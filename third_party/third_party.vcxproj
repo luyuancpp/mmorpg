@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\muduo\muduo\base\AsyncLogging.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\Condition.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\CountDownLatch.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\CrossPlatformAdapterFunction.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\CurrentThread.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\Date.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\Exception.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\FileUtil.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\LogFile.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\Logging.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\LogStream.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\ProcessInfo.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\Thread.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\ThreadPool.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\Timestamp.cc" />
+    <ClCompile Include="..\..\muduo\muduo\base\TimeZone.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\Acceptor.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\boilerplate.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\Buffer.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\Channel.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\Connector.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\EventLoop.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\EventLoopThread.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\EventLoopThreadPool.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\InetAddress.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\Poller.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\poller\DefaultPoller.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\poller\WindowsPollPoller.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\Socket.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\SocketsOps.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\TcpClient.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\TcpConnection.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\TcpServer.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\Timer.cc" />
+    <ClCompile Include="..\..\muduo\muduo\net\TimerQueue.cc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\muduo\muduo\base\AsyncLogging.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Atomic.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\BlockingQueue.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\BoundedBlockingQueue.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Condition.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\copyable.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\CountDownLatch.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\CrossPlatformAdapterFunction.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\CurrentThread.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Date.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Exception.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\FileUtil.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\GzipFile.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\LogFile.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Logging.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\LogStream.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Mutex.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\noncopyable.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\ProcessInfo.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Singleton.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\StringPiece.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Thread.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\ThreadLocal.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\ThreadLocalSingleton.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\ThreadPool.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Timestamp.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\TimeZone.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\Types.h" />
+    <ClInclude Include="..\..\muduo\muduo\base\WeakCallback.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\Acceptor.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\boilerplate.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\Buffer.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\Callbacks.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\Channel.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\Connector.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\Endian.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\EventLoop.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\EventLoopThread.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\EventLoopThreadPool.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\InetAddress.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\Poller.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\Socket.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\SocketsOps.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\TcpClient.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\TcpConnection.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\TcpServer.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\Timer.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\TimerId.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\TimerQueue.h" />
+    <ClInclude Include="..\..\muduo\muduo\net\ZlibStream.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\muduo\muduo\base\BUILD.bazel" />
+    <None Include="..\..\muduo\muduo\net\premake4.lua" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\muduo\muduo\base\CMakeLists.txt" />
+    <Text Include="..\..\muduo\muduo\net\CMakeLists.txt" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{fc29015b-fd9b-4ac9-832d-f660d2d7169d}</ProjectGuid>
+    <RootNamespace>base</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>third_party</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../lib/</OutDir>
+    <IntDir>../output/$(ProjectName)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../lib/</OutDir>
+    <IntDir>../output/$(ProjectName)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>../../muduo/;../../muduo/boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>../../muduo/;../../muduo/boost;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
