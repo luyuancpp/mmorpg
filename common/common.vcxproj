@@ -146,13 +146,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="codec\codec.cc" />
-    <ClCompile Include="protocal\pb3.pb.cc" />
+
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="codec\codec.h" />
     <ClInclude Include="codec\dispatcher.h" />
     <ClInclude Include="codec\dispatcher_lite.h" />
-    <ClInclude Include="protocal\pb3.pb.h" />
+
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
