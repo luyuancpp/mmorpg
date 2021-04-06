@@ -1,6 +1,6 @@
 #include "codec/codec.h"
 #include "codec/dispatcher.h"
-#include "protocal/pb3.pb.h"
+#include "pb3.pb.h"
 
 #include "muduo/base/Logging.h"
 #include "muduo/base/Mutex.h"
@@ -13,7 +13,6 @@
 using namespace muduo;
 using namespace muduo::net;
 
-typedef std::shared_ptr<Proto3MessageWithMaps> QueryPtr;
 typedef std::shared_ptr<Proto3MessageWithMaps> AnswerPtr;
 
 class GameServer : noncopyable
@@ -25,8 +24,7 @@ public:
         dispatcher_(std::bind(&GameServer::onUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3))
     {
-        dispatcher_.registerMessageCallback<Proto3MessageWithMaps>(
-            std::bind(&GameServer::onQuery, this, _1, _2, _3));
+
         dispatcher_.registerMessageCallback<Proto3MessageWithMaps>(
             std::bind(&GameServer::onAnswer, this, _1, _2, _3));
         server_.setConnectionCallback(
@@ -56,22 +54,14 @@ private:
         conn->shutdown();
     }
 
-    void onQuery(const muduo::net::TcpConnectionPtr& conn,
-        const QueryPtr& message,
-        muduo::Timestamp)
-    {
-        LOG_INFO << "onQuery:\n" << message->GetTypeName() << message->DebugString();
-        Proto3MessageWithMaps answer;
-        codec_.send(conn, answer);
-
-        conn->shutdown();
-    }
-
     void onAnswer(const muduo::net::TcpConnectionPtr& conn,
         const AnswerPtr& message,
         muduo::Timestamp)
     {
         LOG_INFO << "onAnswer: " << message->GetTypeName();
+        Proto3MessageWithMaps answer;
+        answer.mutable_field_map_int64_int64_77()->insert(google::protobuf::MapPair<int64_t, int64_t>(20, 20));
+        codec_.send(conn, answer);
         conn->shutdown();
     }
 

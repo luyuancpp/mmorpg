@@ -1,88 +1,109 @@
-﻿#include "muduo/net/TcpClient.h"
+﻿#include "codec/dispatcher.h"
+#include "codec/codec.h"
+#include "pb3.pb.h"
 
 #include "muduo/base/Logging.h"
-#include "muduo/base/Thread.h"
+#include "muduo/base/Mutex.h"
 #include "muduo/net/EventLoop.h"
-#include "muduo/net/InetAddress.h"
-
-#include <utility>
+#include "muduo/net/TcpClient.h"
 
 #include <stdio.h>
-#ifdef __linux__
-#include <unistd.h>
-#endif// __linux__
+
 
 using namespace muduo;
 using namespace muduo::net;
 
-int numThreads = 0;
-class EchoClient;
-std::vector<std::unique_ptr<EchoClient>> clients;
-int current = 0;
+typedef std::shared_ptr<Proto3MessageWithMaps> AnswerPtr;
 
-class EchoClient : noncopyable
+google::protobuf::Message* messageToSend;
+
+class QueryClient : noncopyable
 {
 public:
-    EchoClient(EventLoop* loop, const InetAddress& listenAddr, const string& id)
+    QueryClient(EventLoop* loop,
+        const InetAddress& serverAddr)
         : loop_(loop),
-        client_(loop, listenAddr, "EchoClient" + id)
+        client_(loop, serverAddr, "QueryClient"),
+        dispatcher_(std::bind(&QueryClient::onUnknownMessage, this, _1, _2, _3)),
+        codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3))
     {
+        dispatcher_.registerMessageCallback<Proto3MessageWithMaps>(
+            std::bind(&QueryClient::onAnswer, this, _1, _2, _3));
         client_.setConnectionCallback(
-            std::bind(&EchoClient::onConnection, this, _1));
+            std::bind(&QueryClient::onConnection, this, _1));
         client_.setMessageCallback(
-            std::bind(&EchoClient::onMessage, this, _1, _2, _3));
-        //client_.enableRetry();
+            std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     }
 
     void connect()
     {
         client_.connect();
     }
-    // void stop();
 
 private:
+
     void onConnection(const TcpConnectionPtr& conn)
     {
+        LOG_INFO << conn->localAddress().toIpPort() << " -> "
+            << conn->peerAddress().toIpPort() << " is "
+            << (conn->connected() ? "UP" : "DOWN");
+
+        if (conn->connected())
+        {
+            codec_.send(conn, *messageToSend);
+        }
+        else
+        {
+            loop_->quit();
+        }
     }
 
-    void onMessage(const TcpConnectionPtr& conn, Buffer* buf, Timestamp time)
+    void onUnknownMessage(const TcpConnectionPtr&,
+        const MessagePtr& message,
+        Timestamp)
     {
-      
+        LOG_INFO << "onUnknownMessage: " << message->GetTypeName();
+    }
+
+    void onAnswer(const muduo::net::TcpConnectionPtr&,
+        const AnswerPtr& message,
+        muduo::Timestamp)
+    {
+        LOG_INFO << "onAnswer:\n" << message->GetTypeName() << message->DebugString();
     }
 
     EventLoop* loop_;
     TcpClient client_;
+    ProtobufDispatcher dispatcher_;
+    ProtobufCodec codec_;
 };
 
 int main(int argc, char* argv[])
 {
-    LOG_INFO << "pid = " << getpid() << ", tid = " << CurrentThread::tid();
-    if (argc > 1)
+    LOG_INFO << "pid = " << getpid();
+    if (argc > 2)
     {
         EventLoop loop;
-        bool ipv6 = argc > 3;
-        InetAddress serverAddr(argv[1], 2000, ipv6);
+        uint16_t port = static_cast<uint16_t>(atoi(argv[2]));
+        InetAddress serverAddr(argv[1], port);
 
-        int n = 1;
-        if (argc > 2)
+        Proto3MessageWithMaps query;
+       
+        Proto3MessageWithMaps empty;
+        messageToSend = &query;
+
+        if (argc > 3 && argv[3][0] == 'e')
         {
-            n = atoi(argv[2]);
+            messageToSend = &empty;
         }
 
-        clients.reserve(n);
-        for (int i = 0; i < n; ++i)
-        {
-            char buf[32];
-            snprintf(buf, sizeof buf, "%d", i + 1);
-            clients.emplace_back(new EchoClient(&loop, serverAddr, buf));
-        }
-
-        clients[current]->connect();
+        QueryClient client(&loop, serverAddr);
+        client.connect();
         loop.loop();
     }
     else
     {
-        printf("Usage: %s host_ip [current#]\n", argv[0]);
+        printf("Usage: %s host_ip port [q|e]\n", argv[0]);
     }
 }
 
