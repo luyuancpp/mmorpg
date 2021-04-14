@@ -146,13 +146,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="codec\codec.cc" />
-
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="codec\codec.h" />
     <ClInclude Include="codec\dispatcher.h" />
     <ClInclude Include="codec\dispatcher_lite.h" />
-
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
