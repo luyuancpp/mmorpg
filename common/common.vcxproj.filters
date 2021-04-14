@@ -18,9 +18,6 @@
     <ClCompile Include="codec\codec.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="protocal\pb3.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="codec\codec.h">
@@ -30,9 +27,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="codec\dispatcher_lite.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="protocal\pb3.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
