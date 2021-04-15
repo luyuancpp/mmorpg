@@ -1,1 +1,1 @@
-protoc -I=./ --cpp_out=../ ./pb3.proto
+protoc -I=./ --cpp_out=../pbc/ ./pb3.proto
