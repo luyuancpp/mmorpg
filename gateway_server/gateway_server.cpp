@@ -15,20 +15,19 @@ using namespace muduo::net;
 
 typedef std::shared_ptr<Proto3MessageWithMaps> AnswerPtr;
 
-class GameServer : noncopyable
+class GatewayServer : noncopyable
 {
 public:
-    GameServer(EventLoop* loop,
+    GatewayServer(EventLoop* loop,
         const InetAddress& listenAddr)
         : server_(loop, listenAddr, "QueryServer"),
-        dispatcher_(std::bind(&GameServer::onUnknownMessage, this, _1, _2, _3)),
+        dispatcher_(std::bind(&GatewayServer::onUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3))
     {
-
         dispatcher_.registerMessageCallback<Proto3MessageWithMaps>(
-            std::bind(&GameServer::onAnswer, this, _1, _2, _3));
+            std::bind(&GatewayServer::onAnswer, this, _1, _2, _3));
         server_.setConnectionCallback(
-            std::bind(&GameServer::onConnection, this, _1));
+            std::bind(&GatewayServer::onConnection, this, _1));
         server_.setMessageCallback(
             std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     }
@@ -78,7 +77,7 @@ int main(int argc, char* argv[])
         EventLoop loop;
         uint16_t port = static_cast<uint16_t>(atoi(argv[1]));
         InetAddress serverAddr(port);
-        GameServer server(&loop, serverAddr);
+        GatewayServer server(&loop, serverAddr);
         server.start();
         loop.loop();
     }
