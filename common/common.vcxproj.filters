@@ -18,6 +18,9 @@
     <ClCompile Include="codec\codec.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\timer_task\timer_task.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="codec\codec.h">
@@ -27,6 +30,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="codec\dispatcher_lite.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\timer_task\timer_task.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
