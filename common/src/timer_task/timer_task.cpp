@@ -16,81 +16,79 @@ namespace common
 	void TimerTask::RunAt(const Timestamp& time, const TimerCallback& cb)
 	{
 		Cancel();
-        m_oCallBack = cb;
-		m_oTimerId = gs_thread_even_loop->runAt(time, std::bind(&TimerTask::OnTimer, this));
+        timer_function_callback_ = cb;
+		timer_id_ = gs_thread_even_loop->runAt(time, std::bind(&TimerTask::OnTimer, this));
         UpdateEndTeamDate();
 	}
 
 	void TimerTask::RunAfter(double delay, const TimerCallback& cb)
 	{
 		Cancel();
-        m_oCallBack = cb;
-        m_oTimerId = gs_thread_even_loop->runAfter(delay, std::bind(&TimerTask::OnTimer, this));
+        timer_function_callback_ = cb;
+        timer_id_ = gs_thread_even_loop->runAfter(delay, std::bind(&TimerTask::OnTimer, this));
         UpdateEndTeamDate();
 	}
 
 	void TimerTask::RunEvery(double interval, const TimerCallback& cb)
 	{
         Cancel();	
-        m_oCallBack = cb;
-        m_oTimerId = gs_thread_even_loop->runEvery(interval, std::bind(&TimerTask::OnTimer, this));
+        timer_function_callback_ = cb;
+        timer_id_ = gs_thread_even_loop->runEvery(interval, std::bind(&TimerTask::OnTimer, this));
         UpdateEndTeamDate();
 	}
 
     void TimerTask::Call()
     {
-        if (!m_oCallBack)
+        if (!timer_function_callback_)
         {
             return;
         }
-        m_oCallBack();
+        timer_function_callback_();
     }
 
 	void TimerTask::Cancel()
 	{
-        gs_thread_even_loop->cancel(m_oTimerId);
-        m_oTimerId = TimerId();
-        m_oEndTime = Timestamp();
-#ifdef __TEST__
-        assert(!m_oTimerId.GetTimer());
-#endif // __TEST__
+        gs_thread_even_loop->cancel(timer_id_);
+        timer_id_ = TimerId();
+        end_timestamp_ = Timestamp();
+        assert(nullptr == timer_id_.GetTimer());
 	}
 
     bool TimerTask::ActiveTimer()
     {
-        return !(m_oEndTime.invalid() == m_oEndTime);
+        return !(end_timestamp_.invalid() == end_timestamp_);
     }
 
     int32_t TimerTask::GetEndTime()
     {
-        if (m_oEndTime < Timestamp::now() )
+        if (end_timestamp_ < Timestamp::now() )
         {
             return 0;
         }
-        return (int32_t)m_oTimerId.GetTimer()->expiration().secondsSinceEpoch();
+        return (int32_t)timer_id_.GetTimer()->expiration().secondsSinceEpoch();
     }
 
     void TimerTask::UpdateEndTeamDate()
     {
-        if (nullptr != m_oTimerId.GetTimer())
+        if (nullptr != timer_id_.GetTimer())
         {
-            m_oEndTime = m_oTimerId.GetTimer()->expiration();
+            end_timestamp_ = timer_id_.GetTimer()->expiration();
         }
     }
 
     void TimerTask::SetCallBack(const TimerCallback& cb)
     {
-        m_oCallBack = cb;
+        timer_function_callback_ = cb;
     }
 
     void TimerTask::OnTimer()
     {
-        if (!m_oCallBack)
+        if (!timer_function_callback_)
         {
             return;
         }
-        TimerCallback copycb = m_oCallBack;
+        TimerCallback copycb = timer_function_callback_;
         copycb();
-        m_oEndTime = Timestamp();
+        end_timestamp_ = Timestamp();
     }
 }// namespace common
