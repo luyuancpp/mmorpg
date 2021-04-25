@@ -1,19 +1,18 @@
+#include <stdio.h>
+
 #include "codec/codec.h"
 #include "codec/dispatcher.h"
-#include "pb3.pb.h"
 
 #include "muduo/base/Logging.h"
 #include "muduo/base/Mutex.h"
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/TcpServer.h"
 
-#include <stdio.h>
-
+#include "src/msg_receiver.h"
 
 using namespace muduo;
 using namespace muduo::net;
-
-typedef std::shared_ptr<Proto3MessageWithMaps> AnswerPtr;
+using namespace gateway;
 
 class GatewayServer : noncopyable
 {
@@ -22,10 +21,11 @@ public:
         const InetAddress& listenAddr)
         : server_(loop, listenAddr, "QueryServer"),
         dispatcher_(std::bind(&GatewayServer::onUnknownMessage, this, _1, _2, _3)),
-        codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3))
+        codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
+        msg_receiver_(codec_)
     {
-        dispatcher_.registerMessageCallback<Proto3MessageWithMaps>(
-            std::bind(&GatewayServer::onAnswer, this, _1, _2, _3));
+        dispatcher_.registerMessageCallback<LoginRequest>(
+            std::bind(&MsgReceiver::onAnswer, &msg_receiver_, _1, _2, _3));
         server_.setConnectionCallback(
             std::bind(&GatewayServer::onConnection, this, _1));
         server_.setMessageCallback(
@@ -53,20 +53,10 @@ private:
         conn->shutdown();
     }
 
-    void onAnswer(const muduo::net::TcpConnectionPtr& conn,
-        const AnswerPtr& message,
-        muduo::Timestamp)
-    {
-        LOG_INFO << "onAnswer: " << message->GetTypeName();
-        Proto3MessageWithMaps answer;
-        answer.mutable_field_map_int64_int64_77()->insert(google::protobuf::MapPair<int64_t, int64_t>(20, 20));
-        codec_.send(conn, answer);
-        conn->shutdown();
-    }
-
     TcpServer server_;
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
+    MsgReceiver msg_receiver_;
 };
 
 int main(int argc, char* argv[])

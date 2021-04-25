@@ -19,9 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="pbc\c2gw.pb.h" />
     <ClInclude Include="pbc\pb3.pb.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="pbc\c2gw.pb.cc" />
     <ClCompile Include="pbc\pb3.pb.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

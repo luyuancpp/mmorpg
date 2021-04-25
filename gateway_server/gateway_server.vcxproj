@@ -20,6 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gateway_server.cpp" />
+    <ClCompile Include="src\msg_receiver.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\msg_receiver.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

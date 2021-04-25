@@ -1,6 +1,6 @@
 ﻿#include "codec/dispatcher.h"
 #include "codec/codec.h"
-#include "pb3.pb.h"
+#include "c2gw.pb.h"
 
 #include "muduo/base/Logging.h"
 #include "muduo/base/Mutex.h"
@@ -13,7 +13,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-typedef std::shared_ptr<Proto3MessageWithMaps> AnswerPtr;
+typedef std::shared_ptr<LoginRespone> LoginResponePtr;
 
 google::protobuf::Message* messageToSend;
 
@@ -27,7 +27,7 @@ public:
         dispatcher_(std::bind(&QueryClient::onUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3))
     {
-        dispatcher_.registerMessageCallback<Proto3MessageWithMaps>(
+        dispatcher_.registerMessageCallback<LoginRespone>(
             std::bind(&QueryClient::onAnswer, this, _1, _2, _3));
         client_.setConnectionCallback(
             std::bind(&QueryClient::onConnection, this, _1));
@@ -66,10 +66,10 @@ private:
     }
 
     void onAnswer(const muduo::net::TcpConnectionPtr&,
-        const AnswerPtr& message,
+        const LoginResponePtr& message,
         muduo::Timestamp)
     {
-        LOG_INFO << "onAnswer:\n" << message->GetTypeName() << message->DebugString();
+        
     }
 
     EventLoop* loop_;
@@ -87,15 +87,10 @@ int main(int argc, char* argv[])
         uint16_t port = static_cast<uint16_t>(atoi(argv[2]));
         InetAddress serverAddr(argv[1], port);
 
-        Proto3MessageWithMaps query;
-       
-        Proto3MessageWithMaps empty;
+        LoginRequest query;
+        query.set_account("luhailong");
+        query.set_password("lhl.2020");
         messageToSend = &query;
-
-        if (argc > 3 && argv[3][0] == 'e')
-        {
-            messageToSend = &empty;
-        }
 
         QueryClient client(&loop, serverAddr);
         client.connect();
