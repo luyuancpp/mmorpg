@@ -44,9 +44,9 @@ namespace common
 	private:
         void OnTimer();
 	private:
-        TimerId  m_oTimerId;
-        TimerCallback m_oCallBack;
-        Timestamp m_oEndTime;
+        TimerId  timer_id_;
+        TimerCallback timer_function_callback_;
+        Timestamp end_timestamp_;
 	};
 
 } // namespace BaseModule
