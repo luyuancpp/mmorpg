@@ -7,9 +7,8 @@ void gateway::MsgReceiver::onAnswer(const muduo::net::TcpConnectionPtr& conn,
                                     const LoginRequestPtr& message,
                                     muduo::Timestamp)
 {
-    LOG_INFO << "onAnswer: " << message->DebugString();
-    LoginRespone respone;
+    LOG_INFO << "try login : " << message->DebugString();
+    LoginResponse respone;
     codec_.send(conn, respone);
-    conn->shutdown();
 }
 

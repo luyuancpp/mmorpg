@@ -13,7 +13,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-typedef std::shared_ptr<LoginRespone> LoginResponePtr;
+typedef std::shared_ptr<LoginResponse> LoginResponsePtr;
 
 google::protobuf::Message* messageToSend;
 
@@ -27,7 +27,7 @@ public:
         dispatcher_(std::bind(&QueryClient::onUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3))
     {
-        dispatcher_.registerMessageCallback<LoginRespone>(
+        dispatcher_.registerMessageCallback<LoginResponse>(
             std::bind(&QueryClient::onAnswer, this, _1, _2, _3));
         client_.setConnectionCallback(
             std::bind(&QueryClient::onConnection, this, _1));
@@ -66,7 +66,7 @@ private:
     }
 
     void onAnswer(const muduo::net::TcpConnectionPtr&,
-        const LoginResponePtr& message,
+        const LoginResponsePtr& message,
         muduo::Timestamp)
     {
         
@@ -100,5 +100,6 @@ int main(int argc, char* argv[])
     {
         printf("Usage: %s host_ip port [q|e]\n", argv[0]);
     }
+    return 0;
 }
 

@@ -20,10 +20,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pbc\c2gw.pb.h" />
+    <ClInclude Include="pbc\common.pb.h" />
+    <ClInclude Include="pbc\gw2l.pb.h" />
     <ClInclude Include="pbc\pb3.pb.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pbc\c2gw.pb.cc" />
+    <ClCompile Include="pbc\common.pb.cc" />
+    <ClCompile Include="pbc\gw2l.pb.cc" />
     <ClCompile Include="pbc\pb3.pb.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -80,7 +84,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../lib/</OutDir>
+    <OutDir>../bin/</OutDir>
     <IntDir>../output/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -88,7 +92,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../lib/</OutDir>
+    <OutDir>../bin/</OutDir>
     <IntDir>../output/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

@@ -47,6 +47,11 @@
     <ClCompile Include="muduo\net\Poller.cc" />
     <ClCompile Include="muduo\net\poller\DefaultPoller.cc" />
     <ClCompile Include="muduo\net\poller\WindowsPollPoller.cc" />
+    <ClCompile Include="muduo\net\protobuf\ProtobufCodecLite.cc" />
+    <ClCompile Include="muduo\net\protorpc\rpc.pb.cc" />
+    <ClCompile Include="muduo\net\protorpc\RpcChannel.cc" />
+    <ClCompile Include="muduo\net\protorpc\RpcCodec.cc" />
+    <ClCompile Include="muduo\net\protorpc\RpcServer.cc" />
     <ClCompile Include="muduo\net\Socket.cc" />
     <ClCompile Include="muduo\net\SocketsOps.cc" />
     <ClCompile Include="muduo\net\TcpClient.cc" />
@@ -97,6 +102,12 @@
     <ClInclude Include="muduo\net\EventLoopThreadPool.h" />
     <ClInclude Include="muduo\net\InetAddress.h" />
     <ClInclude Include="muduo\net\Poller.h" />
+    <ClInclude Include="muduo\net\protobuf\BufferStream.h" />
+    <ClInclude Include="muduo\net\protobuf\ProtobufCodecLite.h" />
+    <ClInclude Include="muduo\net\protorpc\rpc.pb.h" />
+    <ClInclude Include="muduo\net\protorpc\RpcChannel.h" />
+    <ClInclude Include="muduo\net\protorpc\RpcCodec.h" />
+    <ClInclude Include="muduo\net\protorpc\RpcServer.h" />
     <ClInclude Include="muduo\net\Socket.h" />
     <ClInclude Include="muduo\net\SocketsOps.h" />
     <ClInclude Include="muduo\net\TcpClient.h" />
@@ -171,7 +182,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../lib/</OutDir>
+    <OutDir>../bin/</OutDir>
     <IntDir>../output/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -179,7 +190,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../lib/</OutDir>
+    <OutDir>../bin/</OutDir>
     <IntDir>../output/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -191,7 +202,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./boost/;./;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./boost/;./;./protobuf/src/;../third_party/;../third_party/zlib/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -220,7 +233,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./boost/;./;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./boost/;./;./protobuf/src/;../third_party/;../third_party/zlib/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
