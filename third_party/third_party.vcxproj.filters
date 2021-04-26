@@ -25,6 +25,12 @@
     <Filter Include="源文件\muduo\net\poller">
       <UniqueIdentifier>{6c007f1e-c7c0-4c6a-8cc8-6205fed0237b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\muduo\net\protorpc">
+      <UniqueIdentifier>{d0352245-be5f-432e-9001-5695b058076e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\muduo\net\protobuf">
+      <UniqueIdentifier>{4807a66b-a21a-4f20-a08c-b176c5ca2fc8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="muduo\base\AsyncLogging.cc">
@@ -131,6 +137,21 @@
     </ClCompile>
     <ClCompile Include="muduo\net\poller\WindowsPollPoller.cc">
       <Filter>源文件\muduo\net\poller</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo\net\protorpc\RpcChannel.cc">
+      <Filter>源文件\muduo\net\protorpc</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo\net\protorpc\RpcCodec.cc">
+      <Filter>源文件\muduo\net\protorpc</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo\net\protorpc\RpcServer.cc">
+      <Filter>源文件\muduo\net\protorpc</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo\net\protobuf\ProtobufCodecLite.cc">
+      <Filter>源文件\muduo\net\protobuf</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo\net\protorpc\rpc.pb.cc">
+      <Filter>源文件\muduo\net\protorpc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -283,6 +304,24 @@
     </ClInclude>
     <ClInclude Include="muduo\net\ZlibStream.h">
       <Filter>源文件\muduo\net</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo\net\protorpc\RpcChannel.h">
+      <Filter>源文件\muduo\net\protorpc</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo\net\protorpc\RpcCodec.h">
+      <Filter>源文件\muduo\net\protorpc</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo\net\protorpc\RpcServer.h">
+      <Filter>源文件\muduo\net\protorpc</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo\net\protobuf\BufferStream.h">
+      <Filter>源文件\muduo\net\protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo\net\protobuf\ProtobufCodecLite.h">
+      <Filter>源文件\muduo\net\protobuf</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo\net\protorpc\rpc.pb.h">
+      <Filter>源文件\muduo\net\protorpc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

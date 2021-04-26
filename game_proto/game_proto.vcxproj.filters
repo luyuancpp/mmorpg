@@ -21,12 +21,24 @@
     <ClInclude Include="pbc\c2gw.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="pbc\gw2l.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pbc\common.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pbc\pb3.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pbc\c2gw.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pbc\common.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pbc\gw2l.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
