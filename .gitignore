@@ -11,7 +11,6 @@ compile_commands.json
 *.stamp
 *.suo
 *.db*
-*.hpp
 third_party/boost/
 third_party/muduo/
 third_party/protobuf/
