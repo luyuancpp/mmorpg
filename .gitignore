@@ -12,6 +12,7 @@ compile_commands.json
 *.suo
 *.db*
 third_party/boost/
+third_party/googletest/
 third_party/muduo/
 third_party/protobuf/
 third_party/zlib/
