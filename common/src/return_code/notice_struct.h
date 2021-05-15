@@ -5,7 +5,7 @@
 
 namespace common
 {
-    enum  class EnumCode : uint32_t;
+    enum  EnumCode : uint32_t;
 
     class ReturnNoticeStruct
     {

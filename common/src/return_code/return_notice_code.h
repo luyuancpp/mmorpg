@@ -7,7 +7,7 @@
 
 namespace common
 {
-    enum  class EnumCode : uint32_t
+    enum  EnumCode : uint32_t
     {
         RET_OK = 1,
 
@@ -30,12 +30,10 @@ namespace common
     };
 }//namespace common
 
-#define re  common::EnumCode
-
 #define RET_CHECK_RET(f)\
 {\
 ReturnValue ret = (f);\
-if (ret != ReturnValue(re::RET_OK))\
+if (ret != ReturnValue(RET_OK))\
 {\
     return  ret;\
 }\
