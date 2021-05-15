@@ -21,7 +21,7 @@ namespace common
     struct CreateTeamParam
     {
         GameGuid leader_id_{ 0 };
-        const Members& members;
+        const Members members;
         std::string  name_;
     };
 
