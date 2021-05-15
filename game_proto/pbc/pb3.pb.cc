@@ -61,18 +61,18 @@ constexpr Proto3Message::Proto3Message(
   , field_bytes_11_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
   , field_message_10_(nullptr)
   , field_double_1_(0)
-  , field_int64_3_(PROTOBUF_LONGLONG(0))
-  , field_uint64_4_(PROTOBUF_ULONGLONG(0))
+  , field_int64_3_(int64_t{0})
+  , field_uint64_4_(uint64_t{0u})
   , field_float_2_(0)
   , field_fixed32_7_(0u)
-  , field_fixed64_6_(PROTOBUF_ULONGLONG(0))
+  , field_fixed64_6_(uint64_t{0u})
   , field_bool_8_(false)
   , field_uint32_12_(0u)
   , field_enum_13_(0)
 
   , field_sfixed32_14_(0)
-  , field_sfixed64_15_(PROTOBUF_LONGLONG(0))
-  , field_sint64_17_(PROTOBUF_LONGLONG(0))
+  , field_sfixed64_15_(int64_t{0})
+  , field_sint64_17_(int64_t{0})
   , field_sint32_16_(0){}
 struct Proto3MessageDefaultTypeInternal {
   constexpr Proto3MessageDefaultTypeInternal()
@@ -683,10 +683,8 @@ const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_pb3_2e
   schemas, file_default_instances, TableStruct_pb3_2eproto::offsets,
   file_level_metadata_pb3_2eproto, file_level_enum_descriptors_pb3_2eproto, file_level_service_descriptors_pb3_2eproto,
 };
-PROTOBUF_ATTRIBUTE_WEAK ::PROTOBUF_NAMESPACE_ID::Metadata
-descriptor_table_pb3_2eproto_metadata_getter(int index) {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_pb3_2eproto);
-  return descriptor_table_pb3_2eproto.file_level_metadata[index];
+PROTOBUF_ATTRIBUTE_WEAK const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable* descriptor_table_pb3_2eproto_getter() {
+  return &descriptor_table_pb3_2eproto;
 }
 
 // Force running AddDescriptors() at dynamic initialization time.
@@ -743,7 +741,7 @@ Proto3Empty::~Proto3Empty() {
 }
 
 void Proto3Empty::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void Proto3Empty::ArenaDtor(void* object) {
@@ -770,8 +768,8 @@ const char* Proto3Empty::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -864,13 +862,14 @@ bool Proto3Empty::IsInitialized() const {
 
 void Proto3Empty::InternalSwap(Proto3Empty* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3Empty::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[0]);
 }
-
 
 // ===================================================================
 
@@ -939,12 +938,12 @@ Proto3Message::Proto3Message(const Proto3Message& from)
   field_string_9_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_field_string_9().empty()) {
     field_string_9_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_field_string_9(), 
-      GetArena());
+      GetArenaForAllocation());
   }
   field_bytes_11_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (!from._internal_field_bytes_11().empty()) {
     field_bytes_11_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_field_bytes_11(), 
-      GetArena());
+      GetArenaForAllocation());
   }
   if (from._internal_has_field_message_10()) {
     field_message_10_ = new ::Proto3Message(*from.field_message_10_);
@@ -973,7 +972,7 @@ Proto3Message::~Proto3Message() {
 }
 
 void Proto3Message::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   field_string_9_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   field_bytes_11_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete field_message_10_;
@@ -1019,7 +1018,7 @@ void Proto3Message::Clear() {
   field_sint64_list_packed_48_.Clear();
   field_string_9_.ClearToEmpty();
   field_bytes_11_.ClearToEmpty();
-  if (GetArena() == nullptr && field_message_10_ != nullptr) {
+  if (GetArenaForAllocation() == nullptr && field_message_10_ != nullptr) {
     delete field_message_10_;
   }
   field_message_10_ = nullptr;
@@ -1034,7 +1033,6 @@ const char* Proto3Message::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // double field_double_1 = 1;
       case 1:
@@ -1450,7 +1448,8 @@ const char* Proto3Message::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -1519,7 +1518,7 @@ failure:
   }
 
   // string field_string_9 = 9;
-  if (this->field_string_9().size() > 0) {
+  if (!this->field_string_9().empty()) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
       this->_internal_field_string_9().data(), static_cast<int>(this->_internal_field_string_9().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
@@ -1537,7 +1536,7 @@ failure:
   }
 
   // bytes field_bytes_11 = 11;
-  if (this->field_bytes_11().size() > 0) {
+  if (!this->field_bytes_11().empty()) {
     target = stream->WriteBytesMaybeAliased(
         11, this->_internal_field_bytes_11(), target);
   }
@@ -1987,14 +1986,14 @@ size_t Proto3Message::ByteSizeLong() const {
   }
 
   // string field_string_9 = 9;
-  if (this->field_string_9().size() > 0) {
+  if (!this->field_string_9().empty()) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
         this->_internal_field_string_9());
   }
 
   // bytes field_bytes_11 = 11;
-  if (this->field_bytes_11().size() > 0) {
+  if (!this->field_bytes_11().empty()) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
         this->_internal_field_bytes_11());
@@ -2136,10 +2135,10 @@ void Proto3Message::MergeFrom(const Proto3Message& from) {
   field_enum_list_packed_44_.MergeFrom(from.field_enum_list_packed_44_);
   field_sint32_list_packed_47_.MergeFrom(from.field_sint32_list_packed_47_);
   field_sint64_list_packed_48_.MergeFrom(from.field_sint64_list_packed_48_);
-  if (from.field_string_9().size() > 0) {
+  if (!from.field_string_9().empty()) {
     _internal_set_field_string_9(from._internal_field_string_9());
   }
-  if (from.field_bytes_11().size() > 0) {
+  if (!from.field_bytes_11().empty()) {
     _internal_set_field_bytes_11(from._internal_field_bytes_11());
   }
   if (from.has_field_message_10()) {
@@ -2206,7 +2205,7 @@ bool Proto3Message::IsInitialized() const {
 
 void Proto3Message::InternalSwap(Proto3Message* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   field_double_list_18_.InternalSwap(&other->field_double_list_18_);
   field_float_list_19_.InternalSwap(&other->field_float_list_19_);
   field_int64_list_20_.InternalSwap(&other->field_int64_list_20_);
@@ -2229,8 +2228,16 @@ void Proto3Message::InternalSwap(Proto3Message* other) {
   field_enum_list_packed_44_.InternalSwap(&other->field_enum_list_packed_44_);
   field_sint32_list_packed_47_.InternalSwap(&other->field_sint32_list_packed_47_);
   field_sint64_list_packed_48_.InternalSwap(&other->field_sint64_list_packed_48_);
-  field_string_9_.Swap(&other->field_string_9_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  field_bytes_11_.Swap(&other->field_bytes_11_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &field_string_9_, GetArenaForAllocation(),
+      &other->field_string_9_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &field_bytes_11_, GetArenaForAllocation(),
+      &other->field_bytes_11_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(Proto3Message, field_sint32_16_)
       + sizeof(Proto3Message::field_sint32_16_)
@@ -2240,9 +2247,10 @@ void Proto3Message::InternalSwap(Proto3Message* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3Message::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[1]);
 }
-
 
 // ===================================================================
 
@@ -2253,7 +2261,9 @@ void Proto3MessageWithMaps_FieldMapBoolBool1Entry_DoNotUse::MergeFrom(const Prot
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapBoolBool1Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[2]);
 }
 void Proto3MessageWithMaps_FieldMapBoolBool1Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2270,7 +2280,9 @@ void Proto3MessageWithMaps_FieldMapInt32Float58Entry_DoNotUse::MergeFrom(const P
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapInt32Float58Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[3]);
 }
 void Proto3MessageWithMaps_FieldMapInt32Float58Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2287,7 +2299,9 @@ void Proto3MessageWithMaps_FieldMapInt32Int3259Entry_DoNotUse::MergeFrom(const P
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapInt32Int3259Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[4]);
 }
 void Proto3MessageWithMaps_FieldMapInt32Int3259Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2304,7 +2318,9 @@ void Proto3MessageWithMaps_FieldMapInt32Int6460Entry_DoNotUse::MergeFrom(const P
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapInt32Int6460Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[5]);
 }
 void Proto3MessageWithMaps_FieldMapInt32Int6460Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2321,7 +2337,9 @@ void Proto3MessageWithMaps_FieldMapInt32Message61Entry_DoNotUse::MergeFrom(const
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapInt32Message61Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[6]);
 }
 void Proto3MessageWithMaps_FieldMapInt32Message61Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2338,7 +2356,9 @@ void Proto3MessageWithMaps_FieldMapInt64Int6477Entry_DoNotUse::MergeFrom(const P
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapInt64Int6477Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[7]);
 }
 void Proto3MessageWithMaps_FieldMapInt64Int6477Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2355,7 +2375,9 @@ void Proto3MessageWithMaps_FieldMapInt64Message78Entry_DoNotUse::MergeFrom(const
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapInt64Message78Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[8]);
 }
 void Proto3MessageWithMaps_FieldMapInt64Message78Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2372,7 +2394,9 @@ void Proto3MessageWithMaps_FieldMapUint32Int32178Entry_DoNotUse::MergeFrom(const
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint32Int32178Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[9]);
 }
 void Proto3MessageWithMaps_FieldMapUint32Int32178Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2389,7 +2413,9 @@ void Proto3MessageWithMaps_FieldMapUint32Int64179Entry_DoNotUse::MergeFrom(const
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint32Int64179Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[10]);
 }
 void Proto3MessageWithMaps_FieldMapUint32Int64179Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2406,7 +2432,9 @@ void Proto3MessageWithMaps_FieldMapUint32Message180Entry_DoNotUse::MergeFrom(con
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint32Message180Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[11]);
 }
 void Proto3MessageWithMaps_FieldMapUint32Message180Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2423,7 +2451,9 @@ void Proto3MessageWithMaps_FieldMapUint32Uint32186Entry_DoNotUse::MergeFrom(cons
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint32Uint32186Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[12]);
 }
 void Proto3MessageWithMaps_FieldMapUint32Uint32186Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2440,7 +2470,9 @@ void Proto3MessageWithMaps_FieldMapUint32Uint64187Entry_DoNotUse::MergeFrom(cons
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint32Uint64187Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[13]);
 }
 void Proto3MessageWithMaps_FieldMapUint32Uint64187Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2457,7 +2489,9 @@ void Proto3MessageWithMaps_FieldMapUint64Int32195Entry_DoNotUse::MergeFrom(const
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint64Int32195Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[14]);
 }
 void Proto3MessageWithMaps_FieldMapUint64Int32195Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2474,7 +2508,9 @@ void Proto3MessageWithMaps_FieldMapUint64Int64196Entry_DoNotUse::MergeFrom(const
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint64Int64196Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[15]);
 }
 void Proto3MessageWithMaps_FieldMapUint64Int64196Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2491,7 +2527,9 @@ void Proto3MessageWithMaps_FieldMapUint64Message197Entry_DoNotUse::MergeFrom(con
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint64Message197Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[16]);
 }
 void Proto3MessageWithMaps_FieldMapUint64Message197Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2508,7 +2546,9 @@ void Proto3MessageWithMaps_FieldMapUint64Uint32203Entry_DoNotUse::MergeFrom(cons
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint64Uint32203Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[17]);
 }
 void Proto3MessageWithMaps_FieldMapUint64Uint32203Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2525,7 +2565,9 @@ void Proto3MessageWithMaps_FieldMapUint64Uint64204Entry_DoNotUse::MergeFrom(cons
   MergeFromInternal(other);
 }
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps_FieldMapUint64Uint64204Entry_DoNotUse::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[18]);
 }
 void Proto3MessageWithMaps_FieldMapUint64Uint64204Entry_DoNotUse::MergeFrom(
     const ::PROTOBUF_NAMESPACE_ID::Message& other) {
@@ -2595,14 +2637,34 @@ Proto3MessageWithMaps::~Proto3MessageWithMaps() {
 }
 
 void Proto3MessageWithMaps::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void Proto3MessageWithMaps::ArenaDtor(void* object) {
   Proto3MessageWithMaps* _this = reinterpret_cast< Proto3MessageWithMaps* >(object);
   (void)_this;
+  _this->field_map_bool_bool_1_. ~MapField();
+  _this->field_map_int32_float_58_. ~MapField();
+  _this->field_map_int32_int32_59_. ~MapField();
+  _this->field_map_int32_int64_60_. ~MapField();
+  _this->field_map_int32_message_61_. ~MapField();
+  _this->field_map_int64_int64_77_. ~MapField();
+  _this->field_map_int64_message_78_. ~MapField();
+  _this->field_map_uint32_int32_178_. ~MapField();
+  _this->field_map_uint32_int64_179_. ~MapField();
+  _this->field_map_uint32_message_180_. ~MapField();
+  _this->field_map_uint32_uint32_186_. ~MapField();
+  _this->field_map_uint32_uint64_187_. ~MapField();
+  _this->field_map_uint64_int32_195_. ~MapField();
+  _this->field_map_uint64_int64_196_. ~MapField();
+  _this->field_map_uint64_message_197_. ~MapField();
+  _this->field_map_uint64_uint32_203_. ~MapField();
+  _this->field_map_uint64_uint64_204_. ~MapField();
 }
-void Proto3MessageWithMaps::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
+inline void Proto3MessageWithMaps::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena) {
+  if (arena != nullptr) {
+    arena->OwnCustomDestructor(this, &Proto3MessageWithMaps::ArenaDtor);
+  }
 }
 void Proto3MessageWithMaps::SetCachedSize(int size) const {
   _cached_size_.Set(size);
@@ -2639,7 +2701,6 @@ const char* Proto3MessageWithMaps::_InternalParse(const char* ptr, ::PROTOBUF_NA
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // map<bool, bool> field_map_bool_bool_1 = 1;
       case 1:
@@ -2847,7 +2908,8 @@ const char* Proto3MessageWithMaps::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -3639,30 +3701,31 @@ bool Proto3MessageWithMaps::IsInitialized() const {
 
 void Proto3MessageWithMaps::InternalSwap(Proto3MessageWithMaps* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
-  field_map_bool_bool_1_.Swap(&other->field_map_bool_bool_1_);
-  field_map_int32_float_58_.Swap(&other->field_map_int32_float_58_);
-  field_map_int32_int32_59_.Swap(&other->field_map_int32_int32_59_);
-  field_map_int32_int64_60_.Swap(&other->field_map_int32_int64_60_);
-  field_map_int32_message_61_.Swap(&other->field_map_int32_message_61_);
-  field_map_int64_int64_77_.Swap(&other->field_map_int64_int64_77_);
-  field_map_int64_message_78_.Swap(&other->field_map_int64_message_78_);
-  field_map_uint32_int32_178_.Swap(&other->field_map_uint32_int32_178_);
-  field_map_uint32_int64_179_.Swap(&other->field_map_uint32_int64_179_);
-  field_map_uint32_message_180_.Swap(&other->field_map_uint32_message_180_);
-  field_map_uint32_uint32_186_.Swap(&other->field_map_uint32_uint32_186_);
-  field_map_uint32_uint64_187_.Swap(&other->field_map_uint32_uint64_187_);
-  field_map_uint64_int32_195_.Swap(&other->field_map_uint64_int32_195_);
-  field_map_uint64_int64_196_.Swap(&other->field_map_uint64_int64_196_);
-  field_map_uint64_message_197_.Swap(&other->field_map_uint64_message_197_);
-  field_map_uint64_uint32_203_.Swap(&other->field_map_uint64_uint32_203_);
-  field_map_uint64_uint64_204_.Swap(&other->field_map_uint64_uint64_204_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
+  field_map_bool_bool_1_.InternalSwap(&other->field_map_bool_bool_1_);
+  field_map_int32_float_58_.InternalSwap(&other->field_map_int32_float_58_);
+  field_map_int32_int32_59_.InternalSwap(&other->field_map_int32_int32_59_);
+  field_map_int32_int64_60_.InternalSwap(&other->field_map_int32_int64_60_);
+  field_map_int32_message_61_.InternalSwap(&other->field_map_int32_message_61_);
+  field_map_int64_int64_77_.InternalSwap(&other->field_map_int64_int64_77_);
+  field_map_int64_message_78_.InternalSwap(&other->field_map_int64_message_78_);
+  field_map_uint32_int32_178_.InternalSwap(&other->field_map_uint32_int32_178_);
+  field_map_uint32_int64_179_.InternalSwap(&other->field_map_uint32_int64_179_);
+  field_map_uint32_message_180_.InternalSwap(&other->field_map_uint32_message_180_);
+  field_map_uint32_uint32_186_.InternalSwap(&other->field_map_uint32_uint32_186_);
+  field_map_uint32_uint64_187_.InternalSwap(&other->field_map_uint32_uint64_187_);
+  field_map_uint64_int32_195_.InternalSwap(&other->field_map_uint64_int32_195_);
+  field_map_uint64_int64_196_.InternalSwap(&other->field_map_uint64_int64_196_);
+  field_map_uint64_message_197_.InternalSwap(&other->field_map_uint64_message_197_);
+  field_map_uint64_uint32_203_.InternalSwap(&other->field_map_uint64_uint32_203_);
+  field_map_uint64_uint64_204_.InternalSwap(&other->field_map_uint64_uint64_204_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Proto3MessageWithMaps::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_pb3_2eproto_getter, &descriptor_table_pb3_2eproto_once,
+      file_level_metadata_pb3_2eproto[19]);
 }
-
 
 // @@protoc_insertion_point(namespace_scope)
 PROTOBUF_NAMESPACE_OPEN

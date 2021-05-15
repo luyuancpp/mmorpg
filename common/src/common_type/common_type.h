@@ -32,6 +32,8 @@ namespace common
 
     using PlayerIdsV = std::vector<GameGuid>;
     using StringV = std::vector<std::string>;
+
+    static const GameGuid kEmptyGameGuid{ 0 };
 }//namespace common
 
 #endif//COMMON_SRC_COMMON_TYPE_CommonType
