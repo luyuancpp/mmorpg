@@ -1,7 +1,7 @@
-#ifndef __CONFIG_EXPRESSION_
-#define __CONFIG_EXPRESSION_
+#ifndef COMMON_SRC_CONFIG_EXPRESSION_Config_Expression
+#define COMMON_SRC_CONFIG_EXPRESSION_Config_Expression
 
-#include "Exprtk/exprtk.hpp"
+#include "src/exprtk/exprtk.hpp"
 
 template<class T>
 inline T randu()
@@ -59,4 +59,4 @@ private:
     parser_type parser_;
 };
 
-#endif // !__CONFIG_EXPRESSION_
+#endif // !COMMON_SRC_CONFIG_EXPRESSION_Config_Expression

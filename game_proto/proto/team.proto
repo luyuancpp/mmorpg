@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message TeamMember
+{
+  uint64 player_id = 1;
+}
