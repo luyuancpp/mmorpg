@@ -21,6 +21,12 @@
     <ClCompile Include="src\timer_task\timer_task.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\team\team.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\team\team_list.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="codec\codec.h">
@@ -33,6 +39,33 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\timer_task\timer_task.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\config_expression\config_expression.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\exprtk\exprtk.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\team\team_list.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\team\team.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_type\common_type.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\return_code\return_code.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\return_code\notice_struct.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\return_code\return_notice_code.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\snow_flake\snow_flake.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
