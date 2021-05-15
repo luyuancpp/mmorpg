@@ -8,7 +8,7 @@ namespace common
     auto it = teams_.find(team_id);\
     if (it == teams_.end())\
     {\
-        return re::RET_TEAM_HAS_NOT_TEAM_ID;\
+        return RET_TEAM_HAS_NOT_TEAM_ID;\
     }\
     auto p_team = it->second;
 
@@ -85,11 +85,11 @@ namespace common
     {
         if (IsTeamsMax())
         {
-            return re::RET_TEAM_TEAM_LIST_MAX;
+            return RET_TEAM_TEAM_LIST_MAX;
         }
         if (PlayerInTeam(param.leader_id_))
         {
-            return re::RET_TEAM_MEMBER_IN_TEAM;
+            return RET_TEAM_MEMBER_IN_TEAM;
         }
         auto team_id = snow_flake_.Generate();
         TeamPtr p_team(
@@ -99,7 +99,7 @@ namespace common
         {
             last_team_id_ = team_id;
         }
-        return re::RET_OK;
+        return RET_OK;
     }
 
     ReturnValue TeamList::JoinTeam(GameGuid team_id, TeamMember& mem)
@@ -114,14 +114,14 @@ namespace common
         GetTeamPtrReturnError;
         RET_CHECK_RET(p_team->LeaveTeam(player_id));
         EraseTeam(team_id);
-        return re::RET_OK;
+        return RET_OK;
     }
 
     ReturnValue TeamList::KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_player_id)
     {
         GetTeamPtrReturnError;
         RET_CHECK_RET(p_team->KickMember(current_leader_id, kick_player_id));
-        return re::RET_OK;
+        return RET_OK;
     }
 
     ReturnValue TeamList::DissMissTeam(GameGuid team_id, GameGuid current_leader_id)
@@ -129,10 +129,10 @@ namespace common
         GetTeamPtrReturnError;
         if (p_team->leader_id() != current_leader_id)
         {
-            return re::RET_TEAM_DISMISS_NOT_LEADER;
+            return RET_TEAM_DISMISS_NOT_LEADER;
         }
         EraseTeam(team_id);
-        return re::RET_OK;
+        return RET_OK;
     }
 
     ReturnValue TeamList::DissMissTeamNoLeader(GameGuid team_id)
@@ -226,7 +226,7 @@ namespace common
         {
             RET_CHECK_RET(p_team->JoinTeam(it.second));
         }
-        return re::RET_OK;
+        return RET_OK;
     }
 
     void TeamList::EraseTeam(GameGuid team_id)

@@ -38,25 +38,25 @@ namespace common
     {
         RET_CHECK_RET(TryToJoinTeam(m));
         OnJoinTeam(m);
-        return re::RET_OK;
+        return RET_OK;
     }
 
     ReturnValue Team::TryToJoinTeam(const TeamMember& m)
     {
         if (m.player_id() == kEmptyGameGuid)
         {
-            return re::RET_TEAM_PLAEYR_ID;
+            return RET_TEAM_PLAEYR_ID;
         }
         if (IsFull())
         {
-            return re::RET_TEAM_MEMBERS_FULL;
+            return RET_TEAM_MEMBERS_FULL;
         }
         auto it = members_.find(m.player_id());
         if (it != members_.end())
         {
-            return re::RET_TEAM_MEMBER_IN_TEAM;
+            return RET_TEAM_MEMBER_IN_TEAM;
         }
-        return re::RET_OK;
+        return RET_OK;
     }
 
     ReturnValue Team::LeaveTeam(GameGuid player_id)
@@ -64,14 +64,14 @@ namespace common
         auto it = members_.find(player_id);
         if (it == members_.end())
         {
-            return re::RET_TEAM_MEMBER_NOT_IN_TEAM;
+            return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
         if (!members_.empty() && IsLeader(player_id))
         {
             OnAppointLeader(members_.begin()->first);
         }
         members_.erase(player_id);
-        return re::RET_OK;
+        return RET_OK;
     }
 
     void Team::OnJoinTeam(const TeamMember& m)
@@ -84,39 +84,39 @@ namespace common
     {
         if (leader_id_ == kick_player_id)
         {
-            return re::RET_TEAM_KICK_SELF;
+            return RET_TEAM_KICK_SELF;
         }
         if (leader_id_ != current_leader)
         {
-            return re::RET_TEAM_KICK_NOT_LEADER;
+            return RET_TEAM_KICK_NOT_LEADER;
         }
         auto it = members_.find(kick_player_id);
         if (it == members_.end())
         {
-            return re::RET_TEAM_MEMBER_NOT_IN_TEAM;
+            return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
         RET_CHECK_RET(LeaveTeam(kick_player_id));
-        return re::RET_OK;
+        return RET_OK;
     }
 
     ReturnValue Team::AppointLeader(GameGuid current_leader, GameGuid new_leader_player_id)
     {
         if (leader_id_ == new_leader_player_id)
         {
-            return re::RET_TEAM_APPOINT_SELF;
+            return RET_TEAM_APPOINT_SELF;
         }
         if (!InTeam(new_leader_player_id))
         {
-            return re::RET_TEAM_MEMBER_NOT_IN_TEAM;
+            return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
 
         if (leader_id_ != current_leader)
         {
-            return re::RET_TEAM_APPOINT_SELF;
+            return RET_TEAM_APPOINT_SELF;
         }
 
         OnAppointLeader(new_leader_player_id);
-        return re::RET_OK;
+        return RET_OK;
     }
 
     void Team::OnAppointLeader(GameGuid new_leader_player_id)
@@ -128,12 +128,12 @@ namespace common
     {
         if (IsFull())
         {
-            return re::RET_TEAM_APPOINT_SELF;
+            return RET_TEAM_APPOINT_SELF;
         }
 
         if (members_.find(m.player_id()) != members_.end())
         {
-            return re::RET_TEAM_MEMBER_IN_TEAM;
+            return RET_TEAM_MEMBER_IN_TEAM;
         }
 
         RET_CHECK_RET(CheckLimt(m));
@@ -141,7 +141,7 @@ namespace common
         auto it = applicants_.find(m.player_id());
         if (it != applicants_.end())
         {
-            return re::RET_TEAM_IN_APPLICANT_LIEST;
+            return RET_TEAM_IN_APPLICANT_LIEST;
         }
         if (applicant_ids_.size() >= kMaxApplicantSize)
         {
@@ -150,7 +150,7 @@ namespace common
             applicant_ids_.erase(applicant_ids_.begin());
         }
         applicants_.emplace(m.player_id(), m);
-        return re::RET_OK;
+        return RET_OK;
     }
 
     ReturnValue Team::AgreeApplicant(GameGuid applicant_id)
@@ -158,13 +158,13 @@ namespace common
         auto it = applicants_.find(applicant_id);
         if (it == applicants_.end())
         {
-            return re::RET_TEAM_NOT_IN_APPLICANTS;
+            return RET_TEAM_NOT_IN_APPLICANTS;
         }
         TeamMember m;
         m.CopyFrom(it->second);
         RET_CHECK_RET(JoinTeam(m));
         RET_CHECK_RET(RemoveApplicant(applicant_id));
-        return re::RET_OK;
+        return RET_OK;
     }
 
     ReturnValue Team::RemoveApplicant(GameGuid applicant_id)
@@ -172,7 +172,7 @@ namespace common
         auto it = applicants_.find(applicant_id);
         if (it == applicants_.end())
         {
-            return re::RET_TEAM_NOT_IN_APPLICANT_LIEST;
+            return RET_TEAM_NOT_IN_APPLICANT_LIEST;
         }
         applicants_.erase(applicant_id);
         auto idit = std::find(applicant_ids_.begin(), applicant_ids_.end(), applicant_id);
@@ -180,7 +180,7 @@ namespace common
         {
             applicant_ids_.erase(idit);
         }
-        return re::RET_OK;
+        return RET_OK;
     }
 
     void Team::ClearApplyList()
@@ -191,7 +191,7 @@ namespace common
 
     ReturnValue Team::CheckLimt(const TeamMember& m)
     {
-        return re::RET_OK;
+        return RET_OK;
     }
 
     bool Team::TestApplicantValueEqual() const

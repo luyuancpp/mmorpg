@@ -28,7 +28,7 @@ public:
 
     GameGuid Generate()
     {
-        return incremented_variable_;
+        return incremented_variable_.fetch_add(1);
         /*return GameGuid(server_id_flag_ ^ incremented_variable_.fetch_add(1),
                GetNow());*/
     }
