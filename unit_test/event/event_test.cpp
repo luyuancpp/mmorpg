@@ -8,7 +8,6 @@
 #include "src/event/event.h"
 
 using common::EventManager;
-using common::Event;
 using common::Receiver;
 using common::EventManagerPtr;
 
