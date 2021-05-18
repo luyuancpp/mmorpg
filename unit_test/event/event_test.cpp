@@ -25,7 +25,7 @@ struct Collision {
 
 struct ExplosionSystem : public Receiver<ExplosionSystem> {
     ExplosionSystem()
-        : m_ptr_(new EventManager)
+        : m_ptr_(EventManager::New())
     {
     }
     void receive(const Explosion& explosion) {
@@ -46,7 +46,7 @@ struct ExplosionSystem : public Receiver<ExplosionSystem> {
 
 TEST(TestEmitReceive, recevie_desctory)
 {
-    EventManagerPtr ptr(new EventManager);
+    auto ptr = EventManager::New();
     EventManager& em = *ptr.get();
     {
         ExplosionSystem explosion_system;
@@ -67,7 +67,7 @@ TEST(TestEmitReceive, recevie_desctory)
 
 TEST(TestEmitReceive, unsubscribetest)
 {
-    EventManagerPtr ptr(new EventManager);
+    EventManagerPtr ptr(EventManager::New());
     EventManager& em = *ptr.get();
 
     ExplosionSystem explosion_system;
@@ -94,7 +94,7 @@ TEST(TestEmitReceive, unsubscribetest)
 TEST(TestEmitReceive, mamgerdestroy) {
     ExplosionSystem explosion_system;
     {
-        EventManagerPtr ptr(new EventManager);
+        EventManagerPtr ptr(EventManager::New());
         EventManager& em = *ptr.get();
         em.subscribe<Explosion>(explosion_system);
         em.emit<Explosion>(10);
@@ -107,7 +107,7 @@ TEST(TestEmitReceive, mamgerdestroy) {
 
 TEST(TestEmitReceive, resubscribe) {
     ExplosionSystem explosion_system;
-    EventManagerPtr ptr(new EventManager);
+    EventManagerPtr ptr(EventManager::New());
     EventManager& em = *ptr.get();
     em.subscribe<Explosion>(explosion_system);
     em.subscribe<Explosion>(explosion_system);
@@ -116,6 +116,84 @@ TEST(TestEmitReceive, resubscribe) {
     EXPECT_EQ(1, explosion_system.connected_signals());
     EXPECT_EQ(1, em.connected_receivers());
 }
+
+
+TEST(TestEmitReceive, TestEmitReceive1)
+{
+    auto ptr = EventManager::New();
+    EventManager& em = *ptr.get();
+    ExplosionSystem explosion_system;
+    em.subscribe<Explosion>(explosion_system);
+    em.subscribe<Collision>(explosion_system);
+    EXPECT_EQ(0 , explosion_system.damage_received);
+    em.emit<Explosion>(10);
+    EXPECT_EQ(1 , explosion_system.received_count);
+    EXPECT_EQ(10 , explosion_system.damage_received);
+    em.emit<Collision>(10);
+    EXPECT_EQ(20 , explosion_system.damage_received);
+    EXPECT_EQ(2 , explosion_system.received_count);
+}
+
+TEST(TestEmitReceive,  TestUntypedEmitReceive)
+{
+    auto ptr = EventManager::New();
+    EventManager& em = *ptr.get();
+    ExplosionSystem explosion_system;
+    em.subscribe<Explosion>(explosion_system);
+    EXPECT_EQ(0 , explosion_system.damage_received);
+    Explosion explosion(10);
+    em.emit(explosion);
+    EXPECT_EQ(1 , explosion_system.received_count);
+    EXPECT_EQ(10 , explosion_system.damage_received);
+}
+
+
+TEST(TestEmitReceive,  TestReceiverExpired) {
+    auto ptr = EventManager::New();
+    EventManager& em = *ptr.get();
+    {
+        ExplosionSystem explosion_system;
+        em.subscribe<Explosion>(explosion_system);
+        em.emit<Explosion>(10);
+        EXPECT_EQ(10 , explosion_system.damage_received);
+        EXPECT_EQ(1 , explosion_system.connected_signals());
+        EXPECT_EQ(1 , em.connected_receivers());
+    }
+    EXPECT_EQ(0 , em.connected_receivers());
+}
+
+
+TEST(TestEmitReceive, TestSenderExpired)
+{
+    ExplosionSystem explosion_system;
+    {
+        auto ptr = EventManager::New();
+        EventManager& em = *ptr.get();
+        em.subscribe<Explosion>(explosion_system);
+        em.emit<Explosion>(10);
+        EXPECT_EQ(10 , explosion_system.damage_received);
+        EXPECT_EQ(1 , explosion_system.connected_signals());
+        EXPECT_EQ(1 , em.connected_receivers());
+    }
+    EXPECT_EQ(0 , explosion_system.connected_signals());
+}
+
+TEST(TestEmitReceive,  TestUnsubscription) 
+{
+    ExplosionSystem explosion_system;
+    {
+        auto ptr = EventManager::New();
+        EventManager& em = *ptr.get();
+        em.subscribe<Explosion>(explosion_system);
+        EXPECT_EQ(explosion_system.damage_received , 0);
+        em.emit<Explosion>(1);
+        EXPECT_EQ(explosion_system.damage_received , 1);
+        em.unsubscribe<Explosion>(explosion_system);
+        em.emit<Explosion>(1);
+        EXPECT_EQ(explosion_system.damage_received , 1);
+    }
+}
+
 
 int main(int argc, char** argv)
 {

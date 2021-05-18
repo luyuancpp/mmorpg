@@ -136,8 +136,10 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
   using Receviers = std::unordered_set<BaseReceiverPtr>;
   using FamilyReceviers = std::unordered_map<Family, Receviers>;
 
-  EventManager();
-  virtual ~EventManager();
+  EventManager() {}
+  ~EventManager();
+
+  static EventManagerPtr New() { auto ptr = std::make_shared<EventManager>(); return ptr; }
 
   EventManager(const EventManager&) = delete;
   EventManager& operator = (const EventManager&) = delete;
@@ -293,6 +295,8 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
       }
   }
  private:     
+          
+
      FamilyReceviers family_receviers_;
 };
 

@@ -58,10 +58,6 @@ void BaseReceiver::onunsubscribe(ManagerKey manager_key, Family family_id)
     }
 }
 
-EventManager::EventManager()
-{
-}
-
 
 EventManager::~EventManager() {
     for (auto& it : family_receviers_)
