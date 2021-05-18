@@ -92,8 +92,7 @@ namespace common
             return RET_TEAM_MEMBER_IN_TEAM;
         }
         auto team_id = snow_flake_.Generate();
-        TeamPtr p_team(
-            new Team(team_id, param));
+        TeamPtr p_team = std::make_shared<Team>(team_id, param);
         std::pair<TeamMap::iterator, bool> p = teams_.emplace(team_id, std::move(p_team));
         if (p.second)
         {
@@ -141,10 +140,10 @@ namespace common
         return DissMissTeam(team_id, p_team->leader_id());
     }
 
-    ReturnValue TeamList::AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  nNewLeaderplayer_id)
+    ReturnValue TeamList::AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  new_leader_player_id)
     {
         GetTeamPtrReturnError;
-        return p_team->AppointLeader(current_leader_id, nNewLeaderplayer_id);
+        return p_team->AppointLeader(current_leader_id, new_leader_player_id);
     }
 
     ReturnValue TeamList::Apply(GameGuid team_id, const TeamMember& m)
