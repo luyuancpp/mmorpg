@@ -148,6 +148,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="codec\codec.cc" />
+    <ClCompile Include="src\return_code\notice_struct.cpp" />
     <ClCompile Include="src\team\team.cpp" />
     <ClCompile Include="src\team\team_list.cpp" />
     <ClCompile Include="src\timer_task\timer_task.cpp" />
