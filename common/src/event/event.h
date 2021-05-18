@@ -15,8 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "src/snow_flake/snow_flake.h"
-
 namespace common 
 {
 using Family = uint64_t;
@@ -45,8 +43,8 @@ class Event : public BaseEvent
  public:
   /// Used internally for registration.
   static Family family() {
-    static Family family = family_counter_++;
-    return family;
+    static Family family_id = family_counter_++;
+    return family_id;
   }
 };
 
@@ -78,14 +76,15 @@ class BaseReceiver {
  public:
   using FamilyCallbacks = std::unordered_map<Family, CallbackPtr>;
   using MangersFamilys = std::pair<EventManagerWeakPtr, FamilyCallbacks>;
-  using Managers = std::unordered_map<GameGuid, MangersFamilys>;
+  using ManagerKey = EventManager*;
+  using Managers = std::unordered_map<ManagerKey, MangersFamilys>;
 
   virtual ~BaseReceiver();
 
   template <typename E>
-  void call(GameGuid emid, Family family_id, const E& e)
+  void call(ManagerKey manager_key, Family family_id, const E& e)
   {
-      auto mit = managers_.find(emid);
+      auto mit = managers_.find(manager_key);
       if (mit == managers_.end())
       {
           return;
@@ -113,7 +112,7 @@ class BaseReceiver {
 
  private:
      void onsubscribe(const EventManagerPtr& manager_ptr, Family family_id, CallbackPtr& callback_ptr);
-     void onunsubscribe(const EventManagerPtr& emp, Family family_id);
+     void onunsubscribe(ManagerKey manager_key, Family family_id);
 
   friend class EventManager;
   Managers managers_;
@@ -143,7 +142,7 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
   EventManager(const EventManager&) = delete;
   EventManager& operator = (const EventManager&) = delete;
 
-  GameGuid manager_id()const { return manager_id_; }
+  EventManager* manager_key(){ return this; }
 
   std::size_t connected_receivers() const {
       std::size_t size = 0;
@@ -214,7 +213,23 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
   template <typename E, typename Receiver>
   void unsubscribe(Receiver &receiver) {
     auto family_id = Event<E>::family();
-    onunsubscribe(&receiver, family_id);
+    auto it = family_receviers_.find(family_id);
+    if (it == family_receviers_.end())
+    {
+        return;
+    }
+    auto& receivers = it->second;
+    auto rit = receivers.find(&receiver);
+    if (rit == receivers.end())
+    {
+        return;
+    }
+    (*rit)->onunsubscribe(this, family_id);
+    receivers.erase(rit);
+    if (receivers.empty())
+    {
+        family_receviers_.erase(it);
+    }
   }
 
   template <typename E>
@@ -227,7 +242,7 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
     }
     for (auto& receiver : it->second)
     {
-        receiver->call<const E&>(manager_id(), family_id, event);
+        receiver->call<const E&>(this, family_id, event);
     }
   }
 
@@ -255,41 +270,32 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
   void emit(Args && ... args) {
     // Using 'E event(std::forward...)' causes VS to fail with an internal error. Hack around it.
     E event = E(std::forward<Args>(args) ...);
-    emit(&event);
+    emit(event);
   }
 
- void onreceiverdestroy(BaseReceiver& receiver, Family family_id)
+  void onreceiverdestroy(BaseReceiverPtr receiver, Family family_id)
   {
       auto it = family_receviers_.find(family_id);
       if (it == family_receviers_.end())
       {
           return;
       }
-      it->second.erase(&receiver);
+      auto& receivers = it->second;
+      auto rit = receivers.find(receiver);
+      if (rit == receivers.end())
+      {
+          return;
+      }
+      receivers.erase(rit);
+      if (receivers.empty())
+      {
+          family_receviers_.erase(it);
+      }
   }
-
- private:
-     void onunsubscribe(BaseReceiverPtr receiver, Family family_id) {
-         auto it = family_receviers_.find(family_id);
-         if (it == family_receviers_.end())
-         {
-             return;
-         }
-         auto& receivers = it->second;
-         auto rit = receivers.find(((BaseReceiverPtr)&receiver));
-         if (rit == receivers.end())
-         {
-             return;
-         }
-         (*rit)->onunsubscribe(shared_from_this(), family_id);
-         receivers.erase(rit);
-     }
-     
+ private:     
      FamilyReceviers family_receviers_;
-     SnowFlake snow_flake_;
-     GameGuid manager_id_{ 0 };
 };
 
-}  // namespace entityx
+}  // namespace common
 
 #endif // !COMMON_SRC_EVENT_Event
