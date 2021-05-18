@@ -109,12 +109,10 @@ namespace common
         {
             return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
-
         if (leader_id_ != current_leader)
         {
             return RET_TEAM_APPOINT_SELF;
         }
-
         OnAppointLeader(new_leader_player_id);
         return RET_OK;
     }
