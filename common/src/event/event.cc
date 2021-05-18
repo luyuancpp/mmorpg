@@ -1,26 +1,77 @@
-/*
- * Copyright (C) 2012 Alec Thomas <alec@swapoff.org>
- * All rights reserved.
- *
- * This software is licensed as described in the file COPYING, which
- * you should have received as part of this distribution.
- *
- * Author: Alec Thomas <alec@swapoff.org>
- */
 
-#include "entityx/Event.h"
+#include "event.h"
 
-namespace entityx {
+namespace common {
 
-BaseEvent::Family BaseEvent::family_counter_ = 0;
+Family BaseEvent::family_counter_ = 0;
 
-BaseEvent::~BaseEvent() {
+BaseReceiver::~BaseReceiver()
+{
+    for (auto m : managers_) {
+        auto manager_ptr = m.second.first.lock();
+        if (nullptr == manager_ptr)
+        {
+            continue;
+        }
+        for (auto& fmc : m.second.second)
+        {
+            manager_ptr->onreceiverdestroy(*this, fmc.first);
+        }
+    }
 }
 
-EventManager::EventManager() {
+
+void BaseReceiver::onsubscribe(const EventManagerPtr& manager_ptr, Family family_id, CallbackPtr& callback_ptr)
+{
+    auto emid = manager_ptr->manager_id();
+    auto mit = managers_.find(emid);
+    if (mit == managers_.end())
+    {
+        FamilyCallbacks fcs;
+        EventManagerWeakPtr manager_wptr(manager_ptr);
+        MangersFamilys manager_familys{ manager_wptr , fcs };
+        managers_.emplace(emid, manager_familys);
+        mit = managers_.find(emid);
+        assert(mit != managers_.end());
+    }
+    auto& family_callbacks = mit->second.second;
+    auto fit = family_callbacks.find(family_id);
+    if (fit != family_callbacks.end())
+    {
+        fit->second = callback_ptr;
+        return;
+    }
+    family_callbacks.emplace(family_id, callback_ptr);
+}
+
+void BaseReceiver::onunsubscribe(const EventManagerPtr& emp, Family family_id)
+{
+    auto emid = emp->manager_id();
+    auto mit = managers_.find(emid);
+    if (mit == managers_.end())
+    {
+        return;
+    }
+    auto& family_callbacks = mit->second.second;
+    family_callbacks.erase(family_id);
+    if (family_callbacks.empty())
+    {
+        managers_.erase(mit);
+    }
+}
+
+EventManager::EventManager()
+    : manager_id_(snow_flake_.Generate())
+{
 }
 
 EventManager::~EventManager() {
+    for (auto& it : family_receviers_)
+    {
+        for (auto& rit : it.second)
+        {
+            onunsubscribe(rit, it.first);
+        }        
+    }
 }
-
 }  // namespace entityx
