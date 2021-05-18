@@ -76,8 +76,8 @@ namespace common
 
     void Team::OnJoinTeam(const TeamMember& m)
     {
-        members_.emplace(m.player_id(), m);
         RemoveApplicant(m.player_id());
+        members_.emplace(m.player_id(), m);        
     }
 
     ReturnValue Team::KickMember(GameGuid current_leader, GameGuid  kick_player_id)
