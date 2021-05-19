@@ -139,7 +139,7 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
   EventManager() {}
   ~EventManager();
 
-  static EventManagerPtr New() { auto ptr = std::make_shared<EventManager>(); return ptr; }
+  static EventManagerPtr New() { return std::make_shared<EventManager>(); }
 
   EventManager(const EventManager&) = delete;
   EventManager& operator = (const EventManager&) = delete;
