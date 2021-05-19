@@ -28,6 +28,9 @@ struct ExplosionSystem : public Receiver<ExplosionSystem> {
         : m_ptr_(EventManager::New())
     {
     }
+
+    ~ExplosionSystem() {}
+
     void receive(const Explosion& explosion) {
         damage_received += explosion.damage;
         received_count++;
