@@ -31,8 +31,8 @@ void BaseReceiver::onsubscribe(const EventManagerPtr& manager_ptr, Family family
         MangersFamilys manager_familys{ manager_wptr , fcs };
         managers_.emplace(manager_key, manager_familys);
         mit = managers_.find(manager_key);
-        assert(mit != managers_.end());
     }
+    assert(mit != managers_.end());
     auto& family_callbacks = mit->second.second;
     auto fit = family_callbacks.find(family_id);
     if (fit != family_callbacks.end())
@@ -58,7 +58,6 @@ void BaseReceiver::onunsubscribe(ManagerKey manager_key, Family family_id)
     }
 }
 
-
 EventManager::~EventManager() {
     for (auto& it : family_receviers_)
     {
@@ -68,4 +67,5 @@ EventManager::~EventManager() {
         }        
     }
 }
-}  // namespace entityx
+
+}  // namespace common
