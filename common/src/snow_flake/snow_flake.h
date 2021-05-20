@@ -19,7 +19,7 @@ namespace common
         static const uint32_t kServerIdByte = 13;
         static const uint32_t kTimeByte = 35;
         static const uint32_t kIncrementedByte = 16;
-        static const uint32_t kMaxIncremented = 0xFFFF;// UINT16_MAX;
+        static const uint32_t kMaxIncremented = UINT16_MAX;
 
         typedef std::mutex MutexLock;
         typedef std::unique_lock<MutexLock> MutexLockGuard;
