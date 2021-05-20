@@ -1,4 +1,4 @@
-﻿#include "src/snow_flake/snow_flake.h"
+﻿#include <gtest/gtest.h>
 
 #include <cassert>
 #include <functional>
@@ -6,6 +6,8 @@
 #include <thread>
 #include <unordered_set>
 #include <vector>
+
+#include "src/snow_flake/snow_flake.h"
 
 using game_guid_vetcor = std::vector<common::GameGuid>;
 using game_guid_set = std::unordered_set<common::GameGuid>;
@@ -39,15 +41,6 @@ void GenerateThread3()
     EmplaceToVector(third_v);
 }
 
-void TestNormal()
-{
-    common::SnowFlake sf;
-    time_t t = sf.GetNow();
-    std::cout << t << std::endl;
-    common::GameGuid id = sf.Generate();
-    std::cout << id << std::endl;
-}
-
 void PutVectorInToSet(game_guid_set& s, game_guid_vetcor& v)
 {
     for (auto& it : v)
@@ -56,7 +49,16 @@ void PutVectorInToSet(game_guid_set& s, game_guid_vetcor& v)
     }
 }
 
-void Test()
+TEST(TestSnowFlake, GenerateTime)
+{
+    common::SnowFlake sf;
+    time_t t = sf.GetNow();
+    std::cout << t << std::endl;
+    common::GameGuid id = sf.Generate();
+    std::cout << id << std::endl;
+}
+
+TEST(TestSnowFlake, Generate)
 {
     game_guid_set guid_set;
     first_v.clear();
@@ -81,11 +83,12 @@ void Test()
     assert(guid_set.size() == (first_v.size() + second_v.size() + third_v.size()));
 }
 
-int32_t main()
+int main(int argc, char** argv)
 {
+    testing::InitGoogleTest(&argc, argv);
     while (true)
     {
-        Test();
-    }    
-    return 0;
+        RUN_ALL_TESTS();
+    }
+    return RUN_ALL_TESTS();
 }
