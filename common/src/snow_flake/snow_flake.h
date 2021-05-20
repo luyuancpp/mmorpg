@@ -16,10 +16,10 @@ namespace common
     {
     public:
         //https://en.cppreference.com/w/cpp/chrono/duration second time byte
-        static const uint32_t kServerIdByte = 14;
+        static const uint32_t kServerIdByte = 13;
         static const uint32_t kTimeByte = 35;
-        static const uint32_t kIncrementedByte = 15;
-        static const uint32_t kMaxIncremented = 0x7FFF;// UINT16_MAX;
+        static const uint32_t kIncrementedByte = 16;
+        static const uint32_t kMaxIncremented = 0xFFFF;// UINT16_MAX;
 
         typedef std::mutex MutexLock;
         typedef std::unique_lock<MutexLock> MutexLockGuard;
