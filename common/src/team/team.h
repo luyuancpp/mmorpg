@@ -52,7 +52,7 @@ namespace common
         ReturnValue LeaveTeam(GameGuid playerid);
         ReturnValue KickMember(GameGuid current_leader, GameGuid  nKickplayerid);
         ReturnValue AppointLeader(GameGuid current_leader, GameGuid  new_leader_player_id);
-        ReturnValue Apply(const TeamMember& m);
+        ReturnValue ApplyForTeam(const TeamMember& m);
         ReturnValue AgreeApplicant(GameGuid applicant_id);
         ReturnValue RemoveApplicant(GameGuid applicant_id);
         ReturnValue DisMiss();
@@ -70,6 +70,7 @@ namespace common
     protected:
         void OnJoinTeam(const TeamMember& m);
         void OnAppointLeader(GameGuid  new_leader_player_id);
+        void RemoveApplicantId(GameGuid  player_id);
 
         GameGuid team_id_{ kEmptyGameGuid };
         GameGuid leader_id_{ kEmptyGameGuid };

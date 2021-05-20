@@ -128,7 +128,7 @@ namespace common
         }
         if (!InTeam(new_leader_player_id))
         {
-            return RET_TEAM_MEMBER_NOT_IN_TEAM;
+            return RET_TEAM_HAS_NOT_TEAM_ID;
         }
         if (leader_id_ != current_leader)
         {
@@ -145,11 +145,21 @@ namespace common
         emp_->emit<TeamEventStructAppointLeader>(team_id_, old_leader_player_id, leader_id_);
     }
 
-    ReturnValue Team::Apply(const TeamMember& m)
+    void Team::RemoveApplicantId(GameGuid player_id)
+    {
+        auto idit = std::find(applicant_ids_.begin(), applicant_ids_.end(), player_id);
+        if (idit == applicant_ids_.end())
+        {
+            return;
+        }
+        applicant_ids_.erase(idit);
+    }
+
+    ReturnValue Team::ApplyForTeam(const TeamMember& m)
     {
         if (IsFull())
         {
-            return RET_TEAM_APPOINT_SELF;
+            return RET_TEAM_MEMBERS_FULL;
         }
 
         if (members_.find(m.player_id()) != members_.end())
@@ -162,7 +172,7 @@ namespace common
         auto it = applicants_.find(m.player_id());
         if (it != applicants_.end())
         {
-            return RET_TEAM_IN_APPLICANT_LIEST;
+            RemoveApplicantId(m.player_id());
         }
         if (applicant_ids_.size() >= kMaxApplicantSize)
         {
@@ -171,6 +181,7 @@ namespace common
             applicant_ids_.erase(applicant_ids_.begin());
         }
         applicants_.emplace(m.player_id(), m);
+        applicant_ids_.emplace_back(m.player_id());
         return RET_OK;
     }
 
@@ -184,7 +195,6 @@ namespace common
         TeamMember m;
         m.CopyFrom(it->second);
         RET_CHECK_RET(JoinTeam(m));
-        RET_CHECK_RET(RemoveApplicant(applicant_id));
         return RET_OK;
     }
 
@@ -196,11 +206,7 @@ namespace common
             return RET_TEAM_NOT_IN_APPLICANT_LIEST;
         }
         applicants_.erase(applicant_id);
-        auto idit = std::find(applicant_ids_.begin(), applicant_ids_.end(), applicant_id);
-        if (idit != applicant_ids_.end())
-        {
-            applicant_ids_.erase(idit);
-        }
+        RemoveApplicantId(applicant_id);
         return RET_OK;
     }
 
