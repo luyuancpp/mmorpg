@@ -10,6 +10,7 @@
 #include "team.pb.h"
 
 #include "src/common_type/common_type.h"
+#include "src/event/event.h"
 #include "src/return_code/notice_struct.h"
 
 namespace common
@@ -23,14 +24,15 @@ namespace common
         GameGuid leader_id_{ 0 };
         const Members members;
         std::string  name_;
+        EventManagerPtr emp_;
     };
 
     class Team
     {
     public:
-        using applymap_type = std::unordered_map<GameGuid, TeamMember>;
+        using ApplyMembers = std::unordered_map<GameGuid, TeamMember>;
         
-        Team(GameGuid team_id, const CreateTeamParam& param);
+        Team(GameGuid team_id, EventManagerPtr& emp, const CreateTeamParam& param);
 
         GameGuid team_id()const { return team_id_; }
         GameGuid leader_id()const { return leader_id_; }
@@ -53,6 +55,7 @@ namespace common
         ReturnValue Apply(const TeamMember& m);
         ReturnValue AgreeApplicant(GameGuid applicant_id);
         ReturnValue RemoveApplicant(GameGuid applicant_id);
+        ReturnValue DisMiss();
         void ClearApplyList();
 
         bool HasApplicant(GameGuid applicant_id) const { return applicants_.find(applicant_id) != applicants_.end(); }
@@ -71,8 +74,10 @@ namespace common
         GameGuid team_id_{ kEmptyGameGuid };
         GameGuid leader_id_{ kEmptyGameGuid };
         Members members_;
-        applymap_type applicants_;
+        ApplyMembers applicants_;
         PlayerIdsV applicant_ids_;
+        PlayerIdsV sequence_players_id_;
+        EventManagerPtr emp_;
     };
 }//namespace common
 

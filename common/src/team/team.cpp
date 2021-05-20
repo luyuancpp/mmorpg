@@ -1,12 +1,14 @@
 #include "team.h"
 
 #include "src/return_code/return_notice_code.h"
+#include "src/team/team_event.h"
 
 namespace common
 {
-    Team::Team(GameGuid team_id, const CreateTeamParam& param)
+    Team::Team(GameGuid team_id, EventManagerPtr& emp, const CreateTeamParam& param)
         : team_id_(team_id),
-          leader_id_(param.leader_id_)
+          leader_id_(param.leader_id_),
+          emp_(emp)
     {
         for (auto& it : param.members)
         {
@@ -66,29 +68,48 @@ namespace common
         {
             return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
-        if (!members_.empty() && IsLeader(player_id))
-        {
-            OnAppointLeader(members_.begin()->first);
-        }
+        bool leader_leave = IsLeader(player_id);
         members_.erase(player_id);
+        auto sit = std::find(sequence_players_id_.begin(), sequence_players_id_.end(), player_id);
+        if (sit != sequence_players_id_.end())
+        {
+            sequence_players_id_.erase(sit);
+        }
+        assert(members_.size() == sequence_players_id_.size());
+        if (!sequence_players_id_.empty() && leader_leave)
+        {
+            OnAppointLeader(*sequence_players_id_.begin());
+        }
+        emp_->emit<TeamEventStructLeaveTeam>(team_id_, player_id);
+        if (members_.empty())
+        {
+            DisMiss();
+        }
         return RET_OK;
     }
 
     void Team::OnJoinTeam(const TeamMember& m)
     {
         RemoveApplicant(m.player_id());
-        members_.emplace(m.player_id(), m);        
+        members_.emplace(m.player_id(), m);
+        sequence_players_id_.push_back(m.player_id());
+        assert(members_.size() == sequence_players_id_.size());
+        emp_->emit<TeamEventStructJoinTeam>(team_id_, m.player_id());
     }
 
     ReturnValue Team::KickMember(GameGuid current_leader, GameGuid  kick_player_id)
     {
+        if (leader_id_ != current_leader)
+        {
+            return RET_TEAM_KICK_NOT_LEADER;
+        }
         if (leader_id_ == kick_player_id)
         {
             return RET_TEAM_KICK_SELF;
         }
-        if (leader_id_ != current_leader)
+        if (current_leader == kick_player_id)
         {
-            return RET_TEAM_KICK_NOT_LEADER;
+            return RET_TEAM_KICK_SELF;
         }
         auto it = members_.find(kick_player_id);
         if (it == members_.end())
@@ -119,7 +140,9 @@ namespace common
 
     void Team::OnAppointLeader(GameGuid new_leader_player_id)
     {
+        auto old_leader_player_id = leader_id_;
         leader_id_ = new_leader_player_id;
+        emp_->emit<TeamEventStructAppointLeader>(team_id_, old_leader_player_id, leader_id_);
     }
 
     ReturnValue Team::Apply(const TeamMember& m)
@@ -178,6 +201,12 @@ namespace common
         {
             applicant_ids_.erase(idit);
         }
+        return RET_OK;
+    }
+
+    ReturnValue Team::DisMiss()
+    {
+        emp_->emit<TeamEventStructDismissTeamOnTeamMemberEmpty>(team_id_);
         return RET_OK;
     }
 
