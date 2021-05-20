@@ -30,6 +30,9 @@
     <ClCompile Include="..\..\game_proto\pbc\team.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\src\event\event.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\team\team.h">
@@ -45,6 +48,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\game_proto\pbc\team.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\team\team_event.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

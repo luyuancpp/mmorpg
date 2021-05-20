@@ -13,14 +13,15 @@ TEST(TeamManger, CreateFullDismiss)
 	PlayerIdsV teamidlist;
 	TeamMember m;
 	GameGuid player_id = 1;
-	m.set_player_id(player_id++);
-	CreateTeamParam p{ m.player_id(), Members{{m.player_id(), m}}, "" };
+	m.set_player_id(player_id);
+	
 	for (int32_t i = 0; i < TeamList::kMaxTeamSize; ++i)
 	{	
-		m.set_player_id(player_id++);
+		CreateTeamParam p{ m.player_id(), Members{{m.player_id(), m}}, "" };
 		EXPECT_EQ(ReturnValue(RET_OK), team_list.CreateTeam(p));
 		//EXPECT_TRUE(team_list.last_team_id() > 0);
 		teamidlist.push_back(team_list.last_team_id());
+		m.set_player_id(++player_id);
 	}
 
 	EXPECT_TRUE(team_list.IsTeamsMax());
@@ -29,12 +30,13 @@ TEST(TeamManger, CreateFullDismiss)
 
 	EXPECT_EQ(TeamList::kMaxTeamSize, team_list.team_size());
 
-	player_id = 1;
 	for (auto it = teamidlist.begin(); it != teamidlist.end(); ++it)
 	{
-		EXPECT_EQ(RET_OK, team_list.DissMissTeam(*it, player_id++));
+		auto leader_player_id = team_list.leader_id_by_teamid(*it);
+		EXPECT_EQ(RET_OK, team_list.DissMissTeam(*it, leader_player_id));
 	}
 	EXPECT_EQ(0, team_list.team_size());
+	EXPECT_EQ(0, team_list.players_size());
 }
 
 TEST(TeamManger, TeamSizeTest)
@@ -97,6 +99,8 @@ TEST(TeamManger, LeaveTeam)
 		
 		EXPECT_EQ(kMaxMemberSize - i - 1 , team_list.member_size(team_list.last_team_id()));
 	}
+    EXPECT_EQ(0, team_list.team_size());
+    EXPECT_EQ(0, team_list.players_size());
 }
 
 
@@ -104,7 +108,8 @@ TEST(TeamManger, KickTeaamMember)
 {
 	TeamList team_list ;
 	TeamMember m;
-	m.set_player_id(100);
+	GameGuid leader_plaeyr_id = 100;
+	m.set_player_id(leader_plaeyr_id);
 
 	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m.player_id(), Members{{m.player_id(), m}}, "" }));
 
@@ -113,25 +118,28 @@ TEST(TeamManger, KickTeaamMember)
 
 	m.set_player_id(m.player_id() + 1);
 	EXPECT_EQ(RET_OK, team_list.JoinTeam(team_list.last_team_id(), m));
-	EXPECT_EQ(RET_TEAM_KICK_SELF, team_list.KickMember(team_list.last_team_id(),101, m.player_id()));
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
-	EXPECT_EQ(RET_TEAM_KICK_NOT_LEADER, team_list.KickMember(team_list.last_team_id(),101, 101));
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
-	EXPECT_EQ(RET_TEAM_KICK_SELF, team_list.KickMember(team_list.last_team_id(), m.player_id(), m.player_id()));
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
-	EXPECT_EQ(RET_TEAM_MEMBER_NOT_IN_TEAM, team_list.KickMember(team_list.last_team_id(),100, 88));
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
-	EXPECT_EQ(RET_OK, team_list.KickMember(team_list.last_team_id(),100, 101));
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
+	EXPECT_EQ(RET_TEAM_KICK_SELF, team_list.KickMember(team_list.last_team_id(), leader_plaeyr_id, leader_plaeyr_id));
+	EXPECT_EQ(leader_plaeyr_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
+	EXPECT_EQ(RET_TEAM_KICK_NOT_LEADER, team_list.KickMember(team_list.last_team_id(), m.player_id(), leader_plaeyr_id));
+	EXPECT_EQ(leader_plaeyr_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
+	EXPECT_EQ(RET_TEAM_KICK_NOT_LEADER, team_list.KickMember(team_list.last_team_id(), m.player_id(), m.player_id()));
+	EXPECT_EQ(leader_plaeyr_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
+	EXPECT_EQ(RET_TEAM_MEMBER_NOT_IN_TEAM, team_list.KickMember(team_list.last_team_id(), leader_plaeyr_id, 88));
+	EXPECT_EQ(leader_plaeyr_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
+	EXPECT_EQ(RET_OK, team_list.KickMember(team_list.last_team_id(), leader_plaeyr_id, m.player_id()));
+	EXPECT_EQ(leader_plaeyr_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
+
+    EXPECT_EQ(1, team_list.team_size());
+    EXPECT_EQ(1, team_list.players_size());
 }
 
 
 TEST(TeamManger, AppointLaderAndLeaveTeam1)
 {
-
 	TeamList team_list;
 	TeamMember m;
-	m.set_player_id(100);
+	GameGuid leader_player_id = 100;
+	m.set_player_id(leader_player_id);
 
 	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m.player_id(), Members{{m.player_id(), m}}, "" }));
 
@@ -144,24 +152,27 @@ TEST(TeamManger, AppointLaderAndLeaveTeam1)
 	}
 
 	EXPECT_EQ(RET_TEAM_APPOINT_SELF, team_list.AppointLeader(team_list.last_team_id(), 101, 101));
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
+	EXPECT_EQ(leader_player_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
 	EXPECT_EQ(RET_TEAM_APPOINT_SELF, team_list.AppointLeader(team_list.last_team_id(), 101, 100));
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
+	EXPECT_EQ(leader_player_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
 	EXPECT_EQ(RET_TEAM_APPOINT_SELF, team_list.AppointLeader(team_list.last_team_id(), 100, 100));
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
+	EXPECT_EQ(leader_player_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
 
 	EXPECT_EQ(RET_OK, team_list.AppointLeader(team_list.last_team_id(), 100, 101));
 	EXPECT_EQ(101, team_list.leader_id_by_teamid(team_list.last_team_id()));
 
 	team_list.LeaveTeam(101);
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
 
+	EXPECT_EQ(leader_player_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
+
+	++leader_player_id;
+	++leader_player_id;
 	EXPECT_EQ(RET_OK, team_list.AppointLeader(team_list.last_team_id(), 100, 102));
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
+	EXPECT_EQ(leader_player_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
 
 	team_list.LeaveTeam(102);
-	EXPECT_EQ(m.player_id(), team_list.leader_id_by_teamid(team_list.last_team_id()));
-
+	leader_player_id = 100;
+	EXPECT_EQ(leader_player_id, team_list.leader_id_by_teamid(team_list.last_team_id()));
 
 	EXPECT_EQ(RET_OK, team_list.AppointLeader(team_list.last_team_id(), 100, 103));
 	EXPECT_EQ(103, team_list.leader_id_by_teamid(team_list.last_team_id()));

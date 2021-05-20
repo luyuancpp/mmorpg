@@ -20,6 +20,15 @@ namespace common
     }\
     auto p_team = it->second;
 
+    TeamList::TeamList()
+        : emp_(EventManager::New())
+    {
+        emp_->subscribe<TeamEventStructJoinTeam>(*this);
+        emp_->subscribe<TeamEventStructLeaderDismissTeam>(*this);     
+        emp_->subscribe<TeamEventStructLeaveTeam>(*this);  
+        emp_->subscribe<TeamEventStructDismissTeamOnTeamMemberEmpty>(*this);
+    }
+
     std::size_t TeamList::member_size(GameGuid team_id)
     {
         auto it = teams_.find(team_id);
@@ -92,7 +101,7 @@ namespace common
             return RET_TEAM_MEMBER_IN_TEAM;
         }
         auto team_id = snow_flake_.Generate();
-        TeamPtr p_team = std::make_shared<Team>(team_id, param);
+        TeamPtr p_team = std::make_shared<Team>(team_id, emp_, param);
         std::pair<TeamMap::iterator, bool> p = teams_.emplace(team_id, std::move(p_team));
         if (p.second)
         {
@@ -107,12 +116,17 @@ namespace common
         return p_team->JoinTeam(mem);
     }
 
+    void TeamList::OnPlayerLeaveTeam(GameGuid player_id)
+    {
+        player_team_map_.erase(player_id);
+    }
+
     ReturnValue TeamList::LeaveTeam(GameGuid player_id)
     {
         auto team_id = GetTeamId(player_id);
         GetTeamPtrReturnError;
         RET_CHECK_RET(p_team->LeaveTeam(player_id));
-        EraseTeam(team_id);
+
         return RET_OK;
     }
 
@@ -129,6 +143,10 @@ namespace common
         if (p_team->leader_id() != current_leader_id)
         {
             return RET_TEAM_DISMISS_NOT_LEADER;
+        }
+        for (auto& it : p_team->members())
+        {
+            emp_->emit<TeamEventStructLeaderDismissTeam>(team_id, it.second.player_id());
         }
         EraseTeam(team_id);
         return RET_OK;
@@ -217,7 +235,27 @@ namespace common
         GetTeamPtrReturn(false);
         return p_team->TestApplicantValueEqual();
     }
+
+    void TeamList::receive(const TeamEventStructJoinTeam& es)
+    {
+        player_team_map_.emplace(es.player_id_, es.team_id_);
+    }
   
+    void TeamList::receive(const TeamEventStructLeaderDismissTeam& es)
+    {
+        OnPlayerLeaveTeam(es.player_id_);
+    }
+
+    void TeamList::receive(const TeamEventStructLeaveTeam& es)
+    {
+        OnPlayerLeaveTeam(es.player_id_);
+    }
+
+    void TeamList::receive(const TeamEventStructDismissTeamOnTeamMemberEmpty& es)
+    {
+        EraseTeam(es.team_id_);
+    }
+
     ReturnValue TeamList::JoinTeam(const Members& member_list, GameGuid  team_id)
     {
         GetTeamPtrReturnError;
