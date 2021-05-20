@@ -49,6 +49,11 @@ void PutVectorInToSet(game_guid_set& s, game_guid_vetcor& v)
     }
 }
 
+TEST(TestSnowFlake, JustGenerateTime)
+{
+    common::GameGuid id = sf.Generate();
+}
+
 TEST(TestSnowFlake, GenerateTime)
 {
     common::SnowFlake sf;
