@@ -16,10 +16,10 @@ namespace common
     {
     public:
         //https://en.cppreference.com/w/cpp/chrono/duration second time byte
-        static const uint32_t kServerIdByte = 12;
+        static const uint32_t kServerIdByte = 14;
         static const uint32_t kTimeByte = 35;
-        static const uint32_t kIncrementedByte = 12;
-        static const uint32_t kMaxIncremented = 0xFFF;// UINT16_MAX;
+        static const uint32_t kIncrementedByte = 15;
+        static const uint32_t kMaxIncremented = 0x7FFF;// UINT16_MAX;
 
         typedef std::mutex MutexLock;
         typedef std::unique_lock<MutexLock> MutexLockGuard;
@@ -55,29 +55,23 @@ namespace common
                 MutexLockGuard m(mutex_);                
                 if (time_now > last_time_)
                 {
-                    //MutexLockGuard m(mutex_);
                     sequence_ = 0;
                     last_time_ = time_now;
                 }
-                else if (time_now == last_time_)
+                else if (time_now <= last_time_)
                 {
                     ResetIncremented();
                 }
-                else if (time_now < last_time_)
-                {
-                    ResetIncremented();
-                }
+
                 sequence = sequence_ + 1;
                 ++sequence_;
                 time_bit = last_time_;
             }
               
-            GameGuid game_guid = server_id_flag_ + (time_bit << kIncrementedByte);
-            game_guid +=  sequence;
-            return game_guid;
+            return server_id_flag_ + (time_bit << kIncrementedByte) + sequence;
         }
     private:
-        void ResetIncremented() 
+        inline void ResetIncremented() 
         {
             // arrive current seconds max id ,use next id
             if (sequence_ + 1 < kMaxIncremented)

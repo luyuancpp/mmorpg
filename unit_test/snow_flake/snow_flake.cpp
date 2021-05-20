@@ -10,7 +10,7 @@
 using game_guid_vetcor = std::vector<common::GameGuid>;
 using game_guid_set = std::unordered_set<common::GameGuid>;
 
-common::SnowFlake t_sf;
+common::SnowFlake sf;
 game_guid_vetcor first_v;
 game_guid_vetcor second_v;
 game_guid_vetcor third_v;
@@ -20,7 +20,7 @@ void EmplaceToVector(game_guid_vetcor& v)
 {
     for (std::size_t i = 0; i < kTestSize; ++i)
     {
-        v.emplace_back(t_sf.Generate());
+        v.emplace_back(sf.Generate());
     }
 }
 
@@ -56,13 +56,12 @@ void PutVectorInToSet(game_guid_set& s, game_guid_vetcor& v)
     }
 }
 
-int32_t main()
+void Test()
 {
-
-    uint8_t j = UINT8_MAX;
-    uint16_t i =  UINT16_MAX;
-    TestNormal();
     game_guid_set guid_set;
+    first_v.clear();
+    second_v.clear();
+    third_v.clear();
 
     auto first_cb = std::bind(GenerateThread1);
     auto second_cb = std::bind(GenerateThread2);
@@ -80,6 +79,13 @@ int32_t main()
     PutVectorInToSet(guid_set, third_v);
 
     assert(guid_set.size() == (first_v.size() + second_v.size() + third_v.size()));
+}
 
+int32_t main()
+{
+    while (true)
+    {
+        Test();
+    }    
     return 0;
 }
