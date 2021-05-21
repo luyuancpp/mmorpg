@@ -68,7 +68,15 @@ namespace common
         bool TestApplicantValueEqual()const;
 
     protected:
-        void OnJoinTeam(const TeamMember& m);
+        template<typename E>
+        void OnJoinTeam(const TeamMember& m)
+        {
+            RemoveApplicant(m.player_id());
+            members_.emplace(m.player_id(), m);
+            sequence_players_id_.push_back(m.player_id());
+            assert(members_.size() == sequence_players_id_.size());
+            emp_->emit<E>(team_id_, m.player_id());
+        }
         void OnAppointLeader(GameGuid  new_leader_player_id);
         void RemoveApplicantId(GameGuid  player_id);
 

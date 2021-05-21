@@ -17,18 +17,21 @@ struct TeamEventStructBase
     GameGuid player_id_{ kEmptyGameGuid };
 };
 
-struct TeamEventStructJoinTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
-struct TeamEventStructLeaderDismissTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
-struct TeamEventStructLeaveTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
-
-struct TeamEventStructDismissTeamOnTeamMemberEmpty
+struct TeamEventStructTeamIdBase
 {
-    TeamEventStructDismissTeamOnTeamMemberEmpty(GameGuid team_id)
+    TeamEventStructTeamIdBase(GameGuid team_id)
         : team_id_(team_id)
     {
     }
     GameGuid team_id_{ kEmptyGameGuid };
 };
+
+struct TeamEventStructDismissTeamOnTeamMemberEmpty : public TeamEventStructTeamIdBase { using TeamEventStructTeamIdBase::TeamEventStructTeamIdBase; };
+
+struct TeamEventStructCreateTeamJoinTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
+struct TeamEventStructJoinTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
+struct TeamEventStructLeaderDismissTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
+struct TeamEventStructLeaveTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
 
 struct TeamEventStructAppointLeader 
 {
