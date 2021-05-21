@@ -197,7 +197,6 @@ TEST(TestEmitReceive,  TestUnsubscription)
     }
 }
 
-
 int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);
