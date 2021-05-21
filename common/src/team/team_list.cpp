@@ -20,6 +20,15 @@ namespace common
     }\
     auto p_team = it->second;
 
+    TeamList::TeamList()
+        : emp_(EventManager::New())
+    {
+        emp_->subscribe<TeamEventStructJoinTeam>(*this);
+        emp_->subscribe<TeamEventStructLeaderDismissTeam>(*this);     
+        emp_->subscribe<TeamEventStructLeaveTeam>(*this);  
+        emp_->subscribe<TeamEventStructDismissTeamOnTeamMemberEmpty>(*this);
+    }
+
     std::size_t TeamList::member_size(GameGuid team_id)
     {
         auto it = teams_.find(team_id);
@@ -30,9 +39,14 @@ namespace common
         return it->second->member_size();
     }
 
-    std::size_t TeamList::applicant_size(GameGuid player_id) const
+    std::size_t TeamList::applicant_size_by_player_id(GameGuid player_id) const
     {
         auto team_id = GetTeamId(player_id);
+        return applicant_size_by_team_id(team_id);
+    }
+
+    std::size_t TeamList::applicant_size_by_team_id(GameGuid team_id) const
+    {
         GetTeamPtrReturn(0);
         return p_team->applicant_size();
     }
@@ -91,8 +105,10 @@ namespace common
         {
             return RET_TEAM_MEMBER_IN_TEAM;
         }
+        RET_CHECK_RET(CheckMemberInTeam(param.members));
+
         auto team_id = snow_flake_.Generate();
-        TeamPtr p_team = std::make_shared<Team>(team_id, param);
+        TeamPtr p_team = std::make_shared<Team>(team_id, emp_, param);
         std::pair<TeamMap::iterator, bool> p = teams_.emplace(team_id, std::move(p_team));
         if (p.second)
         {
@@ -103,8 +119,29 @@ namespace common
 
     ReturnValue TeamList::JoinTeam(GameGuid team_id, TeamMember& mem)
     {
+        if (PlayerInTeam(mem.player_id()))
+        {
+            return RET_TEAM_MEMBER_IN_TEAM;
+        }
         GetTeamPtrReturnError;
         return p_team->JoinTeam(mem);
+    }
+
+    ReturnValue TeamList::CheckMemberInTeam(const Members& member_list)
+    {
+        for (auto& it : member_list)
+        {
+            if (PlayerInTeam(it.second.player_id()))
+            {
+                return RET_TEAM_MEMBER_IN_TEAM;
+            }
+        }
+        return RET_OK;
+    }
+
+    void TeamList::OnPlayerLeaveTeam(GameGuid player_id)
+    {
+        player_team_map_.erase(player_id);
     }
 
     ReturnValue TeamList::LeaveTeam(GameGuid player_id)
@@ -112,7 +149,6 @@ namespace common
         auto team_id = GetTeamId(player_id);
         GetTeamPtrReturnError;
         RET_CHECK_RET(p_team->LeaveTeam(player_id));
-        EraseTeam(team_id);
         return RET_OK;
     }
 
@@ -130,6 +166,10 @@ namespace common
         {
             return RET_TEAM_DISMISS_NOT_LEADER;
         }
+        for (auto& it : p_team->members())
+        {
+            emp_->emit<TeamEventStructLeaderDismissTeam>(team_id, it.second.player_id());
+        }
         EraseTeam(team_id);
         return RET_OK;
     }
@@ -146,10 +186,14 @@ namespace common
         return p_team->AppointLeader(current_leader_id, new_leader_player_id);
     }
 
-    ReturnValue TeamList::Apply(GameGuid team_id, const TeamMember& m)
+    ReturnValue TeamList::ApplyForTeam(GameGuid team_id, const TeamMember& m)
     {
         GetTeamPtrReturnError;
-        return p_team->Apply(m);
+        if (PlayerInTeam(m.player_id()))
+        {
+            return RET_TEAM_MEMBER_IN_TEAM;
+        }
+        return p_team->ApplyForTeam(m);
     }
 
     ReturnValue TeamList::RemoveApplicant(GameGuid team_id, GameGuid nApplyplayer_id)
@@ -158,10 +202,14 @@ namespace common
         return p_team->RemoveApplicant(nApplyplayer_id);
     }
 
-    ReturnValue TeamList::AgreeApplicant(GameGuid team_id, GameGuid nApplyplayer_id)
+    ReturnValue TeamList::AgreeApplicant(GameGuid team_id, GameGuid applicant_id)
     {
         GetTeamPtrReturnError;
-        return p_team->AgreeApplicant(nApplyplayer_id);
+        if (PlayerInTeam(applicant_id))
+        {
+            return RET_TEAM_MEMBER_IN_TEAM;
+        }
+        return p_team->AgreeApplicant(applicant_id);
     }
 
     void TeamList::ClearApplyList(GameGuid team_id)
@@ -217,12 +265,37 @@ namespace common
         GetTeamPtrReturn(false);
         return p_team->TestApplicantValueEqual();
     }
+
+    void TeamList::receive(const TeamEventStructJoinTeam& es)
+    {
+        player_team_map_.emplace(es.player_id_, es.team_id_);
+    }
   
+    void TeamList::receive(const TeamEventStructLeaderDismissTeam& es)
+    {
+        OnPlayerLeaveTeam(es.player_id_);
+    }
+
+    void TeamList::receive(const TeamEventStructLeaveTeam& es)
+    {
+        OnPlayerLeaveTeam(es.player_id_);
+    }
+
+    void TeamList::receive(const TeamEventStructDismissTeamOnTeamMemberEmpty& es)
+    {
+        EraseTeam(es.team_id_);
+    }
+
     ReturnValue TeamList::JoinTeam(const Members& member_list, GameGuid  team_id)
     {
         GetTeamPtrReturnError;
+        RET_CHECK_RET(CheckMemberInTeam(member_list));
         for (auto& it : member_list)
         {
+            if (PlayerInTeam(it.second.player_id()))
+            {
+                return RET_TEAM_MEMBER_IN_TEAM;
+            }
             RET_CHECK_RET(p_team->JoinTeam(it.second));
         }
         return RET_OK;
