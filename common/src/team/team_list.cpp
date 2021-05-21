@@ -23,6 +23,7 @@ namespace common
     TeamList::TeamList()
         : emp_(EventManager::New())
     {
+        emp_->subscribe<TeamEventStructCreateTeamJoinTeam>(*this);
         emp_->subscribe<TeamEventStructJoinTeam>(*this);
         emp_->subscribe<TeamEventStructLeaderDismissTeam>(*this);     
         emp_->subscribe<TeamEventStructLeaveTeam>(*this);  
@@ -268,9 +269,14 @@ namespace common
 
     void TeamList::receive(const TeamEventStructJoinTeam& es)
     {
-        player_team_map_.emplace(es.player_id_, es.team_id_);
+        OnJoinTeam(es.player_id_, es.team_id_);
     }
-  
+
+    void TeamList::receive(const TeamEventStructCreateTeamJoinTeam& es)
+    {
+        OnJoinTeam(es.player_id_, es.team_id_);
+    }
+
     void TeamList::receive(const TeamEventStructLeaderDismissTeam& es)
     {
         OnPlayerLeaveTeam(es.player_id_);

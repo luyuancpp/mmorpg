@@ -12,7 +12,7 @@ namespace common
     {
         for (auto& it : param.members)
         {
-            OnJoinTeam(it.second);
+            OnJoinTeam<TeamEventStructCreateTeamJoinTeam>(it.second);
         }
     }
 
@@ -39,7 +39,7 @@ namespace common
     ReturnValue Team::JoinTeam(const TeamMember& m)
     {
         RET_CHECK_RET(TryToJoinTeam(m));
-        OnJoinTeam(m);
+        OnJoinTeam<TeamEventStructJoinTeam>(m);
         return RET_OK;
     }
 
@@ -88,14 +88,7 @@ namespace common
         return RET_OK;
     }
 
-    void Team::OnJoinTeam(const TeamMember& m)
-    {
-        RemoveApplicant(m.player_id());
-        members_.emplace(m.player_id(), m);
-        sequence_players_id_.push_back(m.player_id());
-        assert(members_.size() == sequence_players_id_.size());
-        emp_->emit<TeamEventStructJoinTeam>(team_id_, m.player_id());
-    }
+   
 
     ReturnValue Team::KickMember(GameGuid current_leader, GameGuid  kick_player_id)
     {

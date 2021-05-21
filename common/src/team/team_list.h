@@ -58,6 +58,7 @@ namespace common
         bool TestApplicantValueEqual(GameGuid team_id)const;
         
         void receive(const TeamEventStructJoinTeam& es);
+        void receive(const TeamEventStructCreateTeamJoinTeam& es);        
         void receive(const TeamEventStructLeaderDismissTeam& es);
         void receive(const TeamEventStructLeaveTeam& es);
         void receive(const TeamEventStructDismissTeamOnTeamMemberEmpty& es);
@@ -68,6 +69,10 @@ namespace common
         ReturnValue CheckMemberInTeam(const Members& member_list);
         void OnPlayerLeaveTeam(GameGuid player_id);
         void EraseTeam(GameGuid team_id);
+        void OnJoinTeam(GameGuid player_id, GameGuid team_id)
+        {
+            player_team_map_.emplace(player_id, team_id);
+        }
 
         TeamMap teams_;
         PlayerIdTeamIdMap player_team_map_;
