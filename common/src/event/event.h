@@ -48,7 +48,6 @@ class Event : public BaseEvent
   }
 };
 
-// Functor used as an event signal callback that casts to E.
 class EventCallbackWrapperBase
 {
 public:
@@ -61,7 +60,6 @@ class EventCallbackWrapper : public EventCallbackWrapperBase
 {
 public:
     explicit EventCallbackWrapper(std::function<void(const E&)> callback) : callback(callback) {}
-    //void operator()(const void *event) { callback(*(static_cast<const E*>(event))); }
     virtual void call(const void* event) override { callback(*(static_cast<const E*>(event))); }
 private:
     std::function<void(const E&)> callback;
@@ -139,7 +137,7 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
   EventManager() {}
   ~EventManager();
 
-  static EventManagerPtr New() { auto ptr = std::make_shared<EventManager>(); return ptr; }
+  static EventManagerPtr New() { return std::make_shared<EventManager>(); }
 
   EventManager(const EventManager&) = delete;
   EventManager& operator = (const EventManager&) = delete;
@@ -213,7 +211,8 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
    *
    */
   template <typename E, typename Receiver>
-  void unsubscribe(Receiver &receiver) {
+  void unsubscribe(Receiver &receiver) 
+  {
     auto family_id = Event<E>::family();
     auto it = family_receviers_.find(family_id);
     if (it == family_receviers_.end())

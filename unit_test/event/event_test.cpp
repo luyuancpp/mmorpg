@@ -28,6 +28,9 @@ struct ExplosionSystem : public Receiver<ExplosionSystem> {
         : m_ptr_(EventManager::New())
     {
     }
+
+    ~ExplosionSystem() {}
+
     void receive(const Explosion& explosion) {
         damage_received += explosion.damage;
         received_count++;
@@ -193,7 +196,6 @@ TEST(TestEmitReceive,  TestUnsubscription)
         EXPECT_EQ(explosion_system.damage_received , 1);
     }
 }
-
 
 int main(int argc, char** argv)
 {

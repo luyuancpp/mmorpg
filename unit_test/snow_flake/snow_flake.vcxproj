@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -18,27 +18,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\common\src\event\event.cc" />
-    <ClCompile Include="..\..\common\src\return_code\notice_struct.cpp" />
-    <ClCompile Include="..\..\common\src\team\team.cpp" />
-    <ClCompile Include="..\..\common\src\team\team_list.cpp" />
-    <ClCompile Include="..\..\game_proto\pbc\team.pb.cc" />
-    <ClCompile Include="teamlist_test.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\common\src\return_code\notice_struct.h" />
-    <ClInclude Include="..\..\common\src\return_code\return_notice_code.h" />
-    <ClInclude Include="..\..\common\src\team\team.h" />
-    <ClInclude Include="..\..\common\src\team\team_event.h" />
-    <ClInclude Include="..\..\common\src\team\team_list.h" />
-    <ClInclude Include="..\..\game_proto\pbc\team.pb.h" />
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{e7f6e1e8-ba0e-4b93-84a3-463c34d3b184}</ProjectGuid>
-    <RootNamespace>team</RootNamespace>
+    <ProjectGuid>{220b73a2-d0ba-47fc-bc79-d7f283ca502d}</ProjectGuid>
+    <RootNamespace>snowflake</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -133,13 +117,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../../common/;../../game_proto/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost;../../third_party/googletest/googletest/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>gtestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../bin/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;game_proto.lib;zlib.lib;gtestd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -158,6 +141,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="snow_flake_test.cpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
