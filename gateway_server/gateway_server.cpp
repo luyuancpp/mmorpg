@@ -17,19 +17,26 @@ using namespace gateway;
 class GatewayServer : noncopyable
 {
 public:
+
     GatewayServer(EventLoop* loop,
-        const InetAddress& listenAddr)
-        : server_(loop, listenAddr, "QueryServer"),
+        const InetAddress& listen_addr)
+        : server_(loop, listen_addr, "QueryServer"),
         dispatcher_(std::bind(&GatewayServer::onUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-        msg_receiver_(codec_)
+        client_receiver_(codec_)
     {
         dispatcher_.registerMessageCallback<LoginRequest>(
-            std::bind(&MsgReceiver::onAnswer, &msg_receiver_, _1, _2, _3));
+            std::bind(&MsgReceiver::onAnswer, &client_receiver_, _1, _2, _3));
         server_.setConnectionCallback(
             std::bind(&GatewayServer::onConnection, this, _1));
         server_.setMessageCallback(
             std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
+    }
+
+    void ConnectLogin(EventLoop* loop,
+        const InetAddress& login_server_addr)
+    {
+        client_receiver_.ConnectLogin(loop, login_server_addr);
     }
 
     void start()
@@ -56,25 +63,21 @@ private:
     TcpServer server_;
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
-    MsgReceiver msg_receiver_;
+    MsgReceiver client_receiver_;
 };
 
 int main(int argc, char* argv[])
 {
-    LOG_INFO << "pid = " << getpid();
-    if (argc > 1)
-    {
-        EventLoop loop;
-        uint16_t port = static_cast<uint16_t>(atoi(argv[1]));
-        InetAddress serverAddr(port);
-        GatewayServer server(&loop, serverAddr);
-        server.start();
-        loop.loop();
-    }
-    else
-    {
-        printf("Usage: %s port\n", argv[0]);
-    }
+    EventLoop loop;
+
+    InetAddress login_server_addr("127.0.0.1", 2001);
+    InetAddress server_addr("127.0.0.1", 2000);
+    GatewayServer server(&loop, server_addr);
+    server.ConnectLogin(&loop, login_server_addr);
+    server.start();
+
+    loop.loop();
+
     return 0;
 }
 

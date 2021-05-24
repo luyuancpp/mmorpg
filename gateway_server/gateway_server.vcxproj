@@ -21,13 +21,9 @@
   <ItemGroup>
     <ClCompile Include="gateway_server.cpp" />
     <ClCompile Include="src\clientreceiver\msg_receiver.cpp" />
-    <ClCompile Include="src\login\rpcclient\loginclientqueue.cpp" />
-    <ClCompile Include="src\login\rpcclient\loginrpcclientqueue.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\clientreceiver\msg_receiver.h" />
-    <ClInclude Include="src\login\rpcclient\loginclientqueue.h" />
-    <ClInclude Include="src\login\rpcclient\loginrpcclientqueue.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

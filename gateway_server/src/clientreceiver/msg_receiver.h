@@ -2,27 +2,45 @@
 #define GATEWAY_SERVER_SRC_msg_receiver
 
 #include "c2gw.pb.h"
+#include "gw2l.pb.h"
 
 #include "codec/codec.h"
 
 #include "muduo/base/noncopyable.h"
+#include "muduo/net/EventLoop.h"
+
+using namespace muduo;
+using namespace muduo::net;
 
 namespace gateway
 {
 typedef std::shared_ptr<LoginRequest> LoginRequestPtr;
 
+class RpcClient;
+
 class MsgReceiver : muduo::noncopyable
 {
 public:
+    using RpcClientPtr = std::shared_ptr<RpcClient>;
+
     MsgReceiver(ProtobufCodec& codec)
         :codec_(codec)
     {}
 
+    void ConnectLogin(EventLoop* loop,
+        const InetAddress& login_server_addr);
+
+    //client to gateway 
     void onAnswer(const muduo::net::TcpConnectionPtr& conn,
         const LoginRequestPtr& message,
         muduo::Timestamp);
+
+    //login to gateway
+    void replied(gw2l::LoginResponse* rsp);
+
 private:
     ProtobufCodec& codec_;
+    RpcClientPtr login_client_;
 };
 }
 

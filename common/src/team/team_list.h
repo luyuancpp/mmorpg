@@ -1,5 +1,5 @@
-#ifndef TEAM_LIST_H
-#define  TEAM_LIST_H
+#ifndef SRC_TEAM_TEAM_LIST_H_
+#define SRC_TEAM_TEAM_LIST_H_
 
 #include <unordered_map>
 
@@ -84,5 +84,5 @@ namespace common
 
 
 
-#endif // TEAM_LIST_H
+#endif // SRC_TEAM_TEAM_LIST_H_
 

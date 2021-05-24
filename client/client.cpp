@@ -81,25 +81,19 @@ private:
 int main(int argc, char* argv[])
 {
     LOG_INFO << "pid = " << getpid();
-    if (argc > 2)
-    {
-        EventLoop loop;
-        uint16_t port = static_cast<uint16_t>(atoi(argv[2]));
-        InetAddress serverAddr(argv[1], port);
 
-        LoginRequest query;
-        query.set_account("luhailong");
-        query.set_password("lhl.2020");
-        messageToSend = &query;
+    EventLoop loop;
+    InetAddress serverAddr("127.0.0.1", 2000);
 
-        QueryClient client(&loop, serverAddr);
-        client.connect();
-        loop.loop();
-    }
-    else
-    {
-        printf("Usage: %s host_ip port [q|e]\n", argv[0]);
-    }
+    LoginRequest query;
+    query.set_account("luhailong");
+    query.set_password("lhl.2020");
+    messageToSend = &query;
+
+    QueryClient client(&loop, serverAddr);
+    client.connect();
+    loop.loop();
+
     return 0;
 }
 

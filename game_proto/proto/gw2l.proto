@@ -1,6 +1,6 @@
 syntax = "proto3";
-import "common.proto";
 package gw2l;
+import "common.proto";
 option cc_generic_services = true;
 
 message LoginRequest
