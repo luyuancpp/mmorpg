@@ -21,14 +21,14 @@ public:
     GatewayServer(EventLoop* loop,
         const InetAddress& listen_addr)
         : server_(loop, listen_addr, "QueryServer"),
-        dispatcher_(std::bind(&GatewayServer::onUnknownMessage, this, _1, _2, _3)),
+        dispatcher_(std::bind(&GatewayServer::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         client_receiver_(codec_)
     {
         dispatcher_.registerMessageCallback<LoginRequest>(
-            std::bind(&MsgReceiver::onAnswer, &client_receiver_, _1, _2, _3));
+            std::bind(&MsgReceiver::OnAnswer, &client_receiver_, _1, _2, _3));
         server_.setConnectionCallback(
-            std::bind(&GatewayServer::onConnection, this, _1));
+            std::bind(&GatewayServer::OnConnection, this, _1));
         server_.setMessageCallback(
             std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     }
@@ -39,20 +39,20 @@ public:
         client_receiver_.ConnectLogin(loop, login_server_addr);
     }
 
-    void start()
+    void Start()
     {
         server_.start();
     }
 
 private:
-    void onConnection(const TcpConnectionPtr& conn)
+    void OnConnection(const TcpConnectionPtr& conn)
     {
         LOG_INFO << conn->peerAddress().toIpPort() << " -> "
             << conn->localAddress().toIpPort() << " is "
             << (conn->connected() ? "UP" : "DOWN");
     }
 
-    void onUnknownMessage(const TcpConnectionPtr& conn,
+    void OnUnknownMessage(const TcpConnectionPtr& conn,
         const MessagePtr& message,
         Timestamp)
     {
@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
     InetAddress server_addr("127.0.0.1", 2000);
     GatewayServer server(&loop, server_addr);
     server.ConnectLogin(&loop, login_server_addr);
-    server.start();
+    server.Start();
 
     loop.loop();
 

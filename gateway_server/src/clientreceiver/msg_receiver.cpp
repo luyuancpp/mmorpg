@@ -14,7 +14,7 @@ void MsgReceiver::ConnectLogin(EventLoop* loop, const InetAddress& login_server_
     login_client_->connect();
 }
 
-void MsgReceiver::onAnswer(const muduo::net::TcpConnectionPtr& conn,
+void MsgReceiver::OnAnswer(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
 {
@@ -27,10 +27,10 @@ void MsgReceiver::onAnswer(const muduo::net::TcpConnectionPtr& conn,
     rq.set_password(message->password());
     gw2l::LoginResponse *rsp = new gw2l::LoginResponse;
     login_client_->SendRequest<gw2l::LoginRequest, gw2l::LoginResponse>(rq,
-        *rsp, NewCallback(this, &MsgReceiver::replied, rsp));
+        *rsp, NewCallback(this, &MsgReceiver::Replied, rsp));
 }
 
-void MsgReceiver::replied(gw2l::LoginResponse* rsp)
+void MsgReceiver::Replied(gw2l::LoginResponse* rsp)
 {
 
 }

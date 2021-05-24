@@ -31,12 +31,12 @@ public:
         const InetAddress& login_server_addr);
 
     //client to gateway 
-    void onAnswer(const muduo::net::TcpConnectionPtr& conn,
+    void OnAnswer(const muduo::net::TcpConnectionPtr& conn,
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
     //login to gateway
-    void replied(gw2l::LoginResponse* rsp);
+    void Replied(gw2l::LoginResponse* rsp);
 
 private:
     ProtobufCodec& codec_;
