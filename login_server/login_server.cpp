@@ -12,29 +12,26 @@ using namespace muduo::net;
 
 namespace gw2l
 {
-
-    class LoginServiceImpl : public LoginService
+class LoginServiceImpl : public LoginService
+{
+public:
+    virtual void Solve(::google::protobuf::RpcController* controller,
+        const gw2l::LoginRequest* request,
+        gw2l::LoginResponse* response,
+        ::google::protobuf::Closure* done)override
     {
-    public:
-        virtual void Echo(::google::protobuf::RpcController* controller,
-            const LoginRequest* request,
-            LoginResponse* response,
-            ::google::protobuf::Closure* done)
-        {
-            //LOG_INFO << "EchoServiceImpl::Solve";
-            done->Run();
-        }
-    };
+        //LOG_INFO << "EchoServiceImpl::Solve";
+        done->Run();
+    }
+};
 
 }  // namespace echo
 
 int main(int argc, char* argv[])
 {
     int nThreads = argc > 1 ? atoi(argv[1]) : 1;
-    LOG_INFO << "pid = " << getpid() << " threads = " << nThreads;
     EventLoop loop;
-    int port = argc > 2 ? atoi(argv[2]) : 8888;
-    InetAddress listenAddr(static_cast<uint16_t>(port));
+    InetAddress listenAddr("127.0.0.1", 2001);
     gw2l::LoginServiceImpl impl;
     RpcServer server(&loop, listenAddr);
     server.setThreadNum(nThreads);

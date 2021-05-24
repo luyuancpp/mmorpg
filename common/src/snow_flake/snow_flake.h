@@ -1,5 +1,5 @@
-#ifndef GAME_SNOW_FLAKE_H
-#define GAME_SNOW_FLAKE_H
+#ifndef SRC_SNOW_FLAKE_SNOW_FLAKE_H_
+#define SRC_SNOW_FLAKE_SNOW_FLAKE_H_
 
 #include <atomic>
 #include <chrono>
@@ -91,4 +91,4 @@ namespace common
 }//namespace common
 
 
-#endif // GAME_SNOW_FLAKE_H
+#endif // SRC_SNOW_FLAKE_SNOW_FLAKE_H_

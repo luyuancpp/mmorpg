@@ -1,5 +1,5 @@
-#ifndef COMMON_SRC_TEAM_Team_Event
-#define COMMON_SRC_TEAM_Team_Event
+#ifndef COMMON_SRC_TEAM_TEAM_EVENT_H
+#define COMMON_SRC_TEAM_TEAM_EVENT_H
 
 #include "src/common_type/common_type.h"
 
@@ -47,4 +47,4 @@ struct TeamEventStructAppointLeader
 };
 }
 
-#endif // !COMMON_SRC_TEAM_Team_Event
+#endif // !COMMON_SRC_TEAM_TEAM_EVENT_H
