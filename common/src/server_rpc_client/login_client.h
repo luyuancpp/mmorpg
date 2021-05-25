@@ -1,9 +1,7 @@
-#ifndef SRC_LOGIN_RPCCLIENT_LOGIN_CLIENT_H_
-#define SRC_LOGIN_RPCCLIENT_LOGIN_CLIENT_H_
+#ifndef SRC_SERVER_RPCCLIENT_LOGIN_CLIENT_H_
+#define SRC_SERVER_RPCCLIENT_LOGIN_CLIENT_H_
 
 #include <memory>
-
-#include "gw2l.pb.h"
 
 #include "muduo/base/CountDownLatch.h"
 #include "muduo/base/Logging.h"
@@ -79,4 +77,4 @@ private:
 };
 } // namespace gateway
 
-#endif // SRC_LOGIN_RPCCLIENT_LOGIN_CLIENT_H_
+#endif // SRC_SERVER_RPCCLIENT_LOGIN_CLIENT_H_
