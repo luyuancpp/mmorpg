@@ -21,9 +21,15 @@
   <ItemGroup>
     <ClCompile Include="gateway_server.cpp" />
     <ClCompile Include="src\clientreceiver\msg_receiver.cpp" />
+    <ClCompile Include="src\game\rpcclient\game_client.cpp" />
+    <ClCompile Include="src\login\rpcclient\login_client.cpp" />
+    <ClCompile Include="src\master\rpcclient\master_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\clientreceiver\msg_receiver.h" />
+    <ClInclude Include="src\game\rpcclient\game_client.h" />
+    <ClInclude Include="src\login\rpcclient\login_client.h" />
+    <ClInclude Include="src\master\rpcclient\master_client.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

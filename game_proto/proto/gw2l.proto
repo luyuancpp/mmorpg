@@ -15,5 +15,5 @@ message LoginResponse
 }
 
 service LoginService {
-  rpc Solve (LoginRequest) returns (LoginResponse);
+  rpc Login (LoginRequest) returns (LoginResponse);
 }

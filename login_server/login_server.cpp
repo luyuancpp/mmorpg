@@ -15,12 +15,12 @@ namespace gw2l
 class LoginServiceImpl : public LoginService
 {
 public:
-    virtual void Solve(::google::protobuf::RpcController* controller,
+    virtual void Login(::google::protobuf::RpcController* controller,
         const gw2l::LoginRequest* request,
         gw2l::LoginResponse* response,
         ::google::protobuf::Closure* done)override
     {
-        //LOG_INFO << "EchoServiceImpl::Solve";
+        LOG_INFO << "login : " << request->DebugString();
         done->Run();
     }
 };
