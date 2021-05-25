@@ -19,10 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="gateway_server.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="src\clientreceiver\msg_receiver.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gateway_server.h" />
     <ClInclude Include="src\clientreceiver\msg_receiver.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

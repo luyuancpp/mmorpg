@@ -38,5 +38,6 @@ int main(int argc, char* argv[])
     server.registerService(&impl);
     server.start();
     loop.loop();
+    return 0;
 }
 
