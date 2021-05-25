@@ -21,9 +21,6 @@
     <ClCompile Include="src\clientreceiver\msg_receiver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\login\rpcclient\login_client.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\master\rpcclient\master_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
