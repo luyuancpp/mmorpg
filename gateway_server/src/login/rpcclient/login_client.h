@@ -55,7 +55,7 @@ public:
             return;
         }
         Response * presponse = new Response;
-        (stub_.get()->*stub_method)(nullptr, &request, presponse, NewCallback(object, method, presponse));
+        ((*stub_).*stub_method)(nullptr, &request, presponse, NewCallback(object, method, presponse));
     }
 
 private:
