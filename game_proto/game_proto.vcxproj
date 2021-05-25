@@ -22,12 +22,14 @@
     <ClInclude Include="pbc\c2gw.pb.h" />
     <ClInclude Include="pbc\common.pb.h" />
     <ClInclude Include="pbc\gw2l.pb.h" />
+    <ClInclude Include="pbc\l2db.pb.h" />
     <ClInclude Include="pbc\pb3.pb.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pbc\c2gw.pb.cc" />
     <ClCompile Include="pbc\common.pb.cc" />
     <ClCompile Include="pbc\gw2l.pb.cc" />
+    <ClCompile Include="pbc\l2db.pb.cc" />
     <ClCompile Include="pbc\pb3.pb.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

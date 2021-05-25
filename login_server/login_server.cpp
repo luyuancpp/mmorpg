@@ -25,7 +25,7 @@ public:
     }
 };
 
-}  // namespace echo
+}  // namespace gw2l
 
 int main(int argc, char* argv[])
 {

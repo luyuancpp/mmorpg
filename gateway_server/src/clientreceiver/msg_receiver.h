@@ -9,6 +9,8 @@
 #include "muduo/base/noncopyable.h"
 #include "muduo/net/EventLoop.h"
 
+#include "src/login/rpcclient/login_client.h"
+
 using namespace muduo;
 using namespace muduo::net;
 
@@ -16,12 +18,11 @@ namespace gateway
 {
 typedef std::shared_ptr<LoginRequest> LoginRequestPtr;
 
-class RpcClient;
-
 class MsgReceiver : muduo::noncopyable
 {
 public:
-    using RpcClientPtr = std::shared_ptr<RpcClient>;
+    using LoginStub = RpcClient<gw2l::LoginService::Stub>;
+    using RpcClientPtr = std::shared_ptr<LoginStub>;
 
     MsgReceiver(ProtobufCodec& codec)
         :codec_(codec)
