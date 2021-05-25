@@ -18,7 +18,7 @@ void MsgReceiver::OnAnswer(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
 {
-    LOG_INFO << "try login : " << message->DebugString();
+    LOG_INFO << "login : " << message->DebugString();
     LoginResponse respone;
     codec_.send(conn, respone);
 
@@ -30,7 +30,7 @@ void MsgReceiver::OnAnswer(const muduo::net::TcpConnectionPtr& conn,
         *rsp, NewCallback(this, &MsgReceiver::Replied, rsp));
 }
 
-void MsgReceiver::Replied(gw2l::LoginResponse* rsp)
+void MsgReceiver::Replied(gw2l::LoginResponse* response)
 {
 
 }

@@ -36,7 +36,7 @@ public:
         muduo::Timestamp);
 
     //login to gateway
-    void Replied(gw2l::LoginResponse* rsp);
+    void Replied(gw2l::LoginResponse* response);
 
 private:
     ProtobufCodec& codec_;
