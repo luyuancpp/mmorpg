@@ -1,5 +1,7 @@
 #include "gateway_server.h"
 
+using namespace gateway;
+
 int main(int argc, char* argv[])
 {
     EventLoop loop;

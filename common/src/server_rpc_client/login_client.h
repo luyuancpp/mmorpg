@@ -15,7 +15,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-namespace gateway
+namespace common
 {
 
 template<typename StubClass>
@@ -43,7 +43,7 @@ public:
     }
 
     template<typename Request, typename Response, typename Class>
-    void SendRequest(Request& request, 
+    void SendRequest(const Request& request, 
                      Class* object, 
                      void (Class::* method)(Response*), 
                      void (StubClass::* stub_method)(::google::protobuf::RpcController*, const Request*, Response*, ::google::protobuf::Closure*))
@@ -75,6 +75,6 @@ private:
     RpcChannelPtr channel_;
     StubPtr stub_;
 };
-} // namespace gateway
+} // namespace common
 
 #endif // SRC_SERVER_RPCCLIENT_LOGIN_CLIENT_H_
