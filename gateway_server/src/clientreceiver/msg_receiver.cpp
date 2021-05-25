@@ -4,7 +4,6 @@
 
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
-#include "src/login/rpcclient/login_client.h"
 
 namespace gateway
 {
@@ -25,8 +24,8 @@ void MsgReceiver::OnAnswer(const muduo::net::TcpConnectionPtr& conn,
     gw2l::LoginRequest request;
     request.set_account(message->account());
     request.set_password(message->password());
-    login_client_->SendRequest<gw2l::LoginRequest, gw2l::LoginResponse, MsgReceiver>
-        (request, this, &MsgReceiver::Replied, &gw2l::LoginService::Stub::Login);
+    login_client_->SendRequest<gw2l::LoginRequest, gw2l::LoginResponse>
+        (request, this, &MsgReceiver::Replied, &gw2l::LoginService_Stub::Login);
 }
 
 void MsgReceiver::Replied(gw2l::LoginResponse* response)

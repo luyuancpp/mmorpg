@@ -32,9 +32,6 @@
     <ClInclude Include="src\clientreceiver\msg_receiver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\login\rpcclient\login_client.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\master\rpcclient\master_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
