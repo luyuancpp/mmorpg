@@ -15,7 +15,9 @@
 
 using namespace muduo;
 using namespace muduo::net;
-using namespace gateway;
+
+namespace gateway
+{
 
 class GatewayServer : noncopyable
 {
@@ -69,6 +71,8 @@ private:
     MsgReceiver client_receiver_;
 };
 
+} // namespace gateway
+ 
 #endif // !GATEWAY_GATEWAY_SERVER_H_
 
 

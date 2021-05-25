@@ -150,6 +150,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="login_server.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\database\rpcclient\database_rpcclient.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="login_server.h" />
+    <ClInclude Include="src\database\rpcclient\database_rpcclient.h" />
+    <ClInclude Include="src\gateway\service\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

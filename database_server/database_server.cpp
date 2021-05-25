@@ -31,7 +31,7 @@ int main(int argc, char* argv[])
 {
     int nThreads = argc > 1 ? atoi(argv[1]) : 1;
     EventLoop loop;
-    InetAddress listenAddr("127.0.0.1", 2002);
+    InetAddress listenAddr("127.0.0.1", 2003);
     l2db::LoginServiceImpl impl;
     RpcServer server(&loop, listenAddr);
     server.setThreadNum(nThreads);

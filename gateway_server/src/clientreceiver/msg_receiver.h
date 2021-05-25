@@ -21,7 +21,7 @@ typedef std::shared_ptr<LoginRequest> LoginRequestPtr;
 class MsgReceiver : muduo::noncopyable
 {
 public:
-    using LoginStub = RpcClient<gw2l::LoginService_Stub>;
+    using LoginStub = common::RpcClient<gw2l::LoginService_Stub>;
     using RpcClientPtr = std::shared_ptr<LoginStub>;
 
     MsgReceiver(ProtobufCodec& codec)
