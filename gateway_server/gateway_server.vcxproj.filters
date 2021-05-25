@@ -15,16 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="gateway_server.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\clientreceiver\msg_receiver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\master\rpcclient\master_client.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game\rpcclient\game_client.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,10 +26,7 @@
     <ClInclude Include="src\clientreceiver\msg_receiver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\master\rpcclient\master_client.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\game\rpcclient\game_client.h">
+    <ClInclude Include="gateway_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
