@@ -147,16 +147,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="codec\codec.cc" />
+    <ClCompile Include="src\codec\codec.cc" />
     <ClCompile Include="src\return_code\notice_struct.cpp" />
     <ClCompile Include="src\team\team.cpp" />
     <ClCompile Include="src\team\team_list.cpp" />
     <ClCompile Include="src\timer_task\timer_task.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="codec\codec.h" />
-    <ClInclude Include="codec\dispatcher.h" />
-    <ClInclude Include="codec\dispatcher_lite.h" />
+    <ClInclude Include="src\codec\codec.h" />
+    <ClInclude Include="src\codec\dispatcher.h" />
+    <ClInclude Include="src\codec\dispatcher_lite.h" />
     <ClInclude Include="src\common_type\common_type.h" />
     <ClInclude Include="src\config_expression\config_expression.h" />
     <ClInclude Include="src\exprtk\exprtk.hpp" />

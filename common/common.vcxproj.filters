@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="codec\codec.cc">
+    <ClCompile Include="src\codec\codec.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\timer_task\timer_task.cpp">
@@ -32,13 +32,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="codec\codec.h">
+    <ClInclude Include="src\codec\codec.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="codec\dispatcher.h">
+    <ClInclude Include="src\codec\dispatcher.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="codec\dispatcher_lite.h">
+    <ClInclude Include="src\codec\dispatcher_lite.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\timer_task\timer_task.h">
