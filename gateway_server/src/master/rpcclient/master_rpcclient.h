@@ -19,8 +19,8 @@ namespace gateway
         void Connect(EventLoop* loop,
             const InetAddress& login_server_addr)
         {
-            master_client_ = std::make_shared<RpcStub>(loop, login_server_addr);
-            master_client_->connect();
+            gameserver_client_ = std::make_shared<RpcStub>(loop, login_server_addr);
+            gameserver_client_->connect();
         }
 
         static MasterRpcClient& GetSingleton()
@@ -30,7 +30,7 @@ namespace gateway
         }
 
     private:
-        RpcClientPtr master_client_;
+        RpcClientPtr gameserver_client_;
     };
 
 }// namespace gateway
