@@ -24,6 +24,12 @@
     <ClCompile Include="src\login\login_rpcclient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\game\rpcclient\gameserver_rpcclient.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\master\rpcclient\master_rpcclient.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client\service\service.h">
@@ -33,6 +39,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\login\login_rpcclient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\rpcclient\gameserver_rpcclient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\master\rpcclient\master_rpcclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

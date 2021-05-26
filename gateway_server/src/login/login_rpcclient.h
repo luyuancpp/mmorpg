@@ -3,9 +3,6 @@
 
 #include "gw2l.pb.h"
 
-#include "muduo/base/noncopyable.h"
-#include "muduo/net/EventLoop.h"
-
 #include "src/server_rpc_client/login_client.h"
 
 using namespace muduo;

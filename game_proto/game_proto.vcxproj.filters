@@ -42,6 +42,9 @@
     <ClInclude Include="pbc\g2db.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="pbc\gw2ms.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pbc\pb3.pb.cc">
@@ -69,6 +72,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pbc\g2db.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pbc\gw2ms.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

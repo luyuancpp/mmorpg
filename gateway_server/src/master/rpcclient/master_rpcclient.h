@@ -1,19 +1,19 @@
-#ifndef LOGIN_SERVER_SRC_MASTER_RPCCLIENT_DATABASE_RPC_CLIENT_H_
-#define LOGIN_SERVER_SRC_MASTER_RPCCLIENT_DATABASE_RPC_CLIENT_H_
+#ifndef GATEWAY_SERVER_SRC_MASTER_RPCCLIENT_MASTER_RPCCLIENT_H_
+#define GATEWAY_SERVER_SRC_MASTER_RPCCLIENT_MASTER_RPCCLIENT_H_
 
-#include "l2ms.pb.h"
+#include "gw2ms.pb.h"
 
 #include "src/server_rpc_client/login_client.h"
 
 using namespace muduo;
 using namespace muduo::net;
 
-namespace login
+namespace gateway
 {
     class MasterRpcClient
     {
     public:
-        using RpcStub = common::RpcClient <l2ms::LoginService_Stub>;
+        using RpcStub = common::RpcClient <gw2ms::LoginService_Stub>;
         using RpcClientPtr = std::shared_ptr<RpcStub>;
 
         void Connect(EventLoop* loop,
@@ -33,9 +33,9 @@ namespace login
         RpcClientPtr master_client_;
     };
 
-}// namespace login
+}// namespace gateway
 
-#define  master login::MasterRpcClient::GetSingleton() 
+#define  master gateway::MasterRpcClient::GetSingleton() 
 
-#endif // LOGIN_SERVER_SRC_MASTER_RPCCLIENT_DATABASE_RPC_CLIENT_H_
+#endif // GATEWAY_SERVER_SRC_MASTER_RPCCLIENT_MASTER_RPCCLIENT_H_
 

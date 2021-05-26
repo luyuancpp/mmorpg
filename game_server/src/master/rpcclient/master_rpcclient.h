@@ -1,15 +1,7 @@
 #ifndef GAME_SERVER_SERVER_SRC_DATABASE_RPCCLIENT_DATABASE_RPC_CLIENT_H_
 #define GAME_SERVER_SERVER_SRC_DATABASE_RPCCLIENT_DATABASE_RPC_CLIENT_H_
 
-#ifdef __linux__
-#include <unistd.h>
-#endif//__linux__
-
 #include "g2ms.pb.h"
-
-#include "muduo/base/Logging.h"
-#include "muduo/net/EventLoop.h"
-#include "muduo/net/protorpc/RpcServer.h"
 
 #include "src/server_rpc_client/login_client.h"
 
