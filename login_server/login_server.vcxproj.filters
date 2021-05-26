@@ -29,7 +29,7 @@
     <ClInclude Include="login_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\gateway\service\service.h">
+    <ClInclude Include="src\gateway\service.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\database\rpcclient\database_rpcclient.h">
