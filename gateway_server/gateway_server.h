@@ -3,15 +3,15 @@
 
 #include <stdio.h>
 
-#include "codec/codec.h"
-#include "codec/dispatcher.h"
+#include "src/codec/codec.h"
+#include "src/codec/dispatcher.h"
 
 #include "muduo/base/Logging.h"
 #include "muduo/base/Mutex.h"
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/TcpServer.h"
 
-#include "src/clientreceiver/msg_receiver.h"
+#include "src/client/service/service.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -31,17 +31,11 @@ public:
         client_receiver_(codec_)
     {
         dispatcher_.registerMessageCallback<LoginRequest>(
-            std::bind(&MsgReceiver::OnAnswer, &client_receiver_, _1, _2, _3));
+            std::bind(&ClientReceiver::OnAnswer, &client_receiver_, _1, _2, _3));
         server_.setConnectionCallback(
             std::bind(&GatewayServer::OnConnection, this, _1));
         server_.setMessageCallback(
             std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
-    }
-
-    void ConnectLogin(EventLoop* loop,
-        const InetAddress& login_server_addr)
-    {
-        client_receiver_.ConnectLogin(loop, login_server_addr);
     }
 
     void Start()
@@ -68,7 +62,7 @@ private:
     TcpServer server_;
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
-    MsgReceiver client_receiver_;
+    ClientReceiver client_receiver_;
 };
 
 } // namespace gateway

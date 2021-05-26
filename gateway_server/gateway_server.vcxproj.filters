@@ -15,18 +15,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\clientreceiver\msg_receiver.cpp">
+    <ClCompile Include="src\client\service\service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\login\login_rpcclient.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\clientreceiver\msg_receiver.h">
+    <ClInclude Include="src\client\service\service.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="gateway_server.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login\login_rpcclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -20,11 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\clientreceiver\msg_receiver.cpp" />
+    <ClCompile Include="src\client\service\service.cpp" />
+    <ClCompile Include="src\login\login_rpcclient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gateway_server.h" />
-    <ClInclude Include="src\clientreceiver\msg_receiver.h" />
+    <ClInclude Include="src\client\service\service.h" />
+    <ClInclude Include="src\login\login_rpcclient.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
