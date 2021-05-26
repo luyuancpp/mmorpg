@@ -30,6 +30,12 @@
     <ClInclude Include="pbc\l2db.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="pbc\l2ms.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pbc\ms2db.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pbc\pb3.pb.cc">
@@ -45,6 +51,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pbc\l2db.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pbc\l2ms.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pbc\ms2db.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

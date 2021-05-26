@@ -152,11 +152,13 @@
     <ClCompile Include="login_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\database\rpcclient\database_rpcclient.cpp" />
+    <ClCompile Include="src\master\rpcclient\master_rpcclient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="login_server.h" />
     <ClInclude Include="src\database\rpcclient\database_rpcclient.h" />
     <ClInclude Include="src\gateway\service.h" />
+    <ClInclude Include="src\master\rpcclient\master_rpcclient.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

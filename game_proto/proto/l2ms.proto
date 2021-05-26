@@ -1,6 +1,7 @@
 syntax = "proto3";
 package l2ms;
 import "common.proto";
+option cc_generic_services = true;
 
 message LoginRequest
 {
@@ -11,4 +12,8 @@ message LoginRequest
 message LoginResponse
 {
 	ClientError error = 1;
+}
+
+service LoginService {
+  rpc Login (LoginRequest) returns (LoginResponse);
 }
