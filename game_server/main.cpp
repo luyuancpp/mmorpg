@@ -1,3 +1,5 @@
+#include "muduo/net/protorpc/RpcServer.h"
+
 #include "src/master/rpcclient/master_rpcclient.h"
 
 using namespace muduo;
