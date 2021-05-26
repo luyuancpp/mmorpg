@@ -148,9 +148,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\database\rpcclient\database_rpcclient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="master_server.h" />
+    <ClInclude Include="src\database\rpcclient\database_rpcclient.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

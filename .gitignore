@@ -11,7 +11,11 @@ compile_commands.json
 *.stamp
 *.suo
 *.db*
+*.user
+*.zip
+game_proto/pbc/
 third_party/boost/
+third_party/entt/
 third_party/googletest/
 third_party/muduo/
 third_party/protobuf/
