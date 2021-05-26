@@ -75,6 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>../bin/</OutDir>
     <IntDir>../output/$(ProjectName)/</IntDir>
+    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -113,6 +114,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../game_proto/;../game_proto/pbc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;game_proto.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
