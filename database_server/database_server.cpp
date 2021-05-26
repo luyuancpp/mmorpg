@@ -1,31 +1,18 @@
 #include "l2db.pb.h"
 
-#include "muduo/base/Logging.h"
-#include "muduo/net/EventLoop.h"
-#include "muduo/net/protorpc/RpcServer.h"
 #ifdef __linux__
 #include <unistd.h>
 #endif//__linux__
 
+#include "muduo/base/Logging.h"
+#include "muduo/net/EventLoop.h"
+#include "muduo/net/protorpc/RpcServer.h"
+
+#include "src/login/service.h"
+
 using namespace muduo;
 using namespace muduo::net;
 
-namespace l2db
-{
-    class LoginServiceImpl : public LoginService
-    {
-    public:
-        virtual void Login(::google::protobuf::RpcController* controller,
-            const l2db::LoginRequest* request,
-            l2db::LoginResponse* response,
-            ::google::protobuf::Closure* done)override
-        {
-            LOG_INFO << "login : " << request->DebugString();
-            done->Run();
-        }
-    };
-
-}  // namespace l2db
 
 int main(int argc, char* argv[])
 {
