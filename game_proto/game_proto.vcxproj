@@ -21,6 +21,8 @@
   <ItemGroup>
     <ClInclude Include="pbc\c2gw.pb.h" />
     <ClInclude Include="pbc\common.pb.h" />
+    <ClInclude Include="pbc\g2db.pb.h" />
+    <ClInclude Include="pbc\g2ms.pb.h" />
     <ClInclude Include="pbc\gw2l.pb.h" />
     <ClInclude Include="pbc\l2db.pb.h" />
     <ClInclude Include="pbc\l2ms.pb.h" />
@@ -30,6 +32,8 @@
   <ItemGroup>
     <ClCompile Include="pbc\c2gw.pb.cc" />
     <ClCompile Include="pbc\common.pb.cc" />
+    <ClCompile Include="pbc\g2db.pb.cc" />
+    <ClCompile Include="pbc\g2ms.pb.cc" />
     <ClCompile Include="pbc\gw2l.pb.cc" />
     <ClCompile Include="pbc\l2db.pb.cc" />
     <ClCompile Include="pbc\l2ms.pb.cc" />
