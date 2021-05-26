@@ -4,7 +4,7 @@
 #include "c2gw.pb.h"
 #include "gw2l.pb.h"
 
-#include "codec/codec.h"
+#include "src/codec/codec.h"
 
 #include "muduo/base/noncopyable.h"
 #include "muduo/net/EventLoop.h"
