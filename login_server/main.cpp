@@ -1,6 +1,6 @@
 #include "login_server.h"
 
-#include "src/gateway/service/service.h"
+#include "src/gateway/service.h"
 #include "src/database/rpcclient/database_rpcclient.h"
 
 int main(int argc, char* argv[])
