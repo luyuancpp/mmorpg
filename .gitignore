@@ -20,6 +20,7 @@ third_party/googletest/
 third_party/muduo/
 third_party/protobuf/
 third_party/zlib/
+third_party/redis/
 output/
 lib/
 bin/
