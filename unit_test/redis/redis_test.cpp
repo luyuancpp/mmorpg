@@ -11,8 +11,8 @@ using namespace common;
 TEST(RedisTest, SyncMessageLoad)
 {
     LoginRequest request;
-    request.set_account("luhailong");
-    request.set_password("123");
+    request.set_account("luhailon g");
+    request.set_password("12 3");
     RedisClient c;
     c.Connect("127.0.0.1", 1, 1);
     c.Save(request);
