@@ -145,13 +145,11 @@
   <ItemGroup>
     <ClCompile Include="..\..\common\src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="..\..\common\src\redis_client\redis_client.cpp" />
-    <ClCompile Include="..\..\common\src\redis_client\sync_redis_client.cpp" />
     <ClCompile Include="redis_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\redis_client\async_redis_client.h" />
     <ClInclude Include="..\..\common\src\redis_client\redis_client.h" />
-    <ClInclude Include="..\..\common\src\redis_client\sync_redis_client.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
