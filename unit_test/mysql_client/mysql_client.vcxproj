@@ -122,7 +122,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../bin/;./Debug/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;game_proto.lib;zlib.lib;gtestd.lib;hiredis.lib;libmysql.lib</AdditionalDependencies>
+      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;game_proto.lib;zlib.lib;gtestd.lib;hiredis.lib;mysqlclient.lib;User32.lib;advapi32.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

@@ -17,6 +17,12 @@ namespace common
 
     using PlayerIdsV = std::vector<GameGuid>;
     using StringV = std::vector<std::string>;
+    using I16V = std::vector<int16_t>;
+    using I16V = std::vector<uint16_t>;
+    using I32V = std::vector<int32_t>;
+    using I64V = std::vector<int64_t>;
+    using UI32V = std::vector<uint32_t>;
+    using UI64V = std::vector<uint64_t>;
 
     static const GameGuid kEmptyGameGuid{ 0 };
 }//namespace common
