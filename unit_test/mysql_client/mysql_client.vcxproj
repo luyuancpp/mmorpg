@@ -143,10 +143,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\src\mysql_client\mysql_client.cpp" />
+    <ClCompile Include="..\..\common\src\pb2db\db_table.cpp" />
+    <ClCompile Include="..\..\game_proto\pbc\db_base.pb.cc" />
     <ClCompile Include="mysql_client_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\mysql_client\mysql_client.h" />
+    <ClInclude Include="..\..\common\src\pb2db\db_table.h" />
+    <ClInclude Include="..\..\game_proto\pbc\db_base.pb.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
