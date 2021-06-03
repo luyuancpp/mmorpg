@@ -23,6 +23,7 @@ class MysqlClient
 public:
     using MysqlPtr = std::shared_ptr<MYSQL>;
     void Connect(const MysqlDataBaseInfo& database_info);
+
 private:
     MysqlPtr mysql_;
 };
