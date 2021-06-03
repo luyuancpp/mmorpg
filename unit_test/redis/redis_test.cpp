@@ -1,8 +1,8 @@
-﻿#include <gtest/gtest.h>
-
-#include <iostream>
+﻿#include <iostream>
 
 #include "c2gw.pb.h"
+
+#include <gtest/gtest.h>
 
 #include "src/redis_client/redis_client.h"
 

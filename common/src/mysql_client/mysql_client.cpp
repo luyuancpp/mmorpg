@@ -18,6 +18,12 @@ void MysqlClient::Connect(const MysqlDataBaseInfo& database_info)
         database_info.port_,
         nullptr,
         CLIENT_FOUND_ROWS | CLIENT_MULTI_RESULTS);
+
+    if (nullptr == res)
+    {
+        return;
+    }
+    mysql_set_character_set(mysql_.get(), "utf8");
 }
 
 }//namespace common;

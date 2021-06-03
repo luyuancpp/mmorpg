@@ -9,7 +9,8 @@ TEST(RedisTest, SyncMessageLoad)
     MysqlDataBaseInfo database_info;
     database_info.host_name_ = "127.0.0.1";
     database_info.user_name_ = "root";
-    database_info.port_ = 6399;
+    database_info.port_ = 3306;
+    database_info.pass_word_ = "luyuan616586";
     database_info.database_name_ = "game";
     MysqlClient request;
     request.Connect(database_info);
