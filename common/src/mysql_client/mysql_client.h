@@ -1,5 +1,5 @@
-#ifndef COMMON_SRC_MYSQL_CLIENT_H_
-#define COMMON_SRC_MYSQL_CLIENT_H_
+#ifndef COMMON_SRC_MYSQL_CLIENT_MYSQL_CLIENT_H_
+#define COMMON_SRC_MYSQL_CLIENT_MYSQL_CLIENT_H_
 
 #include <functional>
 #include <string>
@@ -9,11 +9,11 @@
 #include <mysql.h>
 
 #include "src/util/expected.h"
-//https://github.com/mysql/mysql-server/blob/8.0/router/src/router/src/common/mysql_session.cc
+#include "src/mysql_client/mysql_result.h"
 
 namespace common
 {
-
+    //https://github.com/mysql/mysql-server/blob/8.0/router/src/router/src/common/mysql_session.cc
 struct ConnectionParameters
 {
     std::string host_name_;
@@ -61,17 +61,7 @@ public:
     void operator()(MYSQL* res) { mysql_close(res); }
 };
 
-using Row = std::vector<const char*>;
-class ResultRow {
-public:
-    ResultRow(Row row) : row_{ std::move(row) } {}
-    virtual ~ResultRow() {}
-    size_t size() const { return row_.size(); }
-    const char*& operator[](size_t i) { return row_[i]; }
 
-private:
-    Row row_;
-};
 
 class MysqlClient
 {
@@ -80,7 +70,7 @@ public:
     using MysqConnection = std::unique_ptr<MYSQL, MYSQL_Deleter>;
     using MysqlResultExpected = stdx::expected<MysqlResult, MysqlError>;
     using ResultRowPtr = std::unique_ptr<ResultRow>;
-    using RowProcessor = std::function<bool(const Row&)>;
+    using RowProcessor = std::function<bool(const Row&, const RowLength&)>;
 
     void Connect(const ConnectionParameters& database_info);
     void Execute(
@@ -88,8 +78,8 @@ public:
     ResultRowPtr query_one(
         const std::string& query);  
     void Query(
-      const std::string &q, 
-      const RowProcessor &processor);
+      const std::string& q, 
+      const RowProcessor& processor);
 private:
     MysqlResultExpected LoggedRealQuery(
         const std::string& q);
@@ -104,4 +94,4 @@ private:
 };
 }//namespace common
 
-#endif//COMMON_SRC_MYSQL_CLIENT_H_
+#endif//COMMON_SRC_MYSQL_CLIENT_MYSQL_CLIENT_H_
