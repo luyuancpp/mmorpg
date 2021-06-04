@@ -150,6 +150,8 @@
   <ItemGroup>
     <ClInclude Include="..\..\common\src\mysql_client\mysql_client.h" />
     <ClInclude Include="..\..\common\src\pb2db\db_table.h" />
+    <ClInclude Include="..\..\common\src\util\expected.h" />
+    <ClInclude Include="..\..\common\src\util\type_traits.h" />
     <ClInclude Include="..\..\game_proto\pbc\db_base.pb.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

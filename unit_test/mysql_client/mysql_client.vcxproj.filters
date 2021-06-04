@@ -38,5 +38,11 @@
     <ClInclude Include="..\..\game_proto\pbc\db_base.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\util\expected.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\util\type_traits.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
