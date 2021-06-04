@@ -6,7 +6,7 @@ using namespace common;
 
 TEST(RedisTest, SyncMessageLoad)
 {
-    MysqlDataBaseInfo database_info;
+    ConnectionParameters database_info;
     database_info.host_name_ = "127.0.0.1";
     database_info.user_name_ = "root";
     database_info.port_ = 3306;
