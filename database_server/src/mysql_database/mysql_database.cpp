@@ -15,7 +15,11 @@ void MysqlDatabase::Init()
         auto cb = std::bind(&Pb2DbSql::OnSelectColumnReturn, &it.second,
             std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         Query(it.second.GetSelectColumn(), std::move(cb)); 
-        Execute(GetAlterTableAddFieldSql(it.second.default_instance()));
+        auto alter_sql = GetAlterTableAddFieldSql(it.second.default_instance());
+        if (!alter_sql.empty())
+        {
+            Execute(alter_sql);
+        }        
     }
 }
 
