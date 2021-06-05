@@ -61,8 +61,6 @@ public:
     void operator()(MYSQL* res) { mysql_close(res); }
 };
 
-
-
 class MysqlClient
 {
 public:
@@ -70,7 +68,7 @@ public:
     using MysqConnection = std::unique_ptr<MYSQL, MYSQL_Deleter>;
     using MysqlResultExpected = stdx::expected<MysqlResult, MysqlError>;
     using ResultRowPtr = std::unique_ptr<ResultRow>;
-    using RowProcessor = std::function<bool(const Row&, const RowLength&)>;
+    using RowProcessor = std::function<bool(const MYSQL_ROW&, const unsigned long*)>;
 
     void Connect(const ConnectionParameters& database_info);
     void Execute(
