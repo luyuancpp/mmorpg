@@ -8,6 +8,7 @@ namespace database
 {
 void MysqlDatabase::Init()
 {
+    set_mysql(connection());
     AddTable(account_database::default_instance());
     for (auto& it : tables_)
     {
@@ -21,6 +22,18 @@ void MysqlDatabase::Init()
             Execute(alter_sql);
         }        
     }
+}
+
+void MysqlDatabase::Load(::google::protobuf::Message& message)
+{
+    auto sql = GetSelectAllSql(message);
+    QueryOne(sql);
+}
+
+void MysqlDatabase::Save(const ::google::protobuf::Message& message)
+{
+    auto sql = GetReplaceSql(message);
+    QueryOne(sql);
 }
 
 }//namespace database

@@ -6,10 +6,13 @@
 
 namespace database
 {
-class MysqlDatabase : public common::Pb2DbTables, public common::MysqlClient
+class MysqlDatabase : private common::Pb2DbTables, public common::MysqlClient
 {
 public:
     void Init();
+
+    void Load(::google::protobuf::Message& message);
+    void Save(const ::google::protobuf::Message& message);
 };
 
 }//namespace database
