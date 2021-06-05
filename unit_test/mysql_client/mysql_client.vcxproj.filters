@@ -30,6 +30,9 @@
     <ClCompile Include="..\..\common\src\pb2db\pb2dbsql.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\game_proto\pbc\mysql_database_table.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\mysql_client\mysql_client.h">
@@ -51,6 +54,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\pb2db\pb2dbsql.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_proto\pbc\mysql_database_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
