@@ -11,11 +11,10 @@ namespace common
     class ResultRow {
     public:
         ResultRow(MYSQL_ROW row, RowLength length, MYSQL_RES* res, size_t size)
-            : row_{ row }, length_{ length }, res_(res),size_(size_)  {}
+            : row_{ row }, length_{ length }, res_(res),size_(size)  {}
         ~ResultRow() { mysql_free_result(res_); }
         size_t size() const { return size_; }
         const char* const&  operator[](size_t i) const { return row_[i]; }
-        const char* const& operator[](int32_t i) { return row_[i]; }
         Length length(size_t i) const { return length_[i]; }
     private:
         MYSQL_ROW row_;
