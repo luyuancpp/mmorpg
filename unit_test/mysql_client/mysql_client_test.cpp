@@ -12,7 +12,7 @@ using DatabasePtr = std::unique_ptr<MysqlDatabase>;
 DatabasePtr query_database;
 ConnectionParameters query_database_param{ "127.0.0.1", "root" , "luyuan616586", "game" , 3306 };
 
-TEST(RedisTest, SyncMessageLoad)
+TEST(RedisTest, ConectMysql)
 {
     MysqlDatabase client;
     client.Connect(query_database_param);
