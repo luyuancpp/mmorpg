@@ -78,10 +78,11 @@ public:
     void Query(
       const std::string& q, 
       const RowProcessor& processor);
+protected:
+    inline MYSQL* connection() { return connection_.get(); }
 private:
     MysqlResultExpected LoggedRealQuery(
         const std::string& q);
-    inline MYSQL* connection() { return connection_.get(); }
     MysqlResultExpected RealQuery(
         const std::string& q);
 
