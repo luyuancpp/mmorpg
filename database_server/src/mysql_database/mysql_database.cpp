@@ -27,7 +27,8 @@ void MysqlDatabase::Init()
 void MysqlDatabase::Load(::google::protobuf::Message& message)
 {
     auto sql = GetSelectAllSql(message);
-    QueryOne(sql);
+    auto result = QueryOne(sql);
+    fillMessageField(message, *result);
 }
 
 void MysqlDatabase::Save(const ::google::protobuf::Message& message)

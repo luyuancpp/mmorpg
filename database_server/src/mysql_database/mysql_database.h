@@ -13,6 +13,9 @@ public:
 
     void Load(::google::protobuf::Message& message);
     void Save(const ::google::protobuf::Message& message);
+
+private:
+
 };
 
 }//namespace database
