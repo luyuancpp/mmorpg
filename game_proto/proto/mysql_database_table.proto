@@ -1,5 +1,4 @@
 syntax = "proto3";
-package database;
 import "db_base.proto";
 
 message account_database
