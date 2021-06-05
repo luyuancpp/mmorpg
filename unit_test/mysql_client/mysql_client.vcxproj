@@ -143,7 +143,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\src\mysql_client\mysql_client.cpp" />
-    <ClCompile Include="..\..\common\src\pb2db\db_table.cpp" />
+    <ClCompile Include="..\..\common\src\pb2db\pb2dbsql.cpp" />
     <ClCompile Include="..\..\database_server\src\mysql_database\mysql_database.cpp" />
     <ClCompile Include="..\..\game_proto\pbc\db_base.pb.cc" />
     <ClCompile Include="mysql_client_test.cpp" />
@@ -151,7 +151,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\common\src\mysql_client\mysql_client.h" />
     <ClInclude Include="..\..\common\src\mysql_client\mysql_result.h" />
-    <ClInclude Include="..\..\common\src\pb2db\db_table.h" />
+    <ClInclude Include="..\..\common\src\pb2db\pb2dbsql.h" />
     <ClInclude Include="..\..\common\src\util\expected.h" />
     <ClInclude Include="..\..\common\src\util\type_traits.h" />
     <ClInclude Include="..\..\database_server\src\mysql_database\mysql_database.h" />
