@@ -10,10 +10,8 @@ namespace common
 void MysqlClient::Connect(const ConnectionParameters& database_info)
 {
     connection_.reset(mysql_init(nullptr));
-
     uint32_t op = 1;
     mysql_options(connection(), MYSQL_OPT_RECONNECT, &op);
-
     MYSQL* res = mysql_real_connect(connection(),
         database_info.host_name_.c_str(),
         database_info.user_name_.c_str(),
@@ -23,10 +21,6 @@ void MysqlClient::Connect(const ConnectionParameters& database_info)
         nullptr,
         CLIENT_FOUND_ROWS | CLIENT_MULTI_RESULTS);
     connection_->reconnect = true;
-    if (nullptr == res)
-    {
-        return;
-    }
     mysql_set_character_set(connection(), "utf8");
     conection_info_ = database_info;
 }
