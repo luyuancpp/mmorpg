@@ -7,17 +7,6 @@
 namespace common
 {
 
-class RealResultRow : public ResultRow {
-public:
-    RealResultRow(Row row,  RowLength length, MYSQL_RES* res)
-        : ResultRow(std::move(row), std::move(length)), res_(res) {}
-
-    ~RealResultRow() override { mysql_free_result(res_); }
-
-private:
-    MYSQL_RES* res_;
-};
-
 void MysqlClient::Connect(const ConnectionParameters& database_info)
 {
     connection_.reset(mysql_init(nullptr));
@@ -91,14 +80,7 @@ MysqlClient::ResultRowPtr MysqlClient::query_one(const std::string& query)
    
     if (MYSQL_ROW row = mysql_fetch_row(res)) {
         unsigned long* lengths = mysql_fetch_lengths(res);
-        std::vector<const char*> outrow(nfields);
-        RowLength outlength(nfields);
-        for (unsigned int i = 0; i < nfields; i++) {
-            outrow[i] = row[i];
-            outlength[i] = lengths[i];
-        }
-
-        return std::make_unique<RealResultRow>(outrow, outlength, query_res.value().release());
+        return std::make_unique<ResultRow>(row, lengths, query_res.value().release(), nfields);
     }
 
     return {};
@@ -132,16 +114,8 @@ void MysqlClient::Query(const std::string& query, const RowProcessor& processor)
 
     MYSQL_FIELD* fields = mysql_fetch_fields(res);
     unsigned long* lengths = mysql_fetch_lengths(res);
-    Row outrow;
-    RowLength outlength;
-    outrow.resize(nfields);
-    outlength.resize(nfields);
     while (MYSQL_ROW row = mysql_fetch_row(res)) {
-        for (unsigned int i = 0; i < nfields; i++) {
-            outrow[i] = row[i];
-            outlength[i] = lengths[i];
-        }
-        if (!processor(outrow, outlength)) break;
+        if (!processor(row, lengths)) break;
     }
 }
 

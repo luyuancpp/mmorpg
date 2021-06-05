@@ -5,21 +5,23 @@
 
 namespace common
 {
-    using Row = std::vector<const char*>;
-    using LengthType = unsigned long;
-    using RowLength = std::vector<LengthType>;
+    using Length = unsigned long;
+    using RowLength = Length *;
 
     class ResultRow {
     public:
-        ResultRow(Row row, RowLength length) : row_{ std::move(row) }, length_{ std::move(length) } {}
-        virtual ~ResultRow() {}
-        size_t size() const { return row_.size(); }
+        ResultRow(MYSQL_ROW row, RowLength length, MYSQL_RES* res, size_t size)
+            : row_{ row }, length_{ length }, res_(res),size_(size_)  {}
+        ~ResultRow() { mysql_free_result(res_); }
+        size_t size() const { return size_; }
         const char* const&  operator[](size_t i) const { return row_[i]; }
         const char* const& operator[](int32_t i) { return row_[i]; }
-        LengthType length(size_t i) const { return length_[i]; }
+        Length length(size_t i) const { return length_[i]; }
     private:
-        Row row_;
+        MYSQL_ROW row_;
         RowLength length_;
+        MYSQL_RES* res_;
+        size_t size_{0};
     };
 }//namespace common
 #endif//COMMON_SRC_MYSQL_CLIENT_MYSQL_RESULT_H_
