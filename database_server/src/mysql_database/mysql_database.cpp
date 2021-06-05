@@ -2,13 +2,21 @@
 
 #include "mysql_database_table.pb.h"
 
-#include "src/pb2db/pb2dbsql.h"
+
+
+using namespace common;
 
 namespace database
 {
+
 void MysqlDatabase::Init()
 {
-     common::Pb2DbTables::GetSingleton().AddTable(account_database::GetDescriptor()->full_name());
+    AddTable(account_database::default_instance());
+    for (auto& it : tables_)
+    {
+        Execute(GetCreateTableSql(it.second.default_instance()));
+    }
+ 
 }
 
 }//namespace database
