@@ -29,6 +29,7 @@ TEST(RedisTest, QueryPb)
     query_database->Load(load_message);
     EXPECT_EQ(save_message.account(), load_message.account());
     EXPECT_EQ(save_message.password(), load_message.password());
+    load_message.PrintDebugString();
 }
 
 int main(int argc, char** argv)
