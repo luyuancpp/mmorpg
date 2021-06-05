@@ -43,7 +43,7 @@ void MysqlClient::Execute(const std::string& query)
     }
 }
 
-MysqlClient::ResultRowPtr MysqlClient::query_one(const std::string& query)
+MysqlClient::ResultRowPtr MysqlClient::QueryOne(const std::string& query)
 {
 #ifndef LOG_MYSQL_QUERY
     auto query_res = RealQuery(query);
@@ -68,8 +68,6 @@ MysqlClient::ResultRowPtr MysqlClient::query_one(const std::string& query)
     // get column info and give it to field validator,
     // which should throw if it doesn't like the columns
     unsigned int nfields = mysql_num_fields(res);
-    MYSQL_FIELD* fields = mysql_fetch_fields(res);
-
     if (nfields == 0) return {};
    
     if (MYSQL_ROW row = mysql_fetch_row(res)) {
@@ -104,12 +102,11 @@ void MysqlClient::Query(const std::string& query, const RowProcessor& processor)
 
     // get column info and give it to field validator,
     // which should throw if it doesn't like the columns
-    unsigned int nfields = mysql_num_fields(res);
-
-    MYSQL_FIELD* fields = mysql_fetch_fields(res);
-    unsigned long* lengths = mysql_fetch_lengths(res);
+    
     while (MYSQL_ROW row = mysql_fetch_row(res)) {
-        if (!processor(row, lengths)) break;
+        uint32_t nfields = mysql_num_fields(res);
+        unsigned long* lengths = mysql_fetch_lengths(res);
+        if (!processor(row, lengths, nfields)) break;
     }
 }
 

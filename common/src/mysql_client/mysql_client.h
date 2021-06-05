@@ -68,12 +68,12 @@ public:
     using MysqConnection = std::unique_ptr<MYSQL, MYSQL_Deleter>;
     using MysqlResultExpected = stdx::expected<MysqlResult, MysqlError>;
     using ResultRowPtr = std::unique_ptr<ResultRow>;
-    using RowProcessor = std::function<bool(const MYSQL_ROW&, const unsigned long*)>;
+    using RowProcessor = std::function<bool(const MYSQL_ROW&, const unsigned long*, uint32_t)>;
 
     void Connect(const ConnectionParameters& database_info);
     void Execute(
         const std::string& query);
-    ResultRowPtr query_one(
+    ResultRowPtr QueryOne(
         const std::string& query);  
     void Query(
       const std::string& q, 
