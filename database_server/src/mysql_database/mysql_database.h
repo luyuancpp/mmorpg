@@ -6,7 +6,7 @@ namespace database
 class MysqlDatabase
 {
 private:
-
+    void Init();
 };
 
 }//namespace database
