@@ -19,17 +19,35 @@ TEST(RedisTest, ConectMysql)
     client.Init();
 }
 
-TEST(RedisTest, QueryPb)
+TEST(RedisTest, QueryOptionMessage)
 {
-    account_database save_message;
+    account_database_one_test save_message;
     save_message.set_account("lu hailong");
     save_message.set_password("luyuan ");
-    query_database->Save(save_message);
-    account_database load_message;
-    query_database->Load(load_message);
+    query_database->SaveOne(save_message);
+    account_database_one_test load_message;
+    query_database->LoadOne(load_message);
     EXPECT_EQ(save_message.account(), load_message.account());
     EXPECT_EQ(save_message.password(), load_message.password());
-    load_message.PrintDebugString();
+}
+
+
+TEST(RedisTest, QueryRepeatedMessage)
+{
+
+    account_database_all_test save_message;
+    auto first =  save_message.mutable_account_password()->Add();
+    first->set_account("lu hailong1");
+    first->set_password("luyuan ");
+    auto second = save_message.mutable_account_password()->Add();
+    second->set_account("luh ailong1");
+    second->set_password("lu yuan ");
+
+    query_database->SaveAll<::account_database_one_test>(save_message);
+    save_message.PrintDebugString();
+    account_database_all_test load_message;
+    query_database->LoadAll(load_message);
+  
 }
 
 int main(int argc, char** argv)
