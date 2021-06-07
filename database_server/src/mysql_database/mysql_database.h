@@ -6,7 +6,7 @@
 
 namespace database
 {
-class MysqlDatabase : private common::Pb2DbTables, public common::MysqlClient
+class MysqlDatabase :  public common::MysqlClient
 {
 public:
     void Init();
@@ -17,10 +17,6 @@ public:
     void LoadAll(::google::protobuf::Message& message)
     {
         const ::google::protobuf::Descriptor* des = message.GetDescriptor();
-        if (des->field_count() != 1)
-        {
-            return;
-        }
         auto ref = message.GetReflection();
         auto fd_sub_message =
             des->FindFieldByName(des->field(0)->name());
@@ -34,7 +30,7 @@ public:
             return true;
         };
         
-        std::string sql = GetSelectAllSql(scratch_space);
+        std::string sql = pb2db_.GetSelectAllSql(scratch_space);
         QueryResultRowProcessor(sql, fill_message);
     }
 
@@ -44,22 +40,18 @@ public:
     void SaveAll(const ::google::protobuf::Message& message)
     {
         const ::google::protobuf::Descriptor* des = message.GetDescriptor();
-        if (des->field_count() != 1)
-        {
-            return ;
-        }
         auto ref = message.GetReflection();
         auto fd_sub_message =
             des->FindFieldByName(des->field(0)->name());
         auto rf_message = ref->GetRepeatedFieldRef<T>(message, fd_sub_message);
         for (auto it = rf_message.begin(); it != rf_message.end(); ++it)
         {
-            Execute(GetInsertOnDupKeyForPririmarykey(*it));
+            Execute(pb2db_.GetInsertOnDupKeyForPririmarykey(*it));
         }
     }
 
 private:
-
+    common::Pb2DbTables pb2db_;
 };
 
 }//namespace database
