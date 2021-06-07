@@ -19,7 +19,7 @@ namespace common
     private:
         MYSQL_ROW row_;
         RowLength length_;
-        MYSQL_RES* res_;
+        MYSQL_RES* res_{ nullptr };
         size_t size_{0};
     };
 }//namespace common

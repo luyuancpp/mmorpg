@@ -33,11 +33,6 @@ void MysqlDatabase::LoadOne(::google::protobuf::Message& message)
     FillMessageField(message, *result);
 }
 
-void MysqlDatabase::LoadAll(::google::protobuf::Message& message)
-{
-
-}
-
 void MysqlDatabase::SaveOne(const ::google::protobuf::Message& message)
 {
     auto sql = GetInsertOnDupUpdateSql(message);
