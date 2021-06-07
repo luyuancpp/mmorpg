@@ -11,8 +11,27 @@ class MysqlDatabase : private common::Pb2DbTables, public common::MysqlClient
 public:
     void Init();
 
-    void Load(::google::protobuf::Message& message);
-    void Save(const ::google::protobuf::Message& message);
+    void LoadOne(::google::protobuf::Message& message);
+    void LoadAll(::google::protobuf::Message& message);
+    void SaveOne(const ::google::protobuf::Message& message);
+
+    template<typename T>
+    void SaveAll(const ::google::protobuf::Message& message)
+    {
+        const ::google::protobuf::Descriptor* des = message.GetDescriptor();
+        if (des->field_count() != 1)
+        {
+            return ;
+        }
+        auto ref = message.GetReflection();
+        auto fd_sub_message =
+            des->FindFieldByName(des->field(0)->name());
+        auto rf_message = ref->GetRepeatedFieldRef<T>(message, fd_sub_message);
+        for (auto it = rf_message.begin(); it != rf_message.end(); ++it)
+        {
+            Execute(GetInsertOnDupKeyForPririmarykey(*it));
+        }
+    }
 
 private:
 

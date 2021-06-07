@@ -1,5 +1,7 @@
 #include "mysql_database.h"
 
+#include "muduo/base/Logging.h"
+
 #include "mysql_database_table.pb.h"
 
 using namespace common;
@@ -9,7 +11,7 @@ namespace database
 void MysqlDatabase::Init()
 {
     set_mysql(connection());
-    AddTable(account_database::default_instance());
+    AddTable(account_database_one_test::default_instance());
     for (auto& it : tables_)
     {
         Execute(GetCreateTableSql(it.second.default_instance()));
@@ -24,14 +26,19 @@ void MysqlDatabase::Init()
     }
 }
 
-void MysqlDatabase::Load(::google::protobuf::Message& message)
+void MysqlDatabase::LoadOne(::google::protobuf::Message& message)
 {
     auto sql = GetSelectAllSql(message);
     auto result = QueryOne(sql);
-    fillMessageField(message, *result);
+    FillMessageField(message, *result);
 }
 
-void MysqlDatabase::Save(const ::google::protobuf::Message& message)
+void MysqlDatabase::LoadAll(::google::protobuf::Message& message)
+{
+
+}
+
+void MysqlDatabase::SaveOne(const ::google::protobuf::Message& message)
 {
     auto sql = GetInsertOnDupUpdateSql(message);
     QueryOne(sql);
