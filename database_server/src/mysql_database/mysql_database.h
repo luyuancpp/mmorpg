@@ -24,15 +24,18 @@ public:
         auto ref = message.GetReflection();
         auto fd_sub_message =
             des->FindFieldByName(des->field(0)->name());
-        auto rf_message = ref->GetMutableRepeatedFieldRef<T>(&message, fd_sub_message);
-        auto fill_message = [this, &rf_message](const ResultRowPtr& ptr)-> bool
+        ::google::protobuf::MutableRepeatedFieldRef<T> rf_message = ref->GetMutableRepeatedFieldRef<T>(&message, fd_sub_message);
+        T scratch_space;
+        auto fill_message = [this, &rf_message, &scratch_space](const ResultRowPtr& ptr)-> bool
         {
-            common::FillMessageField(*rf_message.NewMessage(), *ptr);
+            scratch_space.Clear();
+            common::FillMessageField(scratch_space, *ptr);
+            rf_message.Add(scratch_space);
             return true;
         };
-        T sqlmessage;
-        std::string sql = GetSelectAllSql(sqlmessage);
-        //Query(sql, fill_message);
+        
+        std::string sql = GetSelectAllSql(scratch_space);
+        QueryResultRowProcessor(sql, fill_message);
     }
 
     void SaveOne(const ::google::protobuf::Message& message);

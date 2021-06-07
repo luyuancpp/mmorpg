@@ -69,6 +69,7 @@ public:
     using MysqlResultExpected = stdx::expected<MysqlResult, MysqlError>;
     using ResultRowPtr = std::unique_ptr<ResultRow>;
     using RowProcessor = std::function<bool(const MYSQL_ROW&, const unsigned long*, uint32_t)>;
+    using ResultRowProcessor = std::function<bool(const ResultRowPtr&)>;
 
     void Connect(const ConnectionParameters& database_info);
     void Execute(
@@ -76,8 +77,12 @@ public:
     ResultRowPtr QueryOne(
         const std::string& query);  
     void Query(
-      const std::string& q, 
+      const std::string& query,
       const RowProcessor& processor);
+
+    void QueryResultRowProcessor(
+        const std::string& query,
+        const ResultRowProcessor& processor);
 protected:
     inline MYSQL* connection() { return connection_.get(); }
 private:
