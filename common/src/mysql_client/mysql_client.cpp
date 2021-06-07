@@ -110,6 +110,38 @@ void MysqlClient::Query(const std::string& query, const RowProcessor& processor)
     }
 }
 
+void MysqlClient::QueryResultRowProcessor(const std::string& query, const ResultRowProcessor& processor)
+{
+#ifndef LOG_MYSQL_QUERY
+    auto query_res = RealQuery(query);
+#else
+    auto query_res = LoggedRealQuery(query);
+#endif//LOG_MYSQL_QUERY
+    if (!query_res) {
+        auto ec = query_res.error();
+
+        std::stringstream ss;
+        ss << "Error executing MySQL query \"";
+        ss << "\": " << ec.message() << " (" << ec.value() << ")";
+        LOG_INFO << ss.str();
+        return;
+    }
+
+    // no resultset
+    if (!query_res.value()) return;
+
+    auto* res = query_res.value().get();
+
+    // get column info and give it to field validator,
+    // which should throw if it doesn't like the columns
+
+    while (MYSQL_ROW row = mysql_fetch_row(res)) {
+        uint32_t nfields = mysql_num_fields(res);
+        unsigned long* lengths = mysql_fetch_lengths(res);
+        if (!processor(std::make_unique<ResultRow>(row, lengths, nullptr, nfields))) break;
+    }
+}
+
 MysqlClient::MysqlResultExpected MysqlClient::LoggedRealQuery(const std::string& q)
 {
     using clock_type = std::chrono::steady_clock;
