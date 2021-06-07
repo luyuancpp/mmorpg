@@ -43,7 +43,7 @@ TEST(RedisTest, QueryRepeatedMessage)
     query_database->SaveAll<::account_database_one_test>(save_message);
     account_database_all_test load_message;
     query_database->LoadAll<::account_database_one_test>(load_message);
-    load_message.PrintDebugString();
+    //load_message.PrintDebugString();
 }
 
 int main(int argc, char** argv)
