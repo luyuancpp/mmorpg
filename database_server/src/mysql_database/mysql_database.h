@@ -49,6 +49,9 @@ public:
         }
     }
 
+    void Delete(const ::google::protobuf::Message& message);
+    void Delete(const ::google::protobuf::Message& message, const std::string& where_clause);    
+
 private:
     common::Pb2DbTables pb2db_;
 };
