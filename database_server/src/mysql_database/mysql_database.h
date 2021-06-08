@@ -9,6 +9,8 @@ namespace database
 class MysqlDatabase :  public common::MysqlClient
 {
 public:
+    void AddTable(const ::google::protobuf::Message& message_default_instance);
+
     void Init();
 
     void LoadOne(::google::protobuf::Message& message);
