@@ -38,7 +38,7 @@ namespace login
 
 }// namespace login
 
-#define  database login::DatabaseRpcClient::GetSingleton() 
+#define  db_server login::DatabaseRpcClient::GetSingleton() 
 
 #endif // LOGIN_SERVER_SRC_DATABASE_RPCCLIENT_DATABASE_RPC_CLIENT_H_
 

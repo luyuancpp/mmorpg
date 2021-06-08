@@ -30,6 +30,12 @@
     <ClCompile Include="src\return_code\notice_struct.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\mysql_client\mysql_client.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb2db\pb2dbsql.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\codec\codec.h">
@@ -72,6 +78,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_rpc_client\login_client.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mysql_client\mysql_client.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mysql_client\mysql_result.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb2db\pb2dbsql.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

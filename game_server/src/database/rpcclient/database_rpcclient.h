@@ -29,14 +29,13 @@ namespace game
             return singleton;
         }
 
-
     private:
         RpcClientPtr database_client_;
     };
 
 }// namespace game
 
-#define  database game::DatabaseRpcClient::GetSingleton() 
+#define  db_server game::DatabaseRpcClient::GetSingleton() 
 
 #endif // GAME_SERVER_SERVER_SRC_DATABASE_RPCCLIENT_DATABASE_RPC_CLIENT_H_
 

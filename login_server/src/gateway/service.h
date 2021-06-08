@@ -29,7 +29,7 @@ namespace gw2l
 
             l2db::LoginRequest db_request;
             db_request.set_account(request->account());
-            database.Login(db_request);
+            db_server.Login(db_request);
         }
     };
 

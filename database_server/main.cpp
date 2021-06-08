@@ -1,5 +1,3 @@
-#include "l2db.pb.h"
-
 #ifdef __linux__
 #include <unistd.h>
 #endif//__linux__
@@ -8,22 +6,22 @@
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/protorpc/RpcServer.h"
 
-#include "src/login/service.h"
+#include "database_server.h"
+
 
 using namespace muduo;
 using namespace muduo::net;
+using namespace database;
+using namespace common;
 
-
-int main(int argc, char* argv[])
+int32_t main(int argc, char* argv[])
 {
-    int nThreads = argc > 1 ? atoi(argv[1]) : 1;
+    ConnectionParameters query_database_param{ "127.0.0.1", "root" , "luyuan616586", "game" , 3306 };
     EventLoop loop;
     InetAddress listenAddr("127.0.0.1", 2003);
-    l2db::LoginServiceImpl impl;
-    RpcServer server(&loop, listenAddr);
-    server.setThreadNum(nThreads);
-    server.registerService(&impl);
-    server.start();
+    DatabaseServer server(&loop, listenAddr, query_database_param);
+    server.Start();
     loop.loop();
+    return 0;
 }
 

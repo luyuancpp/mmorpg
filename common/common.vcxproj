@@ -122,7 +122,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../game_proto/pbc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../game_proto/pbc/;../third_party/muduo/;../third_party/mysql/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -148,6 +148,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\codec\codec.cc" />
+    <ClCompile Include="src\mysql_client\mysql_client.cpp" />
+    <ClCompile Include="src\pb2db\pb2dbsql.cpp" />
     <ClCompile Include="src\return_code\notice_struct.cpp" />
     <ClCompile Include="src\team\team.cpp" />
     <ClCompile Include="src\team\team_list.cpp" />
@@ -160,6 +162,9 @@
     <ClInclude Include="src\common_type\common_type.h" />
     <ClInclude Include="src\config_expression\config_expression.h" />
     <ClInclude Include="src\exprtk\exprtk.hpp" />
+    <ClInclude Include="src\mysql_client\mysql_client.h" />
+    <ClInclude Include="src\mysql_client\mysql_result.h" />
+    <ClInclude Include="src\pb2db\pb2dbsql.h" />
     <ClInclude Include="src\return_code\notice_struct.h" />
     <ClInclude Include="src\return_code\return_code.h" />
     <ClInclude Include="src\return_code\return_notice_code.h" />

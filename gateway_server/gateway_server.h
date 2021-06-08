@@ -3,14 +3,13 @@
 
 #include <stdio.h>
 
-#include "src/codec/codec.h"
-#include "src/codec/dispatcher.h"
-
 #include "muduo/base/Logging.h"
 #include "muduo/base/Mutex.h"
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/TcpServer.h"
 
+#include "src/codec/codec.h"
+#include "src/codec/dispatcher.h"
 #include "src/client/service/service.h"
 
 using namespace muduo;
@@ -18,7 +17,6 @@ using namespace muduo::net;
 
 namespace gateway
 {
-
 class GatewayServer : noncopyable
 {
 public:

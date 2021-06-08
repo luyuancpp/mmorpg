@@ -8,7 +8,6 @@ using namespace common;
 
 namespace database
 {
-
     void MysqlDatabase::AddTable(const ::google::protobuf::Message& message_default_instance)
     {
         pb2db_.AddTable(message_default_instance);

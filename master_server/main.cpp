@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     InetAddress listen_addr("127.0.0.1", 2004);
     InetAddress database_addr("127.0.0.1", 2003);
 
-    database.Connect(&loop, database_addr);
+    db_server.Connect(&loop, database_addr);
 
     RpcServer server(&loop, listen_addr);
     server.setThreadNum(nThreads);

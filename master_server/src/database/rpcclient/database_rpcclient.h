@@ -35,7 +35,7 @@ namespace master
 
 }// namespace master
 
-#define  database master::DatabaseRpcClient::GetSingleton() 
+#define  db_server master::DatabaseRpcClient::GetSingleton() 
 
 #endif // MASTER_SERVER_SRC_DATABASE_RPCCLIENT_DATABASE_RPCCLIENT_H_
 
