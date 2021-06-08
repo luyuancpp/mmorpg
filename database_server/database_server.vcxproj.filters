@@ -24,6 +24,9 @@
     <ClCompile Include="src\mysql_database\mysql_database.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\login\service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\login\service.h">
