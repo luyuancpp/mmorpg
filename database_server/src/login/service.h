@@ -13,18 +13,41 @@
 using namespace muduo;
 using namespace muduo::net;
 
+namespace database
+{
+    class MysqlDatabase;
+}//namespace database;
+
+namespace common
+{
+    class RedisClient;
+}//namespace common;
+
 namespace l2db
 {
+    
     class LoginServiceImpl : public LoginService
     {
     public:
+        using MysqlClientPtr = std::shared_ptr<database::MysqlDatabase>;
+        using RedisClientPtr = std::shared_ptr<common::RedisClient>;
         virtual void Login(::google::protobuf::RpcController* controller,
             const l2db::LoginRequest* request,
             l2db::LoginResponse* response,
-            ::google::protobuf::Closure* done)override
+            ::google::protobuf::Closure* done)override;
+
+        void set_player_mysql_client(MysqlClientPtr& ptr)
         {
-            done->Run();
+            database_ = ptr;
         }
+
+        void set_redis_client(RedisClientPtr& ptr)
+        {
+            redis_ = ptr;
+        }
+    private:
+        MysqlClientPtr database_;
+        RedisClientPtr redis_;
     };
 
 }  // namespace l2db
