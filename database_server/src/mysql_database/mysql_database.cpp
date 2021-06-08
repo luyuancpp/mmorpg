@@ -30,6 +30,10 @@ void MysqlDatabase::LoadOne(::google::protobuf::Message& message)
 {
     auto sql = pb2db_.GetSelectAllSql(message);
     auto result = QueryOne(sql);
+    if (nullptr == result)
+    {
+        return;
+    }
     FillMessageField(message, *result);
 }
 
@@ -37,12 +41,28 @@ void MysqlDatabase::LoadOne(::google::protobuf::Message& message, const std::str
 {
     auto sql = pb2db_.GetSelectSql(message, where_clause);
     auto result = QueryOne(sql);
+    if (nullptr == result)
+    {
+        return;
+    }
     FillMessageField(message, *result);
 }
 
 void MysqlDatabase::SaveOne(const ::google::protobuf::Message& message)
 {
     auto sql = pb2db_.GetInsertOnDupUpdateSql(message);
+    QueryOne(sql);
+}
+
+void MysqlDatabase::Delete(const ::google::protobuf::Message& message)
+{
+    auto sql = pb2db_.GetDeleteSql(message);
+    QueryOne(sql);
+}
+
+void MysqlDatabase::Delete(const ::google::protobuf::Message& message, const std::string& where_clause)
+{
+    auto sql = pb2db_.GetDeleteSql(message, where_clause);
     QueryOne(sql);
 }
 
