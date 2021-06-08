@@ -12,14 +12,14 @@ using DatabasePtr = std::unique_ptr<MysqlDatabase>;
 DatabasePtr query_database;
 ConnectionParameters query_database_param{ "127.0.0.1", "root" , "luyuan616586", "game" , 3306 };
 
-TEST(RedisTest, ConectMysql)
+TEST(MysqlClientTest, ConectMysql)
 {
     MysqlDatabase client;
     client.Connect(query_database_param);
     client.Init();
 }
 
-TEST(RedisTest, QueryOptionMessage)
+TEST(MysqlClientTest, QueryOptionMessage)
 {
     account_database_one_test save_message;
     save_message.set_account("lu hailong");
@@ -29,9 +29,13 @@ TEST(RedisTest, QueryOptionMessage)
     query_database->LoadOne(load_message);
     EXPECT_EQ(save_message.account(), load_message.account());
     EXPECT_EQ(save_message.password(), load_message.password());
+    account_database_one_test load_message_where;
+    query_database->LoadOne(load_message_where, "account = 'lu hailong'");
+    EXPECT_EQ(save_message.account(), load_message_where.account());
+    EXPECT_EQ(save_message.password(), load_message_where.password());
 }
 
-TEST(RedisTest, QueryRepeatedMessage)
+TEST(MysqlClientTest, QueryRepeatedMessage)
 {
     account_database_all_test save_message;
     auto first =  save_message.mutable_account_password()->Add();
@@ -43,7 +47,6 @@ TEST(RedisTest, QueryRepeatedMessage)
     query_database->SaveAll<::account_database_one_test>(save_message);
     account_database_all_test load_message;
     query_database->LoadAll<::account_database_one_test>(load_message);
-    load_message.PrintDebugString();
 }
 
 int main(int argc, char** argv)
