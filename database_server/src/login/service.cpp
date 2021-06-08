@@ -17,7 +17,7 @@ namespace l2db
             database_->LoadOne(response_account_database,
                 std::string("account = ") + request->account());
         }
-        if (response->player_account().password().empty())
+        if (response_account_database.password().empty())
         {
             response_account_database.set_account(request->account());
             response_account_database.set_password(request->password());
