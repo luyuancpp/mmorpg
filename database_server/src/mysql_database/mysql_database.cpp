@@ -2,16 +2,22 @@
 
 #include "muduo/base/Logging.h"
 
-#include "mysql_database_table.pb.h"
+#include "mysql_database_test.pb.h"
 
 using namespace common;
 
 namespace database
 {
+
+    void MysqlDatabase::AddTable(const ::google::protobuf::Message& message_default_instance)
+    {
+        pb2db_.AddTable(message_default_instance);
+    }
+
 void MysqlDatabase::Init()
 {
     pb2db_.set_mysql(connection());
-    pb2db_.AddTable(account_database_one_test::default_instance());
+    
     for (auto& it : pb2db_.tables())
     {
         Execute(pb2db_.GetCreateTableSql(it.second.default_instance()));

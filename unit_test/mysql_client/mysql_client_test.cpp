@@ -3,7 +3,7 @@
 #include "src/mysql_client/mysql_client.h"
 #include "src/mysql_database/mysql_database.h"
 
-#include "mysql_database_table.pb.h"
+#include "mysql_database_test.pb.h"
 
 using namespace common;
 using namespace database;
@@ -19,6 +19,7 @@ TEST(MysqlClientTest, ConectMysql)
 {
     MysqlDatabase client;
     client.Connect(query_database_param);
+    query_database->AddTable(account_database_one_test::default_instance());
     client.Init();
 }
 
@@ -84,8 +85,8 @@ int main(int argc, char** argv)
 {
     query_database = std::make_unique<MysqlDatabase>();
     query_database->Connect(query_database_param);
-    query_database->Init();
-
+    query_database->AddTable(account_database_one_test::default_instance());
+    query_database->Init();    
     testing::InitGoogleTest(&argc, argv);
 
     return RUN_ALL_TESTS();
