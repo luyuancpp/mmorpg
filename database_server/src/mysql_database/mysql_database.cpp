@@ -33,6 +33,13 @@ void MysqlDatabase::LoadOne(::google::protobuf::Message& message)
     FillMessageField(message, *result);
 }
 
+void MysqlDatabase::LoadOne(::google::protobuf::Message& message, const std::string& where_clause)
+{
+    auto sql = pb2db_.GetSelectSql(message, where_clause);
+    auto result = QueryOne(sql);
+    FillMessageField(message, *result);
+}
+
 void MysqlDatabase::SaveOne(const ::google::protobuf::Message& message)
 {
     auto sql = pb2db_.GetInsertOnDupUpdateSql(message);

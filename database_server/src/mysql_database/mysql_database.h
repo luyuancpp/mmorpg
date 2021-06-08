@@ -12,7 +12,7 @@ public:
     void Init();
 
     void LoadOne(::google::protobuf::Message& message);
-
+    void LoadOne(::google::protobuf::Message& message, const std::string& where_clause);
     template<typename T>
     void LoadAll(::google::protobuf::Message& message)
     {
@@ -35,7 +35,6 @@ public:
     }
 
     void SaveOne(const ::google::protobuf::Message& message);
-
     template<typename T>
     void SaveAll(const ::google::protobuf::Message& message)
     {
