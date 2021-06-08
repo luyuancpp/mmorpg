@@ -6,7 +6,7 @@
 
 namespace database
 {
-class MysqlDatabase :  public common::MysqlClient
+class MysqlDatabase : public common::MysqlClient
 {
 public:
     void AddTable(const ::google::protobuf::Message& message_default_instance);
@@ -57,6 +57,8 @@ public:
 private:
     common::Pb2DbTables pb2db_;
 };
+
+using DatabasePtr = std::unique_ptr<MysqlDatabase>;
 
 }//namespace database
 

@@ -1,6 +1,5 @@
 ﻿#include <gtest/gtest.h>
 
-#include "src/mysql_client/mysql_client.h"
 #include "src/mysql_database/mysql_database.h"
 
 #include "mysql_database_test.pb.h"
@@ -8,7 +7,6 @@
 using namespace common;
 using namespace database;
 
-using DatabasePtr = std::unique_ptr<MysqlDatabase>;
 DatabasePtr query_database;
 ConnectionParameters query_database_param{ "127.0.0.1", "root" , "luyuan616586", "game" , 3306 };
 std::string main_acount("lu hailong");

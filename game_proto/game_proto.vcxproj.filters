@@ -48,6 +48,12 @@
     <ClInclude Include="pbc\gw2g.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="pbc\db_base.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pbc\mysql_database_table.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pbc\pb3.pb.cc">
@@ -81,6 +87,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pbc\gw2g.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pbc\db_base.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pbc\mysql_database_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
