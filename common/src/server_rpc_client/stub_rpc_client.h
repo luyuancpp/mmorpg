@@ -1,5 +1,5 @@
-#ifndef SRC_SERVER_RPCCLIENT_LOGIN_CLIENT_H_
-#define SRC_SERVER_RPCCLIENT_LOGIN_CLIENT_H_
+#ifndef SRC_SERVER_RPCCLIENT_STUB_RPC_CLIENT_H_
+#define SRC_SERVER_RPCCLIENT_STUB_RPC_CLIENT_H_
 
 #include <memory>
 
@@ -22,7 +22,6 @@ template<typename StubClass>
 class RpcClient : noncopyable
 {
 public:
-
     using StubPtr = std::shared_ptr<StubClass>;
 
     RpcClient(EventLoop* loop,
@@ -90,4 +89,4 @@ private:
 };
 } // namespace common
 
-#endif // SRC_SERVER_RPCCLIENT_LOGIN_CLIENT_H_
+#endif // SRC_SERVER_RPCCLIENT_STUB_RPC_CLIENT_H_
