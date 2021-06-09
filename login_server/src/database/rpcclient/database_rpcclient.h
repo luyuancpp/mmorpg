@@ -10,7 +10,7 @@ using namespace muduo::net;
 
 namespace login
 {
-    class DatabaseRpcClient
+    class DbRpcClient
     {
     public:
         using RpcStub = common::RpcClient <l2db::LoginService_Stub>;
@@ -23,11 +23,13 @@ namespace login
             database_client_->connect();
         }
 
-        static DatabaseRpcClient& GetSingleton()
+        static DbRpcClient& s()
         {
-            static DatabaseRpcClient singleton;
+            static DbRpcClient singleton;
             return singleton;
         }
+
+        RpcClientPtr& db_client() { return database_client_; }
 
         void Login(const l2db::LoginRequest& request);
         void LoginReplied(l2db::LoginResponse* response);
@@ -37,8 +39,6 @@ namespace login
     };
 
 }// namespace login
-
-#define  db_server login::DatabaseRpcClient::GetSingleton() 
 
 #endif // LOGIN_SERVER_SRC_DATABASE_RPCCLIENT_DATABASE_RPC_CLIENT_H_
 
