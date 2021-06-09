@@ -41,22 +41,21 @@ public:
         client_.connect();
     }
 
-    template<typename Request, typename Response, typename Class>
-    void SendRequest(const Request& request, 
-                     Class* object, 
-                     void (Class::* method)(Response*), 
-                     void (StubClass::* stub_method)(::google::protobuf::RpcController*, const Request*, Response*, ::google::protobuf::Closure*))
+    template<typename Request, typename Response, typename StubMethod>
+    void Send(const Request& request,
+        void (method)(Response*),
+        StubMethod stub_method)
     {
         if (nullptr == stub_)
         {
             return;
         }
-        Response * presponse = new Response;
-        ((*stub_).*stub_method)(nullptr, &request, presponse, NewCallback(object, method, presponse));
+        Response* presponse = new Response;
+        ((*stub_).*stub_method)(nullptr, &request, presponse, NewCallback( method, presponse));
     }
 
     template<typename Class, typename ClosureArg,  typename StubMethod>
-    void SendRequest1(Class* object, 
+    void SendRpcString(Class* object, 
                       ClosureArg* closurearg,
                      void (Class::* method)(ClosureArg*),
                      StubMethod stub_method)
@@ -68,6 +67,17 @@ public:
                                 NewCallback(object, method, closurearg));
     }
 
+    template<typename ClosureArg, typename StubMethod>
+    void SendRpcString(ClosureArg* closurearg,
+        void (method)(ClosureArg*),
+        StubMethod stub_method)
+    {
+        if (nullptr == stub_) { return; }
+        ((*stub_).*stub_method)(nullptr,
+            &closurearg->server_request_,
+            closurearg->server_respone_,
+            NewCallback(method, closurearg));
+    }
 private:
     void onConnection(const TcpConnectionPtr& conn)
     {

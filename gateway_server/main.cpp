@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
     InetAddress login_server_addr("127.0.0.1", 2001);
     InetAddress server_addr("127.0.0.1", 2000);
     GatewayServer server(&loop, server_addr);
-    login.ConnectLogin(&loop, login_server_addr);
+    LoginClient::s().Connect(&loop, login_server_addr);
     server.Start();
 
     loop.loop();

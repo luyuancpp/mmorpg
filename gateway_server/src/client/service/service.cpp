@@ -8,7 +8,12 @@
 namespace gateway
 {
 
-void ClientReceiver::OnAnswer(const muduo::net::TcpConnectionPtr& conn,
+    void LoginReplied(gw2l::LoginResponse* response)
+    {
+        LOG_INFO << "login : " << response->DebugString();
+    }
+
+void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
 {
@@ -18,8 +23,7 @@ void ClientReceiver::OnAnswer(const muduo::net::TcpConnectionPtr& conn,
     gw2l::LoginRequest request;
     request.set_account(message->account());
     request.set_password(message->password());
-    login.SendRequest<gw2l::LoginRequest, gw2l::LoginResponse>
-        (request, &login, &LoginRpcClient::Replied, &gw2l::LoginService_Stub::Login);
+    LoginClient::s().Send(request, LoginReplied, &gw2l::LoginService_Stub::Login);
 }
 
 }

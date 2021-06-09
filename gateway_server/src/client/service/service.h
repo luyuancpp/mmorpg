@@ -30,7 +30,7 @@ public:
 
 
     //client to gateway 
-    void OnAnswer(const muduo::net::TcpConnectionPtr& conn,
+    void OnLogin(const muduo::net::TcpConnectionPtr& conn,
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
