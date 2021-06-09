@@ -26,6 +26,16 @@ namespace gateway
             return singleton;
         }
 
+        template<typename Request,  typename MethodParam, typename Class, typename StubMethod>
+        void Send(const Request& request,
+            void (Class::* method)(MethodParam),
+            MethodParam method_param,
+            Class* object,            
+            StubMethod stub_method)
+        {
+            login_client_->Send<Request,  MethodParam, Class, StubMethod>(request, method, method_param, object, stub_method);
+        }
+
         template<typename Request, typename Response, typename StubMethod>
         void Send(const Request& request,
             void (method)(Response*),

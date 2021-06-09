@@ -54,6 +54,20 @@ public:
         ((*stub_).*stub_method)(nullptr, &request, presponse, NewCallback( method, presponse));
     }
 
+    template<typename Request,  typename MethodParam, typename Class, typename StubMethod>
+    void Send(const Request& request,
+        void (Class::* method)(MethodParam),
+        MethodParam method_param,
+        Class* object,
+        StubMethod stub_method)
+    {
+        if (nullptr == stub_)
+        {
+            return;
+        }
+        ((*stub_).*stub_method)(nullptr, &request, method_param->server_respone_, NewCallback(object, method, method_param));
+    }
+
     template<typename Class, typename ClosureArg,  typename StubMethod>
     void SendRpcString(Class* object, 
                       ClosureArg* closurearg,
