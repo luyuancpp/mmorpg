@@ -83,7 +83,7 @@
     <ClInclude Include="src\snow_flake\snow_flake.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_rpc_client\login_client.h">
+    <ClInclude Include="src\server_rpc_client\stub_rpc_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\mysql_client\mysql_client.h">

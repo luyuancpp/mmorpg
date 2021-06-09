@@ -3,7 +3,7 @@
 
 #include "l2db.pb.h"
 
-#include "src/server_rpc_client/login_client.h"
+#include "src/server_rpc_client/stub_rpc_client.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -13,7 +13,7 @@ namespace login
     class DbRpcClient
     {
     public:
-        using RpcStub = common::RpcClient <l2db::LoginService_Stub>;
+        using RpcStub = common::RpcClient<l2db::LoginService_Stub>;
         using RpcClientPtr = std::shared_ptr<RpcStub>;
 
         void Connect(EventLoop* loop,
