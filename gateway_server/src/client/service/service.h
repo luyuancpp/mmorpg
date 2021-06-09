@@ -8,6 +8,7 @@
 #include "muduo/base/noncopyable.h"
 #include "muduo/net/EventLoop.h"
 
+#include "src/server_rpc_client/rpc_client_closure.h"
 #include "src/server_rpc_client/stub_rpc_client.h"
 #include "src/login/login_rpcclient.h"
 
@@ -34,6 +35,9 @@ public:
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
+    using LoginCCP = common::ClientClosureParam<LoginResponse, gw2l::LoginResponse>;
+    using LoginCCPPtr = std::shared_ptr<LoginCCP>;
+    void LoginReplied(LoginCCPPtr cp);
 
 private:
     ProtobufCodec& codec_;
