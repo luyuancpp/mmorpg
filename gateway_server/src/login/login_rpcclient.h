@@ -10,38 +10,32 @@ using namespace muduo::net;
 
 namespace gateway
 {
-    class LoginRpcClient : muduo::noncopyable
+    class LoginClient : muduo::noncopyable
     {
     public:
         using StubClass = gw2l::LoginService_Stub;
         using LoginStub = common::RpcClient<gw2l::LoginService_Stub>;
         using RpcClientPtr = std::shared_ptr<LoginStub>;
 
-        void ConnectLogin(EventLoop* loop,
+        void Connect(EventLoop* loop,
             const InetAddress& login_server_addr);
 
-        static LoginRpcClient& GetSingleton()
+        static LoginClient& s()
         {
-            static LoginRpcClient singleton;
+            static LoginClient singleton;
             return singleton;
         }
 
-        template<typename Request, typename Response, typename Class>
-        void SendRequest(const Request& request,
-            Class* object,
-            void (Class::* method)(Response*),
-            void (StubClass::* stub_method)(::google::protobuf::RpcController*, const Request*, Response*, ::google::protobuf::Closure*))
+        template<typename Request, typename Response, typename StubMethod>
+        void Send(const Request& request,
+            void (method)(Response*),
+            StubMethod stub_method)
         {
-            login_client_->SendRequest(request, object, method, stub_method);
+            login_client_->Send<Request, Response, StubMethod>(request, method, stub_method);
         }
-
-        void Replied(gw2l::LoginResponse* response);
-
     private:
         RpcClientPtr login_client_;
     };
 }//namespace gateway
-
-#define  login gateway::LoginRpcClient::GetSingleton() 
 
 #endif // !GATEWAY_SERVER_SRC_LOGIN_LOGIN_CLIENT_H_

@@ -30,14 +30,22 @@ namespace login
         }
 
         template<typename Class, typename ClosureArg, typename StubMethod>
-        void SendRequest1(Class* object,
+        void SendRequest(Class* object,
             ClosureArg* closurearg,
             void (Class::* method)(ClosureArg*),
             StubMethod stub_method)
         {
-            database_client_->SendRequest1(object, closurearg, method, stub_method);
+            database_client_->SendRpcString(object, closurearg, method, stub_method);
         }
 
+        template<typename ClosureArg, typename StubMethod>
+        void SendRequest(ClosureArg* closurearg,
+            void (method)(ClosureArg*),
+            StubMethod stub_method)
+        {
+            database_client_->SendRpcString(closurearg, method, stub_method);
+        }
+  
     private:
         RpcClientPtr database_client_;
     };
