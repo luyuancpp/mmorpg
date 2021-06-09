@@ -22,10 +22,8 @@ namespace gw2l
         using LoginResponParam = common::ClosureParam<l2db::LoginRequest,
             l2db::LoginResponse,
             gw2l::LoginResponse>;
-        void DbLoginReplied(LoginResponParam* respone)
-        {
-            std::unique_ptr<LoginResponParam> d(respone);
-        }
+        void DbLoginReplied(LoginResponParam* respone);
+        
     };
 
 }  // namespace gw2l
