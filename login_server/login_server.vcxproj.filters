@@ -27,6 +27,9 @@
     <ClCompile Include="src\master\rpcclient\master_rpcclient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\gateway\service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="login_server.h">

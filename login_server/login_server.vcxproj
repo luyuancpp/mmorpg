@@ -154,6 +154,7 @@
     <ClCompile Include="login_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\database\rpcclient\database_rpcclient.cpp" />
+    <ClCompile Include="src\gateway\service.cpp" />
     <ClCompile Include="src\master\rpcclient\master_rpcclient.cpp" />
   </ItemGroup>
   <ItemGroup>

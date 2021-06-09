@@ -12,6 +12,8 @@ message LoginRequest
 message LoginResponse
 {
 	ClientError error = 1;
+  string account = 2;
+  string password = 3;
 }
 
 service LoginService {

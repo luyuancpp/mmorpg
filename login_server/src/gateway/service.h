@@ -7,30 +7,40 @@
 
 #include "gw2l.pb.h"
 
-#include "muduo/base/Logging.h"
-#include "muduo/net/protorpc/RpcServer.h"
-
-#include "src/database/rpcclient/database_rpcclient.h"
-
-using namespace muduo;
-using namespace muduo::net;
-
 namespace gw2l
 {
+    template <typename ServerRequest, typename ServerRespone, typename ClientRespone>
+    struct ClosureParam
+    {
+        ClosureParam(ClientRespone* client_respone,
+            ::google::protobuf::Closure* client_closure)
+            : server_respone_(new ServerRespone()),
+            client_closure_(client_closure),
+            client_respone_(client_respone)
+        {
+
+        }
+        ~ClosureParam() { client_closure_->Run(); };
+        ServerRespone* server_respone_{ nullptr };
+        ::google::protobuf::Closure* client_closure_{ nullptr };
+        ClientRespone* client_respone_{ nullptr };
+        ServerRequest server_request_;
+    };
+
     class LoginServiceImpl : public LoginService
     {
     public:
+        using MessagePtr = std::unique_ptr<google::protobuf::Message>;
+        
         virtual void Login(::google::protobuf::RpcController* controller,
             const gw2l::LoginRequest* request,
             gw2l::LoginResponse* response,
-            ::google::protobuf::Closure* done)override
+            ::google::protobuf::Closure* done)override;
+       
+        template <typename ServerRespone, typename CClosure, typename ClientRespone>
+        void DbLoginReplied(ClosureParam<ServerRespone, CClosure, ClientRespone>* respone) 
         {
-            done->Run();
-
-            l2db::LoginRequest db_request;
-            db_request.set_account(request->account());
-            db_request.set_password(request->password());
-            db_server.Login(db_request);
+            std::unique_ptr<ClosureParam<ServerRespone, CClosure, ClientRespone>> d(respone);
         }
     };
 

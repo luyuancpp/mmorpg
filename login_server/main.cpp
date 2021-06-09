@@ -1,5 +1,7 @@
 #include "login_server.h"
 
+#include "muduo/net/protorpc/RpcServer.h"
+
 #include "src/database/rpcclient/database_rpcclient.h"
 #include "src/gateway/service.h"
 #include "src/master/rpcclient/master_rpcclient.h"
@@ -12,7 +14,7 @@ int main(int argc, char* argv[])
     InetAddress database_addr("127.0.0.1", 2003);
     InetAddress master_addr("127.0.0.1", 2004);
 
-    db_server.Connect(&loop, database_addr);
+    login::DbRpcClient::s().Connect(&loop, database_addr);
     master.Connect(&loop, master_addr);
 
     gw2l::LoginServiceImpl impl;
