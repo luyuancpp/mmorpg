@@ -56,11 +56,11 @@ public:
         ((*stub_).*stub_method)(nullptr, &request, presponse, NewCallback(object, method, presponse));
     }
 
-    template<typename Class, typename ClosureArg,  typename Funtype>
+    template<typename Class, typename ClosureArg,  typename StubMethod>
     void SendRequest1(Class* object, 
                       ClosureArg* closurearg,
                      void (Class::* method)(ClosureArg*),
-                     Funtype stub_method)
+                     StubMethod stub_method)
     {
         if (nullptr == stub_){ return; }
         ((*stub_).*stub_method)(nullptr, 
