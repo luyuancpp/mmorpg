@@ -29,10 +29,14 @@ namespace login
             return singleton;
         }
 
-        RpcClientPtr& db_client() { return database_client_; }
-
-        void Login(const l2db::LoginRequest& request);
-        void LoginReplied(l2db::LoginResponse* response);
+        template<typename Class, typename ClosureArg, typename StubMethod>
+        void SendRequest1(Class* object,
+            ClosureArg* closurearg,
+            void (Class::* method)(ClosureArg*),
+            StubMethod stub_method)
+        {
+            database_client_->SendRequest1(object, closurearg, method, stub_method);
+        }
 
     private:
         RpcClientPtr database_client_;
