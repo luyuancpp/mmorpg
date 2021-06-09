@@ -12,7 +12,6 @@ void ClientReceiver::OnAnswer(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
 {
-    LOG_INFO << "login : " << message->DebugString();
     LoginResponse respone;
     codec_.send(conn, respone);
 

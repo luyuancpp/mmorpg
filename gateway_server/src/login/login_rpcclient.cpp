@@ -10,6 +10,7 @@ namespace gateway
 
     void LoginRpcClient::Replied(gw2l::LoginResponse* response)
     {
+        LOG_INFO << "login : " << response->DebugString();
 
     }
 
