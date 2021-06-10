@@ -69,7 +69,7 @@ private:
         const LoginResponsePtr& message,
         muduo::Timestamp)
     {
-        LOG_INFO << "onUnknownMessage: " << message->DebugString().c_str();
+        LOG_INFO << "onlogin: " << message->DebugString().c_str();
     }
 
     EventLoop* loop_;
