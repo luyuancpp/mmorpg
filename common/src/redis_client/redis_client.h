@@ -41,6 +41,10 @@ private:
     ContextPtr context_;
 };
 
+using RedisClientPtr = std::shared_ptr<common::RedisClient>;
+
 }// namespase common
+
+
 
 #endif // COMMON_SRC_REDIS_CLIENT_REDIS_CLIENT_H_

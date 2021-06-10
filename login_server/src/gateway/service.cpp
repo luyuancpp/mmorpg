@@ -28,6 +28,16 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     gw2l::LoginResponse* response,
     ::google::protobuf::Closure* done)
 {
+    ::account_database response_account_database;
+    redis_->Load(response_account_database, request->account());
+    if (!response_account_database.password().empty())
+    {
+        response->set_account(response_account_database.account());
+        response->set_password(response_account_database.password());
+        done->Run();
+        return;
+    }
+
     LoginRP cp(std::make_shared<LoginRpcString>(response, done));
     cp->server_request_.set_account(request->account());
     cp->server_request_.set_password(request->password());

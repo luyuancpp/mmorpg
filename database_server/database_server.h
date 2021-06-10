@@ -30,7 +30,7 @@ namespace database
 
         void Start();
 
-        void registerService(::google::protobuf::Service*);
+        void RegisterService(::google::protobuf::Service*);
     private:
         muduo::net::RpcServer server_;
         MysqlClientPtr database_;

@@ -1,10 +1,6 @@
 #ifndef SRC_LOGIN_SERVICE_SERVICE_H_
 #define SRC_LOGIN_SERVICE_SERVICE_H_
 
-#ifdef __linux__
-#include <unistd.h>
-#endif//__linux__
-
 #include "l2db.pb.h"
 
 #include "muduo/base/Logging.h"
