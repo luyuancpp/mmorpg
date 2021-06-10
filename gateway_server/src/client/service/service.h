@@ -35,7 +35,7 @@ public:
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
-    using LoginCCP = common::ClientClosureParam<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>;
+    using LoginCCP = common::ClientClosure<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>;
     using LoginCCPPtr = std::shared_ptr<LoginCCP>;
     void LoginReplied(LoginCCPPtr cp);
 

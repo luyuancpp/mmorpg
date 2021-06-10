@@ -6,21 +6,20 @@
 namespace common
 {
     template <typename ServerRequest, typename ServerRespone, typename ClientRespone>
-    struct ClosureParam
+    struct RpcString
     {
-        ClosureParam(ClientRespone* client_respone,
+        RpcString(ClientRespone* client_respone,
             ::google::protobuf::Closure* client_closure)
-            : server_respone_(new ServerRespone()),
+            : client_respone_(client_respone),
             client_closure_(client_closure),
-            client_respone_(client_respone)
-        {
+            server_respone_(new ServerRespone())// delete for rpcchanel
+            {}
 
-        }
-        ~ClosureParam() { client_closure_->Run(); };
-        ServerRespone* server_respone_{ nullptr };
-        ::google::protobuf::Closure* client_closure_{ nullptr };
+        ~RpcString() { client_closure_->Run(); };//this function delete server_respone_
         ClientRespone* client_respone_{ nullptr };
         ServerRequest server_request_;
+        ServerRespone* server_respone_{ nullptr };  
+        ::google::protobuf::Closure* client_closure_{ nullptr };
     };
 
 }//namespace common
