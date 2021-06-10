@@ -11,8 +11,6 @@ int main(int argc, char* argv[])
     GatewayServer server(&loop, server_addr);
     LoginClient::s().Connect(&loop, login_server_addr);
     server.Start();
-
     loop.loop();
-
     return 0;
 }

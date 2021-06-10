@@ -38,5 +38,8 @@
     <ClInclude Include="src\mysql_database\mysql_database.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="database_server.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
