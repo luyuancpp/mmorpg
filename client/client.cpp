@@ -50,7 +50,6 @@ private:
 
         if (conn->connected())
         {
-            CurrentThread::sleepUsec(500);
             codec_.send(conn, *messageToSend);
         }
         else
@@ -70,8 +69,7 @@ private:
         const LoginResponsePtr& message,
         muduo::Timestamp)
     {
-        LOG_INFO << "onlogin: " << message->DebugString().c_str();
-        //codec_.send(conn, *messageToSend);
+        codec_.send(conn, *messageToSend);
     }
 
     EventLoop* loop_;
