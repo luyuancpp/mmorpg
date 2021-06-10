@@ -17,10 +17,9 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     LoginCCPPtr p(std::make_shared<LoginCCP>(conn));
-    gw2l::LoginRequest request;
-    request.set_account(message->account());
-    request.set_password(message->password());
-    LoginClient::s().Send(request, &ClientReceiver::LoginReplied, p, this, &gw2l::LoginService_Stub::Login);
+    p->server_request_.set_account(message->account());
+    p->server_request_.set_password(message->password());
+    LoginClient::s().Send(&ClientReceiver::LoginReplied, p, this, &gw2l::LoginService_Stub::Login);
 }
 
 void ClientReceiver::LoginReplied(LoginCCPPtr cp)

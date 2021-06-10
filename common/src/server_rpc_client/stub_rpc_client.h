@@ -54,9 +54,8 @@ public:
         ((*stub_).*stub_method)(nullptr, &request, presponse, NewCallback( method, presponse));
     }
 
-    template<typename Request,  typename MethodParam, typename Class, typename StubMethod>
-    void Send(const Request& request,
-        void (Class::* method)(MethodParam),
+    template<typename MethodParam, typename Class, typename StubMethod>
+    void Send(void (Class::* method)(MethodParam),
         MethodParam method_param,
         Class* object,
         StubMethod stub_method)
@@ -65,7 +64,10 @@ public:
         {
             return;
         }
-        ((*stub_).*stub_method)(nullptr, &request, method_param->server_respone_, NewCallback(object, method, method_param));
+        ((*stub_).*stub_method)(nullptr, 
+            &method_param->server_request_, 
+            method_param->server_respone_, 
+            NewCallback(object, method, method_param));
     }
 
     template<typename Class, typename ClosureArg,  typename StubMethod>
