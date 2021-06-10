@@ -71,10 +71,10 @@ public:
     }
 
     template<typename Class, typename ClosureArg,  typename StubMethod>
-    void SendRpcString(Class* object, 
-                      ClosureArg* closurearg,
-                     void (Class::* method)(ClosureArg*),
-                     StubMethod stub_method)
+    void SendRpcString(Class* object,
+        void (method)(ClosureArg),
+        ClosureArg closurearg,
+        StubMethod stub_method)
     {
         if (nullptr == stub_){ return; }
         ((*stub_).*stub_method)(nullptr, 
@@ -84,8 +84,9 @@ public:
     }
 
     template<typename ClosureArg, typename StubMethod>
-    void SendRpcString(ClosureArg* closurearg,
-        void (method)(ClosureArg*),
+    void SendRpcString(
+        void (method)(ClosureArg),
+        ClosureArg closurearg,
         StubMethod stub_method)
     {
         if (nullptr == stub_) { return; }

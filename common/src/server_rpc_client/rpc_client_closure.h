@@ -8,13 +8,9 @@ namespace common
     {
         ClientClosureParam(const muduo::net::TcpConnectionPtr& cc)
             : server_respone_(new ServerRespone()),
-              client_connection_(cc)
-        {
-
-        }
+              client_connection_(cc){}
 
         ~ClientClosureParam() {};
-
         ClientRespone client_respone_;
         ServerRequest server_request_;
         ServerRespone* server_respone_{ nullptr };

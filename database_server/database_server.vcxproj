@@ -155,6 +155,7 @@
     <ClCompile Include="src\mysql_database\mysql_database.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="database_server.h" />
     <ClInclude Include="src\login\service.h" />
     <ClInclude Include="src\master\service.h" />
     <ClInclude Include="src\mysql_database\mysql_database.h" />

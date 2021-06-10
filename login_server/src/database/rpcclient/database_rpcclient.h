@@ -31,19 +31,20 @@ namespace login
 
         template<typename Class, typename ClosureArg, typename StubMethod>
         void SendRequest(Class* object,
-            ClosureArg* closurearg,
-            void (Class::* method)(ClosureArg*),
+            void (method)(ClosureArg),
+            ClosureArg closurearg,
             StubMethod stub_method)
         {
             database_client_->SendRpcString(object, closurearg, method, stub_method);
         }
 
         template<typename ClosureArg, typename StubMethod>
-        void SendRequest(ClosureArg* closurearg,
-            void (method)(ClosureArg*),
+        void SendRequest(
+            void (method)(ClosureArg),
+            ClosureArg closurearg,
             StubMethod stub_method)
         {
-            database_client_->SendRpcString(closurearg, method, stub_method);
+            database_client_->SendRpcString(method, closurearg, stub_method);
         }
   
     private:
