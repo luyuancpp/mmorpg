@@ -50,6 +50,7 @@ private:
 
         if (conn->connected())
         {
+            CurrentThread::sleepUsec(500);
             codec_.send(conn, *messageToSend);
         }
         else
@@ -65,17 +66,19 @@ private:
         LOG_INFO << "onUnknownMessage: " << message->GetTypeName();
     }
 
-    void onAnswer(const muduo::net::TcpConnectionPtr&,
+    void onAnswer(const muduo::net::TcpConnectionPtr& conn,
         const LoginResponsePtr& message,
         muduo::Timestamp)
     {
         LOG_INFO << "onlogin: " << message->DebugString().c_str();
+        //codec_.send(conn, *messageToSend);
     }
 
     EventLoop* loop_;
     TcpClient client_;
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
+    
 };
 
 int main(int argc, char* argv[])
