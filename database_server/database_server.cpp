@@ -11,7 +11,7 @@ namespace database
         server_.start();
     }
 
-    void DatabaseServer::registerService(google::protobuf::Service* service)
+    void DatabaseServer::RegisterService(google::protobuf::Service* service)
     {
         server_.registerService(service);
     }

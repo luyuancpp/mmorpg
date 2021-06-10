@@ -26,7 +26,7 @@ int32_t main(int argc, char* argv[])
     l2db::LoginServiceImpl impl;
     impl.set_player_mysql_client(server.player_mysql_client());
     impl.set_redis_client(server.redis_client());
-    server.registerService(&impl);
+    server.RegisterService(&impl);
     server.Start();
     loop.loop();
     return 0;
