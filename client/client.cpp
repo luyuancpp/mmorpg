@@ -17,20 +17,20 @@ typedef std::shared_ptr<LoginResponse> LoginResponsePtr;
 
 google::protobuf::Message* messageToSend;
 
-class QueryClient : noncopyable
+class PlayerClient : noncopyable
 {
 public:
-    QueryClient(EventLoop* loop,
+    PlayerClient(EventLoop* loop,
         const InetAddress& serverAddr)
         : loop_(loop),
         client_(loop, serverAddr, "QueryClient"),
-        dispatcher_(std::bind(&QueryClient::onUnknownMessage, this, _1, _2, _3)),
+        dispatcher_(std::bind(&PlayerClient::onUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3))
     {
         dispatcher_.registerMessageCallback<LoginResponse>(
-            std::bind(&QueryClient::onAnswer, this, _1, _2, _3));
+            std::bind(&PlayerClient::onAnswer, this, _1, _2, _3));
         client_.setConnectionCallback(
-            std::bind(&QueryClient::onConnection, this, _1));
+            std::bind(&PlayerClient::onConnection, this, _1));
         client_.setMessageCallback(
             std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     }
@@ -69,7 +69,7 @@ private:
         const LoginResponsePtr& message,
         muduo::Timestamp)
     {
-        codec_.send(conn, *messageToSend);
+        LOG_INFO << "login: " << message->DebugString();
     }
 
     EventLoop* loop_;
@@ -81,17 +81,15 @@ private:
 
 int main(int argc, char* argv[])
 {
-    LOG_INFO << "pid = " << getpid();
-
     EventLoop loop;
     InetAddress serverAddr("127.0.0.1", 2000);
 
     LoginRequest query;
-    query.set_account("luhailong");
-    query.set_password("lhl.2020");
+    query.set_account("luhailong11");
+    query.set_password("lhl.2021");
     messageToSend = &query;
 
-    QueryClient client(&loop, serverAddr);
+    PlayerClient client(&loop, serverAddr);
     client.connect();
     loop.loop();
 
