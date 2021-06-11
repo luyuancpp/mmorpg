@@ -29,16 +29,14 @@ public:
     PlayerClient(EventLoop* loop,
         const InetAddress& serverAddr,
         CountDownLatch* allConnected,
-        CountDownLatch* allFinished,
-        CountDownLatch* all_close)
+        CountDownLatch* allFinished)
         : loop_(loop),
         client_(loop, serverAddr, "QueryClient"),
         dispatcher_(std::bind(&PlayerClient::onUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         all_connected_(allConnected),
         all_finished_(allFinished),
-        service_(codec_, all_finished_),
-        all_close_(all_close)
+        service_(codec_, client_)
     {
         dispatcher_.registerMessageCallback<LoginResponse>(
             std::bind(&ClientService::OnLoginReplied, &service_, _1, _2, _3));
@@ -70,7 +68,8 @@ private:
         }
         else
         {
-            all_close_->countDown();
+            service_.OnDisconnect();
+            all_finished_->countDown();
         }
     }
 
@@ -88,6 +87,5 @@ private:
     CountDownLatch* all_connected_{ nullptr };
     CountDownLatch* all_finished_{ nullptr };
     ClientService service_;
-    CountDownLatch* all_close_{ nullptr };
 };
 #endif//CLIENT_SRC_CLIENT_H_

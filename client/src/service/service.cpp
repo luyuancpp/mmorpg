@@ -9,7 +9,10 @@ void ClientService::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     conn_ = conn;
 }
 
+void ClientService::OnDisconnect()
+{
 
+}
 
 void ClientService::ReadyGo()
 {
@@ -22,6 +25,6 @@ void ClientService::ReadyGo()
 void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn, const LoginResponsePtr& message, muduo::Timestamp)
 {
     LOG_INFO << "login: " << message->DebugString();
-    all_finished_->countDown();
+    client_.disconnect();
 }
 

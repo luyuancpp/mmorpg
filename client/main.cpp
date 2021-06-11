@@ -21,7 +21,6 @@ int main(int argc, char* argv[])
 
         CountDownLatch allConnected(nClients);
         CountDownLatch allFinished(nClients);
-        CountDownLatch allClose(nClients);
 
         EventLoop loop;
         EventLoopThreadPool pool(&loop, "playerbench-client");
@@ -35,8 +34,7 @@ int main(int argc, char* argv[])
             clients.emplace_back(new PlayerClient(pool.getNextLoop(), 
                 serverAddr, 
                 &allConnected, 
-                &allFinished,
-                &allClose));
+                &allFinished));
             clients.back()->connect();
         }
         allConnected.wait();
@@ -53,7 +51,7 @@ int main(int argc, char* argv[])
         printf("%f seconds\n", seconds);
         printf("%.1f calls per second\n", nClients * seconds);
 
-        exit(0);
+        return 0;
     }
     else
     {

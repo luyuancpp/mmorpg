@@ -1,8 +1,8 @@
 #ifndef CLIENT_SRC_SERVICE_SERVICE_H_
 #define CLIENT_SRC_SERVICE_SERVICE_H_
 
-#include "muduo/base/CountDownLatch.h"
 #include "muduo/net/TcpConnection.h"
+#include "muduo/net/TcpClient.h"
 
 #include "src/codec/codec.h"
 
@@ -16,9 +16,10 @@ using namespace muduo::net;
 class ClientService
 {
 public:
-    ClientService(ProtobufCodec& codec, CountDownLatch* all_finished) 
+    ClientService(ProtobufCodec& codec,  TcpClient& client)
         : codec_(codec),
-          all_finished_(all_finished){}
+          client_(client)
+    {}
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
     void OnDisconnect();
     void ReadyGo();
@@ -30,7 +31,7 @@ public:
 private:
     ProtobufCodec& codec_;
     TcpConnectionPtr conn_;
-    CountDownLatch* all_finished_{ nullptr };
+    TcpClient& client_;
 };
 
 #endif//CLIENT_SRC_SERVICE_SERVICE_H_
