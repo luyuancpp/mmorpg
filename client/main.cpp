@@ -52,8 +52,8 @@ int main(int argc, char* argv[])
         double seconds = timeDifference(end, start);
         printf("%f seconds\n", seconds);
         printf("%.1f calls per second\n", nClients * seconds);
-        allClose.wait();
-        return 0;
+
+        exit(0);
     }
     else
     {

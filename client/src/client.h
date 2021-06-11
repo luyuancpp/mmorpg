@@ -71,7 +71,6 @@ private:
         else
         {
             all_close_->countDown();
-            loop_->quit();
         }
     }
 
