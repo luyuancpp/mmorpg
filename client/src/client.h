@@ -14,14 +14,12 @@
 
 #include "src/codec/dispatcher.h"
 #include "src/codec/codec.h"
+#include "src/service/service.h"
 
 #include "c2gw.pb.h"
 
-
 using namespace muduo;
 using namespace muduo::net;
-
-typedef std::shared_ptr<LoginResponse> LoginResponsePtr;
 
 google::protobuf::Message* messageToSend;
 
@@ -31,16 +29,19 @@ public:
     PlayerClient(EventLoop* loop,
         const InetAddress& serverAddr,
         CountDownLatch* allConnected,
-        CountDownLatch* allFinished)
+        CountDownLatch* allFinished,
+        CountDownLatch* all_close)
         : loop_(loop),
         client_(loop, serverAddr, "QueryClient"),
         dispatcher_(std::bind(&PlayerClient::onUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         all_connected_(allConnected),
-        all_finished_(allFinished)
+        all_finished_(allFinished),
+        service_(codec_, all_finished_),
+        all_close_(all_close)
     {
         dispatcher_.registerMessageCallback<LoginResponse>(
-            std::bind(&PlayerClient::OnAnswer, this, _1, _2, _3));
+            std::bind(&ClientService::OnLoginReplied, &service_, _1, _2, _3));
         client_.setConnectionCallback(
             std::bind(&PlayerClient::onConnection, this, _1));
         client_.setMessageCallback(
@@ -53,12 +54,9 @@ public:
         client_.connect();
     }
 
-    void SendRequest()
+    void ReadyGo() // qq tang ready go
     {
-        LoginRequest query;
-        query.set_account("luhailong11");
-        query.set_password("lhl.2021");
-        codec_.send(conn_, query);
+        service_.ReadyGo();
     }
 
 private:
@@ -67,12 +65,12 @@ private:
     {
         if (conn->connected())
         {
-            conn_ = conn;
+            service_.OnConnection(conn);
             all_connected_->countDown();
         }
         else
         {
-            conn_.reset();
+            all_close_->countDown();
             loop_->quit();
         }
     }
@@ -84,20 +82,13 @@ private:
         LOG_INFO << "onUnknownMessage: " << message->GetTypeName();
     }
 
-    void OnAnswer(const muduo::net::TcpConnectionPtr& conn,
-        const LoginResponsePtr& message,
-        muduo::Timestamp)
-    {
-        LOG_INFO << "login: " << message->DebugString();
-        all_finished_->countDown();
-    }
-
-    EventLoop* loop_;
+    EventLoop* loop_{ nullptr };
     TcpClient client_;
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
-    TcpConnectionPtr conn_;
-    CountDownLatch* all_connected_;
-    CountDownLatch* all_finished_;
+    CountDownLatch* all_connected_{ nullptr };
+    CountDownLatch* all_finished_{ nullptr };
+    ClientService service_;
+    CountDownLatch* all_close_{ nullptr };
 };
 #endif//CLIENT_SRC_CLIENT_H_

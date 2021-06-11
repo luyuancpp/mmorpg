@@ -21,6 +21,7 @@ int main(int argc, char* argv[])
 
         CountDownLatch allConnected(nClients);
         CountDownLatch allFinished(nClients);
+        CountDownLatch allClose(nClients);
 
         EventLoop loop;
         EventLoopThreadPool pool(&loop, "playerbench-client");
@@ -31,7 +32,11 @@ int main(int argc, char* argv[])
         std::vector<std::unique_ptr<PlayerClient>> clients;
         for (int i = 0; i < nClients; ++i)
         {
-            clients.emplace_back(new PlayerClient(pool.getNextLoop(), serverAddr, &allConnected, &allFinished));
+            clients.emplace_back(new PlayerClient(pool.getNextLoop(), 
+                serverAddr, 
+                &allConnected, 
+                &allFinished,
+                &allClose));
             clients.back()->connect();
         }
         allConnected.wait();
@@ -39,7 +44,7 @@ int main(int argc, char* argv[])
         LOG_INFO << "all connected";
         for (int i = 0; i < nClients; ++i)
         {
-            clients[i]->SendRequest();
+            clients[i]->ReadyGo();
         }
         allFinished.wait();
         Timestamp end(Timestamp::now());
@@ -47,7 +52,7 @@ int main(int argc, char* argv[])
         double seconds = timeDifference(end, start);
         printf("%f seconds\n", seconds);
         printf("%.1f calls per second\n", nClients * seconds);
-
+        allClose.wait();
         return 0;
     }
     else

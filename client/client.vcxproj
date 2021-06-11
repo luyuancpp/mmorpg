@@ -152,9 +152,13 @@
   <ItemGroup>
     <ClCompile Include="src\client.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\module\login\login.cpp" />
+    <ClCompile Include="src\service\service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client.h" />
+    <ClInclude Include="src\module\login\login.h" />
+    <ClInclude Include="src\service\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
