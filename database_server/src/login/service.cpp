@@ -10,9 +10,9 @@ namespace l2db
         l2db::LoginResponse* response, 
         ::google::protobuf::Closure* done)
     {
-        ::account_database& r_db = *response->mutable_player_account();
+        ::account_database& r_db = *response->mutable_account_player();
         redis_->Load(r_db, request->account());
-        if (response->player_account().password().empty())
+        if (response->account_player().password().empty())
         {
             database_->LoadOne(r_db,
                 std::string("account = ") + request->account());

@@ -19,8 +19,7 @@ using LoginRpcString = common::RpcString<l2db::LoginRequest,
 using LoginRP = std::shared_ptr<LoginRpcString>;
 void DbLoginReplied(LoginRP d)
 {
-    d->client_respone_->set_account(d->server_respone_->player_account().account());
-    d->client_respone_->set_password(d->server_respone_->player_account().password());
+    d->client_respone_->mutable_account_player()->CopyFrom(d->server_respone_->account_player());
 }
 
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
@@ -32,8 +31,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     redis_->Load(response_account_database, request->account());
     if (!response_account_database.password().empty())
     {
-        response->set_account(response_account_database.account());
-        response->set_password(response_account_database.password());
+        response->mutable_account_player()->CopyFrom(response_account_database);
         done->Run();
         return;
     }

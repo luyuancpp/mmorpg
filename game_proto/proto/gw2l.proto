@@ -1,6 +1,7 @@
 syntax = "proto3";
 package gw2l;
 import "common.proto";
+import "mysql_database_table.proto";
 option cc_generic_services = true;
 
 message LoginRequest
@@ -12,8 +13,7 @@ message LoginRequest
 message LoginResponse
 {
 	ClientError error = 1;
-  string account = 2;
-  string password = 3;
+  account_database account_player = 2;
 }
 
 service LoginService {
