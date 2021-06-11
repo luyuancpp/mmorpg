@@ -24,9 +24,15 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::LoginReplied(LoginCCPPtr cp)
 {
-    cp->client_respone_.set_account(cp->server_respone_->account());
-    cp->client_respone_.set_password(cp->server_respone_->password());
-    codec_.send(cp->client_connection_, cp->client_respone_);
+    cp->c_resp_.set_account(cp->s_resp_->account_player().account());
+    cp->c_resp_.set_password(cp->s_resp_->account_player().password());
+    auto& player_list = cp->s_resp_->account_player().simple_players().players();
+    for (auto it : player_list)
+    {
+        auto p = cp->c_resp_.add_players();
+        p->set_player_id(it.player_id());
+    }
+    codec_.send(cp->client_connection_, cp->c_resp_);
 }
 
 }

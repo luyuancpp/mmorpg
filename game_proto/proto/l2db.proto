@@ -13,7 +13,7 @@ message LoginRequest
 message LoginResponse
 {
 	ClientError error = 1;
-  account_database player_account = 2;
+  account_database account_player = 2;
 }
 
 service LoginService {

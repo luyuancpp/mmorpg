@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+message c_account_simple_player
+{
+  uint64 player_id = 1;
+}
+

@@ -30,8 +30,8 @@ public:
     {
         dispatcher_.registerMessageCallback<LoginRequest>(
             std::bind(&ClientReceiver::OnLogin, &client_receiver_, _1, _2, _3));
-        server_.setConnectionCallback(
-            std::bind(&GatewayServer::OnConnection, this, _1));
+        /*server_.setConnectionCallback(
+            std::bind(&GatewayServer::OnConnection, this, _1));*/
         server_.setMessageCallback(
             std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     }
@@ -44,9 +44,6 @@ public:
 private:
     void OnConnection(const TcpConnectionPtr& conn)
     {
-        LOG_INFO << conn->peerAddress().toIpPort() << " -> "
-            << conn->localAddress().toIpPort() << " is "
-            << (conn->connected() ? "UP" : "DOWN");
     }
 
     void OnUnknownMessage(const TcpConnectionPtr& conn,
