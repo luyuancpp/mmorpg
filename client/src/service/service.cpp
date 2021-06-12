@@ -38,7 +38,6 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
                                    const LoginResponsePtr& message, 
                                    muduo::Timestamp)
 {
-    LOG_INFO << "login finish ";
     if (message->players().empty())
     {
         login_.CreatePlayer();
