@@ -43,13 +43,17 @@ public:
         const CreatePlayerRequestPtr& message,
         muduo::Timestamp);
 
-    using CreatePlayerCC = common::ClientClosure<LoginResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerRespone>;
+    using CreatePlayerCC = common::ClientClosure<CreatePlayerRespone, gw2l::CreatePlayerRequest, gw2l::CreatePlayerRespone>;
     using CreatePlayerCCPtr = std::shared_ptr<CreatePlayerCC>;
     void OnServerCreatePlayerReplied(CreatePlayerCCPtr cp);
 
     void OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
+
+    using EnterGameCC = common::ClientClosure<EnterGameRespone, gw2l::CreatePlayerRequest, gw2l::CreatePlayerRespone>;
+    using EnterGameCCPtr = std::shared_ptr<EnterGameCC>;
+    void OnServerEnterGameReplied(EnterGameCCPtr cp);
 
 private:
     ProtobufCodec& codec_;

@@ -42,4 +42,21 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     DbRpcClient::s().SendRequest(DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
 }
 
+void LoginServiceImpl::CratePlayer(::google::protobuf::RpcController* controller, 
+    const gw2l::CreatePlayerRequest* request, 
+    gw2l::CreatePlayerRespone* response, 
+    ::google::protobuf::Closure* done)
+{
+    response->mutable_account_player()->mutable_simple_players()->add_players()->set_player_id(1);
+    done->Run();
+}
+
+void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
+    const ::gw2l::EnterGameRequest* request,
+    ::gw2l::EnterGameRequest* response,
+    ::google::protobuf::Closure* done)
+{
+    done->Run();
+}
+
 }  // namespace gw2l
