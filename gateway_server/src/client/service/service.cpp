@@ -31,7 +31,10 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     LoginCCPtr p(std::make_shared<LoginCC>(conn));
     p->s_rqst_.set_account(message->account());
     p->s_rqst_.set_password(message->password());
-    LoginClient::s().Send(&ClientReceiver::OnServerLoginReplied, p, this, &gw2l::LoginService_Stub::Login);
+    LoginClient::s().Send(&ClientReceiver::OnServerLoginReplied, 
+        p, 
+        this, 
+        &gw2l::LoginService_Stub::Login);
 }
 
 void ClientReceiver::OnServerLoginReplied(LoginCCPtr cp)
@@ -51,19 +54,38 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     const CreatePlayerRequestPtr& message, 
                                     muduo::Timestamp)
 {
-
+    CreatePlayerCCPtr p(std::make_shared<CreatePlayerCC>(conn));
+    LoginClient::s().Send(&ClientReceiver::OnServerCreatePlayerReplied, 
+        p, 
+        this, 
+        &gw2l::LoginService_Stub::CratePlayer);
 }
 
 void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayerCCPtr cp)
 {
-
+    auto& player_list = cp->s_resp_->account_player().simple_players().players();
+    for (auto it : player_list)
+    {
+        auto p = cp->c_resp_.add_players();
+        p->set_player_id(it.player_id());
+    }
+    codec_.send(cp->client_connection_, cp->c_resp_);
 }
 
 void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
                                 const EnterGameRequestPtr& message, 
                                 muduo::Timestamp)
 {
+    EnterGameCCPtr p(std::make_shared<EnterGameCC>(conn));
+    LoginClient::s().Send(&ClientReceiver::OnServerEnterGameReplied,
+        p,
+        this,
+        &gw2l::LoginService_Stub::CratePlayer);
+}
 
+void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
+{
+    codec_.send(cp->client_connection_, cp->c_resp_);
 }
 
 }

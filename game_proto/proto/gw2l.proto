@@ -18,7 +18,6 @@ message LoginResponse
 
 message CreatePlayerRequest
 {
-  
 }
 
 message CreatePlayerRespone
@@ -42,4 +41,5 @@ message EnterGameRespone
 service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc CratePlayer (CreatePlayerRequest) returns (CreatePlayerRespone);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameRequest);
 }

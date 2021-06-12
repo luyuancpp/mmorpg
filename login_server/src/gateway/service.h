@@ -19,6 +19,16 @@ namespace gw2l
             gw2l::LoginResponse* response,
             ::google::protobuf::Closure* done)override;
 
+        virtual void CratePlayer(::google::protobuf::RpcController* controller,
+            const gw2l::CreatePlayerRequest* request,
+            gw2l::CreatePlayerRespone* response,
+            ::google::protobuf::Closure* done)override;
+
+        virtual void EnterGame(::google::protobuf::RpcController* controller,
+            const ::gw2l::EnterGameRequest* request,
+            ::gw2l::EnterGameRequest* response,
+            ::google::protobuf::Closure* done)override;
+
         void set_redis_client(RedisClientPtr& p)
         {
             redis_ = p;
