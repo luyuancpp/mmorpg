@@ -29,22 +29,22 @@ namespace login
             return singleton;
         }
 
-        template<typename Class, typename ClosureArg, typename StubMethod>
+        template<typename Class, typename MethodParam, typename StubMethod>
         void SendRequest(Class* object,
-            void (method)(ClosureArg),
-            ClosureArg closurearg,
+            void (method)(MethodParam),
+            MethodParam& method_param,
             StubMethod stub_method)
         {
-            database_client_->SendRpcString(object, closurearg, method, stub_method);
+            database_client_->SendRpcString(object, method_param, method, stub_method);
         }
 
-        template<typename ClosureArg, typename StubMethod>
+        template<typename MethodParam, typename StubMethod>
         void SendRequest(
-            void (method)(ClosureArg),
-            ClosureArg closurearg,
+            void (method)(MethodParam),
+            MethodParam& method_param,
             StubMethod stub_method)
         {
-            database_client_->SendRpcString(method, closurearg, stub_method);
+            database_client_->SendRpcString(method, method_param, stub_method);
         }
   
     private:

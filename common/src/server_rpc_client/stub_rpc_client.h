@@ -56,7 +56,7 @@ public:
 
     template<typename MethodParam, typename Class, typename StubMethod>
     void Send(void (Class::* method)(MethodParam),
-        MethodParam method_param,
+        MethodParam& method_param,
         Class* object,
         StubMethod stub_method)
     {
@@ -70,30 +70,30 @@ public:
             NewCallback(object, method, method_param));
     }
 
-    template<typename Class, typename ClosureArg,  typename StubMethod>
+    template<typename Class, typename MethodParam,  typename StubMethod>
     void SendRpcString(Class* object,
-        void (method)(ClosureArg),
-        ClosureArg closurearg,
+        void (method)(MethodParam),
+        MethodParam& method_param,
         StubMethod stub_method)
     {
         if (nullptr == stub_){ return; }
         ((*stub_).*stub_method)(nullptr, 
-                                &closurearg->server_request_, 
-                                closurearg->server_respone_, 
-                                NewCallback(object, method, closurearg));
+                                &method_param->server_request_, 
+                                method_param->server_respone_, 
+                                NewCallback(object, method, method_param));
     }
 
-    template<typename ClosureArg, typename StubMethod>
+    template<typename MethodParam, typename StubMethod>
     void SendRpcString(
-        void (method)(ClosureArg),
-        ClosureArg closurearg,
+        void (method)(MethodParam),
+        MethodParam& method_param,
         StubMethod stub_method)
     {
         if (nullptr == stub_) { return; }
         ((*stub_).*stub_method)(nullptr,
-            &closurearg->server_request_,
-            closurearg->server_respone_,
-            NewCallback(method, closurearg));
+            &method_param->server_request_,
+            method_param->server_respone_,
+            NewCallback(method, method_param));
     }
 private:
     void onConnection(const TcpConnectionPtr& conn)
