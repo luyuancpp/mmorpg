@@ -10,16 +10,16 @@ namespace common
     {
         RpcString(ClientRespone* client_respone,
             ::google::protobuf::Closure* client_closure)
-            : client_respone_(client_respone),
-            client_closure_(client_closure),
-            server_respone_(new ServerRespone())// delete for rpcchanel
+            : c_resp_(client_respone),
+            cc_(client_closure),
+            s_resp_(new ServerRespone())// delete for rpcchanel
             {}
 
-        ~RpcString() { client_closure_->Run(); };//this function delete server_respone_
-        ClientRespone* client_respone_{ nullptr };
-        ServerRequest server_request_;
-        ServerRespone* server_respone_{ nullptr };  
-        ::google::protobuf::Closure* client_closure_{ nullptr };
+        ~RpcString() { cc_->Run(); };//this function delete server_respone_
+        ClientRespone* c_resp_{ nullptr };
+        ServerRequest s_reqst_;
+        ServerRespone* s_resp_{ nullptr };  
+        ::google::protobuf::Closure* cc_{ nullptr };
     };
 
 }//namespace common
