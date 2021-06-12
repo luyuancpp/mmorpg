@@ -91,8 +91,8 @@ public:
     {
         if (nullptr == stub_) { return; }
         ((*stub_).*stub_method)(nullptr,
-            &method_param->server_request_,
-            method_param->server_respone_,
+            &method_param->s_reqst_,
+            method_param->s_resp_,
             NewCallback(method, method_param));
     }
 private:

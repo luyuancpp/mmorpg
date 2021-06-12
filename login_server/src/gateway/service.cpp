@@ -19,7 +19,7 @@ using LoginRpcString = common::RpcString<l2db::LoginRequest,
 using LoginRP = std::shared_ptr<LoginRpcString>;
 void DbLoginReplied(LoginRP d)
 {
-    d->client_respone_->mutable_account_player()->CopyFrom(d->server_respone_->account_player());
+    d->c_resp_->mutable_account_player()->CopyFrom(d->s_resp_->account_player());
 }
 
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
@@ -37,8 +37,8 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     }
 
     LoginRP cp(std::make_shared<LoginRpcString>(response, done));
-    cp->server_request_.set_account(request->account());
-    cp->server_request_.set_password(request->password());
+    cp->s_reqst_.set_account(request->account());
+    cp->s_reqst_.set_password(request->password());
     DbRpcClient::s().SendRequest(DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
 }
 
