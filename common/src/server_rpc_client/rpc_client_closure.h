@@ -12,7 +12,7 @@ namespace common
 
         ~ClientClosure() {};
         ClientRespone c_resp_;
-        ServerRequest server_request_;
+        ServerRequest s_rqst_;
         ServerRespone* s_resp_{ nullptr };
         const muduo::net::TcpConnectionPtr client_connection_;
     };

@@ -36,10 +36,9 @@ public:
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         all_connected_(allConnected),
         all_finished_(allFinished),
-        service_(codec_, client_)
+        service_(dispatcher_, codec_, client_)
     {
-        dispatcher_.registerMessageCallback<LoginResponse>(
-            std::bind(&ClientService::OnLoginReplied, &service_, _1, _2, _3));
+       
         client_.setConnectionCallback(
             std::bind(&PlayerClient::onConnection, this, _1));
         client_.setMessageCallback(

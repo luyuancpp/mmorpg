@@ -12,17 +12,29 @@
 namespace gateway
 {
 
+ClientReceiver::ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher)
+    : codec_(codec),
+        dispatcher_(dispatcher)
+{
+    dispatcher_.registerMessageCallback<LoginRequest>(
+        std::bind(&ClientReceiver::OnLogin, this, _1, _2, _3));
+    dispatcher_.registerMessageCallback<CreatePlayerRequest>(
+        std::bind(&ClientReceiver::OnCreatePlayer, this, _1, _2, _3));
+    dispatcher_.registerMessageCallback<EnterGameRequest>(
+        std::bind(&ClientReceiver::OnEnterGame, this, _1, _2, _3));
+}
+
 void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
 {
-    LoginCCPPtr p(std::make_shared<LoginCCP>(conn));
-    p->server_request_.set_account(message->account());
-    p->server_request_.set_password(message->password());
-    LoginClient::s().Send(&ClientReceiver::LoginReplied, p, this, &gw2l::LoginService_Stub::Login);
+    LoginCCPtr p(std::make_shared<LoginCC>(conn));
+    p->s_rqst_.set_account(message->account());
+    p->s_rqst_.set_password(message->password());
+    LoginClient::s().Send(&ClientReceiver::OnServerLoginReplied, p, this, &gw2l::LoginService_Stub::Login);
 }
 
-void ClientReceiver::LoginReplied(LoginCCPPtr cp)
+void ClientReceiver::OnServerLoginReplied(LoginCCPtr cp)
 {
     cp->c_resp_.set_account(cp->s_resp_->account_player().account());
     cp->c_resp_.set_password(cp->s_resp_->account_player().password());
@@ -33,6 +45,25 @@ void ClientReceiver::LoginReplied(LoginCCPPtr cp)
         p->set_player_id(it.player_id());
     }
     codec_.send(cp->client_connection_, cp->c_resp_);
+}
+
+void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
+                                    const CreatePlayerRequestPtr& message, 
+                                    muduo::Timestamp)
+{
+
+}
+
+void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayerCCPtr cp)
+{
+
+}
+
+void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
+                                const EnterGameRequestPtr& message, 
+                                muduo::Timestamp)
+{
+
 }
 
 }
