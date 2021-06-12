@@ -16,3 +16,24 @@ message LoginResponse
   string password = 3;
   repeated c_account_simple_player players = 4;
 }
+
+message CreatePlayerRequest
+{
+	
+}
+
+message CreatePlayerRespone
+{
+	ClientError error = 1;
+	repeated c_account_simple_player players = 2;
+}
+
+message EnterGameRequest
+{
+	uint64 player_id  = 1;
+}
+
+message EnterGameRespone
+{
+	ClientError error = 1;
+}

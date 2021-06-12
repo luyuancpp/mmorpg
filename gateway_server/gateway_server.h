@@ -26,10 +26,9 @@ public:
         : server_(loop, listen_addr, "QueryServer"),
         dispatcher_(std::bind(&GatewayServer::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-        client_receiver_(codec_)
+        client_receiver_(codec_, dispatcher_)
     {
-        dispatcher_.registerMessageCallback<LoginRequest>(
-            std::bind(&ClientReceiver::OnLogin, &client_receiver_, _1, _2, _3));
+   
         /*server_.setConnectionCallback(
             std::bind(&GatewayServer::OnConnection, this, _1));*/
         server_.setMessageCallback(

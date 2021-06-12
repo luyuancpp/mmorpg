@@ -65,7 +65,7 @@ public:
             return;
         }
         ((*stub_).*stub_method)(nullptr, 
-            &method_param->server_request_, 
+            &method_param->s_rqst_,
             method_param->s_resp_, 
             NewCallback(object, method, method_param));
     }
