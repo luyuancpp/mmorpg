@@ -5,6 +5,7 @@ int main(int argc, char* argv[])
     LOG_INFO << "pid = " << getpid();
     if (argc > 1)
     {
+        CurrentThread::sleepUsec(2000000);
         int nClients = 1;
 
         if (argc > 2)

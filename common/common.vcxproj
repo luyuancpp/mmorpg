@@ -159,6 +159,7 @@
     <ClCompile Include="src\timer_task\timer_task.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
     <ClInclude Include="src\codec\codec.h" />
     <ClInclude Include="src\codec\dispatcher.h" />
     <ClInclude Include="src\codec\dispatcher_lite.h" />

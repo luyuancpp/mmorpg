@@ -51,7 +51,7 @@ public:
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
 
-    using EnterGameCC = common::ClientClosure<EnterGameRespone, gw2l::CreatePlayerRequest, gw2l::CreatePlayerRespone>;
+    using EnterGameCC = common::ClientClosure<EnterGameRespone, gw2l::EnterGameRequest, gw2l::EnterGameRespone>;
     using EnterGameCCPtr = std::shared_ptr<EnterGameCC>;
     void OnServerEnterGameReplied(EnterGameCCPtr cp);
 

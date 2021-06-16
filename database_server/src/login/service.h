@@ -32,6 +32,11 @@ namespace l2db
             l2db::LoginResponse* response,
             ::google::protobuf::Closure* done)override;
 
+        virtual void CratePlayer(::google::protobuf::RpcController* controller,
+            const ::l2db::CreatePlayerRequest* request,
+            ::l2db::CreatePlayerRespone* response,
+            ::google::protobuf::Closure* done)override;
+
         void set_player_mysql_client(MysqlClientPtr& ptr)
         {
             database_ = ptr;

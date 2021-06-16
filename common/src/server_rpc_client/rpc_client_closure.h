@@ -1,6 +1,8 @@
 #ifndef COMMON_SRC_SERVER_CRPC_CLIENT_RPC_CLIENT_CLOSURE_H_
 #define COMMON_SRC_SERVER_CRPC_CLIENT_RPC_CLIENT_CLOSURE_H_
 
+#include <any>
+
 namespace common
 {
     template <typename ClientRespone, typename ServerRequest, typename ServerRespone>
@@ -8,7 +10,16 @@ namespace common
     {
         ClientClosure(const muduo::net::TcpConnectionPtr& cc)
             : s_resp_(new ServerRespone()),
-              client_connection_(cc){}
+              client_connection_(cc)
+        {
+            uint64_t p = (uint64_t)(client_connection_.get());
+            boost::any connection_context = p;
+            client_connection_->setContext(connection_context);
+        }
+
+        uint64_t connection_hash_id() {
+            return boost::any_cast<uint64_t>(client_connection_->getContext());
+        }
 
         ~ClientClosure() {};
         ClientRespone c_resp_;

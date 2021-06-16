@@ -107,5 +107,8 @@
     <ClInclude Include="src\server_rpc_client\rpc_client_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\closure_auto_done\closure_aouto_done.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -9,7 +9,7 @@ namespace common
 
 void MysqlClient::Connect(const ConnectionParameters& database_info)
 {
-    connection_.reset(mysql_init(nullptr));
+    connection_ = mysql_init(nullptr);
     uint32_t op = 1;
     mysql_options(connection(), MYSQL_OPT_RECONNECT, &op);
     MYSQL* res = mysql_real_connect(connection(),
@@ -140,6 +140,11 @@ void MysqlClient::QueryResultRowProcessor(const std::string& query, const Result
         unsigned long* lengths = mysql_fetch_lengths(res);
         if (!processor(std::make_unique<ResultRow>(row, lengths, nullptr, nfields))) break;
     }
+}
+
+uint64_t MysqlClient::LastInsertId()
+{
+    return mysql_insert_id(connection_);
 }
 
 MysqlClient::MysqlResultExpected MysqlClient::LoggedRealQuery(const std::string& q)

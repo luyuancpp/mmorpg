@@ -8,11 +8,15 @@
 
 namespace gw2l
 {
+
     using common::RedisClientPtr;
     class LoginServiceImpl : public LoginService
     {
     public:
         using MessagePtr = std::unique_ptr<google::protobuf::Message>;
+        using AccountDatabaseMap = std::unordered_map<std::string, ::account_database>;
+        using ConnectionAccountMap = std::unordered_map<common::GameGuid, std::string>;
+        
        
         virtual void Login(::google::protobuf::RpcController* controller,
             const gw2l::LoginRequest* request,
@@ -26,7 +30,7 @@ namespace gw2l
 
         virtual void EnterGame(::google::protobuf::RpcController* controller,
             const ::gw2l::EnterGameRequest* request,
-            ::gw2l::EnterGameRequest* response,
+            ::gw2l::EnterGameRespone* response,
             ::google::protobuf::Closure* done)override;
 
         void set_redis_client(RedisClientPtr& p)
@@ -35,6 +39,8 @@ namespace gw2l
         }
     private:
         RedisClientPtr redis_;
+        AccountDatabaseMap accounts_;
+        ConnectionAccountMap connection_accounts_;
     };
 
 }  // namespace gw2l
