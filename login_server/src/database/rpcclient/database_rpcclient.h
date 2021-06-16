@@ -31,11 +31,11 @@ namespace login
 
         template<typename Class, typename MethodParam, typename StubMethod>
         void SendRequest(Class* object,
-            void (method)(MethodParam),
+            void (Class::*method)(MethodParam),
             MethodParam& method_param,
             StubMethod stub_method)
         {
-            database_client_->SendRpcString(object, method_param, method, stub_method);
+            database_client_->SendRpcString(object, method, method_param, stub_method);
         }
 
         template<typename MethodParam, typename StubMethod>

@@ -38,8 +38,10 @@ namespace l2db
         player_database new_player;
         new_player.mutable_pos();
         database_->SaveOne(new_player);
+        new_player.set_player_id(response->player_id());
         response->set_player_id(database_->LastInsertId());
-        r_db.mutable_simple_players()->add_players()->set_player_id(database_->LastInsertId());        
+        r_db.mutable_simple_players()->add_players()->set_player_id(response->player_id());
+        redis_->Save(new_player, new_player.player_id());
         redis_->Save(r_db, r_db.account());
         done->Run();
     }
