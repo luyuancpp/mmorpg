@@ -12,14 +12,6 @@ using namespace  login;
 
 namespace gw2l
 {
-using LoginRpcString = common::RpcString<l2db::LoginRequest,
-    l2db::LoginResponse,
-    gw2l::LoginResponse>;
-using LoginRP = std::shared_ptr<LoginRpcString>;
-void DbLoginReplied(LoginRP d)
-{
-    d->c_resp_->mutable_account_player()->CopyFrom(d->s_resp_->account_player());
-}
 
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     const gw2l::LoginRequest* request,
@@ -60,7 +52,13 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     LoginRP cp(std::make_shared<LoginRpcString>(response, done));
     cp->s_reqst_.set_account(request->account());
     cp->s_reqst_.set_password(request->password());
-    DbRpcClient::s().SendRequest(DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
+    DbRpcClient::s().SendRequest(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
+}
+
+void LoginServiceImpl::DbLoginReplied(LoginRP d)
+{
+    d->c_resp_->mutable_account_player()->CopyFrom(d->s_resp_->account_player());
+    UpdateAccount(d->s_reqst_.account(), d->s_resp_->account_player());
 }
 
 void LoginServiceImpl::CratePlayer(::google::protobuf::RpcController* controller, 
@@ -99,15 +97,7 @@ void LoginServiceImpl::CratePlayer(::google::protobuf::RpcController* controller
 void LoginServiceImpl::DbCratePlayerReplied(CreatePlayerRP d)
 {
     d->c_resp_->mutable_account_player()->CopyFrom(d->s_resp_->account_player());
-    d->c_resp_->set_player_id(d->s_resp_->player_id());
-    auto it = accounts_.find(d->s_reqst_.account());
-    if (it == accounts_.end())
-    {
-        std::string msg = std::string("account empty ") + d->s_reqst_.account();
-        LOG_ERROR << msg;
-        return;
-    }
-    it->second = d->s_resp_->account_player();
+    UpdateAccount(d->s_reqst_.account(), d->s_resp_->account_player());
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
@@ -116,6 +106,18 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     done->Run();
+}
+
+void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_database& a_d)
+{
+    auto it = accounts_.find(a);
+    if (it == accounts_.end())
+    {
+        std::string msg = std::string("account empty ") + a;
+        LOG_ERROR << msg;
+        return;
+    }
+    it->second = a_d;
 }
 
 }  // namespace gw2l

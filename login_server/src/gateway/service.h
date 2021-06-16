@@ -24,6 +24,12 @@ namespace gw2l
             gw2l::LoginResponse* response,
             ::google::protobuf::Closure* done)override;
 
+        using LoginRpcString = common::RpcString<l2db::LoginRequest,
+            l2db::LoginResponse,
+            gw2l::LoginResponse>;
+        using LoginRP = std::shared_ptr<LoginRpcString>;
+        void DbLoginReplied(LoginRP d);
+
         virtual void CratePlayer(::google::protobuf::RpcController* controller,
             const gw2l::CreatePlayerRequest* request,
             gw2l::CreatePlayerRespone* response,
@@ -44,6 +50,7 @@ namespace gw2l
         {
             redis_ = p;
         }
+        void UpdateAccount(const std::string& a, const ::account_database& a_d);
     private:
         RedisClientPtr redis_;
         AccountDatabaseMap accounts_;

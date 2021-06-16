@@ -17,7 +17,7 @@ namespace l2db
         if (response->account_player().password().empty())
         {
             database_->LoadOne(r_db,
-                std::string("account = ") + request->account());
+                std::string("account = '") + request->account() + std::string("'"));
         }
         if (r_db.password().empty())
         {
