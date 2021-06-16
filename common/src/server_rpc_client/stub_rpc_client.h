@@ -72,14 +72,14 @@ public:
 
     template<typename Class, typename MethodParam,  typename StubMethod>
     void SendRpcString(Class* object,
-        void (method)(MethodParam),
+        void (Class::* method)(MethodParam),
         MethodParam& method_param,
         StubMethod stub_method)
     {
         if (nullptr == stub_){ return; }
         ((*stub_).*stub_method)(nullptr, 
-                                &method_param->server_request_, 
-                                method_param->server_respone_, 
+                                &method_param->s_reqst_,
+                                method_param->s_resp_, 
                                 NewCallback(object, method, method_param));
     }
 

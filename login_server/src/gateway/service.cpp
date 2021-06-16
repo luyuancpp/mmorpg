@@ -3,11 +3,8 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/protorpc/RpcServer.h"
 
-#include "src/closure_auto_done/closure_aouto_done.h"
 #include "src/database/rpcclient/database_rpcclient.h"
 #include "src/return_code/return_notice_code.h"
-
-#include "l2db.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -31,12 +28,11 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 {
     // login process
     {
-        common::ClosureAutoDone p(done);
         auto it = accounts_.find(request->account());
-        if (it != accounts_.end() && !it->second.account().empty())
+        if (it != accounts_.end())
         {
             response->mutable_account_player()->CopyFrom(it->second);
-            return;
+            ReturnCloseureError(common::RET_OK);
         }
         else if (it == accounts_.end())
         {
@@ -48,8 +44,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         }
         if (it == accounts_.end())
         {
-            response->mutable_error()->set_error_no(common::RET_LOGIN_CNAT_FIND_ACCOUNT);
-            return;
+            ReturnCloseureError(common::RET_LOGIN_CNAT_FIND_ACCOUNT);
         }
 
         auto& account_data = it->second;
@@ -57,7 +52,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         if (!account_data.password().empty())
         {
             response->mutable_account_player()->CopyFrom(account_data);
-            return;
+            ReturnCloseureError(common::RET_OK);
         }
     }
  
@@ -68,43 +63,51 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     DbRpcClient::s().SendRequest(DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
 }
 
-using CreatePlayerRpcString = common::RpcString<l2db::CreatePlayerRequest,
-    l2db::CreatePlayerRespone,
-    gw2l::CreatePlayerRespone>;
-using CreatePlayerRP = std::shared_ptr<CreatePlayerRpcString>;
-void DbCratePlayerReplied(CreatePlayerRP d)
-{
-    d->c_resp_->mutable_account_player()->CopyFrom(d->s_resp_->account_player());
-}
-
 void LoginServiceImpl::CratePlayer(::google::protobuf::RpcController* controller, 
     const gw2l::CreatePlayerRequest* request, 
     gw2l::CreatePlayerRespone* response, 
     ::google::protobuf::Closure* done)
 {
     // login process
-    {
-        auto cit = connection_accounts_.find(request->connection_id());
-        if (cit == connection_accounts_.end())
-        {
-            ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
-        }
 
-        auto ait = accounts_.find(cit->second);
-        if (ait == accounts_.end())
-        {
-            ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_DONOT_LOAD_ACCOUNT);
-        }
-        static int32_t kMaxPlayerSize = 4;
-        if (ait->second.simple_players().players_size() >= kMaxPlayerSize)
-        {
-            ReturnCloseureError(common::RET_LOGIN_MAX_PLAYER_SIZE);
-        }
+    auto cit = connection_accounts_.find(request->connection_id());
+    if (cit == connection_accounts_.end())
+    {
+        ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
     }
-  
+
+    auto ait = accounts_.find(cit->second);
+    if (ait == accounts_.end())
+    {
+        ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_DONOT_LOAD_ACCOUNT);
+    }
+    static int32_t kMaxPlayerSize = 4;
+    if (ait->second.simple_players().players_size() >= kMaxPlayerSize)
+    {
+        ReturnCloseureError(common::RET_LOGIN_MAX_PLAYER_SIZE);
+    }
+
     // database process
     CreatePlayerRP cp(std::make_shared<CreatePlayerRpcString>(response, done));
-    DbRpcClient::s().SendRequest(DbCratePlayerReplied, cp, &l2db::LoginService_Stub::CratePlayer);
+    cp->s_reqst_.set_account(ait->second.account());
+    DbRpcClient::s().SendRequest(this,
+        &LoginServiceImpl::DbCratePlayerReplied,
+        cp,
+        &l2db::LoginService_Stub::CratePlayer);
+}
+
+void LoginServiceImpl::DbCratePlayerReplied(CreatePlayerRP d)
+{
+    d->c_resp_->mutable_account_player()->CopyFrom(d->s_resp_->account_player());
+    d->c_resp_->set_player_id(d->s_resp_->player_id());
+    auto it = accounts_.find(d->s_reqst_.account());
+    if (it == accounts_.end())
+    {
+        std::string msg = std::string("account empty ") + d->s_reqst_.account();
+        LOG_ERROR << msg;
+        return;
+    }
+    it->second = d->s_resp_->account_player();
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,

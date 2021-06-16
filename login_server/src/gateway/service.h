@@ -5,6 +5,7 @@
 #include "src/redis_client/redis_client.h"
 
 #include "gw2l.pb.h"
+#include "l2db.pb.h"
 
 namespace gw2l
 {
@@ -27,6 +28,12 @@ namespace gw2l
             const gw2l::CreatePlayerRequest* request,
             gw2l::CreatePlayerRespone* response,
             ::google::protobuf::Closure* done)override;
+
+        using CreatePlayerRpcString = common::RpcString<l2db::CreatePlayerRequest,
+            l2db::CreatePlayerRespone,
+            gw2l::CreatePlayerRespone>;
+        using CreatePlayerRP = std::shared_ptr<CreatePlayerRpcString>;
+        void DbCratePlayerReplied(CreatePlayerRP d);
 
         virtual void EnterGame(::google::protobuf::RpcController* controller,
             const ::gw2l::EnterGameRequest* request,
