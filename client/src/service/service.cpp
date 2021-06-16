@@ -43,7 +43,6 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
     }
     player_id_ = message->players(0).player_id();
     login_.EnterGame(player_id_);
-
 }
 
 void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn, 

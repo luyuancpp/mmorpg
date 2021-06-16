@@ -3,7 +3,8 @@
 void LoginModule::ReadyGo()
 {
     LoginRequest request;
-    request.set_account("luhailong11");
+    static uint32_t i = 100;
+    request.set_account(std::string("luhailong") + std::to_string(++i));
     request.set_password("lhl.2021");
     codec_.send(conn_, request);
 }
