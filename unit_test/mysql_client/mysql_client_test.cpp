@@ -79,6 +79,11 @@ TEST(MysqlClientTest, QueryDelete)
 //    EXPECT_EQ(0, load_message.account_password_size());
 //}
 
+TEST(MysqlClientTest, LastId)
+{
+    EXPECT_EQ(0, query_database->LastInsertId());
+}
+
 int main(int argc, char** argv)
 {
     query_database = std::make_unique<MysqlDatabase>();

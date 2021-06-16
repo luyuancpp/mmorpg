@@ -1,5 +1,6 @@
 #include "service.h"
 
+#include  <functional>
 #include <memory>
 
 #include "muduo/base/Logging.h"
@@ -31,6 +32,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     LoginCCPtr p(std::make_shared<LoginCC>(conn));
     p->s_rqst_.set_account(message->account());
     p->s_rqst_.set_password(message->password());
+    p->s_rqst_.set_connection_id(p->connection_hash_id());
     LoginClient::s().Send(&ClientReceiver::OnServerLoginReplied, 
         p, 
         this, 
@@ -55,6 +57,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     muduo::Timestamp)
 {
     CreatePlayerCCPtr p(std::make_shared<CreatePlayerCC>(conn));
+    p->s_rqst_.set_connection_id(p->connection_hash_id());
     LoginClient::s().Send(&ClientReceiver::OnServerCreatePlayerReplied, 
         p, 
         this, 
@@ -80,7 +83,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
     LoginClient::s().Send(&ClientReceiver::OnServerEnterGameReplied,
         p,
         this,
-        &gw2l::LoginService_Stub::CratePlayer);
+        &gw2l::LoginService_Stub::EnterGame);
 }
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)

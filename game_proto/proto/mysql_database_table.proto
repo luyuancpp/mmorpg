@@ -1,6 +1,7 @@
 syntax = "proto3";
 import "db_base.proto";
 import "account_database.proto";
+import "game_database.proto";
 
 message account_database
 {
@@ -9,4 +10,13 @@ message account_database
   string account = 1;
   string password = 2;
   account_simple_players simple_players = 3;
+}
+
+message player_database
+{
+  option(OptionTableName)  = "player";
+  option(OptionPrimaryKey) = "player_id";
+  option(OptionAutoIncrementKey) = "player_id";
+  uint64 player_id = 1;
+  Vector3 pos = 2;
 }

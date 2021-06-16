@@ -56,20 +56,16 @@ public:
     void operator()(MYSQL_RES* res) { mysql_free_result(res); }
 };
 
-class MYSQL_Deleter {
-public:
-    void operator()(MYSQL* res) { mysql_close(res); }
-};
-
 class MysqlClient
 {
 public:
     using MysqlResult = std::unique_ptr<MYSQL_RES, MYSQL_RES_Deleter>;
-    using MysqConnection = std::unique_ptr<MYSQL, MYSQL_Deleter>;
     using MysqlResultExpected = stdx::expected<MysqlResult, MysqlError>;
     using ResultRowPtr = std::unique_ptr<ResultRow>;
     using RowProcessor = std::function<bool(const MYSQL_ROW&, const unsigned long*, uint32_t)>;
     using ResultRowProcessor = std::function<bool(const ResultRowPtr&)>;
+
+    ~MysqlClient() { mysql_close(connection_); };
 
     void Connect(const ConnectionParameters& database_info);
     void Execute(
@@ -83,8 +79,10 @@ public:
     void QueryResultRowProcessor(
         const std::string& query,
         const ResultRowProcessor& processor);
+
+    uint64_t LastInsertId();
 protected:
-    inline MYSQL* connection() { return connection_.get(); }
+    inline MYSQL* connection() { return connection_; }
 private:
     MysqlResultExpected LoggedRealQuery(
         const std::string& q);
@@ -93,7 +91,7 @@ private:
 
     const std::string& Address() noexcept { return conection_info_.host_name_; }
 
-    MysqConnection connection_;
+    MYSQL* connection_;
     ConnectionParameters conection_info_;
 };
 }//namespace common
