@@ -5,9 +5,9 @@
 
 namespace common
 {
-struct TeamEventStructBase
+struct TeamESBase
 {
-    TeamEventStructBase(GameGuid team_id, GameGuid player_id)
+    TeamESBase(GameGuid team_id, GameGuid player_id)
         : team_id_(team_id),
         player_id_(player_id)
     {
@@ -17,21 +17,21 @@ struct TeamEventStructBase
     GameGuid player_id_{ kEmptyGameGuid };
 };
 
-struct TeamEventStructTeamIdBase
+struct TeamESTeamIdBase
 {
-    TeamEventStructTeamIdBase(GameGuid team_id)
+    TeamESTeamIdBase(GameGuid team_id)
         : team_id_(team_id)
     {
     }
     GameGuid team_id_{ kEmptyGameGuid };
 };
 
-struct TeamEventStructDismissTeamOnTeamMemberEmpty : public TeamEventStructTeamIdBase { using TeamEventStructTeamIdBase::TeamEventStructTeamIdBase; };
+struct TeamEventStructDismissTeamOnTeamMemberEmpty : public TeamESTeamIdBase { using TeamESTeamIdBase::TeamESTeamIdBase; };
 
-struct TeamEventStructCreateTeamJoinTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
-struct TeamEventStructJoinTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
-struct TeamEventStructLeaderDismissTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
-struct TeamEventStructLeaveTeam : public TeamEventStructBase { using TeamEventStructBase::TeamEventStructBase; };
+struct TeamEventStructCreateTeamJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamEventStructJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamEventStructLeaderDismissTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamEventStructLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 
 struct TeamEventStructAppointLeader 
 {
