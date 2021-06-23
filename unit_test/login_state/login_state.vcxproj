@@ -21,13 +21,13 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{7dff59b9-6450-4359-962e-922bd5487c32}</ProjectGuid>
-    <RootNamespace>common</RootNamespace>
+    <ProjectGuid>{8d9d76c3-fb2f-473d-ab55-1a6fffaa1986}</ProjectGuid>
+    <RootNamespace>loginstate</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -40,7 +40,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -72,16 +72,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../bin/</OutDir>
-    <IntDir>../output/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../bin/</OutDir>
-    <IntDir>../output/$(ProjectName)/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -90,10 +86,8 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../game_proto/pbc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,15 +114,15 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../game_proto/pbc/;../third_party/muduo/;../third_party/mysql/include/;../third_party/redis/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <DisableSpecificWarnings>4200</DisableSpecificWarnings>
+      <AdditionalIncludeDirectories>../../common/;../../game_proto/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>../../bin/</AdditionalLibraryDirectories>
+      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;game_proto.lib;zlib.lib;gtestd.lib;hiredis.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -148,44 +142,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\codec\codec.cc" />
-    <ClCompile Include="src\login_player\login_player.cpp" />
-    <ClCompile Include="src\login_player\login_state_machine.cpp" />
-    <ClCompile Include="src\mysql_client\mysql_client.cpp" />
-    <ClCompile Include="src\pb2db\pb2dbsql.cpp" />
-    <ClCompile Include="src\redis_client\async_redis_client.cpp" />
-    <ClCompile Include="src\redis_client\redis_client.cpp" />
-    <ClCompile Include="src\return_code\notice_struct.cpp" />
-    <ClCompile Include="src\team\team.cpp" />
-    <ClCompile Include="src\team\team_list.cpp" />
-    <ClCompile Include="src\timer_task\timer_task.cpp" />
+    <ClCompile Include="..\..\common\src\event\event.cc" />
+    <ClCompile Include="..\..\common\src\login_player\login_player.cpp" />
+    <ClCompile Include="..\..\common\src\login_player\login_state.cpp" />
+    <ClCompile Include="..\..\common\src\login_player\login_state_machine.cpp" />
+    <ClCompile Include="login_state_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
-    <ClInclude Include="src\codec\codec.h" />
-    <ClInclude Include="src\codec\dispatcher.h" />
-    <ClInclude Include="src\codec\dispatcher_lite.h" />
-    <ClInclude Include="src\common_type\common_type.h" />
-    <ClInclude Include="src\config_expression\config_expression.h" />
-    <ClInclude Include="src\exprtk\exprtk.hpp" />
-    <ClInclude Include="src\login_player\login_player.h" />
-    <ClInclude Include="src\login_player\login_state_machine.h" />
-    <ClInclude Include="src\mysql_client\mysql_client.h" />
-    <ClInclude Include="src\mysql_client\mysql_result.h" />
-    <ClInclude Include="src\pb2db\pb2dbsql.h" />
-    <ClInclude Include="src\redis_client\async_redis_client.h" />
-    <ClInclude Include="src\redis_client\redis_client.h" />
-    <ClInclude Include="src\return_code\notice_struct.h" />
-    <ClInclude Include="src\return_code\return_code.h" />
-    <ClInclude Include="src\return_code\return_notice_code.h" />
-    <ClInclude Include="src\server_rpc_client\rpc_client_closure.h" />
-    <ClInclude Include="src\server_rpc_client\rpc_string_closure.h" />
-    <ClInclude Include="src\server_rpc_client\stub_rpc_client.h" />
-    <ClInclude Include="src\snow_flake\snow_flake.h" />
-    <ClInclude Include="src\team\team.h" />
-    <ClInclude Include="src\team\team_event.h" />
-    <ClInclude Include="src\team\team_list.h" />
-    <ClInclude Include="src\timer_task\timer_task.h" />
+    <ClInclude Include="..\..\common\src\event\event.h" />
+    <ClInclude Include="..\..\common\src\login_player\login_event.h" />
+    <ClInclude Include="..\..\common\src\login_player\login_player.h" />
+    <ClInclude Include="..\..\common\src\login_player\login_state.h" />
+    <ClInclude Include="..\..\common\src\login_player\login_state_machine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
