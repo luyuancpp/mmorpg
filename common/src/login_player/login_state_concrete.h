@@ -50,10 +50,6 @@ namespace common
         {
             emp_->emit(LoginESSetState{ E_LOGIN_STATE_NO_PLAYER });
         }
-        virtual void FullPlayer() override 
-        {
-            emp_->emit(LoginESSetState{ E_LOGIN_STATE_FULL_PLAYER });
-        }
     };
 
     class CreatePlayerState : public ILoginState
@@ -63,12 +59,12 @@ namespace common
 
         virtual int32_t CreatePlayer()override
         {
-            return RET_OK;
+            return RET_LOGIN_BEING_CREATE_PLAYER;
         }
 
         virtual int32_t EnterGame()override
         {
-            return RET_OK;
+            return RET_LOGIN_BEING_CREATE_PLAYER;
         }
 
     };
@@ -87,6 +83,8 @@ namespace common
             return RET_LOGIN_BEING_ENTER_GAME;
         }
 
+        virtual void Playing()override { emp_->emit(LoginESSetState{ E_LGOIN_STATE_PLAYING }); }
+
     };
 
     class PlayingState : public ILoginState
@@ -96,12 +94,12 @@ namespace common
 
         virtual int32_t CreatePlayer()override
         {
-            return RET_OK;
+            return RET_LOGIN_PLAYEING;
         }
 
         virtual int32_t EnterGame()override
         {
-            return RET_OK;
+            return RET_LOGIN_PLAYEING;
         }
 
     };
@@ -147,7 +145,6 @@ namespace common
         using ILoginState::ILoginState;
         virtual int32_t CreatePlayer() override
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_STATE_CREATE_PLAYER });
             return RET_LOGIN_MAX_PLAYER_SIZE;
         }
 

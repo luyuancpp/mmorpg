@@ -43,7 +43,7 @@ namespace common
             emp_->emit(LoginESSetState{ E_LOGIN_STATE_WAITING_ENTER_GAME });
         }
         virtual void NoPlayer() {}
-        virtual void FullPlayer() {}
+        virtual void FullPlayer(){ emp_->emit(LoginESSetState{ E_LOGIN_STATE_FULL_PLAYER }); }
         virtual void Playing() {}
   
         static StatePtr CreateState(int32_t state_enum, EventManagerPtr& emp);

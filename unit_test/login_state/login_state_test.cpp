@@ -35,6 +35,7 @@ TEST(LoginStateMachineTest, LoginNoPlayerCreateFull)
     EXPECT_EQ(RET_LOGIN_LOGIN_NO_PLAYER, lsm.EnterGame());
     EXPECT_EQ(RET_OK, lsm.CreatePlayer());
     EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.CreatePlayer());
+    EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.EnterGame());
     lsm.WaitingEnterGame();
     EXPECT_EQ(RET_OK, lsm.CreatePlayer());
     EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.CreatePlayer());
@@ -51,6 +52,7 @@ TEST(LoginStateMachineTest, RenterGame)
 {
     LoginStateMachine lsm;
     EXPECT_EQ(RET_OK, lsm.Lgoin());
+    lsm.WaitingEnterGame();
     EXPECT_EQ(RET_OK, lsm.EnterGame());
     EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.EnterGame());
     lsm.Playing();
