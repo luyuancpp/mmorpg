@@ -5,6 +5,12 @@
 namespace common
 {
 
+    uint32_t ILoginState::Logout()
+    {
+        emp_->emit(LoginESSetState{ E_LOGIN_STATE_NONE });
+        return RET_OK;
+    }
+
     ILoginState::StatePtr ILoginState::CreateState(int32_t state_enum, EventManagerPtr& emp)
     {
         StatePtr ptr;

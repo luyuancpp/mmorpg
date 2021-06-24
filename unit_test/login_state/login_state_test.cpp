@@ -93,6 +93,44 @@ TEST(LoginStateMachineTest, EnterGameNotReturn)
     EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.EnterGame());
 }
 
+TEST(LoginStateMachineTest, PlayerLoginLogout)
+{
+    LoginStateMachine lsm;
+    EXPECT_EQ(RET_OK, lsm.Login());
+    EXPECT_EQ(RET_OK, lsm.Logout());
+    lsm.WaitingEnterGame();
+    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.CreatePlayer());
+    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.EnterGame());
+    EXPECT_EQ(RET_OK, lsm.Login());
+}
+
+TEST(LoginStateMachineTest, PlayerCreatePlayerLogout)
+{
+    LoginStateMachine lsm;
+    EXPECT_EQ(RET_OK, lsm.Login());
+    lsm.WaitingEnterGame();
+    EXPECT_EQ(RET_OK, lsm.CreatePlayer());
+    EXPECT_EQ(RET_OK, lsm.Logout());
+    lsm.WaitingEnterGame();
+    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.EnterGame());
+    EXPECT_EQ(RET_OK, lsm.Login());
+}
+
+TEST(LoginStateMachineTest, PlayerEnterGameLogout)
+{
+    LoginStateMachine lsm;
+    EXPECT_EQ(RET_OK, lsm.Login());
+    lsm.WaitingEnterGame();
+    EXPECT_EQ(RET_OK, lsm.CreatePlayer());
+    lsm.WaitingEnterGame();
+    EXPECT_EQ(RET_OK, lsm.EnterGame());
+    EXPECT_EQ(RET_OK, lsm.Logout());
+    lsm.Playing();
+    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.CreatePlayer());
+    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.EnterGame());
+    EXPECT_EQ(RET_OK, lsm.Login());
+}
+
 int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);
