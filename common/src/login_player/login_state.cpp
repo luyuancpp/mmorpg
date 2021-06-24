@@ -5,56 +5,58 @@
 namespace common
 {
 
-    int32_t ILoginState::Processing()
-    {
-        return RET_OK;
-    }
-
     ILoginState::StatePtr ILoginState::CreateState(int32_t state_enum, EventManagerPtr& emp)
     {
         StatePtr ptr;
-
         switch (state_enum)
         {
         case E_LOGIN_STATE_NONE:
         {
-            ptr = std::make_shared<NoneState>(emp);
+            CreateILoginStateP cp{ emp, RET_LOGIN_DONOT_LOGIN };
+            ptr = std::make_shared<NoneState>(cp);
             break;
         }
         case E_LOGIN_STATE_LOGIN:
         {
-            ptr = std::make_shared<LoginState>(emp);
+            CreateILoginStateP cp{ emp, RET_LOGIN_LOGIN_ING };
+            ptr = std::make_shared<LoginState>(cp);
             break;
         }
         case E_LOGIN_STATE_CREATE_PLAYER:
         {
-            ptr = std::make_shared<CreatePlayerState>(emp);
+            CreateILoginStateP cp{ emp, RET_LOGIN_BEING_CREATE_PLAYER };
+            ptr = std::make_shared<CreatePlayerState>(cp);
             break;
         }
 
         case E_LOGIN_STATE_ENTER_GAME:
         {
-            ptr = std::make_shared<EnterGameState>(emp);
+            CreateILoginStateP cp{ emp, RET_LOGIN_BEING_ENTER_GAME };
+            ptr = std::make_shared<EnterGameState>(cp);
             break;
         }
         case E_LGOIN_STATE_PLAYING:
         {
-            ptr = std::make_shared<PlayingState>(emp);
+            CreateILoginStateP cp{ emp, RET_LOGIN_PLAYEING };
+            ptr = std::make_shared<PlayingState>(cp);
             break;
         }
         case E_LOGIN_STATE_WAITING_ENTER_GAME:
         {
-            ptr = std::make_shared<WaitingEnterGameState>(emp);
+            CreateILoginStateP cp{ emp, RET_LOGIN_WAITING_ENTER_GAME };
+            ptr = std::make_shared<WaitingEnterGameState>(cp);
             break;
         }
         case E_LOGIN_STATE_NO_PLAYER:
         {
-            ptr = std::make_shared<NoPlayerState>(emp);
+            CreateILoginStateP cp{ emp, RET_LOGIN_WAITING_ENTER_GAME };
+            ptr = std::make_shared<NoPlayerState>(cp);
             break;
         }
         case E_LOGIN_STATE_FULL_PLAYER:
         {
-            ptr = std::make_shared<FullPlayerState>(emp);
+            CreateILoginStateP cp{ emp, RET_LOGIN_WAITING_ENTER_GAME };
+            ptr = std::make_shared<FullPlayerState>(cp);
             break;
         }
         default:

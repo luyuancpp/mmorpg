@@ -17,11 +17,11 @@ namespace common
 
         LoginStateMachine();
 
-        void set_state(int32_t state_enum);
+        void set_state(uint32_t state_enum);
 
-        int32_t Login();
-        int32_t CreatePlayer();
-        int32_t EnterGame();
+        uint32_t Login();
+        uint32_t CreatePlayer();
+        uint32_t EnterGame();
 
         void WaitingEnterGame();
         void NoPlayer();
