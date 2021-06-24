@@ -51,10 +51,11 @@ namespace common
         uint32_t processing()const { return processing_code_; }
 
         virtual uint32_t Login() { return processing(); }
+        uint32_t Logout();
         virtual uint32_t CreatePlayer() { return processing(); }
         virtual uint32_t EnterGame() { return processing(); }
 
-        void WaitingEnterGame()
+        virtual void WaitingEnterGame()
         {
             emp_->emit(LoginESSetState{ E_LOGIN_STATE_WAITING_ENTER_GAME });
         }

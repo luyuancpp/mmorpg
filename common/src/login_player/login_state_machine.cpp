@@ -25,6 +25,11 @@ namespace common
         return current_state_->Login();
     }
 
+    uint32_t LoginStateMachine::Logout()
+    {
+        return current_state_->Logout();
+    }
+
     uint32_t LoginStateMachine::CreatePlayer()
 {
         return current_state_->CreatePlayer();
