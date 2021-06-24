@@ -21,23 +21,38 @@ namespace common
         E_LOGIN_STATE_MAX,
     };
 
+    struct CreateILoginStateP
+    {
+        CreateILoginStateP(EventManagerPtr& emp, uint32_t processing_code)
+            : emp_(emp),
+            processing_code_(processing_code)
+        {
+
+        }
+        EventManagerPtr& emp_;
+        uint32_t processing_code_;
+    };
+
     //login state interfase
     class ILoginState
     {
     public:
         using StatePtr = std::shared_ptr<ILoginState>;
 
-        ILoginState(EventManagerPtr& emp)
-            : emp_(emp)
+        ILoginState(CreateILoginStateP& c)
+            : emp_(c.emp_),
+              processing_code_(c.processing_code_)
         {
 
         }
         virtual ~ILoginState() {};
 
-        virtual int32_t Processing();
-        virtual int32_t Login() { return Processing(); }
-        virtual int32_t CreatePlayer() { return Processing(); }
-        virtual int32_t EnterGame() { return Processing(); }
+        void set_processing(uint32_t p) { processing_code_ = p; }
+        uint32_t processing()const { return processing_code_; }
+
+        virtual uint32_t Login() { return processing(); }
+        virtual uint32_t CreatePlayer() { return processing(); }
+        virtual uint32_t EnterGame() { return processing(); }
 
         void WaitingEnterGame()
         {
@@ -50,6 +65,7 @@ namespace common
         static StatePtr CreateState(int32_t state_enum, EventManagerPtr& emp);
     protected:
         EventManagerPtr emp_;
+        uint32_t processing_code_{0};
     };
 }//namespace common
 

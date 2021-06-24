@@ -15,23 +15,23 @@ namespace common
         set_state(E_LOGIN_STATE_NONE);
     }
 
-    void LoginStateMachine::set_state(int32_t state_enum)
+    void LoginStateMachine::set_state(uint32_t state_enum)
     {
         current_state_ = state_list_[state_enum];
     }
 
-    int32_t LoginStateMachine::Login()
+    uint32_t LoginStateMachine::Login()
 {
         return current_state_->Login();
     }
 
-    int32_t LoginStateMachine::CreatePlayer()
-    {
+    uint32_t LoginStateMachine::CreatePlayer()
+{
         return current_state_->CreatePlayer();
     }
 
-    int32_t LoginStateMachine::EnterGame()
-    {
+    uint32_t LoginStateMachine::EnterGame()
+{
         return current_state_->EnterGame();
     }
 
