@@ -9,7 +9,7 @@ namespace common
     {
         for (uint32_t i = 0; i < E_LOGIN_STATE_MAX; ++i)
         {
-            state_list_[i] = LoginStateInterfase::CreateState(i, emp_);
+            state_list_[i] = ILoginState::CreateState(i, emp_);
         }
         emp_->subscribe<LoginESSetState>(*this);
         set_state(E_LOGIN_STATE_NONE);
@@ -25,19 +25,9 @@ namespace common
         return current_state_->Login();
     }
 
-    int32_t LoginStateMachine::NoPlayer()
-    {
-        return current_state_->NoPlayer();
-    }
-
     int32_t LoginStateMachine::CreatePlayer()
-{
-        return current_state_->CreatePlayer();
-    }
-
-    int32_t LoginStateMachine::CreatePlayerComplete()
     {
-        return current_state_->CreatePlayerComplete();
+        return current_state_->CreatePlayer();
     }
 
     int32_t LoginStateMachine::EnterGame()
@@ -45,9 +35,24 @@ namespace common
         return current_state_->EnterGame();
     }
 
-    int32_t LoginStateMachine::Playing()
+    void LoginStateMachine::WaitingEnterGame()
+    {
+        current_state_->WaitingEnterGame();
+    }
+
+    void LoginStateMachine::NoPlayer()
+    {
+        current_state_->NoPlayer();
+    }
+
+    void LoginStateMachine::FullPlayer()
+    {
+        current_state_->FullPlayer();
+    }
+
+    void LoginStateMachine::Playing()
 {
-        return current_state_->Playing();
+        current_state_->Playing();
     }
 
     void LoginStateMachine::receive(const LoginESSetState& s)

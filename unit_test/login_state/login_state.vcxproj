@@ -153,6 +153,7 @@
     <ClInclude Include="..\..\common\src\login_player\login_event.h" />
     <ClInclude Include="..\..\common\src\login_player\login_player.h" />
     <ClInclude Include="..\..\common\src\login_player\login_state.h" />
+    <ClInclude Include="..\..\common\src\login_player\login_state_concrete.h" />
     <ClInclude Include="..\..\common\src\login_player\login_state_machine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
