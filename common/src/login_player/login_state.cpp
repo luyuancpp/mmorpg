@@ -34,7 +34,6 @@ namespace common
             ptr = std::make_shared<CreatePlayerState>(cp);
             break;
         }
-
         case E_LOGIN_STATE_ENTER_GAME:
         {
             CreateILoginStateP cp{ emp, RET_LOGIN_BEING_ENTER_GAME };
