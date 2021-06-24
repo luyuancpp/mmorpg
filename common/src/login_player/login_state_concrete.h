@@ -13,21 +13,17 @@ namespace common
     public:
         using ILoginState::ILoginState;
 
+        virtual int32_t Processing()override
+        {
+            return RET_LOGIN_DONOT_LOGIN;
+        }
+
         virtual int32_t Login()override
         {
             emp_->emit(LoginESSetState{ E_LOGIN_STATE_LOGIN });
             return RET_OK;
         }
 
-        virtual int32_t CreatePlayer()override
-        {
-            return RET_LOGIN_LOGIN_NOT_COMPLETE;
-        }
-
-        virtual int32_t EnterGame()override
-        {
-            return RET_LOGIN_LOGIN_NOT_COMPLETE;
-        }
     };
 
     class LoginState : public ILoginState
@@ -35,15 +31,9 @@ namespace common
     public:
         using ILoginState::ILoginState;
 
-        virtual int32_t CreatePlayer()override
+        virtual int32_t Processing()override
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_STATE_CREATE_PLAYER });
-            return RET_OK;
-        }
-
-        virtual int32_t EnterGame()override
-        {
-            return RET_LOGIN_LOGIN_NO_PLAYER;
+            return RET_LOGIN_LOGIN_ING;
         }
 
         virtual void NoPlayer() override 
@@ -57,28 +47,18 @@ namespace common
     public:
         using ILoginState::ILoginState;
 
-        virtual int32_t CreatePlayer()override
+        inline int32_t Processing()
         {
             return RET_LOGIN_BEING_CREATE_PLAYER;
         }
-
-        virtual int32_t EnterGame()override
-        {
-            return RET_LOGIN_BEING_CREATE_PLAYER;
-        }
-
     };
 
     class EnterGameState : public ILoginState
     {
     public:
         using ILoginState::ILoginState;
-        virtual int32_t CreatePlayer()override
-        {
-            return RET_LOGIN_BEING_ENTER_GAME;
-        }
 
-        virtual int32_t EnterGame()override
+        virtual int32_t Processing()override
         {
             return RET_LOGIN_BEING_ENTER_GAME;
         }
@@ -92,12 +72,7 @@ namespace common
     public:
         using ILoginState::ILoginState;
 
-        virtual int32_t CreatePlayer()override
-        {
-            return RET_LOGIN_PLAYEING;
-        }
-
-        virtual int32_t EnterGame()override
+        virtual int32_t Processing()override
         {
             return RET_LOGIN_PLAYEING;
         }
@@ -109,6 +84,10 @@ namespace common
     public:
         using ILoginState::ILoginState;
 
+        virtual int32_t Processing()override
+        {
+            return RET_LOGIN_WAITING_ENTER_GAME;
+        }        
         virtual int32_t CreatePlayer() override
         {
             emp_->emit(LoginESSetState{ E_LOGIN_STATE_CREATE_PLAYER });

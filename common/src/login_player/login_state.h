@@ -34,9 +34,10 @@ namespace common
         }
         virtual ~ILoginState() {};
 
-        virtual int32_t Login();
-        virtual int32_t CreatePlayer() = 0;
-        virtual int32_t EnterGame() = 0;
+        virtual int32_t Processing();
+        virtual int32_t Login() { return Processing(); }
+        virtual int32_t CreatePlayer() { return Processing(); }
+        virtual int32_t EnterGame() { return Processing(); }
 
         void WaitingEnterGame()
         {
