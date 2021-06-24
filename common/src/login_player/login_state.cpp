@@ -5,9 +5,9 @@
 namespace common
 {
 
-    int32_t ILoginState::Login()
+    int32_t ILoginState::Processing()
     {
-        return RET_LOGIN_REPETITION_LOGIN; 
+        return RET_OK;
     }
 
     ILoginState::StatePtr ILoginState::CreateState(int32_t state_enum, EventManagerPtr& emp)

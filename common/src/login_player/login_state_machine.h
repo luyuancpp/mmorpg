@@ -19,7 +19,7 @@ namespace common
 
         void set_state(int32_t state_enum);
 
-        int32_t Lgoin();
+        int32_t Login();
         int32_t CreatePlayer();
         int32_t EnterGame();
 

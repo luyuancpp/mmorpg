@@ -20,7 +20,7 @@ namespace common
         current_state_ = state_list_[state_enum];
     }
 
-    int32_t LoginStateMachine::Lgoin()
+    int32_t LoginStateMachine::Login()
 {
         return current_state_->Login();
     }
