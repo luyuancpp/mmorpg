@@ -20,26 +20,27 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 {
     // login process
     {
-        auto it = accounts_.find(request->account());
-        if (it != accounts_.end())
+        auto it = login_players_.find(request->account());
+        if (it != login_players_.end())
         {
-            response->mutable_account_player()->CopyFrom(it->second);
+            response->mutable_account_player()->CopyFrom(it->second->account_data());
             ReturnCloseureError(common::RET_OK);
         }
-        else if (it == accounts_.end())
+        else if (it == login_players_.end())
         {
             ::account_database account_data;
-            auto ret = accounts_.emplace(request->account(), account_data);
+            PlayerPtr player(std::make_shared<LoginPlayer>());
+            auto ret = login_players_.emplace(request->account(), player);
             connection_accounts_.emplace(request->connection_id(), request->account());
             assert(ret.second);
             it = ret.first;
         }
-        if (it == accounts_.end())
+        if (it == login_players_.end())
         {
             ReturnCloseureError(common::RET_LOGIN_CNAT_FIND_ACCOUNT);
         }
 
-        auto& account_data = it->second;
+        auto& account_data = it->second->account_data();
         redis_->Load(account_data, request->account());
         if (!account_data.password().empty())
         {
@@ -74,20 +75,20 @@ void LoginServiceImpl::CratePlayer(::google::protobuf::RpcController* controller
         ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
     }
 
-    auto ait = accounts_.find(cit->second);
-    if (ait == accounts_.end())
+    auto ait = login_players_.find(cit->second);
+    if (ait == login_players_.end())
     {
         ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_DONOT_LOAD_ACCOUNT);
     }
-    static int32_t kMaxPlayerSize = 4;
-    if (ait->second.simple_players().players_size() >= kMaxPlayerSize)
+    
+    if (ait->second->IsFullPlayer())
     {
         ReturnCloseureError(common::RET_LOGIN_MAX_PLAYER_SIZE);
     }
 
     // database process
     CreatePlayerRP cp(std::make_shared<CreatePlayerRpcString>(response, done));
-    cp->s_reqst_.set_account(ait->second.account());
+    cp->s_reqst_.set_account(ait->second->account());
     DbRpcClient::s().SendRequest(this,
         &LoginServiceImpl::DbCratePlayerReplied,
         cp,
@@ -110,14 +111,14 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 
 void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_database& a_d)
 {
-    auto it = accounts_.find(a);
-    if (it == accounts_.end())
+    auto it = login_players_.find(a);
+    if (it == login_players_.end())
     {
         std::string msg = std::string("account empty ") + a;
         LOG_ERROR << msg;
         return;
     }
-    it->second = a_d;
+    it->second->set_account_data(a_d);
 }
 
 }  // namespace gw2l

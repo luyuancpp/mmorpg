@@ -19,10 +19,7 @@ namespace common
             return RET_OK;
         }
 
-        virtual void WaitingEnterGame()override
-        {
-        }
-
+        virtual void WaitingEnterGame()override{}
     };
 
     class LoginState : public ILoginState
