@@ -12,7 +12,7 @@ namespace common
     {
     public:
 
-        using StatePtr = std::shared_ptr<LoginStateInterfase>;
+        using StatePtr = std::shared_ptr<ILoginState>;
         using StatePtrList = std::array<StatePtr, E_LOGIN_STATE_MAX>;
 
         LoginStateMachine();
@@ -20,11 +20,13 @@ namespace common
         void set_state(int32_t state_enum);
 
         int32_t Lgoin();
-        int32_t NoPlayer();
         int32_t CreatePlayer();
-        int32_t CreatePlayerComplete();
         int32_t EnterGame();
-        int32_t Playing();
+
+        void WaitingEnterGame();
+        void NoPlayer();
+        void FullPlayer();
+        void Playing();
 
         void receive(const LoginESSetState& s);
     private:

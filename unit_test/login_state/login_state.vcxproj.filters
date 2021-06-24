@@ -47,5 +47,8 @@
     <ClInclude Include="..\..\common\src\event\event.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\login_player\login_state_concrete.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
