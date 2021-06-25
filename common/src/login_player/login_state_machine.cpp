@@ -45,19 +45,19 @@ namespace common
         current_state_->WaitingEnterGame();
     }
 
-    void LoginStateMachine::NoPlayer()
+    void LoginStateMachine::OnEmptyPlayer()
     {
-        current_state_->NoPlayer();
+        current_state_->OnEmptyPlayer();
     }
 
-    void LoginStateMachine::FullPlayer()
-    {
-        current_state_->FullPlayer();
-    }
-
-    void LoginStateMachine::Playing()
+    void LoginStateMachine::OnFullPlayer()
 {
-        current_state_->Playing();
+        current_state_->OnFullPlayer();
+    }
+
+    void LoginStateMachine::OnPlaying()
+{
+        current_state_->OnPlaying();
     }
 
     void LoginStateMachine::receive(const LoginESSetState& s)

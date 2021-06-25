@@ -143,7 +143,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\src\event\event.cc" />
-    <ClCompile Include="..\..\common\src\login_player\login_player.cpp" />
     <ClCompile Include="..\..\common\src\login_player\login_state.cpp" />
     <ClCompile Include="..\..\common\src\login_player\login_state_machine.cpp" />
     <ClCompile Include="login_state_test.cpp" />
@@ -151,7 +150,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\common\src\event\event.h" />
     <ClInclude Include="..\..\common\src\login_player\login_event.h" />
-    <ClInclude Include="..\..\common\src\login_player\login_player.h" />
     <ClInclude Include="..\..\common\src\login_player\login_state.h" />
     <ClInclude Include="..\..\common\src\login_player\login_state_concrete.h" />
     <ClInclude Include="..\..\common\src\login_player\login_state_machine.h" />

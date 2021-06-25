@@ -34,7 +34,7 @@ namespace common
     };
 
     //login state interfase
-    class ILoginState
+    class ILoginState 
     {
     public:
         using StatePtr = std::shared_ptr<ILoginState>;
@@ -59,11 +59,12 @@ namespace common
         {
             emp_->emit(LoginESSetState{ E_LOGIN_STATE_WAITING_ENTER_GAME });
         }
-        virtual void NoPlayer() {}
-        void FullPlayer(){ emp_->emit(LoginESSetState{ E_LOGIN_STATE_FULL_PLAYER }); }
-        virtual void Playing() {}
+        virtual void OnEmptyPlayer() {}
+        void OnFullPlayer(){ emp_->emit(LoginESSetState{ E_LOGIN_STATE_FULL_PLAYER }); }
+        virtual void OnPlaying() {}
   
         static StatePtr CreateState(int32_t state_enum, EventManagerPtr& emp);
+
     protected:
         EventManagerPtr emp_;
         uint32_t processing_code_{0};

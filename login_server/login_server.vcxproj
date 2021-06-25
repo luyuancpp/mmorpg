@@ -154,12 +154,14 @@
   <ItemGroup>
     <ClCompile Include="login_server.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\account_player\account_player.cpp" />
     <ClCompile Include="src\database\rpcclient\database_rpcclient.cpp" />
     <ClCompile Include="src\gateway\service.cpp" />
     <ClCompile Include="src\master\rpcclient\master_rpcclient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="login_server.h" />
+    <ClInclude Include="src\account_player\account_player.h" />
     <ClInclude Include="src\database\rpcclient\database_rpcclient.h" />
     <ClInclude Include="src\gateway\service.h" />
     <ClInclude Include="src\master\rpcclient\master_rpcclient.h" />

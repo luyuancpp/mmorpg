@@ -52,6 +52,15 @@ if (ret != ReturnValue(RET_OK))\
 }\
 }
 
+#define  CheckCloseureError(ret)\
+if (ret != ReturnValue(common::RET_OK))\
+{\
+    response->mutable_error()->set_error_no(ret);\
+    done->Run();\
+    return;\
+}\
+
+
 #define  ReturnCloseureError(f)\
 response->mutable_error()->set_error_no(f);\
 done->Run();\

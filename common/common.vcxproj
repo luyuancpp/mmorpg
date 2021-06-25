@@ -150,7 +150,6 @@
   <ItemGroup>
     <ClCompile Include="src\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
-    <ClCompile Include="src\login_player\login_player.cpp" />
     <ClCompile Include="src\login_player\login_state.cpp" />
     <ClCompile Include="src\login_player\login_state_machine.cpp" />
     <ClCompile Include="src\mysql_client\mysql_client.cpp" />
@@ -172,7 +171,6 @@
     <ClInclude Include="src\event\event.h" />
     <ClInclude Include="src\exprtk\exprtk.hpp" />
     <ClInclude Include="src\login_player\login_event.h" />
-    <ClInclude Include="src\login_player\login_player.h" />
     <ClInclude Include="src\login_player\login_state.h" />
     <ClInclude Include="src\login_player\login_state_concrete.h" />
     <ClInclude Include="src\login_player\login_state_machine.h" />

@@ -19,7 +19,7 @@ TEST(LoginStateMachineTest, LoginNoPlayer)
 {
     LoginStateMachine lsm;
     EXPECT_EQ(RET_OK, lsm.Login());
-    lsm.NoPlayer();
+    lsm.OnEmptyPlayer();
     EXPECT_EQ(RET_LOGIN_LOGIN_NO_PLAYER, lsm.EnterGame());
     EXPECT_EQ(RET_OK, lsm.CreatePlayer());
     lsm.WaitingEnterGame();
@@ -31,7 +31,7 @@ TEST(LoginStateMachineTest, LoginNoPlayerCreateFull)
 {
     LoginStateMachine lsm;
     EXPECT_EQ(RET_OK, lsm.Login());
-    lsm.NoPlayer();
+    lsm.OnEmptyPlayer();
     EXPECT_EQ(RET_LOGIN_LOGIN_NO_PLAYER, lsm.EnterGame());
     EXPECT_EQ(RET_OK, lsm.CreatePlayer());
     EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.CreatePlayer());
@@ -42,7 +42,7 @@ TEST(LoginStateMachineTest, LoginNoPlayerCreateFull)
     lsm.WaitingEnterGame();
     EXPECT_EQ(RET_OK, lsm.CreatePlayer());
     EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.CreatePlayer());
-    lsm.FullPlayer();
+    lsm.OnFullPlayer();
     EXPECT_EQ(RET_LOGIN_MAX_PLAYER_SIZE, lsm.CreatePlayer());
     EXPECT_EQ(RET_OK, lsm.EnterGame());
     EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.EnterGame());
@@ -55,7 +55,7 @@ TEST(LoginStateMachineTest, RenterGame)
     lsm.WaitingEnterGame();
     EXPECT_EQ(RET_OK, lsm.EnterGame());
     EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.EnterGame());
-    lsm.Playing();
+    lsm.OnPlaying();
     EXPECT_EQ(RET_LOGIN_PLAYEING, lsm.EnterGame());
 }
 
@@ -125,7 +125,7 @@ TEST(LoginStateMachineTest, PlayerEnterGameLogout)
     lsm.WaitingEnterGame();
     EXPECT_EQ(RET_OK, lsm.EnterGame());
     EXPECT_EQ(RET_OK, lsm.Logout());
-    lsm.Playing();
+    lsm.OnPlaying();
     EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.CreatePlayer());
     EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.EnterGame());
     EXPECT_EQ(RET_OK, lsm.Login());

@@ -30,6 +30,9 @@
     <ClCompile Include="src\gateway\service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\account_player\account_player.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="login_server.h">
@@ -42,6 +45,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\master\rpcclient\master_rpcclient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\account_player\account_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -3,7 +3,7 @@
 
 #include "src/server_rpc_client/rpc_string_closure.h"
 #include "src/redis_client/redis_client.h"
-#include "src/login_player/login_player.h"
+#include "src/account_player/account_player.h"
 
 #include "gw2l.pb.h"
 #include "l2db.pb.h"
@@ -11,14 +11,13 @@
 namespace gw2l
 {
     using common::RedisClientPtr;
-    using common::LoginPlayer;
     class LoginServiceImpl : public LoginService
     {
     public:
         using MessagePtr = std::unique_ptr<google::protobuf::Message>;
-        using ConnectionAccountMap = std::unordered_map<common::GameGuid, std::string>;
-        using PlayerPtr = std::shared_ptr<LoginPlayer>;
+        using PlayerPtr = std::shared_ptr<AccountPlayer>;
         using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
+        using ConnectionAccountMap = std::unordered_map<common::GameGuid, PlayerPtr>;
        
         virtual void Login(::google::protobuf::RpcController* controller,
             const gw2l::LoginRequest* request,
@@ -40,7 +39,7 @@ namespace gw2l
             l2db::CreatePlayerRespone,
             gw2l::CreatePlayerRespone>;
         using CreatePlayerRP = std::shared_ptr<CreatePlayerRpcString>;
-        void DbCratePlayerReplied(CreatePlayerRP d);
+        void DbCreatePlayerReplied(CreatePlayerRP d);
 
         virtual void EnterGame(::google::protobuf::RpcController* controller,
             const ::gw2l::EnterGameRequest* request,

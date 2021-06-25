@@ -1,12 +1,12 @@
-#ifndef COMMON_SRC_LOGIN_PLAYER_LOGIN_PLAYER_H_
-#define COMMON_SRC_LOGIN_PLAYER_LOGIN_PLAYER_H_
+#ifndef LOGIN_SRC_ACCOUNT_PLAYER_ACCOUNT_PLAYER_H_
+#define LOGIN_SRC_ACCOUNT_PLAYER_ACCOUNT_PLAYER_H_
 
-#include "login_state_machine.h"
+#include "src/login_player/login_state_machine.h"
 #include "mysql_database_table.pb.h"
 
-namespace common
+namespace gw2l
 {
-    class LoginPlayer
+    class AccountPlayer
     {
     public:
         void set_account_data(const account_database& pb) { account_data_ = pb; }
@@ -19,17 +19,16 @@ namespace common
         inline uint32_t CreatePlayer() { return login_state_machine_.CreatePlayer(); }
         inline uint32_t EnterGame() { return login_state_machine_.EnterGame(); }
 
-        void WaitingEnterGame();
-        inline void NoPlayer() { login_state_machine_.NoPlayer(); }
-        void FullPlayer();
-        inline void Playing() { return login_state_machine_.Playing(); }
+        void OnDbLoaded();
+        inline void Playing() { return login_state_machine_.OnPlaying(); }
 
         bool IsFullPlayer()const;
+        bool EmptyPlayer()const;
 
     private:
-        LoginStateMachine login_state_machine_;
+        common::LoginStateMachine login_state_machine_;
         ::account_database account_data_;
     };
-}//namespace common
+}//namespace gw2l
 
-#endif//COMMON_SRC_LOGIN_PLAYER_LOGIN_PLAYER_H_
+#endif//LOGIN_SRC_ACCOUNT_PLAYER_ACCOUNT_PLAYER_H_
