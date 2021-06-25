@@ -8,10 +8,10 @@
 
 namespace common
 {
-    class NoneState : public ILoginState
+    class NoneState : public LoginStateBase<NoneState, RET_LOGIN_DONOT_LOGIN>
     {
     public:
-        using ILoginState::ILoginState;
+        using LoginStateBase::LoginStateBase;
 
         virtual uint32_t Login()override
         {
@@ -22,10 +22,10 @@ namespace common
         virtual void WaitingEnterGame()override{}
     };
 
-    class LoginState : public ILoginState
+    class LoginState : public LoginStateBase<LoginState, RET_LOGIN_LOGIN_ING>
     {
     public:
-        using ILoginState::ILoginState;
+        using LoginStateBase::LoginStateBase;
 
         virtual void OnEmptyPlayer() override 
         {
@@ -33,31 +33,29 @@ namespace common
         }
     };
 
-    class CreatePlayerState : public ILoginState
+    class CreatePlayerState : public LoginStateBase<CreatePlayerState, RET_LOGIN_BEING_CREATE_PLAYER>
     {
     public:
-        using ILoginState::ILoginState;
+        using LoginStateBase::LoginStateBase;
     };
 
-    class EnterGameState : public ILoginState
+    class EnterGameState : public LoginStateBase< EnterGameState, RET_LOGIN_BEING_ENTER_GAME>
     {
     public:
-        using ILoginState::ILoginState;
-
+        using LoginStateBase::LoginStateBase;
         virtual void OnPlaying()override { emp_->emit(LoginESSetState{ E_LGOIN_STATE_PLAYING }); }
-
     };
 
-    class PlayingState : public ILoginState
+    class PlayingState : public LoginStateBase <PlayingState, RET_LOGIN_PLAYEING>
     {
     public:
-        using ILoginState::ILoginState;
+        using LoginStateBase::LoginStateBase;
     };
 
-    class WaitingEnterGameState : public ILoginState
+    class WaitingEnterGameState : public LoginStateBase<WaitingEnterGameState, RET_LOGIN_WAITING_ENTER_GAME>
     {
     public:
-        using ILoginState::ILoginState;
+        using LoginStateBase::LoginStateBase;
   
         virtual uint32_t CreatePlayer() override
         {
@@ -72,10 +70,10 @@ namespace common
         }
     };
 
-    class NoPlayerState : public ILoginState
+    class EmptyPlayerState : public LoginStateBase <EmptyPlayerState, RET_LOGIN_WAITING_ENTER_GAME>
     {
     public:
-        using ILoginState::ILoginState;
+        using LoginStateBase::LoginStateBase;
 
         virtual uint32_t CreatePlayer() override
         {
@@ -89,10 +87,10 @@ namespace common
         }
     };
 
-    class FullPlayerState : public ILoginState
+    class FullPlayerState : public LoginStateBase <FullPlayerState, RET_LOGIN_WAITING_ENTER_GAME>
     {
     public:
-        using ILoginState::ILoginState;
+        using LoginStateBase::LoginStateBase;
         virtual uint32_t CreatePlayer() override
         {
             return RET_LOGIN_MAX_PLAYER_SIZE;
