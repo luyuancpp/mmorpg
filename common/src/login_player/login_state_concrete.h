@@ -27,7 +27,7 @@ namespace common
     public:
         using ILoginState::ILoginState;
 
-        virtual void NoPlayer() override 
+        virtual void OnEmptyPlayer() override 
         {
             emp_->emit(LoginESSetState{ E_LOGIN_STATE_NO_PLAYER });
         }
@@ -44,7 +44,7 @@ namespace common
     public:
         using ILoginState::ILoginState;
 
-        virtual void Playing()override { emp_->emit(LoginESSetState{ E_LGOIN_STATE_PLAYING }); }
+        virtual void OnPlaying()override { emp_->emit(LoginESSetState{ E_LGOIN_STATE_PLAYING }); }
 
     };
 

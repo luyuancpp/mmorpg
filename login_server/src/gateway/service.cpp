@@ -5,6 +5,7 @@
 
 #include "src/database/rpcclient/database_rpcclient.h"
 #include "src/return_code/return_notice_code.h"
+#include "src/return_code/notice_struct.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -23,15 +24,14 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         auto it = login_players_.find(request->account());
         if (it != login_players_.end())
         {
-            response->mutable_account_player()->CopyFrom(it->second->account_data());
-            ReturnCloseureError(common::RET_OK);
+            ReturnCloseureError(it->second->Login());
         }
         else if (it == login_players_.end())
         {
             ::account_database account_data;
-            PlayerPtr player(std::make_shared<LoginPlayer>());
+            PlayerPtr player(std::make_shared<AccountPlayer>());
             auto ret = login_players_.emplace(request->account(), player);
-            connection_accounts_.emplace(request->connection_id(), request->account());
+            connection_accounts_.emplace(request->connection_id(), player);
             assert(ret.second);
             it = ret.first;
         }
@@ -39,12 +39,13 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         {
             ReturnCloseureError(common::RET_LOGIN_CNAT_FIND_ACCOUNT);
         }
-
+        it->second->Login();
         auto& account_data = it->second->account_data();
         redis_->Load(account_data, request->account());
         if (!account_data.password().empty())
         {
             response->mutable_account_player()->CopyFrom(account_data);
+            it->second->OnDbLoaded();
             ReturnCloseureError(common::RET_OK);
         }
     }
@@ -74,28 +75,19 @@ void LoginServiceImpl::CratePlayer(::google::protobuf::RpcController* controller
     {
         ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
     }
-
-    auto ait = login_players_.find(cit->second);
-    if (ait == login_players_.end())
-    {
-        ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_DONOT_LOAD_ACCOUNT);
-    }
-    
-    if (ait->second->IsFullPlayer())
-    {
-        ReturnCloseureError(common::RET_LOGIN_MAX_PLAYER_SIZE);
-    }
+    auto& ap = cit->second;
+    CheckCloseureError(ap->CreatePlayer());
 
     // database process
     CreatePlayerRP cp(std::make_shared<CreatePlayerRpcString>(response, done));
-    cp->s_reqst_.set_account(ait->second->account());
+    cp->s_reqst_.set_account(cit->second->account());
     DbRpcClient::s().SendRequest(this,
-        &LoginServiceImpl::DbCratePlayerReplied,
+        &LoginServiceImpl::DbCreatePlayerReplied,
         cp,
         &l2db::LoginService_Stub::CratePlayer);
 }
 
-void LoginServiceImpl::DbCratePlayerReplied(CreatePlayerRP d)
+void LoginServiceImpl::DbCreatePlayerReplied(CreatePlayerRP d)
 {
     d->c_resp_->mutable_account_player()->CopyFrom(d->s_resp_->account_player());
     UpdateAccount(d->s_reqst_.account(), d->s_resp_->account_player());
@@ -118,7 +110,9 @@ void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_datab
         LOG_ERROR << msg;
         return;
     }
-    it->second->set_account_data(a_d);
+    auto& ap = it->second;
+    ap->set_account_data(a_d);
+    ap->OnDbLoaded();
 }
 
 }  // namespace gw2l

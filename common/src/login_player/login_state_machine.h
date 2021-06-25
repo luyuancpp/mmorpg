@@ -25,9 +25,9 @@ namespace common
         uint32_t EnterGame();
 
         void WaitingEnterGame();
-        void NoPlayer();
-        void FullPlayer();
-        void Playing();
+        void OnEmptyPlayer();
+        void OnFullPlayer();
+        void OnPlaying();
 
         void receive(const LoginESSetState& s);
     private:
