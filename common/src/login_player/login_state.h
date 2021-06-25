@@ -23,14 +23,8 @@ namespace common
 
     struct CreateILoginStateP
     {
-        CreateILoginStateP(EventManagerPtr& emp, uint32_t processing_code)
-            : emp_(emp),
-            processing_code_(processing_code)
-        {
-
-        }
+        CreateILoginStateP(EventManagerPtr& emp) : emp_(emp){}
         EventManagerPtr& emp_;
-        uint32_t processing_code_;
     };
 
     //login state interfase
@@ -40,21 +34,19 @@ namespace common
         using StatePtr = std::shared_ptr<ILoginState>;
 
         ILoginState(CreateILoginStateP& c)
-            : emp_(c.emp_),
-              processing_code_(c.processing_code_)
+            : emp_(c.emp_)
         {
 
         }
         virtual ~ILoginState() {};
 
-        void set_processing(uint32_t p) { processing_code_ = p; }
-        uint32_t processing()const { return processing_code_; }
-
-        virtual uint32_t Login() { return processing(); }
+        // player operator
+        virtual uint32_t Login() = 0;
         uint32_t Logout();
-        virtual uint32_t CreatePlayer() { return processing(); }
-        virtual uint32_t EnterGame() { return processing(); }
+        virtual uint32_t CreatePlayer() = 0;
+        virtual uint32_t EnterGame() = 0;
 
+        // server operator
         virtual void WaitingEnterGame()
         {
             emp_->emit(LoginESSetState{ E_LOGIN_STATE_WAITING_ENTER_GAME });
@@ -67,7 +59,23 @@ namespace common
 
     protected:
         EventManagerPtr emp_;
-        uint32_t processing_code_{0};
+    };
+
+    //login state interfase
+    template <typename Derived, uint32_t ProcessingCode>
+    class LoginStateBase : public ILoginState
+    {
+    public:
+        using ILoginState::ILoginState;
+
+        uint32_t processing()const { return processing_code_; }
+
+        virtual uint32_t Login() override { return processing(); }
+        virtual uint32_t CreatePlayer() override { return processing(); }
+        virtual uint32_t EnterGame()override { return processing(); }
+
+    protected:
+        static const uint32_t processing_code_{ ProcessingCode };
     };
 }//namespace common
 

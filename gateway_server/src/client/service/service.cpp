@@ -80,6 +80,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 muduo::Timestamp)
 {
     EnterGameCCPtr p(std::make_shared<EnterGameCC>(conn));
+    p->s_rqst_.set_connection_id(p->connection_hash_id());
     LoginClient::s().Send(&ClientReceiver::OnServerEnterGameReplied,
         p,
         this,

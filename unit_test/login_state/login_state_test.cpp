@@ -20,6 +20,7 @@ TEST(LoginStateMachineTest, LoginNoPlayer)
     LoginStateMachine lsm;
     EXPECT_EQ(RET_OK, lsm.Login());
     lsm.OnEmptyPlayer();
+    EXPECT_EQ(RET_LOGIN_WAITING_ENTER_GAME, lsm.Login());
     EXPECT_EQ(RET_LOGIN_LOGIN_NO_PLAYER, lsm.EnterGame());
     EXPECT_EQ(RET_OK, lsm.CreatePlayer());
     lsm.WaitingEnterGame();

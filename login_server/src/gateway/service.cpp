@@ -98,6 +98,14 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::gw2l::EnterGameRespone* response,
     ::google::protobuf::Closure* done)
 {
+    auto cit = connection_accounts_.find(request->connection_id());
+    if (cit == connection_accounts_.end())
+    {
+        ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+    }
+    auto& ap = cit->second;
+    CheckCloseureError(ap->EnterGame());
+    ap->Playing();
     done->Run();
 }
 

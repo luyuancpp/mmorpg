@@ -22,10 +22,10 @@ namespace gw2l
         void OnDbLoaded();
         inline void Playing() { return login_state_machine_.OnPlaying(); }
 
+    private:
         bool IsFullPlayer()const;
         bool EmptyPlayer()const;
 
-    private:
         common::LoginStateMachine login_state_machine_;
         ::account_database account_data_;
     };
