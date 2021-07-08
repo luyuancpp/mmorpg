@@ -43,7 +43,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         {
             response->mutable_account_player()->CopyFrom(account_data);
             player->OnDbLoaded();
-            ReturnCloseureError(common::RET_OK);
+            ReturnCloseureOK;
         }
     }
  
@@ -60,7 +60,7 @@ void LoginServiceImpl::DbLoginReplied(LoginRP d)
     UpdateAccount(d->s_reqst_.account(), d->s_resp_->account_player());
 }
 
-void LoginServiceImpl::CratePlayer(::google::protobuf::RpcController* controller, 
+void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
     const gw2l::CreatePlayerRequest* request, 
     gw2l::CreatePlayerRespone* response, 
     ::google::protobuf::Closure* done)
@@ -81,7 +81,7 @@ void LoginServiceImpl::CratePlayer(::google::protobuf::RpcController* controller
     DbRpcClient::GetSingleton().SendRequest(this,
         &LoginServiceImpl::DbCreatePlayerReplied,
         cp,
-        &l2db::LoginService_Stub::CratePlayer);
+        &l2db::LoginService_Stub::CreatePlayer);
 }
 
 void LoginServiceImpl::DbCreatePlayerReplied(CreatePlayerRP d)
@@ -102,8 +102,41 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     }
     auto& ap = cit->second;
     CheckReturnCloseureError(ap->EnterGame());
-    ap->Playing();
-    done->Run();
+
+    // long time in login processing
+    if (!ap->IsPlayerId(request->player_id()))
+    {
+        ReturnCloseureError(common::RET_LOGIN_ENTER_GAME_PLAYER_ID);
+    }
+
+    // player in redis return ok
+    player_database new_player;
+    new_player.set_player_id(request->player_id());
+    redis_->Load(new_player, new_player.player_id());
+    if (new_player.register_time() > 0)
+    {
+        ReturnCloseureOK;
+    }
+    // database to redis 
+    EnterGameRP cp(std::make_shared<EnterGameRpcString>(response, done));
+    cp->s_reqst_.set_account(ap->account());
+    cp->s_reqst_.set_player_id(request->player_id());
+    DbRpcClient::GetSingleton().SendRequest(this,
+        &LoginServiceImpl::EnterGameReplied,
+        cp,
+        &l2db::LoginService_Stub::EnterGame);
+}
+
+void LoginServiceImpl::EnterGameReplied(EnterGameRP d)
+{
+    auto it = login_players_.find(d->s_reqst_.account());
+    if (it == login_players_.end())
+    {
+        std::string msg = std::string("disconnect not found connection id ") + d->s_reqst_.account();
+        LOG_ERROR << msg;
+        return;
+    }
+    it->second->Playing();
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller, 
@@ -114,7 +147,8 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())
     {
-        LOG_ERROR << "disconnect not found connection id " << request->connection_id();
+        std::string msg("disconnect not found connection id " + std::to_string(request->connection_id()));
+        LOG_ERROR << msg;
     }
     connection_accounts_.erase(cit);
     done->Run();

@@ -19,4 +19,5 @@ message player_database
   option(OptionAutoIncrementKey) = "player_id";
   uint64 player_id = 1;
   Vector3 pos = 2;
+  int64 register_time = 3;
 }

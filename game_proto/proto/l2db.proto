@@ -30,7 +30,8 @@ message CreatePlayerRespone
 
 message EnterGameRequest
 {
-  
+  uint64 player_id = 1;
+  string account = 2;
 }
 
 message EnterGameRespone
@@ -41,5 +42,6 @@ message EnterGameRespone
 
 service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
-  rpc CratePlayer (CreatePlayerRequest) returns (CreatePlayerRespone);
+  rpc CreatePlayer (CreatePlayerRequest) returns (CreatePlayerRespone);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameRespone);
 }

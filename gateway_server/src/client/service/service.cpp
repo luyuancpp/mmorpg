@@ -74,7 +74,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
     LoginClient::GetSingleton().Send(&ClientReceiver::OnServerCreatePlayerReplied, 
         p, 
         this, 
-        &gw2l::LoginService_Stub::CratePlayer);
+        &gw2l::LoginService_Stub::CreatPlayer);
 }
 
 void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayerCCPtr cp)
@@ -94,6 +94,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 {
     EnterGameCCPtr p(std::make_shared<EnterGameCC>(conn));
     p->s_rqst_.set_connection_id(p->connection_hash_id());
+    p->s_rqst_.set_player_id(message->player_id());
     LoginClient::GetSingleton().Send(&ClientReceiver::OnServerEnterGameReplied,
         p,
         this,
