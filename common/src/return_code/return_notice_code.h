@@ -23,6 +23,7 @@ namespace common
         RET_LOGIN_PLAYEING = 1008,
         RET_LOGIN_BEING_CREATE_PLAYER = 1009,
         RET_LOGIN_WAITING_ENTER_GAME = 1010,
+        RET_LOGIN_ENTER_GAME_PLAYER_ID = 1011,
 
         //TeamRet
         RET_TEAM_NOT_IN_APPLICANTS = 5000,
@@ -60,11 +61,11 @@ if (ret != ReturnValue(common::RET_OK))\
     return;\
 }\
 
-
 #define  ReturnCloseureError(f)\
 response->mutable_error()->set_error_no(f);\
 done->Run();\
 return;
 
+#define ReturnCloseureOK ReturnCloseureError(common::RET_OK);
 
 #endif // !COMMON_SRC_RETURN_CODE_Return_Notice_Code
