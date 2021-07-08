@@ -4,6 +4,10 @@ import "common.proto";
 import "mysql_database_table.proto";
 option cc_generic_services = true;
 
+message EmptyRespone
+{
+}
+
 message LoginRequest
 {
   string account = 1;
@@ -40,8 +44,18 @@ message EnterGameRespone
   uint64 player_id = 2;
 }
 
+message DisconnectRequest
+{
+  uint64 connection_id = 3;
+}
+
+message DisconnectRespone
+{
+}
+
 service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc CratePlayer (CreatePlayerRequest) returns (CreatePlayerRespone);
   rpc EnterGame (EnterGameRequest) returns (EnterGameRespone);
+  rpc Disconnect (DisconnectRequest) returns (DisconnectRespone);
 }

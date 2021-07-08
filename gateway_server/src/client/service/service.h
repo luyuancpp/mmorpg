@@ -30,6 +30,8 @@ public:
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
+    void OnConnection(const muduo::net::TcpConnectionPtr& conn);
+
     //client to gateway 
     void OnLogin(const muduo::net::TcpConnectionPtr& conn,
         const LoginRequestPtr& message,
@@ -55,6 +57,9 @@ public:
     using EnterGameCCPtr = std::shared_ptr<EnterGameCC>;
     void OnServerEnterGameReplied(EnterGameCCPtr cp);
 
+    using DisconnectCC = common::ClientClosure<gw2l::EmptyRespone, gw2l::DisconnectRequest, gw2l::DisconnectRespone>;
+    using DisconnectCCPtr = std::shared_ptr<DisconnectCC>;
+    void OnDisconnectReplied(DisconnectCCPtr cp);
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;

@@ -25,6 +25,19 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatc
         std::bind(&ClientReceiver::OnEnterGame, this, _1, _2, _3));
 }
 
+void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
+{
+    if (!conn->connected())
+    {
+        DisconnectCCPtr p(std::make_shared<DisconnectCC>(conn));
+        p->s_rqst_.set_connection_id(p->connection_hash_id());
+        LoginClient::GetSingleton().Send(&ClientReceiver::OnDisconnectReplied,
+            p,
+            this,
+            &gw2l::LoginService_Stub::Disconnect);
+    }
+}
+
 void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
@@ -33,7 +46,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     p->s_rqst_.set_account(message->account());
     p->s_rqst_.set_password(message->password());
     p->s_rqst_.set_connection_id(p->connection_hash_id());
-    LoginClient::s().Send(&ClientReceiver::OnServerLoginReplied, 
+    LoginClient::GetSingleton().Send(&ClientReceiver::OnServerLoginReplied, 
         p, 
         this, 
         &gw2l::LoginService_Stub::Login);
@@ -58,7 +71,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 {
     CreatePlayerCCPtr p(std::make_shared<CreatePlayerCC>(conn));
     p->s_rqst_.set_connection_id(p->connection_hash_id());
-    LoginClient::s().Send(&ClientReceiver::OnServerCreatePlayerReplied, 
+    LoginClient::GetSingleton().Send(&ClientReceiver::OnServerCreatePlayerReplied, 
         p, 
         this, 
         &gw2l::LoginService_Stub::CratePlayer);
@@ -81,7 +94,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 {
     EnterGameCCPtr p(std::make_shared<EnterGameCC>(conn));
     p->s_rqst_.set_connection_id(p->connection_hash_id());
-    LoginClient::s().Send(&ClientReceiver::OnServerEnterGameReplied,
+    LoginClient::GetSingleton().Send(&ClientReceiver::OnServerEnterGameReplied,
         p,
         this,
         &gw2l::LoginService_Stub::EnterGame);
@@ -90,6 +103,11 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
 {
     codec_.send(cp->client_connection_, cp->c_resp_);
+}
+
+void ClientReceiver::OnDisconnectReplied(DisconnectCCPtr cp)
+{
+
 }
 
 }

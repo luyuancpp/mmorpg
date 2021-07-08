@@ -18,7 +18,11 @@ namespace gw2l
         using PlayerPtr = std::shared_ptr<AccountPlayer>;
         using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
         using ConnectionAccountMap = std::unordered_map<common::GameGuid, PlayerPtr>;
-       
+        void set_redis_client(RedisClientPtr& p)
+        {
+            redis_ = p;
+        }
+
         virtual void Login(::google::protobuf::RpcController* controller,
             const gw2l::LoginRequest* request,
             gw2l::LoginResponse* response,
@@ -46,10 +50,11 @@ namespace gw2l
             ::gw2l::EnterGameRespone* response,
             ::google::protobuf::Closure* done)override;
 
-        void set_redis_client(RedisClientPtr& p)
-        {
-            redis_ = p;
-        }
+        virtual void Disconnect(::google::protobuf::RpcController* controller,
+            const ::gw2l::DisconnectRequest* request,
+            ::gw2l::DisconnectRespone* response,
+            ::google::protobuf::Closure* done)override;
+
         void UpdateAccount(const std::string& a, const ::account_database& a_d);
     private:
         RedisClientPtr redis_;

@@ -20,7 +20,7 @@ namespace gateway
         void Connect(EventLoop* loop,
             const InetAddress& login_server_addr);
 
-        static LoginClient& s()
+        static LoginClient& GetSingleton()
         {
             static LoginClient singleton;
             return singleton;

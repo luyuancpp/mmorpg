@@ -35,7 +35,5 @@ namespace login
 
 }// namespace login
 
-#define  master login::MasterRpcClient::GetSingleton() 
-
 #endif // LOGIN_SERVER_SRC_MASTER_RPCCLIENT_DATABASE_RPC_CLIENT_H_
 
