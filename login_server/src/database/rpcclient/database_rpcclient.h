@@ -16,14 +16,8 @@ namespace login
         using RpcStub = common::RpcClient<l2db::LoginService_Stub>;
         using RpcClientPtr = std::shared_ptr<RpcStub>;
 
-        void Connect(EventLoop* loop,
-            const InetAddress& login_server_addr)
-        {
-            database_client_ = std::make_shared<RpcStub>(loop, login_server_addr);
-            database_client_->connect();
-        }
 
-        static DbRpcClient& s()
+        static DbRpcClient& GetSingleton()
         {
             static DbRpcClient singleton;
             return singleton;
@@ -47,6 +41,12 @@ namespace login
             database_client_->SendRpcString(method, method_param, stub_method);
         }
   
+        void Connect(EventLoop* loop,
+            const InetAddress& login_server_addr)
+        {
+            database_client_ = std::make_shared<RpcStub>(loop, login_server_addr);
+            database_client_->connect();
+        }
     private:
         RpcClientPtr database_client_;
     };

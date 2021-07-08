@@ -29,8 +29,8 @@ public:
         client_receiver_(codec_, dispatcher_)
     {
    
-        /*server_.setConnectionCallback(
-            std::bind(&GatewayServer::OnConnection, this, _1));*/
+        server_.setConnectionCallback(
+            std::bind(&GatewayServer::OnConnection, this, _1));
         server_.setMessageCallback(
             std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     }
@@ -43,6 +43,7 @@ public:
 private:
     void OnConnection(const TcpConnectionPtr& conn)
     {
+        client_receiver_.OnConnection(conn);
     }
 
     void OnUnknownMessage(const TcpConnectionPtr& conn,
