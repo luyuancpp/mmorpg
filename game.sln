@@ -49,7 +49,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "master_server", "master_ser
 		{D0AF8FBD-FB08-454F-A879-7F594E3B57DF} = {D0AF8FBD-FB08-454F-A879-7F594E3B57DF}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "protopb", "protopb\game_proto.vcxproj", "{D0AF8FBD-FB08-454F-A879-7F594E3B57DF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "protopb", "protopb\protopb.vcxproj", "{D0AF8FBD-FB08-454F-A879-7F594E3B57DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
