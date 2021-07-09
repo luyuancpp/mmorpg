@@ -85,14 +85,14 @@ namespace common
 //   RpcChannel* channel = new MyRpcChannel("remotehost.example.com:1234");
 //   MyService* service = new MyService::Stub(channel);
 //   service->MyMethod(request, &response, callback);
-class GameRpcChannel : public ::google::protobuf::RpcChannel
+class RpcChannel : public ::google::protobuf::RpcChannel
 {
  public:
-  GameRpcChannel();
+  RpcChannel();
 
-  explicit GameRpcChannel(const muduo::net::TcpConnectionPtr& conn);
+  explicit RpcChannel(const muduo::net::TcpConnectionPtr& conn);
 
-  ~GameRpcChannel() override;
+  ~RpcChannel() override;
 
   void setConnection(const muduo::net::TcpConnectionPtr& conn)
   {
@@ -141,7 +141,7 @@ class GameRpcChannel : public ::google::protobuf::RpcChannel
 
   const std::map<std::string, ::google::protobuf::Service*>* services_;
 };
-typedef std::shared_ptr<GameRpcChannel> RpcChannelPtr;
+typedef std::shared_ptr<RpcChannel> RpcChannelPtr;
 
 }  // namespace common
 

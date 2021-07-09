@@ -138,20 +138,11 @@
     <ClCompile Include="muduo\net\poller\WindowsPollPoller.cc">
       <Filter>源文件\muduo\net\poller</Filter>
     </ClCompile>
-    <ClCompile Include="muduo\net\protorpc\RpcChannel.cc">
-      <Filter>源文件\muduo\net\protorpc</Filter>
-    </ClCompile>
     <ClCompile Include="muduo\net\protorpc\RpcCodec.cc">
-      <Filter>源文件\muduo\net\protorpc</Filter>
-    </ClCompile>
-    <ClCompile Include="muduo\net\protorpc\RpcServer.cc">
       <Filter>源文件\muduo\net\protorpc</Filter>
     </ClCompile>
     <ClCompile Include="muduo\net\protobuf\ProtobufCodecLite.cc">
       <Filter>源文件\muduo\net\protobuf</Filter>
-    </ClCompile>
-    <ClCompile Include="muduo\net\protorpc\rpc.pb.cc">
-      <Filter>源文件\muduo\net\protorpc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -305,13 +296,7 @@
     <ClInclude Include="muduo\net\ZlibStream.h">
       <Filter>源文件\muduo\net</Filter>
     </ClInclude>
-    <ClInclude Include="muduo\net\protorpc\RpcChannel.h">
-      <Filter>源文件\muduo\net\protorpc</Filter>
-    </ClInclude>
     <ClInclude Include="muduo\net\protorpc\RpcCodec.h">
-      <Filter>源文件\muduo\net\protorpc</Filter>
-    </ClInclude>
-    <ClInclude Include="muduo\net\protorpc\RpcServer.h">
       <Filter>源文件\muduo\net\protorpc</Filter>
     </ClInclude>
     <ClInclude Include="muduo\net\protobuf\BufferStream.h">
@@ -319,9 +304,6 @@
     </ClInclude>
     <ClInclude Include="muduo\net\protobuf\ProtobufCodecLite.h">
       <Filter>源文件\muduo\net\protobuf</Filter>
-    </ClInclude>
-    <ClInclude Include="muduo\net\protorpc\rpc.pb.h">
-      <Filter>源文件\muduo\net\protorpc</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

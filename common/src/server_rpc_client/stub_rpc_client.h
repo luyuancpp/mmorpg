@@ -28,12 +28,12 @@ public:
     RpcClient(EventLoop* loop,
         const InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
-          channel_(new GameRpcChannel)
+          channel_(new RpcChannel)
     {
         client_.setConnectionCallback(
             std::bind(&RpcClient::onConnection, this, _1));
         client_.setMessageCallback(
-            std::bind(&GameRpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
+            std::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
         client_.enableRetry();
     }
 

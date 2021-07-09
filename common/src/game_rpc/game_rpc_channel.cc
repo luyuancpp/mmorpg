@@ -18,22 +18,22 @@ using namespace muduo::net;
 
 namespace common
 {
-GameRpcChannel::GameRpcChannel()
-  : codec_(std::bind(&GameRpcChannel::onRpcMessage, this, _1, _2, _3)),
+RpcChannel::RpcChannel()
+  : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
     services_(NULL)
 {
   LOG_INFO << "RpcChannel::ctor - " << this;
 }
 
-GameRpcChannel::GameRpcChannel(const TcpConnectionPtr& conn)
-  : codec_(std::bind(&GameRpcChannel::onRpcMessage, this, _1, _2, _3)),
+RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
+  : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
     conn_(conn),
     services_(NULL)
 {
   LOG_INFO << "RpcChannel::ctor - " << this;
 }
 
-GameRpcChannel::~GameRpcChannel()
+RpcChannel::~RpcChannel()
 {
   LOG_INFO << "RpcChannel::dtor - " << this;
   for (const auto& outstanding : outstandings_)
@@ -49,7 +49,7 @@ GameRpcChannel::~GameRpcChannel()
   // are less strict in one important way:  the request and response objects
   // need not be of any specific class as long as their descriptors are
   // method->input_type() and method->output_type().
-void GameRpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
+void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
                             google::protobuf::RpcController* controller,
                             const ::google::protobuf::Message* request,
                             ::google::protobuf::Message* response,
@@ -71,14 +71,14 @@ void GameRpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* meth
   codec_.send(conn_, message);
 }
 
-void GameRpcChannel::onMessage(const TcpConnectionPtr& conn,
+void RpcChannel::onMessage(const TcpConnectionPtr& conn,
                            Buffer* buf,
                            Timestamp receiveTime)
 {
   codec_.onMessage(conn, buf, receiveTime);
 }
 
-void GameRpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
+void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
                               const RpcMessagePtr& messagePtr,
                               Timestamp receiveTime)
 {
@@ -137,7 +137,7 @@ void GameRpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
             // response is deleted in doneCallback
             int64_t id = message.id();
             service->CallMethod(method, NULL, get_pointer(request), response,
-                                NewCallback(this, &GameRpcChannel::doneCallback, response, id));
+                                NewCallback(this, &RpcChannel::doneCallback, response, id));
             error = RPC_NO_ERROR;
           }
           else
@@ -173,7 +173,7 @@ void GameRpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   }
 }
 
-void GameRpcChannel::doneCallback(::google::protobuf::Message* response, int64_t id)
+void RpcChannel::doneCallback(::google::protobuf::Message* response, int64_t id)
 {
   std::unique_ptr<google::protobuf::Message> d(response);
   RpcMessage message;
