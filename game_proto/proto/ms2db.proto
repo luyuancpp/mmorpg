@@ -1,6 +1,5 @@
 syntax = "proto3";
 package ms2db;
-import "common.proto";
 option cc_generic_services = true;
 
 message LoginRequest

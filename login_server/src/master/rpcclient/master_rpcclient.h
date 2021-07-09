@@ -29,6 +29,14 @@ namespace login
             return singleton;
         }
 
+        template<typename Class, typename MethodParam, typename StubMethod>
+        void SendRequest(Class* object,
+            void (Class::* method)(MethodParam),
+            MethodParam& method_param,
+            StubMethod stub_method)
+        {
+            master_client_->SendRpcString(object, method, method_param, stub_method);
+        }
     private:
         RpcClientPtr master_client_;
     };

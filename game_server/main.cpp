@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     InetAddress listen_addr("127.0.0.1", 2005);
     InetAddress master_addr("127.0.0.1", 2004);
 
-    master.Connect(&loop, master_addr);
+    game::MasterRpcClient::GetSingleton().Connect(&loop, master_addr);
 
     RpcServer server(&loop, listen_addr);
     server.setThreadNum(nThreads);
