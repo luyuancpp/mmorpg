@@ -36,6 +36,23 @@ namespace common
         return *applicant_ids_.begin();
     }
 
+    ReturnValue Team::CheckLimt(const TeamMember& m)
+    {
+        return RET_OK;
+    }
+
+    bool Team::TestApplicantValueEqual() const
+    {
+        for (auto it : applicant_ids_)
+        {
+            if (applicants_.find(it) == applicants_.end())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     ReturnValue Team::JoinTeam(const TeamMember& m)
     {
         RET_CHECK_RET(TryToJoinTeam(m));
@@ -88,7 +105,7 @@ namespace common
         return RET_OK;
     }
 
-   
+
 
     ReturnValue Team::KickMember(GameGuid current_leader, GameGuid  kick_player_id)
     {
@@ -213,22 +230,5 @@ namespace common
     {
         applicants_.clear();
         applicant_ids_.clear();
-    }
-
-    ReturnValue Team::CheckLimt(const TeamMember& m)
-    {
-        return RET_OK;
-    }
-
-    bool Team::TestApplicantValueEqual() const
-    {
-        for (auto it : applicant_ids_)
-        {
-            if (applicants_.find(it) == applicants_.end())
-            {
-                return false;
-            }
-        }
-        return true;
     }
 }//namespace common

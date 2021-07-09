@@ -19,6 +19,7 @@ namespace common
     static const std::size_t kMaxMemberSize{ 5 };
     typedef std::unordered_map<GameGuid, TeamMember> Members;
 
+    //function order get, set is, test action
     struct CreateTeamParam
     {
         GameGuid leader_id_{ 0 };
@@ -47,6 +48,15 @@ namespace common
         GameGuid first_applicant_id()const;
         const Members& members()const { return members_; }
 
+        bool HasApplicant(GameGuid applicant_id) const { return applicants_.find(applicant_id) != applicants_.end(); }
+        bool HasApply()const { return !applicants_.empty(); }
+        bool IsFull()const { return members_.size() >= max_member_size(); }
+        bool IsLeader(GameGuid playerid)const { return leader_id_ != kEmptyGameGuid && leader_id_ == playerid; }
+        bool InTeam(GameGuid player_guid)const { return members_.find(player_guid) != members_.end(); }
+
+        ReturnValue CheckLimt(const TeamMember& m);
+        bool TestApplicantValueEqual()const;
+
         ReturnValue JoinTeam(const TeamMember& m);
         ReturnValue TryToJoinTeam(const TeamMember& m);
         ReturnValue LeaveTeam(GameGuid playerid);
@@ -57,16 +67,6 @@ namespace common
         ReturnValue RemoveApplicant(GameGuid applicant_id);
         ReturnValue DisMiss();
         void ClearApplyList();
-
-        bool HasApplicant(GameGuid applicant_id) const { return applicants_.find(applicant_id) != applicants_.end(); }
-        bool HasApply()const { return !applicants_.empty(); }
-        bool IsFull()const { return members_.size() >= max_member_size(); }
-        bool IsLeader(GameGuid playerid)const { return leader_id_ != kEmptyGameGuid && leader_id_ == playerid; }
-        bool InTeam(GameGuid player_guid)const { return members_.find(player_guid) != members_.end(); }
-
-        ReturnValue CheckLimt(const TeamMember& m);
-        bool TestApplicantValueEqual()const;
-
     protected:
         template<typename E>
         void OnJoinTeam(const TeamMember& m)
