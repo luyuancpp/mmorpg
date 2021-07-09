@@ -187,6 +187,7 @@
     <ClInclude Include="src\return_code\return_code.h" />
     <ClInclude Include="src\return_code\return_notice_code.h" />
     <ClInclude Include="src\server_rpc_client\rpc_client_closure.h" />
+    <ClInclude Include="src\server_rpc_client\rpc_closure.h" />
     <ClInclude Include="src\server_rpc_client\rpc_string_closure.h" />
     <ClInclude Include="src\server_rpc_client\stub_rpc_client.h" />
     <ClInclude Include="src\snow_flake\snow_flake.h" />

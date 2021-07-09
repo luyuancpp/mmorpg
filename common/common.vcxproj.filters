@@ -149,5 +149,8 @@
     <ClInclude Include="src\game_rpc\game_rpc_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\server_rpc_client\rpc_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

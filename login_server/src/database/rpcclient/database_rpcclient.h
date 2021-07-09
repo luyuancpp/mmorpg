@@ -29,7 +29,7 @@ namespace login
             MethodParam& method_param,
             StubMethod stub_method)
         {
-            database_client_->SendRpcString(object, method, method_param, stub_method);
+            database_client_->CallMethodString(object, method, method_param, stub_method);
         }
 
         template<typename MethodParam, typename StubMethod>
@@ -38,7 +38,7 @@ namespace login
             MethodParam& method_param,
             StubMethod stub_method)
         {
-            database_client_->SendRpcString(method, method_param, stub_method);
+            database_client_->CallMethodString(method, method_param, stub_method);
         }
   
         void Connect(EventLoop* loop,

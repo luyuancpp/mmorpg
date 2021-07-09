@@ -32,7 +32,7 @@ namespace gateway
             Class* object,            
             StubMethod stub_method)
         {
-            login_client_->Send<MethodParam, Class, StubMethod>(method, method_param, object, stub_method);
+            login_client_->CallMethod<MethodParam, Class, StubMethod>(method, method_param, object, stub_method);
         }
 
         template<typename Request, typename Response, typename StubMethod>
@@ -40,7 +40,7 @@ namespace gateway
             void (method)(Response*),
             StubMethod stub_method)
         {
-            login_client_->Send<Request, Response, StubMethod>(request, method, stub_method);
+            login_client_->CallMethod<Request, Response, StubMethod>(request, method, stub_method);
         }
     private:
         RpcClientPtr login_client_;

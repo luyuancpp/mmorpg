@@ -35,7 +35,7 @@ namespace login
             MethodParam& method_param,
             StubMethod stub_method)
         {
-            master_client_->SendRpcString(object, method, method_param, stub_method);
+            master_client_->CallMethodString(object, method, method_param, stub_method);
         }
     private:
         RpcClientPtr master_client_;
