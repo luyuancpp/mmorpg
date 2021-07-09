@@ -43,7 +43,7 @@ public:
     }
 
     template<typename Request, typename Response, typename StubMethod>
-    void Send(const Request& request,
+    void CallMethod(const Request& request,
         void (method)(Response*),
         StubMethod stub_method)
     {
@@ -56,7 +56,7 @@ public:
     }
 
     template<typename MethodParam, typename Class, typename StubMethod>
-    void Send(void (Class::* method)(MethodParam),
+    void CallMethod(void (Class::* method)(MethodParam),
         MethodParam& method_param,
         Class* object,
         StubMethod stub_method)
@@ -72,7 +72,7 @@ public:
     }
 
     template<typename Class, typename MethodParam,  typename StubMethod>
-    void SendRpcString(Class* object,
+    void CallMethodString(Class* object,
         void (Class::* method)(MethodParam),
         MethodParam& method_param,
         StubMethod stub_method)
@@ -85,7 +85,7 @@ public:
     }
 
     template<typename MethodParam, typename StubMethod>
-    void SendRpcString(
+    void CallMethodString(
         void (method)(MethodParam),
         MethodParam& method_param,
         StubMethod stub_method)
