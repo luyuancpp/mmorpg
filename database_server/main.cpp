@@ -4,7 +4,7 @@
 
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoop.h"
-#include "muduo/net/protorpc/RpcServer.h"
+#include "src/game_rpc/game_rpc_server.h"
 
 #include "src/login/service.h"
 

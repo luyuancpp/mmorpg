@@ -10,7 +10,8 @@
 #include "muduo/net/InetAddress.h"
 #include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
-#include "muduo/net/protorpc/RpcChannel.h"
+
+#include "src/game_rpc/game_rpc_channel.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -27,12 +28,12 @@ public:
     RpcClient(EventLoop* loop,
         const InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
-          channel_(new RpcChannel)
+          channel_(new GameRpcChannel)
     {
         client_.setConnectionCallback(
             std::bind(&RpcClient::onConnection, this, _1));
         client_.setMessageCallback(
-            std::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
+            std::bind(&GameRpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
         client_.enableRetry();
     }
 

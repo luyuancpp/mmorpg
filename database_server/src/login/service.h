@@ -4,7 +4,7 @@
 #include "l2db.pb.h"
 
 #include "muduo/base/Logging.h"
-#include "muduo/net/protorpc/RpcServer.h"
+#include "src/game_rpc/game_rpc_server.h"
 
 using namespace muduo;
 using namespace muduo::net;

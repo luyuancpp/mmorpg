@@ -1,7 +1,7 @@
 #include "service.h"
 
 #include "muduo/base/Logging.h"
-#include "muduo/net/protorpc/RpcServer.h"
+#include "src/game_rpc/game_rpc_server.h"
 
 #include "src/database/rpcclient/database_rpcclient.h"
 #include "src/master/rpcclient/master_rpcclient.h"

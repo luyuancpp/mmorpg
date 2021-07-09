@@ -1,4 +1,4 @@
-#include "muduo/net/protorpc/RpcServer.h"
+#include "src/game_rpc/game_rpc_server.h"
 
 #include "src/master/rpcclient/master_rpcclient.h"
 
@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
     game::MasterRpcClient::GetSingleton().Connect(&loop, master_addr);
 
-    RpcServer server(&loop, listen_addr);
+    common::GameRpcServer server(&loop, listen_addr);
     server.setThreadNum(nThreads);
     server.start();
     loop.loop();

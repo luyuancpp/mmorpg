@@ -1,7 +1,7 @@
 #ifndef MASTER_SERVER_MASTER_SERVER_H_
 #define MASTER_SERVER_MASTER_SERVER_H_
 
-#include "muduo/net/protorpc/RpcServer.h"
+#include "src/game_rpc/game_rpc_server.h"
 
 #include "src/redis_client/redis_client.h"
 
@@ -25,7 +25,7 @@ namespace master
 
         void RegisterService(::google::protobuf::Service*);
     private:
-        muduo::net::RpcServer server_;
+        common::GameRpcServer server_;
         RedisClientPtr redis_;
     };
 }//namespace master
