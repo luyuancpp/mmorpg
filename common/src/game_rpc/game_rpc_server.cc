@@ -19,38 +19,38 @@ using namespace muduo::net;
 
 namespace common
 {
-GameRpcServer::GameRpcServer(EventLoop* loop,
+RpcServer::RpcServer(EventLoop* loop,
                      const InetAddress& listenAddr)
   : server_(loop, listenAddr, "GameRpcServer")
 {
   server_.setConnectionCallback(
-      std::bind(&GameRpcServer::onConnection, this, _1));
+      std::bind(&RpcServer::onConnection, this, _1));
 //   server_.setMessageCallback(
 //       std::bind(&GameRpcServer::onMessage, this, _1, _2, _3));
 }
 
-void GameRpcServer::registerService(google::protobuf::Service* service)
+void RpcServer::registerService(google::protobuf::Service* service)
 {
   const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
   services_[desc->full_name()] = service;
 }
 
-void GameRpcServer::start()
+void RpcServer::start()
 {
   server_.start();
 }
 
-void GameRpcServer::onConnection(const TcpConnectionPtr& conn)
+void RpcServer::onConnection(const TcpConnectionPtr& conn)
 {
   LOG_INFO << "GameRpcServer - " << conn->peerAddress().toIpPort() << " -> "
     << conn->localAddress().toIpPort() << " is "
     << (conn->connected() ? "UP" : "DOWN");
   if (conn->connected())
   {
-    RpcChannelPtr channel(new GameRpcChannel(conn));
+    RpcChannelPtr channel(new RpcChannel(conn));
     channel->setServices(&services_);
     conn->setMessageCallback(
-        std::bind(&GameRpcChannel::onMessage, get_pointer(channel), _1, _2, _3));
+        std::bind(&RpcChannel::onMessage, get_pointer(channel), _1, _2, _3));
     conn->setContext(channel);
   }
   else

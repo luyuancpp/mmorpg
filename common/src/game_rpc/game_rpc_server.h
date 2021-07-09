@@ -24,10 +24,10 @@ class Service;
 namespace common
 {
 
-class GameRpcServer
+class RpcServer
 {
  public:
-  GameRpcServer(muduo::net::EventLoop* loop,
+  RpcServer(muduo::net::EventLoop* loop,
             const muduo::net::InetAddress& listenAddr);
 
   void setThreadNum(int numThreads)

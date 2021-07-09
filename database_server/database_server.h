@@ -32,7 +32,7 @@ namespace database
 
         void RegisterService(::google::protobuf::Service*);
     private:
-        common::GameRpcServer server_;
+        common::RpcServer server_;
         MysqlClientPtr database_;
         RedisClientPtr redis_;
     };

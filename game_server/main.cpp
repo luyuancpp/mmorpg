@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
     game::MasterRpcClient::GetSingleton().Connect(&loop, master_addr);
 
-    common::GameRpcServer server(&loop, listen_addr);
+    common::RpcServer server(&loop, listen_addr);
     server.setThreadNum(nThreads);
     server.start();
     loop.loop();
