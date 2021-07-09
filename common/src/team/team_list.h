@@ -33,18 +33,6 @@ namespace common
         GameGuid leader_id_by_player_id(GameGuid player_id)const;
         GameGuid first_applicant_id(GameGuid team_id)const;
        
-        ReturnValue CreateTeam(const CreateTeamParam& param);
-        ReturnValue JoinTeam(GameGuid team_id, TeamMember& mem);
-        ReturnValue LeaveTeam(GameGuid player_id);
-        ReturnValue KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_player_id);
-        ReturnValue DissMissTeam(GameGuid team_id, GameGuid current_leader_id);
-        ReturnValue DissMissTeamNoLeader(GameGuid team_id);
-        ReturnValue AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  nNewLeaderPlayerId);
-        ReturnValue ApplyForTeam(GameGuid team_id, const TeamMember& m);
-        ReturnValue RemoveApplicant(GameGuid team_id, GameGuid apply_player_id);
-        ReturnValue AgreeApplicant(GameGuid team_id, GameGuid apply_player_id);
-        void ClearApplyList(GameGuid team_id);
-
         bool IsTeamsMax()const;
         bool IsTeamFull(GameGuid team_id);
         bool PlayerInTeam(GameGuid team_id, GameGuid player_id);
@@ -62,6 +50,18 @@ namespace common
         void receive(const TeamEventStructLeaderDismissTeam& es);
         void receive(const TeamEventStructLeaveTeam& es);
         void receive(const TeamEventStructDismissTeamOnTeamMemberEmpty& es);
+
+        ReturnValue CreateTeam(const CreateTeamParam& param);
+        ReturnValue JoinTeam(GameGuid team_id, TeamMember& mem);
+        ReturnValue LeaveTeam(GameGuid player_id);
+        ReturnValue KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_player_id);
+        ReturnValue DissMissTeam(GameGuid team_id, GameGuid current_leader_id);
+        ReturnValue DissMissTeamNoLeader(GameGuid team_id);
+        ReturnValue AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  nNewLeaderPlayerId);
+        ReturnValue ApplyForTeam(GameGuid team_id, const TeamMember& m);
+        ReturnValue RemoveApplicant(GameGuid team_id, GameGuid apply_player_id);
+        ReturnValue AgreeApplicant(GameGuid team_id, GameGuid apply_player_id);
+        void ClearApplyList(GameGuid team_id);
         
     protected:
 

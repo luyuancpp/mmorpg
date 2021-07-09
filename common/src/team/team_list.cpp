@@ -96,6 +96,76 @@ namespace common
         return p_team->first_applicant_id();
     }
 
+    bool TeamList::IsTeamsMax()const
+    {
+        return teams_.size() >= kMaxTeamSize;
+    }
+
+    bool TeamList::IsTeamFull(GameGuid team_id)
+    {
+        GetTeamPtrReturn(false);
+        return p_team->IsFull();
+    }
+
+    bool TeamList::PlayerInTeam(GameGuid team_id, GameGuid player_id)
+    {
+        GetTeamPtrReturn(false);
+        return p_team->InTeam(player_id);
+    }
+
+    bool TeamList::FindTeamId(GameGuid player_id)
+    {
+        return GetTeamId(player_id) != kEmptyGameGuid;
+    }
+
+    bool TeamList::HasApplicant(GameGuid team_id, GameGuid player_id) const
+    {
+        GetTeamPtrReturn(false);
+        return p_team->HasApplicant(player_id);
+    }
+
+    bool TeamList::IsLeader(GameGuid team_id, GameGuid player_id)
+    {
+        GetTeamPtrReturn(false);
+        return p_team->IsLeader(player_id);
+    }
+
+    bool TeamList::IsLeader(GameGuid player_id)
+    {
+        return IsLeader(GetTeamId(player_id), player_id);
+    }
+
+    bool TeamList::TestApplicantValueEqual(GameGuid team_id)const
+    {
+        GetTeamPtrReturn(false);
+        return p_team->TestApplicantValueEqual();
+    }
+
+    void TeamList::receive(const TeamEventStructJoinTeam& es)
+    {
+        OnJoinTeam(es.player_id_, es.team_id_);
+    }
+
+    void TeamList::receive(const TeamEventStructCreateTeamJoinTeam& es)
+    {
+        OnJoinTeam(es.player_id_, es.team_id_);
+    }
+
+    void TeamList::receive(const TeamEventStructLeaderDismissTeam& es)
+    {
+        OnPlayerLeaveTeam(es.player_id_);
+    }
+
+    void TeamList::receive(const TeamEventStructLeaveTeam& es)
+    {
+        OnPlayerLeaveTeam(es.player_id_);
+    }
+
+    void TeamList::receive(const TeamEventStructDismissTeamOnTeamMemberEmpty& es)
+    {
+        EraseTeam(es.team_id_);
+    }
+
     ReturnValue TeamList::CreateTeam(const CreateTeamParam& param)
     {
         if (IsTeamsMax())
@@ -220,76 +290,6 @@ namespace common
         {
             it->second->ClearApplyList();
         }
-    }
-
-    bool TeamList::IsTeamsMax()const
-    {
-        return teams_.size() >= kMaxTeamSize;
-    }
-
-    bool TeamList::IsTeamFull(GameGuid team_id)
-    {
-        GetTeamPtrReturn(false);
-        return p_team->IsFull();
-    }
-
-    bool TeamList::PlayerInTeam(GameGuid team_id, GameGuid player_id)
-    {
-        GetTeamPtrReturn(false);
-        return p_team->InTeam(player_id);
-    }
-
-    bool TeamList::FindTeamId(GameGuid player_id)
-    {
-        return GetTeamId(player_id) != kEmptyGameGuid;
-    }
-
-    bool TeamList::HasApplicant(GameGuid team_id, GameGuid player_id) const
-    {
-        GetTeamPtrReturn(false);
-        return p_team->HasApplicant(player_id);
-    }
-
-    bool TeamList::IsLeader(GameGuid team_id, GameGuid player_id)
-    {
-        GetTeamPtrReturn(false);
-        return p_team->IsLeader(player_id);
-    }
-
-    bool TeamList::IsLeader(GameGuid player_id)
-    {
-        return IsLeader(GetTeamId(player_id), player_id);
-    }
-
-    bool TeamList::TestApplicantValueEqual(GameGuid team_id)const
-    {
-        GetTeamPtrReturn(false);
-        return p_team->TestApplicantValueEqual();
-    }
-
-    void TeamList::receive(const TeamEventStructJoinTeam& es)
-    {
-        OnJoinTeam(es.player_id_, es.team_id_);
-    }
-
-    void TeamList::receive(const TeamEventStructCreateTeamJoinTeam& es)
-    {
-        OnJoinTeam(es.player_id_, es.team_id_);
-    }
-
-    void TeamList::receive(const TeamEventStructLeaderDismissTeam& es)
-    {
-        OnPlayerLeaveTeam(es.player_id_);
-    }
-
-    void TeamList::receive(const TeamEventStructLeaveTeam& es)
-    {
-        OnPlayerLeaveTeam(es.player_id_);
-    }
-
-    void TeamList::receive(const TeamEventStructDismissTeamOnTeamMemberEmpty& es)
-    {
-        EraseTeam(es.team_id_);
     }
 
     ReturnValue TeamList::JoinTeam(const Members& member_list, GameGuid  team_id)
