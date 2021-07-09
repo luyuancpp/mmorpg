@@ -73,7 +73,10 @@ class Service;
 }  // namespace protobuf
 }  // namespace google
 
-namespace common
+
+namespace muduo
+{
+namespace net
 {
 
 // Abstract interface for an RPC channel.  An RpcChannel represents a
@@ -90,11 +93,11 @@ class RpcChannel : public ::google::protobuf::RpcChannel
  public:
   RpcChannel();
 
-  explicit RpcChannel(const muduo::net::TcpConnectionPtr& conn);
+  explicit RpcChannel(const TcpConnectionPtr& conn);
 
   ~RpcChannel() override;
 
-  void setConnection(const muduo::net::TcpConnectionPtr& conn)
+  void setConnection(const TcpConnectionPtr& conn)
   {
     conn_ = conn;
   }
@@ -115,14 +118,14 @@ class RpcChannel : public ::google::protobuf::RpcChannel
                   ::google::protobuf::Message* response,
                   ::google::protobuf::Closure* done) override;
 
-  void onMessage(const muduo::net::TcpConnectionPtr& conn,
-      muduo::net::Buffer* buf,
-      muduo::Timestamp receiveTime);
+  void onMessage(const TcpConnectionPtr& conn,
+                 Buffer* buf,
+                 Timestamp receiveTime);
 
  private:
-  void onRpcMessage(const muduo::net::TcpConnectionPtr& conn,
-                    const muduo::net::RpcMessagePtr& messagePtr,
-      muduo::Timestamp receiveTime);
+  void onRpcMessage(const TcpConnectionPtr& conn,
+                    const RpcMessagePtr& messagePtr,
+                    Timestamp receiveTime);
 
   void doneCallback(::google::protobuf::Message* response, int64_t id);
 
@@ -132,17 +135,18 @@ class RpcChannel : public ::google::protobuf::RpcChannel
     ::google::protobuf::Closure* done;
   };
 
-  muduo::net::RpcCodec codec_;
-  muduo::net::TcpConnectionPtr conn_;
-  muduo::AtomicInt64 id_;
+  RpcCodec codec_;
+  TcpConnectionPtr conn_;
+  AtomicInt64 id_;
 
-  muduo::MutexLock mutex_;
+  MutexLock mutex_;
   std::map<int64_t, OutstandingCall> outstandings_ GUARDED_BY(mutex_);
 
   const std::map<std::string, ::google::protobuf::Service*>* services_;
 };
 typedef std::shared_ptr<RpcChannel> RpcChannelPtr;
 
-}  // namespace common
+}  // namespace net
+}  // namespace muduo
 
 #endif  // COMMON_SRC_GAME_RPC_GAME_RPC_CHANEL_H_

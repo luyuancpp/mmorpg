@@ -9,15 +9,14 @@
 #include "game_rpc_channel.h"
 
 #include "muduo/base/Logging.h"
-#include "muduo/net/protorpc/rpc.pb.h"
 
 #include <google/protobuf/descriptor.h>
+
+#include "game_rpc.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
 
-namespace common
-{
 RpcChannel::RpcChannel()
   : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
     services_(NULL)
@@ -182,5 +181,4 @@ void RpcChannel::doneCallback(::google::protobuf::Message* response, int64_t id)
   message.set_response(response->SerializeAsString()); // FIXME: error check
   codec_.send(conn_, message);
 }
-}//namespace common
 

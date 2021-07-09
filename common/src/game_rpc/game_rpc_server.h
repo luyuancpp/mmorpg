@@ -21,14 +21,16 @@ class Service;
 }  // namespace protobuf
 }  // namespace google
 
-namespace common
+namespace muduo
+{
+namespace net
 {
 
 class RpcServer
 {
  public:
-  RpcServer(muduo::net::EventLoop* loop,
-            const muduo::net::InetAddress& listenAddr);
+  RpcServer(EventLoop* loop,
+            const InetAddress& listenAddr);
 
   void setThreadNum(int numThreads)
   {
@@ -39,17 +41,18 @@ class RpcServer
   void start();
 
  private:
-  void onConnection(const muduo::net::TcpConnectionPtr& conn);
+  void onConnection(const TcpConnectionPtr& conn);
 
   // void onMessage(const TcpConnectionPtr& conn,
   //                Buffer* buf,
   //                Timestamp time);
 
-  muduo::net::TcpServer server_;
+  TcpServer server_;
   std::map<std::string, ::google::protobuf::Service*> services_;
 };
 
-}  // namespace common
+}  // namespace net
+}  // namespace muduo
 
 
 #endif  // COMMON_SRC_GAME_RPC_GAME_RPC_SERVER_H_

@@ -25,7 +25,7 @@ namespace login
 
         void RegisterService(::google::protobuf::Service*);
     private:
-        common::RpcServer server_;
+        muduo::net::RpcServer server_;
         RedisClientPtr redis_;
     };
 }

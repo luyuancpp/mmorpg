@@ -17,16 +17,14 @@
 using namespace muduo;
 using namespace muduo::net;
 
-namespace common
-{
 RpcServer::RpcServer(EventLoop* loop,
                      const InetAddress& listenAddr)
-  : server_(loop, listenAddr, "GameRpcServer")
+  : server_(loop, listenAddr, "RpcServer")
 {
   server_.setConnectionCallback(
       std::bind(&RpcServer::onConnection, this, _1));
 //   server_.setMessageCallback(
-//       std::bind(&GameRpcServer::onMessage, this, _1, _2, _3));
+//       std::bind(&RpcServer::onMessage, this, _1, _2, _3));
 }
 
 void RpcServer::registerService(google::protobuf::Service* service)
@@ -42,7 +40,7 @@ void RpcServer::start()
 
 void RpcServer::onConnection(const TcpConnectionPtr& conn)
 {
-  LOG_INFO << "GameRpcServer - " << conn->peerAddress().toIpPort() << " -> "
+  LOG_INFO << "RpcServer - " << conn->peerAddress().toIpPort() << " -> "
     << conn->localAddress().toIpPort() << " is "
     << (conn->connected() ? "UP" : "DOWN");
   if (conn->connected())
@@ -60,7 +58,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
   }
 }
 
-// void GameRpcServer::onMessage(const TcpConnectionPtr& conn,
+// void RpcServer::onMessage(const TcpConnectionPtr& conn,
 //                           Buffer* buf,
 //                           Timestamp time)
 // {
@@ -68,4 +66,3 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
 //   channel->onMessage(conn, buf, time);
 // }
 
-}//namespace common
