@@ -2,11 +2,13 @@
 #define SRC_GATEWAY_SERVICE_SERVICE_H_
 
 #include "src/server_rpc_client/rpc_string_closure.h"
+#include "src/server_rpc_client/rpc_closure.h"
 #include "src/redis_client/redis_client.h"
 #include "src/account_player/account_player.h"
 
 #include "gw2l.pb.h"
 #include "l2db.pb.h"
+#include "l2ms.pb.h"
 
 namespace gw2l
 {
@@ -55,6 +57,13 @@ namespace gw2l
             gw2l::EnterGameRespone>;
         using EnterGameRP = std::shared_ptr<EnterGameRpcString>;
         void EnterGameReplied(EnterGameRP d);
+
+        void EnterMasterServer(common::GameGuid player_id, const std::string& account);
+
+        using EnterMasterGameRpcClosure = common::RpcClosure<l2ms::EnterGameRequest,
+            l2ms::EnterGameResponse>;
+        using EnterMasterGameRC = std::shared_ptr<EnterMasterGameRpcClosure>;
+        void EnterMasterGameReplied(EnterMasterGameRC d);
 
         virtual void Disconnect(::google::protobuf::RpcController* controller,
             const ::gw2l::DisconnectRequest* request,

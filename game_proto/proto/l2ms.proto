@@ -1,6 +1,5 @@
 syntax = "proto3";
 package l2ms;
-import "common.proto";
 option cc_generic_services = true;
 
 message LoginRequest
@@ -23,8 +22,29 @@ message EnterGameResponse
 {
 }
 
+message LeaveGameRequest
+{
+  string account = 1;
+  uint64 player_id = 2;
+}
+
+message LeaveGameResponse
+{
+}
+
+message DisconectRequest
+{
+  string account = 1;
+  uint64 player_id = 2;
+}
+
+message DisconectResponse
+{
+}
+
 service LoginService 
 {
-  rpc Login (LoginRequest) returns (LoginResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
+  rpc LeaveGame (LeaveGameRequest) returns (LeaveGameResponse);
+  rpc Disconect (DisconectRequest) returns (DisconectResponse);  
 }

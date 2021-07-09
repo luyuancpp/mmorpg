@@ -35,7 +35,6 @@ namespace gateway
 
 }// namespace gateway
 
-#define  master gateway::MasterRpcClient::GetSingleton() 
 
 #endif // GATEWAY_SERVER_SRC_MASTER_RPCCLIENT_MASTER_RPCCLIENT_H_
 

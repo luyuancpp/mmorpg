@@ -1,5 +1,5 @@
-#ifndef COMMON_SRC_SERVER_CRPC_CLIENT_RPC_STRING_CLOSURE_H_
-#define COMMON_SRC_SERVER_CRPC_CLIENT_RPC_STRING_CLOSURE_H_
+#ifndef COMMON_SRC_SERVER_RPC_CLIENT_RPC_STRING_CLOSURE_H_
+#define COMMON_SRC_SERVER_RPC_CLIENT_RPC_STRING_CLOSURE_H_
 
 #include "google/protobuf/message.h"
 
@@ -19,8 +19,9 @@ namespace common
         ClientRespone* c_resp_{ nullptr };
         ServerRequest s_reqst_;
         ServerRespone* s_resp_{ nullptr };  
+    private:
         ::google::protobuf::Closure* cc_{ nullptr };
     };
 
 }//namespace common
-#endif //COMMON_SRC_SERVER_CRPC_CLIENT_RPC_STRING_CLOSURE_H_
+#endif //COMMON_SRC_SERVER_RPC_CLIENT_RPC_STRING_CLOSURE_H_

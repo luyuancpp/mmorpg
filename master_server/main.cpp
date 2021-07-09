@@ -1,6 +1,9 @@
 #include "master_server.h"
 
 #include "src/database/rpcclient/database_rpcclient.h"
+#include "src/login/service.h"
+
+#include "l2ms.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -12,11 +15,12 @@ int main(int argc, char* argv[])
     InetAddress listen_addr("127.0.0.1", 2004);
     InetAddress database_addr("127.0.0.1", 2003);
 
-    db_server.Connect(&loop, database_addr);
+    master::DatabaseRpcClient::GetSingleton().Connect(&loop, database_addr);
 
-    RpcServer server(&loop, listen_addr);
-    server.setThreadNum(nThreads);
-    server.start();
+    l2ms::LoginServiceImpl impl;
+    master::MasterServer server(&loop, listen_addr);
+    server.RegisterService(&impl);
+    server.Start();
     loop.loop();
     return 0;
 }

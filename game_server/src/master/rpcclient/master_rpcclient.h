@@ -36,7 +36,5 @@ namespace game
 
 }// namespace game
 
-#define  master game::MasterRpcClient::GetSingleton() 
-
 #endif // GAME_SERVER_SERVER_SRC_DATABASE_RPCCLIENT_DATABASE_RPC_CLIENT_H_
 

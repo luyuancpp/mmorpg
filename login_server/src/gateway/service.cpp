@@ -4,6 +4,7 @@
 #include "muduo/net/protorpc/RpcServer.h"
 
 #include "src/database/rpcclient/database_rpcclient.h"
+#include "src/master/rpcclient/master_rpcclient.h"
 #include "src/return_code/return_notice_code.h"
 #include "src/return_code/notice_struct.h"
 
@@ -115,6 +116,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     redis_->Load(new_player, new_player.player_id());
     if (new_player.register_time() > 0)
     {
+        EnterMasterServer(request->player_id(), ap->account());
         ReturnCloseureOK;
     }
     // database to redis 
@@ -129,15 +131,34 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 
 void LoginServiceImpl::EnterGameReplied(EnterGameRP d)
 {
-    auto it = login_players_.find(d->s_reqst_.account());
-    if (it == login_players_.end())
+    auto cit = login_players_.find(d->s_reqst_.account());
+    if (cit == login_players_.end())
     {
         std::string msg = std::string("disconnect not found connection id ") + d->s_reqst_.account();
         LOG_ERROR << msg;
         return;
     }
+    auto& ap = cit->second;
+    ap->Playing(d->s_reqst_.player_id());
 
-    it->second->Playing(d->s_reqst_.player_id());
+    EnterMasterServer(d->s_reqst_.player_id(), d->s_reqst_.account());
+}
+
+void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id, const std::string& account)
+{
+
+    EnterMasterGameRC cp(std::make_shared<EnterMasterGameRpcClosure>());
+    cp->s_reqst_.set_account(account);
+    cp->s_reqst_.set_player_id(player_id);
+    login::MasterRpcClient::GetSingleton().SendRequest(this,
+        &LoginServiceImpl::EnterMasterGameReplied,
+        cp,
+        &l2ms::LoginService_Stub::EnterGame);
+}
+
+void LoginServiceImpl::EnterMasterGameReplied(EnterMasterGameRC d)
+{
+   
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller, 
