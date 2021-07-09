@@ -118,7 +118,7 @@
       <DisableSpecificWarnings>4200</DisableSpecificWarnings>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;game_proto.lib;zlib.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;protopb.lib;zlib.lib;mysqlclient.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../bin/</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
