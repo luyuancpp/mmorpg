@@ -5,7 +5,7 @@
 #include "src/redis_client/redis_client.h"
 
 #include "muduo/net/EventLoop.h"
-#include "muduo/net/protorpc/RpcServer.h"
+#include "src/game_rpc/game_rpc_server.h"
 
 namespace database
 {
@@ -32,7 +32,7 @@ namespace database
 
         void RegisterService(::google::protobuf::Service*);
     private:
-        muduo::net::RpcServer server_;
+        common::GameRpcServer server_;
         MysqlClientPtr database_;
         RedisClientPtr redis_;
     };
