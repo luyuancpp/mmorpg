@@ -25,7 +25,7 @@ namespace master
 
         void RegisterService(::google::protobuf::Service*);
     private:
-        common::RpcServer server_;
+        muduo::net::RpcServer server_;
         RedisClientPtr redis_;
     };
 }//namespace master
