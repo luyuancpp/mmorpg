@@ -13,7 +13,7 @@ compile_commands.json
 *.db*
 *.user
 *.zip
-game_proto/pbc/
+protopb/pbc/
 third_party/
 output/
 lib/
