@@ -23,7 +23,11 @@ namespace gw2l
         inline uint32_t EnterGame() { return login_state_machine_.EnterGame(); }
 
         void OnDbLoaded();
-        inline void Playing() { return login_state_machine_.OnPlaying(); }
+        inline void Playing(common::GameGuid playing_id) 
+        {  
+            playing_id_ = playing_id;
+            login_state_machine_.OnPlaying(); 
+        }
 
     private:
         bool IsFullPlayer()const;
@@ -31,6 +35,7 @@ namespace gw2l
 
         common::LoginStateMachine login_state_machine_;
         ::account_database account_data_;
+        common::GameGuid playing_id_{ 0 };
     };
 }//namespace gw2l
 

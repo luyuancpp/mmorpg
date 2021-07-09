@@ -11,9 +11,20 @@ message LoginRequest
 
 message LoginResponse
 {
-	ClientError error = 1;
 }
 
-service LoginService {
+message EnterGameRequest
+{
+  string account = 1;
+  uint64 player_id = 2;
+}
+
+message EnterGameResponse
+{
+}
+
+service LoginService 
+{
   rpc Login (LoginRequest) returns (LoginResponse);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
 }

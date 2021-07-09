@@ -136,7 +136,8 @@ void LoginServiceImpl::EnterGameReplied(EnterGameRP d)
         LOG_ERROR << msg;
         return;
     }
-    it->second->Playing();
+
+    it->second->Playing(d->s_reqst_.player_id());
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller, 
