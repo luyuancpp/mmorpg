@@ -18,27 +18,27 @@
     <ClCompile Include="teamlist_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\team\team.cpp">
+    <ClCompile Include="..\..\common\src\teams\team.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\team\team_list.cpp">
+    <ClCompile Include="..\..\common\src\teams\teams.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\src\return_code\notice_struct.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\game_proto\pbc\team.pb.cc">
+    <ClCompile Include="..\..\common\src\event\event.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\event\event.cc">
+    <ClCompile Include="..\..\protopb\pbc\team.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\team\team.h">
+    <ClInclude Include="..\..\common\src\teams\team.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\team\team_list.h">
+    <ClInclude Include="..\..\common\src\teams\teams.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\return_code\notice_struct.h">
@@ -47,10 +47,10 @@
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\game_proto\pbc\team.pb.h">
+    <ClInclude Include="..\..\common\src\teams\team_event.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\team\team_event.h">
+    <ClInclude Include="..\..\protopb\pbc\team.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
