@@ -16,8 +16,12 @@ namespace master
             return singleton;
         }
 
-        void EnterGame(common::GameGuid player_id, entt::entity entity_id);
+        entt::entity GetPlayer(common::GameGuid player_id);
+        bool HasPlayer(common::GameGuid player_id) const { return player_list_.find(player_id) != player_list_.end(); }
 
+        void EnterGame(common::GameGuid player_id, entt::entity entity_id){  player_list_.emplace(player_id, entity_id);       }
+        void LeaveGame(common::GameGuid player_id){ player_list_.erase(player_id); }
+        
     private:
         GameGuidEntityIdMap player_list_;
     };
