@@ -1,7 +1,7 @@
 #include "team.h"
 
 #include "src/return_code/return_notice_code.h"
-#include "src/team/team_event.h"
+#include "src/teams/team_event.h"
 
 namespace common
 {

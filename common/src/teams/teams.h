@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "src/snow_flake/snow_flake.h"
-#include "src/team/team_event.h"
+#include "src/teams/team_event.h"
 
 #include "team.h"
 

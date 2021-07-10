@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/team/team_list.h"
+#include "src/teams/teams.h"
 #include "src/return_code/return_notice_code.h"
 
 using namespace common;

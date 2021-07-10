@@ -21,18 +21,18 @@
   <ItemGroup>
     <ClCompile Include="..\..\common\src\event\event.cc" />
     <ClCompile Include="..\..\common\src\return_code\notice_struct.cpp" />
-    <ClCompile Include="..\..\common\src\team\team.cpp" />
-    <ClCompile Include="..\..\common\src\team\team_list.cpp" />
-    <ClCompile Include="..\..\game_proto\pbc\team.pb.cc" />
+    <ClCompile Include="..\..\common\src\teams\team.cpp" />
+    <ClCompile Include="..\..\common\src\teams\teams.cpp" />
+    <ClCompile Include="..\..\protopb\pbc\team.pb.cc" />
     <ClCompile Include="teamlist_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\return_code\notice_struct.h" />
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h" />
-    <ClInclude Include="..\..\common\src\team\team.h" />
-    <ClInclude Include="..\..\common\src\team\team_event.h" />
-    <ClInclude Include="..\..\common\src\team\team_list.h" />
-    <ClInclude Include="..\..\game_proto\pbc\team.pb.h" />
+    <ClInclude Include="..\..\common\src\teams\team.h" />
+    <ClInclude Include="..\..\common\src\teams\team_event.h" />
+    <ClInclude Include="..\..\common\src\teams\teams.h" />
+    <ClInclude Include="..\..\protopb\pbc\team.pb.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -132,7 +132,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../common/;../../game_proto/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost;../../third_party/googletest/googletest/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../common/;../../protopb/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost;../../third_party/googletest/googletest/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26812;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>

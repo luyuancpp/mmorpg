@@ -21,12 +21,6 @@
     <ClCompile Include="src\timer_task\timer_task.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\team\team.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\team\team_list.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\return_code\notice_struct.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -76,12 +70,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\exprtk\exprtk.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\team\team_list.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\team\team.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\common_type\common_type.h">
