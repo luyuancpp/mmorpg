@@ -6,7 +6,7 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
 
-#include "src/server_rpc_client/rpc_client_closure.h"
+#include "src/rpc_closure_param/rpc_client_closure.h"
 
 #include "gw2l.pb.h"
 

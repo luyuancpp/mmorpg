@@ -3,7 +3,7 @@
 
 #include "gw2g.pb.h"
 
-#include "src/server_rpc_client/login_client.h"
+#include "src/rpc_closure_param/login_client.h"
 
 namespace gateway
 {

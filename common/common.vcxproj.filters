@@ -42,12 +42,7 @@
     <ClCompile Include="src\redis_client\redis_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\login_player\login_state_machine.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\login_player\login_state.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
+   
     <ClCompile Include="src\event\event.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -55,6 +50,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\game_rpc\game_rpc_server.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\login_state\login_state.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\login_state\login_state_machine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -98,9 +99,6 @@
     <ClInclude Include="src\snow_flake\snow_flake.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_rpc_client\stub_rpc_client.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\mysql_client\mysql_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -116,28 +114,7 @@
     <ClInclude Include="src\redis_client\redis_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_rpc_client\rpc_string_closure.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_rpc_client\rpc_client_closure.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_state_machine.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\team\team_event.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_event.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_state.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_state_concrete.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\event\event.h">
@@ -149,13 +126,49 @@
     <ClInclude Include="src\game_rpc\game_rpc_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_rpc_client\rpc_closure.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\server_registry\server_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_rpc_client\closure_auto_done.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_rpc_client\rpc_client_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_rpc_client\rpc_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_rpc_client\rpc_string_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_rpc_client\stub_rpc_client.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rpc_closure_param\closure_auto_done.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rpc_closure_param\rpc_client_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rpc_closure_param\rpc_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rpc_closure_param\rpc_string_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rpc_closure_param\stub_rpc_client.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_state\login_event.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_state\login_state.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_state\login_state_concrete.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_state\login_state_machine.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
