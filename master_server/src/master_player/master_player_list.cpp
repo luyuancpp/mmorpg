@@ -2,10 +2,14 @@
 
 namespace master
 {
-
-void MasterPlayerList::EnterGame(common::GameGuid player_id, entt::entity entity_id)
-{
-    player_list_.emplace(player_id, entity_id);
-}
+    entt::entity MasterPlayerList::GetPlayer(common::GameGuid player_id)
+    {
+        auto it = player_list_.find(player_id);
+        if (it == player_list_.end())
+        {
+            return it->second;
+        }
+        return entt::null;
+    }
 
 }//namespace master

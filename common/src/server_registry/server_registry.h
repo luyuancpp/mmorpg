@@ -10,6 +10,7 @@ namespace common
         static entt::registry singleton;
         return singleton;
     }
+
 }//namespace common
 
 #endif//COMMON_SRC_SERVER_REGISTRY_SERVER_REGISTRY_LIST_H_
