@@ -152,8 +152,8 @@
     <ClCompile Include="src\event\event.cc" />
     <ClCompile Include="src\game_rpc\game_rpc_channel.cc" />
     <ClCompile Include="src\game_rpc\game_rpc_server.cc" />
-    <ClCompile Include="src\login_player\login_state.cpp" />
-    <ClCompile Include="src\login_player\login_state_machine.cpp" />
+    <ClCompile Include="src\login_state\login_state.cpp" />
+    <ClCompile Include="src\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\mysql_client\mysql_client.cpp" />
     <ClCompile Include="src\pb2db\pb2dbsql.cpp" />
     <ClCompile Include="src\redis_client\async_redis_client.cpp" />
@@ -178,6 +178,10 @@
     <ClInclude Include="src\login_player\login_state.h" />
     <ClInclude Include="src\login_player\login_state_concrete.h" />
     <ClInclude Include="src\login_player\login_state_machine.h" />
+    <ClInclude Include="src\login_state\login_event.h" />
+    <ClInclude Include="src\login_state\login_state.h" />
+    <ClInclude Include="src\login_state\login_state_concrete.h" />
+    <ClInclude Include="src\login_state\login_state_machine.h" />
     <ClInclude Include="src\mysql_client\mysql_client.h" />
     <ClInclude Include="src\mysql_client\mysql_result.h" />
     <ClInclude Include="src\pb2db\pb2dbsql.h" />
@@ -186,6 +190,11 @@
     <ClInclude Include="src\return_code\notice_struct.h" />
     <ClInclude Include="src\return_code\return_code.h" />
     <ClInclude Include="src\return_code\return_notice_code.h" />
+    <ClInclude Include="src\rpc_closure_param\closure_auto_done.h" />
+    <ClInclude Include="src\rpc_closure_param\rpc_client_closure.h" />
+    <ClInclude Include="src\rpc_closure_param\rpc_closure.h" />
+    <ClInclude Include="src\rpc_closure_param\rpc_string_closure.h" />
+    <ClInclude Include="src\rpc_closure_param\stub_rpc_client.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\server_rpc_client\closure_auto_done.h" />
     <ClInclude Include="src\server_rpc_client\rpc_client_closure.h" />

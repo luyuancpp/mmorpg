@@ -9,8 +9,8 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/codec/dispatcher.h"
-#include "src/server_rpc_client/rpc_client_closure.h"
-#include "src/server_rpc_client/stub_rpc_client.h"
+#include "src/rpc_closure_param/rpc_client_closure.h"
+#include "src/rpc_closure_param/stub_rpc_client.h"
 #include "src/login/login_rpcclient.h"
 
 using namespace muduo;

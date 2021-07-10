@@ -1,5 +1,5 @@
-#ifndef COMMON_SRC_LOGIN_PLAYER_LOGIN_STATE_H_
-#define COMMON_SRC_LOGIN_PLAYER_LOGIN_STATE_H_
+#ifndef COMMON_SRC_LOGIN_STATE_LOGIN_STATE_H_
+#define COMMON_SRC_LOGIN_STATE_LOGIN_STATE_H_
 
 #include <memory>
 
@@ -79,4 +79,4 @@ namespace common
     };
 }//namespace common
 
-#endif//COMMON_SRC_LOGIN_PLAYER_LOGIN_STATE_H_
+#endif//COMMON_SRC_LOGIN_STATE_LOGIN_STATE_H_

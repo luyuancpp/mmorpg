@@ -3,7 +3,7 @@
 
 #include "l2ms.pb.h"
 
-#include "src/server_rpc_client/stub_rpc_client.h"
+#include "src/rpc_closure_param/stub_rpc_client.h"
 
 using namespace muduo;
 using namespace muduo::net;
