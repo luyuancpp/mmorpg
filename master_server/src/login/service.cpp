@@ -1,5 +1,9 @@
 #include "service.h"
 
+#include "src/common_type/common_type.h"
+#include "src/server_registry/server_registry.h"
+#include "src/master_player/master_player_list.h"
+
 namespace l2ms
 {
     void l2ms::LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
@@ -7,6 +11,10 @@ namespace l2ms
         ::l2ms::EnterGameResponse* response,
         ::google::protobuf::Closure* done)
     {
+        auto e = common::reg().create();
+        common::reg().emplace<common::GameGuid>(e, request->player_id());
+        common::reg().emplace<std::string>(e, request->account());
+        master::MasterPlayerList::GetSingleton().EnterGame(request->player_id(), e);
         done->Run();
     }
 

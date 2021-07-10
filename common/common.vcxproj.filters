@@ -152,5 +152,8 @@
     <ClInclude Include="src\server_rpc_client\rpc_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\server_registry\server_registry.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
