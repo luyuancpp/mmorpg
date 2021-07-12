@@ -10,32 +10,12 @@ using namespace muduo::net;
 
 namespace login
 {
-    class DbRpcLoginStub : public common::RpcClient<l2db::LoginService_Stub>
+    using LoginStubPtr = std::unique_ptr<common::RpcClient<l2db::LoginService_Stub>>;
+    static LoginStubPtr& GetSingletonLoginStub()
     {
-    public:
-        using LoginStubPtr = std::unique_ptr<DbRpcLoginStub>;
-
-        DbRpcLoginStub(EventLoop* loop,
-            const InetAddress& serverAddr)
-            : RpcClient(loop, serverAddr)
-        {
-        }
-
-        static LoginStubPtr& GetSingleton()
-        {
-            static LoginStubPtr singleton;
-            return singleton;
-        }
-
-        void Connect(EventLoop* loop,
-            const InetAddress& login_server_addr)
-        {
-            common::RpcClient<l2db::LoginService_Stub>::connect();
-        }
-    private:
-    };
-
-    
+        static LoginStubPtr singleton;
+        return singleton;
+    }
 
 }// namespace login
 
