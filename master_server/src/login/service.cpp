@@ -12,8 +12,8 @@ namespace l2ms
         ::l2ms::EnterGameResponse* response,
         ::google::protobuf::Closure* done)
     {
-        auto player_id = request->player_id();
         common::ClosurePtr cp(done);
+        auto player_id = request->player_id();        
         auto e = common::reg().create();
         common::reg().emplace<common::GameGuid>(e, player_id);
         common::reg().emplace<std::string>(e, request->account());
@@ -25,6 +25,7 @@ namespace l2ms
         ::l2ms::LeaveGameResponse* response,
         ::google::protobuf::Closure* done)
     {
+        common::ClosurePtr cp(done);
         auto player_id = request->player_id();
         auto e = master::MasterPlayerList::GetSingleton().GetPlayer(player_id);
         if (e != entt::null)
@@ -33,9 +34,8 @@ namespace l2ms
             common::reg().destroy(e);
         }
         master::MasterPlayerList::GetSingleton().LeaveGame(player_id);
-        assert(master::MasterPlayerList::GetSingleton().HasPlayer(player_id));
-        assert(master::MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
-        common::ClosurePtr cp(done);
+        assert(!master::MasterPlayerList::GetSingleton().HasPlayer(player_id));
+        assert(master::MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);        
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 

@@ -24,7 +24,7 @@ namespace login
         }
 
         template<typename Class, typename MethodParam, typename StubMethod>
-        void SendRequest(Class* object,
+        void CallMethodString(Class* object,
             void (Class::*method)(MethodParam),
             MethodParam& method_param,
             StubMethod stub_method)
@@ -33,7 +33,7 @@ namespace login
         }
 
         template<typename MethodParam, typename StubMethod>
-        void SendRequest(
+        void CallMethodString(
             void (method)(MethodParam),
             MethodParam& method_param,
             StubMethod stub_method)
