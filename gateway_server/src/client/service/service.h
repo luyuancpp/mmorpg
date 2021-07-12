@@ -25,8 +25,6 @@ using EnterGameRequestPtr = std::shared_ptr<EnterGameRequest>;
 class ClientReceiver : muduo::noncopyable
 {
 public:
-    using LoginStub = common::RpcClient<gw2l::LoginService_Stub>;
-    using RpcClientPtr = std::shared_ptr<LoginStub>;
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
