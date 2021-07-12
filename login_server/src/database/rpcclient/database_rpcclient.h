@@ -13,42 +13,22 @@ namespace login
     class DbRpcClient : noncopyable
     {
     public:
-        using RpcStub = common::RpcClient<l2db::LoginService_Stub>;
-        using RpcClientPtr = std::shared_ptr<RpcStub>;
 
+        using StubType = common::RpcClient<l2db::LoginService_Stub>;
+        using RpcClientPtr = std::unique_ptr<StubType>;
 
-        static DbRpcClient& GetSingleton()
+        static RpcClientPtr& GetSingleton()
         {
-            static DbRpcClient singleton;
+            static RpcClientPtr singleton;
             return singleton;
         }
 
-        template<typename Class, typename MethodParam, typename StubMethod>
-        void CallMethodString(Class* object,
-            void (Class::*method)(MethodParam),
-            MethodParam& method_param,
-            StubMethod stub_method)
-        {
-            database_client_->CallMethodString(object, method, method_param, stub_method);
-        }
-
-        template<typename MethodParam, typename StubMethod>
-        void CallMethodString(
-            void (method)(MethodParam),
-            MethodParam& method_param,
-            StubMethod stub_method)
-        {
-            database_client_->CallMethodString(method, method_param, stub_method);
-        }
-  
-        void Connect(EventLoop* loop,
+        static void InitSingleton(EventLoop* loop,
             const InetAddress& login_server_addr)
         {
-            database_client_ = std::make_shared<RpcStub>(loop, login_server_addr);
-            database_client_->connect();
+            GetSingleton() = std::make_unique<DbRpcClient::StubType>(loop, login_server_addr);
         }
-    private:
-        RpcClientPtr database_client_;
+
     };
 
 }// namespace login
