@@ -10,46 +10,32 @@ using namespace muduo::net;
 
 namespace login
 {
-    class DbRpcLoginStub
+    class DbRpcLoginStub : public common::RpcClient<l2db::LoginService_Stub>
     {
     public:
-        using RpcStub = common::RpcClient<l2db::LoginService_Stub>;
-        using RpcClientPtr = std::shared_ptr<RpcStub>;
+        using LoginStubPtr = std::unique_ptr<DbRpcLoginStub>;
 
-
-        static DbRpcLoginStub& GetSingleton()
+        DbRpcLoginStub(EventLoop* loop,
+            const InetAddress& serverAddr)
+            : RpcClient(loop, serverAddr)
         {
-            static DbRpcLoginStub singleton;
+        }
+
+        static LoginStubPtr& GetSingleton()
+        {
+            static LoginStubPtr singleton;
             return singleton;
         }
 
-        template<typename Class, typename MethodParam, typename StubMethod>
-        void CallMethodString(Class* object,
-            void (Class::*method)(MethodParam),
-            MethodParam& method_param,
-            StubMethod stub_method)
-        {
-            database_client_->CallMethodString(object, method, method_param, stub_method);
-        }
-
-        template<typename MethodParam, typename StubMethod>
-        void CallMethodString(
-            void (method)(MethodParam),
-            MethodParam& method_param,
-            StubMethod stub_method)
-        {
-            database_client_->CallMethodString(method, method_param, stub_method);
-        }
-  
         void Connect(EventLoop* loop,
             const InetAddress& login_server_addr)
         {
-            database_client_ = std::make_shared<RpcStub>(loop, login_server_addr);
-            database_client_->connect();
+            common::RpcClient<l2db::LoginService_Stub>::connect();
         }
     private:
-        RpcClientPtr database_client_;
     };
+
+    
 
 }// namespace login
 
