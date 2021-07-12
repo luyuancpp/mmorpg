@@ -2,19 +2,19 @@
 #define SRC_SERVER_RPCCLIENT_RPC_STUB1_H_
 
 #include "rpc_connection_event.h"
-#include "rpc_stub_client1.h"
+#include "rpc_stub_client.h"
 #include "src/event/event.h"
 #include "src/game_rpc/game_rpc_channel.h"
 
 namespace common
 {
 template<typename StubClass>
-class RpcStub1 : noncopyable,  public Receiver<RpcStub1<StubClass>>
+class RpcStub : noncopyable,  public Receiver<RpcStub<StubClass>>
 {
 public:
     using StubPtr = std::unique_ptr<StubClass>;
 
-    RpcStub1(RpcClient1& client)
+    RpcStub(RpcClient& client)
         : client_(client),
           emp_(client_.emp())
     {
@@ -95,7 +95,7 @@ public:
     }
 
 private:  
-    RpcClient1& client_;
+    RpcClient& client_;
     StubPtr stub_;
     EventManagerPtr emp_;
 };

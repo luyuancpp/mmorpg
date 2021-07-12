@@ -21,17 +21,17 @@ using namespace muduo::net;
 namespace common
 {
 
-class RpcClient1 : noncopyable
+class RpcClient : noncopyable
 {
 public:
-    RpcClient1(EventLoop* loop,
+    RpcClient(EventLoop* loop,
         const InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
           channel_(new RpcChannel),
           emp_(EventManager::New())
     {
         client_.setConnectionCallback(
-            std::bind(&RpcClient1::onConnection, this, _1));
+            std::bind(&RpcClient::onConnection, this, _1));
         client_.setMessageCallback(
             std::bind(&RpcChannel::onMessage, get_pointer(channel_), _1, _2, _3));
         client_.enableRetry();
