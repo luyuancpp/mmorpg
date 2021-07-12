@@ -21,6 +21,12 @@ namespace gateway
             static RpcClientPtr singleton;
             return singleton;
         }
+
+        static void InitSingleton(EventLoop* loop,
+            const InetAddress& login_server_addr)
+        {
+            GetSingleton() = std::make_unique<LoginClient::StubType>(loop, login_server_addr);
+        }
     };
 }//namespace gateway
 
