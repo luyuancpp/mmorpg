@@ -1,5 +1,5 @@
-#ifndef SRC_SERVER_RPCCLIENT_RPC_STUB1_H_
-#define SRC_SERVER_RPCCLIENT_RPC_STUB1_H_
+#ifndef SRC_SERVER_RPCCLIENT_RPC_STUB_H_
+#define SRC_SERVER_RPCCLIENT_RPC_STUB_H_
 
 #include "rpc_connection_event.h"
 #include "rpc_stub_client.h"
@@ -102,4 +102,4 @@ private:
 
 }//namespace common
 
-#endif//SRC_SERVER_RPCCLIENT_RPC_STUB1_H_
+#endif//SRC_SERVER_RPCCLIENT_RPC_STUB_H_
