@@ -10,6 +10,7 @@ int main(int argc, char* argv[])
     InetAddress server_addr("127.0.0.1", 2000);
     GatewayServer server(&loop, server_addr);
     LoginRpcClient::Connect(&loop, login_server_addr);
+    LoginRpcStub::GetSingleton();
     server.Start();
     loop.loop();
     return 0;

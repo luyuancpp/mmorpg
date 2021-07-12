@@ -3,7 +3,8 @@
 
 #include "gw2l.pb.h"
 
-#include "src/rpc_closure_param/rpc_stub_client.h"
+#include "src/rpc_closure_param/rpc_stub1.h"
+#include "src/rpc_closure_param/rpc_stub_client1.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -13,9 +14,8 @@ namespace gateway
     class LoginRpcClient : noncopyable
     {
     public:
-        using StubType = common::RpcClient<gw2l::LoginService_Stub>;
-        using RpcClientPtr = std::unique_ptr<StubType>;
-
+        using RpcClientPtr = std::unique_ptr<common::RpcClient1>;
+        
         static RpcClientPtr& GetSingleton()
         {
             static RpcClientPtr singleton;
@@ -25,8 +25,19 @@ namespace gateway
         static void Connect(EventLoop* loop,
             const InetAddress& login_server_addr)
         {
-            GetSingleton() = std::make_unique<LoginRpcClient::StubType>(loop, login_server_addr);
+            GetSingleton() = std::make_unique<common::RpcClient1>(loop, login_server_addr);
             GetSingleton()->connect();
+        }
+    };
+
+    class LoginRpcStub : noncopyable
+    {
+    public:
+        using RpcStub = common::RpcStub1<gw2l::LoginService_Stub>;
+        static RpcStub& GetSingleton()
+        {
+            static RpcStub singleton(*LoginRpcClient::GetSingleton());
+            return singleton;
         }
     };
 }//namespace gateway
