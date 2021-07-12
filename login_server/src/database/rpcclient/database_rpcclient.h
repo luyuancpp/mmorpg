@@ -10,16 +10,16 @@ using namespace muduo::net;
 
 namespace login
 {
-    class DbRpcLoginStub
+    class DbRpcClient
     {
     public:
         using RpcStub = common::RpcClient<l2db::LoginService_Stub>;
         using RpcClientPtr = std::shared_ptr<RpcStub>;
 
 
-        static DbRpcLoginStub& GetSingleton()
+        static DbRpcClient& GetSingleton()
         {
-            static DbRpcLoginStub singleton;
+            static DbRpcClient singleton;
             return singleton;
         }
 
