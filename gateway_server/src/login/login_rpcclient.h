@@ -3,7 +3,7 @@
 
 #include "gw2l.pb.h"
 
-#include "src/rpc_closure_param/stub_rpc_client.h"
+#include "src/rpc_closure_param/rpc_stub_client.h"
 
 using namespace muduo;
 using namespace muduo::net;

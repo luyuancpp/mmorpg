@@ -10,7 +10,7 @@
 
 #include "src/codec/dispatcher.h"
 #include "src/rpc_closure_param/rpc_client_closure.h"
-#include "src/rpc_closure_param/stub_rpc_client.h"
+#include "src/rpc_closure_param/rpc_stub_client.h"
 #include "src/login/login_rpcclient.h"
 
 using namespace muduo;
