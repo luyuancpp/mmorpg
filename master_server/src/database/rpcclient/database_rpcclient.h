@@ -10,27 +10,25 @@ using namespace muduo::net;
 
 namespace master
 {
-    class DatabaseRpcClient
+   
+    class DbRpcClient
     {
     public:
-        using RpcStub = common::RpcClient <ms2db::LoginService_Stub>;
-        using RpcClientPtr = std::shared_ptr<RpcStub>;
+        using StubType = common::RpcClient< ms2db::LoginService_Stub>;
+        using RpcClientPtr = std::unique_ptr<StubType>;
 
-        void Connect(EventLoop* loop,
-            const InetAddress& login_server_addr)
+        static RpcClientPtr& GetSingleton()
         {
-            database_client_ = std::make_shared<RpcStub>(loop, login_server_addr);
-            database_client_->connect();
-        }
-
-        static DatabaseRpcClient& GetSingleton()
-        {
-            static DatabaseRpcClient singleton;
+            static RpcClientPtr singleton;
             return singleton;
         }
 
-    private:
-        RpcClientPtr database_client_;
+        static void Connect(EventLoop* loop,
+            const InetAddress& login_server_addr)
+        {
+            GetSingleton() = std::make_unique<DbRpcClient::StubType>(loop, login_server_addr);
+            GetSingleton()->connect();
+        }
     };
 
 }// namespace master

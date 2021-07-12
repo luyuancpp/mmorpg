@@ -150,7 +150,7 @@ void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id, const std::
     EnterMasterGameRC cp(std::make_shared<EnterMasterGameRpcClosure>());
     cp->s_reqst_.set_account(account);
     cp->s_reqst_.set_player_id(player_id);
-    login::MasterRpcClient::GetSingleton().SendRequest(this,
+    login::MasterRpcClient::GetSingleton()->CallMethodString(this,
         &LoginServiceImpl::EnterMasterGameReplied,
         cp,
         &l2ms::LoginService_Stub::EnterGame);

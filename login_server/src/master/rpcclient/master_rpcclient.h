@@ -10,35 +10,25 @@ using namespace muduo::net;
 
 namespace login
 {
+    
     class MasterRpcClient
     {
     public:
-        using RpcStub = common::RpcClient <l2ms::LoginService_Stub>;
-        using RpcClientPtr = std::shared_ptr<RpcStub>;
+        using StubType = common::RpcClient<l2ms::LoginService_Stub>;
+        using RpcClientPtr = std::unique_ptr<StubType>;
 
-        void Connect(EventLoop* loop,
-            const InetAddress& login_server_addr)
+        static RpcClientPtr& GetSingleton()
         {
-            master_client_ = std::make_shared<RpcStub>(loop, login_server_addr);
-            master_client_->connect();
-        }
-
-        static MasterRpcClient& GetSingleton()
-        {
-            static MasterRpcClient singleton;
+            static RpcClientPtr singleton;
             return singleton;
         }
 
-        template<typename Class, typename MethodParam, typename StubMethod>
-        void SendRequest(Class* object,
-            void (Class::* method)(MethodParam),
-            MethodParam& method_param,
-            StubMethod stub_method)
+        static void InitSingleton(EventLoop* loop,
+            const InetAddress& login_server_addr)
         {
-            master_client_->CallMethodString(object, method, method_param, stub_method);
+            GetSingleton() = std::make_unique<MasterRpcClient::StubType>(loop, login_server_addr);
         }
-    private:
-        RpcClientPtr master_client_;
+
     };
 
 }// namespace login
