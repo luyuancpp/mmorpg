@@ -159,6 +159,8 @@
     <ClCompile Include="src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
     <ClCompile Include="src\return_code\notice_struct.cpp" />
+    <ClCompile Include="src\teams\team.cpp" />
+    <ClCompile Include="src\teams\teams.cpp" />
     <ClCompile Include="src\timer_task\timer_task.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -191,6 +193,7 @@
     <ClInclude Include="src\rpc_closure_param\closure_auto_done.h" />
     <ClInclude Include="src\rpc_closure_param\rpc_client_closure.h" />
     <ClInclude Include="src\rpc_closure_param\rpc_closure.h" />
+    <ClInclude Include="src\rpc_closure_param\rpc_connection_event.h" />
     <ClInclude Include="src\rpc_closure_param\rpc_string_closure.h" />
     <ClInclude Include="src\rpc_closure_param\rpc_stub.h" />
     <ClInclude Include="src\rpc_closure_param\rpc_stub_client.h" />
@@ -201,6 +204,9 @@
     <ClInclude Include="src\server_rpc_client\rpc_string_closure.h" />
     <ClInclude Include="src\server_rpc_client\stub_rpc_client.h" />
     <ClInclude Include="src\snow_flake\snow_flake.h" />
+    <ClInclude Include="src\teams\team.h" />
+    <ClInclude Include="src\teams\teams.h" />
+    <ClInclude Include="src\teams\team_event.h" />
     <ClInclude Include="src\timer_task\timer_task.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

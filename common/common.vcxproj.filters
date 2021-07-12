@@ -51,6 +51,12 @@
     <ClCompile Include="src\login_state\login_state_machine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\teams\team.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\teams\teams.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\codec\codec.h">
@@ -171,6 +177,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\rpc_closure_param\rpc_stub.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\teams\team.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\teams\team_event.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\teams\teams.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rpc_closure_param\rpc_connection_event.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
