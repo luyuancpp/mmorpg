@@ -3,25 +3,28 @@
 
 #include "gw2g.pb.h"
 
-#include "src/rpc_closure_param/login_client.h"
+#include "src/rpc_closure_param/stub_rpc_client.h"
 
 namespace gateway
 {
     class GameRpcClient
     {
     public:
-        using RpcStub = common::RpcClient <gw2g::LoginService_Stub>;
-        using RpcClientPtr = std::shared_ptr<RpcStub>;
+        using StubType = common::RpcClient<gw2g::LoginService_Stub>;
+        using RpcClientPtr = std::unique_ptr<StubType>;
 
-        void Connect(EventLoop* loop,
-            const InetAddress& login_server_addr)
+        static RpcClientPtr& GetSingleton()
         {
-            game_client_ = std::make_shared<RpcStub>(loop, login_server_addr);
-            game_client_->connect();
+            static RpcClientPtr singleton;
+            return singleton;
         }
 
-    private:
-        RpcClientPtr game_client_;
+        static void InitSingleton(EventLoop* loop,
+            const InetAddress& login_server_addr)
+        {
+            GetSingleton() = std::make_unique<GameRpcClient::StubType>(loop, login_server_addr);
+        }
+
     };
 }
 
