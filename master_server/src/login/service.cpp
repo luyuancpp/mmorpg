@@ -1,7 +1,7 @@
 #include "service.h"
 
 #include "src/common_type/common_type.h"
-#include "src/server_registry/server_registry.h"
+#include "src/game_ecs/game_registry.h"
 #include "src/rpc_closure_param/closure_auto_done.h"
 #include "src/master_player/master_player_list.h"
 
