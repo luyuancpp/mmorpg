@@ -192,6 +192,7 @@
     <ClInclude Include="src\rpc_closure_param\rpc_client_closure.h" />
     <ClInclude Include="src\rpc_closure_param\rpc_closure.h" />
     <ClInclude Include="src\rpc_closure_param\rpc_string_closure.h" />
+    <ClInclude Include="src\rpc_closure_param\rpc_stub.h" />
     <ClInclude Include="src\rpc_closure_param\rpc_stub_client.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\server_rpc_client\closure_auto_done.h" />

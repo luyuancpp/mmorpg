@@ -170,5 +170,8 @@
     <ClInclude Include="src\login_player\login_state_machine.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\rpc_closure_param\rpc_stub.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
