@@ -10,40 +10,17 @@ using namespace muduo::net;
 
 namespace gateway
 {
-    class LoginClient : muduo::noncopyable
+    class LoginClient
     {
     public:
-        using StubClass = gw2l::LoginService_Stub;
-        using LoginStub = common::RpcClient<gw2l::LoginService_Stub>;
-        using RpcClientPtr = std::shared_ptr<LoginStub>;
+        using StubType = common::RpcClient<gw2l::LoginService_Stub>;
+        using RpcClientPtr = std::unique_ptr<StubType>;
 
-        void Connect(EventLoop* loop,
-            const InetAddress& login_server_addr);
-
-        static LoginClient& GetSingleton()
+        static RpcClientPtr& GetSingleton()
         {
-            static LoginClient singleton;
+            static RpcClientPtr singleton;
             return singleton;
         }
-
-        template< typename MethodParam, typename Class, typename StubMethod>
-        void CallMethod( void (Class::* method)(MethodParam),
-            MethodParam& method_param,
-            Class* object,            
-            StubMethod stub_method)
-        {
-            login_client_->CallMethod<MethodParam, Class, StubMethod>(method, method_param, object, stub_method);
-        }
-
-        template<typename Request, typename Response, typename StubMethod>
-        void CallMethod(const Request& request,
-            void (method)(Response*),
-            StubMethod stub_method)
-        {
-            login_client_->CallMethod<Request, Response, StubMethod>(request, method, stub_method);
-        }
-    private:
-        RpcClientPtr login_client_;
     };
 }//namespace gateway
 
