@@ -14,6 +14,7 @@
 
 #include "src/codec/dispatcher.h"
 #include "src/codec/codec.h"
+#include "src/client_entityid/client_entityid.h"
 #include "src/service/service.h"
 
 #include "c2gw.pb.h"

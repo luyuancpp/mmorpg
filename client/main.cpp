@@ -1,5 +1,7 @@
 #include "src/client.h"
 
+#include "src/client_entityid/client_entityid.h"
+
 int main(int argc, char* argv[])
 {
     LOG_INFO << "pid = " << getpid();
@@ -21,6 +23,10 @@ int main(int argc, char* argv[])
 
         CountDownLatch allConnected(nClients);
         CountDownLatch allFinished(nClients);
+        CountDownLatch allLeaveGame(nClients);
+
+        client::kAllLeaveGame = common::reg().create();
+        common::reg().emplace<CountDownLatch*>(client::kAllLeaveGame, &allLeaveGame);
 
         EventLoop loop;
         EventLoopThreadPool pool(&loop, "playerbench-client");
@@ -44,6 +50,7 @@ int main(int argc, char* argv[])
         {
             clients[i]->ReadyGo();
         }
+        allLeaveGame.wait();
         allFinished.wait();
         Timestamp end(Timestamp::now());
         LOG_INFO << "all finished";
