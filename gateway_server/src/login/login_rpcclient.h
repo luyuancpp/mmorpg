@@ -27,7 +27,7 @@ namespace gateway
         }
 
         template< typename MethodParam, typename Class, typename StubMethod>
-        void Send( void (Class::* method)(MethodParam),
+        void CallMethod( void (Class::* method)(MethodParam),
             MethodParam& method_param,
             Class* object,            
             StubMethod stub_method)
@@ -36,7 +36,7 @@ namespace gateway
         }
 
         template<typename Request, typename Response, typename StubMethod>
-        void Send(const Request& request,
+        void CallMethod(const Request& request,
             void (method)(Response*),
             StubMethod stub_method)
         {
