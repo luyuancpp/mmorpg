@@ -10,7 +10,7 @@ using namespace muduo::net;
 
 namespace login
 {
-    class DbRpcClient
+    class DbRpcClient : noncopyable
     {
     public:
         using RpcStub = common::RpcClient<l2db::LoginService_Stub>;
