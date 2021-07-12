@@ -10,7 +10,7 @@ using namespace muduo::net;
 
 namespace gateway
 {
-    class LoginClient
+    class LoginRpcClient
     {
     public:
         using StubType = common::RpcClient<gw2l::LoginService_Stub>;
@@ -25,7 +25,7 @@ namespace gateway
         static void InitSingleton(EventLoop* loop,
             const InetAddress& login_server_addr)
         {
-            GetSingleton() = std::make_unique<LoginClient::StubType>(loop, login_server_addr);
+            GetSingleton() = std::make_unique<LoginRpcClient::StubType>(loop, login_server_addr);
         }
     };
 }//namespace gateway
