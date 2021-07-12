@@ -15,7 +15,8 @@ int main(int argc, char* argv[])
 
     login::DbRpcClient::InitSingleton(&loop, database_addr);
     login::DbRpcClient::GetSingleton()->connect();
-    login::MasterRpcClient::GetSingleton().Connect(&loop, master_addr);
+    login::MasterRpcClient::InitSingleton(&loop, master_addr);
+    login::MasterRpcClient::GetSingleton()->connect();
 
     gw2l::LoginServiceImpl impl;
     LoginServer server(&loop, listen_addr);

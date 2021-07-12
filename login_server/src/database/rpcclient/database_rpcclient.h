@@ -13,7 +13,6 @@ namespace login
     class DbRpcClient : noncopyable
     {
     public:
-
         using StubType = common::RpcClient<l2db::LoginService_Stub>;
         using RpcClientPtr = std::unique_ptr<StubType>;
 

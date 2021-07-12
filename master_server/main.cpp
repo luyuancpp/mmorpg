@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     InetAddress listen_addr("127.0.0.1", 2004);
     InetAddress database_addr("127.0.0.1", 2003);
 
-    master::DatabaseRpcClient::GetSingleton().Connect(&loop, database_addr);
+    master::DbRpcClient::Connect(&loop, database_addr);
 
     l2ms::LoginServiceImpl impl;
     master::MasterServer server(&loop, listen_addr);
