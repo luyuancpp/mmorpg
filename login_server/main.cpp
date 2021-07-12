@@ -14,7 +14,9 @@ int main(int argc, char* argv[])
     InetAddress master_addr("127.0.0.1", 2004);
 
     login::DbRpcClient::Connect(&loop, database_addr);
+    login::DbLoginRpcStub::GetSingleton();
     login::MasterRpcClient::Connect(&loop, master_addr);
+    login::MasterLoginRpcStub::GetSingleton();
 
     gw2l::LoginServiceImpl impl;
     LoginServer server(&loop, listen_addr);

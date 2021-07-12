@@ -3,7 +3,8 @@
 
 #include "l2db.pb.h"
 
-#include "src/rpc_closure_param/rpc_stub_client.h"
+#include "src/rpc_closure_param/rpc_stub1.h"
+#include "src/rpc_closure_param/rpc_stub_client1.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -13,8 +14,7 @@ namespace login
     class DbRpcClient : noncopyable
     {
     public:
-        using StubType = common::RpcClient<l2db::LoginService_Stub>;
-        using RpcClientPtr = std::unique_ptr<StubType>;
+        using RpcClientPtr = std::unique_ptr<common::RpcClient1>;
 
         static RpcClientPtr& GetSingleton()
         {
@@ -25,10 +25,20 @@ namespace login
         static void Connect(EventLoop* loop,
             const InetAddress& login_server_addr)
         {
-            GetSingleton() = std::make_unique<DbRpcClient::StubType>(loop, login_server_addr);
+            GetSingleton() = std::make_unique<common::RpcClient1>(loop, login_server_addr);
             GetSingleton()->connect();
         }
+    };
 
+    class DbLoginRpcStub : noncopyable
+    {
+    public:
+        using RpcStub = common::RpcStub1<l2db::LoginService_Stub>;
+        static RpcStub& GetSingleton()
+        {
+            static RpcStub singleton(*DbRpcClient::GetSingleton());
+            return singleton;
+        }
     };
 
 }// namespace login
