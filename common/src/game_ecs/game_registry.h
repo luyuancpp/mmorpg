@@ -5,12 +5,7 @@
 
 namespace common
 {
-    static entt::registry& reg()
-    {
-        static entt::registry singleton;
-        return singleton;
-    }
-
+entt::registry& reg();
 }//namespace common
 
 #endif//COMMON_SRC_GAME_ENTITY_GAME_REGISTRY_H_
