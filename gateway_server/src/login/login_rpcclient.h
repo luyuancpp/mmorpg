@@ -10,7 +10,7 @@ using namespace muduo::net;
 
 namespace gateway
 {
-    class LoginRpcClient
+    class LoginRpcClient : noncopyable
     {
     public:
         using StubType = common::RpcClient<gw2l::LoginService_Stub>;

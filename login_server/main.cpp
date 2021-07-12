@@ -13,7 +13,8 @@ int main(int argc, char* argv[])
     InetAddress database_addr("127.0.0.1", 2003);
     InetAddress master_addr("127.0.0.1", 2004);
 
-    login::DbRpcClient::GetSingleton().Connect(&loop, database_addr);
+    login::DbRpcClient::InitSingleton(&loop, database_addr);
+    login::DbRpcClient::GetSingleton()->connect();
     login::MasterRpcClient::GetSingleton().Connect(&loop, master_addr);
 
     gw2l::LoginServiceImpl impl;
