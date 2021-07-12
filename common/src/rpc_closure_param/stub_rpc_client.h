@@ -23,7 +23,7 @@ template<typename StubClass>
 class RpcClient : noncopyable
 {
 public:
-    using StubPtr = std::shared_ptr<StubClass>;
+    using StubPtr = std::unique_ptr<StubClass>;
 
     RpcClient(EventLoop* loop,
         const InetAddress& serverAddr)
@@ -103,7 +103,7 @@ private:
         {
             conn->setTcpNoDelay(true);
             channel_->setConnection(conn);
-            stub_ = std::make_shared<StubClass>(get_pointer(channel_));
+            stub_ = std::make_unique<StubClass>(get_pointer(channel_));
         }
         else
         {
