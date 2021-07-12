@@ -70,6 +70,20 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   codec_.send(conn_, message);
 }
 
+void RpcChannel::CallMethodNoResponse(const ::google::protobuf::MethodDescriptor* method,
+    google::protobuf::RpcController* controller,
+    const ::google::protobuf::Message* request,
+    ::google::protobuf::Message* response,
+    ::google::protobuf::Closure* done)
+{
+    RpcMessage message;
+    message.set_type(REQUEST_NO_RESPONSE);
+    message.set_service(method->service()->full_name());
+    message.set_method(method->name());
+    message.set_request(request->SerializeAsString()); // FIXME: error check
+    codec_.send(conn_, message);
+}
+
 void RpcChannel::onMessage(const TcpConnectionPtr& conn,
                            Buffer* buf,
                            Timestamp receiveTime)
@@ -167,6 +181,49 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       codec_.send(conn_, response);
     }
   }
+  else if (message.type() == REQUEST_NO_RESPONSE)
+  {
+      // FIXME: extract to a function
+      ErrorCode error = WRONG_PROTO;
+      if (services_)
+      {
+          std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message.service());
+          if (it != services_->end())
+          {
+              google::protobuf::Service* service = it->second;
+              assert(service != NULL);
+              const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+              const google::protobuf::MethodDescriptor* method
+                  = desc->FindMethodByName(message.method());
+              if (method)
+              {
+                  std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
+                  if (request->ParseFromString(message.request()))
+                  {
+                      service->CallMethod(method, nullptr, get_pointer(request), nullptr,
+                          NewCallback(this, &RpcChannel::doNothing));
+                      error = RPC_NO_ERROR;
+                  }
+                  else
+                  {
+                      error = INVALID_REQUEST;
+                  }
+              }
+              else
+              {
+                  error = NO_METHOD;
+              }
+          }
+          else
+          {
+              error = NO_SERVICE;
+          }
+      }
+      else
+      {
+          error = NO_SERVICE;
+      }
+  }
   else if (message.type() == ERROR)
   {
   }
@@ -181,4 +238,5 @@ void RpcChannel::doneCallback(::google::protobuf::Message* response, int64_t id)
   message.set_response(response->SerializeAsString()); // FIXME: error check
   codec_.send(conn_, message);
 }
+
 
