@@ -31,7 +31,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     {
         DisconnectCCPtr p(std::make_shared<DisconnectCC>(conn));
         p->s_rqst_.set_connection_id(p->connection_hash_id());
-        LoginClient::GetSingleton().Send(&ClientReceiver::OnDisconnectReplied,
+        LoginClient::GetSingleton().CallMethod(&ClientReceiver::OnDisconnectReplied,
             p,
             this,
             &gw2l::LoginService_Stub::Disconnect);
@@ -46,7 +46,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     p->s_rqst_.set_account(message->account());
     p->s_rqst_.set_password(message->password());
     p->s_rqst_.set_connection_id(p->connection_hash_id());
-    LoginClient::GetSingleton().Send(&ClientReceiver::OnServerLoginReplied, 
+    LoginClient::GetSingleton().CallMethod(&ClientReceiver::OnServerLoginReplied, 
         p, 
         this, 
         &gw2l::LoginService_Stub::Login);
@@ -71,7 +71,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 {
     CreatePlayerCCPtr p(std::make_shared<CreatePlayerCC>(conn));
     p->s_rqst_.set_connection_id(p->connection_hash_id());
-    LoginClient::GetSingleton().Send(&ClientReceiver::OnServerCreatePlayerReplied, 
+    LoginClient::GetSingleton().CallMethod(&ClientReceiver::OnServerCreatePlayerReplied, 
         p, 
         this, 
         &gw2l::LoginService_Stub::CreatPlayer);
@@ -95,7 +95,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
     EnterGameCCPtr p(std::make_shared<EnterGameCC>(conn));
     p->s_rqst_.set_connection_id(p->connection_hash_id());
     p->s_rqst_.set_player_id(message->player_id());
-    LoginClient::GetSingleton().Send(&ClientReceiver::OnServerEnterGameReplied,
+    LoginClient::GetSingleton().CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         p,
         this,
         &gw2l::LoginService_Stub::EnterGame);
