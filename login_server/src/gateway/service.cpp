@@ -52,7 +52,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     LoginRP cp(std::make_shared<LoginRpcString>(response, done));
     cp->s_reqst_.set_account(request->account());
     cp->s_reqst_.set_password(request->password());
-    DbRpcClient::GetSingleton()->CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
+    login::DbLoginRpcStub::GetSingleton().CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
 }
 
 void LoginServiceImpl::DbLoginReplied(LoginRP d)
@@ -79,7 +79,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     // database process
     CreatePlayerRP cp(std::make_shared<CreatePlayerRpcString>(response, done));
     cp->s_reqst_.set_account(cit->second->account());
-    DbRpcClient::GetSingleton()->CallMethodString(this,
+    login::DbLoginRpcStub::GetSingleton().CallMethodString(this,
         &LoginServiceImpl::DbCreatePlayerReplied,
         cp,
         &l2db::LoginService_Stub::CreatePlayer);
@@ -123,7 +123,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     EnterGameRP cp(std::make_shared<EnterGameRpcString>(response, done));
     cp->s_reqst_.set_account(ap->account());
     cp->s_reqst_.set_player_id(request->player_id());
-    DbRpcClient::GetSingleton()->CallMethodString(this,
+    login::DbLoginRpcStub::GetSingleton().CallMethodString(this,
         &LoginServiceImpl::EnterGameReplied,
         cp,
         &l2db::LoginService_Stub::EnterGame);
@@ -150,7 +150,7 @@ void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id, const std::
     EnterMasterGameRC cp(std::make_shared<EnterMasterGameRpcClosure>());
     cp->s_reqst_.set_account(account);
     cp->s_reqst_.set_player_id(player_id);
-    login::MasterRpcClient::GetSingleton()->CallMethodString(this,
+    login::MasterLoginRpcStub::GetSingleton().CallMethodString(this,
         &LoginServiceImpl::EnterMasterGameReplied,
         cp,
         &l2ms::LoginService_Stub::EnterGame);

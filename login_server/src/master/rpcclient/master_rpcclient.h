@@ -3,19 +3,18 @@
 
 #include "l2ms.pb.h"
 
-#include "src/rpc_closure_param/rpc_stub_client.h"
+#include "src/rpc_closure_param/rpc_stub1.h"
+#include "src/rpc_closure_param/rpc_stub_client1.h"
 
 using namespace muduo;
 using namespace muduo::net;
 
 namespace login
 {
-    
-    class MasterRpcClient
+    class MasterRpcClient : noncopyable
     {
     public:
-        using StubType = common::RpcClient<l2ms::LoginService_Stub>;
-        using RpcClientPtr = std::unique_ptr<StubType>;
+        using RpcClientPtr = std::unique_ptr<common::RpcClient1>;
 
         static RpcClientPtr& GetSingleton()
         {
@@ -26,10 +25,20 @@ namespace login
         static void Connect(EventLoop* loop,
             const InetAddress& login_server_addr)
         {
-            GetSingleton() = std::make_unique<MasterRpcClient::StubType>(loop, login_server_addr);
+            GetSingleton() = std::make_unique<common::RpcClient1>(loop, login_server_addr);
             GetSingleton()->connect();
         }
+    };
 
+    class MasterLoginRpcStub : noncopyable
+    {
+    public:
+        using RpcStub = common::RpcStub1<l2ms::LoginService_Stub>;
+        static RpcStub& GetSingleton()
+        {
+            static RpcStub singleton(*MasterRpcClient::GetSingleton());
+            return singleton;
+        }
     };
 
 }// namespace login
