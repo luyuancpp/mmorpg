@@ -5,3 +5,7 @@ message ClientError
   uint32 error_no = 1;
   repeated string error_param = 2;
 }
+
+message RpcNoResponse
+{
+}
