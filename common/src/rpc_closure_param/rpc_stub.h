@@ -6,6 +6,8 @@
 #include "src/event/event.h"
 #include "src/game_rpc/game_rpc_channel.h"
 
+#include "common.pb.h"
+
 namespace common
 {
 template<typename StubClass>
@@ -94,6 +96,23 @@ public:
             NewCallback(method, method_param));
     }
 
+    template<typename Request, typename StubMethod>
+    void CallMethodNoResponse(
+        Request& reqst,
+        StubMethod stub_method)
+    {
+        if (nullptr == stub_)
+        {
+            return;
+        }
+        RpcNoResponse resp;
+        ((*stub_).*stub_method)(nullptr,
+            &reqst,
+            resp,
+            NewCallback(&doNothing));
+    }
+
+    static void doNothing() {}
 private:  
     RpcClient& client_;
     StubPtr stub_;
