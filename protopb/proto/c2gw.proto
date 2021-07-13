@@ -37,3 +37,12 @@ message EnterGameRespone
 {
 	ClientError error = 1;
 }
+
+message LeaveGameRequest
+{
+}
+
+message LeaveGameRespone
+{
+	ClientError error = 1;
+}
