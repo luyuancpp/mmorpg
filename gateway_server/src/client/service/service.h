@@ -44,7 +44,7 @@ public:
         const CreatePlayerRequestPtr& message,
         muduo::Timestamp);
 
-    using CreatePlayerCC = common::ClientClosure<CreatePlayerRespone, gw2l::CreatePlayerRequest, gw2l::CreatePlayerRespone>;
+    using CreatePlayerCC = common::ClientClosure<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerRespone>;
     using CreatePlayerCCPtr = std::shared_ptr<CreatePlayerCC>;
     void OnServerCreatePlayerReplied(CreatePlayerCCPtr cp);
 
@@ -52,7 +52,7 @@ public:
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
 
-    using EnterGameCC = common::ClientClosure<EnterGameRespone, gw2l::EnterGameRequest, gw2l::EnterGameRespone>;
+    using EnterGameCC = common::ClientClosure<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameRespone>;
     using EnterGameCCPtr = std::shared_ptr<EnterGameCC>;
     void OnServerEnterGameReplied(EnterGameCCPtr cp);
 

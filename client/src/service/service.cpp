@@ -14,9 +14,9 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 {
     dispatcher_.registerMessageCallback<LoginResponse>(
         std::bind(&ClientService::OnLoginReplied, this, _1, _2, _3));
-    dispatcher_.registerMessageCallback<CreatePlayerRespone>(
+    dispatcher_.registerMessageCallback<CreatePlayerResponse>(
         std::bind(&ClientService::OnCreatePlayerReplied, this, _1, _2, _3));
-    dispatcher_.registerMessageCallback<EnterGameRespone>(
+    dispatcher_.registerMessageCallback<EnterGameResponse>(
         std::bind(&ClientService::OnEnterGameReplied, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<LeaveGameResponse>(
         std::bind(&ClientService::OnLeaveGameReplied, this, _1, _2, _3));

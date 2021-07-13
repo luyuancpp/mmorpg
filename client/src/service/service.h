@@ -14,8 +14,8 @@ using namespace muduo;
 using namespace muduo::net;
 
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
-using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerRespone>;
-using EnterGameResponsePtr = std::shared_ptr<EnterGameRespone>;
+using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;
+using EnterGameResponsePtr = std::shared_ptr<EnterGameResponse>;
 using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
 
 class ClientService

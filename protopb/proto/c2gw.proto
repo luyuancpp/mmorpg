@@ -22,7 +22,7 @@ message CreatePlayerRequest
 	
 }
 
-message CreatePlayerRespone
+message CreatePlayerResponse
 {
 	ClientError error = 1;
 	repeated c_account_simple_player players = 2;
@@ -33,7 +33,7 @@ message EnterGameRequest
 	uint64 player_id  = 1;
 }
 
-message EnterGameRespone
+message EnterGameResponse
 {
 	ClientError error = 1;
 }
