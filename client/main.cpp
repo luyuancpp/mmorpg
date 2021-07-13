@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
             clients[i]->ReadyGo();
         }
         allLeaveGame.wait();
-        common::reg().get<CountDownLatch*>(client::gAllFinish)->wait();
+        allFinish.wait();
         Timestamp end(Timestamp::now());
         LOG_INFO << "all finished";
         double seconds = timeDifference(end, start);
