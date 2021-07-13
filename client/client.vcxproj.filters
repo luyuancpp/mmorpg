@@ -27,6 +27,9 @@
     <ClCompile Include="src\module\login\login.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\client_entityid\client_entityid.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client.h">

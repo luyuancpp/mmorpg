@@ -60,7 +60,7 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponePtr& message,
     muduo::Timestamp)
 {
-    common::reg().get<CountDownLatch*>(client::gAllLeaveGame)->countDown();
+    common::reg().get<CountDownLatch*>(client::ClientEntityId::gAllLeaveGame)->countDown();
     client_.disconnect();    
 }
 

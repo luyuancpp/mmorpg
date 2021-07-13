@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClCompile Include="src\client.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\client_entityid\client_entityid.cpp" />
     <ClCompile Include="src\module\login\login.cpp" />
     <ClCompile Include="src\service\service.cpp" />
   </ItemGroup>
