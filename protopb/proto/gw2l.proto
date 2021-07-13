@@ -53,6 +53,16 @@ message DisconnectResponse
 {
 }
 
+message LeaveGameRequest
+{
+  uint64 connection_id = 1;
+}
+
+message LeaveGameResponse
+{
+  ClientError error = 1;
+}
+
 service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc CreatPlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
