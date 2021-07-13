@@ -5,6 +5,7 @@
 
 #include "muduo/base/Logging.h"
 #include "src/game_rpc/game_rpc_server.h"
+#include "src/mysql_database/mysql_database.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -24,7 +25,7 @@ namespace l2db
     class LoginServiceImpl : public LoginService
     {
     public:
-        using MysqlClientPtr = std::shared_ptr<database::MysqlDatabase>;
+        using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
         virtual void Login(::google::protobuf::RpcController* controller,
             const l2db::LoginRequest* request,

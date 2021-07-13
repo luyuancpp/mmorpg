@@ -1,20 +1,20 @@
-#ifndef DATABASE_SERVER_DATABASE_SERVER_H_
-#define DATABASE_SERVER_DATABASE_SERVER_H_
+﻿#ifndef DEPLOY_SERVER_SRCDEPLOY_SERVER_H_
+#define DEPLOY_SERVER_SRCDEPLOY_SERVER_H_
+
+#include "muduo/net/InetAddress.h"
+#include "src/game_rpc/game_rpc_server.h"
 
 #include "src/mysql_database/mysql_database.h"
 #include "src/redis_client/redis_client.h"
 
-#include "muduo/net/EventLoop.h"
-#include "src/game_rpc/game_rpc_server.h"
-
-namespace database
+namespace deploy_server
 {
-    class DatabaseServer : muduo::noncopyable
+    class DeployServer
     {
     public:
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
-        DatabaseServer(muduo::net::EventLoop* loop,
+        DeployServer(muduo::net::EventLoop* loop,
             const muduo::net::InetAddress& listen_addr,
             const common::ConnectionParameters& db_cp)
             :server_(loop, listen_addr),
@@ -25,7 +25,7 @@ namespace database
             database_->Connect(db_cp);
         }
 
-        MysqlClientPtr& player_mysql_client(){ return database_; }
+        MysqlClientPtr& player_mysql_client() { return database_; }
         RedisClientPtr& redis_client() { return redis_; }
 
         void Start();
@@ -36,7 +36,6 @@ namespace database
         MysqlClientPtr database_;
         RedisClientPtr redis_;
     };
+}//namespace deploy_server
 
-}//namespace database
-
-#endif//DATABASE_SERVER_DATABASE_SERVER_H_
+#endif // !DEPLOY_SERVER_SRCDEPLOY_SERVER_H_

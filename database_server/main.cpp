@@ -1,7 +1,3 @@
-#ifdef __linux__
-#include <unistd.h>
-#endif//__linux__
-
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoop.h"
 #include "src/game_rpc/game_rpc_server.h"

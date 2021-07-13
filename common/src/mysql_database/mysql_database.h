@@ -1,10 +1,10 @@
-#ifndef DATA_BASE_SRC_MYSQL_DATA_BASE_MYSQL_DATABASE_H_
-#define DATA_BASE_SRC_MYSQL_DATA_BASE_MYSQL_DATABASE_H_
+#ifndef COMMON_SRC_MYSQL_DATA_BASE_MYSQL_DATABASE_H_
+#define COMMON_SRC_MYSQL_DATA_BASE_MYSQL_DATABASE_H_
 
 #include "src/mysql_client/mysql_client.h"
 #include "src/pb2db/pb2dbsql.h"
 
-namespace database
+namespace common
 {
 class MysqlDatabase : public common::MysqlClient
 {
@@ -60,6 +60,6 @@ private:
 
 using DatabasePtr = std::unique_ptr<MysqlDatabase>;
 
-}//namespace database
+}//namespace common
 
-#endif // !DATA_BASE_SRC_MYSQL_DATA_BASE_MYSQL_DATABASE_H_
+#endif // !COMMON_SRC_MYSQL_DATA_BASE_MYSQL_DATABASE_H_

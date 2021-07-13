@@ -15,24 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="database_server.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\login\service.cpp">
+    <ClCompile Include="deploy_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\login\service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\master\service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="database_server.h">
+    <ClInclude Include="deploy_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
