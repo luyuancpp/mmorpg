@@ -21,6 +21,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     // login process
+    // check account rule
     {
         auto it = login_players_.find(request->account());
         if (it == login_players_.end())
@@ -67,7 +68,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     ::google::protobuf::Closure* done)
 {
     // login process
-
+    //check name rule
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())
     {

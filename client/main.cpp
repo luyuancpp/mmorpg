@@ -54,7 +54,6 @@ int main(int argc, char* argv[])
         allLeaveGame.wait();
         allFinish.wait();
         Timestamp end(Timestamp::now());
-        LOG_INFO << "all finished";
         double seconds = timeDifference(end, start);
         printf("%f seconds\n", seconds);
         printf("%.1f calls per second\n", nClients * seconds);
