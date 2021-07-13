@@ -194,5 +194,8 @@
     <ClInclude Include="src\rpc_closure_param\rpc_connection_event.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\game_ecs\game_registry.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
