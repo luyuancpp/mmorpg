@@ -32,7 +32,7 @@ namespace l2db
 
     void LoginServiceImpl::CreatePlayer(::google::protobuf::RpcController* controller,
         const ::l2db::CreatePlayerRequest* request, 
-        ::l2db::CreatePlayerRespone* response, 
+        ::l2db::CreatePlayerResponse* response, 
         ::google::protobuf::Closure* done)
     {
         ::account_database& r_db = *response->mutable_account_player();
@@ -50,7 +50,7 @@ namespace l2db
 
     void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller, 
         const ::l2db::EnterGameRequest* request, 
-        ::l2db::EnterGameRespone* response, 
+        ::l2db::EnterGameResponse* response, 
         ::google::protobuf::Closure* done)
     {
         player_database new_player;

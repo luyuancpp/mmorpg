@@ -38,23 +38,23 @@ namespace gw2l
 
         virtual void CreatPlayer(::google::protobuf::RpcController* controller,
             const gw2l::CreatePlayerRequest* request,
-            gw2l::CreatePlayerRespone* response,
+            gw2l::CreatePlayerResponse* response,
             ::google::protobuf::Closure* done)override;
 
         using CreatePlayerRpcString = common::RpcString<l2db::CreatePlayerRequest,
-            l2db::CreatePlayerRespone,
-            gw2l::CreatePlayerRespone>;
+            l2db::CreatePlayerResponse,
+            gw2l::CreatePlayerResponse>;
         using CreatePlayerRP = std::shared_ptr<CreatePlayerRpcString>;
         void DbCreatePlayerReplied(CreatePlayerRP d);
 
         virtual void EnterGame(::google::protobuf::RpcController* controller,
             const ::gw2l::EnterGameRequest* request,
-            ::gw2l::EnterGameRespone* response,
+            ::gw2l::EnterGameResponse* response,
             ::google::protobuf::Closure* done)override;
 
         using EnterGameRpcString = common::RpcString<l2db::EnterGameRequest,
-            l2db::EnterGameRespone,
-            gw2l::EnterGameRespone>;
+            l2db::EnterGameResponse,
+            gw2l::EnterGameResponse>;
         using EnterGameRP = std::shared_ptr<EnterGameRpcString>;
         void EnterGameReplied(EnterGameRP d);
 
@@ -67,7 +67,7 @@ namespace gw2l
 
         virtual void Disconnect(::google::protobuf::RpcController* controller,
             const ::gw2l::DisconnectRequest* request,
-            ::gw2l::DisconnectRespone* response,
+            ::gw2l::DisconnectResponse* response,
             ::google::protobuf::Closure* done)override;
 
         void UpdateAccount(const std::string& a, const ::account_database& a_d);

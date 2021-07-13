@@ -4,7 +4,7 @@ import "common.proto";
 import "mysql_database_table.proto";
 option cc_generic_services = true;
 
-message EmptyRespone
+message EmptyResponse
 {
 }
 
@@ -26,7 +26,7 @@ message CreatePlayerRequest
   uint64 connection_id = 3;
 }
 
-message CreatePlayerRespone
+message CreatePlayerResponse
 {
   ClientError error = 1;
   account_database account_player = 2;
@@ -39,7 +39,7 @@ message EnterGameRequest
   uint64 player_id = 2;
 }
 
-message EnterGameRespone
+message EnterGameResponse
 {
   ClientError error = 1;
 }
@@ -49,13 +49,13 @@ message DisconnectRequest
   uint64 connection_id = 1;
 }
 
-message DisconnectRespone
+message DisconnectResponse
 {
 }
 
 service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
-  rpc CreatPlayer (CreatePlayerRequest) returns (CreatePlayerRespone);
-  rpc EnterGame (EnterGameRequest) returns (EnterGameRespone);
-  rpc Disconnect (DisconnectRequest) returns (DisconnectRespone);
+  rpc CreatPlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
+  rpc Disconnect (DisconnectRequest) returns (DisconnectResponse);
 }
