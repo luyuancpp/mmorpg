@@ -125,12 +125,12 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     cp->s_reqst_.set_account(ap->account());
     cp->s_reqst_.set_player_id(request->player_id());
     login::DbLoginRpcStub::GetSingleton().CallMethodString(this,
-        &LoginServiceImpl::EnterGameReplied,
+        &LoginServiceImpl::EnterGameDbReplied,
         cp,
         &l2db::LoginService_Stub::EnterGame);
 }
 
-void LoginServiceImpl::EnterGameReplied(EnterGameRP d)
+void LoginServiceImpl::EnterGameDbReplied(EnterGameRP d)
 {
     auto cit = login_players_.find(d->s_reqst_.account());
     if (cit == login_players_.end())
