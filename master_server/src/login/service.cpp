@@ -1,6 +1,7 @@
 #include "service.h"
 
 #include "src/common_type/common_type.h"
+#include "src/game_ecs/game_component/player_common_component.h"
 #include "src/game_ecs/game_registry.h"
 #include "src/rpc_closure_param/closure_auto_done.h"
 #include "src/master_player/master_player_list.h"
@@ -16,7 +17,7 @@ namespace l2ms
         auto player_id = request->player_id();        
         auto e = common::reg().create();
         common::reg().emplace<common::GameGuid>(e, player_id);
-        common::reg().emplace<std::string>(e, request->account());
+        common::reg().emplace<common::SharedString>(e, std::make_shared<std::string>(request->account()));
         master::MasterPlayerList::GetSingleton().EnterGame(player_id, e);
     }
 
