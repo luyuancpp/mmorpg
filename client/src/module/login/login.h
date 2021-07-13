@@ -23,6 +23,7 @@ public:
     void ReadyGo();
     void CreatePlayer();
     void EnterGame(uint64_t player_id);
+    void LeaveGame();
 private:
     ProtobufCodec& codec_;
     TcpConnectionPtr& conn_;

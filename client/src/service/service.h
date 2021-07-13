@@ -14,8 +14,9 @@ using namespace muduo;
 using namespace muduo::net;
 
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
-using CreatePlayerResponePtr = std::shared_ptr<CreatePlayerRespone>;
-using EnterGameResponePtr = std::shared_ptr<EnterGameRespone>;
+using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerRespone>;
+using EnterGameResponsePtr = std::shared_ptr<EnterGameRespone>;
+using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
 
 class ClientService
 {
@@ -32,10 +33,14 @@ public:
         const LoginResponsePtr& message,
         muduo::Timestamp);
     void OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn,
-        const CreatePlayerResponePtr& message,
+        const CreatePlayerResponsePtr& message,
         muduo::Timestamp);
     void OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
-        const EnterGameResponePtr& message,
+        const EnterGameResponsePtr& message,
+        muduo::Timestamp);
+
+    void OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
+        const LeaveGameResponsePtr& message,
         muduo::Timestamp);
     
 private:

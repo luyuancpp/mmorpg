@@ -5,20 +5,20 @@
 
 namespace common
 {
-    template <typename ServerRequest, typename ServerRespone, typename ClientRespone>
+    template <typename ServerRequest, typename ServerResponse, typename ClientResponse>
     struct RpcString
     {
-        RpcString(ClientRespone* client_respone,
+        RpcString(ClientResponse* client_response,
             ::google::protobuf::Closure* client_closure)
-            : c_resp_(client_respone),
+            : c_resp_(client_response),
             cc_(client_closure),
-            s_resp_(new ServerRespone())// delete for rpcchanel
+            s_resp_(new ServerResponse())// delete for rpcchanel
             {}
 
-        ~RpcString() { cc_->Run(); };//this function delete server_respone_
-        ClientRespone* c_resp_{ nullptr };
+        ~RpcString() { cc_->Run(); };//this function delete server_response_
+        ClientResponse* c_resp_{ nullptr };
         ServerRequest s_reqst_;
-        ServerRespone* s_resp_{ nullptr };  
+        ServerResponse* s_resp_{ nullptr };  
     private:
         ::google::protobuf::Closure* cc_{ nullptr };
     };

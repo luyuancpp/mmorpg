@@ -5,11 +5,11 @@
 
 namespace common
 {
-    template <typename ClientRespone, typename ServerRequest, typename ServerRespone>
+    template <typename ClientResponse, typename ServerRequest, typename ServerResponse>
     struct ClientClosure
     {
         ClientClosure(const muduo::net::TcpConnectionPtr& cc)
-            : s_resp_(new ServerRespone()),
+            : s_resp_(new ServerResponse()),
               client_connection_(cc)
         {
             uint64_t p = (uint64_t)(client_connection_.get());
@@ -22,9 +22,9 @@ namespace common
         }
 
         ~ClientClosure() {};
-        ClientRespone c_resp_;
+        ClientResponse c_resp_;
         ServerRequest s_rqst_;
-        ServerRespone* s_resp_{ nullptr };
+        ServerResponse* s_resp_{ nullptr };
         const muduo::net::TcpConnectionPtr client_connection_;
     };
 

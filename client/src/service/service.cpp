@@ -18,6 +18,8 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
         std::bind(&ClientService::OnCreatePlayerReplied, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<EnterGameRespone>(
         std::bind(&ClientService::OnEnterGameReplied, this, _1, _2, _3));
+    dispatcher_.registerMessageCallback<LeaveGameResponse>(
+        std::bind(&ClientService::OnLeaveGameReplied, this, _1, _2, _3));
 }
 
 void ClientService::OnConnection(const muduo::net::TcpConnectionPtr& conn)
@@ -49,7 +51,7 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
 }
 
 void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn, 
-    const CreatePlayerResponePtr& message,
+    const CreatePlayerResponsePtr& message,
     muduo::Timestamp)
 {
     player_id_ = message->players(0).player_id();
@@ -57,10 +59,17 @@ void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& co
 }
 
 void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn, 
-    const EnterGameResponePtr& message,
+    const EnterGameResponsePtr& message,
+    muduo::Timestamp)
+{
+    login_.LeaveGame();
+}
+
+void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 
+    const LeaveGameResponsePtr& message, 
     muduo::Timestamp)
 {
     common::reg().get<CountDownLatch*>(client::ClientEntityId::gAllLeaveGame)->countDown();
-    client_.disconnect();    
+    client_.disconnect();
 }
 

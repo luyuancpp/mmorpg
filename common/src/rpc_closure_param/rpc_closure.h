@@ -3,15 +3,15 @@
 
 namespace common
 {
-template <typename ServerRequest, typename ServerRespone>
+template <typename ServerRequest, typename ServerResponse>
 struct RpcClosure
 {
     RpcClosure()
-        : s_resp_(new ServerRespone())// delete for rpcchanel
+        : s_resp_(new ServerResponse())// delete for rpcchanel
     {}
 
     ServerRequest s_reqst_;
-    ServerRespone* s_resp_{ nullptr };
+    ServerResponse* s_resp_{ nullptr };
 private:
 
 };

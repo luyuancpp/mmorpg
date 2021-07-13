@@ -23,6 +23,8 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatc
         std::bind(&ClientReceiver::OnCreatePlayer, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<EnterGameRequest>(
         std::bind(&ClientReceiver::OnEnterGame, this, _1, _2, _3));
+    dispatcher_.registerMessageCallback<LeaveGameRequest>(
+        std::bind(&ClientReceiver::OnLeaveGame, this, _1, _2, _3));
 }
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
@@ -109,6 +111,14 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
 void ClientReceiver::OnDisconnectReplied(DisconnectCCPtr cp)
 {
 
+}
+
+void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn, 
+    const LeaveGameRequestPtr& message, 
+    muduo::Timestamp)
+{
+    LeaveGameResponse respone;
+    codec_.send(conn, respone);
 }
 
 }

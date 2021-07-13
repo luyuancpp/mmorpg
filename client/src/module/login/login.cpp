@@ -21,3 +21,9 @@ void LoginModule::EnterGame(uint64_t player_id)
     request.set_player_id(player_id);
     codec_.send(conn_, request);
 }
+
+void LoginModule::LeaveGame()
+{
+    LeaveGameRequest request;
+    codec_.send(conn_, request);
+}
