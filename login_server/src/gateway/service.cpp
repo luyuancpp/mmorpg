@@ -63,7 +63,7 @@ void LoginServiceImpl::DbLoginReplied(LoginRP d)
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
     const gw2l::CreatePlayerRequest* request, 
-    gw2l::CreatePlayerRespone* response, 
+    gw2l::CreatePlayerResponse* response, 
     ::google::protobuf::Closure* done)
 {
     // login process
@@ -93,7 +93,7 @@ void LoginServiceImpl::DbCreatePlayerReplied(CreatePlayerRP d)
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     const ::gw2l::EnterGameRequest* request,
-    ::gw2l::EnterGameRespone* response,
+    ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
     auto cit = connection_accounts_.find(request->connection_id());
@@ -163,7 +163,7 @@ void LoginServiceImpl::EnterMasterGameReplied(EnterMasterGameRC d)
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller, 
     const ::gw2l::DisconnectRequest* request,
-    ::gw2l::DisconnectRespone* response,
+    ::gw2l::DisconnectResponse* response,
     ::google::protobuf::Closure* done)
 {
     auto cit = connection_accounts_.find(request->connection_id());

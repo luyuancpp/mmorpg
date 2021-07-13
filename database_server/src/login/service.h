@@ -33,12 +33,12 @@ namespace l2db
 
         virtual void CreatePlayer(::google::protobuf::RpcController* controller,
             const ::l2db::CreatePlayerRequest* request,
-            ::l2db::CreatePlayerRespone* response,
+            ::l2db::CreatePlayerResponse* response,
             ::google::protobuf::Closure* done)override;
 
         virtual void EnterGame(::google::protobuf::RpcController* controller,
             const ::l2db::EnterGameRequest* request,
-            ::l2db::EnterGameRespone* response,
+            ::l2db::EnterGameResponse* response,
             ::google::protobuf::Closure* done)override;
 
         void set_player_mysql_client(MysqlClientPtr& ptr)

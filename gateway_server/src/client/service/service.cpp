@@ -117,8 +117,8 @@ void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
     const LeaveGameRequestPtr& message, 
     muduo::Timestamp)
 {
-    LeaveGameResponse respone;
-    codec_.send(conn, respone);
+    LeaveGameResponse response;
+    codec_.send(conn, response);
 }
 
 }

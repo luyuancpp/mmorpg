@@ -21,7 +21,7 @@ message CreatePlayerRequest
   string account = 1;
 }
 
-message CreatePlayerRespone
+message CreatePlayerResponse
 {
   ClientError error = 1;
   account_database account_player = 2;
@@ -34,7 +34,7 @@ message EnterGameRequest
   string account = 2;
 }
 
-message EnterGameRespone
+message EnterGameResponse
 {
   ClientError error = 1;
   uint64 player_id = 2;
@@ -42,6 +42,6 @@ message EnterGameRespone
 
 service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
-  rpc CreatePlayer (CreatePlayerRequest) returns (CreatePlayerRespone);
-  rpc EnterGame (EnterGameRequest) returns (EnterGameRespone);
+  rpc CreatePlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
 }
