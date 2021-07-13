@@ -42,7 +42,7 @@ message LeaveGameRequest
 {
 }
 
-message LeaveGameRespone
+message LeaveGameResponse
 {
 	ClientError error = 1;
 }

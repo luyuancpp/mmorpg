@@ -21,6 +21,7 @@ namespace gateway
 using LoginRequestPtr = std::shared_ptr<LoginRequest> ;
 using CreatePlayerRequestPtr = std::shared_ptr<CreatePlayerRequest>;
 using EnterGameRequestPtr = std::shared_ptr<EnterGameRequest>;
+using LeaveGameRequestPtr = std::shared_ptr<LeaveGameRequest>;
 
 class ClientReceiver : muduo::noncopyable
 {
@@ -58,6 +59,11 @@ public:
     using DisconnectCC = common::ClientClosure<gw2l::EmptyRespone, gw2l::DisconnectRequest, gw2l::DisconnectRespone>;
     using DisconnectCCPtr = std::shared_ptr<DisconnectCC>;
     void OnDisconnectReplied(DisconnectCCPtr cp);
+
+    void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
+        const LeaveGameRequestPtr& message,
+        muduo::Timestamp);
+
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;
