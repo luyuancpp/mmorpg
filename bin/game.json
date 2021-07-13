@@ -1,0 +1,8 @@
+[
+	{"deploy_database_host":"127.0.0.1", 
+	 "deploy_database_port":3306,
+	 "deploy_database_user":"root",
+	 "deploy_database_password":"luyuan61686",
+	 "deploy_database_dbname":"game"
+	}
+]
