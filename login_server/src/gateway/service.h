@@ -56,7 +56,7 @@ namespace gw2l
             l2db::EnterGameResponse,
             gw2l::EnterGameResponse>;
         using EnterGameRP = std::shared_ptr<EnterGameRpcString>;
-        void EnterGameReplied(EnterGameRP d);
+        void EnterGameDbReplied(EnterGameRP d);
 
         void EnterMasterServer(common::GameGuid player_id, const std::string& account);
 
