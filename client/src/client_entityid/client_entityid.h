@@ -5,7 +5,8 @@
 
 namespace client
 {
-    static entt::registry::entity_type kAllLeaveGame;
+    static entt::registry::entity_type gAllLeaveGame;
+    static entt::registry::entity_type gAllFinish;
 
 }//namespace client
 

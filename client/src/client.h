@@ -29,14 +29,12 @@ class PlayerClient : noncopyable
 public:
     PlayerClient(EventLoop* loop,
         const InetAddress& serverAddr,
-        CountDownLatch* allConnected,
-        CountDownLatch* allFinished)
+        CountDownLatch* allConnected)
         : loop_(loop),
         client_(loop, serverAddr, "QueryClient"),
         dispatcher_(std::bind(&PlayerClient::onUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         all_connected_(allConnected),
-        all_finished_(allFinished),
         service_(dispatcher_, codec_, client_)
     {
        
@@ -69,7 +67,7 @@ private:
         else
         {
             service_.OnDisconnect();
-            all_finished_->countDown();
+            common::reg().get<CountDownLatch*>(client::gAllFinish)->countDown();
         }
     }
 
@@ -85,7 +83,6 @@ private:
     ProtobufDispatcher dispatcher_;
     ProtobufCodec codec_;
     CountDownLatch* all_connected_{ nullptr };
-    CountDownLatch* all_finished_{ nullptr };
     ClientService service_;
 };
 #endif//CLIENT_SRC_CLIENT_H_

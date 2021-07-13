@@ -22,11 +22,12 @@ int main(int argc, char* argv[])
         }
 
         CountDownLatch allConnected(nClients);
-        CountDownLatch allFinished(nClients);
         CountDownLatch allLeaveGame(nClients);
-
-        client::kAllLeaveGame = common::reg().create();
-        common::reg().emplace<CountDownLatch*>(client::kAllLeaveGame, &allLeaveGame);
+        CountDownLatch allFinish(nClients);
+        client::gAllLeaveGame = common::reg().create();
+        common::reg().emplace<CountDownLatch*>(client::gAllLeaveGame, &allLeaveGame);
+        client::gAllFinish = common::reg().create();
+        common::reg().emplace<CountDownLatch*>(client::gAllFinish, &allFinish);
 
         EventLoop loop;
         EventLoopThreadPool pool(&loop, "playerbench-client");
@@ -39,8 +40,7 @@ int main(int argc, char* argv[])
         {
             clients.emplace_back(new PlayerClient(pool.getNextLoop(), 
                 serverAddr, 
-                &allConnected, 
-                &allFinished));
+                &allConnected));
             clients.back()->connect();
         }
         allConnected.wait();
@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
             clients[i]->ReadyGo();
         }
         allLeaveGame.wait();
-        allFinished.wait();
+        common::reg().get<CountDownLatch*>(client::gAllFinish)->wait();
         Timestamp end(Timestamp::now());
         LOG_INFO << "all finished";
         double seconds = timeDifference(end, start);

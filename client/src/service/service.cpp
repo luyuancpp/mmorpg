@@ -63,6 +63,6 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     std::string msg = std::to_string(player_id_) + std::string("playing!");
     LOG_INFO << msg;
     client_.disconnect();
-    common::reg().get<CountDownLatch*>(client::kAllLeaveGame)->countDown();
+    common::reg().get<CountDownLatch*>(client::gAllLeaveGame)->countDown();
 }
 
