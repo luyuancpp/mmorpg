@@ -157,6 +157,7 @@
     <ClCompile Include="src\login_state\login_state.cpp" />
     <ClCompile Include="src\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\mysql_client\mysql_client.cpp" />
+    <ClCompile Include="src\mysql_database\mysql_database.cpp" />
     <ClCompile Include="src\pb2db\pb2dbsql.cpp" />
     <ClCompile Include="src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
@@ -174,6 +175,7 @@
     <ClInclude Include="src\config_expression\config_expression.h" />
     <ClInclude Include="src\event\event.h" />
     <ClInclude Include="src\exprtk\exprtk.hpp" />
+    <ClInclude Include="src\file2string\file2string.h" />
     <ClInclude Include="src\game_ecs\game_registry.h" />
     <ClInclude Include="src\game_rpc\game_rpc_channel.h" />
     <ClInclude Include="src\game_rpc\game_rpc_server.h" />
@@ -187,6 +189,7 @@
     <ClInclude Include="src\login_state\login_state_machine.h" />
     <ClInclude Include="src\mysql_client\mysql_client.h" />
     <ClInclude Include="src\mysql_client\mysql_result.h" />
+    <ClInclude Include="src\mysql_database\mysql_database.h" />
     <ClInclude Include="src\pb2db\pb2dbsql.h" />
     <ClInclude Include="src\redis_client\async_redis_client.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />

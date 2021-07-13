@@ -4,9 +4,7 @@
 
 #include "mysql_database_test.pb.h"
 
-using namespace common;
-
-namespace database
+namespace common
 {
     void MysqlDatabase::AddTable(const ::google::protobuf::Message& message_default_instance)
     {
@@ -71,5 +69,5 @@ void MysqlDatabase::Delete(const ::google::protobuf::Message& message, const std
     QueryOne(sql);
 }
 
-}//namespace database
+}//namespace common
 

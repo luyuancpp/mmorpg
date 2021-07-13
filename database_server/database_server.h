@@ -12,13 +12,13 @@ namespace database
     class DatabaseServer : muduo::noncopyable
     {
     public:
-        using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
+        using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
         DatabaseServer(muduo::net::EventLoop* loop,
             const muduo::net::InetAddress& listen_addr,
             const common::ConnectionParameters& db_cp)
             :server_(loop, listen_addr),
-            database_(std::make_shared<MysqlDatabase>()),
+            database_(std::make_shared<common::MysqlDatabase>()),
             redis_(std::make_shared<common::RedisClient>())
         {
             redis_->Connect(listen_addr.toIp(), 1, 1);

@@ -60,6 +60,9 @@
     <ClCompile Include="src\game_ecs\game_registry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\mysql_database\mysql_database.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\codec\codec.h">
@@ -195,6 +198,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_ecs\game_registry.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\file2string\file2string.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\mysql_database\mysql_database.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
