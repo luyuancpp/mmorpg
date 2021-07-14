@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/teams/teams.h"
+#include "src/game_logic/teams/teams.h"
 #include "src/return_code/return_notice_code.h"
 
 using namespace common;

@@ -1,5 +1,5 @@
-#ifndef COMMON_SRC_TEAM_TEAM_H_
-#define COMMON_SRC_TEAM_TEAM_H_
+#ifndef COMMON_SRC_GAME_LOGIC_TEAM_TEAM_H_
+#define COMMON_SRC_GAME_LOGIC_TEAM_TEAM_H_
 
 #include <deque>
 #include <list>
@@ -90,4 +90,4 @@ namespace common
     };
 }//namespace common
 
-#endif // COMMON_SRC_TEAM_TEAM_H_
+#endif // COMMON_SRC_GAME_LOGIC_TEAM_TEAM_H_

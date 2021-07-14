@@ -1,10 +1,10 @@
-#ifndef SRC_TEAM_TEAM_LIST_H_
-#define SRC_TEAM_TEAM_LIST_H_
+#ifndef COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_
+#define COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_
 
 #include <unordered_map>
 
 #include "src/snow_flake/snow_flake.h"
-#include "src/teams/team_event.h"
+#include "src/game_logic/teams/team_event.h"
 
 #include "team.h"
 
@@ -81,8 +81,5 @@ namespace common
         EventManagerPtr emp_;
     };
 }//namespace common
-
-
-
-#endif // SRC_TEAM_TEAM_LIST_H_
+#endif // COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_
 

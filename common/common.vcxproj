@@ -152,6 +152,8 @@
     <ClCompile Include="src\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
     <ClCompile Include="src\game_ecs\game_registry.cpp" />
+    <ClCompile Include="src\game_logic\teams\team.cpp" />
+    <ClCompile Include="src\game_logic\teams\teams.cpp" />
     <ClCompile Include="src\game_rpc\game_rpc_channel.cc" />
     <ClCompile Include="src\game_rpc\game_rpc_server.cc" />
     <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
@@ -163,9 +165,6 @@
     <ClCompile Include="src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
     <ClCompile Include="src\return_code\notice_struct.cpp" />
-    <ClCompile Include="src\teams\team.cpp" />
-    <ClCompile Include="src\teams\teams.cpp" />
-    <ClCompile Include="src\timer_task\timer_task.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
@@ -178,6 +177,9 @@
     <ClInclude Include="src\exprtk\exprtk.hpp" />
     <ClInclude Include="src\file2string\file2string.h" />
     <ClInclude Include="src\game_ecs\game_registry.h" />
+    <ClInclude Include="src\game_logic\teams\team.h" />
+    <ClInclude Include="src\game_logic\teams\teams.h" />
+    <ClInclude Include="src\game_logic\teams\team_event.h" />
     <ClInclude Include="src\game_rpc\game_rpc_channel.h" />
     <ClInclude Include="src\game_rpc\game_rpc_server.h" />
     <ClInclude Include="src\jsoncpp\json.h" />
@@ -212,10 +214,6 @@
     <ClInclude Include="src\server_rpc_client\rpc_string_closure.h" />
     <ClInclude Include="src\server_rpc_client\stub_rpc_client.h" />
     <ClInclude Include="src\snow_flake\snow_flake.h" />
-    <ClInclude Include="src\teams\team.h" />
-    <ClInclude Include="src\teams\teams.h" />
-    <ClInclude Include="src\teams\team_event.h" />
-    <ClInclude Include="src\timer_task\timer_task.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
