@@ -7,11 +7,11 @@
 namespace common
 {
 
-void RedisClient::Connect(const std::string& redis_server_addr, int32_t sec, int32_t usec)
+void RedisClient::Connect(const std::string& redis_server_addr, int32_t port, int32_t sec, int32_t usec)
 {
     struct timeval timeout = { sec, usec };
     context_ = std::shared_ptr<redisContext>
-        (redisConnectWithTimeout(redis_server_addr.c_str(), 6379, timeout),
+        (redisConnectWithTimeout(redis_server_addr.c_str(), port, timeout),
             redisFree);
 }
 

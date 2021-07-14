@@ -1,0 +1,13 @@
+syntax = "proto3";
+import "db_base.proto";
+
+message serverinfo_database
+{
+  option(OptionTableName)  = "serverinfo";
+  option(OptionPrimaryKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+}
+
+

@@ -8,7 +8,7 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop,
     : server_(loop, listen_addr),
     redis_(std::make_shared<common::RedisClient>())
 {
-    redis_->Connect(listen_addr.toIp(), 1, 1);
+    redis_->Connect(listen_addr.toIp(), 6379, 1, 1);
 }    
 
 void MasterServer::Start()

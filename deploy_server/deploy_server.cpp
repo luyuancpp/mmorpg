@@ -2,7 +2,7 @@
 
 #include "src/config/deploy_config.h"
 
-#include "deploy.pb.h"
+#include "deploy_database_table.pb.h"
 
 namespace deploy_server
 {
@@ -12,7 +12,7 @@ namespace deploy_server
         database_(std::make_shared<common::MysqlDatabase>()),
         redis_(std::make_shared<common::RedisClient>())
     {
-        redis_->Connect(listen_addr.toIp(), 1, 1);
+        redis_->Connect(listen_addr.toIp(), 6379, 1, 1);
         DeployConfig dcfg;
         dcfg.Load("deploy.json");
         database_->Connect(dcfg.connetion_param());
