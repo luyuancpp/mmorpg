@@ -119,7 +119,7 @@
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32_LEAN_AND_MEAN;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../common/;../protopb/pbc/;../third_party/protobuf/src/;../third_party/muduo/;../third_party/boost/;../third_party/redis/;../third_party/;../third_party/mysql/include/;./;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4200</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4200;26821</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,9 +147,11 @@
   <ItemGroup>
     <ClCompile Include="deploy_server.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\config\deploy_config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="deploy_server.h" />
+    <ClInclude Include="src\config\deploy_config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

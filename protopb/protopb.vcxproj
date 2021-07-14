@@ -24,6 +24,7 @@
     <ClInclude Include="pbc\client_logic_common.pb.h" />
     <ClInclude Include="pbc\common.pb.h" />
     <ClInclude Include="pbc\db_base.pb.h" />
+    <ClInclude Include="pbc\deploy.pb.h" />
     <ClInclude Include="pbc\g2db.pb.h" />
     <ClInclude Include="pbc\g2ms.pb.h" />
     <ClInclude Include="pbc\game_database.pb.h" />
@@ -43,6 +44,7 @@
     <ClCompile Include="pbc\client_logic_common.pb.cc" />
     <ClCompile Include="pbc\common.pb.cc" />
     <ClCompile Include="pbc\db_base.pb.cc" />
+    <ClCompile Include="pbc\deploy.pb.cc" />
     <ClCompile Include="pbc\g2db.pb.cc" />
     <ClCompile Include="pbc\g2ms.pb.cc" />
     <ClCompile Include="pbc\game_database.pb.cc" />

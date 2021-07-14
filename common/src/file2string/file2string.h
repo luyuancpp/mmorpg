@@ -7,12 +7,12 @@
 namespace common
 {
     //https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
-    std::string File2String(const std::string filename)
+    std::string File2String(const std::string& filename)
     {
+        std::string contents;
         std::ifstream in(filename, std::ios::in | std::ios::binary);
         if (in)
-        {
-            std::string contents;
+        {            
             in.seekg(0, std::ios::end);
             contents.resize(in.tellg());
             in.seekg(0, std::ios::beg);
@@ -20,6 +20,7 @@ namespace common
             in.close();
             return(contents);
         }
+        return contents;
     }
 
 }//namespace common

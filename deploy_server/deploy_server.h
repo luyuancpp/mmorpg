@@ -15,15 +15,7 @@ namespace deploy_server
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
         DeployServer(muduo::net::EventLoop* loop,
-            const muduo::net::InetAddress& listen_addr,
-            const common::ConnectionParameters& db_cp)
-            :server_(loop, listen_addr),
-            database_(std::make_shared<common::MysqlDatabase>()),
-            redis_(std::make_shared<common::RedisClient>())
-        {
-            redis_->Connect(listen_addr.toIp(), 1, 1);
-            database_->Connect(db_cp);
-        }
+            const muduo::net::InetAddress& listen_addr);
 
         MysqlClientPtr& player_mysql_client() { return database_; }
         RedisClientPtr& redis_client() { return redis_; }

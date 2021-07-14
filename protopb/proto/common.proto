@@ -9,3 +9,17 @@ message ClientError
 message RpcNoResponse
 {
 }
+
+message ConnetionParam
+{
+  string host_name = 1;
+  uint32 port = 2;
+  string user_name = 3;
+  string pass_word = 4;
+  string database_name = 5;
+}
+
+message ConnetionParamJsonFormat
+{
+  repeated ConnetionParam data = 1;
+}

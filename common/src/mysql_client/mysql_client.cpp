@@ -7,17 +7,17 @@
 namespace common
 {
 
-void MysqlClient::Connect(const ConnectionParameters& database_info)
+void MysqlClient::Connect(const ConnetionParam& database_info)
 {
     connection_ = mysql_init(nullptr);
     uint32_t op = 1;
     mysql_options(connection(), MYSQL_OPT_RECONNECT, &op);
     MYSQL* res = mysql_real_connect(connection(),
-        database_info.host_name_.c_str(),
-        database_info.user_name_.c_str(),
-        database_info.pass_word_.c_str(),
-        database_info.database_name_.c_str(),
-        database_info.port_,
+        database_info.host_name().c_str(),
+        database_info.user_name().c_str(),
+        database_info.pass_word().c_str(),
+        database_info.database_name().c_str(),
+        database_info.port(),
         nullptr,
         CLIENT_FOUND_ROWS | CLIENT_MULTI_RESULTS);
     connection_->reconnect = true;

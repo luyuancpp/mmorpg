@@ -154,6 +154,7 @@
     <ClCompile Include="src\game_ecs\game_registry.cpp" />
     <ClCompile Include="src\game_rpc\game_rpc_channel.cc" />
     <ClCompile Include="src\game_rpc\game_rpc_server.cc" />
+    <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
     <ClCompile Include="src\login_state\login_state.cpp" />
     <ClCompile Include="src\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\mysql_client\mysql_client.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="src\game_ecs\game_registry.h" />
     <ClInclude Include="src\game_rpc\game_rpc_channel.h" />
     <ClInclude Include="src\game_rpc\game_rpc_server.h" />
+    <ClInclude Include="src\jsoncpp\json.h" />
     <ClInclude Include="src\login_player\login_event.h" />
     <ClInclude Include="src\login_player\login_state.h" />
     <ClInclude Include="src\login_player\login_state_concrete.h" />
