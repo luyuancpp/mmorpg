@@ -8,7 +8,18 @@ namespace deploy_server
     class DeployConfig
     {
     public:
-        const ConnetionParam& connetion_param() { return connetion_param_.data(0); }
+        enum ConnectionDeployEnum
+        {
+            SERVER_DATABASE = 0,
+            SERVER_DEPLOY = 1,
+        };
+        const ConnetionParam& connetion_param() { return connetion_param_.data(SERVER_DATABASE); }
+        const ConnetionParam& deploy_param() { return connetion_param_.data(SERVER_DEPLOY); }
+
+        static DeployConfig& GetSingleton() {
+            static DeployConfig singleton;
+            return singleton;
+        }
 
         void Load(const std::string& filename);
         

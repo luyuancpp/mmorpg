@@ -89,9 +89,6 @@
     <ClInclude Include="src\return_code\notice_struct.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\return_code\return_notice_code.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\snow_flake\snow_flake.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -204,6 +201,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\teams\teams.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\return_code\return_notice_code.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

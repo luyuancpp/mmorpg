@@ -1,8 +1,1 @@
-[
-	{"deploy_host":"127.0.0.1", 
-	 "deploy_port":3306,
-	 "deploy_user":"root",
-	 "deploy_password":"luyuan61686",
-	 "deploy_dbname":"deploy"
-	}
-]
+{ "deploy":{"deploy_host":"127.0.0.1", "deploy_port":1000} }

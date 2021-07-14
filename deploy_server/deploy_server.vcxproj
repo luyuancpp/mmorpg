@@ -149,10 +149,12 @@
     <ClCompile Include="deploy_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\config\deploy_config.cpp" />
+    <ClCompile Include="src\service\service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="deploy_server.h" />
     <ClInclude Include="src\config\deploy_config.h" />
+    <ClInclude Include="src\service\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
