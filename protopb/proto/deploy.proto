@@ -1,0 +1,12 @@
+syntax = "proto3";
+package deploy_server;
+
+message DbConnetionParam
+{
+  string deploy_host = 1;
+  uint32 deploy_port = 2;
+  string deploy_user = 3;
+  string deploy_password = 4;
+  string deploy_dbname = 5;
+}
+

@@ -11,18 +11,11 @@
 #include "src/util/expected.h"
 #include "src/mysql_client/mysql_result.h"
 
+#include "common.pb.h"
+
 namespace common
 {
-    //https://github.com/mysql/mysql-server/blob/8.0/router/src/router/src/common/mysql_session.cc
-struct ConnectionParameters
-{
-    std::string host_name_;
-    std::string user_name_;
-    std::string pass_word_;
-    std::string database_name_;
-    uint32_t port_{ 0 };
-};
-
+//https://github.com/mysql/mysql-server/blob/8.0/router/src/router/src/common/mysql_session.cc
 
 class MysqlError {
 public:
@@ -67,7 +60,7 @@ public:
 
     ~MysqlClient() { mysql_close(connection_); };
 
-    void Connect(const ConnectionParameters& database_info);
+    void Connect(const ConnetionParam& database_info);
     void Execute(
         const std::string& query);
     ResultRowPtr QueryOne(
@@ -89,10 +82,10 @@ private:
     MysqlResultExpected RealQuery(
         const std::string& q);
 
-    const std::string& Address() noexcept { return conection_info_.host_name_; }
+    const std::string& Address() noexcept { return conection_info_.host_name(); }
 
     MYSQL* connection_;
-    ConnectionParameters conection_info_;
+    ConnetionParam conection_info_;
 };
 }//namespace common
 

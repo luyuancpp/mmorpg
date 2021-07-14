@@ -16,7 +16,7 @@ namespace database
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
         DatabaseServer(muduo::net::EventLoop* loop,
             const muduo::net::InetAddress& listen_addr,
-            const common::ConnectionParameters& db_cp)
+            const ConnetionParam& db_cp)
             :server_(loop, listen_addr),
             database_(std::make_shared<common::MysqlDatabase>()),
             redis_(std::make_shared<common::RedisClient>())

@@ -15,7 +15,12 @@ using namespace common;
 
 int32_t main(int argc, char* argv[])
 {
-    ConnectionParameters query_database_param{ "127.0.0.1", "root" , "luyuan616586", "game" , 3306 };
+    ConnetionParam query_database_param;
+    query_database_param.set_host_name("127.0.0.1");
+    query_database_param.set_user_name("root");
+    query_database_param.set_pass_word("luyuan616586");
+    query_database_param.set_database_name("game");
+    query_database_param.set_port(3306);
     EventLoop loop;
     InetAddress listenAddr("127.0.0.1", 2003);
     DatabaseServer server(&loop, listenAddr, query_database_param);
