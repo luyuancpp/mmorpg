@@ -14,7 +14,7 @@ TEST(RedisTest, SyncMessageLoad)
     request.set_account("luhailon g");
     request.set_password("12 3");
     RedisClient c;
-    c.Connect("127.0.0.1", 1, 1);
+    c.Connect("127.0.0.1", 6379, 1, 1);
     c.Save(request);
     LoginRequest request_load;
     c.Load(request_load);

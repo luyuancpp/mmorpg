@@ -21,7 +21,7 @@ namespace database
             database_(std::make_shared<common::MysqlDatabase>()),
             redis_(std::make_shared<common::RedisClient>())
         {
-            redis_->Connect(listen_addr.toIp(), 1, 1);
+            redis_->Connect(listen_addr.toIp(), 6379, 1, 1);
             database_->Connect(db_cp);
         }
 

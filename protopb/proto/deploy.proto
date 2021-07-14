@@ -1,13 +1,21 @@
 syntax = "proto3";
-import "db_base.proto";
 
-message serverinfo_database
+package deploy;
+
+option cc_generic_services = true;
+
+message ServerInfoRequest
 {
-  option(OptionTableName)  = "serverinfo";
-  option(OptionPrimaryKey) = "id";
-  uint32 id = 1;
-  string ip = 2;
-  uint32 port = 3;
+  uint32 group = 1;
+  uint32 server_type_id = 2;
 }
 
+message ServerInfoResponse
+{
+  string ip = 1;
+  uint32 port = 2;
+}
 
+service LoginService {
+  rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
+}

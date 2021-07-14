@@ -26,7 +26,7 @@ public:
     using ReplyPtr = std::unique_ptr<redisReply>;
     using MessageCachedArray = std::vector<uint8_t>;
 
-    void Connect(const std::string& redis_server_addr, int32_t sec, int32_t usec);
+    void Connect(const std::string& redis_server_addr, int32_t port, int32_t sec, int32_t usec);
 
     void Save(const google::protobuf::Message& message);
     void Save(const google::protobuf::Message& message, GameGuid game_guid);
