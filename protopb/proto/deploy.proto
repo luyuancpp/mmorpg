@@ -1,7 +1,6 @@
 syntax = "proto3";
-
 package deploy;
-
+import "deploy_database_table.proto";
 option cc_generic_services = true;
 
 message ServerInfoRequest
@@ -12,10 +11,9 @@ message ServerInfoRequest
 
 message ServerInfoResponse
 {
-  string ip = 1;
-  uint32 port = 2;
+  serverinfo_database info = 1;
 }
 
-service LoginService {
+service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
 }

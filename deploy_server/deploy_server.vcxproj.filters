@@ -24,12 +24,18 @@
     <ClCompile Include="src\config\deploy_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="deploy_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\config\deploy_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

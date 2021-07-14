@@ -18,15 +18,15 @@ namespace deploy_server
             const muduo::net::InetAddress& listen_addr);
 
         MysqlClientPtr& player_mysql_client() { return database_; }
-        RedisClientPtr& redis_client() { return redis_; }
 
         void Start();
-
+        
         void RegisterService(::google::protobuf::Service*);
     private:
+        void InitServerInof();
+
         muduo::net::RpcServer server_;
         MysqlClientPtr database_;
-        RedisClientPtr redis_;
     };
 }//namespace deploy_server
 
