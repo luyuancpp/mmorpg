@@ -1,12 +1,13 @@
 syntax = "proto3";
-package deploy_server;
+import "db_base.proto";
 
-message DbConnetionParam
+message serverinfo_database
 {
-  string deploy_host = 1;
-  uint32 deploy_port = 2;
-  string deploy_user = 3;
-  string deploy_password = 4;
-  string deploy_dbname = 5;
+  option(OptionTableName)  = "serverinfo";
+  option(OptionPrimaryKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
 }
+
 

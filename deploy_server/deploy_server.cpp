@@ -2,6 +2,8 @@
 
 #include "src/config/deploy_config.h"
 
+#include "deploy.pb.h"
+
 namespace deploy_server
 {
     DeployServer::DeployServer(muduo::net::EventLoop* loop,
@@ -18,6 +20,8 @@ namespace deploy_server
 
     void DeployServer::Start()
     {
+        database_->AddTable(serverinfo_database::default_instance());
+        database_->Init();
         server_.start();
     }
 
