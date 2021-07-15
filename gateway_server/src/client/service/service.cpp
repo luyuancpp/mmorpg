@@ -32,7 +32,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     if (!conn->connected())
     {
         DisconnectCCPtr p(std::make_shared<DisconnectCC>(conn));
-        p->s_rqst_.set_connection_id(p->connection_hash_id());
+        p->s_reqst_.set_connection_id(p->connection_hash_id());
         LoginRpcStub::GetSingleton().CallMethod(&ClientReceiver::OnDisconnectReplied,
             p,
             this,
@@ -45,9 +45,9 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     LoginCCPtr p(std::make_shared<LoginCC>(conn));
-    p->s_rqst_.set_account(message->account());
-    p->s_rqst_.set_password(message->password());
-    p->s_rqst_.set_connection_id(p->connection_hash_id());
+    p->s_reqst_.set_account(message->account());
+    p->s_reqst_.set_password(message->password());
+    p->s_reqst_.set_connection_id(p->connection_hash_id());
     LoginRpcStub::GetSingleton().CallMethod(&ClientReceiver::OnServerLoginReplied,
         p, 
         this, 
@@ -72,7 +72,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     muduo::Timestamp)
 {
     CreatePlayerCCPtr p(std::make_shared<CreatePlayerCC>(conn));
-    p->s_rqst_.set_connection_id(p->connection_hash_id());
+    p->s_reqst_.set_connection_id(p->connection_hash_id());
     LoginRpcStub::GetSingleton().CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         p, 
         this, 
@@ -95,8 +95,8 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 muduo::Timestamp)
 {
     EnterGameCCPtr p(std::make_shared<EnterGameCC>(conn));
-    p->s_rqst_.set_connection_id(p->connection_hash_id());
-    p->s_rqst_.set_player_id(message->player_id());
+    p->s_reqst_.set_connection_id(p->connection_hash_id());
+    p->s_reqst_.set_player_id(message->player_id());
     LoginRpcStub::GetSingleton().CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         p,
         this,

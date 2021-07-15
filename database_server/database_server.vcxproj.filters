@@ -24,6 +24,13 @@
     <ClCompile Include="src\login\service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\deploy\rpcclient\deploy_rpcclient.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\config\database_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\login\service.h">
@@ -33,6 +40,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="database_server.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\deploy\rpcclient\deploy_rpcclient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\config\database_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

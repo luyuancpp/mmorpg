@@ -23,3 +23,9 @@ message ConnetionParamJsonFormat
 {
   repeated ConnetionParam data = 1;
 }
+
+message ServerInfo
+{
+  string host_name = 1;
+  uint32 port = 2;
+}

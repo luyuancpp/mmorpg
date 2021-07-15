@@ -5,10 +5,9 @@
 #include "mysql_database_test.pb.h"
 
 using namespace common;
-using namespace database;
 
 DatabasePtr query_database;
-ConnectionParameters query_database_param{ "127.0.0.1", "root" , "luyuan616586", "game" , 3306 };
+ConnetionParam query_database_param;
 std::string main_acount("lu hailong");
 std::string main_password("lu yaun");
 std::string main_where_case = std::string("account = '") + main_acount + std::string("'");
@@ -79,6 +78,18 @@ TEST(MysqlClientTest, QueryDelete)
 //    EXPECT_EQ(0, load_message.account_password_size());
 //}
 
+TEST(MysqlClientTest, QueryWhereAll)
+{
+    account_database_one_test delete_message_where;
+    delete_message_where.set_account("1");
+    query_database->SaveOne(delete_message_where);
+    delete_message_where.set_account("2");
+    query_database->SaveOne(delete_message_where);
+    account_database_all_test load_message;
+    query_database->LoadAll<::account_database_one_test>(load_message, "account = '1' or account = '2'");
+    EXPECT_EQ(2, load_message.account_password_size());
+}
+
 TEST(MysqlClientTest, LastId)
 {
     EXPECT_EQ(0, query_database->LastInsertId());
@@ -86,8 +97,16 @@ TEST(MysqlClientTest, LastId)
 
 int main(int argc, char** argv)
 {
+    std::string droptable = std::string("drop table ") + account_database_one_test::default_instance().GetTypeName();
+    
+    query_database_param.set_host_name("127.0.0.1");
+    query_database_param.set_user_name("root");
+    query_database_param.set_pass_word("luyuan616586");
+    query_database_param.set_port(3306);
+    query_database_param.set_database_name("game");
     query_database = std::make_unique<MysqlDatabase>();
     query_database->Connect(query_database_param);
+    query_database->QueryOne(droptable);
     query_database->AddTable(account_database_one_test::default_instance());
     query_database->Init();    
     testing::InitGoogleTest(&argc, argv);
