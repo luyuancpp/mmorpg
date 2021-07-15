@@ -53,6 +53,7 @@ private:
             conn->setTcpNoDelay(true);
             channel_->setConnection(conn);
         }
+        emp_->emit<RegisterStubEvent>(conn);
         emp_->emit<ConnectionEvent>(conn);
     }
 
