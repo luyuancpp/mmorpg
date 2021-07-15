@@ -6,12 +6,11 @@ option cc_generic_services = true;
 message ServerInfoRequest
 {
   uint32 group = 1;
-  uint32 server_type_id = 2;
 }
 
 message ServerInfoResponse
 {
-  serverinfo_database info = 1;
+  repeated serverinfo_database info = 1;
 }
 
 service DeployService {

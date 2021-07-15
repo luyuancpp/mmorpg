@@ -9,12 +9,14 @@
 #include "src/game_rpc/game_rpc_server.h"
 #include "src/rpc_closure_param/rpc_closure.h"
 #include "src/rpc_closure_param/rpc_connection_event.h"
+#include "src/login/service.h"
 
 #include "deploy.pb.h"
 
+
 namespace database
 {
-    class DatabaseServer : muduo::noncopyable
+    class DatabaseServer : muduo::noncopyable, public common::Receiver<DatabaseServer>
     {
     public:
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
@@ -29,20 +31,20 @@ namespace database
 
         void Start();
 
-        void RegisterService(::google::protobuf::Service*);
-
         void receive(const common::ConnectionEvent& es);
 
         using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
             deploy::ServerInfoResponse>;
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
-        void DbServerInfoReplied(ServerInfoRpcRC cp);
+        void StartServer(ServerInfoRpcRC cp);
 
     private:
         muduo::net::EventLoop* loop_{ nullptr };
         MysqlClientPtr database_;
         RedisClientPtr redis_;
-        RprServerPtr server_;        
+        RprServerPtr server_;  
+
+        l2db::LoginServiceImpl impl_;
     };
 
 }//namespace database
