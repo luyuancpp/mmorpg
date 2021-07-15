@@ -1,17 +1,17 @@
-#ifndef DATABASE_SERVER_SRC_CONFIG_DATABASE_CONFIG_H_
-#define DATABASE_SERVER_SRC_CONFIG_DATABASE_CONFIG_H_
+#ifndef COMMON_SRC_GAME_GAME_CONFIG_H_
+#define COMMON_SRC_GAME_GAME_CONFIG_H_
 
 #include "common.pb.h"
 
-namespace database
+namespace common
 {
-    class DatabaseConfig
+    class GameConfig
     {
     public:
         const ServerInfo& deploy_server() const { return deploy_server_; }
 
-        static DatabaseConfig& GetSingleton() {
-            static DatabaseConfig singleton;
+        static GameConfig& GetSingleton() {
+            static GameConfig singleton;
             return singleton;
         }
 
@@ -19,6 +19,6 @@ namespace database
     private:
         ServerInfo deploy_server_;
     };
-}//namespace database
+}//namespace common
 
 #endif//DATABASE_SERVER_SRC_CONFIG_DATABASE_CONFIG_H_
