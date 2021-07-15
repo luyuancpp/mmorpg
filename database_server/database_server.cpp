@@ -27,12 +27,11 @@ namespace database
         database_->AddTable(account_database::default_instance());
         database_->AddTable(player_database::default_instance());
         database_->Init();
-        server_->start();
-    }
 
-    void DatabaseServer::RegisterService(google::protobuf::Service* service)
-    {
-        server_->registerService(service);
+        impl_.set_player_mysql_client(player_mysql_client());
+        impl_.set_redis_client(redis_client());
+        server_->registerService(&impl_);
+        server_->start();
     }
 
     void DatabaseServer::receive(const common::ConnectionEvent& es)
@@ -42,27 +41,34 @@ namespace database
             return;
         }
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-        cp->s_reqst_.set_group(0);
-        cp->s_reqst_.set_server_type_id(common::SERVER_DATABASE);
+        cp->s_reqst_.set_group(1);
         database::ServerInfoRpcStub::GetSingleton().CallMethod(
-            &DatabaseServer::DbServerInfoReplied,
+            &DatabaseServer::StartServer,
             cp,
             this,
             &deploy::DeployService_Stub::ServerInfo);
     }
 
-    void DatabaseServer::DbServerInfoReplied(ServerInfoRpcRC cp)
+    void DatabaseServer::StartServer(ServerInfoRpcRC cp)
     {
-        InetAddress listenAddr(cp->s_resp_->info().ip(), cp->s_resp_->info().port());
-        redis_->Connect(cp->s_resp_->info().ip(), 6379, 1, 1);
+        if (cp->s_resp_->info().size() < common::SERVER_ID_GROUP_SIZE)
+        {
+            LOG_ERROR << "depoly server size";
+            return;
+        }
+        auto& redisinfo = cp->s_resp_->info(common::SERVER_REDIS);
+        auto& myinfo = cp->s_resp_->info(common::SERVER_DATABASE);        
+        InetAddress listenAddr(myinfo.ip(), myinfo.port());
+        redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
         ConnetionParam query_database_param;
-        query_database_param.set_host_name(cp->s_resp_->info().db_host());
-        query_database_param.set_user_name(cp->s_resp_->info().db_user());
-        query_database_param.set_pass_word(cp->s_resp_->info().db_password());
-        query_database_param.set_database_name(cp->s_resp_->info().db_dbname());
-        query_database_param.set_port(cp->s_resp_->info().db_port());
+        query_database_param.set_host_name(myinfo.db_host());
+        query_database_param.set_user_name(myinfo.db_user());
+        query_database_param.set_pass_word(myinfo.db_password());
+        query_database_param.set_database_name(myinfo.db_dbname());
+        query_database_param.set_port(myinfo.db_port());
         database_->Connect(query_database_param);
         server_ = std::make_shared<muduo::net::RpcServer>(loop_, listenAddr);
+        Start();
     }
 
 

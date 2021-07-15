@@ -5,6 +5,12 @@
 
 #include "deploy_database_table.pb.h"
 
+static const uint32_t kRedisPort = 6379;
+static const uint32_t kGroup = 500;
+static const uint32_t kBeginPort = 2000;
+static const uint32_t kGroupServerSize = common::SERVER_ID_GROUP_SIZE - common::SERVER_REDIS + 1;
+static const uint32_t kTotalSize = kGroup * kGroupServerSize;
+
 namespace deploy_server
 {
     DeployServer::DeployServer(muduo::net::EventLoop* loop,
@@ -33,13 +39,14 @@ namespace deploy_server
         auto q_result = database_->QueryOne("select * from serverinfo_database LIMIT 1");
         if (nullptr == q_result)
         {
-            uint32_t group_server_size = common::SERVER_ID_GROUP_SIZE - common::SERVER_REDIS;
-            uint32_t begin_port = 2000;
-            uint32_t group_size = 500 * group_server_size;
             serverinfo_database sd;
-            for (uint32_t i = 0; i < group_size; ++i)
+            for (uint32_t i = 0; i < kTotalSize; ++i)
             {
-                sd.set_port(begin_port + i);
+                sd.set_port(kBeginPort + i);
+                if (i % common::SERVER_ID_GROUP_SIZE == 0)
+                {
+                    sd.set_port(kRedisPort);
+                }
                 sd.set_ip("127.0.0.1");
                 database_->SaveOne(sd);
             }

@@ -27,6 +27,13 @@ namespace l2db
     public:
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
+
+        static LoginServiceImpl& GetSingleton()
+        {
+            static LoginServiceImpl singleton;
+            return singleton;
+        }
+
         virtual void Login(::google::protobuf::RpcController* controller,
             const l2db::LoginRequest* request,
             l2db::LoginResponse* response,

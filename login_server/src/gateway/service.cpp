@@ -135,8 +135,7 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameRP d)
     auto cit = login_players_.find(d->s_reqst_.account());
     if (cit == login_players_.end())
     {
-        std::string msg = std::string("disconnect not found connection id ") + d->s_reqst_.account();
-        LOG_ERROR << msg;
+        LOG_ERROR << "disconnect not found connection id " << d->s_reqst_.account();
         return;
     }
     auto& ap = cit->second;
@@ -170,8 +169,8 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())
     {
-        std::string msg("disconnect not found connection id " + std::to_string(request->connection_id()));
-        LOG_ERROR << msg;
+        LOG_ERROR << "disconnect not found connection id " << std::to_string(request->connection_id());
+        return;
     }
     connection_accounts_.erase(cit);
     done->Run();
@@ -182,8 +181,7 @@ void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_datab
     auto it = login_players_.find(a);
     if (it == login_players_.end())
     {
-        std::string msg = std::string("account empty ") + a;
-        LOG_ERROR << msg;
+        LOG_ERROR << "account empty " << a;
         return;
     }
     auto& ap = it->second;
