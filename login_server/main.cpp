@@ -1,9 +1,7 @@
 #include "login_server.h"
 
-#include "src/database/rpcclient/database_rpcclient.h"
-#include "src/gateway/service.h"
 #include "src/game_config/game_config.h"
-#include "src/master/rpcclient/master_rpcclient.h"
+#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
 
 using namespace login;
 
@@ -11,22 +9,13 @@ int main(int argc, char* argv[])
 {
     common::GameConfig::GetSingleton().Load("game.json");
     const auto& deploy_info = common::GameConfig::GetSingleton().deploy_server();
-
+;
     EventLoop loop;
-    InetAddress listen_addr("127.0.0.1", 2001);
-    InetAddress database_addr("127.0.0.1", 2003);
-    InetAddress master_addr("127.0.0.1", 2004);
-
-    login::DbRpcClient::Connect(&loop, database_addr);
-    login::DbLoginRpcStub::GetSingleton();
-    login::MasterRpcClient::Connect(&loop, master_addr);
-    login::MasterLoginRpcStub::GetSingleton();
-
-    gw2l::LoginServiceImpl impl;
-    LoginServer server(&loop, listen_addr);
-    server.RegisterService(&impl);
-    impl.set_redis_client(server.redis_client());
-    server.Start();
+    InetAddress deploy_addr(deploy_info.host_name(), deploy_info.port());
+    deploy::DeployRpcClient::Connect(&loop, deploy_addr);
+    deploy::ServerInfoRpcStub::GetSingleton();
+    
+    LoginServer server(&loop);
     loop.loop();
     return 0;
 }

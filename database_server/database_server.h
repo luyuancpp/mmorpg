@@ -24,7 +24,6 @@ namespace database
         using RprServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
         DatabaseServer(muduo::net::EventLoop* loop);
-        ~DatabaseServer();
 
         MysqlClientPtr& player_mysql_client(){ return database_; }
         RedisClientPtr& redis_client() { return redis_; }
