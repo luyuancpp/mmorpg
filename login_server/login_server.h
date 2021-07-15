@@ -24,8 +24,6 @@ namespace login
 
         void Start();
 
-        void RegisterService(::google::protobuf::Service*);
-
         void receive(const common::ConnectionEvent& es);
 
         using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,

@@ -10,19 +10,17 @@
 namespace login
 {
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
-    : redis_(std::make_shared<common::RedisClient>())
+    : loop_(loop),
+      redis_(std::make_shared<common::RedisClient>())
 {
     deploy::DeployRpcClient::GetSingleton()->emp()->subscribe<common::ConnectionEvent>(*this);
 }
 
 void LoginServer::Start()
 {
+    server_->registerService(&impl_);
+    impl_.set_redis_client(redis_client());
     server_->start();
-}
-
-void LoginServer::RegisterService(::google::protobuf::Service* service)
-{
-    server_->registerService(service);
 }
 
 void LoginServer::receive(const common::ConnectionEvent& es)
@@ -42,8 +40,6 @@ void LoginServer::receive(const common::ConnectionEvent& es)
 
 void LoginServer::StartServer(ServerInfoRpcRC cp)
 {
-    muduo::net::InetAddress listenAddr("127.0.0.1", 1111);
-    
     auto& databaseinfo = cp->s_resp_->info(common::SERVER_DATABASE);
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     login::DbRpcClient::Connect(loop_, database_addr);
@@ -60,8 +56,7 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     auto& myinfo = cp->s_resp_->info(common::SERVER_LOGIN);
     InetAddress login_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, login_addr);
-    RegisterService(&impl_);
-    impl_.set_redis_client(redis_client());
+   
     Start();
 }
 

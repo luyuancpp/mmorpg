@@ -1,23 +1,50 @@
 #include "master_server.h"
 
+#include "src/database/rpcclient/database_rpcclient.h"
+#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/server_type_id/server_type_id.h"
+
 namespace master
 {
-
-MasterServer::MasterServer(muduo::net::EventLoop* loop,
-    const muduo::net::InetAddress& listen_addr)
-    : server_(loop, listen_addr),
-    redis_(std::make_shared<common::RedisClient>())
+MasterServer::MasterServer(muduo::net::EventLoop* loop)
+    : loop_(loop),
+      redis_(std::make_shared<common::RedisClient>())
 {
-    redis_->Connect(listen_addr.toIp(), 6379, 1, 1);
+    deploy::DeployRpcClient::GetSingleton()->emp()->subscribe<common::ConnectionEvent>(*this);
 }    
 
 void MasterServer::Start()
 {
-    server_.start();
+    server_->registerService(&impl_);
+    server_->start();
 }
 
-void MasterServer::RegisterService(::google::protobuf::Service* service)
+void MasterServer::receive(const common::ConnectionEvent& es)
 {
-    server_.registerService(service);
+    if (!es.conn_->connected())
+    {
+        return;
+    }
+    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
+    cp->s_reqst_.set_group(1);
+    deploy::ServerInfoRpcStub::GetSingleton().CallMethod(
+        &MasterServer::StartServer,
+        cp,
+        this,
+        &deploy::DeployService_Stub::ServerInfo);
 }
+
+void MasterServer::StartServer(ServerInfoRpcRC cp)
+{
+    auto& databaseinfo = cp->s_resp_->info(common::SERVER_DATABASE);
+    InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
+    master::DbRpcClient::Connect(loop_, database_addr);
+
+    auto& myinfo = cp->s_resp_->info(common::SERVER_MASTER);
+    InetAddress login_addr(myinfo.ip(), myinfo.port());
+    server_ = std::make_shared<muduo::net::RpcServer>(loop_, login_addr);
+
+    Start();
+}
+
 }//namespace master
