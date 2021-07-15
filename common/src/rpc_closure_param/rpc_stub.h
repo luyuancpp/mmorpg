@@ -20,10 +20,10 @@ public:
         : client_(client),
           emp_(client_.emp())
     {
-        emp_->subscribe<ConnectionEvent>(*this);
+        emp_->subscribe<RegisterStubEvent>(*this);
     }
 
-    void receive(const ConnectionEvent& es)
+    void receive(const RegisterStubEvent& es)
     {
         if (es.conn_->connected())
         {

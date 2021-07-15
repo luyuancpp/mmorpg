@@ -5,6 +5,14 @@
 
 namespace common
 {
+    struct RegisterStubEvent
+    {
+        RegisterStubEvent(const muduo::net::TcpConnectionPtr& conn)
+            : conn_(conn)
+        {
+        }
+        const muduo::net::TcpConnectionPtr& conn_;
+    };
     struct ConnectionEvent
     {
         ConnectionEvent(const muduo::net::TcpConnectionPtr& conn)
