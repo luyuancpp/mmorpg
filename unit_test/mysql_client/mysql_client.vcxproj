@@ -116,7 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../common/;../../game_proto/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../third_party/mysql/include/;../../database_server/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../common/;../../protopb/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../third_party/mysql/include/;../../database_server/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,21 +143,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\src\mysql_client\mysql_client.cpp" />
+    <ClCompile Include="..\..\common\src\mysql_database\mysql_database.cpp" />
     <ClCompile Include="..\..\common\src\pb2db\pb2dbsql.cpp" />
-    <ClCompile Include="..\..\database_server\src\mysql_database\mysql_database.cpp" />
-    <ClCompile Include="..\..\game_proto\pbc\db_base.pb.cc" />
-    <ClCompile Include="..\..\game_proto\pbc\mysql_database_test.pb.cc" />
+    <ClCompile Include="..\..\protopb\pbc\common.pb.cc" />
+    <ClCompile Include="..\..\protopb\pbc\db_base.pb.cc" />
+    <ClCompile Include="..\..\protopb\pbc\mysql_database_test.pb.cc" />
     <ClCompile Include="mysql_client_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\mysql_client\mysql_client.h" />
     <ClInclude Include="..\..\common\src\mysql_client\mysql_result.h" />
+    <ClInclude Include="..\..\common\src\mysql_database\mysql_database.h" />
     <ClInclude Include="..\..\common\src\pb2db\pb2dbsql.h" />
     <ClInclude Include="..\..\common\src\util\expected.h" />
     <ClInclude Include="..\..\common\src\util\type_traits.h" />
-    <ClInclude Include="..\..\database_server\src\mysql_database\mysql_database.h" />
-    <ClInclude Include="..\..\game_proto\pbc\db_base.pb.h" />
     <ClInclude Include="..\..\game_proto\pbc\mysql_database_test.pb.h" />
+    <ClInclude Include="..\..\protopb\pbc\common.pb.h" />
+    <ClInclude Include="..\..\protopb\pbc\db_base.pb.h" />
+    <ClInclude Include="..\..\protopb\pbc\mysql_database_test.pb.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

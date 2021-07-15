@@ -9,6 +9,9 @@ message serverinfo_database
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
+  string db_host = 4;
+  string db_user = 5;
+  string db_password = 6;
+  uint32 db_port = 7;
+  string db_dbname = 8;
 }
-
-

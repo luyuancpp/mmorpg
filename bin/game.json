@@ -1,1 +1,1 @@
-{ "deploy":{"deploy_host":"127.0.0.1", "deploy_port":1000} }
+{"host_name":"127.0.0.1", "port":1000} 

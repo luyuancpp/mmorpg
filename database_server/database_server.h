@@ -1,11 +1,16 @@
 #ifndef DATABASE_SERVER_DATABASE_SERVER_H_
 #define DATABASE_SERVER_DATABASE_SERVER_H_
 
+#include "muduo/net/EventLoop.h"
+
+#include "src/event/event.h"
 #include "src/mysql_database/mysql_database.h"
 #include "src/redis_client/redis_client.h"
-
-#include "muduo/net/EventLoop.h"
 #include "src/game_rpc/game_rpc_server.h"
+#include "src/rpc_closure_param/rpc_closure.h"
+#include "src/rpc_closure_param/rpc_connection_event.h"
+
+#include "deploy.pb.h"
 
 namespace database
 {
@@ -14,16 +19,10 @@ namespace database
     public:
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
-        DatabaseServer(muduo::net::EventLoop* loop,
-            const muduo::net::InetAddress& listen_addr,
-            const ConnetionParam& db_cp)
-            :server_(loop, listen_addr),
-            database_(std::make_shared<common::MysqlDatabase>()),
-            redis_(std::make_shared<common::RedisClient>())
-        {
-            redis_->Connect(listen_addr.toIp(), 6379, 1, 1);
-            database_->Connect(db_cp);
-        }
+        using RprServerPtr = std::shared_ptr<muduo::net::RpcServer>;
+
+        DatabaseServer(muduo::net::EventLoop* loop);
+        ~DatabaseServer();
 
         MysqlClientPtr& player_mysql_client(){ return database_; }
         RedisClientPtr& redis_client() { return redis_; }
@@ -31,10 +30,19 @@ namespace database
         void Start();
 
         void RegisterService(::google::protobuf::Service*);
+
+        void receive(const common::ConnectionEvent& es);
+
+        using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
+            deploy::ServerInfoResponse>;
+        using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
+        void DbServerInfoReplied(ServerInfoRpcRC cp);
+
     private:
-        muduo::net::RpcServer server_;
+        muduo::net::EventLoop* loop_{ nullptr };
         MysqlClientPtr database_;
         RedisClientPtr redis_;
+        RprServerPtr server_;        
     };
 
 }//namespace database
