@@ -1,6 +1,6 @@
 #include "database_server.h"
 
-#include "src/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
 #include "src/server_type_id/server_type_id.h"
 
 #include "mysql_database_table.pb.h"
@@ -13,13 +13,7 @@ namespace database
           database_(std::make_shared<common::MysqlDatabase>()),
           redis_(std::make_shared<common::RedisClient>())
     {
-        DeployRpcClient::GetSingleton()->emp()->subscribe<common::ConnectionEvent>(*this);
-        
-    }
-
-    DatabaseServer::~DatabaseServer()
-    {
-        DeployRpcClient::GetSingleton()->emp()->unsubscribe<common::ConnectionEvent>(*this);
+        deploy::DeployRpcClient::GetSingleton()->emp()->subscribe<common::ConnectionEvent>(*this); 
     }
 
     void DatabaseServer::Start()
@@ -42,7 +36,7 @@ namespace database
         }
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
         cp->s_reqst_.set_group(1);
-        database::ServerInfoRpcStub::GetSingleton().CallMethod(
+        deploy::ServerInfoRpcStub::GetSingleton().CallMethod(
             &DatabaseServer::StartServer,
             cp,
             this,
