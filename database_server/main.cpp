@@ -14,8 +14,8 @@ int32_t main(int argc, char* argv[])
 
     EventLoop loop;
     InetAddress listenAddr(deploy_info.host_name(), deploy_info.port());
-    database::DeployRpcClient::Connect(&loop, listenAddr);
-    database::ServerInfoRpcStub::GetSingleton();
+    deploy::DeployRpcClient::Connect(&loop, listenAddr);
+    deploy::ServerInfoRpcStub::GetSingleton();
 
     DatabaseServer server(&loop);
    

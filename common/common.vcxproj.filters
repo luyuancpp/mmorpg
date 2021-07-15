@@ -212,5 +212,8 @@
     <ClInclude Include="src\game_config\game_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\deploy\rpcclient\deploy_rpcclient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

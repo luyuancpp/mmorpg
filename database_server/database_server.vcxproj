@@ -151,12 +151,10 @@
   <ItemGroup>
     <ClCompile Include="database_server.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\deploy\rpcclient\deploy_rpcclient.cpp" />
     <ClCompile Include="src\login\service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="database_server.h" />
-    <ClInclude Include="src\deploy\rpcclient\deploy_rpcclient.h" />
     <ClInclude Include="src\login\service.h" />
     <ClInclude Include="src\master\service.h" />
   </ItemGroup>
