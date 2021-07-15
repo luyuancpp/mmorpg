@@ -63,6 +63,9 @@
     <ClCompile Include="src\game_logic\teams\teams.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_config\game_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\codec\codec.h">
@@ -204,6 +207,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\return_code\return_notice_code.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\game_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
