@@ -2,12 +2,16 @@
 
 #include "src/database/rpcclient/database_rpcclient.h"
 #include "src/gateway/service.h"
+#include "src/game_config/game_config.h"
 #include "src/master/rpcclient/master_rpcclient.h"
 
 using namespace login;
 
 int main(int argc, char* argv[])
 {
+    common::GameConfig::GetSingleton().Load("game.json");
+    const auto& deploy_info = common::GameConfig::GetSingleton().deploy_server();
+
     EventLoop loop;
     InetAddress listen_addr("127.0.0.1", 2001);
     InetAddress database_addr("127.0.0.1", 2003);

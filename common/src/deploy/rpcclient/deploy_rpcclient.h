@@ -9,7 +9,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-namespace database
+namespace deploy
 {
     class DeployRpcClient : noncopyable
     {
@@ -41,7 +41,7 @@ namespace database
         }
     };
 
-}// namespace database
+}// namespace deploy
 
 #endif // DATABASE_SERVER_SRC_DEPLOY_RPCCLIENT_DEPLOY_RPC_CLIENT_H_
 
