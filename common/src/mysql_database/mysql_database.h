@@ -35,6 +35,26 @@ public:
         std::string sql = pb2db_.GetSelectAllSql(scratch_space);
         QueryResultRowProcessor(sql, fill_message);
     }
+    template<typename T>
+    void LoadAll(::google::protobuf::Message& message, const std::string& where_clause)
+    {
+        const ::google::protobuf::Descriptor* des = message.GetDescriptor();
+        auto ref = message.GetReflection();
+        auto fd_sub_message =
+            des->FindFieldByName(des->field(0)->name());
+        ::google::protobuf::MutableRepeatedFieldRef<T> rf_message = ref->GetMutableRepeatedFieldRef<T>(&message, fd_sub_message);
+        T scratch_space;
+        auto fill_message = [this, &rf_message, &scratch_space](const ResultRowPtr& ptr)-> bool
+        {
+            scratch_space.Clear();
+            common::FillMessageField(scratch_space, *ptr);
+            rf_message.Add(scratch_space);
+            return true;
+        };
+
+        std::string sql = pb2db_.GetSelectAllSql(scratch_space, where_clause);
+        QueryResultRowProcessor(sql, fill_message);
+    }
 
     void SaveOne(const ::google::protobuf::Message& message);
     template<typename T>
