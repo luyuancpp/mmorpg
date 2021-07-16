@@ -22,11 +22,6 @@ void GatewayServer::ConnectDeploy()
     deploy_rpc_client_->connect();
 }
 
-void GatewayServer::Start()
-{
-     server_->start();
-}
-
 void GatewayServer::receive(const common::ConnectionEvent& es)
 {
     if (!es.conn_->connected())
