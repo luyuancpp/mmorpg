@@ -1,6 +1,6 @@
 ﻿#include "deploy_server.h"
 
-#include "src/config/deploy_config.h"
+#include "src/game_config/game_config.h"
 #include "src/server_type_id/server_type_id.h"
 
 #include "deploy_database_table.pb.h"
@@ -18,7 +18,7 @@ namespace deploy_server
         :server_(loop, listen_addr),
         database_(std::make_shared<common::MysqlDatabase>())
     {
-        database_->Connect(DeployConfig::GetSingleton().connetion_param());
+        database_->Connect(common::DeployConfig::GetSingleton().connetion_param());
     }
 
     void DeployServer::Start()

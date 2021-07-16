@@ -6,10 +6,17 @@
 
 namespace common
 {
-void GameConfig::Load(const std::string& filename)
+void GameJson::Load(const std::string& filename)
 {
     auto contents = File2String(filename);
     google::protobuf::StringPiece sp(contents.data(), contents.size());
     google::protobuf::util::JsonStringToMessage(sp, &deploy_server_);
+}
+
+void DeployConfig::Load(const std::string& filename)
+{
+    auto contents = common::File2String(filename);
+    google::protobuf::StringPiece sp(contents.data(), contents.size());
+    google::protobuf::util::JsonStringToMessage(sp, &connetion_param_);
 }
 }//namespace database

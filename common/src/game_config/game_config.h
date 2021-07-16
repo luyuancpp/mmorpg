@@ -5,19 +5,41 @@
 
 namespace common
 {
-    class GameConfig
+    class GameJson
     {
     public:
-        const ServerInfo& deploy_server() const { return deploy_server_; }
+        const GameConfig& s() const { return deploy_server_; }
 
-        static GameConfig& GetSingleton() {
-            static GameConfig singleton;
+        static GameJson& GetSingleton() {
+            static GameJson singleton;
             return singleton;
         }
 
         void Load(const std::string& filename);
     private:
-        ServerInfo deploy_server_;
+        GameConfig deploy_server_;
+    };
+
+    class DeployConfig
+    {
+    public:
+        enum ConnectionDeployEnum
+        {
+            SERVER_DATABASE = 0,
+            SERVER_DEPLOY = 1,
+        };
+        const ConnetionParam& connetion_param() { return connetion_param_.data(SERVER_DATABASE); }
+        const ConnetionParam& deploy_param() { return connetion_param_.data(SERVER_DEPLOY); }
+
+        static DeployConfig& GetSingleton() {
+            static DeployConfig singleton;
+            return singleton;
+        }
+
+        void Load(const std::string& filename);
+
+    private:
+        ConnetionParamJsonFormat connetion_param_;
     };
 }//namespace common
 
