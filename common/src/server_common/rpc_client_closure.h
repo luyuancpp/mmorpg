@@ -1,8 +1,6 @@
 #ifndef COMMON_SRC_server_common_RPC_CLIENT_CLOSURE_H_
 #define COMMON_SRC_server_common_RPC_CLIENT_CLOSURE_H_
 
-#include <any>
-
 namespace common
 {
     template <typename ClientResponse, typename ServerRequest, typename ServerResponse>
