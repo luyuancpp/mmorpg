@@ -13,10 +13,12 @@
 namespace gateway
 {
 
-ClientReceiver::ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher, RpcStubgw2l& login_stub_gw2l)
+ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
+    ProtobufDispatcher& dispatcher, 
+    RpcStubgw2l& gw2l_login_stub)
     : codec_(codec),
       dispatcher_(dispatcher),
-      login_stub_gw2l_(login_stub_gw2l)
+      gw2l_login_stub_(gw2l_login_stub)
 {
     dispatcher_.registerMessageCallback<LoginRequest>(
         std::bind(&ClientReceiver::OnLogin, this, _1, _2, _3));
@@ -34,7 +36,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     {
         DisconnectCCPtr p(std::make_shared<DisconnectCC>(conn));
         p->s_reqst_.set_connection_id(p->connection_hash_id());
-        login_stub_gw2l_.CallMethod(&ClientReceiver::OnDisconnectReplied,
+        gw2l_login_stub_.CallMethod(&ClientReceiver::OnDisconnectReplied,
             p,
             this,
             &gw2l::LoginService_Stub::Disconnect);
@@ -49,7 +51,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     p->s_reqst_.set_account(message->account());
     p->s_reqst_.set_password(message->password());
     p->s_reqst_.set_connection_id(p->connection_hash_id());
-    login_stub_gw2l_.CallMethod(&ClientReceiver::OnServerLoginReplied,
+    gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
         p, 
         this, 
         &gw2l::LoginService_Stub::Login);
@@ -74,7 +76,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 {
     CreatePlayerCCPtr p(std::make_shared<CreatePlayerCC>(conn));
     p->s_reqst_.set_connection_id(p->connection_hash_id());
-    login_stub_gw2l_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
+    gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         p, 
         this, 
         &gw2l::LoginService_Stub::CreatPlayer);
@@ -98,7 +100,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
     EnterGameCCPtr p(std::make_shared<EnterGameCC>(conn));
     p->s_reqst_.set_connection_id(p->connection_hash_id());
     p->s_reqst_.set_player_id(message->player_id());
-    login_stub_gw2l_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
+    gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         p,
         this,
         &gw2l::LoginService_Stub::EnterGame);

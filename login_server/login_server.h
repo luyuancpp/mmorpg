@@ -47,10 +47,10 @@ namespace login
         deploy::DeployRpcStub deploy_stub_;
 
         common::RpcClientPtr master_rpc_client_;
-        LoginStubl2ms master_login_stub_;
+        LoginStubl2ms l2ms_login_stub_;
 
         common::RpcClientPtr db_rpc_client_;
-        LoginStubl2db db_login_stub_;
+        LoginStubl2db l2db_login_stub_;
 
         gw2l::LoginServiceImpl impl_;
     };
