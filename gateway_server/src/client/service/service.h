@@ -30,7 +30,7 @@ class ClientReceiver : muduo::noncopyable
 public:
     using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
 
-    ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher, RpcStubgw2l& stub_login_stub_gw2lgw2l);
+    ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher, RpcStubgw2l& gw2l_login_stub);
 
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
 
@@ -71,7 +71,7 @@ private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;
 
-    RpcStubgw2l& login_stub_gw2l_;
+    RpcStubgw2l& gw2l_login_stub_;
 };
 }//namespace gateway
 

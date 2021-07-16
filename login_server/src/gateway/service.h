@@ -25,8 +25,8 @@ namespace gw2l
         using LoginStubl2ms = common::RpcStub<l2ms::LoginService_Stub>;
         using LoginStubl2db = common::RpcStub<l2db::LoginService_Stub>;
 
-        LoginServiceImpl(LoginStubl2ms& master_login_stub,
-                         LoginStubl2db& db_login_stub);
+        LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
+            LoginStubl2db& l2db_login_stub);
   
         void set_redis_client(RedisClientPtr& p)
         {
@@ -84,8 +84,8 @@ namespace gw2l
         ConnectionAccountMap connection_accounts_;
         LoginPlayersMap login_players_;
 
-        LoginStubl2ms& master_login_stub_;
-        LoginStubl2db& db_login_stub_;
+        LoginStubl2ms& l2ms_login_stub_;
+        LoginStubl2db& l2db_login_stub_;
     };
 
 }  // namespace gw2l

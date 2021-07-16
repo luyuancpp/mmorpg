@@ -45,7 +45,7 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
 
     login_rpc_client_ = std::make_unique<common::RpcClient>(loop_, login_addr);
     login_rpc_client_->connect();
-    login_rpc_client_->emp()->subscribe<common::RegisterStubES>(login_stub_gw2l_);
+    login_rpc_client_->emp()->subscribe<common::RegisterStubES>(gw2l_login_stub_);
 
     auto& myinfo = cp->s_resp_->info(common::SERVER_GATEWAY);
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());

@@ -12,7 +12,7 @@ namespace login
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<common::RedisClient>()),
-      impl_( master_login_stub_, db_login_stub_)
+      impl_( l2ms_login_stub_, l2db_login_stub_)
 {
 }
 
@@ -59,13 +59,13 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
     db_rpc_client_->connect();
-    db_rpc_client_->emp()->subscribe<common::RegisterStubES>(db_login_stub_);
+    db_rpc_client_->emp()->subscribe<common::RegisterStubES>(l2db_login_stub_);
 
     auto& masterinfo = cp->s_resp_->info(common::SERVER_MASTER);
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
     master_rpc_client_->connect();
-    master_rpc_client_->emp()->subscribe<common::RegisterStubES>(master_login_stub_);
+    master_rpc_client_->emp()->subscribe<common::RegisterStubES>(l2ms_login_stub_);
     
     auto& redisinfo = cp->s_resp_->info(common::SERVER_REDIS);
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);

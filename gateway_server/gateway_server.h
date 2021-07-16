@@ -31,7 +31,7 @@ public:
         : loop_(loop),
         dispatcher_(std::bind(&GatewayServer::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-        client_receiver_(codec_, dispatcher_, login_stub_gw2l_)
+        client_receiver_(codec_, dispatcher_, gw2l_login_stub_)
     {
         
     }
@@ -73,7 +73,7 @@ private:
     deploy::DeployRpcStub deploy_stub_;
 
     common::RpcClientPtr login_rpc_client_;
-    RpcStubgw2l login_stub_gw2l_;
+    RpcStubgw2l gw2l_login_stub_;
 };
 
 } // namespace gateway
