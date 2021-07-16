@@ -22,12 +22,10 @@
     <ClCompile Include="gateway_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\client\service\service.cpp" />
-    <ClCompile Include="src\master\rpcclient\master_rpcclient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gateway_server.h" />
     <ClInclude Include="src\client\service\service.h" />
-    <ClInclude Include="src\master\rpcclient\master_rpcclient.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

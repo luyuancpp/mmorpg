@@ -21,9 +21,6 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\master\rpcclient\master_rpcclient.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="gateway_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -33,9 +30,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="gateway_server.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\master\rpcclient\master_rpcclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
