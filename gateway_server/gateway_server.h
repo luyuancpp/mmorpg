@@ -40,8 +40,6 @@ public:
 
     void ConnectDeploy();
 
-    void Start();
-
     void receive(const common::ConnectionEvent& es);
 
     using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,

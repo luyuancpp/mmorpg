@@ -3,13 +3,11 @@
 #include "muduo/base/Logging.h"
 #include "src/game_rpc/game_rpc_server.h"
 
-#include "src/database/rpcclient/database_rpcclient.h"
 #include "src/return_code/return_notice_code.h"
 #include "src/return_code/notice_struct.h"
 
 using namespace muduo;
 using namespace muduo::net;
-using namespace  login;
 
 namespace gw2l
 {

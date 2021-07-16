@@ -1,6 +1,5 @@
 #include "login_server.h"
 
-#include "src/database/rpcclient/database_rpcclient.h"
 #include "src/game_config/game_config.h"
 #include "src/net/deploy/rpcclient/deploy_rpcclient.h"
 #include "src/rpc_closure_param/rpc_connection_event.h"

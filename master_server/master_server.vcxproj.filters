@@ -18,9 +18,6 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\database\rpcclient\database_rpcclient.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\login\service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -36,9 +33,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="master_server.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\database\rpcclient\database_rpcclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\login\service.h">
