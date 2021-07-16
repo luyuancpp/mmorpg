@@ -8,7 +8,7 @@ namespace common
     class GameConfig
     {
     public:
-        const GameConfigInfo& s() const { return config_info_; }
+        const GameConfigInfo& config_info() const { return config_info_; }
 
         static GameConfig& GetSingleton() {
             static GameConfig singleton;

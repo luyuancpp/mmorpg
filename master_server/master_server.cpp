@@ -16,6 +16,7 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
 
 void MasterServer::LoadConfig()
 {
+    common::GameConfig::GetSingleton().Load("game.json");
     common::DeployConfig::GetSingleton().Load("deploy.json");
 }
 
@@ -42,7 +43,7 @@ void MasterServer::receive(const common::ConnectionES& es)
         return;
     }
     ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(1);
+    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
     deploy_stub_.CallMethod(
         &MasterServer::StartServer,
         cp,

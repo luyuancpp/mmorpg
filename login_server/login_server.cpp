@@ -18,6 +18,7 @@ LoginServer::LoginServer(muduo::net::EventLoop* loop)
 
 void LoginServer::LoadConfig()
 {
+    common::GameConfig::GetSingleton().Load("game.json");
     common::DeployConfig::GetSingleton().Load("deploy.json");
 }
 
@@ -45,7 +46,7 @@ void LoginServer::receive(const common::ConnectionES& es)
         return;
     }
     ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(1);
+    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
     deploy_stub_.CallMethod(
         &LoginServer::StartServer,
         cp,
