@@ -5,19 +5,19 @@
 
 namespace common
 {
-    class GameJson
+    class GameConfig
     {
     public:
-        const GameConfig& s() const { return deploy_server_; }
+        const GameConfigInfo& s() const { return config_info_; }
 
-        static GameJson& GetSingleton() {
-            static GameJson singleton;
+        static GameConfig& GetSingleton() {
+            static GameConfig singleton;
             return singleton;
         }
 
         void Load(const std::string& filename);
     private:
-        GameConfig deploy_server_;
+        GameConfigInfo config_info_;
     };
 
     class DeployConfig
