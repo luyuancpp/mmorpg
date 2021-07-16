@@ -16,7 +16,7 @@ void GatewayServer::LoadConfig()
 void GatewayServer::ConnectDeploy()
 {
     const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
-    InetAddress deploy_addr(deploy_info.host_name(), deploy_info.port());
+    InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
     deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
     deploy_rpc_client_->emp()->subscribe<common::ConnectionES>(*this);

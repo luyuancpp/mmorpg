@@ -10,6 +10,7 @@ static const uint32_t kGroup = 500;
 static const uint32_t kBeginPort = 2000;
 static const uint32_t kGroupServerSize = common::SERVER_ID_GROUP_SIZE - common::SERVER_REDIS + 1;
 static const uint32_t kTotalSize = kGroup * kGroupServerSize;
+static const std::string kIp = "127.0.0.1";
 
 namespace deploy_server
 {
@@ -40,6 +41,12 @@ namespace deploy_server
         if (nullptr == q_result)
         {
             serverinfo_database sd;
+            sd.set_ip(kIp);
+            sd.set_db_host(kIp);
+            sd.set_db_user("root");
+            sd.set_db_password("luyuan616586");
+            sd.set_db_port(3306);
+            sd.set_db_dbname("game");
             for (uint32_t i = 0; i < kTotalSize; ++i)
             {
                 sd.set_port(kBeginPort + i);
@@ -47,7 +54,6 @@ namespace deploy_server
                 {
                     sd.set_port(kRedisPort);
                 }
-                sd.set_ip("127.0.0.1");
                 database_->SaveOne(sd);
             }
         }

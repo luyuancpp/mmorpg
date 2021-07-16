@@ -12,11 +12,13 @@ message RpcNoResponse
 
 message ConnetionParam
 {
-  string host_name = 1;
+  string ip = 1;
   uint32 port = 2;
-  string user_name = 3;
-  string pass_word = 4;
-  string database_name = 5;
+  string db_host = 3;
+  string db_user = 4;
+  string db_password = 5;
+  uint32 db_port = 6;
+  string db_dbname = 7;
 }
 
 message ConnetionParamJsonFormat

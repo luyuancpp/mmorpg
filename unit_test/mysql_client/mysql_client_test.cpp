@@ -99,11 +99,11 @@ int main(int argc, char** argv)
 {
     std::string droptable = std::string("drop table ") + account_database_one_test::default_instance().GetTypeName();
     
-    query_database_param.set_host_name("127.0.0.1");
-    query_database_param.set_user_name("root");
-    query_database_param.set_pass_word("luyuan616586");
-    query_database_param.set_port(3306);
-    query_database_param.set_database_name("game");
+    query_database_param.set_db_host("127.0.0.1");
+    query_database_param.set_db_user("root");
+    query_database_param.set_db_password("luyuan616586");
+    query_database_param.set_db_port(3306);
+    query_database_param.set_db_dbname("game");
     query_database = std::make_unique<MysqlDatabase>();
     query_database->Connect(query_database_param);
     query_database->QueryOne(droptable);

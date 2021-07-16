@@ -23,7 +23,7 @@ void MasterServer::LoadConfig()
 void MasterServer::ConnectDeploy()
 {
     const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
-    InetAddress deploy_addr(deploy_info.host_name(), deploy_info.port());
+    InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
     deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
     deploy_rpc_client_->emp()->subscribe<common::ConnectionES>(*this);
@@ -60,8 +60,8 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     db_rpc_client_->emp()->subscribe<common::RegisterStubES>(msl2_login_stub_);
 
     auto& myinfo = cp->s_resp_->info(common::SERVER_MASTER);
-    InetAddress login_addr(myinfo.ip(), myinfo.port());
-    server_ = std::make_shared<muduo::net::RpcServer>(loop_, login_addr);
+    InetAddress master_addr(myinfo.ip(), myinfo.port());
+    server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
     
     Start();
 }
