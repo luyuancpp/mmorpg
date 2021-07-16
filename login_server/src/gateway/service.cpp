@@ -5,6 +5,7 @@
 
 #include "src/return_code/return_notice_code.h"
 #include "src/return_code/notice_struct.h"
+#include "src/server_common/closure_auto_done.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -15,9 +16,7 @@ namespace gw2l
         LoginStubl2db& l2db_login_stub)
         : l2ms_login_stub_(l2ms_login_stub),
           l2db_login_stub_(l2db_login_stub)
-    {
-
-    }
+    {}
 
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     const gw2l::LoginRequest* request,
@@ -26,11 +25,11 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 {
     // login process
     // check account rule
+    //check string rule
     {
         auto it = login_players_.find(request->account());
         if (it == login_players_.end())
         {
-            ::account_database account_data;
             PlayerPtr player(std::make_shared<AccountPlayer>());
             assert(connection_accounts_.find(request->connection_id()) == connection_accounts_.end());
             auto ret = login_players_.emplace(request->account(), player);
@@ -150,7 +149,6 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameRP d)
 
 void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id, const std::string& account)
 {
-
     EnterMasterGameRC cp(std::make_shared<EnterMasterGameRpcClosure>());
     cp->s_reqst_.set_account(account);
     cp->s_reqst_.set_player_id(player_id);
@@ -170,6 +168,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::gw2l::DisconnectResponse* response,
     ::google::protobuf::Closure* done)
 {
+    common::ClosurePtr cp(done);
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())
     {
@@ -177,7 +176,6 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
         return;
     }
     connection_accounts_.erase(cit);
-    done->Run();
 }
 
 void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_database& a_d)
