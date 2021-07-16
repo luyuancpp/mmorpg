@@ -16,18 +16,11 @@ class RpcStub : noncopyable,  public Receiver<RpcStub<StubClass>>
 public:
     using StubPtr = std::unique_ptr<StubClass>;
 
-    RpcStub(RpcClient& client)
-        : client_(client),
-          emp_(client_.emp())
-    {
-        emp_->subscribe<RegisterStubEvent>(*this);
-    }
-
     void receive(const RegisterStubEvent& es)
     {
         if (es.conn_->connected())
         {
-            stub_ = std::make_unique<StubClass>(get_pointer(client_.rpcchannel()));
+            stub_ = std::make_unique<StubClass>(get_pointer(es.channel_));
         }
         else
         {
@@ -114,7 +107,6 @@ public:
 
     static void doNothing() {}
 private:  
-    RpcClient& client_;
     StubPtr stub_;
     EventManagerPtr emp_;
 };

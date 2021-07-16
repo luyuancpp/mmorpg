@@ -1,19 +1,34 @@
 #include "database_server.h"
 
+#include "src/game_config/game_config.h"
 #include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/rpc_closure_param/rpc_connection_event.h"
 #include "src/server_type_id/server_type_id.h"
 
 #include "mysql_database_table.pb.h"
 
 namespace database
 {
-
     DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
         : loop_(loop),
           database_(std::make_shared<common::MysqlDatabase>()),
           redis_(std::make_shared<common::RedisClient>())
     {
-        deploy::DeployRpcClient::GetSingleton()->emp()->subscribe<common::ConnectionEvent>(*this); 
+    }
+
+    void DatabaseServer::LoadConfig()
+    {
+        common::GameConfig::GetSingleton().Load("game.json");
+    }
+
+    void DatabaseServer::ConnectDeploy()
+    {
+        const auto& deploy_info = common::GameConfig::GetSingleton().deploy_server();
+        InetAddress deploy_addr(deploy_info.host_name(), deploy_info.port());
+        deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
+        deploy_rpc_client_->emp()->subscribe<common::RegisterStubEvent>(deploy_stub_);
+        deploy_rpc_client_->emp()->subscribe<common::ConnectionEvent>(*this); 
+        deploy_rpc_client_->connect();
     }
 
     void DatabaseServer::Start()
@@ -36,7 +51,7 @@ namespace database
         }
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
         cp->s_reqst_.set_group(1);
-        deploy::ServerInfoRpcStub::GetSingleton().CallMethod(
+        deploy_stub_.CallMethod(
             &DatabaseServer::StartServer,
             cp,
             this,

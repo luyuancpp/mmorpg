@@ -3,6 +3,8 @@
 
 #include "src/rpc_closure_param/rpc_string_closure.h"
 #include "src/rpc_closure_param/rpc_closure.h"
+#include "src/rpc_closure_param/rpc_stub.h"
+#include "src/rpc_closure_param/rpc_stub_client.h"
 #include "src/redis_client/redis_client.h"
 #include "src/account_player/account_player.h"
 
@@ -20,6 +22,12 @@ namespace gw2l
         using PlayerPtr = std::shared_ptr<AccountPlayer>;
         using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
         using ConnectionAccountMap = std::unordered_map<common::GameGuid, PlayerPtr>;
+        using LoginStubl2ms = common::RpcStub<l2ms::LoginService_Stub>;
+        using LoginStubl2db = common::RpcStub<l2db::LoginService_Stub>;
+
+        LoginServiceImpl(LoginStubl2ms& master_login_stub,
+                         LoginStubl2db& db_login_stub);
+  
         void set_redis_client(RedisClientPtr& p)
         {
             redis_ = p;
@@ -75,6 +83,9 @@ namespace gw2l
         RedisClientPtr redis_;
         ConnectionAccountMap connection_accounts_;
         LoginPlayersMap login_players_;
+
+        LoginStubl2ms& master_login_stub_;
+        LoginStubl2db& db_login_stub_;
     };
 
 }  // namespace gw2l

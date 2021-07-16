@@ -4,7 +4,6 @@
 #include "src/game_rpc/game_rpc_server.h"
 
 #include "src/database/rpcclient/database_rpcclient.h"
-#include "src/master/rpcclient/master_rpcclient.h"
 #include "src/return_code/return_notice_code.h"
 #include "src/return_code/notice_struct.h"
 
@@ -14,6 +13,13 @@ using namespace  login;
 
 namespace gw2l
 {
+    LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& master_login_stub,
+        LoginStubl2db& db_login_stub)
+        : master_login_stub_(master_login_stub),
+          db_login_stub_(db_login_stub)
+    {
+
+    }
 
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     const gw2l::LoginRequest* request,
@@ -53,7 +59,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     LoginRP cp(std::make_shared<LoginRpcString>(response, done));
     cp->s_reqst_.set_account(request->account());
     cp->s_reqst_.set_password(request->password());
-    login::DbLoginRpcStub::GetSingleton().CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
+    db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
 }
 
 void LoginServiceImpl::DbLoginReplied(LoginRP d)
@@ -80,7 +86,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     // database process
     CreatePlayerRP cp(std::make_shared<CreatePlayerRpcString>(response, done));
     cp->s_reqst_.set_account(cit->second->account());
-    login::DbLoginRpcStub::GetSingleton().CallMethodString(this,
+    db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::DbCreatePlayerReplied,
         cp,
         &l2db::LoginService_Stub::CreatePlayer);
@@ -124,7 +130,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     EnterGameRP cp(std::make_shared<EnterGameRpcString>(response, done));
     cp->s_reqst_.set_account(ap->account());
     cp->s_reqst_.set_player_id(request->player_id());
-    login::DbLoginRpcStub::GetSingleton().CallMethodString(this,
+    db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterGameDbReplied,
         cp,
         &l2db::LoginService_Stub::EnterGame);
@@ -150,7 +156,7 @@ void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id, const std::
     EnterMasterGameRC cp(std::make_shared<EnterMasterGameRpcClosure>());
     cp->s_reqst_.set_account(account);
     cp->s_reqst_.set_player_id(player_id);
-    login::MasterLoginRpcStub::GetSingleton().CallMethodString(this,
+    master_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterMasterGameReplied,
         cp,
         &l2ms::LoginService_Stub::EnterGame);

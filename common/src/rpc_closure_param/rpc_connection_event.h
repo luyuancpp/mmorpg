@@ -3,15 +3,21 @@
 
 #include "muduo/net/TcpConnection.h"
 
+#include "src/game_rpc/game_rpc_channel.h"
+
 namespace common
 {
     struct RegisterStubEvent
     {
-        RegisterStubEvent(const muduo::net::TcpConnectionPtr& conn)
-            : conn_(conn)
+        RegisterStubEvent(const muduo::net::TcpConnectionPtr& conn, muduo::net::RpcChannelPtr& channel_ptr)
+            : conn_(conn),
+              channel_(channel_ptr)
         {
         }
+
         const muduo::net::TcpConnectionPtr& conn_;
+        muduo::net::RpcChannelPtr& channel_;
+
     };
     struct ConnectionEvent
     {

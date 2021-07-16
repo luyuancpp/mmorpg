@@ -7,8 +7,10 @@
 #include "src/mysql_database/mysql_database.h"
 #include "src/redis_client/redis_client.h"
 #include "src/game_rpc/game_rpc_server.h"
+#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/rpc_closure_param/rpc_stub_client.h"
 #include "src/rpc_closure_param/rpc_closure.h"
-#include "src/rpc_closure_param/rpc_connection_event.h"
+
 #include "src/login/service.h"
 
 #include "deploy.pb.h"
@@ -28,6 +30,10 @@ namespace database
         MysqlClientPtr& player_mysql_client(){ return database_; }
         RedisClientPtr& redis_client() { return redis_; }
 
+        void LoadConfig();
+
+        void ConnectDeploy();
+
         void Start();
 
         void receive(const common::ConnectionEvent& es);
@@ -41,7 +47,10 @@ namespace database
         muduo::net::EventLoop* loop_{ nullptr };
         MysqlClientPtr database_;
         RedisClientPtr redis_;
-        RprServerPtr server_;  
+        RprServerPtr server_;
+
+        common::RpcClientPtr deploy_rpc_client_;
+        deploy::DeployRpcStub deploy_stub_;
 
         l2db::LoginServiceImpl impl_;
     };

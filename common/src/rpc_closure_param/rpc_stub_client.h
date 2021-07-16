@@ -40,6 +40,7 @@ public:
     EventManagerPtr& emp() { return emp_; }
     RpcChannelPtr& rpcchannel() { return channel_; }
 
+
     void connect()
     {
         client_.connect();
@@ -53,7 +54,7 @@ private:
             conn->setTcpNoDelay(true);
             channel_->setConnection(conn);
         }
-        emp_->emit<RegisterStubEvent>(conn);
+        emp_->emit<RegisterStubEvent>(conn, channel_);
         emp_->emit<ConnectionEvent>(conn);
     }
 
@@ -61,6 +62,9 @@ private:
     RpcChannelPtr channel_;
     EventManagerPtr emp_;
 };
+
+using RpcClientPtr = std::unique_ptr<common::RpcClient>;
+
 } // namespace common
 
 #endif // SRC_SERVER_RPCCLIENT_RPC_STUB_CLIENT_H_
