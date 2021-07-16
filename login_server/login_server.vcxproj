@@ -152,13 +152,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="login_server.cpp" />
+    <ClCompile Include="src\login_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\account_player\account_player.cpp" />
     <ClCompile Include="src\gateway\service.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="login_server.h" />
+    <ClInclude Include="src\login_server.h" />
     <ClInclude Include="src\account_player\account_player.h" />
     <ClInclude Include="src\gateway\service.h" />
   </ItemGroup>

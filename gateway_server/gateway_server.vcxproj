@@ -19,12 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="gateway_server.cpp" />
+    <ClCompile Include="src\gateway_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\client\service\service.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="gateway_server.h" />
+    <ClInclude Include="src\gateway_server.h" />
     <ClInclude Include="src\client\service\service.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

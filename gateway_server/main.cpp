@@ -1,4 +1,4 @@
-#include "gateway_server.h"
+#include "src/gateway_server.h"
 
 using namespace gateway;
 

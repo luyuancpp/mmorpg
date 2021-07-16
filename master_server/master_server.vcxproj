@@ -152,13 +152,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="master_server.cpp" />
+    <ClCompile Include="src\master_server.cpp" />
     <ClCompile Include="src\login\service.cpp" />
     <ClCompile Include="src\master_player\master_player.cpp" />
     <ClCompile Include="src\master_player\master_player_list.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="master_server.h" />
+    <ClInclude Include="src\master_server.h" />
     <ClInclude Include="src\login\service.h" />
     <ClInclude Include="src\master_player\master_player.h" />
     <ClInclude Include="src\master_player\master_player_list.h" />
