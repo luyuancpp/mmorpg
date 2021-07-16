@@ -24,8 +24,7 @@ message ConnetionParamJsonFormat
   repeated ConnetionParam data = 1;
 }
 
-message ServerInfo
+message GameConfig
 {
-  string host_name = 1;
-  uint32 port = 2;
+  uint32 port = 1;
 }

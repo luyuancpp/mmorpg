@@ -18,12 +18,12 @@ LoginServer::LoginServer(muduo::net::EventLoop* loop)
 
 void LoginServer::LoadConfig()
 {
-    common::GameConfig::GetSingleton().Load("game.json");
+    common::DeployConfig::GetSingleton().Load("deploy.json");
 }
 
 void LoginServer::ConnectDeploy()
 {
-    const auto& deploy_info = common::GameConfig::GetSingleton().deploy_server();
+    const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.host_name(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
     deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
