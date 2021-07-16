@@ -146,12 +146,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="deploy_server.cpp" />
+    <ClCompile Include="src\deploy_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\service\service.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="deploy_server.h" />
+    <ClInclude Include="src\deploy_server.h" />
     <ClInclude Include="src\service\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

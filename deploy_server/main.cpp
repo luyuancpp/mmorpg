@@ -2,7 +2,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/game_config/game_config.h"
-#include "deploy_server.h"
+#include "src/deploy_server.h"
 
 #include "src/service/service.h"
 
