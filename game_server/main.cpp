@@ -1,5 +1,5 @@
 #include "muduo/net/EventLoop.h"
-#include "src/game_rpc/game_rpc_server.h"
+#include "src/server_common/rpc_server.h"
 
 using namespace muduo;
 using namespace muduo::net;

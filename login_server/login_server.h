@@ -2,11 +2,11 @@
 #define LOGIN_SERVER_LOGIN_SERVER_H
 
 #include "src/event/event.h"
-#include "src/game_rpc/game_rpc_server.h"
+#include "src/server_common/rpc_server.h"
 #include "src/gateway/service.h"
 #include "src/net/deploy/rpcclient/deploy_rpcclient.h"
-#include "src/rpc_closure_param/rpc_closure.h"
-#include "src/rpc_closure_param/rpc_connection_event.h"
+#include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
 
 #include "deploy.pb.h"

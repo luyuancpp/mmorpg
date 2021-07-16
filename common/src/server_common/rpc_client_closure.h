@@ -1,5 +1,5 @@
-#ifndef COMMON_SRC_RPC_CLOSURE_PARAM_RPC_CLIENT_CLOSURE_H_
-#define COMMON_SRC_RPC_CLOSURE_PARAM_RPC_CLIENT_CLOSURE_H_
+#ifndef COMMON_SRC_server_common_RPC_CLIENT_CLOSURE_H_
+#define COMMON_SRC_server_common_RPC_CLIENT_CLOSURE_H_
 
 #include <any>
 
@@ -30,4 +30,4 @@ namespace common
 
 }//namespace common
 
-#endif // COMMON_SRC_RPC_CLOSURE_PARAM_RPC_CLIENT_CLOSURE_H_
+#endif // COMMON_SRC_server_common_RPC_CLIENT_CLOSURE_H_

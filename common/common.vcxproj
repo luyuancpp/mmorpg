@@ -149,14 +149,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\codec\codec.cc" />
+    <ClCompile Include="src\server_common\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
     <ClCompile Include="src\game_config\game_config.cpp" />
     <ClCompile Include="src\game_ecs\game_registry.cpp" />
     <ClCompile Include="src\game_logic\teams\team.cpp" />
     <ClCompile Include="src\game_logic\teams\teams.cpp" />
-    <ClCompile Include="src\game_rpc\game_rpc_channel.cc" />
-    <ClCompile Include="src\game_rpc\game_rpc_server.cc" />
     <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
     <ClCompile Include="src\login_state\login_state.cpp" />
     <ClCompile Include="src\login_state\login_state_machine.cpp" />
@@ -166,12 +164,15 @@
     <ClCompile Include="src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
     <ClCompile Include="src\return_code\notice_struct.cpp" />
+    <ClCompile Include="src\server_common\rpc_channel.cc" />
+    <ClCompile Include="src\server_common\rpc_server.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
-    <ClInclude Include="src\codec\codec.h" />
-    <ClInclude Include="src\codec\dispatcher.h" />
-    <ClInclude Include="src\codec\dispatcher_lite.h" />
+    <ClInclude Include="src\server_common\closure_auto_done.h" />
+    <ClInclude Include="src\server_common\codec\codec.h" />
+    <ClInclude Include="src\server_common\codec\dispatcher.h" />
+    <ClInclude Include="src\server_common\codec\dispatcher_lite.h" />
     <ClInclude Include="src\common_type\common_type.h" />
     <ClInclude Include="src\config_expression\config_expression.h" />
     <ClInclude Include="src\net\deploy\rpcclient\deploy_rpcclient.h" />
@@ -183,8 +184,7 @@
     <ClInclude Include="src\game_logic\teams\team.h" />
     <ClInclude Include="src\game_logic\teams\teams.h" />
     <ClInclude Include="src\game_logic\teams\team_event.h" />
-    <ClInclude Include="src\game_rpc\game_rpc_channel.h" />
-    <ClInclude Include="src\game_rpc\game_rpc_server.h" />
+
     <ClInclude Include="src\jsoncpp\json.h" />
     <ClInclude Include="src\login_player\login_event.h" />
     <ClInclude Include="src\login_player\login_state.h" />
@@ -203,13 +203,21 @@
     <ClInclude Include="src\return_code\notice_struct.h" />
     <ClInclude Include="src\return_code\return_code.h" />
     <ClInclude Include="src\return_code\return_notice_code.h" />
-    <ClInclude Include="src\rpc_closure_param\closure_auto_done.h" />
-    <ClInclude Include="src\rpc_closure_param\rpc_client_closure.h" />
-    <ClInclude Include="src\rpc_closure_param\rpc_closure.h" />
-    <ClInclude Include="src\rpc_closure_param\rpc_connection_event.h" />
-    <ClInclude Include="src\rpc_closure_param\rpc_string_closure.h" />
-    <ClInclude Include="src\rpc_closure_param\rpc_stub.h" />
-    <ClInclude Include="src\rpc_closure_param\rpc_stub_client.h" />
+    <ClInclude Include="src\server_common\rpc_channel.h" />
+    <ClInclude Include="src\server_common\rpc_client_closure.h" />
+    <ClInclude Include="src\server_common\rpc_closure.h" />
+    <ClInclude Include="src\server_common\rpc_closure_param\closure_auto_done.h" />
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_client_closure.h" />
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_closure.h" />
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_connection_event.h" />
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_string_closure.h" />
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub.h" />
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub_client.h" />
+    <ClInclude Include="src\server_common\rpc_connection_event.h" />
+    <ClInclude Include="src\server_common\rpc_server.h" />
+    <ClInclude Include="src\server_common\rpc_string_closure.h" />
+    <ClInclude Include="src\server_common\rpc_stub.h" />
+    <ClInclude Include="src\server_common\rpc_stub_client.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\server_rpc_client\closure_auto_done.h" />
     <ClInclude Include="src\server_rpc_client\rpc_client_closure.h" />

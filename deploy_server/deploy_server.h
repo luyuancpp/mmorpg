@@ -2,7 +2,7 @@
 #define DEPLOY_SERVER_SRCDEPLOY_SERVER_H_
 
 #include "muduo/net/InetAddress.h"
-#include "src/game_rpc/game_rpc_server.h"
+#include "src/server_common/rpc_server.h"
 
 #include "src/mysql_database/mysql_database.h"
 #include "src/redis_client/redis_client.h"

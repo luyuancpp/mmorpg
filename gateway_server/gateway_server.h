@@ -8,13 +8,13 @@
 #include "muduo/net/EventLoop.h"
 #include "muduo/net/TcpServer.h"
 
-#include "src/codec/codec.h"
-#include "src/codec/dispatcher.h"
+#include "src/server_common/codec/codec.h"
+#include "src/server_common/codec/dispatcher.h"
 #include "src/event/event.h"
 #include "src/client/service/service.h"
 #include "src/net/deploy/rpcclient/deploy_rpcclient.h"
-#include "src/rpc_closure_param/rpc_closure.h"
-#include "src/rpc_closure_param/rpc_connection_event.h"
+#include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_connection_event.h"
 
 using namespace muduo;
 using namespace muduo::net;

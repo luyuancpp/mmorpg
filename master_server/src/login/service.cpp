@@ -3,7 +3,7 @@
 #include "src/common_type/common_type.h"
 #include "src/game_ecs/game_component/player_common_component.h"
 #include "src/game_ecs/game_registry.h"
-#include "src/rpc_closure_param/closure_auto_done.h"
+#include "src/server_common/closure_auto_done.h"
 #include "src/master_player/master_player_list.h"
 
 namespace l2ms

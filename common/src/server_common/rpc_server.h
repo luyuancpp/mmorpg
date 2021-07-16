@@ -8,8 +8,8 @@
 //
 // This is a public header file, it must only include public header files.
 
-#ifndef COMMON_SRC_GAME_RPC_GAME_RPC_SERVER_H_
-#define COMMON_SRC_GAME_RPC_GAME_RPC_SERVER_H_
+#ifndef COMMON_SRC_GAME_RPC_rpc_server_H_
+#define COMMON_SRC_GAME_RPC_rpc_server_H_
 
 #include "muduo/net/TcpServer.h"
 
@@ -55,4 +55,4 @@ class RpcServer
 }  // namespace muduo
 
 
-#endif  // COMMON_SRC_GAME_RPC_GAME_RPC_SERVER_H_
+#endif  // COMMON_SRC_GAME_RPC_rpc_server_H_

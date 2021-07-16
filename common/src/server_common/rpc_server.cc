@@ -6,8 +6,8 @@
 
 // Author: Shuo Chen (chenshuo at chenshuo dot com)
 
-#include "game_rpc_server.h"
-#include "game_rpc_channel.h"
+#include "rpc_server.h"
+#include "rpc_channel.h"
 
 #include "muduo/base/Logging.h"
 

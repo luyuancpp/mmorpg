@@ -3,15 +3,15 @@
 
 #include "c2gw.pb.h"
 
-#include "src/codec/codec.h"
+#include "src/server_common/codec/codec.h"
 
 #include "muduo/base/noncopyable.h"
 #include "muduo/net/EventLoop.h"
 
-#include "src/codec/dispatcher.h"
-#include "src/rpc_closure_param/rpc_client_closure.h"
-#include "src/rpc_closure_param/rpc_stub.h"
-#include "src/rpc_closure_param/rpc_stub_client.h"
+#include "src/server_common/codec/dispatcher.h"
+#include "src/server_common/rpc_client_closure.h"
+#include "src/server_common/rpc_stub.h"
+#include "src/server_common/rpc_stub_client.h"
 
 #include "gw2l.pb.h"
 

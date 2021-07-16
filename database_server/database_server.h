@@ -6,10 +6,10 @@
 #include "src/event/event.h"
 #include "src/mysql_database/mysql_database.h"
 #include "src/redis_client/redis_client.h"
-#include "src/game_rpc/game_rpc_server.h"
+#include "src/server_common/rpc_server.h"
 #include "src/net/deploy/rpcclient/deploy_rpcclient.h"
-#include "src/rpc_closure_param/rpc_stub_client.h"
-#include "src/rpc_closure_param/rpc_closure.h"
+#include "src/server_common/rpc_stub_client.h"
+#include "src/server_common/rpc_closure.h"
 
 #include "src/login/service.h"
 
