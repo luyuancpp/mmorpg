@@ -4,7 +4,7 @@
 #include "l2db.pb.h"
 
 #include "muduo/base/Logging.h"
-#include "src/game_rpc/game_rpc_server.h"
+#include "src/server_common/rpc_server.h"
 #include "src/mysql_database/mysql_database.h"
 
 using namespace muduo;

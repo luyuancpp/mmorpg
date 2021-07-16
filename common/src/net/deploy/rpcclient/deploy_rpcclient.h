@@ -3,7 +3,7 @@
 
 #include "deploy.pb.h"
 
-#include "src/rpc_closure_param/rpc_stub.h"
+#include "src/server_common/rpc_stub.h"
 
 using namespace muduo;
 using namespace muduo::net;

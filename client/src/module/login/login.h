@@ -4,7 +4,7 @@
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/TcpClient.h"
 
-#include "src/codec/codec.h"
+#include "src/server_common/codec/codec.h"
 
 #include "c2gw.pb.h"
 

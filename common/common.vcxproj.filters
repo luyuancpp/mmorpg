@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\codec\codec.cc">
+    <ClCompile Include="src\server_common\codec\codec.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\return_code\notice_struct.cpp">
@@ -36,7 +36,7 @@
     <ClCompile Include="src\event\event.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_rpc\game_rpc_channel.cc">
+    <ClCompile Include="src\server_common\game_rpc_channel.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\game_rpc\game_rpc_server.cc">
@@ -66,15 +66,21 @@
     <ClCompile Include="src\game_config\game_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\server_common\rpc_channel.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\server_common\rpc_server.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\codec\codec.h">
+    <ClInclude Include="src\server_common\codec\codec.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\codec\dispatcher.h">
+    <ClInclude Include="src\server_common\codec\dispatcher.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\codec\dispatcher_lite.h">
+    <ClInclude Include="src\server_common\codec\dispatcher_lite.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\config_expression\config_expression.h">
@@ -116,10 +122,10 @@
     <ClInclude Include="src\event\event.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_rpc\game_rpc_channel.h">
+    <ClInclude Include="src\server_common\game_rpc_channel.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_rpc\game_rpc_server.h">
+    <ClInclude Include="src\server_common\game_rpc_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_registry\server_registry.h">
@@ -140,19 +146,19 @@
     <ClInclude Include="src\server_rpc_client\stub_rpc_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\rpc_closure_param\closure_auto_done.h">
+    <ClInclude Include="src\server_common\rpc_closure_param\closure_auto_done.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\rpc_closure_param\rpc_client_closure.h">
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_client_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\rpc_closure_param\rpc_closure.h">
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\rpc_closure_param\rpc_string_closure.h">
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_string_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\rpc_closure_param\rpc_stub_client.h">
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\login_state\login_event.h">
@@ -179,10 +185,10 @@
     <ClInclude Include="src\login_player\login_state_machine.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\rpc_closure_param\rpc_stub.h">
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\rpc_closure_param\rpc_connection_event.h">
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_connection_event.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_ecs\game_registry.h">
@@ -213,6 +219,33 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\net\deploy\rpcclient\deploy_rpcclient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\rpc_stub_client.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\closure_auto_done.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\rpc_channel.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\rpc_client_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\rpc_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\rpc_connection_event.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\rpc_server.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\rpc_string_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\rpc_stub.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

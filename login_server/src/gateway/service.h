@@ -1,10 +1,10 @@
 #ifndef SRC_GATEWAY_SERVICE_SERVICE_H_
 #define SRC_GATEWAY_SERVICE_SERVICE_H_
 
-#include "src/rpc_closure_param/rpc_string_closure.h"
-#include "src/rpc_closure_param/rpc_closure.h"
-#include "src/rpc_closure_param/rpc_stub.h"
-#include "src/rpc_closure_param/rpc_stub_client.h"
+#include "src/server_common/rpc_string_closure.h"
+#include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_stub.h"
+#include "src/server_common/rpc_stub_client.h"
 #include "src/redis_client/redis_client.h"
 #include "src/account_player/account_player.h"
 

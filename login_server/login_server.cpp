@@ -2,7 +2,7 @@
 
 #include "src/game_config/game_config.h"
 #include "src/net/deploy/rpcclient/deploy_rpcclient.h"
-#include "src/rpc_closure_param/rpc_connection_event.h"
+#include "src/server_common/rpc_connection_event.h"
 #include "src/server_type_id/server_type_id.h"
 
 #include "common.pb.h"

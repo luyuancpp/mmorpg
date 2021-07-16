@@ -12,7 +12,7 @@
 #include "muduo/net/TcpConnection.h"
 
 #include "src/event/event.h"
-#include "src/game_rpc/game_rpc_channel.h"
+#include "src/server_common/rpc_channel.h"
 #include "rpc_connection_event.h"
 
 using namespace muduo;

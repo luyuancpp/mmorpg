@@ -1,7 +1,7 @@
 #include "service.h"
 
 #include "muduo/base/Logging.h"
-#include "src/game_rpc/game_rpc_server.h"
+#include "src/server_common/rpc_server.h"
 
 #include "src/return_code/return_notice_code.h"
 #include "src/return_code/notice_struct.h"

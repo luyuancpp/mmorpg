@@ -2,10 +2,10 @@
 #define MASTER_SERVER_MASTER_SERVER_H_
 
 #include "src/event/event.h"
-#include "src/game_rpc/game_rpc_server.h"
+#include "src/server_common/rpc_server.h"
 #include "src/login/service.h"
-#include "src/rpc_closure_param/rpc_closure.h"
-#include "src/rpc_closure_param/rpc_connection_event.h"
+#include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
 #include "src/net/deploy/rpcclient/deploy_rpcclient.h"
 
