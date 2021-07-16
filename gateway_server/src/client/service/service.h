@@ -10,8 +10,10 @@
 
 #include "src/codec/dispatcher.h"
 #include "src/rpc_closure_param/rpc_client_closure.h"
+#include "src/rpc_closure_param/rpc_stub.h"
 #include "src/rpc_closure_param/rpc_stub_client.h"
-#include "src/login/login_rpcclient.h"
+
+#include "gw2l.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -26,8 +28,9 @@ using LeaveGameRequestPtr = std::shared_ptr<LeaveGameRequest>;
 class ClientReceiver : muduo::noncopyable
 {
 public:
+    using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
 
-    ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
+    ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher, RpcStubgw2l& stub_login_stub_gw2lgw2l);
 
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
 
@@ -67,6 +70,8 @@ public:
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;
+
+    RpcStubgw2l& login_stub_gw2l_;
 };
 }//namespace gateway
 

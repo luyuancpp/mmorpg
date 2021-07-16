@@ -20,7 +20,6 @@ using namespace muduo::net;
 
 namespace common
 {
-
 class RpcClient : noncopyable
 {
 public:
