@@ -7,7 +7,7 @@
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
-#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/server_common/deploy_rpcclient.h"
 
 #include "deploy.pb.h"
 #include "l2ms.pb.h"
@@ -32,7 +32,7 @@ namespace master
 
         void Start();
 
-        void receive(const common::ConnectionEvent& es);
+        void receive(const common::ConnectionES& es);
 
         using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
             deploy::ServerInfoResponse>;

@@ -1,7 +1,7 @@
 #include "database_server.h"
 
 #include "src/game_config/game_config.h"
-#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_connection_event.h"
 #include "src/server_type_id/server_type_id.h"
 
@@ -26,8 +26,8 @@ namespace database
         const auto& deploy_info = common::GameConfig::GetSingleton().deploy_server();
         InetAddress deploy_addr(deploy_info.host_name(), deploy_info.port());
         deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-        deploy_rpc_client_->emp()->subscribe<common::RegisterStubEvent>(deploy_stub_);
-        deploy_rpc_client_->emp()->subscribe<common::ConnectionEvent>(*this); 
+        deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
+        deploy_rpc_client_->emp()->subscribe<common::ConnectionES>(*this); 
         deploy_rpc_client_->connect();
     }
 
@@ -43,7 +43,7 @@ namespace database
         server_->start();
     }
 
-    void DatabaseServer::receive(const common::ConnectionEvent& es)
+    void DatabaseServer::receive(const common::ConnectionES& es)
     {
         if (!es.conn_->connected())
         {

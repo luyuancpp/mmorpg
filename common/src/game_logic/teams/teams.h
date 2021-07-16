@@ -45,11 +45,11 @@ namespace common
 
         bool TestApplicantValueEqual(GameGuid team_id)const;
         
-        void receive(const TeamEventStructJoinTeam& es);
-        void receive(const TeamEventStructCreateTeamJoinTeam& es);        
-        void receive(const TeamEventStructLeaderDismissTeam& es);
-        void receive(const TeamEventStructLeaveTeam& es);
-        void receive(const TeamEventStructDismissTeamOnTeamMemberEmpty& es);
+        void receive(const TeamESJoinTeam& es);
+        void receive(const TeamESCreateTeamJoinTeam& es);        
+        void receive(const TeamESLeaderDismissTeam& es);
+        void receive(const TeamESLeaveTeam& es);
+        void receive(const TeamESDismissTeamOnTeamMemberEmpty& es);
 
         ReturnValue CreateTeam(const CreateTeamParam& param);
         ReturnValue JoinTeam(GameGuid team_id, TeamMember& mem);

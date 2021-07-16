@@ -1,7 +1,7 @@
 #include "gateway_server.h"
 
 #include "src/game_config/game_config.h"
-#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/server_common/deploy_rpcclient.h"
 #include "src/server_type_id/server_type_id.h"
 
 namespace gateway
@@ -17,12 +17,12 @@ void GatewayServer::ConnectDeploy()
     const auto& deploy_info = common::GameConfig::GetSingleton().deploy_server();
     InetAddress deploy_addr(deploy_info.host_name(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->emp()->subscribe<common::RegisterStubEvent>(deploy_stub_);
-    deploy_rpc_client_->emp()->subscribe<common::ConnectionEvent>(*this);
+    deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
+    deploy_rpc_client_->emp()->subscribe<common::ConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
-void GatewayServer::receive(const common::ConnectionEvent& es)
+void GatewayServer::receive(const common::ConnectionES& es)
 {
     if (!es.conn_->connected())
     {
@@ -45,7 +45,7 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
 
     login_rpc_client_ = std::make_unique<common::RpcClient>(loop_, login_addr);
     login_rpc_client_->connect();
-    login_rpc_client_->emp()->subscribe<common::RegisterStubEvent>(login_stub_gw2l_);
+    login_rpc_client_->emp()->subscribe<common::RegisterStubES>(login_stub_gw2l_);
 
     auto& myinfo = cp->s_resp_->info(common::SERVER_GATEWAY);
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());

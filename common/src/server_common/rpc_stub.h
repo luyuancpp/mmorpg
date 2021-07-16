@@ -16,7 +16,7 @@ class RpcStub : noncopyable,  public Receiver<RpcStub<StubClass>>
 public:
     using StubPtr = std::unique_ptr<StubClass>;
 
-    void receive(const RegisterStubEvent& es)
+    void receive(const RegisterStubES& es)
     {
         if (es.conn_->connected())
         {

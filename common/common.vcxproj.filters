@@ -36,12 +36,6 @@
     <ClCompile Include="src\event\event.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\server_common\game_rpc_channel.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game_rpc\game_rpc_server.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\login_state\login_state.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -120,12 +114,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\event\event.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_common\game_rpc_channel.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_common\game_rpc_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_registry\server_registry.h">
@@ -218,7 +206,7 @@
     <ClInclude Include="src\game_config\game_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\net\deploy\rpcclient\deploy_rpcclient.h">
+    <ClInclude Include="src\server_common\deploy_rpcclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\rpc_stub_client.h">

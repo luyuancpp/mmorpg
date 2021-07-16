@@ -12,7 +12,7 @@
 #include "src/server_common/codec/dispatcher.h"
 #include "src/event/event.h"
 #include "src/client/service/service.h"
-#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
 
@@ -40,7 +40,7 @@ public:
 
     void ConnectDeploy();
 
-    void receive(const common::ConnectionEvent& es);
+    void receive(const common::ConnectionES& es);
 
     using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;

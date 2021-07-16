@@ -175,7 +175,7 @@
     <ClInclude Include="src\server_common\codec\dispatcher_lite.h" />
     <ClInclude Include="src\common_type\common_type.h" />
     <ClInclude Include="src\config_expression\config_expression.h" />
-    <ClInclude Include="src\net\deploy\rpcclient\deploy_rpcclient.h" />
+    <ClInclude Include="src\server_common\deploy_rpcclient.h" />
     <ClInclude Include="src\event\event.h" />
     <ClInclude Include="src\exprtk\exprtk.hpp" />
     <ClInclude Include="src\file2string\file2string.h" />
@@ -184,7 +184,6 @@
     <ClInclude Include="src\game_logic\teams\team.h" />
     <ClInclude Include="src\game_logic\teams\teams.h" />
     <ClInclude Include="src\game_logic\teams\team_event.h" />
-
     <ClInclude Include="src\jsoncpp\json.h" />
     <ClInclude Include="src\login_player\login_event.h" />
     <ClInclude Include="src\login_player\login_state.h" />
