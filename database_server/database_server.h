@@ -7,7 +7,7 @@
 #include "src/mysql_database/mysql_database.h"
 #include "src/redis_client/redis_client.h"
 #include "src/server_common/rpc_server.h"
-#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_stub_client.h"
 #include "src/server_common/rpc_closure.h"
 
@@ -36,7 +36,7 @@ namespace database
 
         void Start();
 
-        void receive(const common::ConnectionEvent& es);
+        void receive(const common::ConnectionES& es);
 
         using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
             deploy::ServerInfoResponse>;

@@ -23,11 +23,11 @@ namespace common
     TeamList::TeamList()
         : emp_(EventManager::New())
     {
-        emp_->subscribe<TeamEventStructCreateTeamJoinTeam>(*this);
-        emp_->subscribe<TeamEventStructJoinTeam>(*this);
-        emp_->subscribe<TeamEventStructLeaderDismissTeam>(*this);     
-        emp_->subscribe<TeamEventStructLeaveTeam>(*this);  
-        emp_->subscribe<TeamEventStructDismissTeamOnTeamMemberEmpty>(*this);
+        emp_->subscribe<TeamESCreateTeamJoinTeam>(*this);
+        emp_->subscribe<TeamESJoinTeam>(*this);
+        emp_->subscribe<TeamESLeaderDismissTeam>(*this);     
+        emp_->subscribe<TeamESLeaveTeam>(*this);  
+        emp_->subscribe<TeamESDismissTeamOnTeamMemberEmpty>(*this);
     }
 
     std::size_t TeamList::member_size(GameGuid team_id)
@@ -141,27 +141,27 @@ namespace common
         return p_team->TestApplicantValueEqual();
     }
 
-    void TeamList::receive(const TeamEventStructJoinTeam& es)
+    void TeamList::receive(const TeamESJoinTeam& es)
     {
         OnJoinTeam(es.player_id_, es.team_id_);
     }
 
-    void TeamList::receive(const TeamEventStructCreateTeamJoinTeam& es)
+    void TeamList::receive(const TeamESCreateTeamJoinTeam& es)
     {
         OnJoinTeam(es.player_id_, es.team_id_);
     }
 
-    void TeamList::receive(const TeamEventStructLeaderDismissTeam& es)
+    void TeamList::receive(const TeamESLeaderDismissTeam& es)
     {
         OnPlayerLeaveTeam(es.player_id_);
     }
 
-    void TeamList::receive(const TeamEventStructLeaveTeam& es)
+    void TeamList::receive(const TeamESLeaveTeam& es)
     {
         OnPlayerLeaveTeam(es.player_id_);
     }
 
-    void TeamList::receive(const TeamEventStructDismissTeamOnTeamMemberEmpty& es)
+    void TeamList::receive(const TeamESDismissTeamOnTeamMemberEmpty& es)
     {
         EraseTeam(es.team_id_);
     }
@@ -239,7 +239,7 @@ namespace common
         }
         for (auto& it : p_team->members())
         {
-            emp_->emit<TeamEventStructLeaderDismissTeam>(team_id, it.second.player_id());
+            emp_->emit<TeamESLeaderDismissTeam>(team_id, it.second.player_id());
         }
         EraseTeam(team_id);
         return RET_OK;

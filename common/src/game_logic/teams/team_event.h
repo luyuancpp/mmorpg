@@ -26,16 +26,17 @@ struct TeamESTeamIdBase
     GameGuid team_id_{ kEmptyGameGuid };
 };
 
-struct TeamEventStructDismissTeamOnTeamMemberEmpty : public TeamESTeamIdBase { using TeamESTeamIdBase::TeamESTeamIdBase; };
+struct TeamESDismissTeamOnTeamMemberEmpty : public TeamESTeamIdBase { using TeamESTeamIdBase::TeamESTeamIdBase; };
 
-struct TeamEventStructCreateTeamJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct TeamEventStructJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct TeamEventStructLeaderDismissTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct TeamEventStructLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESCreateTeamJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESLeaderDismissTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESLeaderLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 
-struct TeamEventStructAppointLeader 
+struct TeamESAppointLeader 
 {
-    TeamEventStructAppointLeader(GameGuid team_id, GameGuid current_player_id, GameGuid new_player_id)
+    TeamESAppointLeader(GameGuid team_id, GameGuid current_player_id, GameGuid new_player_id)
         : team_id_(team_id),
           current_leader_player_id_(current_player_id),
           new_leader_player_id_(new_player_id)

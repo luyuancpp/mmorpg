@@ -7,9 +7,9 @@
 
 namespace common
 {
-    struct RegisterStubEvent
+    struct RegisterStubES
     {
-        RegisterStubEvent(const muduo::net::TcpConnectionPtr& conn, muduo::net::RpcChannelPtr& channel_ptr)
+        RegisterStubES(const muduo::net::TcpConnectionPtr& conn, muduo::net::RpcChannelPtr& channel_ptr)
             : conn_(conn),
               channel_(channel_ptr)
         {
@@ -19,9 +19,9 @@ namespace common
         muduo::net::RpcChannelPtr& channel_;
 
     };
-    struct ConnectionEvent
+    struct ConnectionES
     {
-        ConnectionEvent(const muduo::net::TcpConnectionPtr& conn)
+        ConnectionES(const muduo::net::TcpConnectionPtr& conn)
             : conn_(conn)
         {   
         }

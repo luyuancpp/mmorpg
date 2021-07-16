@@ -1,4 +1,4 @@
-#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/server_common/deploy_rpcclient.h"
 
 #include "database_server.h"
 

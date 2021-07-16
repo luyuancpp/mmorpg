@@ -35,7 +35,6 @@ public:
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         service_(dispatcher_, codec_, client_)
     {
-       
         client_.setConnectionCallback(
             std::bind(&PlayerClient::onConnection, this, _1));
         client_.setMessageCallback(

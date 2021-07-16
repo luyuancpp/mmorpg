@@ -12,7 +12,7 @@ namespace common
     {
         for (auto& it : param.members)
         {
-            OnJoinTeam<TeamEventStructCreateTeamJoinTeam>(it.second);
+            OnJoinTeam<TeamESCreateTeamJoinTeam>(it.second);
         }
     }
 
@@ -56,7 +56,7 @@ namespace common
     ReturnValue Team::JoinTeam(const TeamMember& m)
     {
         RET_CHECK_RET(TryToJoinTeam(m));
-        OnJoinTeam<TeamEventStructJoinTeam>(m);
+        OnJoinTeam<TeamESJoinTeam>(m);
         return RET_OK;
     }
 
@@ -95,9 +95,10 @@ namespace common
         assert(members_.size() == sequence_players_id_.size());
         if (!sequence_players_id_.empty() && leader_leave)
         {
+            emp_->emit<TeamESLeaderLeaveTeam>(team_id_, player_id);    
             OnAppointLeader(*sequence_players_id_.begin());
         }
-        emp_->emit<TeamEventStructLeaveTeam>(team_id_, player_id);
+        emp_->emit<TeamESLeaveTeam>(team_id_, player_id);
         if (members_.empty())
         {
             DisMiss();
@@ -152,7 +153,7 @@ namespace common
     {
         auto old_leader_player_id = leader_id_;
         leader_id_ = new_leader_player_id;
-        emp_->emit<TeamEventStructAppointLeader>(team_id_, old_leader_player_id, leader_id_);
+        emp_->emit<TeamESAppointLeader>(team_id_, old_leader_player_id, leader_id_);
     }
 
     void Team::RemoveApplicantId(GameGuid player_id)
@@ -222,7 +223,7 @@ namespace common
 
     ReturnValue Team::DisMiss()
     {
-        emp_->emit<TeamEventStructDismissTeamOnTeamMemberEmpty>(team_id_);
+        emp_->emit<TeamESDismissTeamOnTeamMemberEmpty>(team_id_);
         return RET_OK;
     }
 

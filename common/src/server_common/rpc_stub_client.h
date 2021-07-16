@@ -53,8 +53,8 @@ private:
             conn->setTcpNoDelay(true);
             channel_->setConnection(conn);
         }
-        emp_->emit<RegisterStubEvent>(conn, channel_);
-        emp_->emit<ConnectionEvent>(conn);
+        emp_->emit<RegisterStubES>(conn, channel_);
+        emp_->emit<ConnectionES>(conn);
     }
 
     TcpClient client_;

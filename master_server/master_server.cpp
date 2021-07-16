@@ -1,6 +1,6 @@
 #include "master_server.h"
 
-#include "src/net/deploy/rpcclient/deploy_rpcclient.h"
+#include "src/server_common/deploy_rpcclient.h"
 #include "src/server_type_id/server_type_id.h"
 
 #include "src/game_config/game_config.h"
@@ -24,8 +24,8 @@ void MasterServer::ConnectDeploy()
     const auto& deploy_info = common::GameConfig::GetSingleton().deploy_server();
     InetAddress deploy_addr(deploy_info.host_name(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->emp()->subscribe<common::RegisterStubEvent>(deploy_stub_);
-    deploy_rpc_client_->emp()->subscribe<common::ConnectionEvent>(*this);
+    deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
+    deploy_rpc_client_->emp()->subscribe<common::ConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -35,7 +35,7 @@ void MasterServer::Start()
     server_->start();
 }
 
-void MasterServer::receive(const common::ConnectionEvent& es)
+void MasterServer::receive(const common::ConnectionES& es)
 {
     if (!es.conn_->connected())
     {
@@ -56,7 +56,7 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
     db_rpc_client_->connect();
-    db_rpc_client_->emp()->subscribe<common::RegisterStubEvent>(db_login_stub_);
+    db_rpc_client_->emp()->subscribe<common::RegisterStubES>(db_login_stub_);
 
     auto& myinfo = cp->s_resp_->info(common::SERVER_MASTER);
     InetAddress login_addr(myinfo.ip(), myinfo.port());
