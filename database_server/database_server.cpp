@@ -18,6 +18,7 @@ namespace database
 
     void DatabaseServer::LoadConfig()
     {
+        common::GameConfig::GetSingleton().Load("game.json");
         common::DeployConfig::GetSingleton().Load("deploy.json");
     }
 
@@ -50,7 +51,7 @@ namespace database
             return;
         }
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-        cp->s_reqst_.set_group(1);
+        cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
         deploy_stub_.CallMethod(
             &DatabaseServer::StartServer,
             cp,
