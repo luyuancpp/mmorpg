@@ -5,20 +5,20 @@
 int main(int argc, char* argv[])
 {
     LOG_INFO << "pid = " << getpid();
-    if (argc > 1)
+    if (argc > 0)
     {
         int nClients = 1;
 
-        if (argc > 2)
+        if (argc > 1)
         {
-            nClients = atoi(argv[2]);
+            nClients = atoi(argv[1]);
         }
 
         int nThreads = 1;
 
-        if (argc > 3)
+        if (argc > 2)
         {
-            nThreads = atoi(argv[3]);
+            nThreads = atoi(argv[2]);
         }
 
         CountDownLatch allConnected(nClients);
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
         EventLoopThreadPool pool(&loop, "playerbench-client");
         pool.setThreadNum(nThreads);
         pool.start();
-        InetAddress serverAddr("127.0.0.1", 2000);
+        InetAddress serverAddr("127.0.0.1", 2004);
 
         std::vector<std::unique_ptr<PlayerClient>> clients;
         for (int i = 0; i < nClients; ++i)

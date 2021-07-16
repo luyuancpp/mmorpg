@@ -1,2 +1,21 @@
-{"data":[{"host_name":"127.0.0.1", "port":3306,"user_name":"root","pass_word":"luyuan616586","database_name":"deploy"},
-{"host_name":"127.0.0.1", "port":1000,"user_name":"root","pass_word":"luyuan616586","database_name":"deploy"}]}
+{
+	"data": [{
+			"ip": "",
+			"port": 0,
+			"db_host": "127.0.0.1",
+			"db_port": 3306,
+			"db_user": "root",
+			"db_password": "luyuan616586",
+			"db_dbname": "deploy"
+		},
+		{
+			"ip": "127.0.0.1",
+			"port": 1000,
+			"db_host": "127.0.0.1",
+			"db_port": 1000,
+			"db_user": "root",
+			"db_password": "luyuan616586",
+			"db_dbname": "deploy"
+		}
+	]
+}

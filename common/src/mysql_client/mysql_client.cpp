@@ -7,24 +7,6 @@
 namespace common
 {
 
-void MysqlClient::Connect(const ConnetionParam& database_info)
-{
-    connection_ = mysql_init(nullptr);
-    uint32_t op = 1;
-    mysql_options(connection(), MYSQL_OPT_RECONNECT, &op);
-    MYSQL* res = mysql_real_connect(connection(),
-        database_info.host_name().c_str(),
-        database_info.user_name().c_str(),
-        database_info.pass_word().c_str(),
-        database_info.database_name().c_str(),
-        database_info.port(),
-        nullptr,
-        CLIENT_FOUND_ROWS | CLIENT_MULTI_RESULTS);
-    connection_->reconnect = true;
-    mysql_set_character_set(connection(), "utf8");
-    conection_info_ = database_info;
-}
-
 void MysqlClient::Execute(const std::string& query)
 {
 #ifndef LOG_MYSQL_QUERY
@@ -142,7 +124,7 @@ MysqlClient::MysqlResultExpected MysqlClient::LoggedRealQuery(const std::string&
     auto query_res = RealQuery(q);
     auto dur = clock_type::now() - start;
     auto msg =
-        Address() + " (" +
+        std::string(" (") +
         std::to_string(
             std::chrono::duration_cast<std::chrono::microseconds>(dur).count()) +
         " us)> " ;

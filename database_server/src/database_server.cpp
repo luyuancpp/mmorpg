@@ -25,7 +25,7 @@ namespace database
     void DatabaseServer::ConnectDeploy()
     {
         const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
-        InetAddress deploy_addr(deploy_info.host_name(), deploy_info.port());
+        InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
         deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
         deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
         deploy_rpc_client_->emp()->subscribe<common::ConnectionES>(*this); 
@@ -70,13 +70,7 @@ namespace database
         auto& myinfo = cp->s_resp_->info(common::SERVER_DATABASE);        
         InetAddress listenAddr(myinfo.ip(), myinfo.port());
         redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
-        ConnetionParam query_database_param;
-        query_database_param.set_host_name(myinfo.db_host());
-        query_database_param.set_user_name(myinfo.db_user());
-        query_database_param.set_pass_word(myinfo.db_password());
-        query_database_param.set_database_name(myinfo.db_dbname());
-        query_database_param.set_port(myinfo.db_port());
-        database_->Connect(query_database_param);
+        database_->Connect(myinfo);
         server_ = std::make_shared<muduo::net::RpcServer>(loop_, listenAddr);
         Start();
     }

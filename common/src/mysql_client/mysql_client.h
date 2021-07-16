@@ -12,6 +12,7 @@
 #include "src/mysql_client/mysql_result.h"
 
 #include "common.pb.h"
+#include "deploy_database_table.pb.h"
 
 namespace common
 {
@@ -60,7 +61,24 @@ public:
 
     ~MysqlClient() { mysql_close(connection_); };
 
-    void Connect(const ConnetionParam& database_info);
+    template <typename ConnectionParamClass>
+    void Connect(const ConnectionParamClass& database_info)
+    {
+        connection_ = mysql_init(nullptr);
+        uint32_t op = 1;
+        mysql_options(connection(), MYSQL_OPT_RECONNECT, &op);
+        MYSQL* res = mysql_real_connect(connection(),
+            database_info.db_host().c_str(),
+            database_info.db_user().c_str(),
+            database_info.db_password().c_str(),
+            database_info.db_dbname().c_str(),
+            database_info.db_port(),
+            nullptr,
+            CLIENT_FOUND_ROWS | CLIENT_MULTI_RESULTS);
+        connection_->reconnect = true;
+        mysql_set_character_set(connection(), "utf8");
+    }
+
     void Execute(
         const std::string& query);
     ResultRowPtr QueryOne(
@@ -82,10 +100,7 @@ private:
     MysqlResultExpected RealQuery(
         const std::string& q);
 
-    const std::string& Address() noexcept { return conection_info_.host_name(); }
-
     MYSQL* connection_;
-    ConnetionParam conection_info_;
 };
 }//namespace common
 

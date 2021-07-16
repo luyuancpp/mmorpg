@@ -9,7 +9,7 @@ enum ServerTypeIdEnum : uint32_t
 {
     SERVER_REDIS = 0,
     SERVER_DATABASE = 1,
-    SERVER_MASTER = 3,
+    SERVER_MASTER = 2,
     SERVER_LOGIN = 3,
     SERVER_GATEWAY = 4,
     SERVER_ID_GROUP_SIZE = 8,
