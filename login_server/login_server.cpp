@@ -56,7 +56,6 @@ void LoginServer::receive(const common::ConnectionEvent& es)
 
 void LoginServer::StartServer(ServerInfoRpcRC cp)
 {
-    cp->s_resp_->PrintDebugString();
     auto& databaseinfo = cp->s_resp_->info(common::SERVER_DATABASE);
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
