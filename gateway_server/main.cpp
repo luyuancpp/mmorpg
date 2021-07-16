@@ -16,7 +16,7 @@ public:
     DepolyReplied(muduo::net::EventLoop* loop)
         :  loop_(loop)
     {
-        deploy::DeployRpcClient::GetSingleton()->emp()->subscribe<common::ConnectionEvent>(*this);
+        deploy::DeployRpcClient::GetSingleton()->emp()->subscribe<common::DeployConnectionEvent>(*this);
         deploy::ServerInfoRpcStub::GetSingleton();
     }
 
