@@ -19,7 +19,7 @@ namespace master
     {
     public:
         using RedisClientPtr = common::RedisClientPtr;
-        using RprServerPtr = std::shared_ptr<muduo::net::RpcServer>;
+        using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using LoginStubms2db = common::RpcStub<ms2db::LoginService_Stub>;
 
         MasterServer(muduo::net::EventLoop* loop);           
@@ -41,7 +41,7 @@ namespace master
     private:
         muduo::net::EventLoop* loop_{ nullptr };
         RedisClientPtr redis_;
-        RprServerPtr server_;
+        RpcServerPtr server_;
 
         common::RpcClientPtr deploy_rpc_client_;
         deploy::DeployRpcStub deploy_stub_;

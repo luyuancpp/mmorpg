@@ -50,6 +50,11 @@ namespace database
         {
             return;
         }
+        // started 
+        if (nullptr != server_)
+        {
+            return;
+        }
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
         cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
         deploy_stub_.CallMethod(

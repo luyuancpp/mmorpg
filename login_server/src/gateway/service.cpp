@@ -190,5 +190,4 @@ void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_datab
     ap->set_account_data(a_d);
     ap->OnDbLoaded();
 }
-
 }  // namespace gw2l

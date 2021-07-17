@@ -17,7 +17,7 @@ namespace login
     {
     public:
         using RedisClientPtr = common::RedisClientPtr;
-        using RprServerPtr = std::shared_ptr<muduo::net::RpcServer>;
+        using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using LoginStubl2ms = common::RpcStub<l2ms::LoginService_Stub>;
         using LoginStubl2db = common::RpcStub<l2db::LoginService_Stub>;
 
@@ -41,7 +41,7 @@ namespace login
         muduo::net::EventLoop* loop_{ nullptr };
         
         RedisClientPtr redis_;
-        RprServerPtr server_;
+        RpcServerPtr server_;
 
         common::RpcClientPtr deploy_rpc_client_;
         deploy::DeployRpcStub deploy_stub_;
