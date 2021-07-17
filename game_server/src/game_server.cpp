@@ -4,6 +4,8 @@
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_type_id/server_type_id.h"
 
+#include "muduo/base/CrossPlatformAdapterFunction.h"
+
 namespace game
 {
 GameServer::GameServer(muduo::net::EventLoop* loop)

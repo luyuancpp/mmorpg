@@ -1,9 +1,19 @@
 syntax = "proto3";
 package g2ms;
-import "common.proto";
 option cc_generic_services = true;
 
 
-service G2MSService {
+message StartLogicServerRequest
+{
+  uint32 group = 1;
+}
 
+message StartLogicServerResponse
+{
+  repeated serverinfo_database info = 1;
+  uint32 serverinfo_database my_info = 2;
+}
+
+service G2MSService {
+  rpc StartLogicServer (StartLogicServerRequest) returns (StartLogicServerResponse);
 }

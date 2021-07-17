@@ -13,6 +13,18 @@ message ServerInfoResponse
   repeated serverinfo_database info = 1;
 }
 
+message StartLogicServerRequest
+{
+  uint32 group = 1;
+}
+
+message StartLogicServerResponse
+{
+  repeated serverinfo_database info = 1;
+  serverinfo_database my_info = 2;
+}
+
 service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
+  rpc StartLogicServer (StartLogicServerRequest) returns (SartLogicServerResponse);
 }
