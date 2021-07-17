@@ -23,7 +23,7 @@ namespace database
     public:
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
-        using RprServerPtr = std::shared_ptr<muduo::net::RpcServer>;
+        using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
         DatabaseServer(muduo::net::EventLoop* loop);
 
@@ -47,7 +47,7 @@ namespace database
         muduo::net::EventLoop* loop_{ nullptr };
         MysqlClientPtr database_;
         RedisClientPtr redis_;
-        RprServerPtr server_;
+        RpcServerPtr server_;
 
         common::RpcClientPtr deploy_rpc_client_;
         deploy::DeployRpcStub deploy_stub_;

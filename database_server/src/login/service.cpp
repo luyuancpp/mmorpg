@@ -62,5 +62,4 @@ namespace l2db
         redis_->Save(new_player, new_player.player_id());
         done->Run();
     }
-
 }
