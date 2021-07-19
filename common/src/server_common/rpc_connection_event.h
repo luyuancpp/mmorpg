@@ -19,11 +19,21 @@ namespace common
         muduo::net::RpcChannelPtr& channel_;
 
     };
-    struct ConnectionES
+
+    struct ClientConnectionES
     {
-        ConnectionES(const muduo::net::TcpConnectionPtr& conn)
+        ClientConnectionES(const muduo::net::TcpConnectionPtr& conn)
             : conn_(conn)
         {   
+        }
+        const muduo::net::TcpConnectionPtr& conn_;
+    };
+
+    struct ServerConnectionES
+    {
+        ServerConnectionES(const muduo::net::TcpConnectionPtr& conn)
+            : conn_(conn)
+        {
         }
         const muduo::net::TcpConnectionPtr& conn_;
     };

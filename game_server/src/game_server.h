@@ -26,7 +26,7 @@ public:
 
     void ConnectDeploy();
 
-    void receive(const common::ConnectionES& es);
+    void receive(const common::ClientConnectionES& es);
 
     using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;

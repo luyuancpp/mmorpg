@@ -11,7 +11,6 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<common::RedisClient>())
 { 
-
 }    
 
 void MasterServer::LoadConfig()
@@ -26,17 +25,11 @@ void MasterServer::ConnectDeploy()
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
     deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->emp()->subscribe<common::ConnectionES>(*this);
+    deploy_rpc_client_->emp()->subscribe<common::ClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
-void MasterServer::Start()
-{
-    server_->registerService(&impl_);
-    server_->start();
-}
-
-void MasterServer::receive(const common::ConnectionES& es)
+void MasterServer::receive(const common::ClientConnectionES& es)
 {
     if (!es.conn_->connected())
     {
@@ -56,6 +49,10 @@ void MasterServer::receive(const common::ConnectionES& es)
         &deploy::DeployService_Stub::ServerInfo);
 }
 
+void MasterServer::receive(const common::ServerConnectionES& es)
+{
+}
+
 void MasterServer::StartServer(ServerInfoRpcRC cp)
 {
     auto& databaseinfo = cp->s_resp_->info(common::SERVER_DATABASE);
@@ -67,8 +64,10 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     auto& myinfo = cp->s_resp_->info(common::SERVER_MASTER);
     InetAddress master_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
-    
-    Start();
+    server_->emp()->subscribe<common::ServerConnectionES>(*this);
+
+    server_->registerService(&impl_);
+    server_->start();
 }
 
 }//namespace master

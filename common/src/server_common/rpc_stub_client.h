@@ -54,7 +54,7 @@ private:
             channel_->setConnection(conn);
         }
         emp_->emit<RegisterStubES>(conn, channel_);
-        emp_->emit<ConnectionES>(conn);
+        emp_->emit<ClientConnectionES>(conn);
     }
 
     TcpClient client_;

@@ -30,9 +30,8 @@ namespace master
 
         void ConnectDeploy();
 
-        void Start();
-
-        void receive(const common::ConnectionES& es);
+        void receive(const common::ClientConnectionES& es);
+        void receive(const common::ServerConnectionES& es);
 
         using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
             deploy::ServerInfoResponse>;
