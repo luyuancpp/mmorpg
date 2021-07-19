@@ -202,6 +202,7 @@
     <ClInclude Include="src\return_code\notice_struct.h" />
     <ClInclude Include="src\return_code\return_code.h" />
     <ClInclude Include="src\return_code\return_notice_code.h" />
+    <ClInclude Include="src\server_common\deploy_variable.h" />
     <ClInclude Include="src\server_common\rpc_channel.h" />
     <ClInclude Include="src\server_common\rpc_client_closure.h" />
     <ClInclude Include="src\server_common\rpc_closure.h" />
@@ -217,6 +218,7 @@
     <ClInclude Include="src\server_common\rpc_string_closure.h" />
     <ClInclude Include="src\server_common\rpc_stub.h" />
     <ClInclude Include="src\server_common\rpc_stub_client.h" />
+    <ClInclude Include="src\server_common\server_type_id.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\server_rpc_client\closure_auto_done.h" />
     <ClInclude Include="src\server_rpc_client\rpc_client_closure.h" />
