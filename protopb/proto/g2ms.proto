@@ -1,6 +1,5 @@
 syntax = "proto3";
 package g2ms;
-import "deploy_database_table.proto";
 option cc_generic_services = true;
 
 

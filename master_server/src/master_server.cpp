@@ -51,6 +51,7 @@ void MasterServer::receive(const common::ClientConnectionES& es)
 
 void MasterServer::receive(const common::ServerConnectionES& es)
 {
+
 }
 
 void MasterServer::StartServer(ServerInfoRpcRC cp)
