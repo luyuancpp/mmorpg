@@ -86,11 +86,11 @@ void RpcChannel::CallMethodNoResponse(const ::google::protobuf::MethodDescriptor
     codec_.send(conn_, message);
 }
 
-void RpcChannel::ServerToClient(const ::google::protobuf::Message* request)
+void RpcChannel::ServerToClient(const ::google::protobuf::Message& request)
 {
     RpcMessage message;
     message.set_type(SERVER_TO_CLIENT);
-    message.set_request(request->SerializeAsString()); // FIXME: error check
+    message.set_request(request.SerializeAsString()); // FIXME: error check
     codec_.send(conn_, message);
 }
 

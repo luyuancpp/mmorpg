@@ -108,6 +108,8 @@ class RpcChannel : public ::google::protobuf::RpcChannel
     services_ = services;
   }
 
+  ProtobufDispatcher& protobufdispatcher() { return dispatcher_; }
+
   // Call the given method of the remote service.  The signature of this
   // procedure looks the same as Service::CallMethod(), but the requirements
   // are less strict in one important way:  the request and response objects
@@ -125,7 +127,7 @@ class RpcChannel : public ::google::protobuf::RpcChannel
       ::google::protobuf::Message* response,
       ::google::protobuf::Closure* done);
 
-  void ServerToClient(const ::google::protobuf::Message* request);
+  void ServerToClient(const ::google::protobuf::Message& request);
 
   void onMessage(const TcpConnectionPtr& conn,
                  Buffer* buf,
