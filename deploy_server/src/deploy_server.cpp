@@ -40,21 +40,34 @@ namespace deploy_server
         auto q_result = database_->QueryOne("select * from serverinfo_database LIMIT 1");
         if (nullptr == q_result)
         {
-            serverinfo_database sd;
-            sd.set_ip(kIp);
-            sd.set_db_host(kIp);
-            sd.set_db_user("root");
-            sd.set_db_password("luyuan616586");
-            sd.set_db_port(3306);
-            sd.set_db_dbname("game");
+            serverinfo_database sd_db;
+            sd_db.set_ip(kIp);
+            sd_db.set_db_host(kIp);
+            sd_db.set_db_user("root");
+            sd_db.set_db_password("luyuan616586");
+            sd_db.set_db_port(3306);
+            sd_db.set_db_dbname("game");
+
+            serverinfo_database sd_nodb;
+            sd_nodb.set_ip(kIp);
+
             for (uint32_t i = 0; i < kTotalSize; ++i)
             {
-                sd.set_port(kBeginPort + i);
+                sd_db.set_port(kBeginPort + i);
                 if (i % common::SERVER_ID_GROUP_SIZE == 0)
                 {
-                    sd.set_port(kRedisPort);
+                    sd_db.set_port(kRedisPort);
                 }
-                database_->SaveOne(sd);
+                sd_nodb.set_port(sd_db.port());
+                if (i % common::SERVER_ID_GROUP_SIZE == common::SERVER_DATABASE)
+                {
+                    database_->SaveOne(sd_db);
+                }
+                else
+                {
+                    database_->SaveOne(sd_nodb);
+                }
+                
             }
         }
     }
