@@ -45,19 +45,33 @@ void GameServer::receive(const common::ConnectionES& es)
     ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
     cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
     deploy_stub_.CallMethod(
-        &GameServer::StartServer,
+        &GameServer::ServerInfo,
         cp,
         this,
         &deploy::DeployService_Stub::ServerInfo);
 }
 
-void GameServer::StartServer(ServerInfoRpcRC cp)
+void GameServer::ServerInfo(ServerInfoRpcRC cp)
 {
     auto& masterinfo = cp->s_resp_->info(common::SERVER_MASTER);
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
     master_rpc_client_->connect();
     master_rpc_client_->emp()->subscribe<common::RegisterStubES>(g2ms_stub_);
+
+    StartLogicServerRpcRC scp(std::make_shared<StartLogicServerInfoRpcClosure>());
+    scp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+    scp->s_reqst_.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
+    deploy_stub_.CallMethod(
+        &GameServer::StartLogicServer,
+        scp,
+        this,
+        &deploy::DeployService_Stub::StartLogicServer);
+}
+
+void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
+{
+    //cp->s_resp_->PrintDebugString();
 }
 
 }//namespace game

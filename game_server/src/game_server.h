@@ -31,7 +31,13 @@ public:
     using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
-    void StartServer(ServerInfoRpcRC cp);
+    void ServerInfo(ServerInfoRpcRC cp);
+
+    using StartLogicServerInfoRpcClosure = common::RpcClosure<deploy::StartLogicServerRequest,
+        deploy::StartLogicServerResponse>;
+    using StartLogicServerRpcRC = std::shared_ptr<StartLogicServerInfoRpcClosure>;
+    void StartLogicServer(StartLogicServerRpcRC cp);
+
 private:
     muduo::net::EventLoop* loop_{ nullptr };
 

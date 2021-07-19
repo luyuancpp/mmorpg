@@ -2,6 +2,7 @@
 #define DEPLOY_SERVER_SRC_SERVICE_SERVICE_H_
 
 #include "src/mysql_database/mysql_database.h"
+#include "entt/src/entt/entity/registry.hpp"
 
 #include "deploy.pb.h"
 
@@ -31,6 +32,7 @@ namespace deploy
     private:
         MysqlClientPtr database_;
         LogicServerMap logic_server_map_;
+        entt::registry servers_;
     };
 }//namespace deploy
 
