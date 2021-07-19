@@ -1,6 +1,8 @@
 #ifndef COMMON_SRC_SERVER_COMMON_DEPLOY_VARIABLE_H_
 #define COMMON_SRC_SERVER_COMMON_DEPLOY_VARIABLE_H_
 
+#include <string>
+
 #include "src/server_common/server_type_id.h"
 
 namespace deploy_server

@@ -50,6 +50,8 @@ private:
 
     common::RpcClientPtr master_rpc_client_;
     G2MSStubg2ms g2ms_stub_;
+
+    ::serverinfo_database server_info;
 };
 
 };//namespace game
