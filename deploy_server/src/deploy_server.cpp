@@ -2,6 +2,7 @@
 
 #include "muduo/base/Logging.h"
 #include "src/game_config/game_config.h"
+#include "src/server_common/deploy_variable.h"
 
 #include "deploy_database_table.pb.h"
 

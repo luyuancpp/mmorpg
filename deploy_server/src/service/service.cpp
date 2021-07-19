@@ -1,8 +1,7 @@
 #include "service.h"
 
-#include "src/deploy_server.h"
 #include "src/server_common/closure_auto_done.h"
-#include "src/server_type_id/server_type_id.h"
+#include "src/server_common/deploy_variable.h"
 
 namespace deploy
 {
