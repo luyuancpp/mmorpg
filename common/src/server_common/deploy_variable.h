@@ -12,6 +12,8 @@ namespace deploy_server
     static const uint32_t kTotalSize = kGroup * kGroupServerSize;
     static const uint32_t kLogicBeginId = kTotalSize + 1;
     static const uint32_t kLogicBeginPort = kBeginPort + kTotalSize + 1;
+    static const uint32_t kLogicBeginSnowflakeId = kGroup * 2 + 1;
+    static const uint32_t kLogicSnowflakeIdReduceParam = kLogicBeginId - kLogicBeginSnowflakeId;
     static const std::string kIp = "127.0.0.1";
 }//namespace deploy_server
 
