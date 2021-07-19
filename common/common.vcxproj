@@ -220,11 +220,6 @@
     <ClInclude Include="src\server_common\rpc_stub_client.h" />
     <ClInclude Include="src\server_common\server_type_id.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
-    <ClInclude Include="src\server_rpc_client\closure_auto_done.h" />
-    <ClInclude Include="src\server_rpc_client\rpc_client_closure.h" />
-    <ClInclude Include="src\server_rpc_client\rpc_closure.h" />
-    <ClInclude Include="src\server_rpc_client\rpc_string_closure.h" />
-    <ClInclude Include="src\server_rpc_client\stub_rpc_client.h" />
     <ClInclude Include="src\snow_flake\snow_flake.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

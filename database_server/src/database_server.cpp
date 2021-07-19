@@ -3,7 +3,7 @@
 #include "src/game_config/game_config.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_connection_event.h"
-#include "src/server_type_id/server_type_id.h"
+#include "src/server_common/server_type_id.h"
 
 #include "mysql_database_table.pb.h"
 

@@ -1,7 +1,7 @@
 #include "master_server.h"
 
 #include "src/server_common/deploy_rpcclient.h"
-#include "src/server_type_id/server_type_id.h"
+#include "src/server_common/server_type_id.h"
 
 #include "src/game_config/game_config.h"
 

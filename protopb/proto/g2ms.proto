@@ -6,12 +6,11 @@ option cc_generic_services = true;
 
 message StartLogicServerRequest
 {
-  uint32 group = 1;
+  uint32 server_id = 1;
 }
 
 message StartLogicServerResponse
 {
-  repeated serverinfo_database info = 1;
 }
 
 service G2MSService {
