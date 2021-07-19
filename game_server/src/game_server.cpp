@@ -2,6 +2,7 @@
 
 #include "src/game_config/game_config.h"
 #include "src/server_common/deploy_rpcclient.h"
+#include "src/server_common/deploy_variable.h"
 #include "src/server_common/server_type_id.h"
 
 #include "muduo/base/CrossPlatformAdapterFunction.h"
@@ -71,7 +72,11 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
 
 void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
 {
-    //cp->s_resp_->PrintDebugString();
+    auto& myinfo = cp->s_resp_->my_info();
+    uint32_t snid = myinfo.id() - deploy_server::kLogicSnowflakeIdReduceParam;//snowflake id 
+
+    InetAddress login_addr(myinfo.ip(), myinfo.port());
+    server_ = std::make_shared<muduo::net::RpcServer>(loop_, login_addr);
 }
 
 }//namespace game
