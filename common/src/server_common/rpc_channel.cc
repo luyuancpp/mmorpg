@@ -19,7 +19,8 @@ using namespace muduo::net;
 
 RpcChannel::RpcChannel()
   : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
-    services_(NULL)
+    services_(NULL),
+    dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
 {
   LOG_INFO << "RpcChannel::ctor - " << this;
 }
@@ -27,7 +28,8 @@ RpcChannel::RpcChannel()
 RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
   : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
     conn_(conn),
-    services_(NULL)
+    services_(NULL),
+    dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
 {
   LOG_INFO << "RpcChannel::ctor - " << this;
 }
@@ -84,11 +86,25 @@ void RpcChannel::CallMethodNoResponse(const ::google::protobuf::MethodDescriptor
     codec_.send(conn_, message);
 }
 
+void RpcChannel::ServerToClient(const ::google::protobuf::Message* request)
+{
+    RpcMessage message;
+    message.set_type(SERVER_TO_CLIENT);
+    message.set_request(request->SerializeAsString()); // FIXME: error check
+    codec_.send(conn_, message);
+}
+
+
 void RpcChannel::onMessage(const TcpConnectionPtr& conn,
                            Buffer* buf,
                            Timestamp receiveTime)
 {
   codec_.onMessage(conn, buf, receiveTime);
+}
+
+void RpcChannel::onUnknownMessage(const TcpConnectionPtr&, const MessagePtr& message, Timestamp)
+{
+    LOG_INFO << "onUnknownMessage: " << message->GetTypeName();
 }
 
 void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
@@ -223,6 +239,49 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       {
           error = NO_SERVICE;
       }
+  }
+  else if (message.type() == SERVER_TO_CLIENT)
+  {
+  // FIXME: extract to a function
+  ErrorCode error = WRONG_PROTO;
+  if (services_)
+  {
+      std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message.service());
+      if (it != services_->end())
+      {
+          google::protobuf::Service* service = it->second;
+          assert(service != NULL);
+          const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+          const google::protobuf::MethodDescriptor* method
+              = desc->FindMethodByName(message.method());
+          if (method)
+          {
+              std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
+              if (request->ParseFromString(message.request()))
+              {
+                  service->CallMethod(method, nullptr, get_pointer(request), nullptr,
+                      NewCallback(this, &RpcChannel::doNothing));
+                  error = RPC_NO_ERROR;
+              }
+              else
+              {
+                  error = INVALID_REQUEST;
+              }
+          }
+          else
+          {
+              error = NO_METHOD;
+          }
+      }
+      else
+      {
+          error = NO_SERVICE;
+      }
+  }
+  else
+  {
+      error = NO_SERVICE;
+  }
   }
   else if (message.type() == ERROR)
   {

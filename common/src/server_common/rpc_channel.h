@@ -14,6 +14,7 @@
 #include "muduo/base/Atomic.h"
 #include "muduo/base/Mutex.h"
 #include "muduo/net/protorpc/RpcCodec.h"
+#include "src/server_common/codec/dispatcher.h"
 
 #include <google/protobuf/service.h>
 
@@ -124,10 +125,15 @@ class RpcChannel : public ::google::protobuf::RpcChannel
       ::google::protobuf::Message* response,
       ::google::protobuf::Closure* done);
 
+  void ServerToClient(const ::google::protobuf::Message* request);
+
   void onMessage(const TcpConnectionPtr& conn,
                  Buffer* buf,
                  Timestamp receiveTime);
 
+  void onUnknownMessage(const TcpConnectionPtr&,
+      const MessagePtr& message,
+      Timestamp);
  private:
   void onRpcMessage(const TcpConnectionPtr& conn,
                     const RpcMessagePtr& messagePtr,
@@ -151,6 +157,7 @@ class RpcChannel : public ::google::protobuf::RpcChannel
   std::map<int64_t, OutstandingCall> outstandings_ GUARDED_BY(mutex_);
 
   const std::map<std::string, ::google::protobuf::Service*>* services_;
+  ProtobufDispatcher dispatcher_;
 };
 typedef std::shared_ptr<RpcChannel> RpcChannelPtr;
 
