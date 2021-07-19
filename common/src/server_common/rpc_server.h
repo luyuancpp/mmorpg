@@ -13,6 +13,8 @@
 
 #include "muduo/net/TcpServer.h"
 
+#include "src/event/event.h"
+
 namespace google {
 namespace protobuf {
 
@@ -40,6 +42,7 @@ class RpcServer
   void registerService(::google::protobuf::Service*);
   void start();
 
+  common::EventManagerPtr& emp() { return emp_; }
  private:
   void onConnection(const TcpConnectionPtr& conn);
 
@@ -49,6 +52,7 @@ class RpcServer
 
   TcpServer server_;
   std::map<std::string, ::google::protobuf::Service*> services_;
+  common::EventManagerPtr emp_;
 };
 
 }  // namespace net

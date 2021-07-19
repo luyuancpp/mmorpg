@@ -28,7 +28,7 @@ namespace database
         InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
         deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
         deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
-        deploy_rpc_client_->emp()->subscribe<common::ConnectionES>(*this); 
+        deploy_rpc_client_->emp()->subscribe<common::ClientConnectionES>(*this); 
         deploy_rpc_client_->connect();
     }
 
@@ -44,7 +44,7 @@ namespace database
         server_->start();
     }
 
-    void DatabaseServer::receive(const common::ConnectionES& es)
+    void DatabaseServer::receive(const common::ClientConnectionES& es)
     {
         if (!es.conn_->connected())
         {

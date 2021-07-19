@@ -14,12 +14,15 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/service.h>
 
+#include "rpc_connection_event.h"
+
 using namespace muduo;
 using namespace muduo::net;
 
 RpcServer::RpcServer(EventLoop* loop,
                      const InetAddress& listenAddr)
-  : server_(loop, listenAddr, "RpcServer")
+    : server_(loop, listenAddr, "RpcServer"),
+    emp_(common::EventManager::New())
 {
   server_.setConnectionCallback(
       std::bind(&RpcServer::onConnection, this, _1));
@@ -56,6 +59,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
     conn->setContext(RpcChannelPtr());
     // FIXME:
   }
+  emp_->emit<common::ServerConnectionES>(conn);
 }
 
 // void RpcServer::onMessage(const TcpConnectionPtr& conn,
