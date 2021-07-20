@@ -36,6 +36,7 @@
     <ClInclude Include="pbc\l2db.pb.h" />
     <ClInclude Include="pbc\l2ms.pb.h" />
     <ClInclude Include="pbc\ms2db.pb.h" />
+    <ClInclude Include="pbc\ms2g.pb.h" />
     <ClInclude Include="pbc\mysql_database_table.pb.h" />
     <ClInclude Include="pbc\pb3.pb.h" />
   </ItemGroup>
@@ -57,6 +58,7 @@
     <ClCompile Include="pbc\l2db.pb.cc" />
     <ClCompile Include="pbc\l2ms.pb.cc" />
     <ClCompile Include="pbc\ms2db.pb.cc" />
+    <ClCompile Include="pbc\ms2g.pb.cc" />
     <ClCompile Include="pbc\mysql_database_table.pb.cc" />
     <ClCompile Include="pbc\pb3.pb.cc" />
   </ItemGroup>
