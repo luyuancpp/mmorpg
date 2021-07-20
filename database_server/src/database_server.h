@@ -8,7 +8,7 @@
 #include "src/redis_client/redis_client.h"
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/deploy_rpcclient.h"
-#include "src/server_common/rpc_stub_client.h"
+#include "src/server_common/rpc_client.h"
 #include "src/server_common/rpc_closure.h"
 
 #include "src/login/service.h"

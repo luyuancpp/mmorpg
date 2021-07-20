@@ -119,7 +119,6 @@
     <ClInclude Include="src\server_registry\server_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
-
     <ClInclude Include="src\server_common\rpc_closure_param\closure_auto_done.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -195,7 +194,7 @@
     <ClInclude Include="src\server_common\deploy_rpcclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_common\rpc_stub_client.h">
+    <ClInclude Include="src\server_common\rpc_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\closure_auto_done.h">

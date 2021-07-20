@@ -18,8 +18,8 @@ void GatewayServer::ConnectDeploy()
     const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->emp()->subscribe<common::ClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
+    deploy_rpc_client_->subscribe<common::ClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -51,7 +51,7 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
 
     login_rpc_client_ = std::make_unique<common::RpcClient>(loop_, login_addr);
     login_rpc_client_->connect();
-    login_rpc_client_->emp()->subscribe<common::RegisterStubES>(gw2l_login_stub_);
+    login_rpc_client_->subscribe<common::RegisterStubES>(gw2l_login_stub_);
 
     auto& myinfo = cp->s_resp_->info(common::SERVER_GATEWAY);
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());

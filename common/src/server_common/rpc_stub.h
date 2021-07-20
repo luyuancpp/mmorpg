@@ -2,7 +2,7 @@
 #define SRC_SERVER_RPCCLIENT_RPC_STUB_H_
 
 #include "rpc_connection_event.h"
-#include "rpc_stub_client.h"
+#include "rpc_client.h"
 #include "src/event/event.h"
 #include "src/server_common/rpc_channel.h"
 

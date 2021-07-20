@@ -3,10 +3,6 @@
 
 #include <memory>
 
-#include "muduo/base/CountDownLatch.h"
-#include "muduo/base/Logging.h"
-#include "muduo/net/EventLoop.h"
-#include "muduo/net/EventLoopThreadPool.h"
 #include "muduo/net/InetAddress.h"
 #include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
@@ -36,12 +32,18 @@ public:
         client_.enableRetry();
     }
 
-    EventManagerPtr& emp() { return emp_; }
-    RpcChannelPtr& rpcchannel() { return channel_; }
+    template <typename E, typename Receiver>
+    void subscribe(Receiver& receiver) { emp_->subscribe<E>(receiver); }
 
+    void registerService(google::protobuf::Service* service)
+    {
+        const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+        services_[desc->full_name()] = service;
+    }
 
     void connect()
     {
+        channel_->setServices(&services_);
         client_.connect();
     }
 
@@ -60,6 +62,7 @@ private:
     TcpClient client_;
     RpcChannelPtr channel_;
     EventManagerPtr emp_;
+    std::map<std::string, ::google::protobuf::Service*> services_;
 };
 
 using RpcClientPtr = std::unique_ptr<common::RpcClient>;

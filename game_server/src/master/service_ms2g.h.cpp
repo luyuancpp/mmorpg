@@ -1,4 +1,4 @@
-#include "service.h"
+#include "service_ms2g.h"
 
 namespace ms2g
 {
