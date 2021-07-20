@@ -2,7 +2,7 @@
 
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
-
+#include "src/server_common/rpc_server_connection.h"
 #include "src/game_config/game_config.h"
 
 #include "ms2g.pb.h"
@@ -14,6 +14,16 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
       redis_(std::make_shared<common::RedisClient>())
 { 
 }    
+
+bool MasterServer::IsGateClient(const std::string& peer_addr)
+{
+    return false;
+}
+
+bool MasterServer::IsGameClient(const std::string& peer_addr)
+{
+    return true;
+}
 
 void MasterServer::LoadConfig()
 {
@@ -53,33 +63,68 @@ void MasterServer::receive(const common::ClientConnectionES& es)
 
 void MasterServer::receive(const common::ServerConnectionES& es)
 {
-    if (es.conn_->connected())
+    auto& conn = es.conn_;
+    if (conn->connected())
     {
-        RpcChannelPtr ptr = boost::any_cast<RpcChannelPtr>(es.conn_->getContext());
-        ms2g::LoginRequest rq;
-        ptr->ServerToClient(rq, "ms2g.Ms2gService", "Login");
+        OnRpcClientConnectionConnect(conn);
     }
     else
     {
-
+        OnRpcClientConnectionDisConnect(conn);
     }
 }
 
 void MasterServer::StartServer(ServerInfoRpcRC cp)
 {
-    auto& databaseinfo = cp->s_resp_->info(common::SERVER_DATABASE);
+    info_ = cp->s_resp_->info();
+    auto& databaseinfo = info_.Get(common::SERVER_DATABASE);
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
-    db_rpc_client_->connect();
     db_rpc_client_->subscribe<common::RegisterStubES>(msl2_login_stub_);
+    db_rpc_client_->connect();    
 
     auto& myinfo = cp->s_resp_->info(common::SERVER_MASTER);
     InetAddress master_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
-    server_->emp()->subscribe<common::ServerConnectionES>(*this);
+    server_->subscribe<common::ServerConnectionES>(*this);
 
     server_->registerService(&impl_);
     server_->start();
+}
+
+void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn)
+{
+    auto ip = conn->peerAddress().toIp();
+    if (IsGameClient(ip))
+    {
+        auto e = game_client_.create();
+        game_client_.emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
+    }
+    else if (IsGateClient(ip))
+    {
+
+    }
+}
+
+void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
+{
+    auto ip = conn->peerAddress().toIp();
+    if (IsGameClient(ip))
+    {
+        for (auto e : game_client_.view<common::RpcServerConnection>())
+        {
+            if (game_client_.get<common::RpcServerConnection>(e).conn_->peerAddress().toIp() != ip)
+            {
+                continue;
+            }
+            game_client_.destroy(e);
+            break;
+        }
+    }
+    else if (IsGateClient(ip))
+    {
+
+    }
 }
 
 }//namespace master

@@ -42,7 +42,8 @@ class RpcServer
   void registerService(::google::protobuf::Service*);
   void start();
 
-  common::EventManagerPtr& emp() { return emp_; }
+  template <typename E, typename Receiver>
+  void subscribe(Receiver& receiver) { emp_->subscribe<E>(receiver); }
  private:
   void onConnection(const TcpConnectionPtr& conn);
 

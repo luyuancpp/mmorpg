@@ -38,7 +38,10 @@ public:
             return;
         }
         Response* presponse = new Response;
-        ((*stub_).*stub_method)(nullptr, &request, presponse, NewCallback(method, presponse));
+        ((*stub_).*stub_method)(nullptr, 
+            &request, 
+            presponse, 
+            NewCallback(method, presponse));
     }
 
     template<typename MethodParam, typename Class, typename StubMethod>
@@ -89,7 +92,6 @@ public:
             NewCallback(method, method_param));
     }
 
-    static void doNothing() {}
 private:  
     StubPtr stub_;
     EventManagerPtr emp_;

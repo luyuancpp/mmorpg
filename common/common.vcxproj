@@ -215,6 +215,7 @@
     <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub_client.h" />
     <ClInclude Include="src\server_common\rpc_connection_event.h" />
     <ClInclude Include="src\server_common\rpc_server.h" />
+    <ClInclude Include="src\server_common\rpc_server_connection.h" />
     <ClInclude Include="src\server_common\rpc_string_closure.h" />
     <ClInclude Include="src\server_common\rpc_stub.h" />
     <ClInclude Include="src\server_common\rpc_client.h" />

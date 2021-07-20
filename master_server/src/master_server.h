@@ -2,11 +2,12 @@
 #define MASTER_SERVER_MASTER_SERVER_H_
 
 #include "src/event/event.h"
-#include "src/server_common/rpc_server.h"
 #include "src/login/service.h"
+#include "src/redis_client/redis_client.h"
+#include "src/game/game_client.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
-#include "src/redis_client/redis_client.h"
+#include "src/server_common/rpc_server.h"
 #include "src/server_common/deploy_rpcclient.h"
 
 #include "deploy.pb.h"
@@ -26,6 +27,9 @@ namespace master
 
         RedisClientPtr& redis_client() { return redis_; }
 
+        bool IsGateClient(const std::string& peer_addr);
+        bool IsGameClient(const std::string& peer_addr);
+
         void LoadConfig();
 
         void ConnectDeploy();
@@ -37,7 +41,11 @@ namespace master
             deploy::ServerInfoResponse>;
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
+
     private:
+        void OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn);
+        void OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn);
+
         muduo::net::EventLoop* loop_{ nullptr };
         RedisClientPtr redis_;
         RpcServerPtr server_;
@@ -49,6 +57,10 @@ namespace master
         LoginStubms2db msl2_login_stub_;
 
         l2ms::LoginServiceImpl impl_;
+
+        master::GameClient game_client_;
+
+        ::google::protobuf::RepeatedPtrField< ::serverinfo_database > info_;
     };
 }//namespace master
 
