@@ -89,22 +89,6 @@ public:
             NewCallback(method, method_param));
     }
 
-    template<typename Request, typename StubMethod>
-    void CallMethodNoResponse(
-        Request& reqst,
-        StubMethod stub_method)
-    {
-        if (nullptr == stub_)
-        {
-            return;
-        }
-        RpcNoResponse resp;
-        ((*stub_).*stub_method)(nullptr,
-            &reqst,
-            resp,
-            NewCallback(&doNothing));
-    }
-
     static void doNothing() {}
 private:  
     StubPtr stub_;

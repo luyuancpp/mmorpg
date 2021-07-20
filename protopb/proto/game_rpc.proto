@@ -8,9 +8,8 @@ enum MessageType
 {
   REQUEST = 0;
   RESPONSE = 1;
-  REQUEST_NO_RESPONSE = 2;
-  SERVER_TO_CLIENT = 3;
-  RPC_ERROR = 4; // not used
+  SERVER_TO_CLIENT = 2;
+  RPC_ERROR = 3; // not used
 }
 
 enum ErrorCode

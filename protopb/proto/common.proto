@@ -6,10 +6,6 @@ message ClientError
   repeated string error_param = 2;
 }
 
-message RpcNoResponse
-{
-}
-
 message ConnetionParam
 {
   string ip = 1;
