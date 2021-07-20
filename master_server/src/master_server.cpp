@@ -5,6 +5,8 @@
 
 #include "src/game_config/game_config.h"
 
+#include "ms2g.pb.h"
+
 namespace master
 {
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
@@ -24,8 +26,8 @@ void MasterServer::ConnectDeploy()
     const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->emp()->subscribe<common::ClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
+    deploy_rpc_client_->subscribe<common::ClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -54,6 +56,8 @@ void MasterServer::receive(const common::ServerConnectionES& es)
     if (es.conn_->connected())
     {
         RpcChannelPtr ptr = boost::any_cast<RpcChannelPtr>(es.conn_->getContext());
+        ms2g::LoginRequest rq;
+        ptr->ServerToClient(rq, "ms2g.Ms2gService", "Login");
     }
     else
     {
@@ -67,7 +71,7 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
     db_rpc_client_->connect();
-    db_rpc_client_->emp()->subscribe<common::RegisterStubES>(msl2_login_stub_);
+    db_rpc_client_->subscribe<common::RegisterStubES>(msl2_login_stub_);
 
     auto& myinfo = cp->s_resp_->info(common::SERVER_MASTER);
     InetAddress master_addr(myinfo.ip(), myinfo.port());

@@ -1,15 +1,17 @@
 #ifndef GAME_SERVER_SRC_GAME_SERVER_GAME_SERVER_H_
 #define GAME_SERVER_SRC_GAME_SERVER_GAME_SERVER_H_
 
+#include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
+#include "src/master/service_ms2g.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/rpc_stub.h"
 #include "src/redis_client/redis_client.h"
-#include "muduo/net/TcpServer.h"
 #include "src/server_common/rpc_closure.h"
 
 #include "g2ms.pb.h"
+
 
 namespace game
 {
@@ -52,6 +54,8 @@ private:
     G2MSStubg2ms g2ms_stub_;
 
     ::serverinfo_database server_info;
+
+    ms2g::Ms2gServiceImpl ms2g_service_impl_;
 };
 
 };//namespace game

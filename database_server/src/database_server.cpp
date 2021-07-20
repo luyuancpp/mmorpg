@@ -27,8 +27,8 @@ namespace database
         const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
         InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
         deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-        deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
-        deploy_rpc_client_->emp()->subscribe<common::ClientConnectionES>(*this); 
+        deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
+        deploy_rpc_client_->subscribe<common::ClientConnectionES>(*this); 
         deploy_rpc_client_->connect();
     }
 

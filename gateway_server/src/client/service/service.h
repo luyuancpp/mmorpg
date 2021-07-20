@@ -11,7 +11,7 @@
 #include "src/server_common/codec/dispatcher.h"
 #include "src/server_common/rpc_client_closure.h"
 #include "src/server_common/rpc_stub.h"
-#include "src/server_common/rpc_stub_client.h"
+#include "src/server_common/rpc_client.h"
 
 #include "gw2l.pb.h"
 

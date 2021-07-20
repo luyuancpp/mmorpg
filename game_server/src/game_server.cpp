@@ -27,8 +27,8 @@ void GameServer::ConnectDeploy()
     const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->emp()->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->emp()->subscribe<common::ClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
+    deploy_rpc_client_->subscribe<common::ClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -78,7 +78,8 @@ void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
 
     server_->start();
 
-    master_rpc_client_->emp()->subscribe<common::RegisterStubES>(g2ms_stub_);
+    master_rpc_client_->subscribe<common::RegisterStubES>(g2ms_stub_);
+    master_rpc_client_->registerService(&ms2g_service_impl_);
     master_rpc_client_->connect();    
 }
 

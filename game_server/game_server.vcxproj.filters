@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\master\service.cpp">
+    <ClCompile Include="src\master\service_ms2g.h.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,7 +29,7 @@
     <ClInclude Include="src\game_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\master\service.h">
+    <ClInclude Include="src\master\service_ms2g.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

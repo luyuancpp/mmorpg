@@ -72,14 +72,17 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   codec_.send(conn_, message);
 }
 
-void RpcChannel::ServerToClient(const ::google::protobuf::Message& request)
+void RpcChannel::ServerToClient(const ::google::protobuf::Message& request, 
+    const std::string service_name, 
+    std::string method_name)
 {
     RpcMessage message;
     message.set_type(SERVER_TO_CLIENT);
     message.set_request(request.SerializeAsString()); // FIXME: error check
+    message.set_service(service_name);
+    message.set_method(method_name);
     codec_.send(conn_, message);
 }
-
 
 void RpcChannel::onMessage(const TcpConnectionPtr& conn,
                            Buffer* buf,
