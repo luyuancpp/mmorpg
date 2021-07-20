@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\master\service_ms2g.h.cpp">
+    <ClCompile Include="src\master\service_ms2g.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

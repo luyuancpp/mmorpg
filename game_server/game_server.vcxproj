@@ -125,7 +125,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\game_server.cpp" />
-    <ClCompile Include="src\master\service_ms2g.h.cpp" />
+    <ClCompile Include="src\master\service_ms2g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_server.h" />
