@@ -121,12 +121,6 @@ class RpcChannel : public ::google::protobuf::RpcChannel
                   ::google::protobuf::Message* response,
                   ::google::protobuf::Closure* done) override;
 
-  void CallMethodNoResponse(const ::google::protobuf::MethodDescriptor* method,
-      ::google::protobuf::RpcController* controller,
-      const ::google::protobuf::Message* request,
-      ::google::protobuf::Message* response,
-      ::google::protobuf::Closure* done);
-
   void ServerToClient(const ::google::protobuf::Message& request);
 
   void onMessage(const TcpConnectionPtr& conn,

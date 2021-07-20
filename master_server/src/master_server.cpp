@@ -54,7 +54,6 @@ void MasterServer::receive(const common::ServerConnectionES& es)
     if (es.conn_->connected())
     {
         RpcChannelPtr ptr = boost::any_cast<RpcChannelPtr>(es.conn_->getContext());
-        //ptr->ServerToClient();
     }
     else
     {
