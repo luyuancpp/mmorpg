@@ -125,9 +125,11 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\game_server.cpp" />
+    <ClCompile Include="src\master\service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_server.h" />
+    <ClInclude Include="src\master\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
