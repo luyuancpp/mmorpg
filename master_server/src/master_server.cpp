@@ -8,6 +8,8 @@
 #include "ms2g.pb.h"
 #include "ms2gw.pb.h"
 
+using common::reg;
+
 namespace master
 {
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
@@ -16,14 +18,25 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
 { 
 }    
 
-bool MasterServer::IsGateClient(const std::string& peer_addr)
+bool MasterServer::IsGateClient(const InetAddress& peer_addr)
 {
-    return info_.Get(common::SERVER_GATEWAY).ip() == peer_addr;
+    auto& gateway_info = info_.Get(common::SERVER_GATEWAY);
+    return gateway_info.ip() == peer_addr.toIp() && gateway_info.port() == peer_addr.port();
 }
 
-bool MasterServer::IsGameClient(const std::string& peer_addr)
+bool MasterServer::IsGameClient(const InetAddress& peer_addr)
 {
-    return !IsGateClient(peer_addr);
+    for (uint32_t i = 0; i < common::SERVER_CURENT_USER; ++i)
+    {
+        auto& server_info = info_.Get(i);
+        if (server_info.ip() == peer_addr.toIp() && 
+            server_info.port() == peer_addr.port())
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void MasterServer::LoadConfig()
@@ -95,35 +108,35 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
 
 void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn)
 {
-    auto ip = conn->peerAddress().toIp();
-    if (IsGameClient(ip))
+    if (IsGameClient(conn->peerAddress()))
     {
         auto e = game_client_.create();
         game_client_.emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
 
-        if (gate_client_->Connected())
+        if (nullptr != gate_client_ && gate_client_->Connected())
         {
-            /*ms2gw::StartLogicServerRequest request;
-            request.set_ip(ip);
-            request.set_port(conn->peerAddress().port());
-            gate_client_->Send()*/
+            GatewayConnectGame(conn->peerAddress());
         }
         else
         {
-            auto game_addr = common::reg().create();
-            common::reg().emplace<InetAddress>(game_addr, conn->peerAddress());
+            auto game_addr = reg().create();
+            reg().emplace<InetAddress>(game_addr, conn->peerAddress());
         }
     }
-    else if (IsGateClient(ip))
+    else if (IsGateClient(conn->peerAddress()))
     {
         gate_client_.reset(new common::RpcServerConnection(conn));
+        for (auto e : reg().view<InetAddress>())
+        {
+            GatewayConnectGame(reg().get<InetAddress>(e));
+        }
     }
 }
 
 void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
 {
     auto ip = conn->peerAddress().toIp();
-    if (IsGameClient(ip))
+    if (IsGameClient(conn->peerAddress()))
     {
         for (auto e : game_client_.view<common::RpcServerConnection>())
         {
@@ -135,10 +148,18 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
             break;
         }
     }
-    else if (IsGateClient(ip))
+    else if (IsGateClient(conn->peerAddress()))
     {
         gate_client_.reset(new common::RpcServerConnection(conn));
     }
+}
+
+void MasterServer::GatewayConnectGame(const InetAddress& peer_addr)
+{
+    ms2gw::StartLogicServerRequest request;
+    request.set_ip(peer_addr.toIp());
+    request.set_port(peer_addr.port());
+    gate_client_->Send(request, "ms2gw.Ms2gwService", "StartLogicServer");
 }
 
 }//namespace master
