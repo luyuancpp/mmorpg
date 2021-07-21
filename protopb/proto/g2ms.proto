@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "google/protobuf/empty.proto";
 package g2ms;
 option cc_generic_services = true;
 
@@ -8,10 +9,6 @@ message StartLogicServerRequest
   uint32 server_id = 1;
 }
 
-message StartLogicServerResponse
-{
-}
-
 service G2MSService {
-  rpc StartLogicServer (StartLogicServerRequest) returns (StartLogicServerResponse);
+  rpc StartLogicServer (StartLogicServerRequest) returns (google.protobuf.Empty);
 }
