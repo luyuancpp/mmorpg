@@ -26,3 +26,9 @@ message GameConfigInfo
 {
   uint32 group_id = 1;
 }
+
+message IpPort
+{
+  string ip = 1;
+  uint32 port = 2;
+}

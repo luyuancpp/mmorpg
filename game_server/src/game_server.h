@@ -20,7 +20,7 @@ class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
 public:
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-    using G2MSStubg2ms = common::RpcStub<g2ms::G2MSService_Stub>;
+    using StubG2ms = common::RpcStub<g2ms::G2msService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
 
@@ -40,6 +40,11 @@ public:
     using StartLogicServerRpcRC = std::shared_ptr<StartLogicServerInfoRpcClosure>;
     void StartLogicServer(StartLogicServerRpcRC cp);
 
+    using StartMasterLogicServerInfoRpcClosure = common::RpcClosure<g2ms::StartLogicServerRequest,
+        google::protobuf::Empty>;
+    using StartMasterLogicServerRpcRC = std::shared_ptr<StartMasterLogicServerInfoRpcClosure>;
+    void StartMasterLogicServer(StartMasterLogicServerRpcRC cp);
+
 private:
     muduo::net::EventLoop* loop_{ nullptr };
 
@@ -51,9 +56,9 @@ private:
     deploy::DeployRpcStub deploy_stub_;
 
     common::RpcClientPtr master_rpc_client_;
-    G2MSStubg2ms g2ms_stub_;
+    StubG2ms g2ms_stub_;
 
-    ::serverinfo_database server_info;
+    ::serverinfo_database server_info_;
 
     ms2g::Ms2gServiceImpl ms2g_service_impl_;
 };

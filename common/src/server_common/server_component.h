@@ -25,6 +25,12 @@ namespace common
         muduo::net::RpcChannelPtr channel_;
     };
     using RpcServerConnectionPtr = std::unique_ptr<RpcServerConnection>;
+
+    struct GameRpcServerIpPort
+    {
+        std::string ip_;
+        uint32_t port_{ 0 };
+    };
 }//namespace common
 
 #endif//COMMON_SRC_SERVER_COMMON_RPC_SERVER_CONNECTION_H_
