@@ -35,7 +35,8 @@ public:
         : loop_(loop),
         dispatcher_(std::bind(&GatewayServer::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-        client_receiver_(codec_, dispatcher_, gw2l_login_stub_)
+        client_receiver_(codec_, dispatcher_, gw2l_login_stub_),
+        ms2gw_service_impl_(this)
     {
         
     }
@@ -82,6 +83,7 @@ private:
     common::RpcClientPtr master_rpc_client_;
     ms2gw::Ms2gwServiceImpl ms2gw_service_impl_;
     RpcStubgw2ms gw2ms_stub_;
+
 };
 
 } // namespace gateway

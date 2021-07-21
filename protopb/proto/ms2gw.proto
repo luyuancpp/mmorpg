@@ -9,6 +9,13 @@ message StartLogicServerRequest
   uint32 port = 2;
 }
 
+message StopLogicServerRequest
+{
+  string ip = 1;
+  uint32 port = 2;
+}
+
 service Ms2gwService {
   rpc StartLogicServer (StartLogicServerRequest) returns (google.protobuf.Empty);
+  rpc StopLogicServer (StopLogicServerRequest) returns (google.protobuf.Empty);
 }

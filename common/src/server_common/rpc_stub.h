@@ -15,6 +15,7 @@ class RpcStub : noncopyable,  public Receiver<RpcStub<StubClass>>
 {
 public:
     using StubPtr = std::unique_ptr<StubClass>;
+    using MyType = std::unique_ptr<RpcStub>;
 
     void receive(const RegisterStubES& es)
     {

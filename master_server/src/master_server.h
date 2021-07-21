@@ -28,8 +28,8 @@ namespace master
 
         RedisClientPtr& redis_client() { return redis_; }
 
-        bool IsGateClient(const std::string& peer_addr);
-        bool IsGameClient(const std::string& peer_addr);
+        bool IsGateClient(const InetAddress& peer_addr);
+        bool IsGameClient(const InetAddress& peer_addr);
 
         void LoadConfig();
 
@@ -46,6 +46,7 @@ namespace master
     private:
         void OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn);
         void OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn);
+        void GatewayConnectGame(const InetAddress& peer_addr);
 
         muduo::net::EventLoop* loop_{ nullptr };
         RedisClientPtr redis_;

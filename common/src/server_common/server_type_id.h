@@ -12,6 +12,7 @@ enum ServerTypeIdEnum : uint32_t
     SERVER_MASTER = 2,
     SERVER_LOGIN = 3,
     SERVER_GATEWAY = 4,
+    SERVER_CURENT_USER = 5,
     SERVER_ID_GROUP_SIZE = 8,
 };
 

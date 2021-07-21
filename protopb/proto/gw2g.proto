@@ -3,17 +3,16 @@ package gw2g;
 import "common.proto";
 option cc_generic_services = true;
 
-message LoginRequest
+message LogicRequest
 {
-  string account = 1;
-  string password = 2;
+ 
 }
 
-message LoginResponse
+message LogicResponse
 {
 	ClientError error = 1;
 }
 
-service LoginService {
-  rpc Login (LoginRequest) returns (LoginResponse);
+service Gw2gService {
+  rpc PlayerService (LogicRequest) returns (LogicResponse);
 }
