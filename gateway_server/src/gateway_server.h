@@ -12,6 +12,7 @@
 #include "src/server_common/codec/dispatcher.h"
 #include "src/event/event.h"
 #include "src/client/service/service_client.h"
+#include "src/master/service_master.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
@@ -79,6 +80,7 @@ private:
     RpcStubgw2l gw2l_login_stub_;
 
     common::RpcClientPtr master_rpc_client_;
+    ms2gw::Ms2gwServiceImpl ms2gw_service_impl_;
     RpcStubgw2ms gw2ms_stub_;
 };
 

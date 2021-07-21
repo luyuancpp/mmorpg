@@ -22,10 +22,12 @@
     <ClCompile Include="src\gateway_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\client\service\service_client.cpp" />
+    <ClCompile Include="src\master\service_master.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\gateway_server.h" />
     <ClInclude Include="src\client\service\service_client.h" />
+    <ClInclude Include="src\master\service_master.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
