@@ -227,7 +227,10 @@
     <ClInclude Include="src\server_common\server_type_id.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_common\rpc_server_connection.h">
+    <ClInclude Include="src\server_common\server_component.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_ecs\game_component\player_common_component.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -11,10 +11,12 @@
 #include "src/server_common/codec/codec.h"
 #include "src/server_common/codec/dispatcher.h"
 #include "src/event/event.h"
-#include "src/client/service/service.h"
+#include "src/client/service/service_client.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
+
+#include "gw2ms.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -25,6 +27,7 @@ class GatewayServer : noncopyable, public common::Receiver<GatewayServer>
 {
 public:
     using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
+    using RpcStubgw2ms = common::RpcStub<gw2ms::Gw2msService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GatewayServer(EventLoop* loop)
@@ -74,6 +77,9 @@ private:
 
     common::RpcClientPtr login_rpc_client_;
     RpcStubgw2l gw2l_login_stub_;
+
+    common::RpcClientPtr master_rpc_client_;
+    RpcStubgw2ms gw2ms_stub_;
 };
 
 } // namespace gateway

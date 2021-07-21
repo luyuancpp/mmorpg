@@ -1,15 +1,14 @@
 syntax = "proto3";
-package ms2g;
+import "google/protobuf/empty.proto";
+package ms2gw;
 option cc_generic_services = true;
 
-message LoginRequest
+message StartLogicServerRequest
 {
+  string ip = 1;
+  uint32 port = 2;
 }
 
-message LoginResponse
-{
-}
-
-service Ms2gService {
-  rpc Login (LoginRequest) returns (LoginResponse);
+service Ms2gwService {
+  rpc Login (StartLogicServerRequest) returns (google.protobuf.Empty);
 }

@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\client\service\service.cpp">
+    <ClCompile Include="src\client\service\service_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -26,7 +26,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\client\service\service.h">
+    <ClInclude Include="src\client\service\service_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\gateway_server.h">

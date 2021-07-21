@@ -11,6 +11,8 @@ namespace common
             : conn_(conn),
               channel_(boost::any_cast<RpcChannelPtr>(conn->getContext())){}
 
+        bool Connected() const { return conn_->connected(); }
+
         void Send(const ::google::protobuf::Message& request,
             const std::string service_name,
             std::string method_name)

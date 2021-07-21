@@ -153,13 +153,13 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\master_server.cpp" />
-    <ClCompile Include="src\login\service.cpp" />
+    <ClCompile Include="src\login\service_l2ms.cpp" />
     <ClCompile Include="src\master_player\master_player.cpp" />
     <ClCompile Include="src\master_player\master_player_list.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h" />
-    <ClInclude Include="src\login\service.h" />
+    <ClInclude Include="src\login\service_l2ms.h" />
     <ClInclude Include="src\master_player\master_player.h" />
     <ClInclude Include="src\master_player\master_player_list.h" />
     <ClInclude Include="src\master_registry\master_registry.h" />

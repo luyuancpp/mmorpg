@@ -43,15 +43,19 @@ void GatewayServer::receive(const common::ClientConnectionES& es)
         &deploy::DeployService_Stub::ServerInfo);
 }
 
-
 void GatewayServer::StartServer(ServerInfoRpcRC cp)
 {
     auto& login_info = cp->s_resp_->info(common::SERVER_LOGIN);
     InetAddress login_addr(login_info.ip(), login_info.port());
-
     login_rpc_client_ = std::make_unique<common::RpcClient>(loop_, login_addr);
     login_rpc_client_->connect();
     login_rpc_client_->subscribe<common::RegisterStubES>(gw2l_login_stub_);
+
+    auto& master_info = cp->s_resp_->info(common::SERVER_MASTER);
+    InetAddress master_addr(master_info.ip(), master_info.port());
+    master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
+    master_rpc_client_->connect();
+    master_rpc_client_->subscribe<common::RegisterStubES>(gw2ms_stub_);
 
     auto& myinfo = cp->s_resp_->info(common::SERVER_GATEWAY);
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());

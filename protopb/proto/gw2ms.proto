@@ -1,19 +1,9 @@
 syntax = "proto3";
 package gw2ms;
-import "common.proto";
+import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
-message LoginRequest
-{
-  string account = 1;
-  string password = 2;
-}
 
-message LoginResponse
-{
-	ClientError error = 1;
-}
-
-service LoginService {
-  rpc Login (LoginRequest) returns (LoginResponse);
+service Gw2msService {
+  rpc PlayerService (google.protobuf.Empty) returns (google.protobuf.Empty);
 }
