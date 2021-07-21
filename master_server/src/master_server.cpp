@@ -2,7 +2,6 @@
 
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
-#include "src/server_common/rpc_server_connection.h"
 #include "src/game_config/game_config.h"
 
 #include "ms2g.pb.h"
@@ -17,12 +16,12 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
 
 bool MasterServer::IsGateClient(const std::string& peer_addr)
 {
-    return false;
+    return info_.Get(common::SERVER_GATEWAY).ip() == peer_addr;
 }
 
 bool MasterServer::IsGameClient(const std::string& peer_addr)
 {
-    return true;
+    return !IsGateClient(peer_addr);
 }
 
 void MasterServer::LoadConfig()
@@ -102,7 +101,7 @@ void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionP
     }
     else if (IsGateClient(ip))
     {
-
+        gate_client_.reset(new common::RpcServerConnection(conn));
     }
 }
 
@@ -123,7 +122,7 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
     }
     else if (IsGateClient(ip))
     {
-
+        gate_client_.reset(new common::RpcServerConnection(conn));
     }
 }
 
