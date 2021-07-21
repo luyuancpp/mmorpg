@@ -10,5 +10,5 @@ message StartLogicServerRequest
 }
 
 service Ms2gwService {
-  rpc Login (StartLogicServerRequest) returns (google.protobuf.Empty);
+  rpc StartLogicServer (StartLogicServerRequest) returns (google.protobuf.Empty);
 }

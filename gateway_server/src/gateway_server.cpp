@@ -54,8 +54,9 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     auto& master_info = cp->s_resp_->info(common::SERVER_MASTER);
     InetAddress master_addr(master_info.ip(), master_info.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
-    master_rpc_client_->connect();
+    master_rpc_client_->registerService(&ms2gw_service_impl_);
     master_rpc_client_->subscribe<common::RegisterStubES>(gw2ms_stub_);
+    master_rpc_client_->connect();        
 
     auto& myinfo = cp->s_resp_->info(common::SERVER_GATEWAY);
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());

@@ -24,12 +24,18 @@
     <ClCompile Include="src\gateway_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\master\service_master.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client\service\service_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\gateway_server.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\master\service_master.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
