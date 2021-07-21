@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\game\game_client.cpp" />
+    <ClCompile Include="src\game\service_g2ms.cpp" />
     <ClCompile Include="src\master_server.cpp" />
     <ClCompile Include="src\login\service_l2ms.cpp" />
     <ClCompile Include="src\master_player\master_player.cpp" />
@@ -160,6 +161,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game\game_client.h" />
+    <ClInclude Include="src\game\service_g2ms.h" />
     <ClInclude Include="src\master_server.h" />
     <ClInclude Include="src\login\service_l2ms.h" />
     <ClInclude Include="src\master_player\master_player.h" />

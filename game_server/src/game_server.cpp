@@ -43,13 +43,30 @@ void GameServer::receive(const common::ClientConnectionES& es)
     {
         return;
     }
-    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
-    deploy_stub_.CallMethod(
-        &GameServer::ServerInfo,
-        cp,
-        this,
-        &deploy::DeployService_Stub::ServerInfo);
+    if (deploy_rpc_client_->peer_addr().toIp() == es.conn_->peerAddress().toIp())
+    {
+        ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
+        cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+        deploy_stub_.CallMethod(
+            &GameServer::ServerInfo,
+            cp,
+            this,
+            &deploy::DeployService_Stub::ServerInfo);
+    }
+    if (nullptr != master_rpc_client_ && deploy_rpc_client_->peer_addr().toIp() == es.conn_->peerAddress().toIp())
+    {
+        StartMasterLogicServerRpcRC cp(std::make_shared<StartMasterLogicServerInfoRpcClosure>());
+        cp->s_reqst_.mutable_rpc_client()->set_ip(master_rpc_client_->local_addr().toIp());
+        cp->s_reqst_.mutable_rpc_client()->set_port(master_rpc_client_->local_addr().port());
+        cp->s_reqst_.mutable_rpc_server()->set_ip(server_info_.ip());
+        cp->s_reqst_.mutable_rpc_server()->set_port(server_info_.port());
+        g2ms_stub_.CallMethod(
+            &GameServer::StartMasterLogicServer,
+            cp,
+            this,
+            &g2ms::G2msService_Stub::StartLogicServer);
+        
+    }
 }
 
 void GameServer::ServerInfo(ServerInfoRpcRC cp)
@@ -70,10 +87,10 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
 
 void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
 {
-    server_info = cp->s_resp_->my_info();
-    uint32_t snid = server_info.id() - deploy_server::kLogicSnowflakeIdReduceParam;//snowflake id 
+    server_info_ = cp->s_resp_->my_info();
+    uint32_t snid = server_info_.id() - deploy_server::kLogicSnowflakeIdReduceParam;//snowflake id 
 
-    InetAddress game_addr(server_info.ip(), server_info.port());
+    InetAddress game_addr(server_info_.ip(), server_info_.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, game_addr);
 
     server_->start();
@@ -81,6 +98,11 @@ void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
     master_rpc_client_->subscribe<common::RegisterStubES>(g2ms_stub_);
     master_rpc_client_->registerService(&ms2g_service_impl_);
     master_rpc_client_->connect();    
+}
+
+void GameServer::StartMasterLogicServer(StartMasterLogicServerRpcRC cp)
+{
+
 }
 
 }//namespace game

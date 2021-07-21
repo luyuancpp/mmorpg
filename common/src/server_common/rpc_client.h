@@ -32,6 +32,9 @@ public:
         client_.enableRetry();
     }
 
+    const InetAddress& local_addr()const { return client_.connection()->localAddress(); }
+    const InetAddress& peer_addr()const { return client_.connection()->peerAddress(); }
+
     template <typename E, typename Receiver>
     void subscribe(Receiver& receiver) { emp_->subscribe<E>(receiver); }
 

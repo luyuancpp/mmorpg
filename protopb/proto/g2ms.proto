@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "common.proto";
 import "google/protobuf/empty.proto";
 package g2ms;
 option cc_generic_services = true;
@@ -6,9 +7,10 @@ option cc_generic_services = true;
 
 message StartLogicServerRequest
 {
-  uint32 server_id = 1;
+  IpPort rpc_client = 1;
+  IpPort rpc_server = 2;
 }
 
-service G2MSService {
+service G2msService {
   rpc StartLogicServer (StartLogicServerRequest) returns (google.protobuf.Empty);
 }
