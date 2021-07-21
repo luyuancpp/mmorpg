@@ -3,8 +3,10 @@
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
 #include "src/game_config/game_config.h"
+#include "src/game_ecs/game_registry.h"
 
 #include "ms2g.pb.h"
+#include "ms2gw.pb.h"
 
 namespace master
 {
@@ -98,6 +100,19 @@ void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionP
     {
         auto e = game_client_.create();
         game_client_.emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
+
+        if (gate_client_->Connected())
+        {
+            /*ms2gw::StartLogicServerRequest request;
+            request.set_ip(ip);
+            request.set_port(conn->peerAddress().port());
+            gate_client_->Send()*/
+        }
+        else
+        {
+            auto game_addr = common::reg().create();
+            common::reg().emplace<InetAddress>(game_addr, conn->peerAddress());
+        }
     }
     else if (IsGateClient(ip))
     {

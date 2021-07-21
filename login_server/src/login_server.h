@@ -3,7 +3,7 @@
 
 #include "src/event/event.h"
 #include "src/server_common/rpc_server.h"
-#include "src/gateway/service.h"
+#include "src/gateway/service_gw2l.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"

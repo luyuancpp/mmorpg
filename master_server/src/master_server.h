@@ -2,14 +2,14 @@
 #define MASTER_SERVER_MASTER_SERVER_H_
 
 #include "src/event/event.h"
-#include "src/login/service.h"
+#include "src/login/service_l2ms.h"
 #include "src/redis_client/redis_client.h"
 #include "src/game/game_client.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
 #include "src/server_common/rpc_server.h"
-#include "src/server_common/rpc_server_connection.h"
+#include "src/server_common/server_component.h"
 
 #include "deploy.pb.h"
 #include "l2ms.pb.h"

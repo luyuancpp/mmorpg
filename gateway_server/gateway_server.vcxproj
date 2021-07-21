@@ -21,11 +21,11 @@
   <ItemGroup>
     <ClCompile Include="src\gateway_server.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\client\service\service.cpp" />
+    <ClCompile Include="src\client\service\service_client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\gateway_server.h" />
-    <ClInclude Include="src\client\service\service.h" />
+    <ClInclude Include="src\client\service\service_client.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -169,6 +169,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
+    <ClInclude Include="src\game_ecs\game_component\player_common_component.h" />
     <ClInclude Include="src\server_common\closure_auto_done.h" />
     <ClInclude Include="src\server_common\codec\codec.h" />
     <ClInclude Include="src\server_common\codec\dispatcher.h" />
@@ -215,7 +216,7 @@
     <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub_client.h" />
     <ClInclude Include="src\server_common\rpc_connection_event.h" />
     <ClInclude Include="src\server_common\rpc_server.h" />
-    <ClInclude Include="src\server_common\rpc_server_connection.h" />
+    <ClInclude Include="src\server_common\server_component.h" />
     <ClInclude Include="src\server_common\rpc_string_closure.h" />
     <ClInclude Include="src\server_common\rpc_stub.h" />
     <ClInclude Include="src\server_common\rpc_client.h" />
