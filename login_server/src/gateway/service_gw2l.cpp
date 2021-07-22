@@ -54,15 +54,17 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
  
     // database process
     LoginRP cp(std::make_shared<LoginRpcString>(response, done));
-    cp->s_reqst_.set_account(request->account());
-    cp->s_reqst_.set_password(request->password());
+    auto& s_reqst = cp->s_reqst_;
+    s_reqst.set_account(request->account());
+    s_reqst.set_password(request->password());
     l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
 }
 
 void LoginServiceImpl::DbLoginReplied(LoginRP d)
 {
-    d->c_resp_->mutable_account_player()->CopyFrom(d->s_resp_->account_player());
-    UpdateAccount(d->s_reqst_.account(), d->s_resp_->account_player());
+    auto& sresp = d->s_resp_;
+    d->c_resp_->mutable_account_player()->CopyFrom(sresp->account_player());
+    UpdateAccount(d->s_reqst_.account(), sresp->account_player());
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
@@ -91,8 +93,9 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 
 void LoginServiceImpl::DbCreatePlayerReplied(CreatePlayerRP d)
 {
-    d->c_resp_->mutable_account_player()->CopyFrom(d->s_resp_->account_player());
-    UpdateAccount(d->s_reqst_.account(), d->s_resp_->account_player());
+    auto& sresp = d->s_resp_;
+    d->c_resp_->mutable_account_player()->CopyFrom(sresp->account_player());
+    UpdateAccount(d->s_reqst_.account(), sresp->account_player());
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
@@ -100,6 +103,8 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
+    auto player_id = request->player_id();
+    
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())
     {
@@ -109,24 +114,25 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     CheckReturnCloseureError(ap->EnterGame());
 
     // long time in login processing
-    if (!ap->IsPlayerId(request->player_id()))
+    if (!ap->IsPlayerId(player_id))
     {
         ReturnCloseureError(common::RET_LOGIN_ENTER_GAME_PLAYER_ID);
     }
-
+    auto& account = ap->account();
     // player in redis return ok
     player_database new_player;
-    new_player.set_player_id(request->player_id());
+    new_player.set_player_id(player_id);
     redis_->Load(new_player, new_player.player_id());
     if (new_player.register_time() > 0)
     {
-        EnterMasterServer(request->player_id(), ap->account());
+        EnterMasterServer(player_id, account);
         ReturnCloseureOK;
     }
     // database to redis 
     EnterGameRP cp(std::make_shared<EnterGameRpcString>(response, done));
-    cp->s_reqst_.set_account(ap->account());
-    cp->s_reqst_.set_player_id(request->player_id());
+    auto& sreqst = cp->s_reqst_;
+    sreqst.set_account(account);
+    sreqst.set_player_id(player_id);
     l2db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterGameDbReplied,
         cp,
@@ -135,23 +141,26 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 
 void LoginServiceImpl::EnterGameDbReplied(EnterGameRP d)
 {
-    auto cit = login_players_.find(d->s_reqst_.account());
+    auto& sreqst = d->s_reqst_;
+    auto cit = login_players_.find(sreqst.account());
     if (cit == login_players_.end())
     {
         LOG_ERROR << "disconnect not found connection id " << d->s_reqst_.account();
         return;
     }
+    
     auto& ap = cit->second;
-    ap->Playing(d->s_reqst_.player_id());
+    ap->Playing(sreqst.player_id());
 
-    EnterMasterServer(d->s_reqst_.player_id(), d->s_reqst_.account());
+    EnterMasterServer(sreqst.player_id(), sreqst.account());
 }
 
 void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id, const std::string& account)
-{
+{    
     EnterMasterGameRC cp(std::make_shared<EnterMasterGameRpcClosure>());
-    cp->s_reqst_.set_account(account);
-    cp->s_reqst_.set_player_id(player_id);
+    auto& sreqst = cp->s_reqst_;
+    sreqst.set_account(account);
+    sreqst.set_player_id(player_id);
     l2ms_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterMasterGameReplied,
         cp,

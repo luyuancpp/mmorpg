@@ -1,4 +1,4 @@
-#include "service.h"
+#include "service_l2db.h"
 
 #include "muduo/base/Timestamp.h"
 
@@ -15,17 +15,18 @@ namespace l2db
         ::google::protobuf::Closure* done)
     {
         ::account_database& r_db = *response->mutable_account_player();
-        redis_->Load(r_db, request->account());
+        auto& caccount = request->account();
+        redis_->Load(r_db, caccount);
         if (response->account_player().password().empty())
         {
             database_->LoadOne(r_db,
-                std::string("account = '") + request->account() + std::string("'"));
+                std::string("account = '") + caccount + std::string("'"));
         }
         if (r_db.password().empty())
         {
-            r_db.set_account(request->account());
+            r_db.set_account(caccount);
             r_db.set_password(request->password());
-            redis_->Save(r_db, r_db.account());
+            redis_->Save(r_db, caccount);
         }        
         done->Run();
     }

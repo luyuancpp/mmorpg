@@ -21,12 +21,12 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\login\service.cpp">
+    <ClCompile Include="src\login\service_l2db.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\login\service.h">
+    <ClInclude Include="src\login\service_l2db.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\master\service.h">
