@@ -28,7 +28,7 @@ void LoginServer::ConnectDeploy()
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
     deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<common::ClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -39,7 +39,7 @@ void LoginServer::Start()
     server_->start();
 }
 
-void LoginServer::receive(const common::ClientConnectionES& es)
+void LoginServer::receive(const common::RpcClientConnectionES& es)
 {
     if (!es.conn_->connected())
     {

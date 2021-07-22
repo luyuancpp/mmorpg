@@ -20,9 +20,9 @@ namespace common
 
     };
 
-    struct ClientConnectionES
+    struct RpcClientConnectionES
     {
-        ClientConnectionES(const muduo::net::TcpConnectionPtr& conn)
+        RpcClientConnectionES(const muduo::net::TcpConnectionPtr& conn)
             : conn_(conn)
         {   
         }

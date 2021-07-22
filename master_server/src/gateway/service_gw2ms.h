@@ -24,6 +24,11 @@ namespace gw2ms
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
+        virtual void GwConnectLogic(::google::protobuf::RpcController* controller,
+            const ::gw2ms::ConnectedLogicRequest* request,
+            google::protobuf::Empty* response,
+            ::google::protobuf::Closure* done);
+
     private:
         master::MasterServer* server_{ nullptr };
     };

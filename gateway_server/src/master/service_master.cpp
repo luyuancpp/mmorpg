@@ -31,7 +31,6 @@ namespace ms2gw
         gw2msrequest.mutable_rpc_client()->set_ip(request->ip());
         gw2msrequest.mutable_rpc_client()->set_port(request->port());
         server_->gw2ms_stub().CallMethod(gw2msrequest, &gw2ms::Gw2msService_Stub::GwConnectLogic);
-
     }
 
     void Ms2gwServiceImpl::StopLogicServer(::google::protobuf::RpcController* controller, 
