@@ -41,6 +41,8 @@ public:
         
     }
 
+    RpcStubgw2ms& gw2ms_stub() { return gw2ms_stub_; }
+
     void LoadConfig();
 
     void ConnectDeploy();

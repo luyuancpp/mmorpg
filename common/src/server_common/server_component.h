@@ -26,10 +26,13 @@ namespace common
     };
     using RpcServerConnectionPtr = std::unique_ptr<RpcServerConnection>;
 
-    struct GameRpcServerIpPort
+    struct WaitingGatewayConnecting
     {
-        std::string ip_;
-        uint32_t port_{ 0 };
+        InetAddress addr_;
+    };
+    struct GatewayConnected
+    {
+        InetAddress addr_;
     };
 }//namespace common
 

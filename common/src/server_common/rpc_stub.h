@@ -1,6 +1,8 @@
 #ifndef SRC_SERVER_RPCCLIENT_RPC_STUB_H_
 #define SRC_SERVER_RPCCLIENT_RPC_STUB_H_
 
+#include <google/protobuf/empty.pb.h>
+
 #include "rpc_connection_event.h"
 #include "rpc_client.h"
 #include "src/event/event.h"
@@ -93,6 +95,24 @@ public:
             NewCallback(method, method_param));
     }
 
+    // no responese
+    template<typename Request, typename StubMethod>
+    void CallMethod(
+        const Request& request,
+        StubMethod stub_method)
+    {
+        if (nullptr == stub_)
+        {
+            return;
+        }
+        google::protobuf::Empty* presponse = new google::protobuf::Empty;
+        ((*stub_).*stub_method)(nullptr,
+            &request,
+            presponse,
+            google::protobuf::NewCallback(&DoNothing));
+    }
+
+    static void DoNothing() {}
 private:  
     StubPtr stub_;
     EventManagerPtr emp_;
