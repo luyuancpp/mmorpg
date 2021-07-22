@@ -56,8 +56,6 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerLoginReplied(LoginCCPtr cp)
 {
-    cp->c_resp_.set_account(cp->s_resp_->account_player().account());
-    cp->c_resp_.set_password(cp->s_resp_->account_player().password());
     auto& player_list = cp->s_resp_->account_player().simple_players().players();
     for (auto it : player_list)
     {

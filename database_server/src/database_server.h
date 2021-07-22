@@ -11,7 +11,7 @@
 #include "src/server_common/rpc_client.h"
 #include "src/server_common/rpc_closure.h"
 
-#include "src/login/service.h"
+#include "src/login/service_l2db.h"
 
 #include "deploy.pb.h"
 

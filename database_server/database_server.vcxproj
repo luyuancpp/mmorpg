@@ -151,11 +151,11 @@
   <ItemGroup>
     <ClCompile Include="src\database_server.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\login\service.cpp" />
+    <ClCompile Include="src\login\service_l2db.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\database_server.h" />
-    <ClInclude Include="src\login\service.h" />
+    <ClInclude Include="src\login\service_l2db.h" />
     <ClInclude Include="src\master\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
