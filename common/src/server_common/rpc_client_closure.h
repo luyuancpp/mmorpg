@@ -13,7 +13,7 @@ namespace common
         }
 
         uint64_t connection_hash_id() {
-            return uint64_t(client_connection_.get());
+            return  boost::any_cast<uint64_t>(client_connection_->getContext());;
         }
 
         ~ClientClosure() {};
