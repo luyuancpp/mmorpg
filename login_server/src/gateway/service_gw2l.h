@@ -75,7 +75,7 @@ namespace gw2l
 
         virtual void Disconnect(::google::protobuf::RpcController* controller,
             const ::gw2l::DisconnectRequest* request,
-            ::gw2l::DisconnectResponse* response,
+            ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
         void UpdateAccount(const std::string& a, const ::account_database& a_d);

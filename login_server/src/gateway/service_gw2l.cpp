@@ -165,7 +165,7 @@ void LoginServiceImpl::EnterMasterGameReplied(EnterMasterGameRC d)
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller, 
     const ::gw2l::DisconnectRequest* request,
-    ::gw2l::DisconnectResponse* response,
+    ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
     common::ClosurePtr cp(done);
