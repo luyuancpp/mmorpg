@@ -43,11 +43,19 @@ public:
 
     RpcStubgw2ms& gw2ms_stub() { return gw2ms_stub_; }
 
+    template<typename ServerInfo>
+    bool IsSameAddr(const InetAddress& conn_addr, const ServerInfo& server_info)
+    {
+        return server_info.ip() == conn_addr.toIp() &&
+            server_info.port() == conn_addr.port();
+    }
+
+
     void LoadConfig();
 
     void ConnectDeploy();
 
-    void receive(const common::ClientConnectionES& es);
+    void receive(const common::RpcClientConnectionES& es);
 
     using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
@@ -75,6 +83,8 @@ private:
     ClientReceiver client_receiver_;
 
     TcpServerPtr server_;
+
+    ::google::protobuf::RepeatedPtrField< ::serverinfo_database > serverinfo_database_;
 
     common::RpcClientPtr deploy_rpc_client_;
     deploy::DeployRpcStub deploy_stub_;

@@ -19,7 +19,7 @@ namespace g2ms
         ::google::protobuf::Closure* done)
     {
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-        InetAddress rpc_server_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
+        InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
 
         for (auto e : reg().view<RpcServerConnection>())
         {
@@ -33,7 +33,18 @@ namespace g2ms
             auto ce = GameClient::GetSingleton()->create();
             GameClient::GetSingleton()->emplace<common::RpcServerConnection>(ce, common::RpcServerConnection{ c.conn_ });
             GameClient::GetSingleton()->emplace<InetAddress>(ce, rpc_server_peer_addr);
-            server_->GatewayConnectGame(rpc_server_peer_addr);
+
+            if (nullptr == server_->gate_client() || !server_->gate_client()->Connected())
+            {
+                common::WaitingGatewayConnecting wgc{ rpc_server_peer_addr };
+                auto e = reg().create();
+                reg().emplace<common::WaitingGatewayConnecting>(e, wgc);
+            }
+            else
+            {
+                server_->GatewayConnectGame(rpc_server_peer_addr);
+            }
+            
             break;
         }
 

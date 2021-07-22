@@ -19,46 +19,59 @@ void GatewayServer::ConnectDeploy()
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
     deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<common::ClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
-void GatewayServer::receive(const common::ClientConnectionES& es)
+void GatewayServer::receive(const common::RpcClientConnectionES& es)
 {
     if (!es.conn_->connected())
     {
         return;
     }
-    // started 
-    if (nullptr != server_)
+    
+    if (IsSameAddr(es.conn_->peerAddress(), common::DeployConfig::GetSingleton().deploy_param()))
     {
-        return;
+        // started 
+        if (nullptr != server_)
+        {
+            return;
+        }
+        ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
+        cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+        deploy_stub_.CallMethod(
+            &GatewayServer::StartServer,
+            cp,
+            this,
+            &deploy::DeployService_Stub::ServerInfo);
     }
-    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
-    deploy_stub_.CallMethod(
-        &GatewayServer::StartServer,
-        cp,
-        this,
-        &deploy::DeployService_Stub::ServerInfo);
+    else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::SERVER_MASTER)))
+    {
+        gw2ms::ConnectRequest request;
+        request.mutable_rpc_client()->set_ip(es.conn_->localAddress().toIp());
+        request.mutable_rpc_client()->set_port(es.conn_->localAddress().port());
+        gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
+    }
 }
 
 void GatewayServer::StartServer(ServerInfoRpcRC cp)
 {
-    auto& login_info = cp->s_resp_->info(common::SERVER_LOGIN);
+    serverinfo_database_ = cp->s_resp_->info();
+    auto& login_info = serverinfo_database_.Get(common::SERVER_LOGIN);
     InetAddress login_addr(login_info.ip(), login_info.port());
     login_rpc_client_ = std::make_unique<common::RpcClient>(loop_, login_addr);
     login_rpc_client_->connect();
     login_rpc_client_->subscribe<common::RegisterStubES>(gw2l_login_stub_);
 
-    auto& master_info = cp->s_resp_->info(common::SERVER_MASTER);
+    auto& master_info = serverinfo_database_.Get(common::SERVER_MASTER);
     InetAddress master_addr(master_info.ip(), master_info.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
     master_rpc_client_->registerService(&ms2gw_service_impl_);
     master_rpc_client_->subscribe<common::RegisterStubES>(gw2ms_stub_);
+    master_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
     master_rpc_client_->connect();        
 
-    auto& myinfo = cp->s_resp_->info(common::SERVER_GATEWAY);
+    auto& myinfo = serverinfo_database_.Get(common::SERVER_GATEWAY);
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_unique<TcpServer>(loop_, gateway_addr, "gateway");
     server_->setConnectionCallback(

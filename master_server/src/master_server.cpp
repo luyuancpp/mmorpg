@@ -1,5 +1,7 @@
 #include "master_server.h"
 
+#include "muduo/base/Logging.h"
+
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
 #include "src/game_config/game_config.h"
@@ -15,7 +17,8 @@ namespace master
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<common::RedisClient>()),
-      g2ms_impl_(this)
+      g2ms_impl_(this),
+      gw2ms_impl_(this)
 { 
 }    
 
@@ -31,11 +34,11 @@ void MasterServer::ConnectDeploy()
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
     deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<common::ClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
-void MasterServer::receive(const common::ClientConnectionES& es)
+void MasterServer::receive(const common::RpcClientConnectionES& es)
 {
     if (!es.conn_->connected())
     {
@@ -70,8 +73,8 @@ void MasterServer::receive(const common::ServerConnectionES& es)
 
 void MasterServer::StartServer(ServerInfoRpcRC cp)
 {
-    info_ = cp->s_resp_->info();
-    auto& databaseinfo = info_.Get(common::SERVER_DATABASE);
+    serverinfo_database_ = cp->s_resp_->info();
+    auto& databaseinfo = serverinfo_database_.Get(common::SERVER_DATABASE);
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
     db_rpc_client_->subscribe<common::RegisterStubES>(msl2_login_stub_);
@@ -84,6 +87,7 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
 
     server_->registerService(&l2ms_impl_);
     server_->registerService(&g2ms_impl_);
+    server_->registerService(&gw2ms_impl_);
     server_->start();
 }
 
@@ -91,16 +95,13 @@ void MasterServer::GatewayConnectGame(const InetAddress& peer_addr)
 {
     if (nullptr == gate_client_ || !gate_client_->Connected())
     {
-        common::WaitingGatewayConnecting wgc{ peer_addr };
-        auto e = reg().create();
-        reg().emplace<common::WaitingGatewayConnecting>(e, wgc);
+        LOG_INFO << "gate off line";
         return;
     }
     ms2gw::StartLogicServerRequest request;
     request.set_ip(peer_addr.toIp());
     request.set_port(peer_addr.port());
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartLogicServer");
-
 }
 
 

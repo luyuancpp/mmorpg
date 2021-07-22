@@ -5,6 +5,7 @@
 #include "src/login/service_l2ms.h"
 #include "src/redis_client/redis_client.h"
 #include "src/game/service_g2ms.h"
+#include "src/gateway/service_gw2ms.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
@@ -27,12 +28,13 @@ namespace master
         MasterServer(muduo::net::EventLoop* loop);           
 
         RedisClientPtr& redis_client() { return redis_; }
+        common::RpcServerConnectionPtr& gate_client() { return gate_client_; }
 
         void LoadConfig();
 
         void ConnectDeploy();
 
-        void receive(const common::ClientConnectionES& es);
+        void receive(const common::RpcClientConnectionES& es);
         void receive(const common::ServerConnectionES& es);
 
         using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
@@ -56,10 +58,10 @@ namespace master
         LoginStubms2db msl2_login_stub_;
 
         l2ms::LoginServiceImpl l2ms_impl_;
-
         g2ms::G2msServiceImpl g2ms_impl_;
+        gw2ms::Gw2msServiceImpl gw2ms_impl_;        
  
-        ::google::protobuf::RepeatedPtrField< ::serverinfo_database > info_;
+        ::google::protobuf::RepeatedPtrField< ::serverinfo_database > serverinfo_database_;
 
         common::RpcServerConnectionPtr gate_client_;
     };
