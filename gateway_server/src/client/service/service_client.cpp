@@ -34,12 +34,9 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     if (!conn->connected())
     {
-        DisconnectCCPtr p(std::make_shared<DisconnectCC>(conn));
-        p->s_reqst_.set_connection_id(p->connection_hash_id());
-        gw2l_login_stub_.CallMethod(&ClientReceiver::OnDisconnectReplied,
-            p,
-            this,
-            &gw2l::LoginService_Stub::Disconnect);
+        gw2l::DisconnectRequest request;
+        request.set_connection_id(uint64_t(conn.get()));
+        gw2l_login_stub_.CallMethod(request,  &gw2l::LoginService_Stub::Disconnect);
     }
 }
 
@@ -109,11 +106,6 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
 {
     codec_.send(cp->client_connection_, cp->c_resp_);
-}
-
-void ClientReceiver::OnDisconnectReplied(DisconnectCCPtr cp)
-{
-
 }
 
 void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn, 

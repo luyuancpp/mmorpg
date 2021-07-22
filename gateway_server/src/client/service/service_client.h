@@ -59,10 +59,6 @@ public:
     using EnterGameCCPtr = std::shared_ptr<EnterGameCC>;
     void OnServerEnterGameReplied(EnterGameCCPtr cp);
 
-    using DisconnectCC = common::ClientClosure<gw2l::EmptyResponse, gw2l::DisconnectRequest, gw2l::DisconnectResponse>;
-    using DisconnectCCPtr = std::shared_ptr<DisconnectCC>;
-    void OnDisconnectReplied(DisconnectCCPtr cp);
-
     void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
         const LeaveGameRequestPtr& message,
         muduo::Timestamp);

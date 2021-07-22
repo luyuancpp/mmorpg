@@ -2,11 +2,10 @@ syntax = "proto3";
 package gw2l;
 import "common.proto";
 import "mysql_database_table.proto";
+import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
-message EmptyResponse
-{
-}
+
 
 message LoginRequest
 {
@@ -67,5 +66,5 @@ service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc CreatPlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
-  rpc Disconnect (DisconnectRequest) returns (DisconnectResponse);
+  rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty);
 }

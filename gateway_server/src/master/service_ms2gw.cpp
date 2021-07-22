@@ -1,4 +1,4 @@
-#include "service_master.h"
+#include "service_ms2gw.h"
 
 #include "src/game/game_client.h"
 #include "src/gateway_server.h"
