@@ -40,11 +40,6 @@ public:
     using StartLogicServerRpcRC = std::shared_ptr<StartLogicServerInfoRpcClosure>;
     void StartLogicServer(StartLogicServerRpcRC cp);
 
-    using StartMasterLogicServerInfoRpcClosure = common::RpcClosure<g2ms::StartLogicServerRequest,
-        google::protobuf::Empty>;
-    using StartMasterLogicServerRpcRC = std::shared_ptr<StartMasterLogicServerInfoRpcClosure>;
-    void StartMasterLogicServer(StartMasterLogicServerRpcRC cp);
-
 private:
     muduo::net::EventLoop* loop_{ nullptr };
 

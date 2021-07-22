@@ -1,9 +1,21 @@
 syntax = "proto3";
 package gw2ms;
+import "common.proto";
 import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
+message ConnectRequest
+{
+  IpPort rpc_client = 1;
+}
+
+message ConnectedLogicRequest
+{
+  IpPort rpc_client = 1;
+}
 
 service Gw2msService {
   rpc PlayerService (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc GwConnectMaster (ConnectRequest) returns (google.protobuf.Empty);
+  rpc GwConnectLogic(ConnectedLogicRequest) returns (google.protobuf.Empty);
 }

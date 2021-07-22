@@ -91,12 +91,16 @@ void MasterServer::GatewayConnectGame(const InetAddress& peer_addr)
 {
     if (nullptr == gate_client_ || !gate_client_->Connected())
     {
+        common::WaitingGatewayConnecting wgc{ peer_addr };
+        auto e = reg().create();
+        reg().emplace<common::WaitingGatewayConnecting>(e, wgc);
         return;
     }
     ms2gw::StartLogicServerRequest request;
     request.set_ip(peer_addr.toIp());
     request.set_port(peer_addr.port());
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartLogicServer");
+
 }
 
 
