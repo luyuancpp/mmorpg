@@ -184,7 +184,8 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
         LOG_ERROR << "disconnect not found connection id " << std::to_string(request->connection_id());
         return;
     }
-    connection_accounts_.erase(cit);
+    login_players_.erase(cit->second->account());
+    connection_accounts_.erase(cit);    
 }
 
 void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_database& a_d)
