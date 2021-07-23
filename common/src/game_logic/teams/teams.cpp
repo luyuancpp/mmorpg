@@ -55,18 +55,6 @@ namespace common
         return team.applicant_size();
     }
 
-    const TeamMember& Teams::team_member(GameGuid player_id)const
-    {
-        auto team_id = GetTeamEntityId(player_id);
-        static TeamMember m;
-        if (!teams_.valid(team_id))
-        {
-            return m;
-        }
-        auto& team = teams_.get<Team>(team_id);;
-        return team.team_member(player_id);
-    }
-
     GameGuid Teams::GetTeamId(GameGuid player_id)const
     {
         auto it = player_team_map_.find(player_id);
@@ -183,21 +171,21 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Teams::JoinTeam(GameGuid team_id, TeamMember& mem)
+    uint32_t Teams::JoinTeam(GameGuid team_id, GameGuid player_id)
     {
-        if (PlayerInTeam(mem.player_id()))
+        if (PlayerInTeam(player_id))
         {
             return RET_TEAM_MEMBER_IN_TEAM;
         }
         GetTeamPtrReturnError;
-        return team.JoinTeam(mem);
+        return team.JoinTeam(player_id);
     }
 
     uint32_t Teams::CheckMemberInTeam(const Members& member_list)
     {
         for (auto& it : member_list)
         {
-            if (PlayerInTeam(it.second.player_id()))
+            if (PlayerInTeam(it))
             {
                 return RET_TEAM_MEMBER_IN_TEAM;
             }
@@ -238,7 +226,7 @@ namespace common
         }
         for (auto& it : team.members())
         {
-            emp_->emit<TeamESLeaderDismissTeam>(e, it.second.player_id());
+            emp_->emit<TeamESLeaderDismissTeam>(e, it);
         }
         EraseTeam(e);
         return RET_OK;
@@ -256,14 +244,14 @@ namespace common
         return team.AppointLeader(current_leader_id, new_leader_player_id);
     }
 
-    uint32_t Teams::ApplyForTeam(GameGuid team_id, const TeamMember& m)
+    uint32_t Teams::ApplyForTeam(GameGuid team_id, GameGuid player_id)
     {
         GetTeamPtrReturnError;
-        if (PlayerInTeam(m.player_id()))
+        if (PlayerInTeam(player_id))
         {
             return RET_TEAM_MEMBER_IN_TEAM;
         }
-        return team.ApplyForTeam(m);
+        return team.ApplyForTeam(player_id);
     }
 
     uint32_t Teams::RemoveApplicant(GameGuid team_id, GameGuid nApplyplayer_id)
@@ -299,11 +287,11 @@ namespace common
         RET_CHECK_RET(CheckMemberInTeam(member_list));
         for (auto& it : member_list)
         {
-            if (PlayerInTeam(it.second.player_id()))
+            if (PlayerInTeam(it))
             {
                 return RET_TEAM_MEMBER_IN_TEAM;
             }
-            RET_CHECK_RET(team.JoinTeam(it.second));
+            RET_CHECK_RET(team.JoinTeam(it));
         }
         return RET_OK;
     }

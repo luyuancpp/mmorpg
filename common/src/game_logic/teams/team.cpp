@@ -14,19 +14,8 @@ namespace common
     {
         for (auto& it : param.members)
         {
-            AddMember(it.second);
+            AddMember(it);
         }
-    }
-
-    const TeamMember& Team::team_member(GameGuid player_id)const
-    {
-        auto mit = members_.find(player_id);
-        if (mit == members_.end())
-        {
-            static TeamMember m;
-            return m;
-        }
-        return mit->second;
     }
 
     GameGuid Team::first_applicant_id() const
@@ -38,7 +27,7 @@ namespace common
         return *applicant_ids_.begin();
     }
 
-    uint32_t Team::CheckLimt(const TeamMember& m)
+    uint32_t Team::CheckLimt(GameGuid  player_id)
     {
         return RET_OK;
     }
@@ -59,23 +48,23 @@ namespace common
     {
         for (auto& it : members_)
         {
-            emp_->emit<TeamESJoinTeam>(team_id_, it.first);
+            emp_->emit<TeamESJoinTeam>(team_id_, it);
         }
     }
 
-    uint32_t Team::JoinTeam(const TeamMember& m)
+    uint32_t Team::JoinTeam(GameGuid  player_id)
     {
-        RET_CHECK_RET(TryToJoinTeam(m));
-        RemoveApplicant(m.player_id());
-        AddMember(m);
+        RET_CHECK_RET(TryToJoinTeam(player_id));
+        RemoveApplicant(player_id);
+        AddMember(player_id);
         assert(members_.size() == sequence_players_id_.size());
-        emp_->emit< TeamESJoinTeam>(team_id_, m.player_id());
+        emp_->emit< TeamESJoinTeam>(team_id_, player_id);
         return RET_OK;
     }
 
-    uint32_t Team::TryToJoinTeam(const TeamMember& m)
+    uint32_t Team::TryToJoinTeam(GameGuid  player_id)
     {
-        if (m.player_id() == kEmptyGameGuid)
+        if (player_id == kEmptyGameGuid)
         {
             return RET_TEAM_PLAEYR_ID;
         }
@@ -83,7 +72,7 @@ namespace common
         {
             return RET_TEAM_MEMBERS_FULL;
         }
-        auto it = members_.find(m.player_id());
+        auto it = members_.find(player_id);
         if (it != members_.end())
         {
             return RET_TEAM_MEMBER_IN_TEAM;
@@ -173,24 +162,24 @@ namespace common
         applicant_ids_.erase(idit);
     }
 
-    uint32_t Team::ApplyForTeam(const TeamMember& m)
+    uint32_t Team::ApplyForTeam(GameGuid player_id)
     {
         if (IsFull())
         {
             return RET_TEAM_MEMBERS_FULL;
         }
 
-        if (members_.find(m.player_id()) != members_.end())
+        if (members_.find(player_id) != members_.end())
         {
             return RET_TEAM_MEMBER_IN_TEAM;
         }
 
-        RET_CHECK_RET(CheckLimt(m));
+        RET_CHECK_RET(CheckLimt(player_id));
 
-        auto it = applicants_.find(m.player_id());
+        auto it = applicants_.find(player_id);
         if (it != applicants_.end())
         {
-            RemoveApplicantId(m.player_id());
+            RemoveApplicantId(player_id);
         }
         if (applicant_ids_.size() >= kMaxApplicantSize)
         {
@@ -198,8 +187,8 @@ namespace common
             applicants_.erase(*applicant_ids_.begin());
             applicant_ids_.erase(applicant_ids_.begin());
         }
-        applicants_.emplace(m.player_id(), m);
-        applicant_ids_.emplace_back(m.player_id());
+        applicants_.emplace(player_id);
+        applicant_ids_.emplace_back(player_id);
         return RET_OK;
     }
 
@@ -210,9 +199,7 @@ namespace common
         {
             return RET_TEAM_NOT_IN_APPLICANTS;
         }
-        TeamMember m;
-        m.CopyFrom(it->second);
-        RET_CHECK_RET(JoinTeam(m));
+        RET_CHECK_RET(JoinTeam(applicant_id));
         return RET_OK;
     }
 
