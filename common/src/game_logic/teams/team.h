@@ -85,8 +85,8 @@ namespace common
         void OnAppointLeader(GameGuid  new_leader_player_id);
         void RemoveApplicantId(GameGuid  player_id);
 
-        entt::entity team_id_{ kEmptyGameGuid };
-        GameGuid leader_id_{ kEmptyGameGuid };
+        entt::entity team_id_{};
+        GameGuid leader_id_{};
         Members members_;
         ApplyMembers applicants_;
         PlayerIdsV applicant_ids_;
