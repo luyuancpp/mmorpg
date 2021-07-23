@@ -34,7 +34,7 @@ namespace common
         GameGuid leader_id_by_player_id(GameGuid player_id)const;
         GameGuid first_applicant_id(GameGuid team_id)const;
        
-        bool IsTeamsMax()const;
+        bool IsTeamsMax() const{ return team_size() >= kMaxTeamSize; }
         bool IsTeamFull(GameGuid team_id);
         bool PlayerInTeam(GameGuid team_id, GameGuid player_id);
         bool PlayerInTeam(GameGuid player_id)const { return player_team_map_.find(player_id) != player_team_map_.end(); }
