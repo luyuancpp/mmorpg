@@ -3,6 +3,8 @@
 #include "src/game_logic/teams/teams.h"
 #include "src/return_code/return_notice_code.h"
 
+#include "src/return_code/notice_struct.h"
+
 using namespace common;
 
 TEST(TeamManger, CreateFullDismiss)
@@ -18,8 +20,7 @@ TEST(TeamManger, CreateFullDismiss)
 	for (int32_t i = 0; i < Teams::kMaxTeamSize; ++i)
 	{	
 		CreateTeamParam p{ m.player_id(), Members{{m.player_id(), m}}, "" };
-		EXPECT_EQ(ReturnValue(RET_OK), team_list.CreateTeam(p));
-		//EXPECT_TRUE(team_list.last_team_id() > 0);
+		EXPECT_EQ(RET_OK, team_list.CreateTeam(p));
 		teamidlist.push_back(team_list.last_team_id());
 		m.set_player_id(++player_id);
 	}

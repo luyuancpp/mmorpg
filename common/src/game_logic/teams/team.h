@@ -61,18 +61,18 @@ namespace common
         bool IsLeader(GameGuid playerid)const { return leader_id_ != kEmptyGameGuid && leader_id_ == playerid; }
         bool InTeam(GameGuid player_guid)const { return members_.find(player_guid) != members_.end(); }
 
-        ReturnValue CheckLimt(const TeamMember& m);
+        uint32_t CheckLimt(const TeamMember& m);
         bool TestApplicantValueEqual()const;
 
         void OnCreate();
-        ReturnValue JoinTeam(const TeamMember& m);
-        ReturnValue TryToJoinTeam(const TeamMember& m);
-        ReturnValue LeaveTeam(GameGuid playerid);
-        ReturnValue KickMember(GameGuid current_leader, GameGuid  nKickplayerid);
-        ReturnValue AppointLeader(GameGuid current_leader, GameGuid  new_leader_player_id);
-        ReturnValue ApplyForTeam(const TeamMember& m);
-        ReturnValue AgreeApplicant(GameGuid applicant_id);
-        ReturnValue RemoveApplicant(GameGuid applicant_id);
+        uint32_t JoinTeam(const TeamMember& m);
+        uint32_t TryToJoinTeam(const TeamMember& m);
+        uint32_t LeaveTeam(GameGuid playerid);
+        uint32_t KickMember(GameGuid current_leader, GameGuid  nKickplayerid);
+        uint32_t AppointLeader(GameGuid current_leader, GameGuid  new_leader_player_id);
+        uint32_t ApplyForTeam(const TeamMember& m);
+        uint32_t AgreeApplicant(GameGuid applicant_id);
+        uint32_t RemoveApplicant(GameGuid applicant_id);
         void ClearApplyList();
 
     private:

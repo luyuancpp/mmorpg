@@ -18,9 +18,6 @@
     <ClCompile Include="teamlist_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\return_code\notice_struct.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\event\event.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -35,9 +32,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\return_code\notice_struct.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h">
       <Filter>头文件</Filter>
     </ClInclude>
