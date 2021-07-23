@@ -51,21 +51,21 @@ namespace common
         void receive(const TeamESLeaderDismissTeam& es);
         void receive(const TeamESLeaveTeam& es);
 
-        ReturnValue CreateTeam(const CreateTeamParam& param);
-        ReturnValue JoinTeam(GameGuid team_id, TeamMember& mem);
-        ReturnValue LeaveTeam(GameGuid player_id);
-        ReturnValue KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_player_id);
-        ReturnValue DissMissTeam(GameGuid team_id, GameGuid current_leader_id);
-        ReturnValue DissMissTeamNoLeader(GameGuid team_id);
-        ReturnValue AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  nNewLeaderPlayerId);
-        ReturnValue ApplyForTeam(GameGuid team_id, const TeamMember& m);
-        ReturnValue RemoveApplicant(GameGuid team_id, GameGuid apply_player_id);
-        ReturnValue AgreeApplicant(GameGuid team_id, GameGuid apply_player_id);
+        uint32_t CreateTeam(const CreateTeamParam& param);
+        uint32_t JoinTeam(GameGuid team_id, TeamMember& mem);
+        uint32_t LeaveTeam(GameGuid player_id);
+        uint32_t KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_player_id);
+        uint32_t DissMissTeam(GameGuid team_id, GameGuid current_leader_id);
+        uint32_t DissMissTeamNoLeader(GameGuid team_id);
+        uint32_t AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  nNewLeaderPlayerId);
+        uint32_t ApplyForTeam(GameGuid team_id, const TeamMember& m);
+        uint32_t RemoveApplicant(GameGuid team_id, GameGuid apply_player_id);
+        uint32_t AgreeApplicant(GameGuid team_id, GameGuid apply_player_id);
         void ClearApplyList(GameGuid team_id);
         
     protected:
-        ReturnValue JoinTeam(const Members& member_list, GameGuid  team_id);
-        ReturnValue CheckMemberInTeam(const Members& member_list);
+        uint32_t JoinTeam(const Members& member_list, GameGuid  team_id);
+        uint32_t CheckMemberInTeam(const Members& member_list);
         void OnPlayerLeaveTeam(GameGuid player_id);
         void EraseTeam(entt::entity team_id);
         void OnJoinTeam(GameGuid player_id, entt::entity team_id)

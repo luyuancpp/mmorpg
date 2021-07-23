@@ -164,7 +164,7 @@ namespace common
         OnPlayerLeaveTeam(es.player_id_);
     }
 
-    ReturnValue Teams::CreateTeam(const CreateTeamParam& param)
+    uint32_t Teams::CreateTeam(const CreateTeamParam& param)
     {
         if (IsTeamsMax())
         {
@@ -183,7 +183,7 @@ namespace common
         return RET_OK;
     }
 
-    ReturnValue Teams::JoinTeam(GameGuid team_id, TeamMember& mem)
+    uint32_t Teams::JoinTeam(GameGuid team_id, TeamMember& mem)
     {
         if (PlayerInTeam(mem.player_id()))
         {
@@ -193,7 +193,7 @@ namespace common
         return team.JoinTeam(mem);
     }
 
-    ReturnValue Teams::CheckMemberInTeam(const Members& member_list)
+    uint32_t Teams::CheckMemberInTeam(const Members& member_list)
     {
         for (auto& it : member_list)
         {
@@ -210,7 +210,7 @@ namespace common
         player_team_map_.erase(player_id);
     }
 
-    ReturnValue Teams::LeaveTeam(GameGuid player_id)
+    uint32_t Teams::LeaveTeam(GameGuid player_id)
     {
         auto team_id = GetTeamEntityId(player_id);
         GetTeamEntityReturnError;
@@ -222,14 +222,14 @@ namespace common
         return RET_OK;
     }
 
-    ReturnValue Teams::KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_player_id)
+    uint32_t Teams::KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_player_id)
     {
         GetTeamPtrReturnError;
         RET_CHECK_RET(team.KickMember(current_leader_id, kick_player_id));
         return RET_OK;
     }
 
-    ReturnValue Teams::DissMissTeam(GameGuid team_id, GameGuid current_leader_id)
+    uint32_t Teams::DissMissTeam(GameGuid team_id, GameGuid current_leader_id)
     {
         GetTeamPtrReturnError;
         if (team.leader_id() != current_leader_id)
@@ -244,19 +244,19 @@ namespace common
         return RET_OK;
     }
 
-    ReturnValue Teams::DissMissTeamNoLeader(GameGuid team_id)
+    uint32_t Teams::DissMissTeamNoLeader(GameGuid team_id)
     {
         GetTeamPtrReturnError;
         return DissMissTeam(team_id, team.leader_id());
     }
 
-    ReturnValue Teams::AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  new_leader_player_id)
+    uint32_t Teams::AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  new_leader_player_id)
     {
         GetTeamPtrReturnError;
         return team.AppointLeader(current_leader_id, new_leader_player_id);
     }
 
-    ReturnValue Teams::ApplyForTeam(GameGuid team_id, const TeamMember& m)
+    uint32_t Teams::ApplyForTeam(GameGuid team_id, const TeamMember& m)
     {
         GetTeamPtrReturnError;
         if (PlayerInTeam(m.player_id()))
@@ -266,13 +266,13 @@ namespace common
         return team.ApplyForTeam(m);
     }
 
-    ReturnValue Teams::RemoveApplicant(GameGuid team_id, GameGuid nApplyplayer_id)
+    uint32_t Teams::RemoveApplicant(GameGuid team_id, GameGuid nApplyplayer_id)
     {
         GetTeamPtrReturnError;
         return team.RemoveApplicant(nApplyplayer_id);
     }
 
-    ReturnValue Teams::AgreeApplicant(GameGuid team_id, GameGuid applicant_id)
+    uint32_t Teams::AgreeApplicant(GameGuid team_id, GameGuid applicant_id)
     {
         GetTeamPtrReturnError;
         if (PlayerInTeam(applicant_id))
@@ -293,7 +293,7 @@ namespace common
         team.ClearApplyList();
     }
 
-    ReturnValue Teams::JoinTeam(const Members& member_list, GameGuid  team_id)
+    uint32_t Teams::JoinTeam(const Members& member_list, GameGuid  team_id)
     {
         GetTeamPtrReturnError;
         RET_CHECK_RET(CheckMemberInTeam(member_list));

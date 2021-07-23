@@ -46,15 +46,15 @@ namespace common
 
 #define RET_CHECK_RET(f)\
 {\
-ReturnValue ret = (f);\
-if (ret != ReturnValue(RET_OK))\
+uint32_t ret(f);\
+if (ret != RET_OK)\
 {\
     return  ret;\
 }\
 }
 
 #define  CheckReturnCloseureError(ret)\
-if (ret != ReturnValue(common::RET_OK))\
+if (ret != common::RET_OK)\
 {\
     response->mutable_error()->set_error_no(ret);\
     done->Run();\

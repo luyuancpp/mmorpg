@@ -2,6 +2,7 @@
 
 #include "src/return_code/return_notice_code.h"
 #include "src/game_logic/teams/team_event.h"
+#include "src/game_ecs/game_registry.h"
 
 namespace common
 {
@@ -37,7 +38,7 @@ namespace common
         return *applicant_ids_.begin();
     }
 
-    ReturnValue Team::CheckLimt(const TeamMember& m)
+    uint32_t Team::CheckLimt(const TeamMember& m)
     {
         return RET_OK;
     }
@@ -62,7 +63,7 @@ namespace common
         }
     }
 
-    ReturnValue Team::JoinTeam(const TeamMember& m)
+    uint32_t Team::JoinTeam(const TeamMember& m)
     {
         RET_CHECK_RET(TryToJoinTeam(m));
         RemoveApplicant(m.player_id());
@@ -72,7 +73,7 @@ namespace common
         return RET_OK;
     }
 
-    ReturnValue Team::TryToJoinTeam(const TeamMember& m)
+    uint32_t Team::TryToJoinTeam(const TeamMember& m)
     {
         if (m.player_id() == kEmptyGameGuid)
         {
@@ -90,7 +91,7 @@ namespace common
         return RET_OK;
     }
 
-    ReturnValue Team::LeaveTeam(GameGuid player_id)
+    uint32_t Team::LeaveTeam(GameGuid player_id)
     {
         auto it = members_.find(player_id);
         if (it == members_.end())
@@ -114,9 +115,7 @@ namespace common
         return RET_OK;
     }
 
-
-
-    ReturnValue Team::KickMember(GameGuid current_leader, GameGuid  kick_player_id)
+    uint32_t Team::KickMember(GameGuid current_leader, GameGuid  kick_player_id)
     {
         if (leader_id_ != current_leader)
         {
@@ -139,7 +138,7 @@ namespace common
         return RET_OK;
     }
 
-    ReturnValue Team::AppointLeader(GameGuid current_leader, GameGuid new_leader_player_id)
+    uint32_t Team::AppointLeader(GameGuid current_leader, GameGuid new_leader_player_id)
     {
         if (leader_id_ == new_leader_player_id)
         {
@@ -174,7 +173,7 @@ namespace common
         applicant_ids_.erase(idit);
     }
 
-    ReturnValue Team::ApplyForTeam(const TeamMember& m)
+    uint32_t Team::ApplyForTeam(const TeamMember& m)
     {
         if (IsFull())
         {
@@ -204,7 +203,7 @@ namespace common
         return RET_OK;
     }
 
-    ReturnValue Team::AgreeApplicant(GameGuid applicant_id)
+    uint32_t Team::AgreeApplicant(GameGuid applicant_id)
     {
         auto it = applicants_.find(applicant_id);
         if (it == applicants_.end())
@@ -217,7 +216,7 @@ namespace common
         return RET_OK;
     }
 
-    ReturnValue Team::RemoveApplicant(GameGuid applicant_id)
+    uint32_t Team::RemoveApplicant(GameGuid applicant_id)
     {
         auto it = applicants_.find(applicant_id);
         if (it == applicants_.end())
