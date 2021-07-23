@@ -18,9 +18,7 @@
     <ClCompile Include="src\server_common\codec\codec.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\return_code\notice_struct.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
+   
     <ClCompile Include="src\mysql_client\mysql_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>

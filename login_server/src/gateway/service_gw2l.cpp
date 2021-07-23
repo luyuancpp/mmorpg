@@ -2,9 +2,7 @@
 
 #include "muduo/base/Logging.h"
 #include "src/server_common/rpc_server.h"
-
 #include "src/return_code/return_notice_code.h"
-#include "src/return_code/notice_struct.h"
 #include "src/server_common/closure_auto_done.h"
 
 using namespace muduo;
