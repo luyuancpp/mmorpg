@@ -163,7 +163,6 @@
     <ClCompile Include="src\pb2db\pb2dbsql.cpp" />
     <ClCompile Include="src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
-    <ClCompile Include="src\return_code\notice_struct.cpp" />
     <ClCompile Include="src\server_common\rpc_channel.cc" />
     <ClCompile Include="src\server_common\rpc_server.cc" />
   </ItemGroup>
@@ -200,7 +199,6 @@
     <ClInclude Include="src\pb2db\pb2dbsql.h" />
     <ClInclude Include="src\redis_client\async_redis_client.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />
-    <ClInclude Include="src\return_code\notice_struct.h" />
     <ClInclude Include="src\return_code\return_code.h" />
     <ClInclude Include="src\return_code\return_notice_code.h" />
     <ClInclude Include="src\server_common\deploy_variable.h" />
