@@ -185,7 +185,7 @@ namespace common
         RET_CHECK_RET(CheckMemberInTeam(param.members));
 
         auto e = teams_.create();
-        auto team = teams_.emplace<Team>(e,  Team(e, emp_, param));
+        auto team = teams_.emplace<Team>(e,  e, emp_, param, &teams_);
         team.OnCreate();
         last_team_id_ = entt::to_integral(e);
         return RET_OK;
