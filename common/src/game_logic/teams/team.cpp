@@ -5,14 +5,14 @@
 
 namespace common
 {
-    Team::Team(GameGuid team_id, EventManagerPtr& emp, const CreateTeamParam& param)
+    Team::Team(entt::entity team_id, EventManagerPtr& emp, const CreateTeamParam& param)
         : team_id_(team_id),
           leader_id_(param.leader_id_),
           emp_(emp)
     {
         for (auto& it : param.members)
         {
-            OnJoinTeam<TeamESCreateTeamJoinTeam>(it.second);
+            AddMember(it.second);
         }
     }
 
@@ -53,10 +53,21 @@ namespace common
         return true;
     }
 
+    void Team::OnCreate()
+    {
+        for (auto& it : members_)
+        {
+            emp_->emit<TeamESJoinTeam>(team_id_, it.first);
+        }
+    }
+
     ReturnValue Team::JoinTeam(const TeamMember& m)
     {
         RET_CHECK_RET(TryToJoinTeam(m));
-        OnJoinTeam<TeamESJoinTeam>(m);
+        RemoveApplicant(m.player_id());
+        AddMember(m);
+        assert(members_.size() == sequence_players_id_.size());
+        emp_->emit< TeamESJoinTeam>(team_id_, m.player_id());
         return RET_OK;
     }
 
@@ -99,10 +110,6 @@ namespace common
             OnAppointLeader(*sequence_players_id_.begin());
         }
         emp_->emit<TeamESLeaveTeam>(team_id_, player_id);
-        if (members_.empty())
-        {
-            DisMiss();
-        }
         return RET_OK;
     }
 
@@ -218,12 +225,6 @@ namespace common
         }
         applicants_.erase(applicant_id);
         RemoveApplicantId(applicant_id);
-        return RET_OK;
-    }
-
-    ReturnValue Team::DisMiss()
-    {
-        emp_->emit<TeamESDismissTeamOnTeamMemberEmpty>(team_id_);
         return RET_OK;
     }
 

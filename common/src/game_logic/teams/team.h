@@ -11,7 +11,16 @@
 
 #include "src/common_type/common_type.h"
 #include "src/event/event.h"
+#include "src/entt/entity/entity.hpp"
+#include "src/entt/entity/registry.hpp"
 #include "src/return_code/notice_struct.h"
+
+namespace entt
+{
+    [[nodiscard]] static constexpr entt::entity to_entity(uint64_t value) ENTT_NOEXCEPT {
+        return entity(to_integral(value));
+    }
+}//namespace entt
 
 namespace common
 {
@@ -33,9 +42,10 @@ namespace common
     public:
         using ApplyMembers = std::unordered_map<GameGuid, TeamMember>;
         
-        Team(GameGuid team_id, EventManagerPtr& emp, const CreateTeamParam& param);
+        Team(entt::entity team_id, EventManagerPtr& emp, const CreateTeamParam& param);
 
-        GameGuid team_id()const { return team_id_; }
+        GameGuid team_id()const { return entt::to_integral(team_id_); }
+        entt::entity to_entityid()const { return team_id_; }
         GameGuid leader_id()const { return leader_id_; }
         const TeamMember& team_member(GameGuid playerid)const;
         std::size_t max_member_size()const { return kMaxMemberSize; }
@@ -57,6 +67,7 @@ namespace common
         ReturnValue CheckLimt(const TeamMember& m);
         bool TestApplicantValueEqual()const;
 
+        void OnCreate();
         ReturnValue JoinTeam(const TeamMember& m);
         ReturnValue TryToJoinTeam(const TeamMember& m);
         ReturnValue LeaveTeam(GameGuid playerid);
@@ -65,22 +76,19 @@ namespace common
         ReturnValue ApplyForTeam(const TeamMember& m);
         ReturnValue AgreeApplicant(GameGuid applicant_id);
         ReturnValue RemoveApplicant(GameGuid applicant_id);
-        ReturnValue DisMiss();
         void ClearApplyList();
-    protected:
-        template<typename E>
-        void OnJoinTeam(const TeamMember& m)
+
+    private:
+        void AddMember(const TeamMember& m)
         {
-            RemoveApplicant(m.player_id());
             members_.emplace(m.player_id(), m);
             sequence_players_id_.push_back(m.player_id());
-            assert(members_.size() == sequence_players_id_.size());
-            emp_->emit<E>(team_id_, m.player_id());
         }
+
         void OnAppointLeader(GameGuid  new_leader_player_id);
         void RemoveApplicantId(GameGuid  player_id);
 
-        GameGuid team_id_{ kEmptyGameGuid };
+        entt::entity team_id_{ kEmptyGameGuid };
         GameGuid leader_id_{ kEmptyGameGuid };
         Members members_;
         ApplyMembers applicants_;

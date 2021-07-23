@@ -222,8 +222,8 @@ TEST(TeamManger, DismissTeam)
 	m.set_player_id(104);
 	EXPECT_EQ(RET_OK, team_list.JoinTeam(team_list.last_team_id(), m));
 
-	EXPECT_EQ(RET_TEAM_HAS_NOT_TEAM_ID, team_list.DissMissTeam(0, 104));
 	EXPECT_EQ(RET_TEAM_DISMISS_NOT_LEADER, team_list.DissMissTeam(team_list.last_team_id(), 104));
+	EXPECT_EQ(RET_TEAM_HAS_NOT_TEAM_ID, team_list.DissMissTeam(111, 104));
 	EXPECT_EQ(RET_OK, team_list.DissMissTeam(team_list.last_team_id(), 100));
 	EXPECT_FALSE(team_list.FindTeamId(team_list.last_team_id()));
 }
