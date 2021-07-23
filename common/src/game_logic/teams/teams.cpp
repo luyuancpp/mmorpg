@@ -13,12 +13,11 @@ namespace common
     auto& team = teams_.get<Team>(e);\
 
 #define GetTeamEntityReturnError \
-    auto e = team_id;\
-    if (!teams_.valid(e))\
+    if (!teams_.valid(team_id))\
     {\
         return RET_TEAM_HAS_NOT_TEAM_ID;\
     }\
-    auto& team = teams_.get<Team>(e);\
+    auto& team = teams_.get<Team>(team_id);\
 
 #define GetTeamReturn(ret) \
     auto e = entt::to_entity(team_id);\
@@ -36,7 +35,6 @@ namespace common
         emp_->subscribe<TeamESJoinTeam>(*this);
         emp_->subscribe<TeamESLeaderDismissTeam>(*this);     
         emp_->subscribe<TeamESLeaveTeam>(*this);  
-
     }
 
     std::size_t Teams::member_size(GameGuid team_id)
@@ -106,12 +104,6 @@ namespace common
         GetTeamReturn(0);
         return team.first_applicant_id();
     }
-
-    bool Teams::IsTeamsMax()const
-    {
-        return team_size() >= kMaxTeamSize;
-    }
-
     bool Teams::IsTeamFull(GameGuid team_id)
     {
         GetTeamReturn(false);
