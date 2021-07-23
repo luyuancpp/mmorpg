@@ -11,8 +11,8 @@
 
 #include "src/common_type/common_type.h"
 #include "src/event/event.h"
-#include "src/entt/entity/entity.hpp"
-#include "src/entt/entity/registry.hpp"
+#include "entt/src/entt/entity/entity.hpp"
+#include "entt/src/entt/entity/registry.hpp"
 #include "src/game_ecs/entity_cast.h"
 #include "src/return_code/notice_struct.h"
 

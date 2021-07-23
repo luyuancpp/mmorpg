@@ -1,7 +1,7 @@
 #ifndef COMMON_SRC_TEAM_TEAM_EVENT_H
 #define COMMON_SRC_TEAM_TEAM_EVENT_H
 
-#include "src/entt/entity/registry.hpp"
+#include "entt/src/entt/entity/registry.hpp"
 
 #include "src/common_type/common_type.h"
 
