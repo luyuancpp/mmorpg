@@ -7,7 +7,7 @@ using namespace common;
 
 TEST(TeamManger, CreateFullDismiss)
 {
-	TeamList team_list;
+	Teams team_list;
 
 	typedef std::vector<GameGuid> PlayerIdsV;
 	PlayerIdsV teamidlist;
@@ -15,7 +15,7 @@ TEST(TeamManger, CreateFullDismiss)
 	GameGuid player_id = 1;
 	m.set_player_id(player_id);
 	
-	for (int32_t i = 0; i < TeamList::kMaxTeamSize; ++i)
+	for (int32_t i = 0; i < Teams::kMaxTeamSize; ++i)
 	{	
 		CreateTeamParam p{ m.player_id(), Members{{m.player_id(), m}}, "" };
 		EXPECT_EQ(ReturnValue(RET_OK), team_list.CreateTeam(p));
@@ -28,7 +28,7 @@ TEST(TeamManger, CreateFullDismiss)
 	m.set_player_id(player_id++);
 	EXPECT_EQ(RET_TEAM_TEAM_LIST_MAX, team_list.CreateTeam({ m.player_id(), Members{{m.player_id(), m}}, "" }));
 
-	EXPECT_EQ(TeamList::kMaxTeamSize, team_list.team_size());
+	EXPECT_EQ(Teams::kMaxTeamSize, team_list.team_size());
 
 	for (auto it = teamidlist.begin(); it != teamidlist.end(); ++it)
 	{
@@ -41,7 +41,7 @@ TEST(TeamManger, CreateFullDismiss)
 
 TEST(TeamManger, TeamSizeTest)
 {
-	TeamList  team_list;	
+	Teams  team_list;	
 	TeamMember m;
 	m.set_player_id(100);
 	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m.player_id(), Members{{m.player_id(), m}}, "" }));
@@ -62,7 +62,7 @@ TEST(TeamManger, TeamSizeTest)
 
 TEST(TeamManger, LeaveTeam)
 {
-	TeamList  team_list;
+	Teams  team_list;
 	TeamMember m;
 	m.set_player_id(100);
 	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m.player_id(), Members{{m.player_id(), m}}, "" }));
@@ -106,7 +106,7 @@ TEST(TeamManger, LeaveTeam)
 
 TEST(TeamManger, KickTeaamMember)
 {
-	TeamList team_list ;
+	Teams team_list ;
 	TeamMember m;
 	GameGuid leader_plaeyr_id = 100;
 	m.set_player_id(leader_plaeyr_id);
@@ -136,7 +136,7 @@ TEST(TeamManger, KickTeaamMember)
 
 TEST(TeamManger, AppointLaderAndLeaveTeam1)
 {
-	TeamList team_list;
+	Teams team_list;
 	TeamMember m;
 	GameGuid leader_player_id = 100;
 	m.set_player_id(leader_player_id);
@@ -192,7 +192,7 @@ TEST(TeamManger, AppointLaderAndLeaveTeam1)
 
 TEST(TeamManger, AppointLaderAndLeaveTeam2)
 {
-	TeamList  team_list;
+	Teams  team_list;
 	TeamMember m;
 	m.set_player_id(100);
 
@@ -214,7 +214,7 @@ TEST(TeamManger, AppointLaderAndLeaveTeam2)
 
 TEST(TeamManger, DismissTeam)
 {
-	TeamList  team_list;
+	Teams  team_list;
 	TeamMember m;
 	m.set_player_id(100);
 	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m.player_id(), Members{{m.player_id(), m}}, "" }));
@@ -230,7 +230,7 @@ TEST(TeamManger, DismissTeam)
 
 TEST(TeamManger, ApplyFull)
 {
-	TeamList  team_list;
+	Teams  team_list;
 	TeamMember m;
 	m.set_player_id(1001);
 
@@ -267,7 +267,7 @@ TEST(TeamManger, ApplyFull)
 
 TEST(TeamManger, ApplicantOrder)
 {
-    TeamList  team_list;
+    Teams  team_list;
     TeamMember m;
     m.set_player_id(1001);
     EXPECT_EQ(RET_OK, team_list.CreateTeam({ m.player_id(), Members{{m.player_id(), m}}, "" }));
@@ -292,7 +292,7 @@ TEST(TeamManger, ApplicantOrder)
 
 TEST(TeamManger, InTeamApplyForTeam)
 {
-	TeamList  team_list;
+	Teams  team_list;
 	TeamMember m;
 	m.set_player_id(1001);
 
@@ -335,7 +335,7 @@ TEST(TeamManger, InTeamApplyForTeam)
 
 TEST(TeamManger, RemoveApplicant)
 {
-	TeamList  team_list;
+	Teams  team_list;
 	TeamMember m;
 	m.set_player_id(1001);
 
@@ -366,7 +366,7 @@ TEST(TeamManger, RemoveApplicant)
 
 TEST(TeamManger, AgreeApplicant)
 {
-	TeamList  team_list;
+	Teams  team_list;
 	TeamMember m;
 	m.set_player_id(1001);
 	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m.player_id(), Members{{m.player_id(), m}}, "" }));
@@ -420,7 +420,7 @@ TEST(TeamManger, AgreeApplicant)
 TEST(TeamManger, PlayerTeamId)
 {
 
-	TeamList  team_list;
+	Teams  team_list;
 	TeamMember m;
 	m.set_player_id(1);
 
@@ -494,7 +494,7 @@ TEST(TeamManger, PlayerTeamId)
 TEST(TeamManger, PlayerInTeam)
 {
 
-	TeamList  team_list;
+	Teams  team_list;
 	TeamMember m;
 	m.set_player_id(1);
 	
@@ -532,7 +532,7 @@ TEST(TeamManger, PlayerInTeam)
 
 TEST(TeamManger, AppointLeaderNotInTeam)
 {
-    TeamList  team_list;
+    Teams  team_list;
     TeamMember m;
     m.set_player_id(1);
     GameGuid leader_player_id = 1;

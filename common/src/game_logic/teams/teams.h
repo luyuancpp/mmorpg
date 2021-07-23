@@ -13,13 +13,13 @@
 
 namespace common
 {
-    class TeamList : public Receiver<TeamList>
+    class Teams : public Receiver<Teams>
     {
     public:
         using PlayerIdTeamIdMap = std::unordered_map<GameGuid, entt::entity>;
         static const std::size_t kMaxTeamSize = 10000;
 
-        TeamList();
+        Teams();
 
         std::size_t team_size()const { return teams_.size<Team>(); }
         std::size_t member_size(GameGuid team_id);
