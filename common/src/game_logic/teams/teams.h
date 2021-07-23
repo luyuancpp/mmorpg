@@ -26,7 +26,6 @@ namespace common
         std::size_t applicant_size_by_player_id(GameGuid player_id)const;
         std::size_t applicant_size_by_team_id(GameGuid team_id)const;
         std::size_t players_size()const { return player_team_map_.size(); }
-        const TeamMember& team_member(GameGuid player_id)const;
         GameGuid GetTeamId(GameGuid player_id)const;
         entt::entity GetTeamEntityId(GameGuid player_id)const;
         GameGuid last_team_id() const { return last_team_id_; }
@@ -52,13 +51,13 @@ namespace common
         void receive(const TeamESLeaveTeam& es);
 
         uint32_t CreateTeam(const CreateTeamParam& param);
-        uint32_t JoinTeam(GameGuid team_id, TeamMember& mem);
+        uint32_t JoinTeam(GameGuid team_id, GameGuid player_id);
         uint32_t LeaveTeam(GameGuid player_id);
         uint32_t KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_player_id);
         uint32_t DissMissTeam(GameGuid team_id, GameGuid current_leader_id);
         uint32_t DissMissTeamNoLeader(GameGuid team_id);
         uint32_t AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  nNewLeaderPlayerId);
-        uint32_t ApplyForTeam(GameGuid team_id, const TeamMember& m);
+        uint32_t ApplyForTeam(GameGuid team_id, GameGuid player_id);
         uint32_t RemoveApplicant(GameGuid team_id, GameGuid apply_player_id);
         uint32_t AgreeApplicant(GameGuid team_id, GameGuid apply_player_id);
         void ClearApplyList(GameGuid team_id);

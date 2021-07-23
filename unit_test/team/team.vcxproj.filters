@@ -21,9 +21,6 @@
     <ClCompile Include="..\..\common\src\event\event.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\protopb\pbc\team.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\game_logic\teams\team.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -33,9 +30,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\protopb\pbc\team.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\teams\team.h">

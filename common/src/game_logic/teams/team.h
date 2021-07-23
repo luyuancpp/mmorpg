@@ -14,13 +14,12 @@
 #include "entt/src/entt/entity/entity.hpp"
 #include "entt/src/entt/entity/registry.hpp"
 #include "src/game_ecs/entity_cast.h"
-#include "src/return_code/notice_struct.h"
 
 namespace common
 {
     static const std::size_t kMaxApplicantSize{ 20 };
     static const std::size_t kMaxMemberSize{ 5 };
-    typedef std::unordered_map<GameGuid, TeamMember> Members;
+    typedef std::unordered_set<GameGuid> Members;
 
     //function order get, set is, test action
     struct CreateTeamParam
@@ -34,7 +33,7 @@ namespace common
     class Team
     {
     public:
-        using ApplyMembers = std::unordered_map<GameGuid, TeamMember>;
+        using ApplyMembers = std::unordered_set<GameGuid>;
         
         Team(entt::entity team_id, 
             EventManagerPtr& emp, 
@@ -44,7 +43,6 @@ namespace common
         GameGuid team_id()const { return entt::to_integral(team_id_); }
         entt::entity to_entityid()const { return team_id_; }
         GameGuid leader_id()const { return leader_id_; }
-        const TeamMember& team_member(GameGuid playerid)const;
         std::size_t max_member_size()const { return kMaxMemberSize; }
         std::size_t member_size()const { return members_.size(); }
         bool empty()const { return members_.empty(); }
@@ -58,28 +56,28 @@ namespace common
         bool HasApplicant(GameGuid applicant_id) const { return applicants_.find(applicant_id) != applicants_.end(); }
         bool HasApply()const { return !applicants_.empty(); }
         bool IsFull()const { return members_.size() >= max_member_size(); }
-        bool IsLeader(GameGuid playerid)const { return leader_id_ != kEmptyGameGuid && leader_id_ == playerid; }
-        bool InTeam(GameGuid player_guid)const { return members_.find(player_guid) != members_.end(); }
+        bool IsLeader(GameGuid player_id)const { return leader_id_ != kEmptyGameGuid && leader_id_ == player_id; }
+        bool InTeam(GameGuid player_id)const { return members_.find(player_id) != members_.end(); }
 
-        uint32_t CheckLimt(const TeamMember& m);
+        uint32_t CheckLimt(GameGuid  player_id);
         bool TestApplicantValueEqual()const;
 
         void OnCreate();
-        uint32_t JoinTeam(const TeamMember& m);
-        uint32_t TryToJoinTeam(const TeamMember& m);
-        uint32_t LeaveTeam(GameGuid playerid);
+        uint32_t JoinTeam(GameGuid  player_id);
+        uint32_t TryToJoinTeam(GameGuid  player_id);
+        uint32_t LeaveTeam(GameGuid player_id);
         uint32_t KickMember(GameGuid current_leader, GameGuid  nKickplayerid);
         uint32_t AppointLeader(GameGuid current_leader, GameGuid  new_leader_player_id);
-        uint32_t ApplyForTeam(const TeamMember& m);
+        uint32_t ApplyForTeam(GameGuid player_id);
         uint32_t AgreeApplicant(GameGuid applicant_id);
         uint32_t RemoveApplicant(GameGuid applicant_id);
         void ClearApplyList();
 
     private:
-        void AddMember(const TeamMember& m)
+        void AddMember(GameGuid  player_id)
         {
-            members_.emplace(m.player_id(), m);
-            sequence_players_id_.push_back(m.player_id());
+            members_.emplace(player_id);
+            sequence_players_id_.push_back(player_id);
         }
 
         void OnAppointLeader(GameGuid  new_leader_player_id);

@@ -22,7 +22,6 @@
     <ClCompile Include="..\..\common\src\event\event.cc" />
     <ClCompile Include="..\..\common\src\game_logic\teams\team.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\teams\teams.cpp" />
-    <ClCompile Include="..\..\protopb\pbc\team.pb.cc" />
     <ClCompile Include="teamlist_test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -31,7 +30,6 @@
     <ClInclude Include="..\..\common\src\game_logic\teams\teams.h" />
     <ClInclude Include="..\..\common\src\game_logic\teams\team_event.h" />
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h" />
-    <ClInclude Include="..\..\protopb\pbc\team.pb.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\common\common.vcxproj" />
