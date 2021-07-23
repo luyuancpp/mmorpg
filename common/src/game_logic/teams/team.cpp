@@ -5,10 +5,11 @@
 
 namespace common
 {
-    Team::Team(entt::entity team_id, EventManagerPtr& emp, const CreateTeamParam& param)
+    Team::Team(entt::entity team_id, EventManagerPtr& emp, const CreateTeamParam& param, entt::registry* teams_registry)
         : team_id_(team_id),
           leader_id_(param.leader_id_),
-          emp_(emp)
+          emp_(emp),
+          teams_registry_(teams_registry)
     {
         for (auto& it : param.members)
         {

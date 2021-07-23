@@ -53,5 +53,11 @@
     <ClInclude Include="..\..\common\src\game_logic\teams\teams.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\game_ecs\entity_cast.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\common\common.vcxproj" />
   </ItemGroup>
 </Project>

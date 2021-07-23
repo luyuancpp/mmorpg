@@ -27,12 +27,16 @@
     <ClCompile Include="teamlist_test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\common\src\game_ecs\entity_cast.h" />
     <ClInclude Include="..\..\common\src\game_logic\teams\team.h" />
     <ClInclude Include="..\..\common\src\game_logic\teams\teams.h" />
     <ClInclude Include="..\..\common\src\game_logic\teams\team_event.h" />
     <ClInclude Include="..\..\common\src\return_code\notice_struct.h" />
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h" />
     <ClInclude Include="..\..\protopb\pbc\team.pb.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\common\common.vcxproj" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

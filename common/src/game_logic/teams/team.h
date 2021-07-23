@@ -13,14 +13,8 @@
 #include "src/event/event.h"
 #include "src/entt/entity/entity.hpp"
 #include "src/entt/entity/registry.hpp"
+#include "src/game_ecs/entity_cast.h"
 #include "src/return_code/notice_struct.h"
-
-namespace entt
-{
-    [[nodiscard]] static constexpr entt::entity to_entity(uint64_t value) ENTT_NOEXCEPT {
-        return entity(to_integral(value));
-    }
-}//namespace entt
 
 namespace common
 {
@@ -42,7 +36,10 @@ namespace common
     public:
         using ApplyMembers = std::unordered_map<GameGuid, TeamMember>;
         
-        Team(entt::entity team_id, EventManagerPtr& emp, const CreateTeamParam& param);
+        Team(entt::entity team_id, 
+            EventManagerPtr& emp, 
+            const CreateTeamParam& param, 
+            entt::registry* teams_registry);
 
         GameGuid team_id()const { return entt::to_integral(team_id_); }
         entt::entity to_entityid()const { return team_id_; }
@@ -95,6 +92,7 @@ namespace common
         PlayerIdsV applicant_ids_;
         PlayerIdsV sequence_players_id_;
         EventManagerPtr emp_;
+        entt::registry* teams_registry_{ nullptr };
     };
 }//namespace common
 
