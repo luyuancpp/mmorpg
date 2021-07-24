@@ -100,7 +100,7 @@ namespace common
     bool Teams::PlayerInTheTeam(GameGuid team_id, GameGuid player_id)
     {
         GetTeamReturn(false);
-        return team.InTeam(player_id);
+        return team.InMyTeam(player_id);
     }
 
     bool Teams::PlayerInTeam(GameGuid player_id) const
@@ -150,6 +150,17 @@ namespace common
     {
         GetTeamPtrReturnError;
         return team.JoinTeam(player_id);
+    }
+
+    uint32_t Teams::JoinTeam(const UI64USet& member_list, GameGuid  team_id)
+    {
+        GetTeamPtrReturnError;
+        RET_CHECK_RET(CheckMemberInTeam(member_list));
+        for (auto& it : member_list)
+        {
+            RET_CHECK_RET(team.JoinTeam(it));
+        }
+        return RET_OK;
     }
 
     uint32_t Teams::CheckMemberInTeam(const UI64USet& member_list)
@@ -230,17 +241,6 @@ namespace common
         }
         auto& team = teams_registry_.get<Team>(e);
         team.ClearApplyList();
-    }
-
-    uint32_t Teams::JoinTeam(const UI64USet& member_list, GameGuid  team_id)
-    {
-        GetTeamPtrReturnError;
-        RET_CHECK_RET(CheckMemberInTeam(member_list));
-        for (auto& it : member_list)
-        {
-            RET_CHECK_RET(team.JoinTeam(it));
-        }
-        return RET_OK;
     }
 
     void Teams::EraseTeam(entt::entity team_id)

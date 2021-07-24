@@ -48,7 +48,7 @@ namespace common
 
     void Team::OnCreate()
     {
-        auto& ms = teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_);
+        auto& ms = playerid_team_map();
         for (auto& it : members_)
         {
             ms.emplace(it, team_id_);
@@ -58,36 +58,22 @@ namespace common
 
     uint32_t Team::JoinTeam(GameGuid  player_id)
     {
-        if (teams_registry_->get<PlayerInTeamF>(team_id_).cb_(player_id))
+        if (HasTeam(player_id))
         {
             return RET_TEAM_MEMBER_IN_TEAM;
         }
-        
-        RET_CHECK_RET(TryToJoinTeam(player_id));
-        RemoveApplicant(player_id);
-        AddMember(player_id);
-        assert(members_.size() == sequence_players_id_.size());
-        auto& ms = teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_);
-        ms.emplace(player_id, team_id_);
-        emp_->emit< TeamESJoinTeam>(team_id_, player_id);
-        return RET_OK;
-    }
-
-    uint32_t Team::TryToJoinTeam(GameGuid  player_id)
-    {
-        if (player_id == kEmptyGameGuid)
-        {
-            return RET_TEAM_PLAEYR_ID;
-        }
+ 
         if (IsFull())
         {
             return RET_TEAM_MEMBERS_FULL;
         }
-        auto it = members_.find(player_id);
-        if (it != members_.end())
-        {
-            return RET_TEAM_MEMBER_IN_TEAM;
-        }
+        //assert(members_.find(player_id) == members_.end());
+        RemoveApplicant(player_id);
+        AddMember(player_id);
+        assert(members_.size() == sequence_players_id_.size());
+        auto& ms = playerid_team_map();
+        ms.emplace(player_id, team_id_);
+        emp_->emit< TeamESJoinTeam>(team_id_, player_id);
         return RET_OK;
     }
 
@@ -115,8 +101,8 @@ namespace common
             OnAppointLeader(*sequence_players_id_.begin());
         }
         emp_->emit<TeamESLeaveTeam>(team_id_, player_id);
-        auto& ms = teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_);
-        ms.erase(player_id);
+        auto& ms = playerid_team_map();
+        playerid_team_map().erase(player_id);
         return RET_OK;
     }
 
@@ -149,7 +135,7 @@ namespace common
         {
             return RET_TEAM_APPOINT_SELF;
         }
-        if (!InTeam(new_leader_player_id))
+        if (!InMyTeam(new_leader_player_id))
         {
             return RET_TEAM_HAS_NOT_TEAM_ID;
         }
@@ -180,7 +166,7 @@ namespace common
 
     uint32_t Team::ApplyForTeam(GameGuid player_id)
     {
-        if (teams_registry_->get<PlayerInTeamF>(team_id_).cb_(player_id))
+        if (HasTeam(player_id))
         {
             return RET_TEAM_MEMBER_IN_TEAM;
         }
@@ -214,17 +200,12 @@ namespace common
 
     uint32_t Team::AgreeApplicant(GameGuid applicant_id)
     {
-        if (teams_registry_->get<PlayerInTeamF>(team_id_).cb_(applicant_id))
+        auto ret = JoinTeam(applicant_id);
+        if (ret != RET_OK && ret != RET_TEAM_MEMBERS_FULL)
         {
-            return RET_TEAM_MEMBER_IN_TEAM;
+            RemoveApplicant(applicant_id);
         }
-        auto it = applicants_.find(applicant_id);
-        if (it == applicants_.end())
-        {
-            return RET_TEAM_NOT_IN_APPLICANTS;
-        }
-        RET_CHECK_RET(JoinTeam(applicant_id));
-        return RET_OK;
+        return ret;
     }
 
     uint32_t Team::RemoveApplicant(GameGuid applicant_id)
@@ -245,7 +226,7 @@ namespace common
         {
             return RET_TEAM_DISMISS_NOT_LEADER;
         }
-        auto& ms = teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_);
+        auto& ms = playerid_team_map();
         
         for (auto& it : members_)
         {
