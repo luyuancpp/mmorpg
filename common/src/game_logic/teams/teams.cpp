@@ -114,17 +114,6 @@ namespace common
         return team.HasApplicant(player_id);
     }
 
-    bool Teams::IsLeader(GameGuid team_id, GameGuid player_id)
-    {
-        GetTeamReturn(false);
-        return team.IsLeader(player_id);
-    }
-
-    bool Teams::IsLeader(GameGuid player_id)
-    {
-        return IsLeader(GetTeamId(player_id), player_id);
-    }
-
     bool Teams::TestApplicantValueEqual(GameGuid team_id)const
     {
         GetTeamReturn(false);

@@ -38,8 +38,6 @@ namespace common
         bool PlayerInTheTeam(GameGuid team_id, GameGuid player_id);
         bool PlayerInTeam(GameGuid player_id)const { return player_team_map_.find(player_id) != player_team_map_.end(); }
         bool FindTeamId(GameGuid team_id) const{ return nullptr !=  teams_registry_.try_get<Team>(entt::to_entity(team_id)); }
-        bool IsLeader(GameGuid team_id, GameGuid player_id);
-        bool IsLeader(GameGuid player_id);
         bool FindTeamId(GameGuid player_id);
         bool HasApplicant(GameGuid team_id, GameGuid player_id)const;
 
