@@ -32,6 +32,7 @@ struct TeamESJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESLeaderDismissTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESLeaderLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESClearApplyList : public TeamESTeamIdBase { using TeamESTeamIdBase::TeamESTeamIdBase; };
 
 struct TeamESAppointLeader 
 {

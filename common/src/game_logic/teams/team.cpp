@@ -241,5 +241,6 @@ namespace common
     {
         applicants_.clear();
         applicant_ids_.clear();
+        emp_->emit<TeamESClearApplyList>(team_id_);        
     }
 }//namespace common

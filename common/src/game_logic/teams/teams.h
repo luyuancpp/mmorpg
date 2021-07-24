@@ -16,7 +16,6 @@ namespace common
 class Teams : public Receiver<Teams>
 {
 public:
-    using PlayerIdTeamIdMap = std::unordered_map<GameGuid, entt::entity>;
     static const std::size_t kMaxTeamSize = 10000;
 
     Teams();
