@@ -21,7 +21,7 @@ namespace common
 
         Teams();
 
-        std::size_t team_size()const { return teams_.size<Team>(); }
+        std::size_t team_size()const { return teams_registry_.size<Team>(); }
         std::size_t member_size(GameGuid team_id);
         std::size_t applicant_size_by_player_id(GameGuid player_id)const;
         std::size_t applicant_size_by_team_id(GameGuid team_id)const;
@@ -35,9 +35,9 @@ namespace common
        
         bool IsTeamsMax() const{ return team_size() >= kMaxTeamSize; }
         bool IsTeamFull(GameGuid team_id);
-        bool PlayerInTeam(GameGuid team_id, GameGuid player_id);
+        bool PlayerInTheTeam(GameGuid team_id, GameGuid player_id);
         bool PlayerInTeam(GameGuid player_id)const { return player_team_map_.find(player_id) != player_team_map_.end(); }
-        bool FindTeamId(GameGuid team_id) const{ return nullptr !=  teams_.try_get<Team>(entt::to_entity(team_id)); }
+        bool FindTeamId(GameGuid team_id) const{ return nullptr !=  teams_registry_.try_get<Team>(entt::to_entity(team_id)); }
         bool IsLeader(GameGuid team_id, GameGuid player_id);
         bool IsLeader(GameGuid player_id);
         bool FindTeamId(GameGuid player_id);
@@ -75,7 +75,7 @@ namespace common
         PlayerIdTeamIdMap player_team_map_;
         GameGuid last_team_id_{ 0 };
         EventManagerPtr emp_;
-        entt::registry teams_;
+        entt::registry teams_registry_;
     };
 }//namespace common
 #endif // COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_

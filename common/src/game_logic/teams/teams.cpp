@@ -6,27 +6,26 @@ namespace common
 {
 #define GetTeamPtrReturnError \
     auto e = entt::to_entity(team_id);\
-    if (!teams_.valid(e))\
+    if (!teams_registry_.valid(e))\
     {\
         return RET_TEAM_HAS_NOT_TEAM_ID;\
     }\
-    auto& team = teams_.get<Team>(e);\
+    auto& team = teams_registry_.get<Team>(e);\
 
 #define GetTeamEntityReturnError \
-    if (!teams_.valid(team_id))\
+    if (!teams_registry_.valid(team_id))\
     {\
         return RET_TEAM_HAS_NOT_TEAM_ID;\
     }\
-    auto& team = teams_.get<Team>(team_id);\
+    auto& team = teams_registry_.get<Team>(team_id);\
 
 #define GetTeamReturn(ret) \
     auto e = entt::to_entity(team_id);\
-    if (!teams_.valid(e))\
+    if (!teams_registry_.valid(e))\
     {\
         return ret;\
     }\
-    auto& team = teams_.get<Team>(e);\
-
+    auto& team = teams_registry_.get<Team>(e);\
 
     Teams::Teams()
         : emp_(EventManager::New())
@@ -98,7 +97,7 @@ namespace common
         return team.IsFull();
     }
 
-    bool Teams::PlayerInTeam(GameGuid team_id, GameGuid player_id)
+    bool Teams::PlayerInTheTeam(GameGuid team_id, GameGuid player_id)
     {
         GetTeamReturn(false);
         return team.InTeam(player_id);
@@ -164,8 +163,13 @@ namespace common
         }
         RET_CHECK_RET(CheckMemberInTeam(param.members));
 
-        auto e = teams_.create();
-        auto team = teams_.emplace<Team>(e,  e, emp_, param, &teams_);
+        auto e = teams_registry_.create();
+        auto team = teams_registry_.emplace<Team>(e,  e, emp_, param, &teams_registry_);
+
+        PlayerInTeamF f_in_the_team;
+        f_in_the_team.cb_ = std::bind(&Teams::PlayerInTeam, this, std::placeholders::_1);
+        teams_registry_.emplace<PlayerInTeamF>(e, f_in_the_team);
+
         team.OnCreate();
         last_team_id_ = entt::to_integral(e);
         return RET_OK;
@@ -173,10 +177,6 @@ namespace common
 
     uint32_t Teams::JoinTeam(GameGuid team_id, GameGuid player_id)
     {
-        if (PlayerInTeam(player_id))
-        {
-            return RET_TEAM_MEMBER_IN_TEAM;
-        }
         GetTeamPtrReturnError;
         return team.JoinTeam(player_id);
     }
@@ -247,10 +247,6 @@ namespace common
     uint32_t Teams::ApplyForTeam(GameGuid team_id, GameGuid player_id)
     {
         GetTeamPtrReturnError;
-        if (PlayerInTeam(player_id))
-        {
-            return RET_TEAM_MEMBER_IN_TEAM;
-        }
         return team.ApplyForTeam(player_id);
     }
 
@@ -263,21 +259,17 @@ namespace common
     uint32_t Teams::AgreeApplicant(GameGuid team_id, GameGuid applicant_id)
     {
         GetTeamPtrReturnError;
-        if (PlayerInTeam(applicant_id))
-        {
-            return RET_TEAM_MEMBER_IN_TEAM;
-        }
         return team.AgreeApplicant(applicant_id);
     }
 
     void Teams::ClearApplyList(GameGuid team_id)
     {
         auto e = entt::to_entity(team_id);
-        if (!teams_.valid(e))
+        if (!teams_registry_.valid(e))
         {
             return;
         }
-        auto& team = teams_.get<Team>(e);
+        auto& team = teams_registry_.get<Team>(e);
         team.ClearApplyList();
     }
 
@@ -287,10 +279,6 @@ namespace common
         RET_CHECK_RET(CheckMemberInTeam(member_list));
         for (auto& it : member_list)
         {
-            if (PlayerInTeam(it))
-            {
-                return RET_TEAM_MEMBER_IN_TEAM;
-            }
             RET_CHECK_RET(team.JoinTeam(it));
         }
         return RET_OK;
@@ -298,7 +286,7 @@ namespace common
 
     void Teams::EraseTeam(entt::entity team_id)
     {
-        teams_.destroy(team_id);
+        teams_registry_.destroy(team_id);
     }
 
 }//namespace common
