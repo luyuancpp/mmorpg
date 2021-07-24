@@ -174,19 +174,10 @@ namespace common
         {
             return RET_TEAM_MEMBERS_FULL;
         }
-
-        if (members_.find(player_id) != members_.end())
-        {
-            return RET_TEAM_MEMBER_IN_TEAM;
-        }
+        //assert(members_.find(player_id) == members_.end());
 
         RET_CHECK_RET(CheckLimt(player_id));
-
-        auto it = applicants_.find(player_id);
-        if (it != applicants_.end())
-        {
-            RemoveApplicantId(player_id);
-        }
+        RemoveApplicantId(player_id);
         if (applicant_ids_.size() >= kMaxApplicantSize)
         {
             assert(!applicant_ids_.empty());
@@ -210,11 +201,6 @@ namespace common
 
     uint32_t Team::RemoveApplicant(GameGuid applicant_id)
     {
-        auto it = applicants_.find(applicant_id);
-        if (it == applicants_.end())
-        {
-            return RET_TEAM_NOT_IN_APPLICANT_LIEST;
-        }
         applicants_.erase(applicant_id);
         RemoveApplicantId(applicant_id);
         return RET_OK;
