@@ -109,11 +109,6 @@ namespace common
         return player_team_map_.find(player_id) != player_team_map_.end(); 
     }
 
-    bool Teams::FindTeamId(GameGuid player_id)
-    {
-        return GetTeamId(player_id) != kEmptyGameGuid;
-    }
-
     bool Teams::HasApplicant(GameGuid team_id, GameGuid player_id) const
     {
         GetTeamReturn(false);

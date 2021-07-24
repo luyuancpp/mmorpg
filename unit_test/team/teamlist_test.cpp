@@ -181,7 +181,7 @@ TEST(TeamManger, AppointLaderAndLeaveTeam1)
 	EXPECT_EQ(100, team_list.leader_id_by_teamid(team_list.last_team_id()));
 
 	team_list.LeaveTeam(100);
-	EXPECT_FALSE(team_list.FindTeamId(team_list.last_team_id()));
+	EXPECT_FALSE(team_list.PlayerInTeam(100));
 }
 
 TEST(TeamManger, AppointLaderAndLeaveTeam2)
@@ -201,7 +201,7 @@ TEST(TeamManger, AppointLaderAndLeaveTeam2)
 	EXPECT_EQ(104, team_list.leader_id_by_teamid(team_list.last_team_id()));
 
 	team_list.LeaveTeam(104 );
-	EXPECT_FALSE(team_list.FindTeamId(team_list.last_team_id()));
+	EXPECT_FALSE(team_list.PlayerInTeam(104));
 }
 
 
@@ -218,7 +218,7 @@ TEST(TeamManger, DismissTeam)
 	EXPECT_EQ(RET_TEAM_DISMISS_NOT_LEADER, team_list.DissMissTeam(team_list.last_team_id(), 104));
 	EXPECT_EQ(RET_TEAM_HAS_NOT_TEAM_ID, team_list.DissMissTeam(111, 104));
 	EXPECT_EQ(RET_OK, team_list.DissMissTeam(team_list.last_team_id(), 100));
-	EXPECT_FALSE(team_list.FindTeamId(team_list.last_team_id()));
+	EXPECT_FALSE(team_list.PlayerInTeam(100));
 }
 
 TEST(TeamManger, ApplyFull)
