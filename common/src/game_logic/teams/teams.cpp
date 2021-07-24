@@ -181,7 +181,7 @@ namespace common
         return team.JoinTeam(player_id);
     }
 
-    uint32_t Teams::CheckMemberInTeam(const Members& member_list)
+    uint32_t Teams::CheckMemberInTeam(const UI64USet& member_list)
     {
         for (auto& it : member_list)
         {
@@ -281,7 +281,7 @@ namespace common
         team.ClearApplyList();
     }
 
-    uint32_t Teams::JoinTeam(const Members& member_list, GameGuid  team_id)
+    uint32_t Teams::JoinTeam(const UI64USet& member_list, GameGuid  team_id)
     {
         GetTeamPtrReturnError;
         RET_CHECK_RET(CheckMemberInTeam(member_list));

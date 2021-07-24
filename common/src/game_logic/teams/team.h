@@ -7,8 +7,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "team.pb.h"
-
 #include "src/common_type/common_type.h"
 #include "src/event/event.h"
 #include "entt/src/entt/entity/entity.hpp"
@@ -19,13 +17,12 @@ namespace common
 {
     static const std::size_t kMaxApplicantSize{ 20 };
     static const std::size_t kMaxMemberSize{ 5 };
-    typedef std::unordered_set<GameGuid> Members;
 
     //function order get, set is, test action
     struct CreateTeamParam
     {
         GameGuid leader_id_{ 0 };
-        const Members members;
+        const UI64USet members;
         std::string  name_;
         EventManagerPtr emp_;
     };
@@ -51,7 +48,7 @@ namespace common
             assert(applicant_ids_.size() == applicants_.size());  return applicants_.size();
         }
         GameGuid first_applicant_id()const;
-        const Members& members()const { return members_; }
+        const UI64USet& members()const { return members_; }
 
         bool HasApplicant(GameGuid applicant_id) const { return applicants_.find(applicant_id) != applicants_.end(); }
         bool HasApply()const { return !applicants_.empty(); }
@@ -85,7 +82,7 @@ namespace common
 
         entt::entity team_id_{};
         GameGuid leader_id_{};
-        Members members_;
+        UI64USet members_;
         ApplyMembers applicants_;
         PlayerIdsV applicant_ids_;
         PlayerIdsV sequence_players_id_;

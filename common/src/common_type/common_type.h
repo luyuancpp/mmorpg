@@ -24,6 +24,8 @@ namespace common
     using UI32V = std::vector<uint32_t>;
     using UI64V = std::vector<uint64_t>;
 
+    using UI64USet = std::unordered_set<uint64_t>;
+
     using UI64UI64UMap = std::unordered_map<uint64_t, uint64_t>;
     using GameGuidU64Map = std::unordered_map<GameGuid, uint64_t>;
 
