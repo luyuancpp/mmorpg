@@ -63,8 +63,8 @@ namespace common
         void ClearApplyList(GameGuid team_id);
         
     protected:
-        uint32_t JoinTeam(const Members& member_list, GameGuid  team_id);
-        uint32_t CheckMemberInTeam(const Members& member_list);
+        uint32_t JoinTeam(const UI64USet& member_list, GameGuid  team_id);
+        uint32_t CheckMemberInTeam(const UI64USet& member_list);
         void OnPlayerLeaveTeam(GameGuid player_id);
         void EraseTeam(entt::entity team_id);
         void OnJoinTeam(GameGuid player_id, entt::entity team_id)
