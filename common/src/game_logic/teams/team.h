@@ -51,7 +51,7 @@ public:
 
     GameGuid team_id()const { return entt::to_integral(team_id_); }
     entt::entity to_entityid()const { return team_id_; }
-    GameGuid leader_id()const { return leader_id_; }
+    inline GameGuid leader_id()const { return leader_id_; }
     std::size_t max_member_size()const { return kMaxMemberSize; }
     std::size_t member_size()const { return members_.size(); }
     bool empty()const { return members_.empty(); }
