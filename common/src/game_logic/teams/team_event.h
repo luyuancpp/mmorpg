@@ -28,7 +28,6 @@ struct TeamESTeamIdBase
     entt::entity team_id_{ kEmptyGameGuid };
 };
 
-struct TeamESCreateTeamJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESLeaderDismissTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };

@@ -25,7 +25,7 @@ namespace common
         std::size_t member_size(GameGuid team_id);
         std::size_t applicant_size_by_player_id(GameGuid player_id)const;
         std::size_t applicant_size_by_team_id(GameGuid team_id)const;
-        std::size_t players_size()const { return player_team_map_.size(); }
+        std::size_t players_size()const { return teams_registry_.get<PlayerIdTeamIdMap>(my_entity_id_).size(); }
         GameGuid GetTeamId(GameGuid player_id)const;
         entt::entity GetTeamEntityId(GameGuid player_id)const;
         GameGuid last_team_id() const { return last_team_id_; }
@@ -36,15 +36,14 @@ namespace common
         bool IsTeamsMax() const{ return team_size() >= kMaxTeamSize; }
         bool IsTeamFull(GameGuid team_id);
         bool PlayerInTheTeam(GameGuid team_id, GameGuid player_id);
-        bool PlayerInTeam(GameGuid player_id)const { return player_team_map_.find(player_id) != player_team_map_.end(); }
+        bool PlayerInTeam(GameGuid player_id)const;
         bool FindTeamId(GameGuid team_id) const{ return nullptr !=  teams_registry_.try_get<Team>(entt::to_entity(team_id)); }
         bool FindTeamId(GameGuid player_id);
         bool HasApplicant(GameGuid team_id, GameGuid player_id)const;
 
         bool TestApplicantValueEqual(GameGuid team_id)const;
         
-        void receive(const TeamESJoinTeam& es);
-        void receive(const TeamESCreateTeamJoinTeam& es);        
+        void receive(const TeamESJoinTeam& es);      
         void receive(const TeamESLeaderDismissTeam& es);
         void receive(const TeamESLeaveTeam& es);
 
@@ -63,17 +62,12 @@ namespace common
     protected:
         uint32_t JoinTeam(const UI64USet& member_list, GameGuid  team_id);
         uint32_t CheckMemberInTeam(const UI64USet& member_list);
-        void OnPlayerLeaveTeam(GameGuid player_id);
         void EraseTeam(entt::entity team_id);
-        void OnJoinTeam(GameGuid player_id, entt::entity team_id)
-        {
-            player_team_map_.emplace(player_id, team_id);
-        }
 
-        PlayerIdTeamIdMap player_team_map_;
         GameGuid last_team_id_{ 0 };
         EventManagerPtr emp_;
         entt::registry teams_registry_;
+        entt::entity my_entity_id_{};
     };
 }//namespace common
 #endif // COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_

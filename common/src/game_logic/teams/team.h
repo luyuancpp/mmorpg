@@ -23,8 +23,14 @@ namespace common
     {
         GameGuid leader_id_{ 0 };
         const UI64USet members;
-        std::string  name_;
-        EventManagerPtr emp_;
+    };
+
+    struct TeamsParam
+    {
+        entt::entity team_id_{};
+        entt::entity teams_entity_id_{};//manager id
+        EventManagerPtr& emp_;
+        entt::registry* teams_registry_{ nullptr };
     };
 
     struct PlayerInTeamF
@@ -33,16 +39,15 @@ namespace common
         FunctionType cb_;
     };
 
+    using PlayerIdTeamIdMap = std::unordered_map<GameGuid, entt::entity>;
 
     class Team
     {
     public:
         using ApplyMembers = std::unordered_set<GameGuid>;
         
-        Team(entt::entity team_id, 
-            EventManagerPtr& emp, 
-            const CreateTeamParam& param, 
-            entt::registry* teams_registry);
+        Team(const CreateTeamParam& param, 
+            const TeamsParam& teams_param);
 
         GameGuid team_id()const { return entt::to_integral(team_id_); }
         entt::entity to_entityid()const { return team_id_; }
@@ -75,6 +80,7 @@ namespace common
         uint32_t ApplyForTeam(GameGuid player_id);
         uint32_t AgreeApplicant(GameGuid applicant_id);
         uint32_t RemoveApplicant(GameGuid applicant_id);
+        uint32_t DissMiss(GameGuid current_leader_id);
         void ClearApplyList();
 
     private:
@@ -88,6 +94,7 @@ namespace common
         void RemoveApplicantId(GameGuid  player_id);
 
         entt::entity team_id_{};
+        entt::entity teams_entity_id_{};//manager id
         GameGuid leader_id_{};
         UI64USet members_;
         ApplyMembers applicants_;

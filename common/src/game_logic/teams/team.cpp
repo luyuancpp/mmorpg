@@ -6,11 +6,13 @@
 
 namespace common
 {
-    Team::Team(entt::entity team_id, EventManagerPtr& emp, const CreateTeamParam& param, entt::registry* teams_registry)
-        : team_id_(team_id),
+    Team::Team(const CreateTeamParam& param,
+        const TeamsParam& teams_param)
+        : team_id_(teams_param.team_id_),
+          teams_entity_id_(teams_param.teams_entity_id_),
           leader_id_(param.leader_id_),
-          emp_(emp),
-          teams_registry_(teams_registry)
+          emp_(teams_param.emp_),
+          teams_registry_(teams_param.teams_registry_)
     {
         for (auto& it : param.members)
         {
@@ -46,8 +48,10 @@ namespace common
 
     void Team::OnCreate()
     {
+        auto& ms = teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_);
         for (auto& it : members_)
         {
+            ms.emplace(it, team_id_);
             emp_->emit<TeamESJoinTeam>(team_id_, it);
         }
     }
@@ -63,6 +67,8 @@ namespace common
         RemoveApplicant(player_id);
         AddMember(player_id);
         assert(members_.size() == sequence_players_id_.size());
+        auto& ms = teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_);
+        ms.emplace(player_id, team_id_);
         emp_->emit< TeamESJoinTeam>(team_id_, player_id);
         return RET_OK;
     }
@@ -109,6 +115,8 @@ namespace common
             OnAppointLeader(*sequence_players_id_.begin());
         }
         emp_->emit<TeamESLeaveTeam>(team_id_, player_id);
+        auto& ms = teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_);
+        ms.erase(player_id);
         return RET_OK;
     }
 
@@ -228,6 +236,23 @@ namespace common
         }
         applicants_.erase(applicant_id);
         RemoveApplicantId(applicant_id);
+        return RET_OK;
+    }
+
+    uint32_t Team::DissMiss(GameGuid current_leader_id)
+    {
+        if (leader_id() != current_leader_id)
+        {
+            return RET_TEAM_DISMISS_NOT_LEADER;
+        }
+        auto& ms = teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_);
+        
+        for (auto& it : members_)
+        {
+            emp_->emit<TeamESLeaveTeam>(team_id_, it);
+            ms.erase(it);   
+        }
+        emp_->emit<TeamESLeaderDismissTeam>(team_id_, kEmptyGameGuid);
         return RET_OK;
     }
 

@@ -30,10 +30,8 @@ namespace common
     Teams::Teams()
         : emp_(EventManager::New())
     {
-        emp_->subscribe<TeamESCreateTeamJoinTeam>(*this);
-        emp_->subscribe<TeamESJoinTeam>(*this);
-        emp_->subscribe<TeamESLeaderDismissTeam>(*this);     
-        emp_->subscribe<TeamESLeaveTeam>(*this);  
+        my_entity_id_ = teams_registry_.create();
+        teams_registry_.emplace<PlayerIdTeamIdMap>(my_entity_id_, PlayerIdTeamIdMap());
     }
 
     std::size_t Teams::member_size(GameGuid team_id)
@@ -56,6 +54,7 @@ namespace common
 
     GameGuid Teams::GetTeamId(GameGuid player_id)const
     {
+        auto& player_team_map_ = teams_registry_.get<PlayerIdTeamIdMap>(my_entity_id_);
         auto it = player_team_map_.find(player_id);
         if (it == player_team_map_.end())
         {
@@ -66,6 +65,7 @@ namespace common
 
     entt::entity Teams::GetTeamEntityId(GameGuid player_id) const
     {
+        auto& player_team_map_ = teams_registry_.get<PlayerIdTeamIdMap>(my_entity_id_);
         auto it = player_team_map_.find(player_id);
         if (it == player_team_map_.end())
         {
@@ -103,6 +103,12 @@ namespace common
         return team.InTeam(player_id);
     }
 
+    bool Teams::PlayerInTeam(GameGuid player_id) const
+    {
+        auto& player_team_map_ = teams_registry_.get<PlayerIdTeamIdMap>(my_entity_id_);
+        return player_team_map_.find(player_id) != player_team_map_.end(); 
+    }
+
     bool Teams::FindTeamId(GameGuid player_id)
     {
         return GetTeamId(player_id) != kEmptyGameGuid;
@@ -120,26 +126,6 @@ namespace common
         return team.TestApplicantValueEqual();
     }
 
-    void Teams::receive(const TeamESJoinTeam& es)
-    {
-        OnJoinTeam(es.player_id_, es.team_id_);
-    }
-
-    void Teams::receive(const TeamESCreateTeamJoinTeam& es)
-    {
-        OnJoinTeam(es.player_id_, es.team_id_);
-    }
-
-    void Teams::receive(const TeamESLeaderDismissTeam& es)
-    {
-        OnPlayerLeaveTeam(es.player_id_);
-    }
-
-    void Teams::receive(const TeamESLeaveTeam& es)
-    {
-        OnPlayerLeaveTeam(es.player_id_);
-    }
-
     uint32_t Teams::CreateTeam(const CreateTeamParam& param)
     {
         if (IsTeamsMax())
@@ -153,7 +139,8 @@ namespace common
         RET_CHECK_RET(CheckMemberInTeam(param.members));
 
         auto e = teams_registry_.create();
-        auto team = teams_registry_.emplace<Team>(e,  e, emp_, param, &teams_registry_);
+        TeamsParam ts_param{e, my_entity_id_, emp_, &teams_registry_ };
+        auto team = teams_registry_.emplace<Team>(e, param, ts_param);
 
         PlayerInTeamF f_in_the_team;
         f_in_the_team.cb_ = std::bind(&Teams::PlayerInTeam, this, std::placeholders::_1);
@@ -182,11 +169,6 @@ namespace common
         return RET_OK;
     }
 
-    void Teams::OnPlayerLeaveTeam(GameGuid player_id)
-    {
-        player_team_map_.erase(player_id);
-    }
-
     uint32_t Teams::LeaveTeam(GameGuid player_id)
     {
         auto team_id = GetTeamEntityId(player_id);
@@ -209,14 +191,7 @@ namespace common
     uint32_t Teams::DissMissTeam(GameGuid team_id, GameGuid current_leader_id)
     {
         GetTeamPtrReturnError;
-        if (team.leader_id() != current_leader_id)
-        {
-            return RET_TEAM_DISMISS_NOT_LEADER;
-        }
-        for (auto& it : team.members())
-        {
-            emp_->emit<TeamESLeaderDismissTeam>(e, it);
-        }
+        RET_CHECK_RET(team.DissMiss(current_leader_id));
         EraseTeam(e);
         return RET_OK;
     }
