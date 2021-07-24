@@ -37,16 +37,10 @@ namespace common
         bool IsTeamFull(GameGuid team_id);
         bool PlayerInTheTeam(GameGuid team_id, GameGuid player_id);
         bool PlayerInTeam(GameGuid player_id)const;
-        bool FindTeamId(GameGuid team_id) const{ return nullptr !=  teams_registry_.try_get<Team>(entt::to_entity(team_id)); }
-        bool FindTeamId(GameGuid player_id);
         bool HasApplicant(GameGuid team_id, GameGuid player_id)const;
 
         bool TestApplicantValueEqual(GameGuid team_id)const;
         
-        void receive(const TeamESJoinTeam& es);      
-        void receive(const TeamESLeaderDismissTeam& es);
-        void receive(const TeamESLeaveTeam& es);
-
         uint32_t CreateTeam(const CreateTeamParam& param);
         uint32_t JoinTeam(GameGuid team_id, GameGuid player_id);
         uint32_t LeaveTeam(GameGuid player_id);
