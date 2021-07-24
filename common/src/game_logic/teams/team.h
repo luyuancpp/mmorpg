@@ -27,6 +27,13 @@ namespace common
         EventManagerPtr emp_;
     };
 
+    struct PlayerInTeamF
+    {
+        using FunctionType = std::function<bool(GameGuid)>;
+        FunctionType cb_;
+    };
+
+
     class Team
     {
     public:

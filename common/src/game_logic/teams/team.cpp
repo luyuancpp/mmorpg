@@ -54,6 +54,11 @@ namespace common
 
     uint32_t Team::JoinTeam(GameGuid  player_id)
     {
+        if (teams_registry_->get<PlayerInTeamF>(team_id_).cb_(player_id))
+        {
+            return RET_TEAM_MEMBER_IN_TEAM;
+        }
+        
         RET_CHECK_RET(TryToJoinTeam(player_id));
         RemoveApplicant(player_id);
         AddMember(player_id);
@@ -88,6 +93,10 @@ namespace common
             return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
         bool leader_leave = IsLeader(player_id);
+        if (leader_leave)
+        {
+            emp_->emit<TeamESLeaderLeaveTeam>(team_id_, player_id);
+        }
         members_.erase(player_id);
         auto sit = std::find(sequence_players_id_.begin(), sequence_players_id_.end(), player_id);
         if (sit != sequence_players_id_.end())
@@ -97,7 +106,6 @@ namespace common
         assert(members_.size() == sequence_players_id_.size());
         if (!sequence_players_id_.empty() && leader_leave)
         {
-            emp_->emit<TeamESLeaderLeaveTeam>(team_id_, player_id);    
             OnAppointLeader(*sequence_players_id_.begin());
         }
         emp_->emit<TeamESLeaveTeam>(team_id_, player_id);
@@ -164,6 +172,10 @@ namespace common
 
     uint32_t Team::ApplyForTeam(GameGuid player_id)
     {
+        if (teams_registry_->get<PlayerInTeamF>(team_id_).cb_(player_id))
+        {
+            return RET_TEAM_MEMBER_IN_TEAM;
+        }
         if (IsFull())
         {
             return RET_TEAM_MEMBERS_FULL;
@@ -194,6 +206,10 @@ namespace common
 
     uint32_t Team::AgreeApplicant(GameGuid applicant_id)
     {
+        if (teams_registry_->get<PlayerInTeamF>(team_id_).cb_(applicant_id))
+        {
+            return RET_TEAM_MEMBER_IN_TEAM;
+        }
         auto it = applicants_.find(applicant_id);
         if (it == applicants_.end())
         {
