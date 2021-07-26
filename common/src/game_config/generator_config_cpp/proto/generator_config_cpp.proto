@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+message ConditionTableRow
+{
+	 uint32 id = 1;
+	 uint32 type = 2;
+	 repeated uint32 condtion1 = 3;
+	 repeated uint32 condtion2 = 4;
+	 repeated uint32 condtion3 = 5;
+	 uint32 amount_type = 6;
+	 uint32 amount = 7;
+	 uint32 operator = 8;
+}
+
+message ConditionTable
+{
+	 repeated ConditionTableRow data = 1;
+}
+
