@@ -18,7 +18,6 @@
     <ClCompile Include="src\server_common\codec\codec.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-   
     <ClCompile Include="src\mysql_client\mysql_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -55,7 +54,7 @@
     <ClCompile Include="src\game_logic\teams\teams.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_config\game_config.cpp">
+    <ClCompile Include="src\game_config\deploy_json.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\server_common\rpc_channel.cc">
@@ -85,9 +84,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\return_code\return_code.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\return_code\notice_struct.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\snow_flake\snow_flake.h">
@@ -186,7 +182,7 @@
     <ClInclude Include="src\return_code\return_notice_code.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_config\game_config.h">
+    <ClInclude Include="src\game_config\deploy_json.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\deploy_rpcclient.h">

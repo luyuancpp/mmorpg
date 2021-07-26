@@ -1,6 +1,6 @@
 #include "gateway_server.h"
 
-#include "src/game_config/game_config.h"
+#include "src/game_config/deploy_json.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
 

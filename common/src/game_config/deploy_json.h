@@ -1,5 +1,5 @@
-#ifndef COMMON_SRC_GAME_GAME_CONFIG_H_
-#define COMMON_SRC_GAME_GAME_CONFIG_H_
+#ifndef COMMON_SRC_GAME_deploy_json_H_
+#define COMMON_SRC_GAME_deploy_json_H_
 
 #include "common.pb.h"
 
