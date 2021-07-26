@@ -1,4 +1,4 @@
-#include "game_config.h"
+#include "deploy_json.h"
 
 #include "google/protobuf/util/json_util.h"
 

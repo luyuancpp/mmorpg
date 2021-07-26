@@ -1,7 +1,7 @@
 ﻿#include "muduo/base/Logging.h"
 #include "muduo/net/EventLoop.h"
 
-#include "src/game_config/game_config.h"
+#include "src/game_config/deploy_json.h"
 #include "src/deploy_server.h"
 
 #include "src/service/service.h"
