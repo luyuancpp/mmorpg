@@ -6,21 +6,29 @@
 
 namespace common
 {
-    //https://stackoverflow.com/questions/2602013/read-whole-ascii-file-into-c-stdstring
+    //http://www.cplusplus.com/reference/istream/istream/read/
     std::string File2String(const std::string& filename)
     {
-        std::string contents;
-        std::ifstream in(filename, std::ios::in | std::ios::binary);
-        if (in)
-        {            
-            in.seekg(0, std::ios::end);
-            contents.resize(in.tellg());
-            in.seekg(0, std::ios::beg);
-            in.read(&contents[0], contents.size());
-            in.close();
-            return(contents);
+        std::ifstream is(filename, std::ifstream::binary);
+        std::string jssbuffer;
+        if (is) {
+            // get length of file:
+            is.seekg(0, is.end);
+            int length = (int)is.tellg();
+            length = length + 1;
+            is.seekg(0, is.beg);
+            char* buffer = new char[length];
+            memset(buffer, 0, length);
+            // read data as a block:
+            is.read(buffer, length);
+            is.close();
+            // ...buffer contains the entire file...
+            jssbuffer = buffer;
+            jssbuffer.erase(remove_if(jssbuffer.begin(), jssbuffer.end(), iscntrl), jssbuffer.end());
+            jssbuffer.erase(remove_if(jssbuffer.begin(), jssbuffer.end(), isspace), jssbuffer.end());
+            delete[] buffer;
         }
-        return contents;
+        return jssbuffer;
     }
 
 }//namespace common
