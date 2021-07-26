@@ -316,7 +316,6 @@ TEST(TeamManger, InTeamApplyForTeam)
 
     EXPECT_EQ(RET_OK, team_list.LeaveTeam(2));
 
-
     m = (2);
     EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), m));
     EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
