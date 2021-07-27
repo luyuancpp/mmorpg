@@ -6,3 +6,10 @@ message Vector3
 	double y = 2;
 	double z = 3;
 }
+
+message Condition
+{
+	uint32 id = 1;
+	uint32 progress = 2;
+	uint32 status = 3;
+}
