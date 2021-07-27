@@ -20,3 +20,4 @@ lib/
 bin/
 x64/
 .vs/
+common/src/game_config/generator/
