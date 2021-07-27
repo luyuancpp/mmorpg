@@ -7,7 +7,7 @@
 namespace common
 {
     //http://www.cplusplus.com/reference/istream/istream/read/
-    std::string File2String(const std::string& filename)
+    static std::string File2String(const std::string& filename)
     {
         std::ifstream is(filename, std::ifstream::binary);
         std::string jssbuffer;
