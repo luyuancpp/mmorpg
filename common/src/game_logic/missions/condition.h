@@ -3,7 +3,12 @@
 
 namespace common
 {
-
+class Condition
+{
+public:
+private:
+    //dynamic
+};
 
 }//namespace common
 

@@ -4,9 +4,9 @@ message ConditionTableRow
 {
 	 uint32 id = 1;
 	 uint32 type = 2;
-	 repeated uint32 condtion1 = 3;
-	 repeated uint32 condtion2 = 4;
-	 repeated uint32 condtion3 = 5;
+	 repeated uint32 condition1 = 3;
+	 repeated uint32 condition2 = 4;
+	 repeated uint32 condition3 = 5;
 	 uint32 amount_type = 6;
 	 uint32 amount = 7;
 	 uint32 operator = 8;
