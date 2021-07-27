@@ -1,13 +1,14 @@
 #ifndef COMMON_SRC_GAME_LOGIC_MISSIONS_CONDITION_H_
 #define COMMON_SRC_GAME_LOGIC_MISSIONS_CONDITION_H_
 
+#include "src/common_type/common_type.h"
+
 namespace common
 {
-class Condition
+
+struct Condition
 {
-public:
-private:
-    //dynamic
+    //dynamic condition
 };
 
 }//namespace common
