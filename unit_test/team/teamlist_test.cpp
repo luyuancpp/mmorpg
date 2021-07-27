@@ -33,6 +33,8 @@ TEST(TeamManger, CreateFullDismiss)
 	}
 	EXPECT_EQ(0, team_list.team_size());
 	EXPECT_EQ(0, team_list.players_size());
+
+	reg().clear();
 }
 
 TEST(TeamManger, TeamSizeTest)
@@ -53,6 +55,7 @@ TEST(TeamManger, TeamSizeTest)
 	++m;
 	EXPECT_EQ(RET_TEAM_MEMBERS_FULL, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(kMaxMemberSize, team_list.member_size(team_list.last_team_id()));
+	reg().clear();
 }
 
 TEST(TeamManger, LeaveTeam)
@@ -96,6 +99,7 @@ TEST(TeamManger, LeaveTeam)
 	}
     EXPECT_EQ(0, team_list.team_size());
     EXPECT_EQ(0, team_list.players_size());
+	reg().clear();
 }
 
 
