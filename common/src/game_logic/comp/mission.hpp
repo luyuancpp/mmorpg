@@ -2,12 +2,21 @@
 #define COMMON_SRC_GAME_LOIGC_COMP_H_
 
 #include <unordered_map>
+#include <vector>
 
 #include "src/game_logic/game_registry.h"
 
 namespace common
 {
-using MissionMap = std::unordered_map<uint32_t, entt::entity>;
+enum eCondtionType : uint16_t
+{
+    E_CONDITION_KILL_MONSTER,
+    E_CONDITION_TALK_WITH_NPC,
+    E_CONDITION_COMPLELETE_CONDITION
+};
+
+using EntityV = std::vector<entt::entity>;
+using TypeMissionEntityMap = std::unordered_map<eCondtionType, EntityV>;
 
 }//namespace common
 

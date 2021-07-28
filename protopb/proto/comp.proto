@@ -14,15 +14,16 @@ message Condition
 	uint32 status = 3;
 }
 
-message Conditions
-{
-	repeated Condition conditions = 1;
-}
-
 message Mission
 {
 	uint32 id = 1;
 	uint32 status = 2;
+	repeated Condition conditions = 3;
+}
+
+message MissionMap
+{
+	map<uint32, Mission> missions = 1;
 }
 
 message MissionBeginTime
