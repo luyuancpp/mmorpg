@@ -6,11 +6,6 @@
 namespace common
 {
 
-struct Condition
-{
-    //dynamic condition
-};
-
 }//namespace common
 
 #endif // !COMMON_SRC_GAME_LOGIC_MISSIONS_CONDITION_H_
