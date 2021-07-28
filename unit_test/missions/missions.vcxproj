@@ -117,6 +117,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;ENTT_ID_TYPE=uint64_t;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../../common/;../../protopb/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,16 +146,16 @@
     <ClCompile Include="..\..\common\src\game_config\generator\json_cpp\condition_json.cpp" />
     <ClCompile Include="..\..\common\src\game_config\generator\json_cpp\mission_json.cpp" />
     <ClCompile Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.cc" />
-    <ClCompile Include="..\..\common\src\game_logic\missions\condition.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\missions\mission.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\factories\factories.cpp" />
+    <ClCompile Include="..\..\protopb\pbc\comp.pb.cc" />
     <ClCompile Include="missions_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\game_config\generator\json_cpp\condition_json.h" />
     <ClInclude Include="..\..\common\src\game_config\generator\json_cpp\mission_json.h" />
     <ClInclude Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.h" />
-    <ClInclude Include="..\..\common\src\game_logic\missions\condition.h" />
-    <ClInclude Include="..\..\common\src\game_logic\missions\mission.h" />
+    <ClInclude Include="..\..\common\src\game_logic\factories\factories.h" />
+    <ClInclude Include="..\..\protopb\pbc\comp.pb.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
