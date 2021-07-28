@@ -11,7 +11,7 @@
 #include "src/event/event.h"
 #include "entt/src/entt/entity/entity.hpp"
 #include "entt/src/entt/entity/registry.hpp"
-#include "src/game_ecs/entity_cast.h"
+#include "src/game_logic/entity_cast.h"
 
 namespace common
 {

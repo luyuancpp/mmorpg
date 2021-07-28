@@ -5,7 +5,7 @@
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
 #include "src/game_config/deploy_json.h"
-#include "src/game_ecs/game_registry.h"
+#include "src/game_logic/game_registry.h"
 
 #include "ms2g.pb.h"
 #include "ms2gw.pb.h"

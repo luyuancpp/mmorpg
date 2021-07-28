@@ -3,7 +3,7 @@
 #include "muduo/base/CountDownLatch.h"
 #include "muduo/base/Logging.h"
 #include "src/client_entityid/client_entityid.h"
-#include "src/game_ecs/game_registry.h"
+#include "src/game_logic/game_registry.h"
 
 ClientService::ClientService(ProtobufDispatcher& dispatcher, 
                              ProtobufCodec& codec, 

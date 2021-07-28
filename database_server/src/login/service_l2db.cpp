@@ -5,7 +5,7 @@
 #include "src/mysql_database/mysql_database.h"
 #include "src/redis_client/redis_client.h"
 
-#include "game_database.pb.h"
+#include "game_entity.pb.h"
 
 namespace l2db
 {

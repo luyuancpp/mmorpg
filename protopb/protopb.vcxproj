@@ -28,7 +28,7 @@
     <ClInclude Include="pbc\deploy_database_table.pb.h" />
     <ClInclude Include="pbc\g2db.pb.h" />
     <ClInclude Include="pbc\g2ms.pb.h" />
-    <ClInclude Include="pbc\game_database.pb.h" />
+    <ClInclude Include="pbc\game_entity.pb.h" />
     <ClInclude Include="pbc\game_rpc.pb.h" />
     <ClInclude Include="pbc\gw2g.pb.h" />
     <ClInclude Include="pbc\gw2l.pb.h" />
@@ -51,7 +51,7 @@
     <ClCompile Include="pbc\deploy_database_table.pb.cc" />
     <ClCompile Include="pbc\g2db.pb.cc" />
     <ClCompile Include="pbc\g2ms.pb.cc" />
-    <ClCompile Include="pbc\game_database.pb.cc" />
+    <ClCompile Include="pbc\game_entity.pb.cc" />
     <ClCompile Include="pbc\game_rpc.pb.cc" />
     <ClCompile Include="pbc\gw2g.pb.cc" />
     <ClCompile Include="pbc\gw2l.pb.cc" />
