@@ -17,3 +17,14 @@ message ConditionTable
 	 repeated ConditionTableRow data = 1;
 }
 
+message MissionTableRow
+{
+	 uint32 id = 1;
+	 repeated uint32 condition_id = 2;
+	 uint32 condition_order = 3;
+}
+
+message MissionTable
+{
+	 repeated MissionTableRow data = 1;
+}
