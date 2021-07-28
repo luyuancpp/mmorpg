@@ -13,3 +13,8 @@ message Condition
 	uint32 progress = 2;
 	uint32 status = 3;
 }
+
+message Conditions
+{
+	repeated Condition conditions = 1;
+}
