@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "src/common_type/common_type.h"
-#include "src/game_ecs/game_registry.h"
+#include "src/game_logic/game_registry.h"
 #include "entt/src/entt/entity/entity.hpp"
 #include "src/snow_flake/snow_flake.h"
 #include "src/game_logic/teams/team_event.h"

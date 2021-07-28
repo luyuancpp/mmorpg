@@ -39,7 +39,7 @@
     <ClCompile Include="src\login_state\login_state_machine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_ecs\game_registry.cpp">
+    <ClCompile Include="src\game_logic\game_registry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\mysql_database\mysql_database.cpp">
@@ -224,7 +224,7 @@
     <ClInclude Include="src\server_common\server_component.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_ecs\game_component\player_common_component.h">
+    <ClInclude Include="src\game_logic\game_component\player_common_component.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

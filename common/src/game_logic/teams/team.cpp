@@ -2,7 +2,7 @@
 
 #include "src/return_code/return_notice_code.h"
 #include "src/game_logic/teams/team_event.h"
-#include "src/game_ecs/game_registry.h"
+#include "src/game_logic/game_registry.h"
 
 namespace common
 {

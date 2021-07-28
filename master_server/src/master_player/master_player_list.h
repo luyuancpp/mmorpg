@@ -2,7 +2,7 @@
 #define MASTER_SERVER_SRC_MASTER_PLAYER_MASTER_PLAYER_LIST_H_
 
 #include "src/common_type/common_type.h"
-#include "src/game_ecs/game_registry.h"
+#include "src/game_logic/game_registry.h"
 
 namespace master
 {
