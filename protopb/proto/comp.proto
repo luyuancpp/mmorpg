@@ -29,3 +29,8 @@ message MissionBeginTime
 {
 	uint64 begin_time = 1;
 }
+
+message CompleteMissionsId
+{
+	map<uint32, bool> missions = 1;
+}
