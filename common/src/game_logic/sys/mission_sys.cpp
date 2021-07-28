@@ -10,11 +10,9 @@ void CompleteAllMission(entt::registry& reg, entt::entity e, uint32_t op)
 {
     auto& mm = reg.get<MissionMap>(e);
     auto& cm = reg.get<CompleteMissionsId>(e);
-    for (auto& meit : mm)
+    for (auto& meit : mm.missions())
     {
-        auto& mission = reg.get<Mission>(meit.second);
-        cm.mutable_missions()->insert({mission.id(), true});
-        reg.remove<Mission>(meit.second);
+        cm.mutable_missions()->insert({ meit.first, true});
     }
  
     reg.remove<MissionMap>(e);

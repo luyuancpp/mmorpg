@@ -10,39 +10,36 @@
 
 namespace common
 {
-entt::entity MakePlayer(entt::registry& reg)
-{
-    auto e = reg.create();
-    reg.emplace<Vector3>(e);
-    return e;
-}
 
 entt::entity MakeMissionMap(entt::registry& reg)
 {
     auto e = reg.create();
     reg.emplace<MissionMap>(e);
+    reg.emplace<TypeMissionEntityMap>(e);
+    return e;
+}
+
+entt::entity MakePlayerMission(entt::registry& reg)
+{
+    auto e = MakeMissionMap(reg);
     reg.emplace<CompleteMissionsId>(e);
     return e;
 }
 
-entt::entity MakeMission(entt::registry& reg, entt::entity parent_id, uint32_t id)
+entt::entity MakeMission(entt::registry& reg, entt::entity e, uint32_t id)
 {
     auto cids = MissionJson::GetSingleton().Primary1KeyRow(id);
     if (nullptr == cids)
     {
         return entt::null;
     }
-    auto e = reg.create();
-    auto& ms = reg.emplace<Mission>(e);
-    ms.set_id(id);
-    auto& cs = reg.emplace<Conditions>(e);
-
+    Mission m;
     for (int32_t i = 0; i < cids->condition_id_size(); ++i)
     {
-        auto pcs = cs.add_conditions();
+        auto pcs = m.add_conditions();
         pcs->set_id(cids->condition_id(i));
     }
-    reg.get<MissionMap>(parent_id).emplace(id, e);
+    auto ret = reg.get<MissionMap>(e).mutable_missions()->insert({ id, std::move(m) });
     return e;
 }
 

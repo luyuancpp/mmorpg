@@ -14,20 +14,19 @@ using namespace common;
 
 TEST(Missions, MakeQuest)
 {
-    auto mm = MakeMissionMap(reg());
+    auto mm = MakePlayerMission(reg());
     std::size_t s = 0;
-    auto accept_mission = [mm, &s](uint32_t id)-> void
+    auto lmake_mission = [mm, &s](uint32_t id)-> void
     {
         auto m = MakeMission(reg(), mm, id);
         ++s;
     };
     
-    MissionJson::GetSingleton().IdListCallback(accept_mission);
+    MissionJson::GetSingleton().IdListCallback(lmake_mission);
 
-    EXPECT_EQ(s, reg().get<MissionMap>(mm).size());
+    EXPECT_EQ(s, reg().get<MissionMap>(mm).missions().size());
     EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
     CompleteAllMission(reg(), mm, E_OP_CODE_TEST);
-    EXPECT_EQ(0, reg().view<Mission>().size());
     EXPECT_EQ(0, reg().view<MissionMap>().size());
     EXPECT_EQ(s, reg().get<CompleteMissionsId>(mm).missions_size());
 }

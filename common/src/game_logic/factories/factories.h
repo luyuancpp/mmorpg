@@ -7,8 +7,8 @@
 
 namespace common
 {
-entt::entity MakePlayer(entt::registry& reg);
 entt::entity MakeMissionMap(entt::registry&);
+entt::entity MakePlayerMission(entt::registry&);
 entt::entity MakeMission(entt::registry&, entt::entity parent_id, uint32_t id);
 
 }//namespace common
