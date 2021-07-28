@@ -147,6 +147,7 @@
     <ClCompile Include="..\..\common\src\game_config\generator\json_cpp\mission_json.cpp" />
     <ClCompile Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.cc" />
     <ClCompile Include="..\..\common\src\game_logic\factories\factories.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\sys\mission_sys.cpp" />
     <ClCompile Include="..\..\protopb\pbc\comp.pb.cc" />
     <ClCompile Include="missions_test.cpp" />
   </ItemGroup>
@@ -154,7 +155,9 @@
     <ClInclude Include="..\..\common\src\game_config\generator\json_cpp\condition_json.h" />
     <ClInclude Include="..\..\common\src\game_config\generator\json_cpp\mission_json.h" />
     <ClInclude Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.h" />
+    <ClInclude Include="..\..\common\src\game_logic\comp\mission.hpp" />
     <ClInclude Include="..\..\common\src\game_logic\factories\factories.h" />
+    <ClInclude Include="..\..\common\src\game_logic\sys\mission_sys.hpp" />
     <ClInclude Include="..\..\protopb\pbc\comp.pb.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
