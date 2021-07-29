@@ -18,19 +18,19 @@ public:
     }
 
     template <typename RandType>
-    decltype(auto) Rand(RandType min_num, RandType max_num)
+    inline decltype(auto) Rand(RandType min_num, RandType max_num)
     {
         std::uniform_int_distribution<RandType> dist(min_num, max_num);
         return dist(rand);
     }
 
-    decltype(auto) Rand(double min_num, double max_num)
+    inline decltype(auto) Rand(double min_num, double max_num)
     {
         std::uniform_real_distribution<double> dist(min_num, max_num);
         return dist(rand);
     }
 
-    decltype(auto) Rand(float min_num, float max_num)
+    inline decltype(auto) Rand(float min_num, float max_num)
     {
         std::uniform_real_distribution<double> dist(min_num, max_num);
         return dist(rand);
