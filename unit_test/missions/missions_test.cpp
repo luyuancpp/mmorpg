@@ -38,9 +38,14 @@ TEST(Missions, RemakeMission)
 
 TEST(Missions, RadomCondtion)
 {
+    auto cids = MissionJson::GetSingleton().Primary1KeyRow(3);
     auto mm = MakePlayerMission(reg());
-    MakeRadomMission(reg(), mm, 3);
-    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().find(3)->second.conditions_size());
+    MakeMission(reg(), mm, 3);
+    auto& missions = reg().get<MissionMap>(mm).missions();
+    auto it =  std::find(cids->random_condition_pool().begin(), cids->random_condition_pool().end(),
+        missions.find(3)->second.conditions(0).id());
+    EXPECT_TRUE(it != cids->random_condition_pool().end());
+    EXPECT_EQ(1, missions.find(3)->second.conditions_size());
 }
 
 TEST(Missions, CondtionList)
