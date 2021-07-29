@@ -42,6 +42,11 @@ namespace common
         RET_TEAM_TEAM_LIST_MAX = 5012,
         RET_TEAM_HAS_NOT_TEAM_ID = 5013,
         RET_TEAM_DISMISS_NOT_LEADER = 5014,
+
+        //mission ret
+        RET_MISSION_ID_REPTEATED = 6000,
+        RET_MISSION_TYPE_REPTEATED = 6001,
+        RET_MISSION_NO_CONDITION = 6002,
     };
 }//namespace common
 
