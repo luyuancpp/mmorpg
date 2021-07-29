@@ -27,7 +27,7 @@
     <ClCompile Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\factories\factories.cpp">
+    <ClCompile Include="..\..\common\src\game_logic\factories\mission_factories.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\protopb\pbc\comp.pb.cc">
@@ -44,7 +44,7 @@
     <ClInclude Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\factories\factories.h">
+    <ClInclude Include="..\..\common\src\game_logic\factories\mission_factories.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\protopb\pbc\comp.pb.h">

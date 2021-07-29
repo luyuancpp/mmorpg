@@ -3,7 +3,7 @@
 #include "src/game_config/generator/json_cpp/mission_json.h"
 #include "src/game_config/generator/json_cpp/condition_json.h"
 #include "src/game_logic/comp/mission.hpp"
-#include "src/game_logic/factories/factories.h"
+#include "src/game_logic/factories/mission_factories.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/op_code.h"
 #include "src/game_logic/sys/mission_sys.hpp"
@@ -36,7 +36,7 @@ TEST(Missions, MakeMission)
 
     EXPECT_EQ(s, reg().get<MissionMap>(mm).missions().size());
     EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
-    CompleteAllMission(reg(), mm, E_OP_CODE_TEST);
+    CompleteAllMission(mm, E_OP_CODE_TEST);
     EXPECT_EQ(0, reg().view<MissionMap>().size());
     EXPECT_EQ(s, reg().get<CompleteMissionsId>(mm).missions_size());
 }
@@ -77,6 +77,15 @@ TEST(Missions, RepeatedMission)
     }
 }
 
+TEST(Missions, TriggerCondition)
+{
+
+}
+
+TEST(Missions, CompleteRemakeMission)
+{
+
+}
 
 TEST(Missions, CondtionList)
 {
