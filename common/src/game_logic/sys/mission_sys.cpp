@@ -89,6 +89,7 @@ void TriggerConditionEvent(const ConditionEvent& c)
     auto type_missions = reg().get<TypeMissionIdMap>(e);
     auto it = type_missions.find(c.condition_type_);// aready check
     auto& cm = reg().get<CompleteMissionsId>(e);
+    auto complete_callback = reg().try_get<CompleteMissionCallback>(e);
     for (auto lmit : it->second)
     {
         auto mit = mm->find(lmit);
@@ -115,8 +116,14 @@ void TriggerConditionEvent(const ConditionEvent& c)
 
         mission.set_status(E_MISSION_COMPLETE);
         mission.clear_conditions();
-        cm.mutable_missions()->insert({ mission.id(), false });
- 
+        if (nullptr != complete_callback)
+        {
+            complete_callback->operator()(e, mit->first, cm);
+        }
+        else
+        {
+            cm.mutable_missions()->insert({ mission.id(), false });
+        }
         mm->erase(mit);
         // can not use mission and mit 
     }
