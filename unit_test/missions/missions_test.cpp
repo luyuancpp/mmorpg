@@ -13,9 +13,9 @@
 
 using namespace common;
 
-TEST(Missions, MakeQuest)
+TEST(Missions, MakeMission)
 {
-    auto mm = MakePlayerMission(reg());
+    auto mm = MakePlayerMissionMap(reg());
     std::size_t s = 0;
     auto lmake_mission = [mm, &s](uint32_t id)-> void
     {
@@ -36,7 +36,7 @@ TEST(Missions, RadomCondtion)
 {
     uint32_t rid = 3;
     auto cids = MissionJson::GetSingleton().Primary1KeyRow(rid);
-    auto mm = MakePlayerMission(reg());
+    auto mm = MakePlayerMissionMap(reg());
     MakeMission(reg(), mm, rid);
     auto& missions = reg().get<MissionMap>(mm).missions();
     auto it =  std::find(cids->random_condition_pool().begin(), cids->random_condition_pool().end(),

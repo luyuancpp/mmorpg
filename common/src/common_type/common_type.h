@@ -27,6 +27,9 @@ namespace common
     using UI32USet = std::unordered_set<uint32_t>;
     using UI64USet = std::unordered_set<uint64_t>;
 
+    using UI32Pair = std::pair<uint32_t, uint32_t>;
+    using UI32PairSet = std::set<UI32Pair>;
+
     using UI64UI64UMap = std::unordered_map<uint64_t, uint64_t>;
     using GameGuidU64Map = std::unordered_map<GameGuid, uint64_t>;
 
