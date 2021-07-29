@@ -10,6 +10,7 @@ namespace common
     enum  EnumCode : uint32_t
     {
         RET_OK = 1,
+        RET_TABLE_ID_ERROR = 2,
 
         //login server 
         RET_LOGIN_CNAT_FIND_ACCOUNT = 1000,

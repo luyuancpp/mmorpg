@@ -23,6 +23,8 @@ message MissionTableRow
 	 repeated uint32 condition_id = 2;
 	 uint32 condition_order = 3;
 	 repeated uint32 random_condition_pool = 4;
+	 uint32 mission_type = 5;
+	 uint32 mission_sub_type = 6;
 }
 
 message MissionTable
