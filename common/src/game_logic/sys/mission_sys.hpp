@@ -8,8 +8,7 @@
 namespace common
 {
 
-
-void CompleteAllMission(entt::registry&, entt::entity, uint32_t op);
+void CompleteAllMission(entt::entity, uint32_t op);
 
 }//namespace common
 
