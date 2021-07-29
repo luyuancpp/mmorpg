@@ -31,10 +31,14 @@ TEST(Missions, MakeQuest)
     EXPECT_EQ(s, reg().get<CompleteMissionsId>(mm).missions_size());
 }
 
+TEST(Missions, RemakeMission)
+{
+}
 
 TEST(Missions, RadomCondtion)
 {
-
+    auto mm = MakePlayerMission(reg());
+    MakeMission(reg(), mm, 3);
 }
 
 TEST(Missions, CondtionList)
