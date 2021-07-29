@@ -63,8 +63,7 @@ TEST(Missions, RepeatedMission)
         uint32_t mid = 1;
         MakeMissionParam param{ mm,
         mid,
-        MissionJson::GetSingleton().Primary1KeyRow(mid)->condition_id(),
-        E_OP_CODE_TEST };
+        MissionJson::GetSingleton().Primary1KeyRow(mid)->condition_id(), E_OP_CODE_TEST };
         EXPECT_EQ(RET_OK, MakeMission(param));
         EXPECT_EQ(RET_MISSION_ID_REPTEATED, MakeMission(param));
     }
@@ -75,11 +74,34 @@ TEST(Missions, RepeatedMission)
         EXPECT_EQ(RET_OK, MakePlayerMission(param));
         EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, MakePlayerMission(param2));
     }
+    reg().clear();
 }
 
 TEST(Missions, TriggerCondition)
 {
+    auto mm = MakePlayerMissionMap();
+    uint32_t mid = 1;
+    MakeMissionParam param{ mm,   mid,  MissionJson::GetSingleton().Primary1KeyRow(mid)->condition_id(), E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, MakeMission(param));
+    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
+    TriggerConditionEvent(ce);
+    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
+    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
 
+    ce.condtion_ids_ = { 2 };
+    TriggerConditionEvent(ce);
+    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
+    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
+
+    ce.condtion_ids_ = { 3 };
+    TriggerConditionEvent(ce);
+    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
+    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
+
+    ce.condtion_ids_ = { 4 };
+    TriggerConditionEvent(ce);
+    EXPECT_EQ(0, reg().get<MissionMap>(mm).missions().size());
+    EXPECT_EQ(1, reg().get<CompleteMissionsId>(mm).missions_size());
 }
 
 TEST(Missions, CompleteRemakeMission)
