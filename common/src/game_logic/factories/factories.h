@@ -10,6 +10,7 @@ namespace common
 entt::entity MakeMissionMap(entt::registry&);
 entt::entity MakePlayerMission(entt::registry&);
 entt::entity MakeMission(entt::registry&, entt::entity parent_id, uint32_t id);
+entt::entity MakeRadomMission(entt::registry&, entt::entity parent_id, uint32_t id);
 
 }//namespace common
 

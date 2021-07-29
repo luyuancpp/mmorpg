@@ -40,13 +40,26 @@ entt::entity MakeMission(entt::registry& reg, entt::entity e, uint32_t id)
         auto pcs = m.add_conditions();
         pcs->set_id(cids->condition_id(i));
     }
+
+    auto ret = reg.get<MissionMap>(e).mutable_missions()->insert({ id, std::move(m) });
+    return e;
+}
+
+entt::entity MakeRadomMission(entt::registry& reg, entt::entity e, uint32_t id)
+{
+    auto cids = MissionJson::GetSingleton().Primary1KeyRow(id);
+    if (nullptr == cids)
+    {
+        return e;
+    }
+    MakeMission(reg, e, id);
     if (cids->random_condition_pool_size() > 0)
     {
+        auto mit = reg.get<MissionMap>(e).mutable_missions()->find(id);
         auto i = Random::GetSingleton().Rand<int32_t>(0, cids->random_condition_pool_size() - 1);
-        auto pcs = m.add_conditions();
+        auto pcs = mit->second.add_conditions();
         pcs->set_id(cids->random_condition_pool().Get(i));
     }
-    auto ret = reg.get<MissionMap>(e).mutable_missions()->insert({ id, std::move(m) });
     return e;
 }
 
