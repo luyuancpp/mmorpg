@@ -5,6 +5,7 @@
 #include "src/game_config/generator/json_cpp/condition_json.h"
 #include "src/game_config/generator/json_cpp/mission_json.h"
 #include "src/game_logic/comp/mission.hpp"
+#include "src/random/random.h"
 
 #include "comp.pb.h"
 
@@ -38,6 +39,12 @@ entt::entity MakeMission(entt::registry& reg, entt::entity e, uint32_t id)
     {
         auto pcs = m.add_conditions();
         pcs->set_id(cids->condition_id(i));
+    }
+    if (cids->random_condition_pool_size() > 0)
+    {
+        auto i = Random::GetSingleton().Rand<int32_t>(0, cids->random_condition_pool_size() - 1);
+        auto pcs = m.add_conditions();
+        pcs->set_id(cids->random_condition_pool().Get(i));
     }
     auto ret = reg.get<MissionMap>(e).mutable_missions()->insert({ id, std::move(m) });
     return e;
