@@ -26,7 +26,7 @@ TEST(Missions, MakeMission)
     std::size_t s = 0;
     auto lmake_mission = [ &s, &param](uint32_t id)-> void
     {
-        param.mision_id_ = id;
+        param.mission_id_ = id;
         param.condition_id_ = &MissionJson::GetSingleton().Primary1KeyRow(id)->condition_id();
         auto m = MakeMission(param);
         ++s;
@@ -75,7 +75,6 @@ TEST(Missions, RepeatedMission)
         EXPECT_EQ(RET_OK, MakePlayerMission(param));
         EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, MakePlayerMission(param2));
     }
-   
 }
 
 

@@ -32,7 +32,8 @@ entt::entity MakePlayerMissionMap()
 uint32_t MakeMission(const MakeMissionParam& param)
 {
     auto missions = reg().get<MissionMap>(param.e_).mutable_missions();
-    if (missions->count(param.mision_id_))
+    auto mission_id = param.mission_id_;
+    if (missions->count(mission_id))
     {
         return RET_MISSION_ID_REPTEATED;
     }
@@ -41,19 +42,20 @@ uint32_t MakeMission(const MakeMissionParam& param)
         return RET_MISSION_NO_CONDITION;
     }
     Mission m;
-    m.set_id(param.mision_id_);
+    m.set_id(mission_id);
     for (int32_t i = 0; i < param.condition_id_->size(); ++i)
     {
         auto pcs = m.add_conditions();
         pcs->set_id(param.condition_id_->Get(i));
     }
-    missions->insert({ param.mision_id_, std::move(m) });
+    missions->insert({ mission_id, std::move(m) });
     return RET_OK;
 }
 
 uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
 {
-    auto cids = MissionJson::GetSingleton().Primary1KeyRow(param.mision_id_);
+    auto mission_id = param.mission_id_;
+    auto cids = MissionJson::GetSingleton().Primary1KeyRow(param.mission_id_);
     if (nullptr == cids)
     {
         return RET_TABLE_ID_ERROR;
@@ -69,7 +71,7 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
             return RET_MISSION_TYPE_REPTEATED;
         }
     }    
-    MakeMissionParam mp{ param.e_, param.mision_id_, cids ->condition_id(), param.op_};
+    MakeMissionParam mp{ param.e_, mission_id, cids ->condition_id(), param.op_};
     if (cids->random_condition_pool_size() > 0)
     {
         MakeMissionParam::ConditionV v;
@@ -90,7 +92,6 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
     }
     return RET_OK;
 }
-
 
 }//namespace common
 
