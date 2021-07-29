@@ -23,6 +23,28 @@ bool CheckPlayerMissonAutoReward(uint32_t mission_id)
 void OnPlayerCompleteMission(entt::entity e, uint32_t mission_id, CompleteMissionsId& cm)
 {
     cm.mutable_missions()->insert({ mission_id, true});
+    auto mrow = MissionJson::GetSingleton().Primary1KeyRow(mission_id);
+    if (nullptr == mrow)
+    {
+        return;
+    }
+
+    if (mrow->mission_sub_type() > 0)
+    {
+        UI32PairSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
+        auto& type_set = reg().get<UI32PairSet>(e);
+        type_set.erase(p);
+    }
+    auto& type_missions = reg().get<TypeMissionIdMap>(e);
+    for (int32_t i = 0; i < mrow->condition_id_size(); ++i)
+    {
+        auto p = ConditionJson::GetSingleton().PrimaryKeyRow(mrow->condition_id(i));
+        if (nullptr == p)
+        {
+            continue;
+        }
+        type_missions[p->condition_type()].erase(mission_id);
+    }
 }
 
 entt::entity MakeMissionMap()
@@ -82,15 +104,15 @@ uint32_t MakeMission(const MakeMissionParam& param)
 uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
 {
     auto mission_id = param.mission_id_;
-    auto cids = MissionJson::GetSingleton().Primary1KeyRow(param.mission_id_);
-    if (nullptr == cids)
+    auto mrow = MissionJson::GetSingleton().Primary1KeyRow(param.mission_id_);
+    if (nullptr == mrow)
     {
         return RET_TABLE_ID_ERROR;
     }
    
-    if ( cids->mission_sub_type() > 0)
+    if ( mrow->mission_sub_type() > 0)
     {
-        UI32PairSet::value_type p(cids->mission_type(), cids->mission_sub_type());
+        UI32PairSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
         auto& type_set = reg().get<UI32PairSet>(param.e_);
         auto it = type_set.find(p);
         if (it != type_set.end())
@@ -98,12 +120,12 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
             return RET_MISSION_TYPE_REPTEATED;
         }
     }    
-    MakeMissionParam mp{ param.e_, mission_id, cids ->condition_id(), param.op_};
-    if (cids->random_condition_pool_size() > 0)
+    MakeMissionParam mp{ param.e_, mission_id, mrow ->condition_id(), param.op_};
+    if (mrow->random_condition_pool_size() > 0)
     {
         MakeMissionParam::ConditionV v;
-        auto i = Random::GetSingleton().Rand<int32_t>(0, cids->random_condition_pool_size() - 1);
-        *v.Add() = cids->random_condition_pool().Get(i);
+        auto i = Random::GetSingleton().Rand<int32_t>(0, mrow->random_condition_pool_size() - 1);
+        *v.Add() = mrow->random_condition_pool().Get(i);
         mp.condition_id_ = &v;
         RET_CHECK_RET(MakeMission(mp));
     }
@@ -111,9 +133,9 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
     {
         RET_CHECK_RET(MakeMission(mp));
     }
-    if (cids->mission_sub_type() > 0)
+    if (mrow->mission_sub_type() > 0)
     {
-        UI32PairSet::value_type p(cids->mission_type(), cids->mission_sub_type());
+        UI32PairSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
         auto& type_set = reg().get<UI32PairSet>(param.e_);
         type_set.emplace(p);
     }
