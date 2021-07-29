@@ -102,6 +102,7 @@ TEST(Missions, TriggerCondition)
     TriggerConditionEvent(ce);
     EXPECT_EQ(0, reg().get<MissionMap>(mm).missions().size());
     EXPECT_EQ(1, reg().get<CompleteMissionsId>(mm).missions_size());
+    reg().clear();
 }
 
 TEST(Missions, CompleteRemakeMission)

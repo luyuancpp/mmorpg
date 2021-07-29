@@ -14,10 +14,15 @@
 namespace common
 {
 
-bool CheckMissonAutoReward(uint32_t mission_id)
+bool CheckPlayerMissonAutoReward(uint32_t mission_id)
 {
     auto p = MissionJson::GetSingleton().Primary1KeyRow(mission_id);
     return nullptr != p && p->auto_reward() > 0;
+}
+
+void OnPlayerCompleteMission(entt::entity e, uint32_t mission_id, CompleteMissionsId& cm)
+{
+    cm.mutable_missions()->insert({ mission_id, true});
 }
 
 entt::entity MakeMissionMap()
@@ -26,6 +31,7 @@ entt::entity MakeMissionMap()
     reg().emplace<MissionMap>(e);
     reg().emplace<CompleteMissionsId>(e);
     auto type_missions =  reg().emplace<TypeMissionIdMap>(e);
+    
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
     {
         type_missions.emplace(i, UI32USet{});
@@ -38,6 +44,7 @@ entt::entity MakePlayerMissionMap()
     auto e = MakeMissionMap();
     reg().emplace<UI32PairSet>(e);
     //reg().emplace<MissionAutoRewardCallback>(e, MissionAutoRewardCallback(CheckMissonAutoReward));
+    reg().emplace<CompleteMissionCallback>(e, CompleteMissionCallback(OnPlayerCompleteMission));
     return e;
 }
 
