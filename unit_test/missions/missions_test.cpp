@@ -32,21 +32,24 @@ TEST(Missions, MakeQuest)
     EXPECT_EQ(s, reg().get<CompleteMissionsId>(mm).missions_size());
 }
 
-TEST(Missions, RemakeMission)
-{
-}
-
 TEST(Missions, RadomCondtion)
 {
-    auto cids = MissionJson::GetSingleton().Primary1KeyRow(3);
+    uint32_t rid = 3;
+    auto cids = MissionJson::GetSingleton().Primary1KeyRow(rid);
     auto mm = MakePlayerMission(reg());
-    MakeMission(reg(), mm, 3);
+    MakeMission(reg(), mm, rid);
     auto& missions = reg().get<MissionMap>(mm).missions();
     auto it =  std::find(cids->random_condition_pool().begin(), cids->random_condition_pool().end(),
-        missions.find(3)->second.conditions(0).id());
+        missions.find(rid)->second.conditions(0).id());
     EXPECT_TRUE(it != cids->random_condition_pool().end());
-    EXPECT_EQ(1, missions.find(3)->second.conditions_size());
+    EXPECT_EQ(1, missions.find(rid)->second.conditions_size());
 }
+
+TEST(Missions, RemakeMission)
+{
+
+}
+
 
 TEST(Missions, CondtionList)
 {
