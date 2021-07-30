@@ -72,23 +72,30 @@ entt::entity MakePlayerMissionMap()
 
 uint32_t MakeMission(const MakeMissionParam& param)
 {
-    auto missions = reg().get<MissionMap>(param.e_).mutable_missions();
+    auto e = param.e_;
+    auto missions = reg().get<MissionMap>(e).mutable_missions();
     auto mission_id = param.mission_id_;
     if (missions->count(mission_id))
     {
         return RET_MISSION_ID_REPTEATED;
     }
+    auto& cms = reg().get<CompleteMissionsId>(e);
+    if (cms.missions().count(mission_id))
+    {
+        return RET_MISSION_COMPLETE;
+    }
     if (nullptr == param.condition_id_)
     {
         return RET_MISSION_NO_CONDITION;
     }
+    auto condition_id = param.condition_id_;
     Mission m;
     m.set_id(mission_id);
-    auto& type_missions = reg().get<TypeMissionIdMap>(param.e_);
-    for (int32_t i = 0; i < param.condition_id_->size(); ++i)
+    auto& type_missions = reg().get<TypeMissionIdMap>(e);
+    for (int32_t i = 0; i < condition_id->size(); ++i)
     {
         auto pcs = m.add_conditions();
-        pcs->set_id(param.condition_id_->Get(i));
+        pcs->set_id(condition_id->Get(i));
         auto p = ConditionJson::GetSingleton().PrimaryKeyRow(pcs->id());
         if (nullptr == p)
         {

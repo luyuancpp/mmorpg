@@ -115,6 +115,8 @@ TEST(Missions, TypeSize)
     //auto mrow = MissionJson::GetSingleton().Primary1KeyRow(mid);
     MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
     EXPECT_EQ(RET_OK, MakePlayerMission(param));
+    EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
+    EXPECT_FALSE(IsCompleteMission({ mm, mid }));
     auto& type_misison = reg().get<TypeMissionIdMap>(mm);
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_COMSTUM; ++i)
     {
@@ -149,6 +151,8 @@ TEST(Missions, TypeSize)
     
     EXPECT_EQ(0, reg().get<MissionMap>(mm).missions().size());
     EXPECT_EQ(1, reg().get<CompleteMissionsId>(mm).missions_size());
+    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
+    EXPECT_TRUE(IsCompleteMission({ mm, mid }));    
     EXPECT_EQ(0, reg().get<UI32PairSet>(mm).size());
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_COMSTUM; ++i)
     {
@@ -159,16 +163,40 @@ TEST(Missions, TypeSize)
 
 TEST(Missions, CompleteRemakeMission)
 {
-
+    auto mm = MakePlayerMissionMap();
+    uint32_t mid = 4;
+    //auto mrow = MissionJson::GetSingleton().Primary1KeyRow(mid);
+    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+    EXPECT_EQ(1, reg().get<UI32PairSet>(mm).size());
+    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
+    TriggerConditionEvent(ce);
+    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
+    EXPECT_TRUE(IsCompleteMission({ mm, mid }));    
+    EXPECT_EQ(RET_MISSION_COMPLETE, MakePlayerMission(param));
+    reg().clear();
 }
 
 
-TEST(Missions, AcceptNextQuest)
+TEST(Missions, AcceptNextMission)
 {
 
 }
 
+TEST(Missions, AcceptNextMirroMission)
+{
 
+}
+
+TEST(Missions, AcceptMissionCondition)
+{
+
+}
+
+TEST(Missions, MissionTimeOut)
+{
+
+}
 
 int main(int argc, char** argv)
 {
