@@ -254,11 +254,28 @@ TEST(Missions, MissionCondition)
     EXPECT_TRUE(IsCompleteMission({ mm, mid1 }));
     EXPECT_FALSE(IsAcceptedMission({ mm, mid2 }));
     EXPECT_TRUE(IsCompleteMission({ mm, mid2 }));
+    reg().clear();
 }
 
 TEST(Missions, ConditionAmount)
 {
+    auto mm = MakePlayerMissionMap();
 
+    uint32_t mid = 13;
+
+    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+
+    EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
+    EXPECT_FALSE(IsCompleteMission({ mm, mid }));
+    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
+    TriggerConditionEvent(ce);
+    EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
+    EXPECT_FALSE(IsCompleteMission({ mm, mid }));
+    TriggerConditionEvent(ce);
+    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
+    EXPECT_TRUE(IsCompleteMission({ mm, mid }));
+    reg().clear();
 }
 
 TEST(Missions, MissionRewardList)
