@@ -113,7 +113,7 @@ void AcceptNextMission(const ConditionEvent& c)
         {
             for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
             {
-
+                next_time_accpet->next_time_accept_mission_id_.emplace(p->next_mission_id(i));
             }
         }
     }

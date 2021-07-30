@@ -52,7 +52,7 @@ using MissionAutoRewardCallback = std::function<bool(uint32_t)>;
 using CompleteMissionCallback = std::function<void(entt::entity, uint32_t, CompleteMissionsId&)>;
 using TempCompleteList = UI32USet;
 
-struct NextTimeAcceptMission { uint8_t next_time_accept_{ 0 }; };
+struct NextTimeAcceptMission { UI32USet next_time_accept_mission_id_; };
 
 }//namespace common
 
