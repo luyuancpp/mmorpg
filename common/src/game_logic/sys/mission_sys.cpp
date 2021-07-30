@@ -4,6 +4,7 @@
 #include "src/game_config/generator/json_cpp/mission_json.h"
 #include "src/game_logic/comp/mission.hpp"
 #include "src/game_logic/game_registry.h"
+#include "src/return_code/return_notice_code.h"
 
 #include "comp.pb.h"
 
@@ -128,6 +129,24 @@ void TriggerConditionEvent(const ConditionEvent& c)
         // can not use mission and mit 
     }
     
+}
+
+uint32_t GiveMission(const MissionIdParam& gum)
+{
+
+    return RET_OK;
+}
+
+bool IsAcceptedMission(const MissionIdParam& icm)
+{
+    auto& cmi = reg().get<MissionMap>(icm.e_);
+    return cmi.missions().find(icm.missin_id_) != cmi.missions().end();
+}
+
+bool IsCompleteMission(const MissionIdParam& icm)
+{
+    auto& cmi = reg().get<CompleteMissionsId>(icm.e_);
+    return cmi.missions().find(icm.missin_id_) != cmi.missions().end();
 }
 
 }//namespace common

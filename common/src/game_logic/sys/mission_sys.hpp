@@ -20,9 +20,17 @@ struct ConditionEvent
     uint32_t ammount_{ 1 };
 };
 
+struct MissionIdParam
+{
+    entt::entity e_{};
+    uint32_t missin_id_{ 0 };
+};
+
 void CompleteAllMission(entt::entity, uint32_t op);
 void TriggerConditionEvent(const ConditionEvent&);
-
+uint32_t GiveMission(const MissionIdParam&);
+bool IsAcceptedMission(const MissionIdParam&);
+bool IsCompleteMission(const MissionIdParam&);
 }//namespace common
 
 #endif//COMMON_SRC_GAME_LOGIC_SYS_MISSION_SYS_H_
