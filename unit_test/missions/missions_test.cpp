@@ -325,6 +325,10 @@ TEST(Missions, RemoveMission)
     reg().clear();
 }
 
+TEST(Missions, MissionReward)
+{
+}
+
 TEST(Missions, MissionTimeOut)
 {
 
