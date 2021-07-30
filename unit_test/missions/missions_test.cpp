@@ -180,7 +180,33 @@ TEST(Missions, CompleteRemakeMission)
 
 TEST(Missions, AcceptNextMission)
 {
+    auto mm = MakePlayerMissionMap();
+    uint32_t mid = 7;
 
+    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+    EXPECT_EQ(1, reg().get<UI32PairSet>(mm).size());
+    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
+    TriggerConditionEvent(ce);
+    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
+    EXPECT_TRUE(IsCompleteMission({ mm, mid }));
+
+    auto next_mission = ++mid;
+    EXPECT_TRUE(IsAcceptedMission({ mm,  next_mission }));
+    EXPECT_FALSE(IsCompleteMission({ mm, next_mission }));
+    for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_INTERATION; ++i)
+    {
+        ce.condtion_ids_ = { i };
+        TriggerConditionEvent(ce);
+        EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
+        EXPECT_TRUE(IsCompleteMission({ mm, mid }));
+
+        auto next_mission = ++mid;
+        EXPECT_TRUE(IsAcceptedMission({ mm,  next_mission }));
+        EXPECT_FALSE(IsCompleteMission({ mm, next_mission }));
+    }
+
+    reg().clear();
 }
 
 TEST(Missions, AcceptNextMirroMission)
@@ -188,7 +214,7 @@ TEST(Missions, AcceptNextMirroMission)
 
 }
 
-TEST(Missions, AcceptMissionCondition)
+TEST(Missions, MissionCondition)
 {
 
 }

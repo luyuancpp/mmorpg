@@ -9,6 +9,7 @@ message ConditionTableRow
 	 uint32 amount_type = 5;
 	 uint32 amount = 6;
 	 uint32 operator = 7;
+
 }
 
 message ConditionTable
@@ -26,6 +27,7 @@ message MissionTableRow
 	 uint32 mission_sub_type = 6;
 	 uint32 auto_reward = 7;
 	 uint32 reward_id = 8;
+	 repeated uint32 next_mission_id = 9;
 }
 
 message MissionTable
