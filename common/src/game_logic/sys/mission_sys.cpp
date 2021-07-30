@@ -78,7 +78,7 @@ bool TriggerCondition(const ConditionEvent& c, Mission& mission)
     return condition_change;
 }
 
-void OncompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete)
+void OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete)
 {
     if (temp_complete.empty())
     {
@@ -190,7 +190,7 @@ void TriggerConditionEvent(const ConditionEvent& c)
         // can not use mission and mit 
     }
     
-    OncompleteMission(c, temp_complete);    
+    OnCompleteMission(c, temp_complete);    
 }
 
 uint32_t GiveMission(const MissionIdParam& gum)
@@ -198,17 +198,45 @@ uint32_t GiveMission(const MissionIdParam& gum)
     return RET_OK;
 }
 
+uint32_t GetMissionReward(const MissionIdParam& mip)
+{
+    auto e = mip.e_;
+    auto rmid = reg().get<CompleteMissionsId>(e).mutable_can_reward_mission_id();
+    auto it = rmid->find(mip.missin_id_);
+    if (it == rmid->end())
+    {
+        return RET_MISSION_GET_REWARD_NO_MISSION_ID;
+    }
+    rmid->erase(mip.missin_id_);
+    return RET_OK;
+}
+
 void RemoveMission(const MissionIdParam& rm)
 {
     auto e = rm.e_;
     auto mission_id = rm.missin_id_;
-    auto mm = reg().get<MissionMap>(e);
-    mm.mutable_missions()->erase(mission_id);
+    reg().get<MissionMap>(e).mutable_missions()->erase(mission_id);
     reg().get<CompleteMissionsId>(e).mutable_can_reward_mission_id()->erase(mission_id);
     auto begin_times =  reg().try_get<MissionBeginTime>(e);
     if (nullptr != begin_times)
     {
         begin_times->mutable_mission_begin_time()->erase(mission_id);
+    }
+    auto mrow = MissionJson::GetSingleton().Primary1KeyRow(mission_id);
+    if (nullptr == mrow)
+    {
+        return;
+    }
+    RemoveMissionTypeSubType(e, mrow->mission_type(), mrow->mission_type());
+    auto& type_missions = reg().get<TypeMissionIdMap>(e);
+    for (int32_t i = 0; i < mrow->condition_id_size(); ++i)
+    {
+        auto cp = ConditionJson::GetSingleton().PrimaryKeyRow(mrow->condition_id(i));
+        if (nullptr == cp)
+        {
+            continue;
+        }
+        type_missions[cp->condition_type()].erase(mission_id);
     }
 }
 
@@ -222,6 +250,13 @@ bool IsCompleteMission(const MissionIdParam& icm)
 {
     auto& cmi = reg().get<CompleteMissionsId>(icm.e_);
     return cmi.missions().find(icm.missin_id_) != cmi.missions().end();
+}
+
+void RemoveMissionTypeSubType(entt::entity e, uint32_t mission_type, uint32_t mission_sub_type)
+{
+    TypeSubTypeSet::value_type p(mission_type, mission_sub_type);
+    auto& type_set = reg().get<TypeSubTypeSet>(e);
+    type_set.erase(p);
 }
 
 }//namespace common

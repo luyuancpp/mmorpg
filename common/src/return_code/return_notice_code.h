@@ -48,6 +48,7 @@ namespace common
         RET_MISSION_TYPE_REPTEATED = 6001,
         RET_MISSION_NO_CONDITION = 6002,
         RET_MISSION_COMPLETE = 6003,
+        RET_MISSION_GET_REWARD_NO_MISSION_ID = 6004,
     };
 }//namespace common
 

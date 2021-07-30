@@ -14,6 +14,8 @@
 namespace common
 {
 
+void RemoveMissionTypeSubType(entt::entity e, uint32_t mission_type, uint32_t mission_sub_type);
+
 bool CheckPlayerMissonAutoReward(uint32_t mission_id)
 {
     auto p = MissionJson::GetSingleton().Primary1KeyRow(mission_id);
@@ -34,9 +36,7 @@ void OnPlayerCompleteMission(entt::entity e, uint32_t mission_id, CompleteMissio
     }
     if (mrow->mission_sub_type() > 0)
     {
-        TypeSubTypeSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
-        auto& type_set = reg().get<TypeSubTypeSet>(e);
-        type_set.erase(p);
+        RemoveMissionTypeSubType(e, mrow->mission_type(), mrow->mission_sub_type());
     }
 }
 

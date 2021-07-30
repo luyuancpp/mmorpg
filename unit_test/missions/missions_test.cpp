@@ -178,7 +178,7 @@ TEST(Missions, CompleteRemakeMission)
 }
 
 
-TEST(Missions, OncompleteMission)
+TEST(Missions, OnCompleteMission)
 {
     auto mm = MakePlayerMissionMap();
     uint32_t mid = 7;
@@ -280,12 +280,49 @@ TEST(Missions, ConditionAmount)
 
 TEST(Missions, MissionRewardList)
 {
+    auto mm = MakePlayerMissionMap();
 
+    uint32_t mid = 12;
+
+    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+    EXPECT_EQ(RET_MISSION_GET_REWARD_NO_MISSION_ID, GetMissionReward({ mm, mid }));
+    EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
+    EXPECT_FALSE(IsCompleteMission({ mm, mid }));
+    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
+    TriggerConditionEvent(ce);
+    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
+    EXPECT_TRUE(IsCompleteMission({ mm, mid }));
+    EXPECT_EQ(RET_OK, GetMissionReward({ mm, mid }));
+    EXPECT_EQ(RET_MISSION_GET_REWARD_NO_MISSION_ID, GetMissionReward({ mm, mid }));
+    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).can_reward_mission_id().size());
+    reg().clear();
 }
 
 TEST(Missions, RemoveMission)
 {
+    auto mm = MakePlayerMissionMap();
 
+    uint32_t mid = 12;
+
+    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+
+    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
+    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).can_reward_mission_id().size());
+    EXPECT_EQ(1, reg().get<TypeSubTypeSet>(mm).size());
+    auto& type_missions = reg().get<TypeMissionIdMap>(mm);
+
+    EXPECT_EQ(1, type_missions[E_CONDITION_KILL_MONSTER].size());
+    reg().get<CompleteMissionsId>(mm).mutable_can_reward_mission_id()->insert({ mid, true });
+    MissionIdParam rp{ mm, mid,  E_OP_CODE_TEST };
+    RemoveMission(rp);
+
+    EXPECT_EQ(0, reg().get<MissionMap>(mm).missions().size());
+    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).can_reward_mission_id().size());
+    EXPECT_EQ(0, reg().get<TypeSubTypeSet>(mm).size());
+    EXPECT_EQ(0, type_missions[E_CONDITION_KILL_MONSTER].size());
+    reg().clear();
 }
 
 TEST(Missions, MissionTimeOut)
