@@ -21,6 +21,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     gw2l::LoginResponse* response,
     ::google::protobuf::Closure* done)
 {
+    //只连接不登录,占用连接
     // login process
     // check account rule
     //check string rule
@@ -28,9 +29,8 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         auto it = login_players_.find(request->account());
         if (it == login_players_.end())
         {
-            PlayerPtr player(std::make_shared<AccountPlayer>());
             assert(connection_accounts_.find(request->connection_id()) == connection_accounts_.end());
-            auto ret = login_players_.emplace(request->account(), player);
+            auto ret = login_players_.emplace(request->account(), std::make_shared<AccountPlayer>());
             it = ret.first;
         }
         assert(it != login_players_.end());
