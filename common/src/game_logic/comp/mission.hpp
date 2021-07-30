@@ -50,6 +50,10 @@ using EntityV = std::vector<entt::entity>;
 using TypeMissionIdMap = std::unordered_map<uint32_t, UI32USet>;
 using MissionAutoRewardCallback = std::function<bool(uint32_t)>;
 using CompleteMissionCallback = std::function<void(entt::entity, uint32_t, CompleteMissionsId&)>;
+using TempCompleteList = UI32USet;
+
+struct NextTimeAcceptMission { uint8_t next_time_accept_{ 0 }; };
+
 }//namespace common
 
 #endif//COMMON_SRC_GAME_LOIGC_COMP_H_

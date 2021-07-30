@@ -4,6 +4,7 @@
 #include "src/game_config/generator/json_cpp/mission_json.h"
 #include "src/game_logic/comp/mission.hpp"
 #include "src/game_logic/game_registry.h"
+#include "src/game_logic/factories/mission_factories.h"
 #include "src/return_code/return_notice_code.h"
 
 #include "comp.pb.h"
@@ -77,20 +78,64 @@ bool TriggerCondition(const ConditionEvent& c, Mission& mission)
     return condition_change;
 }
 
+void AcceptNextMission(const ConditionEvent& c)
+{
+    auto e = c.e_;
+    auto& type_missions = reg().get<TypeMissionIdMap>(e);
+    auto& temp_complete = reg().get<TempCompleteList>(e);
+    for (auto& it : temp_complete)
+    {
+        auto p = MissionJson::GetSingleton().PrimaryKeyRow(it);
+        if (nullptr == p)
+        {
+            continue;
+        }
+        for (int32_t i = 0; i < p->condition_id_size(); ++i)
+        {
+            auto cp = ConditionJson::GetSingleton().PrimaryKeyRow(p->condition_id(i));
+            if (nullptr == cp)
+            {
+                continue;
+            }
+            type_missions[cp->condition_type()].erase(it);
+        }
+
+        auto next_time_accpet = reg().try_get<NextTimeAcceptMission>(e);
+        if (nullptr == next_time_accpet)
+        {
+            for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
+            {
+                MakePlayerMissionParam param{ e,   p->next_mission_id(i),  c.op_ };
+                MakePlayerMission(param);
+            }
+        }
+        else
+        {
+            for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
+            {
+
+            }
+        }
+    }
+}
+
 void TriggerConditionEvent(const ConditionEvent& c)
 {
-    if (c.condtion_ids_.empty() || !c.CheckType())
+    if (c.condtion_ids_.empty())
     {
         return;
     }
 
     auto e = c.e_;
     auto mm = reg().get<MissionMap>(c.e_).mutable_missions();
-
     auto type_missions = reg().get<TypeMissionIdMap>(e);
-    auto it = type_missions.find(c.condition_type_);// aready check
     auto& cm = reg().get<CompleteMissionsId>(e);
     auto complete_callback = reg().try_get<CompleteMissionCallback>(e);
+    auto it = type_missions.find(c.condition_type_);// aready check
+    if (it == type_missions.end())
+    {
+        return;
+    }
     for (auto lmit : it->second)
     {
         auto mit = mm->find(lmit);
@@ -99,7 +144,10 @@ void TriggerConditionEvent(const ConditionEvent& c)
             continue;
         }
         auto& mission = mit->second;
-        TriggerCondition(c, mission);
+        if (!TriggerCondition(c, mission))
+        {
+            continue;
+        }
         bool all_complete = true;
         for (int32_t i = 0; i < mission.conditions_size(); ++i)
         {
@@ -117,6 +165,7 @@ void TriggerConditionEvent(const ConditionEvent& c)
 
         mission.set_status(E_MISSION_COMPLETE);
         mission.clear_conditions();
+        reg().get<TempCompleteList>(e).emplace(mission.id());
         if (nullptr != complete_callback)
         {
             complete_callback->operator()(e, mit->first, cm);
@@ -128,12 +177,12 @@ void TriggerConditionEvent(const ConditionEvent& c)
         mm->erase(mit);
         // can not use mission and mit 
     }
-    
+
+    AcceptNextMission(c);
 }
 
 uint32_t GiveMission(const MissionIdParam& gum)
 {
-
     return RET_OK;
 }
 

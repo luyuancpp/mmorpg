@@ -16,8 +16,9 @@ struct ConditionEvent
 
     entt::entity e_{};
     uint32_t condition_type_{0};
-    I32V condtion_ids_{};
+    UI32V condtion_ids_{};
     uint32_t ammount_{ 1 };
+    uint32_t op_{ 0 };
 };
 
 struct MissionIdParam

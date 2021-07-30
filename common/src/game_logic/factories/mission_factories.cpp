@@ -35,16 +35,7 @@ void OnPlayerCompleteMission(entt::entity e, uint32_t mission_id, CompleteMissio
         auto& type_set = reg().get<UI32PairSet>(e);
         type_set.erase(p);
     }
-    auto& type_missions = reg().get<TypeMissionIdMap>(e);
-    for (int32_t i = 0; i < mrow->condition_id_size(); ++i)
-    {
-        auto p = ConditionJson::GetSingleton().PrimaryKeyRow(mrow->condition_id(i));
-        if (nullptr == p)
-        {
-            continue;
-        }
-        type_missions[p->condition_type()].erase(mission_id);
-    }
+
 }
 
 entt::entity MakeMissionMap()
@@ -52,7 +43,8 @@ entt::entity MakeMissionMap()
     auto e = reg().create();
     reg().emplace<MissionMap>(e);
     reg().emplace<CompleteMissionsId>(e);
-    auto type_missions =  reg().emplace<TypeMissionIdMap>(e);
+    reg().emplace<TempCompleteList>(e);
+    auto& type_missions =  reg().emplace<TypeMissionIdMap>(e);
     
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
     {
@@ -66,7 +58,7 @@ entt::entity MakePlayerMissionMap()
     auto e = MakeMissionMap();
     reg().emplace<UI32PairSet>(e);
     //reg().emplace<MissionAutoRewardCallback>(e, MissionAutoRewardCallback(CheckMissonAutoReward));
-    reg().emplace<CompleteMissionCallback>(e, CompleteMissionCallback(OnPlayerCompleteMission));
+    reg().emplace<CompleteMissionCallback>(e, OnPlayerCompleteMission);
     return e;
 }
 
@@ -84,11 +76,11 @@ uint32_t MakeMission(const MakeMissionParam& param)
     {
         return RET_MISSION_COMPLETE;
     }
-    if (nullptr == param.condition_id_)
+    auto condition_id = param.condition_id_;
+    if (nullptr == condition_id)
     {
         return RET_MISSION_NO_CONDITION;
-    }
-    auto condition_id = param.condition_id_;
+    }    
     Mission m;
     m.set_id(mission_id);
     auto& type_missions = reg().get<TypeMissionIdMap>(e);
