@@ -51,6 +51,7 @@ using TypeMissionIdMap = std::unordered_map<uint32_t, UI32USet>;
 using MissionAutoRewardCallback = std::function<bool(uint32_t)>;
 using CompleteMissionCallback = std::function<void(entt::entity, uint32_t, CompleteMissionsId&)>;
 using TempCompleteList = UI32USet;
+using TypeSubTypeSet = UI32PairSet;
 
 struct NextTimeAcceptMission { UI32USet next_time_accept_mission_id_; };
 

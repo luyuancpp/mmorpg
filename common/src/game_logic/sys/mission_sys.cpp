@@ -78,11 +78,14 @@ bool TriggerCondition(const ConditionEvent& c, Mission& mission)
     return condition_change;
 }
 
-void AcceptNextMission(const ConditionEvent& c)
+void OncompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete)
 {
+    if (temp_complete.empty())
+    {
+        return;
+    }
     auto e = c.e_;
     auto& type_missions = reg().get<TypeMissionIdMap>(e);
-    auto& temp_complete = reg().get<TempCompleteList>(e);
     for (auto& it : temp_complete)
     {
         auto p = MissionJson::GetSingleton().PrimaryKeyRow(it);
@@ -117,7 +120,15 @@ void AcceptNextMission(const ConditionEvent& c)
             }
         }
     }
+
+    ConditionEvent ce{ e, E_CONDITION_COMPLELTE_MISSION, {}, 1 };
+    for (auto& it : temp_complete)
+    {
+        ce.condtion_ids_ = { it };
+        TriggerConditionEvent(ce);
+    }
 }
+
 
 void TriggerConditionEvent(const ConditionEvent& c)
 {
@@ -177,8 +188,9 @@ void TriggerConditionEvent(const ConditionEvent& c)
         mm->erase(mit);
         // can not use mission and mit 
     }
-
-    AcceptNextMission(c);
+    auto temp_complete = reg().get<TempCompleteList>(e);//copy for iteraotr
+    reg().get<TempCompleteList>(e).clear();
+    OncompleteMission(c, temp_complete);    
 }
 
 uint32_t GiveMission(const MissionIdParam& gum)

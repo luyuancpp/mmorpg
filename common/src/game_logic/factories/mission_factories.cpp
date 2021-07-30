@@ -31,11 +31,10 @@ void OnPlayerCompleteMission(entt::entity e, uint32_t mission_id, CompleteMissio
 
     if (mrow->mission_sub_type() > 0)
     {
-        UI32PairSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
-        auto& type_set = reg().get<UI32PairSet>(e);
+        TypeSubTypeSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
+        auto& type_set = reg().get<TypeSubTypeSet>(e);
         type_set.erase(p);
     }
-
 }
 
 entt::entity MakeMissionMap()
@@ -56,7 +55,7 @@ entt::entity MakeMissionMap()
 entt::entity MakePlayerMissionMap()
 {
     auto e = MakeMissionMap();
-    reg().emplace<UI32PairSet>(e);
+    reg().emplace<TypeSubTypeSet>(e);
     //reg().emplace<MissionAutoRewardCallback>(e, MissionAutoRewardCallback(CheckMissonAutoReward));
     reg().emplace<CompleteMissionCallback>(e, OnPlayerCompleteMission);
     return e;
@@ -111,8 +110,8 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
    
     if ( mrow->mission_sub_type() > 0)
     {
-        UI32PairSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
-        auto& type_set = reg().get<UI32PairSet>(param.e_);
+        TypeSubTypeSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
+        auto& type_set = reg().get<TypeSubTypeSet>(param.e_);
         auto it = type_set.find(p);
         if (it != type_set.end())
         {
@@ -134,8 +133,8 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
     }
     if (mrow->mission_sub_type() > 0)
     {
-        UI32PairSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
-        auto& type_set = reg().get<UI32PairSet>(param.e_);
+        TypeSubTypeSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
+        auto& type_set = reg().get<TypeSubTypeSet>(param.e_);
         type_set.emplace(p);
     }
     return RET_OK;
