@@ -1,7 +1,7 @@
 #include "service_l2ms.h"
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/game_component/player_common_component.h"
+#include "src/game_logic/comp/player.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/master_player/master_player_list.h"

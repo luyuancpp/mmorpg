@@ -60,9 +60,6 @@
     <ClInclude Include="pbc\client_logic_common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pbc\game_rpc.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="pbc\deploy.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -75,7 +72,10 @@
     <ClInclude Include="pbc\ms2gw.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pbc\game_entity.pb.h">
+    <ClInclude Include="pbc\comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pbc\game_rpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -125,9 +125,6 @@
     <ClCompile Include="pbc\client_logic_common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="pbc\game_rpc.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="pbc\deploy.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -140,7 +137,10 @@
     <ClCompile Include="pbc\ms2gw.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="pbc\game_entity.pb.cc">
+    <ClCompile Include="pbc\comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pbc\game_rpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
