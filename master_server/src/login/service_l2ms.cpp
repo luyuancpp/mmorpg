@@ -6,6 +6,8 @@
 #include "src/server_common/closure_auto_done.h"
 #include "src/master_player/master_player_list.h"
 
+using namespace master;
+
 namespace l2ms
 {
     void l2ms::LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
@@ -18,7 +20,7 @@ namespace l2ms
         auto e = common::reg().create();
         common::reg().emplace<common::GameGuid>(e, player_id);
         common::reg().emplace<common::SharedString>(e, std::make_shared<std::string>(request->account()));
-        master::MasterPlayerList::GetSingleton().EnterGame(player_id, e);
+        MasterPlayerList::GetSingleton().EnterGame(player_id, e);
     }
 
     void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
@@ -28,15 +30,15 @@ namespace l2ms
     {
         common::ClosurePtr cp(done);
         auto player_id = request->player_id();
-        auto e = master::MasterPlayerList::GetSingleton().GetPlayer(player_id);
+        auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
         if (e != entt::null)
         {
             assert(common::reg().get<common::GameGuid>(e) == player_id);
             common::reg().destroy(e);
         }
-        master::MasterPlayerList::GetSingleton().LeaveGame(player_id);
-        assert(!master::MasterPlayerList::GetSingleton().HasPlayer(player_id));
-        assert(master::MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);        
+        MasterPlayerList::GetSingleton().LeaveGame(player_id);
+        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
+        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);        
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
