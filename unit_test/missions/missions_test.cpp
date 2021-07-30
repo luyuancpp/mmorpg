@@ -283,6 +283,11 @@ TEST(Missions, MissionRewardList)
 
 }
 
+TEST(Missions, RemoveMission)
+{
+
+}
+
 TEST(Missions, MissionTimeOut)
 {
 
