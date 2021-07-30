@@ -28,7 +28,10 @@ void OnPlayerCompleteMission(entt::entity e, uint32_t mission_id, CompleteMissio
     {
         return;
     }
-
+    if (mrow->reward_id() > 0)
+    {
+        cm.mutable_can_reward_mission_id()->insert({ mission_id, false });
+    }
     if (mrow->mission_sub_type() > 0)
     {
         TypeSubTypeSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
@@ -42,7 +45,7 @@ entt::entity MakeMissionMap()
     auto e = reg().create();
     reg().emplace<MissionMap>(e);
     reg().emplace<CompleteMissionsId>(e);
-    reg().emplace<TempCompleteList>(e);
+
     auto& type_missions =  reg().emplace<TypeMissionIdMap>(e);
     
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)

@@ -147,6 +147,7 @@ void TriggerConditionEvent(const ConditionEvent& c)
     {
         return;
     }
+    TempCompleteList temp_complete;
     for (auto lmit : it->second)
     {
         auto mit = mm->find(lmit);
@@ -176,7 +177,7 @@ void TriggerConditionEvent(const ConditionEvent& c)
 
         mission.set_status(E_MISSION_COMPLETE);
         mission.clear_conditions();
-        reg().get<TempCompleteList>(e).emplace(mission.id());
+        temp_complete.emplace(mission.id());
         if (nullptr != complete_callback)
         {
             complete_callback->operator()(e, mit->first, cm);
@@ -188,14 +189,27 @@ void TriggerConditionEvent(const ConditionEvent& c)
         mm->erase(mit);
         // can not use mission and mit 
     }
-    auto temp_complete = reg().get<TempCompleteList>(e);//copy for iteraotr
-    reg().get<TempCompleteList>(e).clear();
+    
     OncompleteMission(c, temp_complete);    
 }
 
 uint32_t GiveMission(const MissionIdParam& gum)
 {
     return RET_OK;
+}
+
+void RemoveMission(const MissionIdParam& rm)
+{
+    auto e = rm.e_;
+    auto mission_id = rm.missin_id_;
+    auto mm = reg().get<MissionMap>(e);
+    mm.mutable_missions()->erase(mission_id);
+    reg().get<CompleteMissionsId>(e).mutable_can_reward_mission_id()->erase(mission_id);
+    auto begin_times =  reg().try_get<MissionBeginTime>(e);
+    if (nullptr != begin_times)
+    {
+        begin_times->mutable_mission_begin_time()->erase(mission_id);
+    }
 }
 
 bool IsAcceptedMission(const MissionIdParam& icm)

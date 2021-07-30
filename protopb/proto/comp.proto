@@ -24,14 +24,16 @@ message Mission
 message MissionMap
 {
 	map<uint32, Mission> missions = 1;
+	
 }
 
 message MissionBeginTime
 {
-	uint64 begin_time = 1;
+	map<uint32, uint64> mission_begin_time = 1;
 }
 
 message CompleteMissionsId
 {
 	map<uint32, bool> missions = 1;
+	map<uint32, bool> can_reward_mission_id = 2;
 }

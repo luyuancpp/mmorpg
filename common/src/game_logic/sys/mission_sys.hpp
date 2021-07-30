@@ -30,6 +30,7 @@ struct MissionIdParam
 void CompleteAllMission(entt::entity, uint32_t op);
 void TriggerConditionEvent(const ConditionEvent&);
 uint32_t GiveMission(const MissionIdParam&);
+void RemoveMission(const MissionIdParam&);
 bool IsAcceptedMission(const MissionIdParam&);
 bool IsCompleteMission(const MissionIdParam&);
 }//namespace common
