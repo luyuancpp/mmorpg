@@ -59,7 +59,7 @@ namespace l2db
             std::to_string(request->player_id()) + 
             std::string("'");
         database_->LoadOne(new_player, where_case);
-        assert(new_player.register_time() > 0);
+        assert(new_player.player_id() > 0);
         redis_->Save(new_player, new_player.player_id());
         done->Run();
     }

@@ -114,9 +114,8 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     auto& account = ap->account();
     // player in redis return ok
     player_database new_player;
-    new_player.set_player_id(player_id);
-    redis_->Load(new_player, new_player.player_id());
-    if (new_player.register_time() > 0)
+    redis_->Load(new_player, player_id);
+    if (new_player.player_id() > 0)
     {
         EnterMasterServer(player_id, account);
         ReturnCloseureOK;
