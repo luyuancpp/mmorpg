@@ -117,8 +117,12 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
 {
-    auto e = cp->connection_hash_id();
-    reg().emplace<PlayerId>(entt::to_entity(e), cp->s_resp_->player_id());
+    auto e = entt::to_entity(cp->connection_hash_id());
+    if (reg().valid(e))
+    {
+        reg().emplace_or_replace<PlayerId>(e, cp->s_resp_->player_id());
+    }
+    
     codec_.send(cp->client_connection_, cp->c_resp_);
 }
 
