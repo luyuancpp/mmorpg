@@ -13,6 +13,7 @@ int main(int argc, char* argv[])
 
     EventLoop loop;
     MasterServer server(&loop);
+    g_master_server = &server;
     server.LoadConfig();
     server.ConnectDeploy();
     loop.loop();

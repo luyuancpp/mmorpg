@@ -13,10 +13,8 @@ namespace g2ms
     class G2msServiceImpl : public g2ms::G2msService
     {
     public:
-        G2msServiceImpl(master::MasterServer* server)
-            :server_(server)
+        G2msServiceImpl()
         {
-
         }
 
         virtual void StartLogicServer(::google::protobuf::RpcController* controller,
@@ -24,7 +22,6 @@ namespace g2ms
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
     private:
-        master::MasterServer* server_{ nullptr };
     };
 
 }//namespace g2ms
