@@ -102,7 +102,6 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     auto player_id = request->player_id();
-    
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())
     {
@@ -146,10 +145,8 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameRP d)
         LOG_ERROR << "disconnect not found connection id " << d->s_reqst_.account();
         return;
     }
-    
     auto& ap = cit->second;
     ap->Playing(sreqst.player_id());
-
     EnterMasterServer(sreqst.player_id(), sreqst.account());
 }
 
@@ -179,7 +176,6 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())
     {
-        LOG_ERROR << "disconnect not found connection id " << std::to_string(request->connection_id());
         return;
     }
     login_players_.erase(cit->second->account());
