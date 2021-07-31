@@ -66,9 +66,7 @@ public:
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;
-
     RpcStubgw2l& gw2l_login_stub_;
-    uint64_t id_{ 0 };
 };
 }//namespace gateway
 

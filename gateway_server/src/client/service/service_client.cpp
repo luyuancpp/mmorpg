@@ -7,8 +7,12 @@
 #include "muduo/net/TcpConnection.h"
 
 #include "src/server_common/rpc_client_closure.h"
+#include "src/game_logic/game_registry.h"
+#include "src/game_logic/entity_cast.h"
 
 #include "gw2l.pb.h"
+
+using namespace common;
 
 namespace gateway
 {
@@ -34,13 +38,19 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     if (!conn->connected())
     {
+        uint64_t c = boost::any_cast<uint64_t>(conn->getContext());
+        reg().destroy(entt::to_entity(c));
+        //断了线之后不能把消息串到别人的地方，串话
+        //如果我没登录就发送其他协议到master game server 怎么办
         gw2l::DisconnectRequest request;
-        request.set_connection_id(boost::any_cast<uint64_t>(conn->getContext()));
+        request.set_connection_id(c);
         gw2l_login_stub_.CallMethod(request,  &gw2l::LoginService_Stub::Disconnect);
+
     }
     else
     {
-        conn->setContext(++id_);
+        auto e = reg().create();
+        conn->setContext(entt::to_integral(e));
     }
 }
 
