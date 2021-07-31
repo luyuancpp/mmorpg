@@ -19,7 +19,7 @@ namespace l2ms
         auto player_id = request->player_id();        
         auto e = common::reg().create();
         common::reg().emplace<common::GameGuid>(e, player_id);
-        common::reg().emplace<common::SharedString>(e, std::make_shared<std::string>(request->account()));
+        common::reg().emplace<common::SharedAccountString>(e, std::make_shared<std::string>(request->account()));
         MasterPlayerList::GetSingleton().EnterGame(player_id, e);
     }
 

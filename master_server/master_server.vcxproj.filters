@@ -27,9 +27,6 @@
     <ClCompile Include="src\master_player\master_player_list.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\master_player\master_player.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\game\game_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -51,9 +48,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\master_registry\master_registry.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\master_player\master_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game\game_client.h">

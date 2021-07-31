@@ -33,13 +33,9 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
             auto ret = login_players_.emplace(request->account(), std::make_shared<AccountPlayer>());
             it = ret.first;
         }
-        assert(it != login_players_.end());
         auto& player = it->second;
         CheckReturnCloseureError(player->Login());
-        if (connection_accounts_.find(request->connection_id()) == connection_accounts_.end())
-        {
-            connection_accounts_.emplace(request->connection_id(), player);
-        }        
+        connection_accounts_.emplace(request->connection_id(), player);
         auto& account_data = player->account_data();
         redis_->Load(account_data, request->account());
         if (!account_data.password().empty())

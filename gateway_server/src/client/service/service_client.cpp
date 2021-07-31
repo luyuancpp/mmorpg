@@ -45,7 +45,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         gw2l::DisconnectRequest request;
         request.set_connection_id(c);
         gw2l_login_stub_.CallMethod(request,  &gw2l::LoginService_Stub::Disconnect);
-
     }
     else
     {
