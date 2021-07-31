@@ -9,6 +9,7 @@
 #include "src/server_common/rpc_client_closure.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/entity_cast.h"
+#include "src/game_logic/comp/player.hpp"
 
 #include "gw2l.pb.h"
 
@@ -116,6 +117,8 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
 {
+    auto e = cp->connection_hash_id();
+    reg().emplace<PlayerId>(entt::to_entity(e), cp->s_resp_->player_id());
     codec_.send(cp->client_connection_, cp->c_resp_);
 }
 

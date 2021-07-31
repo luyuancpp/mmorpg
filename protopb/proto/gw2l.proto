@@ -41,6 +41,7 @@ message EnterGameRequest
 message EnterGameResponse
 {
   ClientError error = 1;
+  uint64 player_id = 2;
 }
 
 message DisconnectRequest
