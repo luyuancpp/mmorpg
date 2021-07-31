@@ -13,8 +13,7 @@ namespace gw2ms
     class Gw2msServiceImpl : public gw2ms::Gw2msService
     {
     public:
-        Gw2msServiceImpl(master::MasterServer* server)
-            :server_(server)
+        Gw2msServiceImpl()
         {
 
         }
@@ -30,7 +29,7 @@ namespace gw2ms
             ::google::protobuf::Closure* done);
 
     private:
-        master::MasterServer* server_{ nullptr };
+
     };
 }//namespace gw2ms
 

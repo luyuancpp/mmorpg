@@ -12,13 +12,15 @@
 
 using common::reg;
 
+master::MasterServer* g_master_server = nullptr;
+
 namespace master
 {
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<common::RedisClient>()),
-      g2ms_impl_(this),
-      gw2ms_impl_(this)
+      g2ms_impl_(),
+      gw2ms_impl_()
 { 
 }    
 

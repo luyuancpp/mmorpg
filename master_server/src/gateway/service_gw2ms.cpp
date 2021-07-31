@@ -25,14 +25,13 @@ namespace gw2ms
             {
                 continue;
             }
-            server_->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
+            g_master_server->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
             break;
         }
-
         for (auto e : reg().view<WaitingGatewayConnecting>())
         {
             auto& connetion_component = reg().get<WaitingGatewayConnecting>(e);
-            server_->GatewayConnectGame(connetion_component.addr_);
+            g_master_server->GatewayConnectGame(connetion_component.addr_);
         }
         for (auto e : reg().view<WaitingGatewayConnecting>())
         {
