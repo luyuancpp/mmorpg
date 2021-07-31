@@ -4,6 +4,8 @@
 #include <memory>
 #include <string>
 
+#include "src/common_type/common_type.h"
+
 namespace common
 {
 using SharedAccountString = std::shared_ptr<std::string>;
@@ -11,6 +13,11 @@ using SharedAccountString = std::shared_ptr<std::string>;
 struct PlayerGatewayId
 {
     uint64_t gate_way_id{UINT64_MAX};
+};
+
+struct PlayerId
+{
+    GameGuid player_id_{0};
 };
 }//namespace common
 
