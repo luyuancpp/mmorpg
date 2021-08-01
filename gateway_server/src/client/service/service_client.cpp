@@ -10,6 +10,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/entity_cast.h"
 #include "src/game_logic/comp/player.hpp"
+#include "src/return_code/return_notice_code.h"
 
 #include "gw2l.pb.h"
 
@@ -117,12 +118,23 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
 {
-    auto e = entt::to_entity(cp->connection_id());
-    if (reg().valid(e))
+    auto& resp_ = cp->c_resp_;
+    if (resp_.error().error_no() == RET_OK)
     {
-        reg().emplace<PlayerId>(e, cp->s_resp_->player_id());
+        auto e = entt::to_entity(cp->connection_id());
+        if (reg().valid(e))
+        {
+            auto& s_resp = cp->s_resp_;
+            reg().emplace<PlayerId>(e, cp->s_resp_->player_id());
+            gw2l::EnterMasterRequest request;
+            request.set_connection_id(cp->connection_id());
+            request.set_player_id(s_resp->player_id());
+            gw2l_login_stub_.CallMethod(
+                request,
+                &gw2l::LoginService_Stub::EnterMasterServer);
+        }
     }    
-    codec_.send(cp->client_connection_, cp->c_resp_);
+    codec_.send(cp->client_connection_, resp_);
 }
 
 void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn, 

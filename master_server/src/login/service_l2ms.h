@@ -10,17 +10,17 @@ namespace l2ms
     public:
         virtual void EnterGame(::google::protobuf::RpcController* controller,
             const ::l2ms::EnterGameRequest* request,
-            ::l2ms::EnterGameResponse* response,
+            ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
         virtual void LeaveGame(::google::protobuf::RpcController* controller,
             const ::l2ms::LeaveGameRequest* request,
-            ::l2ms::LeaveGameResponse* response,
+            ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
         virtual void Disconect(::google::protobuf::RpcController* controller,
             const ::l2ms::DisconectRequest* request,
-            ::l2ms::DisconectResponse* response,
+            ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
     private:
 
