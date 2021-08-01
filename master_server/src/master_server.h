@@ -16,6 +16,12 @@
 #include "l2ms.pb.h"
 #include "ms2db.pb.h"
 
+namespace common
+{
+    struct WaitingGatewayConnecting;
+}//namespace common
+
+
 namespace master
 {
     class MasterServer : muduo::noncopyable, public common::Receiver<MasterServer>
@@ -42,7 +48,7 @@ namespace master
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
 
-        void GatewayConnectGame(const InetAddress& peer_addr);
+        void GatewayConnectGame(const common::WaitingGatewayConnecting& peer_addr);
     private:
         void OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn);
         void OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn);        

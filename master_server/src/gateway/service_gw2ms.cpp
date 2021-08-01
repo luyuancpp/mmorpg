@@ -31,7 +31,7 @@ namespace gw2ms
         for (auto e : reg().view<WaitingGatewayConnecting>())
         {
             auto& connetion_component = reg().get<WaitingGatewayConnecting>(e);
-            g_master_server->GatewayConnectGame(connetion_component.addr_);
+            g_master_server->GatewayConnectGame(connetion_component);
         }
         for (auto e : reg().view<WaitingGatewayConnecting>())
         {

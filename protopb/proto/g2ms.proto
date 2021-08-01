@@ -9,6 +9,7 @@ message StartLogicServerRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
+  uint32 server_id = 3;
 }
 
 service G2msService {

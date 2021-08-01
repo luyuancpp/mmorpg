@@ -29,6 +29,7 @@ namespace common
     struct WaitingGatewayConnecting
     {
         InetAddress addr_;
+        uint32_t server_id_{ UINT32_MAX };
     };
     struct GatewayConnected
     {

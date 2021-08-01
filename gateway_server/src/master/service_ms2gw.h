@@ -25,6 +25,10 @@ namespace ms2gw
             const ::ms2gw::StopLogicServerRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
+        virtual void PlayerEnterGameServer(::google::protobuf::RpcController* controller,
+            const ::ms2gw::PlayerEnterGameServerRequest* request,
+            ::google::protobuf::Empty* response,
+            ::google::protobuf::Closure* done)override;
     private:
         gateway::GatewayServer* server_{ nullptr };
     };

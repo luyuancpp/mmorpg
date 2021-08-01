@@ -28,7 +28,7 @@ namespace deploy
         common::ClosurePtr cp(done);
         ::serverinfo_database& server_info = *response->mutable_my_info();
         server_info.set_ip(request->my_info().ip());
-        auto server_entity = servers_.create();
+        auto server_entity = servers_.create();//server id error
         uint32_t server_id = static_cast<uint32_t>(server_entity);
         server_info.set_id(deploy_server::kLogicBeginId + server_id);
         server_info.set_port(deploy_server::kLogicBeginPort + server_id);

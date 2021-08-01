@@ -10,9 +10,9 @@ namespace common
 {
 using SharedAccountString = std::shared_ptr<std::string>;
 
-struct PlayerGatewayId
+struct GatewayConnectionId
 {
-    uint64_t gate_way_id{UINT64_MAX};
+    uint64_t connection_id_{UINT64_MAX};
 };
 
 struct PlayerId

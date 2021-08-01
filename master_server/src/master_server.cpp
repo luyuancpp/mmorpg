@@ -6,6 +6,7 @@
 #include "src/server_common/server_type_id.h"
 #include "src/game_config/deploy_json.h"
 #include "src/game_logic/game_registry.h"
+#include "src/game/game_client.h"
 
 #include "ms2g.pb.h"
 #include "ms2gw.pb.h"
@@ -93,7 +94,7 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
-void MasterServer::GatewayConnectGame(const InetAddress& peer_addr)
+void MasterServer::GatewayConnectGame(const common::WaitingGatewayConnecting& connection_info)
 {
     if (nullptr == gate_client_ || !gate_client_->Connected())
     {
@@ -101,8 +102,9 @@ void MasterServer::GatewayConnectGame(const InetAddress& peer_addr)
         return;
     }
     ms2gw::StartLogicServerRequest request;
-    request.set_ip(peer_addr.toIp());
-    request.set_port(peer_addr.port());
+    request.set_ip(connection_info.addr_.toIp());
+    request.set_port(connection_info.addr_.port());
+    request.set_server_id(connection_info.server_id_);
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartLogicServer");
 }
 
@@ -116,6 +118,19 @@ void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionP
 void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
 {
     auto& peer_addr = conn->peerAddress();
+
+    for (auto e : GameClient::GetSingleton()->view<common::RpcServerConnection>())
+    {
+        auto& local_addr = GameClient::GetSingleton()->get<common::RpcServerConnection>(e).conn_->peerAddress();
+        if (local_addr.toIp() != peer_addr.toIp() ||
+            local_addr.port() != peer_addr.port())
+        {
+            continue;
+        }
+        GameClient::GetSingleton()->destroy(e);
+        break;
+    }
+
     for (auto e : reg().view<common::RpcServerConnection>())
     {
         auto& local_addr = reg().get<common::RpcServerConnection>(e).conn_->peerAddress();
@@ -127,7 +142,6 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
         reg().destroy(e);
         break;
     }
-
 }
 
 }//namespace master
