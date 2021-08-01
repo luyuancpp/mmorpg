@@ -15,6 +15,11 @@ struct GatewayConnectionId
     uint64_t connection_id_{UINT64_MAX};
 };
 
+struct TryEnterGamePlayerId
+{
+    GameGuid player_id_{ 0 };
+};
+
 struct PlayerId
 {
     GameGuid player_id_{0};

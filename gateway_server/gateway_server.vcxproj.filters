@@ -27,6 +27,9 @@
     <ClCompile Include="src\master\service_ms2gw.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\gate_player\gate_player_list.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client\service\service_client.h">
@@ -36,6 +39,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\master\service_ms2gw.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gate_player\gate_player_list.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

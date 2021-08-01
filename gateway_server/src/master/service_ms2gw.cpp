@@ -4,6 +4,7 @@
 #include "src/game_logic/comp/player.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/entity_cast.h"
+#include "src/gate_player/gate_player_list.h"
 #include "src/gateway_server.h"
 
 #include "gw2g.pb.h"
@@ -60,21 +61,13 @@ namespace ms2gw
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
-        auto e = entt::to_entity(request->connection_id());
-        if (!reg().valid(e))
+        auto it = g_gate_clients_->find(request->connection_id());
+        if (it == g_gate_clients_->end())
         {
+            assert(false);
             return;
         }
-        auto p_player_id = reg().try_get<PlayerId>(e);
-        if (nullptr == p_player_id)
-        {
-            return;
-        }
-        if (p_player_id->player_id_ != request->player_id())
-        {
-            return;
-        }
-        reg().emplace<uint32_t>(e, request->server_id());
+        it->second.game_server_id_ = request->server_id();
     }
 }
 
