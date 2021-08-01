@@ -61,7 +61,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     LoginCCPtr p(std::make_shared<LoginCC>(conn));
     p->s_reqst_.set_account(message->account());
     p->s_reqst_.set_password(message->password());
-    p->s_reqst_.set_connection_id(p->connection_hash_id());
+    p->s_reqst_.set_connection_id(p->connection_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
         p, 
         this, 
@@ -84,7 +84,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     muduo::Timestamp)
 {
     CreatePlayerCCPtr p(std::make_shared<CreatePlayerCC>(conn));
-    p->s_reqst_.set_connection_id(p->connection_hash_id());
+    p->s_reqst_.set_connection_id(p->connection_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         p, 
         this, 
@@ -107,7 +107,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 muduo::Timestamp)
 {
     EnterGameCCPtr p(std::make_shared<EnterGameCC>(conn));
-    p->s_reqst_.set_connection_id(p->connection_hash_id());
+    p->s_reqst_.set_connection_id(p->connection_id());
     p->s_reqst_.set_player_id(message->player_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         p,
@@ -117,7 +117,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
 {
-    auto e = entt::to_entity(cp->connection_hash_id());
+    auto e = entt::to_entity(cp->connection_id());
     if (reg().valid(e))
     {
         reg().emplace<PlayerId>(e, cp->s_resp_->player_id());

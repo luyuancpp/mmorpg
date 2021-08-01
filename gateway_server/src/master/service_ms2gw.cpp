@@ -1,6 +1,9 @@
 #include "service_ms2gw.h"
 
 #include "src/game/game_client.h"
+#include "src/game_logic/comp/player.hpp"
+#include "src/game_logic/game_registry.h"
+#include "src/game_logic/entity_cast.h"
 #include "src/gateway_server.h"
 
 #include "gw2g.pb.h"
@@ -26,6 +29,7 @@ namespace ms2gw
         c->connect();
         GameClient::GetSingleton().emplace<InetAddress>(e,
             gameserver_addr);
+        GameClient::GetSingleton().emplace<uint32_t>(e, request->server_id());
 
         gw2ms::ConnectedLogicRequest gw2msrequest;
         gw2msrequest.mutable_rpc_client()->set_ip(request->ip());
@@ -51,6 +55,27 @@ namespace ms2gw
         }
     }
 
+    void Ms2gwServiceImpl::PlayerEnterGameServer(::google::protobuf::RpcController* controller, 
+        const ::ms2gw::PlayerEnterGameServerRequest* request, 
+        ::google::protobuf::Empty* response, 
+        ::google::protobuf::Closure* done)
+    {
+        auto e = entt::to_entity(request->connection_id());
+        if (!reg().valid(e))
+        {
+            return;
+        }
+        auto p_player_id = reg().try_get<PlayerId>(e);
+        if (nullptr == p_player_id)
+        {
+            return;
+        }
+        if (p_player_id->player_id_ != request->player_id())
+        {
+            return;
+        }
+        reg().emplace<uint32_t>(e, request->server_id());
+    }
 }
 
 

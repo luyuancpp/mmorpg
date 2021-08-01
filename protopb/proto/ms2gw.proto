@@ -7,6 +7,7 @@ message StartLogicServerRequest
 {
   string ip = 1;
   uint32 port = 2;
+  uint32 server_id = 3;
 }
 
 message StopLogicServerRequest
@@ -15,7 +16,16 @@ message StopLogicServerRequest
   uint32 port = 2;
 }
 
+message PlayerEnterGameServerRequest
+{
+  uint64 connection_id = 1;
+  uint64 player_id = 2;
+  uint32 server_id = 3;
+}
+
+
 service Ms2gwService {
   rpc StartLogicServer (StartLogicServerRequest) returns (google.protobuf.Empty);
   rpc StopLogicServer (StopLogicServerRequest) returns (google.protobuf.Empty);
+  rpc PlayerEnterGameServer (PlayerEnterGameServerRequest) returns (google.protobuf.Empty);
 }

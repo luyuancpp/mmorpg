@@ -1,6 +1,6 @@
 syntax = "proto3";
 package g2gw;
-import "common.proto";
+
 import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
@@ -10,7 +10,10 @@ message PlayerMsgNotifyRequest
   uint64 scene_gameguid = 2;
 }
 
+service G2gwService {
+  rpc PlayerService (PlayerMsgNotifyRequest) returns (google.protobuf.Empty);
+}
 
-service Gw2msService {
+service G2cService {
   rpc PlayerService (PlayerMsgNotifyRequest) returns (google.protobuf.Empty);
 }
