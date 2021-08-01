@@ -66,10 +66,9 @@ namespace gw2l
         using EnterGameRP = std::shared_ptr<EnterGameRpcString>;
         void EnterGameDbReplied(EnterGameRP d);
 
-        virtual void EnterMasterServer(::google::protobuf::RpcController* controller,
-            const ::gw2l::EnterMasterRequest* request,
-            ::google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done)override;
+        void EnterMasterServer(common::GameGuid player_id,
+            const std::string& account,
+            uint64_t connection_id);
 
         virtual void Disconnect(::google::protobuf::RpcController* controller,
             const ::gw2l::DisconnectRequest* request,

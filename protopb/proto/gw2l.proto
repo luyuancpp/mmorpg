@@ -42,7 +42,7 @@ message EnterGameResponse
 {
   ClientError error = 1;
   uint64 player_id = 2;
-  uint64 connection_id = 3;// for logic
+
 }
 
 message DisconnectRequest
@@ -64,16 +64,9 @@ message LeaveGameResponse
   ClientError error = 1;
 }
 
-message EnterMasterRequest
-{
-  uint64 connection_id = 1;
-  uint64 player_id = 2;
-}
-
 service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc CreatPlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
-  rpc EnterMasterServer(EnterMasterRequest) returns (google.protobuf.Empty);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty);
 }

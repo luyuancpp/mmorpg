@@ -10,6 +10,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/entity_cast.h"
 #include "src/game_logic/comp/player.hpp"
+#include "src/gate_player/gate_player_list.h"
 #include "src/return_code/return_notice_code.h"
 
 #include "gw2l.pb.h"
@@ -40,18 +41,25 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     if (!conn->connected())
     {
-        uint64_t c = boost::any_cast<uint64_t>(conn->getContext());
-        reg().destroy(entt::to_entity(c));
+        auto connection_id = boost::any_cast<uint64_t>(conn->getContext());
         //断了线之后不能把消息串到别人的地方，串话
         //如果我没登录就发送其他协议到master game server 怎么办
         gw2l::DisconnectRequest request;
-        request.set_connection_id(c);
+        request.set_connection_id(connection_id);
         gw2l_login_stub_.CallMethod(request,  &gw2l::LoginService_Stub::Disconnect);
+        g_gate_clients_->erase(connection_id);
     }
     else
     {
-        auto e = reg().create();
-        conn->setContext(entt::to_integral(e));
+        /*while (g_gate_clients_->find(id_) != g_gate_clients_->end())
+        {
+            ++id_;
+        }*/
+        //很极端情况下会有问题,如果走了一圈前面的人还没下线，在下一个id下线的瞬间又重用了,就会导致串话
+        conn->setContext(id_);
+        GateClient gc;
+        g_gate_clients_->emplace(id_, gc);
+        ++id_;
     }
 }
 
@@ -118,21 +126,17 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
 {
+    //这里设置player id 还是会有串话问题
     auto& resp_ = cp->c_resp_;
     if (resp_.error().error_no() == RET_OK)
     {
-        auto e = entt::to_entity(cp->connection_id());
-        if (reg().valid(e))
+        auto it = g_gate_clients_->find(cp->connection_id());
+       /* if (it == g_gate_clients_->end())
         {
-            auto& s_resp = cp->s_resp_;
-            reg().emplace<PlayerId>(e, cp->s_resp_->player_id());
-            gw2l::EnterMasterRequest request;
-            request.set_connection_id(cp->connection_id());
-            request.set_player_id(s_resp->player_id());
-            gw2l_login_stub_.CallMethod(
-                request,
-                &gw2l::LoginService_Stub::EnterMasterServer);
-        }
+            assert(false);
+            return;
+        }*/
+        it->second.player_id_ = cp->s_resp_->player_id();
     }    
     codec_.send(cp->client_connection_, resp_);
 }

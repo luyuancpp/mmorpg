@@ -122,6 +122,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     response->set_player_id(player_id);//test
     if (new_player.player_id() > 0)
     {
+        EnterMasterServer(player_id, account, connection_id);
         ReturnCloseureOK;
     }        
     // database to redis 
@@ -137,25 +138,23 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 
 void LoginServiceImpl::EnterGameDbReplied(EnterGameRP d)
 {
-}
-
-void LoginServiceImpl::EnterMasterServer(::google::protobuf::RpcController* controller,
-    const ::gw2l::EnterMasterRequest* request,
-    ::google::protobuf::Empty* response,
-    ::google::protobuf::Closure* done)
-{    
-    common::ClosurePtr cp(done);
-    auto connection_id = request->connection_id();
-    auto cit = connection_accounts_.find(connection_id);
-    if (cit == connection_accounts_.end())
+    auto& sreqst = d->s_reqst_;
+    auto cit = login_players_.find(sreqst.account());
+    if (cit == login_players_.end())
     {
-        LOG_ERROR << "not find player";
+        LOG_ERROR << "disconnect not found connection id " << d->s_reqst_.account();
         return;
     }
-    auto& ap = cit->second;
+    EnterMasterServer(sreqst.player_id(), sreqst.account(), d->c_resp_->connection_id());
+}
+
+void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id,
+    const std::string& account,
+    uint64_t connection_id)
+{    
     l2ms::EnterGameRequest sreqst;
-    sreqst.set_account(ap->account());
-    sreqst.set_player_id(request->player_id());
+    sreqst.set_account(account);
+    sreqst.set_player_id(player_id);
     sreqst.set_connection_id(connection_id);
     l2ms_login_stub_.CallMethod(        
         sreqst,
