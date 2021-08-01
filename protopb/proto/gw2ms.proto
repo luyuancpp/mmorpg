@@ -18,4 +18,5 @@ service Gw2msService {
   rpc PlayerService (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc GwConnectMaster (ConnectRequest) returns (google.protobuf.Empty);
   rpc GwConnectLogic(ConnectedLogicRequest) returns (google.protobuf.Empty);
+  rpc EnterGame(ConnectedLogicRequest) returns (google.protobuf.Empty);
 }

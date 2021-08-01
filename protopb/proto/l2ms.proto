@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "google/protobuf/empty.proto";
 package l2ms;
 option cc_generic_services = true;
 
@@ -19,18 +20,10 @@ message EnterGameRequest
   string account = 3;
 }
 
-message EnterGameResponse
-{
-}
-
 message LeaveGameRequest
 {
   string account = 1;
   uint64 player_id = 2;
-}
-
-message LeaveGameResponse
-{
 }
 
 message DisconectRequest
@@ -39,13 +32,9 @@ message DisconectRequest
 
 }
 
-message DisconectResponse
-{
-}
-
 service LoginService 
 {
-  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
-  rpc LeaveGame (LeaveGameRequest) returns (LeaveGameResponse);
-  rpc Disconect (DisconectRequest) returns (DisconectResponse);  
+  rpc EnterGame (EnterGameRequest) returns (google.protobuf.Empty);
+  rpc LeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
+  rpc Disconect (DisconectRequest) returns (google.protobuf.Empty);  
 }
