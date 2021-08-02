@@ -17,7 +17,7 @@
 
 using namespace common;
 
-static const uint32_t kEmptyId = 0;
+static const uint64_t kEmptyId = 0;
 
 namespace gateway
 {
@@ -134,9 +134,8 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
     if (resp_.error().error_no() == RET_OK)
     {
         auto it = g_gate_clients_->find(cp->connection_id());
-        if (cp->connection_id() != kEmptyId && it == g_gate_clients_->end())
+        if (it == g_gate_clients_->end())
         {
-            assert(false);
             return;
         }
         it->second.player_id_ = cp->s_resp_->player_id();
