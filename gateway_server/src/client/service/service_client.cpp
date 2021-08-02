@@ -17,6 +17,8 @@
 
 using namespace common;
 
+static const uint32_t kEmptyId = 0;
+
 namespace gateway
 {
 
@@ -48,18 +50,19 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         request.set_connection_id(connection_id);
         gw2l_login_stub_.CallMethod(request,  &gw2l::LoginService_Stub::Disconnect);
         g_gate_clients_->erase(connection_id);
+        conn->setContext(kEmptyId);
     }
     else
     {
-        /*while (g_gate_clients_->find(id_) != g_gate_clients_->end())
+        ++id_;
+        while (id_ == kEmptyId || g_gate_clients_->find(id_) != g_gate_clients_->end())
         {
             ++id_;
-        }*/
+        }
         //很极端情况下会有问题,如果走了一圈前面的人还没下线，在下一个id下线的瞬间又重用了,就会导致串话
         conn->setContext(id_);
         GateClient gc;
-        g_gate_clients_->emplace(id_, gc);
-        ++id_;
+        g_gate_clients_->emplace(id_, gc);        
     }
 }
 
@@ -131,11 +134,11 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
     if (resp_.error().error_no() == RET_OK)
     {
         auto it = g_gate_clients_->find(cp->connection_id());
-       /* if (it == g_gate_clients_->end())
+        if (cp->connection_id() != kEmptyId && it == g_gate_clients_->end())
         {
             assert(false);
             return;
-        }*/
+        }
         it->second.player_id_ = cp->s_resp_->player_id();
     }    
     codec_.send(cp->client_connection_, resp_);
