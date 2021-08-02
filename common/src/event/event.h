@@ -100,10 +100,7 @@ class BaseReceiver {
   std::size_t connected_signals() const {
     std::size_t size = 0;
     for (auto m : managers_) {
-      for (auto& connection : m.second.second)
-      {
-          ++size;
-      }
+       size += m.second.second.size();
     }
     return size;
   }
@@ -243,7 +240,7 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
     }
     for (auto& receiver : it->second)
     {
-        receiver->call<const E&>(this, family_id, event);
+        receiver->call(this, family_id, event);
     }
   }
 

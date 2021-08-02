@@ -99,6 +99,12 @@ def writeCMakeLists(vcxprojDir, target_type):
 
 # CMakeList.txt
 def generate(vcxprojfile, vcxprojDir, target_type):
+    global includeDirs
+    global sourceFiles
+    global linkDirs
+    includeDirs = []
+    sourceFiles = []
+    linkDirs = []
     if not vcxprojfile.endswith(".vcxproj"):
         raise NameError("vcxproj file name error")
     parseVCProjFile(vcxprojfile)
@@ -108,5 +114,5 @@ def generate(vcxprojfile, vcxprojDir, target_type):
 generate("./protopb/protopb.vcxproj", "./protopb/", "lib")
 generate("./common/common.vcxproj", "./common/", "lib")
 generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
-generate("./deploy_server/deploy_server.vcxproj", "./deploy_server/")
-generate("./client/client.vcxproj", "./client/")
+generate("./deploy_server/deploy_server.vcxproj", "./deploy_server/", "")
+generate("./client/client.vcxproj", "./client/", "")
