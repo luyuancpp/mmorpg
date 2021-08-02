@@ -15,10 +15,19 @@ namespace common
             s_resp_(new ServerResponse())// delete for rpcchanel
             {}
 
-        ~RpcString() { cc_->Run(); };//this function delete server_response_
+        ~RpcString() { if (nullptr != cc_) { cc_->Run(); } };//this function delete server_response_ if not move
         ClientResponse* c_resp_{ nullptr };
         ServerRequest s_reqst_;
-        ServerResponse* s_resp_{ nullptr };  
+        ServerResponse* s_resp_{ nullptr }; 
+
+        //just for enter master , un safe
+        void Move(ClientResponse*& client_response,
+            ::google::protobuf::Closure*& client_closure)
+        {
+            client_response = c_resp_;
+            client_closure = cc_;
+            cc_ = nullptr;
+        }
     private:
         ::google::protobuf::Closure* cc_{ nullptr };
     };
