@@ -101,7 +101,6 @@ namespace common
             OnAppointLeader(*sequence_players_id_.begin());
         }
         emp_->emit<TeamESLeaveTeam>(team_id_, player_id);
-        auto& ms = playerid_team_map();
         playerid_team_map().erase(player_id);
         return RET_OK;
     }
