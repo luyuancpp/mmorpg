@@ -13,6 +13,7 @@ compile_commands.json
 *.db*
 *.user
 *.zip
+*CMakeLists.txt
 protopb/pbc/
 third_party/
 output/
