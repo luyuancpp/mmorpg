@@ -138,6 +138,7 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
         {
             return;
         }
+        it->second.game_server_id_ = cp->s_resp_->game_server_id();
         it->second.player_id_ = cp->s_resp_->player_id();
     }    
     codec_.send(cp->client_connection_, resp_);

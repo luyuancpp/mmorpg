@@ -17,7 +17,7 @@ namespace l2ms
 {
     void l2ms::LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
         const ::l2ms::EnterGameRequest* request,
-        ::google::protobuf::Empty* response,
+        ::l2ms::EnterGameResponese* response,
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
@@ -33,11 +33,9 @@ namespace l2ms
         gw_request.set_connection_id(connection_id);
         for (auto e : GameClient::GetSingleton()->view<uint32_t>())
         {
-            gw_request.set_server_id(GameClient::GetSingleton()->get<uint32_t>(e));
+            response->set_game_server_id(GameClient::GetSingleton()->get<uint32_t>(e));
             break;
         }
-        
-        g_master_server->gate_client()->Send(gw_request, "ms2gw.Ms2gwService", "PlayerEnterGameServer");
     }
 
     void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 

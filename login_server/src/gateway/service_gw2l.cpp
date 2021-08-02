@@ -122,11 +122,11 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     response->set_player_id(player_id);//test
     if (new_player.player_id() > 0)
     {
-        EnterMasterServer(player_id, account, connection_id);
-        ReturnCloseureOK;
+        EnterMasterServer(account, response, done);
+        return;
     }        
     // database to redis 
-    EnterGameRP cp(std::make_shared<EnterGameRpcString>(response, done));
+    EnterGameDbRP cp(std::make_shared<EnterGameDbRpcString>(response, done));
     auto& sreqst = cp->s_reqst_;
     sreqst.set_account(account);
     sreqst.set_player_id(player_id);
@@ -136,7 +136,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
         &l2db::LoginService_Stub::EnterGame);
 }
 
-void LoginServiceImpl::EnterGameDbReplied(EnterGameRP d)
+void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
 {
     auto& sreqst = d->s_reqst_;
     auto cit = login_players_.find(sreqst.account());
@@ -145,19 +145,28 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameRP d)
         LOG_ERROR << "disconnect not found connection id " << d->s_reqst_.account();
         return;
     }
-    EnterMasterServer(sreqst.player_id(), sreqst.account(), d->c_resp_->connection_id());
+    ::gw2l::EnterGameResponse* response = nullptr;
+    ::google::protobuf::Closure* done = nullptr;
+    d->Move(response, done);
+    EnterMasterServer(sreqst.account(), response, done);
 }
 
-void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id,
-    const std::string& account,
-    uint64_t connection_id)
-{    
-    l2ms::EnterGameRequest sreqst;
-    sreqst.set_account(account);
-    sreqst.set_player_id(player_id);
-    sreqst.set_connection_id(connection_id);
-    l2ms_login_stub_.CallMethod(        
-        sreqst,
+void LoginServiceImpl::EnterGameMasterReplied(EnterGameMasterRP d)
+{
+    d->c_resp_->set_game_server_id(d->s_resp_->game_server_id());
+}
+
+void LoginServiceImpl::EnterMasterServer(const std::string& account,
+    ::gw2l::EnterGameResponse* response,
+    ::google::protobuf::Closure* done)
+{   
+    EnterGameMasterRP cp(std::make_shared<EnterGameMasterRpcString>(response, done));
+    cp->s_reqst_.set_account(account);
+    cp->s_reqst_.set_player_id(response->player_id());
+    cp->s_reqst_.set_connection_id(response->connection_id());
+    l2ms_login_stub_.CallMethodString(this,
+        &LoginServiceImpl::EnterGameMasterReplied,
+        cp,
         &l2ms::LoginService_Stub::EnterGame);
 }
 
