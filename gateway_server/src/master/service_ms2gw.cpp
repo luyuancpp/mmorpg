@@ -64,7 +64,6 @@ namespace ms2gw
         auto it = g_gate_clients_->find(request->connection_id());
         if (it == g_gate_clients_->end())
         {
-            assert(false);
             return;
         }
         it->second.game_server_id_ = request->server_id();
