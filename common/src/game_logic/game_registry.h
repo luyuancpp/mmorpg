@@ -5,7 +5,7 @@
 
 namespace common
 {
-inline entt::registry& reg();
+entt::registry& reg();
 entt::entity& error_entity();
 }//namespace common
 
