@@ -10,6 +10,7 @@ sourceFiles = []
 linkDirs = []
 projectName = ""
 
+
 # parse vcxproj file
 def parseVCProjFile(vcxprojFile):
     xmldoc= xml.dom.minidom.parse(vcxprojFile)
@@ -42,7 +43,7 @@ def parseVCProjFile(vcxprojFile):
                                     linkDirs.append(additionLib)
 
 # write cmake file
-def writeCMakeLists(vcxprojDir):
+def writeCMakeLists(vcxprojDir, target_type):
     # mini version
     fileLines = "cmake_minimum_required(VERSION 3.0)\n\n"
 
@@ -51,6 +52,7 @@ def writeCMakeLists(vcxprojDir):
 
     # add define
     fileLines += "add_definitions(-D__LINUX__)\n\n"
+    fileLines += "add_definitions(-D__linux__)\n\n"
 
     # include directory
     fileLines += "include_directories("
@@ -80,8 +82,12 @@ def writeCMakeLists(vcxprojDir):
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/local/include -L/usr/local/lib -lprotobuf -lpthread")\n\n'
 
-    # add exec
-    fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
+    if target_type == "lib":
+        # add exec
+        fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
+    else:
+        # add exec
+        fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
 
     # link lib
     #fileLines += ("target_link_libraries(%s xx.a)" % projectName)
@@ -92,15 +98,15 @@ def writeCMakeLists(vcxprojDir):
     file.close()
 
 # CMakeList.txt
-def generate(vcxprojfile, vcxprojDir):
+def generate(vcxprojfile, vcxprojDir, target_type):
     if not vcxprojfile.endswith(".vcxproj"):
         raise NameError("vcxproj file name error")
     parseVCProjFile(vcxprojfile)
-    writeCMakeLists(vcxprojDir)
+    writeCMakeLists(vcxprojDir, target_type)
     return projectName
 
-generate("./protopb/protopb.vcxproj", "./protopb/")
-generate("./common/common.vcxproj", "./common/")
-generate("./third_party/third_party.vcxproj", "./third_party/")
+generate("./protopb/protopb.vcxproj", "./protopb/", "lib")
+generate("./common/common.vcxproj", "./common/", "lib")
+generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 generate("./deploy_server/deploy_server.vcxproj", "./deploy_server/")
 generate("./client/client.vcxproj", "./client/")
