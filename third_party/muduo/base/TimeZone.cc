@@ -328,9 +328,9 @@ struct tm TimeZone::toUtcTime(time_t secondsSinceEpoch, bool yday)
 {
   struct tm utc;
   memZero(&utc, sizeof(utc));
-#ifdef __linux
-  utc.tm_zone = "GMT"
-#endif // __linux
+#ifdef __linux__
+  utc.tm_zone = "GMT";
+#endif // __linux__
   int seconds = static_cast<int>(secondsSinceEpoch % kSecondsPerDay);
   int days = static_cast<int>(secondsSinceEpoch / kSecondsPerDay);
   if (seconds < 0)
