@@ -59,7 +59,7 @@ public:
         connection_ = mysql_init(nullptr);
         uint32_t op = 1;
         mysql_options(connection(), MYSQL_OPT_RECONNECT, &op);
-        MYSQL* res = mysql_real_connect(connection(),
+        mysql_real_connect(connection(),
             database_info.db_host().c_str(),
             database_info.db_user().c_str(),
             database_info.db_password().c_str(),
