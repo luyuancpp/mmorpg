@@ -177,7 +177,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
     {
       error = NO_SERVICE;
     }
-    if (error != NO_ERROR)
+    if (error != RPC_NO_ERROR)
     {
       RpcMessage response;
       response.set_type(RESPONSE);
@@ -188,48 +188,30 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   }
   else if (message.type() == SERVER_TO_CLIENT)
   {
-  // FIXME: extract to a function
-  ErrorCode error = WRONG_PROTO;
-  if (services_)
-  {
-      std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message.service());
-      if (it != services_->end())
+      // FIXME: extract to a function
+      if (services_)
       {
-          google::protobuf::Service* service = it->second;
-          assert(service != NULL);
-          const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-          const google::protobuf::MethodDescriptor* method
-              = desc->FindMethodByName(message.method());
-          if (method)
+          std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message.service());
+          if (it != services_->end())
           {
-              std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-              if (request->ParseFromString(message.request()))
+              google::protobuf::Service* service = it->second;
+              assert(service != NULL);
+              const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+              const google::protobuf::MethodDescriptor* method
+                  = desc->FindMethodByName(message.method());
+              if (method)
               {
-                  service->CallMethod(method, nullptr, get_pointer(request), nullptr,
-                      NewCallback(this, &RpcChannel::doNothing));
-                  error = RPC_NO_ERROR;
+                  std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
+                  if (request->ParseFromString(message.request()))
+                  {
+                      service->CallMethod(method, nullptr, get_pointer(request), nullptr,
+                          NewCallback(this, &RpcChannel::doNothing));
+                  }
               }
-              else
-              {
-                  error = INVALID_REQUEST;
-              }
-          }
-          else
-          {
-              error = NO_METHOD;
-          }
-      }
-      else
-      {
-          error = NO_SERVICE;
+         }
       }
   }
-  else
-  {
-      error = NO_SERVICE;
-  }
-  }
-  else if (message.type() == ERROR)
+  else if (message.type() == RPC_ERROR)
   {
   }
 }
