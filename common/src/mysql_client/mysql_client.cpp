@@ -146,6 +146,10 @@ MysqlClient::MysqlResultExpected MysqlClient::LoggedRealQuery(const std::string&
     return query_res;
 }
 
+MysqlError make_mysql_error_code(MYSQL* m) {
+    return { mysql_errno(m), mysql_error(m), mysql_sqlstate(m) };
+}
+
 MysqlClient::MysqlResultExpected MysqlClient::RealQuery(const std::string& q)
 {
     auto query_res = mysql_real_query(connection(), q.data(), (uint32_t)q.size());

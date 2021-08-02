@@ -37,10 +37,6 @@ private:
     std::string sql_state_;
 };
 
-static MysqlError make_mysql_error_code(MYSQL* m) {
-    return { mysql_errno(m), mysql_error(m), mysql_sqlstate(m) };
-}
-
 class MYSQL_RES_Deleter {
 public:
     void operator()(MYSQL_RES* res) { mysql_free_result(res); }
