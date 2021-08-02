@@ -80,6 +80,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -o0")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-Bstatic")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/local/include -L/usr/local/lib -lprotobuf -lpthread")\n\n'
 
     if target_type == "lib":
@@ -90,7 +91,7 @@ def writeCMakeLists(vcxprojDir, target_type):
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
 
     # link lib
-    #fileLines += ("target_link_libraries(%s xx.a)" % projectName)
+    fileLines += ("target_link_libraries(%s libprotopb.a)" % projectName)
 
     # write file
     file = open(vcxprojDir + "CMakeLists.txt", "w")
