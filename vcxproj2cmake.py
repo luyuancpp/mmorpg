@@ -8,6 +8,7 @@ import xml.dom.minidom
 includeDirs = []
 sourceFiles = []
 linkDirs = []
+libs = []
 projectName = ""
 
 
@@ -45,9 +46,10 @@ def parseVCProjFile(vcxprojFile):
 # write cmake file
 def writeCMakeLists(vcxprojDir, target_type):
     # mini version
-    fileLines = "cmake_minimum_required(VERSION 3.0)\n\n"
+    fileLines = "cmake_minimum_required(VERSION 3.0)\n"
 
-    # project name
+    fileLines += 'set(EXECUTABLE_OUTPUT_PATH ../bin)\n'
+    fileLines += 'set(LIBRARY_OUTPUT_PATH ../bin)\n'
     fileLines += ("project(%s)\n\n" % projectName)
 
     # add define
@@ -86,12 +88,18 @@ def writeCMakeLists(vcxprojDir, target_type):
     if target_type == "lib":
         # add exec
         fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
+	global libs
+	libname = (("%s.a") %projectName)
+        libs.append((("%s.a") %projectName))
     else:
         # add exec
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
 
     # link lib
-    fileLines += ("target_link_libraries(%s libprotopb.a)" % projectName)
+    fileLines += ("target_link_libraries(%s " % projectName)
+    for lib in libs:
+        fileLines += (lib + " ")
+    fileLines += ("libprotobuf.a libprotobuf-lite.a)")
 
     # write file
     file = open(vcxprojDir + "CMakeLists.txt", "w")
