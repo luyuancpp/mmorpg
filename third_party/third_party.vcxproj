@@ -46,6 +46,8 @@
     <ClCompile Include="muduo\net\InetAddress.cc" />
     <ClCompile Include="muduo\net\Poller.cc" />
     <ClCompile Include="muduo\net\poller\DefaultPoller.cc" />
+    <ClCompile Include="muduo\net\poller\EPollPoller.cc" />
+    <ClCompile Include="muduo\net\poller\PollPoller.cc" />
     <ClCompile Include="muduo\net\poller\WindowsPollPoller.cc" />
     <ClCompile Include="muduo\net\protobuf\ProtobufCodecLite.cc" />
     <ClCompile Include="muduo\net\protorpc\RpcCodec.cc" />

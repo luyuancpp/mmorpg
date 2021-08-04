@@ -144,6 +144,12 @@
     <ClCompile Include="muduo\net\protobuf\ProtobufCodecLite.cc">
       <Filter>源文件\muduo\net\protobuf</Filter>
     </ClCompile>
+    <ClCompile Include="muduo\net\poller\EPollPoller.cc">
+      <Filter>源文件\muduo\net\poller</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo\net\poller\PollPoller.cc">
+      <Filter>源文件\muduo\net\poller</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="muduo\base\AsyncLogging.h">
