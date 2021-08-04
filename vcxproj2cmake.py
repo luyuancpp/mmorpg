@@ -99,7 +99,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += ("target_link_libraries(%s " % projectName)
     for lib in libs:
         fileLines += ("lib%s " % lib)
-    fileLines += ("libprotobuf.a libprotobuf-lite.a libmysqlclient.a libssl.a libcrypto.a libdl.a libz.a )")
+    fileLines += ("libprotobuf.a libprotobuf-lite.a  mysqlclient ssl crypto dl z )")
 
     # write file
     file = open(vcxprojDir + "CMakeLists.txt", "w")
