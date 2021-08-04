@@ -83,6 +83,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -o0")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread ")\n\n'
 
     if target_type == "lib":
@@ -126,4 +127,9 @@ link_mysql = "mysqlclient"
 generate("./common/common.vcxproj", "./common/", "lib")
 generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 generate("./deploy_server/deploy_server.vcxproj", "./deploy_server/", "")
+generate("./database_server/database_server.vcxproj", "./database_server/", "")
+generate("./master_server/master_server.vcxproj", "./master_server/", "")
+generate("./lgoin_server/login_server.vcxproj", "./login_server/", "")
+generate("./gateway_server/gateway_server.vcxproj", "./gateway_server/", "")
+generate("./game_server/game_server.vcxproj", "./game_server/", "")
 generate("./client/client.vcxproj", "./client/", "")
