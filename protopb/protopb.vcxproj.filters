@@ -75,9 +75,6 @@
     <ClInclude Include="pbc\comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pbc\game_rpc.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pbc\pb3.pb.cc">
@@ -138,9 +135,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pbc\comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="pbc\game_rpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
