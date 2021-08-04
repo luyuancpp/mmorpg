@@ -69,7 +69,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     uniqLinkDir = list(set(linkDirs))
     for linkUnit in uniqLinkDir:
         fileLines += (linkUnit + " ")
-    fileLines += " /usr/lib/x86_64-linux-gnu)\n\n"
+    fileLines += " /usr/lib/x86_64-linux-gnu /usr/local/lib/)\n\n"
 
     # source file
     fileLines += "set(SOURCE_FILE "
