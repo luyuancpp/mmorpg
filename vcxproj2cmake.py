@@ -98,7 +98,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += ("target_link_libraries(%s " % projectName)
     for lib in libs:
         fileLines += ("%s " % lib)
-    fileLines += ("libprotobuf.a libprotobuf-lite.a  mysqlclient ssl crypto dl z )")
+    fileLines += ("libprotobuf.a libprotobuf-lite.a hiredis  mysqlclient ssl crypto dl z )")
 
     if target_type == "lib":
         libs.append((("%s") %projectName))
@@ -129,7 +129,7 @@ generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 generate("./deploy_server/deploy_server.vcxproj", "./deploy_server/", "")
 generate("./database_server/database_server.vcxproj", "./database_server/", "")
 generate("./master_server/master_server.vcxproj", "./master_server/", "")
-generate("./lgoin_server/login_server.vcxproj", "./login_server/", "")
+generate("./login_server/login_server.vcxproj", "./login_server/", "")
 generate("./gateway_server/gateway_server.vcxproj", "./gateway_server/", "")
 generate("./game_server/game_server.vcxproj", "./game_server/", "")
 generate("./client/client.vcxproj", "./client/", "")
