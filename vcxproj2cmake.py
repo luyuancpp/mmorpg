@@ -106,7 +106,7 @@ def writeCMakeLists(vcxprojDir, target_type):
         fileLines += (lib + " ")
     fileLines += ("libprotobuf.a libprotobuf-lite.a libmysqlclient.a)")
     if link_mysql == "mysqlclient" :
-        #fileLines += ("target_link_libraries(%s libbmysqlclient.a libssl.a libcrypto.a libdl.a)" % projectName )
+        fileLines += ("target_link_libraries(%s libbmysqlclient.a libssl.a libcrypto.a libdl.a)" % projectName )
 
     # write file
     file = open(vcxprojDir + "CMakeLists.txt", "w")
