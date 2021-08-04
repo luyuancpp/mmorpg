@@ -89,8 +89,6 @@ def writeCMakeLists(vcxprojDir, target_type):
         # add exec
         fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
 	global libs
-	libname = (("%s.a") %projectName)
-        libs.append((("%s.a") %projectName))
     else:
         # add exec
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
@@ -98,8 +96,11 @@ def writeCMakeLists(vcxprojDir, target_type):
     # link lib
     fileLines += ("target_link_libraries(%s " % projectName)
     for lib in libs:
-        fileLines += ("lib%s " % lib)
-    fileLines += ("libprotobuf.a libprotobuf-lite.a  mysqlclient ssl crypto dl z )")
+        fileLines += ("%s " % lib)
+    fileLines += ("libprotobuf.a libprotobuf-lite.a protopb  mysqlclient ssl crypto dl z )")
+
+    if target_type == "lib":
+        libs.append((("%s") %projectName))
 
     # write file
     file = open(vcxprojDir + "CMakeLists.txt", "w")
