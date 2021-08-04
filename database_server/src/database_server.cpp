@@ -66,11 +66,6 @@ namespace database
 
     void DatabaseServer::StartServer(ServerInfoRpcRC cp)
     {
-        if (cp->s_resp_->info().size() < common::SERVER_ID_GROUP_SIZE)
-        {
-            LOG_ERROR << "depoly server size";
-            return;
-        }
         auto& redisinfo = cp->s_resp_->info(common::SERVER_REDIS);
         auto& myinfo = cp->s_resp_->info(common::SERVER_DATABASE);        
         InetAddress listenAddr(myinfo.ip(), myinfo.port());

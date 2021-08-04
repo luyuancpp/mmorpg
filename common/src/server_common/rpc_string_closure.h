@@ -11,8 +11,8 @@ namespace common
         RpcString(ClientResponse* client_response,
             ::google::protobuf::Closure* client_closure)
             : c_resp_(client_response),
-            cc_(client_closure),
-            s_resp_(new ServerResponse())// delete for rpcchanel
+            s_resp_(new ServerResponse()),// delete for rpcchanel
+            cc_(client_closure)
             {}
 
         ~RpcString() { if (nullptr != cc_) { cc_->Run(); } };//this function delete server_response_ if not move
