@@ -54,7 +54,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += ("project(%s)\n\n" % projectName)
 
     # add define
-    fileLines += "add_definitions(-D__LINUX__)\n\n"
+    fileLines += "add_definitions(-D__LINUX__)\n"
     fileLines += "add_definitions(-D__linux__)\n\n"
 
     # include directory
@@ -69,7 +69,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     uniqLinkDir = list(set(linkDirs))
     for linkUnit in uniqLinkDir:
         fileLines += (linkUnit + " ")
-    fileLines += ")\n\n"
+    fileLines += " /usr/lib/x86_64-linux-gnu)\n\n"
 
     # source file
     fileLines += "set(SOURCE_FILE "
@@ -83,12 +83,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -o0")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-Bstatic")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/usr/local/include -L/usr/local/lib -lprotobuf ")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")\n\n'
-    global link_mysql
-    if link_mysql == "mysqlclient" :
-          fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L/usr/lib/x86_64-linux-gnu -lmysqlclient -lpthread")\n\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread ")\n\n'
 
     if target_type == "lib":
         # add exec
@@ -103,10 +98,8 @@ def writeCMakeLists(vcxprojDir, target_type):
     # link lib
     fileLines += ("target_link_libraries(%s " % projectName)
     for lib in libs:
-        fileLines += (lib + " ")
-    fileLines += ("libprotobuf.a libprotobuf-lite.a libmysqlclient.a)")
-    if link_mysql == "mysqlclient" :
-        fileLines += ("target_link_libraries(%s libbmysqlclient.a libssl.a libcrypto.a libdl.a)" % projectName )
+        fileLines += ("lib%s " % lib)
+    fileLines += ("libprotobuf.a libprotobuf-lite.a libmysqlclient.a libssl.a libcrypto.a libdl.a libz.a )")
 
     # write file
     file = open(vcxprojDir + "CMakeLists.txt", "w")
