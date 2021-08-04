@@ -44,12 +44,11 @@ public:
         muduo::Timestamp);
     
 private:
-    ProtobufDispatcher& dispatcher_;
     ProtobufCodec& codec_;
     TcpConnectionPtr conn_;
     TcpClient& client_;
-
     LoginModule login_;
+    ProtobufDispatcher& dispatcher_;
 
     uint64_t player_id_{ 0 };
 };

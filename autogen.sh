@@ -55,4 +55,10 @@ if test $? -ne 0; then
     exit 
 fi
 
+cd ..
+cd client && cmake . && make -j4
+if test $? -ne 0; then 
+    exit 
+fi
+
 echo " go go go !"
