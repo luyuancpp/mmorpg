@@ -163,6 +163,7 @@
     <ClCompile Include="src\pb2db\pb2dbsql.cpp" />
     <ClCompile Include="src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
+    <ClCompile Include="src\server_common\game_rpc.pb.cc" />
     <ClCompile Include="src\server_common\rpc_channel.cc" />
     <ClCompile Include="src\server_common\rpc_server.cc" />
   </ItemGroup>
@@ -202,6 +203,7 @@
     <ClInclude Include="src\return_code\return_code.h" />
     <ClInclude Include="src\return_code\return_notice_code.h" />
     <ClInclude Include="src\server_common\deploy_variable.h" />
+    <ClInclude Include="src\server_common\game_rpc.pb.h" />
     <ClInclude Include="src\server_common\rpc_channel.h" />
     <ClInclude Include="src\server_common\rpc_client_closure.h" />
     <ClInclude Include="src\server_common\rpc_closure.h" />
