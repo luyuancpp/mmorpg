@@ -47,10 +47,10 @@ void GatewayServer::receive(const common::RpcClientConnectionES& es)
     }
     else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::SERVER_MASTER)))
     {
-        gw2ms::ConnectRequest request;
+        /*gw2ms::ConnectRequest request;
         request.mutable_rpc_client()->set_ip(es.conn_->localAddress().toIp());
         request.mutable_rpc_client()->set_port(es.conn_->localAddress().port());
-        gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
+        gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);*/
     }
 }
 
