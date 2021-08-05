@@ -14,7 +14,7 @@ namespace deploy_server
         database_(std::make_shared<common::MysqlDatabase>())
     {
         auto& ci = common::DeployConfig::GetSingleton().connetion_param();
-        nomoral_server_ip_ = common::DeployConfig::GetSingleton().deploy_param().ip();
+        nomoral_database_ip_ = common::DeployConfig::GetSingleton().connetion_param().db_host();
         database_->Connect(ci);
     }
 
@@ -37,15 +37,15 @@ namespace deploy_server
         if (nullptr == q_result)
         {
             serverinfo_database sd_db;
-            sd_db.set_ip(nomoral_server_ip_);
-            sd_db.set_db_host(nomoral_server_ip_);
+            sd_db.set_ip(nomoral_database_ip_);
+            sd_db.set_db_host(nomoral_database_ip_);
             sd_db.set_db_user("root");
             sd_db.set_db_password("luyuan616586");
             sd_db.set_db_port(3306);
             sd_db.set_db_dbname("game");
 
             serverinfo_database sd_nodb;
-            sd_nodb.set_ip(nomoral_server_ip_);
+            sd_nodb.set_ip(nomoral_database_ip_);
 
             for (uint32_t i = 0; i < kTotalSize; ++i)
             {
