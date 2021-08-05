@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{6348AEF3-B5C7-43C9-AEAD-D707F104140F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <ProjectName>game_server</ProjectName>
+    <RootNamespace>game_server</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
