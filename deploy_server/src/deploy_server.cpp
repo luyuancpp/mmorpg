@@ -15,6 +15,7 @@ namespace deploy_server
     {
         auto& ci = common::DeployConfig::GetSingleton().connetion_param();
         nomoral_database_ip_ = common::DeployConfig::GetSingleton().connetion_param().db_host();
+        nomoral_ip_ = common::DeployConfig::GetSingleton().deploy_param().ip();
         database_->Connect(ci);
     }
 
