@@ -1,6 +1,7 @@
 #include "redis_client.h"
 
 #include "muduo/base/CrossPlatformAdapterFunction.h"
+#include "muduo/base/Logging.h"
 
 #include "google/protobuf/message.h"
 
@@ -43,6 +44,11 @@ void RedisClient::Save(const google::protobuf::Message& message, const std::stri
         key_len,
         message_cached_array.data(),
         message_cached_array.size());
+    if (nullptr == reply)
+    {
+        LOG_ERROR << "redis save error";
+        return;
+    }
     freeReplyObject(reply);
 }
 
@@ -64,6 +70,10 @@ void RedisClient::Load(google::protobuf::Message& message, const std::string& ke
     std::string format = std::string("GET ") + key;
     redisReply* reply = (redisReply*)redisCommand(context_.get(),
         format.c_str());
+    if (nullptr == reply)
+    {
+        return;
+    }
     message.ParseFromArray(reply->str, static_cast<int32_t>(reply->len));
     freeReplyObject(reply);
 }
