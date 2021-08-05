@@ -13,7 +13,9 @@ namespace deploy_server
         :server_(loop, listen_addr),
         database_(std::make_shared<common::MysqlDatabase>())
     {
-        database_->Connect(common::DeployConfig::GetSingleton().connetion_param());
+        auto& ci = common::DeployConfig::GetSingleton().connetion_param();
+        nomoral_server_ip_ = common::DeployConfig::GetSingleton().deploy_param().ip();
+        database_->Connect(ci);
     }
 
     void DeployServer::Start()
@@ -35,15 +37,15 @@ namespace deploy_server
         if (nullptr == q_result)
         {
             serverinfo_database sd_db;
-            sd_db.set_ip(kIp);
-            sd_db.set_db_host(kIp);
+            sd_db.set_ip(nomoral_server_ip_);
+            sd_db.set_db_host(nomoral_server_ip_);
             sd_db.set_db_user("root");
             sd_db.set_db_password("luyuan616586");
             sd_db.set_db_port(3306);
             sd_db.set_db_dbname("game");
 
             serverinfo_database sd_nodb;
-            sd_nodb.set_ip(kIp);
+            sd_nodb.set_ip(nomoral_server_ip_);
 
             for (uint32_t i = 0; i < kTotalSize; ++i)
             {
