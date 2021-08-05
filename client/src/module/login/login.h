@@ -26,8 +26,8 @@ public:
     void LeaveGame();
 private:
     ProtobufCodec& codec_;
-    TcpConnectionPtr& conn_;
     TcpClient& client_;
+    TcpConnectionPtr& conn_;
     
 };
 
