@@ -48,13 +48,18 @@ namespace deploy_server
             serverinfo_database sd_nodb;
             sd_nodb.set_ip(nomoral_ip_);
 
+            serverinfo_database sd_redis;
+            sd_redis.set_ip(redis_ip_);
+            sd_redis.set_port(kRedisPort);
+
             for (uint32_t i = 0; i < kTotalSize; ++i)
-            {
-                sd_db.set_port(kBeginPort + i);
+            {  
                 if (i % common::SERVER_ID_GROUP_SIZE == 0)
                 {
-                    sd_db.set_port(kRedisPort);
+                    database_->SaveOne(sd_redis);
+                    continue;
                 }
+                sd_db.set_port(kBeginPort + i);
                 sd_nodb.set_port(sd_db.port());
                 if (i % common::SERVER_ID_GROUP_SIZE == common::SERVER_DATABASE)
                 {
