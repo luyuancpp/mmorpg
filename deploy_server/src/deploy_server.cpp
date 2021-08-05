@@ -37,7 +37,7 @@ namespace deploy_server
         if (nullptr == q_result)
         {
             serverinfo_database sd_db;
-            sd_db.set_ip(nomoral_database_ip_);
+            sd_db.set_ip(nomoral_ip_);
             sd_db.set_db_host(nomoral_database_ip_);
             sd_db.set_db_user("root");
             sd_db.set_db_password("luyuan616586");
@@ -45,7 +45,7 @@ namespace deploy_server
             sd_db.set_db_dbname("game");
 
             serverinfo_database sd_nodb;
-            sd_nodb.set_ip(nomoral_database_ip_);
+            sd_nodb.set_ip(nomoral_ip_);
 
             for (uint32_t i = 0; i < kTotalSize; ++i)
             {
