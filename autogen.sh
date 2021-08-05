@@ -1,5 +1,10 @@
 #!/bin/bash
 
+git pull
+if test $? -ne 0; then 
+   exit 
+fi
+
 python vcxproj2cmake.py
 
 cd protopb && cmake . && make -j4
