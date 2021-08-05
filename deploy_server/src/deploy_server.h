@@ -28,7 +28,7 @@ namespace deploy_server
 
         muduo::net::RpcServer server_;
         MysqlClientPtr database_;
-        std::string nomoral_server_ip_ = "127.0.0.1";
+        std::string nomoral_database_ip_ = "127.0.0.1";
     };
 }//namespace deploy_server
 
