@@ -1,6 +1,10 @@
 #include "src/client.h"
 
+#include "google/protobuf/util/json_util.h"
+
 #include "src/client_entityid/client_entityid.h"
+#include "src/file2string/file2string.h"
+
 
 int main(int argc, char* argv[])
 {
@@ -35,8 +39,13 @@ int main(int argc, char* argv[])
         EventLoopThreadPool pool(&loop, "playerbench-client");
         pool.setThreadNum(nThreads);
         pool.start();
-        InetAddress serverAddr("127.0.0.1", 2004);
 
+        auto contents = common::File2String("client.json");
+        google::protobuf::StringPiece sp(contents.data(), contents.size());
+        ConnetionParamJsonFormat connetion_param_;
+        google::protobuf::util::JsonStringToMessage(sp, &connetion_param_);
+        InetAddress serverAddr(connetion_param_.data(0).ip(), connetion_param_.data(0).port());
+  
         std::vector<std::unique_ptr<PlayerClient>> clients;
         for (int i = 0; i < nClients; ++i)
         {
