@@ -90,7 +90,7 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
 void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
 {
     server_info_ = cp->s_resp_->my_info();
-    uint32_t snid = server_info_.id() - deploy_server::kLogicSnowflakeIdReduceParam;//snowflake id 
+    //uint32_t snid = server_info_.id() - deploy_server::kLogicSnowflakeIdReduceParam;//snowflake id 
 
     InetAddress game_addr(server_info_.ip(), server_info_.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, game_addr);
