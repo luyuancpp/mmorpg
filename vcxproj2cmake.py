@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin python
 #-*- encoding: utf-8 -*-
 
 # Generate CMakeLists.txt from *.vcxproj
@@ -51,6 +51,9 @@ def writeCMakeLists(vcxprojDir, target_type):
 
     fileLines += 'set(EXECUTABLE_OUTPUT_PATH ../bin)\n'
     fileLines += 'set(LIBRARY_OUTPUT_PATH ../bin)\n'
+    fileLines += 'execute_process(COMMAND mysql_config --cflags OUTPUT_VARIABLE MYSQL_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
+    fileLines += 'execute_process(COMMAND mysql_config --libs OUTPUT_VARIABLE MYSQL_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
+
     fileLines += ("project(%s)\n\n" % projectName)
 
     # add define
@@ -62,7 +65,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     uniqIncludeDir = list(set(includeDirs))
     for incUnit in uniqIncludeDir:
         fileLines += (incUnit + " ")
-    fileLines += ")\n\n"
+    fileLines +="/usr/include/mysql )\n\n"
 
     # link directory
     fileLines += "link_directories("
@@ -90,7 +93,6 @@ def writeCMakeLists(vcxprojDir, target_type):
     if target_type == "lib":
         # add exec
         fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
-	global libs
     else:
         # add exec
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
@@ -99,7 +101,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += ("target_link_libraries(%s " % projectName)
     for lib in libs:
         fileLines += ("%s " % lib)
-    fileLines += ("libprotobuf.a libprotobuf-lite.a hiredis  mysqlclient ssl crypto dl z )")
+    fileLines += (" ${MYSQL_LIBS} libprotobuf.a libprotobuf-lite.a hiredis )")
 
     if target_type == "lib":
         libs.append((("%s") %projectName))
