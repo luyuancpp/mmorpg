@@ -62,6 +62,10 @@ int main(int argc, char* argv[])
         }
         allLeaveGame.wait();
         allFinish.wait();
+        for (auto& client : clients)
+        {
+            client->DisConnect();
+        }
         Timestamp end(Timestamp::now());
         double seconds = timeDifference(end, start);
         printf("%f seconds\n", seconds);

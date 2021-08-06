@@ -52,6 +52,7 @@ public:
         service_.ReadyGo();
     }
 
+    void DisConnect();
 private:
 
     void onConnection(const TcpConnectionPtr& conn)
