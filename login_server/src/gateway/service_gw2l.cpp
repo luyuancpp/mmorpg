@@ -190,7 +190,6 @@ void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_datab
     auto it = login_players_.find(a);
     if (it == login_players_.end())
     {
-        LOG_ERROR << "account empty " << a;
         return;
     }
     auto& ap = it->second;
