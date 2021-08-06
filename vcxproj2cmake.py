@@ -51,8 +51,10 @@ def writeCMakeLists(vcxprojDir, target_type):
 
     fileLines += 'set(EXECUTABLE_OUTPUT_PATH ../bin)\n'
     fileLines += 'set(LIBRARY_OUTPUT_PATH ../bin)\n'
-    fileLines += 'execute_process(COMMAND mysql_config --cflags OUTPUT_VARIABLE MYSQL_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
-    fileLines += 'execute_process(COMMAND mysql_config --libs OUTPUT_VARIABLE MYSQL_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
+    if link_mysql:
+        fileLines += 'execute_process(COMMAND mysql_config --cflags OUTPUT_VARIABLE MYSQL_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
+        fileLines += 'execute_process(COMMAND mysql_config --libs OUTPUT_VARIABLE MYSQL_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
+        fileLines += 'execute_process(COMMAND mysql_config --include OUTPUT_VARIABLE MYSQL_INCLUDE OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
 
     fileLines += ("project(%s)\n\n" % projectName)
 
@@ -65,7 +67,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     uniqIncludeDir = list(set(includeDirs))
     for incUnit in uniqIncludeDir:
         fileLines += (incUnit + " ")
-    fileLines +="/usr/include/mysql )\n\n"
+    fileLines += ")\n\n"
 
     # link directory
     fileLines += "link_directories("
@@ -89,6 +91,8 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread ")\n\n'
+    if link_mysql:
+        fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MYSQL_INCLUDE}")\n\n'
 
     if target_type == "lib":
         # add exec
