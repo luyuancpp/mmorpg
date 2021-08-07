@@ -76,6 +76,10 @@ namespace l2ms
         MasterPlayerList::GetSingleton().LeaveGame(player_id);
         assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
         assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
+        if (MasterPlayerList::GetSingleton().empty())
+        {
+            LOG_INFO << "player empty";
+        }
     }
 
 }//namespace master
