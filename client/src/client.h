@@ -58,6 +58,7 @@ private:
         if (conn->connected())
         {
             service_.OnConnection(conn);
+            service_.ReadyGo();
         }
      
     }
