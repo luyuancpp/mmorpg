@@ -1,10 +1,8 @@
 #!/bin/bash
 
-#!/bin/bash  
-  
-./client 10000 
-#while true
-#do
-#    --./client 2000 4
-#--done
+while true
+do
+    ./client 10000 1
+    sleep 30
+done
 
