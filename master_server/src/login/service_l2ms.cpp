@@ -51,17 +51,24 @@ namespace l2ms
             assert(reg().get<GameGuid>(e) == player_id);
             reg().destroy(e);
         }
-        MasterPlayerList::GetSingleton().LeaveGame(player_id);
+        MasterPlayerList::GetSingleton().LeaveGame(player_id);  
         assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
         assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);        
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
-        const ::l2ms::DisconectRequest* request,
+        const ::l2ms::DisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
+        auto player_id = request->player_id();
+        auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
+        assert(reg().get<GameGuid>(e) == player_id);
+        reg().destroy(e);
+        MasterPlayerList::GetSingleton().LeaveGame(player_id);
+        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
+        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
     }
 
 }//namespace master

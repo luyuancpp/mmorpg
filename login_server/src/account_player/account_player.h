@@ -13,6 +13,7 @@ namespace gw2l
         void set_account_data(const account_database& pb) { account_data_ = pb; }
         account_database& account_data(){ return account_data_; }
         const std::string& account() const{ return account_data_.account(); }
+        common::GameGuid PlayingId() const { return playing_id_; }
 
         bool IsPlayerId(common::GameGuid player_id);
 
@@ -35,7 +36,7 @@ namespace gw2l
 
         common::LoginStateMachine login_state_machine_;
         ::account_database account_data_;
-        common::GameGuid playing_id_{ 0 };
+        common::GameGuid playing_id_{ common::kEmptyGameGuid };
     };
 }//namespace gw2l
 

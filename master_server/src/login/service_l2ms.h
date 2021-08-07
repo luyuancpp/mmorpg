@@ -19,7 +19,7 @@ namespace l2ms
             ::google::protobuf::Closure* done)override;
 
         virtual void Disconect(::google::protobuf::RpcController* controller,
-            const ::l2ms::DisconectRequest* request,
+            const ::l2ms::DisconnectRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
     private:
