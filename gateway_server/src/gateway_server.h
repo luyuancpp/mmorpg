@@ -10,7 +10,6 @@
 
 #include "src/event/event.h"
 #include "src/client/service/service_client.h"
-#include "src/game_logic/timer_task/timer_task.h"
 #include "src/server_common/codec/codec.h"
 #include "src/server_common/codec/dispatcher.h"
 #include "src/master/service_ms2gw.h"
@@ -99,7 +98,6 @@ private:
     ms2gw::Ms2gwServiceImpl ms2gw_service_impl_;
     RpcStubgw2ms gw2ms_stub_;
 
-    common::TimerTask register_master_serever_times_;
 
 };
 

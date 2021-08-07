@@ -3,7 +3,6 @@
 
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
-#include "src/game_logic/timer_task/timer_task.h"
 #include "src/master/service_ms2g.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_server.h"
@@ -59,7 +58,7 @@ private:
     ::serverinfo_database server_info_;
 
     ms2g::Ms2gServiceImpl ms2g_service_impl_;
-    common::TimerTask register_master_serever_times_;
+
 };
 
 };//namespace game
