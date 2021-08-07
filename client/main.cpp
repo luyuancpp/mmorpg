@@ -61,11 +61,11 @@ int main(int argc, char* argv[])
             clients[i]->ReadyGo();
         }
         allLeaveGame.wait();
-        allFinish.wait();
         for (auto& client : clients)
         {
             client->DisConnect();
         }
+        allFinish.wait();
         Timestamp end(Timestamp::now());
         double seconds = timeDifference(end, start);
         printf("%f seconds\n", seconds);
