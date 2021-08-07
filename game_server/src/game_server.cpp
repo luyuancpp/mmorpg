@@ -58,7 +58,7 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
     if (nullptr != master_rpc_client_ && 
         deploy_rpc_client_->peer_addr().toIp() == es.conn_->peerAddress().toIp())
     {
-        register_master_serever_times_.RunAfter(common::k5Millisecond, std::bind(&GameServer::Register2Master, this));
+        register_master_serever_times_.RunAfter(common::k10Millisecond, std::bind(&GameServer::Register2Master, this));
     }
 }
 
