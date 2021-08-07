@@ -22,7 +22,7 @@ namespace common
 	class TimerTask
 	{
 	public:
-
+        TimerTask() {}
 		~TimerTask();
 
         TimerTask(const TimerTask &) = delete;

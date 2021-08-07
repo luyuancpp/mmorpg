@@ -135,9 +135,6 @@
     <ClCompile Include="muduo\net\poller\DefaultPoller.cc">
       <Filter>源文件\muduo\net\poller</Filter>
     </ClCompile>
-    <ClCompile Include="muduo\net\poller\WindowsPollPoller.cc">
-      <Filter>源文件\muduo\net\poller</Filter>
-    </ClCompile>
     <ClCompile Include="muduo\net\protorpc\RpcCodec.cc">
       <Filter>源文件\muduo\net\protorpc</Filter>
     </ClCompile>

@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
     <ClCompile Include="src\server_common\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
     <ClCompile Include="src\game_config\deploy_json.cpp" />
@@ -170,6 +171,7 @@
   <ItemGroup>
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
     <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
+    <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
     <ClInclude Include="src\server_common\closure_auto_done.h" />
     <ClInclude Include="src\server_common\codec\codec.h" />
     <ClInclude Include="src\server_common\codec\dispatcher.h" />

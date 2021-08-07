@@ -66,6 +66,9 @@
     <ClCompile Include="src\server_common\game_rpc.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_logic\timer_task\timer_task.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
@@ -231,6 +234,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\game_rpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\timer_task\timer_task.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

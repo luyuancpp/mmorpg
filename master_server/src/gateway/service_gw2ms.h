@@ -13,11 +13,6 @@ namespace gw2ms
     class Gw2msServiceImpl : public gw2ms::Gw2msService
     {
     public:
-        Gw2msServiceImpl()
-        {
-
-        }
-
         virtual void GwConnectMaster(::google::protobuf::RpcController* controller,
             const ::gw2ms::ConnectRequest* request,
             ::google::protobuf::Empty* response,
