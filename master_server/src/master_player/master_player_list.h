@@ -16,6 +16,8 @@ namespace master
             return singleton;
         }
 
+        std::size_t player_size()const { return player_list_.size(); }
+        bool empty()const { return player_list_.empty(); }
         entt::entity GetPlayer(common::GameGuid player_id);
         bool HasPlayer(common::GameGuid player_id) const { return player_list_.find(player_id) != player_list_.end(); }
 
