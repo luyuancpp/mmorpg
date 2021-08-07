@@ -58,16 +58,7 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
     if (nullptr != master_rpc_client_ && 
         deploy_rpc_client_->peer_addr().toIp() == es.conn_->peerAddress().toIp())
     {
-        /*g2ms::StartLogicServerRequest request;
-        auto rpc_client = request.mutable_rpc_client();
-        rpc_client->set_ip(master_rpc_client_->local_addr().toIp());
-        rpc_client->set_port(master_rpc_client_->local_addr().port());
-        rpc_client->set_ip(server_info_.ip());
-        rpc_client->set_port(server_info_.port());
-        request.set_server_id(server_info_.id());
-        g2ms_stub_.CallMethod(
-            request,
-            &g2ms::G2msService_Stub::StartLogicServer);*/
+        register_master_serever_times_.RunAfter(0.005, std::bind(&GameServer::Register2Master, this));
     }
 }
 
@@ -100,6 +91,18 @@ void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
     master_rpc_client_->registerService(&ms2g_service_impl_);
     master_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
     master_rpc_client_->connect();    
+}
+
+void GameServer::Register2Master()
+{
+    g2ms::StartLogicServerRequest request;
+        auto rpc_client = request.mutable_rpc_client();
+        rpc_client->set_ip(server_info_.ip());
+        rpc_client->set_port(server_info_.port());
+        request.set_server_id(server_info_.id());
+        g2ms_stub_.CallMethod(
+            request,
+            &g2ms::G2msService_Stub::StartLogicServer);
 }
 
 }//namespace game
