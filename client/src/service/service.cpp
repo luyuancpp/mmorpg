@@ -76,12 +76,12 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientService::DisConnect()
 {
-    conn_->disconnected();
+    client_.disconnect();
     auto& c = common::reg().get<uint32_t>(client::gAllFinish);
     --c; 
     if (c == 0)
     {
-        EventLoop::getEventLoopOfCurrentThread()->quit();
+        timer_task_.RunAfter(10, std::bind(&EventLoop::quit, EventLoop::getEventLoopOfCurrentThread()));
     }
 }
 
