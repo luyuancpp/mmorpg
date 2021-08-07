@@ -52,7 +52,7 @@ namespace l2ms
         reg().destroy(e);
         MasterPlayerList::GetSingleton().LeaveGame(player_id);  
         assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
-        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);  }
+        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null); 
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
