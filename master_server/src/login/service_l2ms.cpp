@@ -1,5 +1,7 @@
 #include "service_l2ms.h"
 
+#include "muduo/base/Logging.h"
+
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/player.hpp"
 #include "src/game_logic/game_registry.h"
@@ -50,7 +52,11 @@ namespace l2ms
         reg().destroy(e);
         MasterPlayerList::GetSingleton().LeaveGame(player_id);  
         assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
-        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);        
+        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);  
+        if (MasterPlayerList::GetSingleton().empty())
+        {
+            LOG_INFO << "player empty";
+        }
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
@@ -61,6 +67,10 @@ namespace l2ms
         ClosurePtr cp(done);
         auto player_id = request->player_id();
         auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
+        if (entt::null  == e)
+        {
+            return;
+        }
         assert(reg().get<GameGuid>(e) == player_id);
         reg().destroy(e);
         MasterPlayerList::GetSingleton().LeaveGame(player_id);
