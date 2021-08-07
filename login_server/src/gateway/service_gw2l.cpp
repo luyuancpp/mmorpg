@@ -170,19 +170,44 @@ void LoginServiceImpl::EnterMasterServer(const std::string& account,
         &l2ms::LoginService_Stub::EnterGame);
 }
 
+void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
+    const ::gw2l::LeaveGameRequest* request, 
+    ::google::protobuf::Empty* response, 
+    ::google::protobuf::Closure* done)
+{
+    common::ClosurePtr cp(done);
+    //连接过，登录过
+    auto cit = connection_accounts_.find(request->connection_id());
+    if (cit == connection_accounts_.end())
+    {
+        LOG_ERROR << " leave game not found connection";
+        return;
+    }
+    auto& player = cit->second;
+    l2ms::LeaveGameRequest ms_request;
+    ms_request.set_player_id(player->PlayingId());
+    l2ms_login_stub_.CallMethod(ms_request,
+        &l2ms::LoginService_Stub::LeaveGame);
+    ErasePlayer(cit);
+}
+
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller, 
     const ::gw2l::DisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    common::ClosurePtr cp(done);
     auto cit = connection_accounts_.find(request->connection_id());
-    if (cit == connection_accounts_.end())
+    if (cit == connection_accounts_.end())//连接并没有登录
     {
         return;
     }
-    login_players_.erase(cit->second->account());
-    connection_accounts_.erase(cit);    
+    //连接已经登录过
+    auto& player = cit->second;
+    l2ms::DisconnectRequest ms_disconnect;
+    ms_disconnect.set_player_id(player->PlayingId());
+    l2ms_login_stub_.CallMethod(ms_disconnect,
+        &l2ms::LoginService_Stub::Disconect);
+    ErasePlayer(cit);
 }
 
 void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_database& a_d)
@@ -196,4 +221,5 @@ void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_datab
     ap->set_account_data(a_d);
     ap->OnDbLoaded();
 }
+
 }  // namespace gw2l

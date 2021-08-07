@@ -28,11 +28,10 @@ message EnterGameResponese
 
 message LeaveGameRequest
 {
-  string account = 1;
-  uint64 player_id = 2;
+  uint64 player_id = 1;
 }
 
-message DisconectRequest
+message DisconnectRequest
 {
   uint64 player_id = 1;
 
@@ -42,5 +41,5 @@ service LoginService
 {
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponese);
   rpc LeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
-  rpc Disconect (DisconectRequest) returns (google.protobuf.Empty);  
+  rpc Disconect (DisconnectRequest) returns (google.protobuf.Empty);  
 }

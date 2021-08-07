@@ -76,13 +76,23 @@ namespace gw2l
             ::gw2l::EnterGameResponse* response,
             ::google::protobuf::Closure* done);
 
+        virtual void LeaveGame(::google::protobuf::RpcController* controller,
+            const ::gw2l::LeaveGameRequest* request,
+            ::google::protobuf::Empty* response,
+            ::google::protobuf::Closure* done);
+
         virtual void Disconnect(::google::protobuf::RpcController* controller,
             const ::gw2l::DisconnectRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
-
-        void UpdateAccount(const std::string& a, const ::account_database& a_d);
     private:
+        void UpdateAccount(const std::string& a, const ::account_database& a_d);
+        inline void ErasePlayer(ConnectionAccountMap::iterator& cit) 
+        {
+            login_players_.erase(cit->second->account());
+            connection_accounts_.erase(cit);
+        }
+
         RedisClientPtr redis_;
         ConnectionAccountMap connection_accounts_;
         LoginPlayersMap login_players_;
