@@ -77,7 +77,7 @@ private:
         conn->shutdown();
     }
 
-    void RegisterToMaster(std::string ip, uint16_t port);
+    void Register2Master(std::string ip, uint16_t port);
 
     muduo::net::EventLoop* loop_{ nullptr };
 
