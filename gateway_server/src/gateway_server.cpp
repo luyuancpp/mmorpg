@@ -47,10 +47,9 @@ void GatewayServer::receive(const common::RpcClientConnectionES& es)
     }
     else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::SERVER_MASTER)))
     {
-        /*gw2ms::ConnectRequest request;
-        request.mutable_rpc_client()->set_ip(es.conn_->localAddress().toIp());
-        request.mutable_rpc_client()->set_port(es.conn_->localAddress().port());
-        gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);*/
+        register_master_serever_times_.RunAfter(0.1,
+            std::bind(&GatewayServer::RegisterToMaster, this, es.conn_->localAddress().toIp(),
+                es.conn_->localAddress().port()));
     }
 }
 
@@ -79,6 +78,14 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     server_->setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
+}
+
+void GatewayServer::RegisterToMaster(std::string ip, uint16_t port)
+{ 
+    gw2ms::ConnectRequest request;
+    request.mutable_rpc_client()->set_ip(ip );
+    request.mutable_rpc_client()->set_port(port);
+    gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
 }
 
 }//namespace gateway
