@@ -13,7 +13,7 @@ void GatewayServer::LoadConfig()
     common::DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void GatewayServer::ConnectDeploy()
+void GatewayServer::InitNet()
 {
     const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
@@ -47,7 +47,7 @@ void GatewayServer::receive(const common::RpcClientConnectionES& es)
     }
     else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::SERVER_MASTER)))
     {
-
+        master_local_addr_ = es.conn_->peerAddress();
     }
 }
 
@@ -78,11 +78,11 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
-void GatewayServer::Register2Master(std::string ip, uint16_t port)
+void GatewayServer::Register2Master()
 { 
     gw2ms::ConnectRequest request;
-    request.mutable_rpc_client()->set_ip(ip );
-    request.mutable_rpc_client()->set_port(port);
+    request.mutable_rpc_client()->set_ip(master_local_addr_.toIp());
+    request.mutable_rpc_client()->set_port(master_local_addr_.port());
     gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
 }
 

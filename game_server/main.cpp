@@ -9,7 +9,8 @@ int main(int argc, char* argv[])
     EventLoop loop;
     game::GameServer server(&loop);
     server.LoadConfig();
-    server.ConnectDeploy();
+    server.InitNet();
+    server.Register2Master();
     loop.loop();
     return 0;
 }

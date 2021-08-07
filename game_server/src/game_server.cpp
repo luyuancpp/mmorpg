@@ -22,7 +22,7 @@ void GameServer::LoadConfig()
     common::DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void GameServer::ConnectDeploy()
+void GameServer::InitNet()
 {
     const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
@@ -85,7 +85,6 @@ void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
 
     InetAddress game_addr(server_info_.ip(), server_info_.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, game_addr);
-
     server_->start();
     master_rpc_client_->subscribe<common::RegisterStubES>(g2ms_stub_);
     master_rpc_client_->registerService(&ms2g_service_impl_);

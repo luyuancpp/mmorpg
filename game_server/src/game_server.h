@@ -26,7 +26,7 @@ public:
 
     void LoadConfig();
 
-    void ConnectDeploy();
+    void InitNet();
 
     void receive(const common::RpcClientConnectionES& es);
 
@@ -40,8 +40,8 @@ public:
     using StartLogicServerRpcRC = std::shared_ptr<StartLogicServerInfoRpcClosure>;
     void StartLogicServer(StartLogicServerRpcRC cp);
 
-private:
     void Register2Master();
+private:    
 
     muduo::net::EventLoop* loop_{ nullptr };
 
