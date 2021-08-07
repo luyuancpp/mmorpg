@@ -189,10 +189,6 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     l2ms_login_stub_.CallMethod(ms_request,
         &l2ms::LoginService_Stub::LeaveGame);
     ErasePlayer(cit);
-    if (connection_accounts_.empty() && login_players_.empty())
-    {
-        LOG_INFO << "player empty";
-    }
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller, 
@@ -212,10 +208,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     l2ms_login_stub_.CallMethod(ms_disconnect,
         &l2ms::LoginService_Stub::Disconect);
     ErasePlayer(cit);
-    if (connection_accounts_.empty() && login_players_.empty())
-    {
-        LOG_INFO << "player empty";
-    }
+
 }
 
 void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_database& a_d)
