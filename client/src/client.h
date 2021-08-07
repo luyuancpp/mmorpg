@@ -22,8 +22,6 @@
 using namespace muduo;
 using namespace muduo::net;
 
-google::protobuf::Message* messageToSend;
-
 class PlayerClient : noncopyable
 {
 public:
