@@ -47,7 +47,7 @@ void GatewayServer::receive(const common::RpcClientConnectionES& es)
     }
     else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::SERVER_MASTER)))
     {
-        register_master_serever_times_.RunAfter(common::kMillisecond,
+        register_master_serever_times_.RunAfter(common::k2Millisecond,
             std::bind(&GatewayServer::Register2Master, this, es.conn_->localAddress().toIp(),
                 es.conn_->localAddress().port()));
     }
