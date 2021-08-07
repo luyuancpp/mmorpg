@@ -37,11 +37,6 @@ int main(int argc, char* argv[])
         }
         Timestamp start(Timestamp::now());
         LOG_INFO << "all connected";
-        for (int i = 0; i < nClients; ++i)
-        {
-            clients[i]->ReadyGo();
-        }
-
         loop.loop();
         Timestamp end(Timestamp::now());
         double seconds = timeDifference(end, start);
