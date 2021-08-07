@@ -12,7 +12,7 @@ namespace common
     const uint32_t kSecondsPerHours = 60 * 60;
     const uint32_t kSecondsPerMinute = 60;
     const uint32_t kMillisecondsPerSecond = 1000;
-    const double kMillisecond = 0.001;
+    const double k2Millisecond = 0.002;
 
 	using muduo::net::TimerId;
 	using muduo::Timestamp;
