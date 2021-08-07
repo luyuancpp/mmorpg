@@ -76,7 +76,7 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientService::DisConnect()
 {
-    conn_->shutdown();
+    conn_->disconnected();
     auto& c = common::reg().get<uint32_t>(client::gAllFinish);
     --c; 
     if (c == 0)
