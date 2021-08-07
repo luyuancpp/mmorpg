@@ -53,7 +53,7 @@ public:
 
     void LoadConfig();
 
-    void ConnectDeploy();
+    void InitNet();
 
     void receive(const common::RpcClientConnectionES& es);
 
@@ -62,6 +62,7 @@ public:
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void StartServer(ServerInfoRpcRC cp);
 
+    void Register2Master();
 private:
     void OnConnection(const TcpConnectionPtr& conn)
     {
@@ -75,8 +76,6 @@ private:
         LOG_INFO << "onUnknownMessage: " << message->GetTypeName();
         conn->shutdown();
     }
-
-    void Register2Master(std::string ip, uint16_t port);
 
     muduo::net::EventLoop* loop_{ nullptr };
 
@@ -98,7 +97,7 @@ private:
     ms2gw::Ms2gwServiceImpl ms2gw_service_impl_;
     RpcStubgw2ms gw2ms_stub_;
 
-
+    muduo::net::InetAddress master_local_addr_;
 };
 
 } // namespace gateway
