@@ -48,6 +48,10 @@ namespace l2ms
         ClosurePtr cp(done);
         auto player_id = request->player_id();
         auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
+        if (!reg().valid(e))
+        {
+            LOG_INFO << "player id" << player_id;
+        }
         assert(reg().get<GameGuid>(e) == player_id);
         reg().destroy(e);
         MasterPlayerList::GetSingleton().LeaveGame(player_id);  
@@ -67,6 +71,10 @@ namespace l2ms
         ClosurePtr cp(done);
         auto player_id = request->player_id();
         auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
+        if (!reg().valid(e))
+        {
+            LOG_INFO << "player id" << player_id;
+        }
         if (entt::null  == e)
         {
             return;
