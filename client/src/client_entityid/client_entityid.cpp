@@ -2,8 +2,7 @@
 
 namespace client
 {
-entt::registry::entity_type ClientEntityId::gAllLeaveGame{};
-entt::registry::entity_type ClientEntityId::gAllFinish{};
-entt::registry::entity_type ClientEntityId::gAllConnected{};
+    entt::registry::entity_type gAllFinish;
+
 }//namespace client
 

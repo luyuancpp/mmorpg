@@ -58,13 +58,8 @@ private:
         if (conn->connected())
         {
             service_.OnConnection(conn);
-            common::reg().get<CountDownLatch*>(client::ClientEntityId::gAllConnected)->countDown();
         }
-        else
-        {
-            service_.OnDisconnect();
-            common::reg().get<CountDownLatch*>(client::ClientEntityId::gAllFinish)->countDown();
-        }
+     
     }
 
     void onUnknownMessage(const TcpConnectionPtr&,

@@ -17,28 +17,10 @@ int main(int argc, char* argv[])
         {
             nClients = atoi(argv[1]);
         }
-
-        int nThreads = 1;
-
-        if (argc > 2)
-        {
-            nThreads = atoi(argv[2]);
-        }
-
-        CountDownLatch allConnected(nClients);
-        CountDownLatch allLeaveGame(nClients);
-        CountDownLatch allFinish(nClients);
-        client::ClientEntityId::gAllConnected = common::reg().create();
-        common::reg().emplace<CountDownLatch*>(client::ClientEntityId::gAllConnected, &allConnected);
-        client::ClientEntityId::gAllLeaveGame = common::reg().create();
-        common::reg().emplace<CountDownLatch*>(client::ClientEntityId::gAllLeaveGame, &allLeaveGame);
-        client::ClientEntityId::gAllFinish = common::reg().create();
-        common::reg().emplace<CountDownLatch*>(client::ClientEntityId::gAllFinish, &allFinish);
-
         EventLoop loop;
-        EventLoopThreadPool pool(&loop, "playerbench-client");
-        pool.setThreadNum(nThreads);
-        pool.start();
+        
+        client::gAllFinish = common::reg().create();
+        common::reg().emplace<uint32_t>(client::gAllFinish, nClients);
 
         auto contents = common::File2String("client.json");
         google::protobuf::StringPiece sp(contents.data(), contents.size());
@@ -49,23 +31,18 @@ int main(int argc, char* argv[])
         std::vector<std::unique_ptr<PlayerClient>> clients;
         for (int i = 0; i < nClients; ++i)
         {
-            clients.emplace_back(new PlayerClient(pool.getNextLoop(), 
+            clients.emplace_back(new PlayerClient(&loop,
                 serverAddr));
             clients.back()->connect();
         }
-        allConnected.wait();
         Timestamp start(Timestamp::now());
         LOG_INFO << "all connected";
         for (int i = 0; i < nClients; ++i)
         {
             clients[i]->ReadyGo();
         }
-        allLeaveGame.wait();
-        for (auto& client : clients)
-        {
-            client->DisConnect();
-        }
-        allFinish.wait();
+
+        loop.loop();
         Timestamp end(Timestamp::now());
         double seconds = timeDifference(end, start);
         printf("%f seconds\n", seconds);

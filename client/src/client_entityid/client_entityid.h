@@ -5,13 +5,7 @@
 
 namespace client
 {
-    class ClientEntityId
-    {
-    public:
-        static entt::registry::entity_type gAllLeaveGame;
-        static entt::registry::entity_type gAllFinish;
-        static entt::registry::entity_type gAllConnected;
-    };
+  extern entt::registry::entity_type gAllFinish;
 }//namespace client
 
 #endif//CLIENT_SRC_CLIENT_ENTITYID_CLIENT_ENTITY_ID_H_

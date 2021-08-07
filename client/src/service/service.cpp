@@ -69,6 +69,19 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const LeaveGameResponsePtr& message, 
     muduo::Timestamp)
 {
-    common::reg().get<CountDownLatch*>(client::ClientEntityId::gAllLeaveGame)->countDown();
+    
+    
+    timer_task_.RunAfter(1, std::bind(&ClientService::DisConnect, this));
+}
+
+void ClientService::DisConnect()
+{
+    conn_->shutdown();
+    auto& c = common::reg().get<uint32_t>(client::gAllFinish);
+    --c; 
+    if (c == 0)
+    {
+        EventLoop::getEventLoopOfCurrentThread()->quit();
+    }
 }
 

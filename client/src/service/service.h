@@ -4,6 +4,7 @@
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/TcpClient.h"
 
+#include "src/game_logic/timer_task/timer_task.h"
 #include "src/server_common/codec/codec.h"
 #include "src/server_common/codec/dispatcher.h"
 #include "src/module/login/login.h"
@@ -44,6 +45,8 @@ public:
         muduo::Timestamp);
     
 private:
+    void DisConnect();
+
     ProtobufCodec& codec_;
     TcpConnectionPtr conn_;
     TcpClient& client_;
@@ -51,6 +54,8 @@ private:
     ProtobufDispatcher& dispatcher_;
 
     uint64_t player_id_{ 0 };
+
+    common::TimerTask timer_task_;
 };
 
 #endif//CLIENT_SRC_SERVICE_SERVICE_H_
