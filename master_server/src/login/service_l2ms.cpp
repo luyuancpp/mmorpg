@@ -48,19 +48,11 @@ namespace l2ms
         ClosurePtr cp(done);
         auto player_id = request->player_id();
         auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
-        if (!reg().valid(e))
-        {
-            LOG_INFO << "player id" << player_id;
-        }
         assert(reg().get<GameGuid>(e) == player_id);
         reg().destroy(e);
         MasterPlayerList::GetSingleton().LeaveGame(player_id);  
         assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
-        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);  
-        if (reg().empty())
-        {
-            LOG_INFO << "player empty";
-        }
+        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);  }
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
@@ -71,10 +63,6 @@ namespace l2ms
         ClosurePtr cp(done);
         auto player_id = request->player_id();
         auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
-        if (!reg().valid(e))
-        {
-            LOG_INFO << "player id" << player_id;
-        }
         if (entt::null  == e)
         {
             return;
@@ -84,10 +72,6 @@ namespace l2ms
         MasterPlayerList::GetSingleton().LeaveGame(player_id);
         assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
         assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
-        if (reg().empty())
-        {
-            LOG_INFO << "player empty";
-        }
     }
 
 }//namespace master
