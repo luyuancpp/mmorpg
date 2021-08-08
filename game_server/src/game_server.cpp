@@ -59,7 +59,7 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
     if (nullptr != master_rpc_client_ && 
         deploy_rpc_client_->peer_addr().toIp() == es.conn_->peerAddress().toIp())
     {
-        
+        Register2Master();
     }
 }
 
@@ -81,13 +81,13 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
 
 void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
 {
-    server_info_ = cp->s_resp_->my_info();
     //uint32_t snid = server_info_.id() - deploy_server::kLogicSnowflakeIdReduceParam;//snowflake id 
     master_rpc_client_->subscribe<common::RegisterStubES>(g2ms_stub_);
     master_rpc_client_->registerService(&ms2g_service_impl_);
     master_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
     master_rpc_client_->connect();
 
+    server_info_ = cp->s_resp_->my_info();
     InetAddress game_addr(server_info_.ip(), server_info_.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, game_addr);
     server_->start();   
