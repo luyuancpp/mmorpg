@@ -98,8 +98,11 @@ void GameServer::Register2Master()
     auto& master_local_addr = master_rpc_client_->local_addr();
     g2ms::StartGameServerRequest request;
         auto rpc_client = request.mutable_rpc_client();
+        auto rpc_server = request.mutable_rpc_server();
         rpc_client->set_ip(master_local_addr.toIp());
         rpc_client->set_port(master_local_addr.port());
+        rpc_server->set_ip(server_info_.ip());
+        rpc_server->set_port(server_info_.port());
         request.set_server_id(server_info_.id());
         g2ms_stub_.CallMethod(
             request,
