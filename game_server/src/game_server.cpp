@@ -59,6 +59,7 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
     if (nullptr != master_rpc_client_ && 
         deploy_rpc_client_->peer_addr().toIp() == es.conn_->peerAddress().toIp())
     {
+        master_local_addr_ = es.conn_->peerAddress();
         Register2Master();
     }
 }
@@ -97,8 +98,8 @@ void GameServer::Register2Master()
 {
     g2ms::StartGameServerRequest request;
         auto rpc_client = request.mutable_rpc_client();
-        rpc_client->set_ip(server_info_.ip());
-        rpc_client->set_port(server_info_.port());
+        rpc_client->set_ip(master_local_addr_.toIp());
+        rpc_client->set_port(master_local_addr_.port());
         request.set_server_id(server_info_.id());
         g2ms_stub_.CallMethod(
             request,
