@@ -4,6 +4,8 @@
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
 
+gateway::GatewayServer* g_gateway_server = nullptr; 
+
 namespace gateway
 {
 

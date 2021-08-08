@@ -13,24 +13,23 @@ namespace ms2gw
     class Ms2gwServiceImpl : public Ms2gwService
     {
     public:
-        Ms2gwServiceImpl(gateway::GatewayServer* server)
-            : server_(server)
-        {}
-
-        virtual void StartLogicServer(::google::protobuf::RpcController* controller,
-            const ::ms2gw::StartLogicServerRequest* request,
+        virtual void StartGameServer(::google::protobuf::RpcController* controller,
+            const ::ms2gw::StartGameServerRequest* request,
             google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
-        virtual void StopLogicServer(::google::protobuf::RpcController* controller,
-            const ::ms2gw::StopLogicServerRequest* request,
+        virtual void StopGameServer(::google::protobuf::RpcController* controller,
+            const ::ms2gw::StopGameServerRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
         virtual void PlayerEnterGameServer(::google::protobuf::RpcController* controller,
             const ::ms2gw::PlayerEnterGameServerRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
+        virtual void ConnectMasterFinish(::google::protobuf::RpcController* controller,
+            const ::google::protobuf::Empty* request,
+            ::google::protobuf::Empty* response,
+            ::google::protobuf::Closure* done)override;
     private:
-        gateway::GatewayServer* server_{ nullptr };
     };
 }//namespace gw2ms
 

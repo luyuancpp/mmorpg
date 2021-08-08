@@ -39,8 +39,8 @@ namespace gw2ms
         }
     }
 
-    void Gw2msServiceImpl::GwConnectLogic(::google::protobuf::RpcController* controller, 
-        const ::gw2ms::ConnectedLogicRequest* request, 
+    void Gw2msServiceImpl::GwConnectGame(::google::protobuf::RpcController* controller, 
+        const ::gw2ms::ConnectedGameRequest* request, 
         google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
