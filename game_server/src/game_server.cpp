@@ -59,7 +59,7 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
     if (nullptr != master_rpc_client_ && 
         deploy_rpc_client_->peer_addr().toIp() == es.conn_->peerAddress().toIp())
     {
-        master_local_addr_ = es.conn_->peerAddress();
+        master_local_addr_ = es.conn_->localAddress();
         Register2Master();
     }
 }
