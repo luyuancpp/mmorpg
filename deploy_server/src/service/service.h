@@ -12,7 +12,7 @@ namespace deploy
     {
     public:
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
-        using LogicServerMap = std::unordered_map<uint32_t, ::serverinfo_database>;
+        using GameServerMap = std::unordered_map<uint32_t, ::serverinfo_database>;
 
         void set_player_mysql_client(MysqlClientPtr& ptr)
         {
@@ -24,14 +24,14 @@ namespace deploy
             ::deploy::ServerInfoResponse* response,
             ::google::protobuf::Closure* done)override;
 
-        virtual void StartLogicServer(::google::protobuf::RpcController* controller,
-            const ::deploy::StartLogicServerRequest* request,
-            ::deploy::StartLogicServerResponse* response,
+        virtual void StartGameServer(::google::protobuf::RpcController* controller,
+            const ::deploy::StartGameServerRequest* request,
+            ::deploy::StartGameServerResponse* response,
             ::google::protobuf::Closure* done)override;
 
     private:
         MysqlClientPtr database_;
-        LogicServerMap logic_server_map_;
+        GameServerMap logic_server_map_;
         entt::registry servers_;
     };
 }//namespace deploy

@@ -105,7 +105,7 @@ void MasterServer::GatewayConnectGame(const common::WaitingGatewayConnecting& co
      request.set_ip(connection_info.addr_.toIp());
      request.set_port(connection_info.addr_.port());
      request.set_server_id(connection_info.server_id_);
-     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartLogicServer");
+     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGameServer");
 }
 
 
@@ -113,12 +113,6 @@ void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionP
 {
     auto e = reg().create();
     auto& rpc_client =  reg().emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
-    if (!IsGroupServer(conn->peerAddress()))
-    {
-        ::google::protobuf::Empty request;
-        rpc_client.Send(request, "ms2gw.Ms2gwService", "ConnectMasterFinish"); 
-        rpc_client.Send(request, "ms2g.Ms2gService", "ConnectMasterFinish");
-    }
 }
 
 void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
@@ -150,17 +144,5 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
     }
 }
 
-bool MasterServer::IsGroupServer(const InetAddress& peer_addr)
-{
-    for (uint32_t i = common::SERVER_DATABASE; i < common::SERVER_CURENT_USER; ++ i)
-    {
-        auto& server_data = serverinfo_database_.Get(int32_t(i));
-        if (peer_addr.toIp() == server_data.ip() && peer_addr.port() == server_data.port())
-        {
-            return true;
-        }
-    }
-    return false;
-}
 
 }//namespace master

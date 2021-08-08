@@ -27,5 +27,4 @@ service Ms2gwService {
   rpc StartGameServer (StartGameServerRequest) returns (google.protobuf.Empty);
   rpc StopGameServer (StopGameServerRequest) returns (google.protobuf.Empty);
   rpc PlayerEnterGameServer (PlayerEnterGameServerRequest) returns (google.protobuf.Empty);
-  rpc ConnectMasterFinish (google.protobuf.Empty) returns (google.protobuf.Empty);
 }

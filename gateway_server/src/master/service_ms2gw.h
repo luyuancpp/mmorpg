@@ -25,10 +25,7 @@ namespace ms2gw
             const ::ms2gw::PlayerEnterGameServerRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
-        virtual void ConnectMasterFinish(::google::protobuf::RpcController* controller,
-            const ::google::protobuf::Empty* request,
-            ::google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done)override;
+
     private:
     };
 }//namespace gw2ms

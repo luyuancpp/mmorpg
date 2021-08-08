@@ -69,19 +69,19 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
     
-    StartLogicServerRpcRC scp(std::make_shared<StartLogicServerInfoRpcClosure>());
+    StartGameServerRpcRC scp(std::make_shared<StartGameServerInfoRpcClosure>());
     scp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
     scp->s_reqst_.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
     deploy_stub_.CallMethod(
-        &GameServer::StartLogicServer,
+        &GameServer::StartGameServer,
         scp,
         this,
-        &deploy::DeployService_Stub::StartLogicServer);
+        &deploy::DeployService_Stub::StartGameServer);
 }
 
-void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
+void GameServer::StartGameServer(StartGameServerRpcRC cp)
 {
-    //uint32_t snid = server_info_.id() - deploy_server::kLogicSnowflakeIdReduceParam;//snowflake id 
+    //uint32_t snid = server_info_.id() - deploy_server::kGameSnowflakeIdReduceParam;//snowflake id 
     master_rpc_client_->subscribe<common::RegisterStubES>(g2ms_stub_);
     master_rpc_client_->registerService(&ms2g_service_impl_);
     master_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
@@ -95,14 +95,14 @@ void GameServer::StartLogicServer(StartLogicServerRpcRC cp)
 
 void GameServer::Register2Master()
 {
-    g2ms::StartLogicServerRequest request;
+    g2ms::StartGameServerRequest request;
         auto rpc_client = request.mutable_rpc_client();
         rpc_client->set_ip(server_info_.ip());
         rpc_client->set_port(server_info_.port());
         request.set_server_id(server_info_.id());
         g2ms_stub_.CallMethod(
             request,
-            &g2ms::G2msService_Stub::StartLogicServer);
+            &g2ms::G2msService_Stub::StartGameServer);
 }
 
 }//namespace game

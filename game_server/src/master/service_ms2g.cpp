@@ -12,12 +12,4 @@ namespace ms2g
 
     }
 
-    void Ms2gServiceImpl::ConnectMasterFinish(::google::protobuf::RpcController* controller, 
-        const ::google::protobuf::Empty* request, 
-        ::google::protobuf::Empty* response, 
-        ::google::protobuf::Closure* done)
-    {
-        //g_game_server->Register2Master();
-    }
-
 }

@@ -14,18 +14,18 @@ message ServerInfoResponse
   repeated serverinfo_database info = 1;
 }
 
-message StartLogicServerRequest
+message StartGameServerRequest
 {
   uint32 group = 1;
   serverinfo_database my_info = 2;
 }
 
-message StartLogicServerResponse
+message StartGameServerResponse
 {
   serverinfo_database my_info = 1;
 }
 
 service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
-  rpc StartLogicServer (StartLogicServerRequest) returns (StartLogicServerResponse);
+  rpc StartGameServer (StartGameServerRequest) returns (StartGameServerResponse);
 }

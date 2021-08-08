@@ -14,5 +14,5 @@ message LoginResponse
 
 service Ms2gService {
   rpc Login (LoginRequest) returns (LoginResponse);
-  rpc ConnectMasterFinish (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc Empty(google.protobuf.Empty) returns (google.protobuf.Empty);
 }

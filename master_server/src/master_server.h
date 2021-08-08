@@ -52,7 +52,6 @@ namespace master
     private:
         void OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn);
         void OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn);        
-        bool IsGroupServer(const InetAddress& peer_addr);
 
         muduo::net::EventLoop* loop_{ nullptr };
         RedisClientPtr redis_;

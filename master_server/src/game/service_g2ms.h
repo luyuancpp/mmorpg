@@ -17,8 +17,8 @@ namespace g2ms
         {
         }
 
-        virtual void StartLogicServer(::google::protobuf::RpcController* controller,
-            const ::g2ms::StartLogicServerRequest* request,
+        virtual void StartGameServer(::google::protobuf::RpcController* controller,
+            const ::g2ms::StartGameServerRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
     private:
