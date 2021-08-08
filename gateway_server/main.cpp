@@ -9,9 +9,9 @@ int main(int argc, char* argv[])
     g_gate_clients_ = &gate_clients;
     EventLoop loop;
     GatewayServer server(&loop);
+    g_gateway_server = &server;
     server.LoadConfig();
     server.InitNet();
-    server.Register2Master();
     loop.loop();
     return 0;
 }

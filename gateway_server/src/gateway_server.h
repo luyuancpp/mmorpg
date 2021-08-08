@@ -35,8 +35,7 @@ public:
         : loop_(loop),
         dispatcher_(std::bind(&GatewayServer::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-        client_receiver_(codec_, dispatcher_, gw2l_login_stub_),
-        ms2gw_service_impl_(this)
+        client_receiver_(codec_, dispatcher_, gw2l_login_stub_)
     {
         
     }
@@ -101,7 +100,9 @@ private:
 };
 
 } // namespace gateway
- 
+
+extern gateway::GatewayServer* g_gateway_server;
+
 #endif // !GATEWAY_GATEWAY_SERVER_H_
 
 

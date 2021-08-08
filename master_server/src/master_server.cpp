@@ -101,11 +101,11 @@ void MasterServer::GatewayConnectGame(const common::WaitingGatewayConnecting& co
         LOG_INFO << "gate off line";
         return;
     }
-    /* ms2gw::StartLogicServerRequest request;
+     ms2gw::StartGameServerRequest request;
      request.set_ip(connection_info.addr_.toIp());
      request.set_port(connection_info.addr_.port());
      request.set_server_id(connection_info.server_id_);
-     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartLogicServer");*/
+     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartLogicServer");
 }
 
 
@@ -115,7 +115,7 @@ void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionP
     auto& rpc_client =  reg().emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
     if (!IsGroupServer(conn->peerAddress()))
     {
-        ms2gw::StartLogicServerRequest request;
+        ms2gw::StartGameServerRequest request;
         request.set_ip("127.0.0.1");
         request.set_port(888);
         request.set_server_id(0);

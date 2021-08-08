@@ -18,8 +18,8 @@ namespace gw2ms
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
-        virtual void GwConnectLogic(::google::protobuf::RpcController* controller,
-            const ::gw2ms::ConnectedLogicRequest* request,
+        virtual void GwConnectGame(::google::protobuf::RpcController* controller,
+            const ::gw2ms::ConnectedGameRequest* request,
             google::protobuf::Empty* response,
             ::google::protobuf::Closure* done);
 

@@ -14,13 +14,11 @@ using namespace  common;
 
 namespace ms2gw
 {
-    void Ms2gwServiceImpl::StartLogicServer(::google::protobuf::RpcController* controller,
-        const ::ms2gw::StartLogicServerRequest* request, 
+    void Ms2gwServiceImpl::StartGameServer(::google::protobuf::RpcController* controller,
+        const ::ms2gw::StartGameServerRequest* request, 
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
-        LOG_INFO << " gate";
-        return;
         InetAddress gameserver_addr(request->ip(), request->port());
         auto e = GameClient::GetSingleton().create();
         auto& c = GameClient::GetSingleton().emplace<RpcClientPtr>(e, 
@@ -34,14 +32,14 @@ namespace ms2gw
             gameserver_addr);
         GameClient::GetSingleton().emplace<uint32_t>(e, request->server_id());
 
-        gw2ms::ConnectedLogicRequest gw2msrequest;
+        gw2ms::ConnectedGameRequest gw2msrequest;
         gw2msrequest.mutable_rpc_client()->set_ip(request->ip());
         gw2msrequest.mutable_rpc_client()->set_port(request->port());
-        server_->gw2ms_stub().CallMethod(gw2msrequest, &gw2ms::Gw2msService_Stub::GwConnectLogic);
+        g_gateway_server->gw2ms_stub().CallMethod(gw2msrequest, &gw2ms::Gw2msService_Stub::GwConnectGame);
     }
 
-    void Ms2gwServiceImpl::StopLogicServer(::google::protobuf::RpcController* controller, 
-        const ::ms2gw::StopLogicServerRequest* request, 
+    void Ms2gwServiceImpl::StopGameServer(::google::protobuf::RpcController* controller, 
+        const ::ms2gw::StopGameServerRequest* request, 
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
@@ -70,6 +68,15 @@ namespace ms2gw
         }
         it->second.game_server_id_ = request->server_id();
     }
+
+    void Ms2gwServiceImpl::ConnectMasterFinish(::google::protobuf::RpcController* controller, 
+        const ::google::protobuf::Empty* request, 
+        ::google::protobuf::Empty* response, 
+        ::google::protobuf::Closure* done)
+    {
+        g_gateway_server->Register2Master();
+    }
+
 }
 
 
