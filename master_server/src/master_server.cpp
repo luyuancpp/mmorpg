@@ -112,7 +112,7 @@ void MasterServer::GatewayConnectGame(const common::WaitingGatewayConnecting& co
 void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn)
 {
     auto e = reg().create();
-    auto& rpc_client =  reg().emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
+    reg().emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
 }
 
 void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
