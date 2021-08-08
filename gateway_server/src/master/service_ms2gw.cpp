@@ -68,15 +68,6 @@ namespace ms2gw
         }
         it->second.game_server_id_ = request->server_id();
     }
-
-    void Ms2gwServiceImpl::ConnectMasterFinish(::google::protobuf::RpcController* controller, 
-        const ::google::protobuf::Empty* request, 
-        ::google::protobuf::Empty* response, 
-        ::google::protobuf::Closure* done)
-    {
-        //g_gateway_server->Register2Master();
-    }
-
 }
 
 

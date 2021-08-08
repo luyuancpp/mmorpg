@@ -13,8 +13,8 @@ using namespace muduo::net;
 
 namespace g2ms
 {
-    void G2msServiceImpl::StartLogicServer(::google::protobuf::RpcController* controller, 
-        const ::g2ms::StartLogicServerRequest* request, 
+    void G2msServiceImpl::StartGameServer(::google::protobuf::RpcController* controller, 
+        const ::g2ms::StartGameServerRequest* request, 
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {

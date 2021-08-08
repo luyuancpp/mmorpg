@@ -20,9 +20,9 @@ namespace deploy
         database_->LoadAll<::serverinfo_database>(*response, where_case);
     }
 
-    void DeployServiceImpl::StartLogicServer(::google::protobuf::RpcController* controller, 
-        const ::deploy::StartLogicServerRequest* request, 
-        ::deploy::StartLogicServerResponse* response, 
+    void DeployServiceImpl::StartGameServer(::google::protobuf::RpcController* controller, 
+        const ::deploy::StartGameServerRequest* request,
+        ::deploy::StartGameServerResponse* response,
         ::google::protobuf::Closure* done)
     {
         common::ClosurePtr cp(done);

@@ -5,7 +5,7 @@ package g2ms;
 option cc_generic_services = true;
 
 
-message StartLogicServerRequest
+message StartGameServerRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
@@ -13,5 +13,5 @@ message StartLogicServerRequest
 }
 
 service G2msService {
-  rpc StartLogicServer (StartLogicServerRequest) returns (google.protobuf.Empty);
+  rpc StartGameServer (StartGameServerRequest) returns (google.protobuf.Empty);
 }

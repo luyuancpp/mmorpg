@@ -35,10 +35,10 @@ public:
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void ServerInfo(ServerInfoRpcRC cp);
 
-    using StartLogicServerInfoRpcClosure = common::RpcClosure<deploy::StartLogicServerRequest,
-        deploy::StartLogicServerResponse>;
-    using StartLogicServerRpcRC = std::shared_ptr<StartLogicServerInfoRpcClosure>;
-    void StartLogicServer(StartLogicServerRpcRC cp);
+    using StartGameServerInfoRpcClosure = common::RpcClosure<deploy::StartGameServerRequest,
+        deploy::StartGameServerResponse>;
+    using StartGameServerRpcRC = std::shared_ptr<StartGameServerInfoRpcClosure>;
+    void StartGameServer(StartGameServerRpcRC cp);
 
     void Register2Master();
 private:    

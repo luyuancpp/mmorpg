@@ -13,10 +13,6 @@ namespace ms2g
             ::ms2g::LoginResponse* response,
             ::google::protobuf::Closure* done)override;
 
-        virtual void ConnectMasterFinish(::google::protobuf::RpcController* controller,
-            const ::google::protobuf::Empty* request,
-            ::google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done)override;
     private:
 
     };
