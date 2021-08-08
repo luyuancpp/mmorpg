@@ -96,7 +96,6 @@ private:
     ms2gw::Ms2gwServiceImpl ms2gw_service_impl_;
     RpcStubgw2ms gw2ms_stub_;
 
-    muduo::net::InetAddress master_local_addr_;
 };
 
 } // namespace gateway

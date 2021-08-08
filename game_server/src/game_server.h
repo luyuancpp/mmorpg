@@ -58,8 +58,6 @@ private:
     ::serverinfo_database server_info_;
 
     ms2g::Ms2gServiceImpl ms2g_service_impl_;
-
-    muduo::net::InetAddress master_local_addr_;
 };
 
 };//namespace game

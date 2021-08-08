@@ -49,7 +49,6 @@ void GatewayServer::receive(const common::RpcClientConnectionES& es)
     }
     else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::SERVER_MASTER)))
     {
-        master_local_addr_ = es.conn_->localAddress();
         Register2Master();
     }
 }
@@ -83,9 +82,10 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
 
 void GatewayServer::Register2Master()
 { 
+    auto& master_local_addr = master_rpc_client_->local_addr();
     gw2ms::ConnectRequest request;
-    request.mutable_rpc_client()->set_ip(master_local_addr_.toIp());
-    request.mutable_rpc_client()->set_port(master_local_addr_.port());
+    request.mutable_rpc_client()->set_ip(master_local_addr.toIp());
+    request.mutable_rpc_client()->set_port(master_local_addr.port());
     gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
 }
 
