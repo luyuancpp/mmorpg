@@ -52,7 +52,7 @@ public:
 
     void LoadConfig();
 
-    void InitNet();
+    void InitNetwork();
 
     void receive(const common::RpcClientConnectionES& es);
 

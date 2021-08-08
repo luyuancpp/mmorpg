@@ -31,7 +31,7 @@ namespace ms2gw
         GameClient::GetSingleton().emplace<InetAddress>(e,
             gameserver_addr);
         GameClient::GetSingleton().emplace<uint32_t>(e, request->server_id());
-
+        LOG_INFO << "connect to game server " << gameserver_addr.toIpPort();
         gw2ms::ConnectedGameRequest gw2msrequest;
         gw2msrequest.mutable_rpc_client()->set_ip(request->ip());
         gw2msrequest.mutable_rpc_client()->set_port(request->port());
