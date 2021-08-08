@@ -26,7 +26,7 @@ public:
 
     void LoadConfig();
 
-    void InitNet();
+    void InitNetwork();
 
     void receive(const common::RpcClientConnectionES& es);
 
@@ -62,5 +62,7 @@ private:
 };
 
 };//namespace game
+
+extern game::GameServer* g_game_server;
 
 #endif // !GAME_SERVER_SRC_GAME_SERVER_GAME_SERVER_H_

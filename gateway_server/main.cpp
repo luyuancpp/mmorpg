@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     GatewayServer server(&loop);
     g_gateway_server = &server;
     server.LoadConfig();
-    server.InitNet();
+    server.InitNetwork();
     loop.loop();
     return 0;
 }

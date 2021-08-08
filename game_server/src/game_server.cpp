@@ -7,13 +7,14 @@
 
 #include "muduo/base/CrossPlatformAdapterFunction.h"
 
+game::GameServer* g_game_server = nullptr;
+
 namespace game
 {
 GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
      redis_(std::make_shared<common::RedisClient>())
 {
-
 }
 
 void GameServer::LoadConfig()
@@ -22,7 +23,7 @@ void GameServer::LoadConfig()
     common::DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void GameServer::InitNet()
+void GameServer::InitNetwork()
 {
     const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());

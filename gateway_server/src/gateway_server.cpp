@@ -15,7 +15,7 @@ void GatewayServer::LoadConfig()
     common::DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void GatewayServer::InitNet()
+void GatewayServer::InitNetwork()
 {
     const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
