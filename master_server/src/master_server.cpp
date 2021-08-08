@@ -101,18 +101,27 @@ void MasterServer::GatewayConnectGame(const common::WaitingGatewayConnecting& co
         LOG_INFO << "gate off line";
         return;
     }
-    ms2gw::StartLogicServerRequest request;
-    request.set_ip(connection_info.addr_.toIp());
-    request.set_port(connection_info.addr_.port());
-    request.set_server_id(connection_info.server_id_);
-    gate_client_->Send(request, "ms2gw.Ms2gwService", "StartLogicServer");
+    /* ms2gw::StartLogicServerRequest request;
+     request.set_ip(connection_info.addr_.toIp());
+     request.set_port(connection_info.addr_.port());
+     request.set_server_id(connection_info.server_id_);
+     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartLogicServer");*/
 }
 
 
 void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn)
 {
     auto e = reg().create();
-    reg().emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
+    auto& rpc_client =  reg().emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
+    if (!IsGroupServer(conn->peerAddress()))
+    {
+        ms2gw::StartLogicServerRequest request;
+        request.set_ip("127.0.0.1");
+        request.set_port(888);
+        request.set_server_id(0);
+        rpc_client.Send(request, "ms2gw.Ms2gwService", "StartLogicServer");
+
+    }
 }
 
 void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
@@ -142,6 +151,19 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
         reg().destroy(e);
         break;
     }
+}
+
+bool MasterServer::IsGroupServer(const InetAddress& peer_addr)
+{
+    for (uint32_t i = common::SERVER_DATABASE; i < common::SERVER_CURENT_USER; ++ i)
+    {
+        auto& server_data = serverinfo_database_.Get(int32_t(i));
+        if (peer_addr.toIp() == server_data.ip() && peer_addr.port() == server_data.port())
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 }//namespace master
