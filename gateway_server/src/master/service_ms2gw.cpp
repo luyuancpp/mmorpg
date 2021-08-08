@@ -19,6 +19,8 @@ namespace ms2gw
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
+        LOG_INFO << " gate";
+        return;
         InetAddress gameserver_addr(request->ip(), request->port());
         auto e = GameClient::GetSingleton().create();
         auto& c = GameClient::GetSingleton().emplace<RpcClientPtr>(e, 
