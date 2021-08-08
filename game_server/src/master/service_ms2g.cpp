@@ -17,7 +17,7 @@ namespace ms2g
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
-        g_game_server->Register2Master();
+        //g_game_server->Register2Master();
     }
 
 }

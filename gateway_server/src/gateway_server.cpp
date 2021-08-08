@@ -50,6 +50,7 @@ void GatewayServer::receive(const common::RpcClientConnectionES& es)
     else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::SERVER_MASTER)))
     {
         master_local_addr_ = es.conn_->peerAddress();
+        Register2Master();
     }
 }
 

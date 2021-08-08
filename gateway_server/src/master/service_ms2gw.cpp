@@ -74,7 +74,7 @@ namespace ms2gw
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
-        g_gateway_server->Register2Master();
+        //g_gateway_server->Register2Master();
     }
 
 }
