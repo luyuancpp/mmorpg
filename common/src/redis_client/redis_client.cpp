@@ -44,11 +44,6 @@ void RedisClient::Save(const google::protobuf::Message& message, const std::stri
         key_len,
         message_cached_array.data(),
         message_cached_array.size());
-    if (nullptr == reply)
-    {
-        LOG_ERROR << "redis save error";
-        return;
-    }
     freeReplyObject(reply);
 }
 
