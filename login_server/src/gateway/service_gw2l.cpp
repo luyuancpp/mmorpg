@@ -196,6 +196,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    common::ClosurePtr cp(done);
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())//连接并没有登录
     {

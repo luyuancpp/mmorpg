@@ -6,6 +6,7 @@
 #include "src/game_logic/entity_cast.h"
 #include "src/gate_player/gate_player_list.h"
 #include "src/gateway_server.h"
+#include "src/server_common/closure_auto_done.h"
 
 #include "gw2g.pb.h"
 
@@ -19,6 +20,7 @@ namespace ms2gw
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
+        common::ClosurePtr cp(done);
         InetAddress gameserver_addr(request->ip(), request->port());
         auto e = GameClient::GetSingleton().create();
         auto& c = GameClient::GetSingleton().emplace<RpcClientPtr>(e, 
@@ -43,6 +45,7 @@ namespace ms2gw
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
+        common::ClosurePtr cp(done);
         for (auto e : GameClient::GetSingleton().view<InetAddress>())
         {
             auto& c = GameClient::GetSingleton().get<InetAddress>(e);
@@ -61,6 +64,7 @@ namespace ms2gw
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
+        common::ClosurePtr cp(done);
         auto it = g_gate_clients_->find(request->connection_id());
         if (it == g_gate_clients_->end())
         {
