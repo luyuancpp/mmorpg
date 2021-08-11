@@ -3,6 +3,7 @@
 #include "muduo/base/Timestamp.h"
 
 #include "src/mysql_database/mysql_database.h"
+#include "src/server_common/closure_auto_done.h"
 #include "src/redis_client/redis_client.h"
 
 #include "comp.pb.h"
@@ -14,6 +15,7 @@ namespace l2db
         l2db::LoginResponse* response, 
         ::google::protobuf::Closure* done)
     {
+        common::ClosurePtr cp(done);
         ::account_database& r_db = *response->mutable_account_player();
         auto& caccount = request->account();
         redis_->Load(r_db, caccount);
@@ -28,7 +30,6 @@ namespace l2db
             r_db.set_password(request->password());
             redis_->Save(r_db, caccount);
         }        
-        done->Run();
     }
 
     void LoginServiceImpl::CreatePlayer(::google::protobuf::RpcController* controller,
@@ -36,6 +37,7 @@ namespace l2db
         ::l2db::CreatePlayerResponse* response, 
         ::google::protobuf::Closure* done)
     {
+        common::ClosurePtr cp(done);
         ::account_database& r_db = *response->mutable_account_player();
         redis_->Load(r_db, request->account());
         player_database new_player;
@@ -46,7 +48,6 @@ namespace l2db
         r_db.mutable_simple_players()->add_players()->set_player_id(response->player_id());
         redis_->Save(new_player, new_player.player_id());
         redis_->Save(r_db, r_db.account());
-        done->Run();
     }
 
     void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller, 
@@ -54,6 +55,7 @@ namespace l2db
         ::l2db::EnterGameResponse* response, 
         ::google::protobuf::Closure* done)
     {
+        common::ClosurePtr cp(done);
         player_database new_player;
         std::string where_case = std::string("player_id = '") + 
             std::to_string(request->player_id()) + 
@@ -61,6 +63,5 @@ namespace l2db
         database_->LoadOne(new_player, where_case);
         assert(new_player.player_id() > 0);
         redis_->Save(new_player, new_player.player_id());
-        done->Run();
     }
 }
