@@ -2,7 +2,8 @@
 
 python vcxproj2cmake.py
 
-cpu = cat /proc/cpuinfo  | grep "processor" | wc -l
+cat /proc/cpuinfo  | grep "processor" | wc -l
+cat=$1
 
 cd protopb && cmake . && make -j$cpu
 if test $? -ne 0; then 
