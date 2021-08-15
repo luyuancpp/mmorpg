@@ -63,7 +63,7 @@ void MysqlClient::Query(const std::string& query, const RowProcessor& processor)
     if (!query_res) {
         auto ec = query_res.error();
 
-        LOG_ERROR << "Error executing MySQL query \"" << "\": " << ec.message() << " (" << ec.value() << ")";
+        LOG_ERROR << "Error executing MySQL query \"" << query.c_str() << "\": " << ec.message() << " (" << ec.value() << ")";
         return;
     }
 
