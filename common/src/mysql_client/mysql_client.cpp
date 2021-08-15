@@ -16,7 +16,7 @@ void MysqlClient::Execute(const std::string& query)
 #endif//LOG_MYSQL_QUERY
     if (!query_res) {
         auto ec = query_res.error();
-        LOG_ERROR << "Error executing MySQL query \"" << "\": " << ec.message() << " (" << ec.value() << ")";
+        LOG_ERROR << "Error executing MySQL query \"" << query << "\": " << ec.message() << " (" << ec.value() << ")";
         return;
     }
 }
@@ -63,7 +63,7 @@ void MysqlClient::Query(const std::string& query, const RowProcessor& processor)
     if (!query_res) {
         auto ec = query_res.error();
 
-        LOG_ERROR << "Error executing MySQL query \"" << "\": " << ec.message() << " (" << ec.value() << ")";
+        LOG_ERROR << "Error executing MySQL query \"" << query << "\": " << ec.message() << " (" << ec.value() << ")";
         return;
     }
 
