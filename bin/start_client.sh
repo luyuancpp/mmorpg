@@ -2,7 +2,6 @@
 
 while true
 do
-    ./client 10000 1
-    sleep 30
+    ./client 10000 
 done
 

@@ -4,6 +4,7 @@
 
 #include "src/game_logic/game_registry.h"
 #include "src/master_server.h"
+#include "src/server_common/closure_auto_done.h"
 #include "src/server_common/server_component.h"
 
 using namespace common;
@@ -15,6 +16,7 @@ namespace gw2ms
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
+        ClosurePtr cp(done);
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         for (auto e : reg().view<RpcServerConnection>())
         {
@@ -44,6 +46,7 @@ namespace gw2ms
         google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
+        ClosurePtr cp(done);
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         for (auto e : reg().view<WaitingGatewayConnecting>())
         {

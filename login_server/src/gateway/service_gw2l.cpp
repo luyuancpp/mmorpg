@@ -1,9 +1,11 @@
 #include "service_gw2l.h"
 
 #include "muduo/base/Logging.h"
+
 #include "src/server_common/rpc_server.h"
-#include "src/return_code/return_notice_code.h"
 #include "src/server_common/closure_auto_done.h"
+#include "src/return_code/return_notice_code.h"
+
 
 using namespace muduo;
 using namespace muduo::net;
@@ -196,6 +198,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    common::ClosurePtr cp(done);
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())//连接并没有登录
     {
