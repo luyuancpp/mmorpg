@@ -41,7 +41,7 @@ namespace deploy_server
             sd_db.set_ip(nomoral_ip_);
             sd_db.set_db_host(nomoral_database_ip_);
             sd_db.set_db_user("root");
-            sd_db.set_db_password("luyuan616586");
+            sd_db.set_db_password("");
             sd_db.set_db_port(3306);
             sd_db.set_db_dbname("game");
 
