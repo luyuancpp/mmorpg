@@ -23,5 +23,4 @@ message GameServerIdRequest
 service Gw2msService {
   rpc PlayerService (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc GwConnectMaster (ConnectRequest) returns (google.protobuf.Empty);
-  rpc GwConnectGame(ConnectedGameRequest) returns (google.protobuf.Empty);
 }

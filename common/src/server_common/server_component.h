@@ -26,11 +26,6 @@ namespace common
     };
     using RpcServerConnectionPtr = std::unique_ptr<RpcServerConnection>;
 
-    struct WaitingGatewayConnecting
-    {
-        InetAddress addr_;
-        uint32_t server_id_{ UINT32_MAX };
-    };
     struct GatewayConnected
     {
         InetAddress addr_;

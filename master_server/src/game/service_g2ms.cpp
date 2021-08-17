@@ -34,16 +34,7 @@ namespace g2ms
             GameClient::GetSingleton()->emplace<common::RpcServerConnection>(ce, common::RpcServerConnection{ c.conn_ });
             GameClient::GetSingleton()->emplace<InetAddress>(ce, rpc_server_peer_addr);
             GameClient::GetSingleton()->emplace<uint32_t>(ce, request->server_id());
-            common::WaitingGatewayConnecting wgc{ rpc_server_peer_addr,  request->server_id() };
-            if (nullptr == g_master_server->gate_client() || !g_master_server->gate_client()->Connected())
-            {                
-                auto e = reg().create();
-                reg().emplace<common::WaitingGatewayConnecting>(e, wgc);
-            }
-            else
-            {
-                g_master_server->GatewayConnectGame(wgc);
-            }
+            g_master_server->GatewayConnectGame(ce);
             break;
         }
 

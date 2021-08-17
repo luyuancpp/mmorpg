@@ -22,6 +22,14 @@ namespace ms2gw
     {
         common::ClosurePtr cp(done);
         InetAddress gameserver_addr(request->ip(), request->port());
+        for (auto e : reg().view<InetAddress>())
+        {
+            auto& c = reg().get<InetAddress>(e);
+            if (gameserver_addr.toIpPort() == c.toIpPort())
+            {
+                return;
+            }
+        }
         auto e = GameClient::GetSingleton().create();
         auto& c = GameClient::GetSingleton().emplace<RpcClientPtr>(e, 
             std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gameserver_addr));
@@ -34,10 +42,6 @@ namespace ms2gw
             gameserver_addr);
         GameClient::GetSingleton().emplace<uint32_t>(e, request->server_id());
         LOG_INFO << "connect to game server " << gameserver_addr.toIpPort();
-        gw2ms::ConnectedGameRequest gw2msrequest;
-        gw2msrequest.mutable_rpc_client()->set_ip(request->ip());
-        gw2msrequest.mutable_rpc_client()->set_port(request->port());
-        g_gateway_server->gw2ms_stub().CallMethod(gw2msrequest, &gw2ms::Gw2msService_Stub::GwConnectGame);
     }
 
     void Ms2gwServiceImpl::StopGameServer(::google::protobuf::RpcController* controller, 

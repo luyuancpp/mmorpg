@@ -1,6 +1,8 @@
 #ifndef MASTER_SERVER_MASTER_SERVER_H_
 #define MASTER_SERVER_MASTER_SERVER_H_
 
+#include "entt/src/entt/entity/registry.hpp"
+
 #include "src/event/event.h"
 #include "src/login/service_l2ms.h"
 #include "src/redis_client/redis_client.h"
@@ -48,7 +50,7 @@ namespace master
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
 
-        void GatewayConnectGame(const common::WaitingGatewayConnecting& peer_addr);
+        void GatewayConnectGame(entt::entity ge);
     private:
         void OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn);
         void OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn);        

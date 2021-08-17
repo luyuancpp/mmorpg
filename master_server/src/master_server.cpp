@@ -94,18 +94,23 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
-void MasterServer::GatewayConnectGame(const common::WaitingGatewayConnecting& connection_info)
+void MasterServer::GatewayConnectGame(entt::entity ge)
 {
     if (nullptr == gate_client_ || !gate_client_->Connected())
     {
         LOG_INFO << "gate off line";
         return;
     }
-     ms2gw::StartGameServerRequest request;
-     request.set_ip(connection_info.addr_.toIp());
-     request.set_port(connection_info.addr_.port());
-     request.set_server_id(connection_info.server_id_);
-     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGameServer");
+    auto connection_info = GameClient::GetSingleton()->try_get<InetAddress>(ge);
+    if (nullptr == connection_info)
+    {
+        return;
+    }
+    ms2gw::StartGameServerRequest request;
+    request.set_ip(connection_info->toIp());
+    request.set_port(connection_info->port());
+    request.set_server_id(GameClient::GetSingleton()->get<uint32_t>(ge));
+    gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGameServer");
 }
 
 
