@@ -17,12 +17,6 @@ namespace gw2ms
             const ::gw2ms::ConnectRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
-
-        virtual void GwConnectGame(::google::protobuf::RpcController* controller,
-            const ::gw2ms::ConnectedGameRequest* request,
-            google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done);
-
     private:
 
     };
