@@ -16,8 +16,8 @@ namespace common
     {
     public:
         //https://en.cppreference.com/w/cpp/chrono/duration second time byte
-        static const uint32_t kServerIdByte = 13;
-        static const uint32_t kTimeByte = 35;
+        static const uint32_t kServerIdByte = 16;
+        static const uint32_t kTimeByte = 32;
         static const uint32_t kIncrementedByte = 16;
         static const uint32_t kMaxIncremented = UINT16_MAX;
 
