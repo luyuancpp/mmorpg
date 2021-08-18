@@ -28,8 +28,6 @@ public:
 
     void InitNetwork();
 
-    void receive(const common::RpcClientConnectionES& es);
-
     using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
@@ -41,6 +39,9 @@ public:
     void StartGameServer(StartGameServerRpcRC cp);
 
     void Register2Master();
+
+    void receive(const common::RpcClientConnectionES& es);
+
 private:    
 
     muduo::net::EventLoop* loop_{ nullptr };

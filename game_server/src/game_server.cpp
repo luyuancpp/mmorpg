@@ -33,36 +33,6 @@ void GameServer::InitNetwork()
     deploy_rpc_client_->connect();
 }
 
-void GameServer::receive(const common::RpcClientConnectionES& es)
-{
-    if (!es.conn_->connected())
-    {
-        return;
-    }
-   
-    if (deploy_rpc_client_->peer_addr().toIp() == es.conn_->peerAddress().toIp() && 
-        deploy_rpc_client_->peer_addr().port() == es.conn_->peerAddress().port())
-    {
-        // started 
-        if (nullptr != server_)
-        {
-            return;
-        }
-        ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-        cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
-        deploy_stub_.CallMethod(
-            &GameServer::ServerInfo,
-            cp,
-            this,
-            &deploy::DeployService_Stub::ServerInfo);
-    }
-    if (nullptr != master_rpc_client_ && 
-        deploy_rpc_client_->peer_addr().toIp() == es.conn_->peerAddress().toIp())
-    {
-        Register2Master();
-    }
-}
-
 void GameServer::ServerInfo(ServerInfoRpcRC cp)
 {
     auto& masterinfo = cp->s_resp_->info(common::SERVER_MASTER);
@@ -72,6 +42,8 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
     StartGameServerRpcRC scp(std::make_shared<StartGameServerInfoRpcClosure>());
     scp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
     scp->s_reqst_.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
+    scp->s_reqst_.mutable_rpc_client()->set_ip(deploy_rpc_client_->local_addr().toIp());
+    scp->s_reqst_.mutable_rpc_client()->set_port(deploy_rpc_client_->local_addr().port());
     deploy_stub_.CallMethod(
         &GameServer::StartGameServer,
         scp,
@@ -107,6 +79,35 @@ void GameServer::Register2Master()
         g2ms_stub_.CallMethod(
             request,
             &g2ms::G2msService_Stub::StartGameServer);
+}
+
+void GameServer::receive(const common::RpcClientConnectionES& es)
+{
+    if (!es.conn_->connected())
+    {
+        return;
+    }
+
+    if (deploy_rpc_client_->peer_addr().toIpPort() == es.conn_->peerAddress().toIpPort())
+    {
+        // started 
+        if (nullptr != server_)
+        {
+            return;
+        }
+        ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
+        cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+        deploy_stub_.CallMethod(
+            &GameServer::ServerInfo,
+            cp,
+            this,
+            &deploy::DeployService_Stub::ServerInfo);
+    }
+    if (nullptr != master_rpc_client_ &&
+        master_rpc_client_->peer_addr().toIpPort() == es.conn_->peerAddress().toIpPort())
+    {
+        Register2Master();
+    }
 }
 
 }//namespace game

@@ -44,6 +44,17 @@ namespace database
         server_->start();
     }
 
+    void DatabaseServer::StartServer(ServerInfoRpcRC cp)
+    {
+        auto& redisinfo = cp->s_resp_->info(common::SERVER_REDIS);
+        auto& myinfo = cp->s_resp_->info(common::SERVER_DATABASE);        
+        InetAddress listenAddr(myinfo.ip(), myinfo.port());
+        redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
+        database_->Connect(myinfo);
+        server_ = std::make_shared<muduo::net::RpcServer>(loop_, listenAddr);
+        Start();
+    }
+
     void DatabaseServer::receive(const common::RpcClientConnectionES& es)
     {
         if (!es.conn_->connected())
@@ -63,18 +74,6 @@ namespace database
             this,
             &deploy::DeployService_Stub::ServerInfo);
     }
-
-    void DatabaseServer::StartServer(ServerInfoRpcRC cp)
-    {
-        auto& redisinfo = cp->s_resp_->info(common::SERVER_REDIS);
-        auto& myinfo = cp->s_resp_->info(common::SERVER_DATABASE);        
-        InetAddress listenAddr(myinfo.ip(), myinfo.port());
-        redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
-        database_->Connect(myinfo);
-        server_ = std::make_shared<muduo::net::RpcServer>(loop_, listenAddr);
-        Start();
-    }
-
 
 }//namespace database
 

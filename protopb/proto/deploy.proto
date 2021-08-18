@@ -1,5 +1,6 @@
 syntax = "proto3";
 package deploy;
+import "common.proto";
 import "deploy_database_table.proto";
 option cc_generic_services = true;
 
@@ -18,11 +19,13 @@ message StartGameServerRequest
 {
   uint32 group = 1;
   group_server_db my_info = 2;
+  IpPort rpc_client = 3; 
 }
 
 message StartGameServerResponse
 {
   group_server_db my_info = 1;
+  uint32 error_no = 2;
 }
 
 service DeployService {

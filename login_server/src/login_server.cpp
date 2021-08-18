@@ -39,26 +39,6 @@ void LoginServer::Start()
     server_->start();
 }
 
-void LoginServer::receive(const common::RpcClientConnectionES& es)
-{
-    if (!es.conn_->connected())
-    {
-        return;
-    }
-    // started 
-    if (nullptr != server_)
-    {
-        return;
-    }
-    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
-    deploy_stub_.CallMethod(
-        &LoginServer::StartServer,
-        cp,
-        this,
-        &deploy::DeployService_Stub::ServerInfo);
-}
-
 void LoginServer::StartServer(ServerInfoRpcRC cp)
 {
     auto& databaseinfo = cp->s_resp_->info(common::SERVER_DATABASE);
@@ -82,6 +62,26 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, login_addr);
    
     Start();
+}
+
+void LoginServer::receive(const common::RpcClientConnectionES& es)
+{
+    if (!es.conn_->connected())
+    {
+        return;
+    }
+    // started 
+    if (nullptr != server_)
+    {
+        return;
+    }
+    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
+    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+    deploy_stub_.CallMethod(
+        &LoginServer::StartServer,
+        cp,
+        this,
+        &deploy::DeployService_Stub::ServerInfo);
 }
 
 }

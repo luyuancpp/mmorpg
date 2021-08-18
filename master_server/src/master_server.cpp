@@ -41,39 +41,6 @@ void MasterServer::ConnectDeploy()
     deploy_rpc_client_->connect();
 }
 
-void MasterServer::receive(const common::RpcClientConnectionES& es)
-{
-    if (!es.conn_->connected())
-    {
-        return;
-    }
-    // started 
-    if (nullptr != server_)
-    {
-        return;
-    }
-    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
-    deploy_stub_.CallMethod(
-        &MasterServer::StartServer,
-        cp,
-        this,
-        &deploy::DeployService_Stub::ServerInfo);
-}
-
-void MasterServer::receive(const common::ServerConnectionES& es)
-{
-    auto& conn = es.conn_;
-    if (conn->connected())
-    {
-        OnRpcClientConnectionConnect(conn);
-    }
-    else
-    {
-        OnRpcClientConnectionDisConnect(conn);
-    }
-}
-
 void MasterServer::StartServer(ServerInfoRpcRC cp)
 {
     serverinfo_database_ = cp->s_resp_->info();
@@ -112,6 +79,39 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGameServer");
 }
 
+void MasterServer::receive(const common::RpcClientConnectionES& es)
+{
+    if (!es.conn_->connected())
+    {
+        return;
+    }
+    // started 
+    if (nullptr != server_)
+    {
+        return;
+    }
+    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
+    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+    deploy_stub_.CallMethod(
+        &MasterServer::StartServer,
+        cp,
+        this,
+        &deploy::DeployService_Stub::ServerInfo);
+}
+
+void MasterServer::receive(const common::ServerConnectionES& es)
+{
+    auto& conn = es.conn_;
+    if (conn->connected())
+    {
+        OnRpcClientConnectionConnect(conn);
+    }
+    else
+    {
+        OnRpcClientConnectionDisConnect(conn);
+    }
+}
+
 
 void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn)
 {
@@ -126,8 +126,7 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
     for (auto e : GameClient::GetSingleton()->view<common::RpcServerConnection>())
     {
         auto& local_addr = GameClient::GetSingleton()->get<common::RpcServerConnection>(e).conn_->peerAddress();
-        if (local_addr.toIp() != peer_addr.toIp() ||
-            local_addr.port() != peer_addr.port())
+        if (local_addr.toIpPort() != peer_addr.toIpPort())
         {
             continue;
         }
@@ -138,8 +137,7 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
     for (auto e : reg().view<common::RpcServerConnection>())
     {
         auto& local_addr = reg().get<common::RpcServerConnection>(e).conn_->peerAddress();
-        if (local_addr.toIp() != peer_addr.toIp() ||
-            local_addr.port() != peer_addr.port())
+        if (local_addr.toIpPort() != peer_addr.toIpPort())
         {
             continue;
         }
