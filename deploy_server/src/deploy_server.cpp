@@ -21,7 +21,7 @@ namespace deploy_server
 
     void DeployServer::Start()
     {
-        database_->AddTable(serverinfo_database::default_instance());
+        database_->AddTable(group_server_db::default_instance());
         database_->Init();
         InitServerInof();
         server_.start();
@@ -34,10 +34,10 @@ namespace deploy_server
 
     void DeployServer::InitServerInof()
     {
-        auto q_result = database_->QueryOne("select * from serverinfo_database LIMIT 1");
+        auto q_result = database_->QueryOne("select * from group_server_db LIMIT 1");
         if (nullptr == q_result)
         {
-            serverinfo_database sd_db;
+            group_server_db sd_db;
             sd_db.set_ip(nomoral_ip_);
             sd_db.set_db_host(nomoral_database_ip_);
             sd_db.set_db_user("root");
@@ -45,10 +45,10 @@ namespace deploy_server
             sd_db.set_db_port(3306);
             sd_db.set_db_dbname("game");
 
-            serverinfo_database sd_nodb;
+            group_server_db sd_nodb;
             sd_nodb.set_ip(nomoral_ip_);
 
-            serverinfo_database sd_redis;
+            group_server_db sd_redis;
             sd_redis.set_ip(redis_ip_);
             sd_redis.set_port(kRedisPort);
 

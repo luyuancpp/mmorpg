@@ -11,18 +11,18 @@ message ServerInfoRequest
 
 message ServerInfoResponse
 {
-  repeated serverinfo_database info = 1;
+  repeated group_server_db info = 1;
 }
 
 message StartGameServerRequest
 {
   uint32 group = 1;
-  serverinfo_database my_info = 2;
+  group_server_db my_info = 2;
 }
 
 message StartGameServerResponse
 {
-  serverinfo_database my_info = 1;
+  group_server_db my_info = 1;
 }
 
 service DeployService {

@@ -14,7 +14,7 @@ namespace deploy
     public:
         using ServerId = uint32_t;
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
-        using GameServerMap = std::unordered_map<uint32_t, ::serverinfo_database>;
+        using GameServerMap = std::unordered_map<uint32_t, ::group_server_db>;
 
         void set_player_mysql_client(MysqlClientPtr& ptr)
         {

@@ -18,7 +18,7 @@ namespace deploy
             std::string(" <= id  ") +
             " and id < " +
             std::to_string(server_end_id);
-        database_->LoadAll<::serverinfo_database>(*response, where_case);
+        database_->LoadAll<::group_server_db>(*response, where_case);
     }
 
     void DeployServiceImpl::StartGameServer(::google::protobuf::RpcController* controller, 
@@ -27,13 +27,13 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         common::ClosurePtr cp(done);
-        ::serverinfo_database& server_info = *response->mutable_my_info();
+        ::group_server_db& server_info = *response->mutable_my_info();
         server_info.set_ip(request->my_info().ip());
         auto server_entity = servers_.create(entt::to_entity(reuse_id_.Create()));//server id error
         uint32_t server_id = static_cast<uint32_t>(server_entity);
         server_info.set_id(deploy_server::kLogicBeginId + server_id);
         server_info.set_port(deploy_server::kLogicBeginPort + server_id);
-        servers_.emplace<::serverinfo_database>(server_entity, server_info);
+        servers_.emplace<::group_server_db>(server_entity, server_info);
     }
 
 }//namespace deploy

@@ -55,7 +55,7 @@ private:
     common::RpcClientPtr master_rpc_client_;
     StubG2ms g2ms_stub_;
 
-    ::serverinfo_database server_info_;
+    ::group_server_db server_info_;
 
     ms2g::Ms2gServiceImpl ms2g_service_impl_;
 };

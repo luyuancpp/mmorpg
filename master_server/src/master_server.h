@@ -69,7 +69,7 @@ namespace master
         g2ms::G2msServiceImpl g2ms_impl_;
         gw2ms::Gw2msServiceImpl gw2ms_impl_;        
  
-        ::google::protobuf::RepeatedPtrField< ::serverinfo_database > serverinfo_database_;
+        ::google::protobuf::RepeatedPtrField< ::group_server_db > serverinfo_database_;
 
         common::RpcServerConnectionPtr gate_client_;
     };
