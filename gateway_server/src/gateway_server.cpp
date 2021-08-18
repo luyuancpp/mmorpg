@@ -25,34 +25,6 @@ void GatewayServer::InitNetwork()
     deploy_rpc_client_->connect();
 }
 
-void GatewayServer::receive(const common::RpcClientConnectionES& es)
-{
-    if (!es.conn_->connected())
-    {
-        return;
-    }
-    
-    if (IsSameAddr(es.conn_->peerAddress(), common::DeployConfig::GetSingleton().deploy_param()))
-    {
-        // started 
-        if (nullptr != server_)
-        {
-            return;
-        }
-        ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-        cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
-        deploy_stub_.CallMethod(
-            &GatewayServer::StartServer,
-            cp,
-            this,
-            &deploy::DeployService_Stub::ServerInfo);
-    }
-    else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::SERVER_MASTER)))
-    {
-        Register2Master();
-    }
-}
-
 void GatewayServer::StartServer(ServerInfoRpcRC cp)
 {
     serverinfo_database_ = cp->s_resp_->info();
@@ -87,6 +59,34 @@ void GatewayServer::Register2Master()
     request.mutable_rpc_client()->set_ip(master_local_addr.toIp());
     request.mutable_rpc_client()->set_port(master_local_addr.port());
     gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
+}
+
+void GatewayServer::receive(const common::RpcClientConnectionES& es)
+{
+    if (!es.conn_->connected())
+    {
+        return;
+    }
+
+    if (IsSameAddr(es.conn_->peerAddress(), common::DeployConfig::GetSingleton().deploy_param()))
+    {
+        // started 
+        if (nullptr != server_)
+        {
+            return;
+        }
+        ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
+        cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+        deploy_stub_.CallMethod(
+            &GatewayServer::StartServer,
+            cp,
+            this,
+            &deploy::DeployService_Stub::ServerInfo);
+    }
+    else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::SERVER_MASTER)))
+    {
+        Register2Master();
+    }
 }
 
 }//namespace gateway

@@ -42,15 +42,16 @@ namespace master
 
         void ConnectDeploy();
 
-        void receive(const common::RpcClientConnectionES& es);
-        void receive(const common::ServerConnectionES& es);
-
         using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
             deploy::ServerInfoResponse>;
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
 
         void GatewayConnectGame(entt::entity ge);
+
+        void receive(const common::RpcClientConnectionES& es);
+        void receive(const common::ServerConnectionES& es);
+
     private:
         void OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn);
         void OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn);        

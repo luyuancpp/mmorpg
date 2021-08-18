@@ -11,6 +11,7 @@ namespace common
     {
         RET_OK = 0,
         RET_TABLE_ID_ERROR = 2,
+        RET_START_GAME_SERVER_ID_FULL = 3,
 
         //login server 
         RET_LOGIN_CNAT_FIND_ACCOUNT = 1000,

@@ -26,8 +26,7 @@ namespace g2ms
         {
             auto c = reg().get<RpcServerConnection>(e);
             auto& local_addr = c.conn_->peerAddress();
-            if (local_addr.toIp() != rpc_client_peer_addr.toIp() ||
-                local_addr.port() != rpc_client_peer_addr.port())
+            if (local_addr.toIpPort() != rpc_client_peer_addr.toIpPort())
             {
                 continue;
             }

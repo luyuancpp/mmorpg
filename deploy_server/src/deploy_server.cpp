@@ -28,6 +28,7 @@ namespace deploy
         database_->Init();
         InitGroupServerDb();
         LoadGameServerDb();
+        server_.subscribe<common::ServerConnectionES>(*this);
         server_.start();
     }
 
@@ -42,6 +43,25 @@ namespace deploy
         game_server_info.set_current_size(reuse_id_.size());
         *game_server_info.mutable_free_list()->mutable_free_list() = reuse_id_.free_list();
         database_->SaveOne(game_server_info);        
+    }
+
+    void DeployServer::receive(const common::ServerConnectionES& es)
+    {
+        auto& conn = es.conn_;
+        if (conn->connected())
+        {
+            auto& peer_addr = conn->peerAddress();
+            LOG_INFO << peer_addr.toIpPort();
+            for (auto e : game_servers_.view<muduo::net::InetAddress>())
+            {
+                auto& c = game_servers_.get<muduo::net::InetAddress>(e);
+                if (peer_addr.toIpPort() != c.toIpPort() )
+                {
+                    continue;
+                }
+
+            }
+        }
     }
 
     void DeployServer::LoadGameServerDb()
