@@ -1,9 +1,9 @@
 syntax = "proto3";
 import "db_base.proto";
 
-message serverinfo_database
+message group_server_db
 {
-  option(OptionTableName)  = "serverinfo";
+  option(OptionTableName)  = "group_server_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
