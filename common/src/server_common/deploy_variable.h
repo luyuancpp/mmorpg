@@ -5,7 +5,7 @@
 
 #include "src/server_common/server_type_id.h"
 
-namespace deploy_server
+namespace deploy
 {
     static const uint32_t kRedisPort = 6379;
     static const uint32_t kGroup = 500;
