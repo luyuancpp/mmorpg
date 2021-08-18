@@ -98,7 +98,6 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
 {
     if (nullptr == gate_client_ || !gate_client_->Connected())
     {
-        LOG_INFO << "gate off line";
         return;
     }
     auto connection_info = GameClient::GetSingleton()->try_get<InetAddress>(ge);
