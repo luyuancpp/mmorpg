@@ -2,7 +2,6 @@
 #define DEPLOY_SERVER_SRC_SERVICE_SERVICE_H_
 
 #include "entt/src/entt/entity/registry.hpp"
-#include "src/game_logic/reuse_id/reuse_id.h"
 #include "src/mysql_database/mysql_database.h"
 
 #include "deploy.pb.h"
@@ -35,7 +34,6 @@ namespace deploy
         MysqlClientPtr database_;
         GameServerMap logic_server_map_;
         entt::registry servers_;
-        common::ReuseId<ServerId, std::unordered_set<ServerId>, UINT16_MAX> reuse_id_;
     };
 }//namespace deploy
 

@@ -14,7 +14,8 @@ int32_t main(int argc, char* argv[])
     auto deploy_server_info = common::DeployConfig::GetSingleton().deploy_param();
     EventLoop loop;
     InetAddress listenAddr(deploy_server_info.ip(), deploy_server_info.port());
-    deploy_server::DeployServer server(&loop, listenAddr);
+    deploy::DeployServer server(&loop, listenAddr);
+    g_deploy_server = &server;
     deploy::DeployServiceImpl impl;
     impl.set_player_mysql_client(server.player_mysql_client());
     server.RegisterService(&impl);
