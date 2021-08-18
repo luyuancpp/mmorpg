@@ -1,5 +1,6 @@
 #include "service_g2ms.h"
 
+#include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
 
 #include "src/game/game_client.h"
@@ -35,6 +36,7 @@ namespace g2ms
             GameClient::GetSingleton()->emplace<InetAddress>(ce, rpc_server_peer_addr);
             GameClient::GetSingleton()->emplace<uint32_t>(ce, request->server_id());
             g_master_server->GatewayConnectGame(ce);
+            LOG_INFO << "connect game";
             break;
         }
 

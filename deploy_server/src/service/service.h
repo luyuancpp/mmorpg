@@ -1,8 +1,9 @@
 #ifndef DEPLOY_SERVER_SRC_SERVICE_SERVICE_H_
 #define DEPLOY_SERVER_SRC_SERVICE_SERVICE_H_
 
-#include "src/mysql_database/mysql_database.h"
 #include "entt/src/entt/entity/registry.hpp"
+#include "src/game_logic/reuse_id/reuse_id.h"
+#include "src/mysql_database/mysql_database.h"
 
 #include "deploy.pb.h"
 
@@ -11,6 +12,7 @@ namespace deploy
     class DeployServiceImpl : public DeployService
     {
     public:
+        using ServerId = uint32_t;
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
         using GameServerMap = std::unordered_map<uint32_t, ::serverinfo_database>;
 
@@ -33,6 +35,7 @@ namespace deploy
         MysqlClientPtr database_;
         GameServerMap logic_server_map_;
         entt::registry servers_;
+        common::ReuseId<ServerId, std::unordered_set<ServerId>, UINT16_MAX> reuse_id_;
     };
 }//namespace deploy
 
