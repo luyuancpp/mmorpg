@@ -71,6 +71,17 @@ namespace deploy
         SaveGameServerDb();
     }
 
+    void DeployServer::LogReuseInfo()
+    {
+        std::string s;
+        for (auto it : reuse_id_.free_list())
+        {
+            s += std::to_string(it.first);
+            s += " ";
+        }
+        LOG_INFO << "size : " << reuse_id_.size() << ", " << s;
+    }
+
     void DeployServer::LoadGameServerDb()
     {
         game_server_db game_server_info;

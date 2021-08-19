@@ -25,7 +25,6 @@ namespace deploy
             const muduo::net::InetAddress& listen_addr);
 
         MysqlClientPtr& player_mysql_client() { return database_; }
-        ReuseId& reuse_id() { return reuse_id_; }
         GameServerId& game_server_entities() { return game_entities_; }
 
         void Start();
@@ -38,6 +37,7 @@ namespace deploy
         void SaveGameServerDb();
 
         void OnDisConnected(const muduo::net::TcpConnectionPtr& conn);
+        void LogReuseInfo();
    
         void receive(const common::ServerConnectionES& es);
     private:
