@@ -43,10 +43,7 @@ namespace deploy
 
         muduo::net::RpcServer server_;
         MysqlClientPtr database_;
-        std::string nomoral_database_ip_;
-        std::string nomoral_password_;
         std::string redis_ip_ = "127.0.0.1";
-        std::string nomoral_ip_ = "127.0.0.1";
         ReuseGameServerId reuse_id_;
         common::TimerTask scan_over_timer_;
     };
