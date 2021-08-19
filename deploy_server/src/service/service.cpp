@@ -6,7 +6,7 @@
 #include "src/game_logic/entity_cast.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/server_common/deploy_variable.h"
-#include "src/return_code/return_notice_code.h"
+#include "src/return_code/error_code.h"
 
 using namespace common;
 
@@ -21,7 +21,7 @@ namespace deploy
         uint32_t server_begin_id = (request->group() - 1) * SERVER_ID_GROUP_SIZE + 1;//begin form one
         uint32_t server_end_id = server_begin_id + SERVER_ID_GROUP_SIZE;
         std::string where_case = std::to_string(server_begin_id) +  
-            std::string(" <= id  ") +
+            " <= id  " +
             " and id < " +
             std::to_string(server_end_id);
         database_->LoadAll<::group_server_db>(*response, where_case);
