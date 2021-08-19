@@ -43,11 +43,7 @@ namespace deploy
 
     uint32_t DeployServer::CreateGameServerId()
     {
-        if (reuse_id_.IsScanEmpty())
-        {
-            return reuse_id_.Create();
-        }
-        return reuse_id_.CreateNoReuse();
+        return reuse_id_.CreateGameId();
     }
 
     void DeployServer::SaveGameServerDb()
