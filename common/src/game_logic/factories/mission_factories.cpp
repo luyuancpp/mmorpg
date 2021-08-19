@@ -7,7 +7,7 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/mission.hpp"
 #include "src/random/random.h"
-#include "src/return_code/return_notice_code.h"
+#include "src/return_code/error_code.h"
 
 #include "comp.pb.h"
 
