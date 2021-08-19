@@ -32,13 +32,19 @@ namespace deploy
     {
         ClosurePtr cp(done);
         ::group_server_db& server_info = *response->mutable_my_info();
+        auto& rpc_client = request->rpc_client();
+        muduo::net::InetAddress ip_port(rpc_client.ip(), rpc_client.port());
+        if (server_info.id() > 0)
+        {
+            g_deploy_server->game_server_entities().emplace(ip_port.toIpPort(), server_info.id());
+            return;
+        }
         server_info.set_ip(request->my_info().ip());
         uint32_t create_id = g_deploy_server->reuse_id().Create();
         uint32_t server_id = static_cast<uint32_t>(create_id);
         server_info.set_id(deploy::kLogicBeginId + server_id);
         server_info.set_port(deploy::kLogicBeginPort + server_id);
-        auto& rpc_client = request->rpc_client();
-        muduo::net::InetAddress ip_port(rpc_client.ip(), rpc_client.port());
+
         g_deploy_server->game_server_entities().emplace(ip_port.toIpPort(), create_id);
         g_deploy_server->SaveGameServerDb();
 
