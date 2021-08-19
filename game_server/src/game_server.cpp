@@ -42,6 +42,7 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
     StartGameServerRpcRC scp(std::make_shared<StartGameServerInfoRpcClosure>());
     scp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
     scp->s_reqst_.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
+    scp->s_reqst_.mutable_my_info()->set_id(server_info_.id());
     scp->s_reqst_.mutable_rpc_client()->set_ip(deploy_rpc_client_->local_addr().toIp());
     scp->s_reqst_.mutable_rpc_client()->set_port(deploy_rpc_client_->local_addr().port());
     deploy_stub_.CallMethod(
