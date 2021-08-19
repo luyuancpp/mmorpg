@@ -59,9 +59,9 @@ TEST(RedisTest, ReuseDepolyStartNoGameserver)
     rgs.ScanOver();
     for (uint32_t i = 0; i < max_id; ++i)
     {
-        EXPECT_TRUE(rgs.Create() < max_id);
+        EXPECT_TRUE(rgs.CreateGameId() < max_id);
     }    
-    EXPECT_EQ(rgs.Create(), max_id);
+    EXPECT_EQ(rgs.CreateGameId(), max_id);
 }
 
 TEST(RedisTest, ReuseDepolyStartGameserverReconnect)
@@ -85,9 +85,9 @@ TEST(RedisTest, ReuseDepolyStartGameserverReconnect)
     rgs.ScanOver();
     for (uint32_t i = 0; i < half; ++i)
     {
-        EXPECT_TRUE(rgs.Create() < max_id);
+        EXPECT_TRUE(rgs.CreateGameId() < max_id);
     }
-    EXPECT_EQ(rgs.Create(), max_id);
+    EXPECT_EQ(rgs.CreateGameId(), max_id);
 }
 
 int32_t main(int argc, char** argv)

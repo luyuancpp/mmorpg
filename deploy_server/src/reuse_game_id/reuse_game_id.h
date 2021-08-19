@@ -12,9 +12,19 @@ namespace deploy
         using ScanGameId = std::unordered_set<uint32_t>;
 
         std::size_t free_list_size() { return free_list().size(); }
+   
         bool IsScanEmpty() { return scan_game_server_ids_.empty(); }
 
         void OnDbLoadComplete();
+
+        uint32_t CreateGameId()
+        {
+            if (IsScanEmpty())
+            {
+                return Create();
+            }
+            return CreateNoReuse();
+        }
 
         void Emplace(const std::string& ip, uint32_t id);
 
