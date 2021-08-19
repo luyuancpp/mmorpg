@@ -18,10 +18,6 @@ namespace deploy
         database_(std::make_shared<common::MysqlDatabase>())
     {
         auto& ci = common::DeployConfig::GetSingleton().connetion_param();
-        auto& connetion_param = common::DeployConfig::GetSingleton().connetion_param();
-        nomoral_database_ip_ = connetion_param.db_host();
-        nomoral_password_ = connetion_param.db_password();
-        nomoral_ip_ = common::DeployConfig::GetSingleton().deploy_param().ip();
         database_->Connect(ci);
     }
 
@@ -98,16 +94,18 @@ namespace deploy
         {
             return;
         }
+        auto& connetion_param = common::DeployConfig::GetSingleton().connetion_param();
+        auto& nomoral_ip = common::DeployConfig::GetSingleton().deploy_param().ip();
         group_server_db sd_db;
-        sd_db.set_ip(nomoral_ip_);
-        sd_db.set_db_host(nomoral_database_ip_);
+        sd_db.set_ip(nomoral_ip);
+        sd_db.set_db_host(connetion_param.db_host());
         sd_db.set_db_user("root");
-        sd_db.set_db_password(nomoral_password_);
+        sd_db.set_db_password(connetion_param.db_password());
         sd_db.set_db_port(3306);
         sd_db.set_db_dbname("game");
 
         group_server_db sd_nodb;
-        sd_nodb.set_ip(nomoral_ip_);
+        sd_nodb.set_ip(nomoral_ip);
 
         group_server_db sd_redis;
         sd_redis.set_ip(redis_ip_);
