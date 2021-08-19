@@ -40,7 +40,7 @@ namespace deploy
             return;
         }
         server_info.set_ip(request->my_info().ip());
-        uint32_t create_id = g_deploy_server->reuse_id().Create();
+        uint32_t create_id = g_deploy_server->CreateGameServerId();
         uint32_t server_id = static_cast<uint32_t>(create_id);
         server_info.set_id(deploy::kLogicBeginId + server_id);
         server_info.set_port(deploy::kLogicBeginPort + server_id);

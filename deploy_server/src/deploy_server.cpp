@@ -41,6 +41,15 @@ namespace deploy
         server_.registerService(service);
     }
 
+    uint32_t DeployServer::CreateGameServerId()
+    {
+        if (scan_game_server_ids_.empty())
+        {
+            return reuse_id_.Create();
+        }
+        return reuse_id_.CreateNoReuse();
+    }
+
     void DeployServer::SaveGameServerDb()
     {
         game_server_db game_server_info;
@@ -139,6 +148,7 @@ namespace deploy
         {
             reuse_id_.Destroy(it);
         }
+        scan_game_server_ids_.clear();
     }
 
 }//namespace deploy

@@ -27,6 +27,11 @@ namespace common
             return t;
         }
 
+        T CreateNoReuse()
+        {
+            return size_++;
+        }
+
         void Destroy(T t) { free_list_.emplace(t); }
 
     private:
@@ -58,6 +63,11 @@ namespace common
             uint32_t t = it->first;
             free_list_.erase(it);
             return t;
+        }
+
+        uint32_t CreateNoReuse()
+        {
+            return size_++;
         }
 
         void Destroy(uint32_t t) { free_list_.insert({ t, true}); }
