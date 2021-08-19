@@ -11,7 +11,7 @@
 #include "src/game_logic/entity_cast.h"
 #include "src/game_logic/comp/player.hpp"
 #include "src/gate_player/gate_player_list.h"
-#include "src/return_code/return_notice_code.h"
+#include "src/return_code/error_code.h"
 
 #include "gw2l.pb.h"
 

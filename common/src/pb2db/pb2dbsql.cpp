@@ -16,7 +16,6 @@ namespace common
         for (int32_t i = 0; i < descriptor->field_count(); ++i)
         {
             const ::google::protobuf::FieldDescriptor* field_desc = descriptor->FindFieldByName(descriptor->field(i)->name());
-
             auto filed = descriptor->field(i);
             switch (filed->cpp_type())
             {
@@ -116,8 +115,6 @@ namespace common
         "varchar(256)",
         "Blob",
     };
-
-
 
 #undef  GetMessage
     std::string ConvertFieldValue(const ::google::protobuf::Message& message, const google::protobuf::FieldDescriptor* fieldDesc)
