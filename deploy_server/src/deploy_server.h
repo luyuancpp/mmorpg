@@ -32,6 +32,8 @@ namespace deploy
 
         void RegisterService(::google::protobuf::Service*);
 
+        uint32_t CreateGameServerId();
+
         void LoadGameServerDb();
         void SaveGameServerDb();
 
