@@ -1,5 +1,7 @@
 #include "service.h"
 
+#include "muduo/base/Logging.h"
+
 #include "src/deploy_server.h"
 #include "src/game_logic/entity_cast.h"
 #include "src/server_common/closure_auto_done.h"
@@ -40,13 +42,14 @@ namespace deploy
             return;
         }
         server_info.set_ip(request->my_info().ip());
-        uint32_t server_id = g_deploy_server->CreateGameServerId();;
+        uint32_t server_id = g_deploy_server->CreateGameServerId();
+        LOG_INFO << "new server id " << server_id;
         server_info.set_id(deploy::kLogicBeginId + server_id);
         server_info.set_port(deploy::kLogicBeginPort + server_id);
 
         g_deploy_server->game_server_entities().emplace(ip_port.toIpPort(), server_id);
         g_deploy_server->SaveGameServerDb();
-
+        //g_deploy_server->LogReuseInfo();
         response->set_error_no(RET_OK);
     }
 
