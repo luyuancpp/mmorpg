@@ -5,7 +5,7 @@
 #include "src/game_logic/comp/mission.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/factories/mission_factories.h"
-#include "src/return_code/return_notice_code.h"
+#include "src/return_code/error_code.h"
 
 #include "comp.pb.h"
 
