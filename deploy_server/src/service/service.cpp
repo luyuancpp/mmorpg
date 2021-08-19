@@ -34,13 +34,12 @@ namespace deploy
         ::group_server_db& server_info = *response->mutable_my_info();
         server_info.set_ip(request->my_info().ip());
         uint32_t create_id = g_deploy_server->reuse_id().Create();
-        auto& servers = g_deploy_server->game_server_registry();
-        auto server_entity = servers.create(entt::to_entity(create_id));//server id error
-        uint32_t server_id = static_cast<uint32_t>(server_entity);
+        uint32_t server_id = static_cast<uint32_t>(create_id);
         server_info.set_id(deploy::kLogicBeginId + server_id);
         server_info.set_port(deploy::kLogicBeginPort + server_id);
         auto& rpc_client = request->rpc_client();
-        servers.emplace<muduo::net::InetAddress>(server_entity, rpc_client.ip(), rpc_client.port());
+        muduo::net::InetAddress ip_port(rpc_client.ip(), rpc_client.port());
+        g_deploy_server->game_server_entities().emplace(ip_port.toIpPort(), create_id);
         g_deploy_server->SaveGameServerDb();
 
         response->set_error_no(RET_OK);

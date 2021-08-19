@@ -16,7 +16,9 @@ namespace deploy
         database_(std::make_shared<common::MysqlDatabase>())
     {
         auto& ci = common::DeployConfig::GetSingleton().connetion_param();
-        nomoral_database_ip_ = common::DeployConfig::GetSingleton().connetion_param().db_host();
+        auto& connetion_param = common::DeployConfig::GetSingleton().connetion_param();
+        nomoral_database_ip_ = connetion_param.db_host();
+        nomoral_password_ = connetion_param.db_password();
         nomoral_ip_ = common::DeployConfig::GetSingleton().deploy_param().ip();
         database_->Connect(ci);
     }
@@ -45,31 +47,29 @@ namespace deploy
         database_->SaveOne(game_server_info);        
     }
 
-    void DeployServer::receive(const common::ServerConnectionES& es)
-    {
-        auto& conn = es.conn_;
-        if (conn->connected())
-        {
-            auto& peer_addr = conn->peerAddress();
-            LOG_INFO << peer_addr.toIpPort();
-            for (auto e : game_servers_.view<muduo::net::InetAddress>())
-            {
-                auto& c = game_servers_.get<muduo::net::InetAddress>(e);
-                if (peer_addr.toIpPort() != c.toIpPort() )
-                {
-                    continue;
-                }
-
-            }
-        }
-    }
-
     void DeployServer::LoadGameServerDb()
     {
         game_server_db game_server_info;
         database_->LoadOne(game_server_info);
         reuse_id_.set_size(game_server_info.current_size());
         reuse_id_.set_free_list(game_server_info.free_list().free_list());
+    }
+
+    void DeployServer::receive(const common::ServerConnectionES& es)
+    {
+        auto& conn = es.conn_;
+        if (!conn->connected())
+        {
+            auto& peer_addr = conn->peerAddress();
+            auto it = game_entities_.find(peer_addr.toIpPort());
+            if (it == game_entities_.end())
+            {
+                return;
+            }
+            reuse_id_.Destroy(it->second);
+            game_entities_.erase(it);
+            SaveGameServerDb();
+        }
     }
 
     void DeployServer::InitGroupServerDb()
@@ -83,7 +83,7 @@ namespace deploy
         sd_db.set_ip(nomoral_ip_);
         sd_db.set_db_host(nomoral_database_ip_);
         sd_db.set_db_user("root");
-        sd_db.set_db_password("");
+        sd_db.set_db_password(nomoral_password_);
         sd_db.set_db_port(3306);
         sd_db.set_db_dbname("game");
 

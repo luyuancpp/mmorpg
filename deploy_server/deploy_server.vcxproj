@@ -121,6 +121,7 @@
       <AdditionalIncludeDirectories>../common/;../protopb/pbc/;../third_party/protobuf/src/;../third_party/muduo/;../third_party/boost/;../third_party/redis/;../third_party/;../third_party/mysql/include/;./;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4200;26821</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
