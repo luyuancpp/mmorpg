@@ -15,12 +15,18 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="reuse_id.cpp">
+    <ClCompile Include="reuse_id_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\deploy_server\src\reuse_game_id\reuse_game_id.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\game_logic\reuse_id\reuse_id.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\deploy_server\src\reuse_game_id\reuse_game_id.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

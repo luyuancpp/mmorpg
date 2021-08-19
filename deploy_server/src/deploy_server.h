@@ -3,6 +3,7 @@
 
 #include "muduo/net/InetAddress.h"
 
+#include "src/game_logic/timer_task/timer_task.h"
 #include "src/mysql_database/mysql_database.h"
 #include "src/redis_client/redis_client.h"
 #include "src/reuse_game_id/reuse_game_id.h"
@@ -21,7 +22,7 @@ namespace deploy
             const muduo::net::InetAddress& listen_addr);
 
         MysqlClientPtr& player_mysql_client() { return database_; }
-        ReuseGameServerId& game_reuse_id() { return reuse_id_; }
+        ReuseGameServerId& reuse_game_id() { return reuse_id_; }
 
         void Start();
 

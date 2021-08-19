@@ -38,7 +38,7 @@ namespace deploy
         muduo::net::InetAddress ip_port(rpc_client.ip(), rpc_client.port());
         if (server_info.id() > 0)
         {
-            g_deploy_server->game_reuse_id().Emplace(ip_port.toIpPort(), server_info.id());
+            g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), server_info.id());
             return;
         }
         server_info.set_ip(request->my_info().ip());
@@ -47,7 +47,7 @@ namespace deploy
         server_info.set_id(deploy::kLogicBeginId + server_id);
         server_info.set_port(deploy::kLogicBeginPort + server_id);
 
-        g_deploy_server->game_reuse_id().Emplace(ip_port.toIpPort(), server_id);
+        g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), server_id);
         g_deploy_server->SaveGameServerDb();
         //g_deploy_server->LogReuseInfo();
         response->set_error_no(RET_OK);
