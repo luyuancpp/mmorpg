@@ -5,7 +5,7 @@
 
 using namespace common;
 
-TEST(RedisTest, ReuseSetType)
+TEST(RedisTest, SetType)
 {
     ReuseId<uint32_t, std::set<uint32_t>, UINT32_MAX> reuseid;
     uint32_t test_size = 100000;
@@ -24,7 +24,7 @@ TEST(RedisTest, ReuseSetType)
     }
 }
 
-TEST(RedisTest, ReuseUnorderSetType)
+TEST(RedisTest, UnorderSetType)
 {
     ReuseId<uint32_t, std::unordered_set<uint32_t>, UINT32_MAX> reuseid;
     uint32_t test_size = 100000;
@@ -64,7 +64,7 @@ TEST(RedisTest, ReuseDepolyStartNoGameserver)
     EXPECT_EQ(rgs.CreateGameId(), max_id);
 }
 
-TEST(RedisTest, ReuseDepolyStartGameserverReconnectScanOver)
+TEST(RedisTest, DepolyStartGameserverReconnectScanOver)
 {
     deploy::ReuseGameServerId rgs;
     deploy::ReuseGameServerId::FreeList fl;
@@ -90,7 +90,7 @@ TEST(RedisTest, ReuseDepolyStartGameserverReconnectScanOver)
     EXPECT_EQ(rgs.CreateGameId(), max_id);
 }
 
-TEST(RedisTest, ReuseDepolyStartGameserverReconnectNoScanOver)
+TEST(RedisTest, DepolyStartGameserverReconnectNoScanOver)
 {
     deploy::ReuseGameServerId rgs;
     deploy::ReuseGameServerId::FreeList fl;
