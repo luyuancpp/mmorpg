@@ -64,6 +64,32 @@ TEST(RedisTest, ReuseDepolyStartNoGameserver)
     EXPECT_EQ(rgs.Create(), max_id);
 }
 
+TEST(RedisTest, ReuseDepolyStartGameserverReconnect)
+{
+    deploy::ReuseGameServerId rgs;
+    deploy::ReuseGameServerId::FreeList fl;
+    uint32_t max_id = 100;
+    for (uint32_t i = 0; i < max_id; ++i)
+    {
+        fl.insert({ i,true });
+    }
+    rgs.set_free_list(fl);
+    rgs.set_size(max_id);
+    rgs.OnDbLoadComplete();
+    uint32_t half = max_id / 2;
+    for (uint32_t i = 0; i < half; ++i)
+    {
+        rgs.Emplace(std::to_string(i), i);
+    }
+ 
+    rgs.ScanOver();
+    for (uint32_t i = 0; i < half; ++i)
+    {
+        EXPECT_TRUE(rgs.Create() < max_id);
+    }
+    EXPECT_EQ(rgs.Create(), max_id);
+}
+
 int32_t main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);

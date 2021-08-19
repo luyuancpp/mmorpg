@@ -14,9 +14,10 @@ namespace deploy
     void ReuseGameServerId::Emplace(const std::string& ip, uint32_t id)
     {
         game_entities_.emplace(ip, id);
+        RemoveFree(id);
     }
 
-    void ReuseGameServerId::OnConnect(const std::string& ip)
+    void ReuseGameServerId::OnDisConnect(const std::string& ip)
     {
         auto it = game_entities_.find(ip);
         if (it == game_entities_.end())

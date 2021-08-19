@@ -60,7 +60,7 @@ namespace deploy
 
     void DeployServer::OnDisConnected(const muduo::net::TcpConnectionPtr& conn)
     {
-        reuse_id_.OnConnect(conn->peerAddress().toIpPort());
+        reuse_id_.OnDisConnect(conn->peerAddress().toIpPort());
         SaveGameServerDb();
     }
 

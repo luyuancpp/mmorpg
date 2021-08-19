@@ -33,7 +33,7 @@ namespace common
         }
 
         void Destroy(T t) { free_list_.emplace(t); }
-
+        bool RemoveFree(T t) { free_list_.erase(t); }
     private:
         FreeList free_list_;
         T size_{0};
@@ -71,7 +71,7 @@ namespace common
         }
 
         void Destroy(uint32_t t) { free_list_.insert({ t, true}); }
-
+        bool RemoveFree(uint32_t t) { return free_list_.erase(t) > 0; }
     private:
         FreeList free_list_;
         uint32_t size_{ 0 };
