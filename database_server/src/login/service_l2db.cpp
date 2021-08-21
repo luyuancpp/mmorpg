@@ -57,9 +57,7 @@ namespace l2db
     {
         common::ClosurePtr cp(done);
         player_database new_player;
-        std::string where_case = std::string("player_id = '") + 
-            std::to_string(request->player_id()) + 
-            std::string("'");
+        std::string where_case = std::string("player_id = '") + std::to_string(request->player_id()) + "'";
         database_->LoadOne(new_player, where_case);
         assert(new_player.player_id() > 0);
         redis_->Save(new_player, new_player.player_id());
