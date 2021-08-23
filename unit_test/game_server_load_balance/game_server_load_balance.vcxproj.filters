@@ -18,5 +18,8 @@
     <ClCompile Include="game_server_load_balance_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\master_server\src\factories\scene_factories.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
