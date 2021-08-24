@@ -15,7 +15,6 @@ uint32_t per_scene_config_size = 10;
 entt::entity TestCreateMainScene(entt::registry& reg)
 {
     auto e = MakeMainSceneMap(reg);
-    auto& c = reg.get<common::Scenes>(e);
     MakeSceneParam param;
     param.scene_map_entity_ = e;
     for (uint32_t i = 0; i < scene_config_size; ++i)
@@ -44,30 +43,36 @@ TEST(GameServer, CreateMainScene)
 TEST(GameServer, PutSceneId2Sever)
 {
     entt::registry reg;
-    auto e = TestCreateMainScene(reg);
+    auto e = MakeMainSceneMap(reg);
+    MakeSceneParam cparam;
+    cparam.scene_map_entity_ = e;
+    MakeMainScene(reg, cparam);
     MakeGameServerParam param;
     param.scene_map_entity_ = e;
     param.server_id_ = 1;
-    for (uint32_t i = 0; i < scene_config_size; ++i)
-    {
-        param.scenes_id_.emplace(reg.create());
-    }
+    param.scenes_id_ = reg.get<common::Scenes>(e).scenes_;
     auto se = MakeGameServer(reg, param);   
     auto& server_data = reg.get<common::GameServerData>(se);
     auto& scenes_id = reg.get<common::SceneIds>(se);
-    EXPECT_EQ(std::size_t(scene_config_size), scenes_id.size());
+    EXPECT_EQ(1, scenes_id.size());
     EXPECT_EQ(server_data.server_id_, param.server_id_);
 }
 
 TEST(GameServer, CreateScene2Sever)
 {
     entt::registry reg;
-    auto e = TestCreateMainScene(reg);
+    auto e = MakeMainSceneMap(reg);
+
     MakeGameServerParam param1;
     param1.scene_map_entity_ = e;
     param1.server_id_ = 1;
+
+    MakeSceneParam cparam;
+    cparam.scene_map_entity_ = e;
+
     for (uint32_t i = 0; i < scene_config_size; ++i)
     {
+        MakeMainScene(reg, cparam);
         param1.scenes_id_.emplace(reg.create());
     }
     auto se1 = MakeGameServer(reg, param1);
@@ -103,6 +108,10 @@ TEST(GameServer, CreateScene2Sever)
     EXPECT_EQ(1, scenes_id2.size());
     EXPECT_EQ(server2_param.scene_config_id_, reg.get<common::SceneConfigId>(*scenes_id2.begin()).scene_config_id_);
     EXPECT_EQ(server_data2.server_id_, param2.server_id_);
+
+    std::size_t total_scene_size = scene_config_size + 2;
+    auto& scenes = reg.get<common::Scenes>(e);
+    EXPECT_EQ(total_scene_size, scenes.scenes_.size());
 }
 
 TEST(GameServer, RemoveScene2Sever)
