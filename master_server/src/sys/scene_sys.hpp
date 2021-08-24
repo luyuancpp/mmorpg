@@ -5,6 +5,7 @@
 
 namespace master
 {
+
 }//namespace master
 
 #endif//MASTER_SRC_SCENE_SYS_SCENE_SYS_HPP_
