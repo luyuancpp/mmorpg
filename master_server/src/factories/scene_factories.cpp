@@ -9,6 +9,21 @@ namespace master
         return e;
     }
 
+    void OnAddSceneConfigId(entt::registry& reg,  
+        entt::entity scene_map_entity, 
+        entt::entity scene_entity)
+    {
+        auto p_scene_entity = reg.try_get<common::SceneConfigId>(scene_entity);
+        if (nullptr == p_scene_entity)
+        {
+            return;
+        }
+        uint32_t scene_config_id = p_scene_entity->scene_config_id_;
+        auto& c = reg.get<common::Scenes>(scene_map_entity);
+        c.scenes_group_[scene_config_id].emplace(scene_entity);
+        c.scenes_.emplace(scene_entity);
+    }
+
     entt::entity MakeMainScene(entt::registry& reg,
         const MakeSceneParam& param)
     {
@@ -20,9 +35,7 @@ namespace master
         reg.emplace<common::ScenePlayerList>(e); 
         reg.emplace<common::MainScene>(e);
  
-        auto& c = reg.get<common::Scenes>(param.scene_map_entity_);
-        c.scenes_group_[scene_config_id].emplace(e);
-        c.scenes_.emplace(e);
+        OnAddSceneConfigId(reg, param.scene_map_entity_, e);
         return e;
     }
 
@@ -32,6 +45,10 @@ namespace master
         auto e = reg.create();
         reg.emplace<common::GameServerData>(e, param.server_id_);
         reg.emplace<common::SceneIds>(e, param.scenes_id_);
+        for (auto& it : param.scenes_id_)
+        {
+            OnAddSceneConfigId(reg, param.scene_map_entity_, it);
+        }
         return e;
     }
 
