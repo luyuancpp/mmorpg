@@ -28,6 +28,13 @@ struct MakeScene2GameServerParam
     uint32_t op_{ 0 };
 };
 
+struct PutScene2GameServerParam
+{
+    entt::entity scene_entity_{};
+    entt::entity server_entity_{};
+    uint32_t op_{ 0 };
+};
+
 struct RemoveSceneParam
 {
     entt::entity scene_id_{};
@@ -43,6 +50,9 @@ entt::entity MakeGameServer(entt::registry& reg,
 
 entt::entity MakeScene2GameServer(entt::registry& reg,
     const MakeScene2GameServerParam& param);
+
+void PutScene2GameServer(entt::registry& reg,
+    const PutScene2GameServerParam& param);
 
 void DestroyScene(entt::registry& reg, const RemoveSceneParam& param);
 

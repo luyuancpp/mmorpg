@@ -48,14 +48,14 @@ TEST(GameServer, MakeScene2Sever )
     MakeGameServerParam param1;
     param1.server_id_ = 1;
 
-    auto se1 = MakeGameServer(reg, param1);
+    auto server_entity1 = MakeGameServer(reg, param1);
 
     MakeGameServerParam param2;
     param2.server_id_ = 1;
     auto se2 = MakeGameServer(reg, param2);
 
-    auto& server_data1 = *reg.get<common::GameServerDataPtr>(se1);
-    auto& scenes_id1 = reg.get<common::SceneIds>(se1);
+    auto& server_data1 = *reg.get<common::GameServerDataPtr>(server_entity1);
+    auto& scenes_id1 = reg.get<common::SceneIds>(server_entity1);
  
     auto& server_data2 = *reg.get<common::GameServerDataPtr>(se2);
     auto& scenes_id2 = reg.get<common::SceneIds>(se2);
@@ -65,7 +65,7 @@ TEST(GameServer, MakeScene2Sever )
 
     server1_param.scene_map_entity_ = e;
     server1_param.scene_config_id_ = 2;
-    server1_param.server_entity_ = se1;
+    server1_param.server_entity_ = server_entity1;
 
     server2_param.scene_map_entity_ = e;
     server2_param.scene_config_id_ = 2;
@@ -95,10 +95,22 @@ TEST(GameServer, PutScene2Sever)
 
     MakeSceneParam cparam;
     cparam.scene_map_entity_ = e;
-    MakeMainScene(reg, cparam);
+    auto scene_entity = MakeMainScene(reg, cparam);
 
-    auto se1 = MakeGameServer(reg, param1);
+    auto server_entity1 = MakeGameServer(reg, param1);
         
+    PutScene2GameServerParam put_param;
+    put_param.scene_entity_ = scene_entity;
+    put_param.server_entity_ = server_entity1;
+    PutScene2GameServer(reg, put_param);
+
+    auto& scenes = reg.get<common::Scenes>(e);
+    EXPECT_EQ(1, scenes.scenes_.size());
+    EXPECT_EQ(1, scenes.scenes_group_[cparam.scene_config_id_].size());
+
+    auto& server_scenes = reg.get<common::SceneIds>(server_entity1);
+    EXPECT_EQ(1, server_scenes.size());
+
 }
 
 TEST(GameServer, RemoveScene2Sever)
