@@ -28,6 +28,11 @@ struct MakeScene2GameServerParam
     uint32_t op_{ 0 };
 };
 
+struct RemoveSceneParam
+{
+    entt::entity scene_id_{};
+};
+
 entt::entity MakeScenes(entt::registry& reg);
 
 entt::entity MakeMainScene(entt::registry& reg,
@@ -36,8 +41,10 @@ entt::entity MakeMainScene(entt::registry& reg,
 entt::entity MakeGameServer(entt::registry& reg,
     const MakeGameServerParam& param);
 
-entt::entity MakeScene2GameServer(entt::registry& reg,
+entt::entity PutScene2GameServer(entt::registry& reg,
     const MakeScene2GameServerParam& param);
+
+void DestroyScene(entt::registry& reg, const RemoveSceneParam& param);
 
 }//namespace master
 

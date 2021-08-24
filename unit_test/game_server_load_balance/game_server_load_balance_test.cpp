@@ -40,16 +40,13 @@ TEST(GameServer, CreateMainScene)
     EXPECT_EQ(c.scenes_.size(), std::size_t(scene_config_size * per_scene_config_size));
 }
 
-TEST(GameServer, PutSceneId2Sever )
+TEST(GameServer, MakeScene2Sever )
 {
     entt::registry reg;
     auto e = MakeScenes(reg);
 
     MakeGameServerParam param1;
     param1.server_id_ = 1;
-
-    MakeSceneParam cparam;
-    cparam.scene_map_entity_ = e;
 
     auto se1 = MakeGameServer(reg, param1);
 
@@ -74,8 +71,8 @@ TEST(GameServer, PutSceneId2Sever )
     server2_param.scene_config_id_ = 2;
     server2_param.server_entity_ = se2;
 
-    MakeScene2GameServer(reg, server1_param);
-    MakeScene2GameServer(reg, server2_param);
+    PutScene2GameServer(reg, server1_param);
+    PutScene2GameServer(reg, server2_param);
 
     EXPECT_EQ(1, scenes_id1.size());
     EXPECT_EQ(server_data1.server_id_, param1.server_id_);
@@ -88,7 +85,28 @@ TEST(GameServer, PutSceneId2Sever )
     EXPECT_EQ(2, scenes.scenes_.size());
 }
 
+TEST(GameServer, PutScene2Sever)
+{
+    entt::registry reg;
+    auto e = MakeScenes(reg);
+
+    MakeGameServerParam param1;
+    param1.server_id_ = 1;
+
+    MakeSceneParam cparam;
+    cparam.scene_map_entity_ = e;
+    MakeMainScene(reg, cparam);
+
+    auto se1 = MakeGameServer(reg, param1);
+        
+}
+
 TEST(GameServer, RemoveScene2Sever)
+{
+
+}
+
+TEST(GameServer, ServerScene2Sever)
 {
 
 }
