@@ -1,6 +1,8 @@
 #ifndef COMMON_SRC_GAME_LOGIC_COMP_SERVER_LIST_HPP_
 #define COMMON_SRC_GAME_LOGIC_COMP_SERVER_LIST_HPP_
 
+#include <memory>
+
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "src/common_type/common_type.h"
@@ -42,6 +44,8 @@ namespace common
         uint32_t server_id_{0};
         eGameServerStatus game_server_status_ = eGameServerStatus::eNormal;
     };
+
+    using GameServerDataPtr = std::shared_ptr<GameServerData>;
 
 }//namespace common
 

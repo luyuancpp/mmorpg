@@ -57,10 +57,10 @@ TEST(GameServer, PutSceneId2Sever )
     param2.server_id_ = 1;
     auto se2 = MakeGameServer(reg, param2);
 
-    auto& server_data1 = reg.get<common::GameServerData>(se1);
+    auto& server_data1 = *reg.get<common::GameServerDataPtr>(se1);
     auto& scenes_id1 = reg.get<common::SceneIds>(se1);
  
-    auto& server_data2 = reg.get<common::GameServerData>(se2);
+    auto& server_data2 = *reg.get<common::GameServerDataPtr>(se2);
     auto& scenes_id2 = reg.get<common::SceneIds>(se2);
 
     MakeScene2GameServerParam server1_param;

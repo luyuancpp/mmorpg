@@ -2,7 +2,6 @@
 
 namespace master
 {
-
     void OnAddScene(entt::registry& reg,
         entt::entity scene_map_entity,
         entt::entity scene_entity)
@@ -39,7 +38,9 @@ namespace master
         const MakeGameServerParam& param)
     {
         auto e = reg.create();
-        reg.emplace<common::GameServerData>(e, param.server_id_);
+        common::GameServerDataPtr p_server_data = std::make_shared<common::GameServerData>();
+        p_server_data->server_id_ = param.server_id_;
+        reg.emplace<common::GameServerDataPtr>(e, p_server_data);
         reg.emplace<common::SceneIds>(e);
         return e;
     }
@@ -58,13 +59,6 @@ namespace master
         }
         auto e = MakeMainScene(reg, main_scene_param);
         p_server_ids->emplace(e);
-        return e;
-    }
-
-    entt::entity MakeDungeonScene(entt::registry& reg,
-               const MakeSceneParam& param)
-    {
-        auto e = MakeMainScene(reg, param);
         return e;
     }
 
