@@ -71,8 +71,8 @@ TEST(GameServer, MakeScene2Sever )
     server2_param.scene_config_id_ = 2;
     server2_param.server_entity_ = se2;
 
-    PutScene2GameServer(reg, server1_param);
-    PutScene2GameServer(reg, server2_param);
+    MakeScene2GameServer(reg, server1_param);
+    MakeScene2GameServer(reg, server2_param);
 
     EXPECT_EQ(1, scenes_id1.size());
     EXPECT_EQ(server_data1.server_id_, param1.server_id_);

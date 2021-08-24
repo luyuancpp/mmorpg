@@ -46,15 +46,15 @@ namespace master
         return e;
     }
 
-    entt::entity PutScene2GameServer(entt::registry& reg, 
+    entt::entity MakeScene2GameServer(entt::registry& reg, 
         const MakeScene2GameServerParam& param)
     {
         MakeSceneParam main_scene_param;
         main_scene_param.op_ = param.op_;
         main_scene_param.scene_config_id_ = param.scene_config_id_;
         main_scene_param.scene_map_entity_ = param.scene_map_entity_;
-        auto& server_ids = reg.get<common::SceneIds>(param.server_entity_);
         auto e = MakeMainScene(reg, main_scene_param);
+        auto& server_ids = reg.get<common::SceneIds>(param.server_entity_);
         server_ids.emplace(e);
         auto& p_server_data = reg.get<common::GameServerDataPtr>(param.server_entity_);
         reg.emplace<common::GameServerDataPtr>(e, p_server_data);
