@@ -52,13 +52,13 @@ TEST(GameServer, MakeScene2Sever )
 
     MakeGameServerParam param2;
     param2.server_id_ = 1;
-    auto se2 = MakeGameServer(reg, param2);
+    auto server_entity2 = MakeGameServer(reg, param2);
 
     auto& server_data1 = *reg.get<common::GameServerDataPtr>(server_entity1);
     auto& scenes_id1 = reg.get<common::SceneIds>(server_entity1);
  
-    auto& server_data2 = *reg.get<common::GameServerDataPtr>(se2);
-    auto& scenes_id2 = reg.get<common::SceneIds>(se2);
+    auto& server_data2 = *reg.get<common::GameServerDataPtr>(server_entity2);
+    auto& scenes_id2 = reg.get<common::SceneIds>(server_entity2);
 
     MakeScene2GameServerParam server1_param;
     MakeScene2GameServerParam server2_param;
@@ -69,7 +69,7 @@ TEST(GameServer, MakeScene2Sever )
 
     server2_param.scene_map_entity_ = e;
     server2_param.scene_config_id_ = 2;
-    server2_param.server_entity_ = se2;
+    server2_param.server_entity_ = server_entity2;
 
     MakeScene2GameServer(reg, server1_param);
     MakeScene2GameServer(reg, server2_param);
@@ -113,7 +113,44 @@ TEST(GameServer, PutScene2Sever)
 
 }
 
-TEST(GameServer, RemoveScene2Sever)
+TEST(GameServer, DestroyScene)
+{
+    entt::registry reg;
+    auto e = MakeScenes(reg);
+
+    MakeGameServerParam param1;
+    param1.server_id_ = 1;
+
+    MakeSceneParam cparam;
+    cparam.scene_map_entity_ = e;
+    auto scene_entity = MakeMainScene(reg, cparam);
+
+    auto server_entity1 = MakeGameServer(reg, param1);
+
+    PutScene2GameServerParam put_param;
+    put_param.scene_entity_ = scene_entity;
+    put_param.server_entity_ = server_entity1;
+    PutScene2GameServer(reg, put_param);
+
+    auto& scenes = reg.get<common::Scenes>(e);
+    EXPECT_EQ(1, scenes.scenes_.size());
+    EXPECT_EQ(1, scenes.scenes_group_[cparam.scene_config_id_].size());
+
+    auto& server_scenes = reg.get<common::SceneIds>(server_entity1);
+    EXPECT_EQ(1, server_scenes.size());
+
+    DestroySceneParam dparam;
+    dparam.scene_entity_ = scene_entity;
+    dparam.scene_map_entity_ = e;
+    DestroyScene(reg, dparam);
+    EXPECT_TRUE(scenes.scenes_.empty());
+    EXPECT_TRUE(scenes.scenes_group_[cparam.scene_config_id_].empty());
+    EXPECT_TRUE(server_scenes.empty());
+    EXPECT_FALSE(reg.valid(scene_entity));
+}
+
+
+TEST(GameServer, DestroySever)
 {
 
 }

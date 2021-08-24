@@ -77,9 +77,21 @@ namespace master
     }
 
     void DestroyScene(entt::registry& reg,
-        const RemoveSceneParam& param)
+        const DestroySceneParam& param)
     {
-
+        auto& scene_map = reg.get<common::Scenes>(param.scene_map_entity_);
+        auto scene_entity = param.scene_entity_;
+        auto scene_config_id = reg.get<common::SceneConfigId>(param.scene_entity_).scene_config_id_;
+        scene_map.scenes_group_[scene_config_id].erase(scene_entity);
+        scene_map.scenes_.erase(scene_entity);
+        auto p_server_data = reg.get<common::GameServerDataPtr>(scene_entity);
+        reg.destroy(scene_entity);
+        if (nullptr == p_server_data)
+        {
+            return;
+        }
+        auto& server_scene =  reg.get<common::SceneIds>(p_server_data->server_entity_);
+        server_scene.erase(scene_entity);        
     }
 
 }//namespace master
