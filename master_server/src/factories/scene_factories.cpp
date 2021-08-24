@@ -2,15 +2,9 @@
 
 namespace master
 {
-    entt::entity MakeMainSceneMap(entt::registry& reg)
-    {
-        auto e = reg.create();
-        auto& c = reg.emplace<common::Scenes>(e);
-        return e;
-    }
 
-    void OnAddSceneConfigId(entt::registry& reg,  
-        entt::entity scene_map_entity, 
+    void OnAddScene(entt::registry& reg,
+        entt::entity scene_map_entity,
         entt::entity scene_entity)
     {
         auto p_scene_entity = reg.try_get<common::SceneConfigId>(scene_entity);
@@ -24,18 +18,20 @@ namespace master
         c.scenes_.emplace(scene_entity);
     }
 
+    entt::entity MakeScenes(entt::registry& reg)
+    {
+        auto e = reg.create();
+        auto& c = reg.emplace<common::Scenes>(e);
+        return e;
+    }
+
     entt::entity MakeMainScene(entt::registry& reg,
         const MakeSceneParam& param)
     {
         auto e = reg.create();
-
-        auto scene_config_id = param.scene_config_id_;
-
-        reg.emplace<common::SceneConfigId>(e, scene_config_id);
+        reg.emplace<common::SceneConfigId>(e, param.scene_config_id_);
         reg.emplace<common::ScenePlayerList>(e); 
-        reg.emplace<common::MainScene>(e);
- 
-        OnAddSceneConfigId(reg, param.scene_map_entity_, e);
+        OnAddScene(reg, param.scene_map_entity_, e);
         return e;
     }
 
@@ -44,11 +40,7 @@ namespace master
     {
         auto e = reg.create();
         reg.emplace<common::GameServerData>(e, param.server_id_);
-        reg.emplace<common::SceneIds>(e, param.scenes_id_);
-        for (auto& it : param.scenes_id_)
-        {
-            OnAddSceneConfigId(reg, param.scene_map_entity_, it);
-        }
+        reg.emplace<common::SceneIds>(e);
         return e;
     }
 
@@ -73,8 +65,6 @@ namespace master
                const MakeSceneParam& param)
     {
         auto e = MakeMainScene(reg, param);
-        reg.remove<common::MainScene>(e);
-        reg.emplace<common::DungeonScene>(e);
         return e;
     }
 

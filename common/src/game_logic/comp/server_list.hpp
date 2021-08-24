@@ -12,7 +12,6 @@ namespace common
         uint32_t scene_config_id_{ 0 };
     };
 
-    struct MainScene {};
     struct DungeonScene {};
 
     using SceneIds = std::unordered_set<entt::entity>;
