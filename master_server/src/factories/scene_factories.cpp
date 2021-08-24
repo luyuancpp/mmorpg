@@ -17,6 +17,24 @@ namespace master
         c.scenes_.emplace(scene_entity);
     }
 
+    void OnDestroyScene(entt::registry& reg,
+        entt::entity scene_map_entity,
+        entt::entity scene_entity,
+        common::Scenes& scene_map)
+    {
+        auto scene_config_id = reg.get<common::SceneConfigId>(scene_entity).scene_config_id_;
+        scene_map.scenes_group_[scene_config_id].erase(scene_entity);
+        scene_map.scenes_.erase(scene_entity);
+        auto p_server_data = reg.get<common::GameServerDataPtr>(scene_entity);
+        reg.destroy(scene_entity);
+        if (nullptr == p_server_data)
+        {
+            return;
+        }
+        auto& server_scene = reg.get<common::SceneIds>(p_server_data->server_entity_);
+        server_scene.erase(scene_entity);
+    }
+
     entt::entity MakeScenes(entt::registry& reg)
     {
         auto e = reg.create();
@@ -80,18 +98,25 @@ namespace master
         const DestroySceneParam& param)
     {
         auto& scene_map = reg.get<common::Scenes>(param.scene_map_entity_);
-        auto scene_entity = param.scene_entity_;
-        auto scene_config_id = reg.get<common::SceneConfigId>(param.scene_entity_).scene_config_id_;
-        scene_map.scenes_group_[scene_config_id].erase(scene_entity);
-        scene_map.scenes_.erase(scene_entity);
-        auto p_server_data = reg.get<common::GameServerDataPtr>(scene_entity);
-        reg.destroy(scene_entity);
-        if (nullptr == p_server_data)
+        OnDestroyScene(reg, param.scene_map_entity_, 
+            param.scene_entity_,
+            scene_map);
+    }
+
+    void DestroyServer(entt::registry& reg, 
+        const DestroyServerParam& param)
+    {
+        auto scene_map_entity = param.scene_map_entity_;
+        auto server_entity = param.server_entity_;
+        auto server_scenes =  reg.get<common::SceneIds>(server_entity);
+        auto& scene_map = reg.get<common::Scenes>(scene_map_entity);
+        DestroySceneParam destroy_param;
+        destroy_param.scene_map_entity_ = scene_map_entity;
+        for (auto& it : server_scenes)
         {
-            return;
+            OnDestroyScene(reg, param.scene_map_entity_, it,  scene_map);
         }
-        auto& server_scene =  reg.get<common::SceneIds>(p_server_data->server_entity_);
-        server_scene.erase(scene_entity);        
+        reg.destroy(server_entity);
     }
 
 }//namespace master
