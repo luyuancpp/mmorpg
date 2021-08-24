@@ -42,6 +42,12 @@ struct DestroySceneParam
     entt::entity scene_map_entity_{};
 };
 
+struct DestroyServerParam
+{
+    entt::entity server_entity_{};
+    entt::entity scene_map_entity_{};
+};
+
 entt::entity MakeScenes(entt::registry& reg);
 
 entt::entity MakeMainScene(entt::registry& reg,
@@ -58,6 +64,9 @@ void PutScene2GameServer(entt::registry& reg,
 
 void DestroyScene(entt::registry& reg, 
     const DestroySceneParam& param);
+
+void DestroyServer(entt::registry& reg,
+    const DestroyServerParam& param);
 
 }//namespace master
 
