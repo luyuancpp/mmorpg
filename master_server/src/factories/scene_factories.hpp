@@ -41,7 +41,7 @@ entt::entity MakeMainScene(entt::registry& reg,
 entt::entity MakeGameServer(entt::registry& reg,
     const MakeGameServerParam& param);
 
-entt::entity PutScene2GameServer(entt::registry& reg,
+entt::entity MakeScene2GameServer(entt::registry& reg,
     const MakeScene2GameServerParam& param);
 
 void DestroyScene(entt::registry& reg, const RemoveSceneParam& param);
