@@ -16,9 +16,7 @@ struct MakeSceneParam
 
 struct MakeGameServerParam
 {
-    entt::entity scene_map_entity_{};
     uint32_t server_id_{};
-    common::SceneIds scenes_id_;
     uint32_t op_{ 0 };
 };
 
@@ -30,7 +28,7 @@ struct MakeScene2GameServerParam
     uint32_t op_{ 0 };
 };
 
-entt::entity MakeMainSceneMap(entt::registry& reg);
+entt::entity MakeScenes(entt::registry& reg);
 
 entt::entity MakeMainScene(entt::registry& reg,
     const MakeSceneParam& param);
@@ -41,8 +39,6 @@ entt::entity MakeGameServer(entt::registry& reg,
 entt::entity MakeScene2GameServer(entt::registry& reg,
     const MakeScene2GameServerParam& param);
 
-entt::entity MakeDungeonScene(entt::registry& reg,
-    const MakeSceneParam& param);
 }//namespace master
 
 #endif//MASTER_SRC_FACTORIES_SCENE_FACTORIES_HPP_
