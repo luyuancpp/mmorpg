@@ -12,11 +12,13 @@ using namespace  common;
 uint32_t scene_config_size = 50;
 uint32_t per_scene_config_size = 10;
 
-entt::entity TestCreateMainScene(entt::registry& reg)
+TEST(GameServer, CreateMainScene)
 {
+    entt::registry reg;
     auto e = MakeScenes(reg);
     MakeSceneParam param;
     param.scene_map_entity_ = e;
+    auto& c = reg.get<common::Scenes>(e);
     for (uint32_t i = 0; i < scene_config_size; ++i)
     {
         param.scene_config_id_ = i;
@@ -24,17 +26,6 @@ entt::entity TestCreateMainScene(entt::registry& reg)
         {
             MakeMainScene(reg, param);
         }
-    }
-    return e;
-}
-
-TEST(GameServer, CreateMainScene)
-{
-    entt::registry reg;
-    auto e = TestCreateMainScene(reg);
-    auto& c = reg.get<common::Scenes>(e);
-    for (uint32_t i = 0; i < scene_config_size; ++i)
-    {       
         EXPECT_EQ(c.scenes_group_[i].size(), std::size_t(per_scene_config_size));
     }
     EXPECT_EQ(c.scenes_.size(), std::size_t(scene_config_size * per_scene_config_size));
