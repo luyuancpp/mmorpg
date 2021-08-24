@@ -42,6 +42,7 @@ namespace common
     struct GameServerData
     {
         uint32_t server_id_{0};
+        entt::entity server_entity_{};
         eGameServerStatus game_server_status_ = eGameServerStatus::eNormal;
     };
 
