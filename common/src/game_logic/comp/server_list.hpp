@@ -14,21 +14,21 @@ namespace common
         uint32_t scene_config_id_{ 0 };
     };
 
+    struct SceneEntityId
+    {
+        entt::entity scene_entity_{};
+    };
+
     struct DungeonScene {};
 
     using SceneIds = std::unordered_set<entt::entity>;
-    using PlayerEntities = std::unordered_set<common::GameGuid>;
+    using PlayerEntities = std::unordered_set<entt::entity>;
 
     struct Scenes
     {
         using SceneGroup = std::unordered_map<uint32_t, SceneIds>;
         SceneGroup scenes_group_;
         SceneIds scenes_;
-    };
-
-    struct ScenePlayerList
-    {
-        PlayerEntities player_list_;
     };
 
     enum class eGameServerStatus : std::uint8_t
