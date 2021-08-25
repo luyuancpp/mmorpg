@@ -280,6 +280,16 @@ TEST(GameServer, ServerScene2Sever)
     EXPECT_EQ(reg.get<common::GameServerDataPtr>(server_entity1).use_count(), 1);
 }
 
+TEST(GameServer, PlayerEnterScene)
+{
+
+}
+
+TEST(GameServer, PlayerLeaveScene)
+{
+
+}
+
 TEST(GameServer, MainTain)
 {
 
