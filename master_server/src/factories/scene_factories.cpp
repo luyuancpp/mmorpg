@@ -83,10 +83,6 @@ namespace master
         const PutScene2GameServerParam& param)
     {
         auto scene_entity = param.scene_entity_;
-        if (nullptr ==  reg.try_get<common::SceneConfigId>(scene_entity))
-        {
-            return;
-        }
         auto server_entity = param.server_entity_;
         auto& server_ids = reg.get<common::SceneIds>(server_entity);
         server_ids.emplace(scene_entity);
