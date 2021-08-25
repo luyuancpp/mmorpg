@@ -41,7 +41,7 @@ namespace master
     {
         auto e = reg.create();
         reg.emplace<common::SceneConfigId>(e, param.scene_config_id_);
-        reg.emplace<common::ScenePlayerList>(e); 
+        reg.emplace<common::PlayerEntities>(e);
         OnCreateScene(reg, param.scene_map_entity_, e);
         return e;
     }

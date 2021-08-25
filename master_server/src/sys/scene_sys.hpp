@@ -14,6 +14,7 @@ struct EnterSceneParam
 
 struct LeaveSceneParam
 {
+    entt::entity leave_entity_{};
     uint32_t op_{ 1 };
 };
 
