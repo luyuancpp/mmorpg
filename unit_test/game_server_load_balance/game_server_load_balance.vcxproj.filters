@@ -24,9 +24,6 @@
     <ClCompile Include="..\..\master_server\src\sys\scene_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\global_entities.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
