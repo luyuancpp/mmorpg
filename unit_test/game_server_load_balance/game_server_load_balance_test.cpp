@@ -277,6 +277,7 @@ TEST(GameServer, ServerScene2Sever)
     EXPECT_EQ(1, scenes.scenes_group_[server2_param.scene_config_id_].size());
     EXPECT_EQ(reg.get<common::GameServerDataPtr>(scene_id1)->server_id_, cgs2.server_id_);
     EXPECT_EQ(reg.get<common::GameServerDataPtr>(scene_id2)->server_id_, cgs2.server_id_);
+    EXPECT_EQ(reg.get<common::GameServerDataPtr>(server_entity1).use_count(), 1);
 }
 
 TEST(GameServer, MainTain)
