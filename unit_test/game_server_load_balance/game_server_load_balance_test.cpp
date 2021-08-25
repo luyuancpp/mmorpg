@@ -4,6 +4,7 @@
 #include "src/game/game_client.h"
 #include "src/game_logic/comp/server_list.hpp"
 #include "src/game_logic/game_registry.h"
+#include "src/random/random.h"
 #include "src/sys/scene_sys.hpp"
 
 using namespace  master;
@@ -280,14 +281,45 @@ TEST(GameServer, ServerScene2Sever)
     EXPECT_EQ(reg.get<common::GameServerDataPtr>(server_entity1).use_count(), 1);
 }
 
-TEST(GameServer, PlayerEnterScene)
+TEST(GameServer, PlayerLeaveEnterScene)
 {
+    entt::registry reg;
+    auto e = MakeScenes(reg);
 
-}
+    MakeGameServerParam cgs1;
+    cgs1.server_id_ = 1;
 
-TEST(GameServer, PlayerLeaveScene)
-{
+    auto server_entity1 = MakeGameServer(reg, cgs1);
 
+    MakeGameServerParam cgs2;
+    cgs2.server_id_ = 2;
+    auto server_entity2 = MakeGameServer(reg, cgs2);
+
+    MakeScene2GameServerParam server1_param;
+    MakeScene2GameServerParam server2_param;
+
+    server1_param.scene_map_entity_ = e;
+    server1_param.scene_config_id_ = 3;
+    server1_param.server_entity_ = server_entity1;
+
+    server2_param.scene_map_entity_ = e;
+    server2_param.scene_config_id_ = 2;
+    server2_param.server_entity_ = server_entity2;
+
+    auto scene_id1 = MakeScene2GameServer(reg, server1_param);
+    auto scene_id2 = MakeScene2GameServer(reg, server2_param);
+
+    EnterSceneParam enter_param1;
+    enter_param1.scene_entity_ = scene_id1;
+    
+    EnterSceneParam enter_param2;
+    enter_param2.scene_entity_ = scene_id2;
+
+    uint32_t player_size = 100;
+    for (uint32_t i = 0; i < player_size; ++i)
+    {
+
+    }
 }
 
 TEST(GameServer, MainTain)

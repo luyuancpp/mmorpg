@@ -2,9 +2,7 @@
 
 namespace master
 {
-    void OnCreateScene(entt::registry& reg,
-        entt::entity scene_map_entity,
-        entt::entity scene_entity)
+    void OnCreateScene(entt::registry& reg, entt::entity scene_map_entity, entt::entity scene_entity)
     {
         auto p_scene_entity = reg.try_get<common::SceneConfigId>(scene_entity);
         if (nullptr == p_scene_entity)
@@ -17,10 +15,7 @@ namespace master
         c.scenes_.emplace(scene_entity);
     }
 
-    void OnDestroyScene(entt::registry& reg,
-        entt::entity scene_map_entity,
-        entt::entity scene_entity,
-        common::Scenes& scene_map)
+    void OnDestroyScene(entt::registry& reg, entt::entity scene_map_entity, entt::entity scene_entity, common::Scenes& scene_map)
     {
         auto scene_config_id = reg.get<common::SceneConfigId>(scene_entity).scene_config_id_;
         scene_map.scenes_group_[scene_config_id].erase(scene_entity);
@@ -42,8 +37,7 @@ namespace master
         return e;
     }
 
-    entt::entity MakeMainScene(entt::registry& reg,
-        const MakeSceneParam& param)
+    entt::entity MakeMainScene(entt::registry& reg, const MakeSceneParam& param)
     {
         auto e = reg.create();
         reg.emplace<common::SceneConfigId>(e, param.scene_config_id_);
@@ -52,8 +46,7 @@ namespace master
         return e;
     }
 
-    entt::entity MakeGameServer(entt::registry& reg,
-        const MakeGameServerParam& param)
+    entt::entity MakeGameServer(entt::registry& reg,  const MakeGameServerParam& param)
     {
         auto e = reg.create();
         common::GameServerDataPtr p_server_data = std::make_shared<common::GameServerData>();
@@ -64,8 +57,7 @@ namespace master
         return e;
     }
 
-    entt::entity MakeScene2GameServer(entt::registry& reg, 
-        const MakeScene2GameServerParam& param)
+    entt::entity MakeScene2GameServer(entt::registry& reg, const MakeScene2GameServerParam& param)
     {
         MakeSceneParam main_scene_param;
         main_scene_param.op_ = param.op_;
@@ -79,8 +71,7 @@ namespace master
         return e;
     }
 
-    void PutScene2GameServer(entt::registry& reg, 
-        const PutScene2GameServerParam& param)
+    void PutScene2GameServer(entt::registry& reg, const PutScene2GameServerParam& param)
     {
         auto scene_entity = param.scene_entity_;
         auto server_entity = param.server_entity_;
@@ -90,8 +81,7 @@ namespace master
         reg.emplace<common::GameServerDataPtr>(scene_entity, p_server_data);
     }
 
-    void MoveServerScene2Server(entt::registry& reg,
-        const MoveServerScene2ServerParam& param)
+    void MoveServerScene2Server(entt::registry& reg, const MoveServerScene2ServerParam& param)
     {
         auto to_server_entity = param.to_server_entity_;
         auto& from_scenes_id = reg.get<common::SceneIds>(param.from_server_entity_);
@@ -106,8 +96,7 @@ namespace master
         from_scenes_id.clear();
     }
 
-    void DestroyScene(entt::registry& reg,
-        const DestroySceneParam& param)
+    void DestroyScene(entt::registry& reg,  const DestroySceneParam& param)
     {
         auto& scene_map = reg.get<common::Scenes>(param.scene_map_entity_);
         OnDestroyScene(reg, param.scene_map_entity_, 
@@ -115,8 +104,7 @@ namespace master
             scene_map);
     }
 
-    void DestroyServer(entt::registry& reg, 
-        const DestroyServerParam& param)
+    void DestroyServer(entt::registry& reg, const DestroyServerParam& param)
     {
         auto scene_map_entity = param.scene_map_entity_;
         auto server_entity = param.server_entity_;
