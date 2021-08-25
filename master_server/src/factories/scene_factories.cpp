@@ -2,7 +2,7 @@
 
 namespace master
 {
-    void OnAddScene(entt::registry& reg,
+    void OnCreateScene(entt::registry& reg,
         entt::entity scene_map_entity,
         entt::entity scene_entity)
     {
@@ -48,7 +48,7 @@ namespace master
         auto e = reg.create();
         reg.emplace<common::SceneConfigId>(e, param.scene_config_id_);
         reg.emplace<common::ScenePlayerList>(e); 
-        OnAddScene(reg, param.scene_map_entity_, e);
+        OnCreateScene(reg, param.scene_map_entity_, e);
         return e;
     }
 
