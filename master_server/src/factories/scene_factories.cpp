@@ -5,18 +5,12 @@
 namespace master
 {
     static entt::entity g_scenes_entity;
+    static entt::entity g_gameserver_entity;
 
     entt::entity& scenes_entity()
     {
         return g_scenes_entity;
     }
-
-    entt::entity& gameserver_entity()
-    {
-        static entt::entity gameserver_entity = common::reg().create();
-        return gameserver_entity;
-    }
-
 
     void MakeScenes()
     {
@@ -68,6 +62,7 @@ namespace master
         p_server_data->server_id_ = param.server_id_;
         p_server_data->server_entity_ = e;
         reg.emplace<common::GameServerDataPtr>(e, p_server_data);
+        reg.emplace<common::GameServerComp>(e);
         reg.emplace<common::SceneIds>(e);
         return e;
     }

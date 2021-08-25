@@ -43,8 +43,11 @@ namespace common
     {
         uint32_t server_id_{0};
         entt::entity server_entity_{};
+        uint32_t player_size_{ 0 };
         eGameServerStatus game_server_status_ = eGameServerStatus::eNormal;
     };
+
+    struct GameServerComp {};
 
     using GameServerDataPtr = std::shared_ptr<GameServerData>;
 

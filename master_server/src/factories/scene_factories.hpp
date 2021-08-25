@@ -53,8 +53,6 @@ struct DestroyServerParam
 
 entt::entity& scenes_entity();
 
-entt::entity& gameserver_entity();
-
 void MakeScenes();
 
 entt::entity MakeMainScene(entt::registry& reg, const MakeSceneParam& param);
