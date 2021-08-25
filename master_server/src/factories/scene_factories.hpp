@@ -57,26 +57,19 @@ struct DestroyServerParam
 
 entt::entity MakeScenes(entt::registry& reg);
 
-entt::entity MakeMainScene(entt::registry& reg,
-    const MakeSceneParam& param);
+entt::entity MakeMainScene(entt::registry& reg, const MakeSceneParam& param);
 
-entt::entity MakeGameServer(entt::registry& reg,
-    const MakeGameServerParam& param);
+entt::entity MakeGameServer(entt::registry& reg, const MakeGameServerParam& param);
 
-entt::entity MakeScene2GameServer(entt::registry& reg,
-    const MakeScene2GameServerParam& param);
+entt::entity MakeScene2GameServer(entt::registry& reg, const MakeScene2GameServerParam& param);
 
-void PutScene2GameServer(entt::registry& reg,
-    const PutScene2GameServerParam& param);
+void PutScene2GameServer(entt::registry& reg, const PutScene2GameServerParam& param);
 
-void MoveServerScene2Server(entt::registry& reg,
-    const MoveServerScene2ServerParam& param);
+void MoveServerScene2Server(entt::registry& reg, const MoveServerScene2ServerParam& param);
 
-void DestroyScene(entt::registry& reg, 
-    const DestroySceneParam& param);
+void DestroyScene(entt::registry& reg, const DestroySceneParam& param);
 
-void DestroyServer(entt::registry& reg,
-    const DestroyServerParam& param);
+void DestroyServer(entt::registry& reg, const DestroyServerParam& param);
 
 }//namespace master
 

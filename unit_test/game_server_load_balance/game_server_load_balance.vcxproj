@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\master_server\src\factories\scene_factories.cpp" />
+    <ClCompile Include="..\..\master_server\src\sys\scene_sys.cpp" />
     <ClCompile Include="game_server_load_balance_test.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
