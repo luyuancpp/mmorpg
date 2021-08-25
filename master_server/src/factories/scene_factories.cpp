@@ -94,6 +94,22 @@ namespace master
         reg.emplace<common::GameServerDataPtr>(scene_entity, p_server_data);
     }
 
+    void MoveServerScene2Server(entt::registry& reg,
+        const MoveServerScene2ServerParam& param)
+    {
+        auto to_server_entity = param.to_server_entity_;
+        auto& from_scenes_id = reg.get<common::SceneIds>(param.from_server_entity_);
+        auto& to_scenes_id = reg.get<common::SceneIds>(to_server_entity);
+        auto& p_to_server_data = reg.get<common::GameServerDataPtr>(to_server_entity);
+     
+        for (auto& it : from_scenes_id)
+        {
+            reg.emplace_or_replace<common::GameServerDataPtr>(it, p_to_server_data);
+            to_scenes_id.emplace(it);
+        }
+        from_scenes_id.clear();
+    }
+
     void DestroyScene(entt::registry& reg,
         const DestroySceneParam& param)
     {
