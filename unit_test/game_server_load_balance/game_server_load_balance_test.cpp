@@ -391,8 +391,54 @@ TEST(GameServer, Route)
 {
 }
 
-TEST(GameServer, WeightRoundRobin)
+TEST(GameServer, WeightRoundRobinMainScene)
 {
+ /*   entt::registry reg;
+    auto e = MakeScenes(reg);
+
+    EntitiesUSet server_entities;
+    uint32_t server_size = 10;
+    uint32_t per_server_scene = 10;
+    MakeGameServerParam cgs1;
+
+    for (uint32_t i = 0; i < server_size; ++i)
+    {
+        cgs1.server_id_ = i;
+        server_entities.emplace(MakeGameServer(reg, cgs1));
+    }
+
+    MakeScene2GameServerParam make_server_scene_param;
+    make_server_scene_param.scene_map_entity_ = e;
+    
+    for (uint32_t i = 0; i < per_server_scene; ++i)
+    {
+        make_server_scene_param.scene_config_id_ = i;
+        for (auto& it :server_entities)
+        {
+            make_server_scene_param.server_entity_ = it;
+            MakeScene2GameServer(reg, make_server_scene_param);
+        }        
+    }
+
+    GetWeightRoundRobinSceneParam weight_round_robin_scene;
+    weight_round_robin_scene.scene_config_id_ = 0;
+
+   
+    uint32_t player_size = 1000;
+    EntitiesUSet player_entities_set1;
+ 
+    EnterSceneParam enter_param1;
+
+    for (uint32_t i = 0; i < per_server_scene; ++i)
+    {
+        auto can_enter = GetWeightRoundRobinSceneEntity(reg, weight_round_robin_scene);
+        EXPECT_TRUE(reg.get<common::PlayerEntities>(can_enter).empty());
+        auto p_e = reg.create();
+        player_entities_set1.emplace(p_e);
+        enter_param1.enter_entity_ = p_e;
+        enter_param1.scene_entity_ = can_enter;
+        EnterScene(reg, enter_param1);
+    }   */ 
 }
 
 TEST(GameServer, Enter)
