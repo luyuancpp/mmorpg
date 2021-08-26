@@ -62,7 +62,7 @@ namespace master
         p_server_data->server_id_ = param.server_id_;
         p_server_data->server_entity_ = e;
         reg.emplace<common::GameServerDataPtr>(e, p_server_data);
-        reg.emplace<common::GameServerComp>(e);
+        reg.emplace<common::GameServerStatusNormal>(e);
         reg.emplace<common::SceneIds>(e);
         return e;
     }

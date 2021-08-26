@@ -22,32 +22,26 @@ namespace common
     struct DungeonScene {};
 
     using SceneIds = std::unordered_set<entt::entity>;
+    using SceneGroup = std::unordered_map<uint32_t, SceneIds>;
     using PlayerEntities = std::unordered_set<entt::entity>;
 
     struct Scenes
     {
-        using SceneGroup = std::unordered_map<uint32_t, SceneIds>;
         SceneGroup scenes_group_;
         SceneIds scenes_;
     };
 
-    enum class eGameServerStatus : std::uint8_t
-    {
-        eNormal,
-        eMainTain,
-        eUpdate,
-        eCrash,
-    };
+    struct GameServerStatusNormal{};//game server Õý³£×´Ì¬
+    struct GameServerMainTain{};//game server Î¬»¤×´Ì¬
+    struct GameServerUpdate{};//game server ¸üÐÂ×´Ì¬
+    struct GameServerCrash{};//±ÀÀ£×´Ì¬
 
     struct GameServerData
     {
         uint32_t server_id_{0};
         entt::entity server_entity_{};
         uint32_t player_size_{ 0 };
-        eGameServerStatus game_server_status_ = eGameServerStatus::eNormal;
     };
-
-    struct GameServerComp {};
 
     using GameServerDataPtr = std::shared_ptr<GameServerData>;
 
