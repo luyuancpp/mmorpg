@@ -40,8 +40,8 @@ namespace master
         {
             return;
         }
-        auto& server_scene = reg.get<common::SceneIds>(p_server_data->server_entity());
-        server_scene.erase(scene_entity);
+        auto& server_scene = reg.get<common::Scenes>(p_server_data->server_entity());
+        server_scene.RemoveScene(scene_config_id, scene_entity);
     }
 
     entt::entity MakeMainScene(entt::registry& reg, const MakeSceneParam& param)
@@ -61,7 +61,7 @@ namespace master
         p_server_data->set_server_entity(e);
         reg.emplace<common::GameServerDataPtr>(e, p_server_data);
         reg.emplace<common::GameServerStatusNormal>(e);
-        reg.emplace<common::SceneIds>(e);
+        reg.emplace<common::Scenes>(e);
         return e;
     }
 
@@ -81,9 +81,14 @@ namespace master
     void PutScene2GameServer(entt::registry& reg, const PutScene2GameServerParam& param)
     {
         auto scene_entity = param.scene_entity_;
+        auto p_scene_entity = reg.try_get<common::SceneConfigId>(scene_entity);
+        if (nullptr == p_scene_entity)
+        {
+            return;
+        }
         auto server_entity = param.server_entity_;
-        auto& server_ids = reg.get<common::SceneIds>(server_entity);
-        server_ids.emplace(scene_entity);
+        auto& server_scenes = reg.get<common::Scenes>(server_entity);
+        server_scenes.AddScene(p_scene_entity->scene_config_id(), scene_entity);
         auto& p_server_data = reg.get<common::GameServerDataPtr>(server_entity);
         reg.emplace<common::GameServerDataPtr>(scene_entity, p_server_data);
     }
@@ -91,16 +96,18 @@ namespace master
     void MoveServerScene2Server(entt::registry& reg, const MoveServerScene2ServerParam& param)
     {
         auto to_server_entity = param.to_server_entity_;
-        auto& from_scenes_id = reg.get<common::SceneIds>(param.from_server_entity_);
-        auto& to_scenes_id = reg.get<common::SceneIds>(to_server_entity);
+        auto& from_scenes_id = reg.get<common::Scenes>(param.from_server_entity_).scenes_config_id();
+        auto& to_scenes_id = reg.get<common::Scenes>(to_server_entity);
         auto& p_to_server_data = reg.get<common::GameServerDataPtr>(to_server_entity);
-     
         for (auto& it : from_scenes_id)
         {
-            reg.emplace_or_replace<common::GameServerDataPtr>(it, p_to_server_data);
-            to_scenes_id.emplace(it);
+            for (auto& ji : it.second)
+            {
+                reg.emplace_or_replace<common::GameServerDataPtr>(ji, p_to_server_data);
+                to_scenes_id.AddScene(it.first, ji);
+            }            
         }
-        from_scenes_id.clear();
+        reg.emplace_or_replace<common::Scenes>(param.from_server_entity_);
     }
 
     void DestroyScene(entt::registry& reg,  const DestroySceneParam& param)
@@ -112,7 +119,7 @@ namespace master
     void DestroyServer(entt::registry& reg, const DestroyServerParam& param)
     {
         auto server_entity = param.server_entity_;
-        auto server_scenes =  reg.get<common::SceneIds>(server_entity);
+        auto server_scenes =  reg.get<common::Scenes>(server_entity).copy_scenes_id();
         auto& scene_map = reg.get<common::Scenes>(scenes_entity());
         DestroySceneParam destroy_param;
         for (auto& it : server_scenes)
