@@ -64,12 +64,12 @@ TEST(GameServer, MakeScene2Sever )
     auto& scenes_id2 = reg().get<common::SceneIds>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.size());
-    EXPECT_EQ(server1_param.scene_config_id_, reg().get<common::SceneConfigId>(*scenes_id1.begin()).scene_config_id_);
+    EXPECT_EQ(server1_param.scene_config_id_, reg().get<common::SceneConfigId>(*scenes_id1.begin()).scene_config_id());
     EXPECT_EQ(1, scenes.scenes_group_[server1_param.scene_config_id_].size());
     EXPECT_EQ(server_data1.server_id_, param1.server_id_);
 
     EXPECT_EQ(1, scenes_id2.size());
-    EXPECT_EQ(server2_param.scene_config_id_, reg().get<common::SceneConfigId>(*scenes_id2.begin()).scene_config_id_);
+    EXPECT_EQ(server2_param.scene_config_id_, reg().get<common::SceneConfigId>(*scenes_id2.begin()).scene_config_id());
     EXPECT_EQ(server_data2.server_id_, param2.server_id_);
 
     EXPECT_EQ(1, scenes.scenes_group_[server2_param.scene_config_id_].size());

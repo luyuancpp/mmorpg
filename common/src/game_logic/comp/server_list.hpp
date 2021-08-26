@@ -9,8 +9,13 @@
 
 namespace common
 {
-    struct SceneConfigId
+    class SceneConfigId
     {
+    public:
+        SceneConfigId(uint32_t scene_config_id) : scene_config_id_(scene_config_id) {}
+        inline void set_scene_config_id(uint32_t scene_config_id) { scene_config_id_ = scene_config_id; }
+        inline  uint32_t scene_config_id()const { return scene_config_id_; }
+    private:
         uint32_t scene_config_id_{ 0 };
     };
 
