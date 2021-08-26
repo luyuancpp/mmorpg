@@ -16,7 +16,7 @@ void EnterScene(entt::registry& reg, const EnterSceneParam& param)
     {
         return;
     }
-    ++(*p_server_data)->player_size_;
+    (*p_server_data)->OnPlayerEnter();
 }
 
 void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
@@ -32,7 +32,7 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
     {
         return;
     }
-    --(*p_server_data)->player_size_;
+    (*p_server_data)->OnPlayerLeave();
 }
 
 entt::entity GetWeightRoundRobinSceneEntity(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
