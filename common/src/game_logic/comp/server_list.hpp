@@ -37,7 +37,7 @@ namespace common
     class Scenes
     {
     public:
-        std::size_t scene_config_size(uint32_t scene_config_id)
+        inline std::size_t scene_config_size(uint32_t scene_config_id)
         {
             auto it = scenes_group_.find(scene_config_id);
             if (it == scenes_group_.end())
@@ -47,7 +47,7 @@ namespace common
             return it->second.size();
         }
 
-        bool scene_config_empty(uint32_t scene_config_id)
+        inline bool scene_config_empty(uint32_t scene_config_id)
         {
             auto it = scenes_group_.find(scene_config_id);
             if (it == scenes_group_.end())
@@ -57,23 +57,23 @@ namespace common
             return it->second.empty();
         }
 
-        std::size_t scenes_size() const { return scenes_.size(); }
+        inline std::size_t scenes_size() const { return scenes_.size(); }
 
-        bool scenes_empty() const { return scenes_.empty(); }
+        inline bool scenes_empty() const { return scenes_.empty(); }
 
-        void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
+        inline void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
         {
             scenes_group_[scene_config_id].emplace(scene_entity);
             scenes_.emplace(scene_entity);
         }
 
-        void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
+        inline void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
         {
             scenes_group_[scene_config_id].erase(scene_entity);
             scenes_.erase(scene_entity);
         }
 
-        bool HasSceneType(uint32_t scene_config_id) { return scenes_group_.find(scene_config_id) != scenes_group_.end(); }
+        inline bool HasSceneType(uint32_t scene_config_id) { return scenes_group_.find(scene_config_id) != scenes_group_.end(); }
 
     private:
         SceneGroup scenes_group_;
@@ -87,8 +87,18 @@ namespace common
     struct GameServerUpdate{};//game server ¸üÐÂ×´Ì¬
     struct GameServerCrash{};//±ÀÀ£×´Ì¬
 
-    struct GameServerData
+    class GameServerData
     {
+    public:
+        inline void set_server_id(uint32_t server_id) { server_id_ = server_id; }
+        inline uint32_t server_id()const { return server_id_; }
+        inline void set_server_entity(entt::entity server_entity) { server_entity_ = server_entity; }
+        inline entt::entity server_entity()const { return server_entity_; }
+        uint32_t player_size()const { return player_size_; }
+
+        inline void OnPlayerEnter() { ++player_size_; }
+        inline void OnPlayerLeave() { --player_size_; }
+    private:
         uint32_t server_id_{0};
         entt::entity server_entity_{};
         uint32_t player_size_{ 0 };

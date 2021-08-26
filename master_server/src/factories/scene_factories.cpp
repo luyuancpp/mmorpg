@@ -40,7 +40,7 @@ namespace master
         {
             return;
         }
-        auto& server_scene = reg.get<common::SceneIds>(p_server_data->server_entity_);
+        auto& server_scene = reg.get<common::SceneIds>(p_server_data->server_entity());
         server_scene.erase(scene_entity);
     }
 
@@ -57,8 +57,8 @@ namespace master
     {
         auto e = reg.create();
         common::GameServerDataPtr p_server_data = std::make_shared<common::GameServerData>();
-        p_server_data->server_id_ = param.server_id_;
-        p_server_data->server_entity_ = e;
+        p_server_data->set_server_id(param.server_id_);
+        p_server_data->set_server_entity(e);
         reg.emplace<common::GameServerDataPtr>(e, p_server_data);
         reg.emplace<common::GameServerStatusNormal>(e);
         reg.emplace<common::SceneIds>(e);
