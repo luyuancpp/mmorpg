@@ -9,6 +9,11 @@
 
 namespace common
 {
+
+    using SceneIds = std::unordered_set<entt::entity>;
+    using SceneGroup = std::unordered_map<uint32_t, SceneIds>;
+    using PlayerEntities = std::unordered_set<entt::entity>;
+
     class SceneConfigId
     {
     public:
@@ -29,17 +34,53 @@ namespace common
         entt::entity scene_entity_{};
     };
 
-    struct DungeonScene {};
-
-    using SceneIds = std::unordered_set<entt::entity>;
-    using SceneGroup = std::unordered_map<uint32_t, SceneIds>;
-    using PlayerEntities = std::unordered_set<entt::entity>;
-
-    struct Scenes
+    class Scenes
     {
+    public:
+        std::size_t scene_config_size(uint32_t scene_config_id)
+        {
+            auto it = scenes_group_.find(scene_config_id);
+            if (it == scenes_group_.end())
+            {
+                return 0;
+            }
+            return it->second.size();
+        }
+
+        bool scene_config_empty(uint32_t scene_config_id)
+        {
+            auto it = scenes_group_.find(scene_config_id);
+            if (it == scenes_group_.end())
+            {
+                return true;
+            }
+            return it->second.empty();
+        }
+
+        std::size_t scenes_size() const { return scenes_.size(); }
+
+        bool scenes_empty() const { return scenes_.empty(); }
+
+        void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
+        {
+            scenes_group_[scene_config_id].emplace(scene_entity);
+            scenes_.emplace(scene_entity);
+        }
+
+        void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
+        {
+            scenes_group_[scene_config_id].erase(scene_entity);
+            scenes_.erase(scene_entity);
+        }
+
+        bool HasSceneType(uint32_t scene_config_id) { return scenes_group_.find(scene_config_id) != scenes_group_.end(); }
+
+    private:
         SceneGroup scenes_group_;
         SceneIds scenes_;
     };
+
+    struct DungeonScene {};
 
     struct GameServerStatusNormal{};//game server Õý³£×´Ì¬
     struct GameServerMainTain{};//game server Î¬»¤×´Ì¬

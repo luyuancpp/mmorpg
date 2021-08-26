@@ -39,8 +39,7 @@ entt::entity GetWeightRoundRobinSceneEntity(entt::registry& reg, const GetWeight
 {
     auto& scene_map = reg.get<common::Scenes>(scenes_entity());
     auto scene_config_id = param.scene_config_id_;
-    auto it = scene_map.scenes_group_.find(scene_config_id);
-    if (it == scene_map.scenes_group_.end())
+    if (!scene_map.HasSceneType(scene_config_id))
     {
         return entt::null;
     }
