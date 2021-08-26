@@ -23,7 +23,7 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
 {
     auto leave_entity = param.leave_entity_;
     auto& cscene_entity = reg.get<common::SceneEntityId>(leave_entity);
-    auto scene_entity = cscene_entity.scene_entity_;
+    auto scene_entity = cscene_entity.scene_entity();
     auto& player_entities = reg.get<common::PlayerEntities>(scene_entity);
     player_entities.erase(leave_entity);
     reg.remove<common::SceneEntityId>(leave_entity);

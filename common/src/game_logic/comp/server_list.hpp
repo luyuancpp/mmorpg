@@ -19,8 +19,13 @@ namespace common
         uint32_t scene_config_id_{ 0 };
     };
 
-    struct SceneEntityId
+    class SceneEntityId
     {
+    public:
+        SceneEntityId(entt::entity scene_entity) :scene_entity_(scene_entity) {}
+        inline void set_scene_entity(entt::entity scene_entity) { scene_entity_ = scene_entity; }
+        inline  entt::entity scene_entity()const { return scene_entity_; }
+    private:
         entt::entity scene_entity_{};
     };
 
