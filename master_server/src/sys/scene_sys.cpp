@@ -1,6 +1,7 @@
 #include "scene_sys.hpp"
 
 #include "src/game_logic/comp/server_list.hpp"
+#include "src/factories/scene_factories.hpp"
 
 namespace master
 {
@@ -36,14 +37,14 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
 
 entt::entity GetWeightRoundRobinSceneEntity(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
-    auto& scene_map = reg.get<common::Scenes>(param.scene_map_entity_);
+    auto& scene_map = reg.get<common::Scenes>(scenes_entity());
     auto scene_config_id = param.scene_config_id_;
     auto it = scene_map.scenes_group_.find(scene_config_id);
     if (it == scene_map.scenes_group_.end())
     {
         return entt::null;
     }
-    for (auto e : reg.view<common::GameServerComp>())
+    for (auto e : reg.view<common::GameServerStatusNormal>())
     {
 
     }
