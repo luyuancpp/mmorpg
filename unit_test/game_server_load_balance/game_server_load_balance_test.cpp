@@ -323,12 +323,12 @@ TEST(GameServer, PlayerLeaveEnterScene)
     for (auto&it : player_entities_set1)
     {
         EXPECT_TRUE(scenes_players1.find(it) != scenes_players1.end());
-        EXPECT_TRUE(reg().get<common::SceneEntityId>(it).scene_entity_ == scene_id1);
+        EXPECT_TRUE(reg().get<common::SceneEntityId>(it).scene_entity() == scene_id1);
     }
     for (auto& it : player_entities_set2)
     {
         EXPECT_TRUE(scenes_players2.find(it) != scenes_players2.end());
-        EXPECT_TRUE(reg().get<common::SceneEntityId>(it).scene_entity_ == scene_id2);
+        EXPECT_TRUE(reg().get<common::SceneEntityId>(it).scene_entity() == scene_id2);
     }
     EXPECT_EQ(reg().get<common::GameServerDataPtr>(server_entity1)->player_size_, player_size / 2);
     EXPECT_EQ(reg().get<common::GameServerDataPtr>(server_entity2)->player_size_, player_size / 2);
