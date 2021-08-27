@@ -61,6 +61,7 @@ namespace master
         p_server_data->set_server_entity(e);
         reg.emplace<common::GameServerDataPtr>(e, p_server_data);
         reg.emplace<common::GameServerStatusNormal>(e);
+        reg.emplace<common::GameNoPressure>(e);
         reg.emplace<common::Scenes>(e);
         return e;
     }

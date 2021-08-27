@@ -404,25 +404,58 @@ TEST(GameServer, WeightRoundRobinMainScene)
         }        
     }
 
+    uint32_t scene_config_id0 = 0;
+    uint32_t scene_config_id1 = 1;
+
     GetWeightRoundRobinSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.scene_config_id_ = 0;
+    weight_round_robin_scene.scene_config_id_ = scene_config_id0;
 
    
     uint32_t player_size = 1000;
-    EntitiesUSet player_entities_set1;
+
+    std::unordered_map<entt::entity, entt::entity> player_scene1;
  
     EnterSceneParam enter_param1;
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        /*auto can_enter = GetWeightRoundRobinSceneEntity(reg(), weight_round_robin_scene);
+        auto can_enter = GetWeightRoundRobinSceneEntity(reg(), weight_round_robin_scene);
         EXPECT_TRUE(reg().get<common::PlayerEntities>(can_enter).empty());
         auto p_e = reg().create();
-        player_entities_set1.emplace(p_e);
         enter_param1.enter_entity_ = p_e;
         enter_param1.scene_entity_ = can_enter;
-        EnterScene(reg(), enter_param1);*/
+        player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+        EnterScene(reg(), enter_param1);
     }   
+
+    uint32_t player_scene_id = 0;
+    for (auto& it : player_scene1)
+    {
+        auto& pse = reg().get<common::SceneEntityId>(it.first);
+        EXPECT_TRUE(pse.scene_entity() == it.second);
+        EXPECT_EQ(reg().get<common::SceneConfigId>(pse.scene_entity()).scene_config_id(), scene_config_id0);
+    }
+
+    std::unordered_map<entt::entity, entt::entity> player_scene2;
+    EnterSceneParam enter_param2;
+    weight_round_robin_scene.scene_config_id_ = scene_config_id1;
+    for (uint32_t i = 0; i < per_server_scene; ++i)
+    {
+        auto can_enter = GetWeightRoundRobinSceneEntity(reg(), weight_round_robin_scene);
+        EXPECT_TRUE(reg().get<common::PlayerEntities>(can_enter).empty());
+        auto p_e = reg().create();
+        enter_param1.enter_entity_ = p_e;
+        enter_param1.scene_entity_ = can_enter;
+        player_scene2.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+        EnterScene(reg(), enter_param1);
+    }
+    player_scene_id = 0;
+    for (auto& it : player_scene2)
+    {
+        auto& pse = reg().get<common::SceneEntityId>(it.first);
+        EXPECT_TRUE(pse.scene_entity() == it.second);
+        EXPECT_EQ(reg().get<common::SceneConfigId>(pse.scene_entity()).scene_config_id(), scene_config_id1);
+    }
     reg().clear();
 }
 

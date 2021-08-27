@@ -43,11 +43,39 @@ entt::entity GetWeightRoundRobinSceneEntity(entt::registry& reg, const GetWeight
     {
         return entt::null;
     }
-    for (auto e : reg.view<common::GameServerStatusNormal>())
+    entt::entity scene_entity = entt::null;
+    std::size_t min_player_size = UINT64_MAX;
+    for (auto e : reg.view<common::GameServerStatusNormal, common::GameNoPressure>())
     {
-
+        auto& scenes = reg.get<common::Scenes>(e);
+        if (!scenes.HasSceneType(scene_config_id))
+        {
+            continue;
+        }
+        auto p_server_data = reg.try_get<common::GameServerDataPtr>(e);
+        if (nullptr == p_server_data)
+        {
+            continue;
+        }
+        std::size_t server_player_size = (*p_server_data)->player_size();
+        if (server_player_size >= min_player_size)
+        {
+           continue;
+        }
+        min_player_size = server_player_size;
+        std::size_t scene_min_player_size = UINT64_MAX;
+        for (auto& ji : scenes.scenes_config_id(scene_config_id))
+        {
+            std::size_t scene_player_size = reg.get<common::PlayerEntities>(ji).size();
+            if (scene_player_size >= scene_min_player_size)
+            {
+                continue;
+            }
+            scene_min_player_size = scene_player_size;
+            scene_entity = ji;
+        }
     }
-    return entt::null;
+    return scene_entity;
 }
 
 }//namespace master

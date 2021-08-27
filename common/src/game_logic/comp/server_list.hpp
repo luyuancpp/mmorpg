@@ -39,13 +39,24 @@ namespace common
     public:
         entt::entity first_scene() { if (scenes_.empty()) { return entt::null; } return *scenes_.begin(); }
         const SceneIds& scenes_id() const { return scenes_; }
-        const ConfigScenes& scenes_config_id() const { return config_scene_group_; }
+        const ConfigScenes& scenes_config_id() const { return config_scene_; }
+        const SceneIds& scenes_config_id(uint32_t scene_config_id) const 
+        {
+            auto it = config_scene_.find(scene_config_id);
+            if (it == config_scene_.end())
+            {
+                static SceneIds s;
+                return s;
+            }
+            return it->second;
+        }
+
         SceneIds copy_scenes_id() { return scenes_; }
 
         inline std::size_t scene_config_size(uint32_t scene_config_id)
         {
-            auto it = config_scene_group_.find(scene_config_id);
-            if (it == config_scene_group_.end())
+            auto it = config_scene_.find(scene_config_id);
+            if (it == config_scene_.end())
             {
                 return 0;
             }
@@ -54,8 +65,8 @@ namespace common
 
         inline bool scene_config_empty(uint32_t scene_config_id)
         {
-            auto it = config_scene_group_.find(scene_config_id);
-            if (it == config_scene_group_.end())
+            auto it = config_scene_.find(scene_config_id);
+            if (it == config_scene_.end())
             {
                 return true;
             }
@@ -68,29 +79,35 @@ namespace common
 
         inline void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
         {
-            config_scene_group_[scene_config_id].emplace(scene_entity);
+            config_scene_[scene_config_id].emplace(scene_entity);
             scenes_.emplace(scene_entity);
         }
 
         inline void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
         {
-            config_scene_group_[scene_config_id].erase(scene_entity);
+            config_scene_[scene_config_id].erase(scene_entity);
             scenes_.erase(scene_entity);
         }
 
-        inline bool HasSceneType(uint32_t scene_config_id) { return config_scene_group_.find(scene_config_id) != config_scene_group_.end(); }
+        inline bool HasSceneType(uint32_t scene_config_id) { return config_scene_.find(scene_config_id) != config_scene_.end(); }
 
     private:
-        ConfigScenes config_scene_group_;
+        ConfigScenes config_scene_;
         SceneIds scenes_;
     };
 
-    struct DungeonScene {};
+    struct WorldScene {};
+    struct RoomScene {};
 
     struct GameServerStatusNormal{};//game server Õý³£×´Ì¬
     struct GameServerMainTain{};//game server Î¬»¤×´Ì¬
     struct GameServerUpdate{};//game server ¸üÐÂ×´Ì¬
     struct GameServerCrash{};//±ÀÀ£×´Ì¬
+
+    struct GameNoPressure {};//
+    struct GamePressure {};//
+    struct GamePressure1 {};
+    struct GamePressure2 {};
 
     class GameServerData
     {
