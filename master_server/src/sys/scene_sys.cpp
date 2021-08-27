@@ -35,7 +35,7 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
     (*p_server_data)->OnPlayerLeave();
 }
 
-entt::entity GetWeightRoundRobinSceneEntity(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+entt::entity GetWeightRoundRobinMainSceneEntity(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
     auto& scene_map = reg.get<common::Scenes>(scenes_entity());
     auto scene_config_id = param.scene_config_id_;
