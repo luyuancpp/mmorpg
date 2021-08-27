@@ -28,7 +28,7 @@ void EnterScene(entt::registry& reg, const EnterSceneParam& param);
 
 void LeaveScene(entt::registry& reg, const LeaveSceneParam& param);
 
-entt::entity GetWeightRoundRobinSceneEntity(entt::registry& reg, const GetWeightRoundRobinSceneParam& param);
+entt::entity GetWeightRoundRobinMainSceneEntity(entt::registry& reg, const GetWeightRoundRobinSceneParam& param);
 
 }//namespace master
 
