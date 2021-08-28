@@ -36,7 +36,7 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
 }
 
 template<typename ServerStatus, typename ServerPressure>
-entt::entity GetWeightRoundRobinMainSceneEntityT(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
     auto& scene_map = reg.get<common::Scenes>(scenes_entity());
     auto scene_config_id = param.scene_config_id_;
@@ -80,12 +80,12 @@ entt::entity GetWeightRoundRobinMainSceneEntityT(entt::registry& reg, const GetW
     return scene_entity;
 }
 
-entt::entity GetWeightRoundRobinMainSceneEntity(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
-    auto scene_entity = GetWeightRoundRobinMainSceneEntityT<common::GameServerStatusNormal, common::GameNoPressure>(reg, param);
+    auto scene_entity = GetWeightRoundRobinMainSceneT<common::GameServerStatusNormal, common::GameNoPressure>(reg, param);
     if (entt::null == scene_entity)
     {
-        scene_entity = GetWeightRoundRobinMainSceneEntityT<common::GameServerStatusNormal, common::GamePressure>(reg, param);
+        scene_entity = GetWeightRoundRobinMainSceneT<common::GameServerStatusNormal, common::GamePressure>(reg, param);
     }
     return scene_entity;
 }

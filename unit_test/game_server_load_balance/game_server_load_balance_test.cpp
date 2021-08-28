@@ -421,7 +421,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainSceneEntity(reg(), weight_round_robin_scene);
+        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
         EXPECT_TRUE(reg().get<common::PlayerEntities>(can_enter).empty());
         auto p_e = reg().create();
         enter_param1.enter_entity_ = p_e;
@@ -443,7 +443,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
     weight_round_robin_scene.scene_config_id_ = scene_config_id1;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainSceneEntity(reg(), weight_round_robin_scene);
+        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
         EXPECT_TRUE(reg().get<common::PlayerEntities>(can_enter).empty());
         auto p_e = reg().create();
         enter_param1.enter_entity_ = p_e;
