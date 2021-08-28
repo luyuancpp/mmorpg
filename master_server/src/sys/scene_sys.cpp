@@ -54,12 +54,8 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
         {
             continue;
         }
-        auto p_server_data = reg.try_get<common::GameServerDataPtr>(e);
-        if (nullptr == p_server_data)
-        {
-            continue;
-        }
-        std::size_t server_player_size = (*p_server_data)->player_size();
+        auto& server_data = reg.get<common::GameServerDataPtr>(e);
+        std::size_t server_player_size = (*server_data).player_size();
         if (server_player_size >= min_player_size)
         {
             continue;
