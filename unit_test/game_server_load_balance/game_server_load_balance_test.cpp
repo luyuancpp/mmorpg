@@ -406,28 +406,28 @@ TEST(GameServer, WeightRoundRobinMainScene)
         }        
     }
 
-    auto enter_leave_lambda = [&server_entities, server_size]()->void
+    auto enter_leave_lambda = [&server_entities, server_size, per_server_scene]()->void
     {
         uint32_t scene_config_id0 = 0;
         uint32_t scene_config_id1 = 1;
-
         GetWeightRoundRobinSceneParam weight_round_robin_scene;
         weight_round_robin_scene.scene_config_id_ = scene_config_id0;
-
 
         uint32_t player_size = 1000;
 
         std::unordered_map<entt::entity, entt::entity> player_scene1;
         EnterSceneParam enter_param1;
 
+        EntitiesUSet scene_sets;
+
         for (uint32_t i = 0; i < player_size; ++i)
         {
             auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
-
             auto p_e = reg().create();
             enter_param1.enter_entity_ = p_e;
             enter_param1.scene_entity_ = can_enter;
-            player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+            player_scene1.emplace(enter_param1.enter_entity_, can_enter);
+            scene_sets.emplace(can_enter);
             EnterScene(reg(), enter_param1);
         }
 
@@ -448,6 +448,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
             enter_param1.enter_entity_ = p_e;
             enter_param1.scene_entity_ = can_enter;
             player_scene2.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+            scene_sets.emplace(can_enter);
             EnterScene(reg(), enter_param1);
         }
         player_scene_id = 0;
@@ -465,7 +466,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
             auto& ps = reg().get<common::GameServerDataPtr>(it);
             EXPECT_EQ((*ps).player_size(), server_player_size);
         }
-
+        EXPECT_EQ(scene_sets.size(), std::size_t(2 * per_server_scene));
     };
     enter_leave_lambda();
     //leave 
