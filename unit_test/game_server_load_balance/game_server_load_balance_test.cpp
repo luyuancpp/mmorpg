@@ -64,12 +64,12 @@ TEST(GameServer, MakeScene2Sever )
     auto& scenes_id2 = reg().get<common::Scenes>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
-    EXPECT_EQ(server1_param.scene_config_id_, reg().get<common::SceneConfigId>(scenes_id1.first_scene()).scene_config_id());
+    EXPECT_EQ(server1_param.scene_config_id_, reg().get<common::SceneConfig>(scenes_id1.first_scene()).scene_config_id());
     EXPECT_EQ(1, scenes.scene_config_size(server1_param.scene_config_id_));
     EXPECT_EQ(server_data1.server_id(), param1.server_id_);
 
     EXPECT_EQ(1, scenes_id2.scenes_size());
-    EXPECT_EQ(server2_param.scene_config_id_, reg().get<common::SceneConfigId>(scenes_id2.first_scene()).scene_config_id());
+    EXPECT_EQ(server2_param.scene_config_id_, reg().get<common::SceneConfig>(scenes_id2.first_scene()).scene_config_id());
     EXPECT_EQ(server_data2.server_id(), param2.server_id_);
 
     EXPECT_EQ(1, scenes.scene_config_size(server2_param.scene_config_id_));
@@ -361,7 +361,9 @@ TEST(GameServer, PlayerLeaveEnterScene)
 
 TEST(GameServer, MainTain)
 {
+    MakeScenes();
 
+    reg().clear();
 }
 
 TEST(GameServer, Update)
@@ -433,7 +435,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
     {
         auto& pse = reg().get<common::SceneEntityId>(it.first);
         EXPECT_TRUE(pse.scene_entity() == it.second);
-        EXPECT_EQ(reg().get<common::SceneConfigId>(pse.scene_entity()).scene_config_id(), scene_config_id0);
+        EXPECT_EQ(reg().get<common::SceneConfig>(pse.scene_entity()).scene_config_id(), scene_config_id0);
     }
 
     std::unordered_map<entt::entity, entt::entity> player_scene2;
@@ -454,7 +456,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
     {
         auto& pse = reg().get<common::SceneEntityId>(it.first);
         EXPECT_TRUE(pse.scene_entity() == it.second);
-        EXPECT_EQ(reg().get<common::SceneConfigId>(pse.scene_entity()).scene_config_id(), scene_config_id1);
+        EXPECT_EQ(reg().get<common::SceneConfig>(pse.scene_entity()).scene_config_id(), scene_config_id1);
     }
     reg().clear();
 }

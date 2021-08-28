@@ -20,19 +20,14 @@ namespace master
 
     void OnCreateScene(entt::registry& reg, entt::entity scene_entity)
     {
-        auto p_scene_entity = reg.try_get<common::SceneConfigId>(scene_entity);
-        if (nullptr == p_scene_entity)
-        {
-            return;
-        }
-        uint32_t scene_config_id = p_scene_entity->scene_config_id();
+        auto& scene_config = reg.get<common::SceneConfig>(scene_entity);
         auto& c = reg.get<common::Scenes>(scenes_entity());
-        c.AddScene(scene_config_id, scene_entity);
+        c.AddScene(scene_config.scene_config_id(), scene_entity);
     }
 
     void OnDestroyScene(entt::registry& reg, entt::entity scene_entity, common::Scenes& scene_map)
     {
-        auto scene_config_id = reg.get<common::SceneConfigId>(scene_entity).scene_config_id();
+        auto scene_config_id = reg.get<common::SceneConfig>(scene_entity).scene_config_id();
         scene_map.RemoveScene(scene_config_id, scene_entity);
         auto p_server_data = reg.get<common::GameServerDataPtr>(scene_entity);
         reg.destroy(scene_entity);
@@ -47,7 +42,7 @@ namespace master
     entt::entity MakeMainScene(entt::registry& reg, const MakeSceneParam& param)
     {
         auto e = reg.create();
-        reg.emplace<common::SceneConfigId>(e, param.scene_config_id_);
+        reg.emplace<common::SceneConfig>(e, param.scene_config_id_);
         reg.emplace<common::PlayerEntities>(e);
         OnCreateScene(reg, e);
         return e;
@@ -82,14 +77,10 @@ namespace master
     void PutScene2GameServer(entt::registry& reg, const PutScene2GameServerParam& param)
     {
         auto scene_entity = param.scene_entity_;
-        auto p_scene_entity = reg.try_get<common::SceneConfigId>(scene_entity);
-        if (nullptr == p_scene_entity)
-        {
-            return;
-        }
+        auto& scene_config = reg.get<common::SceneConfig>(scene_entity);
         auto server_entity = param.server_entity_;
         auto& server_scenes = reg.get<common::Scenes>(server_entity);
-        server_scenes.AddScene(p_scene_entity->scene_config_id(), scene_entity);
+        server_scenes.AddScene(scene_config.scene_config_id(), scene_entity);
         auto& p_server_data = reg.get<common::GameServerDataPtr>(server_entity);
         reg.emplace<common::GameServerDataPtr>(scene_entity, p_server_data);
     }
