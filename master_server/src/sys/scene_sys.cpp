@@ -45,7 +45,8 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
         return entt::null;
     }
 
-    entt::entity scene_entity = entt::null;
+    entt::entity scene_entity{ entt::null };
+    entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
     for (auto e : reg.view<ServerStatus, ServerPressure>())
     {
@@ -60,18 +61,24 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
         {
             continue;
         }
-        min_player_size = server_player_size;
-        std::size_t scene_min_player_size = UINT64_MAX;
-        for (auto& ji : scenes.scenes_config_id(scene_config_id))
+        server_entity = e;
+        min_player_size = server_player_size;   
+    }
+    if (entt::null == server_entity)
+    {
+        return scene_entity;
+    }
+    auto& scenes = reg.get<common::Scenes>(server_entity);
+    std::size_t scene_min_player_size = UINT64_MAX;
+    for (auto& ji : scenes.scenes_config_id(scene_config_id))
+    {
+        std::size_t scene_player_size = reg.get<common::PlayerEntities>(ji).size();
+        if (scene_player_size >= scene_min_player_size)
         {
-            std::size_t scene_player_size = reg.get<common::PlayerEntities>(ji).size();
-            if (scene_player_size >= scene_min_player_size)
-            {
-                continue;
-            }
-            scene_min_player_size = scene_player_size;
-            scene_entity = ji;
+            continue;
         }
+        scene_min_player_size = scene_player_size;
+        scene_entity = ji;
     }
     return scene_entity;
 }
