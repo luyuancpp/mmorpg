@@ -461,6 +461,89 @@ TEST(GameServer, WeightRoundRobinMainScene)
     reg().clear();
 }
 
+TEST(GameServer, WeightRoundRobinMainSceneServerPrassure)
+{
+    MakeScenes();
+    EntitiesUSet server_entities;
+    uint32_t server_size = 10;
+    uint32_t per_server_scene = 10;
+    MakeGameServerParam cgs1;
+
+    for (uint32_t i = 0; i < server_size; ++i)
+    {
+        cgs1.server_id_ = i;
+        server_entities.emplace(MakeGameServer(reg(), cgs1));
+    }
+
+    MakeScene2GameServerParam make_server_scene_param;
+
+    for (uint32_t i = 0; i < per_server_scene; ++i)
+    {
+        make_server_scene_param.scene_config_id_ = i;
+        for (auto& it : server_entities)
+        {
+            make_server_scene_param.server_entity_ = it;
+            MakeScene2GameServer(reg(), make_server_scene_param);
+        }
+    }
+
+    //reg().emplace<>(*server_entities.begin());
+
+    uint32_t scene_config_id0 = 0;
+    uint32_t scene_config_id1 = 1;
+
+    GetWeightRoundRobinSceneParam weight_round_robin_scene;
+    weight_round_robin_scene.scene_config_id_ = scene_config_id0;
+
+
+    uint32_t player_size = 1000;
+
+    std::unordered_map<entt::entity, entt::entity> player_scene1;
+
+    EnterSceneParam enter_param1;
+
+    for (uint32_t i = 0; i < per_server_scene; ++i)
+    {
+        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        EXPECT_TRUE(reg().get<common::PlayerEntities>(can_enter).empty());
+        auto p_e = reg().create();
+        enter_param1.enter_entity_ = p_e;
+        enter_param1.scene_entity_ = can_enter;
+        player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+        EnterScene(reg(), enter_param1);
+    }
+
+    uint32_t player_scene_id = 0;
+    for (auto& it : player_scene1)
+    {
+        auto& pse = reg().get<common::SceneEntityId>(it.first);
+        EXPECT_TRUE(pse.scene_entity() == it.second);
+        EXPECT_EQ(reg().get<common::SceneConfig>(pse.scene_entity()).scene_config_id(), scene_config_id0);
+    }
+
+    std::unordered_map<entt::entity, entt::entity> player_scene2;
+    EnterSceneParam enter_param2;
+    weight_round_robin_scene.scene_config_id_ = scene_config_id1;
+    for (uint32_t i = 0; i < per_server_scene; ++i)
+    {
+        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        EXPECT_TRUE(reg().get<common::PlayerEntities>(can_enter).empty());
+        auto p_e = reg().create();
+        enter_param1.enter_entity_ = p_e;
+        enter_param1.scene_entity_ = can_enter;
+        player_scene2.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+        EnterScene(reg(), enter_param1);
+    }
+    player_scene_id = 0;
+    for (auto& it : player_scene2)
+    {
+        auto& pse = reg().get<common::SceneEntityId>(it.first);
+        EXPECT_TRUE(pse.scene_entity() == it.second);
+        EXPECT_EQ(reg().get<common::SceneConfig>(pse.scene_entity()).scene_config_id(), scene_config_id1);
+    }
+    reg().clear();
+}
+
 TEST(GameServer, Login)
 {
 }
