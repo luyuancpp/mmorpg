@@ -35,7 +35,8 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
     (*p_server_data)->OnPlayerLeave();
 }
 
-entt::entity GetWeightRoundRobinMainSceneEntity(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+template<typename ServerStatus, typename ServerPressure>
+entt::entity GetWeightRoundRobinMainSceneEntityT(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
     auto& scene_map = reg.get<common::Scenes>(scenes_entity());
     auto scene_config_id = param.scene_config_id_;
@@ -43,9 +44,10 @@ entt::entity GetWeightRoundRobinMainSceneEntity(entt::registry& reg, const GetWe
     {
         return entt::null;
     }
+
     entt::entity scene_entity = entt::null;
     std::size_t min_player_size = UINT64_MAX;
-    for (auto e : reg.view<common::GameServerStatusNormal, common::GameNoPressure>())
+    for (auto e : reg.view<ServerStatus, ServerPressure>())
     {
         auto& scenes = reg.get<common::Scenes>(e);
         if (!scenes.HasSceneType(scene_config_id))
@@ -60,7 +62,7 @@ entt::entity GetWeightRoundRobinMainSceneEntity(entt::registry& reg, const GetWe
         std::size_t server_player_size = (*p_server_data)->player_size();
         if (server_player_size >= min_player_size)
         {
-           continue;
+            continue;
         }
         min_player_size = server_player_size;
         std::size_t scene_min_player_size = UINT64_MAX;
@@ -74,6 +76,16 @@ entt::entity GetWeightRoundRobinMainSceneEntity(entt::registry& reg, const GetWe
             scene_min_player_size = scene_player_size;
             scene_entity = ji;
         }
+    }
+    return scene_entity;
+}
+
+entt::entity GetWeightRoundRobinMainSceneEntity(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+{
+    auto scene_entity = GetWeightRoundRobinMainSceneEntityT<common::GameServerStatusNormal, common::GameNoPressure>(reg, param);
+    if (entt::null == scene_entity)
+    {
+        scene_entity = GetWeightRoundRobinMainSceneEntityT<common::GameServerStatusNormal, common::GamePressure>(reg, param);
     }
     return scene_entity;
 }

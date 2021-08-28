@@ -106,8 +106,6 @@ namespace common
 
     struct GameNoPressure {};//
     struct GamePressure {};//
-    struct GamePressure1 {};
-    struct GamePressure2 {};
 
     class GameServerData
     {
