@@ -90,5 +90,17 @@ entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRo
     return scene_entity;
 }
 
+void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
+{
+    reg.remove<common::GameNoPressure>(param.server_entity_);
+    reg.emplace<common::GamePressure>(param.server_entity_);
+}
+
+void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param)
+{
+    reg.remove<common::GamePressure>(param.server_entity_);
+    reg.emplace<common::GameNoPressure>(param.server_entity_);
+}
+
 }//namespace master
 
