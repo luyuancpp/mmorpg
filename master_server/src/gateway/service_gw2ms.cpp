@@ -31,7 +31,7 @@ namespace gw2ms
             g_master_server->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
             break;
         }
-        for (auto e : GameClient::GetSingleton()->view<muduo::net::InetAddress>())
+        for (auto e : reg().view<muduo::net::InetAddress>())
         {
             g_master_server->GatewayConnectGame(e);
         }

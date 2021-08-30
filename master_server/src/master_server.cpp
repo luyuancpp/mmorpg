@@ -67,7 +67,7 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     {
         return;
     }
-    auto connection_info = GameClient::GetSingleton()->try_get<InetAddress>(ge);
+    auto connection_info = reg().try_get<InetAddress>(ge);
     if (nullptr == connection_info)
     {
         return;
@@ -75,7 +75,7 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     ms2gw::StartGameServerRequest request;
     request.set_ip(connection_info->toIp());
     request.set_port(connection_info->port());
-    request.set_server_id(GameClient::GetSingleton()->get<uint32_t>(ge));
+    request.set_server_id(reg().get<uint32_t>(ge));
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGameServer");
 }
 
@@ -123,14 +123,14 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
 {
     auto& peer_addr = conn->peerAddress();
 
-    for (auto e : GameClient::GetSingleton()->view<common::RpcServerConnection>())
+    for (auto e : reg().view<common::RpcServerConnection>())
     {
-        auto& local_addr = GameClient::GetSingleton()->get<common::RpcServerConnection>(e).conn_->peerAddress();
+        auto& local_addr = reg().get<common::RpcServerConnection>(e).conn_->peerAddress();
         if (local_addr.toIpPort() != peer_addr.toIpPort())
         {
             continue;
         }
-        GameClient::GetSingleton()->destroy(e);
+        reg().destroy(e);
         break;
     }
 

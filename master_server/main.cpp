@@ -9,8 +9,6 @@ using namespace master;
 
 int main(int argc, char* argv[])
 {
-    GameClient::GetSingleton() = std::make_unique<GameClient::Type>();
-
     EventLoop loop;
     MasterServer server(&loop);
     g_master_server = &server;
