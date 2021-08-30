@@ -40,7 +40,7 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
 {
     auto& scene_map = reg.get<common::Scenes>(scenes_entity());
     auto scene_config_id = param.scene_config_id_;
-    if (!scene_map.HasSceneType(scene_config_id))
+    if (!scene_map.HasSceneConfig(scene_config_id))
     {
         return entt::null;
     }
@@ -51,7 +51,7 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
     for (auto e : reg.view<ServerStatus, ServerPressure>())
     {
         auto& scenes = reg.get<common::Scenes>(e);
-        if (!scenes.HasSceneType(scene_config_id))
+        if (!scenes.HasSceneConfig(scene_config_id))
         {
             continue;
         }
@@ -124,6 +124,42 @@ void ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
 {
     reg.remove<common::GameServerStatusNormal>(param.maintain_server_entity_);
     reg.emplace<common::GameServerMainTain>(param.maintain_server_entity_);
+}
+
+void CompelChangeScene(entt::registry& reg, const CompelChangeSceneParam& param)
+{
+    auto new_server_entity = param.new_server_entity_;
+    auto compel_entity = param.compel_change_entity_;
+    auto& new_server_scene = reg.get<common::Scenes>(new_server_entity);
+    auto scene_config_id = param.scene_config_id_;
+
+    entt::entity server_scene_enitity = entt::null;
+
+    if (!new_server_scene.HasSceneConfig(param.scene_config_id_))
+    {
+        MakeScene2GameServerParam make_server_scene_param;
+        make_server_scene_param.scene_config_id_ = scene_config_id;
+        make_server_scene_param.server_entity_ = new_server_entity;
+        server_scene_enitity = MakeScene2GameServer(reg, make_server_scene_param);
+    }
+    else
+    {
+        server_scene_enitity = new_server_scene.scene_id(param.scene_config_id_);
+    }
+
+    if (entt::null == server_scene_enitity)
+    {
+        return;
+    }
+
+    LeaveSceneParam leave_param;
+    leave_param.leave_entity_ = compel_entity;
+    LeaveScene(reg, leave_param);
+
+    EnterSceneParam enter_param;
+    enter_param.enter_entity_ = compel_entity;
+    enter_param.scene_entity_ = server_scene_enitity;
+    EnterScene(reg, enter_param);
 }
 
 }//namespace master

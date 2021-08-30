@@ -45,6 +45,12 @@ struct MaintainServerParam
     entt::entity maintain_server_entity_{ entt::null };
 };
 
+struct CompelChangeSceneParam
+{
+    entt::entity compel_change_entity_{ entt::null };
+    entt::entity new_server_entity_{ entt::null };
+    uint32_t scene_config_id_{0};
+};
 
 void EnterScene(entt::registry& reg, const EnterSceneParam& param);
 
@@ -61,6 +67,8 @@ void ServerCrashed(entt::registry& reg, const ServerCrashParam& param);
 void ReplaceCrashServer(entt::registry& reg, const ReplaceCrashServerParam& param);
 
 void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
+
+void CompelChangeScene(entt::registry& reg, const CompelChangeSceneParam& param);
 
 }//namespace master
 

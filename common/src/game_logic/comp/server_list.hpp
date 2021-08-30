@@ -50,10 +50,22 @@ namespace common
             }
             return it->second;
         }
-
         SceneIds copy_scenes_id() { return scenes_; }
+        entt::entity scene_id(uint32_t scene_config_id)const
+        {
+            auto it = config_scene_.find(scene_config_id);
+            if (it == config_scene_.end())
+            {
+                return entt::null;
+            }
+            if (it->second.empty())
+            {
+                return entt::null;
+            }
+            return *it->second.begin();
+        }
 
-        inline std::size_t scene_config_size(uint32_t scene_config_id)
+        std::size_t scene_config_size(uint32_t scene_config_id)
         {
             auto it = config_scene_.find(scene_config_id);
             if (it == config_scene_.end())
@@ -63,7 +75,7 @@ namespace common
             return it->second.size();
         }
 
-        inline bool scene_config_empty(uint32_t scene_config_id)
+        bool scene_config_empty(uint32_t scene_config_id)
         {
             auto it = config_scene_.find(scene_config_id);
             if (it == config_scene_.end())
@@ -73,24 +85,23 @@ namespace common
             return it->second.empty();
         }
 
-        inline std::size_t scenes_size() const { return scenes_.size(); }
+        std::size_t scenes_size() const { return scenes_.size(); }
 
-        inline bool scenes_empty() const { return scenes_.empty(); }
+        bool scenes_empty() const { return scenes_.empty(); }
 
-        inline void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
+        bool HasSceneConfig(uint32_t scene_config_id) { return config_scene_.find(scene_config_id) != config_scene_.end(); }
+
+        void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
         {
             config_scene_[scene_config_id].emplace(scene_entity);
             scenes_.emplace(scene_entity);
         }
 
-        inline void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
+        void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
         {
             config_scene_[scene_config_id].erase(scene_entity);
             scenes_.erase(scene_entity);
         }
-
-        inline bool HasSceneType(uint32_t scene_config_id) { return config_scene_.find(scene_config_id) != config_scene_.end(); }
-
     private:
         ConfigScenes config_scene_;
         SceneIds scenes_;
