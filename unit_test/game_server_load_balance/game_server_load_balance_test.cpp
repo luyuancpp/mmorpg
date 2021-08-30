@@ -359,17 +359,79 @@ TEST(GameServer, PlayerLeaveEnterScene)
     reg().clear();
 }
 
-TEST(GameServer, MainTain)
+TEST(GameServer, MainTainWeightRoundRobinMainScene)
+{
+    MakeScenes();
+    EntitiesUSet server_entities;
+    uint32_t server_size = 2;
+    uint32_t per_server_scene = 2;
+    MakeGameServerParam cgs1;
+    EntitiesUSet scene_entities;
+
+    for (uint32_t i = 0; i < server_size; ++i)
+    {
+        cgs1.server_id_ = i;
+        server_entities.emplace(MakeGameServer(reg(), cgs1));
+    }
+
+    MakeScene2GameServerParam make_server_scene_param;
+    for (uint32_t i = 0; i < per_server_scene; ++i)
+    {
+        make_server_scene_param.scene_config_id_ = i;
+        for (auto& it : server_entities)
+        {
+            make_server_scene_param.server_entity_ = it;
+            auto e = MakeScene2GameServer(reg(), make_server_scene_param);
+            if (scene_entities.empty())
+            {
+                scene_entities.emplace(e);
+            }
+        }
+    }
+
+    uint32_t player_size = 1000;
+
+    std::unordered_map<entt::entity, entt::entity> player_scene1;
+
+    EnterSceneParam enter_param1;
+
+    for (uint32_t i = 0; i < player_size; ++i)
+    {
+        for (auto it : scene_entities)
+        {
+            auto p_e = reg().create();
+            enter_param1.enter_entity_ = p_e;
+            enter_param1.scene_entity_ = it;
+            player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+            EnterScene(reg(), enter_param1);
+        }
+    }
+
+    MaintainServerParam maintain;
+    maintain.maintain_server_entity_ = *server_entities.begin();
+    ServerMaintain(reg(), maintain);
+
+    uint32_t scene_config_id0 = 0;
+    uint32_t scene_config_id1 = 1;
+    GetWeightRoundRobinSceneParam weight_round_robin_scene;
+    weight_round_robin_scene.scene_config_id_ = scene_config_id0;
+    for (uint32_t i = 0; i < player_size; ++i)
+    {
+        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        EXPECT_TRUE(reg().get<common::GameServerDataPtr>(can_enter)->server_entity() != entt::null);
+        EXPECT_TRUE(reg().get<common::GameServerDataPtr>(can_enter)->server_entity() != maintain.maintain_server_entity_);
+    }
+
+    reg().clear();
+}
+
+TEST(GameServer, CompelChangeScene)
 {
     MakeScenes();
 
     reg().clear();
 }
 
-TEST(GameServer, Update)
-{
-
-}
 
 TEST(GameServer, CrashWeightRoundRobinMainScene)
 {
@@ -421,7 +483,7 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
 
     ServerCrashParam crash1;
     crash1.crash_server_entity_ = *server_entities.begin();
-    ServerCrash(reg(), crash1);
+    ServerCrashed(reg(), crash1);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -487,7 +549,7 @@ TEST(GameServer, CrashMovePlayer2NewServer)
 
     ServerCrashParam crash1;
     crash1.crash_server_entity_ = *server_entities.begin();
-    ServerCrash(reg(), crash1);
+    ServerCrashed(reg(), crash1);
 
     ReplaceCrashServerParam replace_crash;
     replace_crash.cransh_server_entity_ = *server_entities.begin();
@@ -517,10 +579,6 @@ TEST(GameServer, CrashMovePlayer2NewServer)
     }
     
     reg().clear();
-}
-
-TEST(GameServer, Route)
-{
 }
 
 TEST(GameServer, WeightRoundRobinMainScene)
@@ -725,28 +783,16 @@ TEST(GameServer, ServerEnterLeavePressure)
     reg().clear();
 }
 
-TEST(GameServer, Login)
-{
-}
-
-TEST(GameServer, Logout)
-{
-}
-
-TEST(GameServer, Disconnect)
-{
-}
-
-TEST(GameServer, ReDisconnect)
-{
-}
 
 TEST(GameServer, CreateDungeon)
 {
 }
 
-TEST(GameServer, MoveScene)
+TEST(GameServer, Route)
 {
+    MakeScenes();
+
+    reg().clear();
 }
 
 int32_t main(int argc, char** argv)

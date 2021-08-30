@@ -40,6 +40,12 @@ struct ReplaceCrashServerParam
     entt::entity replace_server_entity_{ entt::null };
 };
 
+struct MaintainServerParam
+{
+    entt::entity maintain_server_entity_{ entt::null };
+};
+
+
 void EnterScene(entt::registry& reg, const EnterSceneParam& param);
 
 void LeaveScene(entt::registry& reg, const LeaveSceneParam& param);
@@ -50,9 +56,11 @@ void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
 
 void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param);
 
-void ServerCrash(entt::registry& reg, const ServerCrashParam& param);
+void ServerCrashed(entt::registry& reg, const ServerCrashParam& param);
 
 void ReplaceCrashServer(entt::registry& reg, const ReplaceCrashServerParam& param);
+
+void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
 
 }//namespace master
 
