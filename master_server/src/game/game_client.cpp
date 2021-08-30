@@ -2,6 +2,5 @@
 
 namespace master
 {
-    GameClient::GameClientPtr GameClient::singleton_;
 
 }//namespace master

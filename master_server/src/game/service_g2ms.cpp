@@ -30,10 +30,10 @@ namespace g2ms
             {
                 continue;
             }
-            auto ce = GameClient::GetSingleton()->create();
-            GameClient::GetSingleton()->emplace<common::RpcServerConnection>(ce, common::RpcServerConnection{ c.conn_ });
-            GameClient::GetSingleton()->emplace<InetAddress>(ce, rpc_server_peer_addr);
-            GameClient::GetSingleton()->emplace<uint32_t>(ce, request->server_id());
+            auto ce = reg().create();
+            reg().emplace<common::RpcServerConnection>(ce, common::RpcServerConnection{ c.conn_ });
+            reg().emplace<InetAddress>(ce, rpc_server_peer_addr);
+            reg().emplace<uint32_t>(ce, request->server_id());
             g_master_server->GatewayConnectGame(ce);
             LOG_INFO << "connect game";
             break;
