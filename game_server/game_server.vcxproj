@@ -117,6 +117,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;protopb.lib;zlib.lib;mysqlclient.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>

@@ -171,6 +171,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
+    <ClInclude Include="src\game_logic\comp\gateway.hpp" />
+    <ClInclude Include="src\game_logic\comp\player.hpp" />
+    <ClInclude Include="src\game_logic\comp\server_list.hpp" />
     <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
     <ClInclude Include="src\server_common\closure_auto_done.h" />
