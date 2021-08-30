@@ -428,7 +428,59 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
 TEST(GameServer, CompelChangeScene)
 {
     MakeScenes();
+    MakeGameServerParam cgs1;
+    cgs1.server_id_ = 1;
 
+    auto server_entity1 = MakeGameServer(reg(), cgs1);
+
+    MakeGameServerParam cgs2;
+    cgs2.server_id_ = 2;
+    auto server_entity2 = MakeGameServer(reg(), cgs2);
+
+    MakeScene2GameServerParam server1_param;
+    MakeScene2GameServerParam server2_param;
+
+    server1_param.scene_config_id_ = 2;
+    server1_param.server_entity_ = server_entity1;
+
+    server2_param.scene_config_id_ = 2;
+    server2_param.server_entity_ = server_entity2;
+
+    auto scene_id1 = MakeScene2GameServer(reg(), server1_param);
+    auto scene_id2 = MakeScene2GameServer(reg(), server2_param);
+
+    EnterSceneParam enter_param1;
+    enter_param1.scene_entity_ = scene_id1;
+
+    EnterSceneParam enter_param2;
+    enter_param2.scene_entity_ = scene_id2;
+
+    uint32_t player_size = 100;
+    EntitiesUSet player_entities_set1;
+    EntitiesUSet player_entities_set2;
+    for (uint32_t i = 0; i < player_size; ++i)
+    {
+        auto pe = reg().create();
+        player_entities_set1.emplace(pe);
+        enter_param1.enter_entity_ = pe;
+        EnterScene(reg(), enter_param1);
+    }
+
+    CompelChangeSceneParam compel_change_param1;
+    compel_change_param1.new_server_entity_ = server_entity2;
+    compel_change_param1.scene_config_id_ = server2_param.scene_config_id_;
+    for (auto& it : player_entities_set1)
+    {
+        compel_change_param1.compel_change_entity_ = it;
+        CompelChangeScene(reg(), compel_change_param1);
+        EXPECT_TRUE(reg().try_get<common::SceneEntityId>(it)->scene_entity() == scene_id2);
+    }
+    EXPECT_EQ(reg().get<common::GameServerDataPtr>(server_entity1)->player_size(), 0);
+    EXPECT_EQ(reg().get<common::GameServerDataPtr>(server_entity2)->player_size(), player_entities_set1.size());
+    auto& scenes_players11 = reg().get<common::PlayerEntities>(scene_id1);
+    auto& scenes_players22 = reg().get<common::PlayerEntities>(scene_id2);
+    EXPECT_TRUE(scenes_players11.empty());
+    EXPECT_EQ(scenes_players22.size(), player_entities_set1.size());
     reg().clear();
 }
 
