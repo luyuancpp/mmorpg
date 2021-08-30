@@ -371,9 +371,152 @@ TEST(GameServer, Update)
 
 }
 
-TEST(GameServer, Crash)
+TEST(GameServer, CrashWeightRoundRobinMainScene)
 {
+    MakeScenes();
+    EntitiesUSet server_entities;
+    uint32_t server_size = 2;
+    uint32_t per_server_scene = 2;
+    MakeGameServerParam cgs1;
+    EntitiesUSet scene_entities;
 
+    for (uint32_t i = 0; i < server_size; ++i)
+    {
+        cgs1.server_id_ = i;
+        server_entities.emplace(MakeGameServer(reg(), cgs1));
+    }
+
+    MakeScene2GameServerParam make_server_scene_param;
+    for (uint32_t i = 0; i < per_server_scene; ++i)
+    {
+        make_server_scene_param.scene_config_id_ = i;
+        for (auto& it : server_entities)
+        {
+            make_server_scene_param.server_entity_ = it;
+            auto e = MakeScene2GameServer(reg(), make_server_scene_param);
+            if (scene_entities.empty())
+            {
+                scene_entities.emplace(e);
+            }
+        }
+    }
+
+    uint32_t player_size = 1000;
+
+    std::unordered_map<entt::entity, entt::entity> player_scene1;
+
+    EnterSceneParam enter_param1;
+
+    for (uint32_t i = 0; i < player_size; ++i)
+    {
+        for (auto it : scene_entities)
+        {
+            auto p_e = reg().create();
+            enter_param1.enter_entity_ = p_e;
+            enter_param1.scene_entity_ = it;
+            player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+            EnterScene(reg(), enter_param1);
+        }
+    }
+
+    ServerCrashParam crash1;
+    crash1.crash_server_entity_ = *server_entities.begin();
+    ServerCrash(reg(), crash1);
+
+    uint32_t scene_config_id0 = 0;
+    uint32_t scene_config_id1 = 1;
+    GetWeightRoundRobinSceneParam weight_round_robin_scene;
+    weight_round_robin_scene.scene_config_id_ = scene_config_id0;
+    for (uint32_t i = 0; i < player_size; ++i)
+    {
+        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        EXPECT_TRUE(reg().get<common::GameServerDataPtr>(can_enter)->server_entity() != entt::null);
+        EXPECT_TRUE(reg().get<common::GameServerDataPtr>(can_enter)->server_entity() != crash1.crash_server_entity_);
+    }
+
+    reg().clear();
+}
+
+//崩溃时候的消息不能处理
+TEST(GameServer, CrashMovePlayer2NewServer)
+{
+    MakeScenes();
+    EntitiesUSet server_entities;
+    uint32_t server_size = 2;
+    uint32_t per_server_scene = 2;
+    MakeGameServerParam cgs1;
+    EntitiesUSet scene_entities;
+    entt::entity first_scene = entt::null;
+
+    for (uint32_t i = 0; i < server_size; ++i)
+    {
+        cgs1.server_id_ = i;
+        server_entities.emplace(MakeGameServer(reg(), cgs1));
+    }
+
+    MakeScene2GameServerParam make_server_scene_param;
+    for (uint32_t i = 0; i < per_server_scene; ++i)
+    {
+        make_server_scene_param.scene_config_id_ = i;
+        for (auto& it : server_entities)
+        {
+            make_server_scene_param.server_entity_ = it;
+            auto e = MakeScene2GameServer(reg(), make_server_scene_param);
+            scene_entities.emplace(e);
+            if (first_scene == entt::null)
+            {
+                first_scene = e;
+            }
+        }
+    }
+
+    uint32_t player_size = 1000;
+
+    std::unordered_map<entt::entity, entt::entity> player_scene1;
+
+    EnterSceneParam enter_param1;
+
+    for (uint32_t i = 0; i < player_size; ++i)
+    {
+        auto p_e = reg().create();
+        enter_param1.enter_entity_ = p_e;
+        enter_param1.scene_entity_ = first_scene;
+        player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+        EnterScene(reg(), enter_param1);
+    }
+
+    ServerCrashParam crash1;
+    crash1.crash_server_entity_ = *server_entities.begin();
+    ServerCrash(reg(), crash1);
+
+    ReplaceCrashServerParam replace_crash;
+    replace_crash.cransh_server_entity_ = *server_entities.begin();
+    replace_crash.replace_server_entity_ = *(++server_entities.begin());
+    ReplaceCrashServer(reg(), replace_crash);
+
+    EXPECT_FALSE(reg().valid(replace_crash.cransh_server_entity_));
+    server_entities.erase(replace_crash.cransh_server_entity_);
+    for (auto& it : server_entities)
+    {
+        auto& server_scene =  reg().get<Scenes>(it);
+        EXPECT_EQ(server_scene.scenes_size(), scene_entities.size());
+    }
+
+    auto& eq_server_data = reg().get<GameServerDataPtr>(replace_crash.replace_server_entity_);
+    EXPECT_EQ(1, eq_server_data->server_id());
+    for (auto& it : scene_entities)
+    {
+        auto& server_data = reg().get<GameServerDataPtr>(it);
+        EXPECT_EQ(server_data->server_id(), eq_server_data->server_id());
+    }
+    for (auto& it : player_scene1)
+    {
+        auto& player_scene_entity = reg().get<common::SceneEntityId>(it.first);
+        auto& server_data = reg().get<GameServerDataPtr>(player_scene_entity.scene_entity());
+        EXPECT_EQ(server_data->server_id(), eq_server_data->server_id());
+    }
+    
+    reg().clear();
 }
 
 TEST(GameServer, Route)
@@ -538,9 +681,6 @@ TEST(GameServer, ServerEnterLeavePressure)
 
     GetWeightRoundRobinSceneParam weight_round_robin_scene;
     weight_round_robin_scene.scene_config_id_ = scene_config_id0;
-
-
-    uint32_t player_size = 1000;
 
     std::unordered_map<entt::entity, entt::entity> player_scene1;
 
