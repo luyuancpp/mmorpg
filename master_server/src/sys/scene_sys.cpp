@@ -86,11 +86,11 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
 entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
     auto scene_entity = GetWeightRoundRobinMainSceneT<common::GameServerStatusNormal, common::GameNoPressure>(reg, param);
-    if (entt::null == scene_entity)
+    if (entt::null != scene_entity)
     {
-        scene_entity = GetWeightRoundRobinMainSceneT<common::GameServerStatusNormal, common::GamePressure>(reg, param);
+        return scene_entity;
     }
-    return scene_entity;
+    return GetWeightRoundRobinMainSceneT<common::GameServerStatusNormal, common::GamePressure>(reg, param);;
 }
 
 void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)

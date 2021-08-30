@@ -467,8 +467,32 @@ TEST(GameServer, WeightRoundRobinMainScene)
             EXPECT_EQ((*ps).player_size(), server_player_size);
         }
         EXPECT_EQ(scene_sets.size(), std::size_t(2 * per_server_scene));
+
+        LeaveSceneParam leave_scene;
+        for (auto& it : player_scene1)
+        {
+            auto& pse = reg().get<common::SceneEntityId>(it.first);
+            leave_scene.leave_entity_ = it.first;
+            LeaveScene(reg(), leave_scene);
+            EXPECT_EQ(reg().get<common::SceneConfig>(pse.scene_entity()).scene_config_id(), scene_config_id1);
+        }
+        for (auto& it : player_scene2)
+        {
+            auto& pse = reg().get<common::SceneEntityId>(it.first);
+            leave_scene.leave_entity_ = it.first;
+            LeaveScene(reg(), leave_scene);
+            EXPECT_EQ(reg().get<common::SceneConfig>(pse.scene_entity()).scene_config_id(), scene_config_id1);
+        }
+        for (auto& it : server_entities)
+        {
+            auto& ps = reg().get<common::GameServerDataPtr>(it);
+            EXPECT_EQ((*ps).player_size(), 0);
+        }
     };
-    enter_leave_lambda();
+    for (uint32_t i = 0; i < 2; ++i)
+    {
+        enter_leave_lambda();
+    }    
     //leave 
     reg().clear();
 }
