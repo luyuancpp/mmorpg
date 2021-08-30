@@ -105,7 +105,7 @@ void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param
     reg.emplace<common::GameNoPressure>(param.server_entity_);
 }
 
-void ServerCrash(entt::registry& reg, const ServerCrashParam& param)
+void ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
 {
     reg.remove<common::GameServerStatusNormal>(param.crash_server_entity_);
     reg.emplace<common::GameServerCrash>(param.crash_server_entity_);
@@ -118,6 +118,12 @@ void ReplaceCrashServer(entt::registry& reg, const ReplaceCrashServerParam& para
     move_param.to_server_entity_ = param.replace_server_entity_;
     MoveServerScene2Server(reg, move_param);
     reg.destroy(move_param.from_server_entity_);
+}
+
+void ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
+{
+    reg.remove<common::GameServerStatusNormal>(param.maintain_server_entity_);
+    reg.emplace<common::GameServerMainTain>(param.maintain_server_entity_);
 }
 
 }//namespace master

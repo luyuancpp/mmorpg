@@ -101,8 +101,10 @@ namespace common
 
     struct GameServerStatusNormal{};//game server Õý³£×´Ì¬
     struct GameServerMainTain{};//game server Î¬»¤×´Ì¬
-    struct GameServerUpdate{};//game server ¸üÐÂ×´Ì¬
     struct GameServerCrash{};//±ÀÀ£×´Ì¬
+
+    struct ServerUpdateNotice {};
+    struct ServerMaintainNotice {};
 
     struct GameNoPressure {};//
     struct GamePressure {};//
