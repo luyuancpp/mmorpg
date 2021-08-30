@@ -27,7 +27,17 @@ struct GetWeightRoundRobinSceneParam
 struct ServerPressureParam
 {
     entt::entity server_entity_{ entt::null };
-    uint32_t op_{ 0 };
+};
+
+struct ServerCrashParam
+{
+    entt::entity crash_server_entity_{ entt::null };
+};
+
+struct ReplaceCrashServerParam
+{
+    entt::entity cransh_server_entity_{ entt::null };
+    entt::entity replace_server_entity_{ entt::null };
 };
 
 void EnterScene(entt::registry& reg, const EnterSceneParam& param);
@@ -39,6 +49,10 @@ entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRo
 void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
 
 void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param);
+
+void ServerCrash(entt::registry& reg, const ServerCrashParam& param);
+
+void ReplaceCrashServer(entt::registry& reg, const ReplaceCrashServerParam& param);
 
 }//namespace master
 

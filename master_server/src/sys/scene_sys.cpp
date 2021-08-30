@@ -22,8 +22,8 @@ void EnterScene(entt::registry& reg, const EnterSceneParam& param)
 void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
 {
     auto leave_entity = param.leave_entity_;
-    auto& cscene_entity = reg.get<common::SceneEntityId>(leave_entity);
-    auto scene_entity = cscene_entity.scene_entity();
+    auto& player_scene_entity = reg.get<common::SceneEntityId>(leave_entity);
+    auto scene_entity = player_scene_entity.scene_entity();
     auto& player_entities = reg.get<common::PlayerEntities>(scene_entity);
     player_entities.erase(leave_entity);
     reg.remove<common::SceneEntityId>(leave_entity);
@@ -103,6 +103,21 @@ void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param
 {
     reg.remove<common::GamePressure>(param.server_entity_);
     reg.emplace<common::GameNoPressure>(param.server_entity_);
+}
+
+void ServerCrash(entt::registry& reg, const ServerCrashParam& param)
+{
+    reg.remove<common::GameServerStatusNormal>(param.crash_server_entity_);
+    reg.emplace<common::GameServerCrash>(param.crash_server_entity_);
+}
+
+void ReplaceCrashServer(entt::registry& reg, const ReplaceCrashServerParam& param)
+{
+    MoveServerScene2ServerParam move_param;
+    move_param.from_server_entity_ = param.cransh_server_entity_;
+    move_param.to_server_entity_ = param.replace_server_entity_;
+    MoveServerScene2Server(reg, move_param);
+    reg.destroy(move_param.from_server_entity_);
 }
 
 }//namespace master
