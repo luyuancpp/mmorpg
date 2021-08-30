@@ -110,9 +110,7 @@
     <ClInclude Include="src\redis_client\redis_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\closure_auto_done\closure_aouto_done.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
+
     <ClInclude Include="src\event\event.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -146,25 +144,11 @@
     <ClInclude Include="src\login_state\login_state_machine.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\login_player\login_event.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_state.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_state_concrete.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_state_machine.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
+
     <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\rpc_closure_param\rpc_connection_event.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\game_ecs\game_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\file2string\file2string.h">

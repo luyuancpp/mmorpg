@@ -5,7 +5,6 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/player.hpp"
 #include "src/game_logic/game_registry.h"
-#include "src/game/game_client.h"
 #include "src/master_player/master_player_list.h"
 #include "src/master_server.h"
 #include "src/server_common/closure_auto_done.h"

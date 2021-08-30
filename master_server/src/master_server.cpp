@@ -2,11 +2,11 @@
 
 #include "muduo/base/Logging.h"
 
+#include "src/factories/scene_factories.hpp"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
 #include "src/game_config/deploy_json.h"
 #include "src/game_logic/game_registry.h"
-#include "src/game/game_client.h"
 
 #include "ms2g.pb.h"
 #include "ms2gw.pb.h"
@@ -29,6 +29,7 @@ void MasterServer::LoadConfig()
 {
     common::GameConfig::GetSingleton().Load("game.json");
     common::DeployConfig::GetSingleton().Load("deploy.json");
+    MakeScenes();
 }
 
 void MasterServer::ConnectDeploy()
@@ -75,7 +76,7 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     ms2gw::StartGameServerRequest request;
     request.set_ip(connection_info->toIp());
     request.set_port(connection_info->port());
-    request.set_server_id(reg().get<uint32_t>(ge));
+    request.set_server_id(reg().get<common::GameServerDataPtr>(ge)->server_id());
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGameServer");
 }
 
@@ -122,18 +123,6 @@ void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionP
 void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
 {
     auto& peer_addr = conn->peerAddress();
-
-    for (auto e : reg().view<common::RpcServerConnection>())
-    {
-        auto& local_addr = reg().get<common::RpcServerConnection>(e).conn_->peerAddress();
-        if (local_addr.toIpPort() != peer_addr.toIpPort())
-        {
-            continue;
-        }
-        reg().destroy(e);
-        break;
-    }
-
     for (auto e : reg().view<common::RpcServerConnection>())
     {
         auto& local_addr = reg().get<common::RpcServerConnection>(e).conn_->peerAddress();

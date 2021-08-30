@@ -2,7 +2,6 @@
 
 #include "muduo/net/InetAddress.h"
 
-#include "src/game/game_client.h"
 #include "src/game_logic/game_registry.h"
 #include "src/master_server.h"
 #include "src/server_common/closure_auto_done.h"
