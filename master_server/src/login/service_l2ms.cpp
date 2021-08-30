@@ -3,12 +3,13 @@
 #include "muduo/base/Logging.h"
 
 #include "src/common_type/common_type.h"
+#include "src/factories/scene_factories.hpp"
 #include "src/game_logic/comp/player.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/master_player/master_player_list.h"
 #include "src/master_server.h"
 #include "src/server_common/closure_auto_done.h"
-
+#include "src/sys/scene_sys.hpp"
 
 #include "ms2gw.pb.h"
 
@@ -33,11 +34,11 @@ namespace l2ms
 
         ms2gw::PlayerEnterGameServerRequest gw_request;
         gw_request.set_connection_id(connection_id);
-        for (auto e : reg().view<uint32_t>())
-        {
-            response->set_game_server_id(reg().get<uint32_t>(e));
-            break;
-        }
+
+        GetWeightRoundRobinSceneParam weight_round_robin_scene;
+        weight_round_robin_scene.scene_config_id_ = 0;// has not scene
+        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        response->set_game_server_id(reg().get<GameServerDataPtr>(can_enter)->server_id());
     }
 
     void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 

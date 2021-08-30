@@ -34,12 +34,10 @@ namespace ms2gw
         auto& c = GameClient::GetSingleton().emplace<RpcClientPtr>(e, 
             std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gameserver_addr));
         using Gw2gStubPtr = RpcStub<gw2g::Gw2gService_Stub>::MyType;
-        auto& sc =  GameClient::GetSingleton().emplace<Gw2gStubPtr>(e,
-            std::make_unique<RpcStub<gw2g::Gw2gService_Stub>>());
+        auto& sc =  GameClient::GetSingleton().emplace<Gw2gStubPtr>(e, std::make_unique<RpcStub<gw2g::Gw2gService_Stub>>());
         c->subscribe<RegisterStubES>(*(sc.get()));
         c->connect();
-        GameClient::GetSingleton().emplace<InetAddress>(e,
-            gameserver_addr);
+        GameClient::GetSingleton().emplace<InetAddress>(e, gameserver_addr);
         GameClient::GetSingleton().emplace<uint32_t>(e, request->server_id());
         LOG_INFO << "connect to game server " << gameserver_addr.toIpPort() << " server id " << request->server_id();
     }
