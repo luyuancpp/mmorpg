@@ -154,7 +154,6 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\factories\scene_factories.cpp" />
-    <ClCompile Include="src\game\game_client.cpp" />
     <ClCompile Include="src\game\service_g2ms.cpp" />
     <ClCompile Include="src\gateway\service_gw2ms.cpp" />
     <ClCompile Include="src\master_server.cpp" />
@@ -163,7 +162,6 @@
     <ClCompile Include="src\sys\scene_sys.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\game\game_client.h" />
     <ClInclude Include="src\game\service_g2ms.h" />
     <ClInclude Include="src\gateway\service_gw2ms.h" />
     <ClInclude Include="src\master_server.h" />

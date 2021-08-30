@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
 
-#include "src/game/game_client.h"
+#include "src/factories/scene_factories.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/master_server.h"
 #include "src/server_common/server_component.h"
@@ -30,12 +30,13 @@ namespace g2ms
             {
                 continue;
             }
-            auto ce = reg().create();
-            reg().emplace<common::RpcServerConnection>(ce, common::RpcServerConnection{ c.conn_ });
-            reg().emplace<InetAddress>(ce, rpc_server_peer_addr);
-            reg().emplace<uint32_t>(ce, request->server_id());
-            g_master_server->GatewayConnectGame(ce);
-            LOG_INFO << "connect game";
+            MakeGameServerParam cparam;
+            cparam.server_id_ = request->server_id();
+            auto server_entity = MakeGameServer(reg(), cparam);
+            reg().emplace<common::RpcServerConnection>(server_entity, common::RpcServerConnection{ c.conn_ });
+            reg().emplace<InetAddress>(server_entity, rpc_server_peer_addr);
+            g_master_server->GatewayConnectGame(server_entity);
+            LOG_INFO << "game connected " << request->server_id();
             break;
         }
 

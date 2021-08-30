@@ -2,7 +2,6 @@
 
 #include "src/common_type/common_type.h"
 #include "src/factories/scene_factories.hpp"
-#include "src/game/game_client.h"
 #include "src/game_logic/comp/server_list.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/sys/scene_sys.hpp"

@@ -1,6 +1,5 @@
 #include "muduo/net/EventLoop.h"
 
-#include "src/game/game_client.h"
 #include "src/master_server.h"
 
 using namespace muduo;
