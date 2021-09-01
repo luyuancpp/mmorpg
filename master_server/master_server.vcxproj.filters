@@ -27,7 +27,6 @@
     <ClCompile Include="src\master_player\master_player_list.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-
     <ClCompile Include="src\game\service_g2ms.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -38,6 +37,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\factories\scene_factories.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\factories\server_global_entity.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -54,7 +56,6 @@
     <ClInclude Include="src\master_registry\master_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
-
     <ClInclude Include="src\game\service_g2ms.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -62,6 +63,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\sys\scene_sys.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\factories\server_global_entity.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

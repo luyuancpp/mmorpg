@@ -147,6 +147,9 @@ void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
     const LeaveGameRequestPtr& message, 
     muduo::Timestamp)
 {
+    gw2l::LeaveGameRequest request;
+    request.set_connection_id(boost::any_cast<uint64_t>(conn->getContext()));
+    gw2l_login_stub_.CallMethod(request, &gw2l::LoginService_Stub::LeaveGame);
     LeaveGameResponse response;
     codec_.send(conn, response);
 }

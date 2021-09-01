@@ -4,6 +4,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/factories/scene_factories.hpp"
+#include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/master_player/master_player_list.h"
@@ -31,6 +32,7 @@ namespace l2ms
         reg().emplace<SharedAccountString>(e, std::make_shared<std::string>(request->account()));
         reg().emplace<GatewayConnectionId>(e, connection_id);
         MasterPlayerList::GetSingleton().EnterGame(player_id, e);
+        reg().get<common::ConnectionPlayerEnitiesMap>(global_entity()).emplace(connection_id, e);
 
         ms2gw::PlayerEnterGameServerRequest gw_request;
         gw_request.set_connection_id(connection_id);
@@ -52,17 +54,26 @@ namespace l2ms
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        auto player_id = request->player_id();
-        auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
-        assert(reg().get<GameGuid>(e) == player_id);
-        reg().destroy(e);
-        MasterPlayerList::GetSingleton().LeaveGame(player_id);  
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
-        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null); 
+        auto& connection_map = reg().get<common::ConnectionPlayerEnitiesMap>(global_entity());
+        auto it = connection_map.find(request->connection_id());
+        assert(it != connection_map.end());
+        if (it == connection_map.end())
+        {
+            return;
+        }
+        auto player_entity = it->second;
 
         LeaveSceneParam leave_scene;
-        leave_scene.leave_entity_ = e;
+        leave_scene.leave_entity_ = player_entity;
         LeaveScene(reg(), leave_scene);
+
+        auto player_id = reg().get<GameGuid>(player_entity);
+        assert(MasterPlayerList::GetSingleton().HasPlayer(player_id));  
+        reg().destroy(player_entity);
+        MasterPlayerList::GetSingleton().LeaveGame(player_id);  
+        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
+
+        connection_map.erase(it);
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
@@ -71,17 +82,20 @@ namespace l2ms
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        auto player_id = request->player_id();
-        auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
-        if (entt::null  == e)
+       auto& connection_map = reg().get<common::ConnectionPlayerEnitiesMap>(global_entity());
+        auto it = connection_map.find(request->connection_id());
+        if (it == connection_map.end())
         {
             return;
         }
-        assert(reg().get<GameGuid>(e) == player_id);
-        reg().destroy(e);
+        auto player_entity = it->second;
+        auto player_id = reg().get<GameGuid>(player_entity);
+
+        reg().destroy(player_entity);
+        connection_map.erase(it);
+
         MasterPlayerList::GetSingleton().LeaveGame(player_id);
         assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
-        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
     }
 
 }//namespace master

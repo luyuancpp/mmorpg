@@ -4,11 +4,9 @@
 
 namespace master
 {
-    static entt::entity g_scenes_entity;
-    static entt::entity g_gameserver_entity;
-
     entt::entity& scenes_entity()
     {
+        static entt::entity g_scenes_entity;
         return g_scenes_entity;
     }
 

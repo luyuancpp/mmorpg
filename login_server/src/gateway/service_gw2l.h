@@ -72,7 +72,8 @@ namespace gw2l
         using EnterGameMasterRP = std::shared_ptr<EnterGameMasterRpcString>;
         void EnterGameMasterReplied(EnterGameMasterRP d);
 
-        void EnterMasterServer(const std::string& account,
+        void EnterMasterServer(common::GameGuid player_id,
+            const std::string& account,
             ::gw2l::EnterGameResponse* response,
             ::google::protobuf::Closure* done);
 

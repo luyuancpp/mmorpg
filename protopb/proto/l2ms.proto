@@ -28,13 +28,12 @@ message EnterGameResponese
 
 message LeaveGameRequest
 {
-  uint64 player_id = 1;
+  uint64 connection_id = 1;
 }
 
 message DisconnectRequest
 {
-  uint64 player_id = 1;
-
+  uint64 connection_id = 1;
 }
 
 service LoginService 
