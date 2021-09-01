@@ -38,7 +38,7 @@ namespace master
         RedisClientPtr& redis_client() { return redis_; }
         common::RpcServerConnectionPtr& gate_client() { return gate_client_; }
 
-        void LoadConfig();
+        void Init();
 
         void ConnectDeploy();
 

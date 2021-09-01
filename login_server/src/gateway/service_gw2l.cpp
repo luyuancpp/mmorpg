@@ -124,7 +124,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
    
     if (new_player.player_id() > 0)
     {
-        EnterMasterServer(account, response, done);
+        EnterMasterServer(new_player.player_id(), account, response, done);
         return;
     }        
     // database to redis 
@@ -150,7 +150,7 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
     ::gw2l::EnterGameResponse* response = nullptr;
     ::google::protobuf::Closure* done = nullptr;
     d->Move(response, done);
-    EnterMasterServer(sreqst.account(), response, done);
+    EnterMasterServer(cit->second->PlayingId(), sreqst.account(), response, done);
 }
 
 void LoginServiceImpl::EnterGameMasterReplied(EnterGameMasterRP d)
@@ -158,13 +158,15 @@ void LoginServiceImpl::EnterGameMasterReplied(EnterGameMasterRP d)
     d->c_resp_->set_game_server_id(d->s_resp_->game_server_id());
 }
 
-void LoginServiceImpl::EnterMasterServer(const std::string& account,
+void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id, 
+    const std::string& account,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {   
     EnterGameMasterRP cp(std::make_shared<EnterGameMasterRpcString>(response, done));
     cp->s_reqst_.set_account(account);
     cp->s_reqst_.set_connection_id(response->connection_id());
+    cp->s_reqst_.set_player_id(player_id);
     l2ms_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterGameMasterReplied,
         cp,
@@ -186,7 +188,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     }
     auto& player = cit->second;
     l2ms::LeaveGameRequest ms_request;
-    ms_request.set_player_id(player->PlayingId());
+    ms_request.set_connection_id(request->connection_id());
     l2ms_login_stub_.CallMethod(ms_request,
         &l2ms::LoginService_Stub::LeaveGame);
     ErasePlayer(cit);
@@ -206,7 +208,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     //连接已经登录过
     auto& player = cit->second;
     l2ms::DisconnectRequest ms_disconnect;
-    ms_disconnect.set_player_id(player->PlayingId());
+    ms_disconnect.set_connection_id(request->connection_id());
     l2ms_login_stub_.CallMethod(ms_disconnect,
         &l2ms::LoginService_Stub::Disconect);
     ErasePlayer(cit);

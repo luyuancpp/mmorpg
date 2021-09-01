@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     EventLoop loop;
     MasterServer server(&loop);
     g_master_server = &server;
-    server.LoadConfig();
+    server.Init();
     server.ConnectDeploy();
     loop.loop();
     return 0;

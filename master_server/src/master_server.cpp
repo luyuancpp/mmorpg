@@ -3,6 +3,8 @@
 #include "muduo/base/Logging.h"
 
 #include "src/factories/scene_factories.hpp"
+#include "src/factories/server_global_entity.hpp"
+#include "src/game_logic/comp/player.hpp"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
 #include "src/game_config/deploy_json.h"
@@ -25,11 +27,12 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
 { 
 }    
 
-void MasterServer::LoadConfig()
+void MasterServer::Init()
 {
     common::GameConfig::GetSingleton().Load("game.json");
     common::DeployConfig::GetSingleton().Load("deploy.json");
     MakeScenes();
+    reg().emplace<common::ConnectionPlayerEnitiesMap>(global_entity());
 }
 
 void MasterServer::ConnectDeploy()
