@@ -39,6 +39,11 @@ namespace l2ms
         weight_round_robin_scene.scene_config_id_ = 0;// has not scene
         auto scene_entity = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
         response->set_game_server_id(reg().get<GameServerDataPtr>(scene_entity)->server_id());
+
+        EnterSceneParam enter_scene_param;
+        enter_scene_param.enter_entity_ = e;
+        enter_scene_param.scene_entity_ = scene_entity;
+        EnterScene(reg(), enter_scene_param);
     }
 
     void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
@@ -54,6 +59,10 @@ namespace l2ms
         MasterPlayerList::GetSingleton().LeaveGame(player_id);  
         assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
         assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null); 
+
+        LeaveSceneParam leave_scene;
+        leave_scene.leave_entity_ = e;
+        LeaveScene(reg(), leave_scene);
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
