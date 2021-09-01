@@ -7,7 +7,6 @@ namespace gateway
 {
     struct GateClient
     {
-        common::GameGuid player_id_{ 0 };
         uint32_t game_server_id_{ 0 };
     };
 
