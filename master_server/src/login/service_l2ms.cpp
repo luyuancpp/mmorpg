@@ -37,8 +37,8 @@ namespace l2ms
 
         GetWeightRoundRobinSceneParam weight_round_robin_scene;
         weight_round_robin_scene.scene_config_id_ = 0;// has not scene
-        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
-        response->set_game_server_id(reg().get<GameServerDataPtr>(can_enter)->server_id());
+        auto scene_entity = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        response->set_game_server_id(reg().get<GameServerDataPtr>(scene_entity)->server_id());
     }
 
     void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
