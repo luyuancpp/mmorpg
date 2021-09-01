@@ -121,7 +121,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     redis_->Load(new_player, player_id);
     ap->Playing(player_id);//test
     response->set_connection_id(connection_id);
-    response->set_player_id(player_id);//test
+   
     if (new_player.player_id() > 0)
     {
         EnterMasterServer(account, response, done);
@@ -164,7 +164,6 @@ void LoginServiceImpl::EnterMasterServer(const std::string& account,
 {   
     EnterGameMasterRP cp(std::make_shared<EnterGameMasterRpcString>(response, done));
     cp->s_reqst_.set_account(account);
-    cp->s_reqst_.set_player_id(response->player_id());
     cp->s_reqst_.set_connection_id(response->connection_id());
     l2ms_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterGameMasterReplied,
