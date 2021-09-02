@@ -10,14 +10,24 @@ from os.path import isfile, join
 beginrowidx = 6
 jsondir = "json/"
 xlsdir = "xlsx/"
+gen_type="server"
 
 def getColNames(sheet):
         rowSize = sheet.row_len(0)
         colValues = sheet.row_values(0, 0, rowSize )
         columnNames = []
         counter = 0
+        scdIndex = 0
+        
         for value in colValues:
-                columnNames.append(value)
+                v = sheet.cell_value(3,scdIndex)
+                if v == "design":
+                        columnNames.append("")
+                elif v != "common" and gen_type != v:
+                        columnNames.append("")
+                else:
+                        columnNames.append(value)
+                scdIndex += 1
 
         return columnNames
 
@@ -30,6 +40,8 @@ def getRowData(row, columnNames):
                         cell.value = int(cell.value)
                 except:
                         pass
+                if columnNames[counter].strip() == "":
+                        continue
                 rowData[columnNames[counter]] = cell.value
                 counter +=1
 
@@ -58,7 +70,6 @@ def getWorkBookData(workbook):
                 columnNames = getColNames(worksheet)
                 sheetdata = getSheetData(worksheet, columnNames)
                 workbookdata[worksheet.name] = sheetdata
-
         return workbookdata
 
 def main():
@@ -69,7 +80,6 @@ def main():
                 filename = xlsdir + filename
 
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
-                        print(filename)
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
