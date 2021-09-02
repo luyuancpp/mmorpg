@@ -26,7 +26,7 @@ def getRowData(row, columnNames):
                 if columnNames[counter].strip() != "key":
                         counter +=1
                         continue
-                rowData[columnNames[counter]] = cell.value
+                rowData[str(cell.value)] = cell.value
                 counter +=1
         return rowData
 
@@ -52,32 +52,62 @@ def getWorkBookData(workbook):
 
 def getcpph(datastring, sheetname):
         s = "#include <memory>\n"
-        s += "#include <umordered_map>\n\n"
-        s += '#include "%s.pb.h; \n\n' % (sheetname)
+        s += "#include <umordered_map>\n"
+        s += '#include "%s.pb.h; \n' % (sheetname)
         s += 'class %sconfig\n{\npublic:\n' % (sheetname)
+        s += '  using rowptr = const %s_row*;\n'% (sheetname)
+        s += '  using keydatastype = std::umordered_map<uint32, rowptr>;\n'
         s += '  void load();\n'
-        s += '  using rowptr = std::shared_ptr< %s_row>;\n'% (sheetname)
-        s += '  const %s_row* key_id(uint32 keyid);\n' % (sheetname)
+        s += '  rowptr key_id(uint32 keyid);\n'
         counter = 0
+        pd = ''
         for d in datastring:
                 for v in d.values():
-                        s += "  const %s_row* key_%s(uint32 keyid); " % (sheetname,v) + ";\n" 
-                counter += 1
-        s += 'private:\n std::umordered_map<uint32, rowptr> data_;\n'
+                        s += '  rowptr key_%s(uint32 keyid)const;\n' % (v) 
+                        pd += ' keydatastype key_data_%s_\n'%(counter)
+                        counter += 1
+        s += 'private:\n %s_table data_;\n' % (sheetname)
+        s += ' keydatastype key_data_;\n'
+        s += pd
         s += '};\n'
         return s;
 
 def getcpp(datastring, sheetname):
-        s = "#include <umordered_map>"
-        s += '#include "%s.pb.h; \n' % (sheetname)
-        s += 'class %sconfig\n{\npublic:\n' % (sheetname)
-        s += '  const %s_row* key_id(uint32 keyid);\n' % (sheetname)
+        s = '#include "%s_config.h; \n' % (sheetname)
+        s += 'void %sconfig::load()\n{\n data_.clear();\n' % (sheetname)
+        s += ' auto contents = File2String(filename);\n'
+        s += ' google::protobuf::StringPiece sp(contents.data(), contents.size());\n'
+        s += ' google::protobuf::util::JsonStringToMessage(sp, &key_data_);\n'
+        
+        s += ' for (int32_t i = 0; i < data_.data_size(); ++i)\n {\n'
+        s += '   auto& d = data_.data(i);\n'
         counter = 0
         for d in datastring:
-                for v in d.values():
-                        s += "  const %s_row* key_%s(uint32 keyid); " % (sheetname,v) + ";\n" 
-                counter += 1
-        s += 'private:\n std::umordered_map<uint32, %s_row> data_;\n};\n' % (sheetname)
+                for v in d.values(): 
+                        s += '   key_data_%s_.clear();\n' % (counter) 
+                        counter += 1
+                s += ' }\n'
+
+        s += ' for (int32_t i = 0; i < data_.data_size(); ++i)\n {\n'
+        s += '   auto& d = data_.data(i);\n'
+        counter = 0
+        for d in datastring:
+                for v in d.values(): 
+                        s += '   key_data_%s_.emplace(d.%s(), &d);\n' % (counter,v) 
+                        counter += 1
+                s += ' }\n'
+        s += '}\n'
+        
+      
+        s += ' const %s_row* key_id(uint32 keyid);\n{\n' % (sheetname)
+        s += '  auto it = key_data_.find(keyid);\n  return it == key_data_.end() ? nullptr : it->second;\n}\n'
+
+        counter = 0
+        for d in datastring:
+                for v in d.values(): 
+                        s += 'const %s_row* key_%s(uint32 keyid)\n{\n' % (sheetname,v)
+                        s += '  auto it = key_data_%s_.find(keyid);\n  return it == key_data_%s_.end() ? nullptr : it->second;\n}\n'% (counter,counter) 
+                        counter += 1
         return s;
 
 def main():
@@ -89,9 +119,13 @@ def main():
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
-                                output = open(protodir + sheetname + "_config.h", "w", encoding="utf-8")
+                                outputh = open(protodir + sheetname + "_config.h", "w", encoding="utf-8")
                                 s =getcpph(workbookdata[sheetname], sheetname)
-                                output.write(s)
-                                output.close()
+                                outputh.write(s)
+                                outputh.close()
+                                outputcpp = open(protodir + sheetname + "_config.cpp", "w", encoding="utf-8")
+                                s =getcpp(workbookdata[sheetname], sheetname)
+                                outputcpp.write(s)
+                                outputcpp.close()
                        
 main()
