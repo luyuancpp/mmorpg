@@ -15,21 +15,14 @@ def getColNames(sheet):
         rowSize = sheet.row_len(0)
         colValues = sheet.row_values(0, 0, rowSize )
         columnNames = []
-        counter = 0
         for value in colValues:
                 columnNames.append(value)
-
         return columnNames
 
 def getRowData(row, columnNames):
         rowData = {}
         counter = 0
-
         for cell in row:
-                try:
-                        cell.value = int(cell.value)
-                except:
-                        pass
                 rowData[columnNames[counter]] = cell.value
                 counter +=1
 
@@ -50,9 +43,7 @@ def getSheetData(sheet, columnNames):
 
 def getWorkBookData(workbook):
         nsheets = workbook.nsheets
-        counter = 0
         workbookdata = {}
-
         for idx in range(0, nsheets):
                 worksheet = workbook.sheet_by_index(idx)
                 columnNames = getColNames(worksheet)
@@ -79,7 +70,6 @@ def getProtoData(datastring, sheetname):
 def main():
         if not os.path.exists(protodir):
                 os.makedirs(protodir) 
-        
         for filename in listdir(xlsdir):
                 filename = xlsdir + filename
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
