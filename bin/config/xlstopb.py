@@ -7,7 +7,7 @@ import os.path
 from os import listdir
 from os.path import isfile, join
 
-endrowidx = 2
+endrowidx = 3
 protodir = "proto/"
 xlsdir = "xlsx/"
 
@@ -66,6 +66,8 @@ def getProtoData(datastring, sheetname):
         s += 'message %s\n{\n' % (sheetname)
         counter = 1
         for k in datastring[0]:
+                if datastring[2][k].strip() == 'client' or datastring[2][k].strip() == 'design':
+                        continue
                 if datastring[1][k].strip() == '':
                         s += "%s %s" % ( datastring[0][k], k) + " = " + str(counter) + ";\n" 
                 else :   
