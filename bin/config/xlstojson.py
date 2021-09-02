@@ -26,7 +26,6 @@ def getColNames(sheet):
                 else:
                         columnNames.append(value)
                 scdIndex += 1
-
         return columnNames
 
 def getRowData(row, columnNames):
@@ -39,28 +38,26 @@ def getRowData(row, columnNames):
                         cell.value = int(cell.value)
                 rowData[columnNames[counter]] = cell.value
                 counter +=1
-
         return rowData
 
 def getSheetData(sheet, columnNames):
         nRows = sheet.nrows
         sheetData = []
         counter = 1
-
         for idx in range(1, nRows):
                 if idx >= beginrowidx:
                         row = sheet.row(idx)
                         rowData = getRowData(row, columnNames)
                         sheetData.append(rowData)
-
         return sheetData
 
 def getWorkBookData(workbook):
         nsheets = workbook.nsheets
         workbookdata = {}
-
         for idx in range(0, nsheets):
                 worksheet = workbook.sheet_by_index(idx)
+                if worksheet.cell_value(0, 0) != "id":
+                        print("%s firs col num must be id "%(worksheet.name))
                 columnNames = getColNames(worksheet)
                 sheetdata = getSheetData(worksheet, columnNames)
                 workbookdata[worksheet.name] = sheetdata
@@ -72,7 +69,6 @@ def main():
         
         for filename in listdir(xlsdir):
                 filename = xlsdir + filename
-
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
