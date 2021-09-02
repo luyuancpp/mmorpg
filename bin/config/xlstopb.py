@@ -7,7 +7,7 @@ import os.path
 from os import listdir
 from os.path import isfile, join
 
-beginrowidx = 3
+endrowidx = 2
 protodir = "proto/"
 xlsdir = "xlsx/"
 
@@ -41,7 +41,7 @@ def getSheetData(sheet, columnNames):
         counter = 1
 
         for idx in range(1, nRows):
-                if idx >= beginrowidx:
+                if idx <= endrowidx:
                         row = sheet.row(idx)
                         rowData = getRowData(row, columnNames)
                         sheetData.append(rowData)
@@ -61,19 +61,32 @@ def getWorkBookData(workbook):
 
         return workbookdata
 
+def getProtoData(datastring, sheetname):
+        s = 'syntax = "proto3"; \n'
+        s += 'message %s\n{\n' % (sheetname)
+        counter = 1
+        for k in datastring[0]:
+                if datastring[1][k].strip() == '':
+                        s += "%s %s" % ( datastring[0][k], k) + " = " + str(counter) + ";\n" 
+                else :   
+                        s += "%s %s %s" % (datastring[1][k], datastring[0][k], k) + " = " + str(counter) + ";\n"    
+                counter += 1
+        s += '}\n'
+        print(s)
+        return s;
+
 def main():
         if not os.path.exists(protodir):
                 os.makedirs(protodir) 
         
         for filename in listdir(xlsdir):
                 filename = xlsdir + filename
-
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
                                 output = open(protodir + sheetname + ".proto", "w", encoding="utf-8")
-                                datastring = 'syntax = "proto3";\n' + json.dumps(workbookdata[sheetname] , sort_keys=True, indent=4,  separators=(',', ": "))
+                                datastring =getProtoData(workbookdata[sheetname], sheetname)
                                 output.write(datastring)
                                 output.close()
                        

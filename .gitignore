@@ -26,4 +26,5 @@ x64/
 common/src/game_config/proto/*.proto
 bin/config/xlwt/
 bin/config/xlrd/
+bin/config/proto
 
