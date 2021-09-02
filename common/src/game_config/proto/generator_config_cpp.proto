@@ -9,7 +9,6 @@ message ConditionTableRow
 	 uint32 amount_type = 5;
 	 uint32 amount = 6;
 	 uint32 operator = 7;
-
 }
 
 message ConditionTable
@@ -33,4 +32,14 @@ message MissionTableRow
 message MissionTable
 {
 	 repeated MissionTableRow data = 1;
+}
+
+message SceneTableRow
+{
+	 uint32 id = 1;
+}
+
+message SceneTable
+{
+	 repeated SceneTableRow data = 1;
 }
