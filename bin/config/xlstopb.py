@@ -54,7 +54,7 @@ def getWorkBookData(workbook):
 
 def getProtoData(datastring, sheetname):
         s = 'syntax = "proto3"; \n'
-        s += 'message %s\n{\n' % (sheetname)
+        s += 'message %s_row\n{\n' % (sheetname)
         counter = 1
         for k in datastring[0]:
                 if datastring[2][k].strip() == 'client' or datastring[2][k].strip() == 'design':
@@ -65,6 +65,7 @@ def getProtoData(datastring, sheetname):
                         s += "%s %s %s" % (datastring[1][k], datastring[0][k], k) + " = " + str(counter) + ";\n"    
                 counter += 1
         s += '}\n'
+        s += 'message %s_table\n{\n repeated %s_row data = 1;\n}\n' % (sheetname,sheetname)
         return s;
 
 def main():
