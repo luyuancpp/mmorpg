@@ -21,7 +21,6 @@ compile_commands.json
 protopb/pbc/
 third_party/
 output/
-lib/
 x64/
 .vs/
 common/src/game_config/proto/*.proto
