@@ -8,7 +8,7 @@ from os import listdir
 from os.path import isfile, join
 
 endrowidx = 2
-protodir = "proto/"
+protodir = "../../common/src/game_config/proto/"
 xlsdir = "xlsx/"
 
 def getColNames(sheet):
@@ -72,7 +72,6 @@ def getProtoData(datastring, sheetname):
                         s += "%s %s %s" % (datastring[1][k], datastring[0][k], k) + " = " + str(counter) + ";\n"    
                 counter += 1
         s += '}\n'
-        print(s)
         return s;
 
 def main():
