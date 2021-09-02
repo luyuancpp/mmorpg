@@ -73,9 +73,9 @@ def getcpph(datastring, sheetname):
         return s;
 
 def getcpp(datastring, sheetname):
-        s = '#include "%s_config.h; \n' % (sheetname)
+        s = '#include "%s_config.h" \n' % (sheetname)
         s += 'void %sconfig::load()\n{\n data_.clear();\n' % (sheetname)
-        s += ' auto contents = File2String(filename);\n'
+        s += ' auto contents = File2String("config/json/%s.json");\n' % (sheetname)
         s += ' google::protobuf::StringPiece sp(contents.data(), contents.size());\n'
         s += ' google::protobuf::util::JsonStringToMessage(sp, &key_data_);\n'
         
