@@ -16,9 +16,7 @@ def getColNames(sheet):
         rowSize = sheet.row_len(0)
         colValues = sheet.row_values(0, 0, rowSize )
         columnNames = []
-        counter = 0
         scdIndex = 0
-        
         for value in colValues:
                 v = sheet.cell_value(3,scdIndex)
                 if v == "design":
@@ -34,14 +32,11 @@ def getColNames(sheet):
 def getRowData(row, columnNames):
         rowData = {}
         counter = 0
-
         for cell in row:
-                try:
-                        cell.value = int(cell.value)
-                except:
-                        pass
                 if columnNames[counter].strip() == "":
                         continue
+                if cell.ctype == 2 and cell.value % 1 == 0.0:
+                        cell.value = int(cell.value)
                 rowData[columnNames[counter]] = cell.value
                 counter +=1
 
@@ -62,7 +57,6 @@ def getSheetData(sheet, columnNames):
 
 def getWorkBookData(workbook):
         nsheets = workbook.nsheets
-        counter = 0
         workbookdata = {}
 
         for idx in range(0, nsheets):
