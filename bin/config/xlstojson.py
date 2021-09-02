@@ -7,7 +7,7 @@ import os.path
 from os import listdir
 from os.path import isfile, join
 
-beginrowidx = 5
+beginrowidx = 6
 jsondir = "json/"
 xlsdir = "xlsx/"
 
