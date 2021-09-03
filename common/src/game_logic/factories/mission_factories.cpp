@@ -2,8 +2,8 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "src/game_config/generator/json_cpp/condition_json.h"
-#include "src/game_config/generator/json_cpp/mission_json.h"
+#include "src/game_config/condition_config.h"
+#include "src/game_config/mission_config.h"
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/mission.hpp"
 #include "src/random/random.h"
@@ -18,14 +18,14 @@ void RemoveMissionTypeSubType(entt::entity e, uint32_t mission_type, uint32_t mi
 
 bool CheckPlayerMissonAutoReward(uint32_t mission_id)
 {
-    auto p = MissionJson::GetSingleton().Primary1KeyRow(mission_id);
+    auto p = missionconfig::GetSingleton().key_id(mission_id);
     return nullptr != p && p->auto_reward() > 0;
 }
 
 void OnPlayerCompleteMission(entt::entity e, uint32_t mission_id, CompleteMissionsId& cm)
 {
     cm.mutable_missions()->insert({ mission_id, true});
-    auto mrow = MissionJson::GetSingleton().Primary1KeyRow(mission_id);
+    auto mrow = missionconfig::GetSingleton().key_id(mission_id);
     if (nullptr == mrow)
     {
         return;
@@ -90,7 +90,7 @@ uint32_t MakeMission(const MakeMissionParam& param)
     {
         auto pcs = m.add_conditions();
         pcs->set_id(condition_id->Get(i));
-        auto p = ConditionJson::GetSingleton().PrimaryKeyRow(pcs->id());
+        auto p = conditionconfig::GetSingleton().key_id(pcs->id());
         if (nullptr == p)
         {
             continue;
@@ -105,7 +105,7 @@ uint32_t MakeMission(const MakeMissionParam& param)
 uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
 {
     auto mission_id = param.mission_id_;
-    auto mrow = MissionJson::GetSingleton().Primary1KeyRow(param.mission_id_);
+    auto mrow = missionconfig::GetSingleton().key_id(param.mission_id_);
     if (nullptr == mrow)
     {
         return RET_TABLE_ID_ERROR;

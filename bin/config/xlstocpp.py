@@ -93,6 +93,7 @@ def getcpp(datastring, sheetname):
         s += '   auto& d = data_.data(i);\n'
         counter = 0
         for d in datastring:
+                s += '   key_data_.clear();\n'
                 for v in d.values(): 
                         s += '   key_data_%s_.clear();\n' % (counter) 
                         counter += 1
@@ -102,6 +103,7 @@ def getcpp(datastring, sheetname):
         s += '   auto& d = data_.data(i);\n'
         counter = 0
         for d in datastring:
+                s += '   key_data_.emplace(d.id(), &d);\n'
                 for v in d.values(): 
                         s += '   key_data_%s_.emplace(d.%s(), &d);\n' % (counter,v) 
                         counter += 1
