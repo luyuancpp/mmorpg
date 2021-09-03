@@ -52,25 +52,29 @@ def getWorkBookData(workbook):
         return workbookdata
 
 def getcpph(datastring, sheetname):
-        s = "#include <memory>\n"
-        s += "#include <umordered_map>\n"
-        s += '#include "%s.pb.h; \n' % (sheetname)
+        s = "#ifndef %s_config_h_\n"% (sheetname)
+        s += "#define %s_config_h_\n"% (sheetname)
+        s += "#include <memory>\n"
+        s += "#include <unordered_map>\n"
+        s += '#include "%s_config.pb.h" \n' % (sheetname)
         s += 'class %sconfig\n{\npublic:\n' % (sheetname)
         s += '  using rowptr = const %s_row*;\n'% (sheetname)
-        s += '  using keydatastype = std::umordered_map<uint32, rowptr>;\n'
+        s += '  using keydatastype = std::unordered_map<uint32_t, rowptr>;\n'
+        s += '  static conditionconfig& GetSingleton(){static conditionconfig singleton; return singleton;}\n'
         s += '  void load();\n'
-        s += '  rowptr key_id(uint32 keyid);\n'
+        s += '  rowptr key_id(uint32_t keyid);\n'
         counter = 0
         pd = ''
         for d in datastring:
                 for v in d.values():
-                        s += '  rowptr key_%s(uint32 keyid)const;\n' % (v) 
-                        pd += ' keydatastype key_data_%s_\n'%(counter)
+                        s += '  rowptr key_%s(uint32_t keyid)const;\n' % (v) 
+                        pd += ' keydatastype key_data_%s_;\n'%(counter)
                         counter += 1
         s += 'private:\n %s_table data_;\n' % (sheetname)
         s += ' keydatastype key_data_;\n'
         s += pd
         s += '};\n'
+        s += "#endif// %s_config_h_\n"% (sheetname)
         return s;
 
 def getcpp(datastring, sheetname):
@@ -100,13 +104,13 @@ def getcpp(datastring, sheetname):
         s += '}\n'
         
       
-        s += ' const %s_row* key_id(uint32 keyid);\n{\n' % (sheetname)
+        s += ' const %s_row* key_id(uint32_t keyid);\n{\n' % (sheetname)
         s += '  auto it = key_data_.find(keyid);\n  return it == key_data_.end() ? nullptr : it->second;\n}\n'
 
         counter = 0
         for d in datastring:
                 for v in d.values(): 
-                        s += 'const %s_row* key_%s(uint32 keyid)\n{\n' % (sheetname,v)
+                        s += 'const %s_row* key_%s(uint32_t keyid)\n{\n' % (sheetname,v)
                         s += '  auto it = key_data_%s_.find(keyid);\n  return it == key_data_%s_.end() ? nullptr : it->second;\n}\n'% (counter,counter) 
                         counter += 1
         return s;
