@@ -83,11 +83,12 @@ def getcpp(datastring, sheetname):
         s += '#include "src/file2string/file2string.h"\n'
         s += '#include "%s_config.h" \n' % (sheetname)
         s += 'using namespace common;\n' 
+        s += 'using namespace std;\n'
         s += 'void %sconfig::load()\n{\n data_.Clear();\n' % (sheetname)
         s += ' auto contents = File2String("config/json/%s.json");\n' % (sheetname)
         s += ' google::protobuf::StringPiece sp(contents.data(), contents.size());\n'
-        s += ' google::protobuf::util::JsonStringToMessage(sp, &data_);\n'
-        
+        s += ' auto result = google::protobuf::util::JsonStringToMessage(sp, &data_);\n'
+        s += ' if (!result.ok()){cout << "%s " << result.message().data() << endl;}\n' % (sheetname)
         s += ' for (int32_t i = 0; i < data_.data_size(); ++i)\n {\n'
         s += '   auto& d = data_.data(i);\n'
         counter = 0
@@ -130,7 +131,7 @@ def main():
                                 md5tool.generate_md5_file_for(filename, filenamemd5)
                         error = md5tool.check_against_md5_file(filename, filename + '.md5')
                         if error == None:
-                                continue
+                                pass
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
