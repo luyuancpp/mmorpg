@@ -19,14 +19,19 @@ def get_file_info_dictionaries(walkdir, protobufdir, cppdir):
                 continue
             filenamemd5 = md5str + "/" + each_filename + '.md5'
             error = None
-            if  os.path.exists(filenamemd5):
-                error = md5tool.check_against_md5_file(each_filename, filenamemd5)
+            first = False
+            if not os.path.exists(filenamemd5):
+                first = True
             else:
-                 error = (each_filename, filenamemd5)
+                error = md5tool.check_against_md5_file(each_filename, filenamemd5)
+
             hfilename = cppdir + each_filename + ".pb.h"
             cfilename = cppdir + each_filename + ".pb.cc"
+            hfilename = hfilename.replace(".proto", "")
+            cfilename = cfilename.replace(".proto", "")
             if error == None and os.path.exists(hfilename) and os.path.exists(cfilename) :
                     continue
+            print("copy %s %s" % (hfilename, cfilename))
             if not os.path.exists(filenamemd5):
                     md5tool.generate_md5_file_for(each_filename, filenamemd5)
             commond = 'protoc  -I=./ -I=%s --cpp_out=%s %s' % (protobufdir, cppdir, each_filename)
