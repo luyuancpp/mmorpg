@@ -116,7 +116,6 @@ void MasterServer::receive(const common::ServerConnectionES& es)
     }
 }
 
-
 void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn)
 {
     auto e = reg().create();
