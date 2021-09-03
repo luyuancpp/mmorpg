@@ -1,7 +1,7 @@
 #include "mission_sys.hpp"
 
-#include "src/game_config/generator/json_cpp/condition_json.h"
-#include "src/game_config/generator/json_cpp/mission_json.h"
+#include "src/game_config/condition_config.h"
+#include "src/game_config/mission_config.h"
 #include "src/game_logic/comp/mission.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/factories/mission_factories.h"
@@ -40,7 +40,7 @@ bool TriggerCondition(const ConditionEvent& c, Mission& mission)
         {
             continue;
         }
-        auto p = ConditionJson::GetSingleton().PrimaryKeyRow(condition->id());
+        auto p = conditionconfig::GetSingleton().key_id(condition->id());
         if (nullptr == p)
         {
             continue;
@@ -88,14 +88,14 @@ void OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_com
     auto& type_missions = reg().get<TypeMissionIdMap>(e);
     for (auto& it : temp_complete)
     {
-        auto p = MissionJson::GetSingleton().PrimaryKeyRow(it);
+        auto p = missionconfig::GetSingleton().key_id(it);
         if (nullptr == p)
         {
             continue;
         }
         for (int32_t i = 0; i < p->condition_id_size(); ++i)
         {
-            auto cp = ConditionJson::GetSingleton().PrimaryKeyRow(p->condition_id(i));
+            auto cp = conditionconfig::GetSingleton().key_id(p->condition_id(i));
             if (nullptr == cp)
             {
                 continue;
@@ -222,7 +222,7 @@ void RemoveMission(const MissionIdParam& rm)
     {
         begin_times->mutable_mission_begin_time()->erase(mission_id);
     }
-    auto mrow = MissionJson::GetSingleton().Primary1KeyRow(mission_id);
+    auto mrow = missionconfig::GetSingleton().key_id(mission_id);
     if (nullptr == mrow)
     {
         return;
@@ -231,7 +231,7 @@ void RemoveMission(const MissionIdParam& rm)
     auto& type_missions = reg().get<TypeMissionIdMap>(e);
     for (int32_t i = 0; i < mrow->condition_id_size(); ++i)
     {
-        auto cp = ConditionJson::GetSingleton().PrimaryKeyRow(mrow->condition_id(i));
+        auto cp = conditionconfig::GetSingleton().key_id(mrow->condition_id(i));
         if (nullptr == cp)
         {
             continue;
