@@ -59,7 +59,7 @@ def check_against_md5_file(filename, md5_filename):
 
     # If we couldn't read the expected hash, return an error
     if expected_hash is None:
-        print("ERROR     {0}".format(filename))
+        #print("ERROR     {0}".format(filename))
         print("Could not read a valid md5 hash from {0}".format(md5_filename))
         return (filename, 'could not read from .md5 file', 'not generated')
 
@@ -69,13 +69,12 @@ def check_against_md5_file(filename, md5_filename):
     # Print out success or failure messages
     error = None
     if actual_hash == expected_hash:
-        sys.stdout.write("\rOK        {0}\n".format(filename))
-        sys.stdout.flush()
+        pass
     else:
-        sys.stdout.write("\rERROR     {0}\n".format(filename))
-        sys.stdout.flush()
-        print("  expected hash  {0}".format(expected_hash))
-        print("  actual hash is {0}".format(actual_hash))
+        #sys.stdout.write("\rERROR     {0}\n".format(filename))
+        #sys.stdout.flush()
+        #print("  expected hash  {0}".format(expected_hash))
+        #print("  actual hash is {0}".format(actual_hash))
         error = (filename, expected_hash, actual_hash)
 
     return error

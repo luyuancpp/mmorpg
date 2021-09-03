@@ -122,9 +122,46 @@ def getcpp(datastring, sheetname):
                         counter += 1
         return s;
 
+def getallconfig():
+        sheetnames = []
+        filechange = False
+        for filename in listdir(xlsdir):
+                filename = xlsdir + filename
+                if filename.endswith('.xlsx') or filename.endswith('.xls'):
+                        filenamemd5 = filename + '.md5'
+                        if not os.path.exists(filenamemd5):
+                                md5tool.generate_md5_file_for(filename, filenamemd5)
+                        error = md5tool.check_against_md5_file(filename, filename + '.md5')
+                        if error == None:
+                                continue
+                        filechange = True
+                        workbook = xlrd.open_workbook(filename)
+                        workbookdata = getWorkBookData(workbook)
+                        for sheetname in workbookdata :
+                                sheetnames.append(sheetname)
+        s =  '#ifndef all_config_h\n'                      
+        s += '#define all_config_h\n'
+        s += 'void loadallconfig();\n'
+        s += '#endif// all_config_h\n'
+
+        scpp = '#include "all_config.h"\n'  
+        for item in sheetnames :
+                scpp += '#include "%s_config.h"\n' % (item)               
+        scpp += ' void loadallconfig()\n{\n'
+        for item in sheetnames :
+                scpp += '"%sconfig::GetSingleton().load();"\n' % (item)
+        scpp += '}\n'
+        return s, scpp
+
+def mywrite(str, filename):
+        outputh = open(protodir  + filename, "w", encoding="utf-8")
+        outputh.write(str)
+        outputh.close()
+
 def main():
         if not os.path.exists(protodir):
                 os.makedirs(protodir) 
+        sheetnames = []
         for filename in listdir(xlsdir):
                 filename = xlsdir + filename
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
@@ -145,5 +182,8 @@ def main():
                                 s =getcpp(workbookdata[sheetname], sheetname)
                                 outputcpp.write(s)
                                 outputcpp.close()
+        hs, cpps = getallconfig()
+        mywrite(hs, "all_config.h")
+        mywrite(cpps, "all_config.cpp")
                        
 main()
