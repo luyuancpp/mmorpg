@@ -131,7 +131,7 @@ def main():
                                 md5tool.generate_md5_file_for(filename, filenamemd5)
                         error = md5tool.check_against_md5_file(filename, filename + '.md5')
                         if error == None:
-                                pass
+                                continue
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
