@@ -147,9 +147,9 @@ def getallconfig():
         scpp = '#include "all_config.h"\n'  
         for item in sheetnames :
                 scpp += '#include "%s_config.h"\n' % (item)               
-        scpp += ' void loadallconfig()\n{\n'
+        scpp += 'void loadallconfig()\n{\n'
         for item in sheetnames :
-                scpp += '"%sconfig::GetSingleton().load();"\n' % (item)
+                scpp += '%sconfig::GetSingleton().load();\n' % (item)
         scpp += '}\n'
         return s, scpp
 
@@ -178,10 +178,9 @@ def main():
                                 s =getcpph(workbookdata[sheetname], sheetname)
                                 outputh.write(s)
                                 outputh.close()
-                                outputcpp = open(protodir + sheetname + "_config.cpp", "w", encoding="utf-8")
                                 s =getcpp(workbookdata[sheetname], sheetname)
-                                outputcpp.write(s)
-                                outputcpp.close()
+                                wfilename = sheetname + "_config.cpp"
+                                mywrite(s, wfilename)
         hs, cpps = getallconfig()
         mywrite(hs, "all_config.h")
         mywrite(cpps, "all_config.cpp")
