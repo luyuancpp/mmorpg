@@ -45,8 +45,8 @@ def generate_md5_hash(filename, block_size=2 ** 20, progress_blocks=128):
             # Display progress in the command line
             if (blocks % progress_blocks) == 0:
                 percentage_string = "{0}%".format(100 * blocks / total_blocks)
-                sys.stdout.write("\r{1:<10}{0}\n".format(filename, percentage_string))
-                sys.stdout.flush()
+                #sys.stdout.write("\r{1:<10}{0}\n".format(filename, percentage_string))
+                #sys.stdout.flush()
             blocks += 1
     return md5.hexdigest()
 

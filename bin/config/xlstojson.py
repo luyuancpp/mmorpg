@@ -3,6 +3,7 @@
 import xlrd
 import xlwt
 import json
+import md5tool
 import os.path
 from os import listdir
 from os.path import isfile, join
@@ -70,6 +71,12 @@ def main():
         for filename in listdir(xlsdir):
                 filename = xlsdir + filename
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
+                        filenamemd5 = filename + '.md5'
+                        if not os.path.exists(filenamemd5):
+                                md5tool.generate_md5_file_for(filename, filenamemd5)
+                        error = md5tool.check_against_md5_file(filename, filename + '.md5')
+                        if error == None:
+                                continue
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
