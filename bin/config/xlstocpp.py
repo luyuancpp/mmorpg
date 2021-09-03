@@ -58,10 +58,10 @@ def getcpph(datastring, sheetname):
         s += "#include <unordered_map>\n"
         s += '#include "%s_config.pb.h" \n' % (sheetname)
         s += 'class %sconfig\n{\npublic:\n' % (sheetname)
-        s += '  using rowptr = const %s_row*;\n'% (sheetname)
+        s += '  using rowptr = const %s_row*;\n' % (sheetname)
         s += '  using keydatastype = std::unordered_map<uint32_t, rowptr>;\n'
-        s += '  static conditionconfig& GetSingleton(){static conditionconfig singleton; return singleton;}\n'
-        s += '  void load();\n'
+        s += '  static %sconfig& GetSingleton(){static %sconfig singleton; return singleton;}\n' % (sheetname,sheetname)
+        s += '  const %s_table& all()const{return data_;}\n'% (sheetname)
         s += '  rowptr key_id(uint32_t keyid);\n'
         counter = 0
         pd = ''
@@ -70,6 +70,7 @@ def getcpph(datastring, sheetname):
                         s += '  rowptr key_%s(uint32_t keyid)const;\n' % (v) 
                         pd += ' keydatastype key_data_%s_;\n'%(counter)
                         counter += 1
+        s += '  void load();\n'
         s += 'private:\n %s_table data_;\n' % (sheetname)
         s += ' keydatastype key_data_;\n'
         s += pd
@@ -78,11 +79,14 @@ def getcpph(datastring, sheetname):
         return s;
 
 def getcpp(datastring, sheetname):
-        s = '#include "%s_config.h" \n' % (sheetname)
-        s += 'void %sconfig::load()\n{\n data_.clear();\n' % (sheetname)
+        s = '#include "google/protobuf/util/json_util.h"\n'
+        s += '#include "src/file2string/file2string.h"\n'
+        s += '#include "%s_config.h" \n' % (sheetname)
+        s += 'using namespace common;\n' 
+        s += 'void %sconfig::load()\n{\n data_.Clear();\n' % (sheetname)
         s += ' auto contents = File2String("config/json/%s.json");\n' % (sheetname)
         s += ' google::protobuf::StringPiece sp(contents.data(), contents.size());\n'
-        s += ' google::protobuf::util::JsonStringToMessage(sp, &key_data_);\n'
+        s += ' google::protobuf::util::JsonStringToMessage(sp, &data_);\n'
         
         s += ' for (int32_t i = 0; i < data_.data_size(); ++i)\n {\n'
         s += '   auto& d = data_.data(i);\n'
@@ -104,13 +108,13 @@ def getcpp(datastring, sheetname):
         s += '}\n'
         
       
-        s += ' const %s_row* key_id(uint32_t keyid);\n{\n' % (sheetname)
+        s += ' const %s_row* %sconfig::key_id(uint32_t keyid)\n{\n' % (sheetname,sheetname)
         s += '  auto it = key_data_.find(keyid);\n  return it == key_data_.end() ? nullptr : it->second;\n}\n'
 
         counter = 0
         for d in datastring:
                 for v in d.values(): 
-                        s += 'const %s_row* key_%s(uint32_t keyid)\n{\n' % (sheetname,v)
+                        s += 'const %s_row* %sconfig::key_%s(uint32_t keyid)const\n{\n' % (sheetname,sheetname,v)
                         s += '  auto it = key_data_%s_.find(keyid);\n  return it == key_data_%s_.end() ? nullptr : it->second;\n}\n'% (counter,counter) 
                         counter += 1
         return s;
