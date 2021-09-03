@@ -150,6 +150,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\game_config\all_config.cpp" />
+    <ClCompile Include="src\game_config\condition_config.cpp" />
+    <ClCompile Include="src\game_config\mainscene_config.cpp" />
+    <ClCompile Include="src\game_config\mission_config.cpp" />
+    <ClCompile Include="src\game_config\scene_config.cpp" />
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
     <ClCompile Include="src\server_common\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
@@ -171,6 +176,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
+    <ClInclude Include="src\game_config\all_config.h" />
+    <ClInclude Include="src\game_config\condition_config.h" />
+    <ClInclude Include="src\game_config\mainscene_config.h" />
+    <ClInclude Include="src\game_config\mission_config.h" />
+    <ClInclude Include="src\game_config\scene_config.h" />
     <ClInclude Include="src\game_logic\comp\gateway.hpp" />
     <ClInclude Include="src\game_logic\comp\player.hpp" />
     <ClInclude Include="src\game_logic\comp\server_list.hpp" />

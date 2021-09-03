@@ -69,6 +69,21 @@
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_config\condition_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\mainscene_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\mission_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\scene_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\all_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
@@ -110,7 +125,6 @@
     <ClInclude Include="src\redis_client\redis_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
-
     <ClInclude Include="src\event\event.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -144,7 +158,6 @@
     <ClInclude Include="src\login_state\login_state_machine.h">
       <Filter>头文件</Filter>
     </ClInclude>
-
     <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -230,6 +243,39 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\comp\server_list.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\closure_auto_done\closure_aouto_done.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_ecs\game_registry.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_player\login_event.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_player\login_state.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_player\login_state_concrete.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_player\login_state_machine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\condition_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\mainscene_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\mission_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\scene_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\all_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
