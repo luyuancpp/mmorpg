@@ -165,20 +165,11 @@ def main():
         for filename in listdir(xlsdir):
                 filename = xlsdir + filename
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
-                        filenamemd5 = filename + '.md5'
-                        first = False
-                        if not os.path.exists(filenamemd5):
-                                md5tool.generate_md5_file_for(filename, filenamemd5)
-                                first = True
-                        error = md5tool.check_against_md5_file(filename, filename + '.md5')
-                       
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
                                 hwfilename = sheetname + "_config.h"
                                 cwfilename = sheetname + "_config.cpp"
-                                if error == None  and first == False and os.path.exists(hwfilename) and os.path.exists(cwfilename):
-                                        continue
                                 s =getcpph(workbookdata[sheetname], sheetname)
                                 mywrite(s, hwfilename)
                                 s =getcpp(workbookdata[sheetname], sheetname)
