@@ -6,6 +6,7 @@ import os
 import os.path
 import sys
 import shutil
+import md5tool
 from os import system
 
 def get_file_info_dictionaries(walkdir, protobufdir, cppdir):
