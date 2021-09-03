@@ -17,4 +17,4 @@ def get_file_info_dictionaries(walkdir, protobufdir, cppdir):
             commond = 'protoc  -I=./ -I=%s --cpp_out=%s %s' % (protobufdir, cppdir, each_filename)
             system(commond)
 
-get_file_info_dictionaries("./", "../../../../../third_party/protobuf/src", "../../../protopb/pbc/")
+get_file_info_dictionaries("./", "../../third_party/protobuf/src", "../pbc/")
