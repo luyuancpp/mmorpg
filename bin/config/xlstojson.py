@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+import buildcommon
 import xlrd
 import xlwt
 import json
@@ -82,11 +83,9 @@ def main():
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
-                                output = open(jsondir + sheetname + ".json", "w", encoding="utf-8")
                                 datastring = '{"data":' + json.dumps(workbookdata[sheetname] , sort_keys=True, indent=4,  separators=(',', ": ")) + '}'
                                 datastring = datastring.replace('"[','[');
                                 datastring = datastring.replace("]\"","]");
-                                output.write(datastring)
-                                output.close()
-                       
+                                buildcommon.mywrite(datastring, jsondir + sheetname  + ".json")
+                     
 main()
