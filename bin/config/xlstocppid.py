@@ -9,8 +9,8 @@ import os.path
 from os import listdir
 from os.path import isfile, join
 
-beginrowidx = 7
-jsondir = "cpp/"
+beginrowidx = buildcommon.beginrowidx
+cppdir = "cpp/"
 xlsdir = "xlsx/"
 genfilelist = ["mission"]
 
@@ -42,14 +42,14 @@ def genIdCpp(workbook):
         return workbookdata
 
 def main():
-        if not os.path.exists(jsondir):
-                os.makedirs(jsondir) 
+        if not os.path.exists(cppdir):
+                os.makedirs(cppdir) 
         for filename in listdir(xlsdir):
                 filename = xlsdir + filename
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = genIdCpp(workbook)
                         for sheetname in workbookdata :
-                                buildcommon.mywrite(workbookdata[sheetname], jsondir + sheetname + "_config_id.h")
+                                buildcommon.mywrite(workbookdata[sheetname], cppdir + sheetname + "_config_id.h")
                        
 main()
