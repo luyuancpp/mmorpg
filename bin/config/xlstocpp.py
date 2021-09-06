@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+import buildcommon
 import xlrd
 import xlwt
 import json
@@ -9,7 +10,7 @@ from os import listdir
 from os.path import isfile, join
 
 keyrowidx = 4
-protodir = "cpp/"
+cppdir = "cpp/"
 xlsdir = "xlsx/"
 
 def getColNames(sheet):
@@ -151,14 +152,9 @@ def getallconfig():
         scpp += '}\n'
         return s, scpp
 
-def mywrite(str, filename):
-        outputh = open(protodir  + filename, "w", encoding="utf-8")
-        outputh.write(str)
-        outputh.close()
-
 def main():
-        if not os.path.exists(protodir):
-                os.makedirs(protodir) 
+        if not os.path.exists(cppdir):
+                os.makedirs(cppdir) 
         sheetnames = []
         for filename in listdir(xlsdir):
                 filename = xlsdir + filename
@@ -169,11 +165,11 @@ def main():
                                 hwfilename = sheetname + "_config.h"
                                 cwfilename = sheetname + "_config.cpp"
                                 s =getcpph(workbookdata[sheetname], sheetname)
-                                mywrite(s, hwfilename)
+                                buildcommon.mywrite(s, cppdir + hwfilename)
                                 s =getcpp(workbookdata[sheetname], sheetname)
-                                mywrite(s, cwfilename)
+                                buildcommon.mywrite(s, cppdir + cwfilename)
         hs, cpps = getallconfig()
-        mywrite(hs, "all_config.h")
-        mywrite(cpps, "all_config.cpp")
+        buildcommon.mywrite(hs, cppdir + "all_config.h")
+        buildcommon.mywrite(cpps, cppdir + "all_config.cpp")
                        
 main()
