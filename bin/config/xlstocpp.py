@@ -37,7 +37,6 @@ def getSheetData(sheet, columnNames):
         row = sheet.row(0)
         rowData = getRowData(row, columnNames)
         sheetData.append(rowData)
-
         return sheetData
 
 def getWorkBookData(workbook):
@@ -48,7 +47,6 @@ def getWorkBookData(workbook):
                 columnNames = getColNames(worksheet)
                 sheetdata = getSheetData(worksheet, columnNames)
                 workbookdata[worksheet.name] = sheetdata
-
         return workbookdata
 
 def getcpph(datastring, sheetname):
