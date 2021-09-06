@@ -180,6 +180,7 @@
     <ClInclude Include="src\game_config\condition_config.h" />
     <ClInclude Include="src\game_config\mainscene_config.h" />
     <ClInclude Include="src\game_config\mission_config.h" />
+    <ClInclude Include="src\game_config\mission_config_id.h" />
     <ClInclude Include="src\game_config\scene_config.h" />
     <ClInclude Include="src\game_logic\comp\gateway.hpp" />
     <ClInclude Include="src\game_logic\comp\player.hpp" />
