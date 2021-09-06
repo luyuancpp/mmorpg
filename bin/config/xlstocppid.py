@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+import buildcommon
 import xlrd
 import xlwt
 import json
@@ -40,11 +41,6 @@ def genIdCpp(workbook):
                 workbookdata[worksheet.name] = rowData
         return workbookdata
 
-def mywrite(str, filename):
-        outputh = open(jsondir  + filename, "w", encoding="utf-8")
-        outputh.write(str)
-        outputh.close()
-
 def main():
         if not os.path.exists(jsondir):
                 os.makedirs(jsondir) 
@@ -54,6 +50,6 @@ def main():
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = genIdCpp(workbook)
                         for sheetname in workbookdata :
-                                mywrite(workbookdata[sheetname], sheetname + "_config_id.h")
+                                buildcommon.mywrite(workbookdata[sheetname], jsondir + sheetname + "_config_id.h")
                        
 main()
