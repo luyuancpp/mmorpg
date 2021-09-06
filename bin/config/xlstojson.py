@@ -73,13 +73,11 @@ def main():
                 filename = xlsdir + filename
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
                         filenamemd5 = filename + '.md5'
-                        first = False
                         if not os.path.exists(filenamemd5):
                                 md5tool.generate_md5_file_for(filename, filenamemd5)
-                                first = True
-                        error = md5tool.check_against_md5_file(filename, filename + '.md5')
-                        if error == None and first == False:
-                                continue
+                                error = md5tool.check_against_md5_file(filename, filename + '.md5')
+                                if error == None:
+                                        continue
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
