@@ -107,7 +107,7 @@ namespace common
         SceneIds scenes_;
     };
 
-    struct WorldScene {};
+    struct MainScene {};
     struct RoomScene {};
 
     struct GameServerStatusNormal{};//game server Õý³£×´Ì¬
@@ -138,6 +138,11 @@ namespace common
     };
 
     using GameServerDataPtr = std::shared_ptr<GameServerData>;
+
+    struct MainSceneServerSize
+    {
+        uint32_t server_size_{ 0 };
+    };
 
 }//namespace common
 

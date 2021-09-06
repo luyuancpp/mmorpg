@@ -278,5 +278,8 @@
     <ClInclude Include="src\game_config\all_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\game_config\mission_config_id.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

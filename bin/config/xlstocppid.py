@@ -12,7 +12,7 @@ from os.path import isfile, join
 beginrowidx = buildcommon.beginrowidx
 cppdir = "cpp/"
 xlsdir = "xlsx/"
-genfilelist = ["mission"]
+genfilelist = ["global"]
 
 def genIdStr(sheet):
         nRows = sheet.nrows
