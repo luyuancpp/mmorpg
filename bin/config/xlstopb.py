@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
+import buildcommon
 import xlrd
 import xlwt
 import json
@@ -77,16 +78,13 @@ def main():
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
                         filenamemd5 = filename + '.md5'
                         if not os.path.exists(filenamemd5):
-                                md5tool.generate_md5_file_for(filename, filenamemd5)
-                        error = md5tool.check_against_md5_file(filename, filename + '.md5')
-                        if error == None:
-                                continue
+                                error = md5tool.check_against_md5_file(filename, filename + '.md5')
+                                if error == None:
+                                        continue
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
-                                output = open(protodir + sheetname + "_config.proto", "w", encoding="utf-8")
                                 datastring =getProtoData(workbookdata[sheetname], sheetname)
-                                output.write(datastring)
-                                output.close()
+                                buildcommon.mywrite(datastring, protodir + sheetname + "_config.proto")
                        
 main()
