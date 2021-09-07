@@ -26,7 +26,7 @@ namespace common
     class SceneEntityId
     {
     public:
-        SceneEntityId(entt::entity scene_entity) :scene_entity_(scene_entity) {}
+        SceneEntityId(entt::entity scene_entity) : scene_entity_(scene_entity) {}
         inline void set_scene_entity(entt::entity scene_entity) { scene_entity_ = scene_entity; }
         inline  entt::entity scene_entity()const { return scene_entity_; }
     private:
