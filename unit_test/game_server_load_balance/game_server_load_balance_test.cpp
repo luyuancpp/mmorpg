@@ -38,11 +38,11 @@ TEST(GameServer, MakeScene2Sever )
     MakeGameServerParam param1;
     param1.server_id_ = 1;
 
-    auto server_entity1 = MakeGameServer(reg(), param1);
+    auto server_entity1 = MakeMainSceneGameServer(reg(), param1);
 
     MakeGameServerParam param2;
     param2.server_id_ = 1;
-    auto server_entity2 = MakeGameServer(reg(), param2);
+    auto server_entity2 = MakeMainSceneGameServer(reg(), param2);
 
     MakeScene2GameServerParam server1_param;
     MakeScene2GameServerParam server2_param;
@@ -88,7 +88,7 @@ TEST(GameServer, PutScene2Sever)
     MakeSceneParam cparam;
     auto scene_entity = MakeMainScene(reg(), cparam);
 
-    auto server_entity1 = MakeGameServer(reg(), param1);
+    auto server_entity1 = MakeMainSceneGameServer(reg(), param1);
         
     PutScene2GameServerParam put_param;
     put_param.scene_entity_ = scene_entity;
@@ -114,7 +114,7 @@ TEST(GameServer, DestroyScene)
     MakeSceneParam cparam;
     auto scene_entity = MakeMainScene(reg(), cparam);
 
-    auto server_entity1 = MakeGameServer(reg(), param1);
+    auto server_entity1 = MakeMainSceneGameServer(reg(), param1);
 
     PutScene2GameServerParam put_param;
     put_param.scene_entity_ = scene_entity;
@@ -147,11 +147,11 @@ TEST(GameServer, DestroySever)
     MakeGameServerParam param1;
     param1.server_id_ = 1;
 
-    auto server_entity1 = MakeGameServer(reg(), param1);
+    auto server_entity1 = MakeMainSceneGameServer(reg(), param1);
 
     MakeGameServerParam param2;
     param2.server_id_ = 2;
-    auto server_entity2 = MakeGameServer(reg(), param2);
+    auto server_entity2 = MakeMainSceneGameServer(reg(), param2);
 
     auto& server_data1 = *reg().get<common::GameServerDataPtr>(server_entity1);
     
@@ -216,11 +216,11 @@ TEST(GameServer, ServerScene2Sever)
     MakeGameServerParam cgs1;
     cgs1.server_id_ = 1;
 
-    auto server_entity1 = MakeGameServer(reg(), cgs1);
+    auto server_entity1 = MakeMainSceneGameServer(reg(), cgs1);
 
     MakeGameServerParam cgs2;
     cgs2.server_id_ = 2;
-    auto server_entity2 = MakeGameServer(reg(), cgs2);
+    auto server_entity2 = MakeMainSceneGameServer(reg(), cgs2);
 
    
     auto& server_data2 = *reg().get<common::GameServerDataPtr>(server_entity2);
@@ -280,11 +280,11 @@ TEST(GameServer, PlayerLeaveEnterScene)
     MakeGameServerParam cgs1;
     cgs1.server_id_ = 1;
 
-    auto server_entity1 = MakeGameServer(reg(), cgs1);
+    auto server_entity1 = MakeMainSceneGameServer(reg(), cgs1);
 
     MakeGameServerParam cgs2;
     cgs2.server_id_ = 2;
-    auto server_entity2 = MakeGameServer(reg(), cgs2);
+    auto server_entity2 = MakeMainSceneGameServer(reg(), cgs2);
 
     MakeScene2GameServerParam server1_param;
     MakeScene2GameServerParam server2_param;
@@ -378,7 +378,7 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.server_id_ = i;
-        server_entities.emplace(MakeGameServer(reg(), cgs1));
+        server_entities.emplace(MakeMainSceneGameServer(reg(), cgs1));
     }
 
     MakeScene2GameServerParam make_server_scene_param;
@@ -438,11 +438,11 @@ TEST(GameServer, CompelChangeScene)
     MakeGameServerParam cgs1;
     cgs1.server_id_ = 1;
 
-    auto server_entity1 = MakeGameServer(reg(), cgs1);
+    auto server_entity1 = MakeMainSceneGameServer(reg(), cgs1);
 
     MakeGameServerParam cgs2;
     cgs2.server_id_ = 2;
-    auto server_entity2 = MakeGameServer(reg(), cgs2);
+    auto server_entity2 = MakeMainSceneGameServer(reg(), cgs2);
 
     MakeScene2GameServerParam server1_param;
     MakeScene2GameServerParam server2_param;
@@ -504,7 +504,7 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.server_id_ = i;
-        server_entities.emplace(MakeGameServer(reg(), cgs1));
+        server_entities.emplace(MakeMainSceneGameServer(reg(), cgs1));
     }
 
     MakeScene2GameServerParam make_server_scene_param;
@@ -572,7 +572,7 @@ TEST(GameServer, CrashMovePlayer2NewServer)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.server_id_ = i;
-        server_entities.emplace(MakeGameServer(reg(), cgs1));
+        server_entities.emplace(MakeMainSceneGameServer(reg(), cgs1));
     }
 
     MakeScene2GameServerParam make_server_scene_param;
@@ -651,7 +651,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.server_id_ = i;
-        server_entities.emplace(MakeGameServer(reg(), cgs1));
+        server_entities.emplace(MakeMainSceneGameServer(reg(), cgs1));
     }
 
     MakeScene2GameServerParam make_server_scene_param;
@@ -774,7 +774,7 @@ TEST(GameServer, ServerEnterLeavePressure)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.server_id_ = i;
-        server_entities.emplace(MakeGameServer(reg(), cgs1));
+        server_entities.emplace(MakeMainSceneGameServer(reg(), cgs1));
     }
 
     MakeScene2GameServerParam make_server_scene_param;

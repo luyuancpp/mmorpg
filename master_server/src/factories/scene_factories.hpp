@@ -56,7 +56,7 @@ void MakeScenes();
 
 entt::entity MakeMainScene(entt::registry& reg, const MakeSceneParam& param);
 
-entt::entity MakeGameServer(entt::registry& reg, const MakeGameServerParam& param);
+entt::entity MakeMainSceneGameServer(entt::registry& reg, const MakeGameServerParam& param);
 
 entt::entity MakeScene2GameServer(entt::registry& reg, const MakeScene2GameServerParam& param);
 

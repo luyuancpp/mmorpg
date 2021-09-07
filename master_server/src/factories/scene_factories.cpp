@@ -51,12 +51,13 @@ namespace master
         return e;
     }
 
-    entt::entity MakeGameServer(entt::registry& reg,  const MakeGameServerParam& param)
+    entt::entity MakeMainSceneGameServer(entt::registry& reg,  const MakeGameServerParam& param)
     {
         auto e = reg.create();
         common::GameServerDataPtr p_server_data = std::make_shared<common::GameServerData>();
         p_server_data->set_server_id(param.server_id_);
         p_server_data->set_server_entity(e);
+        reg.emplace<common::MainScene>(e);
         reg.emplace<common::GameServerDataPtr>(e, p_server_data);
         reg.emplace<common::GameServerStatusNormal>(e);
         reg.emplace<common::GameNoPressure>(e);
