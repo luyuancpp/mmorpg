@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     LOG_INFO << "pid = " << getpid();
     if (argc > 0)
     {
-        int nClients = 1;
+        int32_t nClients = 1;
 
         if (argc > 1)
         {

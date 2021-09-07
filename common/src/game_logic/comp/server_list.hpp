@@ -9,7 +9,6 @@
 
 namespace common
 {
-
     using SceneIds = std::unordered_set<entt::entity>;
     using ConfigScenes = std::unordered_map<uint32_t, SceneIds>;
     using PlayerEntities = std::unordered_set<entt::entity>;

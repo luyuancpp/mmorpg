@@ -56,10 +56,10 @@ def getcpph(datastring, sheetname):
         s += "#include <memory>\n"
         s += "#include <unordered_map>\n"
         s += '#include "%s_config.pb.h" \n' % (sheetname)
-        s += 'class %sconfig\n{\npublic:\n' % (sheetname)
+        s += 'class %s_config\n{\npublic:\n' % (sheetname)
         s += '  using rowptr = const %s_row*;\n' % (sheetname)
         s += '  using keydatastype = std::unordered_map<uint32_t, rowptr>;\n'
-        s += '  static %sconfig& GetSingleton(){static %sconfig singleton; return singleton;}\n' % (sheetname,sheetname)
+        s += '  static %s_config& GetSingleton(){static %s_config singleton; return singleton;}\n' % (sheetname,sheetname)
         s += '  const %s_table& all()const{return data_;}\n'% (sheetname)
         s += '  rowptr key_id(uint32_t keyid);\n'
         counter = 0
@@ -83,7 +83,7 @@ def getcpp(datastring, sheetname):
         s += '#include "%s_config.h" \n' % (sheetname)
         s += 'using namespace common;\n' 
         s += 'using namespace std;\n'
-        s += 'void %sconfig::load()\n{\n data_.Clear();\n' % (sheetname)
+        s += 'void %s_config::load()\n{\n data_.Clear();\n' % (sheetname)
         s += ' auto contents = File2String("config/json/%s.json");\n' % (sheetname)
         s += ' google::protobuf::StringPiece sp(contents.data(), contents.size());\n'
         s += ' auto result = google::protobuf::util::JsonStringToMessage(sp, &data_);\n'
@@ -110,13 +110,13 @@ def getcpp(datastring, sheetname):
         s += '}\n'
         
       
-        s += ' const %s_row* %sconfig::key_id(uint32_t keyid)\n{\n' % (sheetname,sheetname)
+        s += ' const %s_row* %s_config::key_id(uint32_t keyid)\n{\n' % (sheetname,sheetname)
         s += '  auto it = key_data_.find(keyid);\n  return it == key_data_.end() ? nullptr : it->second;\n}\n'
 
         counter = 0
         for d in datastring:
                 for v in d.values(): 
-                        s += 'const %s_row* %sconfig::key_%s(uint32_t keyid)const\n{\n' % (sheetname,sheetname,v)
+                        s += 'const %s_row* %s_config::key_%s(uint32_t keyid)const\n{\n' % (sheetname,sheetname,v)
                         s += '  auto it = key_data_%s_.find(keyid);\n  return it == key_data_%s_.end() ? nullptr : it->second;\n}\n'% (counter,counter) 
                         counter += 1
         return s;
@@ -140,7 +140,7 @@ def getallconfig():
                 scpp += '#include "%s_config.h"\n' % (item)               
         scpp += 'void loadallconfig()\n{\n'
         for item in sheetnames :
-                scpp += '%sconfig::GetSingleton().load();\n' % (item)
+                scpp += '%s_config::GetSingleton().load();\n' % (item)
                 #print(item)
         scpp += '}\n'
         return s, scpp

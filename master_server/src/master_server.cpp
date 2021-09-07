@@ -2,6 +2,9 @@
 
 #include "muduo/base/Logging.h"
 
+
+#include "src/game_config/all_config.h"
+
 #include "src/factories/scene_factories.hpp"
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player.hpp"
@@ -31,6 +34,7 @@ void MasterServer::Init()
 {
     common::GameConfig::GetSingleton().Load("game.json");
     common::DeployConfig::GetSingleton().Load("deploy.json");
+    loadallconfig();
     MakeScenes();
     reg().emplace<common::ConnectionPlayerEnitiesMap>(global_entity());
 }

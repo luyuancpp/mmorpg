@@ -1,6 +1,10 @@
 #include "game_server.h"
 
 #include "src/game_config/deploy_json.h"
+
+#include "src/factories/server_global_entity.hpp"
+#include "src/game_logic/enum/server_enum.h"
+#include "src/game_logic/game_registry.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/deploy_variable.h"
 #include "src/server_common/server_type_id.h"
@@ -76,6 +80,7 @@ void GameServer::Register2Master()
         rpc_client->set_port(master_local_addr.port());
         rpc_server->set_ip(server_info_.ip());
         rpc_server->set_port(server_info_.port());
+        request.set_server_type(common::reg().get<common::eServerType>(game::global_entity()));
         request.set_server_id(server_info_.id());
         g2ms_stub_.CallMethod(
             request,

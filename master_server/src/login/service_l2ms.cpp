@@ -38,7 +38,7 @@ namespace l2ms
         gw_request.set_connection_id(connection_id);
 
         GetWeightRoundRobinSceneParam weight_round_robin_scene;
-        weight_round_robin_scene.scene_config_id_ = 0;// has not scene
+        weight_round_robin_scene.scene_config_id_ = 1;// has not scene
         auto scene_entity = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
         response->set_game_server_id(reg().get<GameServerDataPtr>(scene_entity)->server_id());
 
