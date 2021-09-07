@@ -42,7 +42,7 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
     entt::entity scene_entity{ entt::null };
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
-    for (auto e : reg.view<ServerStatus, ServerPressure>())
+    for (auto e : reg.view<ServerStatus, ServerPressure, common::MainScene>())
     {
         auto& scenes = reg.get<common::Scenes>(e);
         if (!scenes.HasSceneConfig(scene_config_id))
