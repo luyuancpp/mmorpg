@@ -10,7 +10,7 @@ using namespace  master;
 using namespace  common;
 
 uint32_t scene_config_size = 50;
-uint32_t per_scene_config_size = 10;
+uint32_t per_scene_config_size = 2;
 
 TEST(GameServer, CreateMainScene)
 {
@@ -27,6 +27,7 @@ TEST(GameServer, CreateMainScene)
         EXPECT_EQ(c.scene_config_size(i), std::size_t(per_scene_config_size));
     }
     EXPECT_EQ(c.scenes_size(), std::size_t(scene_config_size * per_scene_config_size));
+    EXPECT_EQ(reg().get<common::SceneMap>(scenes_entity()).size(), std::size_t(scene_config_size * per_scene_config_size));
     reg().clear();
 }
 
@@ -73,6 +74,7 @@ TEST(GameServer, MakeScene2Sever )
 
     EXPECT_EQ(1, scenes.scene_config_size(server2_param.scene_config_id_));
     EXPECT_EQ(2, scenes.scenes_size());
+    EXPECT_EQ(reg().get<common::Scenes>(scenes_entity()).scenes_size(), reg().get<common::SceneMap>(scenes_entity()).size());
     reg().clear();
 }
 
@@ -96,6 +98,7 @@ TEST(GameServer, PutScene2Sever)
     auto& scenes = reg().get<common::Scenes>(scenes_entity());
     EXPECT_EQ(1, scenes.scenes_size());
     EXPECT_EQ(1, scenes.scene_config_size(cparam.scene_config_id_));
+    EXPECT_EQ(reg().get<common::Scenes>(scenes_entity()).scenes_size(), reg().get<common::SceneMap>(scenes_entity()).size());
 
     auto& server_scenes = reg().get<common::Scenes>(server_entity1);
     EXPECT_EQ(1, server_scenes.scenes_size());
@@ -121,6 +124,7 @@ TEST(GameServer, DestroyScene)
     auto& scenes = reg().get<common::Scenes>(scenes_entity());
     EXPECT_EQ(1, scenes.scenes_size());
     EXPECT_EQ(1, scenes.scene_config_size(cparam.scene_config_id_));
+    EXPECT_EQ(reg().get<common::Scenes>(scenes_entity()).scenes_size(), reg().get<common::SceneMap>(scenes_entity()).size());
 
     auto& server_scenes = reg().get<common::Scenes>(server_entity1);
     EXPECT_EQ(1, server_scenes.scenes_size());
@@ -131,6 +135,7 @@ TEST(GameServer, DestroyScene)
     EXPECT_TRUE(scenes.scenes_empty());
     EXPECT_TRUE(scenes.scene_config_empty(cparam.scene_config_id_));
     EXPECT_TRUE(server_scenes.scenes_empty());
+    EXPECT_EQ(reg().get<common::Scenes>(scenes_entity()).scenes_size(), reg().get<common::SceneMap>(scenes_entity()).size());
     EXPECT_FALSE(reg().valid(scene_entity));
     reg().clear();
 }
@@ -173,6 +178,7 @@ TEST(GameServer, DestroySever)
 
     auto& scenes = reg().get<common::Scenes>(scenes_entity());
     EXPECT_EQ(2, scenes.scenes_size());
+    EXPECT_EQ(reg().get<common::Scenes>(scenes_entity()).scenes_size(), reg().get<common::SceneMap>(scenes_entity()).size());
 
     DestroyServerParam destroy_server_param;
     destroy_server_param.server_entity_ = server_entity1;
@@ -199,6 +205,7 @@ TEST(GameServer, DestroySever)
 
     EXPECT_EQ(0, scenes.scene_config_size(server1_param.scene_config_id_));
     EXPECT_EQ(0, scenes.scene_config_size(server2_param.scene_config_id_));
+    EXPECT_EQ(reg().get<common::Scenes>(scenes_entity()).scenes_size(), reg().get<common::SceneMap>(scenes_entity()).size());
     reg().clear();
 }
 
@@ -241,6 +248,7 @@ TEST(GameServer, ServerScene2Sever)
 
     auto& scenes = reg().get<common::Scenes>(scenes_entity());
     EXPECT_EQ(2, scenes.scenes_size());
+    EXPECT_EQ(reg().get<common::Scenes>(scenes_entity()).scenes_size(), reg().get<common::SceneMap>(scenes_entity()).size());
 
     EXPECT_EQ(reg().get<common::GameServerDataPtr>(scene_id1)->server_id(), cgs1.server_id_);
     EXPECT_EQ(reg().get<common::GameServerDataPtr>(scene_id2)->server_id(), cgs2.server_id_);

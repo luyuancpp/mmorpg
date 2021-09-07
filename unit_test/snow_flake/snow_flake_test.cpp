@@ -12,7 +12,7 @@
 using game_guid_vetcor = std::vector<common::GameGuid>;
 using game_guid_set = std::unordered_set<common::GameGuid>;
 
-common::SnowFlake sf;
+common::SnowFlakeThreadSafe sf;
 game_guid_vetcor first_v;
 game_guid_vetcor second_v;
 game_guid_vetcor third_v;
@@ -49,21 +49,21 @@ void PutVectorInToSet(game_guid_set& s, game_guid_vetcor& v)
     }
 }
 
-TEST(TestSnowFlake, JustGenerateTime)
+TEST(TestSnowFlakeThreadSafe, JustGenerateTime)
 {
     common::GameGuid id = sf.Generate();
 }
 
-TEST(TestSnowFlake, GenerateTime)
+TEST(TestSnowFlakeThreadSafe, GenerateTime)
 {
-    common::SnowFlake sf;
+    common::SnowFlakeThreadSafe sf;
     time_t t = sf.GetNow();
     std::cout << t << std::endl;
     common::GameGuid id = sf.Generate();
     std::cout << id << std::endl;
 }
 
-TEST(TestSnowFlake, Generate)
+TEST(TestSnowFlakeThreadSafe, Generate)
 {
     game_guid_set guid_set;
     first_v.clear();
