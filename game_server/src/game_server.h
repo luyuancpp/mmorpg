@@ -12,12 +12,12 @@
 
 #include "g2ms.pb.h"
 
-
 namespace game
 {
 class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
 {
 public:
+
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     using StubG2ms = common::RpcStub<g2ms::G2msService_Stub>;

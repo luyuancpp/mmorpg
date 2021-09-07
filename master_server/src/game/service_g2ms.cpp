@@ -3,10 +3,10 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
 
-#include "src/game_config/global_config_id.h"
-#include "src/game_config/global_config.h"
+#include "src/game_config/global_variable_config.h"
 #include "src/game_config/mainscene_config.h"
 
+#include "src/game_logic/enum/server_enum.h"
 #include "src/factories/scene_factories.hpp"
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player.hpp"
@@ -42,14 +42,17 @@ namespace g2ms
             reg().emplace<common::RpcServerConnection>(server_entity, common::RpcServerConnection{ c.conn_ });
             reg().emplace<InetAddress>(server_entity, rpc_server_peer_addr);
 
-            auto& config_all = mainsceneconfig::GetSingleton().all();
-            MakeScene2GameServerParam create_scene_param;
-            create_scene_param.server_entity_ = server_entity;
-            for (int32_t i = 0; i < config_all.data_size(); ++i)
+            if (request->server_type() == common::kMainServer)
             {
-                create_scene_param.scene_config_id_ = config_all.data(i).id();
-                MakeScene2GameServer(reg(), create_scene_param);
-            }
+                auto& config_all = mainscene_config::GetSingleton().all();
+                MakeScene2GameServerParam create_scene_param;
+                create_scene_param.server_entity_ = server_entity;
+                for (int32_t i = 0; i < config_all.data_size(); ++i)
+                {
+                    create_scene_param.scene_config_id_ = config_all.data(i).id();
+                    MakeScene2GameServer(reg(), create_scene_param);
+                }
+            }           
             g_master_server->GatewayConnectGame(server_entity);
             LOG_INFO << "game connected " << request->server_id();
             break;

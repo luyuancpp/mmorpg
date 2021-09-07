@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClCompile Include="src\game_config\all_config.cpp" />
     <ClCompile Include="src\game_config\condition_config.cpp" />
+    <ClCompile Include="src\game_config\global_variable_config.cpp" />
     <ClCompile Include="src\game_config\mainscene_config.cpp" />
     <ClCompile Include="src\game_config\mission_config.cpp" />
     <ClCompile Include="src\game_config\scene_config.cpp" />
@@ -178,9 +179,10 @@
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
     <ClInclude Include="src\game_config\all_config.h" />
     <ClInclude Include="src\game_config\condition_config.h" />
+    <ClInclude Include="src\game_config\global_variable_config.h" />
+    <ClInclude Include="src\game_config\global_variable_config_id.h" />
     <ClInclude Include="src\game_config\mainscene_config.h" />
     <ClInclude Include="src\game_config\mission_config.h" />
-    <ClInclude Include="src\game_config\mission_config_id.h" />
     <ClInclude Include="src\game_config\scene_config.h" />
     <ClInclude Include="src\game_logic\comp\gateway.hpp" />
     <ClInclude Include="src\game_logic\comp\player.hpp" />
