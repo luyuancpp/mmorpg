@@ -110,6 +110,7 @@ namespace common
     struct MainScene {};
     struct RoomScene {};
 
+    struct MainSceneServer {};
     struct GameServerStatusNormal{};//game server Õý³£×´Ì¬
     struct GameServerMainTain{};//game server Î¬»¤×´Ì¬
     struct GameServerCrash{};//±ÀÀ£×´Ì¬

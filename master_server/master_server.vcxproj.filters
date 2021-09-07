@@ -42,9 +42,6 @@
     <ClCompile Include="src\factories\server_global_entity.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene\main_scene.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h">
@@ -71,7 +68,7 @@
     <ClInclude Include="src\factories\server_global_entity.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\scene\main_scene.h">
+    <ClInclude Include="src\factories\scene_factories.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

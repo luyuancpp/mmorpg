@@ -56,6 +56,9 @@ namespace master
         void OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn);
         void OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn);        
 
+        void InitConfig();
+        void InitGlobalEntities();
+
         muduo::net::EventLoop* loop_{ nullptr };
         RedisClientPtr redis_;
         RpcServerPtr server_;
