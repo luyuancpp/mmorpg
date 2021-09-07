@@ -1,6 +1,7 @@
 #include "game_server.h"
 
 #include "src/game_config/deploy_json.h"
+#include "src/game_config/all_config.h"
 
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/enum/server_enum.h"
@@ -21,10 +22,11 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 {
 }
 
-void GameServer::LoadConfig()
+void GameServer::Init()
 {
     common::GameConfig::GetSingleton().Load("game.json");
     common::DeployConfig::GetSingleton().Load("deploy.json");
+    loadallconfig();
 }
 
 void GameServer::InitNetwork()

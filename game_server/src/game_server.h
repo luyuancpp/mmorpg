@@ -24,7 +24,7 @@ public:
 
     GameServer(muduo::net::EventLoop* loop);
 
-    void LoadConfig();
+    void Init();
 
     void InitNetwork();
 
