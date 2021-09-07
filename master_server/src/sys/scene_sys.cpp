@@ -39,10 +39,9 @@ template<typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
     auto scene_config_id = param.scene_config_id_;
-    entt::entity scene_entity{ entt::null };
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
-    for (auto e : reg.view<ServerStatus, ServerPressure, common::MainScene>())
+    for (auto e : reg.view<ServerStatus, ServerPressure, common::MainSceneServer>())
     {
         auto& scenes = reg.get<common::Scenes>(e);
         if (!scenes.HasSceneConfig(scene_config_id))
@@ -58,6 +57,7 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
         server_entity = e;
         min_player_size = server_player_size;   
     }
+    entt::entity scene_entity{ entt::null };
     if (entt::null == server_entity)
     {
         return scene_entity;

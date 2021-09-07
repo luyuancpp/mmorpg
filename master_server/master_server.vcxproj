@@ -163,6 +163,7 @@
     <ClCompile Include="src\sys\scene_sys.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\factories\scene_factories.hpp" />
     <ClInclude Include="src\factories\server_global_entity.hpp" />
     <ClInclude Include="src\game\service_g2ms.h" />
     <ClInclude Include="src\gateway\service_gw2ms.h" />

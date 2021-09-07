@@ -32,11 +32,8 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
 
 void MasterServer::Init()
 {
-    common::GameConfig::GetSingleton().Load("game.json");
-    common::DeployConfig::GetSingleton().Load("deploy.json");
-    loadallconfig();
-    MakeScenes();
-    reg().emplace<common::ConnectionPlayerEnitiesMap>(global_entity());
+    InitConfig();
+    InitGlobalEntities();
 }
 
 void MasterServer::ConnectDeploy()
@@ -139,6 +136,20 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
         reg().destroy(e);
         break;
     }
+}
+
+void MasterServer::InitConfig()
+{
+    common::GameConfig::GetSingleton().Load("game.json");
+    common::DeployConfig::GetSingleton().Load("deploy.json");
+    loadallconfig();
+}
+
+void MasterServer::InitGlobalEntities()
+{
+    MakeScenes();
+    global_entity() = reg().create();
+    reg().emplace<common::ConnectionPlayerEnitiesMap>(global_entity());
 }
 
 }//namespace master
