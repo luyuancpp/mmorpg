@@ -38,13 +38,7 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
 template<typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
-    auto& scene_map = reg.get<common::Scenes>(scenes_entity());
     auto scene_config_id = param.scene_config_id_;
-    if (!scene_map.HasSceneConfig(scene_config_id))
-    {
-        return entt::null;
-    }
-
     entt::entity scene_entity{ entt::null };
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
