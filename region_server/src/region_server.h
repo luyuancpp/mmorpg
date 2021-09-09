@@ -5,6 +5,7 @@
 
 #include "src/event/event.h"
 #include "src/server_common/deploy_rpcclient.h"
+#include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_server.h"
 
 namespace region
@@ -19,6 +20,11 @@ public:
     void Init();
 
     void ConnectDeploy();
+
+    using RegionInfoRpcClosure = common::RpcClosure<deploy::RegionInfoRequest,
+        deploy::RegionInfoResponse>;
+    using RegionInfoRpcRpcRC = std::shared_ptr<RegionInfoRpcClosure>;
+    void StartServer(RegionInfoRpcRpcRC cp);
 
     void receive(const common::RpcClientConnectionES& es);
     void receive(const common::ServerConnectionES& es);

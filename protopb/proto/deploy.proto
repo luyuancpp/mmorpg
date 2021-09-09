@@ -30,7 +30,19 @@ message StartGameServerResponse
   uint32 error_no = 2;
 }
 
+message RegionInfoRequest
+{
+  uint32 region_id = 1;
+}
+
+message RegionInfoResponse
+{
+  repeated group_server_db info = 1;
+  repeated group_server_db redis_info = 2;
+}
+
 service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
   rpc StartGameServer (StartGameServerRequest) returns (StartGameServerResponse);
+  rpc StartRegionServer(RegionInfoRequest) returns (RegionInfoResponse);
 }

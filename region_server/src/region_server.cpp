@@ -28,8 +28,29 @@ namespace region
         deploy_rpc_client_->connect();
     }
 
+    void RegionServer::StartServer(RegionInfoRpcRpcRC cp)
+    {
+
+    }
+
     void RegionServer::receive(const common::RpcClientConnectionES& es)
     {
+        if (!es.conn_->connected())
+        {
+            return;
+        }
+        // started 
+        if (nullptr != server_)
+        {
+            return;
+        }
+        RegionInfoRpcRpcRC cp(std::make_shared<RegionInfoRpcClosure>());
+        cp->s_reqst_.set_region_id(common::GameConfig::GetSingleton().config_info().region_id());
+        deploy_stub_.CallMethod(
+            &RegionServer::StartServer,
+            cp,
+            this,
+            &deploy::DeployService_Stub::StartRegionServer);
     }
 
     void RegionServer::receive(const common::ServerConnectionES& es)
