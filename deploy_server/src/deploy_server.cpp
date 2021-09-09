@@ -96,6 +96,7 @@ namespace deploy
         }
         auto& connetion_param = common::DeployConfig::GetSingleton().connetion_param();
         auto& nomoral_ip = common::DeployConfig::GetSingleton().deploy_param().ip();
+
         group_server_db sd_db;
         sd_db.set_ip(nomoral_ip);
         sd_db.set_db_host(connetion_param.db_host());
@@ -103,9 +104,14 @@ namespace deploy
         sd_db.set_db_password(connetion_param.db_password());
         sd_db.set_db_port(3306);
         sd_db.set_db_dbname("game");
+        
 
         group_server_db sd_nodb;
         sd_nodb.set_ip(nomoral_ip);
+
+        uint32_t region_id = 0;
+        sd_db.set_region_id(++region_id);
+        sd_nodb.set_region_id(region_id);
 
         group_server_db sd_redis;
         sd_redis.set_ip(redis_ip_);
@@ -122,10 +128,18 @@ namespace deploy
             database_->SaveOne(sd_nodb);
         }
 
+        uint32_t region_size = 0;
+        
         for (uint32_t i = kGroupBegin; i < kLogicBegin; ++i)
         {
             if (i % common::kServerSize == common::kServerDatabase)
             {
+                ++region_size;
+                if (region_size % 10 == 0)
+                {
+                    sd_db.set_region_id(++region_id);
+                    sd_nodb.set_region_id(region_id);
+                }
                 sd_db.set_port(i + kServerBeginPort);
                 database_->SaveOne(sd_db);
             }
@@ -136,5 +150,4 @@ namespace deploy
             }
         }
     }
-
 }//namespace deploy
