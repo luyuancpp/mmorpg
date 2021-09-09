@@ -56,6 +56,7 @@ namespace g2ms
             else
             {
                 reg().remove<common::MainSceneServer>(server_entity);
+                reg().remove<common::RoomSceneServer>(server_entity);                
             }
             g_master_server->GatewayConnectGame(server_entity);
             LOG_INFO << "game connected " << request->server_id();

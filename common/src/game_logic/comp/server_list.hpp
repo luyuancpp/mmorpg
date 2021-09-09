@@ -111,6 +111,8 @@ namespace common
     struct RoomScene {};
 
     struct MainSceneServer {};
+    struct RoomSceneServer {};
+
     struct GameServerStatusNormal{};//game server Õý³£×´Ì¬
     struct GameServerMainTain{};//game server Î¬»¤×´Ì¬
     struct GameServerCrash{};//±ÀÀ£×´Ì¬

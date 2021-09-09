@@ -58,6 +58,8 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param);
 
 entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param);
 
+entt::entity GetWeightRoundRobinRoomScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param);
+
 void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
 
 void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param);

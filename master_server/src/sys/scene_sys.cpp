@@ -35,13 +35,13 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
     (*p_server_data)->OnPlayerLeave();
 }
 
-template<typename ServerStatus, typename ServerPressure>
+template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
     auto scene_config_id = param.scene_config_id_;
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
-    for (auto e : reg.view<ServerStatus, ServerPressure, common::MainSceneServer>())
+    for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
     {
         auto& scenes = reg.get<common::Scenes>(e);
         if (!scenes.HasSceneConfig(scene_config_id))
@@ -79,12 +79,22 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
 
 entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
-    auto scene_entity = GetWeightRoundRobinMainSceneT<common::GameServerStatusNormal, common::GameNoPressure>(reg, param);
+    auto scene_entity = GetWeightRoundRobinMainSceneT<common::MainSceneServer, common::GameServerStatusNormal, common::GameNoPressure>(reg, param);
     if (entt::null != scene_entity)
     {
         return scene_entity;
     }
-    return GetWeightRoundRobinMainSceneT<common::GameServerStatusNormal, common::GamePressure>(reg, param);;
+    return GetWeightRoundRobinMainSceneT<common::MainSceneServer, common::GameServerStatusNormal, common::GamePressure>(reg, param);
+}
+
+entt::entity GetWeightRoundRobinRoomScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+{
+    auto scene_entity = GetWeightRoundRobinMainSceneT<common::RoomSceneServer, common::GameServerStatusNormal, common::GameNoPressure>(reg, param);
+    if (entt::null != scene_entity)
+    {
+        return scene_entity;
+    }
+    return GetWeightRoundRobinMainSceneT<common::RoomSceneServer, common::GameServerStatusNormal, common::GamePressure>(reg, param);
 }
 
 void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
