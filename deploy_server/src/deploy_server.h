@@ -39,7 +39,6 @@ namespace deploy
         void receive(const common::ServerConnectionES& es);
     private:
         void InitGroupServerDb();        
-        
 
         muduo::net::RpcServer server_;
         MysqlClientPtr database_;
