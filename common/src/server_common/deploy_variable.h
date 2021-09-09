@@ -8,6 +8,8 @@
 namespace deploy
 {
     static const uint32_t kRedisPort = 6379;
+    static const uint32_t kRegionServerBeginPort = 8000;
+    static const uint32_t kServerBeginPort = 10000;
     static const uint32_t kGroup = 500;
     static const uint32_t kGroupServerSize = common::kServerMax - common::kServerDatabase;
     static const uint32_t kGroupRedis = kGroup;
