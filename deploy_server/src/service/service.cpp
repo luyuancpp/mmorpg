@@ -18,13 +18,17 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        uint32_t server_begin_id = (request->group() - 1) * kServerGroupSize + 1;//begin form one
-        uint32_t server_end_id = server_begin_id + kServerGroupSize;
+        uint32_t group_id = request->group() - 1;
+        uint32_t server_begin_id = group_id * kServerSize + kGroupBegin + 1;//begin form one
+        uint32_t server_end_id = server_begin_id + kServerSize;
         std::string where_case = std::to_string(server_begin_id) +  
             " <= id  " +
             " and id < " +
             std::to_string(server_end_id);
         database_->LoadAll<::group_server_db>(*response, where_case);
+
+        where_case = std::to_string(group_id + 1) + " = id  ";
+        database_->LoadOne(*response->mutable_redis_info(), where_case);
     }
 
     void DeployServiceImpl::StartGameServer(::google::protobuf::RpcController* controller, 
@@ -44,7 +48,7 @@ namespace deploy
         server_info.set_ip(request->my_info().ip());
         uint32_t server_id = g_deploy_server->CreateGameServerId();
         LOG_INFO << "new server id " << server_id;
-        server_info.set_id(deploy::kLogicBeginId + server_id);
+        server_info.set_id(deploy::kLogicBegin + server_id);
         server_info.set_port(deploy::kLogicBeginPort + server_id);
 
         g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), server_id);

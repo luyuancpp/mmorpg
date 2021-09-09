@@ -111,21 +111,27 @@ namespace deploy
         sd_redis.set_ip(redis_ip_);
         sd_redis.set_port(kRedisPort);
 
-        for (uint32_t i = 0; i < kTotalSize; ++i)
+        for (uint32_t i = 0; i < kGroupRedis; ++i)
         {
-            if (i % common::kServerGroupSize == 0)
+            database_->SaveOne(sd_redis);
+        }
+
+        for (uint32_t i = kGroupRedis; i < kGroupBegin; ++i)
+        {
+            sd_nodb.set_port(i);
+            database_->SaveOne(sd_nodb);
+        }
+
+        for (uint32_t i = kGroupBegin; i < kLogicBegin; ++i)
+        {
+            if (i % common::kServerSize == common::kServerDatabase)
             {
-                database_->SaveOne(sd_redis);
-                continue;
-            }
-            sd_db.set_port(kBeginPort + i);
-            sd_nodb.set_port(sd_db.port());
-            if (i % common::kServerGroupSize == common::kServerDatabase)
-            {
+                sd_db.set_port(i);
                 database_->SaveOne(sd_db);
             }
             else
             {
+                sd_nodb.set_port(i);
                 database_->SaveOne(sd_nodb);
             }
         }

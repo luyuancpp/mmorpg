@@ -2,7 +2,7 @@
 	"data": [
 		{
 			"ip": "127.0.0.1",
-			"port": 2004,
+			"port": 2003,
 			"db_host": "127.0.0.1",
 			"db_port": 1000,
 			"db_user": "root",

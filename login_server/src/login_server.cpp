@@ -53,7 +53,7 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     master_rpc_client_->connect();
     master_rpc_client_->subscribe<common::RegisterStubES>(l2ms_login_stub_);
     
-    auto& redisinfo = cp->s_resp_->info(common::kServerRedis);
+    auto& redisinfo = cp->s_resp_->redis_info();
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
  
     auto& myinfo = cp->s_resp_->info(common::kServerLogin);
