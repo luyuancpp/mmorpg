@@ -18,7 +18,7 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        uint32_t group_id = request->group() - 1;
+        uint32_t group_id = request->group();
         uint32_t server_begin_id = group_id * kServerSize + kGroupBegin + 1;//begin form one
         uint32_t server_end_id = server_begin_id + kServerSize;
         std::string where_case = std::to_string(server_begin_id) +  
@@ -55,6 +55,18 @@ namespace deploy
         g_deploy_server->SaveGameServerDb();
         //g_deploy_server->LogReuseInfo();
         response->set_error_no(RET_OK);
+    }
+
+    void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* controller, 
+        const ::deploy::RegionInfoRequest* request,
+        ::deploy::RegionInfoResponse* response,
+        ::google::protobuf::Closure* done)
+    {
+        ClosurePtr cp(done);
+        uint32_t region_id = request->region_id() - 1;
+        uint32_t server_id = region_id * kRegionServerSize + kRegionBegin + 1;//
+        std::string where_case = std::to_string(server_id) + " = id  ";
+        database_->LoadOne(*response->mutable_info(), where_case);
     }
 
 }//namespace deploy

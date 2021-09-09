@@ -105,28 +105,27 @@ namespace deploy
         sd_db.set_db_port(3306);
         sd_db.set_db_dbname("game");
         
-
         group_server_db sd_nodb;
         sd_nodb.set_ip(nomoral_ip);
-
-        uint32_t region_id = 0;
-        sd_db.set_region_id(++region_id);
-        sd_nodb.set_region_id(region_id);
 
         group_server_db sd_redis;
         sd_redis.set_ip(redis_ip_);
         sd_redis.set_port(kRedisPort);
 
-        for (uint32_t i = 0; i < kGroupRedis; ++i)
+        for (uint32_t i = 0; i < kRegionBegin; ++i)
         {
             database_->SaveOne(sd_redis);
         }
 
-        for (uint32_t i = kGroupRedis; i < kGroupBegin; ++i)
+        for (uint32_t i = kRegionBegin; i < kGroupBegin; ++i)
         {
             sd_nodb.set_port(i + kRegionServerBeginPort);
             database_->SaveOne(sd_nodb);
         }
+
+        uint32_t region_id = 0;
+        sd_db.set_region_id(++region_id);
+        sd_nodb.set_region_id(region_id);
 
         uint32_t region_size = 0;
         
