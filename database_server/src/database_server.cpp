@@ -46,8 +46,8 @@ namespace database
 
     void DatabaseServer::StartServer(ServerInfoRpcRC cp)
     {
-        auto& redisinfo = cp->s_resp_->info(common::SERVER_REDIS);
-        auto& myinfo = cp->s_resp_->info(common::SERVER_DATABASE);        
+        auto& redisinfo = cp->s_resp_->info(common::kServerRedis);
+        auto& myinfo = cp->s_resp_->info(common::kServerDatabase);        
         InetAddress listenAddr(myinfo.ip(), myinfo.port());
         redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
         database_->Connect(myinfo);

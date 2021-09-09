@@ -41,22 +41,22 @@ void LoginServer::Start()
 
 void LoginServer::StartServer(ServerInfoRpcRC cp)
 {
-    auto& databaseinfo = cp->s_resp_->info(common::SERVER_DATABASE);
+    auto& databaseinfo = cp->s_resp_->info(common::kServerDatabase);
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
     db_rpc_client_->connect();
     db_rpc_client_->subscribe<common::RegisterStubES>(l2db_login_stub_);
 
-    auto& masterinfo = cp->s_resp_->info(common::SERVER_MASTER);
+    auto& masterinfo = cp->s_resp_->info(common::kServerMaster);
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
     master_rpc_client_->connect();
     master_rpc_client_->subscribe<common::RegisterStubES>(l2ms_login_stub_);
     
-    auto& redisinfo = cp->s_resp_->info(common::SERVER_REDIS);
+    auto& redisinfo = cp->s_resp_->info(common::kServerRedis);
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
  
-    auto& myinfo = cp->s_resp_->info(common::SERVER_LOGIN);
+    auto& myinfo = cp->s_resp_->info(common::kServerLogin);
 
     InetAddress login_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, login_addr);

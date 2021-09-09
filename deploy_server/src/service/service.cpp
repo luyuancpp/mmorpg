@@ -18,8 +18,8 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        uint32_t server_begin_id = (request->group() - 1) * SERVER_ID_GROUP_SIZE + 1;//begin form one
-        uint32_t server_end_id = server_begin_id + SERVER_ID_GROUP_SIZE;
+        uint32_t server_begin_id = (request->group() - 1) * kServerGroupSize + 1;//begin form one
+        uint32_t server_end_id = server_begin_id + kServerGroupSize;
         std::string where_case = std::to_string(server_begin_id) +  
             " <= id  " +
             " and id < " +
