@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{13118878-9993-4729-84b4-86c0197dad06}</ProjectGuid>
-    <RootNamespace>masterserver</RootNamespace>
+    <ProjectGuid>{fddc52cb-40a8-4cc2-9e6c-dc848001c298}</ProjectGuid>
+    <RootNamespace>regionserver</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -72,8 +72,6 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>../bin/</OutDir>
-    <IntDir>../output/</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -82,7 +80,6 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>../bin/</OutDir>
     <IntDir>../output/$(ProjectName)/</IntDir>
-    <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -97,7 +94,6 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../bin/</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -122,11 +118,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../protopb/pbc/;../third_party/redis/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <DisableSpecificWarnings>4200</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../protopb/pbc/;../third_party/redis/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,25 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\factories\scene_factories.cpp" />
-    <ClCompile Include="src\factories\server_global_entity.cpp" />
-    <ClCompile Include="src\game\service_g2ms.cpp" />
-    <ClCompile Include="src\gateway\service_gw2ms.cpp" />
-    <ClCompile Include="src\master_server.cpp" />
-    <ClCompile Include="src\login\service_l2ms.cpp" />
-    <ClCompile Include="src\master_player\master_player_list.cpp" />
-    <ClCompile Include="src\sys\scene_sys.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\factories\scene_factories.hpp" />
-    <ClInclude Include="src\factories\server_global_entity.hpp" />
-    <ClInclude Include="src\game\service_g2ms.h" />
-    <ClInclude Include="src\gateway\service_gw2ms.h" />
-    <ClInclude Include="src\master_server.h" />
-    <ClInclude Include="src\login\service_l2ms.h" />
-    <ClInclude Include="src\master_player\master_player_list.h" />
-    <ClInclude Include="src\master_registry\master_registry.h" />
-    <ClInclude Include="src\sys\scene_sys.hpp" />
+    <ClCompile Include="src\region_server.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

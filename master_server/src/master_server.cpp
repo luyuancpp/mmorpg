@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-
+#include "src/game_config/deploy_json.h"
 #include "src/game_config/all_config.h"
 
 #include "src/factories/scene_factories.hpp"
@@ -10,7 +10,6 @@
 #include "src/game_logic/comp/player.hpp"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/server_type_id.h"
-#include "src/game_config/deploy_json.h"
 #include "src/game_logic/game_registry.h"
 
 #include "ms2g.pb.h"
