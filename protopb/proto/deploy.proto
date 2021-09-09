@@ -37,8 +37,7 @@ message RegionInfoRequest
 
 message RegionInfoResponse
 {
-  repeated group_server_db info = 1;
-  repeated group_server_db redis_info = 2;
+  group_server_db info = 1;
 }
 
 service DeployService {

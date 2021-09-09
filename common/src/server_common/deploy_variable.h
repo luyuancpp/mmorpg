@@ -12,8 +12,8 @@ namespace deploy
     static const uint32_t kServerBeginPort = 10000;
     static const uint32_t kGroup = 500;
     static const uint32_t kGroupServerSize = common::kServerSize - common::kServerDatabase;
-    static const uint32_t kGroupRedis = kGroup;
-    static const uint32_t kGroupBegin = kGroupRedis + kGroup;
+    static const uint32_t kRegionBegin = kGroup;
+    static const uint32_t kGroupBegin = kRegionBegin + kGroup;
     static const uint32_t kTotalGroupSize = kGroup * kGroupServerSize;
     static const uint32_t kLogicBegin = kGroupBegin + kTotalGroupSize;
     static const uint32_t kLogicBeginPort = kLogicBegin ;

@@ -1,6 +1,11 @@
 ﻿#include "region_server.h"
 
+#include "muduo/base/Logging.h"
+
+#include "src/config/region_config.h"
 #include "src/game_config/deploy_json.h"
+
+#include "src/server_common/server_type_id.h"
 
 region::RegionServer* g_region_server = nullptr;
 
@@ -14,7 +19,7 @@ namespace region
 
     void RegionServer::Init()
     {
-        common::GameConfig::GetSingleton().Load("game.json");
+        RegionConfig::GetSingleton().Load("region.json");
         common::DeployConfig::GetSingleton().Load("deploy.json");
     }
 
@@ -30,7 +35,12 @@ namespace region
 
     void RegionServer::StartServer(RegionInfoRpcRpcRC cp)
     {
-
+        auto& myinfo = cp->s_resp_->info();
+        InetAddress master_addr(myinfo.ip(), myinfo.port());
+        server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
+        server_->subscribe<common::ServerConnectionES>(*this);
+        //LOG_INFO << myinfo.DebugString().c_str();
+        server_->start();
     }
 
     void RegionServer::receive(const common::RpcClientConnectionES& es)
@@ -45,7 +55,7 @@ namespace region
             return;
         }
         RegionInfoRpcRpcRC cp(std::make_shared<RegionInfoRpcClosure>());
-        cp->s_reqst_.set_region_id(common::GameConfig::GetSingleton().config_info().region_id());
+        cp->s_reqst_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
         deploy_stub_.CallMethod(
             &RegionServer::StartServer,
             cp,

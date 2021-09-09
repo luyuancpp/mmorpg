@@ -29,6 +29,11 @@ namespace deploy
             ::deploy::StartGameServerResponse* response,
             ::google::protobuf::Closure* done)override;
 
+        virtual void StartRegionServer(::google::protobuf::RpcController* controller,
+            const ::deploy::RegionInfoRequest* request,
+            ::deploy::RegionInfoResponse* response,
+            ::google::protobuf::Closure* done)override;
+
     private:
         MysqlClientPtr database_;
         GameServerMap logic_server_map_;

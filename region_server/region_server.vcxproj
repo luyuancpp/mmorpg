@@ -146,7 +146,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\config\region_config.cpp" />
     <ClCompile Include="src\region_server.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\config\region_config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
