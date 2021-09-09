@@ -58,6 +58,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "deploy_server", "deploy_ser
 		{D0AF8FBD-FB08-454F-A879-7F594E3B57DF} = {D0AF8FBD-FB08-454F-A879-7F594E3B57DF}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "region_server", "region_server\region_server.vcxproj", "{FDDC52CB-40A8-4CC2-9E6C-DC848001C298}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -146,6 +148,14 @@ Global
 		{1BA5E9A8-1C36-4FF3-826C-68CA94C033CE}.Release|x64.Build.0 = Release|x64
 		{1BA5E9A8-1C36-4FF3-826C-68CA94C033CE}.Release|x86.ActiveCfg = Release|Win32
 		{1BA5E9A8-1C36-4FF3-826C-68CA94C033CE}.Release|x86.Build.0 = Release|Win32
+		{FDDC52CB-40A8-4CC2-9E6C-DC848001C298}.Debug|x64.ActiveCfg = Debug|x64
+		{FDDC52CB-40A8-4CC2-9E6C-DC848001C298}.Debug|x64.Build.0 = Debug|x64
+		{FDDC52CB-40A8-4CC2-9E6C-DC848001C298}.Debug|x86.ActiveCfg = Debug|Win32
+		{FDDC52CB-40A8-4CC2-9E6C-DC848001C298}.Debug|x86.Build.0 = Debug|Win32
+		{FDDC52CB-40A8-4CC2-9E6C-DC848001C298}.Release|x64.ActiveCfg = Release|x64
+		{FDDC52CB-40A8-4CC2-9E6C-DC848001C298}.Release|x64.Build.0 = Release|x64
+		{FDDC52CB-40A8-4CC2-9E6C-DC848001C298}.Release|x86.ActiveCfg = Release|Win32
+		{FDDC52CB-40A8-4CC2-9E6C-DC848001C298}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

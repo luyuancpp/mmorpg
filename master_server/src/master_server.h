@@ -18,12 +18,6 @@
 #include "l2ms.pb.h"
 #include "ms2db.pb.h"
 
-namespace common
-{
-    struct WaitingGatewayConnecting;
-}//namespace common
-
-
 namespace master
 {
     class MasterServer : muduo::noncopyable, public common::Receiver<MasterServer>
