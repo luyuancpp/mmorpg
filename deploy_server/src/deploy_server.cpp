@@ -113,14 +113,14 @@ namespace deploy
 
         for (uint32_t i = 0; i < kTotalSize; ++i)
         {
-            if (i % common::SERVER_ID_GROUP_SIZE == 0)
+            if (i % common::kServerGroupSize == 0)
             {
                 database_->SaveOne(sd_redis);
                 continue;
             }
             sd_db.set_port(kBeginPort + i);
             sd_nodb.set_port(sd_db.port());
-            if (i % common::SERVER_ID_GROUP_SIZE == common::SERVER_DATABASE)
+            if (i % common::kServerGroupSize == common::kServerDatabase)
             {
                 database_->SaveOne(sd_db);
             }

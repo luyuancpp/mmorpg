@@ -41,7 +41,7 @@ void GameServer::InitNetwork()
 
 void GameServer::ServerInfo(ServerInfoRpcRC cp)
 {
-    auto& masterinfo = cp->s_resp_->info(common::SERVER_MASTER);
+    auto& masterinfo = cp->s_resp_->info(common::kServerMaster);
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
     
