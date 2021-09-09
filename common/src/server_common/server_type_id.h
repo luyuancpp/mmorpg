@@ -11,9 +11,7 @@ enum ServerTypeIdEnum : uint32_t
     kServerMaster = 1,
     kServerLogin = 2,
     kServerGateway = 3,
-    kServerGlobal = 4,
-    kServerMax = 7,
-    kServerSize = 8,
+    kServerSize = 4,
 };
 
 enum eRegionServerTypeIdEnum : uint32_t
