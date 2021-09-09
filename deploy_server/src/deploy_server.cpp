@@ -118,7 +118,7 @@ namespace deploy
 
         for (uint32_t i = kGroupRedis; i < kGroupBegin; ++i)
         {
-            sd_nodb.set_port(i);
+            sd_nodb.set_port(i + kRegionServerBeginPort);
             database_->SaveOne(sd_nodb);
         }
 
@@ -126,12 +126,12 @@ namespace deploy
         {
             if (i % common::kServerSize == common::kServerDatabase)
             {
-                sd_db.set_port(i);
+                sd_db.set_port(i + kServerBeginPort);
                 database_->SaveOne(sd_db);
             }
             else
             {
-                sd_nodb.set_port(i);
+                sd_nodb.set_port(i + kServerBeginPort);
                 database_->SaveOne(sd_nodb);
             }
         }
