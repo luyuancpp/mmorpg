@@ -7,13 +7,19 @@ namespace common
 {
 enum ServerTypeIdEnum : uint32_t
 {
-    kServerRedis = 0,
-    kServerDatabase = 1,
-    kServerMaster = 2,
-    kServerLogin = 3,
-    kServerGateway = 4,
-    kServerCurrent = 5,
-    kServerGroupSize = 8,
+    kServerDatabase = 0,
+    kServerMaster = 1,
+    kServerLogin = 2,
+    kServerGateway = 3,
+    kServerGlobal = 4,
+    kServerMax = 7,
+    kServerSize = 8,
+};
+
+enum eRegionServerTypeIdEnum : uint32_t
+{
+    kServerCross = 0,
+    kRegionServerSize = 4,
 };
 
 }//namespace common
