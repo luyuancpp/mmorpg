@@ -90,7 +90,7 @@ void GameServer::Register2Master()
     rpc_server->set_ip(server_info_.ip());
     rpc_server->set_port(server_info_.port());
     request.set_server_type(common::reg().get<common::eServerType>(game::global_entity()));
-    request.set_server_id(server_info_.id());
+    request.set_node_id(server_info_.id());
     g2ms_stub_.CallMethod(
         request,
         &g2ms::G2msService_Stub::StartGameServer);

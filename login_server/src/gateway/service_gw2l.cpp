@@ -155,7 +155,7 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
 
 void LoginServiceImpl::EnterGameMasterReplied(EnterGameMasterRP d)
 {
-    d->c_resp_->set_game_server_id(d->s_resp_->game_server_id());
+    d->c_resp_->set_game_node_id(d->s_resp_->game_node_id());
 }
 
 void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id, 
