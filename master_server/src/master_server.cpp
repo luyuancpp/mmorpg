@@ -71,14 +71,10 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     {
         return;
     }
-    auto connection_info = reg().try_get<InetAddress>(ge);
-    if (nullptr == connection_info)
-    {
-        return;
-    }
+    auto connection_info = reg().get<InetAddress>(ge);
     ms2gw::StartGameServerRequest request;
-    request.set_ip(connection_info->toIp());
-    request.set_port(connection_info->port());
+    request.set_ip(connection_info.toIp());
+    request.set_port(connection_info.port());
     request.set_server_id(reg().get<common::GameServerDataPtr>(ge)->server_id());
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGameServer");
 }
