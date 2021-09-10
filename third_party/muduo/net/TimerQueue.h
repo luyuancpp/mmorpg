@@ -49,7 +49,7 @@ class TimerQueue : noncopyable
 
   void cancel(TimerId timerId);
 
-  void windowLoop();
+  void loop();
  private:
 
   // FIXME: use unique_ptr<Timer> instead of raw pointers.
