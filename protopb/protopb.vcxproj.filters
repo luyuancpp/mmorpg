@@ -96,9 +96,6 @@
     <ClInclude Include="pbc\g2rg.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pbc\global_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="pbc\rg2g.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -183,9 +180,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pbc\g2rg.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="pbc\global_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pbc\rg2g.pb.cc">

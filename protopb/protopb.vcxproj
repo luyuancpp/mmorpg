@@ -32,7 +32,6 @@
     <ClInclude Include="pbc\g2gw.pb.h" />
     <ClInclude Include="pbc\g2ms.pb.h" />
     <ClInclude Include="pbc\g2rg.pb.h" />
-    <ClInclude Include="pbc\global_config.pb.h" />
     <ClInclude Include="pbc\global_variable_config.pb.h" />
     <ClInclude Include="pbc\gw2g.pb.h" />
     <ClInclude Include="pbc\gw2l.pb.h" />
@@ -63,7 +62,6 @@
     <ClCompile Include="pbc\g2gw.pb.cc" />
     <ClCompile Include="pbc\g2ms.pb.cc" />
     <ClCompile Include="pbc\g2rg.pb.cc" />
-    <ClCompile Include="pbc\global_config.pb.cc" />
     <ClCompile Include="pbc\global_variable_config.pb.cc" />
     <ClCompile Include="pbc\gw2g.pb.cc" />
     <ClCompile Include="pbc\gw2l.pb.cc" />

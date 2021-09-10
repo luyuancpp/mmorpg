@@ -4,7 +4,7 @@
 
 #include "src/file2string/file2string.h"
 
-namespace region
+namespace common
 {
 void RegionConfig::Load(const std::string& filename)
 {

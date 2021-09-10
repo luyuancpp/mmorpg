@@ -1,9 +1,9 @@
-#ifndef REGION_SERVER_SRC_CONFIG_REGION_CONFIG_H_
-#define REGION_SERVER_SRC_CONFIG_REGION_CONFIG_H_
+#ifndef COMMON_SRC_GAME_CONFIG_REGION_CONFIG_H_
+#define COMMON_SRC_GAME_CONFIG_REGION_CONFIG_H_
 
 #include "common.pb.h"
 
-namespace region
+namespace common
 {
 class RegionConfig
 {
@@ -19,5 +19,5 @@ public:
 private:
     RegionConfigInfo config_info_;
 };
-}//namespace region
-#endif // !REGION_SERVER_SRC_CONFIG_REGION_CONFIG_H_
+}//namespace common
+#endif // !COMMON_SRC_GAME_CONFIG_REGION_CONFIG_H_

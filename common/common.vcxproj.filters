@@ -87,6 +87,9 @@
     <ClCompile Include="src\game_config\global_variable_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_config\region_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
@@ -285,6 +288,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_config\global_variable_config_id.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\region_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
