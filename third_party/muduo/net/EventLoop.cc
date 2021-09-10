@@ -139,7 +139,7 @@ void EventLoop::loop()
       currentActiveChannel_->handleEvent(pollReturnTime_);
     }
 #ifdef WIN32
-	timerQueue_->windowLoop();
+	timerQueue_->loop();
 #endif // WIN32
     currentActiveChannel_ = NULL;
     eventHandling_ = false;
