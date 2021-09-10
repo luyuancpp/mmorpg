@@ -13,7 +13,7 @@ using common::reg;
 int main(int argc, char* argv[])
 {
     game::global_entity() = reg().create();
-    if (argc > 1)
+    if (argc > 1 && atoi(argv[1]) == common::kRoomServer)
     {
         reg().emplace<common::eServerType>(game::global_entity(), common::kRoomServer);
     }

@@ -40,7 +40,7 @@ namespace deploy
             ::google::protobuf::Closure* done)override;
 
     private:
-        void RegionServer(const ::deploy::RegionInfoRequest* request, ::deploy::RegionInfoResponse* response);
+        void RegionServer(uint32_t region_id, ::group_server_db* response);
 
         MysqlClientPtr database_;
         GameServerMap logic_server_map_;

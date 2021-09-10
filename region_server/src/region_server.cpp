@@ -36,10 +36,10 @@ namespace region
     void RegionServer::StartServer(RegionInfoRpcRpcRC cp)
     {
         auto& myinfo = cp->s_resp_->info();
-        InetAddress master_addr(myinfo.ip(), myinfo.port());
-        server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
+        InetAddress region_addr(myinfo.ip(), myinfo.port());
+        server_ = std::make_shared<muduo::net::RpcServer>(loop_, region_addr);
         server_->subscribe<common::ServerConnectionES>(*this);
-        //LOG_INFO << myinfo.DebugString().c_str();
+        LOG_INFO << myinfo.DebugString().c_str();
         server_->start();
     }
 
