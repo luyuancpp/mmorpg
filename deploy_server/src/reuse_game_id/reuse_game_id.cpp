@@ -7,7 +7,7 @@ namespace deploy
     {
         for (uint32_t i = 0; i < size(); ++i)
         {
-            scan_game_server_ids_.emplace(i);
+            scan_node_ids_.emplace(i);
         }
     }
 
@@ -30,7 +30,7 @@ namespace deploy
 
     void ReuseGameServerId::EraseScanEmpty(uint32_t id)
     {
-        scan_game_server_ids_.erase(id);
+        scan_node_ids_.erase(id);
     }
 
     void ReuseGameServerId::ScanOver()
@@ -38,14 +38,14 @@ namespace deploy
         //等待一段时间后连接上来得先处理
         for (auto& it : game_entities_)
         {
-            scan_game_server_ids_.erase(it.second);
+            scan_node_ids_.erase(it.second);
         }
         //超过一段时间后，没有连接上来得id 重用
-        for (auto& it : scan_game_server_ids_)
+        for (auto& it : scan_node_ids_)
         {
             Destroy(it);
         }
-        scan_game_server_ids_.clear();
+        scan_node_ids_.clear();
     }
 
 }//namespace deploy
