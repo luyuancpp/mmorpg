@@ -2,8 +2,9 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_config/deploy_json.h"
 #include "src/game_config/all_config.h"
+#include "src/game_config/deploy_json.h"
+#include "src/game_config/region_config.h"
 
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/enum/server_enum.h"
@@ -28,6 +29,7 @@ void GameServer::Init()
 {
     common::GameConfig::GetSingleton().Load("game.json");
     common::DeployConfig::GetSingleton().Load("deploy.json");
+    common::RegionConfig::GetSingleton().Load("region.json");
     loadallconfig();
 }
 
@@ -69,6 +71,7 @@ void GameServer::StartGameServer(StartGameServerRpcRC cp)
 {
     //uint32_t snid = server_info_.id() - deploy_server::kGameSnowflakeIdReduceParam;//snowflake id 
     ConnectMaster();
+    ConnectRegion();
 
     server_info_ = cp->s_resp_->my_info();
     InetAddress game_addr(server_info_.ip(), server_info_.port());
@@ -109,6 +112,7 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
         }
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
         cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+        cp->s_reqst_.set_region_id(common::RegionConfig::GetSingleton().config_info().region_id());
         deploy_stub_.CallMethod(
             &GameServer::ServerInfo,
             cp,
@@ -121,10 +125,6 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
         Register2Master();
     }
 
-    if (common::kRoomServer == common::reg().get<common::eServerType>(game::global_entity()))
-    {
-
-    }
 }
 
 void GameServer::ConnectMaster()

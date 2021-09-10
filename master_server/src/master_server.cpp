@@ -2,8 +2,9 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_config/deploy_json.h"
 #include "src/game_config/all_config.h"
+#include "src/game_config/deploy_json.h"
+#include "src/game_config/region_config.h"
 
 #include "src/factories/scene_factories.hpp"
 #include "src/factories/server_global_entity.hpp"
@@ -92,6 +93,7 @@ void MasterServer::receive(const common::RpcClientConnectionES& es)
     }
     ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
     cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+    cp->s_reqst_.set_region_id(common::RegionConfig::GetSingleton().config_info().region_id());
     deploy_stub_.CallMethod(
         &MasterServer::StartServer,
         cp,
@@ -137,6 +139,7 @@ void MasterServer::InitConfig()
 {
     common::GameConfig::GetSingleton().Load("game.json");
     common::DeployConfig::GetSingleton().Load("deploy.json");
+    common::RegionConfig::GetSingleton().Load("region.json");
     loadallconfig();
 }
 

@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/config/region_config.h"
+#include "src/game_config/region_config.h"
 #include "src/game_config/deploy_json.h"
 
 #include "src/server_common/server_type_id.h"
@@ -19,7 +19,7 @@ namespace region
 
     void RegionServer::Init()
     {
-        RegionConfig::GetSingleton().Load("region.json");
+        common::RegionConfig::GetSingleton().Load("region.json");
         common::DeployConfig::GetSingleton().Load("deploy.json");
     }
 
@@ -39,7 +39,7 @@ namespace region
         InetAddress region_addr(myinfo.ip(), myinfo.port());
         server_ = std::make_shared<muduo::net::RpcServer>(loop_, region_addr);
         server_->subscribe<common::ServerConnectionES>(*this);
-        LOG_INFO << myinfo.DebugString().c_str();
+        //LOG_INFO << myinfo.DebugString().c_str();
         server_->start();
     }
 
@@ -55,7 +55,7 @@ namespace region
             return;
         }
         RegionInfoRpcRpcRC cp(std::make_shared<RegionInfoRpcClosure>());
-        cp->s_reqst_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+        cp->s_reqst_.set_region_id(common::RegionConfig::GetSingleton().config_info().region_id());
         deploy_stub_.CallMethod(
             &RegionServer::StartServer,
             cp,
