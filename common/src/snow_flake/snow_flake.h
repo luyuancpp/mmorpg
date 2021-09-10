@@ -28,18 +28,18 @@ namespace common
         SnowFlakeThreadSafe& operator=(const SnowFlakeThreadSafe&) = delete;
 
         explicit SnowFlakeThreadSafe()
-            :server_id_(0),
-            server_id_flag_(0)
+            :node_id_(0),
+            node_id_flag_(0)
         {
         }
 
-        void set_serverId(uint16_t server_id)
+        void set_node_id(uint16_t node_id)
         {
-            server_id_ = server_id;
-            server_id_flag_ = server_id;
-            server_id_flag_ = (server_id_flag_ << kTimeByte) << kIncrementedByte;
+            node_id_ = node_id;
+            node_id_flag_ = node_id;
+            node_id_flag_ = (node_id_flag_ << kTimeByte) << kIncrementedByte;
         }
-        uint16_t server_id()const { return server_id_; }
+        uint16_t node_id()const { return node_id_; }
 
         time_t GetNow()
         {
@@ -68,7 +68,7 @@ namespace common
                 time_bit = last_time_;
             }
               
-            return server_id_flag_ + (time_bit << kIncrementedByte) + sequence;
+            return node_id_flag_ + (time_bit << kIncrementedByte) + sequence;
         }
     private:
         inline void ResetIncremented() 
@@ -82,8 +82,8 @@ namespace common
             ++last_time_;            
         }
 
-    uint16_t server_id_{ 0 };
-    uint64_t server_id_flag_{ 0 };   
+    uint16_t node_id_{ 0 };
+    uint64_t node_id_flag_{ 0 };   
     uint64_t last_time_{ 0 };
     uint32_t sequence_{ 0 };
     mutable MutexLock mutex_;
@@ -99,18 +99,18 @@ namespace common
         static const uint32_t kMaxIncremented = UINT16_MAX;
 
         explicit SnowFlake()
-            :server_id_(0),
-            server_id_flag_(0)
+            :node_id_(0),
+            node_id_flag_(0)
         {
         }
 
-        void set_serverId(uint16_t server_id)
+        void set_serverId(uint16_t node_id)
         {
-            server_id_ = server_id;
-            server_id_flag_ = server_id;
-            server_id_flag_ = (server_id_flag_ << kTimeByte) << kIncrementedByte;
+            node_id_ = node_id;
+            node_id_flag_ = node_id;
+            node_id_flag_ = (node_id_flag_ << kTimeByte) << kIncrementedByte;
         }
-        uint16_t server_id()const { return server_id_; }
+        uint16_t node_id()const { return node_id_; }
 
         time_t GetNow()
         {
@@ -138,7 +138,7 @@ namespace common
                 time_bit = last_time_;
             }
 
-            return server_id_flag_ + (time_bit << kIncrementedByte) + sequence;
+            return node_id_flag_ + (time_bit << kIncrementedByte) + sequence;
         }
     private:
         inline void ResetIncremented()
@@ -152,8 +152,8 @@ namespace common
             ++last_time_;
         }
 
-        uint16_t server_id_{ 0 };
-        uint64_t server_id_flag_{ 0 };
+        uint16_t node_id_{ 0 };
+        uint64_t node_id_flag_{ 0 };
         uint64_t last_time_{ 0 };
         uint32_t sequence_{ 0 };
     };
