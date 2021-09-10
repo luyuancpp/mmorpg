@@ -63,6 +63,21 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
+        RegionServer(request, response);
+    }
+
+    void DeployServiceImpl::RegionServer(::google::protobuf::RpcController* controller,
+        const ::deploy::RegionInfoRequest* request, 
+        ::deploy::RegionInfoResponse* response, 
+        ::google::protobuf::Closure* done)
+    {
+        ClosurePtr cp(done);
+        RegionServer(request, response);
+    }
+
+    void DeployServiceImpl::RegionServer(const ::deploy::RegionInfoRequest* request, 
+        ::deploy::RegionInfoResponse* response)
+    {
         uint32_t region_id = request->region_id() - 1;
         uint32_t server_id = region_id * kRegionServerSize + kRegionBegin + 1;//
         std::string where_case = std::to_string(server_id) + " = id  ";

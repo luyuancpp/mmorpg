@@ -44,4 +44,5 @@ service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
   rpc StartGameServer (StartGameServerRequest) returns (StartGameServerResponse);
   rpc StartRegionServer(RegionInfoRequest) returns (RegionInfoResponse);
+  rpc RegionServer(RegionInfoRequest) returns (RegionInfoResponse);
 }
