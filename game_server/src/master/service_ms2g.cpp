@@ -6,9 +6,9 @@
 
 namespace ms2g
 {
-    void Ms2gServiceImpl::Login(::google::protobuf::RpcController* controller, 
-        const ::ms2g::LoginRequest* request, 
-        ::ms2g::LoginResponse* response, 
+    void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
+        const ::ms2g::EnterGameRequest* request,
+        ::ms2g::EnterGameResponse* response,
         ::google::protobuf::Closure* done)
     {
         common::ClosurePtr cp(done);

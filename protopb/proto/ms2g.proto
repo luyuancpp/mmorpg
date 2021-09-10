@@ -3,16 +3,16 @@ import "google/protobuf/empty.proto";
 package ms2g;
 option cc_generic_services = true;
 
-message LoginRequest
+message EnterGameRequest
 {
 
 }
 
-message LoginResponse
+message EnterGameResponse
 {
 }
 
 service Ms2gService {
-  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc Empty(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
