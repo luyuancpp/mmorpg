@@ -48,12 +48,12 @@ namespace deploy
             return;
         }
         server_info.set_ip(request->my_info().ip());
-        uint32_t server_id = g_deploy_server->CreateGameServerId();
-        LOG_INFO << "new server id " << server_id;
-        server_info.set_id(deploy::kLogicBegin + server_id);
-        server_info.set_port(deploy::kLogicBeginPort + server_id);
+        uint32_t node_id = g_deploy_server->CreateGameServerId();
+        LOG_INFO << "new server id " << node_id;
+        server_info.set_id(deploy::kLogicBegin + node_id);
+        server_info.set_port(deploy::kLogicBeginPort + node_id);
 
-        g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), server_id);
+        g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
         g_deploy_server->SaveGameServerDb();
         //g_deploy_server->LogReuseInfo();
         response->set_error_no(RET_OK);

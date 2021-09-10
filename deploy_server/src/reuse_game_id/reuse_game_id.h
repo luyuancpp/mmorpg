@@ -13,7 +13,7 @@ namespace deploy
 
         std::size_t free_list_size() { return free_list().size(); }
    
-        bool IsScanEmpty() { return scan_game_server_ids_.empty(); }
+        bool IsScanEmpty() { return scan_node_ids_.empty(); }
 
         void OnDbLoadComplete();
 
@@ -35,7 +35,7 @@ namespace deploy
         void ScanOver();
     private:
         GameServerId game_entities_;
-        ScanGameId scan_game_server_ids_;
+        ScanGameId scan_node_ids_;
 
     };
 

@@ -72,7 +72,7 @@ namespace ms2gw
         {
             return;
         }
-        it->second.game_server_id_ = request->server_id();
+        it->second.node_id_ = request->server_id();
     }
 }
 

@@ -76,7 +76,7 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     ms2gw::StartGameServerRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
-    request.set_server_id(reg().get<common::GameServerDataPtr>(ge)->server_id());
+    request.set_server_id(reg().get<common::GameServerDataPtr>(ge)->node_id());
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGameServer");
 }
 

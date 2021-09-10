@@ -126,16 +126,16 @@ namespace common
     class GameServerData
     {
     public:
-        inline void set_server_id(uint32_t server_id) { server_id_ = server_id; }
-        inline uint32_t server_id()const { return server_id_; }
-        inline void set_server_entity(entt::entity server_entity) { server_entity_ = server_entity; }
+        inline void set_node_id(uint32_t node_id) { node_id_ = node_id; }
+        inline uint32_t node_id()const { return node_id_; }
+        inline void set_node_entity(entt::entity server_entity) { server_entity_ = server_entity; }
         inline entt::entity server_entity()const { return server_entity_; }
         uint32_t player_size()const { return player_size_; }
 
         inline void OnPlayerEnter() { ++player_size_; }
         inline void OnPlayerLeave() { --player_size_; }
     private:
-        uint32_t server_id_{0};
+        uint32_t node_id_{0};
         entt::entity server_entity_{};
         uint32_t player_size_{ 0 };
     };

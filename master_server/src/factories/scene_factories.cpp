@@ -55,8 +55,8 @@ namespace master
     {
         auto e = reg.create();
         common::GameServerDataPtr p_server_data = std::make_shared<common::GameServerData>();
-        p_server_data->set_server_id(param.server_id_);
-        p_server_data->set_server_entity(e);
+        p_server_data->set_node_id(param.server_id_);
+        p_server_data->set_node_entity(e);
         reg.emplace<common::MainSceneServer>(e);
         reg.emplace<common::GameServerDataPtr>(e, p_server_data);
         reg.emplace<common::GameServerStatusNormal>(e);
