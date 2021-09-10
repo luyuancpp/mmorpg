@@ -14,5 +14,4 @@ message EnterGameResponse
 
 service Ms2gService {
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
-  rpc Empty(google.protobuf.Empty) returns (google.protobuf.Empty);
 }

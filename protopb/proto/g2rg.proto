@@ -1,0 +1,14 @@
+syntax = "proto3";
+import "common.proto";
+import "google/protobuf/empty.proto";
+package g2rg;
+option cc_generic_services = true;
+
+message StartGameServerRequest
+{
+
+}
+
+service G2rgService {
+  rpc StartGameServer (StartGameServerRequest) returns (google.protobuf.Empty);
+}

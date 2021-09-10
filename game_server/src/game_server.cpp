@@ -1,5 +1,7 @@
 #include "game_server.h"
 
+#include "muduo/base/Logging.h"
+
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/all_config.h"
 
@@ -44,6 +46,11 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
     auto& masterinfo = cp->s_resp_->info(common::kServerMaster);
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
+
+    auto& regioninfo = cp->s_resp_->regin_info();
+    InetAddress region_addr(regioninfo.ip(), regioninfo.port());
+    LOG_INFO << regioninfo.DebugString().c_str();
+    region_rpc_client_ = std::make_unique<common::RpcClient>(loop_, region_addr);
     
     StartGameServerRpcRC scp(std::make_shared<StartGameServerInfoRpcClosure>());
     scp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
@@ -61,10 +68,7 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
 void GameServer::StartGameServer(StartGameServerRpcRC cp)
 {
     //uint32_t snid = server_info_.id() - deploy_server::kGameSnowflakeIdReduceParam;//snowflake id 
-    master_rpc_client_->subscribe<common::RegisterStubES>(g2ms_stub_);
-    master_rpc_client_->registerService(&ms2g_service_impl_);
-    master_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
-    master_rpc_client_->connect();
+    ConnectMaster();
 
     server_info_ = cp->s_resp_->my_info();
     InetAddress game_addr(server_info_.ip(), server_info_.port());
@@ -116,6 +120,27 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
     {
         Register2Master();
     }
+
+    if (common::kRoomServer == common::reg().get<common::eServerType>(game::global_entity()))
+    {
+
+    }
+}
+
+void GameServer::ConnectMaster()
+{
+    master_rpc_client_->subscribe<common::RegisterStubES>(g2ms_stub_);
+    master_rpc_client_->registerService(&ms2g_service_impl_);
+    master_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
+    master_rpc_client_->connect();
+}
+
+void GameServer::ConnectRegion()
+{
+    region_rpc_client_->subscribe<common::RegisterStubES>(g2rg_stub_);
+    region_rpc_client_->registerService(&rg2g_service_impl_);
+    region_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
+    region_rpc_client_->connect();
 }
 
 }//namespace game

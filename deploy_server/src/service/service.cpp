@@ -29,6 +29,8 @@ namespace deploy
 
         where_case = std::to_string(group_id + 1) + " = id  ";
         database_->LoadOne(*response->mutable_redis_info(), where_case);
+
+        RegionServer(request->region_id(), response->mutable_regin_info());
     }
 
     void DeployServiceImpl::StartGameServer(::google::protobuf::RpcController* controller, 
@@ -63,7 +65,7 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        RegionServer(request, response);
+        RegionServer(request->region_id(), response->mutable_info());
     }
 
     void DeployServiceImpl::RegionServer(::google::protobuf::RpcController* controller,
@@ -72,16 +74,15 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        RegionServer(request, response);
+        RegionServer(request->region_id(), response->mutable_info());
     }
 
-    void DeployServiceImpl::RegionServer(const ::deploy::RegionInfoRequest* request, 
-        ::deploy::RegionInfoResponse* response)
+    void DeployServiceImpl::RegionServer(uint32_t region_id,
+        ::group_server_db* response)
     {
-        uint32_t region_id = request->region_id() - 1;
-        uint32_t server_id = region_id * kRegionServerSize + kRegionBegin + 1;//
+        uint32_t server_id = (region_id - 1) * kRegionServerSize + kRegionBegin + 1;//
         std::string where_case = std::to_string(server_id) + " = id  ";
-        database_->LoadOne(*response->mutable_info(), where_case);
+        database_->LoadOne(*response, where_case);
     }
 
 }//namespace deploy

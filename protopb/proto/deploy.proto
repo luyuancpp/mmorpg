@@ -15,6 +15,7 @@ message ServerInfoResponse
 {
   repeated group_server_db info = 1;
   group_server_db redis_info = 2;
+  group_server_db regin_info = 3;
 }
 
 message StartGameServerRequest

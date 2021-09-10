@@ -3,7 +3,9 @@
 
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
+
 #include "src/master/service_ms2g.h"
+#include "src/region/service_rg2g.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/rpc_stub.h"
@@ -11,6 +13,7 @@
 #include "src/server_common/rpc_closure.h"
 
 #include "g2ms.pb.h"
+#include "g2rg.pb.h"
 
 namespace game
 {
@@ -21,6 +24,7 @@ public:
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     using StubG2ms = common::RpcStub<g2ms::G2msService_Stub>;
+    using StubG2rg = common::RpcStub<g2rg::G2rgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
 
@@ -44,6 +48,9 @@ public:
 
 private:    
 
+    void ConnectMaster();
+    void ConnectRegion();
+
     muduo::net::EventLoop* loop_{ nullptr };
 
     RedisClientPtr redis_;
@@ -56,9 +63,13 @@ private:
     common::RpcClientPtr master_rpc_client_;
     StubG2ms g2ms_stub_;
 
+    common::RpcClientPtr region_rpc_client_;
+    StubG2rg g2rg_stub_;
+
     ::group_server_db server_info_;
 
     ms2g::Ms2gServiceImpl ms2g_service_impl_;
+    rg2g::Rg2gServiceImpl rg2g_service_impl_;
 };
 
 };//namespace game

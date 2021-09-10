@@ -31,6 +31,8 @@
     <ClInclude Include="pbc\g2db.pb.h" />
     <ClInclude Include="pbc\g2gw.pb.h" />
     <ClInclude Include="pbc\g2ms.pb.h" />
+    <ClInclude Include="pbc\g2rg.pb.h" />
+    <ClInclude Include="pbc\global_config.pb.h" />
     <ClInclude Include="pbc\global_variable_config.pb.h" />
     <ClInclude Include="pbc\gw2g.pb.h" />
     <ClInclude Include="pbc\gw2l.pb.h" />
@@ -44,6 +46,7 @@
     <ClInclude Include="pbc\ms2gw.pb.h" />
     <ClInclude Include="pbc\mysql_database_table.pb.h" />
     <ClInclude Include="pbc\pb3.pb.h" />
+    <ClInclude Include="pbc\rg2g.pb.h" />
     <ClInclude Include="pbc\scene_config.pb.h" />
   </ItemGroup>
   <ItemGroup>
@@ -59,6 +62,8 @@
     <ClCompile Include="pbc\g2db.pb.cc" />
     <ClCompile Include="pbc\g2gw.pb.cc" />
     <ClCompile Include="pbc\g2ms.pb.cc" />
+    <ClCompile Include="pbc\g2rg.pb.cc" />
+    <ClCompile Include="pbc\global_config.pb.cc" />
     <ClCompile Include="pbc\global_variable_config.pb.cc" />
     <ClCompile Include="pbc\gw2g.pb.cc" />
     <ClCompile Include="pbc\gw2l.pb.cc" />
@@ -72,6 +77,7 @@
     <ClCompile Include="pbc\ms2gw.pb.cc" />
     <ClCompile Include="pbc\mysql_database_table.pb.cc" />
     <ClCompile Include="pbc\pb3.pb.cc" />
+    <ClCompile Include="pbc\rg2g.pb.cc" />
     <ClCompile Include="pbc\scene_config.pb.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
