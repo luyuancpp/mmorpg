@@ -23,7 +23,7 @@ message EnterGameRequest
 message EnterGameResponese
 {
   uint64 connection_id = 1;
-  uint32 game_server_id = 2;
+  uint32 game_node_id = 2;
 }
 
 message LeaveGameRequest

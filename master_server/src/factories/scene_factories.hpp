@@ -15,7 +15,7 @@ struct MakeSceneParam
 
 struct MakeGameServerParam
 {
-    uint32_t server_id_{};
+    uint32_t node_id_{};
     uint32_t op_{ 0 };
 };
 

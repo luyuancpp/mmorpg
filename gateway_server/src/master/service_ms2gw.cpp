@@ -38,8 +38,8 @@ namespace ms2gw
         c->subscribe<RegisterStubES>(*(sc.get()));
         c->connect();
         GameClient::GetSingleton().emplace<InetAddress>(e, gameserver_addr);
-        GameClient::GetSingleton().emplace<uint32_t>(e, request->server_id());
-        LOG_INFO << "connect to game server " << gameserver_addr.toIpPort() << " server id " << request->server_id();
+        GameClient::GetSingleton().emplace<uint32_t>(e, request->node_id());
+        LOG_INFO << "connect to game server " << gameserver_addr.toIpPort() << " server id " << request->node_id();
     }
 
     void Ms2gwServiceImpl::StopGameServer(::google::protobuf::RpcController* controller, 
@@ -72,7 +72,7 @@ namespace ms2gw
         {
             return;
         }
-        it->second.node_id_ = request->server_id();
+        it->second.node_id_ = request->node_id();
     }
 }
 

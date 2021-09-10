@@ -37,7 +37,7 @@ namespace g2ms
                 continue;
             }
             MakeGameServerParam cparam;
-            cparam.server_id_ = request->server_id();
+            cparam.node_id_ = request->node_id();
             auto server_entity = MakeMainSceneGameServer(reg(), cparam);
             reg().emplace<common::RpcServerConnection>(server_entity, common::RpcServerConnection{ c.conn_ });
             reg().emplace<InetAddress>(server_entity, rpc_server_peer_addr);
@@ -59,7 +59,7 @@ namespace g2ms
                 reg().emplace<common::RoomSceneServer>(server_entity);                
             }
             g_master_server->GatewayConnectGame(server_entity);
-            LOG_INFO << "game connected " << request->server_id();
+            LOG_INFO << "game connected " << request->node_id();
             break;
         }
 
