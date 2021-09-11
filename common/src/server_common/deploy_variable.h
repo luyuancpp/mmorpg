@@ -7,8 +7,7 @@ namespace deploy
 {
     static const uint32_t kRedisPort = 6379;
     static const uint32_t kRegionServerBeginPort = 8000;
-    static const uint32_t kServerBeginPort = 10000;
-    static const uint32_t kDatabeseServerBeginPort = 10000;
+    static const uint32_t kDatabeseServerBeginPort = 20000;
     static const uint32_t kLoginServerBeginPort = 12000;
     static const uint32_t kMasterServerBeginPort = 14000;
     static const uint32_t kGatewayServerBeginPort = 16000;
