@@ -48,14 +48,14 @@ void MasterServer::ConnectDeploy()
 
 void MasterServer::StartServer(ServerInfoRpcRC cp)
 {
-    serverinfo_database_ = cp->s_resp_->info();
-    auto& databaseinfo = serverinfo_database_.Get(common::kServerDatabase);
+    serverinfos_ = cp->s_resp_->info();
+    auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
     db_rpc_client_->subscribe<common::RegisterStubES>(msl2_login_stub_);
     db_rpc_client_->connect();    
 
-    auto& myinfo = cp->s_resp_->info(common::kServerMaster);
+    auto& myinfo = serverinfos_.master_info();
     InetAddress master_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
     server_->subscribe<common::ServerConnectionES>(*this);

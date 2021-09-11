@@ -66,7 +66,7 @@ private:
     common::RpcClientPtr region_rpc_client_;
     StubG2rg g2rg_stub_;
 
-    ::group_server_db server_info_;
+    ::game_server_db server_info_;
 
     ms2g::Ms2gServiceImpl ms2g_service_impl_;
     rg2g::Rg2gServiceImpl rg2g_service_impl_;

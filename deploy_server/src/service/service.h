@@ -12,7 +12,7 @@ namespace deploy
     public:
         using ServerId = uint32_t;
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
-        using GameServerMap = std::unordered_map<uint32_t, ::group_server_db>;
+        using GameServerMap = std::unordered_map<uint32_t, ::game_server_db>;
 
         void set_player_mysql_client(MysqlClientPtr& ptr)
         {
@@ -40,7 +40,7 @@ namespace deploy
             ::google::protobuf::Closure* done)override;
 
     private:
-        void RegionServer(uint32_t region_id, ::group_server_db* response);
+        void RegionServer(uint32_t region_id, ::region_server_db* response);
 
         MysqlClientPtr database_;
         GameServerMap logic_server_map_;

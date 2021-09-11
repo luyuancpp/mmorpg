@@ -18,19 +18,15 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        uint32_t group_id = request->group();
-        uint32_t server_begin_id = group_id * kServerSize + kGroupBegin + 1;//begin form one
-        uint32_t server_end_id = server_begin_id + kServerSize;
-        std::string where_case = std::to_string(server_begin_id) +  
-            " <= id  " +
-            " and id < " +
-            std::to_string(server_end_id);
-        database_->LoadAll<::group_server_db>(*response, where_case);
-
-        where_case = std::to_string(group_id + 1) + " = id  ";
-        database_->LoadOne(*response->mutable_redis_info(), where_case);
-
-        RegionServer(request->region_id(), response->mutable_regin_info());
+        auto group_id = request->group();
+        std::string where_case = std::to_string(group_id) + " = id  ";
+        auto& servers_info = *response->mutable_info();
+        database_->LoadOne(*servers_info.mutable_database_info(), where_case);
+        database_->LoadOne(*servers_info.mutable_login_info(), where_case);
+        database_->LoadOne(*servers_info.mutable_master_info(), where_case);
+        database_->LoadOne(*servers_info.mutable_gateway_info(), where_case);
+        database_->LoadOne(*servers_info.mutable_redis_info(), where_case);
+        RegionServer(request->region_id(), servers_info.mutable_regin_info());
     }
 
     void DeployServiceImpl::StartGameServer(::google::protobuf::RpcController* controller, 
@@ -39,7 +35,7 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        ::group_server_db& server_info = *response->mutable_my_info();
+        auto& server_info = *response->mutable_my_info();
         auto& rpc_client = request->rpc_client();
         muduo::net::InetAddress ip_port(rpc_client.ip(), rpc_client.port());
         if (server_info.id() > 0)
@@ -50,8 +46,8 @@ namespace deploy
         server_info.set_ip(request->my_info().ip());
         uint32_t node_id = g_deploy_server->CreateGameServerId();
         LOG_INFO << "new server id " << node_id;
-        server_info.set_id(deploy::kLogicBegin + node_id);
-        server_info.set_port(deploy::kLogicBeginPort + node_id);
+        server_info.set_id(node_id);
+        server_info.set_port(node_id + kGameServerBeginPort);
 
         g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
         g_deploy_server->SaveGameServerDb();
@@ -78,10 +74,9 @@ namespace deploy
     }
 
     void DeployServiceImpl::RegionServer(uint32_t region_id,
-        ::group_server_db* response)
+        ::region_server_db* response)
     {
-        uint32_t server_id = (region_id - 1) * kRegionServerSize + kRegionBegin + 1;//
-        std::string where_case = std::to_string(server_id) + " = id  ";
+        std::string where_case = std::to_string(region_id) + " = id  ";
         database_->LoadOne(*response, where_case);
     }
 

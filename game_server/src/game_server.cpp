@@ -45,11 +45,12 @@ void GameServer::InitNetwork()
 
 void GameServer::ServerInfo(ServerInfoRpcRC cp)
 {
-    auto& masterinfo = cp->s_resp_->info(common::kServerMaster);
+    auto& info = cp->s_resp_->info();
+    auto& masterinfo = info.master_info();
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
 
-    auto& regioninfo = cp->s_resp_->regin_info();
+    auto& regioninfo = info.regin_info();
     InetAddress region_addr(regioninfo.ip(), regioninfo.port());
     LOG_INFO << regioninfo.DebugString().c_str();
     region_rpc_client_ = std::make_unique<common::RpcClient>(loop_, region_addr);

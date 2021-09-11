@@ -85,7 +85,7 @@ private:
 
     TcpServerPtr server_;
 
-    ::google::protobuf::RepeatedPtrField< ::group_server_db > serverinfo_database_;
+    servers_info_data serverinfo_database_;
 
     common::RpcClientPtr deploy_rpc_client_;
     deploy::DeployRpcStub deploy_stub_;

@@ -1,8 +1,6 @@
 ﻿#include "deploy_server.h"
 
 #include "muduo/base/Logging.h"
-#include "src/game_config/deploy_json.h"
-#include "src/server_common/deploy_variable.h"
 
 #include "deploy_database_table.pb.h"
 
@@ -23,10 +21,26 @@ namespace deploy
 
     void DeployServer::Start()
     {
-        database_->AddTable(group_server_db::default_instance());
+        database_->AddTable(region_server_db::default_instance());
+        database_->AddTable(database_server_db::default_instance());
+        database_->AddTable(redis_server_db::default_instance());
+        database_->AddTable(login_server_db::default_instance());
+        database_->AddTable(master_server_db::default_instance());
         database_->AddTable(game_server_db::default_instance());
+        database_->AddTable(gateway_server_db::default_instance());
+        database_->AddTable(reuse_game_server_db::default_instance());
+
         database_->Init();
-        InitGroupServerDb();
+
+        InitGroupDatabaseServerDb();
+
+        InitGroupLoginServerDb<region_server_db>(kRegionServerBeginPort, kGroup);
+        InitGroupLoginServerDb<redis_server_db>(kGatewayServerBeginPort, kGroup);
+        InitGroupLoginServerDb<login_server_db>(kLoginServerBeginPort, kGroup);
+        InitGroupLoginServerDb<master_server_db>(kMasterServerBeginPort, kGroup);
+        InitGroupLoginServerDb<game_server_db>(kGameServerBeginPort, kGroup * 2);
+        InitGroupLoginServerDb<gateway_server_db>(kGatewayServerBeginPort, kGroup);
+
         LoadGameServerDb();
         server_.subscribe<common::ServerConnectionES>(*this);
         server_.start();
@@ -44,7 +58,7 @@ namespace deploy
 
     void DeployServer::SaveGameServerDb()
     {
-        game_server_db game_server_info;
+        reuse_game_server_db game_server_info;
         game_server_info.set_current_size(reuse_id_.size());
         *game_server_info.mutable_free_list()->mutable_free_list() = reuse_id_.free_list();
         database_->SaveOne(game_server_info);        
@@ -69,7 +83,7 @@ namespace deploy
 
     void DeployServer::LoadGameServerDb()
     {
-        game_server_db game_server_info;
+        reuse_game_server_db game_server_info;
         database_->LoadOne(game_server_info);
         reuse_id_.set_size(game_server_info.current_size());
         reuse_id_.OnDbLoadComplete();
@@ -87,9 +101,9 @@ namespace deploy
         }
     }
 
-    void DeployServer::InitGroupServerDb()
+    void DeployServer::InitGroupDatabaseServerDb()
     {
-        auto q_result = database_->QueryOne("select * from group_server_db LIMIT 1");
+        auto q_result = database_->QueryOne("select * from database_server_db LIMIT 1");
         if (nullptr != q_result)
         {
             return;
@@ -97,56 +111,27 @@ namespace deploy
         auto& connetion_param = common::DeployConfig::GetSingleton().connetion_param();
         auto& nomoral_ip = common::DeployConfig::GetSingleton().deploy_param().ip();
 
-        group_server_db sd_db;
+        uint32_t region_size = 0;
+        uint32_t region_id = 0;
+
+        database_server_db sd_db;
         sd_db.set_ip(nomoral_ip);
         sd_db.set_db_host(connetion_param.db_host());
         sd_db.set_db_user("root");
         sd_db.set_db_password(connetion_param.db_password());
         sd_db.set_db_port(3306);
         sd_db.set_db_dbname("game");
-        
-        group_server_db sd_nodb;
-        sd_nodb.set_ip(nomoral_ip);
+        sd_db.set_region_id(region_id);
 
-        group_server_db sd_redis;
-        sd_redis.set_ip(redis_ip_);
-        sd_redis.set_port(kRedisPort);
-
-        for (uint32_t i = 0; i < kRegionBegin; ++i)
+        for (uint32_t i = 0; i < kGroup; ++i)
         {
-            database_->SaveOne(sd_redis);
-        }
-
-        for (uint32_t i = kRegionBegin; i < kGroupBegin; ++i)
-        {
-            sd_nodb.set_port(i + kRegionServerBeginPort);
-            database_->SaveOne(sd_nodb);
-        }
-
-        uint32_t region_id = 0;
-        sd_db.set_region_id(++region_id);
-        sd_nodb.set_region_id(region_id);
-
-        uint32_t region_size = 0;
-        
-        for (uint32_t i = kGroupBegin; i < kLogicBegin; ++i)
-        {
-            if (i % common::kServerSize == common::kServerDatabase)
+            if (region_size++ % 10 == 0)
             {
-                ++region_size;
-                if (region_size % 10 == 0)
-                {
-                    sd_db.set_region_id(++region_id);
-                    sd_nodb.set_region_id(region_id);
-                }
-                sd_db.set_port(i + kServerBeginPort);
-                database_->SaveOne(sd_db);
+                sd_db.set_region_id(++region_id);
             }
-            else
-            {
-                sd_nodb.set_port(i + kServerBeginPort);
-                database_->SaveOne(sd_nodb);
-            }
+            sd_db.set_port(i + kDatabeseServerBeginPort);
+            database_->SaveOne(sd_db);
         }
     }
+
 }//namespace deploy
