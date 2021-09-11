@@ -37,6 +37,7 @@ namespace common
             primarykey_field_ = descriptor_->FindFieldByName(descriptor_->field(kPrimaryKeyIndex)->name());
         }
 
+        void set_auto_increment(uint64_t auto_increment) { auto_increment_ = auto_increment; }
         inline const std::string& GetTypeName() { return default_instance_.GetDescriptor()->full_name(); }
         const ::google::protobuf::Message& default_instance() { return default_instance_; }
 
@@ -75,12 +76,15 @@ namespace common
         const ::google::protobuf::Descriptor* descriptor_{nullptr};
         const ::google::protobuf::MessageOptions&  options_;
         const ::google::protobuf::FieldDescriptor* primarykey_field_{ nullptr };
+        uint64_t auto_increment_{ 0 };
     };
 
     class Pb2DbTables
     {
     public:
         using PbSqlMap = std::unordered_map<std::string, Pb2DbSql>;
+
+        void set_auto_increment(const ::google::protobuf::Message& message_default_instance, uint64_t auto_increment);
 
         std::string GetCreateTableSql(const ::google::protobuf::Message& message);
         std::string GetAlterTableAddFieldSql(const ::google::protobuf::Message& message);
