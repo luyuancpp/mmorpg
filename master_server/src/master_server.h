@@ -29,8 +29,9 @@ namespace master
 
         MasterServer(muduo::net::EventLoop* loop);           
 
-        RedisClientPtr& redis_client() { return redis_; }
-        common::RpcServerConnectionPtr& gate_client() { return gate_client_; }
+        inline RedisClientPtr& redis_client() { return redis_; }
+        inline common::RpcServerConnectionPtr& gate_client() { return gate_client_; }
+        inline uint32_t master_node_id()const { return serverinfos_.master_info().id(); };
 
         void Init();
 

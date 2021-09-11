@@ -40,7 +40,12 @@ public:
     using StartGameServerInfoRpcClosure = common::RpcClosure<deploy::StartGameServerRequest,
         deploy::StartGameServerResponse>;
     using StartGameServerRpcRC = std::shared_ptr<StartGameServerInfoRpcClosure>;
-    void StartGameServer(StartGameServerRpcRC cp);
+    void StartGameServerDeployReplied(StartGameServerRpcRC cp);
+
+    using StartGameMasterRpcClosure = common::RpcClosure<g2ms::StartGameServerRequest,
+        g2ms::StartGameServerResponse>;
+    using StartGameMasterRpcRC = std::shared_ptr<StartGameMasterRpcClosure>;
+    void StartGameServerMasterReplied(StartGameMasterRpcRC cp);
 
     void Register2Master();
 

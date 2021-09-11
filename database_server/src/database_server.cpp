@@ -51,7 +51,7 @@ namespace database
         InetAddress listenAddr(myinfo.ip(), myinfo.port());
         redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
         database_->Connect(myinfo);
-        LOG_INFO << myinfo.DebugString().c_str();
+        //LOG_INFO << myinfo.DebugString().c_str();
         server_ = std::make_shared<muduo::net::RpcServer>(loop_, listenAddr);
         Start();
     }

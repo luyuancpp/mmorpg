@@ -48,7 +48,6 @@ void MasterServer::ConnectDeploy()
 void MasterServer::StartServer(ServerInfoRpcRC cp)
 {
     serverinfos_ = cp->s_resp_->info();
-    LOG_INFO << serverinfos_.DebugString().c_str();
     auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
