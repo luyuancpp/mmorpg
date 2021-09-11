@@ -5,8 +5,6 @@
 #include "src/game_config/region_config.h"
 #include "src/game_config/deploy_json.h"
 
-#include "src/server_common/server_type_id.h"
-
 region::RegionServer* g_region_server = nullptr;
 
 namespace region

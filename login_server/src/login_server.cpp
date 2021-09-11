@@ -3,7 +3,6 @@
 #include "src/game_config/deploy_json.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_connection_event.h"
-#include "src/server_common/server_type_id.h"
 
 #include "common.pb.h"
 

@@ -124,7 +124,6 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
     {
         Register2Master();
     }
-
 }
 
 void GameServer::ConnectMaster()

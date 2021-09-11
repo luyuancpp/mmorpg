@@ -10,7 +10,6 @@
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player.hpp"
 #include "src/server_common/deploy_rpcclient.h"
-#include "src/server_common/server_type_id.h"
 #include "src/game_logic/game_registry.h"
 
 #include "ms2g.pb.h"
@@ -49,6 +48,7 @@ void MasterServer::ConnectDeploy()
 void MasterServer::StartServer(ServerInfoRpcRC cp)
 {
     serverinfos_ = cp->s_resp_->info();
+    LOG_INFO << serverinfos_.DebugString().c_str();
     auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
