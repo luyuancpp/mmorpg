@@ -28,13 +28,13 @@ void GatewayServer::InitNetwork()
 void GatewayServer::StartServer(ServerInfoRpcRC cp)
 {
     serverinfo_database_ = cp->s_resp_->info();
-    auto& login_info = serverinfo_database_.Get(common::kServerLogin);
+    auto& login_info = serverinfo_database_.login_info();
     InetAddress login_addr(login_info.ip(), login_info.port());
     login_rpc_client_ = std::make_unique<common::RpcClient>(loop_, login_addr);
     login_rpc_client_->connect();
     login_rpc_client_->subscribe<common::RegisterStubES>(gw2l_login_stub_);
 
-    auto& master_info = serverinfo_database_.Get(common::kServerMaster);
+    auto& master_info = serverinfo_database_.master_info();
     InetAddress master_addr(master_info.ip(), master_info.port());
     master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
     master_rpc_client_->registerService(&ms2gw_service_impl_);
@@ -42,7 +42,7 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     master_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
     master_rpc_client_->connect();        
 
-    auto& myinfo = serverinfo_database_.Get(common::kServerGateway);
+    auto& myinfo = serverinfo_database_.gateway_info();
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_unique<TcpServer>(loop_, gateway_addr, "gateway");
     server_->setConnectionCallback(
@@ -83,7 +83,7 @@ void GatewayServer::receive(const common::RpcClientConnectionES& es)
             this,
             &deploy::DeployService_Stub::ServerInfo);
     }
-    else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.Get(common::kServerMaster)))
+    else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_database_.master_info()))
     {
         Register2Master();
     }

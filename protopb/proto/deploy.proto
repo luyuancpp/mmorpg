@@ -13,21 +13,19 @@ message ServerInfoRequest
 
 message ServerInfoResponse
 {
-  repeated group_server_db info = 1;
-  group_server_db redis_info = 2;
-  group_server_db regin_info = 3;
+  servers_info_data info = 1;
 }
 
 message StartGameServerRequest
 {
   uint32 group = 1;
-  group_server_db my_info = 2;
+  game_server_db my_info = 2;
   IpPort rpc_client = 3; 
 }
 
 message StartGameServerResponse
 {
-  group_server_db my_info = 1;
+  game_server_db my_info = 1;
   uint32 error_no = 2;
 }
 
@@ -38,7 +36,7 @@ message RegionInfoRequest
 
 message RegionInfoResponse
 {
-  group_server_db info = 1;
+  region_server_db info = 1;
 }
 
 service DeployService {
