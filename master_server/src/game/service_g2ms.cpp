@@ -12,6 +12,7 @@
 #include "src/game_logic/comp/player.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/master_server.h"
+#include "src/server_common/closure_auto_done.h"
 #include "src/server_common/server_component.h"
 
 using namespace master;
@@ -22,9 +23,11 @@ namespace g2ms
 {
     void G2msServiceImpl::StartGameServer(::google::protobuf::RpcController* controller, 
         const ::g2ms::StartGameServerRequest* request, 
-        ::google::protobuf::Empty* response, 
+        ::g2ms::StartGameServerResponse* response,
         ::google::protobuf::Closure* done)
     {
+        ClosurePtr cp(done);
+        response->set_master_node_id(g_master_server->master_node_id());
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
 

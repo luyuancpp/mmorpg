@@ -1,5 +1,4 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
 package ms2g;
 option cc_generic_services = true;
 

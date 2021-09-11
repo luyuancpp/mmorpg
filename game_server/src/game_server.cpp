@@ -20,9 +20,7 @@ namespace game
 {
 GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
-     redis_(std::make_shared<common::RedisClient>())
-{
-}
+     redis_(std::make_shared<common::RedisClient>()){}
 
 void GameServer::Init()
 {
@@ -51,7 +49,7 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
 
     auto& regioninfo = info.regin_info();
     InetAddress region_addr(regioninfo.ip(), regioninfo.port());
-    LOG_INFO << regioninfo.DebugString().c_str();
+    //LOG_INFO << regioninfo.DebugString().c_str();
     region_rpc_client_ = std::make_unique<common::RpcClient>(loop_, region_addr);
     
     StartGameServerRpcRC scp(std::make_shared<StartGameServerInfoRpcClosure>());
@@ -61,13 +59,13 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
     scp->s_reqst_.mutable_rpc_client()->set_ip(deploy_rpc_client_->local_addr().toIp());
     scp->s_reqst_.mutable_rpc_client()->set_port(deploy_rpc_client_->local_addr().port());
     deploy_stub_.CallMethod(
-        &GameServer::StartGameServer,
+        &GameServer::StartGameServerDeployReplied,
         scp,
         this,
         &deploy::DeployService_Stub::StartGameServer);
 }
 
-void GameServer::StartGameServer(StartGameServerRpcRC cp)
+void GameServer::StartGameServerDeployReplied(StartGameServerRpcRC cp)
 {
     //uint32_t snid = server_info_.id() - deploy_server::kGameSnowflakeIdReduceParam;//snowflake id 
     ConnectMaster();
@@ -79,10 +77,21 @@ void GameServer::StartGameServer(StartGameServerRpcRC cp)
     server_->start();   
 }
 
+void GameServer::StartGameServerMasterReplied(StartGameMasterRpcRC cp)
+{
+    auto rsp = cp->s_resp_;
+    if (cp->s_reqst_.master_server_addr() == (uint64_t)master_rpc_client_.get())
+    {
+        LOG_INFO << "master server info " << rsp->master_node_id();
+    }
+}
+
 void GameServer::Register2Master()
 {
+    StartGameMasterRpcRC scp(std::make_shared<StartGameMasterRpcClosure>());
+
     auto& master_local_addr = master_rpc_client_->local_addr();
-    g2ms::StartGameServerRequest request;
+    g2ms::StartGameServerRequest& request = scp->s_reqst_;
     auto rpc_client = request.mutable_rpc_client();
     auto rpc_server = request.mutable_rpc_server();
     rpc_client->set_ip(master_local_addr.toIp());
@@ -91,8 +100,11 @@ void GameServer::Register2Master()
     rpc_server->set_port(server_info_.port());
     request.set_server_type(common::reg().get<common::eServerType>(game::global_entity()));
     request.set_node_id(server_info_.id());
+    request.set_master_server_addr(uint64_t(master_rpc_client_.get()));
     g2ms_stub_.CallMethod(
-        request,
+        &GameServer::StartGameServerMasterReplied,
+        scp,
+        this,
         &g2ms::G2msService_Stub::StartGameServer);
 }
 
