@@ -241,7 +241,6 @@
     <ClInclude Include="src\server_common\rpc_string_closure.h" />
     <ClInclude Include="src\server_common\rpc_stub.h" />
     <ClInclude Include="src\server_common\rpc_client.h" />
-    <ClInclude Include="src\server_common\server_type_id.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\snow_flake\snow_flake.h" />
   </ItemGroup>
