@@ -649,6 +649,17 @@ namespace common
             std::string("';");
     }
 
+    void Pb2DbTables::set_auto_increment(const ::google::protobuf::Message& message, uint64_t auto_increment)
+    {
+        const auto& table_name = message.GetDescriptor()->full_name();
+        auto it = tables_.find(table_name);
+        if (it == tables_.end())
+        {
+            return;
+        }
+        it->second.set_auto_increment(auto_increment);
+    }
+
     std::string Pb2DbTables::GetCreateTableSql(const ::google::protobuf::Message& message)
     {
         const auto& table_name = message.GetDescriptor()->full_name();

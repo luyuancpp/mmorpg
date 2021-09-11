@@ -9,6 +9,9 @@ namespace common
 class MysqlDatabase : public common::MysqlClient
 {
 public:
+
+    void set_auto_increment(const ::google::protobuf::Message& message_default_instance, uint64_t auto_increment);
+
     void AddTable(const ::google::protobuf::Message& message_default_instance);
 
     void Init();
