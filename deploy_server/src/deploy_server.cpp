@@ -35,7 +35,7 @@ namespace deploy
         InitGroupDatabaseServerDb();
 
         InitGroupLoginServerDb<region_server_db>(kRegionServerBeginPort, kGroup);
-        InitGroupLoginServerDb<redis_server_db>(kGatewayServerBeginPort, kGroup);
+        InitGroupLoginServerDb<redis_server_db>(kRedisPort, kGroup);
         InitGroupLoginServerDb<login_server_db>(kLoginServerBeginPort, kGroup);
         InitGroupLoginServerDb<master_server_db>(kMasterServerBeginPort, kGroup);
         InitGroupLoginServerDb<game_server_db>(kGameServerBeginPort, kGroup * 2);
