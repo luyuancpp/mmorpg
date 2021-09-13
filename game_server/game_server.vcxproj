@@ -132,6 +132,7 @@
     <ClCompile Include="src\region\service_rg2g.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\comp\master.hpp" />
     <ClInclude Include="src\factories\server_global_entity.hpp" />
     <ClInclude Include="src\game_server.h" />
     <ClInclude Include="src\master\service_ms2g.h" />

@@ -1,5 +1,4 @@
 syntax = "proto3";
-import "common.proto";
 import "google/protobuf/empty.proto";
 package g2rg;
 option cc_generic_services = true;

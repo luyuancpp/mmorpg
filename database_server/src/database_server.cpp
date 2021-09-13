@@ -11,9 +11,7 @@ namespace database
     DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
         : loop_(loop),
           database_(std::make_shared<common::MysqlDatabase>()),
-          redis_(std::make_shared<common::RedisClient>())
-    {
-    }
+          redis_(std::make_shared<common::RedisClient>()){}
 
     void DatabaseServer::LoadConfig()
     {

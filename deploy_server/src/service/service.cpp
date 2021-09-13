@@ -19,13 +19,21 @@ namespace deploy
     {
         ClosurePtr cp(done);
         auto group_id = request->group();
-        std::string where_case = std::to_string(group_id) + " = id  ";
         auto& servers_info = *response->mutable_info();
-        database_->LoadOne(*servers_info.mutable_database_info(), where_case);
-        database_->LoadOne(*servers_info.mutable_login_info(), where_case);
-        database_->LoadOne(*servers_info.mutable_master_info(), where_case);
-        database_->LoadOne(*servers_info.mutable_gateway_info(), where_case);
-        database_->LoadOne(*servers_info.mutable_redis_info(), where_case);
+        if (group_id > 0)
+        {
+            std::string where_case = std::to_string(group_id) + " = id  ";
+            database_->LoadOne(*servers_info.mutable_database_info(), where_case);
+            database_->LoadOne(*servers_info.mutable_login_info(), where_case);
+            database_->LoadOne(*servers_info.mutable_master_info(), where_case);
+            database_->LoadOne(*servers_info.mutable_gateway_info(), where_case);
+            database_->LoadOne(*servers_info.mutable_redis_info(), where_case);
+        }
+        else
+        {
+            std::string where_case = std::to_string(request->region_id()) + " = region_id  ";
+            database_->LoadAll<::master_server_db>(*response->mutable_region_masters(), where_case);
+        }
         RegionServer(request->region_id(), servers_info.mutable_regin_info());
     }
 
