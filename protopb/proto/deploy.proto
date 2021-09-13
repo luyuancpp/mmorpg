@@ -8,12 +8,17 @@ message ServerInfoRequest
 {
   uint32 group = 1;
   uint32 region_id = 2;
-  uint32 region_server_type = 3;
+}
+
+message MasterServersDb
+{
+  repeated master_server_db masters = 1;
 }
 
 message ServerInfoResponse
 {
   servers_info_data info = 1;
+  MasterServersDb region_masters = 2;
 }
 
 message StartGameServerRequest

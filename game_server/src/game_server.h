@@ -4,6 +4,7 @@
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
 
+#include "src/comp/master.hpp"
 #include "src/master/service_ms2g.h"
 #include "src/region/service_rg2g.h"
 #include "src/server_common/deploy_rpcclient.h"
@@ -20,7 +21,6 @@ namespace game
 class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
 {
 public:
-
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     using StubG2ms = common::RpcStub<g2ms::G2msService_Stub>;
@@ -47,12 +47,12 @@ public:
     using StartGameMasterRpcRC = std::shared_ptr<StartGameMasterRpcClosure>;
     void StartGameServerMasterReplied(StartGameMasterRpcRC cp);
 
-    void Register2Master();
+    void Register2Master(MasterClientPtr& master_rpc_client);
 
     void receive(const common::RpcClientConnectionES& es);
 
 private:    
-
+    void InitRoomMasters(const deploy::ServerInfoResponse* resp);
     void ConnectMaster();
     void ConnectRegion();
 
@@ -65,7 +65,6 @@ private:
     common::RpcClientPtr deploy_rpc_client_;
     deploy::DeployRpcStub deploy_stub_;
 
-    common::RpcClientPtr master_rpc_client_;
     StubG2ms g2ms_stub_;
 
     common::RpcClientPtr region_rpc_client_;

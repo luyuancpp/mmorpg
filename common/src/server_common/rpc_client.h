@@ -35,6 +35,8 @@ public:
     const InetAddress& local_addr()const { return client_.connection()->localAddress(); }
     const InetAddress& peer_addr()const { return client_.connection()->peerAddress(); }
 
+    bool connected()const { return nullptr != client_.connection(); }
+
     template <typename E, typename Receiver>
     void subscribe(Receiver& receiver) { emp_->subscribe<E>(receiver); }
 
