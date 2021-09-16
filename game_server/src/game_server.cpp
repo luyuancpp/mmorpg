@@ -7,6 +7,7 @@
 #include "src/game_config/region_config.h"
 
 #include "src/factories/server_global_entity.hpp"
+#include "src/game_logic/comp/server_list.hpp"
 #include "src/game_logic/enum/server_enum.h"
 #include "src/game_logic/game_registry.h"
 #include "src/master/replied_ms2g.h"
@@ -27,6 +28,7 @@ void GameServer::Init()
     common::DeployConfig::GetSingleton().Load("deploy.json");
     common::RegionConfig::GetSingleton().Load("region.json");
     loadallconfig();
+    InitGlobalEntities();
 }
 
 void GameServer::InitNetwork()
@@ -136,6 +138,11 @@ void GameServer::receive(const common::RpcClientConnectionES& es)
             break;
         }
     }
+}
+
+void GameServer::InitGlobalEntities()
+{
+    common::reg().emplace<common::SceneMap>(global_entity());
 }
 
 void GameServer::InitRoomMasters(const deploy::ServerInfoResponse* resp)
