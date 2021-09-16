@@ -11,6 +11,7 @@
 #include "src/master_server.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/sys/scene_sys.hpp"
+#include "src/sys/message_sys.hpp"
 
 #include "ms2g.pb.h"
 #include "ms2gw.pb.h"
@@ -46,11 +47,13 @@ namespace l2ms
 
         auto& gs = reg().get<RpcServerConnection>(server_ptr->server_entity());
 
+        reg().emplace_or_replace<GameServerEntity>(e, GameServerEntity{ server_ptr->server_entity() });
+
         ::ms2g::EnterGameRequest entergame_request;
         entergame_request.set_player_id(player_id);
         entergame_request.mutable_scenes_info()->set_scene_config_id(reg().get<SceneConfig>(scene_entity).scene_config_id());
         entergame_request.mutable_scenes_info()->set_scene_id(reg().get<GameGuid>(scene_entity));        
-        gs.Send(entergame_request, "ms2g.Ms2gService", "EnterGame");
+        Send2GameServer(entergame_request, "ms2g.Ms2gService", "EnterGame", e);
 
         EnterSceneParam enter_scene_param;
         enter_scene_param.enter_entity_ = e;

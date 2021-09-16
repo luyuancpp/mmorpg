@@ -160,6 +160,7 @@
     <ClCompile Include="src\master_server.cpp" />
     <ClCompile Include="src\login\service_l2ms.cpp" />
     <ClCompile Include="src\master_player\master_player_list.cpp" />
+    <ClCompile Include="src\sys\message_sys.cpp" />
     <ClCompile Include="src\sys\scene_sys.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -171,6 +172,7 @@
     <ClInclude Include="src\login\service_l2ms.h" />
     <ClInclude Include="src\master_player\master_player_list.h" />
     <ClInclude Include="src\master_registry\master_registry.h" />
+    <ClInclude Include="src\sys\message_sys.hpp" />
     <ClInclude Include="src\sys\scene_sys.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

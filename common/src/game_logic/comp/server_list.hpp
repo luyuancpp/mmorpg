@@ -147,6 +147,16 @@ namespace common
         uint32_t server_size_{ 0 };
     };
 
+    class GameServerEntity
+    {
+    public:
+        GameServerEntity(entt::entity e) : server_entity_(e) {}
+        void set_server_entity(entt::entity server_entity) { server_entity_ = server_entity; }
+        entt::entity server_entity() const {return server_entity_;}
+    private:
+        entt::entity server_entity_{};
+    };
+
 }//namespace common
 
 #endif//COMMON_SRC_GAME_LOGIC_COMP_SERVER_LIST_HPP_
