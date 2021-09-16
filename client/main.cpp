@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
         google::protobuf::util::JsonStringToMessage(sp, &connetion_param_);
         InetAddress serverAddr(connetion_param_.data(0).ip(), connetion_param_.data(0).port());
   
+        muduo::Logger::setLogLevel(muduo::Logger::WARN);
         std::vector<std::unique_ptr<PlayerClient>> clients;
         for (int i = 0; i < nClients; ++i)
         {
@@ -37,14 +38,14 @@ int main(int argc, char* argv[])
             clients.back()->connect();
         }
         Timestamp start(Timestamp::now());
+        muduo::Logger::setLogLevel(muduo::Logger::INFO);
         LOG_INFO << "all connected";
         loop.loop();
         Timestamp end(Timestamp::now());
         double seconds = timeDifference(end, start);
         printf("%f seconds\n", seconds);
         printf("%.1f calls per second\n", nClients * seconds);
-
-        return 0;
+        muduo::Logger::setLogLevel(muduo::Logger::WARN);
     }
     else
     {
