@@ -9,10 +9,9 @@
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/enum/server_enum.h"
 #include "src/game_logic/game_registry.h"
+#include "src/master/replied_ms2g.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/deploy_variable.h"
-
-#include "muduo/base/CrossPlatformAdapterFunction.h"
 
 game::GameServer* g_game_server = nullptr;
 
@@ -78,26 +77,9 @@ void GameServer::StartGameServerDeployReplied(StartGameServerRpcRC cp)
     server_->start();   
 }
 
-void GameServer::StartGameServerMasterReplied(StartGameMasterRpcRC cp)
-{
-    auto rsp = cp->s_resp_;
-    
-    for (auto e : common::reg().view<MasterClientPtr>())
-    {
-        auto& master_rpc_client = common::reg().get<MasterClientPtr>(e);
-        if (cp->s_reqst_.master_server_addr() == (uint64_t)master_rpc_client.get())
-        {
-            common::reg().emplace<uint32_t>(e, rsp->master_node_id());
-            LOG_INFO << "master server info " << rsp->master_node_id();
-            break;
-        }
-    }
-}
-
 void GameServer::Register2Master(MasterClientPtr& master_rpc_client)
 {
-    StartGameMasterRpcRC scp(std::make_shared<StartGameMasterRpcClosure>());
-
+    ms2g::RepliedMs2g::StartGameMasterRpcRC scp(std::make_shared<ms2g::RepliedMs2g::StartGameMasterRpcClosure>());
     auto& master_local_addr = master_rpc_client->local_addr();
     g2ms::StartGameServerRequest& request = scp->s_reqst_;
     auto rpc_client = request.mutable_rpc_client();
@@ -110,9 +92,9 @@ void GameServer::Register2Master(MasterClientPtr& master_rpc_client)
     request.set_node_id(server_info_.id());
     request.set_master_server_addr(uint64_t(master_rpc_client.get()));
     g2ms_stub_.CallMethod(
-        &GameServer::StartGameServerMasterReplied,
+        &ms2g::RepliedMs2g::StartGameServerMasterReplied,
         scp,
-        this,
+        &ms2g::RepliedMs2g::GetSingleton(),
         &g2ms::G2msService_Stub::StartGameServer);
 }
 
