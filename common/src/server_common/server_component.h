@@ -3,13 +3,15 @@
 
 #include "muduo/net/TcpConnection.h"
 
+#include "src/server_common/rpc_channel.h"
+
 namespace common
 {
     struct RpcServerConnection
     {
         RpcServerConnection(const muduo::net::TcpConnectionPtr& conn)
             : conn_(conn),
-              channel_(boost::any_cast<RpcChannelPtr>(conn->getContext())){}
+              channel_(boost::any_cast<muduo::net::RpcChannelPtr>(conn->getContext())){}
 
         bool Connected() const { return conn_->connected(); }
 
@@ -28,7 +30,7 @@ namespace common
 
     struct GatewayConnected
     {
-        InetAddress addr_;
+        muduo::net::InetAddress addr_;
     };
 }//namespace common
 
