@@ -47,6 +47,7 @@ public:
     void receive(const common::RpcClientConnectionES& es);
 
 private:    
+    void InitGlobalEntities();
     void InitRoomMasters(const deploy::ServerInfoResponse* resp);
     void ConnectMaster();
     void ConnectRegion();
