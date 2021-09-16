@@ -12,6 +12,7 @@ namespace ms2g
 void RepliedMs2g::StartGameServerMasterReplied(StartGameMasterRpcRC cp)
 {
     auto rsp = cp->s_resp_;
+    //LOG_INFO << "master server info " << rsp->DebugString().c_str();
     for (auto e : common::reg().view<MasterClientPtr>())
     {
         auto& master_rpc_client = common::reg().get<MasterClientPtr>(e);
