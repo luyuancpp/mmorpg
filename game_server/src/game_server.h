@@ -42,11 +42,6 @@ public:
     using StartGameServerRpcRC = std::shared_ptr<StartGameServerInfoRpcClosure>;
     void StartGameServerDeployReplied(StartGameServerRpcRC cp);
 
-    using StartGameMasterRpcClosure = common::RpcClosure<g2ms::StartGameServerRequest,
-        g2ms::StartGameServerResponse>;
-    using StartGameMasterRpcRC = std::shared_ptr<StartGameMasterRpcClosure>;
-    void StartGameServerMasterReplied(StartGameMasterRpcRC cp);
-
     void Register2Master(MasterClientPtr& master_rpc_client);
 
     void receive(const common::RpcClientConnectionES& es);
