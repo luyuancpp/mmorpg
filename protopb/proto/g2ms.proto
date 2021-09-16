@@ -1,5 +1,6 @@
 syntax = "proto3";
 import "common.proto";
+import "google/protobuf/empty.proto";
 package g2ms;
 option cc_generic_services = true;
 
@@ -13,16 +14,10 @@ message StartGameServerRequest
   uint64 master_server_addr = 5;
 }
 
-message MakeSceneInfo
-{
-  uint32 scene_config_id = 1;
-  uint64 scene_id = 2;
-}
-
 message StartGameServerResponse
 {
   uint32 master_node_id = 1;
-  repeated MakeSceneInfo scenes_info = 2;
+  repeated SceneInfo scenes_info = 2;
 }
 
 service G2msService {

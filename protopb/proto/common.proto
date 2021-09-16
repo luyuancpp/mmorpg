@@ -38,3 +38,9 @@ message IpPort
   string ip = 1;
   uint32 port = 2;
 }
+
+message SceneInfo
+{
+  uint32 scene_config_id = 1;
+  uint64 scene_id = 2;
+}
