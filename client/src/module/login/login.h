@@ -14,11 +14,7 @@ using namespace muduo::net;
 class LoginModule
 {
 public:
-    LoginModule(ProtobufCodec& codec, TcpClient& client, TcpConnectionPtr& conn)
-        : codec_(codec),
-          client_(client),
-          conn_(conn)
-    {}
+    LoginModule(ProtobufCodec& codec, TcpClient& client, TcpConnectionPtr& conn);
 
     void ReadyGo();
     void CreatePlayer();

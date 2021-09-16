@@ -4,13 +4,14 @@
 
 #include "src/client_entityid/client_entityid.h"
 #include "src/file2string/file2string.h"
-
+#include "src/luacpp/lua_client.h"
 
 int main(int argc, char* argv[])
 {
     LOG_INFO << "pid = " << getpid();
     if (argc > 0)
     {
+        LuaClient::GetSingleton();
         int32_t nClients = 1;
 
         if (argc > 1)
