@@ -10,7 +10,7 @@ namespace ms2g
     public:
         virtual void EnterGame(::google::protobuf::RpcController* controller,
             const ::ms2g::EnterGameRequest* request,
-            ::ms2g::EnterGameResponse* response,
+            ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
     private:
