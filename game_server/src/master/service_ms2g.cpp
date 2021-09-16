@@ -13,7 +13,7 @@ namespace ms2g
         ::google::protobuf::Closure* done)
     {
         common::ClosurePtr cp(done);
-        LOG_INFO << request->DebugString().c_str();
+        //LOG_INFO << request->DebugString().c_str();
     }
 
 }
