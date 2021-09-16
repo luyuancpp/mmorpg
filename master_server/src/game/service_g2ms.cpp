@@ -31,6 +31,7 @@ namespace g2ms
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
 
+        entt::entity game_server_entity{ entt::null };
         for (auto e : reg().view<RpcServerConnection>())
         {
             auto c = reg().get<RpcServerConnection>(e);
@@ -39,33 +40,46 @@ namespace g2ms
             {
                 continue;
             }
-            MakeGameServerParam cparam;
-            cparam.node_id_ = request->node_id();
-            auto server_entity = MakeMainSceneGameServer(reg(), cparam);
-            reg().emplace<common::RpcServerConnection>(server_entity, common::RpcServerConnection{ c.conn_ });
-            reg().emplace<InetAddress>(server_entity, rpc_server_peer_addr);
-
-            if (request->server_type() == common::kMainServer)
-            {
-                auto& config_all = mainscene_config::GetSingleton().all();
-                MakeScene2GameServerParam create_scene_param;
-                create_scene_param.server_entity_ = server_entity;
-                for (int32_t i = 0; i < config_all.data_size(); ++i)
-                {
-                    create_scene_param.scene_config_id_ = config_all.data(i).id();
-                    MakeScene2GameServer(reg(), create_scene_param);
-                }
-            }          
-            else
-            {
-                reg().remove<common::MainSceneServer>(server_entity);
-                reg().emplace<common::RoomSceneServer>(server_entity);                
-            }
-            g_master_server->GatewayConnectGame(server_entity);
-            LOG_INFO << "game connected " << request->node_id();
-            break;
+            game_server_entity = e;
+            break;            
         }
+        if (game_server_entity == entt::null)
+        {
+            return;
+        }
+        auto c = reg().get<RpcServerConnection>(game_server_entity);
+        MakeGameServerParam cparam;
+        cparam.node_id_ = request->node_id();
+        auto server_entity = MakeMainSceneGameServer(reg(), cparam);
+        reg().emplace<common::RpcServerConnection>(server_entity, common::RpcServerConnection{ c.conn_ });
+        reg().emplace<InetAddress>(server_entity, rpc_server_peer_addr);
 
+        if (request->server_type() == common::kMainServer)
+        {
+            auto& config_all = mainscene_config::GetSingleton().all();
+            MakeScene2GameServerParam create_scene_param;
+            create_scene_param.server_entity_ = server_entity;
+            for (int32_t i = 0; i < config_all.data_size(); ++i)
+            {
+                create_scene_param.scene_config_id_ = config_all.data(i).id();
+                auto scene_entity = MakeScene2GameServer(reg(), create_scene_param);
+                if (!reg().valid(scene_entity))
+                {
+                    continue;
+                }
+                auto scene_info = response->add_scenes_info();
+                scene_info->set_scene_config_id(reg().get<common::SceneConfig>(scene_entity).scene_config_id());
+                scene_info->set_scene_id(reg().get<common::GameGuid>(scene_entity));
+            }
+        }
+        else
+        {
+            reg().remove<common::MainSceneServer>(server_entity);
+            reg().emplace<common::RoomSceneServer>(server_entity);
+        }
+        g_master_server->GatewayConnectGame(server_entity);
+        LOG_INFO << "game connected " << request->node_id();
+       
     }
 
 }//namespace g2ms
