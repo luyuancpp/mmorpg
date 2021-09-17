@@ -22,20 +22,18 @@ LoginModule::LoginModule(ProtobufCodec& codec, TcpClient& client, TcpConnectionP
     lua.new_usertype<LoginRequest>("LoginRequest", "account",
         sol::property(&LoginRequest::account, &LoginRequest::set_account<const std::string&>));
     lua.new_usertype<PlayerId>("PlayerId",
-        // bind as variable
         "player_id",
         sol::var(PlayerId::player_id));
 }
 
 void LoginModule::ReadyGo()
 {
-    LoginRequest request;
-    sol::state& lua = LuaClient::GetSingleton().lua();
-    request.set_password("lhl.2021");    
-    lua.set("login", std::ref(request));
+    sol::state& lua = LuaClient::GetSingleton().lua();  
+    lua["LoginRequest"]["Send"] = [this](const LoginRequest& o) {
+        codec_.send(conn_, o);
+        //LOG_INFO << o.DebugString().c_str();
+    };
     LuaClient::GetSingleton().client().call();
-    //LOG_INFO << request.DebugString().c_str();
-    codec_.send(conn_, request);
 }
 
 void LoginModule::CreatePlayer()
@@ -56,3 +54,4 @@ void LoginModule::LeaveGame()
     LeaveGameRequest request;
     codec_.send(conn_, request);
 }
+
