@@ -11,20 +11,19 @@
 using namespace muduo;
 using namespace muduo::net;
 
+class ClientService;
+
 class LoginModule
 {
 public:
-    LoginModule(ProtobufCodec& codec, TcpClient& client, TcpConnectionPtr& conn);
+    LoginModule(ClientService* service);
 
     void ReadyGo();
     void CreatePlayer();
     void EnterGame(uint64_t player_id);
     void LeaveGame();
 private:
-    ProtobufCodec& codec_;
-    TcpClient& client_;
-    TcpConnectionPtr& conn_;
-    
+    ClientService* service_{nullptr};
 };
 
 #endif//CLIENT_SRC_MODULE_LOGIN_LOGIN_H_

@@ -26,6 +26,7 @@ public:
         ProtobufCodec& codec,
         TcpClient& client);
 
+    inline void Send(const google::protobuf::Message& message){ codec_.send(conn_, message);}
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
     void OnDisconnect();
     void ReadyGo();
