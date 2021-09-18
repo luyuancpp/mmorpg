@@ -6,12 +6,24 @@
 #include "src/file2string/file2string.h"
 #include "src/luacpp/lua_client.h"
 
+struct PlayerId {
+public:
+    static uint64_t player_id;
+};
+
+uint64_t PlayerId::player_id = 100;
+
 int main(int argc, char* argv[])
 {
     LOG_INFO << "pid = " << getpid();
     if (argc > 0)
     {
-        LuaClient::GetSingleton();
+        sol::state& lua = LuaClient::GetSingleton().lua();
+        lua.new_usertype<LoginRequest>("LoginRequest", "account",
+            sol::property(&LoginRequest::account, &LoginRequest::set_account<const std::string&>));
+        lua.new_usertype<PlayerId>("PlayerId",
+            "player_id",
+            sol::var(PlayerId::player_id));
         int32_t nClients = 1;
 
         if (argc > 1)
