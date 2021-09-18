@@ -24,9 +24,6 @@
     <ClCompile Include="src\service\service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\module\login\login.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\client_entityid\client_entityid.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -39,9 +36,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\module\login\login.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\client_entityid\client_entityid.h">

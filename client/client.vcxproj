@@ -156,14 +156,12 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\client_entityid\client_entityid.cpp" />
     <ClCompile Include="src\luacpp\lua_client.cpp" />
-    <ClCompile Include="src\module\login\login.cpp" />
     <ClCompile Include="src\service\service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client.h" />
     <ClInclude Include="src\client_entityid\client_entityid.h" />
     <ClInclude Include="src\luacpp\lua_client.h" />
-    <ClInclude Include="src\module\login\login.h" />
     <ClInclude Include="src\service\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
