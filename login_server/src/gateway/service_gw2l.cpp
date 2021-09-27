@@ -26,6 +26,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     // login process
     // check account rule
     //check string rule
+    // check sdk token msg encryption
     {
         auto it = login_players_.find(request->account());
         if (it == login_players_.end())

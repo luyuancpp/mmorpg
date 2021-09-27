@@ -20,17 +20,17 @@ TEST(Missions, MakeMission)
     auto mm = MakePlayerMissionMap();
     MakeMissionParam param{ mm,
         mid,
-        missionconfig::GetSingleton().key_id(mid)->condition_id(), 
+        mission_config::GetSingleton().key_id(mid)->condition_id(), 
         E_OP_CODE_TEST };
     
-    auto& data = missionconfig::GetSingleton().all();
+    auto& data = mission_config::GetSingleton().all();
 
     std::size_t s = 0;
     for (int32_t i = 0; i < data.data_size(); ++i)
     {
         auto id = data.data(i).id();
         param.mission_id_ = id;
-        param.condition_id_ = &missionconfig::GetSingleton().key_id(id)->condition_id();
+        param.condition_id_ = &mission_config::GetSingleton().key_id(id)->condition_id();
         auto m = MakeMission(param);
         ++s;
     }
@@ -47,7 +47,7 @@ TEST(Missions, RadomCondtion)
     uint32_t mid = 3;
     auto mm = MakePlayerMissionMap();
     MakePlayerMissionParam param{mm, mid,  E_OP_CODE_TEST };    
-    auto cids = missionconfig::GetSingleton().key_id(mid);    
+    auto cids = mission_config::GetSingleton().key_id(mid);    
     MakePlayerMission(param);
     auto& missions = reg().get<MissionMap>(mm).missions();
     auto it =  std::find(cids->random_condition_pool().begin(), cids->random_condition_pool().end(),
@@ -64,7 +64,7 @@ TEST(Missions, RepeatedMission)
         uint32_t mid = 1;
         MakeMissionParam param{ mm,
         mid,
-        missionconfig::GetSingleton().key_id(mid)->condition_id(), E_OP_CODE_TEST };
+        mission_config::GetSingleton().key_id(mid)->condition_id(), E_OP_CODE_TEST };
         EXPECT_EQ(RET_OK, MakeMission(param));
         EXPECT_EQ(RET_MISSION_ID_REPTEATED, MakeMission(param));
     }
@@ -82,7 +82,7 @@ TEST(Missions, TriggerCondition)
 {
     auto mm = MakePlayerMissionMap();
     uint32_t mid = 1;
-    //auto mrow = missionconfig::GetSingleton().key_id(mid);
+    //auto mrow = mission_config::GetSingleton().key_id(mid);
     MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
     EXPECT_EQ(RET_OK, MakePlayerMission(param));
     EXPECT_EQ(1, reg().get<UI32PairSet>(mm).size());
@@ -113,7 +113,7 @@ TEST(Missions, TypeSize)
 {
     auto mm = MakePlayerMissionMap();
     uint32_t mid = 6;
-    //auto mrow = missionconfig::GetSingleton().key_id(mid);
+    //auto mrow = mission_config::GetSingleton().key_id(mid);
     MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
     EXPECT_EQ(RET_OK, MakePlayerMission(param));
     EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
@@ -166,7 +166,7 @@ TEST(Missions, CompleteRemakeMission)
 {
     auto mm = MakePlayerMissionMap();
     uint32_t mid = 4;
-    //auto mrow = missionconfig::GetSingleton().key_id(mid);
+    //auto mrow = mission_config::GetSingleton().key_id(mid);
     MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
     EXPECT_EQ(RET_OK, MakePlayerMission(param));
     EXPECT_EQ(1, reg().get<UI32PairSet>(mm).size());
@@ -338,8 +338,8 @@ TEST(Missions, MissionTimeOut)
 int main(int argc, char** argv)
 {
     Random::GetSingleton();
-    conditionconfig::GetSingleton().load();
-    missionconfig::GetSingleton().load();
+    condition_config::GetSingleton().load();
+    mission_config::GetSingleton().load();
     testing::InitGoogleTest(&argc, argv);
 
     return RUN_ALL_TESTS();
