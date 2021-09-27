@@ -28,7 +28,6 @@ struct MissionIdParam
     uint32_t op_{ 0 };
 };
 
-void CompleteAllMission(entt::entity, uint32_t op);
 void TriggerConditionEvent(const ConditionEvent&);
 uint32_t GiveMission(const MissionIdParam&);
 uint32_t GetMissionReward(const MissionIdParam&);

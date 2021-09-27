@@ -47,7 +47,6 @@ entt::entity MakeMissionMap()
     reg().emplace<CompleteMissionsId>(e);
 
     auto& type_missions =  reg().emplace<TypeMissionIdMap>(e);
-    
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
     {
         type_missions.emplace(i, UI32USet{});
@@ -121,7 +120,7 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
             return RET_MISSION_TYPE_REPTEATED;
         }
     }    
-    MakeMissionParam mp{ param.e_, mission_id, mrow ->condition_id(), param.op_};
+    MakeMissionParam mp{ param.e_, mission_id, mrow->condition_id(), param.op_};
     if (mrow->random_condition_pool_size() > 0)
     {
         MakeMissionParam::ConditionV v;

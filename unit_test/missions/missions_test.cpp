@@ -7,6 +7,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/op_code.h"
 #include "src/game_logic/sys/mission_sys.hpp"
+#include "src/game_logic/missions/missions.h"
 #include "src/random/random.h"
 #include "src/return_code/error_code.h"
 
@@ -17,8 +18,8 @@ using namespace common;
 TEST(Missions, MakeMission)
 {
     uint32_t mid = 1;
-    auto mm = MakePlayerMissionMap();
-    MakeMissionParam param{ mm,
+    Missions ms;
+    MakeMissionParam param{ ms.entity(),
         mid,
         mission_config::GetSingleton().key_id(mid)->condition_id(), 
         E_OP_CODE_TEST };
@@ -31,15 +32,15 @@ TEST(Missions, MakeMission)
         auto id = data.data(i).id();
         param.mission_id_ = id;
         param.condition_id_ = &mission_config::GetSingleton().key_id(id)->condition_id();
-        auto m = MakeMission(param);
+        auto m = ms.MakeMission(param);
         ++s;
     }
 
-    EXPECT_EQ(s, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
-    CompleteAllMission(mm, E_OP_CODE_TEST);
-    EXPECT_EQ(0, reg().view<MissionMap>().size());
-    EXPECT_EQ(s, reg().get<CompleteMissionsId>(mm).missions_size());
+    EXPECT_EQ(s, ms.mission_size());
+    EXPECT_EQ(0, ms.completemission_size());
+    ms.CompleteAllMission();
+    EXPECT_EQ(0, ms.mission_size());
+    EXPECT_EQ(s, ms.completemission_size());
 }
 
 TEST(Missions, RadomCondtion)
