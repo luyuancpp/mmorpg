@@ -40,7 +40,7 @@ bool TriggerCondition(const ConditionEvent& c, Mission& mission)
         {
             continue;
         }
-        auto p = conditionconfig::GetSingleton().key_id(condition->id());
+        auto p = condition_config::GetSingleton().key_id(condition->id());
         if (nullptr == p)
         {
             continue;
@@ -88,14 +88,14 @@ void OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_com
     auto& type_missions = reg().get<TypeMissionIdMap>(e);
     for (auto& it : temp_complete)
     {
-        auto p = missionconfig::GetSingleton().key_id(it);
+        auto p = mission_config::GetSingleton().key_id(it);
         if (nullptr == p)
         {
             continue;
         }
         for (int32_t i = 0; i < p->condition_id_size(); ++i)
         {
-            auto cp = conditionconfig::GetSingleton().key_id(p->condition_id(i));
+            auto cp = condition_config::GetSingleton().key_id(p->condition_id(i));
             if (nullptr == cp)
             {
                 continue;
@@ -222,7 +222,7 @@ void RemoveMission(const MissionIdParam& rm)
     {
         begin_times->mutable_mission_begin_time()->erase(mission_id);
     }
-    auto mrow = missionconfig::GetSingleton().key_id(mission_id);
+    auto mrow = mission_config::GetSingleton().key_id(mission_id);
     if (nullptr == mrow)
     {
         return;
@@ -231,7 +231,7 @@ void RemoveMission(const MissionIdParam& rm)
     auto& type_missions = reg().get<TypeMissionIdMap>(e);
     for (int32_t i = 0; i < mrow->condition_id_size(); ++i)
     {
-        auto cp = conditionconfig::GetSingleton().key_id(mrow->condition_id(i));
+        auto cp = condition_config::GetSingleton().key_id(mrow->condition_id(i));
         if (nullptr == cp)
         {
             continue;

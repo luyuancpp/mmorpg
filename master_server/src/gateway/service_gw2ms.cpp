@@ -38,7 +38,6 @@ namespace gw2ms
         {
             g_master_server->GatewayConnectGame(e);
         }
-
     }
 
     void Gw2msServiceImpl::PlayerDisconnect(::google::protobuf::RpcController* controller, 
