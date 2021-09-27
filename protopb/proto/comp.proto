@@ -24,7 +24,6 @@ message Mission
 message MissionMap
 {
 	map<uint32, Mission> missions = 1;
-	
 }
 
 message MissionBeginTime

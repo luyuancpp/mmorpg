@@ -14,4 +14,10 @@ namespace common
         return singleton;
     }
 
+    entt::entity& op_enitty()
+    {
+        static entt::entity singleton = reg().create();
+        return singleton;
+    }
+
 }//namespace common

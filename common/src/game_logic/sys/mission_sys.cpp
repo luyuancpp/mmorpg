@@ -17,21 +17,14 @@ bool ConditionEvent::CheckType() const
     return condition_type_ < E_CONDITION_MAX;
 }
 
-void CompleteAllMission(entt::entity e, uint32_t op)
-{
-    auto& mm = reg().get<MissionMap>(e);
-    auto& cm = reg().get<CompleteMissionsId>(e);
-    for (auto& meit : mm.missions())
-    {
-        cm.mutable_missions()->insert({ meit.first, false});
-    }
-    reg().remove<MissionMap>(e);
-}
-
 bool TriggerCondition(const ConditionEvent& c, Mission& mission)
 {
+    if (c.condtion_ids_.empty())
+    {
+        return false;
+    }
     auto& row_condtion1 = c.condtion_ids_[E_CONDITION_1];
-    //compera condition
+    //compare condition
     bool condition_change = false;
     for (int32_t i = 0; i < mission.conditions_size(); ++i)
     {
@@ -48,8 +41,7 @@ bool TriggerCondition(const ConditionEvent& c, Mission& mission)
         if (c.condition_type_ != p->condition_type())
         {
             continue;
-        }
-        
+        }        
         bool conform = false;
         for (int32_t ci = 0; ci < p->condition1_size(); ++ci)
         {
@@ -129,20 +121,18 @@ void OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_com
     }
 }
 
-
 void TriggerConditionEvent(const ConditionEvent& c)
 {
     if (c.condtion_ids_.empty())
     {
         return;
     }
-
     auto e = c.e_;
     auto mm = reg().get<MissionMap>(c.e_).mutable_missions();
     auto type_missions = reg().get<TypeMissionIdMap>(e);
     auto& cm = reg().get<CompleteMissionsId>(e);
     auto complete_callback = reg().try_get<CompleteMissionCallback>(e);
-    auto it = type_missions.find(c.condition_type_);// aready check
+    auto it = type_missions.find(c.condition_type_);
     if (it == type_missions.end())
     {
         return;
