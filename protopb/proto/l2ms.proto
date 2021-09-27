@@ -31,14 +31,7 @@ message LeaveGameRequest
   uint64 connection_id = 1;
 }
 
-message DisconnectRequest
-{
-  uint64 connection_id = 1;
-}
-
 service LoginService 
 {
-  rpc EnterGame (EnterGameRequest) returns (EnterGameResponese);
-  rpc LeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
-  rpc Disconect (DisconnectRequest) returns (google.protobuf.Empty);  
+  rpc EnterGame (EnterGameRequest) returns (EnterGameResponese); 
 }

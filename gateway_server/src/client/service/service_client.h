@@ -1,8 +1,6 @@
 #ifndef GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_
 #define GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_
 
-#include "c2gw.pb.h"
-
 #include "src/server_common/codec/codec.h"
 
 #include "muduo/base/noncopyable.h"
@@ -13,7 +11,9 @@
 #include "src/server_common/rpc_stub.h"
 #include "src/server_common/rpc_client.h"
 
+#include "c2gw.pb.h"
 #include "gw2l.pb.h"
+#include "gw2ms.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

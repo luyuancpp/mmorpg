@@ -60,57 +60,6 @@ namespace l2ms
         enter_scene_param.scene_entity_ = scene_entity;
         EnterScene(reg(), enter_scene_param);
     }
-
-    void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
-        const ::l2ms::LeaveGameRequest* request, 
-        ::google::protobuf::Empty* response,
-        ::google::protobuf::Closure* done)
-    {
-        ClosurePtr cp(done);
-        auto& connection_map = reg().get<common::ConnectionPlayerEnitiesMap>(global_entity());
-        auto it = connection_map.find(request->connection_id());
-        assert(it != connection_map.end());
-        if (it == connection_map.end())
-        {
-            return;
-        }
-        auto player_entity = it->second;
-
-        LeaveSceneParam leave_scene;
-        leave_scene.leave_entity_ = player_entity;
-        LeaveScene(reg(), leave_scene);
-
-        auto player_id = reg().get<GameGuid>(player_entity);
-        assert(MasterPlayerList::GetSingleton().HasPlayer(player_id));  
-        reg().destroy(player_entity);
-        MasterPlayerList::GetSingleton().LeaveGame(player_id);  
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
-
-        connection_map.erase(it);
-    }
-
-    void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
-        const ::l2ms::DisconnectRequest* request,
-        ::google::protobuf::Empty* response,
-        ::google::protobuf::Closure* done)
-    {
-        ClosurePtr cp(done);
-       auto& connection_map = reg().get<common::ConnectionPlayerEnitiesMap>(global_entity());
-        auto it = connection_map.find(request->connection_id());
-        if (it == connection_map.end())
-        {
-            return;
-        }
-        auto player_entity = it->second;
-        auto player_id = reg().get<GameGuid>(player_entity);
-
-        reg().destroy(player_entity);
-        connection_map.erase(it);
-
-        MasterPlayerList::GetSingleton().LeaveGame(player_id);
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
-    }
-
 }//namespace master
 
 

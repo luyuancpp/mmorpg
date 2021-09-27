@@ -12,16 +12,6 @@ namespace l2ms
             const ::l2ms::EnterGameRequest* request,
             ::l2ms::EnterGameResponese* response,
             ::google::protobuf::Closure* done)override;
-
-        virtual void LeaveGame(::google::protobuf::RpcController* controller,
-            const ::l2ms::LeaveGameRequest* request,
-            ::google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done)override;
-
-        virtual void Disconect(::google::protobuf::RpcController* controller,
-            const ::l2ms::DisconnectRequest* request,
-            ::google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done)override;
     private:
 
     };

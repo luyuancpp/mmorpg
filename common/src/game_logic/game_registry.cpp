@@ -10,8 +10,8 @@ namespace common
 
     entt::entity& error_entity()
     {
-        static entt::entity error_entity = reg().create();
-        return error_entity;
+        static entt::entity singleton = reg().create();
+        return singleton;
     }
 
 }//namespace common
