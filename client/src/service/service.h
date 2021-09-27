@@ -7,7 +7,6 @@
 #include "src/game_logic/timer_task/timer_task.h"
 #include "src/server_common/codec/codec.h"
 #include "src/server_common/codec/dispatcher.h"
-#include "src/module/login/login.h"
 
 #include "c2gw.pb.h"
 
@@ -51,7 +50,6 @@ private:
     ProtobufCodec& codec_;
     TcpConnectionPtr conn_;
     TcpClient& client_;
-    LoginModule login_;
     ProtobufDispatcher& dispatcher_;
 
     uint64_t player_id_{ 0 };

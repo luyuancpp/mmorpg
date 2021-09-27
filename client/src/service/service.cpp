@@ -10,7 +10,6 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
                              ProtobufCodec& codec, 
                              TcpClient& client) : codec_(codec), 
                                                   client_(client),
-                                                  login_(this),
                                                   dispatcher_(dispatcher)
 {
     dispatcher_.registerMessageCallback<LoginResponse>(

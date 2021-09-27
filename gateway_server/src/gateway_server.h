@@ -40,6 +40,7 @@ public:
         
     }
 
+    RpcStubgw2l& gw2l_stub() { return gw2l_login_stub_; }
     RpcStubgw2ms& gw2ms_stub() { return gw2ms_stub_; }
 
     template<typename ServerInfo>

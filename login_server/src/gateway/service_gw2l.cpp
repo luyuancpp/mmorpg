@@ -155,6 +155,12 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
 void LoginServiceImpl::EnterGameMasterReplied(EnterGameMasterRP d)
 {
     d->c_resp_->set_game_node_id(d->s_resp_->game_node_id());
+    auto cit = connection_accounts_.find(d->s_reqst_.connection_id());
+    if (cit == connection_accounts_.end())
+    {
+        return;
+    }
+    ErasePlayer(cit);
 }
 
 void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id, 
@@ -172,27 +178,6 @@ void LoginServiceImpl::EnterMasterServer(common::GameGuid player_id,
         &l2ms::LoginService_Stub::EnterGame);
 }
 
-void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
-    const ::gw2l::LeaveGameRequest* request, 
-    ::google::protobuf::Empty* response, 
-    ::google::protobuf::Closure* done)
-{
-    common::ClosurePtr cp(done);
-    //连接过，登录过
-    auto cit = connection_accounts_.find(request->connection_id());
-    if (cit == connection_accounts_.end())
-    {
-        LOG_ERROR << " leave game not found connection";
-        return;
-    }
-    auto& player = cit->second;
-    l2ms::LeaveGameRequest ms_request;
-    ms_request.set_connection_id(request->connection_id());
-    l2ms_login_stub_.CallMethod(ms_request,
-        &l2ms::LoginService_Stub::LeaveGame);
-    ErasePlayer(cit);
-}
-
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller, 
     const ::gw2l::DisconnectRequest* request,
     ::google::protobuf::Empty* response,
@@ -204,14 +189,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     {
         return;
     }
-    //连接已经登录过
-    auto& player = cit->second;
-    l2ms::DisconnectRequest ms_disconnect;
-    ms_disconnect.set_connection_id(request->connection_id());
-    l2ms_login_stub_.CallMethod(ms_disconnect,
-        &l2ms::LoginService_Stub::Disconect);
     ErasePlayer(cit);
-
 }
 
 void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_database& a_d)

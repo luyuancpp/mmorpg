@@ -77,11 +77,6 @@ namespace gw2l
             ::gw2l::EnterGameResponse* response,
             ::google::protobuf::Closure* done);
 
-        virtual void LeaveGame(::google::protobuf::RpcController* controller,
-            const ::gw2l::LeaveGameRequest* request,
-            ::google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done);
-
         virtual void Disconnect(::google::protobuf::RpcController* controller,
             const ::gw2l::DisconnectRequest* request,
             ::google::protobuf::Empty* response,

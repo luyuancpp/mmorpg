@@ -26,6 +26,7 @@ LuaClient::LuaClient()
     lua_.new_usertype<PlayerId>("PlayerId",
         "player_id",
         sol::var(PlayerId::player_id));
+
     auto contents = common::File2String("client/client.lua");
     lua_.script(contents);
     //auto b = result.valid();

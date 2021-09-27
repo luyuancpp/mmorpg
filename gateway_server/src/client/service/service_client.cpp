@@ -11,6 +11,7 @@
 #include "src/game_logic/entity_cast.h"
 #include "src/game_logic/comp/player.hpp"
 #include "src/gate_player/gate_player_list.h"
+#include "src/gateway_server.h"
 #include "src/return_code/error_code.h"
 
 #include "gw2l.pb.h"
@@ -46,9 +47,13 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         auto connection_id = boost::any_cast<uint64_t>(conn->getContext());
         //断了线之后不能把消息串到别人的地方，串话
         //如果我没登录就发送其他协议到master game server 怎么办
-        gw2l::DisconnectRequest request;
-        request.set_connection_id(connection_id);
-        gw2l_login_stub_.CallMethod(request,  &gw2l::LoginService_Stub::Disconnect);
+        gw2l::DisconnectRequest lrequest;
+        lrequest.set_connection_id(connection_id);
+        gw2l_login_stub_.CallMethod(lrequest, &gw2l::LoginService_Stub::Disconnect);
+
+        gw2ms::PlayerDisconnectRequest msrequest;
+        msrequest.set_connection_id(connection_id);
+        g_gateway_server->gw2ms_stub().CallMethod(msrequest,  &gw2ms::Gw2msService_Stub::PlayerDisconnect);
         g_gate_clients_->erase(connection_id);
         conn->setContext(kEmptyId);
     }
@@ -147,9 +152,9 @@ void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
     const LeaveGameRequestPtr& message, 
     muduo::Timestamp)
 {
-    gw2l::LeaveGameRequest request;
+    gw2ms::LeaveGameRequest request;
     request.set_connection_id(boost::any_cast<uint64_t>(conn->getContext()));
-    gw2l_login_stub_.CallMethod(request, &gw2l::LoginService_Stub::LeaveGame);
+    g_gateway_server->gw2ms_stub().CallMethod(request, &gw2ms::Gw2msService_Stub::LeaveGame);
     LeaveGameResponse response;
     codec_.send(conn, response);
 }
