@@ -47,12 +47,24 @@ namespace common
 
         bool auto_reward(uint32_t mission_id)
         {
-            auto p = mission_config::GetSingleton().key_id(mission_id);
+            auto p = Config::GetSingleton().key_id(mission_id);
             if (nullptr == p)
             {
                 return false;
             }
             return nullptr != p && p->auto_reward() > 0;
+        }
+
+        inline const ::google::protobuf::RepeatedField<uint32_t>& condition_id(uint32_t mission_id)
+        {
+            auto p = Config::GetSingleton().key_id(mission_id);
+            if (nullptr == p)
+            {
+                static ::google::protobuf::RepeatedField<uint32_t> s;
+                s.Clear();
+                return s;
+            }
+            return p->condition_id();
         }
 
         bool HasMainSubTypeCheck() { return std::is_same_v<mission_row, ConfigRow>;   }
