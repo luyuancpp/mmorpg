@@ -62,6 +62,14 @@ if (ret != RET_OK)\
 }\
 }
 
+#define RetrunIfError(b, ret)\
+{\
+if (b)\
+{\
+    return  ret;\
+}\
+}
+
 #define  CheckReturnCloseureError(ret)\
 if (ret != common::RET_OK)\
 {\

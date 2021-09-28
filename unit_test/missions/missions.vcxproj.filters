@@ -74,5 +74,8 @@
     <ClInclude Include="..\..\common\src\game_logic\entity_class\entity_class.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,32 +1,10 @@
 #ifndef COMMON_SRC_GAME_LOGIC_MISSION_MISSION_H_
 #define COMMON_SRC_GAME_LOGIC_MISSION_MISSION_H_
 
+#include "src/game_logic/comp/mission.hpp"
+
 namespace common
 {
-enum eCondtionType : uint32_t
-{
-    E_CONDITION_KILL_MONSTER = 1,
-    E_CONDITION_TALK_WITH_NPC,
-    E_CONDITION_COMPLELETE_CONDITION,
-    E_CONDITION_USE_ITEM,
-    E_CONDITION_INTERATION,
-    E_CONDITION_LEVEUP,
-    E_CONDITION_COMSTUM,
-    E_CONDITION_COMPLELTE_MISSION,
-    E_CONDITION_MAX,
-};
-
-enum eConditionIndex
-{
-    E_CONDITION_1,
-    E_CONDITION_2
-};
-
-enum eConditionStatus
-{
-    E_CONDITION_NORMAL,
-    E_CONDITION_COMPLETE,
-};
 
 }//namespace common
 

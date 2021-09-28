@@ -18,7 +18,8 @@ using namespace common;
 TEST(Missions, MakeMission)
 {
     uint32_t mid = 1;
-    Missions ms;
+    Missions<mission_config, mission_row> ms;
+    reg().remove<CheckSubType>(ms.entity());
     MakeMissionParam param{ ms.entity(),
         mid,
         mission_config::GetSingleton().key_id(mid)->condition_id(), 
@@ -46,15 +47,15 @@ TEST(Missions, MakeMission)
 TEST(Missions, RadomCondtion)
 {
     uint32_t mid = 3;
-    auto mm = MakePlayerMissionMap();
-    MakePlayerMissionParam param{mm, mid,  E_OP_CODE_TEST };    
+    Missions<mission_config, mission_row> ms;
+    MakePlayerMissionParam param{ms.entity(), mid,  E_OP_CODE_TEST };    
     auto cids = mission_config::GetSingleton().key_id(mid);    
-    MakePlayerMission(param);
-    auto& missions = reg().get<MissionMap>(mm).missions();
+    RandomMision(param, ms);
+    auto& missions = ms.missions();
     auto it =  std::find(cids->random_condition_pool().begin(), cids->random_condition_pool().end(),
-        missions.find(mid)->second.conditions(0).id());
+        missions.missions().find(mid)->second.conditions(0).id());
     EXPECT_TRUE(it != cids->random_condition_pool().end());
-    EXPECT_EQ(1, missions.find(mid)->second.conditions_size());
+    EXPECT_EQ(1, missions.missions().find(mid)->second.conditions_size());
     reg().clear();
 }
 

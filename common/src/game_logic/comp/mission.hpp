@@ -11,30 +11,30 @@ class CompleteMissionsId;
 
 namespace common
 {
-enum eCondtionType : uint32_t
-{
-    E_CONDITION_KILL_MONSTER = 1,
-    E_CONDITION_TALK_WITH_NPC ,
-    E_CONDITION_COMPLELETE_CONDITION,
-    E_CONDITION_USE_ITEM,
-    E_CONDITION_INTERATION,
-    E_CONDITION_LEVEUP,
-    E_CONDITION_COMSTUM,
-    E_CONDITION_COMPLELTE_MISSION,
-    E_CONDITION_MAX,
-};
+    enum eCondtionType : uint32_t
+    {
+        E_CONDITION_KILL_MONSTER = 1,
+        E_CONDITION_TALK_WITH_NPC,
+        E_CONDITION_COMPLELETE_CONDITION,
+        E_CONDITION_USE_ITEM,
+        E_CONDITION_INTERATION,
+        E_CONDITION_LEVEUP,
+        E_CONDITION_COMSTUM,
+        E_CONDITION_COMPLELTE_MISSION,
+        E_CONDITION_MAX,
+    };
 
-enum eConditionIndex
-{
-    E_CONDITION_1,
-    E_CONDITION_2
-};
+    enum eConditionIndex
+    {
+        E_CONDITION_1,
+        E_CONDITION_2
+    };
 
-enum eConditionStatus
-{
-    E_CONDITION_NORMAL,
-    E_CONDITION_COMPLETE,
-};
+    enum eConditionStatus
+    {
+        E_CONDITION_NORMAL,
+        E_CONDITION_COMPLETE,
+    };
 
 enum eMissionStatus
 {
@@ -55,6 +55,7 @@ using TypeSubTypeSet = UI32PairSet;
 
 struct NextTimeAcceptMission { UI32USet next_time_accept_mission_id_; };
 
+struct CheckSubType {};
 }//namespace common
 
 #endif//COMMON_SRC_GAME_LOIGC_COMP_H_
