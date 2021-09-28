@@ -5,17 +5,35 @@
 
 namespace common
 {
-    template<typename Config, typename ConfigRow>
-    struct MissionConfig
+    struct IMissionConfig 
     {
-        static MissionConfig<Config, ConfigRow> GetSingleton() {
-            static MissionConfig<Config, ConfigRow> singleton;
-            return singleton;
-        }
-
-        uint32_t mission_type(uint32_t id)
+        virtual uint32_t mission_type(uint32_t id){ return 0; }
+        virtual uint32_t mission_sub_type(uint32_t id) { return 0; }
+        virtual uint32_t reward_id(uint32_t id) { return 0; }
+        virtual bool auto_reward(uint32_t mission_id) { return 0; }
+        virtual const ::google::protobuf::RepeatedField<uint32_t>& condition_id(uint32_t mission_id)
         {
-            auto mrow = Config::GetSingleton().key_id(id);
+                static ::google::protobuf::RepeatedField<uint32_t> s;
+                s.Clear();
+                return s;
+        }
+        virtual const ::google::protobuf::RepeatedField<uint32_t>& next_mission_id(uint32_t mission_id)
+        {
+            static ::google::protobuf::RepeatedField<uint32_t> s;
+            s.Clear();
+            return s;
+        }
+        virtual bool HasMainSubTypeCheck() { return false; }
+        virtual bool HasKey(uint32_t id) { return false; }
+    };
+
+    struct MissionConfig : public IMissionConfig
+    {
+        static MissionConfig& GetSingleton() { static MissionConfig singleton; return singleton; }
+
+        virtual uint32_t mission_type(uint32_t id)override
+        {
+            auto mrow = mission_config::GetSingleton().key_id(id);
             if (nullptr == mrow)
             {
                 return 0;
@@ -23,9 +41,9 @@ namespace common
             return mrow->mission_type();
         }
 
-        uint32_t mission_sub_type(uint32_t id)
+        virtual uint32_t mission_sub_type(uint32_t id)override
         {
-            auto mrow = Config::GetSingleton().key_id(id);
+            auto mrow = mission_config::GetSingleton().key_id(id);
             if (nullptr == mrow)
             {
                 return 0;
@@ -33,9 +51,9 @@ namespace common
             return mrow->mission_sub_type();
         }
 
-        uint32_t reward_id(uint32_t id)
+        virtual uint32_t reward_id(uint32_t id)override
         {
-            auto mrow = Config::GetSingleton().key_id(id);
+            auto mrow = mission_config::GetSingleton().key_id(id);
             if (nullptr == mrow)
             {
                 return 0;
@@ -43,9 +61,9 @@ namespace common
             return mrow->reward_id();
         }
 
-        bool auto_reward(uint32_t mission_id)
+        virtual bool auto_reward(uint32_t mission_id)override
         {
-            auto p = Config::GetSingleton().key_id(mission_id);
+            auto p = mission_config::GetSingleton().key_id(mission_id);
             if (nullptr == p)
             {
                 return false;
@@ -53,9 +71,9 @@ namespace common
             return nullptr != p && p->auto_reward() > 0;
         }
 
-        inline const ::google::protobuf::RepeatedField<uint32_t>& condition_id(uint32_t mission_id)
+        virtual const ::google::protobuf::RepeatedField<uint32_t>& condition_id(uint32_t mission_id) override
         {
-            auto p = Config::GetSingleton().key_id(mission_id);
+            auto p = mission_config::GetSingleton().key_id(mission_id);
             if (nullptr == p)
             {
                 static ::google::protobuf::RepeatedField<uint32_t> s;
@@ -65,9 +83,9 @@ namespace common
             return p->condition_id();
         }
 
-        inline const ::google::protobuf::RepeatedField<uint32_t>& next_mission_id(uint32_t mission_id)
+        virtual const ::google::protobuf::RepeatedField<uint32_t>& next_mission_id(uint32_t mission_id)override
         {
-            auto p = Config::GetSingleton().key_id(mission_id);
+            auto p = mission_config::GetSingleton().key_id(mission_id);
             if (nullptr == p)
             {
                 static ::google::protobuf::RepeatedField<uint32_t> s;
@@ -77,9 +95,8 @@ namespace common
             return p->next_mission_id();
         }
 
-        bool HasMainSubTypeCheck() { return std::is_same_v<mission_row, ConfigRow>;   }
-        bool HasKey(uint32_t id) { return nullptr !=  Config::GetSingleton().key_id(id); }
-
+        virtual bool HasMainSubTypeCheck() override { return true;   }
+        virtual bool HasKey(uint32_t id)override { return nullptr !=  mission_config::GetSingleton().key_id(id); }
     };
 }//namespace common
 
