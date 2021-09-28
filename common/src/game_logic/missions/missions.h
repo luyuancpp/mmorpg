@@ -235,14 +235,10 @@ namespace common
     private:
         void RemoveMissionTypeSubType(uint32_t mission_id)
         {
-            auto mrow = MissionConfig::GetSingleton().key_id(mission_id);
-            if (nullptr == mrow)
+            auto& cs = MissionConfig::GetSingleton().condition_id(mission_id);
+            for (int32_t i = 0; i < cs.size(); ++i)
             {
-                return;
-            }
-            for (int32_t i = 0; i < mrow->condition_id_size(); ++i)
-            {
-                auto cp = condition_config::GetSingleton().key_id(mrow->condition_id(i));
+                auto cp = condition_config::GetSingleton().key_id(cs.Get(i));
                 if (nullptr == cp)
                 {
                     continue;
@@ -357,7 +353,6 @@ namespace common
                 TriggerConditionEvent(ce);
             }
         }
-
 
         MissionMap missions_;
         CompleteMissionsId complete_ids_;  
