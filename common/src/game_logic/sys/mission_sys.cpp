@@ -100,7 +100,7 @@ void OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_com
         {
             for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
             {
-                MakePlayerMissionParam param{ e,   p->next_mission_id(i),  c.op_ };
+                MakePlayerMissionParam param{ e,   p->next_mission_id(i) };
                 MakePlayerMission(param);
             }
         }
