@@ -110,55 +110,57 @@ TEST(Missions, TriggerCondition)
 
 TEST(Missions, TypeSize)
 {
-    auto mm = MakePlayerMissionMap();
+    Missions<mission_config, mission_row> ms;
     uint32_t mid = 6;
     //auto mrow = mission_config::GetSingleton().key_id(mid);
-    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
-    EXPECT_EQ(RET_OK, MakePlayerMission(param));
-    EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
-    EXPECT_FALSE(IsCompleteMission({ mm, mid }));
-    auto& type_misison = reg().get<TypeMissionIdMap>(mm);
+    MakePlayerMissionParam param{ ms.entity(),   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, RandomMision(param, ms));
+    EXPECT_TRUE(ms.IsAcceptedMission(mid));
+    EXPECT_FALSE(ms.IsCompleteMission(mid));
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_COMSTUM; ++i)
     {
-        EXPECT_EQ(1, type_misison[i].size());
+        EXPECT_EQ(1, ms.type_mission_id().find(i)->second.size());
     }    
-    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
-    TriggerConditionEvent(ce);
-    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
+    ConditionEvent ce{ ms.entity(), E_CONDITION_KILL_MONSTER, {1}, 1 };
+    ms.TriggerConditionEvent(ce);
+    EXPECT_EQ(1, ms.mission_size());
+    EXPECT_EQ(0, ms.completemission_size());
 
     ce.condition_type_ = E_CONDITION_TALK_WITH_NPC;
     ce.condtion_ids_ = { 1 };
-    TriggerConditionEvent(ce);
-    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
+    ms.TriggerConditionEvent(ce);
+    EXPECT_EQ(1, ms.mission_size());
+    EXPECT_EQ(0, ms.completemission_size());
 
     ce.condition_type_ = E_CONDITION_COMPLELETE_CONDITION;
-    TriggerConditionEvent(ce);
-    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
+    ms.TriggerConditionEvent(ce);
+    EXPECT_EQ(1, ms.mission_size());
+    EXPECT_EQ(0, ms.completemission_size());
 
     ce.condition_type_ = E_CONDITION_USE_ITEM;
-    TriggerConditionEvent(ce);
+    ms.TriggerConditionEvent(ce);
+    EXPECT_EQ(1, ms.mission_size());
+    EXPECT_EQ(0, ms.completemission_size());
 
     ce.condition_type_ = E_CONDITION_LEVEUP;
     ce.condtion_ids_ = { 10 };
-    TriggerConditionEvent(ce);
+    ms.TriggerConditionEvent(ce);
+    EXPECT_EQ(1, ms.mission_size());
+    EXPECT_EQ(0, ms.completemission_size());
 
     ce.condition_type_ = E_CONDITION_INTERATION;
     ce.condtion_ids_ = { 1};
-    TriggerConditionEvent(ce);
+    ms.TriggerConditionEvent(ce);
     
-    EXPECT_EQ(0, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(1, reg().get<CompleteMissionsId>(mm).missions_size());
-    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
-    EXPECT_TRUE(IsCompleteMission({ mm, mid }));    
-    EXPECT_EQ(0, reg().get<UI32PairSet>(mm).size());
+    EXPECT_EQ(0, ms.mission_size());
+    EXPECT_EQ(1, ms.completemission_size());
+    EXPECT_FALSE(ms.IsAcceptedMission(mid));
+    EXPECT_TRUE(ms.IsCompleteMission(mid));
+    EXPECT_EQ(0, ms.type_set_size());
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_COMSTUM; ++i)
     {
-        EXPECT_EQ(0, type_misison[i].size());
+        EXPECT_EQ(0, ms.type_mission_id().find(i)->second.size());
     }
-    reg().clear();
 }
 
 TEST(Missions, CompleteRemakeMission)
