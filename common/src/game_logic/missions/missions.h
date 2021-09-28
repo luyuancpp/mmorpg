@@ -165,8 +165,7 @@ namespace common
                         }
                         MakeMissionParam param{ entity(),   
                             next_condition_id,
-                            np->condition_id(),
-                            c.op_ };
+                            np->condition_id() };
                         MakeMission(param);
                     }
                 }

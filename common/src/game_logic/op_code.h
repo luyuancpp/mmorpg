@@ -5,7 +5,6 @@ namespace common
 {
 enum eOpcode
 {
-    E_OP_CODE_TEST,
 };
 }//namespace common
 

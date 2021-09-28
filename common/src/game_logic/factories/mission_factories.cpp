@@ -105,7 +105,7 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
     {
         return RET_TABLE_ID_ERROR;
     }   
-    MakeMissionParam mp{ param.e_, mission_id, mrow->condition_id(), param.op_};
+    MakeMissionParam mp{ param.e_, mission_id, mrow->condition_id()};
     if (mrow->random_condition_pool_size() > 0)
     {
         MakeMissionParam::ConditionV v;

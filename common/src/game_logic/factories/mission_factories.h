@@ -17,25 +17,20 @@ struct MakeMissionParam
     MakeMissionParam(
         entt::entity e,
         uint32_t mision_id,
-        const ConditionV* condition_id,
-        uint32_t op)
+        const ConditionV* condition_id)
         : e_(e),
         mission_id_(mision_id),
-        condition_id_(condition_id),
-        op_(op) {}
+        condition_id_(condition_id) {}
     MakeMissionParam(
         entt::entity e,
         uint32_t mision_id,
-        const ConditionV& condition_id,
-        uint32_t op)
+        const ConditionV& condition_id)
         : e_(e), 
         mission_id_(mision_id),
-        condition_id_(&condition_id),
-        op_(op) {}
+        condition_id_(&condition_id) {}
 
     entt::entity e_{entt::null};
     uint32_t mission_id_{ 0 };
-    uint32_t op_{0};
     const ConditionV* condition_id_{nullptr};
 };
 
@@ -43,15 +38,13 @@ struct MakePlayerMissionParam
 {
     MakePlayerMissionParam(
         entt::entity e,
-        uint32_t mision_id,
-        uint32_t op)
+        uint32_t mision_id)
         : e_(e),
         mission_id_(mision_id)
     {}
 
     entt::entity e_{ entt::null };
     uint32_t mission_id_{ 0 };
-    uint32_t op_{ 0 };
 };
 
 entt::entity MakeMissionMap();
