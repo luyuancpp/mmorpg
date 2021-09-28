@@ -1,6 +1,8 @@
 #include "missions.h"
 
 #include "src/game_logic/game_registry.h"
+#include "src/game_config/condition_config.h"
+#include "src/random/random.h"
 #include "src/return_code/error_code.h"
 
 namespace common
