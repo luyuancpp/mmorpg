@@ -20,17 +20,15 @@ namespace common
     {
         using ConditionV = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
         MakeMissionParam(
-            entt::entity e,
             uint32_t mision_id,
             const ConditionV* condition_id)
-            : e_(e),
+            :
             mission_id_(mision_id),
             condition_id_(condition_id) {}
         MakeMissionParam(
-            entt::entity e,
             uint32_t mision_id,
             const ConditionV& condition_id)
-            : e_(e),
+            : 
             mission_id_(mision_id),
             condition_id_(&condition_id) {}
 
@@ -42,20 +40,16 @@ namespace common
     struct MakePlayerMissionParam
     {
         MakePlayerMissionParam(
-            entt::entity e,
             uint32_t mision_id)
-            : e_(e),
+            : 
             mission_id_(mision_id)
         {}
-
-        entt::entity e_{ entt::null };
         uint32_t mission_id_{ 0 };
     };
 
 
     struct ConditionEvent
     {
-        entt::entity e_{};
         uint32_t condition_type_{ 0 };
         UI32V condtion_ids_{};
         uint32_t ammount_{ 1 };
@@ -63,7 +57,6 @@ namespace common
 
     struct MissionIdParam
     {
-        entt::entity e_{};
         uint32_t missin_id_{ 0 };
     };
 
@@ -212,8 +205,7 @@ namespace common
                         {
                             continue;
                         }
-                        MakeMissionParam param{ entity(),   
-                            next_condition_id,
+                        MakeMissionParam param{next_condition_id,
                             np->condition_id() };
                         MakeMission(param);
                     }
@@ -227,7 +219,7 @@ namespace common
                 }
             }
 
-            ConditionEvent ce{ entity(), E_CONDITION_COMPLELTE_MISSION, {}, 1 };
+            ConditionEvent ce{ E_CONDITION_COMPLELTE_MISSION, {}, 1 };
             for (auto& it : temp_complete)
             {
                 ce.condtion_ids_ = { it };
