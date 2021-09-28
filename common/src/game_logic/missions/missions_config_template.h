@@ -13,8 +13,6 @@ namespace common
             return singleton;
         }
 
-        decltype(auto) key_id(uint32_t id) { return Config::GetSingleton().key_id(id); }
-
         uint32_t mission_type(uint32_t id)
         {
             auto mrow = Config::GetSingleton().key_id(id);
@@ -67,7 +65,20 @@ namespace common
             return p->condition_id();
         }
 
+        inline const ::google::protobuf::RepeatedField<uint32_t>& next_mission_id(uint32_t mission_id)
+        {
+            auto p = Config::GetSingleton().key_id(mission_id);
+            if (nullptr == p)
+            {
+                static ::google::protobuf::RepeatedField<uint32_t> s;
+                s.Clear();
+                return s;
+            }
+            return p->next_mission_id();
+        }
+
         bool HasMainSubTypeCheck() { return std::is_same_v<mission_row, ConfigRow>;   }
+        bool HasKey(uint32_t id) { return nullptr !=  Config::GetSingleton().key_id(id); }
 
     };
 }//namespace common
