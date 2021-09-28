@@ -123,8 +123,7 @@ namespace common
             {
                 return RET_MISSION_NO_CONDITION;
             }
-            auto mrow = MissionConfig::GetSingleton().key_id(mission_id);
-            if (nullptr == mrow)
+            if (!MissionConfig::GetSingleton().HasKey(mission_id))
             {
                 return RET_TABLE_ID_ERROR;
             }
@@ -320,13 +319,13 @@ namespace common
                 }
 
                 RemoveMissionTypeSubType(mission_id);
-                auto p = MissionConfig::GetSingleton().key_id(mission_id);
+                auto& next_missions = MissionConfig::GetSingleton().next_mission_id(mission_id);
                 auto next_time_accpet = reg().try_get<NextTimeAcceptMission>(entity());
                 if (nullptr == next_time_accpet)
                 {
-                    for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
+                    for (int32_t i = 0; i < next_missions.size(); ++i)
                     {
-                        auto next_condition_id = p->next_mission_id(i);
+                        auto next_condition_id = next_missions.Get(i);
                         auto np = Config::GetSingleton().key_id(next_condition_id);
                         if (nullptr == np)
                         {
@@ -339,9 +338,9 @@ namespace common
                 }
                 else
                 {
-                    for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
+                    for (int32_t i = 0; i < next_missions.size(); ++i)
                     {
-                        next_time_accpet->next_time_accept_mission_id_.emplace(p->next_mission_id(i));
+                        next_time_accpet->next_time_accept_mission_id_.emplace(next_missions.Get(i));
                     }
                 }
             }
