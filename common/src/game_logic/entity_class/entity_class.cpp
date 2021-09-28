@@ -5,10 +5,7 @@
 namespace common
 {
     EntityClass::EntityClass()
-        : entity_(reg().create())
-    {
-
-    }
+        : entity_(reg().create()){}
 
     EntityClass::~EntityClass()
     {

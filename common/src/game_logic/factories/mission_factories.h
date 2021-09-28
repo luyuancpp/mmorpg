@@ -47,11 +47,6 @@ struct MakePlayerMissionParam
     uint32_t mission_id_{ 0 };
 };
 
-entt::entity MakeMissionMap();
-entt::entity MakePlayerMissionMap();
-uint32_t MakeMission(const MakeMissionParam&);
-uint32_t MakePlayerMission(const MakePlayerMissionParam&);
-
 }//namespace common
 
 #endif // !COMMON_SRC_GAME_LOGIC_GAME_ENTITY_MISSION_FACTORIES_H_

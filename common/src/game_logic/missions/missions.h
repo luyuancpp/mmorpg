@@ -278,7 +278,6 @@ namespace common
                 {
                     break;
                 }
-
                 mission.set_status(E_MISSION_COMPLETE);
                 mission.clear_conditions();
                 temp_complete.emplace(mission.id());
@@ -325,7 +324,6 @@ namespace common
         TypeMissionIdMap type_missions_;
         UI32PairSet type_set_;
     };
-
 
     uint32_t RandomMision(const MakePlayerMissionParam& param, Missions<mission_config, mission_row>& ms);
 }//namespace common
