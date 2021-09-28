@@ -38,9 +38,12 @@ namespace common
 
         const TypeMissionIdMap& type_mission_id() const { return  type_missions_; }
         const MissionMap& missions() { return missions_; }
+        const CompleteMissionsId& complete_ids() { return complete_ids_; }
         std::size_t mission_size()const { return missions_.missions().size(); }
         std::size_t completemission_size()const { return complete_ids_.missions().size(); }
         std::size_t type_set_size()const { return type_set_.size(); }
+        std::size_t can_reward_mission_id_size()const { return complete_ids_.can_reward_mission_id().size(); }
+
         bool IsAcceptedMission(uint32_t mission_id)const
         {
             auto& mission = missions_.missions();
@@ -50,6 +53,18 @@ namespace common
         {
             auto& complete_ids = complete_ids_.missions();
             return complete_ids.find(mission_id) != complete_ids.end();
+        }
+
+        uint32_t GetMissionReward(uint32_t missin_id)
+        {
+            auto rmid = complete_ids_.mutable_can_reward_mission_id();
+            auto it = complete_ids_.mutable_can_reward_mission_id()->find(missin_id);
+            if (it == rmid->end())
+            {
+                return RET_MISSION_GET_REWARD_NO_MISSION_ID;
+            }
+            rmid->erase(missin_id);
+            return RET_OK;
         }
 
         uint32_t MakeMission(const MakeMissionParam& param)
@@ -107,6 +122,19 @@ namespace common
             return RET_OK;
         }
 
+        void RemoveMission(uint32_t mission_id)
+        {
+            missions_.mutable_missions()->erase(mission_id);
+            complete_ids_.mutable_missions()->erase(mission_id);
+            complete_ids_.mutable_can_reward_mission_id()->erase(mission_id);
+            auto begin_times = reg().try_get<MissionBeginTime>(entity());
+            if (nullptr != begin_times)
+            {
+                begin_times->mutable_mission_begin_time()->erase(mission_id);
+            }
+            RemoveMissionTypeSubType(mission_id);
+        }
+
         void OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete)
         {
             if (temp_complete.empty())
@@ -121,18 +149,9 @@ namespace common
                 {
                     complete_ids_.mutable_can_reward_mission_id()->insert({ mission_id, false });
                 }
-                auto p = Config::GetSingleton().key_id(mission_id);
+                
                 RemoveMissionTypeSubType(mission_id);
-                for (int32_t i = 0; i < p->condition_id_size(); ++i)
-                {
-                    auto cp = condition_config::GetSingleton().key_id(p->condition_id(i));
-                    if (nullptr == cp)
-                    {
-                        continue;
-                    }
-                    type_missions_[cp->condition_type()].erase(mission_id);
-                }
-
+                auto p = MissionConfig::GetSingleton().key_id(mission_id);
                 auto next_time_accpet = reg().try_get<NextTimeAcceptMission>(entity());
                 if (nullptr == next_time_accpet)
                 {
@@ -286,6 +305,15 @@ namespace common
             if (nullptr == mrow)
             {
                 return;
+            }
+            for (int32_t i = 0; i < mrow->condition_id_size(); ++i)
+            {
+                auto cp = condition_config::GetSingleton().key_id(mrow->condition_id(i));
+                if (nullptr == cp)
+                {
+                    continue;
+                }
+                type_missions_[cp->condition_type()].erase(mission_id);
             }
             auto mission_sub_type = MissionConfig::GetSingleton().mission_sub_type(mission_id);
             auto mission_type = MissionConfig::GetSingleton().mission_type(mission_id);

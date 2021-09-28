@@ -255,70 +255,67 @@ TEST(Missions, MissionCondition)
 
 TEST(Missions, ConditionAmount)
 {
-    auto mm = MakePlayerMissionMap();
+    Missions<mission_config, mission_row> ms;
 
     uint32_t mid = 13;
 
-    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
-    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+    MakePlayerMissionParam param{ ms.entity(),   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, RandomMision(param, ms));
 
-    EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
-    EXPECT_FALSE(IsCompleteMission({ mm, mid }));
-    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
-    TriggerConditionEvent(ce);
-    EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
-    EXPECT_FALSE(IsCompleteMission({ mm, mid }));
-    TriggerConditionEvent(ce);
-    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
-    EXPECT_TRUE(IsCompleteMission({ mm, mid }));
-    reg().clear();
+    EXPECT_TRUE(ms.IsAcceptedMission(mid));
+    EXPECT_FALSE(ms.IsCompleteMission(mid));
+    ConditionEvent ce{ ms.entity(), E_CONDITION_KILL_MONSTER, {1}, 1 };
+    ms.TriggerConditionEvent(ce);
+    EXPECT_TRUE(ms.IsAcceptedMission(mid));
+    EXPECT_FALSE(ms.IsCompleteMission(mid));
+    ms.TriggerConditionEvent(ce);
+    EXPECT_FALSE(ms.IsAcceptedMission(mid));
+    EXPECT_TRUE(ms.IsCompleteMission(mid));
 }
 
 TEST(Missions, MissionRewardList)
 {
-    auto mm = MakePlayerMissionMap();
+    Missions<mission_config, mission_row> ms;
+
+    reg().emplace<MissionReward>(ms.entity());
 
     uint32_t mid = 12;
 
-    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
-    EXPECT_EQ(RET_OK, MakePlayerMission(param));
-    EXPECT_EQ(RET_MISSION_GET_REWARD_NO_MISSION_ID, GetMissionReward({ mm, mid }));
-    EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
-    EXPECT_FALSE(IsCompleteMission({ mm, mid }));
-    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
-    TriggerConditionEvent(ce);
-    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
-    EXPECT_TRUE(IsCompleteMission({ mm, mid }));
-    EXPECT_EQ(RET_OK, GetMissionReward({ mm, mid }));
-    EXPECT_EQ(RET_MISSION_GET_REWARD_NO_MISSION_ID, GetMissionReward({ mm, mid }));
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).can_reward_mission_id().size());
-    reg().clear();
+    MakePlayerMissionParam param{ ms.entity(),   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, RandomMision(param, ms));
+    EXPECT_EQ(RET_MISSION_GET_REWARD_NO_MISSION_ID, ms.GetMissionReward(mid));
+    EXPECT_TRUE(ms.IsAcceptedMission(mid));
+    EXPECT_FALSE(ms.IsCompleteMission(mid));
+    ConditionEvent ce{ ms.entity(), E_CONDITION_KILL_MONSTER, {1}, 1 };
+    ms.TriggerConditionEvent(ce);
+    EXPECT_FALSE(ms.IsAcceptedMission(mid));
+    EXPECT_TRUE(ms.IsCompleteMission(mid));
+    EXPECT_EQ(RET_OK, ms.GetMissionReward(mid));
+    EXPECT_EQ(RET_MISSION_GET_REWARD_NO_MISSION_ID, ms.GetMissionReward(mid));
+    EXPECT_EQ(0, ms.can_reward_mission_id_size());
 }
 
 TEST(Missions, RemoveMission)
 {
-    auto mm = MakePlayerMissionMap();
-
+    Missions<mission_config, mission_row> ms;
     uint32_t mid = 12;
+    MakePlayerMissionParam param{ ms.entity(),   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, RandomMision(param, ms));
 
-    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
-    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+    EXPECT_EQ(1, ms.mission_size());
+    EXPECT_EQ(0, ms.can_reward_mission_id_size());
+    EXPECT_EQ(1, ms.type_set_size());
+    auto& type_missions = ms.type_mission_id();
 
-    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).can_reward_mission_id().size());
-    EXPECT_EQ(1, reg().get<TypeSubTypeSet>(mm).size());
-    auto& type_missions = reg().get<TypeMissionIdMap>(mm);
+    EXPECT_EQ(1, type_missions.find(E_CONDITION_KILL_MONSTER)->second.size());
+    auto& cm = ms.complete_ids();
+    ((CompleteMissionsId&)cm).mutable_can_reward_mission_id()->insert({ mid, true });
+    ms.RemoveMission(mid);
 
-    EXPECT_EQ(1, type_missions[E_CONDITION_KILL_MONSTER].size());
-    reg().get<CompleteMissionsId>(mm).mutable_can_reward_mission_id()->insert({ mid, true });
-    MissionIdParam rp{ mm, mid,  E_OP_CODE_TEST };
-    RemoveMission(rp);
-
-    EXPECT_EQ(0, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).can_reward_mission_id().size());
-    EXPECT_EQ(0, reg().get<TypeSubTypeSet>(mm).size());
-    EXPECT_EQ(0, type_missions[E_CONDITION_KILL_MONSTER].size());
-    reg().clear();
+    EXPECT_EQ(0, ms.mission_size());
+    EXPECT_EQ(0, ms.can_reward_mission_id_size());
+    EXPECT_EQ(0, ms.type_set_size());
+    EXPECT_EQ(0, type_missions.find(E_CONDITION_KILL_MONSTER)->second.size());
 }
 
 TEST(Missions, MissionAutoReward)
