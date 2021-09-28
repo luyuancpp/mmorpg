@@ -63,8 +63,8 @@ namespace common
             {
                 return RET_MISSION_COMPLETE;
             }
-            auto condition_id = param.condition_id_;
-            if (nullptr == condition_id)
+            auto conditions = param.condition_id_;
+            if (nullptr == conditions)
             {
                 return RET_MISSION_NO_CONDITION;
             }
@@ -86,15 +86,16 @@ namespace common
             }
             Mission m;
             m.set_id(mission_id);
-            for (int32_t i = 0; i < condition_id->size(); ++i)
+            for (int32_t i = 0; i < conditions->size(); ++i)
             {
-                auto pcs = m.add_conditions();
-                pcs->set_id(condition_id->Get(i));
-                auto p = condition_config::GetSingleton().key_id(pcs->id());
+                auto condition_id = conditions->Get(i);
+                auto p = condition_config::GetSingleton().key_id(condition_id);
                 if (nullptr == p)
                 {
                     continue;
                 }
+                auto pcs = m.add_conditions();
+                pcs->set_id(condition_id);
                 type_missions_[p->condition_type()].emplace(mission_id);
             }
             missions_.mutable_missions()->insert({ mission_id, std::move(m) });
@@ -112,14 +113,16 @@ namespace common
             {
                 return;
             }
-            for (auto& it : temp_complete)
+            bool reward = reg().any_of<MissionReward>(entity());
+            for (auto& mission_id : temp_complete)
             {
-                auto p = mission_config::GetSingleton().key_id(it);
-                RemoveMissionTypeSubType(it);
-                if (nullptr == p)
+                complete_ids_.mutable_missions()->insert({ mission_id, true });
+                if (reward && MissionConfig::GetSingleton().reward_id(mission_id) > 0)
                 {
-                    continue;
+                    complete_ids_.mutable_can_reward_mission_id()->insert({ mission_id, false });
                 }
+                auto p = Config::GetSingleton().key_id(mission_id);
+                RemoveMissionTypeSubType(mission_id);
                 for (int32_t i = 0; i < p->condition_id_size(); ++i)
                 {
                     auto cp = condition_config::GetSingleton().key_id(p->condition_id(i));
@@ -127,7 +130,7 @@ namespace common
                     {
                         continue;
                     }
-                    type_missions_[cp->condition_type()].erase(it);
+                    type_missions_[cp->condition_type()].erase(mission_id);
                 }
 
                 auto next_time_accpet = reg().try_get<NextTimeAcceptMission>(entity());
@@ -135,8 +138,17 @@ namespace common
                 {
                     for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
                     {
-                        MakePlayerMissionParam param{ entity(),   p->next_mission_id(i),  c.op_ };
-                        MakePlayerMission(param);
+                        auto next_condition_id = p->next_mission_id(i);
+                        auto np = Config::GetSingleton().key_id(next_condition_id);
+                        if (nullptr == np)
+                        {
+                            continue;
+                        }
+                        MakeMissionParam param{ entity(),   
+                            next_condition_id,
+                            np->condition_id(),
+                            c.op_ };
+                        MakeMission(param);
                     }
                 }
                 else
@@ -216,7 +228,6 @@ namespace common
                 return;
             }
             auto mm = missions_.mutable_missions();
-            auto complete_callback = reg().try_get<CompleteMissionCallback>(entity());
             auto it = type_missions_.find(c.condition_type_);
             if (it == type_missions_.end())
             {
@@ -253,14 +264,6 @@ namespace common
                 mission.set_status(E_MISSION_COMPLETE);
                 mission.clear_conditions();
                 temp_complete.emplace(mission.id());
-                if (nullptr != complete_callback)
-                {
-                    complete_callback->operator()(entity(), mit->first, complete_ids_);
-                }
-                else
-                {
-                    complete_ids_.mutable_missions()->insert({ mission.id(), false });
-                }
                 mm->erase(mit);
                 // can not use mission and mit 
             }

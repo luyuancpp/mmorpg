@@ -104,18 +104,7 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
     if (nullptr == mrow)
     {
         return RET_TABLE_ID_ERROR;
-    }
-   
-    if ( mrow->mission_sub_type() > 0)
-    {
-        TypeSubTypeSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
-        auto& type_set = reg().get<TypeSubTypeSet>(param.e_);
-        auto it = type_set.find(p);
-        if (it != type_set.end())
-        {
-            return RET_MISSION_TYPE_REPTEATED;
-        }
-    }    
+    }   
     MakeMissionParam mp{ param.e_, mission_id, mrow->condition_id(), param.op_};
     if (mrow->random_condition_pool_size() > 0)
     {
@@ -129,12 +118,7 @@ uint32_t MakePlayerMission(const MakePlayerMissionParam& param)
     {
         RET_CHECK_RET(MakeMission(mp));
     }
-    if (mrow->mission_sub_type() > 0)
-    {
-        TypeSubTypeSet::value_type p(mrow->mission_type(), mrow->mission_sub_type());
-        auto& type_set = reg().get<TypeSubTypeSet>(param.e_);
-        type_set.emplace(p);
-    }
+
     return RET_OK;
 }
 
