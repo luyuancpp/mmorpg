@@ -3,7 +3,6 @@
 
 #include "entt/src/entt/entity/entity.hpp"
 
-#include "condition.h"
 #include "src/common_type/common_type.h"
 #include "src/game_config/condition_config.h"
 #include "src/game_logic/comp/mission.hpp"
@@ -46,7 +45,6 @@ namespace common
         {}
         uint32_t mission_id_{ 0 };
     };
-
 
     struct ConditionEvent
     {
@@ -177,109 +175,6 @@ namespace common
             RemoveMissionTypeSubType(mission_id);
         }
 
-        void OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete)
-        {
-            if (temp_complete.empty())
-            {
-                return;
-            }
-            bool reward = reg().any_of<MissionReward>(entity());
-            for (auto& mission_id : temp_complete)
-            {
-                complete_ids_.mutable_missions()->insert({ mission_id, true });
-                if (reward && MissionConfig::GetSingleton().reward_id(mission_id) > 0)
-                {
-                    complete_ids_.mutable_can_reward_mission_id()->insert({ mission_id, false });
-                }
-                
-                RemoveMissionTypeSubType(mission_id);
-                auto p = MissionConfig::GetSingleton().key_id(mission_id);
-                auto next_time_accpet = reg().try_get<NextTimeAcceptMission>(entity());
-                if (nullptr == next_time_accpet)
-                {
-                    for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
-                    {
-                        auto next_condition_id = p->next_mission_id(i);
-                        auto np = Config::GetSingleton().key_id(next_condition_id);
-                        if (nullptr == np)
-                        {
-                            continue;
-                        }
-                        MakeMissionParam param{next_condition_id,
-                            np->condition_id() };
-                        MakeMission(param);
-                    }
-                }
-                else
-                {
-                    for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
-                    {
-                        next_time_accpet->next_time_accept_mission_id_.emplace(p->next_mission_id(i));
-                    }
-                }
-            }
-
-            ConditionEvent ce{ E_CONDITION_COMPLELTE_MISSION, {}, 1 };
-            for (auto& it : temp_complete)
-            {
-                ce.condtion_ids_ = { it };
-                TriggerConditionEvent(ce);
-            }
-        }
-
-        bool TriggerCondition(const ConditionEvent& c, Mission& mission)
-        {
-            if (c.condtion_ids_.empty())
-            {
-                return false;
-            }
-            auto& row_condtion1 = c.condtion_ids_[E_CONDITION_1];
-            //compare condition
-            bool condition_change = false;
-            for (int32_t i = 0; i < mission.conditions_size(); ++i)
-            {
-                auto condition = mission.mutable_conditions(i);
-                if (condition->status() == E_CONDITION_COMPLETE)
-                {
-                    continue;
-                }
-                auto p = condition_config::GetSingleton().key_id(condition->id());
-                if (nullptr == p)
-                {
-                    continue;
-                }
-                if (c.condition_type_ != p->condition_type())
-                {
-                    continue;
-                }
-                bool conform = false;
-                for (int32_t ci = 0; ci < p->condition1_size(); ++ci)
-                {
-                    if (row_condtion1 != p->condition1(ci))
-                    {
-                        continue;
-                    }
-                    conform = true;
-                    break;
-                }
-                if (!conform)
-                {
-                    continue;
-                }
-                condition_change = true;
-                condition->set_progress(c.ammount_ + condition->progress());
-                // to client
-                if (condition->progress() < p->amount())
-                {
-                    continue;
-                }
-                condition->set_progress(p->amount());
-                condition->set_status(E_CONDITION_COMPLETE);
-                // to client
-            }
-            return condition_change;
-        }
-
         void TriggerConditionEvent(const ConditionEvent& c)
         {
             if (c.condtion_ids_.empty())
@@ -359,6 +254,110 @@ namespace common
             TypeSubTypeSet::value_type p(mission_type, mission_sub_type);
             type_set_.erase(p);
         }
+
+        bool TriggerCondition(const ConditionEvent& c, Mission& mission)
+        {
+            if (c.condtion_ids_.empty())
+            {
+                return false;
+            }
+            auto& row_condtion1 = c.condtion_ids_[E_CONDITION_1];
+            //compare condition
+            bool condition_change = false;
+            for (int32_t i = 0; i < mission.conditions_size(); ++i)
+            {
+                auto condition = mission.mutable_conditions(i);
+                if (condition->status() == E_CONDITION_COMPLETE)
+                {
+                    continue;
+                }
+                auto p = condition_config::GetSingleton().key_id(condition->id());
+                if (nullptr == p)
+                {
+                    continue;
+                }
+                if (c.condition_type_ != p->condition_type())
+                {
+                    continue;
+                }
+                bool conform = false;
+                for (int32_t ci = 0; ci < p->condition1_size(); ++ci)
+                {
+                    if (row_condtion1 != p->condition1(ci))
+                    {
+                        continue;
+                    }
+                    conform = true;
+                    break;
+                }
+                if (!conform)
+                {
+                    continue;
+                }
+                condition_change = true;
+                condition->set_progress(c.ammount_ + condition->progress());
+                // to client
+                if (condition->progress() < p->amount())
+                {
+                    continue;
+                }
+                condition->set_progress(p->amount());
+                condition->set_status(E_CONDITION_COMPLETE);
+                // to client
+            }
+            return condition_change;
+        }
+
+        void OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete)
+        {
+            if (temp_complete.empty())
+            {
+                return;
+            }
+            bool reward = reg().any_of<MissionReward>(entity());
+            for (auto& mission_id : temp_complete)
+            {
+                complete_ids_.mutable_missions()->insert({ mission_id, true });
+                if (reward && MissionConfig::GetSingleton().reward_id(mission_id) > 0)
+                {
+                    complete_ids_.mutable_can_reward_mission_id()->insert({ mission_id, false });
+                }
+
+                RemoveMissionTypeSubType(mission_id);
+                auto p = MissionConfig::GetSingleton().key_id(mission_id);
+                auto next_time_accpet = reg().try_get<NextTimeAcceptMission>(entity());
+                if (nullptr == next_time_accpet)
+                {
+                    for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
+                    {
+                        auto next_condition_id = p->next_mission_id(i);
+                        auto np = Config::GetSingleton().key_id(next_condition_id);
+                        if (nullptr == np)
+                        {
+                            continue;
+                        }
+                        MakeMissionParam param{ next_condition_id,
+                            np->condition_id() };
+                        MakeMission(param);
+                    }
+                }
+                else
+                {
+                    for (int32_t i = 0; i < p->next_mission_id_size(); ++i)
+                    {
+                        next_time_accpet->next_time_accept_mission_id_.emplace(p->next_mission_id(i));
+                    }
+                }
+            }
+
+            ConditionEvent ce{ E_CONDITION_COMPLELTE_MISSION, {}, 1 };
+            for (auto& it : temp_complete)
+            {
+                ce.condtion_ids_ = { it };
+                TriggerConditionEvent(ce);
+            }
+        }
+
 
         MissionMap missions_;
         CompleteMissionsId complete_ids_;  
