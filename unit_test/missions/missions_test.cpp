@@ -209,23 +209,22 @@ TEST(Missions, OnCompleteMission)
 
 TEST(Missions, AcceptNextMirroMission)
 {
-    auto mm = MakePlayerMissionMap();
+    Missions<mission_config, mission_row> ms;
     uint32_t mid = 7;
-    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
-    auto& next_mission_set =  reg().emplace<NextTimeAcceptMission>(mm);
-    EXPECT_EQ(RET_OK, MakePlayerMission(param));
-    EXPECT_EQ(1, reg().get<UI32PairSet>(mm).size());
-    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
-    TriggerConditionEvent(ce);
-    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
-    EXPECT_TRUE(IsCompleteMission({ mm, mid }));
+    MakePlayerMissionParam param{ ms.entity(),   mid,  E_OP_CODE_TEST };
+    auto& next_mission_set =  reg().emplace<NextTimeAcceptMission>(ms.entity());
+    EXPECT_EQ(RET_OK, RandomMision(param, ms));
+    EXPECT_EQ(1, ms.type_set_size());
+    ConditionEvent ce{ ms.entity(), E_CONDITION_KILL_MONSTER, {1}, 1 };
+    ms.TriggerConditionEvent(ce);
+    EXPECT_FALSE(ms.IsAcceptedMission(mid));
+    EXPECT_TRUE(ms.IsCompleteMission(mid));
 
     auto next_mission_id = ++mid;
-    EXPECT_FALSE(IsAcceptedMission({ mm,  next_mission_id }));
-    EXPECT_FALSE(IsCompleteMission({ mm, next_mission_id }));
+    EXPECT_FALSE(ms.IsAcceptedMission(next_mission_id));
+    EXPECT_FALSE(ms.IsCompleteMission(next_mission_id));
     EXPECT_TRUE(next_mission_set.next_time_accept_mission_id_.find(next_mission_id)
         != next_mission_set.next_time_accept_mission_id_.end());
-    reg().clear();
 }
 
 TEST(Missions, MissionCondition)
