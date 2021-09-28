@@ -35,6 +35,16 @@ namespace common
             return mrow->mission_sub_type();
         }
 
+        uint32_t reward_id(uint32_t id)
+        {
+            auto mrow = Config::GetSingleton().key_id(id);
+            if (nullptr == mrow)
+            {
+                return 0;
+            }
+            return mrow->reward_id();
+        }
+
         bool HasMainSubTypeCheck() { return std::is_same_v<mission_row, ConfigRow>;   }
 
     };

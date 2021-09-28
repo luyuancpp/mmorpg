@@ -54,8 +54,8 @@ using TempCompleteList = UI32USet;
 using TypeSubTypeSet = UI32PairSet;
 
 struct NextTimeAcceptMission { UI32USet next_time_accept_mission_id_; };
-
 struct CheckSubType {};
+struct MissionReward {};
 }//namespace common
 
 #endif//COMMON_SRC_GAME_LOIGC_COMP_H_
