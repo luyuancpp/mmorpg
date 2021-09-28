@@ -80,33 +80,32 @@ TEST(Missions, RepeatedMission)
 
 TEST(Missions, TriggerCondition)
 {
-    auto mm = MakePlayerMissionMap();
+    Missions<mission_config, mission_row> ms;
     uint32_t mid = 1;
     //auto mrow = mission_config::GetSingleton().key_id(mid);
-    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
-    EXPECT_EQ(RET_OK, MakePlayerMission(param));
-    EXPECT_EQ(1, reg().get<UI32PairSet>(mm).size());
-    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
-    TriggerConditionEvent(ce);
-    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
+    MakePlayerMissionParam param{ ms.entity(),   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, RandomMision(param, ms));
+    EXPECT_EQ(1, ms.type_set_size());
+    ConditionEvent ce{ ms.entity(), E_CONDITION_KILL_MONSTER, {1}, 1 };
+    ms.TriggerConditionEvent(ce);
+    EXPECT_EQ(1, ms.mission_size());
+    EXPECT_EQ(0, ms.completemission_size());
 
     ce.condtion_ids_ = { 2 };
-    TriggerConditionEvent(ce);
-    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
+    ms.TriggerConditionEvent(ce);
+    EXPECT_EQ(1, ms.mission_size());
+    EXPECT_EQ(0, ms.completemission_size());
 
     ce.condtion_ids_ = { 3 };
-    TriggerConditionEvent(ce);
-    EXPECT_EQ(1, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(0, reg().get<CompleteMissionsId>(mm).missions_size());
+    ms.TriggerConditionEvent(ce);
+    EXPECT_EQ(1, ms.mission_size());
+    EXPECT_EQ(0, ms.completemission_size());
 
     ce.condtion_ids_ = { 4 };
-    TriggerConditionEvent(ce);
-    EXPECT_EQ(0, reg().get<MissionMap>(mm).missions().size());
-    EXPECT_EQ(1, reg().get<CompleteMissionsId>(mm).missions_size());
-    EXPECT_EQ(0, reg().get<UI32PairSet>(mm).size());
-    reg().clear();
+    ms.TriggerConditionEvent(ce);
+    EXPECT_EQ(0, ms.mission_size());
+    EXPECT_EQ(1, ms.completemission_size());
+    EXPECT_EQ(0, ms.type_set_size());
 }
 
 TEST(Missions, TypeSize)

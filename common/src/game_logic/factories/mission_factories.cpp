@@ -34,10 +34,6 @@ void OnPlayerCompleteMission(entt::entity e, uint32_t mission_id, CompleteMissio
     {
         cm.mutable_can_reward_mission_id()->insert({ mission_id, false });
     }
-    if (mrow->mission_sub_type() > 0)
-    {
-        RemoveMissionTypeSubType(e, mrow->mission_type(), mrow->mission_sub_type());
-    }
 }
 
 entt::entity MakeMissionMap()
