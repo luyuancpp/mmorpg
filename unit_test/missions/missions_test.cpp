@@ -16,7 +16,7 @@ using namespace common;
 TEST(Missions, MakeMission)
 {
     uint32_t mid = 1;
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
     reg().remove<CheckSubType>(ms.entity());
     MakeMissionParam param{ 
     mid,
@@ -44,7 +44,7 @@ TEST(Missions, MakeMission)
 TEST(Missions, RadomCondtion)
 {
     uint32_t mid = 3;
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
     MakePlayerMissionParam param{ mid};    
     auto cids = mission_config::GetSingleton().key_id(mid);    
     RandomMision(param, ms);
@@ -57,7 +57,7 @@ TEST(Missions, RadomCondtion)
 
 TEST(Missions, RepeatedMission)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
     {
         uint32_t mid = 1;
         MakeMissionParam param{ 
@@ -77,7 +77,7 @@ TEST(Missions, RepeatedMission)
 
 TEST(Missions, TriggerCondition)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
     uint32_t mid = 1;
     //auto mrow = mission_config::GetSingleton().key_id(mid);
     MakePlayerMissionParam param{mid};
@@ -107,7 +107,7 @@ TEST(Missions, TriggerCondition)
 
 TEST(Missions, TypeSize)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
     uint32_t mid = 6;
     //auto mrow = mission_config::GetSingleton().key_id(mid);
     MakePlayerMissionParam param{mid};
@@ -162,7 +162,7 @@ TEST(Missions, TypeSize)
 
 TEST(Missions, CompleteRemakeMission)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
     uint32_t mid = 4;
     //auto mrow = mission_config::GetSingleton().key_id(mid);
     MakePlayerMissionParam param{  mid};
@@ -177,7 +177,7 @@ TEST(Missions, CompleteRemakeMission)
 
 TEST(Missions, OnCompleteMission)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
     uint32_t mid = 7;
 
     MakePlayerMissionParam param{mid};
@@ -206,7 +206,7 @@ TEST(Missions, OnCompleteMission)
 
 TEST(Missions, AcceptNextMirroMission)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
     uint32_t mid = 7;
     MakePlayerMissionParam param{mid};
     auto& next_mission_set =  reg().emplace<NextTimeAcceptMission>(ms.entity());
@@ -226,7 +226,7 @@ TEST(Missions, AcceptNextMirroMission)
 
 TEST(Missions, MissionCondition)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
 
     uint32_t mid = 14;
     uint32_t mid1 = 15;
@@ -252,7 +252,7 @@ TEST(Missions, MissionCondition)
 
 TEST(Missions, ConditionAmount)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
 
     uint32_t mid = 13;
 
@@ -272,7 +272,7 @@ TEST(Missions, ConditionAmount)
 
 TEST(Missions, MissionRewardList)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
 
     reg().emplace<MissionReward>(ms.entity());
 
@@ -294,7 +294,7 @@ TEST(Missions, MissionRewardList)
 
 TEST(Missions, RemoveMission)
 {
-    Missions<mission_config, mission_row> ms;
+    Missions ms;
     uint32_t mid = 12;
     MakePlayerMissionParam param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
