@@ -229,29 +229,28 @@ TEST(Missions, AcceptNextMirroMission)
 
 TEST(Missions, MissionCondition)
 {
-    auto mm = MakePlayerMissionMap();
+    Missions<mission_config, mission_row> ms;
 
     uint32_t mid = 14;
     uint32_t mid1 = 15;
     uint32_t mid2 = 16;
-    MakePlayerMissionParam param{ mm,   mid,  E_OP_CODE_TEST };
-    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+    MakePlayerMissionParam param{ ms.entity(),   mid,  E_OP_CODE_TEST };
+    EXPECT_EQ(RET_OK, RandomMision(param, ms));
     param.mission_id_ = mid1;
-    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+    EXPECT_EQ(RET_OK, RandomMision(param, ms));
     param.mission_id_ = mid2;
-    EXPECT_EQ(RET_OK, MakePlayerMission(param));
+    EXPECT_EQ(RET_OK, RandomMision(param, ms));
 
-    EXPECT_TRUE(IsAcceptedMission({ mm, mid }));
-    EXPECT_FALSE(IsCompleteMission({ mm, mid }));
-    ConditionEvent ce{ mm, E_CONDITION_KILL_MONSTER, {1}, 1 };
-    TriggerConditionEvent(ce);
-    EXPECT_FALSE(IsAcceptedMission({ mm, mid }));
-    EXPECT_TRUE(IsCompleteMission({ mm, mid }));
-    EXPECT_FALSE(IsAcceptedMission({ mm, mid1 }));
-    EXPECT_TRUE(IsCompleteMission({ mm, mid1 }));
-    EXPECT_FALSE(IsAcceptedMission({ mm, mid2 }));
-    EXPECT_TRUE(IsCompleteMission({ mm, mid2 }));
-    reg().clear();
+    EXPECT_TRUE(ms.IsAcceptedMission(mid));
+    EXPECT_FALSE(ms.IsCompleteMission(mid));
+    ConditionEvent ce{ ms.entity(), E_CONDITION_KILL_MONSTER, {1}, 1 };
+    ms.TriggerConditionEvent(ce);
+    EXPECT_FALSE(ms.IsAcceptedMission(mid));
+    EXPECT_TRUE(ms.IsCompleteMission(mid));
+    EXPECT_FALSE(ms.IsAcceptedMission(mid1));
+    EXPECT_TRUE(ms.IsCompleteMission(mid1));
+    EXPECT_FALSE(ms.IsAcceptedMission(mid2));
+    EXPECT_TRUE(ms.IsCompleteMission(mid2));
 }
 
 TEST(Missions, ConditionAmount)
