@@ -146,9 +146,7 @@
     <ClCompile Include="..\..\common\src\game_config\condition_config.cpp" />
     <ClCompile Include="..\..\common\src\game_config\mission_config.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\factories\mission_factories.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\missions\missions.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\sys\mission_sys.cpp" />
     <ClCompile Include="..\..\protopb\pbc\comp.pb.cc" />
     <ClCompile Include="..\..\protopb\pbc\condition_config.pb.cc" />
     <ClCompile Include="..\..\protopb\pbc\mission_config.pb.cc" />

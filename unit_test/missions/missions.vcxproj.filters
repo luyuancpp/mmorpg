@@ -18,13 +18,7 @@
     <ClCompile Include="missions_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\factories\mission_factories.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\protopb\pbc\comp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\sys\mission_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\protopb\pbc\condition_config.pb.cc">
