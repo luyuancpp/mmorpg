@@ -1,7 +1,6 @@
 #include "missions.h"
 
 #include "src/game_logic/game_registry.h"
-#include "src/game_logic/factories/mission_factories.h"
 #include "src/return_code/error_code.h"
 
 namespace common
