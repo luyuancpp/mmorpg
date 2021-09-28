@@ -36,10 +36,21 @@ namespace common
             }            
         }
 
+        const TypeMissionIdMap& type_mission_id() const { return  type_missions_; }
         const MissionMap& missions() { return missions_; }
         std::size_t mission_size()const { return missions_.missions().size(); }
         std::size_t completemission_size()const { return complete_ids_.missions().size(); }
         std::size_t type_set_size()const { return type_set_.size(); }
+        bool IsAcceptedMission(uint32_t mission_id)const
+        {
+            auto& mission = missions_.missions();
+            return mission.find(mission_id) != mission.end();
+        }
+        bool IsCompleteMission(uint32_t mission_id)const
+        {
+            auto& complete_ids = complete_ids_.missions();
+            return complete_ids.find(mission_id) != complete_ids.end();
+        }
 
         uint32_t MakeMission(const MakeMissionParam& param)
         {
