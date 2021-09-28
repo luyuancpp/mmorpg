@@ -56,28 +56,26 @@ TEST(Missions, RadomCondtion)
         missions.missions().find(mid)->second.conditions(0).id());
     EXPECT_TRUE(it != cids->random_condition_pool().end());
     EXPECT_EQ(1, missions.missions().find(mid)->second.conditions_size());
-    reg().clear();
 }
 
 TEST(Missions, RepeatedMission)
 {
-    auto mm = MakePlayerMissionMap();
+    Missions<mission_config, mission_row> ms;
     {
         uint32_t mid = 1;
-        MakeMissionParam param{ mm,
+        MakeMissionParam param{ ms.entity(),
         mid,
         mission_config::GetSingleton().key_id(mid)->condition_id(), E_OP_CODE_TEST };
-        EXPECT_EQ(RET_OK, MakeMission(param));
-        EXPECT_EQ(RET_MISSION_ID_REPTEATED, MakeMission(param));
+        EXPECT_EQ(RET_OK, ms.MakeMission(param));
+        EXPECT_EQ(RET_MISSION_ID_REPTEATED, ms.MakeMission(param));
     }
 
     {
-        MakePlayerMissionParam param{ mm, 3,  E_OP_CODE_TEST };
-        MakePlayerMissionParam param2{ mm, 2,  E_OP_CODE_TEST };
-        EXPECT_EQ(RET_OK, MakePlayerMission(param));
-        EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, MakePlayerMission(param2));
+        MakePlayerMissionParam param{ ms.entity(), 3,  E_OP_CODE_TEST };
+        MakePlayerMissionParam param2{ ms.entity(), 2,  E_OP_CODE_TEST };
+        EXPECT_EQ(RET_OK, RandomMision(param, ms));
+        EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, RandomMision(param2, ms));
     }
-    reg().clear();
 }
 
 TEST(Missions, TriggerCondition)

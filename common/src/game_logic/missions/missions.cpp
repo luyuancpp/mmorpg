@@ -21,11 +21,11 @@ namespace common
             auto i = Random::GetSingleton().Rand<int32_t>(0, mrow->random_condition_pool_size() - 1);
             *v.Add() = mrow->random_condition_pool().Get(i);
             mp.condition_id_ = &v;
-            RET_CHECK_RET(MakeMission(mp));
+            RET_CHECK_RET(ms.MakeMission(mp));
         }
         else
         {
-            RET_CHECK_RET(MakeMission(mp));
+            RET_CHECK_RET(ms.MakeMission(mp));
         }
         return RET_OK;
     }
