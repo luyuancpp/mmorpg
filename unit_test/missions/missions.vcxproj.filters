@@ -41,16 +41,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\game_logic\factories\mission_factories.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\protopb\pbc\comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\comp\mission.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\sys\mission_sys.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\protopb\pbc\condition_config.pb.h">

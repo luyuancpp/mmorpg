@@ -9,8 +9,6 @@
 #include "src/game_logic/comp/mission.hpp"
 #include "src/game_logic/entity_class/entity_class.h"
 #include "src/game_logic/missions/missions_config_template.h"
-#include "src/game_logic/factories/mission_factories.h"
-#include "src/game_logic/sys/mission_sys.hpp"
 #include "src/random/random.h"
 #include "src/return_code/error_code.h"
 
@@ -18,6 +16,57 @@
 
 namespace common
 {
+    struct MakeMissionParam
+    {
+        using ConditionV = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
+        MakeMissionParam(
+            entt::entity e,
+            uint32_t mision_id,
+            const ConditionV* condition_id)
+            : e_(e),
+            mission_id_(mision_id),
+            condition_id_(condition_id) {}
+        MakeMissionParam(
+            entt::entity e,
+            uint32_t mision_id,
+            const ConditionV& condition_id)
+            : e_(e),
+            mission_id_(mision_id),
+            condition_id_(&condition_id) {}
+
+        entt::entity e_{ entt::null };
+        uint32_t mission_id_{ 0 };
+        const ConditionV* condition_id_{ nullptr };
+    };
+
+    struct MakePlayerMissionParam
+    {
+        MakePlayerMissionParam(
+            entt::entity e,
+            uint32_t mision_id)
+            : e_(e),
+            mission_id_(mision_id)
+        {}
+
+        entt::entity e_{ entt::null };
+        uint32_t mission_id_{ 0 };
+    };
+
+
+    struct ConditionEvent
+    {
+        entt::entity e_{};
+        uint32_t condition_type_{ 0 };
+        UI32V condtion_ids_{};
+        uint32_t ammount_{ 1 };
+    };
+
+    struct MissionIdParam
+    {
+        entt::entity e_{};
+        uint32_t missin_id_{ 0 };
+    };
+
     template<typename Config, typename ConfigRow>
     class Missions : public EntityClass
     {
