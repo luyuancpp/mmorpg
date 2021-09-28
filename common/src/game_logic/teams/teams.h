@@ -7,24 +7,26 @@
 #include "src/game_logic/game_registry.h"
 #include "entt/src/entt/entity/entity.hpp"
 #include "src/snow_flake/snow_flake.h"
+#include "src/game_logic/entity_class/entity_class.h"
 #include "src/game_logic/teams/team_event.h"
 
 #include "team.h"
 
 namespace common
 {
-class Teams : public Receiver<Teams>
+class Teams : public Receiver<Teams>, public EntityClass
 {
 public:
     static const std::size_t kMaxTeamSize = 10000;
 
     Teams();
+    ~Teams();
 
     std::size_t team_size()const { return reg().size<Team>(); }
     std::size_t member_size(GameGuid team_id);
     std::size_t applicant_size_by_player_id(GameGuid player_id)const;
     std::size_t applicant_size_by_team_id(GameGuid team_id)const;
-    std::size_t players_size()const { return reg().get<PlayerIdTeamIdMap>(my_entity_id_).size(); }
+    std::size_t players_size()const { return reg().get<PlayerIdTeamIdMap>(entity()).size(); }
     GameGuid GetTeamId(GameGuid player_id)const;
     entt::entity GetTeamEntityId(GameGuid player_id)const;
     GameGuid last_team_id() const { return last_team_id_; }
@@ -59,7 +61,6 @@ private:
 
     GameGuid last_team_id_{ 0 };
     EventManagerPtr emp_;
-    entt::entity my_entity_id_{};
 };
 }//namespace common
 #endif // COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_

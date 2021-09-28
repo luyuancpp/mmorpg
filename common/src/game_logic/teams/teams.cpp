@@ -30,8 +30,12 @@ namespace common
     Teams::Teams()
         : emp_(EventManager::New())
     {
-        my_entity_id_ = reg().create();
-        reg().emplace<PlayerIdTeamIdMap>(my_entity_id_, PlayerIdTeamIdMap());
+        reg().emplace<PlayerIdTeamIdMap>(entity(), PlayerIdTeamIdMap());
+    }
+
+    Teams::~Teams()
+    {
+        reg().clear<Team>();
     }
 
     std::size_t Teams::member_size(GameGuid team_id)
@@ -54,7 +58,7 @@ namespace common
 
     GameGuid Teams::GetTeamId(GameGuid player_id)const
     {
-        auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(my_entity_id_);
+        auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(entity());
         auto it = player_team_map_.find(player_id);
         if (it == player_team_map_.end())
         {
@@ -65,7 +69,7 @@ namespace common
 
     entt::entity Teams::GetTeamEntityId(GameGuid player_id) const
     {
-        auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(my_entity_id_);
+        auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(entity());
         auto it = player_team_map_.find(player_id);
         if (it == player_team_map_.end())
         {
@@ -105,7 +109,7 @@ namespace common
 
     bool Teams::PlayerInTeam(GameGuid player_id) const
     {
-        auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(my_entity_id_);
+        auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(entity());
         return player_team_map_.find(player_id) != player_team_map_.end(); 
     }
 
@@ -134,7 +138,7 @@ namespace common
         RET_CHECK_RET(CheckMemberInTeam(param.members));
 
         auto e = reg().create();
-        TeamsParam ts_param{e, my_entity_id_, emp_, &reg() };
+        TeamsParam ts_param{e, entity(), emp_, &reg() };
         auto team = reg().emplace<Team>(e, param, ts_param);
 
         PlayerInTeamF f_in_the_team;

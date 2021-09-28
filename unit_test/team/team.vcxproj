@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\src\event\event.cc" />
+    <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\teams\team.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\teams\teams.cpp" />
     <ClCompile Include="teamlist_test.cpp" />
@@ -140,7 +141,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../bin/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;game_proto.lib;zlib.lib;gtestd.lib</AdditionalDependencies>
+      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;protopb.lib;zlib.lib;gtestd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

@@ -10,8 +10,7 @@ namespace common
     public:
         EntityClass();
         ~EntityClass();
-
-        entt::entity entity()const { return entity_; }
+        inline entt::entity entity()const { return entity_; }
     private:
         
         entt::entity entity_;
