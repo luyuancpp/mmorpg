@@ -5,6 +5,7 @@
 #include "src/game_logic/comp/server_list.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/sys/scene_sys.hpp"
+#include "src/scene/sceces.h"
 
 using namespace  master;
 using namespace  common;
@@ -14,21 +15,20 @@ uint32_t per_scene_config_size = 2;
 
 TEST(GameServer, CreateMainScene)
 {
-    MakeScenes();
+    ScenesManager sm;
     MakeSceneParam param;
-    auto& c = reg().get<common::Scenes>(scenes_entity());
+   
     for (uint32_t i = 0; i < scene_config_size; ++i)
     {
         param.scene_config_id_ = i;
         for (uint32_t j = 0; j < per_scene_config_size; ++j)
         {
-            MakeMainScene(reg(), param);
+            sm.MakeMainScene(param);
         }
-        EXPECT_EQ(c.scene_config_size(i), std::size_t(per_scene_config_size));
+        EXPECT_EQ(sm.scene_config_size(i), std::size_t(per_scene_config_size));
     }
-    EXPECT_EQ(c.scenes_size(), std::size_t(scene_config_size * per_scene_config_size));
-    EXPECT_EQ(reg().get<common::SceneMap>(scenes_entity()).size(), std::size_t(scene_config_size * per_scene_config_size));
-    reg().clear();
+    EXPECT_EQ(sm.scenes_size(), std::size_t(scene_config_size * per_scene_config_size));
+    EXPECT_EQ(sm.scenes_size(), std::size_t(scene_config_size * per_scene_config_size));
 }
 
 TEST(GameServer, MakeScene2Sever )
