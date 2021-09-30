@@ -33,7 +33,7 @@ TEST(GameServer, CreateMainScene)
 
 TEST(GameServer, MakeScene2Sever )
 {
-    MakeScenes();
+    ScenesManager sm;
 
     MakeGameServerParam param1;
     param1.node_id_ = 1;
@@ -53,10 +53,9 @@ TEST(GameServer, MakeScene2Sever )
     server2_param.scene_config_id_ = 3;
     server2_param.server_entity_ = server_entity2;
 
-    MakeScene2GameServer(reg(), server1_param);
-    MakeScene2GameServer(reg(), server2_param);
+    sm.MakeScene2GameServer(server1_param);
+    sm.MakeScene2GameServer(server2_param);
 
-    auto& scenes = reg().get<common::Scenes>(scenes_entity());
     auto& server_data1 = *reg().get<common::GameServerDataPtr>(server_entity1);
     auto& scenes_id1 = reg().get<common::Scenes>(server_entity1);
  
@@ -65,17 +64,16 @@ TEST(GameServer, MakeScene2Sever )
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
     EXPECT_EQ(server1_param.scene_config_id_, reg().get<common::SceneConfig>(scenes_id1.first_scene()).scene_config_id());
-    EXPECT_EQ(1, scenes.scene_config_size(server1_param.scene_config_id_));
+    EXPECT_EQ(1, sm.scene_config_size(server1_param.scene_config_id_));
     EXPECT_EQ(server_data1.node_id(), param1.node_id_);
 
     EXPECT_EQ(1, scenes_id2.scenes_size());
     EXPECT_EQ(server2_param.scene_config_id_, reg().get<common::SceneConfig>(scenes_id2.first_scene()).scene_config_id());
     EXPECT_EQ(server_data2.node_id(), param2.node_id_);
 
-    EXPECT_EQ(1, scenes.scene_config_size(server2_param.scene_config_id_));
-    EXPECT_EQ(2, scenes.scenes_size());
-    EXPECT_EQ(reg().get<common::Scenes>(scenes_entity()).scenes_size(), reg().get<common::SceneMap>(scenes_entity()).size());
-    reg().clear();
+    EXPECT_EQ(1, sm.scene_config_size(server2_param.scene_config_id_));
+    EXPECT_EQ(2, sm.scenes_size());
+    EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 }
 
 TEST(GameServer, PutScene2Sever)
@@ -102,7 +100,6 @@ TEST(GameServer, PutScene2Sever)
 
     auto& server_scenes = reg().get<common::Scenes>(server_entity1);
     EXPECT_EQ(1, server_scenes.scenes_size());
-    reg().clear();
 }
 
 TEST(GameServer, DestroyScene)

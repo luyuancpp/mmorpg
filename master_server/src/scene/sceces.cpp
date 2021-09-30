@@ -69,6 +69,31 @@ namespace master
         return e;
     }
 
+    entt::entity ScenesManager::MakeScene2GameServer(const MakeScene2GameServerParam& param)
+    {
+        MakeSceneParam main_scene_param;
+        main_scene_param.op_ = param.op_;
+        main_scene_param.scene_config_id_ = param.scene_config_id_;
+        auto e = MakeMainScene(main_scene_param);
+        PutScene2GameServerParam put_param;
+        put_param.scene_entity_ = e;
+        put_param.server_entity_ = param.server_entity_;
+        PutScene2GameServer(put_param);
+        return e;
+    }
+
+    void ScenesManager::PutScene2GameServer(const PutScene2GameServerParam& param)
+    {
+        auto scene_entity = param.scene_entity_;
+        auto& scene_config = reg().get<common::SceneConfig>(scene_entity);
+        auto server_entity = param.server_entity_;
+        auto& server_scenes = reg().get<common::Scenes>(server_entity);
+        server_scenes.AddScene(scene_config.scene_config_id(), scene_entity);
+        auto& p_server_data = reg().get<common::GameServerDataPtr>(server_entity);
+        reg().emplace<common::GameServerDataPtr>(scene_entity, p_server_data);
+    }
+
+
     void ScenesManager::AddScene(uint32_t scene_config_id, entt::entity scene_entity)
     {
         config_scene_[scene_config_id].emplace(scene_entity);
