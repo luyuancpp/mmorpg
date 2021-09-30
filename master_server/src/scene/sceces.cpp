@@ -94,6 +94,23 @@ namespace master
     }
 
 
+    void ScenesManager::DestroyScene(const DestroySceneParam& param)
+    {
+        OnDestroyScene(param.scene_entity_);
+    }
+
+    void ScenesManager::DestroyServer(const DestroyServerParam& param)
+    {
+        auto server_entity = param.server_entity_;
+        auto server_scenes = reg().get<common::Scenes>(server_entity).copy_scenes_id();
+        DestroySceneParam destroy_param;
+        for (auto& it : server_scenes)
+        {
+            OnDestroyScene(it);
+        }
+        reg().destroy(server_entity);
+    }
+
     void ScenesManager::AddScene(uint32_t scene_config_id, entt::entity scene_entity)
     {
         config_scene_[scene_config_id].emplace(scene_entity);
