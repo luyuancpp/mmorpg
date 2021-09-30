@@ -32,13 +32,16 @@ public:
 
     entt::entity MakeMainScene(const MakeSceneParam& param);
 
+    entt::entity MakeScene2GameServer(const MakeScene2GameServerParam& param);
+    void PutScene2GameServer(const PutScene2GameServerParam& param);
+private:
+
     void AddScene(uint32_t scene_config_id, entt::entity scene_entity);
 
     void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity);
 
     void OnDestroyScene(entt::entity scene_entity);
 
-private:
     common::ConfigScenes config_scene_;
     common::SceneIds scenes_;
     common::SceneMap scenes_map_;
