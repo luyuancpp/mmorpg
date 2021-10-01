@@ -483,7 +483,7 @@ TEST(GameServer, CompelChangeScene)
 
 TEST(GameServer, CrashWeightRoundRobinMainScene)
 {
-    MakeScenes();
+    ScenesManager sm;
     EntitiesUSet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
@@ -503,7 +503,7 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
         for (auto& it : server_entities)
         {
             make_server_scene_param.server_entity_ = it;
-            auto e = MakeScene2GameServer(reg(), make_server_scene_param);
+            auto e = sm.MakeScene2GameServer(make_server_scene_param);
             if (scene_entities.empty())
             {
                 scene_entities.emplace(e);
@@ -525,7 +525,7 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
             enter_param1.enter_entity_ = p_e;
             enter_param1.scene_entity_ = it;
             player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
-            EnterScene(reg(), enter_param1);
+            sm.EnterScene(enter_param1);
         }
     }
 
@@ -544,13 +544,12 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
         EXPECT_TRUE(reg().get<common::GameServerDataPtr>(can_enter)->server_entity() != crash1.crash_server_entity_);
     }
 
-    reg().clear();
 }
 
 //崩溃时候的消息不能处理
 TEST(GameServer, CrashMovePlayer2NewServer)
 {
-    MakeScenes();
+    ScenesManager sm;
     EntitiesUSet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
@@ -571,7 +570,7 @@ TEST(GameServer, CrashMovePlayer2NewServer)
         for (auto& it : server_entities)
         {
             make_server_scene_param.server_entity_ = it;
-            auto e = MakeScene2GameServer(reg(), make_server_scene_param);
+            auto e = sm.MakeScene2GameServer(make_server_scene_param);
             scene_entities.emplace(e);
             if (first_scene == entt::null)
             {
@@ -592,7 +591,7 @@ TEST(GameServer, CrashMovePlayer2NewServer)
         enter_param1.enter_entity_ = p_e;
         enter_param1.scene_entity_ = first_scene;
         player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
-        EnterScene(reg(), enter_param1);
+        sm.EnterScene(enter_param1);
     }
 
     ServerCrashParam crash1;
@@ -626,12 +625,12 @@ TEST(GameServer, CrashMovePlayer2NewServer)
         EXPECT_EQ(server_data->node_id(), eq_server_data->node_id());
     }
     
-    reg().clear();
 }
 
 TEST(GameServer, WeightRoundRobinMainScene)
 {
-    MakeScenes();
+    reg().clear();
+    ScenesManager sm;
     EntitiesUSet server_entities;
     uint32_t server_size = 10;
     uint32_t per_server_scene = 10;
@@ -651,11 +650,11 @@ TEST(GameServer, WeightRoundRobinMainScene)
         for (auto& it :server_entities)
         {
             make_server_scene_param.server_entity_ = it;
-            MakeScene2GameServer(reg(), make_server_scene_param);
+            sm.MakeScene2GameServer(make_server_scene_param);
         }        
     }
 
-    auto enter_leave_lambda = [&server_entities, server_size, per_server_scene]()->void
+    auto enter_leave_lambda = [&server_entities, server_size, per_server_scene, &sm]()->void
     {
         uint32_t scene_config_id0 = 0;
         uint32_t scene_config_id1 = 1;
@@ -677,7 +676,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
             enter_param1.scene_entity_ = can_enter;
             player_scene1.emplace(enter_param1.enter_entity_, can_enter);
             scene_sets.emplace(can_enter);
-            EnterScene(reg(), enter_param1);
+            sm.EnterScene(enter_param1);
         }
 
         uint32_t player_scene_id = 0;
@@ -698,7 +697,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
             enter_param1.scene_entity_ = can_enter;
             player_scene2.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
             scene_sets.emplace(can_enter);
-            EnterScene(reg(), enter_param1);
+            sm.EnterScene(enter_param1);
         }
         player_scene_id = 0;
         for (auto& it : player_scene2)
@@ -709,6 +708,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
         }
 
         std::size_t server_player_size = player_size * 2 / server_size;
+
 
         for (auto& it : server_entities)
         {
@@ -722,13 +722,13 @@ TEST(GameServer, WeightRoundRobinMainScene)
         {
             auto& pse = reg().get<common::SceneEntityId>(it.first);
             leave_scene.leave_entity_ = it.first;
-            LeaveScene(reg(), leave_scene);
+            sm.LeaveScene(leave_scene);
         }
         for (auto& it : player_scene2)
         {
             auto& pse = reg().get<common::SceneEntityId>(it.first);
             leave_scene.leave_entity_ = it.first;
-            LeaveScene(reg(), leave_scene);
+            sm.LeaveScene(leave_scene);
         }
         for (auto& it : server_entities)
         {
@@ -749,7 +749,6 @@ TEST(GameServer, WeightRoundRobinMainScene)
         enter_leave_lambda();
     }    
     //leave 
-    reg().clear();
 }
 
 TEST(GameServer, ServerEnterLeavePressure)
