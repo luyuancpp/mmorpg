@@ -115,56 +115,12 @@ void ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
     reg.emplace<common::GameServerCrash>(param.crash_server_entity_);
 }
 
-void ReplaceCrashServer(entt::registry& reg, const ReplaceCrashServerParam& param)
-{
-    MoveServerScene2ServerParam move_param;
-    move_param.from_server_entity_ = param.cransh_server_entity_;
-    move_param.to_server_entity_ = param.replace_server_entity_;
-    MoveServerScene2Server(reg, move_param);
-    reg.destroy(move_param.from_server_entity_);
-}
+
 
 void ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
 {
     reg.remove<common::GameServerStatusNormal>(param.maintain_server_entity_);
     reg.emplace<common::GameServerMainTain>(param.maintain_server_entity_);
 }
-
-void CompelChangeScene(entt::registry& reg, const CompelChangeSceneParam& param)
-{
-    auto new_server_entity = param.new_server_entity_;
-    auto compel_entity = param.compel_change_entity_;
-    auto& new_server_scene = reg.get<common::Scenes>(new_server_entity);
-    auto scene_config_id = param.scene_config_id_;
-
-    entt::entity server_scene_enitity = entt::null;
-
-    if (!new_server_scene.HasSceneConfig(param.scene_config_id_))
-    {
-        MakeScene2GameServerParam make_server_scene_param;
-        make_server_scene_param.scene_config_id_ = scene_config_id;
-        make_server_scene_param.server_entity_ = new_server_entity;
-        server_scene_enitity = MakeScene2GameServer(reg, make_server_scene_param);
-    }
-    else
-    {
-        server_scene_enitity = new_server_scene.scene_id(param.scene_config_id_);
-    }
-
-    if (entt::null == server_scene_enitity)
-    {
-        return;
-    }
-
-    LeaveSceneParam leave_param;
-    leave_param.leave_entity_ = compel_entity;
-    LeaveScene(reg, leave_param);
-
-    EnterSceneParam enter_param;
-    enter_param.enter_entity_ = compel_entity;
-    enter_param.scene_entity_ = server_scene_enitity;
-    EnterScene(reg, enter_param);
-}
-
 }//namespace master
 

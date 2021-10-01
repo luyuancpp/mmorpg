@@ -48,6 +48,7 @@ public:
 
     void CompelChangeScene(const CompelChangeSceneParam& param);
 
+    void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 private:
 
     void AddScene(uint32_t scene_config_id, entt::entity scene_entity);
