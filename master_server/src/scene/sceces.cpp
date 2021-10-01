@@ -111,6 +111,23 @@ namespace master
         reg().destroy(server_entity);
     }
 
+    void ScenesManager::MoveServerScene2Server(const MoveServerScene2ServerParam& param)
+    {
+        auto to_server_entity = param.to_server_entity_;
+        auto& from_scenes_id = reg().get<common::Scenes>(param.from_server_entity_).scenes_config_id();
+        auto& to_scenes_id = reg().get<common::Scenes>(to_server_entity);
+        auto& p_to_server_data = reg().get<common::GameServerDataPtr>(to_server_entity);
+        for (auto& it : from_scenes_id)
+        {
+            for (auto& ji : it.second)
+            {
+                reg().emplace_or_replace<common::GameServerDataPtr>(ji, p_to_server_data);
+                to_scenes_id.AddScene(it.first, ji);
+            }
+        }
+        reg().emplace_or_replace<common::Scenes>(param.from_server_entity_);
+    }
+
     void ScenesManager::AddScene(uint32_t scene_config_id, entt::entity scene_entity)
     {
         config_scene_[scene_config_id].emplace(scene_entity);
