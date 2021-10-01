@@ -7,6 +7,7 @@
 #include "src/game_logic/entity_class/entity_class.h"
 #include "src/game_logic/comp/server_list.hpp"
 #include "src/snow_flake/snow_flake.h"
+#include "src/sys/scene_sys.hpp"
 
 namespace master
 {
@@ -40,6 +41,13 @@ public:
     void DestroyServer(const DestroyServerParam& param);
 
     void MoveServerScene2Server(const MoveServerScene2ServerParam& param);
+
+    void EnterScene(const EnterSceneParam& param);
+
+    void LeaveScene(const LeaveSceneParam& param);
+
+    void CompelChangeScene(const CompelChangeSceneParam& param);
+
 private:
 
     void AddScene(uint32_t scene_config_id, entt::entity scene_entity);

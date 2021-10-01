@@ -128,6 +128,72 @@ namespace master
         reg().emplace_or_replace<common::Scenes>(param.from_server_entity_);
     }
 
+    void ScenesManager::EnterScene(const EnterSceneParam& param)
+    {
+        auto scene_entity = param.scene_entity_;
+        auto& player_entities = reg().get<common::PlayerEntities>(scene_entity);
+        player_entities.emplace(param.enter_entity_);
+        reg().emplace<common::SceneEntityId>(param.enter_entity_, scene_entity);
+        auto p_server_data = reg().try_get<common::GameServerDataPtr>(scene_entity);
+        if (nullptr == p_server_data)
+        {
+            return;
+        }
+        (*p_server_data)->OnPlayerEnter();
+    }
+
+    void ScenesManager::LeaveScene(const LeaveSceneParam& param)
+    {
+        auto leave_entity = param.leave_entity_;
+        auto& player_scene_entity = reg().get<common::SceneEntityId>(leave_entity);
+        auto scene_entity = player_scene_entity.scene_entity();
+        auto& player_entities = reg().get<common::PlayerEntities>(scene_entity);
+        player_entities.erase(leave_entity);
+        reg().remove<common::SceneEntityId>(leave_entity);
+        auto p_server_data = reg().try_get<common::GameServerDataPtr>(scene_entity);
+        if (nullptr == p_server_data)
+        {
+            return;
+        }
+        (*p_server_data)->OnPlayerLeave();
+    }
+
+    void ScenesManager::CompelChangeScene(const CompelChangeSceneParam& param)
+    {
+        auto new_server_entity = param.new_server_entity_;
+        auto compel_entity = param.compel_change_entity_;
+        auto& new_server_scene = reg().get<common::Scenes>(new_server_entity);
+        auto scene_config_id = param.scene_config_id_;
+
+        entt::entity server_scene_enitity = entt::null;
+
+        if (!new_server_scene.HasSceneConfig(param.scene_config_id_))
+        {
+            MakeScene2GameServerParam make_server_scene_param;
+            make_server_scene_param.scene_config_id_ = scene_config_id;
+            make_server_scene_param.server_entity_ = new_server_entity;
+            server_scene_enitity = MakeScene2GameServer(make_server_scene_param);
+        }
+        else
+        {
+            server_scene_enitity = new_server_scene.scene_id(param.scene_config_id_);
+        }
+
+        if (entt::null == server_scene_enitity)
+        {
+            return;
+        }
+
+        LeaveSceneParam leave_param;
+        leave_param.leave_entity_ = compel_entity;
+        LeaveScene(leave_param);
+
+        EnterSceneParam enter_param;
+        enter_param.enter_entity_ = compel_entity;
+        enter_param.scene_entity_ = server_scene_enitity;
+        EnterScene(enter_param);
+    }
+
     void ScenesManager::AddScene(uint32_t scene_config_id, entt::entity scene_entity)
     {
         config_scene_[scene_config_id].emplace(scene_entity);
