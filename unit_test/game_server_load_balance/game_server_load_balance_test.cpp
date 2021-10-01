@@ -358,7 +358,8 @@ TEST(GameServer, PlayerLeaveEnterScene)
 
 TEST(GameServer, MainTainWeightRoundRobinMainScene)
 {
-    MakeScenes();
+    reg().clear();
+    ScenesManager sm;
     EntitiesUSet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
@@ -378,7 +379,7 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
         for (auto& it : server_entities)
         {
             make_server_scene_param.server_entity_ = it;
-            auto e = MakeScene2GameServer(reg(), make_server_scene_param);
+            auto e = sm.MakeScene2GameServer(make_server_scene_param);
             if (scene_entities.empty())
             {
                 scene_entities.emplace(e);
@@ -418,8 +419,6 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
         EXPECT_TRUE(reg().get<common::GameServerDataPtr>(can_enter)->server_entity() != entt::null);
         EXPECT_TRUE(reg().get<common::GameServerDataPtr>(can_enter)->server_entity() != maintain.maintain_server_entity_);
     }
-
-    reg().clear();
 }
 
 TEST(GameServer, CompelChangeScene)
@@ -601,7 +600,7 @@ TEST(GameServer, CrashMovePlayer2NewServer)
     ReplaceCrashServerParam replace_crash;
     replace_crash.cransh_server_entity_ = *server_entities.begin();
     replace_crash.replace_server_entity_ = *(++server_entities.begin());
-    ReplaceCrashServer(reg(), replace_crash);
+    sm.ReplaceCrashServer(replace_crash);
 
     EXPECT_FALSE(reg().valid(replace_crash.cransh_server_entity_));
     server_entities.erase(replace_crash.cransh_server_entity_);

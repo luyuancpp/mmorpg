@@ -66,11 +66,7 @@ void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param
 
 void ServerCrashed(entt::registry& reg, const ServerCrashParam& param);
 
-void ReplaceCrashServer(entt::registry& reg, const ReplaceCrashServerParam& param);
-
 void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
-
-void CompelChangeScene(entt::registry& reg, const CompelChangeSceneParam& param);
 
 }//namespace master
 

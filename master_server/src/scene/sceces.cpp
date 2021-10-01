@@ -194,6 +194,15 @@ namespace master
         EnterScene(enter_param);
     }
 
+    void ScenesManager::ReplaceCrashServer(const ReplaceCrashServerParam& param)
+    {
+        MoveServerScene2ServerParam move_param;
+        move_param.from_server_entity_ = param.cransh_server_entity_;
+        move_param.to_server_entity_ = param.replace_server_entity_;
+        MoveServerScene2Server(move_param);
+        reg().destroy(move_param.from_server_entity_);
+    }
+
     void ScenesManager::AddScene(uint32_t scene_config_id, entt::entity scene_entity)
     {
         config_scene_[scene_config_id].emplace(scene_entity);
