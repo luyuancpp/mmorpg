@@ -38,6 +38,8 @@ public:
 
     void DestroyScene(const DestroySceneParam& param);
     void DestroyServer(const DestroyServerParam& param);
+
+    void MoveServerScene2Server(const MoveServerScene2ServerParam& param);
 private:
 
     void AddScene(uint32_t scene_config_id, entt::entity scene_entity);

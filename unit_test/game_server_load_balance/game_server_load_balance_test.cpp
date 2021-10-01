@@ -204,7 +204,7 @@ TEST(GameServer, DestroySever)
 
 TEST(GameServer, ServerScene2Sever)
 {
-    MakeScenes();
+    ScenesManager sm;
 
     MakeGameServerParam cgs1;
     cgs1.node_id_ = 1;
@@ -227,8 +227,8 @@ TEST(GameServer, ServerScene2Sever)
     server2_param.scene_config_id_ = 2;
     server2_param.server_entity_ = server_entity2;
 
-    auto scene_id1 = MakeScene2GameServer(reg(), server1_param);
-    auto scene_id2 = MakeScene2GameServer(reg(), server2_param);
+    auto scene_id1 = sm.MakeScene2GameServer(server1_param);
+    auto scene_id2 = sm.MakeScene2GameServer(server2_param);
 
     auto& server_data1 = *reg().get<common::GameServerDataPtr>(server_entity1);
     auto& scenes_id1 = reg().get<common::Scenes>(server_entity1);
@@ -239,9 +239,8 @@ TEST(GameServer, ServerScene2Sever)
     EXPECT_EQ(1, reg().get<common::Scenes>(server_entity2).scenes_size());
     EXPECT_EQ(server_data2.node_id(), cgs2.node_id_);
 
-    auto& scenes = reg().get<common::Scenes>(scenes_entity());
-    EXPECT_EQ(2, scenes.scenes_size());
-    EXPECT_EQ(reg().get<common::Scenes>(scenes_entity()).scenes_size(), reg().get<common::SceneMap>(scenes_entity()).size());
+    EXPECT_EQ(2, sm.scenes_size());
+    EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 
     EXPECT_EQ(reg().get<common::GameServerDataPtr>(scene_id1)->node_id(), cgs1.node_id_);
     EXPECT_EQ(reg().get<common::GameServerDataPtr>(scene_id2)->node_id(), cgs2.node_id_);
@@ -249,7 +248,7 @@ TEST(GameServer, ServerScene2Sever)
     MoveServerScene2ServerParam move_scene_param;
     move_scene_param.from_server_entity_ = server_entity1;
     move_scene_param.to_server_entity_ = server_entity2;
-    MoveServerScene2Server(reg(), move_scene_param);
+    sm.MoveServerScene2Server(move_scene_param);
 
     EXPECT_TRUE(reg().valid(server_entity1));
     EXPECT_TRUE(reg().valid(scene_id1));
@@ -258,13 +257,12 @@ TEST(GameServer, ServerScene2Sever)
 
     EXPECT_EQ(0, reg().get<common::Scenes>(server_entity1).scenes_size());
     EXPECT_EQ(2, reg().get<common::Scenes>(server_entity2).scenes_size());
-    EXPECT_EQ(2, scenes.scenes_size());
-    EXPECT_EQ(1, scenes.scene_config_size(server1_param.scene_config_id_));
-    EXPECT_EQ(1, scenes.scene_config_size(server2_param.scene_config_id_));
+    EXPECT_EQ(2, sm.scenes_size());
+    EXPECT_EQ(1, sm.scene_config_size(server1_param.scene_config_id_));
+    EXPECT_EQ(1, sm.scene_config_size(server2_param.scene_config_id_));
     EXPECT_EQ(reg().get<common::GameServerDataPtr>(scene_id1)->node_id(), cgs2.node_id_);
     EXPECT_EQ(reg().get<common::GameServerDataPtr>(scene_id2)->node_id(), cgs2.node_id_);
     EXPECT_EQ(reg().get<common::GameServerDataPtr>(server_entity1).use_count(), 1);
-    reg().clear();
 }
 
 TEST(GameServer, PlayerLeaveEnterScene)
