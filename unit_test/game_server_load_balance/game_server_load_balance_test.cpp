@@ -753,7 +753,8 @@ TEST(GameServer, WeightRoundRobinMainScene)
 
 TEST(GameServer, ServerEnterLeavePressure)
 {
-    MakeScenes();
+    reg().clear();
+    ScenesManager sm;
     EntitiesUSet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 10;
@@ -773,7 +774,7 @@ TEST(GameServer, ServerEnterLeavePressure)
         for (auto& it : server_entities)
         {
             make_server_scene_param.server_entity_ = it;
-            MakeScene2GameServer(reg(), make_server_scene_param);
+            sm.MakeScene2GameServer(make_server_scene_param);
         }
     }
     ServerPressureParam pressure1;
@@ -798,7 +799,7 @@ TEST(GameServer, ServerEnterLeavePressure)
         enter_param1.enter_entity_ = p_e;
         enter_param1.scene_entity_ = can_enter;
         player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
-        EnterScene(reg(), enter_param1);
+        sm.EnterScene(enter_param1);
     }
 
     uint32_t player_scene_id = 0;
@@ -819,7 +820,7 @@ TEST(GameServer, ServerEnterLeavePressure)
         enter_param1.enter_entity_ = p_e;
         enter_param1.scene_entity_ = can_enter;
         player_scene2.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
-        EnterScene(reg(), enter_param1);
+        sm.EnterScene(enter_param1);
     }
     player_scene_id = 0;
     for (auto& it : player_scene2)
@@ -827,7 +828,7 @@ TEST(GameServer, ServerEnterLeavePressure)
         auto& psr = reg().get<common::GameServerDataPtr>(it.second);
         EXPECT_TRUE(psr->server_entity() == pressure1.server_entity_);
     }
-    reg().clear();
+    
 }
 
 
@@ -837,8 +838,6 @@ TEST(GameServer, CreateDungeon)
 
 TEST(GameServer, Route)
 {
-    MakeScenes();
-
     reg().clear();
 }
 
