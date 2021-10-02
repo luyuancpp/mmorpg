@@ -12,6 +12,7 @@
 #include "src/game_logic/comp/player.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/master_server.h"
+#include "src/scene/sceces.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/server_common/server_component.h"
 
@@ -62,7 +63,7 @@ namespace g2ms
             for (int32_t i = 0; i < config_all.data_size(); ++i)
             {
                 create_scene_param.scene_config_id_ = config_all.data(i).id();
-                auto scene_entity = MakeScene2GameServer(reg(), create_scene_param);
+                auto scene_entity = g_scene_manager->MakeScene2GameServer( create_scene_param);
                 if (!reg().valid(scene_entity))
                 {
                     continue;

@@ -45,6 +45,9 @@
     <ClCompile Include="src\sys\message_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\scene\sceces.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h">
@@ -75,6 +78,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\sys\message_sys.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\scene\sceces.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

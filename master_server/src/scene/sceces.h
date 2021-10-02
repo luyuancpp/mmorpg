@@ -64,4 +64,6 @@ private:
 };
 }//namespace master
 
+extern master::ScenesManager* g_scene_manager;
+
 #endif//MASTER_SERVER_SRC_SCENE_SCENES_H_

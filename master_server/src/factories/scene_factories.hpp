@@ -58,12 +58,6 @@ entt::entity MakeMainScene(entt::registry& reg, const MakeSceneParam& param);
 
 entt::entity MakeMainSceneGameServer(entt::registry& reg, const MakeGameServerParam& param);
 
-void PutScene2GameServer(entt::registry& reg, const PutScene2GameServerParam& param);
-
-void DestroyScene(entt::registry& reg, const DestroySceneParam& param);
-
-void DestroyServer(entt::registry& reg, const DestroyServerParam& param);
-
 }//namespace master
 
 #endif//MASTER_SRC_FACTORIES_SCENE_FACTORIES_HPP_
