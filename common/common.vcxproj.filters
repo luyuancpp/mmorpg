@@ -90,6 +90,9 @@
     <ClCompile Include="src\game_config\region_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_logic\entity_class\entity_class.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
@@ -288,6 +291,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_config\region_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\entity_class\entity_class.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

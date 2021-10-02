@@ -4,6 +4,8 @@
 
 using namespace common;
 
+master::ScenesManager* g_scene_manager = nullptr;
+
 namespace master
 {
     ScenesManager::ScenesManager()
