@@ -59,15 +59,15 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     }
     else
     {
-        ++id_;
-        while (id_ == kEmptyId || g_gate_clients_->find(id_) != g_gate_clients_->end())
+        auto id = server_sequence_.Generate();
+        while (g_gate_clients_->find(id) != g_gate_clients_->end())
         {
-            ++id_;
+            id = server_sequence_.Generate();
         }
         //很极端情况下会有问题,如果走了一圈前面的人还没下线，在下一个id下线的瞬间又重用了,就会导致串话
-        conn->setContext(id_);
+        conn->setContext(id);
         GateClient gc;
-        g_gate_clients_->emplace(id_, gc);        
+        g_gate_clients_->emplace(id, gc);
     }
 }
 
