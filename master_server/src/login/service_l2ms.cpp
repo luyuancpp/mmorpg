@@ -12,6 +12,7 @@
 #include "src/server_common/closure_auto_done.h"
 #include "src/sys/scene_sys.hpp"
 #include "src/sys/message_sys.hpp"
+#include "src/return_code/error_code.h"
 
 #include "ms2g.pb.h"
 #include "ms2gw.pb.h"
@@ -19,11 +20,30 @@
 using namespace master;
 using namespace common;
 
+uint32_t kMaxPlayer = 100000;
+
 namespace l2ms
 {
+    void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
+        const ::l2ms::LoginRequest* request,
+        ::l2ms::LoginResponse* response,
+        ::google::protobuf::Closure* done)
+    {
+        ClosurePtr cp(done);
+        if (MasterPlayerList::GetSingleton().player_size() >= kMaxPlayer)
+        {
+            response->mutable_error()->set_error_no(RET_LOGIN_SERVER_FULL);
+        }
+        else
+        {
+            response->mutable_error()->set_error_no(RET_OK);
+        }
+        
+    }
+
     void l2ms::LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
         const ::l2ms::EnterGameRequest* request,
-        ::l2ms::EnterGameResponese* response,
+        ::l2ms::EnterGameResponse* response,
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
@@ -60,6 +80,8 @@ namespace l2ms
         enter_scene_param.scene_entity_ = scene_entity;
         EnterScene(reg(), enter_scene_param);
     }
+
+
 }//namespace master
 
 

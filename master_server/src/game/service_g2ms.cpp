@@ -3,7 +3,6 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
 
-#include "src/game_config/global_variable_config.h"
 #include "src/game_config/mainscene_config.h"
 
 #include "src/game_logic/enum/server_enum.h"

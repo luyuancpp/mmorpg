@@ -26,6 +26,8 @@ namespace common
         RET_LOGIN_BEING_CREATE_PLAYER = 1009,
         RET_LOGIN_WAITING_ENTER_GAME = 1010,
         RET_LOGIN_ENTER_GAME_PLAYER_ID = 1011,
+        RET_LOGIN_SERVER_FULL = 1012,
+        RET_LOGIN_ENTER_GAME_CONNECTION_HAS_NOT_ACCOUNT = 1013,
 
         //TeamRet
         RET_TEAM_NOT_IN_APPLICANTS = 5000,
@@ -74,6 +76,14 @@ if (b)\
 if (ret != common::RET_OK)\
 {\
     response->mutable_error()->set_error_no(ret);\
+    done->Run();\
+    return;\
+}\
+
+#define  CheckReturnCloseureErrorFromObj(ret)\
+if (ret != common::RET_OK)\
+{\
+    response.mutable_error()->set_error_no(ret);\
     done->Run();\
     return;\
 }\

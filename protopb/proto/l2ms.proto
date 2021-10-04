@@ -1,17 +1,8 @@
 syntax = "proto3";
+import "common.proto";
 import "google/protobuf/empty.proto";
 package l2ms;
 option cc_generic_services = true;
-
-message LoginRequest
-{
-  string account = 1;
-  string password = 2;
-}
-
-message LoginResponse
-{
-}
 
 message EnterGameRequest
 {
@@ -20,7 +11,7 @@ message EnterGameRequest
   string account = 3;
 }
 
-message EnterGameResponese
+message EnterGameResponse
 {
   uint64 connection_id = 1;
   uint32 game_node_id = 2;
@@ -31,7 +22,20 @@ message LeaveGameRequest
   uint64 connection_id = 1;
 }
 
+message LoginRequest
+{
+  uint64 connection_id = 1;
+  string account = 2;
+}
+
+message LoginResponse
+{
+  uint32 queue = 1;
+  ClientError error = 2;
+}
+
 service LoginService 
 {
-  rpc EnterGame (EnterGameRequest) returns (EnterGameResponese); 
+  rpc Login (LoginRequest) returns (LoginResponse); 
+  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse); 
 }
