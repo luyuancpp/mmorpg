@@ -44,6 +44,12 @@ namespace gw2l
         using LoginRP = std::shared_ptr<LoginRpcString>;
         void DbLoginReplied(LoginRP d);
 
+        using LoginMasterRpcString = common::RpcString<l2ms::LoginRequest,
+            l2ms::LoginResponse,
+            gw2l::LoginResponse>;
+        using LoginMasterRP = std::shared_ptr<LoginMasterRpcString>;
+        void MasterLoginReplied(LoginMasterRP d);
+
         virtual void CreatPlayer(::google::protobuf::RpcController* controller,
             const gw2l::CreatePlayerRequest* request,
             gw2l::CreatePlayerResponse* response,
@@ -67,7 +73,7 @@ namespace gw2l
         void EnterGameDbReplied(EnterGameDbRP d);
 
         using EnterGameMasterRpcString = common::RpcString<l2ms::EnterGameRequest,
-            l2ms::EnterGameResponese,
+            l2ms::EnterGameResponse,
             gw2l::EnterGameResponse>;
         using EnterGameMasterRP = std::shared_ptr<EnterGameMasterRpcString>;
         void EnterGameMasterReplied(EnterGameMasterRP d);

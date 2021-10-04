@@ -25,35 +25,15 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     //只连接不登录,占用连接
     // login process
     // check account rule
-    //check string rule
+    // check string rule
     // check sdk token msg encryption
-    {
-        auto it = login_players_.find(request->account());
-        if (it == login_players_.end())
-        {
-            assert(connection_accounts_.find(request->connection_id()) == connection_accounts_.end());
-            auto ret = login_players_.emplace(request->account(), std::make_shared<AccountPlayer>());
-            it = ret.first;
-        }
-        auto& player = it->second;
-        CheckReturnCloseureError(player->Login());
-        connection_accounts_.emplace(request->connection_id(), player);
-        auto& account_data = player->account_data();
-        redis_->Load(account_data, request->account());
-        if (!account_data.password().empty())
-        {
-            response->mutable_account_player()->CopyFrom(account_data);
-            player->OnDbLoaded();
-            ReturnCloseureOK;
-        }
-    }
- 
-    // database process
-    LoginRP cp(std::make_shared<LoginRpcString>(response, done));
-    auto& s_reqst = cp->s_reqst_;
+
+    LoginMasterRP msp(std::make_shared<LoginMasterRpcString>(response, done));
+    auto& s_reqst = msp->s_reqst_;
     s_reqst.set_account(request->account());
-    s_reqst.set_password(request->password());
-    l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
+    s_reqst.set_connection_id(request->connection_id());
+    msp->setContext(request->password());
+    l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::MasterLoginReplied, msp, &l2ms::LoginService_Stub::Login);
 }
 
 void LoginServiceImpl::DbLoginReplied(LoginRP d)
@@ -61,6 +41,53 @@ void LoginServiceImpl::DbLoginReplied(LoginRP d)
     auto& sresp = d->s_resp_;
     d->c_resp_->mutable_account_player()->CopyFrom(sresp->account_player());
     UpdateAccount(d->s_reqst_.account(), sresp->account_player());
+}
+
+void LoginServiceImpl::MasterLoginReplied(LoginMasterRP d)
+{
+    auto& request = d->s_reqst_;
+    auto response = d->c_resp_;
+
+    if (d->s_resp_->error().error_no() != common::RET_OK)
+    {
+        return;
+    }
+
+    uint32_t ret = common::RET_OK;
+    {
+        auto it = login_players_.find(request.account());
+        if (it == login_players_.end())
+        {
+            assert(connection_accounts_.find(request.connection_id()) == connection_accounts_.end());
+            auto ret = login_players_.emplace(request.account(), std::make_shared<AccountPlayer>());
+            it = ret.first;
+        }
+        auto& player = it->second;
+        ret = player->Login();
+        if (ret != common::RET_OK)
+        {
+            response->mutable_error()->set_error_no(ret);
+            return;
+        }
+        connection_accounts_.emplace(request.connection_id(), player);
+        auto& account_data = player->account_data();
+        redis_->Load(account_data, request.account());
+        if (!account_data.password().empty())
+        {
+            response->mutable_account_player()->CopyFrom(account_data);
+            player->OnDbLoaded();
+            return;
+        }
+    }
+    gw2l::LoginResponse* mresponse = nullptr;
+    ::google::protobuf::Closure* done = nullptr;
+    d->Move(mresponse, done);
+    // database process
+    LoginRP cp(std::make_shared<LoginRpcString>(mresponse, done));
+    auto& s_reqst = cp->s_reqst_;
+    s_reqst.set_account(request.account());
+    s_reqst.set_password(boost::any_cast<std::string>(d->getContext()));
+    l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp, &l2db::LoginService_Stub::Login);
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
@@ -104,7 +131,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     auto cit = connection_accounts_.find(connection_id);
     if (cit == connection_accounts_.end())
     {
-        ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+        ReturnCloseureError(common::RET_LOGIN_ENTER_GAME_CONNECTION_HAS_NOT_ACCOUNT);
     }
     auto& ap = cit->second;
     // check second times change player id error 

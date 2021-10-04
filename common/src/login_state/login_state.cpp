@@ -18,7 +18,7 @@ namespace common
         {
         case E_LOGIN_STATE_NONE:
         {
-            CreateILoginStateP cp{emp};
+            CreateILoginStateP cp{ emp };
             ptr = std::make_shared<NoneState>(cp);
             break;
         }
