@@ -11,7 +11,7 @@
 #include "src/game_logic/entity_cast.h"
 #include "src/game_logic/comp/player.hpp"
 #include "src/gate_player/gate_player_list.h"
-#include "src/return_code/return_notice_code.h"
+#include "src/return_code/error_code.h"
 
 #include "gw2l.pb.h"
 
@@ -138,7 +138,7 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
         {
             return;
         }
-        it->second.game_server_id_ = cp->s_resp_->game_server_id();
+        it->second.node_id_ = cp->s_resp_->node_id();
         it->second.guid_ = cp->s_resp_->guid();
     }    
     codec_.send(cp->client_connection_, resp_);

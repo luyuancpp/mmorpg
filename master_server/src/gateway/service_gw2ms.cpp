@@ -53,13 +53,13 @@ namespace gw2ms
             return;
         }
         auto player_entity = it->second;
-        auto player_id = reg().get<GameGuid>(player_entity);
+        auto guid = reg().get<GameGuid>(player_entity);
 
         reg().destroy(player_entity);
         connection_map.erase(it);
 
-        MasterPlayerList::GetSingleton().LeaveGame(player_id);
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
+        MasterPlayerList::GetSingleton().LeaveGame(guid);
+        assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
     }
 
     void Gw2msServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
@@ -81,11 +81,11 @@ namespace gw2ms
         leave_scene.leave_entity_ = player_entity;
         LeaveScene(reg(), leave_scene);
 
-        auto player_id = reg().get<GameGuid>(player_entity);
-        assert(MasterPlayerList::GetSingleton().HasPlayer(player_id));
+        auto guid = reg().get<GameGuid>(player_entity);
+        assert(MasterPlayerList::GetSingleton().HasPlayer(guid));
         reg().destroy(player_entity);
-        MasterPlayerList::GetSingleton().LeaveGame(player_id);
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
+        MasterPlayerList::GetSingleton().LeaveGame(guid);
+        assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
 
         connection_map.erase(it);
     }

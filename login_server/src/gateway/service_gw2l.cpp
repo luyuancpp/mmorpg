@@ -4,7 +4,7 @@
 
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/closure_auto_done.h"
-#include "src/return_code/return_notice_code.h"
+#include "src/return_code/error_code.h"
 
 
 using namespace muduo;
@@ -124,7 +124,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     response->set_guid(guid);//test
     if (new_player.guid() > 0)
     {
-        EnterMasterServer(account, response, done);
+        EnterMasterServer(guid, account, response, done);
         return;
     }        
     // database to redis 
@@ -150,21 +150,22 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
     ::gw2l::EnterGameResponse* response = nullptr;
     ::google::protobuf::Closure* done = nullptr;
     d->Move(response, done);
-    EnterMasterServer(sreqst.account(), response, done);
+    EnterMasterServer(sreqst.guid(), sreqst.account(), response, done);
 }
 
 void LoginServiceImpl::EnterGameMasterReplied(EnterGameMasterRP d)
 {
-    d->c_resp_->set_game_server_id(d->s_resp_->game_server_id());
+    d->c_resp_->set_node_id(d->s_resp_->node_id());
 }
 
-void LoginServiceImpl::EnterMasterServer(const std::string& account,
+void LoginServiceImpl::EnterMasterServer(common::GameGuid guid,
+    const std::string& account,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {   
     EnterGameMasterRP cp(std::make_shared<EnterGameMasterRpcString>(response, done));
     cp->s_reqst_.set_account(account);
-    cp->s_reqst_.set_guid(response->guid());
+    cp->s_reqst_.set_guid(guid);
     cp->s_reqst_.set_connection_id(response->connection_id());
     l2ms_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterGameMasterReplied,

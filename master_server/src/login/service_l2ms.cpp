@@ -34,9 +34,9 @@ namespace l2ms
 
         ms2gw::PlayerEnterGameServerRequest gw_request;
         gw_request.set_connection_id(connection_id);
-        for (auto e : GameClient::GetSingleton()->view<uint32_t>())
+        for (auto e : GameClient::GetSingleton().view<uint32_t>())
         {
-            response->set_game_server_id(GameClient::GetSingleton()->get<uint32_t>(e));
+            response->set_node_id(GameClient::GetSingleton().get<uint32_t>(e));
             break;
         }
     }
