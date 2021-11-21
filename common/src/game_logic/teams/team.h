@@ -66,33 +66,33 @@ public:
     bool HasApplicant(GameGuid applicant_id) const { return applicants_.find(applicant_id) != applicants_.end(); }
     inline bool HasApply()const { return !applicants_.empty(); }
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
-    inline bool IsLeader(GameGuid player_id)const { assert(leader_id_ != kEmptyGameGuid); return leader_id_ == player_id; }
-    inline bool InMyTeam(GameGuid player_id)const { return members_.find(player_id) != members_.end(); }
-    inline bool HasTeam(GameGuid player_id) const { return teams_registry_->get<PlayerInTeamF>(team_id_).cb_(player_id); }
+    inline bool IsLeader(GameGuid guid)const { assert(leader_id_ != kEmptyGameGuid); return leader_id_ == guid; }
+    inline bool InMyTeam(GameGuid guid)const { return members_.find(guid) != members_.end(); }
+    inline bool HasTeam(GameGuid guid) const { return teams_registry_->get<PlayerInTeamF>(team_id_).cb_(guid); }
 
-    uint32_t CheckLimt(GameGuid  player_id);
+    uint32_t CheckLimt(GameGuid  guid);
     bool TestApplicantValueEqual()const;
 
     void OnCreate();
-    uint32_t JoinTeam(GameGuid  player_id);
-    uint32_t LeaveTeam(GameGuid player_id);
+    uint32_t JoinTeam(GameGuid  guid);
+    uint32_t LeaveTeam(GameGuid guid);
     uint32_t KickMember(GameGuid current_leader, GameGuid  nKickplayerid);
-    uint32_t AppointLeader(GameGuid current_leader, GameGuid  new_leader_player_id);
-    uint32_t ApplyForTeam(GameGuid player_id);
+    uint32_t AppointLeader(GameGuid current_leader, GameGuid  new_leader_guid);
+    uint32_t ApplyForTeam(GameGuid guid);
     uint32_t AgreeApplicant(GameGuid applicant_id);
     uint32_t RemoveApplicant(GameGuid applicant_id);
     uint32_t DissMiss(GameGuid current_leader_id);
     void ClearApplyList();
 
 private:
-    void AddMember(GameGuid  player_id)
+    void AddMember(GameGuid  guid)
     {
-        members_.emplace(player_id);
-        sequence_players_id_.push_back(player_id);
+        members_.emplace(guid);
+        sequence_players_id_.push_back(guid);
     }
 
-    void OnAppointLeader(GameGuid  new_leader_player_id);
-    void RemoveApplicantId(GameGuid  player_id);
+    void OnAppointLeader(GameGuid  new_leader_guid);
+    void RemoveApplicantId(GameGuid  guid);
 
     entt::entity team_id_{};
     entt::entity teams_entity_id_{};//manager id

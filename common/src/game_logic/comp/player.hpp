@@ -17,12 +17,12 @@ struct GatewayConnectionId
 
 struct TryEnterGamePlayerId
 {
-    GameGuid player_id_{ 0 };
+    GameGuid guid_{ 0 };
 };
 
 struct PlayerId
 {
-    GameGuid player_id_{0};
+    GameGuid guid_{0};
 };
 }//namespace common
 

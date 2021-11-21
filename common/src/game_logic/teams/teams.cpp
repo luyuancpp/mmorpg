@@ -40,9 +40,9 @@ namespace common
         return team.member_size();
     }
 
-    std::size_t Teams::applicant_size_by_player_id(GameGuid player_id) const
+    std::size_t Teams::applicant_size_by_guid(GameGuid guid) const
     {
-        auto team_id = GetTeamId(player_id);
+        auto team_id = GetTeamId(guid);
         return applicant_size_by_team_id(team_id);
     }
 
@@ -52,10 +52,10 @@ namespace common
         return team.applicant_size();
     }
 
-    GameGuid Teams::GetTeamId(GameGuid player_id)const
+    GameGuid Teams::GetTeamId(GameGuid guid)const
     {
         auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(my_entity_id_);
-        auto it = player_team_map_.find(player_id);
+        auto it = player_team_map_.find(guid);
         if (it == player_team_map_.end())
         {
             return kEmptyGameGuid;
@@ -63,10 +63,10 @@ namespace common
         return entt::to_integral(it->second);
     }
 
-    entt::entity Teams::GetTeamEntityId(GameGuid player_id) const
+    entt::entity Teams::GetTeamEntityId(GameGuid guid) const
     {
         auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(my_entity_id_);
-        auto it = player_team_map_.find(player_id);
+        auto it = player_team_map_.find(guid);
         if (it == player_team_map_.end())
         {
             return entt::null;
@@ -80,9 +80,9 @@ namespace common
         return team.leader_id();
     }
 
-    common::GameGuid Teams::leader_id_by_player_id(GameGuid player_id) const
+    common::GameGuid Teams::leader_id_by_guid(GameGuid guid) const
     {
-        auto team_id = GetTeamId(player_id);
+        auto team_id = GetTeamId(guid);
         return leader_id_by_teamid(team_id);
     }
     
@@ -97,22 +97,22 @@ namespace common
         return team.IsFull();
     }
 
-    bool Teams::PlayerInTheTeam(GameGuid team_id, GameGuid player_id)
+    bool Teams::PlayerInTheTeam(GameGuid team_id, GameGuid guid)
     {
         GetTeamReturn(false);
-        return team.InMyTeam(player_id);
+        return team.InMyTeam(guid);
     }
 
-    bool Teams::PlayerInTeam(GameGuid player_id) const
+    bool Teams::PlayerInTeam(GameGuid guid) const
     {
         auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(my_entity_id_);
-        return player_team_map_.find(player_id) != player_team_map_.end(); 
+        return player_team_map_.find(guid) != player_team_map_.end(); 
     }
 
-    bool Teams::HasApplicant(GameGuid team_id, GameGuid player_id) const
+    bool Teams::HasApplicant(GameGuid team_id, GameGuid guid) const
     {
         GetTeamReturn(false);
-        return team.HasApplicant(player_id);
+        return team.HasApplicant(guid);
     }
 
     bool Teams::TestApplicantValueEqual(GameGuid team_id)const
@@ -146,10 +146,10 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Teams::JoinTeam(GameGuid team_id, GameGuid player_id)
+    uint32_t Teams::JoinTeam(GameGuid team_id, GameGuid guid)
     {
         GetTeamPtrReturnError;
-        return team.JoinTeam(player_id);
+        return team.JoinTeam(guid);
     }
 
     uint32_t Teams::JoinTeam(const UI64USet& member_list, GameGuid  team_id)
@@ -175,11 +175,11 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Teams::LeaveTeam(GameGuid player_id)
+    uint32_t Teams::LeaveTeam(GameGuid guid)
     {
-        auto team_id = GetTeamEntityId(player_id);
+        auto team_id = GetTeamEntityId(guid);
         GetTeamEntityReturnError;
-        RET_CHECK_RET(team.LeaveTeam(player_id));
+        RET_CHECK_RET(team.LeaveTeam(guid));
         if (team.empty())
         {
             EraseTeam(team.to_entityid());
@@ -187,10 +187,10 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Teams::KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_player_id)
+    uint32_t Teams::KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_guid)
     {
         GetTeamPtrReturnError;
-        RET_CHECK_RET(team.KickMember(current_leader_id, kick_player_id));
+        RET_CHECK_RET(team.KickMember(current_leader_id, kick_guid));
         return RET_OK;
     }
 
@@ -208,22 +208,22 @@ namespace common
         return DissMissTeam(team_id, team.leader_id());
     }
 
-    uint32_t Teams::AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  new_leader_player_id)
+    uint32_t Teams::AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  new_leader_guid)
     {
         GetTeamPtrReturnError;
-        return team.AppointLeader(current_leader_id, new_leader_player_id);
+        return team.AppointLeader(current_leader_id, new_leader_guid);
     }
 
-    uint32_t Teams::ApplyForTeam(GameGuid team_id, GameGuid player_id)
+    uint32_t Teams::ApplyForTeam(GameGuid team_id, GameGuid guid)
     {
         GetTeamPtrReturnError;
-        return team.ApplyForTeam(player_id);
+        return team.ApplyForTeam(guid);
     }
 
-    uint32_t Teams::RemoveApplicant(GameGuid team_id, GameGuid nApplyplayer_id)
+    uint32_t Teams::RemoveApplicant(GameGuid team_id, GameGuid apply_guid)
     {
         GetTeamPtrReturnError;
-        return team.RemoveApplicant(nApplyplayer_id);
+        return team.RemoveApplicant(apply_guid);
     }
 
     uint32_t Teams::AgreeApplicant(GameGuid team_id, GameGuid applicant_id)

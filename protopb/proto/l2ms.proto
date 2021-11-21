@@ -15,7 +15,7 @@ message LoginResponse
 
 message EnterGameRequest
 {
-  uint64 player_id = 1;
+  uint64 guid = 1;
   uint64 connection_id = 2;
   string account = 3;
 }
@@ -28,12 +28,12 @@ message EnterGameResponese
 
 message LeaveGameRequest
 {
-  uint64 player_id = 1;
+  uint64 guid = 1;
 }
 
 message DisconnectRequest
 {
-  uint64 player_id = 1;
+  uint64 guid = 1;
 
 }
 

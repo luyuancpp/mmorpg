@@ -18,11 +18,11 @@ namespace master
 
         std::size_t player_size()const { return player_list_.size(); }
         bool empty()const { return player_list_.empty(); }
-        entt::entity GetPlayer(common::GameGuid player_id);
-        bool HasPlayer(common::GameGuid player_id) const { return player_list_.find(player_id) != player_list_.end(); }
+        entt::entity GetPlayer(common::GameGuid guid);
+        bool HasPlayer(common::GameGuid guid) const { return player_list_.find(guid) != player_list_.end(); }
 
-        void EnterGame(common::GameGuid player_id, entt::entity entity_id){  player_list_.emplace(player_id, entity_id);       }
-        void LeaveGame(common::GameGuid player_id){ player_list_.erase(player_id); }
+        void EnterGame(common::GameGuid guid, entt::entity entity_id){  player_list_.emplace(guid, entity_id);       }
+        void LeaveGame(common::GameGuid guid){ player_list_.erase(guid); }
         
     private:
         GameGuidEntityIdMap player_list_;

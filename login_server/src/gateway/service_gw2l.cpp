@@ -99,7 +99,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
-    auto player_id = request->player_id();
+    auto guid = request->guid();
     auto connection_id = request->connection_id();
     auto cit = connection_accounts_.find(connection_id);
     if (cit == connection_accounts_.end())
@@ -111,18 +111,18 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     CheckReturnCloseureError(ap->EnterGame());
 
     // long time in login processing
-    if (!ap->IsPlayerId(player_id))
+    if (!ap->IsPlayerId(guid))
     {
-        ReturnCloseureError(common::RET_LOGIN_ENTER_GAME_PLAYER_ID);
+        ReturnCloseureError(common::RET_LOGIN_ENTER_GAME_guid);
     }
     auto& account = ap->account();
     // player in redis return ok
     player_database new_player;
-    redis_->Load(new_player, player_id);
-    ap->Playing(player_id);//test
+    redis_->Load(new_player, guid);
+    ap->Playing(guid);//test
     response->set_connection_id(connection_id);
-    response->set_player_id(player_id);//test
-    if (new_player.player_id() > 0)
+    response->set_guid(guid);//test
+    if (new_player.guid() > 0)
     {
         EnterMasterServer(account, response, done);
         return;
@@ -131,7 +131,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     EnterGameDbRP cp(std::make_shared<EnterGameDbRpcString>(response, done));
     auto& sreqst = cp->s_reqst_;
     sreqst.set_account(account);
-    sreqst.set_player_id(player_id);
+    sreqst.set_guid(guid);
     l2db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterGameDbReplied,
         cp,
@@ -164,7 +164,7 @@ void LoginServiceImpl::EnterMasterServer(const std::string& account,
 {   
     EnterGameMasterRP cp(std::make_shared<EnterGameMasterRpcString>(response, done));
     cp->s_reqst_.set_account(account);
-    cp->s_reqst_.set_player_id(response->player_id());
+    cp->s_reqst_.set_guid(response->guid());
     cp->s_reqst_.set_connection_id(response->connection_id());
     l2ms_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterGameMasterReplied,
@@ -187,7 +187,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     }
     auto& player = cit->second;
     l2ms::LeaveGameRequest ms_request;
-    ms_request.set_player_id(player->PlayingId());
+    ms_request.set_guid(player->PlayingId());
     l2ms_login_stub_.CallMethod(ms_request,
         &l2ms::LoginService_Stub::LeaveGame);
     ErasePlayer(cit);
@@ -207,7 +207,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     //连接已经登录过
     auto& player = cit->second;
     l2ms::DisconnectRequest ms_disconnect;
-    ms_disconnect.set_player_id(player->PlayingId());
+    ms_disconnect.set_guid(player->PlayingId());
     l2ms_login_stub_.CallMethod(ms_disconnect,
         &l2ms::LoginService_Stub::Disconect);
     ErasePlayer(cit);

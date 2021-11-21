@@ -24,13 +24,13 @@ namespace l2ms
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        auto player_id = request->player_id();   
+        auto guid = request->guid();   
         auto connection_id = request->connection_id();
         auto e = reg().create();
-        reg().emplace<GameGuid>(e, player_id);
+        reg().emplace<GameGuid>(e, guid);
         reg().emplace<SharedAccountString>(e, std::make_shared<std::string>(request->account()));
         reg().emplace<GatewayConnectionId>(e, connection_id);
-        MasterPlayerList::GetSingleton().EnterGame(player_id, e);
+        MasterPlayerList::GetSingleton().EnterGame(guid, e);
 
         ms2gw::PlayerEnterGameServerRequest gw_request;
         gw_request.set_connection_id(connection_id);
@@ -47,13 +47,13 @@ namespace l2ms
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        auto player_id = request->player_id();
-        auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
-        assert(reg().get<GameGuid>(e) == player_id);
+        auto guid = request->guid();
+        auto e = MasterPlayerList::GetSingleton().GetPlayer(guid);
+        assert(reg().get<GameGuid>(e) == guid);
         reg().destroy(e);
-        MasterPlayerList::GetSingleton().LeaveGame(player_id);  
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
-        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null); 
+        MasterPlayerList::GetSingleton().LeaveGame(guid);  
+        assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
+        assert(MasterPlayerList::GetSingleton().GetPlayer(guid) == entt::null); 
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
@@ -62,17 +62,17 @@ namespace l2ms
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        auto player_id = request->player_id();
-        auto e = MasterPlayerList::GetSingleton().GetPlayer(player_id);
+        auto guid = request->guid();
+        auto e = MasterPlayerList::GetSingleton().GetPlayer(guid);
         if (entt::null  == e)
         {
             return;
         }
-        assert(reg().get<GameGuid>(e) == player_id);
+        assert(reg().get<GameGuid>(e) == guid);
         reg().destroy(e);
-        MasterPlayerList::GetSingleton().LeaveGame(player_id);
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
-        assert(MasterPlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
+        MasterPlayerList::GetSingleton().LeaveGame(guid);
+        assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
+        assert(MasterPlayerList::GetSingleton().GetPlayer(guid) == entt::null);
     }
 
 }//namespace master

@@ -25,19 +25,19 @@ message CreatePlayerResponse
 {
   ClientError error = 1;
   account_database account_player = 2;
-  uint64 player_id = 3;
+  uint64 guid = 3;
 }
 
 message EnterGameRequest
 {
-  uint64 player_id = 1;
+  uint64 guid = 1;
   string account = 2;
 }
 
 message EnterGameResponse
 {
   ClientError error = 1;
-  uint64 player_id = 2;
+  uint64 guid = 2;
 }
 
 service LoginService {
