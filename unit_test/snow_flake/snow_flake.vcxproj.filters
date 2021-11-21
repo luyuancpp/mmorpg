@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="snow_flake.cpp">
+    <ClCompile Include="snow_flake_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

@@ -122,7 +122,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../bin/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;game_proto.lib;zlib.lib;gtestd.lib;hiredis.lib</AdditionalDependencies>
+      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;protopb.lib;zlib.lib;gtestd.lib;hiredis.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,16 +143,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\src\event\event.cc" />
-    <ClCompile Include="..\..\common\src\login_player\login_state.cpp" />
-    <ClCompile Include="..\..\common\src\login_player\login_state_machine.cpp" />
+    <ClCompile Include="..\..\common\src\login_state\login_state.cpp" />
+    <ClCompile Include="..\..\common\src\login_state\login_state_machine.cpp" />
     <ClCompile Include="login_state_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\event\event.h" />
-    <ClInclude Include="..\..\common\src\login_player\login_event.h" />
-    <ClInclude Include="..\..\common\src\login_player\login_state.h" />
-    <ClInclude Include="..\..\common\src\login_player\login_state_concrete.h" />
-    <ClInclude Include="..\..\common\src\login_player\login_state_machine.h" />
+    <ClInclude Include="..\..\common\src\login_state\login_event.h" />
+    <ClInclude Include="..\..\common\src\login_state\login_state.h" />
+    <ClInclude Include="..\..\common\src\login_state\login_state_concrete.h" />
+    <ClInclude Include="..\..\common\src\login_state\login_state_machine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

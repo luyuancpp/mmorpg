@@ -16,7 +16,6 @@ namespace common
         for (int32_t i = 0; i < descriptor->field_count(); ++i)
         {
             const ::google::protobuf::FieldDescriptor* field_desc = descriptor->FindFieldByName(descriptor->field(i)->name());
-
             auto filed = descriptor->field(i);
             switch (filed->cpp_type())
             {
@@ -116,8 +115,6 @@ namespace common
         "varchar(256)",
         "Blob",
     };
-
-
 
 #undef  GetMessage
     std::string ConvertFieldValue(const ::google::protobuf::Message& message, const google::protobuf::FieldDescriptor* fieldDesc)
@@ -650,6 +647,17 @@ namespace common
         return std::string("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS  WHERE  TABLE_NAME = '") + 
             GetTypeName() + 
             std::string("';");
+    }
+
+    void Pb2DbTables::set_auto_increment(const ::google::protobuf::Message& message, uint64_t auto_increment)
+    {
+        const auto& table_name = message.GetDescriptor()->full_name();
+        auto it = tables_.find(table_name);
+        if (it == tables_.end())
+        {
+            return;
+        }
+        it->second.set_auto_increment(auto_increment);
     }
 
     std::string Pb2DbTables::GetCreateTableSql(const ::google::protobuf::Message& message)

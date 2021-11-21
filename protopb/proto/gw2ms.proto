@@ -20,8 +20,19 @@ message GameServerIdRequest
   uint64 connection_id = 2;
 }
 
+message LeaveGameRequest
+{
+  uint64 connection_id = 1;
+}
+
+message PlayerDisconnectRequest
+{
+  uint64 connection_id = 1;
+}
+
 service Gw2msService {
   rpc PlayerService (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc GwConnectMaster (ConnectRequest) returns (google.protobuf.Empty);
-  rpc GwConnectGame(ConnectedGameRequest) returns (google.protobuf.Empty);
+  rpc PlayerDisconnect(PlayerDisconnectRequest) returns (google.protobuf.Empty);
+  rpc LeaveGame(LeaveGameRequest) returns (google.protobuf.Empty);
 }

@@ -69,6 +69,30 @@
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_config\condition_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\mainscene_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\mission_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\scene_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\all_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\global_variable_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\region_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_logic\entity_class\entity_class.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
@@ -89,7 +113,7 @@
     <ClInclude Include="src\common_type\common_type.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\return_code\return_code.h">
+    <ClInclude Include="src\return_code\error_code.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\snow_flake\snow_flake.h">
@@ -108,9 +132,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\redis_client\redis_client.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\closure_auto_done\closure_aouto_done.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\event\event.h">
@@ -146,25 +167,10 @@
     <ClInclude Include="src\login_state\login_state_machine.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\login_player\login_event.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_state.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_state_concrete.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\login_player\login_state_machine.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\rpc_closure_param\rpc_connection_event.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\game_ecs\game_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\file2string\file2string.h">
@@ -185,7 +191,7 @@
     <ClInclude Include="src\game_logic\teams\teams.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\return_code\return_notice_code.h">
+    <ClInclude Include="src\return_code\return_code.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_config\deploy_json.h">
@@ -224,9 +230,6 @@
     <ClInclude Include="src\server_common\deploy_variable.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_common\server_type_id.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\server_common\server_component.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -237,6 +240,60 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\timer_task\timer_task.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\comp\gateway.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\comp\player.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\comp\server_list.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\closure_auto_done\closure_aouto_done.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_ecs\game_registry.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_player\login_event.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_player\login_state.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_player\login_state_concrete.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_player\login_state_machine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\condition_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\mainscene_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\mission_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\scene_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\all_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\global_variable_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\global_variable_config_id.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_config\region_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\entity_class\entity_class.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,12 +2,17 @@
 
 #include "muduo/net/InetAddress.h"
 
+#include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/game_registry.h"
+#include "src/game_logic/comp/player.hpp"
 #include "src/master_server.h"
+#include "src/master_player/master_player_list.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/server_common/server_component.h"
+#include "src/sys/scene_sys.hpp"
 
 using namespace common;
+using namespace master;
 
 namespace gw2ms
 {
@@ -22,43 +27,67 @@ namespace gw2ms
         {
             auto c = reg().get<RpcServerConnection>(e);
             auto& local_addr = c.conn_->peerAddress();
-            if (local_addr.toIp() != rpc_client_peer_addr.toIp() ||
-                local_addr.port() != rpc_client_peer_addr.port())
+            if (local_addr.toIpPort() != rpc_client_peer_addr.toIpPort())
             {
                 continue;
             }
             g_master_server->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
             break;
         }
-        for (auto e : reg().view<WaitingGatewayConnecting>())
+        for (auto e : reg().view<muduo::net::InetAddress>())
         {
-            auto& connetion_component = reg().get<WaitingGatewayConnecting>(e);
-            g_master_server->GatewayConnectGame(connetion_component);
-        }
-        for (auto e : reg().view<WaitingGatewayConnecting>())
-        {
-            reg().destroy(e);   
+            g_master_server->GatewayConnectGame(e);
         }
     }
 
-    void Gw2msServiceImpl::GwConnectGame(::google::protobuf::RpcController* controller, 
-        const ::gw2ms::ConnectedGameRequest* request, 
-        google::protobuf::Empty* response, 
+    void Gw2msServiceImpl::PlayerDisconnect(::google::protobuf::RpcController* controller, 
+        const ::gw2ms::PlayerDisconnectRequest* request, 
+        ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-        for (auto e : reg().view<WaitingGatewayConnecting>())
+        auto& connection_map = reg().get<common::ConnectionPlayerEnitiesMap>(global_entity());
+        auto it = connection_map.find(request->connection_id());
+        if (it == connection_map.end())
         {
-            auto& connetion_component = reg().get<WaitingGatewayConnecting>(e);
-            if (connetion_component.addr_.toIp() != rpc_client_peer_addr.toIp() || 
-                connetion_component.addr_.port() != rpc_client_peer_addr.port())
-            {
-                continue;
-            }
-            reg().destroy(e);
-            break;
+            return;
         }
+        auto player_entity = it->second;
+        auto player_id = reg().get<GameGuid>(player_entity);
+
+        reg().destroy(player_entity);
+        connection_map.erase(it);
+
+        MasterPlayerList::GetSingleton().LeaveGame(player_id);
+        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
+    }
+
+    void Gw2msServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
+        const ::gw2ms::LeaveGameRequest* request, 
+        ::google::protobuf::Empty* response, 
+        ::google::protobuf::Closure* done)
+    {
+        ClosurePtr cp(done);
+        auto& connection_map = reg().get<common::ConnectionPlayerEnitiesMap>(global_entity());
+        auto it = connection_map.find(request->connection_id());
+        assert(it != connection_map.end());
+        if (it == connection_map.end())
+        {
+            return;
+        }
+        auto player_entity = it->second;
+
+        LeaveSceneParam leave_scene;
+        leave_scene.leave_entity_ = player_entity;
+        LeaveScene(reg(), leave_scene);
+
+        auto player_id = reg().get<GameGuid>(player_entity);
+        assert(MasterPlayerList::GetSingleton().HasPlayer(player_id));
+        reg().destroy(player_entity);
+        MasterPlayerList::GetSingleton().LeaveGame(player_id);
+        assert(!MasterPlayerList::GetSingleton().HasPlayer(player_id));
+
+        connection_map.erase(it);
     }
 
 }//namespace gw2ms

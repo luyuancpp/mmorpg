@@ -6,6 +6,8 @@
 
 #include "src/common_type/common_type.h"
 
+#include "entt/src/entt/entity/entity.hpp"
+
 namespace common
 {
 using SharedAccountString = std::shared_ptr<std::string>;
@@ -14,6 +16,8 @@ struct GatewayConnectionId
 {
     uint64_t connection_id_{UINT64_MAX};
 };
+
+using ConnectionPlayerEnitiesMap = std::unordered_map<uint64_t, entt::entity>;
 
 struct TryEnterGamePlayerId
 {

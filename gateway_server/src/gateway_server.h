@@ -40,6 +40,7 @@ public:
         
     }
 
+    RpcStubgw2l& gw2l_stub() { return gw2l_login_stub_; }
     RpcStubgw2ms& gw2ms_stub() { return gw2ms_stub_; }
 
     template<typename ServerInfo>
@@ -54,14 +55,15 @@ public:
 
     void InitNetwork();
 
-    void receive(const common::RpcClientConnectionES& es);
-
     using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void StartServer(ServerInfoRpcRC cp);
 
     void Register2Master();
+
+    void receive(const common::RpcClientConnectionES& es);
+
 private:
     void OnConnection(const TcpConnectionPtr& conn)
     {
@@ -84,7 +86,7 @@ private:
 
     TcpServerPtr server_;
 
-    ::google::protobuf::RepeatedPtrField< ::serverinfo_database > serverinfo_database_;
+    servers_info_data serverinfo_database_;
 
     common::RpcClientPtr deploy_rpc_client_;
     deploy::DeployRpcStub deploy_stub_;

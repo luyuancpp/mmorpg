@@ -8,9 +8,9 @@ namespace ms2g
     class Ms2gServiceImpl : public Ms2gService
     {
     public:
-        virtual void Login(::google::protobuf::RpcController* controller,
-            const ::ms2g::LoginRequest* request,
-            ::ms2g::LoginResponse* response,
+        virtual void EnterGame(::google::protobuf::RpcController* controller,
+            const ::ms2g::EnterGameRequest* request,
+            ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
     private:

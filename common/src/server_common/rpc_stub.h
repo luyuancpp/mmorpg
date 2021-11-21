@@ -19,18 +19,6 @@ public:
     using StubPtr = std::unique_ptr<StubClass>;
     using MyType = std::unique_ptr<RpcStub>;
 
-    void receive(const RegisterStubES& es)
-    {
-        if (es.conn_->connected())
-        {
-            stub_ = std::make_unique<StubClass>(get_pointer(es.channel_));
-        }
-        else
-        {
-            stub_.reset();
-        }
-    }
-
     template<typename Request, typename Response, typename StubMethod>
     void CallMethod(const Request& request,
         void (method)(Response*),
@@ -113,6 +101,19 @@ public:
     }
 
     static void DoNothing() {}
+
+    void receive(const RegisterStubES& es)
+    {
+        if (es.conn_->connected())
+        {
+            stub_ = std::make_unique<StubClass>(get_pointer(es.channel_));
+        }
+        else
+        {
+            stub_.reset();
+        }
+    }
+
 private:  
     StubPtr stub_;
     EventManagerPtr emp_;

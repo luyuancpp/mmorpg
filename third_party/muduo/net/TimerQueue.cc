@@ -175,7 +175,7 @@ void TimerQueue::cancelInLoop(TimerId timerId)
   assert(timers_.size() == activeTimers_.size());
 }
 
-void TimerQueue::windowLoop()
+void TimerQueue::loop()
 {
     handleRead();
 }

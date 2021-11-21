@@ -1,18 +1,15 @@
 syntax = "proto3";
+import "common.proto";
 import "google/protobuf/empty.proto";
 package ms2g;
 option cc_generic_services = true;
 
-message LoginRequest
+message EnterGameRequest
 {
-
-}
-
-message LoginResponse
-{
+  uint64 player_id = 1;
+  SceneInfo scenes_info = 2;
 }
 
 service Ms2gService {
-  rpc Login (LoginRequest) returns (LoginResponse);
-  rpc Empty(google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc EnterGame (EnterGameRequest) returns (google.protobuf.Empty);
 }

@@ -126,6 +126,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -149,6 +150,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\game_config\all_config.cpp" />
+    <ClCompile Include="src\game_config\condition_config.cpp" />
+    <ClCompile Include="src\game_config\global_variable_config.cpp" />
+    <ClCompile Include="src\game_config\mainscene_config.cpp" />
+    <ClCompile Include="src\game_config\mission_config.cpp" />
+    <ClCompile Include="src\game_config\region_config.cpp" />
+    <ClCompile Include="src\game_config\scene_config.cpp" />
+    <ClCompile Include="src\game_logic\entity_class\entity_class.cpp" />
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
     <ClCompile Include="src\server_common\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
@@ -170,6 +179,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
+    <ClInclude Include="src\game_config\all_config.h" />
+    <ClInclude Include="src\game_config\condition_config.h" />
+    <ClInclude Include="src\game_config\global_variable_config.h" />
+    <ClInclude Include="src\game_config\global_variable_config_id.h" />
+    <ClInclude Include="src\game_config\mainscene_config.h" />
+    <ClInclude Include="src\game_config\mission_config.h" />
+    <ClInclude Include="src\game_config\region_config.h" />
+    <ClInclude Include="src\game_config\scene_config.h" />
+    <ClInclude Include="src\game_logic\comp\gateway.hpp" />
+    <ClInclude Include="src\game_logic\comp\player.hpp" />
+    <ClInclude Include="src\game_logic\comp\server_list.hpp" />
+    <ClInclude Include="src\game_logic\entity_class\entity_class.h" />
     <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
     <ClInclude Include="src\server_common\closure_auto_done.h" />
@@ -202,8 +223,8 @@
     <ClInclude Include="src\pb2db\pb2dbsql.h" />
     <ClInclude Include="src\redis_client\async_redis_client.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />
+    <ClInclude Include="src\return_code\error_code.h" />
     <ClInclude Include="src\return_code\return_code.h" />
-    <ClInclude Include="src\return_code\return_notice_code.h" />
     <ClInclude Include="src\server_common\deploy_variable.h" />
     <ClInclude Include="src\server_common\game_rpc.pb.h" />
     <ClInclude Include="src\server_common\rpc_channel.h" />
@@ -222,7 +243,6 @@
     <ClInclude Include="src\server_common\rpc_string_closure.h" />
     <ClInclude Include="src\server_common\rpc_stub.h" />
     <ClInclude Include="src\server_common\rpc_client.h" />
-    <ClInclude Include="src\server_common\server_type_id.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\snow_flake\snow_flake.h" />
   </ItemGroup>
