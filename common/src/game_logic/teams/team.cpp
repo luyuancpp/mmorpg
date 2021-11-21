@@ -29,7 +29,7 @@ namespace common
         return *applicant_ids_.begin();
     }
 
-    uint32_t Team::CheckLimt(GameGuid  player_id)
+    uint32_t Team::CheckLimt(GameGuid  guid)
     {
         return RET_OK;
     }
@@ -56,9 +56,9 @@ namespace common
         }
     }
 
-    uint32_t Team::JoinTeam(GameGuid  player_id)
+    uint32_t Team::JoinTeam(GameGuid  guid)
     {
-        if (HasTeam(player_id))
+        if (HasTeam(guid))
         {
             return RET_TEAM_MEMBER_IN_TEAM;
         }
@@ -67,30 +67,30 @@ namespace common
         {
             return RET_TEAM_MEMBERS_FULL;
         }
-        //assert(members_.find(player_id) == members_.end());
-        RemoveApplicant(player_id);
-        AddMember(player_id);
+        //assert(members_.find(guid) == members_.end());
+        RemoveApplicant(guid);
+        AddMember(guid);
         assert(members_.size() == sequence_players_id_.size());
         auto& ms = playerid_team_map();
-        ms.emplace(player_id, team_id_);
-        emp_->emit< TeamESJoinTeam>(team_id_, player_id);
+        ms.emplace(guid, team_id_);
+        emp_->emit< TeamESJoinTeam>(team_id_, guid);
         return RET_OK;
     }
 
-    uint32_t Team::LeaveTeam(GameGuid player_id)
+    uint32_t Team::LeaveTeam(GameGuid guid)
     {
-        auto it = members_.find(player_id);
+        auto it = members_.find(guid);
         if (it == members_.end())
         {
             return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
-        bool leader_leave = IsLeader(player_id);
+        bool leader_leave = IsLeader(guid);
         if (leader_leave)
         {
-            emp_->emit<TeamESLeaderLeaveTeam>(team_id_, player_id);
+            emp_->emit<TeamESLeaderLeaveTeam>(team_id_, guid);
         }
-        members_.erase(player_id);
-        auto sit = std::find(sequence_players_id_.begin(), sequence_players_id_.end(), player_id);
+        members_.erase(guid);
+        auto sit = std::find(sequence_players_id_.begin(), sequence_players_id_.end(), guid);
         if (sit != sequence_players_id_.end())
         {
             sequence_players_id_.erase(sit);
@@ -100,41 +100,41 @@ namespace common
         {
             OnAppointLeader(*sequence_players_id_.begin());
         }
-        emp_->emit<TeamESLeaveTeam>(team_id_, player_id);
-        playerid_team_map().erase(player_id);
+        emp_->emit<TeamESLeaveTeam>(team_id_, guid);
+        playerid_team_map().erase(guid);
         return RET_OK;
     }
 
-    uint32_t Team::KickMember(GameGuid current_leader, GameGuid  kick_player_id)
+    uint32_t Team::KickMember(GameGuid current_leader, GameGuid  kick_guid)
     {
         if (leader_id_ != current_leader)
         {
             return RET_TEAM_KICK_NOT_LEADER;
         }
-        if (leader_id_ == kick_player_id)
+        if (leader_id_ == kick_guid)
         {
             return RET_TEAM_KICK_SELF;
         }
-        if (current_leader == kick_player_id)
+        if (current_leader == kick_guid)
         {
             return RET_TEAM_KICK_SELF;
         }
-        auto it = members_.find(kick_player_id);
+        auto it = members_.find(kick_guid);
         if (it == members_.end())
         {
             return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
-        RET_CHECK_RET(LeaveTeam(kick_player_id));
+        RET_CHECK_RET(LeaveTeam(kick_guid));
         return RET_OK;
     }
 
-    uint32_t Team::AppointLeader(GameGuid current_leader, GameGuid new_leader_player_id)
+    uint32_t Team::AppointLeader(GameGuid current_leader, GameGuid new_leader_guid)
     {
-        if (leader_id_ == new_leader_player_id)
+        if (leader_id_ == new_leader_guid)
         {
             return RET_TEAM_APPOINT_SELF;
         }
-        if (!InMyTeam(new_leader_player_id))
+        if (!InMyTeam(new_leader_guid))
         {
             return RET_TEAM_HAS_NOT_TEAM_ID;
         }
@@ -142,20 +142,20 @@ namespace common
         {
             return RET_TEAM_APPOINT_SELF;
         }
-        OnAppointLeader(new_leader_player_id);
+        OnAppointLeader(new_leader_guid);
         return RET_OK;
     }
 
-    void Team::OnAppointLeader(GameGuid new_leader_player_id)
+    void Team::OnAppointLeader(GameGuid new_leader_guid)
     {
-        auto old_leader_player_id = leader_id_;
-        leader_id_ = new_leader_player_id;
-        emp_->emit<TeamESAppointLeader>(team_id_, old_leader_player_id, leader_id_);
+        auto old_leader_guid = leader_id_;
+        leader_id_ = new_leader_guid;
+        emp_->emit<TeamESAppointLeader>(team_id_, old_leader_guid, leader_id_);
     }
 
-    void Team::RemoveApplicantId(GameGuid player_id)
+    void Team::RemoveApplicantId(GameGuid guid)
     {
-        auto idit = std::find(applicant_ids_.begin(), applicant_ids_.end(), player_id);
+        auto idit = std::find(applicant_ids_.begin(), applicant_ids_.end(), guid);
         if (idit == applicant_ids_.end())
         {
             return;
@@ -163,9 +163,9 @@ namespace common
         applicant_ids_.erase(idit);
     }
 
-    uint32_t Team::ApplyForTeam(GameGuid player_id)
+    uint32_t Team::ApplyForTeam(GameGuid guid)
     {
-        if (HasTeam(player_id))
+        if (HasTeam(guid))
         {
             return RET_TEAM_MEMBER_IN_TEAM;
         }
@@ -173,18 +173,18 @@ namespace common
         {
             return RET_TEAM_MEMBERS_FULL;
         }
-        //assert(members_.find(player_id) == members_.end());
+        //assert(members_.find(guid) == members_.end());
 
-        RET_CHECK_RET(CheckLimt(player_id));
-        RemoveApplicantId(player_id);
+        RET_CHECK_RET(CheckLimt(guid));
+        RemoveApplicantId(guid);
         if (applicant_ids_.size() >= kMaxApplicantSize)
         {
             assert(!applicant_ids_.empty());
             applicants_.erase(*applicant_ids_.begin());
             applicant_ids_.erase(applicant_ids_.begin());
         }
-        applicants_.emplace(player_id);
-        applicant_ids_.emplace_back(player_id);
+        applicants_.emplace(guid);
+        applicant_ids_.emplace_back(guid);
         return RET_OK;
     }
 

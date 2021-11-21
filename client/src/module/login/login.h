@@ -22,7 +22,7 @@ public:
 
     void ReadyGo();
     void CreatePlayer();
-    void EnterGame(uint64_t player_id);
+    void EnterGame(uint64_t guid);
     void LeaveGame();
 private:
     ProtobufCodec& codec_;

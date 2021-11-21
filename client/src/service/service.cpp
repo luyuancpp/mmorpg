@@ -46,16 +46,16 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
         login_.CreatePlayer();
         return;
     }
-    player_id_ = message->players(0).player_id();
-    login_.EnterGame(player_id_);
+    guid_ = message->players(0).guid();
+    login_.EnterGame(guid_);
 }
 
 void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn, 
     const CreatePlayerResponsePtr& message,
     muduo::Timestamp)
 {
-    player_id_ = message->players(0).player_id();
-    login_.EnterGame(player_id_);
+    guid_ = message->players(0).guid();
+    login_.EnterGame(guid_);
 }
 
 void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn, 

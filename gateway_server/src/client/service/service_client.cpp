@@ -86,7 +86,7 @@ void ClientReceiver::OnServerLoginReplied(LoginCCPtr cp)
     for (auto it : player_list)
     {
         auto p = cp->c_resp_.add_players();
-        p->set_player_id(it.player_id());
+        p->set_guid(it.guid());
     }
     codec_.send(cp->client_connection_, cp->c_resp_);
 }
@@ -109,7 +109,7 @@ void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayerCCPtr cp)
     for (auto it : player_list)
     {
         auto p = cp->c_resp_.add_players();
-        p->set_player_id(it.player_id());
+        p->set_guid(it.guid());
     }
     codec_.send(cp->client_connection_, cp->c_resp_);
 }
@@ -120,7 +120,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 {
     EnterGameCCPtr p(std::make_shared<EnterGameCC>(conn));
     p->s_reqst_.set_connection_id(p->connection_id());
-    p->s_reqst_.set_player_id(message->player_id());
+    p->s_reqst_.set_guid(message->guid());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         p,
         this,
@@ -139,7 +139,7 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameCCPtr cp)
             return;
         }
         it->second.game_server_id_ = cp->s_resp_->game_server_id();
-        it->second.player_id_ = cp->s_resp_->player_id();
+        it->second.guid_ = cp->s_resp_->guid();
     }    
     codec_.send(cp->client_connection_, resp_);
 }

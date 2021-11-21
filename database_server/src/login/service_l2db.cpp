@@ -43,10 +43,10 @@ namespace l2db
         player_database new_player;
         new_player.set_register_time(muduo::Timestamp::now().microSecondsSinceEpoch());
         database_->SaveOne(new_player);
-        response->set_player_id(database_->LastInsertId());
-        new_player.set_player_id(response->player_id());        
-        r_db.mutable_simple_players()->add_players()->set_player_id(response->player_id());
-        redis_->Save(new_player, new_player.player_id());
+        response->set_guid(database_->LastInsertId());
+        new_player.set_guid(response->guid());        
+        r_db.mutable_simple_players()->add_players()->set_guid(response->guid());
+        redis_->Save(new_player, new_player.guid());
         redis_->Save(r_db, r_db.account());
     }
 
@@ -57,11 +57,11 @@ namespace l2db
     {
         common::ClosurePtr cp(done);
         player_database new_player;
-        std::string where_case = std::string("player_id = '") + 
-            std::to_string(request->player_id()) + 
+        std::string where_case = std::string("guid = '") + 
+            std::to_string(request->guid()) + 
             std::string("'");
         database_->LoadOne(new_player, where_case);
-        assert(new_player.player_id() > 0);
-        redis_->Save(new_player, new_player.player_id());
+        assert(new_player.guid() > 0);
+        redis_->Save(new_player, new_player.guid());
     }
 }

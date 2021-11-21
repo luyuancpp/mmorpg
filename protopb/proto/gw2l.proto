@@ -29,19 +29,19 @@ message CreatePlayerResponse
 {
   ClientError error = 1;
   account_database account_player = 2;
-  uint64 player_id = 3;
+  uint64 guid = 3;
 }
 
 message EnterGameRequest
 {
   uint64 connection_id = 1;
-  uint64 player_id = 2;
+  uint64 guid = 2;
 }
 
 message EnterGameResponse
 {
   ClientError error = 1;
-  uint64 player_id = 2;
+  uint64 guid = 2;
   uint64 connection_id = 3;// for logic
   uint32 game_server_id = 4;
 }

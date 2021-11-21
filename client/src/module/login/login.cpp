@@ -18,10 +18,10 @@ void LoginModule::CreatePlayer()
     codec_.send(conn_, request);
 }
 
-void LoginModule::EnterGame(uint64_t player_id)
+void LoginModule::EnterGame(uint64_t guid)
 {
     EnterGameRequest request;
-    request.set_player_id(player_id);
+    request.set_guid(guid);
     codec_.send(conn_, request);
 }
 

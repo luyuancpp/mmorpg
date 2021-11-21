@@ -2,9 +2,9 @@
 
 namespace master
 {
-    entt::entity MasterPlayerList::GetPlayer(common::GameGuid player_id)
+    entt::entity MasterPlayerList::GetPlayer(common::GameGuid guid)
     {
-        auto it = player_list_.find(player_id);
+        auto it = player_list_.find(guid);
         if (it == player_list_.end())
         {
             return entt::null;

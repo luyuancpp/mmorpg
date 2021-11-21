@@ -53,7 +53,7 @@ private:
     LoginModule login_;
     ProtobufDispatcher& dispatcher_;
 
-    uint64_t player_id_{ 0 };
+    uint64_t guid_{ 0 };
 
     common::TimerTask timer_task_;
 };

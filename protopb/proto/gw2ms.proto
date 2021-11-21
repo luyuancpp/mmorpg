@@ -16,7 +16,7 @@ message ConnectedGameRequest
 
 message GameServerIdRequest
 {
-  uint64 player_id = 1;
+  uint64 guid = 1;
   uint64 connection_id = 2;
 }
 
