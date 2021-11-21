@@ -116,7 +116,7 @@ namespace GameMMR
         void RemoveMatchUnit(match_unit_type & p);
         void RemoveRoom(room_id_type roomId);
         void RoomTimeOut(room_id_type roomId);
-        void NotifyRoomInfo(GUID_t player_id);
+        void NotifyRoomInfo(GUID_t guid);
         
         std::size_t GetRoomPlayerSize();
         std::size_t GetRoomPlayerSize(GUID_t nRoomId);

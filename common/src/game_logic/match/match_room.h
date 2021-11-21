@@ -33,7 +33,7 @@ namespace GameMMR
      team_id_(cp.team_id_),
      team_all_ready_callback_(cp.team_all_ready_callback_),
      name_(cp.name),
-     create_player_id_(cp.create_player_id_)
+     create_guid_(cp.create_guid_)
  {
      m_nRoomId = m_oSnowflake.generate(m_nRoomId);
 
@@ -582,11 +582,11 @@ namespace GameMMR
      return 0;
  }
 
- void MatchRoom::NotifyRoomInfo(GUID_t player_id)
+ void MatchRoom::NotifyRoomInfo(GUID_t guid)
  {
      MatchRpcPrepareRoomNotify n;
      ToClientPb(*n.mutable_readyroom());
-     m_oSendCallBack(player_id, ModuleMatch::RPC_CODE_MATCH_PREPAREROOM_NOTIFY, n);
+     m_oSendCallBack(guid, ModuleMatch::RPC_CODE_MATCH_PREPAREROOM_NOTIFY, n);
  }
 
 }//namespace GameMMR

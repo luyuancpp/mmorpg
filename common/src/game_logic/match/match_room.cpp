@@ -51,7 +51,7 @@ namespace GameMMR
         team_all_ready_callback_type team_all_ready_callback_;
         int32_t prepare_seconds_{ kPrepareTime };
         std::string name;
-        GUID_t create_player_id_{ 0 };
+        GUID_t create_guid_{ 0 };
     };
 
     class MatchRoom
@@ -164,11 +164,11 @@ namespace GameMMR
 			m_oMirrorMatchCallBack = o;
 		}
 
-        void NotifyRoomInfo(GUID_t player_id);
+        void NotifyRoomInfo(GUID_t guid);
 
         std::string GetName() { return name_; }
         Team::team_id_type GetTeamId() { return team_id_; }
-        GUID_t GetCreatePlayerId()const { return create_player_id_; }
+        GUID_t GetCreatePlayerId()const { return create_guid_; }
     private:
         void OnAllPlayerReady();
         void RemoveRoom();
@@ -193,7 +193,7 @@ namespace GameMMR
         Team::team_id_type team_id_{ Team::EmptyTeamId };
         time_t time_out_{0};
         std::string name_;
-        GUID_t create_player_id_{0};
+        GUID_t create_guid_{0};
     };
 
 
