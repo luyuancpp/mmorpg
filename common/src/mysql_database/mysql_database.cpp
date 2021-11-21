@@ -6,6 +6,12 @@
 
 namespace common
 {
+
+    void MysqlDatabase::set_auto_increment(const ::google::protobuf::Message& message_default_instance, uint64_t auto_increment)
+    {
+        pb2db_.set_auto_increment(message_default_instance, auto_increment);
+    }
+
     void MysqlDatabase::AddTable(const ::google::protobuf::Message& message_default_instance)
     {
         pb2db_.AddTable(message_default_instance);

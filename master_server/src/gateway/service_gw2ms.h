@@ -18,11 +18,15 @@ namespace gw2ms
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
-        virtual void GwConnectGame(::google::protobuf::RpcController* controller,
-            const ::gw2ms::ConnectedGameRequest* request,
-            google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done);
+        virtual void PlayerDisconnect(::google::protobuf::RpcController* controller,
+            const ::gw2ms::PlayerDisconnectRequest* request,
+            ::google::protobuf::Empty* response,
+            ::google::protobuf::Closure* done)override;
 
+        virtual void LeaveGame(::google::protobuf::RpcController* controller,
+            const ::gw2ms::LeaveGameRequest* request,
+            ::google::protobuf::Empty* response,
+            ::google::protobuf::Closure* done)override;
     private:
 
     };

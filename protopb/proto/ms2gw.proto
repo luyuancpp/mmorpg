@@ -7,7 +7,7 @@ message StartGameServerRequest
 {
   string ip = 1;
   uint32 port = 2;
-  uint32 server_id = 3;
+  uint32 node_id = 3;
 }
 
 message StopGameServerRequest
@@ -19,7 +19,7 @@ message StopGameServerRequest
 message PlayerEnterGameServerRequest
 {
   uint64 connection_id = 1;
-  uint32 server_id = 2;
+  uint32 node_id = 2;
 }
 
 

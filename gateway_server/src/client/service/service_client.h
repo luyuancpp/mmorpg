@@ -1,8 +1,6 @@
 #ifndef GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_
 #define GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_
 
-#include "c2gw.pb.h"
-
 #include "src/server_common/codec/codec.h"
 
 #include "muduo/base/noncopyable.h"
@@ -12,8 +10,11 @@
 #include "src/server_common/rpc_client_closure.h"
 #include "src/server_common/rpc_stub.h"
 #include "src/server_common/rpc_client.h"
+#include "src/server_sequence/server_sequence.h"
 
+#include "c2gw.pb.h"
 #include "gw2l.pb.h"
+#include "gw2ms.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -67,8 +68,7 @@ private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;
     RpcStubgw2l& gw2l_login_stub_;
-    uint64_t id_{ 0 };
-    
+    common::ServerSequence server_sequence_;
 };
 }//namespace gateway
 

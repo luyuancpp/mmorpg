@@ -3,7 +3,6 @@
 #include "src/game_config/deploy_json.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_connection_event.h"
-#include "src/server_common/server_type_id.h"
 
 #include "common.pb.h"
 
@@ -39,6 +38,32 @@ void LoginServer::Start()
     server_->start();
 }
 
+void LoginServer::StartServer(ServerInfoRpcRC cp)
+{
+    auto& info = cp->s_resp_->info();
+    auto& databaseinfo = info.database_info();
+    InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
+    db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
+    db_rpc_client_->connect();
+    db_rpc_client_->subscribe<common::RegisterStubES>(l2db_login_stub_);
+
+    auto& masterinfo = info.master_info();
+    InetAddress master_addr(masterinfo.ip(), masterinfo.port());
+    master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
+    master_rpc_client_->connect();
+    master_rpc_client_->subscribe<common::RegisterStubES>(l2ms_login_stub_);
+    
+    auto& redisinfo = info.redis_info();
+    redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
+ 
+    auto& myinfo = info.login_info();
+
+    InetAddress login_addr(myinfo.ip(), myinfo.port());
+    server_ = std::make_shared<muduo::net::RpcServer>(loop_, login_addr);
+   
+    Start();
+}
+
 void LoginServer::receive(const common::RpcClientConnectionES& es)
 {
     if (!es.conn_->connected())
@@ -57,31 +82,6 @@ void LoginServer::receive(const common::RpcClientConnectionES& es)
         cp,
         this,
         &deploy::DeployService_Stub::ServerInfo);
-}
-
-void LoginServer::StartServer(ServerInfoRpcRC cp)
-{
-    auto& databaseinfo = cp->s_resp_->info(common::SERVER_DATABASE);
-    InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
-    db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
-    db_rpc_client_->connect();
-    db_rpc_client_->subscribe<common::RegisterStubES>(l2db_login_stub_);
-
-    auto& masterinfo = cp->s_resp_->info(common::SERVER_MASTER);
-    InetAddress master_addr(masterinfo.ip(), masterinfo.port());
-    master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
-    master_rpc_client_->connect();
-    master_rpc_client_->subscribe<common::RegisterStubES>(l2ms_login_stub_);
-    
-    auto& redisinfo = cp->s_resp_->info(common::SERVER_REDIS);
-    redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
- 
-    auto& myinfo = cp->s_resp_->info(common::SERVER_LOGIN);
-
-    InetAddress login_addr(myinfo.ip(), myinfo.port());
-    server_ = std::make_shared<muduo::net::RpcServer>(loop_, login_addr);
-   
-    Start();
 }
 
 }

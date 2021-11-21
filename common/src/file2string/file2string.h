@@ -24,8 +24,8 @@ namespace common
             is.close();
             // ...buffer contains the entire file...
             jssbuffer = buffer;
-            jssbuffer.erase(remove_if(jssbuffer.begin(), jssbuffer.end(), iscntrl), jssbuffer.end());
-            jssbuffer.erase(remove_if(jssbuffer.begin(), jssbuffer.end(), isspace), jssbuffer.end());
+            //jssbuffer.erase(remove_if(jssbuffer.begin(), jssbuffer.end(), iscntrl), jssbuffer.end());
+            //jssbuffer.erase(remove_if(jssbuffer.begin(), jssbuffer.end(), isspace), jssbuffer.end());
             delete[] buffer;
         }
         return jssbuffer;

@@ -24,21 +24,29 @@
     <ClInclude Include="pbc\client_logic_common.pb.h" />
     <ClInclude Include="pbc\common.pb.h" />
     <ClInclude Include="pbc\comp.pb.h" />
+    <ClInclude Include="pbc\condition_config.pb.h" />
     <ClInclude Include="pbc\db_base.pb.h" />
     <ClInclude Include="pbc\deploy.pb.h" />
     <ClInclude Include="pbc\deploy_database_table.pb.h" />
     <ClInclude Include="pbc\g2db.pb.h" />
+    <ClInclude Include="pbc\g2gw.pb.h" />
     <ClInclude Include="pbc\g2ms.pb.h" />
+    <ClInclude Include="pbc\g2rg.pb.h" />
+    <ClInclude Include="pbc\global_variable_config.pb.h" />
     <ClInclude Include="pbc\gw2g.pb.h" />
     <ClInclude Include="pbc\gw2l.pb.h" />
     <ClInclude Include="pbc\gw2ms.pb.h" />
     <ClInclude Include="pbc\l2db.pb.h" />
     <ClInclude Include="pbc\l2ms.pb.h" />
+    <ClInclude Include="pbc\mainscene_config.pb.h" />
+    <ClInclude Include="pbc\mission_config.pb.h" />
     <ClInclude Include="pbc\ms2db.pb.h" />
     <ClInclude Include="pbc\ms2g.pb.h" />
     <ClInclude Include="pbc\ms2gw.pb.h" />
     <ClInclude Include="pbc\mysql_database_table.pb.h" />
     <ClInclude Include="pbc\pb3.pb.h" />
+    <ClInclude Include="pbc\rg2g.pb.h" />
+    <ClInclude Include="pbc\scene_config.pb.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pbc\account_database.pb.cc" />
@@ -46,21 +54,29 @@
     <ClCompile Include="pbc\client_logic_common.pb.cc" />
     <ClCompile Include="pbc\common.pb.cc" />
     <ClCompile Include="pbc\comp.pb.cc" />
+    <ClCompile Include="pbc\condition_config.pb.cc" />
     <ClCompile Include="pbc\db_base.pb.cc" />
     <ClCompile Include="pbc\deploy.pb.cc" />
     <ClCompile Include="pbc\deploy_database_table.pb.cc" />
     <ClCompile Include="pbc\g2db.pb.cc" />
+    <ClCompile Include="pbc\g2gw.pb.cc" />
     <ClCompile Include="pbc\g2ms.pb.cc" />
+    <ClCompile Include="pbc\g2rg.pb.cc" />
+    <ClCompile Include="pbc\global_variable_config.pb.cc" />
     <ClCompile Include="pbc\gw2g.pb.cc" />
     <ClCompile Include="pbc\gw2l.pb.cc" />
     <ClCompile Include="pbc\gw2ms.pb.cc" />
     <ClCompile Include="pbc\l2db.pb.cc" />
     <ClCompile Include="pbc\l2ms.pb.cc" />
+    <ClCompile Include="pbc\mainscene_config.pb.cc" />
+    <ClCompile Include="pbc\mission_config.pb.cc" />
     <ClCompile Include="pbc\ms2db.pb.cc" />
     <ClCompile Include="pbc\ms2g.pb.cc" />
     <ClCompile Include="pbc\ms2gw.pb.cc" />
     <ClCompile Include="pbc\mysql_database_table.pb.cc" />
     <ClCompile Include="pbc\pb3.pb.cc" />
+    <ClCompile Include="pbc\rg2g.pb.cc" />
+    <ClCompile Include="pbc\scene_config.pb.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

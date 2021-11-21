@@ -25,10 +25,22 @@ message ConnetionParamJsonFormat
 message GameConfigInfo
 {
   uint32 group_id = 1;
+  uint32 region_id = 2;
+}
+
+message RegionConfigInfo
+{
+  uint32 region_id = 1;
 }
 
 message IpPort
 {
   string ip = 1;
   uint32 port = 2;
+}
+
+message SceneInfo
+{
+  uint32 scene_config_id = 1;
+  uint64 scene_id = 2;
 }

@@ -36,12 +36,12 @@ namespace database
 
         void Start();
 
-        void receive(const common::RpcClientConnectionES& es);
-
         using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
             deploy::ServerInfoResponse>;
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
+
+        void receive(const common::RpcClientConnectionES& es);
 
     private:
         muduo::net::EventLoop* loop_{ nullptr };

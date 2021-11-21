@@ -1,6 +1,6 @@
 #include "login_state_machine.h"
 
-#include "src/return_code/return_notice_code.h"
+#include "src/return_code/error_code.h"
 
 namespace common
 {

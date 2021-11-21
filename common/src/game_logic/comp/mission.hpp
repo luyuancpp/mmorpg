@@ -7,34 +7,32 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/game_registry.h"
 
-class CompleteMissionsId;
-
 namespace common
 {
-enum eCondtionType : uint32_t
-{
-    E_CONDITION_KILL_MONSTER = 1,
-    E_CONDITION_TALK_WITH_NPC ,
-    E_CONDITION_COMPLELETE_CONDITION,
-    E_CONDITION_USE_ITEM,
-    E_CONDITION_INTERATION,
-    E_CONDITION_LEVEUP,
-    E_CONDITION_COMSTUM,
-    E_CONDITION_COMPLELTE_MISSION,
-    E_CONDITION_MAX,
-};
+    enum eCondtionType : uint32_t
+    {
+        E_CONDITION_KILL_MONSTER = 1,
+        E_CONDITION_TALK_WITH_NPC,
+        E_CONDITION_COMPLELETE_CONDITION,
+        E_CONDITION_USE_ITEM,
+        E_CONDITION_INTERATION,
+        E_CONDITION_LEVEUP,
+        E_CONDITION_COMSTUM,
+        E_CONDITION_COMPLELTE_MISSION,
+        E_CONDITION_MAX,
+    };
 
-enum eConditionIndex
-{
-    E_CONDITION_1,
-    E_CONDITION_2
-};
+    enum eConditionIndex
+    {
+        E_CONDITION_1,
+        E_CONDITION_2
+    };
 
-enum eConditionStatus
-{
-    E_CONDITION_NORMAL,
-    E_CONDITION_COMPLETE,
-};
+    enum eConditionStatus
+    {
+        E_CONDITION_NORMAL,
+        E_CONDITION_COMPLETE,
+    };
 
 enum eMissionStatus
 {
@@ -49,12 +47,12 @@ enum eMissionStatus
 using EntityV = std::vector<entt::entity>;
 using TypeMissionIdMap = std::unordered_map<uint32_t, UI32USet>;
 using MissionAutoRewardCallback = std::function<bool(uint32_t)>;
-using CompleteMissionCallback = std::function<void(entt::entity, uint32_t, CompleteMissionsId&)>;
 using TempCompleteList = UI32USet;
 using TypeSubTypeSet = UI32PairSet;
 
 struct NextTimeAcceptMission { UI32USet next_time_accept_mission_id_; };
-
+struct CheckSubType {};
+struct MissionReward {};
 }//namespace common
 
 #endif//COMMON_SRC_GAME_LOIGC_COMP_H_

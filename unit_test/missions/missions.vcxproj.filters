@@ -18,45 +18,51 @@
     <ClCompile Include="missions_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_config\generator\json_cpp\condition_json.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\src\game_config\generator\json_cpp\mission_json.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\factories\mission_factories.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\protopb\pbc\comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\sys\mission_sys.cpp">
+    <ClCompile Include="..\..\protopb\pbc\condition_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\protopb\pbc\mission_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_config\condition_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_config\mission_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_logic\missions\missions.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\game_config\generator\json_cpp\condition_json.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\factories\mission_factories.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\protopb\pbc\comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\comp\mission.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\sys\mission_sys.hpp">
+    <ClInclude Include="..\..\protopb\pbc\condition_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_config\generator\json_cpp\mission_json.h">
+    <ClInclude Include="..\..\common\src\game_config\condition_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_config\mission_config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\missions\missions.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\entity_class\entity_class.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -22,22 +22,24 @@ namespace ms2gw
     {
         common::ClosurePtr cp(done);
         InetAddress gameserver_addr(request->ip(), request->port());
+        for (auto e : reg().view<InetAddress>())
+        {
+            auto& c = reg().get<InetAddress>(e);
+            if (gameserver_addr.toIpPort() == c.toIpPort())
+            {
+                return;
+            }
+        }
         auto e = GameClient::GetSingleton().create();
         auto& c = GameClient::GetSingleton().emplace<RpcClientPtr>(e, 
             std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gameserver_addr));
         using Gw2gStubPtr = RpcStub<gw2g::Gw2gService_Stub>::MyType;
-        auto& sc =  GameClient::GetSingleton().emplace<Gw2gStubPtr>(e,
-            std::make_unique<RpcStub<gw2g::Gw2gService_Stub>>());
+        auto& sc =  GameClient::GetSingleton().emplace<Gw2gStubPtr>(e, std::make_unique<RpcStub<gw2g::Gw2gService_Stub>>());
         c->subscribe<RegisterStubES>(*(sc.get()));
         c->connect();
-        GameClient::GetSingleton().emplace<InetAddress>(e,
-            gameserver_addr);
-        GameClient::GetSingleton().emplace<uint32_t>(e, request->server_id());
-        LOG_INFO << "connect to game server " << gameserver_addr.toIpPort();
-        gw2ms::ConnectedGameRequest gw2msrequest;
-        gw2msrequest.mutable_rpc_client()->set_ip(request->ip());
-        gw2msrequest.mutable_rpc_client()->set_port(request->port());
-        g_gateway_server->gw2ms_stub().CallMethod(gw2msrequest, &gw2ms::Gw2msService_Stub::GwConnectGame);
+        GameClient::GetSingleton().emplace<InetAddress>(e, gameserver_addr);
+        GameClient::GetSingleton().emplace<uint32_t>(e, request->node_id());
+        LOG_INFO << "connect to game server " << gameserver_addr.toIpPort() << " server id " << request->node_id();
     }
 
     void Ms2gwServiceImpl::StopGameServer(::google::protobuf::RpcController* controller, 
@@ -70,7 +72,7 @@ namespace ms2gw
         {
             return;
         }
-        it->second.game_server_id_ = request->server_id();
+        it->second.node_id_ = request->node_id();
     }
 }
 

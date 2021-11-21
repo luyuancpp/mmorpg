@@ -3,7 +3,6 @@
 #include "src/game_config/deploy_json.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_connection_event.h"
-#include "src/server_common/server_type_id.h"
 
 #include "mysql_database_table.pb.h"
 
@@ -12,9 +11,7 @@ namespace database
     DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
         : loop_(loop),
           database_(std::make_shared<common::MysqlDatabase>()),
-          redis_(std::make_shared<common::RedisClient>())
-    {
-    }
+          redis_(std::make_shared<common::RedisClient>()){}
 
     void DatabaseServer::LoadConfig()
     {
@@ -36,12 +33,28 @@ namespace database
     {
         database_->AddTable(account_database::default_instance());
         database_->AddTable(player_database::default_instance());
+        static const uint64_t begin_player_id = 10000000000;
+        database_->set_auto_increment(player_database::default_instance(),
+            common::GameConfig::GetSingleton().config_info().group_id() * begin_player_id);
         database_->Init();
 
         impl_.set_player_mysql_client(player_mysql_client());
         impl_.set_redis_client(redis_client());
         server_->registerService(&impl_);
         server_->start();
+    }
+
+    void DatabaseServer::StartServer(ServerInfoRpcRC cp)
+    {
+        auto& info = cp->s_resp_->info();
+        auto& redisinfo = info.redis_info();
+        auto& myinfo = info.database_info();
+        InetAddress listenAddr(myinfo.ip(), myinfo.port());
+        redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
+        database_->Connect(myinfo);
+        //LOG_INFO << myinfo.DebugString().c_str();
+        server_ = std::make_shared<muduo::net::RpcServer>(loop_, listenAddr);
+        Start();
     }
 
     void DatabaseServer::receive(const common::RpcClientConnectionES& es)
@@ -63,18 +76,6 @@ namespace database
             this,
             &deploy::DeployService_Stub::ServerInfo);
     }
-
-    void DatabaseServer::StartServer(ServerInfoRpcRC cp)
-    {
-        auto& redisinfo = cp->s_resp_->info(common::SERVER_REDIS);
-        auto& myinfo = cp->s_resp_->info(common::SERVER_DATABASE);        
-        InetAddress listenAddr(myinfo.ip(), myinfo.port());
-        redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
-        database_->Connect(myinfo);
-        server_ = std::make_shared<muduo::net::RpcServer>(loop_, listenAddr);
-        Start();
-    }
-
 
 }//namespace database
 

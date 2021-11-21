@@ -1,9 +1,76 @@
 syntax = "proto3";
 import "db_base.proto";
 
-message serverinfo_database
+message login_server_db
 {
-  option(OptionTableName)  = "serverinfo";
+  option(OptionTableName)  = "login_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 region_id = 4;
+}
+
+message master_server_db
+{
+  option(OptionTableName)  = "master_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 region_id = 4;
+}
+
+message region_server_db
+{
+  option(OptionTableName)  = "region_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 region_id = 4;
+}
+
+message redis_server_db
+{
+  option(OptionTableName)  = "redis_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 region_id = 4;
+}
+
+message game_server_db
+{
+  option(OptionTableName)  = "game_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 region_id = 4;
+}
+
+message gateway_server_db
+{
+  option(OptionTableName)  = "gateway_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 region_id = 4;
+}
+
+
+message database_server_db
+{
+  option(OptionTableName)  = "database_server_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
@@ -14,4 +81,29 @@ message serverinfo_database
   string db_password = 6;
   uint32 db_port = 7;
   string db_dbname = 8;
+  uint32 region_id = 9;
+}
+
+message game_freeids
+{
+  map<uint32, bool> free_list = 1;
+}
+
+message reuse_game_server_db
+{
+  option(OptionTableName)  = "reuse_game_server_db";
+  option(OptionPrimaryKey) = "id";
+  uint32 id = 1;
+  uint32 current_size = 2;
+  game_freeids free_list = 3;
+}
+
+message servers_info_data
+{
+  database_server_db database_info = 1;
+  login_server_db login_info = 2;
+  master_server_db master_info = 3;
+  gateway_server_db gateway_info = 4;
+  redis_server_db redis_info = 5;
+  region_server_db regin_info = 6;
 }

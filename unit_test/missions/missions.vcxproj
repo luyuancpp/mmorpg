@@ -123,7 +123,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../bin/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;game_proto.lib;zlib.lib;gtestd.lib</AdditionalDependencies>
+      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;protopb.lib;zlib.lib;gtestd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,22 +143,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\common\src\game_config\generator\json_cpp\condition_json.cpp" />
-    <ClCompile Include="..\..\common\src\game_config\generator\json_cpp\mission_json.cpp" />
-    <ClCompile Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.cc" />
-    <ClCompile Include="..\..\common\src\game_logic\factories\mission_factories.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\sys\mission_sys.cpp" />
+    <ClCompile Include="..\..\common\src\game_config\condition_config.cpp" />
+    <ClCompile Include="..\..\common\src\game_config\mission_config.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\missions\missions.cpp" />
     <ClCompile Include="..\..\protopb\pbc\comp.pb.cc" />
+    <ClCompile Include="..\..\protopb\pbc\condition_config.pb.cc" />
+    <ClCompile Include="..\..\protopb\pbc\mission_config.pb.cc" />
     <ClCompile Include="missions_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\game_config\generator\json_cpp\condition_json.h" />
-    <ClInclude Include="..\..\common\src\game_config\generator\json_cpp\mission_json.h" />
-    <ClInclude Include="..\..\common\src\game_config\generator\pbc\generator_config_cpp.pb.h" />
+    <ClInclude Include="..\..\common\src\game_config\condition_config.h" />
+    <ClInclude Include="..\..\common\src\game_config\mission_config.h" />
     <ClInclude Include="..\..\common\src\game_logic\comp\mission.hpp" />
-    <ClInclude Include="..\..\common\src\game_logic\factories\mission_factories.h" />
-    <ClInclude Include="..\..\common\src\game_logic\sys\mission_sys.hpp" />
+    <ClInclude Include="..\..\common\src\game_logic\entity_class\entity_class.h" />
+    <ClInclude Include="..\..\common\src\game_logic\missions\missions.h" />
+    <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h" />
     <ClInclude Include="..\..\protopb\pbc\comp.pb.h" />
+    <ClInclude Include="..\..\protopb\pbc\condition_config.pb.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

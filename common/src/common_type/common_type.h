@@ -9,6 +9,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "entt/src/entt/entity/registry.hpp"
+
 namespace common
 {
     using UiddHighType = uint64_t;
@@ -29,6 +31,8 @@ namespace common
 
     using UI32Pair = std::pair<uint32_t, uint32_t>;
     using UI32PairSet = std::set<UI32Pair>;
+
+    using EntitiesUSet = std::unordered_set<entt::entity>;
 
     using UI64UI64UMap = std::unordered_map<uint64_t, uint64_t>;
     using GameGuidU64Map = std::unordered_map<GameGuid, uint64_t>;
