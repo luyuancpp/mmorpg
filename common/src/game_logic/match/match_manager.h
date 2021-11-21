@@ -68,7 +68,7 @@ namespace GameMMR
         int32_t RoomReady(int32_t matchType, uint64_t roomId, GUID_t playerid);
         int32_t CustomRoomCancel(GUID_t playerid);
         int32_t CustomRoomReady(GUID_t playerid);
-        void NotifyRoomInfo(GUID_t player_id);
+        void NotifyRoomInfo(GUID_t guid);
 
         int32_t OnEnterDungeon(int32_t matchType, uint64_t roomId);
 

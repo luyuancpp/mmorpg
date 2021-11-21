@@ -255,11 +255,11 @@ namespace GameMMR
         return RoomReady(GameMMR::E_NOMAL_TEAM_MATCH, room_id, playerid);
     }
 
-    void MatchManager::NotifyRoomInfo(GUID_t player_id)
+    void MatchManager::NotifyRoomInfo(GUID_t guid)
     {
         for (auto&it : m_vMatchList)
         {
-            it->NotifyRoomInfo(player_id);
+            it->NotifyRoomInfo(guid);
         }
     }
 

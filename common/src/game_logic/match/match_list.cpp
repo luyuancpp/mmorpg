@@ -683,14 +683,14 @@ namespace GameMMR
 		RemoveRoom(roomId);
     }
 
-    void MatchMaking::NotifyRoomInfo(GUID_t player_id)
+    void MatchMaking::NotifyRoomInfo(GUID_t guid)
     {
-        roome_list_type::iterator it = m_vRooms.find(GetRoomId(player_id));
+        roome_list_type::iterator it = m_vRooms.find(GetRoomId(guid));
         if (it == m_vRooms.end())
         {
             return;
         }
-        it->second->NotifyRoomInfo(player_id);
+        it->second->NotifyRoomInfo(guid);
     }
 
 
@@ -879,7 +879,7 @@ namespace GameMMR
     {
         int32_t eventId = param.team_event_type_;
         TeamList::team_id_type teamId = param.team_id_;
-        GUID_t  m = param.player_id_;
+        GUID_t  m = param.guid_;
         int32_t nCancelAllTeam = 0;
         if (NULL != m_pMatchElement)
         {
