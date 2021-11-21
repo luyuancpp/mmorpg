@@ -8,7 +8,7 @@ namespace gateway
     struct GateClient
     {
         common::GameGuid guid_{ 0 };
-        uint32_t game_server_id_{ 0 };
+        uint32_t node_id_{ 0 };
     };
 
     using GateClientList = std::unordered_map<uint64_t, GateClient>;

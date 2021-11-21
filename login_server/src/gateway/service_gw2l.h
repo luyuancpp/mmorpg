@@ -73,20 +73,26 @@ namespace gw2l
         void EnterGameDbReplied(EnterGameDbRP d);
 
         using EnterGameMasterRpcString = common::RpcString<l2ms::EnterGameRequest,
-            l2ms::EnterGameResponse,
+            l2ms::EnterGameResponese,
             gw2l::EnterGameResponse>;
         using EnterGameMasterRP = std::shared_ptr<EnterGameMasterRpcString>;
         void EnterGameMasterReplied(EnterGameMasterRP d);
 
-        void EnterMasterServer(common::GameGuid player_id,
+        void EnterMasterServer(common::GameGuid guid,
             const std::string& account,
             ::gw2l::EnterGameResponse* response,
             ::google::protobuf::Closure* done);
+
+        void LeaveGame(::google::protobuf::RpcController* controller,
+            const ::gw2l::LeaveGameRequest* request,
+            ::google::protobuf::Empty* response,
+            ::google::protobuf::Closure* done)override;
 
         virtual void Disconnect(::google::protobuf::RpcController* controller,
             const ::gw2l::DisconnectRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
+
     private:
         void UpdateAccount(const std::string& a, const ::account_database& a_d);
         inline void ErasePlayer(ConnectionAccountMap::iterator& cit) 

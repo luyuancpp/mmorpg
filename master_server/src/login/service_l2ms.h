@@ -9,14 +9,19 @@ namespace l2ms
     {
     public:
 
-        virtual void Login(::google::protobuf::RpcController* controller,
-            const ::l2ms::LoginRequest* request,
-            ::l2ms::LoginResponse* response,
-            ::google::protobuf::Closure* done);
-
-        virtual void EnterGame(::google::protobuf::RpcController* controller,
+        void EnterGame(::google::protobuf::RpcController* controller,
             const ::l2ms::EnterGameRequest* request,
-            ::l2ms::EnterGameResponse* response,
+            ::l2ms::EnterGameResponese* response,
+            ::google::protobuf::Closure* done)override;
+
+        void LeaveGame(::google::protobuf::RpcController* controller,
+            const ::l2ms::LeaveGameRequest* request,
+            ::google::protobuf::Empty* response,
+            ::google::protobuf::Closure* done)override;
+
+        void Disconect(::google::protobuf::RpcController* controller,
+            const ::l2ms::DisconnectRequest* request,
+            ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
     private:

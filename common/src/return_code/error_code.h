@@ -1,5 +1,5 @@
-#ifndef COMMON_SRC_RETURN_CODE_Return_Notice_Code
-#define COMMON_SRC_RETURN_CODE_Return_Notice_Code
+#ifndef COMMON_SRC_RETURN_CODE_ERROR_CODE
+#define COMMON_SRC_RETURN_CODE_ERROR_CODE
 
 #include <cstdint>
 #include <string>
@@ -76,4 +76,4 @@ return;
 
 #define ReturnCloseureOK ReturnCloseureError(common::RET_OK);
 
-#endif // !COMMON_SRC_RETURN_CODE_Return_Notice_Code
+#endif // !COMMON_SRC_RETURN_CODE_ERROR_CODE

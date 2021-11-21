@@ -5,11 +5,10 @@
 #include "src/client_entityid/client_entityid.h"
 #include "src/game_logic/game_registry.h"
 
-ClientService::ClientService(ProtobufDispatcher& dispatcher, 
+ClientService::ClientService(ProtobufDispatcher& dispatcher,
                              ProtobufCodec& codec, 
                              TcpClient& client) : codec_(codec), 
                                                   client_(client),
-                                                  login_(codec_, client_, conn_),
                                                   dispatcher_(dispatcher)
 {
     dispatcher_.registerMessageCallback<LoginResponse>(
@@ -34,7 +33,7 @@ void ClientService::OnDisconnect()
 
 void ClientService::ReadyGo()
 {
-    login_.ReadyGo();
+  
 }
 
 void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -43,11 +42,9 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
 {
     if (message->players().empty())
     {
-        login_.CreatePlayer();
         return;
     }
     guid_ = message->players(0).guid();
-    login_.EnterGame(guid_);
 }
 
 void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -55,14 +52,12 @@ void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& co
     muduo::Timestamp)
 {
     guid_ = message->players(0).guid();
-    login_.EnterGame(guid_);
 }
 
 void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn, 
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-    login_.LeaveGame();
 }
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 

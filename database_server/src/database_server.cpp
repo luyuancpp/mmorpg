@@ -33,9 +33,9 @@ namespace database
     {
         database_->AddTable(account_database::default_instance());
         database_->AddTable(player_database::default_instance());
-        static const uint64_t begin_player_id = 10000000000;
+        static const uint64_t begin_guid = 10000000000;
         database_->set_auto_increment(player_database::default_instance(),
-            common::GameConfig::GetSingleton().config_info().group_id() * begin_player_id);
+            common::GameConfig::GetSingleton().config_info().group_id() * begin_guid);
         database_->Init();
 
         impl_.set_player_mysql_client(player_mysql_client());
