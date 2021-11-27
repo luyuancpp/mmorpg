@@ -11,7 +11,7 @@ namespace common
         const GameConfigInfo& config_info() const { return config_info_; }
 
         static GameConfig& GetSingleton() {
-            static GameConfig singleton;
+            thread_local GameConfig singleton;
             return singleton;
         }
 
@@ -32,7 +32,7 @@ namespace common
         const ConnetionParam& deploy_param() { return connetion_param_.data(SERVER_DEPLOY); }
 
         static DeployConfig& GetSingleton() {
-            static DeployConfig singleton;
+            thread_local DeployConfig singleton;
             return singleton;
         }
 

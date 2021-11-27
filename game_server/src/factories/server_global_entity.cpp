@@ -4,7 +4,7 @@ namespace game
 {
 entt::entity& global_entity()
 {
-    static entt::entity singleton;
+    thread_local entt::entity singleton;
     return singleton;
 }
 }//namespace game

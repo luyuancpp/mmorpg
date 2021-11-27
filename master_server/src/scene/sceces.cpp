@@ -17,7 +17,7 @@ namespace master
         auto it = config_scene_.find(scene_config_id);
         if (it == config_scene_.end())
         {
-            static common::SceneIds s;
+             static common::SceneIds s;
             return s;
         }
         return it->second;

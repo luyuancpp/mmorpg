@@ -9,7 +9,7 @@ namespace master
     {
     public:
         static GameClient& GetSingleton() {
-            static GameClient singleton;
+            thread_local GameClient singleton;
             return singleton;
         }
     private:

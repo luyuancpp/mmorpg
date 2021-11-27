@@ -11,7 +11,7 @@ class RepliedMs2g
 {
 public:
 
-    static RepliedMs2g& GetSingleton() { static RepliedMs2g singleton; return singleton; }
+    static RepliedMs2g& GetSingleton() { thread_local RepliedMs2g singleton; return singleton; }
 
     using StartGameMasterRpcClosure = common::RpcClosure<g2ms::StartGameServerRequest,
         g2ms::StartGameServerResponse>;

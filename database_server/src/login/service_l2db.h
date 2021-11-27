@@ -30,7 +30,7 @@ namespace l2db
 
         static LoginServiceImpl& GetSingleton()
         {
-            static LoginServiceImpl singleton;
+            thread_local LoginServiceImpl singleton;
             return singleton;
         }
 

@@ -2,7 +2,7 @@
 
 namespace gw2l
 {
-    static int32_t kMaxPlayerSize = 4;
+    static const int32_t kMaxPlayerSize = 4;
 
     bool AccountPlayer::IsPlayerId(common::GameGuid guid)
     {
