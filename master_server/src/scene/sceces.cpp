@@ -65,7 +65,7 @@ namespace master
         reg().emplace<common::PlayerEntities>(e);
         auto& scene_config = reg().get<common::SceneConfig>(e);
         auto scene_guid = snow_flake_.Generate();
-        reg().emplace<common::GameGuid>(e, scene_guid);
+        reg().emplace<common::Guid>(e, scene_guid);
         scenes_map_.emplace(scene_guid, e);
         AddScene(scene_config.scene_config_id(), e);
         return e;
@@ -221,7 +221,7 @@ namespace master
     {
         auto scene_config_id = reg().get<common::SceneConfig>(scene_entity).scene_config_id();
         RemoveScene(scene_config_id, scene_entity);
-        auto scene_guid = reg().get<common::GameGuid>(scene_entity);
+        auto scene_guid = reg().get<common::Guid>(scene_entity);
         scenes_map_.erase(scene_guid);
         auto p_server_data = reg().get<common::GameServerDataPtr>(scene_entity);
         reg().destroy(scene_entity);

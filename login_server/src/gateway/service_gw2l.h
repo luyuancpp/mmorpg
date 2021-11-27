@@ -21,7 +21,7 @@ namespace gw2l
         using MessagePtr = std::unique_ptr<google::protobuf::Message>;
         using PlayerPtr = std::shared_ptr<AccountPlayer>;
         using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
-        using ConnectionAccountMap = std::unordered_map<common::GameGuid, PlayerPtr>;
+        using ConnectionAccountMap = std::unordered_map<common::Guid, PlayerPtr>;
         using LoginStubl2ms = common::RpcStub<l2ms::LoginService_Stub>;
         using LoginStubl2db = common::RpcStub<l2db::LoginService_Stub>;
 
@@ -78,7 +78,7 @@ namespace gw2l
         using EnterGameMasterRP = std::shared_ptr<EnterGameMasterRpcString>;
         void EnterGameMasterReplied(EnterGameMasterRP d);
 
-        void EnterMasterServer(common::GameGuid guid,
+        void EnterMasterServer(common::Guid guid,
             const std::string& account,
             ::gw2l::EnterGameResponse* response,
             ::google::protobuf::Closure* done);

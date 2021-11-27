@@ -117,7 +117,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     // long time in login processing
     if (!ap->IsPlayerId(guid))
     {
-        ReturnCloseureError(RET_LOGIN_ENTER_GAME_guid);
+        ReturnCloseureError(RET_LOGIN_ENTER_GUID);
     }
     auto& account = ap->account();
     // player in redis return ok
@@ -162,7 +162,7 @@ void LoginServiceImpl::EnterGameMasterReplied(EnterGameMasterRP d)
     d->c_resp_->set_node_id(d->s_resp_->node_id());
 }
 
-void LoginServiceImpl::EnterMasterServer(GameGuid guid,
+void LoginServiceImpl::EnterMasterServer(Guid guid,
     const std::string& account,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)

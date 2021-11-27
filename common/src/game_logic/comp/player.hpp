@@ -21,12 +21,12 @@ using ConnectionPlayerEnitiesMap = std::unordered_map<uint64_t, entt::entity>;
 
 struct TryEnterGamePlayerId
 {
-    GameGuid guid_{ 0 };
+    Guid guid_{ 0 };
 };
 
 struct PlayerId
 {
-    GameGuid guid_{0};
+    Guid guid_{0};
 };
 }//namespace common
 

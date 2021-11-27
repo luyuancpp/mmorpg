@@ -29,11 +29,11 @@ public:
     void Connect(const std::string& redis_server_addr, int32_t port, int32_t sec, int32_t usec);
 
     void Save(const google::protobuf::Message& message);
-    void Save(const google::protobuf::Message& message, GameGuid game_guid);
+    void Save(const google::protobuf::Message& message, Guid guid);
     void Save(const google::protobuf::Message& message, const std::string& key);
 
     void Load(google::protobuf::Message& message);
-    void Load(google::protobuf::Message& message, GameGuid game_guid);
+    void Load(google::protobuf::Message& message, Guid guid);
     void Load(google::protobuf::Message& message, const std::string& key);
 private:
     void OnDisconnect();

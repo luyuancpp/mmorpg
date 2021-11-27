@@ -9,7 +9,7 @@ namespace master
     class MasterPlayerList
     {
     public:
-        using GameGuidEntityIdMap = std::unordered_map<common::GameGuid, entt::entity>;
+        using GameGuidEntityIdMap = std::unordered_map<common::Guid, entt::entity>;
         static MasterPlayerList& GetSingleton()
         {
             thread_local MasterPlayerList singleton;
@@ -18,11 +18,11 @@ namespace master
 
         std::size_t player_size()const { return player_list_.size(); }
         bool empty()const { return player_list_.empty(); }
-        entt::entity GetPlayer(common::GameGuid guid);
-        bool HasPlayer(common::GameGuid guid) const { return player_list_.find(guid) != player_list_.end(); }
+        entt::entity GetPlayer(common::Guid guid);
+        bool HasPlayer(common::Guid guid) const { return player_list_.find(guid) != player_list_.end(); }
 
-        void EnterGame(common::GameGuid guid, entt::entity entity_id){  player_list_.emplace(guid, entity_id);       }
-        void LeaveGame(common::GameGuid guid){ player_list_.erase(guid); }
+        void EnterGame(common::Guid guid, entt::entity entity_id){  player_list_.emplace(guid, entity_id);       }
+        void LeaveGame(common::Guid guid){ player_list_.erase(guid); }
         
     private:
         GameGuidEntityIdMap player_list_;

@@ -4,7 +4,7 @@ namespace gw2l
 {
     static const int32_t kMaxPlayerSize = 4;
 
-    bool AccountPlayer::IsPlayerId(common::GameGuid guid)
+    bool AccountPlayer::IsPlayerId(common::Guid guid)
     {
         auto s = account_data_.simple_players().players_size();
         for (int32_t i = 0; i < s; ++i)

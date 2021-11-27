@@ -9,14 +9,14 @@ namespace common
 {
 struct TeamESBase
 {
-    TeamESBase(entt::entity team_id, GameGuid guid)
+    TeamESBase(entt::entity team_id, Guid guid)
         : team_id_(team_id),
         guid_(guid)
     {
 
     }
-    entt::entity team_id_{ kEmptyGameGuid };
-    GameGuid guid_{ kEmptyGameGuid };
+    entt::entity team_id_{ kEmptyGuid };
+    Guid guid_{ kEmptyGuid };
 };
 
 struct TeamESTeamIdBase
@@ -25,7 +25,7 @@ struct TeamESTeamIdBase
         : team_id_(team_id)
     {
     }
-    entt::entity team_id_{ kEmptyGameGuid };
+    entt::entity team_id_{ kEmptyGuid };
 };
 
 struct TeamESJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
@@ -36,15 +36,15 @@ struct TeamESClearApplyList : public TeamESTeamIdBase { using TeamESTeamIdBase::
 
 struct TeamESAppointLeader 
 {
-    TeamESAppointLeader(entt::entity team_id, GameGuid current_guid, GameGuid new_guid)
+    TeamESAppointLeader(entt::entity team_id, Guid current_guid, Guid new_guid)
         : team_id_(team_id),
           current_leader_guid_(current_guid),
           new_leader_guid_(new_guid)
     {
     }
-    entt::entity team_id_{ kEmptyGameGuid };
-    GameGuid current_leader_guid_{ kEmptyGameGuid };
-    GameGuid new_leader_guid_{ kEmptyGameGuid };
+    entt::entity team_id_{ kEmptyGuid };
+    Guid current_leader_guid_{ kEmptyGuid };
+    Guid new_leader_guid_{ kEmptyGuid };
 };
 }
 

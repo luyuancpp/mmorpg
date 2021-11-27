@@ -45,7 +45,7 @@ public:
         const LeaveGameResponsePtr& message,
         muduo::Timestamp);
     
-    void EnterGame(common::GameGuid guid);
+    void EnterGame(common::Guid guid);
 private:
     void DisConnect();
 

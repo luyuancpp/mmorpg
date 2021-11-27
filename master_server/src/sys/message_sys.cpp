@@ -19,7 +19,7 @@ namespace master
     auto ptr_gse = reg().try_get<GameServerEntity>(player_entity);
     if (nullptr == ptr_gse)
     {
-        LOG_ERROR << "player send message empty server:" << reg().get<GameGuid>(player_entity)
+        LOG_ERROR << "player send message empty server:" << reg().get<Guid>(player_entity)
             << "message:" << message.GetTypeName();
         return;
     }

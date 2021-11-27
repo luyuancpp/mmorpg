@@ -15,9 +15,9 @@ namespace common
 {
     using UiddHighType = uint64_t;
     using UiddLowType = uint64_t; 
-    using GameGuid = uint64_t;
+    using Guid = uint64_t;
 
-    using PlayerIdsV = std::vector<GameGuid>;
+    using PlayerIdsV = std::vector<Guid>;
     using StringV = std::vector<std::string>;
     using I16V = std::vector<int16_t>;
     using UI16V = std::vector<uint16_t>;
@@ -35,9 +35,9 @@ namespace common
     using EntitiesUSet = std::unordered_set<entt::entity>;
 
     using UI64UI64UMap = std::unordered_map<uint64_t, uint64_t>;
-    using GameGuidU64Map = std::unordered_map<GameGuid, uint64_t>;
+    using GameGuidU64Map = std::unordered_map<Guid, uint64_t>;
 
-    static const GameGuid kEmptyGameGuid{ 0 };
+    static const Guid kEmptyGuid{ 0 };
 }//namespace common
 
 #endif//COMMON_SRC_COMMON_TYPE_CommonType

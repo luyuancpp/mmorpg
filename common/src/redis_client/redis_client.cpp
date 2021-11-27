@@ -28,15 +28,15 @@ void RedisClient::Save(const google::protobuf::Message& message)
     Save(message, desc->full_name());
 }
 
-void RedisClient::Save(const google::protobuf::Message& message, GameGuid game_guid)
+void RedisClient::Save(const google::protobuf::Message& message, Guid guid)
 {
     const auto* desc = message.GetDescriptor();
-    if (kEmptyGameGuid == game_guid)
+    if (kEmptyGuid == guid)
     {
         LOG_ERROR << "Message Save To Redis Gameguid Key Empty : " << desc->full_name();
         return;
     }
-    std::string key = desc->full_name() + std::to_string(game_guid);
+    std::string key = desc->full_name() + std::to_string(guid);
     Save(message, key);
 }
 
@@ -70,10 +70,10 @@ void RedisClient::Load(google::protobuf::Message& message)
     Load(message, desc->full_name());
 }
 
-void RedisClient::Load(google::protobuf::Message& message, GameGuid game_guid)
+void RedisClient::Load(google::protobuf::Message& message, Guid guid)
 {
     const auto* desc = message.GetDescriptor();
-    std::string key = desc->full_name() + std::to_string(game_guid);
+    std::string key = desc->full_name() + std::to_string(guid);
     Load(message, key);
 }
 

@@ -27,7 +27,7 @@ namespace l2ms
         auto guid = request->guid();   
         auto connection_id = request->connection_id();
         auto e = reg().create();
-        reg().emplace<GameGuid>(e, guid);
+        reg().emplace<Guid>(e, guid);
         reg().emplace<SharedAccountString>(e, std::make_shared<std::string>(request->account()));
         reg().emplace<GatewayConnectionId>(e, connection_id);
         MasterPlayerList::GetSingleton().EnterGame(guid, e);
@@ -49,7 +49,7 @@ namespace l2ms
         ClosurePtr cp(done);
         auto guid = request->guid();
         auto e = MasterPlayerList::GetSingleton().GetPlayer(guid);
-        assert(reg().get<GameGuid>(e) == guid);
+        assert(reg().get<Guid>(e) == guid);
         reg().destroy(e);
         MasterPlayerList::GetSingleton().LeaveGame(guid);  
         assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
@@ -68,7 +68,7 @@ namespace l2ms
         {
             return;
         }
-        assert(reg().get<GameGuid>(e) == guid);
+        assert(reg().get<Guid>(e) == guid);
         reg().destroy(e);
         MasterPlayerList::GetSingleton().LeaveGame(guid);
         assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));

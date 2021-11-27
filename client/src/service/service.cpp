@@ -86,7 +86,7 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
     timer_task_.RunAfter(1, std::bind(&ClientService::DisConnect, this));
 }
 
-void ClientService::EnterGame(common::GameGuid guid)
+void ClientService::EnterGame(common::Guid guid)
 {
     auto& lua = LuaClient::GetSingleton().lua();
     lua["EnterGameRequest"]["Send"] = [this](EnterGameRequest& request) ->void
