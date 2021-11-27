@@ -8,6 +8,8 @@
 #include "src/event/event.h"
 #include "src/server_common/rpc_channel.h"
 
+#include "muduo/base/Logging.h"
+
 #include "common.pb.h"
 
 namespace common
@@ -26,6 +28,7 @@ public:
     {
         if (nullptr == stub_)
         {
+            LOG_ERROR << "Server Disconnected";
             return;
         }
         Response* presponse = new Response;
@@ -43,6 +46,7 @@ public:
     {
         if (nullptr == stub_)
         {
+            LOG_ERROR << "Server Disconnected";
             return;
         }
         ((*stub_).*stub_method)(nullptr,
@@ -59,6 +63,7 @@ public:
     {
         if (nullptr == stub_) 
         { 
+            LOG_ERROR << "Server Disconnected";
             return; 
         }
         ((*stub_).*stub_method)(nullptr,
@@ -75,6 +80,7 @@ public:
     {
         if (nullptr == stub_) 
         { 
+            LOG_ERROR << "Server Disconnected";
             return; 
         }
         ((*stub_).*stub_method)(nullptr,
@@ -91,6 +97,7 @@ public:
     {
         if (nullptr == stub_)
         {
+            LOG_ERROR << "Server Disconnected";
             return;
         }
         google::protobuf::Empty* presponse = new google::protobuf::Empty;
@@ -110,6 +117,7 @@ public:
         }
         else
         {
+            LOG_ERROR << "Server Disconnected";
             stub_.reset();
         }
     }

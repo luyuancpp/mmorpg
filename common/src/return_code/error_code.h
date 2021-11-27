@@ -25,6 +25,7 @@ namespace common
         RET_LOGIN_BEING_CREATE_PLAYER = 1009,
         RET_LOGIN_WAITING_ENTER_GAME = 1010,
         RET_LOGIN_ENTER_GAME_guid = 1011,
+        RET_LOGIN_NAME_EMPTY = 1012,
 
         //TeamRet
         RET_TEAM_NOT_IN_APPLICANTS = 5000,
