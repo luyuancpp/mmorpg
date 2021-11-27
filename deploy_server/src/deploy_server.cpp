@@ -35,12 +35,12 @@ namespace deploy
 
         InitGroupDatabaseServerDb();
 
-        InitGroupLoginServerDb<region_server_db>(kRegionServerBeginPort, kGroup);
-        InitGroupLoginServerDb<redis_server_db>(kRedisPort, kGroup);
-        InitGroupLoginServerDb<login_server_db>(kLoginServerBeginPort, kGroup);
-        InitGroupLoginServerDb<master_server_db>(kMasterServerBeginPort, kGroup);
-        InitGroupLoginServerDb<game_server_db>(kGameServerBeginPort, kGroup * 2);
-        InitGroupLoginServerDb<gateway_server_db>(kGatewayServerBeginPort, kGroup);
+        InitGroupServerDb<region_server_db>(kRegionServerBeginPort, kGroup);
+        InitGroupServerDb<redis_server_db>(kRedisPort, kGroup);
+        InitGroupServerDb<login_server_db>(kLoginServerBeginPort, kGroup);
+        InitGroupServerDb<master_server_db>(kMasterServerBeginPort, kGroup);
+        InitGroupServerDb<game_server_db>(kGameServerBeginPort, kGroup * 2);
+        InitGroupServerDb<gateway_server_db>(kGatewayServerBeginPort, kGroup);
 
         LoadGameServerDb();
         server_.subscribe<ServerConnectionES>(*this);
@@ -60,8 +60,7 @@ namespace deploy
     void DeployServer::SaveGameServerDb()
     {
         reuse_game_server_db game_server_info;
-        game_server_info.set_current_size(reuse_id_.size());
-        *game_server_info.mutable_free_list()->mutable_free_list() = reuse_id_.free_list();
+        game_server_info.set_size(reuse_id_.size());
         database_->SaveOne(game_server_info);        
     }
 
@@ -86,7 +85,7 @@ namespace deploy
     {
         reuse_game_server_db game_server_info;
         database_->LoadOne(game_server_info);
-        reuse_id_.set_size(game_server_info.current_size());
+        reuse_id_.set_size(game_server_info.size());
         reuse_id_.OnDbLoadComplete();
         scan_over_timer_.RunAfter(kScanOverSeconds, std::bind(&ReuseGameServerId::ScanOver, &reuse_id_));
     }

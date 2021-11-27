@@ -42,7 +42,7 @@ namespace deploy
         void InitGroupDatabaseServerDb();
 
         template<typename DbMessage>
-        void InitGroupLoginServerDb(uint32_t begin_port, uint32_t server_size )
+        void InitGroupServerDb(uint32_t begin_port, uint32_t server_size )
         {
             DbMessage sd;
             std::string sql = "select * from " + sd.GetTypeName() + " LIMIT 1";
