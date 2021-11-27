@@ -2,8 +2,6 @@
 
 #include <chrono>
 
-#include "muduo/base/Logging.h"
-
 namespace common
 {
 

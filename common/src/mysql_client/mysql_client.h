@@ -11,6 +11,8 @@
 #include "src/util/expected.h"
 #include "src/mysql_client/mysql_result.h"
 
+#include "muduo/base/Logging.h"
+
 #include "common.pb.h"
 #include "deploy_database_table.pb.h"
 
@@ -59,7 +61,7 @@ public:
         connection_ = mysql_init(nullptr);
         uint32_t op = 1;
         mysql_options(connection(), MYSQL_OPT_RECONNECT, &op);
-        mysql_real_connect(connection(),
+        auto p_mysql = mysql_real_connect(connection(),
             database_info.db_host().c_str(),
             database_info.db_user().c_str(),
             database_info.db_password().c_str(),
@@ -67,6 +69,12 @@ public:
             database_info.db_port(),
             nullptr,
             CLIENT_FOUND_ROWS | CLIENT_MULTI_RESULTS);
+        if (nullptr == p_mysql)
+        {
+            LOG_FATAL << "mysql_real_connect\"" << database_info.DebugString().c_str() << ")";
+            return;
+        }
+
         connection_->reconnect = true;
         mysql_set_character_set(connection(), "utf8");
     }

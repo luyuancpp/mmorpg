@@ -11,12 +11,6 @@ namespace deploy
         }
     }
 
-    void ReuseGameServerId::Emplace(const std::string& ip, uint32_t id)
-    {
-        game_entities_.emplace(ip, id);
-        RemoveFree(id);
-    }
-
     void ReuseGameServerId::OnDisConnect(const std::string& ip)
     {
         auto it = game_entities_.find(ip);
@@ -28,9 +22,10 @@ namespace deploy
         game_entities_.erase(it);
     }
 
-    void ReuseGameServerId::EraseScanEmpty(uint32_t id)
+    void ReuseGameServerId::Emplace(const std::string& ip, uint32_t id)
     {
-        scan_node_ids_.erase(id);
+        game_entities_.emplace(ip, id);
+        RemoveFree(id);
     }
 
     void ReuseGameServerId::ScanOver()

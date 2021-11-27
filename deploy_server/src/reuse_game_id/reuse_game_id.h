@@ -5,35 +5,42 @@
 
 namespace deploy
 {
-    class ReuseGameServerId : public common::ReuseId< uint32_t, ::google::protobuf::Map<uint32_t, bool>, UINT16_MAX>
+    class ReuseGameServerId
     {
     public:
         using GameServerId = std::unordered_map<std::string, uint32_t>;
         using ScanGameId = std::unordered_set<uint32_t>;
+        using FreeList = ::google::protobuf::Map<uint32_t, bool>;
 
-        std::size_t free_list_size() { return free_list().size(); }
-   
-        bool IsScanEmpty() { return scan_node_ids_.empty(); }
+        uint32_t size() const { return size_; }
+        const FreeList& free_list() const { return free_list_; }
+        uint32_t Max() const { return UINT16_MAX; }
 
-        void OnDbLoadComplete();
+        void set_size(uint32_t s) { size_ = s; }
 
-        uint32_t CreateGameId()
+        bool IsFull()const { return size_ >= Max(); }
+
+        uint32_t Create()
         {
-            if (IsScanEmpty())
+            if (free_list_.empty())
             {
-                return Create();
+                return size_++;
             }
-            return CreateNoReuse();
+            auto it = free_list_.begin();
+            uint32_t t = it->first;
+            free_list_.erase(it);
+            return t;
         }
 
-        void Emplace(const std::string& ip, uint32_t id);
-
+        void OnDbLoadComplete();
         void OnDisConnect(const std::string& ip);
-
-        void EraseScanEmpty(uint32_t id);
-
+        void Destroy(uint32_t t) { free_list_.insert({ t, true }); }
+        bool RemoveFree(uint32_t t) { return free_list_.erase(t) > 0; }        
+        void Emplace(const std::string& ip, uint32_t id);
         void ScanOver();
     private:
+        FreeList free_list_;
+        uint32_t size_{ 0 };
         GameServerId game_entities_;
         ScanGameId scan_node_ids_;
 

@@ -20,8 +20,7 @@ namespace deploy
         using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
 
-        DeployServer(muduo::net::EventLoop* loop,
-            const muduo::net::InetAddress& listen_addr);
+        DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr);
 
         MysqlClientPtr& player_mysql_client() { return database_; }
         ReuseGameServerId& reuse_game_id() { return reuse_id_; }
