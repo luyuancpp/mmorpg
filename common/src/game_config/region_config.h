@@ -11,7 +11,7 @@ public:
     const RegionConfigInfo& config_info() const { return config_info_; }
 
     static RegionConfig& GetSingleton() {
-        static RegionConfig singleton;
+        thread_local RegionConfig singleton;
         return singleton;
     }
 

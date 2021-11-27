@@ -13,13 +13,13 @@ namespace common
         virtual bool auto_reward(uint32_t mission_id) { return 0; }
         virtual const ::google::protobuf::RepeatedField<uint32_t>& condition_id(uint32_t mission_id)
         {
-                static ::google::protobuf::RepeatedField<uint32_t> s;
+            thread_local ::google::protobuf::RepeatedField<uint32_t> s;
                 s.Clear();
                 return s;
         }
         virtual const ::google::protobuf::RepeatedField<uint32_t>& next_mission_id(uint32_t mission_id)
         {
-            static ::google::protobuf::RepeatedField<uint32_t> s;
+            thread_local ::google::protobuf::RepeatedField<uint32_t> s;
             s.Clear();
             return s;
         }
@@ -29,7 +29,7 @@ namespace common
 
     struct MissionConfig : public IMissionConfig
     {
-        static MissionConfig& GetSingleton() { static MissionConfig singleton; return singleton; }
+        static MissionConfig& GetSingleton() { thread_local MissionConfig singleton; return singleton; }
 
         virtual uint32_t mission_type(uint32_t id)override
         {

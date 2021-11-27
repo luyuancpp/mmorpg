@@ -4,7 +4,7 @@ namespace master
 {
     entt::entity& global_entity()
     {
-        static entt::entity g_global_entity;
+        thread_local entt::entity g_global_entity;
         return g_global_entity;
     }
 }//namespace master

@@ -8,9 +8,9 @@ using namespace common;
 
 struct PlayerId {
 public:
-    static uint64_t guid;
+    thread_local static uint64_t guid;
 };
-uint64_t PlayerId::guid = 100;
+thread_local uint64_t PlayerId::guid = 100;
 
 void LuaClient::Init()
 {

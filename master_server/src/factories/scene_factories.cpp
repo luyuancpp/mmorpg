@@ -7,7 +7,7 @@ namespace master
 {
     entt::entity& scenes_entity()
     {
-        static entt::entity g_scenes_entity;
+        thread_local entt::entity g_scenes_entity;
         return g_scenes_entity;
     }
 

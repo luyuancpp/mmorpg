@@ -13,7 +13,7 @@ public:
 
     static Random& GetSingleton()
     {
-        static Random singleton;
+        thread_local Random singleton;
         return singleton;
     }
 

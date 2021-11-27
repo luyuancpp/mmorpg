@@ -4,19 +4,19 @@ namespace common
 {
     entt::registry& reg()
     {
-        static entt::registry singleton;
+        thread_local entt::registry singleton;
         return singleton;
     }
 
     entt::entity& error_entity()
     {
-        static entt::entity singleton = reg().create();
+        thread_local entt::entity singleton = reg().create();
         return singleton;
     }
 
     entt::entity& op_enitty()
     {
-        static entt::entity singleton = reg().create();
+        thread_local entt::entity singleton = reg().create();
         return singleton;
     }
 

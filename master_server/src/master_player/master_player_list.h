@@ -12,7 +12,7 @@ namespace master
         using GameGuidEntityIdMap = std::unordered_map<common::GameGuid, entt::entity>;
         static MasterPlayerList& GetSingleton()
         {
-            static MasterPlayerList singleton;
+            thread_local MasterPlayerList singleton;
             return singleton;
         }
 
