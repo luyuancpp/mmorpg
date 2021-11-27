@@ -13,7 +13,7 @@ public:
         server_id_ = server_id;
     }
 
-    GameGuid Generate()
+    Guid Generate()
     {
         return server_id_ ^ ++seq_;
     }

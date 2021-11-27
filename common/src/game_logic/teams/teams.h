@@ -21,43 +21,43 @@ public:
     Teams();
 
     std::size_t team_size()const { return reg().size<Team>(); }
-    std::size_t member_size(GameGuid team_id);
-    std::size_t applicant_size_by_guid(GameGuid guid)const;
-    std::size_t applicant_size_by_team_id(GameGuid team_id)const;
+    std::size_t member_size(Guid team_id);
+    std::size_t applicant_size_by_guid(Guid guid)const;
+    std::size_t applicant_size_by_team_id(Guid team_id)const;
     std::size_t players_size()const { return reg().get<PlayerIdTeamIdMap>(my_entity_id_).size(); }
-    GameGuid GetTeamId(GameGuid guid)const;
-    entt::entity GetTeamEntityId(GameGuid guid)const;
-    GameGuid last_team_id() const { return last_team_id_; }
-    GameGuid leader_id_by_teamid(GameGuid team_id)const;
-    GameGuid leader_id_by_guid(GameGuid guid)const;
-    GameGuid first_applicant_id(GameGuid team_id)const;
+    Guid GetTeamId(Guid guid)const;
+    entt::entity GetTeamEntityId(Guid guid)const;
+    Guid last_team_id() const { return last_team_id_; }
+    Guid leader_id_by_teamid(Guid team_id)const;
+    Guid leader_id_by_guid(Guid guid)const;
+    Guid first_applicant_id(Guid team_id)const;
        
     bool IsTeamsMax() const{ return team_size() >= kMaxTeamSize; }
-    bool IsTeamFull(GameGuid team_id);
-    bool PlayerInTheTeam(GameGuid team_id, GameGuid guid);
-    bool PlayerInTeam(GameGuid guid)const;
-    bool HasApplicant(GameGuid team_id, GameGuid guid)const;
+    bool IsTeamFull(Guid team_id);
+    bool PlayerInTheTeam(Guid team_id, Guid guid);
+    bool PlayerInTeam(Guid guid)const;
+    bool HasApplicant(Guid team_id, Guid guid)const;
 
-    bool TestApplicantValueEqual(GameGuid team_id)const;
+    bool TestApplicantValueEqual(Guid team_id)const;
         
     uint32_t CreateTeam(const CreateTeamParam& param);
-    uint32_t JoinTeam(GameGuid team_id, GameGuid guid);
-    uint32_t JoinTeam(const UI64USet& member_list, GameGuid  team_id);
-    uint32_t LeaveTeam(GameGuid guid);
-    uint32_t KickMember(GameGuid team_id, GameGuid current_leader_id, GameGuid  kick_guid);
-    uint32_t DissMissTeam(GameGuid team_id, GameGuid current_leader_id);
-    uint32_t DissMissTeamNoLeader(GameGuid team_id);
-    uint32_t AppointLeader(GameGuid team_id, GameGuid current_leader_id, GameGuid  nNewLeaderPlayerId);
-    uint32_t ApplyForTeam(GameGuid team_id, GameGuid guid);
-    uint32_t RemoveApplicant(GameGuid team_id, GameGuid apply_guid);
-    uint32_t AgreeApplicant(GameGuid team_id, GameGuid apply_guid);
-    void ClearApplyList(GameGuid team_id);
+    uint32_t JoinTeam(Guid team_id, Guid guid);
+    uint32_t JoinTeam(const UI64USet& member_list, Guid  team_id);
+    uint32_t LeaveTeam(Guid guid);
+    uint32_t KickMember(Guid team_id, Guid current_leader_id, Guid  kick_guid);
+    uint32_t DissMissTeam(Guid team_id, Guid current_leader_id);
+    uint32_t DissMissTeamNoLeader(Guid team_id);
+    uint32_t AppointLeader(Guid team_id, Guid current_leader_id, Guid  nNewLeaderPlayerId);
+    uint32_t ApplyForTeam(Guid team_id, Guid guid);
+    uint32_t RemoveApplicant(Guid team_id, Guid apply_guid);
+    uint32_t AgreeApplicant(Guid team_id, Guid apply_guid);
+    void ClearApplyList(Guid team_id);
         
 private:
     uint32_t CheckMemberInTeam(const UI64USet& member_list);
     void EraseTeam(entt::entity team_id);
 
-    GameGuid last_team_id_{ 0 };
+    Guid last_team_id_{ 0 };
     EventManagerPtr emp_;
     entt::entity my_entity_id_{};
 };

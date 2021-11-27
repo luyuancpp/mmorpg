@@ -69,7 +69,7 @@ namespace g2ms
                 }
                 auto scene_info = response->add_scenes_info();
                 scene_info->set_scene_config_id(reg().get<common::SceneConfig>(scene_entity).scene_config_id());
-                scene_info->set_scene_id(reg().get<common::GameGuid>(scene_entity));
+                scene_info->set_scene_id(reg().get<common::Guid>(scene_entity));
             }
         }
         else

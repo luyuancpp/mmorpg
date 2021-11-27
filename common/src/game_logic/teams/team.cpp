@@ -20,16 +20,16 @@ namespace common
         }
     }
 
-    GameGuid Team::first_applicant_id() const
+    Guid Team::first_applicant_id() const
     {
         if (applicant_ids_.empty())
         {
-            return kEmptyGameGuid;
+            return kEmptyGuid;
         }
         return *applicant_ids_.begin();
     }
 
-    uint32_t Team::CheckLimt(GameGuid  guid)
+    uint32_t Team::CheckLimt(Guid  guid)
     {
         return RET_OK;
     }
@@ -56,7 +56,7 @@ namespace common
         }
     }
 
-    uint32_t Team::JoinTeam(GameGuid  guid)
+    uint32_t Team::JoinTeam(Guid  guid)
     {
         if (HasTeam(guid))
         {
@@ -77,7 +77,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Team::LeaveTeam(GameGuid guid)
+    uint32_t Team::LeaveTeam(Guid guid)
     {
         auto it = members_.find(guid);
         if (it == members_.end())
@@ -105,7 +105,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Team::KickMember(GameGuid current_leader, GameGuid  kick_guid)
+    uint32_t Team::KickMember(Guid current_leader, Guid  kick_guid)
     {
         if (leader_id_ != current_leader)
         {
@@ -128,7 +128,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Team::AppointLeader(GameGuid current_leader, GameGuid new_leader_guid)
+    uint32_t Team::AppointLeader(Guid current_leader, Guid new_leader_guid)
     {
         if (leader_id_ == new_leader_guid)
         {
@@ -146,14 +146,14 @@ namespace common
         return RET_OK;
     }
 
-    void Team::OnAppointLeader(GameGuid new_leader_guid)
+    void Team::OnAppointLeader(Guid new_leader_guid)
     {
         auto old_leader_guid = leader_id_;
         leader_id_ = new_leader_guid;
         emp_->emit<TeamESAppointLeader>(team_id_, old_leader_guid, leader_id_);
     }
 
-    void Team::RemoveApplicantId(GameGuid guid)
+    void Team::RemoveApplicantId(Guid guid)
     {
         auto idit = std::find(applicant_ids_.begin(), applicant_ids_.end(), guid);
         if (idit == applicant_ids_.end())
@@ -163,7 +163,7 @@ namespace common
         applicant_ids_.erase(idit);
     }
 
-    uint32_t Team::ApplyForTeam(GameGuid guid)
+    uint32_t Team::ApplyForTeam(Guid guid)
     {
         if (HasTeam(guid))
         {
@@ -188,7 +188,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Team::AgreeApplicant(GameGuid applicant_id)
+    uint32_t Team::AgreeApplicant(Guid applicant_id)
     {
         auto ret = JoinTeam(applicant_id);
         if (ret != RET_OK && ret != RET_TEAM_MEMBERS_FULL)
@@ -198,14 +198,14 @@ namespace common
         return ret;
     }
 
-    uint32_t Team::RemoveApplicant(GameGuid applicant_id)
+    uint32_t Team::RemoveApplicant(Guid applicant_id)
     {
         applicants_.erase(applicant_id);
         RemoveApplicantId(applicant_id);
         return RET_OK;
     }
 
-    uint32_t Team::DissMiss(GameGuid current_leader_id)
+    uint32_t Team::DissMiss(Guid current_leader_id)
     {
         if (leader_id() != current_leader_id)
         {
@@ -218,7 +218,7 @@ namespace common
             emp_->emit<TeamESLeaveTeam>(team_id_, it);
             ms.erase(it);   
         }
-        emp_->emit<TeamESLeaderDismissTeam>(team_id_, kEmptyGameGuid);
+        emp_->emit<TeamESLeaderDismissTeam>(team_id_, kEmptyGuid);
         return RET_OK;
     }
 

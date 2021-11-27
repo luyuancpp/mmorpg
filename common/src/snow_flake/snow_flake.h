@@ -46,7 +46,7 @@ namespace common
             return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         }
 
-        GameGuid Generate()
+        Guid Generate()
         {
             uint32_t sequence = 0;
             uint64_t time_bit = 0;
@@ -117,7 +117,7 @@ namespace common
             return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         }
 
-        GameGuid Generate()
+        Guid Generate()
         {
             uint32_t sequence = 0;
             uint64_t time_bit = 0;

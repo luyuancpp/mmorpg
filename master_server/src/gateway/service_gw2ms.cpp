@@ -53,7 +53,7 @@ namespace gw2ms
             return;
         }
         auto player_entity = it->second;
-        auto guid = reg().get<GameGuid>(player_entity);
+        auto guid = reg().get<Guid>(player_entity);
 
         reg().destroy(player_entity);
         connection_map.erase(it);
@@ -81,7 +81,7 @@ namespace gw2ms
         leave_scene.leave_entity_ = player_entity;
         LeaveScene(reg(), leave_scene);
 
-        auto guid = reg().get<GameGuid>(player_entity);
+        auto guid = reg().get<Guid>(player_entity);
         assert(MasterPlayerList::GetSingleton().HasPlayer(guid));
         reg().destroy(player_entity);
         MasterPlayerList::GetSingleton().LeaveGame(guid);
