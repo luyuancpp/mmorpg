@@ -8,12 +8,12 @@ class LuaClient
 {
 public:
 
-    LuaClient();
-
     static LuaClient& GetSingleton() { static LuaClient singleton; return singleton; }
 
     sol::state& lua() { return lua_; }
     sol::load_result& client() { return client_; }
+
+    void Init();
 
 private:
     sol::state lua_;

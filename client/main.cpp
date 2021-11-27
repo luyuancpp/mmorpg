@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 
     if (argc > 0)
     {
-        auto& lua = LuaClient::GetSingleton().lua();
+        LuaClient::GetSingleton().Init();
        
         int32_t nClients = 1;
 

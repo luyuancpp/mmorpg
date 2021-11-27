@@ -5,6 +5,8 @@
 #include "src/client_entityid/client_entityid.h"
 #include "src/game_logic/game_registry.h"
 
+#include "src/luacpp/lua_client.h"
+
 ClientService::ClientService(ProtobufDispatcher& dispatcher,
                              ProtobufCodec& codec, 
                              TcpClient& client) : codec_(codec), 
@@ -33,7 +35,12 @@ void ClientService::OnDisconnect()
 
 void ClientService::ReadyGo()
 {
-  
+    auto& lua = LuaClient::GetSingleton().lua();
+    lua["LoginRequest"]["Send"] = [this](LoginRequest& request) ->void
+    {
+        this->codec_.send(this->conn_, request);
+    };
+   lua["ReadyGo"]();
 }
 
 void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -41,23 +48,35 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
                                    muduo::Timestamp)
 {
     if (message->players().empty())
-    {
+    {        
+        auto& lua = LuaClient::GetSingleton().lua();
+        lua["CreatePlayerRequest"]["Send"] = [this](CreatePlayerRequest& request) ->void
+        {
+            this->codec_.send(this->conn_, request);
+        };
+        lua["CreatePlayer"]();
         return;
     }
-    guid_ = message->players(0).guid();
+    EnterGame(message->players(0).guid());   
 }
 
 void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn, 
     const CreatePlayerResponsePtr& message,
     muduo::Timestamp)
 {
-    guid_ = message->players(0).guid();
+    EnterGame(message->players(0).guid());
 }
 
 void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn, 
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
+    auto& lua = LuaClient::GetSingleton().lua();
+    lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
+    {
+        this->codec_.send(this->conn_, request);
+    };
+    lua["LeaveGame"]();
 }
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -65,6 +84,16 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     timer_task_.RunAfter(1, std::bind(&ClientService::DisConnect, this));
+}
+
+void ClientService::EnterGame(common::GameGuid guid)
+{
+    auto& lua = LuaClient::GetSingleton().lua();
+    lua["EnterGameRequest"]["Send"] = [this](EnterGameRequest& request) ->void
+    {
+        this->codec_.send(this->conn_, request);
+    };
+    lua["EnterGame"](guid);
 }
 
 void ClientService::DisConnect()

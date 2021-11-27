@@ -1,6 +1,6 @@
 function LoginRequest:ReadyGo() 
-	self.account = ("luhailong"..PlayerId.player_id)
-	PlayerId.player_id = PlayerId.player_id + 1
+	self.account = ("luhailong"..PlayerId.guid)
+	PlayerId.guid = PlayerId.guid + 1
 end
 
 function ReadyGo()
@@ -14,9 +14,9 @@ function CreatePlayer()
 	request:Send()
 end
 
-function EnterGame(player_id)
+function EnterGame(guid)
 	request = EnterGameRequest.new()
-	request.player_id = player_id
+	request.guid = guid
 	request:Send()
 end
 

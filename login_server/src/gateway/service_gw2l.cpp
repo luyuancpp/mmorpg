@@ -9,6 +9,7 @@
 
 using namespace muduo;
 using namespace muduo::net;
+using namespace common;
 
 namespace gw2l
 {
@@ -28,16 +29,19 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     // check account rule
     //check string rule
     {
+        if (request->account().empty())
+        {
+            ReturnCloseureError(RET_LOGIN_NAME_EMPTY);
+        }
         auto it = login_players_.find(request->account());
         if (it == login_players_.end())
         {
-            assert(connection_accounts_.find(request->connection_id()) == connection_accounts_.end());
             auto ret = login_players_.emplace(request->account(), std::make_shared<AccountPlayer>());
             it = ret.first;
         }
         auto& player = it->second;
-        CheckReturnCloseureError(player->Login());
         connection_accounts_.emplace(request->connection_id(), player);
+        CheckReturnCloseureError(player->Login());        
         auto& account_data = player->account_data();
         redis_->Load(account_data, request->account());
         if (!account_data.password().empty())
@@ -73,7 +77,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())
     {
-        ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+        ReturnCloseureError(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
     }
     auto& ap = cit->second;
     CheckReturnCloseureError(ap->CreatePlayer());
@@ -104,7 +108,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     auto cit = connection_accounts_.find(connection_id);
     if (cit == connection_accounts_.end())
     {
-        ReturnCloseureError(common::RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+        ReturnCloseureError(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
     }
     auto& ap = cit->second;
     // check second times change player id error 
@@ -113,7 +117,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     // long time in login processing
     if (!ap->IsPlayerId(guid))
     {
-        ReturnCloseureError(common::RET_LOGIN_ENTER_GAME_guid);
+        ReturnCloseureError(RET_LOGIN_ENTER_GAME_guid);
     }
     auto& account = ap->account();
     // player in redis return ok
@@ -158,7 +162,7 @@ void LoginServiceImpl::EnterGameMasterReplied(EnterGameMasterRP d)
     d->c_resp_->set_node_id(d->s_resp_->node_id());
 }
 
-void LoginServiceImpl::EnterMasterServer(common::GameGuid guid,
+void LoginServiceImpl::EnterMasterServer(GameGuid guid,
     const std::string& account,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
@@ -178,7 +182,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response, 
     ::google::protobuf::Closure* done)
 {
-    common::ClosurePtr cp(done);
+    ClosurePtr cp(done);
     //连接过，登录过
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())
@@ -199,7 +203,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    common::ClosurePtr cp(done);
+    ClosurePtr cp(done);
     auto cit = connection_accounts_.find(request->connection_id());
     if (cit == connection_accounts_.end())//连接并没有登录
     {

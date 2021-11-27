@@ -45,11 +45,6 @@ public:
         client_.connect();
     }
 
-    void ReadyGo() // qq tang ready go
-    {
-        service_.ReadyGo();
-    }
-
     void DisConnect();
 private:
 

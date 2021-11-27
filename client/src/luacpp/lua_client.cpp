@@ -12,7 +12,7 @@ public:
 };
 uint64_t PlayerId::guid = 100;
 
-LuaClient::LuaClient()
+void LuaClient::Init()
 {
     lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
@@ -29,7 +29,5 @@ LuaClient::LuaClient()
 
     auto contents = common::File2String("client/client.lua");
     lua_.script(contents);
-    //auto b = result.valid();
-    //lua_["ReadyGo"]();
 }
 

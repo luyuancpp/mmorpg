@@ -4,6 +4,7 @@
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/TcpClient.h"
 
+#include "src/common_type/common_type.h"
 #include "src/game_logic/timer_task/timer_task.h"
 #include "src/server_common/codec/codec.h"
 #include "src/server_common/codec/dispatcher.h"
@@ -44,6 +45,7 @@ public:
         const LeaveGameResponsePtr& message,
         muduo::Timestamp);
     
+    void EnterGame(common::GameGuid guid);
 private:
     void DisConnect();
 
