@@ -63,7 +63,7 @@ if (ret != RET_OK)\
 }
 
 #define  CheckReturnCloseureError(ret)\
-if (ret != common::RET_OK)\
+if (ret != RET_OK)\
 {\
     response->mutable_error()->set_error_no(ret);\
     done->Run();\
@@ -75,6 +75,6 @@ response->mutable_error()->set_error_no(f);\
 done->Run();\
 return;
 
-#define ReturnCloseureOK ReturnCloseureError(common::RET_OK);
+#define ReturnCloseureOK ReturnCloseureError(RET_OK);
 
 #endif // !COMMON_SRC_RETURN_CODE_ERROR_CODE

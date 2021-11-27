@@ -70,7 +70,7 @@ private:
     std::map<std::string, ::google::protobuf::Service*> services_;
 };
 
-using RpcClientPtr = std::unique_ptr<common::RpcClient>;
+using RpcClientPtr = std::unique_ptr<RpcClient>;
 
 } // namespace common
 
