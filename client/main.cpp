@@ -6,6 +6,8 @@
 #include "src/file2string/file2string.h"
 #include "src/luacpp/lua_client.h"
 
+using namespace common;
+
 int main(int argc, char* argv[])
 {
     LOG_INFO << "pid = " << getpid();
@@ -22,10 +24,10 @@ int main(int argc, char* argv[])
         }
         EventLoop loop;
         
-        client::gAllFinish = common::reg().create();
-        common::reg().emplace<uint32_t>(client::gAllFinish, nClients);
+        client::gAllFinish = reg().create();
+        reg().emplace<uint32_t>(client::gAllFinish, nClients);
 
-        auto contents = common::File2String("client.json");
+        auto contents = File2String("client.json");
         google::protobuf::StringPiece sp(contents.data(), contents.size());
         ConnetionParamJsonFormat connetion_param_;
         google::protobuf::util::JsonStringToMessage(sp, &connetion_param_);

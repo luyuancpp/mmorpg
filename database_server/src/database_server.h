@@ -15,7 +15,6 @@
 
 #include "deploy.pb.h"
 
-
 namespace database
 {
     class DatabaseServer : muduo::noncopyable, public common::Receiver<DatabaseServer>

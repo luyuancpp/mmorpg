@@ -3,6 +3,8 @@
 #include "src/game_config/deploy_json.h"
 #include "src/server_common/deploy_rpcclient.h"
 
+using namespace common;
+
 gateway::GatewayServer* g_gateway_server = nullptr; 
 
 namespace gateway
@@ -10,17 +12,17 @@ namespace gateway
 
 void GatewayServer::LoadConfig()
 {
-    common::GameConfig::GetSingleton().Load("game.json");
-    common::DeployConfig::GetSingleton().Load("deploy.json");
+    GameConfig::GetSingleton().Load("game.json");
+    DeployConfig::GetSingleton().Load("deploy.json");
 }
 
 void GatewayServer::InitNetwork()
 {
-    const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
+    const auto& deploy_info = DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
+    deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+    deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
+    deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -29,16 +31,16 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     serverinfo_database_ = cp->s_resp_->info();
     auto& login_info = serverinfo_database_.login_info();
     InetAddress login_addr(login_info.ip(), login_info.port());
-    login_rpc_client_ = std::make_unique<common::RpcClient>(loop_, login_addr);
+    login_rpc_client_ = std::make_unique<RpcClient>(loop_, login_addr);
     login_rpc_client_->connect();
-    login_rpc_client_->subscribe<common::RegisterStubES>(gw2l_login_stub_);
+    login_rpc_client_->subscribe<RegisterStubES>(gw2l_login_stub_);
 
     auto& master_info = serverinfo_database_.master_info();
     InetAddress master_addr(master_info.ip(), master_info.port());
-    master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
+    master_rpc_client_ = std::make_unique<RpcClient>(loop_, master_addr);
     master_rpc_client_->registerService(&ms2gw_service_impl_);
-    master_rpc_client_->subscribe<common::RegisterStubES>(gw2ms_stub_);
-    master_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
+    master_rpc_client_->subscribe<RegisterStubES>(gw2ms_stub_);
+    master_rpc_client_->subscribe<RpcClientConnectionES>(*this);
     master_rpc_client_->connect();        
 
     auto& myinfo = serverinfo_database_.gateway_info();
@@ -60,14 +62,14 @@ void GatewayServer::Register2Master()
     gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
 }
 
-void GatewayServer::receive(const common::RpcClientConnectionES& es)
+void GatewayServer::receive(const RpcClientConnectionES& es)
 {
     if (!es.conn_->connected())
     {
         return;
     }
 
-    if (IsSameAddr(es.conn_->peerAddress(), common::DeployConfig::GetSingleton().deploy_param()))
+    if (IsSameAddr(es.conn_->peerAddress(), DeployConfig::GetSingleton().deploy_param()))
     {
         // started 
         if (nullptr != server_)
@@ -75,7 +77,7 @@ void GatewayServer::receive(const common::RpcClientConnectionES& es)
             return;
         }
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-        cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+        cp->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
         deploy_stub_.CallMethod(
             &GatewayServer::StartServer,
             cp,

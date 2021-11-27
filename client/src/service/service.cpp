@@ -7,6 +7,8 @@
 
 #include "src/luacpp/lua_client.h"
 
+using namespace common;
+
 ClientService::ClientService(ProtobufDispatcher& dispatcher,
                              ProtobufCodec& codec, 
                              TcpClient& client) : codec_(codec), 
@@ -86,7 +88,7 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
     timer_task_.RunAfter(1, std::bind(&ClientService::DisConnect, this));
 }
 
-void ClientService::EnterGame(common::Guid guid)
+void ClientService::EnterGame(Guid guid)
 {
     auto& lua = LuaClient::GetSingleton().lua();
     lua["EnterGameRequest"]["Send"] = [this](EnterGameRequest& request) ->void
@@ -99,7 +101,7 @@ void ClientService::EnterGame(common::Guid guid)
 void ClientService::DisConnect()
 {
     client_.disconnect();
-    auto& c = common::reg().get<uint32_t>(client::gAllFinish);
+    auto& c = reg().get<uint32_t>(client::gAllFinish);
     --c; 
     if (c == 0)
     {

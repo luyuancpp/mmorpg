@@ -3,7 +3,7 @@ ping /n 1 127.1 >nul
 start region_server.exe
 ping /n 1 127.1 >nul
 start database_server.exe
-ping /n0 1 127.1 >nul
+ping /n 1 127.1 >nul
 start master_server.exe
 ping /n 1 127.1 >nul
 start login_server.exe

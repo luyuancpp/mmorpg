@@ -4,6 +4,8 @@
 
 #include "src/server_common/closure_auto_done.h"
 
+using namespace common;
+
 namespace rg2g
 {
 void Rg2gServiceImpl::EnterRoom(::google::protobuf::RpcController* controller,
@@ -11,7 +13,7 @@ void Rg2gServiceImpl::EnterRoom(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    common::ClosurePtr cp(done);
+    ClosurePtr cp(done);
 }
 }//namespace rg2g
 

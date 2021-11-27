@@ -6,7 +6,7 @@
 
 namespace common
 {
-class MysqlDatabase : public common::MysqlClient
+class MysqlDatabase : public MysqlClient
 {
 public:
 

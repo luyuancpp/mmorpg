@@ -8,7 +8,7 @@ namespace common
 {
 void RegionConfig::Load(const std::string& filename)
 {
-    auto contents = common::File2String(filename);
+    auto contents = File2String(filename);
     google::protobuf::StringPiece sp(contents.data(), contents.size());
     google::protobuf::util::JsonStringToMessage(sp, &config_info_);
 }
