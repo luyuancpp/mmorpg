@@ -1,4 +1,4 @@
-﻿#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #include <cassert>
 #include <functional>
@@ -9,16 +9,18 @@
 
 #include "src/snow_flake/snow_flake.h"
 
-using game_guid_vetcor = std::vector<common::GameGuid>;
-using game_guid_set = std::unordered_set<common::GameGuid>;
+using namespace common;
 
-common::SnowFlakeThreadSafe sf;
-game_guid_vetcor first_v;
-game_guid_vetcor second_v;
-game_guid_vetcor third_v;
+using guid_vetcor = std::vector<Guid>;
+using guid_set = std::unordered_set<Guid>;
+
+SnowFlakeThreadSafe sf;
+guid_vetcor first_v;
+guid_vetcor second_v;
+guid_vetcor third_v;
 static const std::size_t kTestSize = 1000000;
 
-void EmplaceToVector(game_guid_vetcor& v)
+void EmplaceToVector(guid_vetcor& v)
 {
     for (std::size_t i = 0; i < kTestSize; ++i)
     {
@@ -41,7 +43,7 @@ void GenerateThread3()
     EmplaceToVector(third_v);
 }
 
-void PutVectorInToSet(game_guid_set& s, game_guid_vetcor& v)
+void PutVectorInToSet(guid_set& s, guid_vetcor& v)
 {
     for (auto& it : v)
     {
@@ -51,21 +53,21 @@ void PutVectorInToSet(game_guid_set& s, game_guid_vetcor& v)
 
 TEST(TestSnowFlakeThreadSafe, JustGenerateTime)
 {
-    common::GameGuid id = sf.Generate();
+    Guid id = sf.Generate();
 }
 
 TEST(TestSnowFlakeThreadSafe, GenerateTime)
 {
-    common::SnowFlakeThreadSafe sf;
+    SnowFlakeThreadSafe sf;
     time_t t = sf.GetNow();
     std::cout << t << std::endl;
-    common::GameGuid id = sf.Generate();
+    Guid id = sf.Generate();
     std::cout << id << std::endl;
 }
 
 TEST(TestSnowFlakeThreadSafe, Generate)
 {
-    game_guid_set guid_set;
+    guid_set guid_set;
     first_v.clear();
     second_v.clear();
     third_v.clear();
