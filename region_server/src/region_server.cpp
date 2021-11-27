@@ -5,6 +5,8 @@
 #include "src/game_config/region_config.h"
 #include "src/game_config/deploy_json.h"
 
+using namespace common;
+
 region::RegionServer* g_region_server = nullptr;
 
 namespace region
@@ -17,17 +19,17 @@ namespace region
 
     void RegionServer::Init()
     {
-        common::RegionConfig::GetSingleton().Load("region.json");
-        common::DeployConfig::GetSingleton().Load("deploy.json");
+        RegionConfig::GetSingleton().Load("region.json");
+        DeployConfig::GetSingleton().Load("deploy.json");
     }
 
     void RegionServer::ConnectDeploy()
     {
-        const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
+        const auto& deploy_info = DeployConfig::GetSingleton().deploy_param();
         InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-        deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-        deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
-        deploy_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
+        deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+        deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
+        deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this);
         deploy_rpc_client_->connect();
     }
 
@@ -36,12 +38,12 @@ namespace region
         auto& myinfo = cp->s_resp_->info();
         InetAddress region_addr(myinfo.ip(), myinfo.port());
         server_ = std::make_shared<muduo::net::RpcServer>(loop_, region_addr);
-        server_->subscribe<common::ServerConnectionES>(*this);
+        server_->subscribe<ServerConnectionES>(*this);
         //LOG_INFO << myinfo.DebugString().c_str();
         server_->start();
     }
 
-    void RegionServer::receive(const common::RpcClientConnectionES& es)
+    void RegionServer::receive(const RpcClientConnectionES& es)
     {
         if (!es.conn_->connected())
         {
@@ -53,7 +55,7 @@ namespace region
             return;
         }
         RegionInfoRpcRpcRC cp(std::make_shared<RegionInfoRpcClosure>());
-        cp->s_reqst_.set_region_id(common::RegionConfig::GetSingleton().config_info().region_id());
+        cp->s_reqst_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
         deploy_stub_.CallMethod(
             &RegionServer::StartServer,
             cp,
@@ -61,7 +63,7 @@ namespace region
             &deploy::DeployService_Stub::StartRegionServer);
     }
 
-    void RegionServer::receive(const common::ServerConnectionES& es)
+    void RegionServer::receive(const ServerConnectionES& es)
     {
     }
 }

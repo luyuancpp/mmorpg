@@ -7,19 +7,18 @@
 
 using namespace muduo;
 using namespace muduo::net;
-
-using common::reg;
+using namespace common;
 
 int main(int argc, char* argv[])
 {
     game::global_entity() = reg().create();
-    if (argc > 1 && atoi(argv[1]) == common::kRoomServer)
+    if (argc > 1 && atoi(argv[1]) == kRoomServer)
     {
-        reg().emplace<common::eServerType>(game::global_entity(), common::kRoomServer);
+        reg().emplace<eServerType>(game::global_entity(), kRoomServer);
     }
     else
     {
-        reg().emplace<common::eServerType>(game::global_entity(), common::kMainServer);
+        reg().emplace<eServerType>(game::global_entity(), kMainServer);
     }
 
     EventLoop loop;

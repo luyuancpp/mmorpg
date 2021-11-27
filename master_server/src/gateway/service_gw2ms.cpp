@@ -46,7 +46,7 @@ namespace gw2ms
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        auto& connection_map = reg().get<common::ConnectionPlayerEnitiesMap>(global_entity());
+        auto& connection_map = reg().get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
         if (it == connection_map.end())
         {
@@ -68,7 +68,7 @@ namespace gw2ms
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        auto& connection_map = reg().get<common::ConnectionPlayerEnitiesMap>(global_entity());
+        auto& connection_map = reg().get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
         assert(it != connection_map.end());
         if (it == connection_map.end())

@@ -15,7 +15,7 @@ void GameConfig::Load(const std::string& filename)
 
 void DeployConfig::Load(const std::string& filename)
 {
-    auto contents = common::File2String(filename);
+    auto contents = File2String(filename);
     google::protobuf::StringPiece sp(contents.data(), contents.size());
     google::protobuf::util::JsonStringToMessage(sp, &connetion_param_);
 }

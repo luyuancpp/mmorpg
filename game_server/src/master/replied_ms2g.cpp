@@ -21,13 +21,13 @@ void RepliedMs2g::StartGameServerMasterReplied(StartGameMasterRpcRC cp)
         auto& master_rpc_client = reg().get<MasterClientPtr>(e);
         if (cp->s_reqst_.master_server_addr() == (uint64_t)master_rpc_client.get())
         {
-            common::reg().emplace<uint32_t>(e, rsp->master_node_id());
+            reg().emplace<uint32_t>(e, rsp->master_node_id());
             LOG_INFO << "master server info " << rsp->master_node_id();
             break;
         }
     }
 
-    auto& scenemap = common::reg().get<common::SceneMap>(game::global_entity());
+    auto& scenemap = reg().get<SceneMap>(game::global_entity());
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
     {
         auto& pb = rsp->scenes_info(i);

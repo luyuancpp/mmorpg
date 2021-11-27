@@ -8,6 +8,8 @@
 
 #include "comp.pb.h"
 
+using namespace common;
+
 namespace l2db
 {
     void LoginServiceImpl::Login(::google::protobuf::RpcController* controller, 
@@ -15,7 +17,7 @@ namespace l2db
         l2db::LoginResponse* response, 
         ::google::protobuf::Closure* done)
     {
-        common::ClosurePtr cp(done);
+        ClosurePtr cp(done);
         ::account_database& r_db = *response->mutable_account_player();
         auto& caccount = request->account();
         redis_->Load(r_db, caccount);
@@ -37,7 +39,7 @@ namespace l2db
         ::l2db::CreatePlayerResponse* response, 
         ::google::protobuf::Closure* done)
     {
-        common::ClosurePtr cp(done);
+        ClosurePtr cp(done);
         ::account_database& r_db = *response->mutable_account_player();
         redis_->Load(r_db, request->account());
         player_database new_player;
@@ -55,7 +57,7 @@ namespace l2db
         ::l2db::EnterGameResponse* response, 
         ::google::protobuf::Closure* done)
     {
-        common::ClosurePtr cp(done);
+        ClosurePtr cp(done);
         player_database new_player;
         std::string where_case = std::string("guid = '") + 
             std::to_string(request->guid()) + 

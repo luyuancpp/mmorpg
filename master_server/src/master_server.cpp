@@ -15,7 +15,7 @@
 #include "ms2g.pb.h"
 #include "ms2gw.pb.h"
 
-using common::reg;
+using namespace common;
 
 master::MasterServer* g_master_server = nullptr;
 
@@ -23,7 +23,7 @@ namespace master
 {
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-      redis_(std::make_shared<common::RedisClient>()),
+      redis_(std::make_shared<RedisClient>()),
       g2ms_impl_(),
       gw2ms_impl_()
 { 
@@ -37,11 +37,11 @@ void MasterServer::Init()
 
 void MasterServer::ConnectDeploy()
 {
-    const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
+    const auto& deploy_info = DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
+    deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+    deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
+    deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -50,14 +50,14 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     serverinfos_ = cp->s_resp_->info();
     auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
-    db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
-    db_rpc_client_->subscribe<common::RegisterStubES>(msl2_login_stub_);
+    db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
+    db_rpc_client_->subscribe<RegisterStubES>(msl2_login_stub_);
     db_rpc_client_->connect();    
 
     auto& myinfo = serverinfos_.master_info();
     InetAddress master_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
-    server_->subscribe<common::ServerConnectionES>(*this);
+    server_->subscribe<ServerConnectionES>(*this);
 
     server_->registerService(&l2ms_impl_);
     server_->registerService(&g2ms_impl_);
@@ -75,11 +75,11 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     ms2gw::StartGameServerRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
-    request.set_node_id(reg().get<common::GameServerDataPtr>(ge)->node_id());
+    request.set_node_id(reg().get<GameServerDataPtr>(ge)->node_id());
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGameServer");
 }
 
-void MasterServer::receive(const common::RpcClientConnectionES& es)
+void MasterServer::receive(const RpcClientConnectionES& es)
 {
     if (!es.conn_->connected())
     {
@@ -91,8 +91,8 @@ void MasterServer::receive(const common::RpcClientConnectionES& es)
         return;
     }
     ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
-    cp->s_reqst_.set_region_id(common::RegionConfig::GetSingleton().config_info().region_id());
+    cp->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
+    cp->s_reqst_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
     deploy_stub_.CallMethod(
         &MasterServer::StartServer,
         cp,
@@ -100,7 +100,7 @@ void MasterServer::receive(const common::RpcClientConnectionES& es)
         &deploy::DeployService_Stub::ServerInfo);
 }
 
-void MasterServer::receive(const common::ServerConnectionES& es)
+void MasterServer::receive(const ServerConnectionES& es)
 {
     auto& conn = es.conn_;
     if (conn->connected())
@@ -116,15 +116,15 @@ void MasterServer::receive(const common::ServerConnectionES& es)
 void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn)
 {
     auto e = reg().create();
-    reg().emplace<common::RpcServerConnection>(e, common::RpcServerConnection{ conn });
+    reg().emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
 }
 
 void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
 {
     auto& peer_addr = conn->peerAddress();
-    for (auto e : reg().view<common::RpcServerConnection>())
+    for (auto e : reg().view<RpcServerConnection>())
     {
-        auto& local_addr = reg().get<common::RpcServerConnection>(e).conn_->peerAddress();
+        auto& local_addr = reg().get<RpcServerConnection>(e).conn_->peerAddress();
         if (local_addr.toIpPort() != peer_addr.toIpPort())
         {
             continue;
@@ -136,9 +136,9 @@ void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnecti
 
 void MasterServer::InitConfig()
 {
-    common::GameConfig::GetSingleton().Load("game.json");
-    common::DeployConfig::GetSingleton().Load("deploy.json");
-    common::RegionConfig::GetSingleton().Load("region.json");
+    GameConfig::GetSingleton().Load("game.json");
+    DeployConfig::GetSingleton().Load("deploy.json");
+    RegionConfig::GetSingleton().Load("region.json");
     loadallconfig();
 }
 
@@ -146,7 +146,7 @@ void MasterServer::InitGlobalEntities()
 {
     MakeScenes();
     global_entity() = reg().create();
-    reg().emplace<common::ConnectionPlayerEnitiesMap>(global_entity());
+    reg().emplace<ConnectionPlayerEnitiesMap>(global_entity());
 }
 
 }//namespace master

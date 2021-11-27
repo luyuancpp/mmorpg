@@ -6,28 +6,30 @@
 
 #include "common.pb.h"
 
+using namespace common;
+
 namespace login
 {
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-      redis_(std::make_shared<common::RedisClient>()),
+      redis_(std::make_shared<RedisClient>()),
       impl_( l2ms_login_stub_, l2db_login_stub_)
 {
 }
 
 void LoginServer::LoadConfig()
 {
-    common::GameConfig::GetSingleton().Load("game.json");
-    common::DeployConfig::GetSingleton().Load("deploy.json");
+    GameConfig::GetSingleton().Load("game.json");
+    DeployConfig::GetSingleton().Load("deploy.json");
 }
 
 void LoginServer::ConnectDeploy()
 {
-    const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
+    const auto& deploy_info = DeployConfig::GetSingleton().deploy_param();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<common::RpcClientConnectionES>(*this);
+    deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+    deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
+    deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -43,15 +45,15 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     auto& info = cp->s_resp_->info();
     auto& databaseinfo = info.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
-    db_rpc_client_ = std::make_unique<common::RpcClient>(loop_, database_addr);
+    db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
     db_rpc_client_->connect();
-    db_rpc_client_->subscribe<common::RegisterStubES>(l2db_login_stub_);
+    db_rpc_client_->subscribe<RegisterStubES>(l2db_login_stub_);
 
     auto& masterinfo = info.master_info();
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
-    master_rpc_client_ = std::make_unique<common::RpcClient>(loop_, master_addr);
+    master_rpc_client_ = std::make_unique<RpcClient>(loop_, master_addr);
     master_rpc_client_->connect();
-    master_rpc_client_->subscribe<common::RegisterStubES>(l2ms_login_stub_);
+    master_rpc_client_->subscribe<RegisterStubES>(l2ms_login_stub_);
     
     auto& redisinfo = info.redis_info();
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
@@ -64,7 +66,7 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     Start();
 }
 
-void LoginServer::receive(const common::RpcClientConnectionES& es)
+void LoginServer::receive(const RpcClientConnectionES& es)
 {
     if (!es.conn_->connected())
     {
@@ -76,7 +78,7 @@ void LoginServer::receive(const common::RpcClientConnectionES& es)
         return;
     }
     ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+    cp->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
     deploy_stub_.CallMethod(
         &LoginServer::StartServer,
         cp,

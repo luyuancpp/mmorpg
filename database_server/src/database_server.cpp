@@ -6,26 +6,28 @@
 
 #include "mysql_database_table.pb.h"
 
+using namespace common;
+
 namespace database
 {
     DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
         : loop_(loop),
           database_(std::make_shared<common::MysqlDatabase>()),
-          redis_(std::make_shared<common::RedisClient>()){}
+          redis_(std::make_shared<RedisClient>()){}
 
     void DatabaseServer::LoadConfig()
     {
-        common::GameConfig::GetSingleton().Load("game.json");
-        common::DeployConfig::GetSingleton().Load("deploy.json");
+        GameConfig::GetSingleton().Load("game.json");
+        DeployConfig::GetSingleton().Load("deploy.json");
     }
 
     void DatabaseServer::ConnectDeploy()
     {
-        const auto& deploy_info = common::DeployConfig::GetSingleton().deploy_param();
+        const auto& deploy_info = DeployConfig::GetSingleton().deploy_param();
         InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-        deploy_rpc_client_ = std::make_unique<common::RpcClient>(loop_, deploy_addr);
-        deploy_rpc_client_->subscribe<common::RegisterStubES>(deploy_stub_);
-        deploy_rpc_client_->subscribe<common::RpcClientConnectionES>(*this); 
+        deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+        deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
+        deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this); 
         deploy_rpc_client_->connect();
     }
 
@@ -35,7 +37,7 @@ namespace database
         database_->AddTable(player_database::default_instance());
         static const uint64_t begin_guid = 10000000000;
         database_->set_auto_increment(player_database::default_instance(),
-            common::GameConfig::GetSingleton().config_info().group_id() * begin_guid);
+            GameConfig::GetSingleton().config_info().group_id() * begin_guid);
         database_->Init();
 
         impl_.set_player_mysql_client(player_mysql_client());
@@ -57,7 +59,7 @@ namespace database
         Start();
     }
 
-    void DatabaseServer::receive(const common::RpcClientConnectionES& es)
+    void DatabaseServer::receive(const RpcClientConnectionES& es)
     {
         if (!es.conn_->connected())
         {
@@ -69,7 +71,7 @@ namespace database
             return;
         }
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-        cp->s_reqst_.set_group(common::GameConfig::GetSingleton().config_info().group_id());
+        cp->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
         deploy_stub_.CallMethod(
             &DatabaseServer::StartServer,
             cp,

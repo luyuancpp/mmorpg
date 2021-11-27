@@ -11,7 +11,7 @@ using namespace common;
 
 int32_t main(int argc, char* argv[])
 {
-    common::DeployConfig::GetSingleton().Load("deploy.json");
+    DeployConfig::GetSingleton().Load("deploy.json");
     auto deploy_server_info = DeployConfig::GetSingleton().deploy_param();
     EventLoop loop;
     InetAddress listenAddr(deploy_server_info.ip(), deploy_server_info.port());
