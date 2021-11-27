@@ -74,19 +74,19 @@ namespace common
         return it->second;
     }
 
-    common::Guid Teams::leader_id_by_teamid(Guid team_id) const
+    Guid Teams::leader_id_by_teamid(Guid team_id) const
     {
         GetTeamReturn(kEmptyGuid);
         return team.leader_id();
     }
 
-    common::Guid Teams::leader_id_by_guid(Guid guid) const
+    Guid Teams::leader_id_by_guid(Guid guid) const
     {
         auto team_id = GetTeamId(guid);
         return leader_id_by_teamid(team_id);
     }
     
-    common::Guid Teams::first_applicant_id(Guid team_id) const
+    Guid Teams::first_applicant_id(Guid team_id) const
     {
         GetTeamReturn(0);
         return team.first_applicant_id();

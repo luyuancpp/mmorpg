@@ -9,15 +9,15 @@
 
 #include "src/server_sequence/server_sequence.h"
 
-using game_guid_vetcor = std::vector<common::GameGuid>;
-using game_guid_set = std::unordered_set<common::GameGuid>;
+using guid_vetcor = std::vector<common::Guid>;
+using guid_set = std::unordered_set<common::Guid>;
 
 common::ServerSequence sf;
 
 
 static const std::size_t kTestSize = 1000000;
 
-void EmplaceToVector(game_guid_vetcor& v)
+void EmplaceToVector(guid_vetcor& v)
 {
     for (std::size_t i = 0; i < kTestSize; ++i)
     {
@@ -25,7 +25,7 @@ void EmplaceToVector(game_guid_vetcor& v)
     }
 }
 
-void PutVectorInToSet(game_guid_set& s, game_guid_vetcor& v)
+void PutVectorInToSet(guid_set& s, guid_vetcor& v)
 {
     for (auto& it : v)
     {
@@ -35,13 +35,13 @@ void PutVectorInToSet(game_guid_set& s, game_guid_vetcor& v)
 
 TEST(TestSnowFlakeThreadSafe, JustGenerateTime)
 {
-    common::GameGuid id = sf.Generate();
+    common::Guid id = sf.Generate();
 }
 
 TEST(TestSnowFlakeThreadSafe, Generate)
 {
-    game_guid_set guid_set;
-    game_guid_vetcor first_v;
+    guid_set guid_set;
+    guid_vetcor first_v;
     EmplaceToVector(first_v);
     PutVectorInToSet(guid_set, first_v);
 
