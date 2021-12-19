@@ -12,7 +12,7 @@
 namespace master
 {
 
-class ScenesManager : public common::EntityClass
+class ScenesManager : public common::EntityHandle
 {
 public:
     ScenesManager();

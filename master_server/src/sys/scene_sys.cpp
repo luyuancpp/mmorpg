@@ -12,7 +12,7 @@ void EnterScene(entt::registry& reg, const EnterSceneParam& param)
     auto scene_entity = param.scene_entity_;
     auto& player_entities =  reg.get<PlayerEntities>(scene_entity);
     player_entities.emplace(param.enter_entity_);
-    reg.emplace<SceneEntityId>(param.enter_entity_, scene_entity);
+    reg.emplace<common::SceneEntity>(param.enter_entity_, scene_entity);
     auto p_server_data = reg.try_get<GameServerDataPtr>(scene_entity);
     if (nullptr == p_server_data)
     {
@@ -24,11 +24,11 @@ void EnterScene(entt::registry& reg, const EnterSceneParam& param)
 void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
 {
     auto leave_entity = param.leave_entity_;
-    auto& player_scene_entity = reg.get<SceneEntityId>(leave_entity);
+    auto& player_scene_entity = reg.get<common::SceneEntity>(leave_entity);
     auto scene_entity = player_scene_entity.scene_entity();
     auto& player_entities = reg.get<PlayerEntities>(scene_entity);
     player_entities.erase(leave_entity);
-    reg.remove<SceneEntityId>(leave_entity);
+    reg.remove<common::SceneEntity>(leave_entity);
     auto p_server_data = reg.try_get<GameServerDataPtr>(scene_entity);
     if (nullptr == p_server_data)
     {

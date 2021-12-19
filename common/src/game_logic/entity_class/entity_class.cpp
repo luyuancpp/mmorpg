@@ -4,10 +4,10 @@
 
 namespace common
 {
-    EntityClass::EntityClass()
+    EntityHandle::EntityHandle()
         : entity_(reg().create()){}
 
-    EntityClass::~EntityClass()
+    EntityHandle::~EntityHandle()
     {
         reg().destroy(entity_);
     }

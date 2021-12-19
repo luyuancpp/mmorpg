@@ -5,11 +5,11 @@
 
 namespace common
 {
-    class EntityClass
+    class EntityHandle
     {
     public:
-        EntityClass();
-        ~EntityClass();
+        EntityHandle();
+        ~EntityHandle();
         inline entt::entity entity()const { return entity_; }
     private:
         
