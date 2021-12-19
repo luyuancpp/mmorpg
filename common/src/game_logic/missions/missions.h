@@ -44,7 +44,7 @@ namespace common
     struct ConditionEvent
     {
         uint32_t condition_type_{ 0 };
-        UI32V condtion_ids_{};
+        UInt32Vector condtion_ids_{};
         uint32_t ammount_{ 1 };
     };
 
@@ -56,7 +56,7 @@ namespace common
     class Missions : public EntityClass
     {
     public:
-        using TypeMissionIdMap = std::unordered_map<uint32_t, UI32USet>;
+        using TypeMissionIdMap = std::unordered_map<uint32_t, UInt32Set>;
         Missions();
         Missions(IMissionConfig* config);
 
@@ -99,7 +99,7 @@ namespace common
         MissionMap missions_;
         CompleteMissionsId complete_ids_;  
         TypeMissionIdMap type_missions_;
-        UI32PairSet type_set_;
+        UInt32PairSet type_set_;
     };
 
     uint32_t RandomMision(const MakePlayerMissionParam& param, Missions& ms);
