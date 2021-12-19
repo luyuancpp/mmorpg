@@ -42,7 +42,7 @@ public:
         
     uint32_t CreateTeam(const CreateTeamParam& param);
     uint32_t JoinTeam(Guid team_id, Guid guid);
-    uint32_t JoinTeam(const UI64USet& member_list, Guid  team_id);
+    uint32_t JoinTeam(const UInt64Set& member_list, Guid  team_id);
     uint32_t LeaveTeam(Guid guid);
     uint32_t KickMember(Guid team_id, Guid current_leader_id, Guid  kick_guid);
     uint32_t DissMissTeam(Guid team_id, Guid current_leader_id);
@@ -54,7 +54,7 @@ public:
     void ClearApplyList(Guid team_id);
         
 private:
-    uint32_t CheckMemberInTeam(const UI64USet& member_list);
+    uint32_t CheckMemberInTeam(const UInt64Set& member_list);
     void EraseTeam(entt::entity team_id);
 
     Guid last_team_id_{ 0 };

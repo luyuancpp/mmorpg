@@ -66,9 +66,9 @@ namespace common
         std::string GetUpdateSet(const ::google::protobuf::Message& message, MYSQL* mysql);
 
         Fields fileds_;
-        StringV primarykeys_;
-        StringV indexes_;
-        StringV unique_keys_;
+        StringVector primarykeys_;
+        StringVector indexes_;
+        StringVector unique_keys_;
         std::string foreign_keys_;
         std::string foreign_references_;
         std::string auto_increase_key_;

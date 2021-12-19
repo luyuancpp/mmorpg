@@ -22,7 +22,7 @@ namespace common
     struct CreateTeamParam
     {
         Guid leader_id_{ 0 };
-        const UI64USet members;
+        const UInt64Set members;
     };
 
     struct TeamsParam
@@ -60,7 +60,7 @@ public:
         assert(applicant_ids_.size() == applicants_.size());  return applicants_.size();
     }
     Guid first_applicant_id()const;
-    const UI64USet& members()const { return members_; }
+    const UInt64Set& members()const { return members_; }
     inline PlayerIdTeamIdMap& playerid_team_map() { return teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_); }
 
     bool HasApplicant(Guid applicant_id) const { return applicants_.find(applicant_id) != applicants_.end(); }
@@ -97,10 +97,10 @@ private:
     entt::entity team_id_{};
     entt::entity teams_entity_id_{};//manager id
     Guid leader_id_{};
-    UI64USet members_;
+    UInt64Set members_;
     ApplyMembers applicants_;
-    PlayerIdsV applicant_ids_;
-    PlayerIdsV sequence_players_id_;
+    GuidVector applicant_ids_;
+    GuidVector sequence_players_id_;
     EventManagerPtr emp_;
     entt::registry* teams_registry_{ nullptr };
 };

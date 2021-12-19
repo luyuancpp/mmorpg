@@ -61,7 +61,7 @@ def getcpph(datastring, sheetname):
         s += '  using keydatastype = std::unordered_map<uint32_t, rowptr>;\n'
         s += '  static %s_config& GetSingleton(){thread_local %s_config singleton; return singleton;}\n' % (sheetname,sheetname)
         s += '  const %s_table& all()const{return data_;}\n'% (sheetname)
-        s += '  rowptr key_id(uint32_t keyid);\n'
+        s += '  rowptr get(uint32_t keyid);\n'
         counter = 0
         pd = ''
         for d in datastring:
@@ -110,7 +110,7 @@ def getcpp(datastring, sheetname):
         s += '}\n'
         
       
-        s += ' const %s_row* %s_config::key_id(uint32_t keyid)\n{\n' % (sheetname,sheetname)
+        s += ' const %s_row* %s_config::get(uint32_t keyid)\n{\n' % (sheetname,sheetname)
         s += '  auto it = key_data_.find(keyid);\n  return it == key_data_.end() ? nullptr : it->second;\n}\n'
 
         counter = 0

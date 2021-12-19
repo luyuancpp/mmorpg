@@ -67,14 +67,14 @@ namespace common
         {
             UI32PairSet::value_type p(mission_type, mission_sub_type);
             auto it = type_set_.find(p);
-            RetrunIfError(it != type_set_.end(), RET_MISSION_TYPE_REPTEATED);
+            CheckCondtion(it != type_set_.end(), RET_MISSION_TYPE_REPTEATED);
         }
         Mission m;
         m.set_id(mission_id);
         for (int32_t i = 0; i < conditions->size(); ++i)
         {
             auto condition_id = conditions->Get(i);
-            auto p = condition_config::GetSingleton().key_id(condition_id);
+            auto p = condition_config::GetSingleton().get(condition_id);
             if (nullptr == p)
             {
                 continue;
@@ -169,7 +169,7 @@ namespace common
         auto& cs = config_->condition_id(mission_id);
         for (int32_t i = 0; i < cs.size(); ++i)
         {
-            auto cp = condition_config::GetSingleton().key_id(cs.Get(i));
+            auto cp = condition_config::GetSingleton().get(cs.Get(i));
             if (nullptr == cp)
             {
                 continue;
@@ -198,7 +198,7 @@ namespace common
             {
                 continue;
             }
-            auto p = condition_config::GetSingleton().key_id(condition->id());
+            auto p = condition_config::GetSingleton().get(condition->id());
             if (nullptr == p)
             {
                 continue;
@@ -283,7 +283,7 @@ namespace common
     uint32_t RandomMision(const MakePlayerMissionParam& param, Missions& ms)
     {
         auto mission_id = param.mission_id_;
-        auto mrow = mission_config::GetSingleton().key_id(mission_id);
+        auto mrow = mission_config::GetSingleton().get(mission_id);
         if (nullptr == mrow)
         {
             return RET_TABLE_ID_ERROR;

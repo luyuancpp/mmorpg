@@ -20,7 +20,7 @@ TEST(Missions, MakeMission)
     reg().remove<CheckSubType>(ms.entity());
     MakeMissionParam param{ 
     mid,
-        mission_config::GetSingleton().key_id(mid)->condition_id()};
+        mission_config::GetSingleton().get(mid)->condition_id()};
     
     auto& data = mission_config::GetSingleton().all();
 
@@ -29,7 +29,7 @@ TEST(Missions, MakeMission)
     {
         auto id = data.data(i).id();
         param.mission_id_ = id;
-        param.condition_id_ = &mission_config::GetSingleton().key_id(id)->condition_id();
+        param.condition_id_ = &mission_config::GetSingleton().get(id)->condition_id();
         auto m = ms.MakeMission(param);
         ++s;
     }
@@ -46,7 +46,7 @@ TEST(Missions, RadomCondtion)
     uint32_t mid = 3;
     Missions ms;
     MakePlayerMissionParam param{ mid};    
-    auto cids = mission_config::GetSingleton().key_id(mid);    
+    auto cids = mission_config::GetSingleton().get(mid);    
     RandomMision(param, ms);
     auto& missions = ms.missions();
     auto it =  std::find(cids->random_condition_pool().begin(), cids->random_condition_pool().end(),
@@ -62,7 +62,7 @@ TEST(Missions, RepeatedMission)
         uint32_t mid = 1;
         MakeMissionParam param{ 
     mid,
-        mission_config::GetSingleton().key_id(mid)->condition_id()};
+        mission_config::GetSingleton().get(mid)->condition_id()};
         EXPECT_EQ(RET_OK, ms.MakeMission(param));
         EXPECT_EQ(RET_MISSION_ID_REPTEATED, ms.MakeMission(param));
     }
@@ -79,7 +79,7 @@ TEST(Missions, TriggerCondition)
 {
     Missions ms;
     uint32_t mid = 1;
-    //auto mrow = mission_config::GetSingleton().key_id(mid);
+    //auto mrow = mission_config::GetSingleton().get(mid);
     MakePlayerMissionParam param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     EXPECT_EQ(1, ms.type_set_size());
@@ -109,7 +109,7 @@ TEST(Missions, TypeSize)
 {
     Missions ms;
     uint32_t mid = 6;
-    //auto mrow = mission_config::GetSingleton().key_id(mid);
+    //auto mrow = mission_config::GetSingleton().get(mid);
     MakePlayerMissionParam param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     EXPECT_TRUE(ms.IsAcceptedMission(mid));
@@ -164,7 +164,7 @@ TEST(Missions, CompleteRemakeMission)
 {
     Missions ms;
     uint32_t mid = 4;
-    //auto mrow = mission_config::GetSingleton().key_id(mid);
+    //auto mrow = mission_config::GetSingleton().get(mid);
     MakePlayerMissionParam param{  mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     EXPECT_EQ(1, ms.type_set_size());
