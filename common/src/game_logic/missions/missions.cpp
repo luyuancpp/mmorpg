@@ -12,7 +12,7 @@ namespace common
     {
         for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
         {
-            type_missions_.emplace(i, UI32USet{});
+            type_missions_.emplace(i, UInt32Set{});
         }
         if (config_->HasMainSubTypeCheck())
         {
@@ -65,7 +65,7 @@ namespace common
             reg().any_of<CheckSubType>(entity());
         if (check_sub_mission)
         {
-            UI32PairSet::value_type p(mission_type, mission_sub_type);
+            UInt32PairSet::value_type p(mission_type, mission_sub_type);
             auto it = type_set_.find(p);
             CheckCondtion(it != type_set_.end(), RET_MISSION_TYPE_REPTEATED);
         }
@@ -86,7 +86,7 @@ namespace common
         missions_.mutable_missions()->insert({ mission_id, std::move(m) });
         if (check_sub_mission)
         {
-            UI32PairSet::value_type p(mission_type, mission_sub_type);
+            UInt32PairSet::value_type p(mission_type, mission_sub_type);
             type_set_.emplace(p);
         }
         return RET_OK;

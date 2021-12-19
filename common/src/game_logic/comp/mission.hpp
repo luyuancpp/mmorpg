@@ -45,12 +45,12 @@ enum eMissionStatus
 };
 
 using EntityV = std::vector<entt::entity>;
-using TypeMissionIdMap = std::unordered_map<uint32_t, UI32USet>;
+using TypeMissionIdMap = std::unordered_map<uint32_t, UInt32Set>;
 using MissionAutoRewardCallback = std::function<bool(uint32_t)>;
-using TempCompleteList = UI32USet;
-using TypeSubTypeSet = UI32PairSet;
+using TempCompleteList = UInt32Set;
+using TypeSubTypeSet = UInt32PairSet;
 
-struct NextTimeAcceptMission { UI32USet next_time_accept_mission_id_; };
+struct NextTimeAcceptMission { UInt32Set next_time_accept_mission_id_; };
 struct CheckSubType {};
 struct MissionReward {};
 }//namespace common
