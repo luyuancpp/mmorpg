@@ -152,7 +152,7 @@ namespace common
         return team.JoinTeam(guid);
     }
 
-    uint32_t Teams::JoinTeam(const UI64USet& member_list, Guid  team_id)
+    uint32_t Teams::JoinTeam(const UInt64Set& member_list, Guid  team_id)
     {
         GetTeamPtrReturnError;
         RET_CHECK_RET(CheckMemberInTeam(member_list));
@@ -163,7 +163,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Teams::CheckMemberInTeam(const UI64USet& member_list)
+    uint32_t Teams::CheckMemberInTeam(const UInt64Set& member_list)
     {
         for (auto& it : member_list)
         {

@@ -13,29 +13,27 @@
 
 namespace common
 {
-    using UiddHighType = uint64_t;
-    using UiddLowType = uint64_t; 
     using Guid = uint64_t;
 
-    using PlayerIdsV = std::vector<Guid>;
-    using StringV = std::vector<std::string>;
-    using I16V = std::vector<int16_t>;
-    using UI16V = std::vector<uint16_t>;
-    using I32V = std::vector<int32_t>;
-    using I64V = std::vector<int64_t>;
-    using UI32V = std::vector<uint32_t>;
-    using UI64V = std::vector<uint64_t>;
+    using GuidVector = std::vector<Guid>;
+    using StringVector = std::vector<std::string>;
+    using Int16Vector = std::vector<int16_t>;
+    using UInt16Vector = std::vector<uint16_t>;
+    using Int32Vector = std::vector<int32_t>;
+    using Int64Vector = std::vector<int64_t>;
+    using UInt32Vector = std::vector<uint32_t>;
+    using UInt64Vector = std::vector<uint64_t>;
 
-    using UI32USet = std::unordered_set<uint32_t>;
-    using UI64USet = std::unordered_set<uint64_t>;
+    using UInt32Set = std::unordered_set<uint32_t>;
+    using UInt64Set = std::unordered_set<uint64_t>;
 
-    using UI32Pair = std::pair<uint32_t, uint32_t>;
-    using UI32PairSet = std::set<UI32Pair>;
+    using UInt32Pair = std::pair<uint32_t, uint32_t>;
+    using UInt32PairSet = std::set<UInt32Pair>;
 
-    using EntitiesUSet = std::unordered_set<entt::entity>;
+    using EntitySet = std::unordered_set<entt::entity>;
 
-    using UI64UI64UMap = std::unordered_map<uint64_t, uint64_t>;
-    using GameGuidU64Map = std::unordered_map<Guid, uint64_t>;
+    using UInt64UInt64UnorderedMap = std::unordered_map<uint64_t, uint64_t>;
+    using GuidUint64Map = std::unordered_map<Guid, uint64_t>;
 
     static const Guid kEmptyGuid{ 0 };
 }//namespace common

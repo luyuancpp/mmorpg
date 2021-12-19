@@ -62,12 +62,18 @@ if (ret != RET_OK)\
 }\
 }
 
-#define  CheckReturnCloseureError(ret)\
-if (ret != RET_OK)\
+#define  CheckReturnCloseureError(return_code)\
+if (return_code != RET_OK)\
 {\
-    response->mutable_error()->set_error_no(ret);\
+    response->mutable_error()->set_error_no(return_code);\
     done->Run();\
     return;\
+}\
+
+#define CheckCondtion(condition, return_code)\
+if (condition)\
+{\
+        return  return_code; \
 }\
 
 #define  ReturnCloseureError(f)\
