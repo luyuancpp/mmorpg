@@ -74,8 +74,8 @@ namespace g2ms
         }
         else
         {
-            reg().remove<MainSceneServer>(server_entity);
-            reg().emplace<RoomSceneServer>(server_entity);
+            reg().remove<MainSceneServerComp>(server_entity);
+            reg().emplace<RoomSceneServerComp>(server_entity);
         }
         g_master_server->GatewayConnectGame(server_entity);
         LOG_INFO << "game connected " << request->node_id();

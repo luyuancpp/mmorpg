@@ -61,7 +61,7 @@ namespace master
     {
         auto e = reg().create();
         reg().emplace<SceneConfigComp>(e, param.scene_config_id_);
-        reg().emplace<MainScene>(e);
+        reg().emplace<MainSceneComp>(e);
         reg().emplace<PlayersComp>(e);
         auto& scene_config = reg().get<SceneConfigComp>(e);
         auto scene_guid = snow_flake_.Generate();
@@ -91,8 +91,8 @@ namespace master
         auto server_entity = param.server_entity_;
         auto& server_scenes = reg().get<SceneComp>(server_entity);
         server_scenes.AddScene(scene_config, scene_entity);
-        auto& p_server_data = reg().get<GameServerDataPtr>(server_entity);
-        reg().emplace<GameServerDataPtr>(scene_entity, p_server_data);
+        auto& p_server_data = reg().get<GSDataPtrComp>(server_entity);
+        reg().emplace<GSDataPtrComp>(scene_entity, p_server_data);
     }
 
 
@@ -118,12 +118,12 @@ namespace master
         auto to_server_entity = param.to_server_entity_;
         auto& from_scenes_id = reg().get<SceneComp>(param.from_server_entity_).confid_sceneslist();
         auto& to_scenes_id = reg().get<SceneComp>(to_server_entity);
-        auto& p_to_server_data = reg().get<GameServerDataPtr>(to_server_entity);
+        auto& p_to_server_data = reg().get<GSDataPtrComp>(to_server_entity);
         for (auto& it : from_scenes_id)
         {
             for (auto& ji : it.second)
             {
-                reg().emplace_or_replace<GameServerDataPtr>(ji, p_to_server_data);
+                reg().emplace_or_replace<GSDataPtrComp>(ji, p_to_server_data);
                 to_scenes_id.AddScene(it.first, ji);
             }
         }
@@ -136,7 +136,7 @@ namespace master
         auto& player_entities = reg().get<PlayersComp>(scene_entity);
         player_entities.emplace(param.enter_entity_);
         reg().emplace<common::SceneEntity>(param.enter_entity_, scene_entity);
-        auto p_server_data = reg().try_get<GameServerDataPtr>(scene_entity);
+        auto p_server_data = reg().try_get<GSDataPtrComp>(scene_entity);
         if (nullptr == p_server_data)
         {
             return;
@@ -152,7 +152,7 @@ namespace master
         auto& player_entities = reg().get<PlayersComp>(scene_entity);
         player_entities.erase(leave_entity);
         reg().remove<common::SceneEntity>(leave_entity);
-        auto p_server_data = reg().try_get<GameServerDataPtr>(scene_entity);
+        auto p_server_data = reg().try_get<GSDataPtrComp>(scene_entity);
         if (nullptr == p_server_data)
         {
             return;
@@ -223,7 +223,7 @@ namespace master
         RemoveScene(scene_config_id, scene_entity);
         auto scene_guid = reg().get<Guid>(scene_entity);
         scenes_map_.erase(scene_guid);
-        auto p_server_data = reg().get<GameServerDataPtr>(scene_entity);
+        auto p_server_data = reg().get<GSDataPtrComp>(scene_entity);
         reg().destroy(scene_entity);
         if (nullptr == p_server_data)
         {
