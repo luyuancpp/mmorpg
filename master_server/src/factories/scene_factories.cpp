@@ -16,39 +16,39 @@ namespace master
     void MakeScenes()
     {
         scenes_entity() = reg().create();
-        reg().emplace<Scenes>(scenes_entity());
+        reg().emplace<SceneComp>(scenes_entity());
         reg().emplace<SnowFlake>(scenes_entity());
-        reg().emplace<SceneMap>(scenes_entity());
+        reg().emplace<SceneMapComp>(scenes_entity());
     }
 
-    void OnDestroyScene(entt::registry& reg, entt::entity scene_entity, Scenes& scene_map)
+    void OnDestroyScene(entt::registry& reg, entt::entity scene_entity, SceneComp& scene_map)
     {
-        auto scene_config_id = reg.get<SceneConfig>(scene_entity).scene_config_id();
+        auto scene_config_id = reg.get<SceneConfigComp>(scene_entity).scene_config_id();
         scene_map.RemoveScene(scene_config_id, scene_entity);
         auto scene_guid = reg.get<Guid>(scene_entity);
-        reg.get<SceneMap>(scenes_entity()).erase(scene_guid);
+        reg.get<SceneMapComp>(scenes_entity()).erase(scene_guid);
         auto p_server_data = reg.get<GameServerDataPtr>(scene_entity);
         reg.destroy(scene_entity);
         if (nullptr == p_server_data)
         {
             return;
         }
-        auto& server_scene = reg.get<Scenes>(p_server_data->server_entity());
+        auto& server_scene = reg.get<SceneComp>(p_server_data->server_entity());
         server_scene.RemoveScene(scene_config_id, scene_entity);
     }
 
     entt::entity MakeMainScene(entt::registry& reg, const MakeSceneParam& param)
     {
         auto e = reg.create();
-        reg.emplace<SceneConfig>(e, param.scene_config_id_);
+        reg.emplace<SceneConfigComp>(e, param.scene_config_id_);
         reg.emplace<MainScene>(e);
-        reg.emplace<PlayerEntities>(e);
-        auto& scene_config = reg.get<SceneConfig>(e);
-        auto& c = reg.get<Scenes>(scenes_entity());
+        reg.emplace<PlayersComp>(e);
+        auto& scene_config = reg.get<SceneConfigComp>(e);
+        auto& c = reg.get<SceneComp>(scenes_entity());
         auto& sn = reg.get<SnowFlake>(scenes_entity());
         auto scene_guid = sn.Generate();
         reg.emplace<Guid>(e, scene_guid);
-        reg.get<SceneMap>(scenes_entity()).emplace(scene_guid, e);
+        reg.get<SceneMapComp>(scenes_entity()).emplace(scene_guid, e);
         c.AddScene(scene_config.scene_config_id(), e);
         return e;
     }
@@ -63,7 +63,7 @@ namespace master
         reg.emplace<GameServerDataPtr>(e, p_server_data);
         reg.emplace<GameServerStatusNormal>(e);
         reg.emplace<GameNoPressure>(e);
-        reg.emplace<Scenes>(e);
+        reg.emplace<SceneComp>(e);
         return e;
     }
 

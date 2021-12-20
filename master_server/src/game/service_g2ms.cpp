@@ -68,7 +68,7 @@ namespace g2ms
                     continue;
                 }
                 auto scene_info = response->add_scenes_info();
-                scene_info->set_scene_config_id(reg().get<SceneConfig>(scene_entity).scene_config_id());
+                scene_info->set_scene_config_id(reg().get<SceneConfigComp>(scene_entity).scene_config_id());
                 scene_info->set_scene_id(reg().get<Guid>(scene_entity));
             }
         }

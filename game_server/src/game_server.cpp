@@ -144,7 +144,7 @@ void GameServer::receive(const RpcClientConnectionES& es)
 
 void GameServer::InitGlobalEntities()
 {
-    reg().emplace<SceneMap>(global_entity());
+    reg().emplace<SceneMapComp>(global_entity());
 }
 
 void GameServer::InitRoomMasters(const deploy::ServerInfoResponse* resp)
