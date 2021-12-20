@@ -10,7 +10,7 @@ namespace master
 void EnterScene(entt::registry& reg, const EnterSceneParam& param)
 {
     auto scene_entity = param.scene_entity_;
-    auto& player_entities =  reg.get<PlayerEntities>(scene_entity);
+    auto& player_entities =  reg.get<PlayersComp>(scene_entity);
     player_entities.emplace(param.enter_entity_);
     reg.emplace<common::SceneEntity>(param.enter_entity_, scene_entity);
     auto p_server_data = reg.try_get<GameServerDataPtr>(scene_entity);
@@ -26,7 +26,7 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
     auto leave_entity = param.leave_entity_;
     auto& player_scene_entity = reg.get<common::SceneEntity>(leave_entity);
     auto scene_entity = player_scene_entity.scene_entity();
-    auto& player_entities = reg.get<PlayerEntities>(scene_entity);
+    auto& player_entities = reg.get<PlayersComp>(scene_entity);
     player_entities.erase(leave_entity);
     reg.remove<common::SceneEntity>(leave_entity);
     auto p_server_data = reg.try_get<GameServerDataPtr>(scene_entity);
@@ -45,7 +45,7 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
     std::size_t min_player_size = UINT64_MAX;
     for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
     {
-        auto& scenes = reg.get<Scenes>(e);
+        auto& scenes = reg.get<SceneComp>(e);
         if (!scenes.HasSceneConfig(scene_config_id))
         {
             continue;
@@ -64,11 +64,11 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
     {
         return scene_entity;
     }
-    auto& scenes = reg.get<Scenes>(server_entity);
+    auto& scenes = reg.get<SceneComp>(server_entity);
     std::size_t scene_min_player_size = UINT64_MAX;
-    for (auto& ji : scenes.scenes_config_id(scene_config_id))
+    for (auto& ji : scenes.confid_sceneslist(scene_config_id))
     {
-        std::size_t scene_player_size = reg.get<PlayerEntities>(ji).size();
+        std::size_t scene_player_size = reg.get<PlayersComp>(ji).size();
         if (scene_player_size >= scene_min_player_size)
         {
             continue;

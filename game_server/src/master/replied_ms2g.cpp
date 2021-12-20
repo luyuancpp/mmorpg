@@ -27,12 +27,12 @@ void RepliedMs2g::StartGameServerMasterReplied(StartGameMasterRpcRC cp)
         }
     }
 
-    auto& scenemap = reg().get<SceneMap>(game::global_entity());
+    auto& scenemap = reg().get<SceneMapComp>(game::global_entity());
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
     {
         auto& pb = rsp->scenes_info(i);
         auto e = reg().create();
-        reg().emplace<SceneConfig>(e, pb.scene_config_id());
+        reg().emplace<SceneConfigComp>(e, pb.scene_config_id());
         reg().emplace<Guid>(e, pb.scene_id());
         scenemap.emplace(pb.scene_id(), e);
     }
