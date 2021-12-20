@@ -10,15 +10,15 @@ namespace master
 void EnterScene(entt::registry& reg, const EnterSceneParam& param)
 {
     auto scene_entity = param.scene_entity_;
-    auto& player_entities =  reg.get<PlayersComp>(scene_entity);
-    player_entities.emplace(param.enter_entity_);
+    auto& players =  reg.get<PlayersComp>(scene_entity);
+    players.emplace(param.enter_entity_);
     reg.emplace<common::SceneEntity>(param.enter_entity_, scene_entity);
-    auto p_server_data = reg.try_get<GSDataPtrComp>(scene_entity);
-    if (nullptr == p_server_data)
+    auto p_gs_data_comp = reg.try_get<GSDataPtrComp>(scene_entity);
+    if (nullptr == p_gs_data_comp)
     {
         return;
     }
-    (*p_server_data)->OnPlayerEnter();
+    (*p_gs_data_comp)->OnPlayerEnter();
 }
 
 void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
@@ -26,15 +26,15 @@ void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
     auto leave_entity = param.leave_entity_;
     auto& player_scene_entity = reg.get<common::SceneEntity>(leave_entity);
     auto scene_entity = player_scene_entity.scene_entity();
-    auto& player_entities = reg.get<PlayersComp>(scene_entity);
-    player_entities.erase(leave_entity);
+    auto& players = reg.get<PlayersComp>(scene_entity);
+    players.erase(leave_entity);
     reg.remove<common::SceneEntity>(leave_entity);
-    auto p_server_data = reg.try_get<GSDataPtrComp>(scene_entity);
-    if (nullptr == p_server_data)
+    auto p_gs_data_comp = reg.try_get<GSDataPtrComp>(scene_entity);
+    if (nullptr == p_gs_data_comp)
     {
         return;
     }
-    (*p_server_data)->OnPlayerLeave();
+    (*p_gs_data_comp)->OnPlayerLeave();
 }
 
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
