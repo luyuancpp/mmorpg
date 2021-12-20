@@ -13,15 +13,7 @@ namespace common
     using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
     using PlayersComp = EntitySet;//弱引用，要解除玩家和场景的耦合
 
-    class SceneConfigComp
-    {
-    public:
-        SceneConfigComp(uint32_t scene_config_id) : scene_config_id_(scene_config_id) {}
-        inline void set_scene_config_id(uint32_t scene_config_id) { scene_config_id_ = scene_config_id; }
-        inline  uint32_t scene_config_id()const { return scene_config_id_; }
-    private:
-        uint32_t scene_config_id_{ 0 };
-    };
+    using SceneConfigComp = uint32_t;
 
     class SceneEntity
     {

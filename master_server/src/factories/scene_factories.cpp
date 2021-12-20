@@ -23,7 +23,7 @@ namespace master
 
     void OnDestroyScene(entt::registry& reg, entt::entity scene_entity, SceneComp& scene_map)
     {
-        auto scene_config_id = reg.get<SceneConfigComp>(scene_entity).scene_config_id();
+        auto scene_config_id = reg.get<SceneConfigComp>(scene_entity);
         scene_map.RemoveScene(scene_config_id, scene_entity);
         auto scene_guid = reg.get<Guid>(scene_entity);
         reg.get<SceneMapComp>(scenes_entity()).erase(scene_guid);
@@ -49,7 +49,7 @@ namespace master
         auto scene_guid = sn.Generate();
         reg.emplace<Guid>(e, scene_guid);
         reg.get<SceneMapComp>(scenes_entity()).emplace(scene_guid, e);
-        c.AddScene(scene_config.scene_config_id(), e);
+        c.AddScene(scene_config, e);
         return e;
     }
 

@@ -67,7 +67,7 @@ namespace master
         auto scene_guid = snow_flake_.Generate();
         reg().emplace<Guid>(e, scene_guid);
         scenes_map_.emplace(scene_guid, e);
-        AddScene(scene_config.scene_config_id(), e);
+        AddScene(scene_config, e);
         return e;
     }
 
@@ -90,7 +90,7 @@ namespace master
         auto& scene_config = reg().get<SceneConfigComp>(scene_entity);
         auto server_entity = param.server_entity_;
         auto& server_scenes = reg().get<SceneComp>(server_entity);
-        server_scenes.AddScene(scene_config.scene_config_id(), scene_entity);
+        server_scenes.AddScene(scene_config, scene_entity);
         auto& p_server_data = reg().get<GameServerDataPtr>(server_entity);
         reg().emplace<GameServerDataPtr>(scene_entity, p_server_data);
     }
@@ -219,7 +219,7 @@ namespace master
 
     void ScenesManager::OnDestroyScene(entt::entity scene_entity)
     {
-        auto scene_config_id = reg().get<SceneConfigComp>(scene_entity).scene_config_id();
+        auto scene_config_id = reg().get<SceneConfigComp>(scene_entity);
         RemoveScene(scene_config_id, scene_entity);
         auto scene_guid = reg().get<Guid>(scene_entity);
         scenes_map_.erase(scene_guid);
