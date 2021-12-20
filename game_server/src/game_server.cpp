@@ -7,7 +7,7 @@
 #include "src/game_config/region_config.h"
 
 #include "src/factories/server_global_entity.hpp"
-#include "src/game_logic/comp/server_list.hpp"
+#include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/enum/server_enum.h"
 #include "src/game_logic/game_registry.h"
 #include "src/master/replied_ms2g.h"
