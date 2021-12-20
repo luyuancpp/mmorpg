@@ -1,6 +1,6 @@
 #include "scene_sys.hpp"
 
-#include "src/game_logic/comp/server_list.hpp"
+#include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/factories/scene_factories.hpp"
 
 using namespace common;
