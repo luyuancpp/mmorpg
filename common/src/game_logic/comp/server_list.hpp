@@ -12,7 +12,6 @@ namespace common
     using SceneMapComp = std::unordered_map<Guid, entt::entity>;
     using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
     using PlayersComp = EntitySet;//弱引用，要解除玩家和场景的耦合
-
     using SceneConfigComp = uint32_t;
 
     class SceneEntity
@@ -98,21 +97,18 @@ namespace common
         EntitySet sceneids_;
     };
 
-    struct MainScene {};
-    struct RoomScene {};
+    struct MainSceneComp {};
+    struct RoomSceneComp {};
 
-    struct MainSceneServer {};
-    struct RoomSceneServer {};
+    struct MainSceneServerComp {};
+    struct RoomSceneServerComp {};
 
-    struct GameServerStatusNormal{};//game server 正常状态
-    struct GameServerMainTain{};//game server 维护状态
-    struct GameServerCrash{};//崩溃状态
+    struct GSNormalComp{};//game server 正常状态
+    struct GSMainTainComp{};//game server 维护状态
+    struct GSCrashComp{};//崩溃状态
 
-    struct ServerUpdateNotice {};
-    struct ServerMaintainNotice {};
-
-    struct GameNoPressure {};//
-    struct GamePressure {};//
+    struct NoPressureComp {};//
+    struct PressureComp {};//
 
     class GameServerData
     {
@@ -131,7 +127,7 @@ namespace common
         uint32_t player_size_{ 0 };
     };
 
-    using GameServerDataPtr = std::shared_ptr<GameServerData>;
+    using GSDataPtrComp = std::shared_ptr<GameServerData>;
 
     struct MainSceneServerSize
     {
