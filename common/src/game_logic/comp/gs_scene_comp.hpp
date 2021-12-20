@@ -129,11 +129,6 @@ namespace common
 
     using GSDataPtrComp = std::shared_ptr<GameServerData>;
 
-    struct MainSceneServerSize
-    {
-        uint32_t server_size_{ 0 };
-    };
-
     class GameServerEntity
     {
     public:
