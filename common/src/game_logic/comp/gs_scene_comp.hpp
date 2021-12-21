@@ -110,7 +110,7 @@ namespace common
     struct NoPressureComp {};//
     struct PressureComp {};//
 
-    class GameServerData
+    class GSData
     {
     public:
         inline void set_node_id(uint32_t node_id) { node_id_ = node_id; }
@@ -127,7 +127,7 @@ namespace common
         uint32_t player_size_{ 0 };
     };
 
-    using GSDataPtrComp = std::shared_ptr<GameServerData>;
+    using GSDataPtrComp = std::shared_ptr<GSData>;
 
     class GameServerEntity
     {
