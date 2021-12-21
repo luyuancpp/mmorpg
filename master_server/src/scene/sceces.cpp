@@ -47,7 +47,7 @@ namespace master
         return it->second.size();
     }
 
-    bool ScenesManager::scene_config_empty(uint32_t scene_config_id)
+    bool ScenesManager::is_scene_empty(uint32_t scene_config_id)
     {
         auto it = confid_scenelist_.find(scene_config_id);
         if (it == confid_scenelist_.end())
@@ -104,7 +104,7 @@ namespace master
     void ScenesManager::DestroyServer(const DestroyServerParam& param)
     {
         auto server_entity = param.server_entity_;
-        auto server_scenes = reg().get<SceneComp>(server_entity).scenesids_copy();
+        auto server_scenes = reg().get<SceneComp>(server_entity).scenesids_clone();
         DestroySceneParam destroy_param;
         for (auto& it : server_scenes)
         {

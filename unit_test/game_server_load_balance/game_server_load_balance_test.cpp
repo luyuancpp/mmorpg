@@ -128,7 +128,7 @@ TEST(GameServer, DestroyScene)
     dparam.scene_entity_ = scene_entity;
     sm.DestroyScene(dparam);
     EXPECT_TRUE(sm.scenes_empty());
-    EXPECT_TRUE(sm.scene_config_empty(cparam.scene_config_id_));
+    EXPECT_TRUE(sm.is_scene_empty(cparam.scene_config_id_));
     EXPECT_TRUE(server_scenes.scenes_empty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
     EXPECT_FALSE(reg().valid(scene_entity));
@@ -406,7 +406,7 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
     }
 
     MaintainServerParam maintain;
-    maintain.maintain_server_entity_ = *server_entities.begin();
+    maintain.maintain_entity_ = *server_entities.begin();
     ServerMaintain(reg(), maintain);
 
     uint32_t scene_config_id0 = 0;
@@ -417,7 +417,7 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
     {
         auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
         EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != entt::null);
-        EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != maintain.maintain_server_entity_);
+        EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != maintain.maintain_entity_);
     }
 }
 
@@ -529,7 +529,7 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
     }
 
     ServerCrashParam crash1;
-    crash1.crash_server_entity_ = *server_entities.begin();
+    crash1.crash_entity_ = *server_entities.begin();
     ServerCrashed(reg(), crash1);
 
     uint32_t scene_config_id0 = 0;
@@ -540,7 +540,7 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
     {
         auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
         EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != entt::null);
-        EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != crash1.crash_server_entity_);
+        EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != crash1.crash_entity_);
     }
 
 }
@@ -594,7 +594,7 @@ TEST(GameServer, CrashMovePlayer2NewServer)
     }
 
     ServerCrashParam crash1;
-    crash1.crash_server_entity_ = *server_entities.begin();
+    crash1.crash_entity_ = *server_entities.begin();
     ServerCrashed(reg(), crash1);
 
     ReplaceCrashServerParam replace_crash;

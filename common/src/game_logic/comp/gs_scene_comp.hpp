@@ -40,7 +40,7 @@ namespace common
             }
             return it->second;
         }
-        EntitySet scenesids_copy() { return sceneids_; }
+        EntitySet scenesids_clone() { return sceneids_; }
         entt::entity scenelist(uint32_t scene_config_id)const
         {
             auto it = confid_scenelist_.find(scene_config_id);

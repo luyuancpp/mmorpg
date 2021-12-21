@@ -27,7 +27,7 @@ public:
     std::size_t scenes_size() const { return scenes_.size(); }
     std::size_t scenes_map_size() const { return scenes_map_.size(); }
 
-    bool scene_config_empty(uint32_t scene_config_id);
+    bool is_scene_empty(uint32_t scene_config_id);
     inline bool scenes_empty() const { return scenes_.empty(); }
     inline bool HasSceneConfig(uint32_t scene_config_id) { return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
 

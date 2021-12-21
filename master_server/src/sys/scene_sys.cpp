@@ -114,16 +114,14 @@ void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param
 
 void ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
 {
-    reg.remove<GSNormalComp>(param.crash_server_entity_);
-    reg.emplace<GSCrashComp>(param.crash_server_entity_);
+    reg.remove<GSNormalComp>(param.crash_entity_);
+    reg.emplace<GSCrashComp>(param.crash_entity_);
 }
-
-
 
 void ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
 {
-    reg.remove<GSNormalComp>(param.maintain_server_entity_);
-    reg.emplace<GSMainTainComp>(param.maintain_server_entity_);
+    reg.remove<GSNormalComp>(param.maintain_entity_);
+    reg.emplace<GSMainTainComp>(param.maintain_entity_);
 }
 }//namespace master
 
