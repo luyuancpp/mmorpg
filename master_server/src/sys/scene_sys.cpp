@@ -39,19 +39,19 @@ void LeaveScene(const LeaveSceneParam& param)
 }
 
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
-entt::entity GetWeightRoundRobinSceneT(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+entt::entity GetWeightRoundRobinSceneT(const GetWeightRoundRobinSceneParam& param)
 {
     auto scene_config_id = param.scene_config_id_;
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
-    for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
+    for (auto e : reg().view<ServerType, ServerStatus, ServerPressure>())
     {
-        auto& scenes = reg.get<SceneComp>(e);
+        auto& scenes = reg().get<SceneComp>(e);
         if (!scenes.HasSceneConfig(scene_config_id))
         {
             continue;
         }
-        auto& server_data = reg.get<GSDataPtrComp>(e);
+        auto& server_data = reg().get<GSDataPtrComp>(e);
         std::size_t server_player_size = (*server_data).player_size();
         if (server_player_size >= min_player_size)
         {
@@ -65,11 +65,11 @@ entt::entity GetWeightRoundRobinSceneT(entt::registry& reg, const GetWeightRound
     {
         return scene_entity;
     }
-    auto& scenes = reg.get<SceneComp>(server_entity);
+    auto& scenes = reg().get<SceneComp>(server_entity);
     std::size_t scene_min_player_size = UINT64_MAX;
     for (auto& ji : scenes.confid_sceneslist(scene_config_id))
     {
-        std::size_t scene_player_size = reg.get<PlayersComp>(ji).size();
+        std::size_t scene_player_size = reg().get<PlayersComp>(ji).size();
         if (scene_player_size >= scene_min_player_size)
         {
             continue;
@@ -80,24 +80,24 @@ entt::entity GetWeightRoundRobinSceneT(entt::registry& reg, const GetWeightRound
     return scene_entity;
 }
 
-entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+entt::entity GetWeightRoundRobinMainScene(const GetWeightRoundRobinSceneParam& param)
 {
-    auto scene_entity = GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, NoPressureComp>(reg, param);
+    auto scene_entity = GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, NoPressureComp>( param);
     if (entt::null != scene_entity)
     {
         return scene_entity;
     }
-    return GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, PressureComp>(reg, param);
+    return GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, PressureComp>( param);
 }
 
-entt::entity GetWeightRoundRobinRoomScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+entt::entity GetWeightRoundRobinRoomScene(const GetWeightRoundRobinSceneParam& param)
 {
-    auto scene_entity = GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, NoPressureComp>(reg, param);
+    auto scene_entity = GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, NoPressureComp>( param);
     if (entt::null != scene_entity)
     {
         return scene_entity;
     }
-    return GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, PressureComp>(reg, param);
+    return GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, PressureComp>(param);
 }
 
 void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
