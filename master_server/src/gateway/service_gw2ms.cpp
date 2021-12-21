@@ -79,7 +79,7 @@ namespace gw2ms
 
         LeaveSceneParam leave_scene;
         leave_scene.leave_entity_ = player_entity;
-        LeaveScene(reg(), leave_scene);
+        LeaveScene(leave_scene);
 
         auto guid = reg().get<Guid>(player_entity);
         assert(MasterPlayerList::GetSingleton().HasPlayer(guid));
