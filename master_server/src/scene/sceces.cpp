@@ -77,14 +77,14 @@ namespace master
         main_scene_param.op_ = param.op_;
         main_scene_param.scene_config_id_ = param.scene_config_id_;
         auto e = MakeMainScene(main_scene_param);
-        PutScene2GameServerParam put_param;
+        PutScene2GSParam put_param;
         put_param.scene_entity_ = e;
         put_param.server_entity_ = param.server_entity_;
         PutScene2GameServer(put_param);
         return e;
     }
 
-    void ScenesManager::PutScene2GameServer(const PutScene2GameServerParam& param)
+    void ScenesManager::PutScene2GameServer(const PutScene2GSParam& param)
     {
         auto scene_entity = param.scene_entity_;
         auto& scene_config = reg().get<SceneConfigComp>(scene_entity);

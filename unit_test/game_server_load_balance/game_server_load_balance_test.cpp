@@ -35,12 +35,12 @@ TEST(GameServer, MakeScene2Sever )
 {
     ScenesManager sm;
 
-    MakeGameServerParam param1;
+    MakeGSParam param1;
     param1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneGS(reg(), param1);
 
-    MakeGameServerParam param2;
+    MakeGSParam param2;
     param2.node_id_ = 1;
     auto server_entity2 = MakeMainSceneGS(reg(), param2);
 
@@ -80,7 +80,7 @@ TEST(GameServer, PutScene2Sever)
 {
     ScenesManager sm;
 
-    MakeGameServerParam param1;
+    MakeGSParam param1;
     param1.node_id_ = 1;
 
     MakeMainSceneP cparam;
@@ -88,7 +88,7 @@ TEST(GameServer, PutScene2Sever)
 
     auto server_entity1 = MakeMainSceneGS(reg(), param1);
         
-    PutScene2GameServerParam put_param;
+    PutScene2GSParam put_param;
     put_param.scene_entity_ = scene_entity;
     put_param.server_entity_ = server_entity1;
     sm.PutScene2GameServer(put_param);
@@ -104,7 +104,7 @@ TEST(GameServer, DestroyScene)
 {
     ScenesManager sm;
 
-    MakeGameServerParam param1;
+    MakeGSParam param1;
     param1.node_id_ = 1;
 
     MakeMainSceneP cparam;
@@ -112,7 +112,7 @@ TEST(GameServer, DestroyScene)
 
     auto server_entity1 = MakeMainSceneGS(reg(), param1);
 
-    PutScene2GameServerParam put_param;
+    PutScene2GSParam put_param;
     put_param.scene_entity_ = scene_entity;
     put_param.server_entity_ = server_entity1;
     sm.PutScene2GameServer(put_param);
@@ -138,12 +138,12 @@ TEST(GameServer, DestroySever)
 {
     ScenesManager sm;
 
-    MakeGameServerParam param1;
+    MakeGSParam param1;
     param1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneGS(reg(), param1);
 
-    MakeGameServerParam param2;
+    MakeGSParam param2;
     param2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneGS(reg(), param2);
 
@@ -206,12 +206,12 @@ TEST(GameServer, ServerScene2Sever)
 {
     ScenesManager sm;
 
-    MakeGameServerParam cgs1;
+    MakeGSParam cgs1;
     cgs1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneGS(reg(), cgs1);
 
-    MakeGameServerParam cgs2;
+    MakeGSParam cgs2;
     cgs2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneGS(reg(), cgs2);
 
@@ -268,12 +268,12 @@ TEST(GameServer, ServerScene2Sever)
 TEST(GameServer, PlayerLeaveEnterScene)
 {
     ScenesManager sm;
-    MakeGameServerParam cgs1;
+    MakeGSParam cgs1;
     cgs1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneGS(reg(), cgs1);
 
-    MakeGameServerParam cgs2;
+    MakeGSParam cgs2;
     cgs2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneGS(reg(), cgs2);
 
@@ -363,7 +363,7 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
-    MakeGameServerParam cgs1;
+    MakeGSParam cgs1;
     EntitySet scene_entities;
 
     for (uint32_t i = 0; i < server_size; ++i)
@@ -424,12 +424,12 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
 TEST(GameServer, CompelChangeScene)
 {
     ScenesManager sm;
-    MakeGameServerParam cgs1;
+    MakeGSParam cgs1;
     cgs1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneGS(reg(), cgs1);
 
-    MakeGameServerParam cgs2;
+    MakeGSParam cgs2;
     cgs2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneGS(reg(), cgs2);
 
@@ -486,7 +486,7 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
-    MakeGameServerParam cgs1;
+    MakeGSParam cgs1;
     EntitySet scene_entities;
 
     for (uint32_t i = 0; i < server_size; ++i)
@@ -552,7 +552,7 @@ TEST(GameServer, CrashMovePlayer2NewServer)
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
-    MakeGameServerParam cgs1;
+    MakeGSParam cgs1;
     EntitySet scene_entities;
     entt::entity first_scene_id = entt::null;
 
@@ -633,7 +633,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
     EntitySet server_entities;
     uint32_t server_size = 10;
     uint32_t per_server_scene = 10;
-    MakeGameServerParam cgs1;
+    MakeGSParam cgs1;
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
@@ -757,7 +757,7 @@ TEST(GameServer, ServerEnterLeavePressure)
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 10;
-    MakeGameServerParam cgs1;
+    MakeGSParam cgs1;
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
