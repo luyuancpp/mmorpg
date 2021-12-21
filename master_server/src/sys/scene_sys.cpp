@@ -39,7 +39,7 @@ void LeaveScene(const LeaveSceneParam& param)
 }
 
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
-entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
+entt::entity GetWeightRoundRobinSceneT(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
     auto scene_config_id = param.scene_config_id_;
     entt::entity server_entity{ entt::null };
@@ -82,22 +82,22 @@ entt::entity GetWeightRoundRobinMainSceneT(entt::registry& reg, const GetWeightR
 
 entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
-    auto scene_entity = GetWeightRoundRobinMainSceneT<MainSceneServerComp, GSNormalComp, NoPressureComp>(reg, param);
+    auto scene_entity = GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, NoPressureComp>(reg, param);
     if (entt::null != scene_entity)
     {
         return scene_entity;
     }
-    return GetWeightRoundRobinMainSceneT<MainSceneServerComp, GSNormalComp, PressureComp>(reg, param);
+    return GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, PressureComp>(reg, param);
 }
 
 entt::entity GetWeightRoundRobinRoomScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param)
 {
-    auto scene_entity = GetWeightRoundRobinMainSceneT<RoomSceneServerComp, GSNormalComp, NoPressureComp>(reg, param);
+    auto scene_entity = GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, NoPressureComp>(reg, param);
     if (entt::null != scene_entity)
     {
         return scene_entity;
     }
-    return GetWeightRoundRobinMainSceneT<RoomSceneServerComp, GSNormalComp, PressureComp>(reg, param);
+    return GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, PressureComp>(reg, param);
 }
 
 void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
