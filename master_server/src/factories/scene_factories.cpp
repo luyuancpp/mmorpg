@@ -37,7 +37,7 @@ namespace master
         server_scene.RemoveScene(scene_config_id, scene_entity);
     }
 
-    entt::entity MakeMainScene(entt::registry& reg, const MakeSceneParam& param)
+    entt::entity MakeMainScene(entt::registry& reg, const MakeMainSceneP& param)
     {
         auto e = reg.create();
         reg.emplace<SceneConfigComp>(e, param.scene_config_id_);

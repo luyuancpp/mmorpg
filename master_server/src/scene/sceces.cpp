@@ -57,7 +57,7 @@ namespace master
         return it->second.empty();
     }
 
-    entt::entity ScenesManager::MakeMainScene(const MakeSceneParam& param)
+    entt::entity ScenesManager::MakeMainScene(const MakeMainSceneP& param)
     {
         auto e = reg().create();
         reg().emplace<SceneConfigComp>(e, param.scene_config_id_);
@@ -71,9 +71,9 @@ namespace master
         return e;
     }
 
-    entt::entity ScenesManager::MakeScene2GameServer(const MakeScene2GameServerParam& param)
+    entt::entity ScenesManager::MakeSceneGSScene(const MakeGSSceneP& param)
     {
-        MakeSceneParam main_scene_param;
+        MakeMainSceneP main_scene_param;
         main_scene_param.op_ = param.op_;
         main_scene_param.scene_config_id_ = param.scene_config_id_;
         auto e = MakeMainScene(main_scene_param);
@@ -171,10 +171,10 @@ namespace master
 
         if (!new_server_scene.HasSceneConfig(param.scene_config_id_))
         {
-            MakeScene2GameServerParam make_server_scene_param;
+            MakeGSSceneP make_server_scene_param;
             make_server_scene_param.scene_config_id_ = scene_config_id;
             make_server_scene_param.server_entity_ = new_server_entity;
-            server_scene_enitity = MakeScene2GameServer(make_server_scene_param);
+            server_scene_enitity = MakeSceneGSScene(make_server_scene_param);
         }
         else
         {
