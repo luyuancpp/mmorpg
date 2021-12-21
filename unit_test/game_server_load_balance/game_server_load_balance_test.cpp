@@ -127,8 +127,8 @@ TEST(GameServer, DestroyScene)
     DestroySceneParam dparam;
     dparam.scene_entity_ = scene_entity;
     sm.DestroyScene(dparam);
-    EXPECT_TRUE(sm.scenes_empty());
-    EXPECT_TRUE(sm.is_scene_empty(cparam.scene_config_id_));
+    EXPECT_TRUE(sm.Empty());
+    EXPECT_TRUE(sm.IsConfigSceneEmpty(cparam.scene_config_id_));
     EXPECT_TRUE(server_scenes.scenes_empty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
     EXPECT_FALSE(reg().valid(scene_entity));
@@ -245,10 +245,10 @@ TEST(GameServer, ServerScene2Sever)
     EXPECT_EQ(reg().get<common::GSDataPtrComp>(scene_id1)->node_id(), cgs1.node_id_);
     EXPECT_EQ(reg().get<common::GSDataPtrComp>(scene_id2)->node_id(), cgs2.node_id_);
 
-    MoveServerScene2ServerParam move_scene_param;
+    MoveServerScene2ServerSceneP move_scene_param;
     move_scene_param.from_server_entity_ = server_entity1;
     move_scene_param.to_server_entity_ = server_entity2;
-    sm.MoveServerScene2Server(move_scene_param);
+    sm.MoveServerScene2ServerScene(move_scene_param);
 
     EXPECT_TRUE(reg().valid(server_entity1));
     EXPECT_TRUE(reg().valid(scene_id1));

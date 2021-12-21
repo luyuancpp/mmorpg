@@ -27,12 +27,11 @@ public:
     std::size_t scenes_size() const { return scenes_.size(); }
     std::size_t scenes_map_size() const { return scenes_map_.size(); }
 
-    bool is_scene_empty(uint32_t scene_config_id);
-    inline bool scenes_empty() const { return scenes_.empty(); }
+    bool IsConfigSceneEmpty(uint32_t scene_config_id);
+    inline bool Empty() const { return scenes_.empty(); }
     inline bool HasSceneConfig(uint32_t scene_config_id) { return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
 
     entt::entity MakeMainScene(const MakeSceneParam& param);
-
     entt::entity MakeScene2GameServer(const MakeScene2GameServerParam& param);
 
     void PutScene2GameServer(const PutScene2GameServerParam& param);
@@ -40,7 +39,7 @@ public:
     void DestroyScene(const DestroySceneParam& param);
     void DestroyServer(const DestroyServerParam& param);
 
-    void MoveServerScene2Server(const MoveServerScene2ServerParam& param);
+    void MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param);
 
     void EnterScene(const EnterSceneParam& param);
 
