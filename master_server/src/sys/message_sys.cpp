@@ -16,7 +16,7 @@ namespace master
         const std::string& stub,
         entt::entity player_entity)
 {
-    auto ptr_gse = reg().try_get<GameServerEntity>(player_entity);
+    auto ptr_gse = reg().try_get<GSEntity>(player_entity);
     if (nullptr == ptr_gse)
     {
         LOG_ERROR << "player send message empty server:" << reg().get<Guid>(player_entity)

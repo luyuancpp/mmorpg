@@ -5,10 +5,10 @@
 
 namespace deploy
 {
-    class ReuseGameServerId
+    class ReuseGSId
     {
     public:
-        using GameServerId = std::unordered_map<std::string, uint32_t>;
+        using GSId = std::unordered_map<std::string, uint32_t>;
         using ScanGameId = std::unordered_set<uint32_t>;
         using FreeList = ::google::protobuf::Map<uint32_t, bool>;
 
@@ -41,7 +41,7 @@ namespace deploy
     private:
         FreeList free_list_;
         uint32_t size_{ 0 };
-        GameServerId game_entities_;
+        GSId gs_entities_;
         ScanGameId scan_node_ids_;
 
     };

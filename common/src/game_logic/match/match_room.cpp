@@ -45,7 +45,7 @@ namespace GameMMR
         TeamList * p_team_list_{nullptr};
         const MatchTargetInfo * p_target_{ nullptr };
         send_callback_type sendcb;
-        send_scene_callback_type send_gameserver_cb;
+        send_scene_callback_type send_gs_cb;
 		mirror_match_callback_type m_oMirrorMatchCallBack;
         Team::team_id_type team_id_{Team::EmptyTeamId};
         team_all_ready_callback_type team_all_ready_callback_;

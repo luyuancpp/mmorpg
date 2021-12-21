@@ -35,14 +35,14 @@ namespace deploy
 
         InitGroupDatabaseServerDb();
 
-        InitGroupServerDb<region_server_db>(kRegionServerBeginPort, kGroup);
+        InitGroupServerDb<region_server_db>(kRSBeginPort, kGroup);
         InitGroupServerDb<redis_server_db>(kRedisPort, kGroup);
-        InitGroupServerDb<login_server_db>(kLoginServerBeginPort, kGroup);
-        InitGroupServerDb<master_server_db>(kMasterServerBeginPort, kGroup);
-        InitGroupServerDb<game_server_db>(kGameServerBeginPort, kGroup * 2);
-        InitGroupServerDb<gateway_server_db>(kGatewayServerBeginPort, kGroup);
+        InitGroupServerDb<login_server_db>(kLSBeginPort, kGroup);
+        InitGroupServerDb<master_server_db>(kMSBeginPort, kGroup);
+        InitGroupServerDb<game_server_db>(kGSBeginPort, kGroup * 2);
+        InitGroupServerDb<gateway_server_db>(kGateSBeginPort, kGroup);
 
-        LoadGameServerDb();
+        LoadGSDb();
         server_.subscribe<ServerConnectionES>(*this);
         server_.start();
     }
@@ -52,12 +52,12 @@ namespace deploy
         server_.registerService(service);
     }
 
-    uint32_t DeployServer::CreateGameServerId()
+    uint32_t DeployServer::CreateGSId()
     {
         return reuse_id_.Create();
     }
 
-    void DeployServer::SaveGameServerDb()
+    void DeployServer::SaveGSDb()
     {
         reuse_game_server_db game_server_info;
         game_server_info.set_size(reuse_id_.size());
@@ -67,7 +67,7 @@ namespace deploy
     void DeployServer::OnDisConnected(const muduo::net::TcpConnectionPtr& conn)
     {
         reuse_id_.OnDisConnect(conn->peerAddress().toIpPort());
-        SaveGameServerDb();
+        SaveGSDb();
     }
 
     void DeployServer::LogReuseInfo()
@@ -81,13 +81,13 @@ namespace deploy
         LOG_INFO << "size : " << reuse_id_.size() << ", " << s;
     }
 
-    void DeployServer::LoadGameServerDb()
+    void DeployServer::LoadGSDb()
     {
         reuse_game_server_db game_server_info;
         database_->LoadOne(game_server_info);
         reuse_id_.set_size(game_server_info.size());
         reuse_id_.OnDbLoadComplete();
-        scan_over_timer_.RunAfter(kScanOverSeconds, std::bind(&ReuseGameServerId::ScanOver, &reuse_id_));
+        scan_over_timer_.RunAfter(kScanOverSeconds, std::bind(&ReuseGSId::ScanOver, &reuse_id_));
     }
 
     void DeployServer::receive(const ServerConnectionES& es)
@@ -127,7 +127,7 @@ namespace deploy
             {
                 sd_db.set_region_id(++region_id);
             }
-            sd_db.set_port(i + kDatabeseServerBeginPort);
+            sd_db.set_port(i + kDSBeginPort);
             database_->SaveOne(sd_db);
         }
     }
