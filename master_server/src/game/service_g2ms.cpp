@@ -57,12 +57,12 @@ namespace g2ms
         if (request->server_type() == kMainServer)
         {
             auto& config_all = mainscene_config::GetSingleton().all();
-            MakeScene2GameServerParam create_scene_param;
+            MakeGSSceneP create_scene_param;
             create_scene_param.server_entity_ = server_entity;
             for (int32_t i = 0; i < config_all.data_size(); ++i)
             {
                 create_scene_param.scene_config_id_ = config_all.data(i).id();
-                auto scene_entity = g_scene_manager->MakeScene2GameServer( create_scene_param);
+                auto scene_entity = g_scene_manager->MakeSceneGSScene( create_scene_param);
                 if (!reg().valid(scene_entity))
                 {
                     continue;

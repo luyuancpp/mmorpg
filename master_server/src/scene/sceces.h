@@ -31,8 +31,8 @@ public:
     inline bool Empty() const { return scenes_.empty(); }
     inline bool HasSceneConfig(uint32_t scene_config_id) { return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
 
-    entt::entity MakeMainScene(const MakeSceneParam& param);
-    entt::entity MakeScene2GameServer(const MakeScene2GameServerParam& param);
+    entt::entity MakeMainScene(const MakeMainSceneP& param);
+    entt::entity MakeSceneGSScene(const MakeGSSceneP& param);
 
     void PutScene2GameServer(const PutScene2GameServerParam& param);
 
