@@ -3,7 +3,7 @@
 namespace deploy
 {
 
-    void ReuseGameServerId::OnDbLoadComplete()
+    void ReuseGSId::OnDbLoadComplete()
     {
         for (uint32_t i = 0; i < size(); ++i)
         {
@@ -11,27 +11,27 @@ namespace deploy
         }
     }
 
-    void ReuseGameServerId::OnDisConnect(const std::string& ip)
+    void ReuseGSId::OnDisConnect(const std::string& ip)
     {
-        auto it = game_entities_.find(ip);
-        if (it == game_entities_.end())
+        auto it = gs_entities_.find(ip);
+        if (it == gs_entities_.end())
         {
             return;
         }
         Destroy(it->second);
-        game_entities_.erase(it);
+        gs_entities_.erase(it);
     }
 
-    void ReuseGameServerId::Emplace(const std::string& ip, uint32_t id)
+    void ReuseGSId::Emplace(const std::string& ip, uint32_t id)
     {
-        game_entities_.emplace(ip, id);
+        gs_entities_.emplace(ip, id);
         RemoveFree(id);
     }
 
-    void ReuseGameServerId::ScanOver()
+    void ReuseGSId::ScanOver()
     {
         //等待一段时间后连接上来得先处理
-        for (auto& it : game_entities_)
+        for (auto& it : gs_entities_)
         {
             scan_node_ids_.erase(it.second);
         }

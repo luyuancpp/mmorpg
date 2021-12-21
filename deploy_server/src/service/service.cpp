@@ -52,13 +52,13 @@ namespace deploy
             return;
         }
         server_info.set_ip(request->my_info().ip());
-        uint32_t node_id = g_deploy_server->CreateGameServerId();
+        uint32_t node_id = g_deploy_server->CreateGSId();
         LOG_INFO << "new server id " << node_id;
         server_info.set_id(node_id);
-        server_info.set_port(node_id + kGameServerBeginPort);
+        server_info.set_port(node_id + kGSBeginPort);
 
         g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
-        g_deploy_server->SaveGameServerDb();
+        g_deploy_server->SaveGSDb();
         //g_deploy_server->LogReuseInfo();
         response->set_error_no(RET_OK);
     }

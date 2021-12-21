@@ -23,16 +23,16 @@ namespace deploy
         DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr);
 
         MysqlClientPtr& player_mysql_client() { return database_; }
-        ReuseGameServerId& reuse_game_id() { return reuse_id_; }
+        ReuseGSId& reuse_game_id() { return reuse_id_; }
 
         void Start();
 
         void RegisterService(::google::protobuf::Service*);
 
-        uint32_t CreateGameServerId();
+        uint32_t CreateGSId();
 
-        void LoadGameServerDb();
-        void SaveGameServerDb();
+        void LoadGSDb();
+        void SaveGSDb();
 
         void OnDisConnected(const muduo::net::TcpConnectionPtr& conn);
         void LogReuseInfo();
@@ -74,7 +74,7 @@ namespace deploy
         muduo::net::RpcServer server_;
         MysqlClientPtr database_;   
         std::string redis_ip_ = "127.0.0.1";
-        ReuseGameServerId reuse_id_;
+        ReuseGSId reuse_id_;
         common::TimerTask scan_over_timer_;
     };
 }//namespace deploy
