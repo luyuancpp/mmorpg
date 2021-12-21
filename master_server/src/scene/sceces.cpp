@@ -47,7 +47,7 @@ namespace master
         return it->second.size();
     }
 
-    bool ScenesManager::is_scene_empty(uint32_t scene_config_id)
+    bool ScenesManager::IsConfigSceneEmpty(uint32_t scene_config_id)
     {
         auto it = confid_scenelist_.find(scene_config_id);
         if (it == confid_scenelist_.end())
@@ -113,7 +113,7 @@ namespace master
         reg().destroy(server_entity);
     }
 
-    void ScenesManager::MoveServerScene2Server(const MoveServerScene2ServerParam& param)
+    void ScenesManager::MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param)
     {
         auto to_server_entity = param.to_server_entity_;
         auto& from_scenes_id = reg().get<SceneComp>(param.from_server_entity_).confid_sceneslist();
@@ -198,10 +198,10 @@ namespace master
 
     void ScenesManager::ReplaceCrashServer(const ReplaceCrashServerParam& param)
     {
-        MoveServerScene2ServerParam move_param;
+        MoveServerScene2ServerSceneP move_param;
         move_param.from_server_entity_ = param.cransh_server_entity_;
         move_param.to_server_entity_ = param.replace_server_entity_;
-        MoveServerScene2Server(move_param);
+        MoveServerScene2ServerScene(move_param);
         reg().destroy(move_param.from_server_entity_);
     }
 

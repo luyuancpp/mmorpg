@@ -33,7 +33,7 @@ struct PutScene2GameServerParam
     uint32_t op_{ 0 };
 };
 
-struct MoveServerScene2ServerParam
+struct MoveServerScene2ServerSceneP
 {
     entt::entity from_server_entity_{ entt::null };
     entt::entity to_server_entity_{ entt::null };
