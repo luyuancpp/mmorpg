@@ -52,9 +52,9 @@ struct CompelChangeSceneParam
     uint32_t scene_config_id_{0};
 };
 
-void EnterScene(entt::registry& reg, const EnterSceneParam& param);
+void EnterScene(const EnterSceneParam& param);
 
-void LeaveScene(entt::registry& reg, const LeaveSceneParam& param);
+void LeaveScene(const LeaveSceneParam& param);
 
 entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param);
 
