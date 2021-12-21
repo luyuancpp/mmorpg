@@ -13,7 +13,7 @@ using namespace  common;
 uint32_t confid_scenelist_size = 50;
 uint32_t per_scene_config_size = 2;
 
-TEST(GameServer, CreateMainScene)
+TEST(GS, CreateMainScene)
 {
     ScenesManager sm;
     MakeMainSceneP param;
@@ -31,7 +31,7 @@ TEST(GameServer, CreateMainScene)
     EXPECT_EQ(sm.scenes_size(), std::size_t(confid_scenelist_size * per_scene_config_size));
 }
 
-TEST(GameServer, MakeScene2Sever )
+TEST(GS, MakeScene2Sever )
 {
     ScenesManager sm;
 
@@ -76,7 +76,7 @@ TEST(GameServer, MakeScene2Sever )
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 }
 
-TEST(GameServer, PutScene2Sever)
+TEST(GS, PutScene2Sever)
 {
     ScenesManager sm;
 
@@ -91,7 +91,7 @@ TEST(GameServer, PutScene2Sever)
     PutScene2GSParam put_param;
     put_param.scene_entity_ = scene_entity;
     put_param.server_entity_ = server_entity1;
-    sm.PutScene2GameServer(put_param);
+    sm.PutScene2GS(put_param);
 
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(1, sm.confid_scenelist_size(cparam.scene_config_id_));
@@ -100,7 +100,7 @@ TEST(GameServer, PutScene2Sever)
     EXPECT_EQ(1, sm.scenes_size());
 }
 
-TEST(GameServer, DestroyScene)
+TEST(GS, DestroyScene)
 {
     ScenesManager sm;
 
@@ -115,7 +115,7 @@ TEST(GameServer, DestroyScene)
     PutScene2GSParam put_param;
     put_param.scene_entity_ = scene_entity;
     put_param.server_entity_ = server_entity1;
-    sm.PutScene2GameServer(put_param);
+    sm.PutScene2GS(put_param);
 
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(1, sm.confid_scenelist_size(cparam.scene_config_id_));
@@ -134,7 +134,7 @@ TEST(GameServer, DestroyScene)
     EXPECT_FALSE(reg().valid(scene_entity));
 }
 
-TEST(GameServer, DestroySever)
+TEST(GS, DestroySever)
 {
     ScenesManager sm;
 
@@ -202,7 +202,7 @@ TEST(GameServer, DestroySever)
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 }
 
-TEST(GameServer, ServerScene2Sever)
+TEST(GS, ServerScene2Sever)
 {
     ScenesManager sm;
 
@@ -265,7 +265,7 @@ TEST(GameServer, ServerScene2Sever)
     EXPECT_EQ(reg().get<common::GSDataPtrComp>(server_entity1).use_count(), 1);
 }
 
-TEST(GameServer, PlayerLeaveEnterScene)
+TEST(GS, PlayerLeaveEnterScene)
 {
     ScenesManager sm;
     MakeGSParam cgs1;
@@ -356,7 +356,7 @@ TEST(GameServer, PlayerLeaveEnterScene)
     EXPECT_TRUE(scenes_players22.empty());
 }
 
-TEST(GameServer, MainTainWeightRoundRobinMainScene)
+TEST(GS, MainTainWeightRoundRobinMainScene)
 {
     reg().clear();
     ScenesManager sm;
@@ -421,7 +421,7 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
     }
 }
 
-TEST(GameServer, CompelChangeScene)
+TEST(GS, CompelChangeScene)
 {
     ScenesManager sm;
     MakeGSParam cgs1;
@@ -480,7 +480,7 @@ TEST(GameServer, CompelChangeScene)
 }
 
 
-TEST(GameServer, CrashWeightRoundRobinMainScene)
+TEST(GS, CrashWeightRoundRobinMainScene)
 {
     ScenesManager sm;
     EntitySet server_entities;
@@ -546,7 +546,7 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
 }
 
 //崩溃时候的消息不能处理
-TEST(GameServer, CrashMovePlayer2NewServer)
+TEST(GS, CrashMovePlayer2NewServer)
 {
     ScenesManager sm;
     EntitySet server_entities;
@@ -626,7 +626,7 @@ TEST(GameServer, CrashMovePlayer2NewServer)
     
 }
 
-TEST(GameServer, WeightRoundRobinMainScene)
+TEST(GS, WeightRoundRobinMainScene)
 {
     reg().clear();
     ScenesManager sm;
@@ -750,7 +750,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
     //leave 
 }
 
-TEST(GameServer, ServerEnterLeavePressure)
+TEST(GS, ServerEnterLeavePressure)
 {
     reg().clear();
     ScenesManager sm;
@@ -831,11 +831,11 @@ TEST(GameServer, ServerEnterLeavePressure)
 }
 
 
-TEST(GameServer, CreateDungeon)
+TEST(GS, CreateDungeon)
 {
 }
 
-TEST(GameServer, Route)
+TEST(GS, Route)
 {
     reg().clear();
 }

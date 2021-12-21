@@ -34,7 +34,7 @@ public:
     entt::entity MakeMainScene(const MakeMainSceneP& param);
     entt::entity MakeSceneGSScene(const MakeGSSceneP& param);
 
-    void PutScene2GameServer(const PutScene2GSParam& param);
+    void PutScene2GS(const PutScene2GSParam& param);
 
     void DestroyScene(const DestroySceneParam& param);
     void DestroyServer(const DestroyServerParam& param);

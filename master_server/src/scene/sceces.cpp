@@ -80,11 +80,11 @@ namespace master
         PutScene2GSParam put_param;
         put_param.scene_entity_ = e;
         put_param.server_entity_ = param.server_entity_;
-        PutScene2GameServer(put_param);
+        PutScene2GS(put_param);
         return e;
     }
 
-    void ScenesManager::PutScene2GameServer(const PutScene2GSParam& param)
+    void ScenesManager::PutScene2GS(const PutScene2GSParam& param)
     {
         auto scene_entity = param.scene_entity_;
         auto& scene_config = reg().get<SceneConfigComp>(scene_entity);
