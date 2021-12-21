@@ -53,10 +53,10 @@ namespace master
         return e;
     }
 
-    entt::entity MakeMainSceneGameServer(entt::registry& reg,  const MakeGameServerParam& param)
+    entt::entity MakeMainSceneGS(entt::registry& reg,  const MakeGameServerParam& param)
     {
         auto e = reg.create();
-        GSDataPtrComp p_server_data = std::make_shared<GameServerData>();
+        GSDataPtrComp p_server_data = std::make_shared<GSData>();
         p_server_data->set_node_id(param.node_id_);
         p_server_data->set_node_entity(e);
         reg.emplace<MainSceneServerComp>(e);
