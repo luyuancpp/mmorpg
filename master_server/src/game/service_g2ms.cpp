@@ -48,7 +48,7 @@ namespace g2ms
             return;
         }
         auto c = reg().get<RpcServerConnection>(game_server_entity);
-        MakeGameServerParam cparam;
+        MakeGSParam cparam;
         cparam.node_id_ = request->node_id();
         auto server_entity = MakeMainSceneGS(reg(), cparam);
         reg().emplace<RpcServerConnection>(server_entity, RpcServerConnection{ c.conn_ });

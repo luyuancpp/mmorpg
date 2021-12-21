@@ -13,7 +13,7 @@ struct MakeMainSceneP
     uint32_t op_{ 0 };
 };
 
-struct MakeGameServerParam
+struct MakeGSParam
 {
     uint32_t node_id_{};
     uint32_t op_{ 0 };
@@ -26,7 +26,7 @@ struct MakeGSSceneP
     uint32_t op_{ 0 };
 };
 
-struct PutScene2GameServerParam
+struct PutScene2GSParam
 {
     entt::entity scene_entity_{ entt::null };
     entt::entity server_entity_{ entt::null };
@@ -56,7 +56,7 @@ void MakeScenes();
 
 entt::entity MakeMainScene(entt::registry& reg, const MakeMainSceneP& param);
 
-entt::entity MakeMainSceneGS(entt::registry& reg, const MakeGameServerParam& param);
+entt::entity MakeMainSceneGS(entt::registry& reg, const MakeGSParam& param);
 
 }//namespace master
 
