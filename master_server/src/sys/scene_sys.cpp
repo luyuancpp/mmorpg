@@ -1,19 +1,20 @@
 #include "scene_sys.hpp"
 
 #include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/game_logic/game_registry.h"
 #include "src/factories/scene_factories.hpp"
 
 using namespace common;
 
 namespace master
 {
-void EnterScene(entt::registry& reg, const EnterSceneParam& param)
+void EnterScene(const EnterSceneParam& param)
 {
     auto scene_entity = param.scene_entity_;
-    auto& players =  reg.get<PlayersComp>(scene_entity);
+    auto& players =  reg().get<PlayersComp>(scene_entity);
     players.emplace(param.enter_entity_);
-    reg.emplace<common::SceneEntity>(param.enter_entity_, scene_entity);
-    auto p_gs_data_comp = reg.try_get<GSDataPtrComp>(scene_entity);
+    reg().emplace<SceneEntity>(param.enter_entity_, scene_entity);
+    auto p_gs_data_comp = reg().try_get<GSDataPtrComp>(scene_entity);
     if (nullptr == p_gs_data_comp)
     {
         return;
@@ -21,18 +22,18 @@ void EnterScene(entt::registry& reg, const EnterSceneParam& param)
     (*p_gs_data_comp)->OnPlayerEnter();
 }
 
-void LeaveScene(entt::registry& reg, const LeaveSceneParam& param)
+void LeaveScene(const LeaveSceneParam& param)
 {
     auto leave_entity = param.leave_entity_;
-    auto& player_scene_entity = reg.get<common::SceneEntity>(leave_entity);
+    auto& player_scene_entity = reg().get<SceneEntity>(leave_entity);
     auto scene_entity = player_scene_entity.scene_entity();
-    auto& players = reg.get<PlayersComp>(scene_entity);
+    auto& players = reg().get<PlayersComp>(scene_entity);
     players.erase(leave_entity);
-    reg.remove<common::SceneEntity>(leave_entity);
-    auto p_gs_data_comp = reg.try_get<GSDataPtrComp>(scene_entity);
+    reg().remove<SceneEntity>(leave_entity);
+    auto p_gs_data_comp = reg().try_get<GSDataPtrComp>(scene_entity);
     if (nullptr == p_gs_data_comp)
     {
-        return;
+        return; 
     }
     (*p_gs_data_comp)->OnPlayerLeave();
 }
