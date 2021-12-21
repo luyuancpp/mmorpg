@@ -415,7 +415,7 @@ TEST(GameServer, MainTainWeightRoundRobinMainScene)
     weight_round_robin_scene.scene_config_id_ = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
         EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != entt::null);
         EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != maintain.maintain_server_entity_);
     }
@@ -538,7 +538,7 @@ TEST(GameServer, CrashWeightRoundRobinMainScene)
     weight_round_robin_scene.scene_config_id_ = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
         EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != entt::null);
         EXPECT_TRUE(reg().get<common::GSDataPtrComp>(can_enter)->server_entity() != crash1.crash_server_entity_);
     }
@@ -669,7 +669,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
 
         for (uint32_t i = 0; i < player_size; ++i)
         {
-            auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+            auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
             auto p_e = reg().create();
             enter_param1.enter_entity_ = p_e;
             enter_param1.scene_entity_ = can_enter;
@@ -690,7 +690,7 @@ TEST(GameServer, WeightRoundRobinMainScene)
         weight_round_robin_scene.scene_config_id_ = scene_config_id1;
         for (uint32_t i = 0; i < player_size; ++i)
         {
-            auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+            auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
             auto p_e = reg().create();
             enter_param1.enter_entity_ = p_e;
             enter_param1.scene_entity_ = can_enter;
@@ -793,7 +793,7 @@ TEST(GameServer, ServerEnterLeavePressure)
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
         auto p_e = reg().create();
         enter_param1.enter_entity_ = p_e;
         enter_param1.scene_entity_ = can_enter;
@@ -814,7 +814,7 @@ TEST(GameServer, ServerEnterLeavePressure)
     weight_round_robin_scene.scene_config_id_ = scene_config_id1;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainScene(reg(), weight_round_robin_scene);
+        auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
         auto p_e = reg().create();
         enter_param1.enter_entity_ = p_e;
         enter_param1.scene_entity_ = can_enter;

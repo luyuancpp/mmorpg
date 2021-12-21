@@ -56,9 +56,9 @@ void EnterScene(const EnterSceneParam& param);
 
 void LeaveScene(const LeaveSceneParam& param);
 
-entt::entity GetWeightRoundRobinMainScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param);
+entt::entity GetWeightRoundRobinMainScene(const GetWeightRoundRobinSceneParam& param);
 
-entt::entity GetWeightRoundRobinRoomScene(entt::registry& reg, const GetWeightRoundRobinSceneParam& param);
+entt::entity GetWeightRoundRobinRoomScene(const GetWeightRoundRobinSceneParam& param);
 
 void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
 
