@@ -13,10 +13,10 @@ public:
 
     static RepliedMs2g& GetSingleton() { thread_local RepliedMs2g singleton; return singleton; }
 
-    using StartGameMasterRpcClosure = common::RpcClosure<g2ms::StartGameServerRequest,
-        g2ms::StartGameServerResponse>;
+    using StartGameMasterRpcClosure = common::RpcClosure<g2ms::StartGSRequest,
+        g2ms::StartGSResponse>;
     using StartGameMasterRpcRC = std::shared_ptr<StartGameMasterRpcClosure>;
-    void StartGameServerMasterReplied(StartGameMasterRpcRC cp);
+    void StartGSMasterReplied(StartGameMasterRpcRC cp);
 private:
 };
 }

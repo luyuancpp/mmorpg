@@ -3,20 +3,20 @@ import "google/protobuf/empty.proto";
 package ms2gw;
 option cc_generic_services = true;
 
-message StartGameServerRequest
+message StartGSRequest
 {
   string ip = 1;
   uint32 port = 2;
   uint32 node_id = 3;
 }
 
-message StopGameServerRequest
+message StopGSRequest
 {
   string ip = 1;
   uint32 port = 2;
 }
 
-message PlayerEnterGameServerRequest
+message PlayerEnterGSRequest
 {
   uint64 connection_id = 1;
   uint32 node_id = 2;
@@ -24,7 +24,7 @@ message PlayerEnterGameServerRequest
 
 
 service Ms2gwService {
-  rpc StartGameServer (StartGameServerRequest) returns (google.protobuf.Empty);
-  rpc StopGameServer (StopGameServerRequest) returns (google.protobuf.Empty);
-  rpc PlayerEnterGameServer (PlayerEnterGameServerRequest) returns (google.protobuf.Empty);
+  rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
+  rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
+  rpc PlayerEnterGS (PlayerEnterGSRequest) returns (google.protobuf.Empty);
 }

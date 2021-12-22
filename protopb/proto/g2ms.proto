@@ -5,7 +5,7 @@ package g2ms;
 option cc_generic_services = true;
 
 
-message StartGameServerRequest
+message StartGSRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
@@ -14,12 +14,12 @@ message StartGameServerRequest
   uint64 master_server_addr = 5;
 }
 
-message StartGameServerResponse
+message StartGSResponse
 {
   uint32 master_node_id = 1;
   repeated SceneInfo scenes_info = 2;
 }
 
 service G2msService {
-  rpc StartGameServer (StartGameServerRequest) returns (StartGameServerResponse);
+  rpc StartGS (StartGSRequest) returns (StartGSResponse);
 }

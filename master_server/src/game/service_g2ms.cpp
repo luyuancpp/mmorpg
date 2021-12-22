@@ -21,9 +21,9 @@ using namespace muduo::net;
 
 namespace g2ms
 {
-    void G2msServiceImpl::StartGameServer(::google::protobuf::RpcController* controller, 
-        const ::g2ms::StartGameServerRequest* request, 
-        ::g2ms::StartGameServerResponse* response,
+    void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller, 
+        const ::g2ms::StartGSRequest* request, 
+        ::g2ms::StartGSResponse* response,
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);

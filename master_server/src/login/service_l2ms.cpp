@@ -32,8 +32,8 @@ namespace l2ms
         reg().emplace<GatewayConnectionId>(e, connection_id);
         MasterPlayerList::GetSingleton().EnterGame(guid, e);
 
-        ms2gw::PlayerEnterGameServerRequest gw_request;
-        gw_request.set_connection_id(connection_id);
+        ms2gw::PlayerEnterGSRequest gw_request;
+        gw_request.set_connection_id(connection_id);//error
         for (auto e : GameClient::GetSingleton().view<uint32_t>())
         {
             response->set_node_id(GameClient::GetSingleton().get<uint32_t>(e));

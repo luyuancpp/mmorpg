@@ -14,7 +14,7 @@ message ConnectedGameRequest
   IpPort rpc_client = 1;
 }
 
-message GameServerIdRequest
+message GSIdRequest
 {
   uint64 guid = 1;
   uint64 connection_id = 2;
