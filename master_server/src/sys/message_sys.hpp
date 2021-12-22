@@ -7,7 +7,7 @@
 
 namespace master
 {
-void Send2GameServer(const google::protobuf::Message& message, 
+void Send2GS(const google::protobuf::Message& message, 
                      const std::string& service,
                      const std::string& stub,
                      entt::entity player_entity);

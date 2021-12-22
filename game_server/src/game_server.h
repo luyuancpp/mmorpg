@@ -74,6 +74,6 @@ private:
 
 };//namespace game
 
-extern game::GameServer* g_game_server;
+extern game::GameServer* g_gs;
 
 #endif // !GAME_SERVER_SRC_GAME_SERVER_GAME_SERVER_H_
