@@ -19,13 +19,13 @@ namespace common
     static const std::size_t kMaxMemberSize{ 5 };
 
     //function order get, set is, test action
-    struct CreateTeamParam
+    struct CreateTeamP
     {
         Guid leader_id_{ 0 };
         const UInt64Set members;
     };
 
-    struct TeamsParam
+    struct TeamsP
     {
         entt::entity team_id_{};
         entt::entity teams_entity_id_{};//manager id
@@ -46,8 +46,8 @@ class Team
 public:
     using ApplyMembers = std::unordered_set<Guid>;
         
-    Team(const CreateTeamParam& param, 
-        const TeamsParam& teams_param);
+    Team(const CreateTeamP& param, 
+        const TeamsP& teams_param);
 
     Guid team_id()const { return entt::to_integral(team_id_); }
     entt::entity to_entityid()const { return team_id_; }

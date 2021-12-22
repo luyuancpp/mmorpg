@@ -6,13 +6,13 @@
 
 namespace common
 {
-    Team::Team(const CreateTeamParam& param,
-        const TeamsParam& teams_param)
-        : team_id_(teams_param.team_id_),
-          teams_entity_id_(teams_param.teams_entity_id_),
+    Team::Team(const CreateTeamP& param,
+        const TeamsP& p)
+        : team_id_(p.team_id_),
+          teams_entity_id_(p.teams_entity_id_),
           leader_id_(param.leader_id_),
-          emp_(teams_param.emp_),
-          teams_registry_(teams_param.teams_registry_)
+          emp_(p.emp_),
+          teams_registry_(p.teams_registry_)
     {
         for (auto& it : param.members)
         {
