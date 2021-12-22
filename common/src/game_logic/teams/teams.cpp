@@ -100,7 +100,7 @@ namespace common
     bool Teams::PlayerInTheTeam(Guid team_id, Guid guid)
     {
         GetTeamReturn(false);
-        return team.InMyTeam(guid);
+        return team.HasMember(guid);
     }
 
     bool Teams::PlayerInTeam(Guid guid) const

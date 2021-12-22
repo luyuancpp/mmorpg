@@ -60,14 +60,14 @@ public:
         assert(applicant_ids_.size() == applicants_.size());  return applicants_.size();
     }
     Guid first_applicant_id()const;
-    const UInt64Set& members()const { return members_; }
+    const GuidVector& members()const { return members_; }
     inline PlayerIdTeamIdMap& playerid_team_map() { return teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_); }
 
     bool HasApplicant(Guid applicant_id) const { return applicants_.find(applicant_id) != applicants_.end(); }
     inline bool HasApply()const { return !applicants_.empty(); }
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
     inline bool IsLeader(Guid guid)const { assert(leader_id_ != kEmptyGuid); return leader_id_ == guid; }
-    inline bool InMyTeam(Guid guid)const { return members_.find(guid) != members_.end(); }
+    inline bool HasMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
     inline bool HasTeam(Guid guid) const { return teams_registry_->get<PlayerInTeamF>(team_id_).cb_(guid); }
 
     uint32_t CheckLimt(Guid  guid);
@@ -87,8 +87,7 @@ public:
 private:
     void AddMember(Guid  guid)
     {
-        members_.emplace(guid);
-        sequence_players_id_.push_back(guid);
+        members_.emplace_back(guid);
     }
 
     void OnAppointLeader(Guid  new_leader_guid);
@@ -97,10 +96,9 @@ private:
     entt::entity team_id_{};
     entt::entity teams_entity_id_{};//manager id
     Guid leader_id_{};
-    UInt64Set members_;
+    GuidVector members_;
     ApplyMembers applicants_;
     GuidVector applicant_ids_;
-    GuidVector sequence_players_id_;
     EventManagerPtr emp_;
     entt::registry* teams_registry_{ nullptr };
 };

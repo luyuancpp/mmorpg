@@ -16,7 +16,7 @@ namespace common
     {
         for (auto& it : param.members)
         {
-            AddMember(it);
+            members_.emplace_back(it);
         }
     }
 
@@ -68,8 +68,7 @@ namespace common
         }
         //assert(members_.find(guid) == members_.end());
         RemoveApplicant(guid);
-        AddMember(guid);
-        assert(members_.size() == sequence_players_id_.size());
+        members_.emplace_back(guid);
         auto& ms = playerid_team_map();
         ms.emplace(guid, team_id_);
         emp_->emit< TeamESJoinTeam>(team_id_, guid);
@@ -78,8 +77,7 @@ namespace common
 
     uint32_t Team::LeaveTeam(Guid guid)
     {
-        auto it = members_.find(guid);
-        if (it == members_.end())
+        if (!HasMember(guid))
         {
             return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
@@ -88,16 +86,14 @@ namespace common
         {
             emp_->emit<TeamESLeaderLeaveTeam>(team_id_, guid);
         }
-        members_.erase(guid);
-        auto sit = std::find(sequence_players_id_.begin(), sequence_players_id_.end(), guid);
-        if (sit != sequence_players_id_.end())
+        auto it = std::find(members_.begin(), members_.end(), guid);
+        if (it != members_.end())
         {
-            sequence_players_id_.erase(sit);
+            members_.erase(it);
         }
-        assert(members_.size() == sequence_players_id_.size());
-        if (!sequence_players_id_.empty() && leader_leave)
+        if (!members_.empty() && leader_leave)
         {
-            OnAppointLeader(*sequence_players_id_.begin());
+            OnAppointLeader(*members_.begin());
         }
         emp_->emit<TeamESLeaveTeam>(team_id_, guid);
         playerid_team_map().erase(guid);
@@ -118,8 +114,7 @@ namespace common
         {
             return RET_TEAM_KICK_SELF;
         }
-        auto it = members_.find(kick_guid);
-        if (it == members_.end())
+        if (!HasMember(kick_guid))
         {
             return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
@@ -133,7 +128,7 @@ namespace common
         {
             return RET_TEAM_APPOINT_SELF;
         }
-        if (!InMyTeam(new_leader_guid))
+        if (!HasMember(new_leader_guid))
         {
             return RET_TEAM_HAS_NOT_TEAM_ID;
         }
