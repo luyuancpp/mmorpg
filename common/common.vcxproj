@@ -187,7 +187,6 @@
     <ClInclude Include="src\game_config\mission_config.h" />
     <ClInclude Include="src\game_config\region_config.h" />
     <ClInclude Include="src\game_config\scene_config.h" />
-    <ClInclude Include="src\game_logic\comp\gateway.hpp" />
     <ClInclude Include="src\game_logic\comp\player.hpp" />
     <ClInclude Include="src\game_logic\comp\server_list.hpp" />
     <ClInclude Include="src\game_logic\entity_class\entity_class.h" />

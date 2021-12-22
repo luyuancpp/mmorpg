@@ -8,7 +8,7 @@
 
 #include "src/factories/scene_factories.hpp"
 #include "src/factories/server_global_entity.hpp"
-#include "src/game_logic/comp/player.hpp"
+#include "src/game_logic/comp/player_comp.hpp"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/game_logic/game_registry.h"
 

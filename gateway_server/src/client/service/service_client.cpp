@@ -9,7 +9,7 @@
 #include "src/server_common/rpc_client_closure.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/entity_cast.h"
-#include "src/game_logic/comp/player.hpp"
+#include "src/game_logic/comp/player_comp.hpp"
 #include "src/gate_player/gate_player_list.h"
 #include "src/return_code/error_code.h"
 

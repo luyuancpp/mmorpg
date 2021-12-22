@@ -1,7 +1,7 @@
 #include "service_ms2gw.h"
 
 #include "src/game/game_client.h"
-#include "src/game_logic/comp/player.hpp"
+#include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/entity_cast.h"
 #include "src/gate_player/gate_player_list.h"
