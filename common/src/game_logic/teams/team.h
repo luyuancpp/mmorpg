@@ -85,11 +85,6 @@ public:
     void ClearApplyList();
 
 private:
-    void AddMember(Guid  guid)
-    {
-        members_.emplace_back(guid);
-    }
-
     void OnAppointLeader(Guid  new_leader_guid);
     void RemoveApplicantId(Guid  guid);
 
