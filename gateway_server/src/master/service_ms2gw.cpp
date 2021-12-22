@@ -21,25 +21,25 @@ namespace ms2gw
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        InetAddress gameserver_addr(request->ip(), request->port());
+        InetAddress gs_addr(request->ip(), request->port());
         for (auto e : reg().view<InetAddress>())
         {
             auto& c = reg().get<InetAddress>(e);
-            if (gameserver_addr.toIpPort() == c.toIpPort())
+            if (gs_addr.toIpPort() == c.toIpPort())
             {
                 return;
             }
         }
         auto e = GameClient::GetSingleton().create();
         auto& c = GameClient::GetSingleton().emplace<RpcClientPtr>(e, 
-            std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gameserver_addr));
+            std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr));
         using Gw2gStubPtr = RpcStub<gw2g::Gw2gService_Stub>::MyType;
         auto& sc =  GameClient::GetSingleton().emplace<Gw2gStubPtr>(e, std::make_unique<RpcStub<gw2g::Gw2gService_Stub>>());
         c->subscribe<RegisterStubES>(*(sc.get()));
         c->connect();
-        GameClient::GetSingleton().emplace<InetAddress>(e, gameserver_addr);
+        GameClient::GetSingleton().emplace<InetAddress>(e, gs_addr);
         GameClient::GetSingleton().emplace<uint32_t>(e, request->node_id());
-        LOG_INFO << "connect to game server " << gameserver_addr.toIpPort() << " server id " << request->node_id();
+        LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->node_id();
     }
 
     void Ms2gwServiceImpl::StopGameServer(::google::protobuf::RpcController* controller, 

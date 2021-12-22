@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 
     EventLoop loop;
     game::GameServer server(&loop);
-    g_game_server = &server;
+    g_gs = &server;
     server.Init();
     server.InitNetwork();
     loop.loop();

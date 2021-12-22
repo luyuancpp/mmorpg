@@ -16,7 +16,7 @@
 
 using namespace common;
 
-game::GameServer* g_game_server = nullptr;
+game::GameServer* g_gs = nullptr;
 
 namespace game
 {
