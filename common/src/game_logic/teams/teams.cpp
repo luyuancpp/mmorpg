@@ -31,7 +31,7 @@ namespace common
         : emp_(EventManager::New())
     {
         my_entity_id_ = reg().create();
-        reg().emplace<PlayerIdTeamIdMap>(my_entity_id_, PlayerIdTeamIdMap());
+        reg().emplace<PlayerTeamMap>(my_entity_id_, PlayerTeamMap());
     }
 
     std::size_t Teams::member_size(Guid team_id)
@@ -54,7 +54,7 @@ namespace common
 
     Guid Teams::GetTeamId(Guid guid)const
     {
-        auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(my_entity_id_);
+        auto& player_team_map_ = reg().get<PlayerTeamMap>(my_entity_id_);
         auto it = player_team_map_.find(guid);
         if (it == player_team_map_.end())
         {
@@ -65,7 +65,7 @@ namespace common
 
     entt::entity Teams::GetTeamEntityId(Guid guid) const
     {
-        auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(my_entity_id_);
+        auto& player_team_map_ = reg().get<PlayerTeamMap>(my_entity_id_);
         auto it = player_team_map_.find(guid);
         if (it == player_team_map_.end())
         {
@@ -91,6 +91,7 @@ namespace common
         GetTeamReturn(0);
         return team.first_applicant_id();
     }
+
     bool Teams::IsTeamFull(Guid team_id)
     {
         GetTeamReturn(false);
@@ -105,7 +106,7 @@ namespace common
 
     bool Teams::PlayerInTeam(Guid guid) const
     {
-        auto& player_team_map_ = reg().get<PlayerIdTeamIdMap>(my_entity_id_);
+        auto& player_team_map_ = reg().get<PlayerTeamMap>(my_entity_id_);
         return player_team_map_.find(guid) != player_team_map_.end(); 
     }
 

@@ -27,7 +27,7 @@ namespace common
 
     struct TeamsP
     {
-        entt::entity team_id_{};
+        entt::entity teamid_{};
         entt::entity teams_entity_id_{};//manager id
         EventManagerPtr& emp_;
         entt::registry* teams_registry_{ nullptr };
@@ -39,7 +39,7 @@ namespace common
         FunctionType cb_;
     };
 
-    using PlayerIdTeamIdMap = std::unordered_map<Guid, entt::entity>;
+    using PlayerTeamMap = std::unordered_map<Guid, entt::entity>;
 
 class Team
 {
@@ -49,8 +49,8 @@ public:
     Team(const CreateTeamP& param, 
         const TeamsP& teams_param);
 
-    Guid team_id()const { return entt::to_integral(team_id_); }
-    entt::entity to_entityid()const { return team_id_; }
+    Guid team_id()const { return entt::to_integral(teamid_); }
+    entt::entity to_entityid()const { return teamid_; }
     inline Guid leader_id()const { return leader_id_; }
     std::size_t max_member_size()const { return kMaxMemberSize; }
     std::size_t member_size()const { return members_.size(); }
@@ -58,14 +58,14 @@ public:
     std::size_t applicant_size()const{  return applicants_.size();}
     Guid first_applicant_id()const;
     const GuidVector& members()const { return members_; }
-    inline PlayerIdTeamIdMap& playerid_team_map() { return teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_); }
+    inline PlayerTeamMap& playerid_team_map() { return teams_registry_->get<PlayerTeamMap>(teams_entity_id_); }
 
     bool HasApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
     inline bool HasApply()const { return !applicants_.empty(); }
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
     inline bool IsLeader(Guid guid)const { assert(leader_id_ != kEmptyGuid); return leader_id_ == guid; }
     inline bool HasMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
-    inline bool HasTeam(Guid guid) const { return teams_registry_->get<PlayerInTeamF>(team_id_).cb_(guid); }
+    inline bool HasTeam(Guid guid) const { return teams_registry_->get<PlayerInTeamF>(teamid_).cb_(guid); }
 
     uint32_t CheckLimt(Guid  guid);
 
@@ -83,7 +83,7 @@ public:
 private:
     void OnAppointLeader(Guid  new_leader_guid);
 
-    entt::entity team_id_{};
+    entt::entity teamid_{};
     entt::entity teams_entity_id_{};//manager id
     Guid leader_id_{};
     GuidVector members_;

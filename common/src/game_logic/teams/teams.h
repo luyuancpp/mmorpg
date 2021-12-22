@@ -24,7 +24,7 @@ public:
     std::size_t member_size(Guid team_id);
     std::size_t applicant_size_by_guid(Guid guid)const;
     std::size_t applicant_size_by_team_id(Guid team_id)const;
-    std::size_t players_size()const { return reg().get<PlayerIdTeamIdMap>(my_entity_id_).size(); }
+    std::size_t players_size()const { return reg().get<PlayerTeamMap>(my_entity_id_).size(); }
     Guid GetTeamId(Guid guid)const;
     entt::entity GetTeamEntityId(Guid guid)const;
     Guid last_team_id() const { return last_team_id_; }
