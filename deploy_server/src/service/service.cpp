@@ -37,9 +37,9 @@ namespace deploy
         RegionServer(request->region_id(), servers_info.mutable_regin_info());
     }
 
-    void DeployServiceImpl::StartGameServer(::google::protobuf::RpcController* controller, 
-        const ::deploy::StartGameServerRequest* request,
-        ::deploy::StartGameServerResponse* response,
+    void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller, 
+        const ::deploy::StartGSRequest* request,
+        ::deploy::StartGSResponse* response,
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);

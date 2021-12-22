@@ -15,8 +15,8 @@ using namespace  common;
 
 namespace ms2gw
 {
-    void Ms2gwServiceImpl::StartGameServer(::google::protobuf::RpcController* controller,
-        const ::ms2gw::StartGameServerRequest* request, 
+    void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
+        const ::ms2gw::StartGSRequest* request, 
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
@@ -42,8 +42,8 @@ namespace ms2gw
         LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->node_id();
     }
 
-    void Ms2gwServiceImpl::StopGameServer(::google::protobuf::RpcController* controller, 
-        const ::ms2gw::StopGameServerRequest* request, 
+    void Ms2gwServiceImpl::StopGS(::google::protobuf::RpcController* controller, 
+        const ::ms2gw::StopGSRequest* request, 
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
@@ -61,8 +61,8 @@ namespace ms2gw
         }
     }
 
-    void Ms2gwServiceImpl::PlayerEnterGameServer(::google::protobuf::RpcController* controller, 
-        const ::ms2gw::PlayerEnterGameServerRequest* request, 
+    void Ms2gwServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* controller, 
+        const ::ms2gw::PlayerEnterGSRequest* request, 
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {

@@ -56,20 +56,20 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
    
     region_rpc_client_ = std::make_unique<RpcClient>(loop_, region_addr);
     
-    StartGameServerRpcRC scp(std::make_shared<StartGameServerInfoRpcClosure>());
+    StartGSRpcRC scp(std::make_shared<StartGSInfoRpcClosure>());
     scp->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
     scp->s_reqst_.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
     scp->s_reqst_.mutable_my_info()->set_id(server_info_.id());
     scp->s_reqst_.mutable_rpc_client()->set_ip(deploy_rpc_client_->local_addr().toIp());
     scp->s_reqst_.mutable_rpc_client()->set_port(deploy_rpc_client_->local_addr().port());
     deploy_stub_.CallMethod(
-        &GameServer::StartGameServerDeployReplied,
+        &GameServer::StartGSDeployReplied,
         scp,
         this,
-        &deploy::DeployService_Stub::StartGameServer);
+        &deploy::DeployService_Stub::StartGS);
 }
 
-void GameServer::StartGameServerDeployReplied(StartGameServerRpcRC cp)
+void GameServer::StartGSDeployReplied(StartGSRpcRC cp)
 {
     //uint32_t snid = server_info_.id() - deploy_server::kGameSnowflakeIdReduceParam;//snowflake id 
     ConnectMaster();
@@ -85,7 +85,7 @@ void GameServer::Register2Master(MasterClientPtr& master_rpc_client)
 {
     ms2g::RepliedMs2g::StartGameMasterRpcRC scp(std::make_shared<ms2g::RepliedMs2g::StartGameMasterRpcClosure>());
     auto& master_local_addr = master_rpc_client->local_addr();
-    g2ms::StartGameServerRequest& request = scp->s_reqst_;
+    g2ms::StartGSRequest& request = scp->s_reqst_;
     auto rpc_client = request.mutable_rpc_client();
     auto rpc_server = request.mutable_rpc_server();
     rpc_client->set_ip(master_local_addr.toIp());
@@ -96,10 +96,10 @@ void GameServer::Register2Master(MasterClientPtr& master_rpc_client)
     request.set_node_id(server_info_.id());
     request.set_master_server_addr(uint64_t(master_rpc_client.get()));
     g2ms_stub_.CallMethod(
-        &ms2g::RepliedMs2g::StartGameServerMasterReplied,
+        &ms2g::RepliedMs2g::StartGSMasterReplied,
         scp,
         &ms2g::RepliedMs2g::GetSingleton(),
-        &g2ms::G2msService_Stub::StartGameServer);
+        &g2ms::G2msService_Stub::StartGS);
 }
 
 void GameServer::receive(const RpcClientConnectionES& es)

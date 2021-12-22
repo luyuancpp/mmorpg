@@ -13,9 +13,9 @@ namespace g2ms
     class G2msServiceImpl : public g2ms::G2msService
     {
     public:
-        virtual void StartGameServer(::google::protobuf::RpcController* controller,
-            const ::g2ms::StartGameServerRequest* request,
-            ::g2ms::StartGameServerResponse* response,
+        virtual void StartGS(::google::protobuf::RpcController* controller,
+            const ::g2ms::StartGSRequest* request,
+            ::g2ms::StartGSResponse* response,
             ::google::protobuf::Closure* done)override;
     private:
     };

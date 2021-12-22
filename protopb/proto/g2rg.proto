@@ -3,11 +3,11 @@ import "google/protobuf/empty.proto";
 package g2rg;
 option cc_generic_services = true;
 
-message StartGameServerRequest
+message StartGSRequest
 {
 
 }
 
 service G2rgService {
-  rpc StartGameServer (StartGameServerRequest) returns (google.protobuf.Empty);
+  rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
 }

@@ -21,14 +21,14 @@ message ServerInfoResponse
   MasterServersDb region_masters = 2;
 }
 
-message StartGameServerRequest
+message StartGSRequest
 {
   uint32 group = 1;
   game_server_db my_info = 2;
   IpPort rpc_client = 3; 
 }
 
-message StartGameServerResponse
+message StartGSResponse
 {
   game_server_db my_info = 1;
   uint32 error_no = 2;
@@ -46,7 +46,7 @@ message RegionInfoResponse
 
 service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
-  rpc StartGameServer (StartGameServerRequest) returns (StartGameServerResponse);
+  rpc StartGS (StartGSRequest) returns (StartGSResponse);
   rpc StartRegionServer(RegionInfoRequest) returns (RegionInfoResponse);
   rpc RegionServer(RegionInfoRequest) returns (RegionInfoResponse);
 }

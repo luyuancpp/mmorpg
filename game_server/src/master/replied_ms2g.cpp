@@ -12,7 +12,7 @@ using namespace game;
 
 namespace ms2g
 {
-void RepliedMs2g::StartGameServerMasterReplied(StartGameMasterRpcRC cp)
+void RepliedMs2g::StartGSMasterReplied(StartGameMasterRpcRC cp)
 {
     auto rsp = cp->s_resp_;
     //LOG_INFO << "master server info " << rsp->DebugString().c_str();

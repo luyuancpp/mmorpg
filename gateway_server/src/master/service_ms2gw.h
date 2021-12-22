@@ -13,16 +13,16 @@ namespace ms2gw
     class Ms2gwServiceImpl : public Ms2gwService
     {
     public:
-        virtual void StartGameServer(::google::protobuf::RpcController* controller,
-            const ::ms2gw::StartGameServerRequest* request,
+        virtual void StartGS(::google::protobuf::RpcController* controller,
+            const ::ms2gw::StartGSRequest* request,
             google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
-        virtual void StopGameServer(::google::protobuf::RpcController* controller,
-            const ::ms2gw::StopGameServerRequest* request,
+        virtual void StopGS(::google::protobuf::RpcController* controller,
+            const ::ms2gw::StopGSRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
-        virtual void PlayerEnterGameServer(::google::protobuf::RpcController* controller,
-            const ::ms2gw::PlayerEnterGameServerRequest* request,
+        virtual void PlayerEnterGS(::google::protobuf::RpcController* controller,
+            const ::ms2gw::PlayerEnterGSRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
 
