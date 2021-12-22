@@ -55,15 +55,12 @@ public:
     std::size_t max_member_size()const { return kMaxMemberSize; }
     std::size_t member_size()const { return members_.size(); }
     bool empty()const { return members_.empty(); }
-    std::size_t applicant_size()const
-    {
-        assert(applicant_ids_.size() == applicants_.size());  return applicants_.size();
-    }
+    std::size_t applicant_size()const{  return applicants_.size();}
     Guid first_applicant_id()const;
     const GuidVector& members()const { return members_; }
     inline PlayerIdTeamIdMap& playerid_team_map() { return teams_registry_->get<PlayerIdTeamIdMap>(teams_entity_id_); }
 
-    bool HasApplicant(Guid applicant_id) const { return applicants_.find(applicant_id) != applicants_.end(); }
+    bool HasApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
     inline bool HasApply()const { return !applicants_.empty(); }
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
     inline bool IsLeader(Guid guid)const { assert(leader_id_ != kEmptyGuid); return leader_id_ == guid; }
@@ -71,7 +68,6 @@ public:
     inline bool HasTeam(Guid guid) const { return teams_registry_->get<PlayerInTeamF>(team_id_).cb_(guid); }
 
     uint32_t CheckLimt(Guid  guid);
-    bool TestApplicantValueEqual()const;
 
     void OnCreate();
     uint32_t JoinTeam(Guid  guid);
@@ -86,14 +82,12 @@ public:
 
 private:
     void OnAppointLeader(Guid  new_leader_guid);
-    void RemoveApplicantId(Guid  guid);
 
     entt::entity team_id_{};
     entt::entity teams_entity_id_{};//manager id
     Guid leader_id_{};
     GuidVector members_;
-    ApplyMembers applicants_;
-    GuidVector applicant_ids_;
+    GuidVector applicants_;
     EventManagerPtr emp_;
     entt::registry* teams_registry_{ nullptr };
 };

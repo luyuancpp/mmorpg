@@ -22,28 +22,16 @@ namespace common
 
     Guid Team::first_applicant_id() const
     {
-        if (applicant_ids_.empty())
+        if (applicants_.empty())
         {
             return kEmptyGuid;
         }
-        return *applicant_ids_.begin();
+        return *applicants_.begin();
     }
 
     uint32_t Team::CheckLimt(Guid  guid)
     {
         return RET_OK;
-    }
-
-    bool Team::TestApplicantValueEqual() const
-    {
-        for (auto it : applicant_ids_)
-        {
-            if (applicants_.find(it) == applicants_.end())
-            {
-                return false;
-            }
-        }
-        return true;
     }
 
     void Team::OnCreate()
@@ -147,16 +135,6 @@ namespace common
         emp_->emit<TeamESAppointLeader>(team_id_, old_leader_guid, leader_id_);
     }
 
-    void Team::RemoveApplicantId(Guid guid)
-    {
-        auto idit = std::find(applicant_ids_.begin(), applicant_ids_.end(), guid);
-        if (idit == applicant_ids_.end())
-        {
-            return;
-        }
-        applicant_ids_.erase(idit);
-    }
-
     uint32_t Team::ApplyForTeam(Guid guid)
     {
         if (HasTeam(guid))
@@ -170,15 +148,12 @@ namespace common
         //assert(members_.find(guid) == members_.end());
 
         RET_CHECK_RET(CheckLimt(guid));
-        RemoveApplicantId(guid);
-        if (applicant_ids_.size() >= kMaxApplicantSize)
+        if (applicants_.size() >= kMaxApplicantSize)
         {
-            assert(!applicant_ids_.empty());
-            applicants_.erase(*applicant_ids_.begin());
-            applicant_ids_.erase(applicant_ids_.begin());
+            assert(!applicants_.empty());
+            applicants_.erase(applicants_.begin());
         }
-        applicants_.emplace(guid);
-        applicant_ids_.emplace_back(guid);
+        applicants_.emplace_back(guid);
         return RET_OK;
     }
 
@@ -194,8 +169,11 @@ namespace common
 
     uint32_t Team::RemoveApplicant(Guid applicant_id)
     {
-        applicants_.erase(applicant_id);
-        RemoveApplicantId(applicant_id);
+        auto it = std::find(applicants_.begin(), applicants_.end(), applicant_id);
+        if ( it != applicants_.end())
+        {
+            applicants_.erase(it);
+        }        
         return RET_OK;
     }
 
@@ -219,7 +197,6 @@ namespace common
     void Team::ClearApplyList()
     {
         applicants_.clear();
-        applicant_ids_.clear();
         emp_->emit<TeamESClearApplyList>(team_id_);        
     }
 }//namespace common

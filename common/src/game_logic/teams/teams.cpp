@@ -115,12 +115,6 @@ namespace common
         return team.HasApplicant(guid);
     }
 
-    bool Teams::TestApplicantValueEqual(Guid team_id)const
-    {
-        GetTeamReturn(false);
-        return team.TestApplicantValueEqual();
-    }
-
     uint32_t Teams::CreateTeam(const CreateTeamP& param)
     {
         if (IsTeamsMax())

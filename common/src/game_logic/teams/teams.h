@@ -37,8 +37,6 @@ public:
     bool PlayerInTheTeam(Guid team_id, Guid guid);
     bool PlayerInTeam(Guid guid)const;
     bool HasApplicant(Guid team_id, Guid guid)const;
-
-    bool TestApplicantValueEqual(Guid team_id)const;
         
     uint32_t CreateTeam(const CreateTeamP& param);
     uint32_t JoinTeam(Guid team_id, Guid guid);
