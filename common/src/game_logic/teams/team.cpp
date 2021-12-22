@@ -62,7 +62,6 @@ namespace common
         {
             return RET_TEAM_MEMBER_IN_TEAM;
         }
- 
         if (IsFull())
         {
             return RET_TEAM_MEMBERS_FULL;

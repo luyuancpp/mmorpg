@@ -40,7 +40,7 @@ namespace common
 
     uint32_t Missions::MakeMission(const MakeMissionParam& param)
     {
-        auto mission_id = param.mission_id_;
+        auto mission_id = param.mid_;
         if (missions_.missions().count(mission_id))
         {
             return RET_MISSION_ID_REPTEATED;

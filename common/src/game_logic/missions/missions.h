@@ -14,20 +14,20 @@ namespace common
     {
         using ConditionV = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
         MakeMissionParam(
-            uint32_t mision_id,
+            uint32_t mid,
             const ConditionV* condition_id)
             :
-            mission_id_(mision_id),
+            mid_(mid),
             condition_id_(condition_id) {}
         MakeMissionParam(
             uint32_t mision_id,
             const ConditionV& condition_id)
             : 
-            mission_id_(mision_id),
+            mid_(mision_id),
             condition_id_(&condition_id) {}
 
         entt::entity e_{ entt::null };
-        uint32_t mission_id_{ 0 };
+        uint32_t mid_{ 0 };
         const ConditionV* condition_id_{ nullptr };
     };
 

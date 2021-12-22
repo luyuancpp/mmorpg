@@ -14,7 +14,7 @@ TEST(TeamManger, CreateFullDismiss)
 	Guid player_id = 1;	
 	for (int32_t i = 0; i < Teams::kMaxTeamSize; ++i)
 	{	
-		CreateTeamParam p{ player_id, UI64USet{player_id}};
+		CreateTeamParam p{ player_id, UInt64Set{player_id}};
 		EXPECT_EQ(RET_OK, team_list.CreateTeam(p));
 		teamidlist.push_back(team_list.last_team_id());
 		++player_id;
@@ -22,7 +22,7 @@ TEST(TeamManger, CreateFullDismiss)
 
 	EXPECT_TRUE(team_list.IsTeamsMax());
 	player_id++;
-	EXPECT_EQ(RET_TEAM_TEAM_LIST_MAX, team_list.CreateTeam({ player_id, UI64USet{player_id}}));
+	EXPECT_EQ(RET_TEAM_TEAM_LIST_MAX, team_list.CreateTeam({ player_id, UInt64Set{player_id}}));
 
 	EXPECT_EQ(Teams::kMaxTeamSize, team_list.team_size());
 
@@ -39,7 +39,7 @@ TEST(TeamManger, TeamSizeTest)
 {
 	Teams  team_list;	
 	Guid m = 100;
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 	EXPECT_TRUE(team_list.PlayerInTheTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(1, team_list.member_size(team_list.last_team_id()));
@@ -57,9 +57,10 @@ TEST(TeamManger, TeamSizeTest)
 
 TEST(TeamManger, LeaveTeam)
 {
+	reg().clear();
 	Teams  team_list;
 	Guid m = 100;
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 	EXPECT_TRUE(team_list.PlayerInTheTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(1, team_list.member_size(team_list.last_team_id()));
@@ -70,7 +71,7 @@ TEST(TeamManger, LeaveTeam)
 	EXPECT_EQ(RET_TEAM_HAS_NOT_TEAM_ID, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(0, team_list.member_size(team_list.last_team_id()));
 
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	Guid player_id = m;
 	for (std::size_t i = 1; i < kMaxMemberSize; ++i)
@@ -101,11 +102,12 @@ TEST(TeamManger, LeaveTeam)
 
 TEST(TeamManger, KickTeaamMember)
 {
+	reg().clear();
 	Teams team_list ;
 	Guid m = 100;
 	Guid leader_plaeyr_id = 100;
 
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	EXPECT_EQ(RET_TEAM_KICK_SELF, team_list.KickMember(team_list.last_team_id(), m, m));
 	EXPECT_EQ(RET_TEAM_KICK_NOT_LEADER, team_list.KickMember(team_list.last_team_id(),99, 99));
@@ -135,7 +137,7 @@ TEST(TeamManger, AppointLaderAndLeaveTeam1)
     Guid leader_player_id = 100;
 
 
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	Guid player_id = m;
 	for (std::size_t i = 1; i < kMaxMemberSize; ++i)
@@ -189,7 +191,7 @@ TEST(TeamManger, AppointLaderAndLeaveTeam2)
 	Teams  team_list;
 	Guid m = 100;
 
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	m = 104;
 	EXPECT_EQ(RET_OK, team_list.JoinTeam(team_list.last_team_id(), m));
@@ -210,7 +212,7 @@ TEST(TeamManger, DismissTeam)
 	Teams  team_list;
 	Guid m;
 	m = (100);
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	m = (104);
 	EXPECT_EQ(RET_OK, team_list.JoinTeam(team_list.last_team_id(), m));
@@ -226,7 +228,7 @@ TEST(TeamManger, ApplyFull)
 	Teams  team_list;
 	Guid m =1001;
 
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	Guid a;
 
@@ -262,7 +264,7 @@ TEST(TeamManger, ApplicantOrder)
     Teams  team_list;
     Guid m;
     m = (1001);
-    EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+    EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
     Guid a;
 
 	Guid nMax = kMaxApplicantSize;
@@ -288,7 +290,7 @@ TEST(TeamManger, InTeamApplyForTeam)
 	Guid m;
 	m = (1001);
 
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	Guid a;
 
@@ -318,7 +320,7 @@ TEST(TeamManger, InTeamApplyForTeam)
 
     m = (2);
     EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), m));
-    EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+    EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
     EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.AgreeApplicant(team_list.last_team_id(), 2));
     EXPECT_FALSE(team_list.HasApplicant(team_list.last_team_id(), 2));
 }
@@ -330,7 +332,7 @@ TEST(TeamManger, RemoveApplicant)
 	Guid m;
 	m = (1001);
 
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 	Guid a;
 
 	Guid nMax = kMaxMemberSize;
@@ -360,7 +362,7 @@ TEST(TeamManger, AgreeApplicant)
 	Teams  team_list;
 	Guid m;
 	m = (1001);
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	Guid a;
 
@@ -415,7 +417,7 @@ TEST(TeamManger, PlayerTeamId)
 	Guid m;
 	m = (1);
 
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 	EXPECT_TRUE(team_list.PlayerInTeam(m));
 	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(m));
 
@@ -470,7 +472,7 @@ TEST(TeamManger, PlayerTeamId)
 	}
 
 
-    EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+    EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
     for (std::size_t i = 4; i < kMaxMemberSize; ++i)
     {
@@ -489,13 +491,13 @@ TEST(TeamManger, PlayerInTeam)
 	Guid m;
 	m = (1);
 	
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
-	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
+	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.CreateTeam({ m, UInt64Set{m}}));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_list.last_team_id(), m));
 	auto team_id1 = team_list.last_team_id();
 
 	m = (2);
-	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_id1, m));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.ApplyForTeam(team_id1, m));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.AgreeApplicant(team_id1, m));
@@ -527,7 +529,7 @@ TEST(TeamManger, AppointLeaderNotInTeam)
     Guid m;
     m = (1);
     Guid leader_player_id = 1;
-    EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UI64USet{m}}));
+    EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
     for (Guid i = leader_player_id + 1; i < 10; i++)
     {
         EXPECT_EQ(RET_TEAM_HAS_NOT_TEAM_ID, team_list.AppointLeader(team_list.last_team_id(), leader_player_id, i));
