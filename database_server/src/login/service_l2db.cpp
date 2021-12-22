@@ -18,19 +18,19 @@ namespace l2db
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        ::account_database& r_db = *response->mutable_account_player();
-        auto& caccount = request->account();
-        redis_->Load(r_db, caccount);
+        ::account_database& db = *response->mutable_account_player();
+        auto& account = request->account();
+        redis_->Load(db, account);
         if (response->account_player().password().empty())
         {
-            database_->LoadOne(r_db,
-                std::string("account = '") + caccount + std::string("'"));
+            database_->LoadOne(db,
+                std::string("account = '") + account + std::string("'"));
         }
-        if (r_db.password().empty())
+        if (db.password().empty())
         {
-            r_db.set_account(caccount);
-            r_db.set_password(request->password());
-            redis_->Save(r_db, caccount);
+            db.set_account(account);
+            db.set_password(request->password());
+            redis_->Save(db, account);
         }        
     }
 

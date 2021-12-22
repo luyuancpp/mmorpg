@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/comp/player.hpp"
+#include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game/game_client.h"
 #include "src/master_player/master_player_list.h"

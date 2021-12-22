@@ -242,9 +242,6 @@
     <ClInclude Include="src\game_logic\timer_task\timer_task.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\comp\gateway.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\game_logic\comp\player.hpp">
       <Filter>头文件</Filter>
     </ClInclude>

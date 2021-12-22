@@ -8,7 +8,7 @@
 #include "src/game_logic/enum/server_enum.h"
 #include "src/factories/scene_factories.hpp"
 #include "src/factories/server_global_entity.hpp"
-#include "src/game_logic/comp/player.hpp"
+#include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/master_server.h"
 #include "src/scene/sceces.h"
