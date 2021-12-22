@@ -354,7 +354,6 @@ TEST(TeamManger, RemoveApplicant)
 		}
 	}
 
-	EXPECT_TRUE(team_list.TestApplicantValueEqual(team_list.last_team_id()));
 }
 
 TEST(TeamManger, AgreeApplicant)
@@ -407,7 +406,6 @@ TEST(TeamManger, AgreeApplicant)
 		EXPECT_TRUE(team_list.PlayerInTheTeam(team_list.last_team_id(), i));
 	}
 
-	EXPECT_TRUE(team_list.TestApplicantValueEqual(team_list.last_team_id()));
 }
 
 TEST(TeamManger, PlayerTeamId)
