@@ -8,7 +8,7 @@ namespace common
 {
     Team::Team(const CreateTeamP& param,
         const TeamsP& p)
-        : team_id_(p.team_id_),
+        : teamid_(p.teamid_),
           teams_entity_id_(p.teams_entity_id_),
           leader_id_(param.leader_id_),
           emp_(p.emp_),
@@ -39,8 +39,8 @@ namespace common
         auto& ms = playerid_team_map();
         for (auto& it : members_)
         {
-            ms.emplace(it, team_id_);
-            emp_->emit<TeamESJoinTeam>(team_id_, it);
+            ms.emplace(it, teamid_);
+            emp_->emit<TeamESJoinTeam>(teamid_, it);
         }
     }
 
@@ -54,12 +54,11 @@ namespace common
         {
             return RET_TEAM_MEMBERS_FULL;
         }
-        //assert(members_.find(guid) == members_.end());
         RemoveApplicant(guid);
         members_.emplace_back(guid);
         auto& ms = playerid_team_map();
-        ms.emplace(guid, team_id_);
-        emp_->emit< TeamESJoinTeam>(team_id_, guid);
+        ms.emplace(guid, teamid_);
+        emp_->emit< TeamESJoinTeam>(teamid_, guid);
         return RET_OK;
     }
 
@@ -72,7 +71,7 @@ namespace common
         bool leader_leave = IsLeader(guid);
         if (leader_leave)
         {
-            emp_->emit<TeamESLeaderLeaveTeam>(team_id_, guid);
+            emp_->emit<TeamESLeaderLeaveTeam>(teamid_, guid);
         }
         auto it = std::find(members_.begin(), members_.end(), guid);
         if (it != members_.end())
@@ -83,7 +82,7 @@ namespace common
         {
             OnAppointLeader(*members_.begin());
         }
-        emp_->emit<TeamESLeaveTeam>(team_id_, guid);
+        emp_->emit<TeamESLeaveTeam>(teamid_, guid);
         playerid_team_map().erase(guid);
         return RET_OK;
     }
@@ -132,7 +131,7 @@ namespace common
     {
         auto old_leader_guid = leader_id_;
         leader_id_ = new_leader_guid;
-        emp_->emit<TeamESAppointLeader>(team_id_, old_leader_guid, leader_id_);
+        emp_->emit<TeamESAppointLeader>(teamid_, old_leader_guid, leader_id_);
     }
 
     uint32_t Team::ApplyForTeam(Guid guid)
@@ -145,8 +144,6 @@ namespace common
         {
             return RET_TEAM_MEMBERS_FULL;
         }
-        //assert(members_.find(guid) == members_.end());
-
         RET_CHECK_RET(CheckLimt(guid));
         if (applicants_.size() >= kMaxApplicantSize)
         {
@@ -184,19 +181,18 @@ namespace common
             return RET_TEAM_DISMISS_NOT_LEADER;
         }
         auto& ms = playerid_team_map();
-        
         for (auto& it : members_)
         {
-            emp_->emit<TeamESLeaveTeam>(team_id_, it);
+            emp_->emit<TeamESLeaveTeam>(teamid_, it);
             ms.erase(it);   
         }
-        emp_->emit<TeamESLeaderDismissTeam>(team_id_, kEmptyGuid);
+        emp_->emit<TeamESLeaderDismissTeam>(teamid_, kEmptyGuid);
         return RET_OK;
     }
 
     void Team::ClearApplyList()
     {
         applicants_.clear();
-        emp_->emit<TeamESClearApplyList>(team_id_);        
+        emp_->emit<TeamESClearApplyList>(teamid_);        
     }
 }//namespace common
