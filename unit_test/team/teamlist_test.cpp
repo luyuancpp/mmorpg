@@ -14,7 +14,7 @@ TEST(TeamManger, CreateFullDismiss)
 	Guid player_id = 1;	
 	for (int32_t i = 0; i < Teams::kMaxTeamSize; ++i)
 	{	
-		CreateTeamParam p{ player_id, UInt64Set{player_id}};
+		CreateTeamP p{ player_id, UInt64Set{player_id}};
 		EXPECT_EQ(RET_OK, team_list.CreateTeam(p));
 		teamidlist.push_back(team_list.last_team_id());
 		++player_id;

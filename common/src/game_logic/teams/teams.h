@@ -40,7 +40,7 @@ public:
 
     bool TestApplicantValueEqual(Guid team_id)const;
         
-    uint32_t CreateTeam(const CreateTeamParam& param);
+    uint32_t CreateTeam(const CreateTeamP& param);
     uint32_t JoinTeam(Guid team_id, Guid guid);
     uint32_t JoinTeam(const UInt64Set& member_list, Guid  team_id);
     uint32_t LeaveTeam(Guid guid);

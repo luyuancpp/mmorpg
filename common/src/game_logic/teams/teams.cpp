@@ -121,7 +121,7 @@ namespace common
         return team.TestApplicantValueEqual();
     }
 
-    uint32_t Teams::CreateTeam(const CreateTeamParam& param)
+    uint32_t Teams::CreateTeam(const CreateTeamP& param)
     {
         if (IsTeamsMax())
         {
@@ -134,7 +134,7 @@ namespace common
         RET_CHECK_RET(CheckMemberInTeam(param.members));
 
         auto e = reg().create();
-        TeamsParam ts_param{e, my_entity_id_, emp_, &reg() };
+        TeamsP ts_param{e, my_entity_id_, emp_, &reg() };
         auto team = reg().emplace<Team>(e, param, ts_param);
 
         PlayerInTeamF f_in_the_team;
