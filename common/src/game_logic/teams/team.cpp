@@ -119,7 +119,7 @@ namespace common
         emp_->emit<TeamESAppointLeader>(teamid_, old_guid, leader_id_);
     }
 
-    uint32_t Team::ApplyForTeam(Guid guid)
+    uint32_t Team::Apply(Guid guid)
     {
         if (HasTeam(guid))
         {

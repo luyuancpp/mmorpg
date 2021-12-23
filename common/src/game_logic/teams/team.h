@@ -72,7 +72,7 @@ public:
     uint32_t LeaveTeam(Guid guid);
     uint32_t KickMember(Guid current_leader, Guid  nKickplayerid);
     uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
-    uint32_t ApplyForTeam(Guid guid);
+    uint32_t Apply(Guid guid);
     uint32_t DissMiss(Guid current_leader_id);
     void ClearApplyList();
     uint32_t RemoveApplicant(Guid applicant_id);
