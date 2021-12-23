@@ -344,7 +344,7 @@ TEST(TeamManger, RemoveApplicant)
 		EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), a));
 		if (i % 2 == 0)
 		{
-			EXPECT_EQ(RET_OK, team_list.RemoveApplicant(team_list.last_team_id(), a));
+			EXPECT_EQ(RET_OK, team_list.RejectApplicant(team_list.last_team_id(), a));
 		}
 		
 		if (i >= 19 && i % 2 != 0)
@@ -430,7 +430,7 @@ TEST(TeamManger, PlayerTeamId)
 	EXPECT_FALSE(team_list.PlayerInTeam(m));
 	EXPECT_EQ(kEmptyGuid, team_list.GetTeamId(m));
 
-	EXPECT_EQ(RET_OK, team_list.RemoveApplicant(team_list.last_team_id(), m));
+	EXPECT_EQ(RET_OK, team_list.RejectApplicant(team_list.last_team_id(), m));
 	EXPECT_FALSE(team_list.PlayerInTeam(m));
 	EXPECT_EQ(kEmptyGuid, team_list.GetTeamId(m));
 
