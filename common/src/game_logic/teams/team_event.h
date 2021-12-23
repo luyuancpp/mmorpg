@@ -30,8 +30,10 @@ struct TeamESTeamIdBase
 
 struct TeamESJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESLeaderDismissTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct TeamESLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct TeamESLeaderLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESBeforeLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESAfterLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESDissmisTeam : public TeamESBase { using TeamESBase::TeamESBase; };
+struct TeamESBeforeLeaderLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESClearApplyList : public TeamESTeamIdBase { using TeamESTeamIdBase::TeamESTeamIdBase; };
 
 struct TeamESAppointLeader 
