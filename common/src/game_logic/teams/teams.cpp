@@ -213,7 +213,7 @@ namespace common
         return team.ApplyForTeam(guid);
     }
 
-    uint32_t Teams::RemoveApplicant(Guid team_id, Guid apply_guid)
+    uint32_t Teams::RejectApplicant(Guid team_id, Guid apply_guid)
     {
         GetTeamPtrReturnError;
         return team.RemoveApplicant(apply_guid);
@@ -222,7 +222,7 @@ namespace common
     uint32_t Teams::AgreeApplicant(Guid team_id, Guid applicant_id)
     {
         GetTeamPtrReturnError;
-        return team.AgreeApplicant(applicant_id);
+        return team.JoinTeam(applicant_id);
     }
 
     void Teams::ClearApplyList(Guid team_id)

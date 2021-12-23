@@ -73,16 +73,15 @@ public:
     uint32_t KickMember(Guid current_leader, Guid  nKickplayerid);
     uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
     uint32_t ApplyForTeam(Guid guid);
-    uint32_t AgreeApplicant(Guid applicant_id);
-    uint32_t RemoveApplicant(Guid applicant_id);
     uint32_t DissMiss(Guid current_leader_id);
     void ClearApplyList();
-
+    uint32_t RemoveApplicant(Guid applicant_id);
+    
 private:
     inline bool HasTeam(Guid guid) const { return teams_registry_->get<PlayerInTeamF>(teamid_).cb_(guid); }
 
     void OnAppointLeader(Guid  new_leader_guid);
-
+   
     entt::entity teamid_{};
     entt::entity teams_entity_id_{};//manager id
     Guid leader_id_{};

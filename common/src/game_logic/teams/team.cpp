@@ -139,26 +139,6 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Team::AgreeApplicant(Guid guid)
-    {
-        auto ret = JoinTeam(guid);
-        if (ret != RET_OK && ret != RET_TEAM_MEMBERS_FULL)
-        {
-            RemoveApplicant(guid);
-        }
-        return ret;
-    }
-
-    uint32_t Team::RemoveApplicant(Guid guid)
-    {
-        auto it = std::find(applicants_.begin(), applicants_.end(), guid);
-        if ( it != applicants_.end())
-        {
-            applicants_.erase(it);
-        }        
-        return RET_OK;
-    }
-
     uint32_t Team::DissMiss(Guid current_leader_id)
     {
         if (leader_id() != current_leader_id)
@@ -171,7 +151,6 @@ namespace common
             emp_->emit<TeamESDissmisTeam>(teamid_, it);
             ms.erase(it);               
         }
-        emp_->emit<TeamESLeaderDismissTeam>(teamid_, kEmptyGuid);
         return RET_OK;
     }
 
@@ -180,4 +159,15 @@ namespace common
         applicants_.clear();
         emp_->emit<TeamESClearApplyList>(teamid_);        
     }
+
+    uint32_t Team::RemoveApplicant(Guid applicant_id)
+    {
+        auto it = std::find(applicants_.begin(), applicants_.end(), applicant_id);
+        if (it != applicants_.end())
+        {
+            applicants_.erase(it);
+        }
+        return RET_OK;
+    }
+
 }//namespace common

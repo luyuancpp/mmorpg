@@ -29,7 +29,6 @@ struct TeamESTeamIdBase
 };
 
 struct TeamESJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct TeamESLeaderDismissTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESBeforeLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESAfterLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
 struct TeamESDissmisTeam : public TeamESBase { using TeamESBase::TeamESBase; };
