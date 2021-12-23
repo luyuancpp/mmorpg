@@ -22,20 +22,20 @@ public:
 
     std::size_t team_size()const { return reg().size<Team>(); }
     std::size_t member_size(Guid team_id);
-    std::size_t applicant_size_by_guid(Guid guid)const;
+    std::size_t applicant_size_by_playerid(Guid guid)const;
     std::size_t applicant_size_by_team_id(Guid team_id)const;
     std::size_t players_size()const { return reg().get<PlayerTeamMap>(my_entity_id_).size(); }
     Guid GetTeamId(Guid guid)const;
     entt::entity GetTeamEntityId(Guid guid)const;
     Guid last_team_id() const { return last_team_id_; }
-    Guid leader_id_by_teamid(Guid team_id)const;
-    Guid leader_id_by_guid(Guid guid)const;
+    Guid get_leader_id_by_teamid(Guid team_id)const;
+    Guid get_leader_id_by_playerid(Guid guid)const;
     Guid first_applicant(Guid team_id)const;
        
     bool IsTeamsMax() const{ return team_size() >= kMaxTeamSize; }
     bool IsTeamFull(Guid team_id);
     bool HasMember(Guid team_id, Guid guid);
-    bool PlayerInTeam(Guid guid)const;
+    bool HasTeam(Guid guid)const;
     bool HasApplicant(Guid team_id, Guid guid)const;
         
     uint32_t CreateTeam(const CreateTeamP& param);
