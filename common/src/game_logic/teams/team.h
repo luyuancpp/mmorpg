@@ -56,20 +56,18 @@ public:
     std::size_t member_size()const { return members_.size(); }
     bool empty()const { return members_.empty(); }
     std::size_t applicant_size()const{  return applicants_.size();}
-    Guid first_applicant_id()const;
+    Guid first_applicant()const;
     const GuidVector& members()const { return members_; }
     inline PlayerTeamMap& playerid_team_map() { return teams_registry_->get<PlayerTeamMap>(teams_entity_id_); }
 
     bool HasApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
     inline bool HasApply()const { return !applicants_.empty(); }
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
-    inline bool IsLeader(Guid guid)const { assert(leader_id_ != kEmptyGuid); return leader_id_ == guid; }
+    inline bool IsLeader(Guid guid)const { /*assert(leader_id_ != kEmptyGuid);*/ return leader_id_ == guid; }
     inline bool HasMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
-    inline bool HasTeam(Guid guid) const { return teams_registry_->get<PlayerInTeamF>(teamid_).cb_(guid); }
-
+   
     uint32_t CheckLimt(Guid  guid);
 
-    void OnCreate();
     uint32_t JoinTeam(Guid  guid);
     uint32_t LeaveTeam(Guid guid);
     uint32_t KickMember(Guid current_leader, Guid  nKickplayerid);
@@ -81,6 +79,8 @@ public:
     void ClearApplyList();
 
 private:
+    inline bool HasTeam(Guid guid) const { return teams_registry_->get<PlayerInTeamF>(teamid_).cb_(guid); }
+
     void OnAppointLeader(Guid  new_leader_guid);
 
     entt::entity teamid_{};

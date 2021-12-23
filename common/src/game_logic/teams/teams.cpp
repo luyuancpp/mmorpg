@@ -86,10 +86,10 @@ namespace common
         return leader_id_by_teamid(team_id);
     }
     
-    Guid Teams::first_applicant_id(Guid team_id) const
+    Guid Teams::first_applicant(Guid team_id) const
     {
         GetTeamReturn(0);
-        return team.first_applicant_id();
+        return team.first_applicant();
     }
 
     bool Teams::IsTeamFull(Guid team_id)
@@ -98,7 +98,7 @@ namespace common
         return team.IsFull();
     }
 
-    bool Teams::PlayerInTheTeam(Guid team_id, Guid guid)
+    bool Teams::HasMember(Guid team_id, Guid guid)
     {
         GetTeamReturn(false);
         return team.HasMember(guid);
@@ -135,9 +135,7 @@ namespace common
         PlayerInTeamF f_in_the_team;
         f_in_the_team.cb_ = std::bind(&Teams::PlayerInTeam, this, std::placeholders::_1);
         reg().emplace<PlayerInTeamF>(e, f_in_the_team);
-
-        team.OnCreate();
-        last_team_id_ = entt::to_integral(e);
+        last_team_id_ = entt::to_integral(e);//for test
         return RET_OK;
     }
 

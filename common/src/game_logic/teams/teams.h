@@ -30,11 +30,11 @@ public:
     Guid last_team_id() const { return last_team_id_; }
     Guid leader_id_by_teamid(Guid team_id)const;
     Guid leader_id_by_guid(Guid guid)const;
-    Guid first_applicant_id(Guid team_id)const;
+    Guid first_applicant(Guid team_id)const;
        
     bool IsTeamsMax() const{ return team_size() >= kMaxTeamSize; }
     bool IsTeamFull(Guid team_id);
-    bool PlayerInTheTeam(Guid team_id, Guid guid);
+    bool HasMember(Guid team_id, Guid guid);
     bool PlayerInTeam(Guid guid)const;
     bool HasApplicant(Guid team_id, Guid guid)const;
         

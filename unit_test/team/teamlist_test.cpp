@@ -40,7 +40,7 @@ TEST(TeamManger, TeamSizeTest)
 	Teams  team_list;	
 	Guid m = 100;
 	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
-	EXPECT_TRUE(team_list.PlayerInTheTeam(team_list.last_team_id(), m));
+	EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), m));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(1, team_list.member_size(team_list.last_team_id()));
 
@@ -61,12 +61,12 @@ TEST(TeamManger, LeaveTeam)
 	Teams  team_list;
 	Guid m = 100;
 	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
-	EXPECT_TRUE(team_list.PlayerInTheTeam(team_list.last_team_id(), m));
+	EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), m));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(1, team_list.member_size(team_list.last_team_id()));
 
 	team_list.LeaveTeam(m );
-    EXPECT_FALSE(team_list.PlayerInTheTeam(team_list.last_team_id(), m));
+    EXPECT_FALSE(team_list.HasMember(team_list.last_team_id(), m));
 	EXPECT_EQ(0, team_list.member_size(team_list.last_team_id()));
 	EXPECT_EQ(RET_TEAM_HAS_NOT_TEAM_ID, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(0, team_list.member_size(team_list.last_team_id()));
@@ -86,7 +86,7 @@ TEST(TeamManger, LeaveTeam)
 	{
 		player_id = player_id + i;
 		team_list.LeaveTeam(player_id);
-        EXPECT_FALSE(team_list.PlayerInTheTeam(team_list.last_team_id(), player_id));
+        EXPECT_FALSE(team_list.HasMember(team_list.last_team_id(), player_id));
 		if (i < 4)
 		{
 			EXPECT_EQ(player_id + i + 1, team_list.leader_id_by_teamid(team_list.last_team_id()));
@@ -244,7 +244,7 @@ TEST(TeamManger, ApplyFull)
 		else
 		{
 			EXPECT_EQ(kMaxApplicantSize, team_list.applicant_size_by_team_id(team_list.last_team_id()));
-			EXPECT_EQ(i - kMaxApplicantSize + 1, team_list.first_applicant_id(team_list.last_team_id()));
+			EXPECT_EQ(i - kMaxApplicantSize + 1, team_list.first_applicant(team_list.last_team_id()));
 		}
 	}
 
@@ -273,7 +273,7 @@ TEST(TeamManger, ApplicantOrder)
         a = (i);
         EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), a));
     }
-    EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant_id(team_list.last_team_id()));
+    EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant(team_list.last_team_id()));
 
     for (Guid i = 0; i < nMax; ++i)
     {
@@ -281,7 +281,7 @@ TEST(TeamManger, ApplicantOrder)
         EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), a));
     }
 
-    EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant_id(team_list.last_team_id()));
+    EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant(team_list.last_team_id()));
 }
 
 TEST(TeamManger, InTeamApplyForTeam)
@@ -350,7 +350,7 @@ TEST(TeamManger, RemoveApplicant)
 		if (i >= 19 && i % 2 != 0)
 		{
 			EXPECT_EQ(10, team_list.applicant_size_by_team_id(team_list.last_team_id()));
-			EXPECT_EQ(i - 17, team_list.first_applicant_id(team_list.last_team_id()));
+			EXPECT_EQ(i - 17, team_list.first_applicant(team_list.last_team_id()));
 		}
 	}
 
@@ -376,7 +376,7 @@ TEST(TeamManger, AgreeApplicant)
         if (i > kMaxApplicantSize)
         {
             EXPECT_EQ(kMaxApplicantSize, team_list.applicant_size_by_team_id(team_list.last_team_id()));
-            EXPECT_EQ(i - kMaxApplicantSize + 1, team_list.first_applicant_id(team_list.last_team_id()));
+            EXPECT_EQ(i - kMaxApplicantSize + 1, team_list.first_applicant(team_list.last_team_id()));
         }
     }
     player_id = 0;
@@ -388,7 +388,7 @@ TEST(TeamManger, AgreeApplicant)
 		if (i > (nMax - kMaxMemberSize ))
 		{
 			EXPECT_EQ(RET_OK, team_list.AgreeApplicant(team_list.last_team_id(), a));
-			EXPECT_TRUE(team_list.PlayerInTheTeam(team_list.last_team_id(), a));
+			EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), a));
             if (nBegiplayer_id == 1)
             {
                 nBegiplayer_id = a;
@@ -397,13 +397,13 @@ TEST(TeamManger, AgreeApplicant)
 		}
 		else
 		{
-			EXPECT_FALSE(team_list.PlayerInTheTeam(team_list.last_team_id(), a));
+			EXPECT_FALSE(team_list.HasMember(team_list.last_team_id(), a));
 		}
 	}
 
 	for (uint64_t i = nBegiplayer_id; i < nMax; ++i )
 	{
-		EXPECT_TRUE(team_list.PlayerInTheTeam(team_list.last_team_id(), i));
+		EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), i));
 	}
 
 }
@@ -422,7 +422,7 @@ TEST(TeamManger, PlayerTeamId)
 	m = (2);
 	EXPECT_EQ(RET_OK, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_TRUE(team_list.PlayerInTeam(m));
-	EXPECT_TRUE(team_list.PlayerInTheTeam(team_list.last_team_id(), m));
+	EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), m));
 	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(m));
 
 	m = (3);
