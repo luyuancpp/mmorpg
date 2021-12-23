@@ -210,7 +210,7 @@ namespace common
     uint32_t Teams::ApplyForTeam(Guid team_id, Guid guid)
     {
         GetTeamPtrReturnError;
-        return team.ApplyForTeam(guid);
+        return team.Apply(guid);
     }
 
     uint32_t Teams::RejectApplicant(Guid team_id, Guid guid)
