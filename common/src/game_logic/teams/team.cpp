@@ -132,7 +132,6 @@ namespace common
         RET_CHECK_RET(CheckLimt(guid));
         if (applicants_.size() >= kMaxApplicantSize)
         {
-            assert(!applicants_.empty());
             applicants_.erase(applicants_.begin());
         }
         applicants_.emplace_back(guid);
@@ -156,8 +155,7 @@ namespace common
 
     void Team::ClearApplyList()
     {
-        applicants_.clear();
-        emp_->emit<TeamESClearApplyList>(teamid_);        
+        applicants_.clear();      
     }
 
     uint32_t Team::RemoveApplicant(Guid applicant_id)
