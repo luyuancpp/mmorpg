@@ -2,7 +2,7 @@
 #define COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_H_
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/comp/mission.hpp"
+#include "src/game_logic/comp/mission_comp.hpp"
 #include "src/game_logic/entity_class/entity_class.h"
 #include "src/game_logic/missions/missions_config_template.h"
 
@@ -53,7 +53,7 @@ namespace common
         uint32_t missin_id_{ 0 };
     };
 
-    class Missions : public EntityClass
+    class Missions : public EntityHandle
     {
     public:
         using TypeMissionIdMap = std::unordered_map<uint32_t, UInt32Set>;

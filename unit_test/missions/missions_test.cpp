@@ -2,7 +2,7 @@
 
 #include "src/game_config/condition_config.h"
 #include "src/game_config/mission_config.h"
-#include "src/game_logic/comp/mission.hpp"
+#include "src/game_logic/comp/mission_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/op_code.h"
 #include "src/game_logic/missions/missions.h"
@@ -28,7 +28,7 @@ TEST(Missions, MakeMission)
     for (int32_t i = 0; i < data.data_size(); ++i)
     {
         auto id = data.data(i).id();
-        param.mission_id_ = id;
+        param.mid_ = id;
         param.condition_id_ = &mission_config::GetSingleton().get(id)->condition_id();
         auto m = ms.MakeMission(param);
         ++s;
