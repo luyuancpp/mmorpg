@@ -32,11 +32,11 @@ public:
     Guid get_leader_id_by_playerid(Guid guid)const;
     Guid first_applicant(Guid team_id)const;
        
-    bool IsTeamsMax() const{ return team_size() >= kMaxTeamSize; }
+    bool IsTeamListMax() const{ return team_size() >= kMaxTeamSize; }
     bool IsTeamFull(Guid team_id);
     bool HasMember(Guid team_id, Guid guid);
     bool HasTeam(Guid guid)const;
-    bool HasApplicant(Guid team_id, Guid guid)const;
+    bool IsApplicant(Guid team_id, Guid guid)const;
         
     uint32_t CreateTeam(const CreateTeamP& param);
     uint32_t JoinTeam(Guid team_id, Guid guid);
@@ -47,8 +47,7 @@ public:
     uint32_t DissMissTeamNoLeader(Guid team_id);
     uint32_t AppointLeader(Guid team_id, Guid current_leader_id, Guid  nNewLeaderPlayerId);
     uint32_t ApplyForTeam(Guid team_id, Guid guid);
-    uint32_t RejectApplicant(Guid team_id, Guid apply_guid);
-    uint32_t AgreeApplicant(Guid team_id, Guid apply_guid);
+    uint32_t DelApplicant(Guid team_id, Guid apply_guid);
     void ClearApplyList(Guid team_id);
         
 private:
