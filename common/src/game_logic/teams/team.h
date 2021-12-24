@@ -60,11 +60,11 @@ public:
     const GuidVector& members()const { return members_; }
     inline PlayerTeamMap& playerid_team_map() { return teams_registry_->get<PlayerTeamMap>(teams_entity_id_); }
 
-    bool HasApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
-    inline bool HasApply()const { return !applicants_.empty(); }
+    bool IsApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
+    inline bool ApplicantEmpty()const { return !applicants_.empty(); }
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
     inline bool IsLeader(Guid guid)const { /*assert(leader_id_ != kEmptyGuid);*/ return leader_id_ == guid; }
-    inline bool HasMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
+    inline bool IsMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
    
     uint32_t CheckLimt(Guid  guid);
 
@@ -72,10 +72,10 @@ public:
     uint32_t LeaveTeam(Guid guid);
     uint32_t KickMember(Guid current_leader, Guid  nKickplayerid);
     uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
-    uint32_t Apply(Guid guid);
     uint32_t DissMiss(Guid current_leader_id);
     void ClearApplyList();
-    uint32_t RemoveApplicant(Guid applicant_id);
+    uint32_t AddApplicant(Guid guid);
+    uint32_t DelApplicant(Guid applicant_id);
     
 private:
     inline bool HasTeam(Guid guid) const { return teams_registry_->get<PlayerInTeamF>(teamid_).cb_(guid); }

@@ -50,7 +50,7 @@ namespace common
         {
             return RET_TEAM_MEMBERS_FULL;
         }
-        RemoveApplicant(guid);
+        DelApplicant(guid);
         members_.emplace_back(guid);
         playerid_team_map().emplace(guid, teamid_);
         emp_->emit<TeamESJoinTeam>(teamid_, guid);
@@ -59,7 +59,7 @@ namespace common
 
     uint32_t Team::LeaveTeam(Guid guid)
     {
-        if (!HasMember(guid))
+        if (!IsMember(guid))
         {
             return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
@@ -100,7 +100,7 @@ namespace common
         {
             return RET_TEAM_APPOINT_SELF;
         }
-        if (!HasMember(new_leader))
+        if (!IsMember(new_leader))
         {
             return RET_TEAM_HAS_NOT_TEAM_ID;
         }
@@ -117,25 +117,6 @@ namespace common
         auto old_guid = leader_id_;
         leader_id_ = guid;
         emp_->emit<TeamESAppointLeader>(teamid_, old_guid, leader_id_);
-    }
-
-    uint32_t Team::Apply(Guid guid)
-    {
-        if (HasTeam(guid))
-        {
-            return RET_TEAM_MEMBER_IN_TEAM;
-        }
-        if (IsFull())
-        {
-            return RET_TEAM_MEMBERS_FULL;
-        }
-        RET_CHECK_RET(CheckLimt(guid));
-        if (applicants_.size() >= kMaxApplicantSize)
-        {
-            applicants_.erase(applicants_.begin());
-        }
-        applicants_.emplace_back(guid);
-        return RET_OK;
     }
 
     uint32_t Team::DissMiss(Guid current_leader_id)
@@ -158,7 +139,27 @@ namespace common
         applicants_.clear();      
     }
 
-    uint32_t Team::RemoveApplicant(Guid applicant_id)
+	uint32_t Team::AddApplicant(Guid guid)
+	{
+		if (HasTeam(guid))
+		{
+			return RET_TEAM_MEMBER_IN_TEAM;
+		}
+		if (IsFull())
+		{
+			return RET_TEAM_MEMBERS_FULL;
+		}
+		RET_CHECK_RET(CheckLimt(guid));
+		if (applicants_.size() >= kMaxApplicantSize)
+		{
+			applicants_.erase(applicants_.begin());
+		}
+		applicants_.emplace_back(guid);
+		return RET_OK;
+	}
+
+
+    uint32_t Team::DelApplicant(Guid applicant_id)
     {
         auto it = std::find(applicants_.begin(), applicants_.end(), applicant_id);
         if (it != applicants_.end())
