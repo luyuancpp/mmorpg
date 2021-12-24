@@ -27,6 +27,14 @@ namespace common
     }\
     auto& team = reg().get<Team>(e);\
 
+#define GetTeamReturnVoid \
+    auto e = entt::to_entity(team_id);\
+    if (!reg().valid(e))\
+    {\
+        return ;\
+    }\
+    auto& team = reg().get<Team>(e);\
+
     Teams::Teams()
         : emp_(EventManager::New())
     {
@@ -202,10 +210,10 @@ namespace common
         return team.AppointLeader(current_leader, new_leader);
     }
 
-    uint32_t Teams::ApplyForTeam(Guid team_id, Guid guid)
+    uint32_t Teams::ApplyToTeam(Guid team_id, Guid guid)
     {
         GetTeamPtrReturnError;
-        return team.ApplyTeam(guid);
+        return team.ApplyToTeam(guid);
     }
 
     uint32_t Teams::DelApplicant(Guid team_id, Guid guid)
@@ -216,12 +224,7 @@ namespace common
 
     void Teams::ClearApplyList(Guid team_id)
     {
-        auto e = entt::to_entity(team_id);
-        if (!reg().valid(e))
-        {
-            return;
-        }
-        auto& team = reg().get<Team>(e);
+        GetTeamReturnVoid;
         team.ClearApplyList();
     }
 

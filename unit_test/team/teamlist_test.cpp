@@ -236,7 +236,7 @@ TEST(TeamManger, ApplyFull)
 	for (Guid i = 0; i < nMax; ++i)
 	{
 		a = i;
-		EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(),  a));
+		EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(),  a));
 		if (i < kMaxApplicantSize)
 		{
 			EXPECT_EQ(i + 1, team_list.applicant_size_by_team_id(team_list.last_team_id()));
@@ -271,14 +271,14 @@ TEST(TeamManger, ApplicantOrder)
     for (Guid i = 0; i < nMax; ++i)
     {
         a = (i);
-        EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), a));
+        EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(), a));
     }
     EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant(team_list.last_team_id()));
 
     for (Guid i = 0; i < nMax; ++i)
     {
         a = (i);
-        EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), a));
+        EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(), a));
     }
 
     EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant(team_list.last_team_id()));
@@ -298,7 +298,7 @@ TEST(TeamManger, InTeamApplyForTeam)
     for (Guid i = 1; i < nMax; ++i)
     {
         a = (i);
-        EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), a));
+        EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(), a));
     }
 	for (Guid i = 1; i < nMax; ++i)
 	{
@@ -314,12 +314,12 @@ TEST(TeamManger, InTeamApplyForTeam)
 		}
 	}
     a = (6666);
-    EXPECT_EQ(RET_TEAM_MEMBERS_FULL, team_list.ApplyForTeam(team_list.last_team_id(), a));
+    EXPECT_EQ(RET_TEAM_MEMBERS_FULL, team_list.ApplyToTeam(team_list.last_team_id(), a));
 
     EXPECT_EQ(RET_OK, team_list.LeaveTeam(2));
 
     m = (2);
-    EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), m));
+    EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(), m));
     EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
     EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_list.last_team_id(), 2));
     EXPECT_FALSE(team_list.IsApplicant(team_list.last_team_id(), 2));
@@ -341,7 +341,7 @@ TEST(TeamManger, RemoveApplicant)
 	for (Guid i = 0; i < nMax; ++i)
 	{
 		a = (player_id++);
-		EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), a));
+		EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(), a));
 		if (i % 2 == 0)
 		{
 			EXPECT_EQ(RET_OK, team_list.DelApplicant(team_list.last_team_id(), a));
@@ -372,7 +372,7 @@ TEST(TeamManger, AgreeApplicant)
     for (int32_t i = 0; i < nMax; ++i)
     {
         a = (i);
-        EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), a));
+        EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(), a));
         if (i > kMaxApplicantSize)
         {
             EXPECT_EQ(kMaxApplicantSize, team_list.applicant_size_by_team_id(team_list.last_team_id()));
@@ -426,7 +426,7 @@ TEST(TeamManger, PlayerTeamId)
 	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(m));
 
 	m = (3);
-	EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(), m));
+	EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(), m));
 	EXPECT_FALSE(team_list.HasTeam(m));
 	EXPECT_EQ(kEmptyGuid, team_list.GetTeamId(m));
 
@@ -435,7 +435,7 @@ TEST(TeamManger, PlayerTeamId)
 	EXPECT_EQ(kEmptyGuid, team_list.GetTeamId(m));
 
 
-	EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_list.last_team_id(),  m));
+	EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(),  m));
 	EXPECT_EQ(RET_OK, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_TRUE(team_list.HasTeam(m));
 	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(m));
@@ -497,7 +497,7 @@ TEST(TeamManger, PlayerInTeam)
 	m = (2);
 	EXPECT_EQ(RET_OK, team_list.CreateTeam({ m, UInt64Set{m}}));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_id1, m));
-	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.ApplyForTeam(team_id1, m));
+	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.ApplyToTeam(team_id1, m));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_id1, m));
 	auto team_id2 = team_list.last_team_id();
 
@@ -505,11 +505,11 @@ TEST(TeamManger, PlayerInTeam)
 	EXPECT_EQ(RET_OK, team_list.LeaveTeam(m));
 	EXPECT_EQ(RET_OK, team_list.JoinTeam(team_id1, m));
 
-	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.ApplyForTeam(team_id1, m));
+	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.ApplyToTeam(team_id1, m));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_id1, m));
 
 	EXPECT_EQ(RET_OK, team_list.LeaveTeam( m));
-	EXPECT_EQ(RET_OK, team_list.ApplyForTeam(team_id1, m));
+	EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_id1, m));
 	EXPECT_EQ(RET_OK, team_list.JoinTeam(team_id1, m));
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_id1, m));
 
