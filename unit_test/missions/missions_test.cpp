@@ -30,7 +30,7 @@ TEST(Missions, MakeMission)
         auto id = data.data(i).id();
         param.mid_ = id;
         param.condition_id_ = &mission_config::GetSingleton().get(id)->condition_id();
-        auto m = ms.MakeMission(param);
+        auto m = ms.Accept(param);
         ++s;
     }
 
@@ -63,8 +63,8 @@ TEST(Missions, RepeatedMission)
         MakeMissionParam param{ 
     mid,
         mission_config::GetSingleton().get(mid)->condition_id()};
-        EXPECT_EQ(RET_OK, ms.MakeMission(param));
-        EXPECT_EQ(RET_MISSION_ID_REPTEATED, ms.MakeMission(param));
+        EXPECT_EQ(RET_OK, ms.Accept(param));
+        EXPECT_EQ(RET_MISSION_ID_REPTEATED, ms.Accept(param));
     }
 
     {
@@ -307,7 +307,7 @@ TEST(Missions, RemoveMission)
     EXPECT_EQ(1, type_missions.find(E_CONDITION_KILL_MONSTER)->second.size());
     auto& cm = ms.complete_ids();
     ((CompleteMissionsId&)cm).mutable_can_reward_mission_id()->insert({ mid, true });
-    ms.RemoveMission(mid);
+    ms.Abandon(mid);
 
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(0, ms.can_reward_mission_id_size());

@@ -80,9 +80,10 @@ namespace common
         }
 
         uint32_t GetMissionReward(uint32_t missin_id);
-        uint32_t MakeMission(const MakeMissionParam& param);
-
-        void RemoveMission(uint32_t mission_id);
+        uint32_t Accept(const MakeMissionParam& param);
+        uint32_t AcceptCheck(const MakeMissionParam& param);
+        
+        void Abandon(uint32_t mission_id);
         
         void TriggerConditionEvent(const ConditionEvent& c);
 

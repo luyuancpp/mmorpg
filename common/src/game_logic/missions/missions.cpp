@@ -38,7 +38,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Missions::MakeMission(const MakeMissionParam& param)
+    uint32_t Missions::Accept(const MakeMissionParam& param)
     {
         auto mission_id = param.mid_;
         if (missions_.missions().count(mission_id))
@@ -92,8 +92,12 @@ namespace common
         return RET_OK;
     }
 
+    uint32_t Missions::AcceptCheck(const MakeMissionParam& param)
+    {
+        return RET_OK;
+    }
 
-    void Missions::RemoveMission(uint32_t mission_id)
+    void Missions::Abandon(uint32_t mission_id)
     {
         missions_.mutable_missions()->erase(mission_id);
         complete_ids_.mutable_missions()->erase(mission_id);
@@ -260,7 +264,7 @@ namespace common
                     auto next_condition_id = next_missions.Get(i);
                     MakeMissionParam param{ next_condition_id,
                         config_->condition_id(next_condition_id) };
-                    MakeMission(param);
+                    Accept(param);
                 }
             }
             else
@@ -295,11 +299,11 @@ namespace common
             auto i = Random::GetSingleton().Rand<int32_t>(0, mrow->random_condition_pool_size() - 1);
             *v.Add() = mrow->random_condition_pool().Get(i);
             mp.condition_id_ = &v;
-            RET_CHECK_RET(ms.MakeMission(mp));
+            RET_CHECK_RET(ms.Accept(mp));
         }
         else
         {
-            RET_CHECK_RET(ms.MakeMission(mp));
+            RET_CHECK_RET(ms.Accept(mp));
         }
         return RET_OK;
     }
