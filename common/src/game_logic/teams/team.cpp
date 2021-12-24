@@ -64,7 +64,7 @@ namespace common
             return RET_TEAM_MEMBER_NOT_IN_TEAM;
         }
         bool leader_leave = IsLeader(guid);
-        emp_->emit<TeamESBeforeLeaveTeam>(teamid_, guid);
+        emp_->emit<EeventBeforeLeaveTeam>(teamid_, guid);
         auto it = std::find(members_.begin(), members_.end(), guid);
         members_.erase(it);//HasMember(guid) already check
         if (!members_.empty() && leader_leave)
@@ -72,7 +72,7 @@ namespace common
             OnAppointLeader(*members_.begin());
         }        
         playerid_team_map().erase(guid);
-        emp_->emit<TeamESAfterLeaveTeam>(teamid_, guid);     
+        emp_->emit<EventAfterLeaveTeam>(teamid_, guid);     
         return RET_OK;
     }
 
@@ -128,7 +128,7 @@ namespace common
         auto& ms = playerid_team_map();
         for (auto& it : members_)
         {
-            emp_->emit<TeamESDissmisTeam>(teamid_, it);
+            emp_->emit<EventDissmisTeam>(teamid_, it);
             ms.erase(it);               
         }
         return RET_OK;
@@ -139,7 +139,7 @@ namespace common
         applicants_.clear();      
     }
 
-	uint32_t Team::ApplyTeam(Guid guid)
+	uint32_t Team::ApplyToTeam(Guid guid)
 	{
 		if (HasTeam(guid))
 		{

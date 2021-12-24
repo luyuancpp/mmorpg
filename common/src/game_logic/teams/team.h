@@ -57,7 +57,7 @@ public:
     bool IsApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
     inline bool ApplicantEmpty()const { return !applicants_.empty(); }
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
-    inline bool IsLeader(Guid guid)const { /*assert(leader_id_ != kEmptyGuid);*/ return leader_id_ == guid; }
+        inline bool IsLeader(Guid guid)const { return leader_id_ == guid; }
     inline bool IsMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
    
     uint32_t CheckLimt(Guid  guid);
@@ -68,7 +68,7 @@ public:
     uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
     uint32_t DissMiss(Guid current_leader_id);
     void ClearApplyList();
-    uint32_t ApplyTeam(Guid guid);
+    uint32_t ApplyToTeam(Guid guid);
     uint32_t DelApplicant(Guid applicant_id);
     
 private:

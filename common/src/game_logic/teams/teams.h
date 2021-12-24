@@ -46,7 +46,7 @@ public:
     uint32_t DissMissTeam(Guid team_id, Guid current_leader_id);
     uint32_t DissMissTeamNoLeader(Guid team_id);
     uint32_t AppointLeader(Guid team_id, Guid current_leader_id, Guid  nNewLeaderPlayerId);
-    uint32_t ApplyForTeam(Guid team_id, Guid guid);
+    uint32_t ApplyToTeam(Guid team_id, Guid guid);
     uint32_t DelApplicant(Guid team_id, Guid apply_guid);
     void ClearApplyList(Guid team_id);
         
