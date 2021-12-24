@@ -101,7 +101,7 @@ namespace common
     bool Teams::HasMember(Guid team_id, Guid guid)
     {
         GetTeamReturn(false);
-        return team.HasMember(guid);
+        return team.IsMember(guid);
     }
 
     bool Teams::HasTeam(Guid guid) const
@@ -110,15 +110,15 @@ namespace common
         return player_team_map_.find(guid) != player_team_map_.end(); 
     }
 
-    bool Teams::HasApplicant(Guid team_id, Guid guid) const
+    bool Teams::IsApplicant(Guid team_id, Guid guid) const
     {
         GetTeamReturn(false);
-        return team.HasApplicant(guid);
+        return team.IsApplicant(guid);
     }
 
     uint32_t Teams::CreateTeam(const CreateTeamP& param)
     {
-        if (IsTeamsMax())
+        if (IsTeamListMax())
         {
             return RET_TEAM_TEAM_LIST_MAX;
         }
@@ -127,14 +127,9 @@ namespace common
             return RET_TEAM_MEMBER_IN_TEAM;
         }
         RET_CHECK_RET(CheckMemberInTeam(param.members));
-
         auto e = reg().create();
         TeamsP ts_param{e, my_entity_id_, emp_, &reg() };
-        auto team = reg().emplace<Team>(e, param, ts_param);
-
-        PlayerInTeamF f_in_the_team;
-        f_in_the_team.cb_ = std::bind(&Teams::HasTeam, this, std::placeholders::_1);
-        reg().emplace<PlayerInTeamF>(e, f_in_the_team);
+        reg().emplace<Team>(e, param, ts_param);
         last_team_id_ = entt::to_integral(e);//for test
         return RET_OK;
     }
@@ -210,19 +205,13 @@ namespace common
     uint32_t Teams::ApplyForTeam(Guid team_id, Guid guid)
     {
         GetTeamPtrReturnError;
-        return team.Apply(guid);
+        return team.ApplyTeam(guid);
     }
 
-    uint32_t Teams::RejectApplicant(Guid team_id, Guid guid)
+    uint32_t Teams::DelApplicant(Guid team_id, Guid guid)
     {
         GetTeamPtrReturnError;
-        return team.RemoveApplicant(guid);
-    }
-
-    uint32_t Teams::AgreeApplicant(Guid team_id, Guid guid)
-    {
-        GetTeamPtrReturnError;
-        return team.JoinTeam(guid);
+        return team.DelApplicant(guid);
     }
 
     void Teams::ClearApplyList(Guid team_id)

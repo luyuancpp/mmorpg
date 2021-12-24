@@ -33,12 +33,6 @@ namespace common
         entt::registry* teams_registry_{ nullptr };
     };
 
-    struct PlayerInTeamF
-    {
-        using FunctionType = std::function<bool(Guid)>;
-        FunctionType cb_;
-    };
-
     using PlayerTeamMap = std::unordered_map<Guid, entt::entity>;
 
 class Team
@@ -58,7 +52,7 @@ public:
     std::size_t applicant_size()const{  return applicants_.size();}
     Guid first_applicant()const;
     const GuidVector& members()const { return members_; }
-    inline PlayerTeamMap& playerid_team_map() { return teams_registry_->get<PlayerTeamMap>(teams_entity_id_); }
+    inline PlayerTeamMap& playerid_team_map() const { return teams_registry_->get<PlayerTeamMap>(teams_entity_id_); }
 
     bool IsApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
     inline bool ApplicantEmpty()const { return !applicants_.empty(); }
@@ -74,11 +68,11 @@ public:
     uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
     uint32_t DissMiss(Guid current_leader_id);
     void ClearApplyList();
-    uint32_t AddApplicant(Guid guid);
+    uint32_t ApplyTeam(Guid guid);
     uint32_t DelApplicant(Guid applicant_id);
     
 private:
-    inline bool HasTeam(Guid guid) const { return teams_registry_->get<PlayerInTeamF>(teamid_).cb_(guid); }
+    inline bool HasTeam(Guid guid) const { return playerid_team_map().find(guid) != playerid_team_map().end(); }
 
     void OnAppointLeader(Guid  new_leader_guid);
    

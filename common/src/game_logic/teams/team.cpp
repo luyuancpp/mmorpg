@@ -139,7 +139,7 @@ namespace common
         applicants_.clear();      
     }
 
-	uint32_t Team::AddApplicant(Guid guid)
+	uint32_t Team::ApplyTeam(Guid guid)
 	{
 		if (HasTeam(guid))
 		{
