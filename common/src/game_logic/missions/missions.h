@@ -10,30 +10,34 @@
 
 namespace common
 {
-    struct AcceptMissionBaseP
+    class AcceptMissionBaseP
     {
+    public:
         using PBUint32V = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
         AcceptMissionBaseP(uint32_t mid, const PBUint32V* condition_id) 
             : missionid_(mid),
               conditions_id_(condition_id){}
 
-        AcceptMissionBaseP(uint32_t mision_id, const PBUint32V& condition_id)
-            : missionid_(mision_id),
-              conditions_id_(&condition_id){}
+        AcceptMissionBaseP(uint32_t mid, const PBUint32V& condition_id)
+            : AcceptMissionBaseP(mid, &condition_id) {}
+
+    protected:
+        AcceptMissionBaseP(uint32_t mid) : missionid_(mid) {}
+
+    public:
         uint32_t missionid_{ 0 };
         const PBUint32V* conditions_id_{ nullptr };
     };
 
-    //struct AcceptMissionP : public AcceptMissionBaseP
-    //{
-    //    using PBUint32V = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
-    //    AcceptMissionP(uint32_t mid, const PBUint32V* condition_id);
-    //    AcceptMissionP(uint32_t mision_id, const PBUint32V& condition_id);
-    //};
-
-    struct MakePlayerMissionP
+    struct AcceptMissionP : public AcceptMissionBaseP
     {
-        MakePlayerMissionP(
+        using PBUint32V = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
+        AcceptMissionP(uint32_t mid);
+    };
+
+    struct AcceptPlayerRandomMissionP
+    {
+        AcceptPlayerRandomMissionP(
             uint32_t mision_id)
             : 
             mission_id_(mision_id)
@@ -103,7 +107,7 @@ namespace common
         UInt32PairSet type_set_;
     };
 
-    uint32_t RandomMision(const MakePlayerMissionP& param, MissionsComp& ms);
+    uint32_t RandomMision(const AcceptPlayerRandomMissionP& param, MissionsComp& ms);
 }//namespace common
 
 #endif // !COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_H_
