@@ -10,26 +10,26 @@
 
 namespace common
 {
-    struct AcceptMissionP
+    struct AcceptMissionBaseP
     {
         using PBUint32V = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
-        AcceptMissionP(
-            uint32_t mid,
-            const PBUint32V* condition_id)
-            :
-            missionid_(mid),
-            conditions_id_(condition_id) {}
-        AcceptMissionP(
-            uint32_t mision_id,
-            const PBUint32V& condition_id)
-            : 
-            missionid_(mision_id),
-            conditions_id_(&condition_id) {}
+        AcceptMissionBaseP(uint32_t mid, const PBUint32V* condition_id) 
+            : missionid_(mid),
+              conditions_id_(condition_id){}
 
-        entt::entity e_{ entt::null };
+        AcceptMissionBaseP(uint32_t mision_id, const PBUint32V& condition_id)
+            : missionid_(mision_id),
+              conditions_id_(&condition_id){}
         uint32_t missionid_{ 0 };
         const PBUint32V* conditions_id_{ nullptr };
     };
+
+    //struct AcceptMissionP : public AcceptMissionBaseP
+    //{
+    //    using PBUint32V = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
+    //    AcceptMissionP(uint32_t mid, const PBUint32V* condition_id);
+    //    AcceptMissionP(uint32_t mision_id, const PBUint32V& condition_id);
+    //};
 
     struct MakePlayerMissionP
     {
@@ -80,8 +80,8 @@ namespace common
         }
 
         uint32_t GetReward(uint32_t missin_id);
-        uint32_t Accept(const AcceptMissionP& param);
-        uint32_t AcceptCheck(const AcceptMissionP& param);
+        uint32_t Accept(const AcceptMissionBaseP& param);
+        uint32_t AcceptCheck(const AcceptMissionBaseP& param);
         
         uint32_t Abandon(uint32_t mission_id);
         

@@ -18,7 +18,7 @@ TEST(MissionsComp, AcceptMission)
     uint32_t mid = 1;
     MissionsComp ms;
     reg().remove<CheckSubType>(ms.entity());
-    AcceptMissionP param{mid,mission_config::GetSingleton().get(mid)->condition_id()};
+    AcceptMissionBaseP param{mid,mission_config::GetSingleton().get(mid)->condition_id()};
     auto& data = mission_config::GetSingleton().all();
     std::size_t sz = 0;
     for (int32_t i = 0; i < data.data_size(); ++i)
@@ -56,9 +56,7 @@ TEST(MissionsComp, RepeatedMission)
     MissionsComp ms;
     {
         uint32_t mid = 1;
-        AcceptMissionP param{ 
-    mid,
-        mission_config::GetSingleton().get(mid)->condition_id()};
+        AcceptMissionBaseP param{mid, mission_config::GetSingleton().get(mid)->condition_id()};
         EXPECT_EQ(RET_OK, ms.Accept(param));
         EXPECT_EQ(RET_MISSION_ID_REPTEATED, ms.Accept(param));
     }
