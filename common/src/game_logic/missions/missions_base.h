@@ -15,46 +15,25 @@ namespace common
     public:
         using PBUint32V = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
         AcceptMissionBaseP(uint32_t mid, const PBUint32V* condition_id) 
-            : missionid_(mid),
+            : mission_id_(mid),
               conditions_id_(condition_id){}
 
         AcceptMissionBaseP(uint32_t mid, const PBUint32V& condition_id)
             : AcceptMissionBaseP(mid, &condition_id) {}
 
     protected:
-        AcceptMissionBaseP(uint32_t mid) : missionid_(mid) {}
+        AcceptMissionBaseP(uint32_t mid) : mission_id_(mid) {}
 
     public:
-        uint32_t missionid_{ 0 };
+        uint32_t mission_id_{ 0 };
         const PBUint32V* conditions_id_{ nullptr };
     };
-
-    struct AcceptMissionP : public AcceptMissionBaseP
-    {
-        using PBUint32V = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
-        AcceptMissionP(uint32_t mid);
-    };
-
-    struct AcceptPlayerRandomMissionP
-    {
-        AcceptPlayerRandomMissionP(
-            uint32_t mision_id)
-            : 
-            mission_id_(mision_id)
-        {}
-        uint32_t mission_id_{ 0 };
-    };
-
+    
     struct ConditionEvent
     {
-        uint32_t condition_type_{ 0 };
-        UInt32Vector condtion_ids_{};
+        uint32_t type_{ 0 };
+        UInt32Vector match_condtion_ids_{};
         uint32_t ammount_{ 1 };
-    };
-
-    struct MissionIdParam
-    {
-        uint32_t missin_id_{ 0 };
     };
 
     class MissionsComp : public EntityHandle
@@ -64,12 +43,12 @@ namespace common
         MissionsComp();
         MissionsComp(IMissionConfig* config);
 
-        const Uint32KeyUint32SetValue& type_mission_id() const { return  classify_missions_; }
+        const Uint32KeyUint32SetValue& classify_for_unittest() const { return  classify_missions_; }
         const MissionMap& missions() { return missions_; }
         const CompleteMissionsId& complete_ids() { return complete_ids_; }
         std::size_t mission_size()const { return missions_.missions().size(); }
         std::size_t complete_size()const { return complete_ids_.missions().size(); }
-        std::size_t type_set_size()const { return type_set_.size(); }
+        std::size_t type_set_size()const { return type_filter_.size(); }
         std::size_t can_reward_size()const { return complete_ids_.can_reward_mission_id().size(); }
 
         bool IsAccepted(uint32_t mission_id)const
@@ -83,15 +62,13 @@ namespace common
             return complete_ids.find(mission_id) != complete_ids.end();
         }
 
-        uint32_t GetReward(uint32_t missin_id);
+        uint32_t GetReward(uint32_t mission_id);
         uint32_t Accept(const AcceptMissionBaseP& param);
         uint32_t AcceptCheck(const AcceptMissionBaseP& param);
-        
         uint32_t Abandon(uint32_t mission_id);
-        
-        void TriggerConditionEvent(const ConditionEvent& c);
-
         void CompleteAllMission();
+
+        void receive(const ConditionEvent& c);
        
     private:
         void DelClassify(uint32_t mission_id);
@@ -104,10 +81,8 @@ namespace common
         MissionMap missions_;
         CompleteMissionsId complete_ids_;  
         Uint32KeyUint32SetValue classify_missions_;//key : event classify , value misison list
-        UInt32PairSet type_set_;
+        UInt32PairSet type_filter_;
     };
-
-    uint32_t RandomMision(const AcceptPlayerRandomMissionP& param, MissionsComp& ms);
 }//namespace common
 
 #endif // !COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_BASE_H_

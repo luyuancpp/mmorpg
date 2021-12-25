@@ -7,20 +7,12 @@
 
 namespace common
 {
-    AcceptMissionP::AcceptMissionP(uint32_t mid)
-        : AcceptMissionBaseP(mid)
-    {
-        auto mrow = mission_config::GetSingleton().get(mid);
-        if (nullptr == mrow)
-        {
-            return;
-        }
-        conditions_id_ = &mrow->condition_id();
-    }
-
 
     MissionsComp::MissionsComp()
-        : config_(&MissionConfig::GetSingleton())
+        : MissionsComp(&MissionConfig::GetSingleton()){}
+
+    MissionsComp::MissionsComp(IMissionConfig* config)
+        : config_(config)
     {
         for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
         {
@@ -30,12 +22,6 @@ namespace common
         {
             reg().emplace<CheckSubType>(entity());
         }
-    }
-
-    MissionsComp::MissionsComp(IMissionConfig* config)
-        : MissionsComp()          
-    {
-        config_ = config;
     }
 
     uint32_t MissionsComp::GetReward(uint32_t missin_id)
@@ -52,17 +38,17 @@ namespace common
 
     uint32_t MissionsComp::Accept(const AcceptMissionBaseP& param)
     {
-        auto mission_id = param.missionid_;
-        if (missions_.missions().count(mission_id))
+        auto mission_id = param.mission_id_;
+        if (missions_.missions().count(mission_id) > 0)
         {
             return RET_MISSION_ID_REPTEATED;
         }
-        if (complete_ids_.missions().count(mission_id))
+        if (complete_ids_.missions().count(mission_id) > 0)
         {
             return RET_MISSION_COMPLETE;
         }
-        auto conditions = param.conditions_id_;
-        if (nullptr == conditions)
+        auto condition_id_ = param.conditions_id_;
+        if (nullptr == condition_id_)
         {
             return RET_MISSION_NO_CONDITION;
         }
@@ -78,14 +64,14 @@ namespace common
         if (check_sub_mission)
         {
             UInt32PairSet::value_type p(mission_type, mission_sub_type);
-            auto it = type_set_.find(p);
-            CheckCondtion(it != type_set_.end(), RET_MISSION_TYPE_REPTEATED);
+            auto it = type_filter_.find(p);
+            CheckCondtion(it != type_filter_.end(), RET_MISSION_TYPE_REPTEATED);
         }
         Mission m;
         m.set_id(mission_id);
-        for (int32_t i = 0; i < conditions->size(); ++i)
+        for (int32_t i = 0; i < condition_id_->size(); ++i)
         {
-            auto condition_id = conditions->Get(i);
+            auto condition_id = condition_id_->Get(i);
             auto p = condition_config::GetSingleton().get(condition_id);
             if (nullptr == p)
             {
@@ -99,7 +85,7 @@ namespace common
         if (check_sub_mission)
         {
             UInt32PairSet::value_type p(mission_type, mission_sub_type);
-            type_set_.emplace(p);
+            type_filter_.emplace(p);
         }
         return RET_OK;
     }
@@ -123,22 +109,32 @@ namespace common
         return RET_OK;
     }
 
-    void MissionsComp::TriggerConditionEvent(const ConditionEvent& c)
+    void MissionsComp::CompleteAllMission()
     {
-        if (c.condtion_ids_.empty())
+        for (auto& meit : missions_.missions())
+        {
+            complete_ids_.mutable_missions()->insert({ meit.first, false });
+        }
+        missions_.mutable_missions()->clear();
+    }
+
+    void MissionsComp::receive(const ConditionEvent& c)
+    {
+        if (c.match_condtion_ids_.empty())
         {
             return;
         }
         auto mm = missions_.mutable_missions();
-        auto it = classify_missions_.find(c.condition_type_);
+        auto it = classify_missions_.find(c.type_);
         if (it == classify_missions_.end())
         {
             return;
         }
         TempCompleteList temp_complete;
-        for (auto lmit : it->second)
+        auto& mission_list = it->second;
+        for (auto lit : mission_list)
         {
-            auto mit = mm->find(lmit);
+            auto mit = mm->find(lit);
             if (mit == mm->end())
             {
                 continue;
@@ -172,15 +168,6 @@ namespace common
         OnCompleteMission(c, temp_complete);
     }
 
-    void MissionsComp::CompleteAllMission()
-    {
-        for (auto& meit : missions_.missions())
-        {
-            complete_ids_.mutable_missions()->insert({ meit.first, false });
-        }
-        missions_.mutable_missions()->clear();
-    }
-
     void MissionsComp::DelClassify(uint32_t mission_id)
     {
         auto& cs = config_->condition_id(mission_id);
@@ -196,16 +183,16 @@ namespace common
         auto mission_sub_type = config_->mission_sub_type(mission_id);
         auto mission_type = config_->mission_type(mission_id);
         TypeSubTypeSet::value_type p(mission_type, mission_sub_type);
-        type_set_.erase(p);
+        type_filter_.erase(p);
     }
 
     bool MissionsComp::TriggerCondition(const ConditionEvent& c, Mission& mission)
     {
-        if (c.condtion_ids_.empty())
+        if (c.match_condtion_ids_.empty())
         {
             return false;
         }
-        auto& row_condtion1 = c.condtion_ids_[E_CONDITION_1];
+        auto& row_condtion1 = c.match_condtion_ids_[E_CONDITION_1];
         //compare condition
         bool condition_change = false;
         for (int32_t i = 0; i < mission.conditions_size(); ++i)
@@ -220,7 +207,7 @@ namespace common
             {
                 continue;
             }
-            if (c.condition_type_ != p->condition_type())
+            if (c.type_ != p->condition_type())
             {
                 continue;
             }
@@ -292,33 +279,9 @@ namespace common
         ConditionEvent ce{ E_CONDITION_COMPLELTE_MISSION, {}, 1 };
         for (auto& it : temp_complete)
         {
-            ce.condtion_ids_ = { it };
-            TriggerConditionEvent(ce);
+            ce.match_condtion_ids_ = { it };
+            receive(ce);
         }
-    }
-
-    uint32_t RandomMision(const AcceptPlayerRandomMissionP& param, MissionsComp& ms)
-    {
-        auto mid = param.mission_id_;
-        auto mrow = mission_config::GetSingleton().get(mid);
-        if (nullptr == mrow)
-        {
-            return RET_TABLE_ID_ERROR;
-        }
-        AcceptMissionBaseP mp{ mid, mrow->condition_id()};
-        if (mrow->random_condition_pool_size() > 0)
-        {
-            AcceptMissionBaseP::PBUint32V v;
-            auto i = Random::GetSingleton().Rand<int32_t>(0, mrow->random_condition_pool_size() - 1);
-            *v.Add() = mrow->random_condition_pool().Get(i);
-            mp.conditions_id_ = &v;
-            RET_CHECK_RET(ms.Accept(mp));
-        }
-        else
-        {
-            RET_CHECK_RET(ms.Accept(mp));
-        }
-        return RET_OK;
     }
 
 }//namespace common
