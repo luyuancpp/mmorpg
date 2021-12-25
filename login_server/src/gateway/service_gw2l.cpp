@@ -115,7 +115,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     CheckReturnCloseureError(ap->EnterGame());
 
     // long time in login processing
-    if (!ap->IsPlayerId(guid))
+    if (!ap->IsInPlayerList(guid))  
     {
         ReturnCloseureError(RET_LOGIN_ENTER_GUID);
     }

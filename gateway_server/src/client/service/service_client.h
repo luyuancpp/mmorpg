@@ -69,7 +69,6 @@ private:
     ProtobufDispatcher& dispatcher_;
     RpcStubgw2l& gw2l_login_stub_;
     common::ServerSequence server_sequence_;
-    common::Guid id_{ 0 };
 };
 }//namespace gateway
 
