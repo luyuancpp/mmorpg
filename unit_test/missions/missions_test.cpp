@@ -13,32 +13,28 @@
 
 using namespace common;
 
-TEST(MissionsComp, MakeMission)
+TEST(MissionsComp, AcceptMission)
 {
     uint32_t mid = 1;
     MissionsComp ms;
     reg().remove<CheckSubType>(ms.entity());
-    MakeMissionP param{ 
-    mid,
-        mission_config::GetSingleton().get(mid)->condition_id()};
-    
+    AcceptMissionP param{mid,mission_config::GetSingleton().get(mid)->condition_id()};
     auto& data = mission_config::GetSingleton().all();
-
-    std::size_t s = 0;
+    std::size_t sz = 0;
     for (int32_t i = 0; i < data.data_size(); ++i)
     {
         auto id = data.data(i).id();
         param.missionid_ = id;
         param.conditions_id_ = &mission_config::GetSingleton().get(id)->condition_id();
         auto m = ms.Accept(param);
-        ++s;
+        ++sz;
     }
 
-    EXPECT_EQ(s, ms.mission_size());
+    EXPECT_EQ(sz, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
     ms.CompleteAllMission();
     EXPECT_EQ(0, ms.mission_size());
-    EXPECT_EQ(s, ms.complete_size());
+    EXPECT_EQ(sz, ms.complete_size());
 }
 
 TEST(MissionsComp, RadomCondtion)
@@ -60,7 +56,7 @@ TEST(MissionsComp, RepeatedMission)
     MissionsComp ms;
     {
         uint32_t mid = 1;
-        MakeMissionP param{ 
+        AcceptMissionP param{ 
     mid,
         mission_config::GetSingleton().get(mid)->condition_id()};
         EXPECT_EQ(RET_OK, ms.Accept(param));
