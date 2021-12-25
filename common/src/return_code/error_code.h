@@ -73,7 +73,7 @@ if (return_code != RET_OK)\
 #define CheckCondtion(condition, return_code)\
 if (condition)\
 {\
-        return  return_code; \
+     return  return_code; \
 }\
 
 #define  ReturnCloseureError(f)\

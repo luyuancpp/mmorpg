@@ -27,6 +27,7 @@ namespace common
     public:
         uint32_t mission_id_{ 0 };
         const PBUint32V* conditions_id_{ nullptr };
+        bool is_random_condition_{ false };
     };
     
     struct ConditionEvent
@@ -73,9 +74,9 @@ namespace common
     private:
         void DelClassify(uint32_t mission_id);
        
-        bool TriggerCondition(const ConditionEvent& c, Mission& mission);
+        bool TriggerChangeByMatchCondition(const ConditionEvent& c, Mission& mission);
         
-        void OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete);
+        void OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete);
         
         IMissionConfig* config_{ nullptr };
         MissionMap missions_;
