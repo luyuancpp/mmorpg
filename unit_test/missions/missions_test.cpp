@@ -18,7 +18,7 @@ TEST(Missions, MakeMission)
     uint32_t mid = 1;
     Missions ms;
     reg().remove<CheckSubType>(ms.entity());
-    MakeMissionParam param{ 
+    MakeMissionP param{ 
     mid,
         mission_config::GetSingleton().get(mid)->condition_id()};
     
@@ -28,8 +28,8 @@ TEST(Missions, MakeMission)
     for (int32_t i = 0; i < data.data_size(); ++i)
     {
         auto id = data.data(i).id();
-        param.mid_ = id;
-        param.condition_id_ = &mission_config::GetSingleton().get(id)->condition_id();
+        param.missionid_ = id;
+        param.conditions_id_ = &mission_config::GetSingleton().get(id)->condition_id();
         auto m = ms.Accept(param);
         ++s;
     }
@@ -60,7 +60,7 @@ TEST(Missions, RepeatedMission)
     Missions ms;
     {
         uint32_t mid = 1;
-        MakeMissionParam param{ 
+        MakeMissionP param{ 
     mid,
         mission_config::GetSingleton().get(mid)->condition_id()};
         EXPECT_EQ(RET_OK, ms.Accept(param));
