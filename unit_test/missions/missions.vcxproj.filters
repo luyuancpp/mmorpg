@@ -33,10 +33,10 @@
     <ClCompile Include="..\..\common\src\game_config\mission_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\missions\missions.cpp">
+    <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp">
+    <ClCompile Include="..\..\common\src\game_logic\missions\missions_base.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -53,13 +53,13 @@
     <ClInclude Include="..\..\common\src\game_config\mission_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\missions\missions.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\entity_class\entity_class.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\missions\missions_base.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

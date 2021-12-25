@@ -1,5 +1,5 @@
-#ifndef COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_H_
-#define COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_H_
+#ifndef COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_BASE_H_
+#define COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_BASE_H_
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/mission_comp.hpp"
@@ -110,4 +110,4 @@ namespace common
     uint32_t RandomMision(const AcceptPlayerRandomMissionP& param, MissionsComp& ms);
 }//namespace common
 
-#endif // !COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_H_
+#endif // !COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_BASE_H_

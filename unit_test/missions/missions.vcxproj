@@ -146,7 +146,7 @@
     <ClCompile Include="..\..\common\src\game_config\condition_config.cpp" />
     <ClCompile Include="..\..\common\src\game_config\mission_config.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\missions\missions.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\missions\missions_base.cpp" />
     <ClCompile Include="..\..\protopb\pbc\comp.pb.cc" />
     <ClCompile Include="..\..\protopb\pbc\condition_config.pb.cc" />
     <ClCompile Include="..\..\protopb\pbc\mission_config.pb.cc" />
@@ -156,7 +156,7 @@
     <ClInclude Include="..\..\common\src\game_config\condition_config.h" />
     <ClInclude Include="..\..\common\src\game_config\mission_config.h" />
     <ClInclude Include="..\..\common\src\game_logic\entity_class\entity_class.h" />
-    <ClInclude Include="..\..\common\src\game_logic\missions\missions.h" />
+    <ClInclude Include="..\..\common\src\game_logic\missions\missions_base.h" />
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h" />
     <ClInclude Include="..\..\protopb\pbc\comp.pb.h" />
     <ClInclude Include="..\..\protopb\pbc\condition_config.pb.h" />
