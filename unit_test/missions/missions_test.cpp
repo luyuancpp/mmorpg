@@ -6,6 +6,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/op_code.h"
 #include "src/game_logic/missions/missions_base.h"
+#include "src/game_logic/missions/player_mission.h"
 #include "src/random/random.h"
 #include "src/return_code/error_code.h"
 
@@ -24,7 +25,7 @@ TEST(MissionsComp, AcceptMission)
     for (int32_t i = 0; i < data.data_size(); ++i)
     {
         auto id = data.data(i).id();
-        param.missionid_ = id;
+        param.mission_id_ = id;
         param.conditions_id_ = &mission_config::GetSingleton().get(id)->condition_id();
         auto m = ms.Accept(param);
         ++sz;
@@ -78,22 +79,22 @@ TEST(MissionsComp, TriggerCondition)
     EXPECT_EQ(RET_OK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{ E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.TriggerConditionEvent(ce);
+    ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.condtion_ids_ = { 2 };
-    ms.TriggerConditionEvent(ce);
+    ce.match_condtion_ids_ = { 2 };
+    ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.condtion_ids_ = { 3 };
-    ms.TriggerConditionEvent(ce);
+    ce.match_condtion_ids_ = { 3 };
+    ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.condtion_ids_ = { 4 };
-    ms.TriggerConditionEvent(ce);
+    ce.match_condtion_ids_ = { 4 };
+    ms.receive(ce);
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(1, ms.complete_size());
     EXPECT_EQ(0, ms.type_set_size());
@@ -110,38 +111,38 @@ TEST(MissionsComp, TypeSize)
     EXPECT_FALSE(ms.IsComplete(mid));
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_COMSTUM; ++i)
     {
-        EXPECT_EQ(1, ms.type_mission_id().find(i)->second.size());
+        EXPECT_EQ(1, ms.classify_for_unittest().find(i)->second.size());
     }    
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.TriggerConditionEvent(ce);
+    ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.condition_type_ = E_CONDITION_TALK_WITH_NPC;
-    ce.condtion_ids_ = { 1 };
-    ms.TriggerConditionEvent(ce);
+    ce.type_ = E_CONDITION_TALK_WITH_NPC;
+    ce.match_condtion_ids_ = { 1 };
+    ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.condition_type_ = E_CONDITION_COMPLELETE_CONDITION;
-    ms.TriggerConditionEvent(ce);
+    ce.type_ = E_CONDITION_COMPLELETE_CONDITION;
+    ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.condition_type_ = E_CONDITION_USE_ITEM;
-    ms.TriggerConditionEvent(ce);
+    ce.type_ = E_CONDITION_USE_ITEM;
+    ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.condition_type_ = E_CONDITION_LEVEUP;
-    ce.condtion_ids_ = { 10 };
-    ms.TriggerConditionEvent(ce);
+    ce.type_ = E_CONDITION_LEVEUP;
+    ce.match_condtion_ids_ = { 10 };
+    ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.condition_type_ = E_CONDITION_INTERATION;
-    ce.condtion_ids_ = { 1};
-    ms.TriggerConditionEvent(ce);
+    ce.type_ = E_CONDITION_INTERATION;
+    ce.match_condtion_ids_ = { 1};
+    ms.receive(ce);
     
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(1, ms.complete_size());
@@ -150,7 +151,7 @@ TEST(MissionsComp, TypeSize)
     EXPECT_EQ(0, ms.type_set_size());
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_COMSTUM; ++i)
     {
-        EXPECT_EQ(0, ms.type_mission_id().find(i)->second.size());
+        EXPECT_EQ(0, ms.classify_for_unittest().find(i)->second.size());
     }
 }
 
@@ -163,7 +164,7 @@ TEST(MissionsComp, CompleteAcceptMission)
     EXPECT_EQ(RET_OK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.TriggerConditionEvent(ce);
+    ms.receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
     EXPECT_EQ(RET_MISSION_COMPLETE, ms.Accept(param));
@@ -178,7 +179,7 @@ TEST(MissionsComp, OnCompleteMission)
     EXPECT_EQ(RET_OK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.TriggerConditionEvent(ce);
+    ms.receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
 
@@ -187,8 +188,8 @@ TEST(MissionsComp, OnCompleteMission)
     EXPECT_FALSE(ms.IsComplete(mid));
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_INTERATION; ++i)
     {
-        ce.condtion_ids_ = { i };
-        ms.TriggerConditionEvent(ce);
+        ce.match_condtion_ids_ = { i };
+        ms.receive(ce);
         EXPECT_FALSE(ms.IsAccepted(mid));
         EXPECT_TRUE(ms.IsComplete(mid));
 
@@ -207,7 +208,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
     EXPECT_EQ(RET_OK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.TriggerConditionEvent(ce);
+    ms.receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
 
@@ -235,7 +236,7 @@ TEST(MissionsComp, MissionCondition)
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.TriggerConditionEvent(ce);
+    ms.receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
     EXPECT_FALSE(ms.IsAccepted(mid1));
@@ -256,10 +257,10 @@ TEST(MissionsComp, ConditionAmount)
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.TriggerConditionEvent(ce);
+    ms.receive(ce);
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
-    ms.TriggerConditionEvent(ce);
+    ms.receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
 }
@@ -278,7 +279,7 @@ TEST(MissionsComp, MissionRewardList)
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.TriggerConditionEvent(ce);
+    ms.receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
     EXPECT_EQ(RET_OK, ms.GetReward(mid));
@@ -296,7 +297,7 @@ TEST(MissionsComp, RemoveMission)
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.can_reward_size());
     EXPECT_EQ(1, ms.type_set_size());
-    auto& type_missions = ms.type_mission_id();
+    auto& type_missions = ms.classify_for_unittest();
 
     EXPECT_EQ(1, type_missions.find(E_CONDITION_KILL_MONSTER)->second.size());
     auto& cm = ms.complete_ids();
