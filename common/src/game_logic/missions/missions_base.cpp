@@ -1,5 +1,8 @@
 #include "missions_base.h"
 
+
+#include "muduo/base/Logging.h"
+
 #include "src/game_logic/game_registry.h"
 #include "src/game_config/condition_config.h"
 #include "src/random/random.h"
@@ -58,14 +61,11 @@ namespace common
         }
         auto mission_sub_type = config_->mission_sub_type(mission_id);
         auto mission_type = config_->mission_type(mission_id);
-        bool check_sub_mission = config_->HasMainSubTypeCheck() &&
-            mission_sub_type > 0 &&
-            reg().any_of<CheckSubType>(entity());
-        if (check_sub_mission)
+        bool check_type_filter = config_->HasMainSubTypeCheck() &&  mission_sub_type > 0 && reg().any_of<CheckSubType>(entity());
+        if (check_type_filter)
         {
             UInt32PairSet::value_type p(mission_type, mission_sub_type);
-            auto it = type_filter_.find(p);
-            CheckCondtion(it != type_filter_.end(), RET_MISSION_TYPE_REPTEATED);
+            CheckCondtion(type_filter_.find(p) != type_filter_.end(), RET_MISSION_TYPE_REPTEATED);
         }
         Mission m;
         m.set_id(mission_id);
@@ -75,6 +75,7 @@ namespace common
             auto p = condition_config::GetSingleton().get(condition_id);
             if (nullptr == p)
             {
+                LOG_ERROR << "has not condtion" << condition_id;
                 continue;
             }
             auto pcs = m.add_conditions();
@@ -82,7 +83,7 @@ namespace common
             classify_missions_[p->condition_type()].emplace(mission_id);
         }
         missions_.mutable_missions()->insert({ mission_id, std::move(m) });
-        if (check_sub_mission)
+        if (check_type_filter)
         {
             UInt32PairSet::value_type p(mission_type, mission_sub_type);
             type_filter_.emplace(p);
@@ -140,7 +141,7 @@ namespace common
                 continue;
             }
             auto& mission = mit->second;
-            if (!TriggerCondition(c, mission))
+            if (!TriggerChangeByMatchCondition(c, mission))
             {
                 continue;
             }
@@ -165,7 +166,7 @@ namespace common
             // can not use mission and mit 
         }
 
-        OnCompleteMission(c, temp_complete);
+        OnMissionComplete(c, temp_complete);
     }
 
     void MissionsComp::DelClassify(uint32_t mission_id)
@@ -180,21 +181,19 @@ namespace common
             }
             classify_missions_[cp->condition_type()].erase(mission_id);
         }
-        auto mission_sub_type = config_->mission_sub_type(mission_id);
-        auto mission_type = config_->mission_type(mission_id);
-        TypeSubTypeSet::value_type p(mission_type, mission_sub_type);
+        TypeSubTypeSet::value_type p(config_->mission_type(mission_id), config_->mission_sub_type(mission_id));
         type_filter_.erase(p);
     }
 
-    bool MissionsComp::TriggerCondition(const ConditionEvent& c, Mission& mission)
+    bool MissionsComp::TriggerChangeByMatchCondition(const ConditionEvent& c, Mission& mission)
     {
         if (c.match_condtion_ids_.empty())
         {
             return false;
-        }
-        auto& row_condtion1 = c.match_condtion_ids_[E_CONDITION_1];
+         }
+        auto& row_condtion1 = c.match_condtion_ids_[E_CONDITION_1];//to do condition 2
         //compare condition
-        bool condition_change = false;
+        bool mission_change = false;
         for (int32_t i = 0; i < mission.conditions_size(); ++i)
         {
             auto condition = mission.mutable_conditions(i);
@@ -225,21 +224,38 @@ namespace common
             {
                 continue;
             }
-            condition_change = true;
+            mission_change = true;
             condition->set_progress(c.ammount_ + condition->progress());
-            // to client
-            if (condition->progress() < p->amount())
+
+            static std::vector<std::function<bool(int32_t, int32_t)>> f_c{
+                {[](int32_t a, int32_t b) {return a >=   b; }},
+                {[](int32_t a, int32_t b) {return a > b; }},
+                {[](int32_t a, int32_t b) {return a <= b; }},
+                {[](int32_t a, int32_t b) {return a < b; }},
+                {[](int32_t a, int32_t b) {return a == b; }},
+            };
+
+            std::size_t operator_id = std::size_t(p->operation());
+
+            if (!(operator_id >= 0 && operator_id < f_c.size()))
+            {
+                operator_id = 0;
+            }
+
+            if (!f_c[operator_id](condition->progress(), p->amount()))
             {
                 continue;
             }
+
+            // to client
             condition->set_progress(p->amount());
             condition->set_status(E_CONDITION_COMPLETE);
             // to client
         }
-        return condition_change;
+        return mission_change;
     }
 
-    void MissionsComp::OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete)
+    void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete)
     {
         if (temp_complete.empty())
         {
@@ -253,7 +269,6 @@ namespace common
             {
                 complete_ids_.mutable_can_reward_mission_id()->insert({ mission_id, false });
             }
-
             DelClassify(mission_id);
             auto& next_missions = config_->next_mission_id(mission_id);
             auto next_time_accpet = reg().try_get<NextTimeAcceptMission>(entity());
