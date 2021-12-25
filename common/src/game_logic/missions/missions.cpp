@@ -7,12 +7,12 @@
 
 namespace common
 {
-    Missions::Missions()
+    MissionsComp::MissionsComp()
         : config_(&MissionConfig::GetSingleton())
     {
         for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
         {
-            type_missions_.emplace(i, UInt32Set{});
+            classify_missions_.emplace(i, UInt32Set{});
         }
         if (config_->HasMainSubTypeCheck())
         {
@@ -20,13 +20,13 @@ namespace common
         }
     }
 
-    Missions::Missions(IMissionConfig* config)
-        : Missions()          
+    MissionsComp::MissionsComp(IMissionConfig* config)
+        : MissionsComp()          
     {
         config_ = config;
     }
 
-    uint32_t Missions::GetReward(uint32_t missin_id)
+    uint32_t MissionsComp::GetReward(uint32_t missin_id)
     {
         auto rmid = complete_ids_.mutable_can_reward_mission_id();
         auto it = complete_ids_.mutable_can_reward_mission_id()->find(missin_id);
@@ -38,7 +38,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Missions::Accept(const MakeMissionP& param)
+    uint32_t MissionsComp::Accept(const MakeMissionP& param)
     {
         auto mission_id = param.missionid_;
         if (missions_.missions().count(mission_id))
@@ -81,7 +81,7 @@ namespace common
             }
             auto pcs = m.add_conditions();
             pcs->set_id(condition_id);
-            type_missions_[p->condition_type()].emplace(mission_id);
+            classify_missions_[p->condition_type()].emplace(mission_id);
         }
         missions_.mutable_missions()->insert({ mission_id, std::move(m) });
         if (check_sub_mission)
@@ -92,12 +92,12 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Missions::AcceptCheck(const MakeMissionP& param)
+    uint32_t MissionsComp::AcceptCheck(const MakeMissionP& param)
     {
         return RET_OK;
     }
 
-    uint32_t Missions::Abandon(uint32_t mission_id)
+    uint32_t MissionsComp::Abandon(uint32_t mission_id)
     {
         missions_.mutable_missions()->erase(mission_id);
         complete_ids_.mutable_missions()->erase(mission_id);
@@ -111,15 +111,15 @@ namespace common
         return RET_OK;
     }
 
-    void Missions::TriggerConditionEvent(const ConditionEvent& c)
+    void MissionsComp::TriggerConditionEvent(const ConditionEvent& c)
     {
         if (c.condtion_ids_.empty())
         {
             return;
         }
         auto mm = missions_.mutable_missions();
-        auto it = type_missions_.find(c.condition_type_);
-        if (it == type_missions_.end())
+        auto it = classify_missions_.find(c.condition_type_);
+        if (it == classify_missions_.end())
         {
             return;
         }
@@ -160,7 +160,7 @@ namespace common
         OnCompleteMission(c, temp_complete);
     }
 
-    void Missions::CompleteAllMission()
+    void MissionsComp::CompleteAllMission()
     {
         for (auto& meit : missions_.missions())
         {
@@ -169,7 +169,7 @@ namespace common
         missions_.mutable_missions()->clear();
     }
 
-    void Missions::DelClassify(uint32_t mission_id)
+    void MissionsComp::DelClassify(uint32_t mission_id)
     {
         auto& cs = config_->condition_id(mission_id);
         for (int32_t i = 0; i < cs.size(); ++i)
@@ -179,7 +179,7 @@ namespace common
             {
                 continue;
             }
-            type_missions_[cp->condition_type()].erase(mission_id);
+            classify_missions_[cp->condition_type()].erase(mission_id);
         }
         auto mission_sub_type = config_->mission_sub_type(mission_id);
         auto mission_type = config_->mission_type(mission_id);
@@ -187,7 +187,7 @@ namespace common
         type_set_.erase(p);
     }
 
-    bool Missions::TriggerCondition(const ConditionEvent& c, Mission& mission)
+    bool MissionsComp::TriggerCondition(const ConditionEvent& c, Mission& mission)
     {
         if (c.condtion_ids_.empty())
         {
@@ -240,7 +240,7 @@ namespace common
         return condition_change;
     }
 
-    void Missions::OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete)
+    void MissionsComp::OnCompleteMission(const ConditionEvent& c, const TempCompleteList& temp_complete)
     {
         if (temp_complete.empty())
         {
@@ -285,7 +285,7 @@ namespace common
         }
     }
 
-    uint32_t RandomMision(const MakePlayerMissionParam& param, Missions& ms)
+    uint32_t RandomMision(const MakePlayerMissionP& param, MissionsComp& ms)
     {
         auto mission_id = param.mission_id_;
         auto mrow = mission_config::GetSingleton().get(mission_id);
