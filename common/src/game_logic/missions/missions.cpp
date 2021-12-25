@@ -38,9 +38,9 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Missions::Accept(const MakeMissionParam& param)
+    uint32_t Missions::Accept(const MakeMissionP& param)
     {
-        auto mission_id = param.mid_;
+        auto mission_id = param.missionid_;
         if (missions_.missions().count(mission_id))
         {
             return RET_MISSION_ID_REPTEATED;
@@ -49,7 +49,7 @@ namespace common
         {
             return RET_MISSION_COMPLETE;
         }
-        auto conditions = param.condition_id_;
+        auto conditions = param.conditions_id_;
         if (nullptr == conditions)
         {
             return RET_MISSION_NO_CONDITION;
@@ -92,7 +92,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t Missions::AcceptCheck(const MakeMissionParam& param)
+    uint32_t Missions::AcceptCheck(const MakeMissionP& param)
     {
         return RET_OK;
     }
@@ -262,7 +262,7 @@ namespace common
                 for (int32_t i = 0; i < next_missions.size(); ++i)
                 {
                     auto next_condition_id = next_missions.Get(i);
-                    MakeMissionParam param{ next_condition_id,
+                    MakeMissionP param{ next_condition_id,
                         config_->condition_id(next_condition_id) };
                     Accept(param);
                 }
@@ -292,13 +292,13 @@ namespace common
         {
             return RET_TABLE_ID_ERROR;
         }
-        MakeMissionParam mp{ mission_id, mrow->condition_id()};
+        MakeMissionP mp{ mission_id, mrow->condition_id()};
         if (mrow->random_condition_pool_size() > 0)
         {
-            MakeMissionParam::ConditionV v;
+            MakeMissionP::PBUint32V v;
             auto i = Random::GetSingleton().Rand<int32_t>(0, mrow->random_condition_pool_size() - 1);
             *v.Add() = mrow->random_condition_pool().Get(i);
-            mp.condition_id_ = &v;
+            mp.conditions_id_ = &v;
             RET_CHECK_RET(ms.Accept(mp));
         }
         else
