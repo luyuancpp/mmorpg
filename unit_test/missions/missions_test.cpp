@@ -63,9 +63,9 @@ TEST(MissionsComp, RepeatedMission)
 
     {
         AcceptPlayerRandomMissionP param{3};
-        AcceptPlayerRandomMissionP param2{2};
+        AcceptMissionP param2{2};
         EXPECT_EQ(RET_OK, RandomMision(param, ms));
-        EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, RandomMision(param2, ms));
+        EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, ms.Accept(param2));
     }
 }
 
