@@ -45,7 +45,6 @@ public:
         client_.connect();
     }
 
-    void DisConnect();
 private:
 
     void onConnection(const TcpConnectionPtr& conn)

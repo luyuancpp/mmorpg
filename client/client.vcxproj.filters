@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\client.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -27,7 +24,7 @@
     <ClCompile Include="src\client_entityid\client_entityid.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\luacpp\lua_client.cpp">
+    <ClCompile Include="src\luacpp\lua_module.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,7 +38,7 @@
     <ClInclude Include="src\client_entityid\client_entityid.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\luacpp\lua_client.h">
+    <ClInclude Include="src\luacpp\lua_module.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

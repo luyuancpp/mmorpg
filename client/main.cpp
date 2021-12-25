@@ -4,7 +4,7 @@
 
 #include "src/client_entityid/client_entityid.h"
 #include "src/file2string/file2string.h"
-#include "src/luacpp/lua_client.h"
+#include "src/luacpp/lua_module.h"
 
 using namespace common;
 
@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
     if (argc > 0)
     {
-        LuaClient::GetSingleton().Init();
+        LuaModule::GetSingleton().Init();
        
         int32_t nClients = 1;
 
@@ -43,12 +43,10 @@ int main(int argc, char* argv[])
         }
         Timestamp start(Timestamp::now());
         muduo::Logger::setLogLevel(muduo::Logger::INFO);
-        LOG_INFO << "all connected";
         loop.loop();
         Timestamp end(Timestamp::now());
         double seconds = timeDifference(end, start);
-        printf("%f seconds\n", seconds);
-        printf("%.1f calls per second\n", nClients * seconds);
+        LOG_INFO << seconds << "seconds\n";
         muduo::Logger::setLogLevel(muduo::Logger::WARN);
     }
     else

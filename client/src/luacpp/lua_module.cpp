@@ -1,4 +1,4 @@
-#include "lua_client.h"
+#include "lua_module.h"
 
 #include "src/file2string/file2string.h"
 
@@ -12,7 +12,7 @@ public:
 };
 thread_local uint64_t PlayerId::guid = 100;
 
-void LuaClient::Init()
+void LuaModule::Init()
 {
     lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 

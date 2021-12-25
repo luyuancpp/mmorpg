@@ -5,7 +5,7 @@
 #include "src/client_entityid/client_entityid.h"
 #include "src/game_logic/game_registry.h"
 
-#include "src/luacpp/lua_client.h"
+#include "src/luacpp/lua_module.h"
 
 using namespace common;
 
@@ -37,7 +37,7 @@ void ClientService::OnDisconnect()
 
 void ClientService::ReadyGo()
 {
-    auto& lua = LuaClient::GetSingleton().lua();
+    auto& lua = LuaModule::GetSingleton().lua();
     lua["LoginRequest"]["Send"] = [this](LoginRequest& request) ->void
     {
         this->codec_.send(this->conn_, request);
@@ -51,7 +51,7 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
 {
     if (message->players().empty())
     {        
-        auto& lua = LuaClient::GetSingleton().lua();
+        auto& lua = LuaModule::GetSingleton().lua();
         lua["CreatePlayerRequest"]["Send"] = [this](CreatePlayerRequest& request) ->void
         {
             this->codec_.send(this->conn_, request);
@@ -73,7 +73,7 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-    auto& lua = LuaClient::GetSingleton().lua();
+    auto& lua = LuaModule::GetSingleton().lua();
     lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
     {
         this->codec_.send(this->conn_, request);
@@ -90,7 +90,7 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientService::EnterGame(Guid guid)
 {
-    auto& lua = LuaClient::GetSingleton().lua();
+    auto& lua = LuaModule::GetSingleton().lua();
     lua["EnterGameRequest"]["Send"] = [this](EnterGameRequest& request) ->void
     {
         this->codec_.send(this->conn_, request);
