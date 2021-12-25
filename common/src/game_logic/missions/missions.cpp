@@ -38,7 +38,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t MissionsComp::Accept(const MakeMissionP& param)
+    uint32_t MissionsComp::Accept(const AcceptMissionP& param)
     {
         auto mission_id = param.missionid_;
         if (missions_.missions().count(mission_id))
@@ -92,7 +92,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t MissionsComp::AcceptCheck(const MakeMissionP& param)
+    uint32_t MissionsComp::AcceptCheck(const AcceptMissionP& param)
     {
         return RET_OK;
     }
@@ -263,7 +263,7 @@ namespace common
                 for (int32_t i = 0; i < next_missions.size(); ++i)
                 {
                     auto next_condition_id = next_missions.Get(i);
-                    MakeMissionP param{ next_condition_id,
+                    AcceptMissionP param{ next_condition_id,
                         config_->condition_id(next_condition_id) };
                     Accept(param);
                 }
@@ -293,18 +293,18 @@ namespace common
         {
             return RET_TABLE_ID_ERROR;
         }
-        MakeMissionP mp{ mission_id, mrow->condition_id()};
+        AcceptMissionP amp{ mission_id, mrow->condition_id()};
         if (mrow->random_condition_pool_size() > 0)
         {
-            MakeMissionP::PBUint32V v;
+            AcceptMissionP::PBUint32V v;
             auto i = Random::GetSingleton().Rand<int32_t>(0, mrow->random_condition_pool_size() - 1);
             *v.Add() = mrow->random_condition_pool().Get(i);
-            mp.conditions_id_ = &v;
-            RET_CHECK_RET(ms.Accept(mp));
+            amp.conditions_id_ = &v;
+            RET_CHECK_RET(ms.Accept(amp));
         }
         else
         {
-            RET_CHECK_RET(ms.Accept(mp));
+            RET_CHECK_RET(ms.Accept(amp));
         }
         return RET_OK;
     }

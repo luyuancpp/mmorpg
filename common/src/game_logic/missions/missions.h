@@ -10,16 +10,16 @@
 
 namespace common
 {
-    struct MakeMissionP
+    struct AcceptMissionP
     {
         using PBUint32V = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
-        MakeMissionP(
+        AcceptMissionP(
             uint32_t mid,
             const PBUint32V* condition_id)
             :
             missionid_(mid),
             conditions_id_(condition_id) {}
-        MakeMissionP(
+        AcceptMissionP(
             uint32_t mision_id,
             const PBUint32V& condition_id)
             : 
@@ -80,8 +80,8 @@ namespace common
         }
 
         uint32_t GetReward(uint32_t missin_id);
-        uint32_t Accept(const MakeMissionP& param);
-        uint32_t AcceptCheck(const MakeMissionP& param);
+        uint32_t Accept(const AcceptMissionP& param);
+        uint32_t AcceptCheck(const AcceptMissionP& param);
         
         uint32_t Abandon(uint32_t mission_id);
         
