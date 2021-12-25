@@ -5,7 +5,7 @@
 #include "src/game_logic/comp/mission_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/op_code.h"
-#include "src/game_logic/missions/missions.h"
+#include "src/game_logic/missions/missions_base.h"
 #include "src/random/random.h"
 #include "src/return_code/error_code.h"
 
