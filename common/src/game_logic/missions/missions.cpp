@@ -26,7 +26,7 @@ namespace common
         config_ = config;
     }
 
-    uint32_t Missions::GetMissionReward(uint32_t missin_id)
+    uint32_t Missions::GetReward(uint32_t missin_id)
     {
         auto rmid = complete_ids_.mutable_can_reward_mission_id();
         auto it = complete_ids_.mutable_can_reward_mission_id()->find(missin_id);
@@ -97,7 +97,7 @@ namespace common
         return RET_OK;
     }
 
-    void Missions::Abandon(uint32_t mission_id)
+    uint32_t Missions::Abandon(uint32_t mission_id)
     {
         missions_.mutable_missions()->erase(mission_id);
         complete_ids_.mutable_missions()->erase(mission_id);
@@ -107,7 +107,8 @@ namespace common
         {
             begin_times->mutable_mission_begin_time()->erase(mission_id);
         }
-        RemoveMissionTypeSubType(mission_id);
+        DelClassify(mission_id);
+        return RET_OK;
     }
 
     void Missions::TriggerConditionEvent(const ConditionEvent& c)
@@ -168,7 +169,7 @@ namespace common
         missions_.mutable_missions()->clear();
     }
 
-    void Missions::RemoveMissionTypeSubType(uint32_t mission_id)
+    void Missions::DelClassify(uint32_t mission_id)
     {
         auto& cs = config_->condition_id(mission_id);
         for (int32_t i = 0; i < cs.size(); ++i)
@@ -254,7 +255,7 @@ namespace common
                 complete_ids_.mutable_can_reward_mission_id()->insert({ mission_id, false });
             }
 
-            RemoveMissionTypeSubType(mission_id);
+            DelClassify(mission_id);
             auto& next_missions = config_->next_mission_id(mission_id);
             auto next_time_accpet = reg().try_get<NextTimeAcceptMission>(entity());
             if (nullptr == next_time_accpet)
