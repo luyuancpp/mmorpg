@@ -13,10 +13,10 @@
 
 using namespace common;
 
-TEST(Missions, MakeMission)
+TEST(MissionsComp, MakeMission)
 {
     uint32_t mid = 1;
-    Missions ms;
+    MissionsComp ms;
     reg().remove<CheckSubType>(ms.entity());
     MakeMissionP param{ 
     mid,
@@ -41,11 +41,11 @@ TEST(Missions, MakeMission)
     EXPECT_EQ(s, ms.complete_size());
 }
 
-TEST(Missions, RadomCondtion)
+TEST(MissionsComp, RadomCondtion)
 {
     uint32_t mid = 3;
-    Missions ms;
-    MakePlayerMissionParam param{ mid};    
+    MissionsComp ms;
+    MakePlayerMissionP param{ mid};    
     auto cids = mission_config::GetSingleton().get(mid);    
     RandomMision(param, ms);
     auto& missions = ms.missions();
@@ -55,9 +55,9 @@ TEST(Missions, RadomCondtion)
     EXPECT_EQ(1, missions.missions().find(mid)->second.conditions_size());
 }
 
-TEST(Missions, RepeatedMission)
+TEST(MissionsComp, RepeatedMission)
 {
-    Missions ms;
+    MissionsComp ms;
     {
         uint32_t mid = 1;
         MakeMissionP param{ 
@@ -68,19 +68,19 @@ TEST(Missions, RepeatedMission)
     }
 
     {
-        MakePlayerMissionParam param{  3};
-        MakePlayerMissionParam param2{  2};
+        MakePlayerMissionP param{  3};
+        MakePlayerMissionP param2{  2};
         EXPECT_EQ(RET_OK, RandomMision(param, ms));
         EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, RandomMision(param2, ms));
     }
 }
 
-TEST(Missions, TriggerCondition)
+TEST(MissionsComp, TriggerCondition)
 {
-    Missions ms;
+    MissionsComp ms;
     uint32_t mid = 1;
     //auto mrow = mission_config::GetSingleton().get(mid);
-    MakePlayerMissionParam param{mid};
+    MakePlayerMissionP param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{ E_CONDITION_KILL_MONSTER, {1}, 1 };
@@ -105,12 +105,12 @@ TEST(Missions, TriggerCondition)
     EXPECT_EQ(0, ms.type_set_size());
 }
 
-TEST(Missions, TypeSize)
+TEST(MissionsComp, TypeSize)
 {
-    Missions ms;
+    MissionsComp ms;
     uint32_t mid = 6;
     //auto mrow = mission_config::GetSingleton().get(mid);
-    MakePlayerMissionParam param{mid};
+    MakePlayerMissionP param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
@@ -160,12 +160,12 @@ TEST(Missions, TypeSize)
     }
 }
 
-TEST(Missions, CompleteRemakeMission)
+TEST(MissionsComp, CompleteRemakeMission)
 {
-    Missions ms;
+    MissionsComp ms;
     uint32_t mid = 4;
     //auto mrow = mission_config::GetSingleton().get(mid);
-    MakePlayerMissionParam param{  mid};
+    MakePlayerMissionP param{  mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
@@ -175,12 +175,12 @@ TEST(Missions, CompleteRemakeMission)
     EXPECT_EQ(RET_MISSION_COMPLETE, RandomMision(param, ms));
 }
 
-TEST(Missions, OnCompleteMission)
+TEST(MissionsComp, OnCompleteMission)
 {
-    Missions ms;
+    MissionsComp ms;
     uint32_t mid = 7;
 
-    MakePlayerMissionParam param{mid};
+    MakePlayerMissionP param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
@@ -204,11 +204,11 @@ TEST(Missions, OnCompleteMission)
     }
 }
 
-TEST(Missions, AcceptNextMirroMission)
+TEST(MissionsComp, AcceptNextMirroMission)
 {
-    Missions ms;
+    MissionsComp ms;
     uint32_t mid = 7;
-    MakePlayerMissionParam param{mid};
+    MakePlayerMissionP param{mid};
     auto& next_mission_set =  reg().emplace<NextTimeAcceptMission>(ms.entity());
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     EXPECT_EQ(1, ms.type_set_size());
@@ -224,14 +224,14 @@ TEST(Missions, AcceptNextMirroMission)
         != next_mission_set.next_time_accept_mission_id_.end());
 }
 
-TEST(Missions, MissionCondition)
+TEST(MissionsComp, MissionCondition)
 {
-    Missions ms;
+    MissionsComp ms;
 
     uint32_t mid = 14;
     uint32_t mid1 = 15;
     uint32_t mid2 = 16;
-    MakePlayerMissionParam param{mid};
+    MakePlayerMissionP param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     param.mission_id_ = mid1;
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
@@ -250,13 +250,13 @@ TEST(Missions, MissionCondition)
     EXPECT_TRUE(ms.IsComplete(mid2));
 }
 
-TEST(Missions, ConditionAmount)
+TEST(MissionsComp, ConditionAmount)
 {
-    Missions ms;
+    MissionsComp ms;
 
     uint32_t mid = 13;
 
-    MakePlayerMissionParam param{mid};
+    MakePlayerMissionP param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
 
     EXPECT_TRUE(ms.IsAccepted(mid));
@@ -270,15 +270,15 @@ TEST(Missions, ConditionAmount)
     EXPECT_TRUE(ms.IsComplete(mid));
 }
 
-TEST(Missions, MissionRewardList)
+TEST(MissionsComp, MissionRewardList)
 {
-    Missions ms;
+    MissionsComp ms;
 
     reg().emplace<MissionReward>(ms.entity());
 
     uint32_t mid = 12;
 
-    MakePlayerMissionParam param{mid};
+    MakePlayerMissionP param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
     EXPECT_EQ(RET_MISSION_GET_REWARD_NO_MISSION_ID, ms.GetReward(mid));
     EXPECT_TRUE(ms.IsAccepted(mid));
@@ -292,11 +292,11 @@ TEST(Missions, MissionRewardList)
     EXPECT_EQ(0, ms.can_reward_size());
 }
 
-TEST(Missions, RemoveMission)
+TEST(MissionsComp, RemoveMission)
 {
-    Missions ms;
+    MissionsComp ms;
     uint32_t mid = 12;
-    MakePlayerMissionParam param{mid};
+    MakePlayerMissionP param{mid};
     EXPECT_EQ(RET_OK, RandomMision(param, ms));
 
     EXPECT_EQ(1, ms.mission_size());
@@ -315,11 +315,11 @@ TEST(Missions, RemoveMission)
     EXPECT_EQ(0, type_missions.find(E_CONDITION_KILL_MONSTER)->second.size());
 }
 
-TEST(Missions, MissionAutoReward)
+TEST(MissionsComp, MissionAutoReward)
 {
 }
 
-TEST(Missions, MissionTimeOut)
+TEST(MissionsComp, MissionTimeOut)
 {
 
 }

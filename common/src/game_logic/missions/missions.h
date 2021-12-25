@@ -31,9 +31,9 @@ namespace common
         const PBUint32V* conditions_id_{ nullptr };
     };
 
-    struct MakePlayerMissionParam
+    struct MakePlayerMissionP
     {
-        MakePlayerMissionParam(
+        MakePlayerMissionP(
             uint32_t mision_id)
             : 
             mission_id_(mision_id)
@@ -53,14 +53,14 @@ namespace common
         uint32_t missin_id_{ 0 };
     };
 
-    class Missions : public EntityHandle
+    class MissionsComp : public EntityHandle
     {
     public:
-        using TypeMissionIdMap = std::unordered_map<uint32_t, UInt32Set>;
-        Missions();
-        Missions(IMissionConfig* config);
+        using Uint32KeyUint32SetValue = std::unordered_map<uint32_t, UInt32Set>;
+        MissionsComp();
+        MissionsComp(IMissionConfig* config);
 
-        const TypeMissionIdMap& type_mission_id() const { return  type_missions_; }
+        const Uint32KeyUint32SetValue& type_mission_id() const { return  classify_missions_; }
         const MissionMap& missions() { return missions_; }
         const CompleteMissionsId& complete_ids() { return complete_ids_; }
         std::size_t mission_size()const { return missions_.missions().size(); }
@@ -99,11 +99,11 @@ namespace common
         IMissionConfig* config_{ nullptr };
         MissionMap missions_;
         CompleteMissionsId complete_ids_;  
-        TypeMissionIdMap type_missions_;
+        Uint32KeyUint32SetValue classify_missions_;//key : event classify , value misison list
         UInt32PairSet type_set_;
     };
 
-    uint32_t RandomMision(const MakePlayerMissionParam& param, Missions& ms);
+    uint32_t RandomMision(const MakePlayerMissionP& param, MissionsComp& ms);
 }//namespace common
 
 #endif // !COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_H_
