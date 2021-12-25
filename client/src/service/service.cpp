@@ -2,8 +2,6 @@
 
 #include "muduo/base/CountDownLatch.h"
 #include "muduo/base/Logging.h"
-#include "src/client_entityid/client_entityid.h"
-#include "src/game_logic/game_registry.h"
 
 #include "src/luacpp/lua_module.h"
 
@@ -101,11 +99,5 @@ void ClientService::EnterGame(Guid guid)
 void ClientService::DisConnect()
 {
     client_.disconnect();
-    auto& c = reg().get<uint32_t>(client::gAllFinish);
-    --c; 
-    if (c == 0)
-    {
-        timer_task_.RunAfter(5, std::bind(&EventLoop::quit, EventLoop::getEventLoopOfCurrentThread()));
-    }
 }
 

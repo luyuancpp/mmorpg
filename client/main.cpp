@@ -2,8 +2,8 @@
 
 #include "google/protobuf/util/json_util.h"
 
-#include "src/client_entityid/client_entityid.h"
 #include "src/file2string/file2string.h"
+#include "src/game_logic/game_registry.h"
 #include "src/luacpp/lua_module.h"
 
 using namespace common;
@@ -24,8 +24,8 @@ int main(int argc, char* argv[])
         }
         EventLoop loop;
         
-        client::gAllFinish = reg().create();
-        reg().emplace<uint32_t>(client::gAllFinish, nClients);
+        gAllFinish = reg().create();
+        reg().emplace<uint32_t>(gAllFinish, nClients);
 
         auto contents = File2String("client.json");
         google::protobuf::StringPiece sp(contents.data(), contents.size());

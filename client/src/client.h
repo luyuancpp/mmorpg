@@ -14,13 +14,14 @@
 
 #include "src/server_common/codec/dispatcher.h"
 #include "src/server_common/codec/codec.h"
-#include "src/client_entityid/client_entityid.h"
 #include "src/service/service.h"
 
 #include "c2gw.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
+
+extern entt::registry::entity_type gAllFinish;
 
 class PlayerClient : noncopyable
 {
@@ -54,8 +55,14 @@ private:
             service_.OnConnection(conn);
             service_.ReadyGo();
         }
+        else
+        {
+            onDisConenction();
+        }
      
     }
+
+    void onDisConenction();
 
     void onUnknownMessage(const TcpConnectionPtr&,
         const MessagePtr& message,

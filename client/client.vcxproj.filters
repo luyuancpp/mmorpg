@@ -21,10 +21,10 @@
     <ClCompile Include="src\service\service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\client_entityid\client_entityid.cpp">
+    <ClCompile Include="src\luacpp\lua_module.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\luacpp\lua_module.cpp">
+    <ClCompile Include="src\client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -33,9 +33,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\client_entityid\client_entityid.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\luacpp\lua_module.h">
