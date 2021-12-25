@@ -15,7 +15,7 @@ namespace gw2l
         const std::string& account() const{ return account_data_.account(); }
         common::Guid PlayingId() const { return playing_id_; }
 
-        bool IsPlayerId(common::Guid guid);
+        bool IsInPlayerList(common::Guid guid);
 
         // login state machine
         inline uint32_t Login() { return login_state_machine_.Login(); }
