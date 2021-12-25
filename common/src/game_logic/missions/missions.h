@@ -64,33 +64,33 @@ namespace common
         const MissionMap& missions() { return missions_; }
         const CompleteMissionsId& complete_ids() { return complete_ids_; }
         std::size_t mission_size()const { return missions_.missions().size(); }
-        std::size_t completemission_size()const { return complete_ids_.missions().size(); }
+        std::size_t complete_size()const { return complete_ids_.missions().size(); }
         std::size_t type_set_size()const { return type_set_.size(); }
-        std::size_t can_reward_mission_id_size()const { return complete_ids_.can_reward_mission_id().size(); }
+        std::size_t can_reward_size()const { return complete_ids_.can_reward_mission_id().size(); }
 
-        bool IsAcceptedMission(uint32_t mission_id)const
+        bool IsAccepted(uint32_t mission_id)const
         {
             auto& mission = missions_.missions();
             return mission.find(mission_id) != mission.end();
         }
-        bool IsCompleteMission(uint32_t mission_id)const
+        bool IsComplete(uint32_t mission_id)const
         {
             auto& complete_ids = complete_ids_.missions();
             return complete_ids.find(mission_id) != complete_ids.end();
         }
 
-        uint32_t GetMissionReward(uint32_t missin_id);
+        uint32_t GetReward(uint32_t missin_id);
         uint32_t Accept(const MakeMissionP& param);
         uint32_t AcceptCheck(const MakeMissionP& param);
         
-        void Abandon(uint32_t mission_id);
+        uint32_t Abandon(uint32_t mission_id);
         
         void TriggerConditionEvent(const ConditionEvent& c);
 
         void CompleteAllMission();
        
     private:
-        void RemoveMissionTypeSubType(uint32_t mission_id);
+        void DelClassify(uint32_t mission_id);
        
         bool TriggerCondition(const ConditionEvent& c, Mission& mission);
         
