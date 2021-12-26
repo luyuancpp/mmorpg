@@ -46,9 +46,7 @@ namespace common
         virtual void OnEmptyPlayer() {}
         void OnFullPlayer();
         virtual void OnPlaying() {}
-  
-        static StatePtr CreateState(int32_t state_enum, LoginStateMachine& m);
-
+ 
     protected:
         LoginStateMachine& login_machine_;
     };

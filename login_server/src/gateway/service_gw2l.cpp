@@ -28,7 +28,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     // login process
     // check account rule: empty , erro
     //check string rule
-    {
+   /* {
         auto it = login_players_.find(request->account());
         if (it == login_players_.end())
         {
@@ -37,7 +37,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         }
         auto& player = it->second;
         connection_accounts_.emplace(request->connection_id(), player);
-        CheckReturnCloseureError(player->Login());        
+        CheckReturnCloseureError(player->Login());
         auto& account_data = player->account_data();
         redis_->Load(account_data, request->account());
         if (!account_data.password().empty())
@@ -46,14 +46,15 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
             player->OnDbLoaded();
             ReturnCloseureOK;
         }
-    }
+    }*/
  
-    // database process
-    LoginRP cp(std::make_shared<LoginRpcString>(response, done));
-    auto& s_reqst = cp->s_reqst_;
-    s_reqst.set_account(request->account());
-    s_reqst.set_password(request->password());
-    l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
+    CallMSLogin(request->account(), response, done);
+    //// database process
+    //LoginRP cp(std::make_shared<LoginRpcString>(response, done));
+    //auto& s_reqst = cp->s_reqst_;
+    //s_reqst.set_account(request->account());
+    //s_reqst.set_password(request->password());
+    //l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
 }
 
 void LoginServiceImpl::DbLoginReplied(LoginRP d)
@@ -61,6 +62,11 @@ void LoginServiceImpl::DbLoginReplied(LoginRP d)
     auto& sresp = d->s_resp_;
     d->c_resp_->mutable_account_player()->CopyFrom(sresp->account_player());
     UpdateAccount(d->s_reqst_.account(), sresp->account_player());
+}
+
+void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
+{
+
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
@@ -124,7 +130,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     response->set_guid(guid);//test
     if (new_player.guid() > 0)
     {
-        EnterMasterServer(guid, account, response, done);
+        CallEnterMS(guid, account, response, done);
         return;
     }        
     // database to redis 
@@ -150,25 +156,36 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
     ::gw2l::EnterGameResponse* response = nullptr;
     ::google::protobuf::Closure* done = nullptr;
     d->Move(response, done);
-    EnterMasterServer(sreqst.guid(), sreqst.account(), response, done);
+    CallEnterMS(sreqst.guid(), sreqst.account(), response, done);
 }
 
-void LoginServiceImpl::EnterGameMasterReplied(EnterGameMasterRP d)
+void LoginServiceImpl::EnterMSReplied(EnterGameMS d)
 {
     d->c_resp_->set_node_id(d->s_resp_->node_id());
 }
+    
+void LoginServiceImpl::CallMSLogin(const std::string& account,
+    ::gw2l::LoginResponse* response, 
+    ::google::protobuf::Closure* done)
+{
+    // database process
+    LoginMasterRP cp(std::make_shared<LoginMasterRpcString>(response, done));
+    auto& s_reqst = cp->s_reqst_;
+    s_reqst.set_account(account);
+    l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::MSLoginReplied, cp, &l2ms::LoginService_Stub::Login);
+}
 
-void LoginServiceImpl::EnterMasterServer(Guid guid,
+void LoginServiceImpl::CallEnterMS(Guid guid,
     const std::string& account,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {   
-    EnterGameMasterRP cp(std::make_shared<EnterGameMasterRpcString>(response, done));
+    EnterGameMS cp(std::make_shared<EnterMSRpcString>(response, done));
     cp->s_reqst_.set_account(account);
     cp->s_reqst_.set_guid(guid);
     cp->s_reqst_.set_connection_id(response->connection_id());
     l2ms_login_stub_.CallMethodString(this,
-        &LoginServiceImpl::EnterGameMasterReplied,
+        &LoginServiceImpl::EnterMSReplied,
         cp,
         &l2ms::LoginService_Stub::EnterGame);
 }
