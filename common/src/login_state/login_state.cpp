@@ -1,73 +1,25 @@
 #include "login_state.h"
 
+#include "login_state_machine.h"
 #include "login_state_concrete.h"
 
 namespace common
 {
 
-    uint32_t ILoginState::Logout()
+    uint32_t IAccountState::LogoutAccount()
     {
-        emp_->emit(EeventLoginSetState{ E_LOGIN_NONE });
+        login_machine_.set_state(E_LOGIN_NONE);
         return RET_OK;
     }
 
-    ILoginState::StatePtr ILoginState::CreateState(int32_t state_enum, EventManagerPtr& emp)
+    void IAccountState::WaitingEnterGame()
     {
-        StatePtr ptr;
-        switch (state_enum)
-        {
-        case E_LOGIN_NONE:
-        {
-            CreateILoginStateP cp{ emp };
-            ptr = std::make_shared<NoneState>(cp);
-            break;
-        }
-        case E_LOGIN_ACCOUNT_LOGIN:
-        {
-            CreateILoginStateP cp{ emp };
-            ptr = std::make_shared<LoginState>(cp);
-            break;
-        }
-        case E_LOGIN_ACCOUNT_CREATE_PLAYER:
-        {
-            CreateILoginStateP cp{ emp };
-            ptr = std::make_shared<CreatePlayerState>(cp);
-            break;
-        }
-        case E_LOGIN_ACCOUNT_ENTER_GAME:
-        {
-            CreateILoginStateP cp{ emp };
-            ptr = std::make_shared<EnterGameState>(cp);
-            break;
-        }
-        case E_LGOIN_ACCOUNT_PLAYING:
-        {
-            CreateILoginStateP cp{ emp };
-            ptr = std::make_shared<PlayingState>(cp);
-            break;
-        }
-        case E_LOGIN_WAITING_ENTER_GAME:
-        {
-            CreateILoginStateP cp{emp};
-            ptr = std::make_shared<WaitingEnterGameState>(cp);
-            break;
-        }
-        case E_LOGIN_NO_PLAYER:
-        {
-            CreateILoginStateP cp{ emp };
-            ptr = std::make_shared<EmptyPlayerState>(cp);
-            break;
-        }
-        case E_LOGIN_ULL_PLAYER:
-        {
-            CreateILoginStateP cp{ emp };
-            ptr = std::make_shared<FullPlayerState>(cp);
-            break;
-        }
-        default:
-            break;
-        }
-        return ptr;
+        login_machine_.set_state(E_LOGIN_WAITING_ENTER_GAME);
+    }
+
+    void IAccountState::OnFullPlayer()
+    {
+        login_machine_.set_state(E_LOGIN_ACCOUNT_FULL_PLAYER); 
     }
 
 }//namespace common

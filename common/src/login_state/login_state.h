@@ -3,9 +3,6 @@
 
 #include <memory>
 
-#include "login_event.h"
-#include "src/event/event.h"
-
 namespace common
 {
     //为什么要有状态，因为要处理可能我在登录的任意阶段发各种协议，比如加载数据过程中发一次进入游戏
@@ -17,65 +14,55 @@ namespace common
         E_LOGIN_ACCOUNT_LOGIN,//登录状态，重复登录的话提示，比如快点俩下
         E_LOGIN_ACCOUNT_LOADING,//登录状态，加载数据,防止客户端发其他协议提示，服务器数据流错乱安安
         E_LOGIN_ACCOUNT_CREATE_PLAYER,//登录状态，创建账号
-        E_LOGIN_ACCOUNT_NORMAL,//登录状态，账号加载数据完成,可以进入游戏
         E_LOGIN_ACCOUNT_ENTER_GAME,//登录状态，有角色进入了游戏
         E_LGOIN_ACCOUNT_PLAYING,
-        E_LOGIN_WAITING_ENTER_GAME,
-        E_LOGIN_NO_PLAYER,
-        E_LOGIN_ULL_PLAYER,
+        E_LOGIN_WAITING_ENTER_GAME,//登录状态，账号加载数据完成,可以进入游戏
+        E_LOGIN_ACCOUNT_NO_PLAYER,//登录状态，没有角色，不能进入游戏，必须发创建角色协议
+        E_LOGIN_ACCOUNT_FULL_PLAYER,//登录状态，角色已经满了不能再创建角色了
         E_LOGIN_STATE_MAX,
     };
 
-    struct CreateILoginStateP
-    {
-        CreateILoginStateP(EventManagerPtr& emp) : emp_(emp){}
-        EventManagerPtr& emp_;
-    };
+    class LoginStateMachine;
 
     //login state interfase
-    class ILoginState 
+    class IAccountState 
     {
     public:
-        using StatePtr = std::shared_ptr<ILoginState>;
+        using StatePtr = std::shared_ptr<IAccountState>;
 
-        ILoginState(CreateILoginStateP& c)
-            : emp_(c.emp_)
-        {
-
-        }
-        virtual ~ILoginState() {};
+        IAccountState(LoginStateMachine& m)
+            : login_machine_(m)
+        {}
+        virtual ~IAccountState() {};
 
         // player operator
-        virtual uint32_t Login() = 0;
-        uint32_t Logout();
+        virtual uint32_t LoginAccount() = 0;
+        uint32_t LogoutAccount();
         virtual uint32_t CreatePlayer() = 0;
         virtual uint32_t EnterGame() = 0;
-
         // server operator
-        virtual void WaitingEnterGame()
-        {
-            emp_->emit(EeventLoginSetState{ E_LOGIN_WAITING_ENTER_GAME });
-        }
+        virtual void WaitingEnterGame();
+
         virtual void OnEmptyPlayer() {}
-        void OnFullPlayer(){ emp_->emit(EeventLoginSetState{ E_LOGIN_ULL_PLAYER }); }
+        void OnFullPlayer();
         virtual void OnPlaying() {}
   
-        static StatePtr CreateState(int32_t state_enum, EventManagerPtr& emp);
+        static StatePtr CreateState(int32_t state_enum, LoginStateMachine& m);
 
     protected:
-        EventManagerPtr emp_;
+        LoginStateMachine& login_machine_;
     };
 
     //login state interfase
     template <typename Derived, uint32_t ProcessingCode>
-    class LoginStateBase : public ILoginState
+    class LoginStateBase : public IAccountState
     {
     public:
-        using ILoginState::ILoginState;
+        using IAccountState::IAccountState;
 
         uint32_t processing()const { return processing_code_; }
 
-        virtual uint32_t Login() override { return processing(); }
+        virtual uint32_t LoginAccount() override { return processing(); }
         virtual uint32_t CreatePlayer() override { return processing(); }
         virtual uint32_t EnterGame()override { return processing(); }
 
