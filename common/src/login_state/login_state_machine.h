@@ -8,11 +8,10 @@
 
 namespace common
 {
-    class LoginStateMachine :  public Receiver<LoginStateMachine>
+    class LoginStateMachine 
     {
     public:
-
-        using StatePtr = std::shared_ptr<ILoginState>;
+        using StatePtr = std::shared_ptr<IAccountState>;
         using StatePtrList = std::array<StatePtr, E_LOGIN_STATE_MAX>;
 
         LoginStateMachine();
@@ -29,11 +28,9 @@ namespace common
         void OnFullPlayer();
         void OnPlaying();
 
-        void receive(const EeventLoginSetState& s);
     private:
         StatePtrList state_list_;
         StatePtr current_state_;
-        EventManagerPtr emp_;
     };
 }//namespace common
 

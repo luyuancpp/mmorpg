@@ -149,7 +149,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\event\event.h" />
-    <ClInclude Include="..\..\common\src\login_state\login_event.h" />
     <ClInclude Include="..\..\common\src\login_state\login_state.h" />
     <ClInclude Include="..\..\common\src\login_state\login_state_concrete.h" />
     <ClInclude Include="..\..\common\src\login_state\login_state_machine.h" />
