@@ -15,7 +15,7 @@ namespace common
 
         virtual uint32_t Login()override
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_LOGIN });
+            emp_->emit(EeventLoginSetState{ E_LOGIN_ACCOUNT_LOGIN });
             return RET_OK;
         }
 
@@ -29,7 +29,7 @@ namespace common
 
         virtual void OnEmptyPlayer() override 
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_NO_PLAYER });
+            emp_->emit(EeventLoginSetState{ E_LOGIN_NO_PLAYER });
         }
     };
 
@@ -43,7 +43,7 @@ namespace common
     {
     public:
         using LoginStateBase::LoginStateBase;
-        virtual void OnPlaying()override { emp_->emit(LoginESSetState{ E_LGOIN_PLAYING }); }
+        virtual void OnPlaying()override { emp_->emit(EeventLoginSetState{ E_LGOIN_ACCOUNT_PLAYING }); }
     };
 
     class PlayingState : public LoginStateBase <PlayingState, RET_LOGIN_PLAYEING>
@@ -59,13 +59,13 @@ namespace common
   
         virtual uint32_t CreatePlayer() override
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_CREATE_PLAYER });
+            emp_->emit(EeventLoginSetState{ E_LOGIN_ACCOUNT_CREATE_PLAYER });
             return RET_OK;
         }
 
         virtual uint32_t EnterGame()override
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_ENTER_GAME });
+            emp_->emit(EeventLoginSetState{ E_LOGIN_ACCOUNT_ENTER_GAME });
             return RET_OK;
         }
     };
@@ -77,7 +77,7 @@ namespace common
 
         virtual uint32_t CreatePlayer() override
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_CREATE_PLAYER });
+            emp_->emit(EeventLoginSetState{ E_LOGIN_ACCOUNT_CREATE_PLAYER });
             return RET_OK;
         }
 
@@ -98,7 +98,7 @@ namespace common
 
         virtual uint32_t EnterGame()override
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_ENTER_GAME });
+            emp_->emit(EeventLoginSetState{ E_LOGIN_ACCOUNT_ENTER_GAME });
             return RET_OK;
         }
     };

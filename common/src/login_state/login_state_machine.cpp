@@ -11,7 +11,7 @@ namespace common
         {
             state_list_[i] = ILoginState::CreateState(i, emp_);
         }
-        emp_->subscribe<LoginESSetState>(*this);
+        emp_->subscribe<EeventLoginSetState>(*this);
         set_state(E_LOGIN_NONE);
     }
 
@@ -60,7 +60,7 @@ namespace common
         current_state_->OnPlaying();
     }
 
-    void LoginStateMachine::receive(const LoginESSetState& s)
+    void LoginStateMachine::receive(const EeventLoginSetState& s)
     {
         set_state(s.state_id_);
     }

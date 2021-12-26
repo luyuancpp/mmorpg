@@ -8,13 +8,18 @@
 
 namespace common
 {
+    //为什么要有状态，因为要处理可能我在登录的任意阶段发各种协议，比如加载数据过程中发一次进入游戏
+    //这时候服务器数据流不能出错，应该告诉客户端请稍等，正在登录中
+    //学楚留香手游，一个账号支持多个游戏角色在线
     enum EnumLoginState : uint8_t
     {
         E_LOGIN_NONE,
-        E_LOGIN_LOGIN,//登录，重复登录的话提示
-        E_LOGIN_CREATE_PLAYER,
-        E_LOGIN_ENTER_GAME,
-        E_LGOIN_PLAYING,
+        E_LOGIN_ACCOUNT_LOGIN,//登录状态，重复登录的话提示，比如快点俩下
+        E_LOGIN_ACCOUNT_LOADING,//登录状态，加载数据,防止客户端发其他协议提示，服务器数据流错乱安安
+        E_LOGIN_ACCOUNT_CREATE_PLAYER,//登录状态，创建账号
+        E_LOGIN_ACCOUNT_NORMAL,//登录状态，账号加载数据完成,可以进入游戏
+        E_LOGIN_ACCOUNT_ENTER_GAME,//登录状态，有角色进入了游戏
+        E_LGOIN_ACCOUNT_PLAYING,
         E_LOGIN_WAITING_ENTER_GAME,
         E_LOGIN_NO_PLAYER,
         E_LOGIN_ULL_PLAYER,
@@ -49,10 +54,10 @@ namespace common
         // server operator
         virtual void WaitingEnterGame()
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_WAITING_ENTER_GAME });
+            emp_->emit(EeventLoginSetState{ E_LOGIN_WAITING_ENTER_GAME });
         }
         virtual void OnEmptyPlayer() {}
-        void OnFullPlayer(){ emp_->emit(LoginESSetState{ E_LOGIN_ULL_PLAYER }); }
+        void OnFullPlayer(){ emp_->emit(EeventLoginSetState{ E_LOGIN_ULL_PLAYER }); }
         virtual void OnPlaying() {}
   
         static StatePtr CreateState(int32_t state_enum, EventManagerPtr& emp);
