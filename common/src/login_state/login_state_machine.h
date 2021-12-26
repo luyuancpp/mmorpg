@@ -29,7 +29,7 @@ namespace common
         void OnFullPlayer();
         void OnPlaying();
 
-        void receive(const LoginESSetState& s);
+        void receive(const EeventLoginSetState& s);
     private:
         StatePtrList state_list_;
         StatePtr current_state_;

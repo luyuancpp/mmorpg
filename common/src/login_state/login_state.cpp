@@ -7,7 +7,7 @@ namespace common
 
     uint32_t ILoginState::Logout()
     {
-        emp_->emit(LoginESSetState{ E_LOGIN_NONE });
+        emp_->emit(EeventLoginSetState{ E_LOGIN_NONE });
         return RET_OK;
     }
 
@@ -22,25 +22,25 @@ namespace common
             ptr = std::make_shared<NoneState>(cp);
             break;
         }
-        case E_LOGIN_LOGIN:
+        case E_LOGIN_ACCOUNT_LOGIN:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<LoginState>(cp);
             break;
         }
-        case E_LOGIN_CREATE_PLAYER:
+        case E_LOGIN_ACCOUNT_CREATE_PLAYER:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<CreatePlayerState>(cp);
             break;
         }
-        case E_LOGIN_ENTER_GAME:
+        case E_LOGIN_ACCOUNT_ENTER_GAME:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<EnterGameState>(cp);
             break;
         }
-        case E_LGOIN_PLAYING:
+        case E_LGOIN_ACCOUNT_PLAYING:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<PlayingState>(cp);

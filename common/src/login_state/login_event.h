@@ -3,9 +3,9 @@
 
 namespace common
 {
-    struct LoginESSetState
+    struct EeventLoginSetState
     {
-        LoginESSetState(int32_t state_id)
+        EeventLoginSetState(int32_t state_id)
             : state_id_(state_id){}
         int32_t state_id_{ 0};
     };
