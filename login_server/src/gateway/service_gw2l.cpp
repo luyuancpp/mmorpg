@@ -26,13 +26,9 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 {
     //只连接不登录,占用连接
     // login process
-    // check account rule
+    // check account rule: empty , erro
     //check string rule
     {
-        if (request->account().empty())
-        {
-            ReturnCloseureError(RET_LOGIN_NAME_EMPTY);
-        }
         auto it = login_players_.find(request->account());
         if (it == login_players_.end())
         {

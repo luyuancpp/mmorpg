@@ -293,5 +293,20 @@
     <ClInclude Include="src\game_logic\entity_class\entity_class.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\game_logic\comp\account_comp.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\comp\player_comp.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\comp\gs_scene_comp.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\comp\mission_comp.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\comp\gateway_comp.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

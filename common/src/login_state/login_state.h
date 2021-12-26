@@ -10,14 +10,14 @@ namespace common
 {
     enum EnumLoginState : uint8_t
     {
-        E_LOGIN_STATE_NONE,
-        E_LOGIN_STATE_LOGIN,
-        E_LOGIN_STATE_CREATE_PLAYER,
-        E_LOGIN_STATE_ENTER_GAME,
-        E_LGOIN_STATE_PLAYING,
-        E_LOGIN_STATE_WAITING_ENTER_GAME,
-        E_LOGIN_STATE_NO_PLAYER,
-        E_LOGIN_STATE_FULL_PLAYER,
+        E_LOGIN_NONE,
+        E_LOGIN_LOGIN,//登录，重复登录的话提示
+        E_LOGIN_CREATE_PLAYER,
+        E_LOGIN_ENTER_GAME,
+        E_LGOIN_PLAYING,
+        E_LOGIN_WAITING_ENTER_GAME,
+        E_LOGIN_NO_PLAYER,
+        E_LOGIN_ULL_PLAYER,
         E_LOGIN_STATE_MAX,
     };
 
@@ -49,10 +49,10 @@ namespace common
         // server operator
         virtual void WaitingEnterGame()
         {
-            emp_->emit(LoginESSetState{ E_LOGIN_STATE_WAITING_ENTER_GAME });
+            emp_->emit(LoginESSetState{ E_LOGIN_WAITING_ENTER_GAME });
         }
         virtual void OnEmptyPlayer() {}
-        void OnFullPlayer(){ emp_->emit(LoginESSetState{ E_LOGIN_STATE_FULL_PLAYER }); }
+        void OnFullPlayer(){ emp_->emit(LoginESSetState{ E_LOGIN_ULL_PLAYER }); }
         virtual void OnPlaying() {}
   
         static StatePtr CreateState(int32_t state_enum, EventManagerPtr& emp);

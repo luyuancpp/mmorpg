@@ -1,4 +1,4 @@
-#include "master_player_list.h"
+#include "ms_player_list.h"
 
 using namespace common;
 
