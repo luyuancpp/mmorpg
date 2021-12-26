@@ -36,6 +36,14 @@ TEST(MissionsComp, AcceptMission)
     ms.CompleteAllMission();
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(sz, ms.complete_size());
+
+    
+}
+
+TEST(MissionsComp, RadomCondtion1)
+{
+    std::unordered_map<uint32_t, MissionsComp> tv;
+    tv.emplace(1, MissionsComp());
 }
 
 TEST(MissionsComp, RadomCondtion)

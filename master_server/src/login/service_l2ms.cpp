@@ -6,19 +6,47 @@
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game/game_client.h"
-#include "src/master_player/master_player_list.h"
+#include "src/master_player/ms_player_list.h"
 #include "src/master_server.h"
+#include "src/return_code/error_code.h"
 #include "src/server_common/closure_auto_done.h"
-
 
 #include "ms2gw.pb.h"
 
 using namespace master;
 using namespace common;
 
+std::size_t kMaxPlayerSize = 1000;
+
 namespace l2ms
 {
-    void l2ms::LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
+
+    void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
+        const ::l2ms::LoginRequest* request, 
+        ::l2ms::LoginResponse* response, 
+        ::google::protobuf::Closure* done)
+    {
+        ClosurePtr cp(done);
+        if ((MasterPlayerList::GetSingleton().player_size() + login_accounts_.size()) >= kMaxPlayerSize)
+        {
+            response->mutable_error()->set_error_no(RET_LOGIN_MAX_PLAYER_SIZE);
+            return;
+        }
+        if (login_accounts_.find(request->account()) != login_accounts_.end())
+        {
+
+            return;
+        }
+        auto result = login_accounts_.emplace(request->account(), LoginAccount());
+        if (result.second)
+        {
+            auto& lc = result.first->second;
+            reg().emplace<SharedAccountString>(lc.entity(), std::make_shared<std::string>(request->account()));
+        }
+        response->mutable_error()->set_error_no(RET_OK);
+    }
+
+    void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
         const ::l2ms::EnterGameRequest* request,
         ::l2ms::EnterGameResponese* response,
         ::google::protobuf::Closure* done)
@@ -28,10 +56,8 @@ namespace l2ms
         auto connection_id = request->connection_id();
         auto e = reg().create();
         reg().emplace<Guid>(e, guid);
-        reg().emplace<SharedAccountString>(e, std::make_shared<std::string>(request->account()));
         reg().emplace<GatewayConnectionId>(e, connection_id);
         MasterPlayerList::GetSingleton().EnterGame(guid, e);
-
         ms2gw::PlayerEnterGSRequest gw_request;
         gw_request.set_connection_id(connection_id);//error
         for (auto e : GameClient::GetSingleton().view<uint32_t>())

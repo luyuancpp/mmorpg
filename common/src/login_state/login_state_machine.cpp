@@ -12,7 +12,7 @@ namespace common
             state_list_[i] = ILoginState::CreateState(i, emp_);
         }
         emp_->subscribe<LoginESSetState>(*this);
-        set_state(E_LOGIN_STATE_NONE);
+        set_state(E_LOGIN_NONE);
     }
 
     void LoginStateMachine::set_state(uint32_t state_enum)

@@ -7,7 +7,7 @@ namespace common
 
     uint32_t ILoginState::Logout()
     {
-        emp_->emit(LoginESSetState{ E_LOGIN_STATE_NONE });
+        emp_->emit(LoginESSetState{ E_LOGIN_NONE });
         return RET_OK;
     }
 
@@ -16,49 +16,49 @@ namespace common
         StatePtr ptr;
         switch (state_enum)
         {
-        case E_LOGIN_STATE_NONE:
+        case E_LOGIN_NONE:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<NoneState>(cp);
             break;
         }
-        case E_LOGIN_STATE_LOGIN:
+        case E_LOGIN_LOGIN:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<LoginState>(cp);
             break;
         }
-        case E_LOGIN_STATE_CREATE_PLAYER:
+        case E_LOGIN_CREATE_PLAYER:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<CreatePlayerState>(cp);
             break;
         }
-        case E_LOGIN_STATE_ENTER_GAME:
+        case E_LOGIN_ENTER_GAME:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<EnterGameState>(cp);
             break;
         }
-        case E_LGOIN_STATE_PLAYING:
+        case E_LGOIN_PLAYING:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<PlayingState>(cp);
             break;
         }
-        case E_LOGIN_STATE_WAITING_ENTER_GAME:
+        case E_LOGIN_WAITING_ENTER_GAME:
         {
             CreateILoginStateP cp{emp};
             ptr = std::make_shared<WaitingEnterGameState>(cp);
             break;
         }
-        case E_LOGIN_STATE_NO_PLAYER:
+        case E_LOGIN_NO_PLAYER:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<EmptyPlayerState>(cp);
             break;
         }
-        case E_LOGIN_STATE_FULL_PLAYER:
+        case E_LOGIN_ULL_PLAYER:
         {
             CreateILoginStateP cp{ emp };
             ptr = std::make_shared<FullPlayerState>(cp);

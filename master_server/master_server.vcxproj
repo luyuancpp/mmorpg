@@ -157,9 +157,9 @@
     <ClCompile Include="src\factories\server_global_entity.cpp" />
     <ClCompile Include="src\game\service_g2ms.cpp" />
     <ClCompile Include="src\gateway\service_gw2ms.cpp" />
+    <ClCompile Include="src\master_player\ms_player_list.cpp" />
     <ClCompile Include="src\master_server.cpp" />
     <ClCompile Include="src\login\service_l2ms.cpp" />
-    <ClCompile Include="src\master_player\master_player_list.cpp" />
     <ClCompile Include="src\scene\sceces.cpp" />
     <ClCompile Include="src\sys\message_sys.cpp" />
     <ClCompile Include="src\sys\scene_sys.cpp" />
@@ -169,9 +169,9 @@
     <ClInclude Include="src\factories\server_global_entity.hpp" />
     <ClInclude Include="src\game\service_g2ms.h" />
     <ClInclude Include="src\gateway\service_gw2ms.h" />
+    <ClInclude Include="src\master_player\ms_player_list.h" />
     <ClInclude Include="src\master_server.h" />
     <ClInclude Include="src\login\service_l2ms.h" />
-    <ClInclude Include="src\master_player\master_player_list.h" />
     <ClInclude Include="src\master_registry\master_registry.h" />
     <ClInclude Include="src\scene\sceces.h" />
     <ClInclude Include="src\sys\message_sys.hpp" />
