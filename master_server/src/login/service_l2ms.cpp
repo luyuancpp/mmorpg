@@ -34,7 +34,6 @@ namespace l2ms
         }
         if (login_accounts_.find(request->account()) != login_accounts_.end())
         {
-
             return;
         }
         auto result = login_accounts_.emplace(request->account(), LoginAccount());
@@ -42,6 +41,7 @@ namespace l2ms
         {
             auto& lc = result.first->second;
             reg().emplace<SharedAccountString>(lc.entity(), std::make_shared<std::string>(request->account()));
+            lc.login_state_machine_.Login();
         }
         response->mutable_error()->set_error_no(RET_OK);
     }

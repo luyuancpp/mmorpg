@@ -7,12 +7,14 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/entity_class/entity_class.h"
 #include "src/game_logic/comp/account_comp.hpp"
+#include "src/login_state/login_state_machine.h"
 
 namespace l2ms
 {
     struct LoginAccount : public common::EntityHandle
     {
         common::GuidVector playing_guids_;
+        common::LoginStateMachine login_state_machine_;
     };
 
     class LoginServiceImpl : public l2ms::LoginService
