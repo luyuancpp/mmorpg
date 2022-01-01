@@ -26,12 +26,12 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 { 
     //login master
-    LoginMasterRP cp(std::make_shared<LoginMasterRpcString>(response, done));
+    LoginMasterRP cp(std::make_shared<LoginMasterRpcs>(response, done));
     auto& s_reqst = cp->s_reqst_;
     s_reqst.set_account(request->account());
     s_reqst.set_login_node_id(g_login_server->node_id());
     s_reqst.set_connection_id(request->connection_id());
-    auto it =  connection_accounts_.emplace(request->connection_id(), common::EntityHandle());
+    auto it =  connections_.emplace(request->connection_id(), common::EntityHandle());
     if (it.second)
     {
         reg().emplace<std::string>(it.first->second.entity(), request->account());
@@ -52,14 +52,14 @@ void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
  // login process
  // check account rule: empty , erro
  //check string rule
-    auto cit = connection_accounts_.find(d->s_reqst_.connection_id());
+    auto cit = connections_.find(d->s_reqst_.connection_id());
     auto& account = d->s_reqst_.account();
     auto& response = d->c_resp_;
     {
-        auto it = login_players_.find(account);
-        if (it == login_players_.end())
+        auto it = accounts_.find(account);
+        if (it == accounts_.end())
         {
-            auto ret = login_players_.emplace(account, std::make_shared<AccountPlayer>());
+            auto ret = accounts_.emplace(account, std::make_shared<AccountPlayer>());
             it = ret.first;
             reg().emplace<PlayerPtr>(cit->second.entity(), it->second);
         }
@@ -81,7 +81,7 @@ void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
     }
 
      // database process
-    LoginRP cp(std::make_shared<LoginRpcString>(*d));
+    LoginRP cp(std::make_shared<LoginRpcs>(*d));
     auto& s_reqst = cp->s_reqst_;
     s_reqst.set_account(account);
     l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
@@ -95,8 +95,8 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 {
     // login process
     //check name rule
-    auto cit = connection_accounts_.find(request->connection_id());
-    if (cit == connection_accounts_.end())
+    auto cit = connections_.find(request->connection_id());
+    if (cit == connections_.end())
     {
         ReturnCloseureError(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
     }
@@ -109,7 +109,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     CheckReturnCloseureError(ap->CreatePlayer());
 
     // database process
-    CreatePlayerRP cp(std::make_shared<CreatePlayerRpcString>(response, done));
+    CreatePlayerRP cp(std::make_shared<CreatePlayerRpcs>(response, done));
     cp->s_reqst_.set_account(ap->account());
     l2db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::DbCreatePlayerReplied,
@@ -131,8 +131,8 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 {
     auto guid = request->guid();
     auto connection_id = request->connection_id();
-    auto cit = connection_accounts_.find(connection_id);
-    if (cit == connection_accounts_.end())
+    auto cit = connections_.find(connection_id);
+    if (cit == connections_.end())
     {
         ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
     }
@@ -163,7 +163,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
         return;
     }        
     // database to redis 
-    EnterGameDbRP cp(std::make_shared<EnterGameDbRpcString>(response, done));
+    EnterGameDbRP cp(std::make_shared<EnterGameDbRpcs>(response, done));
     auto& sreqst = cp->s_reqst_;
     sreqst.set_account(account);
     sreqst.set_guid(guid);
@@ -176,8 +176,8 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
 {
     auto& sreqst = d->s_reqst_;
-    auto cit = login_players_.find(sreqst.account());
-    if (cit == login_players_.end())
+    auto cit = accounts_.find(sreqst.account());
+    if (cit == accounts_.end())
     {
         LOG_ERROR << "disconnect not found connection id " << d->s_reqst_.account();
         return;
@@ -198,7 +198,7 @@ void LoginServiceImpl::CallEnterMS(Guid guid,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {   
-    EnterGameMS cp(std::make_shared<EnterMSRpcString>(response, done));
+    EnterGameMS cp(std::make_shared<EnterMSRpcs>(response, done));
     cp->s_reqst_.set_account(account);
     cp->s_reqst_.set_guid(guid);
     cp->s_reqst_.set_connection_id(response->connection_id());
@@ -215,8 +215,8 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 {
     ClosurePtr cp(done);
     //连接过，登录过
-    auto cit = connection_accounts_.find(request->connection_id());
-    if (cit == connection_accounts_.end())
+    auto cit = connections_.find(request->connection_id());
+    if (cit == connections_.end())
     {
         LOG_ERROR << " leave game not found connection";
         return;
@@ -240,8 +240,8 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     ClosurePtr cp(done);
-    auto cit = connection_accounts_.find(request->connection_id());
-    if (cit == connection_accounts_.end())//连接并没有登录
+    auto cit = connections_.find(request->connection_id());
+    if (cit == connections_.end())//连接并没有登录
     {
         return;
     }
@@ -262,8 +262,8 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 
 void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_database& a_d)
 {
-    auto it = login_players_.find(a);
-    if (it == login_players_.end())
+    auto it = accounts_.find(a);
+    if (it == accounts_.end())
     {
         return;
     }
@@ -277,9 +277,9 @@ void LoginServiceImpl::ErasePlayer(ConnectionEntityMap::iterator& cit)
     auto* p_acnt = reg().try_get<std::string>(cit->second.entity());
     if (nullptr != p_acnt)
     {
-        login_players_.erase(*p_acnt);
+        accounts_.erase(*p_acnt);
     }
-    connection_accounts_.erase(cit);
+    connections_.erase(cit);
 }
 
 }  // namespace gw2l
