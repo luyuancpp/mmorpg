@@ -132,6 +132,14 @@ TEST(LoginStateMachineTest, PlayerEnterGameLogout)
     EXPECT_EQ(RET_OK, lsm.Login());
 }
 
+TEST(LoginStateMachineTest, PlayerAfterEnterGameLogin)
+{
+    LoginStateMachine lsm;
+    EXPECT_EQ(RET_OK, lsm.Login());
+    lsm.WaitingEnterGame();
+    EXPECT_EQ(RET_LOGIN_WAITING_ENTER_GAME, lsm.Login());
+}
+
 int main(int argc, char** argv)
 {
     testing::InitGoogleTest(&argc, argv);

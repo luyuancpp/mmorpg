@@ -79,13 +79,10 @@ void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
             return;
         }
     }
-
      // database process
     LoginRP cp(std::make_shared<LoginRpcs>(*d));
-    auto& s_reqst = cp->s_reqst_;
-    s_reqst.set_account(account);
+    cp->s_reqst_.set_account(account);
     l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
-
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
