@@ -39,16 +39,16 @@ namespace gw2l
             gw2l::LoginResponse* response,
             ::google::protobuf::Closure* done)override;
 
-        using LoginRpcString = common::RpcString<l2db::LoginRequest,
+        using LoginRpcs = common::RpcString<l2db::LoginRequest,
             l2db::LoginResponse,
             gw2l::LoginResponse>;
-        using LoginRP = std::shared_ptr<LoginRpcString>;
+        using LoginRP = std::shared_ptr<LoginRpcs>;
         void DbLoginReplied(LoginRP d);
 
-        using LoginMasterRpcString = common::RpcString<l2ms::LoginAccountRequest,
+        using LoginMasterRpcs = common::RpcString<l2ms::LoginAccountRequest,
             l2ms::LoginAccountResponse,
             gw2l::LoginResponse>;
-        using LoginMasterRP = std::shared_ptr<LoginMasterRpcString>;
+        using LoginMasterRP = std::shared_ptr<LoginMasterRpcs>;
         void MSLoginReplied(LoginMasterRP d);
 
         virtual void CreatPlayer(::google::protobuf::RpcController* controller,
@@ -56,10 +56,10 @@ namespace gw2l
             gw2l::CreatePlayerResponse* response,
             ::google::protobuf::Closure* done)override;
 
-        using CreatePlayerRpcString = common::RpcString<l2db::CreatePlayerRequest,
+        using CreatePlayerRpcs = common::RpcString<l2db::CreatePlayerRequest,
             l2db::CreatePlayerResponse,
             gw2l::CreatePlayerResponse>;
-        using CreatePlayerRP = std::shared_ptr<CreatePlayerRpcString>;
+        using CreatePlayerRP = std::shared_ptr<CreatePlayerRpcs>;
         void DbCreatePlayerReplied(CreatePlayerRP d);
 
         virtual void EnterGame(::google::protobuf::RpcController* controller,
@@ -67,16 +67,16 @@ namespace gw2l
             ::gw2l::EnterGameResponse* response,
             ::google::protobuf::Closure* done)override;
 
-        using EnterGameDbRpcString = common::RpcString<l2db::EnterGameRequest,
+        using EnterGameDbRpcs = common::RpcString<l2db::EnterGameRequest,
             l2db::EnterGameResponse,
             gw2l::EnterGameResponse>;
-        using EnterGameDbRP = std::shared_ptr<EnterGameDbRpcString>;
+        using EnterGameDbRP = std::shared_ptr<EnterGameDbRpcs>;
         void EnterGameDbReplied(EnterGameDbRP d);
 
-        using EnterMSRpcString = common::RpcString<l2ms::EnterGameRequest,
+        using EnterMSRpcs = common::RpcString<l2ms::EnterGameRequest,
             l2ms::EnterGameResponese,
             gw2l::EnterGameResponse>;
-        using EnterGameMS = std::shared_ptr<EnterMSRpcString>;
+        using EnterGameMS = std::shared_ptr<EnterMSRpcs>;
         void EnterMSReplied(EnterGameMS d);
 
         void CallEnterMS(common::Guid guid,
@@ -99,8 +99,8 @@ namespace gw2l
         inline void ErasePlayer(ConnectionEntityMap::iterator& cit);
 
         RedisClientPtr redis_;
-        ConnectionEntityMap connection_accounts_;
-        LoginPlayersMap login_players_;
+        ConnectionEntityMap connections_;
+        LoginPlayersMap accounts_;
 
         LoginStubl2ms& l2ms_login_stub_;
         LoginStubl2db& l2db_login_stub_;
