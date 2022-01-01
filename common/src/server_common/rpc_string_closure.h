@@ -10,8 +10,6 @@ namespace common
     template <typename ServerRequest, typename ServerResponse, typename ClientResponse>
     struct RpcString
     {
-        using ContextType = boost::any;
-
         RpcString(ClientResponse* client_response,
             ::google::protobuf::Closure* client_closure)
             : c_resp_(client_response),
@@ -19,25 +17,17 @@ namespace common
             cc_(client_closure)
             {}
 
+        template <typename MoveRpcString>
+        RpcString(MoveRpcString& rpcstring)
+            : s_resp_(new ServerResponse())// delete for rpcchanel
+        {
+            rpcstring.Move(c_resp_, cc_);
+        }
+
         ~RpcString() { if (nullptr != cc_) { cc_->Run(); } };//this function delete server_response_ if not move
         ClientResponse* c_resp_{ nullptr };
         ServerRequest s_reqst_;
         ServerResponse* s_resp_{ nullptr }; 
-
-        void setContext(ContextType context)
-        {
-            context_ = context;
-        }
-
-        const ContextType getContext() const
-        {
-            return context_;
-        }
-
-        ContextType* getMutableContext()
-        {
-            return &context_;
-        }
 
         //just for enter master , un safe
         void Move(ClientResponse*& client_response,
@@ -49,7 +39,6 @@ namespace common
         }
     private:
         ::google::protobuf::Closure* cc_{ nullptr };
-        ContextType context_;
     };
 
 }//namespace common
