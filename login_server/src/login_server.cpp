@@ -8,6 +8,8 @@
 
 using namespace common;
 
+login::LoginServer* g_login_server = nullptr;
+
 namespace login
 {
 LoginServer::LoginServer(muduo::net::EventLoop* loop)

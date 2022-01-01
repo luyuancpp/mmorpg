@@ -2,7 +2,6 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/common_type/common_type.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game/game_client.h"
@@ -20,30 +19,44 @@ std::size_t kMaxPlayerSize = 1000;
 
 namespace l2ms
 {
-
-    void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
-        const ::l2ms::LoginRequest* request, 
-        ::l2ms::LoginResponse* response, 
+    void LoginServiceImpl::LoginAccount(::google::protobuf::RpcController* controller,
+        const ::l2ms::LoginAccountRequest* request,
+        ::l2ms::LoginAccountResponse* response,
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        if ((MasterPlayerList::GetSingleton().player_size() + login_accounts_.size()) >= kMaxPlayerSize)
+        auto lit = login_accounts_.find(request->account());
+        if (lit == login_accounts_.end() && 
+            (MasterPlayerList::GetSingleton().player_size() + login_accounts_.size()) >= kMaxPlayerSize)
         {
+            //如果登录的是新账号,满了得去排队
             response->mutable_error()->set_error_no(RET_LOGIN_MAX_PLAYER_SIZE);
             return;
         }
-        if (login_accounts_.find(request->account()) != login_accounts_.end())
+        
+        if (lit != login_accounts_.end())
         {
-            return;
+            auto& lc = lit->second;
+            //如果不是同一个登录服务器,踢掉已经登录的账号
+            if (reg().get<AccountLoginNode>(lc.entity()).node_id_ != request->node_id())
+            {
+
+            }
+            else//告诉客户端登录中
+            {
+                response->mutable_error()->set_error_no(RET_LOGIN_LOGIN_ING);
+            }
         }
-        auto result = login_accounts_.emplace(request->account(), LoginAccount());
-        if (result.second)
+        else
         {
-            auto& lc = result.first->second;
-            reg().emplace<SharedAccountString>(lc.entity(), std::make_shared<std::string>(request->account()));
-            lc.login_state_machine_.Login();
+            auto result = login_accounts_.emplace(request->account(), MSLoginAccount());
+            if (result.second)
+            {
+                auto& lc = result.first->second;
+                reg().emplace<SharedAccountString>(lc.entity(), std::make_shared<std::string>(request->account()));
+                reg().emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->node_id()});
+            }
         }
-        response->mutable_error()->set_error_no(RET_OK);
     }
 
     void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,

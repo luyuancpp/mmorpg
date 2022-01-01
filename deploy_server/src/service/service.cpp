@@ -60,7 +60,6 @@ namespace deploy
         g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
         g_deploy_server->SaveGSDb();
         //g_deploy_server->LogReuseInfo();
-        response->set_error_no(RET_OK);
     }
 
     void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* controller, 

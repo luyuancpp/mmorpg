@@ -24,6 +24,7 @@ namespace login
         LoginServer(muduo::net::EventLoop* loop);
             
         RedisClientPtr& redis_client() { return redis_; }
+        uint32_t node_id() const { return node_info_.id(); }
 
         void LoadConfig();
 
@@ -54,8 +55,12 @@ namespace login
         LoginStubl2db l2db_login_stub_;
 
         gw2l::LoginServiceImpl impl_;
+
+        login_server_db node_info_;
     };
 }
+
+extern login::LoginServer* g_login_server;
 
 #endif // LOGIN_SERVER_LOGIN_SERVER_H
 

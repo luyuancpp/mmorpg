@@ -5,7 +5,7 @@
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/return_code/error_code.h"
-
+#include "src/login_server.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -23,38 +23,13 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     const gw2l::LoginRequest* request,
     gw2l::LoginResponse* response,
     ::google::protobuf::Closure* done)
-{
-    //只连接不登录,占用连接
-    // login process
-    // check account rule: empty , erro
-    //check string rule
-   /* {
-        auto it = login_players_.find(request->account());
-        if (it == login_players_.end())
-        {
-            auto ret = login_players_.emplace(request->account(), std::make_shared<AccountPlayer>());
-            it = ret.first;
-        }
-        auto& player = it->second;
-        connection_accounts_.emplace(request->connection_id(), player);
-        CheckReturnCloseureError(player->Login());
-        auto& account_data = player->account_data();
-        redis_->Load(account_data, request->account());
-        if (!account_data.password().empty())
-        {
-            response->mutable_account_player()->CopyFrom(account_data);
-            player->OnDbLoaded();
-            ReturnCloseureOK;
-        }
-    }*/
- 
-    CallMSLogin(request->account(), response, done);
-    //// database process
-    //LoginRP cp(std::make_shared<LoginRpcString>(response, done));
-    //auto& s_reqst = cp->s_reqst_;
-    //s_reqst.set_account(request->account());
-    //s_reqst.set_password(request->password());
-    //l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
+{ 
+    //login master
+    LoginMasterRP cp(std::make_shared<LoginMasterRpcString>(response, done));
+    auto& s_reqst = cp->s_reqst_;
+    s_reqst.set_account(request->account());
+    s_reqst.set_node_id(g_login_server->node_id());
+    l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::MSLoginReplied, cp, &l2ms::LoginService_Stub::LoginAccount);
 }
 
 void LoginServiceImpl::DbLoginReplied(LoginRP d)
@@ -66,6 +41,41 @@ void LoginServiceImpl::DbLoginReplied(LoginRP d)
 
 void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
 {
+    //只连接不登录,占用连接
+ // login process
+ // check account rule: empty , erro
+ //check string rule
+    auto& account = d->s_reqst_.account();
+    auto& response = d->c_resp_;
+    {
+        auto it = login_players_.find(account);
+        if (it == login_players_.end())
+        {
+            auto ret = login_players_.emplace(account, std::make_shared<AccountPlayer>());
+            it = ret.first;
+        }
+        auto& player = it->second;
+        auto ret = player->Login();
+        if (ret != RET_OK)
+        {
+            response->mutable_error()->set_error_no(ret);
+            return;
+        }
+        auto& account_data = player->account_data();
+        redis_->Load(account_data, account);
+        if (!account_data.password().empty())
+        {
+            response->mutable_account_player()->CopyFrom(account_data);
+            player->OnDbLoaded();
+            return;
+        }
+    }
+
+     // database process
+    LoginRP cp(std::make_shared<LoginRpcString>(*d));
+    auto& s_reqst = cp->s_reqst_;
+    s_reqst.set_account(account);
+    l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
 
 }
 
@@ -162,17 +172,6 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
 void LoginServiceImpl::EnterMSReplied(EnterGameMS d)
 {
     d->c_resp_->set_node_id(d->s_resp_->node_id());
-}
-    
-void LoginServiceImpl::CallMSLogin(const std::string& account,
-    ::gw2l::LoginResponse* response, 
-    ::google::protobuf::Closure* done)
-{
-    // database process
-    LoginMasterRP cp(std::make_shared<LoginMasterRpcString>(response, done));
-    auto& s_reqst = cp->s_reqst_;
-    s_reqst.set_account(account);
-    l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::MSLoginReplied, cp, &l2ms::LoginService_Stub::Login);
 }
 
 void LoginServiceImpl::CallEnterMS(Guid guid,

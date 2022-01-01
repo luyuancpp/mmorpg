@@ -83,5 +83,8 @@
     <ClInclude Include="src\master_player\ms_player_list.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\comp\ms_login_account_comp.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

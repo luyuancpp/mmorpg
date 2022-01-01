@@ -44,8 +44,8 @@ namespace gw2l
         using LoginRP = std::shared_ptr<LoginRpcString>;
         void DbLoginReplied(LoginRP d);
 
-        using LoginMasterRpcString = common::RpcString<l2ms::LoginRequest,
-            l2ms::LoginResponse,
+        using LoginMasterRpcString = common::RpcString<l2ms::LoginAccountRequest,
+            l2ms::LoginAccountResponse,
             gw2l::LoginResponse>;
         using LoginMasterRP = std::shared_ptr<LoginMasterRpcString>;
         void MSLoginReplied(LoginMasterRP d);
@@ -77,10 +77,6 @@ namespace gw2l
             gw2l::EnterGameResponse>;
         using EnterGameMS = std::shared_ptr<EnterMSRpcString>;
         void EnterMSReplied(EnterGameMS d);
-
-        void CallMSLogin(const std::string& account,
-            ::gw2l::LoginResponse* response,
-            ::google::protobuf::Closure* done);
 
         void CallEnterMS(common::Guid guid,
             const std::string& account,

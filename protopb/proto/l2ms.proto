@@ -4,12 +4,13 @@ import "google/protobuf/empty.proto";
 import "common.proto";
 option cc_generic_services = true;
 
-message LoginRequest
+message LoginAccountRequest
 {
   string account = 1;
+  uint32 node_id = 2;
 }
 
-message LoginResponse
+message LoginAccountResponse
 { 
   ClientError error = 1;
 }
@@ -40,7 +41,7 @@ message DisconnectRequest
 
 service LoginService 
 {
-  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc LoginAccount (LoginAccountRequest) returns (LoginAccountResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponese);
   rpc LeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
   rpc Disconect (DisconnectRequest) returns (google.protobuf.Empty);  

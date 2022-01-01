@@ -5,27 +5,19 @@
 
 #include "src/account_player/ms_account.h"
 #include "src/common_type/common_type.h"
-#include "src/game_logic/entity_class/entity_class.h"
+#include "src/comp/ms_login_account_comp.hpp"
 #include "src/game_logic/comp/account_comp.hpp"
-#include "src/login_state/login_state_machine.h"
 
 namespace l2ms
 {
-    struct LoginAccount : public common::EntityHandle
-    {
-        common::GuidVector playing_guids_;
-        common::LoginStateMachine login_state_machine_;
-    };
-
     class LoginServiceImpl : public l2ms::LoginService
     {
     public:
+        using AccountMap = std::unordered_map<std::string, master::MSLoginAccount>;
 
-        using AccountMap = std::unordered_map<std::string, LoginAccount>;
-
-        void Login(::google::protobuf::RpcController* controller,
-            const ::l2ms::LoginRequest* request,
-            ::l2ms::LoginResponse* response,
+        void LoginAccount(::google::protobuf::RpcController* controller,
+            const ::l2ms::LoginAccountRequest* request,
+            ::l2ms::LoginAccountResponse* response,
             ::google::protobuf::Closure* done)override;
 
         void EnterGame(::google::protobuf::RpcController* controller,
