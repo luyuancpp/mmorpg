@@ -19,7 +19,6 @@ namespace gw2l
     class LoginServiceImpl : public LoginService
     {
     public:
-        using MessagePtr = std::unique_ptr<google::protobuf::Message>;
         using PlayerPtr = std::shared_ptr<AccountPlayer>;
         using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
         using ConnectionEntityMap = std::unordered_map<common::Guid, common::EntityHandle>;
@@ -29,10 +28,7 @@ namespace gw2l
         LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
             LoginStubl2db& l2db_login_stub);
   
-        void set_redis_client(RedisClientPtr& p)
-        {
-            redis_ = p;
-        }
+        void set_redis_client(RedisClientPtr& p){ redis_ = p; }
 
         virtual void Login(::google::protobuf::RpcController* controller,
             const gw2l::LoginRequest* request,
