@@ -2,6 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
+#include "src/game_logic/game_registry.h"
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/return_code/error_code.h"
@@ -28,7 +29,13 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     LoginMasterRP cp(std::make_shared<LoginMasterRpcString>(response, done));
     auto& s_reqst = cp->s_reqst_;
     s_reqst.set_account(request->account());
-    s_reqst.set_node_id(g_login_server->node_id());
+    s_reqst.set_login_node_id(g_login_server->node_id());
+    s_reqst.set_connection_id(request->connection_id());
+    auto it =  connection_accounts_.emplace(request->connection_id(), common::EntityHandle());
+    if (it.second)
+    {
+        reg().emplace<std::string>(it.first->second.entity(), request->account());
+    }
     l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::MSLoginReplied, cp, &l2ms::LoginService_Stub::LoginAccount);
 }
 
@@ -45,6 +52,7 @@ void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
  // login process
  // check account rule: empty , erro
  //check string rule
+    auto cit = connection_accounts_.find(d->s_reqst_.connection_id());
     auto& account = d->s_reqst_.account();
     auto& response = d->c_resp_;
     {
@@ -53,6 +61,7 @@ void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
         {
             auto ret = login_players_.emplace(account, std::make_shared<AccountPlayer>());
             it = ret.first;
+            reg().emplace<PlayerPtr>(cit->second.entity(), it->second);
         }
         auto& player = it->second;
         auto ret = player->Login();
@@ -91,12 +100,17 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     {
         ReturnCloseureError(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
     }
-    auto& ap = cit->second;
+    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    if (nullptr == p_player)
+    {
+        ReturnCloseureError(REG_LOGIN_CREATEPLAYER_CONNECTION_ACCOUNT_EMPTY);
+    }
+    auto& ap = *p_player;
     CheckReturnCloseureError(ap->CreatePlayer());
 
     // database process
     CreatePlayerRP cp(std::make_shared<CreatePlayerRpcString>(response, done));
-    cp->s_reqst_.set_account(cit->second->account());
+    cp->s_reqst_.set_account(ap->account());
     l2db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::DbCreatePlayerReplied,
         cp,
@@ -120,10 +134,15 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     auto cit = connection_accounts_.find(connection_id);
     if (cit == connection_accounts_.end())
     {
-        ReturnCloseureError(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+        ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
     }
-    auto& ap = cit->second;
+    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    if (nullptr == p_player)
+    {
+        ReturnCloseureError(REG_LOGIN_CREATEPLAYER_CONNECTION_ACCOUNT_EMPTY);
+    }
     // check second times change player id error 
+    auto& ap = *p_player;
     CheckReturnCloseureError(ap->EnterGame());
 
     // long time in login processing
@@ -202,7 +221,12 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
         LOG_ERROR << " leave game not found connection";
         return;
     }
-    auto& player = cit->second;
+    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    if (nullptr == p_player)
+    {
+        return;
+    }
+    auto& player = (*p_player);
     l2ms::LeaveGameRequest ms_request;
     ms_request.set_guid(player->PlayingId());
     l2ms_login_stub_.CallMethod(ms_request,
@@ -222,7 +246,12 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
         return;
     }
     //连接已经登录过
-    auto& player = cit->second;
+    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    if (nullptr == p_player)
+    {
+        return;
+    }
+    auto& player = (*p_player);
     l2ms::DisconnectRequest ms_disconnect;
     ms_disconnect.set_guid(player->PlayingId());
     l2ms_login_stub_.CallMethod(ms_disconnect,
@@ -241,6 +270,16 @@ void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_datab
     auto& ap = it->second;
     ap->set_account_data(a_d);
     ap->OnDbLoaded();
+}
+
+void LoginServiceImpl::ErasePlayer(ConnectionEntityMap::iterator& cit)
+{
+    auto* p_acnt = reg().try_get<std::string>(cit->second.entity());
+    if (nullptr != p_acnt)
+    {
+        login_players_.erase(*p_acnt);
+    }
+    connection_accounts_.erase(cit);
 }
 
 }  // namespace gw2l
