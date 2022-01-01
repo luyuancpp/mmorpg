@@ -66,7 +66,7 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
 
   OutstandingCall out = { response, done };
   {
-  //MutexLockGuard lock(mutex_);
+  MutexLockGuard lock(mutex_);
   outstandings_[id] = out;
   }
   codec_.send(conn_, message);
@@ -110,7 +110,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
     OutstandingCall out = { NULL, NULL };
 
     {
-      //MutexLockGuard lock(mutex_);
+      MutexLockGuard lock(mutex_);
       std::map<int64_t, OutstandingCall>::iterator it = outstandings_.find(id);
       if (it != outstandings_.end())
       {
