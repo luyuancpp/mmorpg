@@ -38,7 +38,7 @@ namespace l2ms
         {
             auto& lc = lit->second;
             //如果不是同一个登录服务器,踢掉已经登录的账号
-            if (reg().get<AccountLoginNode>(lc.entity()).node_id_ != request->node_id())
+            if (reg().get<AccountLoginNode>(lc.entity()).node_id_ != request->login_node_id())
             {
 
             }
@@ -54,7 +54,7 @@ namespace l2ms
             {
                 auto& lc = result.first->second;
                 reg().emplace<SharedAccountString>(lc.entity(), std::make_shared<std::string>(request->account()));
-                reg().emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->node_id()});
+                reg().emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id()});
             }
         }
     }

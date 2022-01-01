@@ -1,12 +1,13 @@
 #ifndef SRC_GATEWAY_SERVICE_SERVICE_H_
 #define SRC_GATEWAY_SERVICE_SERVICE_H_
 
+#include "src/account_player/account_player.h"
+#include "src/game_logic/entity_class/entity_class.h"
 #include "src/server_common/rpc_string_closure.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_stub.h"
 #include "src/server_common/rpc_client.h"
 #include "src/redis_client/redis_client.h"
-#include "src/account_player/account_player.h"
 
 #include "gw2l.pb.h"
 #include "l2db.pb.h"
@@ -21,7 +22,7 @@ namespace gw2l
         using MessagePtr = std::unique_ptr<google::protobuf::Message>;
         using PlayerPtr = std::shared_ptr<AccountPlayer>;
         using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
-        using ConnectionAccountMap = std::unordered_map<common::Guid, PlayerPtr>;
+        using ConnectionEntityMap = std::unordered_map<common::Guid, common::EntityHandle>;
         using LoginStubl2ms = common::RpcStub<l2ms::LoginService_Stub>;
         using LoginStubl2db = common::RpcStub<l2db::LoginService_Stub>;
 
@@ -95,14 +96,10 @@ namespace gw2l
 
     private:
         void UpdateAccount(const std::string& a, const ::account_database& a_d);
-        inline void ErasePlayer(ConnectionAccountMap::iterator& cit) 
-        {
-            login_players_.erase(cit->second->account());
-            connection_accounts_.erase(cit);
-        }
+        inline void ErasePlayer(ConnectionEntityMap::iterator& cit);
 
         RedisClientPtr redis_;
-        ConnectionAccountMap connection_accounts_;
+        ConnectionEntityMap connection_accounts_;
         LoginPlayersMap login_players_;
 
         LoginStubl2ms& l2ms_login_stub_;

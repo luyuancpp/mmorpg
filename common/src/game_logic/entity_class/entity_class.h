@@ -2,21 +2,18 @@
 #define COMMON_SRC_GAME_LOGIC_ENTITY_CLASS_H_
 
 #include "entt/src/entt/entity/fwd.hpp"
-
+ 
 namespace common
 {
+    using EntitySharedPtr = std::shared_ptr<entt::entity>;
+    using EntitySharedWPtr = std::weak_ptr<entt::entity>;
     class EntityHandle
     {
     public:
-        using EntityType = std::shared_ptr<entt::entity>;
         EntityHandle();
-        ~EntityHandle();
-        EntityHandle(const EntityHandle& r);
-        EntityHandle& operator=(const EntityHandle& r);
-        inline entt::entity entity()const { return entity_; }
+        inline entt::entity entity()const { return *entity_.get(); }
     private:
-        
-        entt::entity entity_;
+        EntitySharedPtr entity_;
     };
 }//namespace common
 
