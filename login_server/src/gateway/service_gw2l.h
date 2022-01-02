@@ -76,7 +76,7 @@ namespace gw2l
         void EnterMSReplied(EnterGameMS d);
 
         void CallEnterMS(common::Guid guid,
-            const std::string& account,
+            uint64_t connection_id,
             ::gw2l::EnterGameResponse* response,
             ::google::protobuf::Closure* done);
 
@@ -91,13 +91,11 @@ namespace gw2l
             ::google::protobuf::Closure* done)override;
 
     private:
-        void UpdateAccount(const std::string& a, const ::account_database& a_d);
+        void UpdateAccount(uint64_t connection_id, const ::account_database& a_d);
         inline void ErasePlayer(ConnectionEntityMap::iterator& cit);
 
         RedisClientPtr redis_;
         ConnectionEntityMap connections_;
-        LoginPlayersMap accounts_;
-
         LoginStubl2ms& l2ms_login_stub_;
         LoginStubl2db& l2db_login_stub_;
     };

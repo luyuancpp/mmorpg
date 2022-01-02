@@ -29,7 +29,6 @@ namespace l2db
         if (db.password().empty())
         {
             db.set_account(account);
-            db.set_password(request->password());
             redis_->Save(db, account);
         }        
     }
