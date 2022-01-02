@@ -151,7 +151,6 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     {
         ReturnCloseureError(RET_LOGIN_ENTER_GUID);
     }
-    auto& account = ap->account();
     // player in redis return ok
     player_database new_player;
     redis_->Load(new_player, guid);
