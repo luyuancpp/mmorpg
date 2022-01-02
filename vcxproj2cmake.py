@@ -129,9 +129,9 @@ def generate(vcxprojfile, vcxprojDir, target_type):
     writeCMakeLists(vcxprojDir, target_type)
     return projectName
 
-generate("./protopb/protopb.vcxproj", "./protopb/", "lib")
 link_mysql = "mysqlclient"
 generate("./common/common.vcxproj", "./common/", "lib")
+generate("./protopb/protopb.vcxproj", "./protopb/", "lib")
 generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 generate("./deploy_server/deploy_server.vcxproj", "./deploy_server/", "")
 generate("./database_server/database_server.vcxproj", "./database_server/", "")
