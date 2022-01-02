@@ -89,7 +89,6 @@ def getcpp(datastring, sheetname):
         s += ' auto result = google::protobuf::util::JsonStringToMessage(sp, &data_);\n'
         s += ' if (!result.ok()){cout << "%s " << result.message().data() << endl;}\n' % (sheetname)
         s += ' for (int32_t i = 0; i < data_.data_size(); ++i)\n {\n'
-        s += '   auto& d = data_.data(i);\n'
         counter = 0
         for d in datastring:
                 s += '   key_data_.clear();\n'
