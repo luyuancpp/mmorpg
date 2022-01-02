@@ -77,9 +77,9 @@ namespace common
 
         std::size_t scenes_size() const { return sceneids_.size(); }
 
-        bool scenes_empty() const { return sceneids_.empty(); }
+        inline bool scenes_empty() const { return sceneids_.empty(); }
 
-        bool HasSceneConfig(uint32_t scene_config_id) { return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
+        inline bool HasConfig(uint32_t scene_config_id)const{ return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
 
         void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
         {

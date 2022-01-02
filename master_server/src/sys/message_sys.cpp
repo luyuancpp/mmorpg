@@ -16,14 +16,14 @@ namespace master
         const std::string& stub,
         entt::entity player_entity)
 {
-    auto ptr_gse = reg().try_get<GSEntity>(player_entity);
+    auto ptr_gse = reg.try_get<GSEntity>(player_entity);
     if (nullptr == ptr_gse)
     {
-        LOG_ERROR << "player send message empty server:" << reg().get<Guid>(player_entity)
+        LOG_ERROR << "player send message empty server:" << reg.get<Guid>(player_entity)
             << "message:" << message.GetTypeName();
         return;
     }
-    auto& gs = reg().get<RpcServerConnection>(ptr_gse->server_entity());
+    auto& gs = reg.get<RpcServerConnection>(ptr_gse->server_entity());
     gs.Send(message, service, stub);
 }
 

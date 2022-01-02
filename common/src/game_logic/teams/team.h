@@ -43,21 +43,21 @@ public:
     Team(const CreateTeamP& param, 
         const TeamsP& teams_param);
 
-    Guid team_id()const { return entt::to_integral(teamid_); }
-    entt::entity to_entityid()const { return teamid_; }
+    inline Guid team_id()const { return entt::to_integral(teamid_); }
+    inline entt::entity to_entityid()const { return teamid_; }
     inline Guid leader_id()const { return leader_id_; }
-    std::size_t max_member_size()const { return kMaxMemberSize; }
-    std::size_t member_size()const { return members_.size(); }
-    bool empty()const { return members_.empty(); }
-    std::size_t applicant_size()const{  return applicants_.size();}
+    inline std::size_t max_member_size()const { return kMaxMemberSize; }
+    inline std::size_t member_size()const { return members_.size(); }
+    inline bool empty()const { return members_.empty(); }
+    inline std::size_t applicant_size()const{  return applicants_.size();}
     Guid first_applicant()const;
-    const GuidVector& members()const { return members_; }
+    inline const GuidVector& members()const { return members_; }
     inline PlayerTeamMap& playerid_team_map() const { return teams_registry_->get<PlayerTeamMap>(teams_entity_id_); }
 
-    bool IsApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
-    inline bool ApplicantEmpty()const { return !applicants_.empty(); }
+    inline bool IsApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
+    inline bool IsApplicantEmpty()const { return !applicants_.empty(); }
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
-        inline bool IsLeader(Guid guid)const { return leader_id_ == guid; }
+    inline bool IsLeader(Guid guid)const { return leader_id_ == guid; }
     inline bool IsMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
    
     uint32_t CheckLimt(Guid  guid);

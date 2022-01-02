@@ -23,9 +23,9 @@ namespace gw2ms
     {
         ClosurePtr cp(done);
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-        for (auto e : reg().view<RpcServerConnection>())
+        for (auto e : reg.view<RpcServerConnection>())
         {
-            auto c = reg().get<RpcServerConnection>(e);
+            auto c = reg.get<RpcServerConnection>(e);
             auto& local_addr = c.conn_->peerAddress();
             if (local_addr.toIpPort() != rpc_client_peer_addr.toIpPort())
             {
@@ -34,7 +34,7 @@ namespace gw2ms
             g_master_server->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
             break;
         }
-        for (auto e : reg().view<muduo::net::InetAddress>())
+        for (auto e : reg.view<muduo::net::InetAddress>())
         {
             g_master_server->GatewayConnectGame(e);
         }
@@ -46,16 +46,16 @@ namespace gw2ms
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        auto& connection_map = reg().get<ConnectionPlayerEnitiesMap>(global_entity());
+        auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
         if (it == connection_map.end())
         {
             return;
         }
         auto player_entity = it->second;
-        auto guid = reg().get<Guid>(player_entity);
+        auto guid = reg.get<Guid>(player_entity);
 
-        reg().destroy(player_entity);
+        reg.destroy(player_entity);
         connection_map.erase(it);
 
         MasterPlayerList::GetSingleton().LeaveGame(guid);
@@ -68,7 +68,7 @@ namespace gw2ms
         ::google::protobuf::Closure* done)
     {
         ClosurePtr cp(done);
-        auto& connection_map = reg().get<ConnectionPlayerEnitiesMap>(global_entity());
+        auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
         assert(it != connection_map.end());
         if (it == connection_map.end())
@@ -81,9 +81,9 @@ namespace gw2ms
         leave_scene.leave_entity_ = player_entity;
         LeaveScene(leave_scene);
 
-        auto guid = reg().get<Guid>(player_entity);
+        auto guid = reg.get<Guid>(player_entity);
         assert(MasterPlayerList::GetSingleton().HasPlayer(guid));
-        reg().destroy(player_entity);
+        reg.destroy(player_entity);
         MasterPlayerList::GetSingleton().LeaveGame(guid);
         assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
 

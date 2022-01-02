@@ -6,40 +6,40 @@ namespace common
 {
 #define GetTeamPtrReturnError \
     auto e = entt::to_entity(team_id);\
-    if (!reg().valid(e))\
+    if (!reg.valid(e))\
     {\
         return RET_TEAM_HAS_NOT_TEAM_ID;\
     }\
-    auto& team = reg().get<Team>(e);\
+    auto& team = reg.get<Team>(e);\
 
 #define GetTeamEntityReturnError \
-    if (!reg().valid(team_id))\
+    if (!reg.valid(team_id))\
     {\
         return RET_TEAM_HAS_NOT_TEAM_ID;\
     }\
-    auto& team = reg().get<Team>(team_id);\
+    auto& team = reg.get<Team>(team_id);\
 
 #define GetTeamReturn(ret) \
     auto e = entt::to_entity(team_id);\
-    if (!reg().valid(e))\
+    if (!reg.valid(e))\
     {\
         return ret;\
     }\
-    auto& team = reg().get<Team>(e);\
+    auto& team = reg.get<Team>(e);\
 
 #define GetTeamReturnVoid \
     auto e = entt::to_entity(team_id);\
-    if (!reg().valid(e))\
+    if (!reg.valid(e))\
     {\
         return ;\
     }\
-    auto& team = reg().get<Team>(e);\
+    auto& team = reg.get<Team>(e);\
 
     Teams::Teams()
         : emp_(EventManager::New())
     {
-        my_entity_id_ = reg().create();
-        reg().emplace<PlayerTeamMap>(my_entity_id_, PlayerTeamMap());
+        my_entity_id_ = reg.create();
+        reg.emplace<PlayerTeamMap>(my_entity_id_, PlayerTeamMap());
     }
 
     std::size_t Teams::member_size(Guid team_id)
@@ -62,7 +62,7 @@ namespace common
 
     Guid Teams::GetTeamId(Guid guid)const
     {
-        auto& player_team_map_ = reg().get<PlayerTeamMap>(my_entity_id_);
+        auto& player_team_map_ = reg.get<PlayerTeamMap>(my_entity_id_);
         auto it = player_team_map_.find(guid);
         if (it == player_team_map_.end())
         {
@@ -73,7 +73,7 @@ namespace common
 
     entt::entity Teams::GetTeamEntityId(Guid guid) const
     {
-        auto& player_team_map_ = reg().get<PlayerTeamMap>(my_entity_id_);
+        auto& player_team_map_ = reg.get<PlayerTeamMap>(my_entity_id_);
         auto it = player_team_map_.find(guid);
         if (it == player_team_map_.end())
         {
@@ -114,7 +114,7 @@ namespace common
 
     bool Teams::HasTeam(Guid guid) const
     {
-        auto& player_team_map_ = reg().get<PlayerTeamMap>(my_entity_id_);
+        auto& player_team_map_ = reg.get<PlayerTeamMap>(my_entity_id_);
         return player_team_map_.find(guid) != player_team_map_.end(); 
     }
 
@@ -135,9 +135,9 @@ namespace common
             return RET_TEAM_MEMBER_IN_TEAM;
         }
         RET_CHECK_RET(CheckMemberInTeam(param.members));
-        auto e = reg().create();
-        TeamsP ts_param{e, my_entity_id_, emp_, &reg() };
-        reg().emplace<Team>(e, param, ts_param);
+        auto e = reg.create();
+        TeamsP ts_param{e, my_entity_id_, emp_, &reg };
+        reg.emplace<Team>(e, param, ts_param);
         last_team_id_ = entt::to_integral(e);//for test
         return RET_OK;
     }
@@ -230,7 +230,7 @@ namespace common
 
     void Teams::EraseTeam(entt::entity team_id)
     {
-        reg().destroy(team_id);
+        reg.destroy(team_id);
     }
 
 }//namespace common

@@ -32,9 +32,9 @@ namespace g2ms
         InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
 
         entt::entity game_server_entity{ entt::null };
-        for (auto e : reg().view<RpcServerConnection>())
+        for (auto e : reg.view<RpcServerConnection>())
         {
-            auto c = reg().get<RpcServerConnection>(e);
+            auto c = reg.get<RpcServerConnection>(e);
             auto& local_addr = c.conn_->peerAddress();
             if (local_addr.toIpPort() != rpc_client_peer_addr.toIpPort())
             {
@@ -47,12 +47,12 @@ namespace g2ms
         {
             return;
         }
-        auto c = reg().get<RpcServerConnection>(game_server_entity);
+        auto c = reg.get<RpcServerConnection>(game_server_entity);
         MakeGSParam cparam;
         cparam.node_id_ = request->node_id();
-        auto server_entity = MakeMainSceneGS(reg(), cparam);
-        reg().emplace<RpcServerConnection>(server_entity, RpcServerConnection{ c.conn_ });
-        reg().emplace<InetAddress>(server_entity, rpc_server_peer_addr);
+        auto server_entity = MakeMainSceneGS(reg, cparam);
+        reg.emplace<RpcServerConnection>(server_entity, RpcServerConnection{ c.conn_ });
+        reg.emplace<InetAddress>(server_entity, rpc_server_peer_addr);
 
         if (request->server_type() == kMainServer)
         {
@@ -63,19 +63,19 @@ namespace g2ms
             {
                 create_scene_param.scene_config_id_ = config_all.data(i).id();
                 auto scene_entity = g_scene_manager->MakeSceneGSScene( create_scene_param);
-                if (!reg().valid(scene_entity))
+                if (!reg.valid(scene_entity))
                 {
                     continue;
                 }
                 auto scene_info = response->add_scenes_info();
-                scene_info->set_scene_config_id(reg().get<SceneConfigComp>(scene_entity));
-                scene_info->set_scene_id(reg().get<Guid>(scene_entity));
+                scene_info->set_scene_config_id(reg.get<SceneConfigComp>(scene_entity));
+                scene_info->set_scene_id(reg.get<Guid>(scene_entity));
             }
         }
         else
         {
-            reg().remove<MainSceneServerComp>(server_entity);
-            reg().emplace<RoomSceneServerComp>(server_entity);
+            reg.remove<MainSceneServerComp>(server_entity);
+            reg.emplace<RoomSceneServerComp>(server_entity);
         }
         g_master_server->GatewayConnectGame(server_entity);
         LOG_INFO << "game connected " << request->node_id();

@@ -38,7 +38,7 @@ namespace l2ms
         {
             auto& lc = lit->second;
             //如果不是同一个登录服务器,踢掉已经登录的账号
-            if (reg().get<AccountLoginNode>(lc.entity()).node_id_ != request->login_node_id())
+            if (reg.get<AccountLoginNode>(lc.entity()).node_id_ != request->login_node_id())
             {
 
             }
@@ -53,8 +53,8 @@ namespace l2ms
             if (result.second)
             {
                 auto& lc = result.first->second;
-                reg().emplace<SharedAccountString>(lc.entity(), std::make_shared<std::string>(request->account()));
-                reg().emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id()});
+                reg.emplace<SharedAccountString>(lc.entity(), std::make_shared<std::string>(request->account()));
+                reg.emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id()});
             }
         }
     }
@@ -67,9 +67,9 @@ namespace l2ms
         ClosurePtr cp(done);
         auto guid = request->guid();   
         auto connection_id = request->connection_id();
-        auto e = reg().create();
-        reg().emplace<Guid>(e, guid);
-        reg().emplace<GatewayConnectionId>(e, connection_id);
+        auto e = reg.create();
+        reg.emplace<Guid>(e, guid);
+        reg.emplace<GatewayConnectionId>(e, connection_id);
         MasterPlayerList::GetSingleton().EnterGame(guid, e);
         ms2gw::PlayerEnterGSRequest gw_request;
         gw_request.set_connection_id(connection_id);//error
@@ -88,8 +88,8 @@ namespace l2ms
         ClosurePtr cp(done);
         auto guid = request->guid();
         auto e = MasterPlayerList::GetSingleton().GetPlayer(guid);
-        assert(reg().get<Guid>(e) == guid);
-        reg().destroy(e);
+        assert(reg.get<Guid>(e) == guid);
+        reg.destroy(e);
         MasterPlayerList::GetSingleton().LeaveGame(guid);  
         assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
         assert(MasterPlayerList::GetSingleton().GetPlayer(guid) == entt::null); 
@@ -107,8 +107,8 @@ namespace l2ms
         {
             return;
         }
-        assert(reg().get<Guid>(e) == guid);
-        reg().destroy(e);
+        assert(reg.get<Guid>(e) == guid);
+        reg.destroy(e);
         MasterPlayerList::GetSingleton().LeaveGame(guid);
         assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
         assert(MasterPlayerList::GetSingleton().GetPlayer(guid) == entt::null);

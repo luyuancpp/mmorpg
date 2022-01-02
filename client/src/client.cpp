@@ -10,7 +10,7 @@ using namespace common;
 
 void PlayerClient::onDisConenction()
 {
-    auto& c = reg().get<uint32_t>(gAllFinish);
+    auto& c = reg.get<uint32_t>(gAllFinish);
     --c;
     if (c == 0)
     {

@@ -11,10 +11,10 @@ namespace master
 void EnterScene(const EnterSceneParam& param)
 {
     auto scene_entity = param.scene_entity_;
-    auto& players =  reg().get<PlayersComp>(scene_entity);
+    auto& players =  reg.get<PlayersComp>(scene_entity);
     players.emplace(param.enter_entity_);
-    reg().emplace<SceneEntity>(param.enter_entity_, scene_entity);
-    auto p_gs_data_comp = reg().try_get<GSDataPtrComp>(scene_entity);
+    reg.emplace<SceneEntity>(param.enter_entity_, scene_entity);
+    auto p_gs_data_comp = reg.try_get<GSDataPtrComp>(scene_entity);
     if (nullptr == p_gs_data_comp)
     {
         return;
@@ -25,12 +25,12 @@ void EnterScene(const EnterSceneParam& param)
 void LeaveScene(const LeaveSceneParam& param)
 {
     auto leave_entity = param.leave_entity_;
-    auto& player_scene_entity = reg().get<SceneEntity>(leave_entity);
+    auto& player_scene_entity = reg.get<SceneEntity>(leave_entity);
     auto scene_entity = player_scene_entity.scene_entity();
-    auto& players = reg().get<PlayersComp>(scene_entity);
+    auto& players = reg.get<PlayersComp>(scene_entity);
     players.erase(leave_entity);
-    reg().remove<SceneEntity>(leave_entity);
-    auto p_gs_data_comp = reg().try_get<GSDataPtrComp>(scene_entity);
+    reg.remove<SceneEntity>(leave_entity);
+    auto p_gs_data_comp = reg.try_get<GSDataPtrComp>(scene_entity);
     if (nullptr == p_gs_data_comp)
     {
         return; 
@@ -44,15 +44,14 @@ entt::entity GetWeightRoundRobinSceneT(const GetWeightRoundRobinSceneParam& para
     auto scene_config_id = param.scene_config_id_;
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
-    for (auto e : reg().view<ServerType, ServerStatus, ServerPressure>())
+
+    for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
     {
-        auto& scenes = reg().get<SceneComp>(e);
-        if (!scenes.HasSceneConfig(scene_config_id))
+        if (!reg.get<SceneComp>(e).HasConfig(scene_config_id))
         {
             continue;
         }
-        auto& server_data = reg().get<GSDataPtrComp>(e);
-        std::size_t server_player_size = (*server_data).player_size();
+        std::size_t server_player_size = (*reg.get<GSDataPtrComp>(e)).player_size();
         if (server_player_size >= min_player_size)
         {
             continue;
@@ -65,11 +64,12 @@ entt::entity GetWeightRoundRobinSceneT(const GetWeightRoundRobinSceneParam& para
     {
         return scene_entity;
     }
-    auto& scenes = reg().get<SceneComp>(server_entity);
+    auto& scenes = reg.get<SceneComp>(server_entity);
     std::size_t scene_min_player_size = UINT64_MAX;
-    for (auto& ji : scenes.confid_sceneslist(scene_config_id))
+    auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
+    for (auto& ji : server_scenes)
     {
-        std::size_t scene_player_size = reg().get<PlayersComp>(ji).size();
+        std::size_t scene_player_size = reg.get<PlayersComp>(ji).size();
         if (scene_player_size >= scene_min_player_size)
         {
             continue;

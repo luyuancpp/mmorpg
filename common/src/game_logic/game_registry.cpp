@@ -2,21 +2,17 @@
 
 namespace common
 {
-    entt::registry& reg()
-    {
-        thread_local entt::registry singleton;
-        return singleton;
-    }
+    thread_local entt::registry reg;
 
     entt::entity& error_entity()
     {
-        thread_local entt::entity singleton = reg().create();
+        thread_local entt::entity singleton = reg.create();
         return singleton;
     }
 
     entt::entity& op_enitty()
     {
-        thread_local entt::entity singleton = reg().create();
+        thread_local entt::entity singleton = reg.create();
         return singleton;
     }
 

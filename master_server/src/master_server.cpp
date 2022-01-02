@@ -71,11 +71,11 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     {
         return;
     }
-    auto connection_info = reg().get<InetAddress>(ge);
+    auto connection_info = reg.get<InetAddress>(ge);
     ms2gw::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
-    request.set_node_id(reg().get<GSDataPtrComp>(ge)->node_id());
+    request.set_node_id(reg.get<GSDataPtrComp>(ge)->node_id());
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGS");
 }
 
@@ -115,21 +115,21 @@ void MasterServer::receive(const ServerConnectionES& es)
 
 void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn)
 {
-    auto e = reg().create();
-    reg().emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+    auto e = reg.create();
+    reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
 }
 
 void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
 {
     auto& peer_addr = conn->peerAddress();
-    for (auto e : reg().view<RpcServerConnection>())
+    for (auto e : reg.view<RpcServerConnection>())
     {
-        auto& local_addr = reg().get<RpcServerConnection>(e).conn_->peerAddress();
+        auto& local_addr = reg.get<RpcServerConnection>(e).conn_->peerAddress();
         if (local_addr.toIpPort() != peer_addr.toIpPort())
         {
             continue;
         }
-        reg().destroy(e);
+        reg.destroy(e);
         break;
     }
 }
@@ -145,8 +145,8 @@ void MasterServer::InitConfig()
 void MasterServer::InitGlobalEntities()
 {
     MakeScenes();
-    global_entity() = reg().create();
-    reg().emplace<ConnectionPlayerEnitiesMap>(global_entity());
+    global_entity() = reg.create();
+    reg.emplace<ConnectionPlayerEnitiesMap>(global_entity());
 }
 
 }//namespace master

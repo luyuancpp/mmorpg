@@ -92,7 +92,7 @@ void GameServer::Register2Master(MasterClientPtr& master_rpc_client)
     rpc_client->set_port(master_local_addr.port());
     rpc_server->set_ip(server_info_.ip());
     rpc_server->set_port(server_info_.port());
-    request.set_server_type(reg().get<eServerType>(game::global_entity()));
+    request.set_server_type(reg.get<eServerType>(game::global_entity()));
     request.set_node_id(server_info_.id());
     request.set_master_server_addr(uint64_t(master_rpc_client.get()));
     g2ms_stub_.CallMethod(
@@ -118,7 +118,7 @@ void GameServer::receive(const RpcClientConnectionES& es)
         }
 
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-        if (reg().get<eServerType>(game::global_entity()) == kMainServer)
+        if (reg.get<eServerType>(game::global_entity()) == kMainServer)
         {
             cp->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
         }        
@@ -130,9 +130,9 @@ void GameServer::receive(const RpcClientConnectionES& es)
             &deploy::DeployService_Stub::ServerInfo);
     }
 
-    for (auto e : reg().view<MasterClientPtr>())
+    for (auto e : reg.view<MasterClientPtr>())
     {
-        auto& master_rpc_client = reg().get<MasterClientPtr>(e);
+        auto& master_rpc_client = reg.get<MasterClientPtr>(e);
         if (master_rpc_client->connected() &&
             master_rpc_client->peer_addr().toIpPort() == es.conn_->peerAddress().toIpPort())
         {
@@ -144,33 +144,33 @@ void GameServer::receive(const RpcClientConnectionES& es)
 
 void GameServer::InitGlobalEntities()
 {
-    reg().emplace<SceneMapComp>(global_entity());
+    reg.emplace<SceneMapComp>(global_entity());
 }
 
 void GameServer::InitRoomMasters(const deploy::ServerInfoResponse* resp)
 {
-    auto e = reg().create();
+    auto e = reg.create();
     auto& regionmaster = resp->region_masters();
     if (regionmaster.masters_size() <= 0)
     {
         auto& masterinfo = resp->info().master_info();
         InetAddress master_addr(masterinfo.ip(), masterinfo.port());
-        reg().emplace<MasterClientPtr>(e, std::make_shared<RpcClient>(loop_, master_addr));
+        reg.emplace<MasterClientPtr>(e, std::make_shared<RpcClient>(loop_, master_addr));
         return;
     }
     for (int32_t i = 0; i < regionmaster.masters_size(); ++i)
     {
         auto& masterinfo = regionmaster.masters(i);
         InetAddress master_addr(masterinfo.ip(), masterinfo.port());
-        reg().emplace<MasterClientPtr>(e, std::make_shared<RpcClient>(loop_, master_addr));
+        reg.emplace<MasterClientPtr>(e, std::make_shared<RpcClient>(loop_, master_addr));
     }
 }
 
 void GameServer::ConnectMaster()
 {
-    for (auto e : reg().view<MasterClientPtr>())
+    for (auto e : reg.view<MasterClientPtr>())
     {
-        auto& master_rpc_client = reg().get<MasterClientPtr>(e);
+        auto& master_rpc_client = reg.get<MasterClientPtr>(e);
         master_rpc_client->subscribe<RegisterStubES>(g2ms_stub_);
         master_rpc_client->registerService(&ms2g_service_impl_);
         master_rpc_client->subscribe<RpcClientConnectionES>(*this);

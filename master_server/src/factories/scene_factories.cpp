@@ -15,10 +15,10 @@ namespace master
 
     void MakeScenes()
     {
-        scenes_entity() = reg().create();
-        reg().emplace<SceneComp>(scenes_entity());
-        reg().emplace<SnowFlake>(scenes_entity());
-        reg().emplace<SceneMapComp>(scenes_entity());
+        scenes_entity() = reg.create();
+        reg.emplace<SceneComp>(scenes_entity());
+        reg.emplace<SnowFlake>(scenes_entity());
+        reg.emplace<SceneMapComp>(scenes_entity());
     }
 
     void OnDestroyScene(entt::registry& reg, entt::entity scene_entity, SceneComp& scene_map)
