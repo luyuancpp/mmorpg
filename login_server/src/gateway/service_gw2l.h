@@ -92,7 +92,6 @@ namespace gw2l
 
     private:
         void UpdateAccount(uint64_t connection_id, const ::account_database& a_d);
-        inline void ErasePlayer(ConnectionEntityMap::iterator& cit);
 
         RedisClientPtr redis_;
         ConnectionEntityMap connections_;
