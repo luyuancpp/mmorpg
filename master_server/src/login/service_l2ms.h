@@ -36,7 +36,7 @@ namespace l2ms
             ::google::protobuf::Closure* done)override;
 
     private:
-        AccountMap login_accounts_;
+        AccountMap login_accounts_;//login±¿¿££¨ms±¿¿£,gs±¿¿£º«µ√ª÷∏¥
     };
 }
 

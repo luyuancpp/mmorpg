@@ -25,6 +25,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     gw2l::LoginResponse* response,
     ::google::protobuf::Closure* done)
 { 
+    //测试用例连接不登录马上断线，
     //账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
     //login master
     LoginMasterRP cp(std::make_shared<LoginMasterRpcs>(response, done));
@@ -61,6 +62,8 @@ void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
     }
     auto& account = d->s_reqst_.account();
     auto& response = d->c_resp_;
+
+    //has dat
     {
         auto& player = reg().emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
         auto ret = player->Login();
@@ -127,7 +130,6 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
-    auto guid = request->guid();
     auto connection_id = request->connection_id();
     auto cit = connections_.find(connection_id);
     if (cit == connections_.end())
@@ -144,6 +146,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     CheckReturnCloseureError(ap->EnterGame());
 
     // long time in login processing
+    auto guid = request->guid();
     if (!ap->IsInPlayerList(guid))  
     {
         ReturnCloseureError(RET_LOGIN_ENTER_GUID);
@@ -187,7 +190,8 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
 
 void LoginServiceImpl::EnterMSReplied(EnterGameMS d)
 {
-    d->c_resp_->set_node_id(d->s_resp_->node_id());
+    d->c_resp_->set_gs_node_id(d->s_resp_->gs_node_id());
+    connections_.erase(d->s_reqst_.connection_id());
 }
 
 void LoginServiceImpl::CallEnterMS(common::Guid guid,
@@ -232,7 +236,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     ms_request.set_guid(player->PlayingId());
     l2ms_login_stub_.CallMethod(ms_request,
         &l2ms::LoginService_Stub::LeaveGame);
-    ErasePlayer(cit);
+    connections_.erase(cit); 
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller, 
@@ -257,8 +261,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ms_disconnect.set_guid(player->PlayingId());
     l2ms_login_stub_.CallMethod(ms_disconnect,
         &l2ms::LoginService_Stub::Disconect);
-    ErasePlayer(cit);
-
+    connections_.erase(cit);
 }
 
 void LoginServiceImpl::UpdateAccount(uint64_t connection_id, const ::account_database& a_d)
@@ -276,11 +279,6 @@ void LoginServiceImpl::UpdateAccount(uint64_t connection_id, const ::account_dat
     auto& ap = *p_player;
     ap->set_account_data(a_d);
     ap->OnDbLoaded();
-}
-
-void LoginServiceImpl::ErasePlayer(ConnectionEntityMap::iterator& cit)
-{
-    connections_.erase(cit);
 }
 
 }  // namespace gw2l
