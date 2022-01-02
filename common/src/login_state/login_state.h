@@ -12,7 +12,6 @@ namespace common
     {
         E_LOGIN_NONE,
         E_LOGIN_ACCOUNT_LOGIN,//登录状态，重复登录的话提示，比如快点俩下
-        E_LOGIN_ACCOUNT_LOADING,//登录状态，加载数据,防止客户端发其他协议提示，服务器数据流错乱
         E_LOGIN_ACCOUNT_CREATE_PLAYER,//登录状态，创建账号
         E_LOGIN_ACCOUNT_ENTER_GAME,//登录状态，有角色进入了游戏
         E_LGOIN_ACCOUNT_PLAYING,
