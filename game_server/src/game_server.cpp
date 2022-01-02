@@ -1,6 +1,7 @@
 #include "game_server.h"
 
 #include "muduo/base/Logging.h"
+#include "muduo/base/CrossPlatformAdapterFunction.h"
 
 #include "src/game_config/all_config.h"
 #include "src/game_config/deploy_json.h"
