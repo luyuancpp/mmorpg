@@ -36,7 +36,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     auto it =  connections_.emplace(request->connection_id(), common::EntityHandle());
     if (it.second)
     {
-        reg().emplace<std::string>(it.first->second.entity(), request->account());
+        reg.emplace<std::string>(it.first->second.entity(), request->account());
     }
     l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::MSLoginReplied, cp, &l2ms::LoginService_Stub::LoginAccount);
 }
@@ -65,7 +65,7 @@ void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
 
     //has dat
     {
-        auto& player = reg().emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
+        auto& player = reg.emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
         auto ret = player->Login();
         if (ret != RET_OK)
         {
@@ -100,7 +100,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     {
         ReturnCloseureError(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
     }
-    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
     if (nullptr == p_player)
     {
         ReturnCloseureError(REG_LOGIN_CREATEPLAYER_CONNECTION_ACCOUNT_EMPTY);
@@ -136,7 +136,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     {
         ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
     }
-    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
     if (nullptr == p_player)
     {
         ReturnCloseureError(REG_LOGIN_CREATEPLAYER_CONNECTION_ACCOUNT_EMPTY);
@@ -226,7 +226,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
         LOG_ERROR << " leave game not found connection";
         return;
     }
-    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
     if (nullptr == p_player)
     {
         return;
@@ -251,7 +251,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
         return;
     }
     //连接已经登录过
-    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
     if (nullptr == p_player)
     {
         return;
@@ -271,7 +271,7 @@ void LoginServiceImpl::UpdateAccount(uint64_t connection_id, const ::account_dat
     {
         return;
     }
-    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
     if (nullptr == p_player)
     {
         return;

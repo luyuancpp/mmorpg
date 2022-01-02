@@ -11,14 +11,14 @@ using namespace common;
 
 int main(int argc, char* argv[])
 {
-    game::global_entity() = reg().create();
+    game::global_entity() = reg.create();
     if (argc > 1 && atoi(argv[1]) == kRoomServer)
     {
-        reg().emplace<eServerType>(game::global_entity(), kRoomServer);
+        reg.emplace<eServerType>(game::global_entity(), kRoomServer);
     }
     else
     {
-        reg().emplace<eServerType>(game::global_entity(), kMainServer);
+        reg.emplace<eServerType>(game::global_entity(), kMainServer);
     }
 
     EventLoop loop;

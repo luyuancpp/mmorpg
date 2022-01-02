@@ -22,9 +22,9 @@ namespace ms2gw
     {
         ClosurePtr cp(done);
         InetAddress gs_addr(request->ip(), request->port());
-        for (auto e : reg().view<InetAddress>())
+        for (auto e : reg.view<InetAddress>())
         {
-            auto& c = reg().get<InetAddress>(e);
+            auto& c = reg.get<InetAddress>(e);
             if (gs_addr.toIpPort() == c.toIpPort())
             {
                 return;

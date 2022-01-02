@@ -5,7 +5,7 @@
 namespace common
 {
     EntityHandle::EntityHandle()
-        : entity_(new entt::entity(reg().create()), [](entt::entity* p){reg().destroy(*p);delete p;})
+        : entity_(new entt::entity(reg.create()), [](entt::entity* p){reg.destroy(*p);delete p;})
     {
 
     }
