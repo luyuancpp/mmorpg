@@ -23,7 +23,7 @@ namespace common
         }
         if (config_->HasMainSubTypeCheck())
         {
-            reg().emplace<CheckSubType>(entity());
+            reg.emplace<CheckSubType>(entity());
         }
     }
 
@@ -61,7 +61,7 @@ namespace common
         }
         auto mission_sub_type = config_->mission_sub_type(mission_id);
         auto mission_type = config_->mission_type(mission_id);
-        bool check_type_filter = config_->HasMainSubTypeCheck() &&  mission_sub_type > 0 && reg().any_of<CheckSubType>(entity());
+        bool check_type_filter = config_->HasMainSubTypeCheck() &&  mission_sub_type > 0 && reg.any_of<CheckSubType>(entity());
         if (check_type_filter)
         {
             UInt32PairSet::value_type p(mission_type, mission_sub_type);
@@ -101,7 +101,7 @@ namespace common
         missions_.mutable_missions()->erase(mission_id);
         complete_ids_.mutable_missions()->erase(mission_id);
         complete_ids_.mutable_can_reward_mission_id()->erase(mission_id);
-        auto begin_times = reg().try_get<MissionBeginTime>(entity());
+        auto begin_times = reg.try_get<MissionBeginTime>(entity());
         if (nullptr != begin_times)
         {
             begin_times->mutable_mission_begin_time()->erase(mission_id);
@@ -261,7 +261,7 @@ namespace common
         {
             return;
         }
-        bool reward = reg().any_of<MissionReward>(entity());
+        bool reward = reg.any_of<MissionReward>(entity());
         for (auto& mission_id : temp_complete)
         {
             complete_ids_.mutable_missions()->insert({ mission_id, true });
@@ -271,7 +271,7 @@ namespace common
             }
             DelClassify(mission_id);
             auto& next_missions = config_->next_mission_id(mission_id);
-            auto next_time_accpet = reg().try_get<NextTimeAcceptMission>(entity());
+            auto next_time_accpet = reg.try_get<NextTimeAcceptMission>(entity());
             if (nullptr == next_time_accpet)
             {
                 for (int32_t i = 0; i < next_missions.size(); ++i)
