@@ -25,6 +25,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     gw2l::LoginResponse* response,
     ::google::protobuf::Closure* done)
 { 
+    //账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
     //login master
     LoginMasterRP cp(std::make_shared<LoginMasterRpcs>(response, done));
     auto& s_reqst = cp->s_reqst_;
@@ -43,27 +44,25 @@ void LoginServiceImpl::DbLoginReplied(LoginRP d)
 {
     auto& sresp = d->s_resp_;
     d->c_resp_->mutable_account_player()->CopyFrom(sresp->account_player());
-    UpdateAccount(d->s_reqst_.account(), sresp->account_player());
+    UpdateAccount(d->s_reqst_.connection_id(), sresp->account_player());
 }
 
 void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
 {
     //只连接不登录,占用连接
- // login process
- // check account rule: empty , erro
- //check string rule
+    // login process
+    // check account rule: empty , errno
+    //check string rule
     auto cit = connections_.find(d->s_reqst_.connection_id());
+    if (cit == connections_.end())
+    {
+        d->c_resp_->mutable_error()->set_error_no(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+        return;
+    }
     auto& account = d->s_reqst_.account();
     auto& response = d->c_resp_;
     {
-        auto it = accounts_.find(account);
-        if (it == accounts_.end())
-        {
-            auto ret = accounts_.emplace(account, std::make_shared<AccountPlayer>());
-            it = ret.first;
-            reg().emplace<PlayerPtr>(cit->second.entity(), it->second);
-        }
-        auto& player = it->second;
+        auto& player = reg().emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
         auto ret = player->Login();
         if (ret != RET_OK)
         {
@@ -82,6 +81,7 @@ void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
      // database process
     LoginRP cp(std::make_shared<LoginRpcs>(*d));
     cp->s_reqst_.set_account(account);
+    cp->s_reqst_.set_connection_id(d->s_reqst_.connection_id());
     l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
 }
 
@@ -107,6 +107,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 
     // database process
     CreatePlayerRP cp(std::make_shared<CreatePlayerRpcs>(response, done));
+    cp->s_reqst_.set_connection_id(request->connection_id());
     cp->s_reqst_.set_account(ap->account());
     l2db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::DbCreatePlayerReplied,
@@ -118,7 +119,7 @@ void LoginServiceImpl::DbCreatePlayerReplied(CreatePlayerRP d)
 {
     auto& sresp = d->s_resp_;
     d->c_resp_->mutable_account_player()->CopyFrom(sresp->account_player());
-    UpdateAccount(d->s_reqst_.account(), sresp->account_player());
+    UpdateAccount(d->s_reqst_.connection_id(), sresp->account_player());
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
@@ -156,13 +157,12 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     response->set_guid(guid);//test
     if (new_player.guid() > 0)
     {
-        CallEnterMS(guid, account, response, done);
+        CallEnterMS(guid, connection_id, response, done);
         return;
     }        
     // database to redis 
     EnterGameDbRP cp(std::make_shared<EnterGameDbRpcs>(response, done));
     auto& sreqst = cp->s_reqst_;
-    sreqst.set_account(account);
     sreqst.set_guid(guid);
     l2db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterGameDbReplied,
@@ -172,17 +172,17 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 
 void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
 {
+    //db 加载过程中断线了
     auto& sreqst = d->s_reqst_;
-    auto cit = accounts_.find(sreqst.account());
-    if (cit == accounts_.end())
+    auto cit = connections_.find(d->c_resp_->connection_id());
+    if (cit == connections_.end())
     {
-        LOG_ERROR << "disconnect not found connection id " << d->s_reqst_.account();
         return;
     }
     ::gw2l::EnterGameResponse* response = nullptr;
     ::google::protobuf::Closure* done = nullptr;
     d->Move(response, done);
-    CallEnterMS(sreqst.guid(), sreqst.account(), response, done);
+    CallEnterMS(sreqst.guid(), response->connection_id(), response, done);
 }
 
 void LoginServiceImpl::EnterMSReplied(EnterGameMS d)
@@ -190,13 +190,17 @@ void LoginServiceImpl::EnterMSReplied(EnterGameMS d)
     d->c_resp_->set_node_id(d->s_resp_->node_id());
 }
 
-void LoginServiceImpl::CallEnterMS(Guid guid,
-    const std::string& account,
+void LoginServiceImpl::CallEnterMS(common::Guid guid,
+    uint64_t connection_id,
     ::gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {   
+    auto it = connections_.find(connection_id);
+    if (connections_.end() == it)
+    {
+        ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
+    }
     EnterGameMS cp(std::make_shared<EnterMSRpcs>(response, done));
-    cp->s_reqst_.set_account(account);
     cp->s_reqst_.set_guid(guid);
     cp->s_reqst_.set_connection_id(response->connection_id());
     l2ms_login_stub_.CallMethodString(this,
@@ -257,25 +261,25 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 
 }
 
-void LoginServiceImpl::UpdateAccount(const std::string& a, const ::account_database& a_d)
+void LoginServiceImpl::UpdateAccount(uint64_t connection_id, const ::account_database& a_d)
 {
-    auto it = accounts_.find(a);
-    if (it == accounts_.end())
+    auto cit = connections_.find(connection_id);
+    if (cit == connections_.end())//断线了
     {
         return;
     }
-    auto& ap = it->second;
+    auto* p_player = reg().try_get<PlayerPtr>(cit->second.entity());
+    if (nullptr == p_player)
+    {
+        return;
+    }
+    auto& ap = *p_player;
     ap->set_account_data(a_d);
     ap->OnDbLoaded();
 }
 
 void LoginServiceImpl::ErasePlayer(ConnectionEntityMap::iterator& cit)
 {
-    auto* p_acnt = reg().try_get<std::string>(cit->second.entity());
-    if (nullptr != p_acnt)
-    {
-        accounts_.erase(*p_acnt);
-    }
     connections_.erase(cit);
 }
 

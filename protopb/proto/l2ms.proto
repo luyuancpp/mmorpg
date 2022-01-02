@@ -20,7 +20,6 @@ message EnterGameRequest
 {
   uint64 guid = 1;
   uint64 connection_id = 2;
-  string account = 3;
 }
 
 message EnterGameResponese
