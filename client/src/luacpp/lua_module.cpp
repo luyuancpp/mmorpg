@@ -27,7 +27,7 @@ void LuaModule::Init()
         "guid",
         sol::var(PlayerId::guid));
 
-    auto contents = File2String("client/client.lua");
+    auto contents = File2String("scrpit/client.lua");
     lua_.script(contents);
 }
 
