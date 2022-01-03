@@ -1,7 +1,7 @@
-ps -ef|grep java | awk '{print deploy_server}' | xarsg -r kill -9
-ps -ef|grep java | awk '{print region_server}' | xarsg -r kill -9
-ps -ef|grep java | awk '{print database_server}' | xarsg -r kill -9
-ps -ef|grep java | awk '{print master_server}' | xarsg -r kill -9
-ps -ef|grep java | awk '{print login_server}' | xarsg -r kill -9
-ps -ef|grep java | awk '{print game_server}' | xarsg -r kill -9
-ps -ef|grep java | awk '{print gateway_server}' | xarsg -r kill -9
+ps -ef|grep deploy_server | awk '{print $2}' | xargs -r kill -9
+ps -ef|grep region_server | awk '{print $2}' |  xargs -r kill -9
+ps -ef|grep database_server | awk '{print $2}' |  xargs -r kill -9
+ps -ef|grep master_server | awk '{print $2}' |  xargs -r kill -9
+ps -ef|grep login_server | awk '{print $2}' |  xargs -r kill -9
+ps -ef|grep game_server | awk '{print $2}' |  xargs -r kill -9
+ps -ef|grep gateway_server | awk '{print $2}' |  xargs -r kill -9
