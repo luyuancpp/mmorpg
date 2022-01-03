@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{1ba5e9a8-1c36-4ff3-826c-68ca94c033ce}</ProjectGuid>
-    <RootNamespace>deployserver</RootNamespace>
+    <RootNamespace>deploy_server</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
