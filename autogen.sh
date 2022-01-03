@@ -29,6 +29,12 @@ if test $? -ne 0; then
 fi
 
 cd ..
+cd region_server && cmake . && make -j$cpu
+if test $? -ne 0; then 
+    exit 
+fi
+
+cd ..
 cd database_server && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
