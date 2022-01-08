@@ -58,7 +58,7 @@ void GatewayServer::Register2Master()
     auto& master_local_addr = master_rpc_client_->local_addr();
     gw2ms::ConnectRequest request;
     request.mutable_rpc_client()->set_ip(master_local_addr.toIp());
-    request.mutable_rpc_client()->set_port(master_local_addr.port());
+    request.mutable_rpc_client()->set_port(master_local_addr.toPort());
     gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
 }
 
