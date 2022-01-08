@@ -8,6 +8,7 @@ spec = Gem::Specification.load("google-protobuf.gemspec")
 well_known_protos = %w[
   google/protobuf/any.proto
   google/protobuf/api.proto
+  google/protobuf/descriptor.proto
   google/protobuf/duration.proto
   google/protobuf/empty.proto
   google/protobuf/field_mask.proto
@@ -60,29 +61,25 @@ unless ENV['IN_DOCKER'] == 'true'
     output_file = proto_file.sub(/\.proto$/, "_pb.rb")
     genproto_output << output_file
     file output_file => proto_file do |file_task|
-      sh "#{protoc_command} -I../src -I. --ruby_out=. #{proto_file}"
+      sh "#{protoc_command} -I../src -I. -I./tests --ruby_out=.  #{proto_file}"
     end
   end
 end
 
 if RUBY_PLATFORM == "java"
-  if `which mvn` == ''
-    raise ArgumentError, "maven needs to be installed"
-  end
-  task :clean do
+  task :clean => :require_mvn do
     system("mvn --batch-mode clean")
   end
 
-  task :compile do
+  task :compile => :require_mvn do
     system("mvn --batch-mode package")
   end
-else
-  unless ENV['IN_DOCKER'] == 'true'
-    # We need wyhash in-tree.
-    FileUtils.mkdir_p("ext/google/protobuf_c/third_party/wyhash")
-    FileUtils.cp("../third_party/wyhash/wyhash.h", "ext/google/protobuf_c/third_party/wyhash/wyhash.h")
+
+  task :require_mvn do
+    raise ArgumentError, "maven needs to be installed" if `which mvn` == ''
   end
 
+else
   Rake::ExtensionTask.new("protobuf_c", spec) do |ext|
     unless RUBY_PLATFORM =~ /darwin/
       # TODO: also set "no_native to true" for mac if possible. As is,
@@ -96,16 +93,31 @@ else
     ext.cross_platform = [
       'x86-mingw32', 'x64-mingw32',
       'x86_64-linux', 'x86-linux',
-      'universal-darwin'
+      'x86_64-darwin', 'arm64-darwin',
     ]
   end
 
+  task 'gem:java' do
+    sh "rm Gemfile.lock"
+    require 'rake_compiler_dock'
+    # Specify the repo root as the working and mount directory to provide access
+    # to the java directory
+    repo_root = File.realdirpath File.join(Dir.pwd, '..')
+    RakeCompilerDock.sh <<-"EOT", platform: 'jruby', rubyvm: :jruby, mountdir: repo_root, workdir: repo_root
+      sudo apt-get install maven -y && \
+      cd java && mvn install -Dmaven.test.skip=true && cd ../ruby && \
+      bundle && \
+      IN_DOCKER=true rake compile gem
+    EOT
+  end
+
   task 'gem:windows' do
+    sh "rm Gemfile.lock"
     require 'rake_compiler_dock'
     ['x86-mingw32', 'x64-mingw32', 'x86_64-linux', 'x86-linux'].each do |plat|
       RakeCompilerDock.sh <<-"EOT", platform: plat
         bundle && \
-        IN_DOCKER=true rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem RUBY_CC_VERSION=3.0.0:2.7.0:2.6.0:2.5.0:2.4.0:2.3.0
+        IN_DOCKER=true rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem RUBY_CC_VERSION=3.0.0:2.7.0:2.6.0:2.5.0
       EOT
     end
   end
@@ -113,10 +125,10 @@ else
   if RUBY_PLATFORM =~ /darwin/
     task 'gem:native' do
       system "rake genproto"
-      system "rake cross native gem RUBY_CC_VERSION=3.0.0:2.7.0:2.6.0:2.5.1:2.4.0:2.3.0"
+      system "rake cross native gem RUBY_CC_VERSION=3.0.0:2.7.0:2.6.0:2.5.1"
     end
   else
-    task 'gem:native' => [:genproto, 'gem:windows']
+    task 'gem:native' => [:genproto, 'gem:windows', 'gem:java']
   end
 end
 

@@ -2,6 +2,17 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+PROTOBUF_MAVEN_ARTIFACTS = [
+    "com.google.code.findbugs:jsr305:3.0.2",
+    "com.google.code.gson:gson:2.8.6",
+    "com.google.errorprone:error_prone_annotations:2.3.2",
+    "com.google.j2objc:j2objc-annotations:1.3",
+    "com.google.guava:guava:30.1.1-jre",
+    "com.google.truth:truth:1.1.2",
+    "junit:junit:4.12",
+    "org.easymock:easymock:3.2",
+]
+
 def protobuf_deps():
     """Loads common dependencies needed to compile the protobuf library."""
 
@@ -22,14 +33,6 @@ def protobuf_deps():
             sha256 = "629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff",
             strip_prefix = "zlib-1.2.11",
             urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
-        )
-
-    if not native.existing_rule("six"):
-        http_archive(
-            name = "six",
-            build_file = "@com_google_protobuf//:third_party/six.BUILD",
-            sha256 = "d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73",
-            urls = ["https://pypi.python.org/packages/source/s/six/six-1.12.0.tar.gz"],
         )
 
     if not native.existing_rule("rules_cc"):
@@ -59,15 +62,14 @@ def protobuf_deps():
     if not native.existing_rule("rules_python"):
         http_archive(
             name = "rules_python",
-            sha256 = "e5470e92a18aa51830db99a4d9c492cc613761d5bdb7131c04bd92b9834380f6",
-            strip_prefix = "rules_python-4b84ad270387a7c439ebdccfd530e2339601ef27",
-            urls = ["https://github.com/bazelbuild/rules_python/archive/4b84ad270387a7c439ebdccfd530e2339601ef27.tar.gz"],
+            sha256 = "b6d46438523a3ec0f3cead544190ee13223a52f6a6765a29eae7b7cc24cc83a0",
+            urls = ["https://github.com/bazelbuild/rules_python/releases/download/0.1.0/rules_python-0.1.0.tar.gz"],
         )
 
     if not native.existing_rule("rules_jvm_external"):
-       http_archive(
+        http_archive(
             name = "rules_jvm_external",
-            sha256 = "31701ad93dbfe544d597dbe62c9a1fdd76d81d8a9150c2bf1ecf928ecdf97169",
-            strip_prefix = "rules_jvm_external-4.0",
-            urls = ["https://github.com/bazelbuild/rules_jvm_external/archive/4.0.zip"],
+            sha256 = "f36441aa876c4f6427bfb2d1f2d723b48e9d930b62662bf723ddfb8fc80f0140",
+            strip_prefix = "rules_jvm_external-4.1",
+            urls = ["https://github.com/bazelbuild/rules_jvm_external/archive/4.1.zip"],
         )
