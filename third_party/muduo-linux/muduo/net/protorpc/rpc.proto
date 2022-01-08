@@ -1,3 +1,4 @@
+syntax = "proto3";
 package muduo.net;
 // option go_package = "muduorpc";
 option java_package = "com.chenshuo.muduo.protorpc";
@@ -5,9 +6,9 @@ option java_outer_classname = "RpcProto";
 
 enum MessageType
 {
-  REQUEST = 1;
-  RESPONSE = 2;
-  ERROR = 3; // not used
+  REQUEST = 0;
+  RESPONSE = 1;
+  RPC_ERROR = 2; // not used
 }
 
 enum ErrorCode
@@ -23,14 +24,14 @@ enum ErrorCode
 
 message RpcMessage
 {
-  required MessageType type = 1;
-  required fixed64 id = 2;
+  MessageType type = 1;
+  fixed64 id = 2;
 
-  optional string service = 3;
-  optional string method = 4;
-  optional bytes request = 5;
+  string service = 3;
+  string method = 4;
+  bytes request = 5;
 
-  optional bytes response = 6;
+  bytes response = 6;
 
-  optional ErrorCode error = 7;
+  ErrorCode error = 7;
 }
