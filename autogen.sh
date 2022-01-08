@@ -5,13 +5,25 @@ python vcxproj2cmake.py
 cat /proc/cpuinfo  | grep "processor" | wc -l
 cat=$1
 
+cd bin/config && python build.py
+if test $? -ne 0; then 
+   exit 
+fi
+cd ../..
+
+cd protopb/proto && python build.py
+if test $? -ne 0; then 
+   exit 
+fi
+cd ../..
+
 cd protopb && cmake . && make -j$cpu
 if test $? -ne 0; then 
    exit 
 fi
 
 cd ..
-cd third_party && cmake . && make -j$cpu
+cd third_party && cp -rf muduo-linux muduo && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
 fi
