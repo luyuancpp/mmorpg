@@ -11,6 +11,10 @@ if test $? -ne 0; then
 fi
 cd ../..
 
+if [ ! -d "protopb/pbc" ];then
+  mkdir protopb/pbc
+fi
+
 cd protopb/proto && python build.py
 if test $? -ne 0; then 
    exit 
