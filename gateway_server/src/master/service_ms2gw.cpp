@@ -52,7 +52,7 @@ namespace ms2gw
         {
             auto& c = GameClient::GetSingleton().get<InetAddress>(e);
             if (c.toIp() != request->ip() ||
-                c.port() != request->port())
+                c.toPort() != request->port())
             {
                 continue;
             }

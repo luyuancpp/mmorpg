@@ -74,7 +74,7 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     auto connection_info = reg.get<InetAddress>(ge);
     ms2gw::StartGSRequest request;
     request.set_ip(connection_info.toIp());
-    request.set_port(connection_info.port());
+    request.set_port(connection_info.toPort());
     request.set_node_id(reg.get<GSDataPtrComp>(ge)->node_id());
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGS");
 }

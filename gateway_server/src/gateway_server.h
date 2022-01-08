@@ -47,7 +47,7 @@ public:
     bool IsSameAddr(const InetAddress& conn_addr, const ServerInfo& server_info)
     {
         return server_info.ip() == conn_addr.toIp() &&
-            server_info.port() == conn_addr.port();
+            server_info.port() == conn_addr.toPort();
     }
 
 
