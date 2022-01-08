@@ -3,6 +3,7 @@
 namespace common
 {
     thread_local entt::registry reg;
+    static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 
     entt::entity& error_entity()
     {

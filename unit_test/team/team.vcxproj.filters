@@ -27,7 +27,7 @@
     <ClCompile Include="..\..\common\src\game_logic\teams\teams.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp">
+    <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
