@@ -27,7 +27,7 @@ if test $? -ne 0; then
 fi
 
 cd ..
-cd third_party && cp -rf muduo-linux muduo && cmake . && make -j$cpu
+cd third_party && cp -rf muduo-linux/muduo/* muduo/ && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
 fi
