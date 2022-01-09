@@ -19,6 +19,7 @@ compile_commands.json
 *.pyc
 *CMakeLists.txt
 protopb/pbc/
+third_party/
 output/
 x64/
 .vs/
