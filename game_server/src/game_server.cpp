@@ -36,7 +36,7 @@ void GameServer::Init()
 
 void GameServer::InitNetwork()
 {
-    const auto& deploy_info = DeployConfig::GetSingleton().deploy_param();
+    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
     deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);

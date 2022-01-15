@@ -16,7 +16,7 @@ namespace deploy
         :server_(loop, listen_addr),
          database_(std::make_shared<MysqlDatabase>())
     {
-        auto& ci = DeployConfig::GetSingleton().connetion_param();
+        auto& ci = DeployConfig::GetSingleton().database_param();
         database_->Connect(ci);
     }
 
@@ -106,8 +106,8 @@ namespace deploy
         {
             return;
         }
-        auto& connetion_param = DeployConfig::GetSingleton().connetion_param();
-        auto& nomoral_ip = DeployConfig::GetSingleton().deploy_param().ip();
+        auto& connetion_param = DeployConfig::GetSingleton().database_param();
+        auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
 
         uint32_t region_size = 0;
         uint32_t region_id = 0;

@@ -51,7 +51,7 @@ namespace deploy
             {
                 return;
             }
-            auto& nomoral_ip = common::DeployConfig::GetSingleton().deploy_param().ip();
+            auto& nomoral_ip = common::DeployConfig::GetSingleton().deploy_info().ip();
 
             uint32_t region_size = 0;
             uint32_t region_id = 0;
