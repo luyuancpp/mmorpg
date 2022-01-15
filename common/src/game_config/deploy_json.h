@@ -28,8 +28,8 @@ namespace common
             SERVER_DATABASE = 0,
             SERVER_DEPLOY = 1,
         };
-        const ConnetionParam& connetion_param() { return connetion_param_.data(SERVER_DATABASE); }
-        const ConnetionParam& deploy_param() { return connetion_param_.data(SERVER_DEPLOY); }
+        const ConnetionParam& database_param() { return connetion_param_.data(SERVER_DATABASE); }
+        const ConnetionParam& deploy_info() { return connetion_param_.data(SERVER_DEPLOY); }
 
         static DeployConfig& GetSingleton() {
             thread_local DeployConfig singleton;

@@ -12,7 +12,7 @@ using namespace common;
 int32_t main(int argc, char* argv[])
 {
     DeployConfig::GetSingleton().Load("deploy.json");
-    auto deploy_server_info = DeployConfig::GetSingleton().deploy_param();
+    auto deploy_server_info = DeployConfig::GetSingleton().deploy_info();
     EventLoop loop;
     InetAddress listenAddr(deploy_server_info.ip(), deploy_server_info.port());
     deploy::DeployServer server(&loop, listenAddr);
