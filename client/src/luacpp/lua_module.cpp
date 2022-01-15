@@ -29,7 +29,10 @@ void LuaModule::Init()
         sol::var(PlayerId::guid));
 
     auto contents = File2String("scrpit/client.lua");
-    sol::error err = lua_.script(contents);
-    LOG_FATAL << err.what();
+    auto r = lua_.script(contents);
+    if (!r.valid())
+    {
+        LOG_FATAL << err.what();
+    }    
 }
 
