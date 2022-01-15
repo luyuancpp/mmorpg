@@ -32,6 +32,7 @@ void LuaModule::Init()
     auto r = lua_.script(contents);
     if (!r.valid())
     {
+        sol::error err = r;
         LOG_FATAL << err.what();
     }    
 }
