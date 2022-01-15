@@ -1,5 +1,6 @@
 #include "lua_module.h"
 
+#include "muduo/base/Logging.h"
 #include "src/file2string/file2string.h"
 
 #include "c2gw.pb.h"
@@ -28,6 +29,7 @@ void LuaModule::Init()
         sol::var(PlayerId::guid));
 
     auto contents = File2String("scrpit/client.lua");
-    lua_.script(contents);
+    sol::error err = lua_.script(contents);
+    LOG_FATAL << err.what();
 }
 
