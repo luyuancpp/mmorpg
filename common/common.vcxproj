@@ -150,6 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\file2string\file2string.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
     <ClCompile Include="src\game_config\condition_config.cpp" />
     <ClCompile Include="src\game_config\global_variable_config.cpp" />
