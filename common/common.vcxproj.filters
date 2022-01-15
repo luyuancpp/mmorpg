@@ -93,6 +93,9 @@
     <ClCompile Include="src\game_logic\entity_class\entity_class.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\file2string\file2string.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
