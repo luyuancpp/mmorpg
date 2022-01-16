@@ -25,7 +25,11 @@ namespace
     GOOGLE_PROTOBUF_VERIFY_VERSION;
     return 0;
   }
-  int dummy  = ProtobufVersionCheck();
+#ifdef __linux__
+  int dummy __attribute__ ((unused)) = ProtobufVersionCheck();
+#else
+  int dummy = ProtobufVersionCheck();
+#endif//__linux__
 }
 
 namespace muduo

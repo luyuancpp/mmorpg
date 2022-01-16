@@ -5,7 +5,7 @@
 			"db_host": "127.0.0.1",
 			"db_port": 3306,
 			"db_user": "root",
-			"db_password": "123456",
+			"db_password": "luyuan616586",
 			"db_dbname": "deploy"
 		},
 		{
@@ -14,7 +14,7 @@
 			"db_host": "127.0.0.1",
 			"db_port": 1000,
 			"db_user": "root",
-			"db_password": "123456",
+			"db_password": "luyuan616586",
 			"db_dbname": "deploy"
 		}
 	]

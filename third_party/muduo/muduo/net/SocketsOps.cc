@@ -15,11 +15,9 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>  // snprintf
-#ifdef __linux__
 #include <sys/socket.h>
 #include <sys/uio.h>  // readv
 #include <unistd.h>
-#endif//__linux__
 
 using namespace muduo;
 using namespace muduo::net;

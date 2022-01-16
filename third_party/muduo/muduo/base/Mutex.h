@@ -9,9 +9,7 @@
 #include "muduo/base/CurrentThread.h"
 #include "muduo/base/noncopyable.h"
 #include <assert.h>
-#ifdef __linux
 #include <pthread.h>
-#endif // __linux
 #include <mutex>
 
 // Thread safety annotations {

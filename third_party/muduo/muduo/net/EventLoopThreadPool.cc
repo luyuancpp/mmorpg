@@ -39,7 +39,12 @@ void EventLoopThreadPool::start(const ThreadInitCallback& cb)
 
   for (int i = 0; i < numThreads_; ++i)
   {
-    std::string buf(name_ + std::to_string(i));
+#ifdef __linux__
+	  char buf[name_.size() + 32];
+	  snprintf(buf, sizeof buf, "%s%d", name_.c_str(), i);
+#else if WIN32
+      std::string buf(name_ + std::to_string(i));
+#endif // __linux__    
     EventLoopThread* t = new EventLoopThread(cb, buf);
     threads_.push_back(std::unique_ptr<EventLoopThread>(t));
     loops_.push_back(t->startLoop());

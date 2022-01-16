@@ -8,9 +8,7 @@
 
 #include "muduo/base/Mutex.h"
 
-#ifdef __linux__
 #include <pthread.h>
-#endif // __linux__
 #include <condition_variable>
 #include <chrono>
 

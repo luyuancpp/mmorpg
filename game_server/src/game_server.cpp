@@ -62,7 +62,7 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
     scp->s_reqst_.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
     scp->s_reqst_.mutable_my_info()->set_id(server_info_.id());
     scp->s_reqst_.mutable_rpc_client()->set_ip(deploy_rpc_client_->local_addr().toIp());
-    scp->s_reqst_.mutable_rpc_client()->set_port(deploy_rpc_client_->local_addr().toPort());
+    scp->s_reqst_.mutable_rpc_client()->set_port(deploy_rpc_client_->local_addr().port());
     deploy_stub_.CallMethod(
         &GameServer::StartGSDeployReplied,
         scp,
@@ -90,7 +90,7 @@ void GameServer::Register2Master(MasterClientPtr& master_rpc_client)
     auto rpc_client = request.mutable_rpc_client();
     auto rpc_server = request.mutable_rpc_server();
     rpc_client->set_ip(master_local_addr.toIp());
-    rpc_client->set_port(master_local_addr.toPort());
+    rpc_client->set_port(master_local_addr.port());
     rpc_server->set_ip(server_info_.ip());
     rpc_server->set_port(server_info_.port());
     request.set_server_type(reg.get<eServerType>(game::global_entity()));

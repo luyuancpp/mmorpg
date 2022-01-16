@@ -18,10 +18,8 @@
 #include <algorithm>
 
 #include <signal.h>
-#ifdef __linux__
 #include <sys/eventfd.h>
 #include <unistd.h>
-#endif //__linux__
 
 using namespace muduo;
 using namespace muduo::net;

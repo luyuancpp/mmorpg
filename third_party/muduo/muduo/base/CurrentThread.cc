@@ -6,8 +6,8 @@
 #include "muduo/base/CurrentThread.h"
 #ifdef __linux__
 #include <cxxabi.h>
+#endif// __linux__
 #include <execinfo.h>
-#endif//__linux__
 #include <stdlib.h>
 
 namespace muduo

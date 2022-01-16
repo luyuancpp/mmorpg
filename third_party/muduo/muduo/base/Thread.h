@@ -12,9 +12,7 @@
 
 #include <functional>
 #include <memory>
-#ifdef __linux__
 #include <pthread.h>
-#endif//__linux__
 
 #include <thread>
 namespace muduo

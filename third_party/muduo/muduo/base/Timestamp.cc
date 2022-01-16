@@ -4,9 +4,7 @@
 // Author: Shuo Chen (chenshuo at chenshuo dot com)
 
 #include "muduo/base/Timestamp.h"
-#ifdef  __linux__
 #include <sys/time.h>
-#endif //  __linux__
 #include <stdio.h>
 
 #ifndef __STDC_FORMAT_MACROS

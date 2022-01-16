@@ -15,9 +15,7 @@
 
 #include <assert.h>
 //#define _BSD_SOURCE
-#ifdef __linux__
 #include <endian.h>
-#endif // __linux__
 
 #include <stdint.h>
 #include <stdio.h>
@@ -124,11 +122,19 @@ class File : noncopyable
 
   string readBytes(int n)
   {
-    std::vector<char> buf(n);
-    ssize_t nr = ::fread(buf.data(), 1, n, fp_);
+#ifdef __linux__
+    char buf[n];
+    ssize_t nr = ::fread(buf, 1, n, fp_);
     if (nr != n)
       throw logic_error("no enough data");
-    return string(buf.data(), n);
+    return string(buf, n);
+#else 
+	  std::vector<char> buf(n);
+	  ssize_t nr = ::fread(buf.data(), 1, n, fp_);
+	  if (nr != n)
+		  throw logic_error("no enough data");
+	  return string(buf.data(), n);
+#endif//__linux__
   }
 
   int32_t readInt32()

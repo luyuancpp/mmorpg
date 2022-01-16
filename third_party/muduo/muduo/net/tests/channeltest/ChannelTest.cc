@@ -2,9 +2,7 @@
 
 #include <stdio.h>
 
-#ifdef __linux__
 #include <sys/timerfd.h>
-#endif // __linux__
 
 #include <gtest/gtest.h>
 
