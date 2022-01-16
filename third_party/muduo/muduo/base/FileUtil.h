@@ -8,6 +8,8 @@
 #ifndef MUDUO_BASE_FILEUTIL_H
 #define MUDUO_BASE_FILEUTIL_H
 
+#include "muduo/base/CrossPlatformAdapterFunction.h"
+
 #include "muduo/base/noncopyable.h"
 #include "muduo/base/StringPiece.h"
 #include <sys/types.h>  // for off_t
@@ -70,24 +72,16 @@ class AppendFile : noncopyable
   void append(const char* logline, size_t len);
 
   void flush();
-#ifdef __linux__
+
   off_t writtenBytes() const { return writtenBytes_; }
-#endif // __linux__
-#ifdef WIN32
-  std::size_t writtenBytes() const { return writtenBytes_; }
-#endif // WIN32 
+
  private:
 
   size_t write(const char* logline, size_t len);
 
   FILE* fp_;
   char buffer_[64*1024];
-#ifdef __linux__
   off_t writtenBytes_;
-#endif // __linux__
-#ifdef WIN32
-  std::size_t writtenBytes_;
-#endif // WIN32 
 };
 
 }  // namespace FileUtil

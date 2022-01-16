@@ -17,9 +17,7 @@
 #include <fcntl.h>
 //#include <sys/types.h>
 //#include <sys/stat.h>
-#ifdef __linux__
 #include <unistd.h>
-#endif//____linux__
 
 using namespace muduo;
 using namespace muduo::net;

@@ -86,8 +86,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   if (message.type() == RESPONSE)
   {
     int64_t id = message.id();
-    assert(message.has_response() || message.has_error());
-
+ 
     OutstandingCall out = { NULL, NULL };
 
     {
@@ -103,7 +102,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
     if (out.response)
     {
       std::unique_ptr<google::protobuf::Message> d(out.response);
-      if (message.has_response())
+      if (!message.response().empty())
       {
         out.response->ParseFromString(message.response());
       }
@@ -137,7 +136,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
             int64_t id = message.id();
             service->CallMethod(method, NULL, get_pointer(request), response,
                                 NewCallback(this, &RpcChannel::doneCallback, response, id));
-            error = NO_ERROR;
+            error = RPC_NO_ERROR;
           }
           else
           {

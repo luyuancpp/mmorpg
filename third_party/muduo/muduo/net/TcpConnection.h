@@ -42,7 +42,6 @@ class TcpConnection : noncopyable,
                       public std::enable_shared_from_this<TcpConnection>
 {
  public:
-     using ContextType = boost::any;
   /// Constructs a TcpConnection with a connected sockfd
   ///
   /// User should not create this object.
@@ -78,13 +77,13 @@ class TcpConnection : noncopyable,
   void stopRead();
   bool isReading() const { return reading_; }; // NOT thread safe, may race with start/stopReadInLoop
 
-  void setContext(ContextType context)
+  void setContext(const boost::any& context)
   { context_ = context; }
 
-  const ContextType getContext() const
+  const boost::any& getContext() const
   { return context_; }
 
-  ContextType* getMutableContext()
+  boost::any* getMutableContext()
   { return &context_; }
 
   void setConnectionCallback(const ConnectionCallback& cb)
@@ -149,7 +148,7 @@ class TcpConnection : noncopyable,
   size_t highWaterMark_;
   Buffer inputBuffer_;
   Buffer outputBuffer_; // FIXME: use list<Buffer> as output buffer.
-  ContextType context_;
+  boost::any context_;
   // FIXME: creationTime_, lastReceiveTime_
   //        bytesReceived_, bytesSent_
 };

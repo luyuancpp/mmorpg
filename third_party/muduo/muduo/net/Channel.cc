@@ -12,9 +12,7 @@
 
 #include <sstream>
 
-#ifdef __linux__
 #include <poll.h>
-#endif // __linux__
 
 using namespace muduo;
 using namespace muduo::net;

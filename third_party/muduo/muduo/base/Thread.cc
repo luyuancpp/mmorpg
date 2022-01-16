@@ -12,13 +12,11 @@
 
 #include <errno.h>
 #include <stdio.h>
-#ifdef __linux__
 #include <unistd.h>
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <linux/unistd.h>
-#endif // __linux__
 
 namespace muduo
 {

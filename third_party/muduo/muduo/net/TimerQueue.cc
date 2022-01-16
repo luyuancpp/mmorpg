@@ -19,10 +19,8 @@
 #include "muduo/net/TimerId.h"
 #include "muduo/net/SocketsOps.h"
 
-#ifdef __linux__
 #include <sys/timerfd.h>
 #include <unistd.h>
-#endif // __linux__
 
 namespace muduo
 {

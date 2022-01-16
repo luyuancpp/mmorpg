@@ -13,10 +13,8 @@
 #include "muduo/net/InetAddress.h"
 #include "muduo/net/SocketsOps.h"
 
-#ifdef __linux__
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#endif //__linux__
 #include <stdio.h>  // snprintf
 
 using namespace muduo;

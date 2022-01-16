@@ -5,10 +5,8 @@
 
 #include <muduo/base/Types.h>
 
-
-
-#ifdef __linux__
 #include <sys/types.h>
+#ifdef __linux__
 #include <sys/time.h>
 #define auto_ptr unique_ptr
 #endif // __linux__
@@ -58,6 +56,7 @@
 //type 
 typedef long long ssize_t;
 #define pid_t int32_t
+#define _OFF_T_DEFINED
 #undef off_t
 #define off_t std::size_t
 #define sa_family_t int32_t

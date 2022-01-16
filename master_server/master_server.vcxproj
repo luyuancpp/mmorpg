@@ -122,7 +122,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../protopb/pbc/;../third_party/redis/;../third_party/muduo/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../protopb/pbc/;../third_party/redis/;../third_party/muduo/;../third_party/muduo/contrib/windows/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
