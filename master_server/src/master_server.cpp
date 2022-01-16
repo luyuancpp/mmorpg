@@ -71,7 +71,7 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     {
         return;
     }
-    auto connection_info = reg.get<InetAddress>(ge);
+    auto& connection_info = reg.get<InetAddress>(ge);
     ms2gw::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
