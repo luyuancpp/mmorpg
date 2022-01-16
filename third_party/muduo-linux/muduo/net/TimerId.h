@@ -42,8 +42,6 @@ class TimerId : public muduo::copyable
 
   friend class TimerQueue;
 
-  const Timer* GetTimer() { return timer_; }
-  
  private:
   Timer* timer_;
   int64_t sequence_;
