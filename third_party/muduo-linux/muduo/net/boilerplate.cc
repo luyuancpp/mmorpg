@@ -7,7 +7,7 @@
 // Author: Shuo Chen (chenshuo at chenshuo dot com)
 //
 
-#include "muduo/net/BoilerPlate.h"
+#include "muduo/net/boilerplate.h"
 
 using namespace muduo;
 using namespace muduo::net;
