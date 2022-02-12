@@ -73,9 +73,9 @@ namespace l2ms
         PlayerList::GetSingleton().EnterGame(guid, e);
         ms2gw::PlayerEnterGSRequest gw_request;
         gw_request.set_connection_id(connection_id);//error
-        for (auto e : GameClient::GetSingleton().view<uint32_t>())
+        for (auto e : SessionReg::GetSingleton().view<uint32_t>())
         {
-            response->set_gs_node_id(GameClient::GetSingleton().get<uint32_t>(e));
+            response->set_gs_node_id(SessionReg::GetSingleton().get<uint32_t>(e));
             break;
         }
     }

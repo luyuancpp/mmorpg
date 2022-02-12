@@ -30,15 +30,15 @@ namespace ms2gw
                 return;
             }
         }
-        auto e = GameClient::GetSingleton().create();
-        auto& c = GameClient::GetSingleton().emplace<RpcClientPtr>(e, 
+        auto e = SessionReg::GetSingleton().create();
+        auto& c = SessionReg::GetSingleton().emplace<RpcClientPtr>(e, 
             std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr));
         using Gw2gStubPtr = RpcStub<gw2g::Gw2gService_Stub>::MyType;
-        auto& sc =  GameClient::GetSingleton().emplace<Gw2gStubPtr>(e, std::make_unique<RpcStub<gw2g::Gw2gService_Stub>>());
+        auto& sc =  SessionReg::GetSingleton().emplace<Gw2gStubPtr>(e, std::make_unique<RpcStub<gw2g::Gw2gService_Stub>>());
         c->subscribe<RegisterStubEvent>(*(sc.get()));
         c->connect();
-        GameClient::GetSingleton().emplace<InetAddress>(e, gs_addr);
-        GameClient::GetSingleton().emplace<uint32_t>(e, request->node_id());
+        SessionReg::GetSingleton().emplace<InetAddress>(e, gs_addr);
+        SessionReg::GetSingleton().emplace<uint32_t>(e, request->node_id());
         LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->node_id();
     }
 
@@ -48,15 +48,15 @@ namespace ms2gw
         ::google::protobuf::Closure* done)
     {
         AutoRecycleClosure cp(done);
-        for (auto e : GameClient::GetSingleton().view<InetAddress>())
+        for (auto e : SessionReg::GetSingleton().view<InetAddress>())
         {
-            auto& c = GameClient::GetSingleton().get<InetAddress>(e);
+            auto& c = SessionReg::GetSingleton().get<InetAddress>(e);
             if (c.toIp() != request->ip() ||
                 c.port() != request->port())
             {
                 continue;
             }
-            GameClient::GetSingleton().destroy(e);
+            SessionReg::GetSingleton().destroy(e);
             break;
         }
     }
