@@ -7,9 +7,9 @@
 
 namespace common
 {
-struct TeamESBase
+struct TeamEvent
 {
-    TeamESBase(entt::entity team_id, Guid guid)
+    TeamEvent(entt::entity team_id, Guid guid)
         : teamid_(team_id),
         guid_(guid)
     {
@@ -28,16 +28,16 @@ struct TeamESTeamIdBase
     entt::entity teamid_{ kEmptyGuid };
 };
 
-struct TeamESJoinTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct EeventBeforeLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct EventAfterLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct EventDissmisTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct TeamESBeforeLeaderLeaveTeam : public TeamESBase { using TeamESBase::TeamESBase; };
-struct TeamESClearApplyList : public TeamESTeamIdBase { using TeamESTeamIdBase::TeamESTeamIdBase; };
+struct JoinTeamEvent : public TeamEvent { using TeamEvent::TeamEvent; };
+struct BeforeLeaveTeamEvent : public TeamEvent { using TeamEvent::TeamEvent; };
+struct AfterLeaveTeamEvent : public TeamEvent { using TeamEvent::TeamEvent; };
+struct DissmisTeamEvent : public TeamEvent { using TeamEvent::TeamEvent; };
+struct BeforeLeaderLeaveTeamEvent : public TeamEvent { using TeamEvent::TeamEvent; };
+struct ClearApplyListEvent : public TeamESTeamIdBase { using TeamESTeamIdBase::TeamESTeamIdBase; };
 
-struct TeamESAppointLeader 
+struct AppointLeaderEvent 
 {
-    TeamESAppointLeader(entt::entity team_id, Guid current_guid, Guid new_guid)
+    AppointLeaderEvent(entt::entity team_id, Guid current_guid, Guid new_guid)
         : teamid_(team_id),
           current_leader_guid_(current_guid),
           new_leader_guid_(new_guid)
