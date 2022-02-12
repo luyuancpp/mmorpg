@@ -291,8 +291,6 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
       }
   }
  private:     
-          
-
      FamilyReceviers family_receviers_;
 };
 
