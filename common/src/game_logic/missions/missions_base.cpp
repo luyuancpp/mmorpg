@@ -19,7 +19,7 @@ namespace common
     {
         for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
         {
-            classify_missions_.emplace(i, UInt32Set{});
+             event_missions_classify_.emplace(i, UInt32Set{});
         }
         if (config_->HasMainSubTypeCheck())
         {
@@ -80,7 +80,7 @@ namespace common
             }
             auto pcs = m.add_conditions();
             pcs->set_id(condition_id);
-            classify_missions_[p->condition_type()].emplace(mission_id);
+             event_missions_classify_[p->condition_type()].emplace(mission_id);
         }
         missions_.mutable_missions()->insert({ mission_id, std::move(m) });
         if (check_type_filter)
@@ -126,8 +126,8 @@ namespace common
             return;
         }
         auto mm = missions_.mutable_missions();
-        auto it = classify_missions_.find(c.type_);
-        if (it == classify_missions_.end())
+        auto it =  event_missions_classify_.find(c.type_);
+        if (it ==  event_missions_classify_.end())
         {
             return;
         }
@@ -179,7 +179,7 @@ namespace common
             {
                 continue;
             }
-            classify_missions_[cp->condition_type()].erase(mission_id);
+             event_missions_classify_[cp->condition_type()].erase(mission_id);
         }
         TypeSubTypeSet::value_type p(config_->mission_type(mission_id), config_->mission_sub_type(mission_id));
         type_filter_.erase(p);

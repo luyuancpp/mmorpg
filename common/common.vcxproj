@@ -189,7 +189,6 @@
     <ClInclude Include="src\game_config\region_config.h" />
     <ClInclude Include="src\game_config\scene_config.h" />
     <ClInclude Include="src\game_logic\comp\account_comp.hpp" />
-    <ClInclude Include="src\game_logic\comp\gateway_comp.hpp" />
     <ClInclude Include="src\game_logic\comp\gs_scene_comp.hpp" />
     <ClInclude Include="src\game_logic\comp\mission_comp.hpp" />
     <ClInclude Include="src\game_logic\comp\player.hpp" />

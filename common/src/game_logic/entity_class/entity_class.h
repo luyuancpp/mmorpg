@@ -5,15 +5,15 @@
  
 namespace common
 {
-    using EntitySharedPtr = std::shared_ptr<entt::entity>;
-    using EntitySharedWPtr = std::weak_ptr<entt::entity>;
+    using EntityPtr = std::shared_ptr<entt::entity>;
+    using EntityWeakPtr = std::weak_ptr<entt::entity>;
     class EntityHandle
     {
     public:
         EntityHandle();
         inline entt::entity entity()const { return *entity_.get(); }
     private:
-        EntitySharedPtr entity_;
+        EntityPtr entity_;
     };
 }//namespace common
 
