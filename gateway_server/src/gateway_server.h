@@ -36,9 +36,7 @@ public:
         dispatcher_(std::bind(&GatewayServer::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         client_receiver_(codec_, dispatcher_, gw2l_login_stub_)
-    {
-        
-    }
+    { }
 
     RpcStubgw2l& gw2l_stub() { return gw2l_login_stub_; }
     RpcStubgw2ms& gw2ms_stub() { return gw2ms_stub_; }
@@ -46,8 +44,7 @@ public:
     template<typename ServerInfo>
     bool IsSameAddr(const InetAddress& conn_addr, const ServerInfo& server_info)
     {
-        return server_info.ip() == conn_addr.toIp() &&
-            server_info.port() == conn_addr.port();
+        return server_info.ip() == conn_addr.toIp() && server_info.port() == conn_addr.port();
     }
 
 

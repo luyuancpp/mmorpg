@@ -28,8 +28,8 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     //测试用例连接不登录马上断线，
     //账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
     //login master
-    LoginMasterRP cp(std::make_shared<LoginMasterRpcs>(response, done));
-    auto& s_reqst = cp->s_reqst_;
+    auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
+    auto& s_reqst = c->s_reqst_;
     s_reqst.set_account(request->account());
     s_reqst.set_login_node_id(g_login_server->node_id());
     s_reqst.set_connection_id(request->connection_id());
@@ -38,10 +38,10 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     {
         reg.emplace<std::string>(it.first->second.entity(), request->account());
     }
-    l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::MSLoginReplied, cp, &l2ms::LoginService_Stub::LoginAccount);
+    l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::MSLoginReplied, c, &l2ms::LoginService_Stub::LoginAccount);
 }
 
-void LoginServiceImpl::DbLoginReplied(LoginRP d)
+void LoginServiceImpl::DbLoginReplied(LoginRpcReplied d)
 {
     auto& sresp = d->s_resp_;
     d->c_resp_->mutable_account_player()->CopyFrom(sresp->account_player());
@@ -82,10 +82,10 @@ void LoginServiceImpl::MSLoginReplied(LoginMasterRP d)
         }
     }
      // database process
-    LoginRP cp(std::make_shared<LoginRpcs>(*d));
-    cp->s_reqst_.set_account(account);
-    cp->s_reqst_.set_connection_id(d->s_reqst_.connection_id());
-    l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, cp,  &l2db::LoginService_Stub::Login);
+    auto c(std::make_shared<LoginRpcReplied::element_type>(*d));
+    c->s_reqst_.set_account(account);
+    c->s_reqst_.set_connection_id(d->s_reqst_.connection_id());
+    l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::DbLoginReplied, c,  &l2db::LoginService_Stub::Login);
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
@@ -109,16 +109,16 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     CheckReturnCloseureError(ap->CreatePlayer());
 
     // database process
-    CreatePlayerRP cp(std::make_shared<CreatePlayerRpcs>(response, done));
-    cp->s_reqst_.set_connection_id(request->connection_id());
-    cp->s_reqst_.set_account(ap->account());
+    auto c(std::make_shared<CreatePlayerRpcReplied::element_type>(response, done));
+    c->s_reqst_.set_connection_id(request->connection_id());
+    c->s_reqst_.set_account(ap->account());
     l2db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::DbCreatePlayerReplied,
-        cp,
+        c,
         &l2db::LoginService_Stub::CreatePlayer);
 }
 
-void LoginServiceImpl::DbCreatePlayerReplied(CreatePlayerRP d)
+void LoginServiceImpl::DbCreatePlayerReplied(CreatePlayerRpcReplied d)
 {
     auto& sresp = d->s_resp_;
     d->c_resp_->mutable_account_player()->CopyFrom(sresp->account_player());
@@ -163,16 +163,16 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
         return;
     }        
     // database to redis 
-    EnterGameDbRP cp(std::make_shared<EnterGameDbRpcs>(response, done));
-    auto& sreqst = cp->s_reqst_;
+    auto c(std::make_shared<EnterGameDbRpcReplied::element_type>(response, done));
+    auto& sreqst = c->s_reqst_;
     sreqst.set_guid(guid);
     l2db_login_stub_.CallMethodString(this,
         &LoginServiceImpl::EnterGameDbReplied,
-        cp,
+        c,
         &l2db::LoginService_Stub::EnterGame);
 }
 
-void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
+void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 {
     //db 加载过程中断线了
     auto& sreqst = d->s_reqst_;
@@ -187,7 +187,7 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRP d)
     CallEnterMS(sreqst.guid(), response->connection_id(), response, done);
 }
 
-void LoginServiceImpl::EnterMSReplied(EnterGameMS d)
+void LoginServiceImpl::EnterMSReplied(EnterGameMSRpcReplied d)
 {
     d->c_resp_->set_gs_node_id(d->s_resp_->gs_node_id());
     connections_.erase(d->s_reqst_.connection_id());
@@ -203,7 +203,7 @@ void LoginServiceImpl::CallEnterMS(common::Guid guid,
     {
         ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
     }
-    EnterGameMS cp(std::make_shared<EnterMSRpcs>(response, done));
+    auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
     cp->s_reqst_.set_guid(guid);
     cp->s_reqst_.set_connection_id(response->connection_id());
     l2ms_login_stub_.CallMethodString(this,
