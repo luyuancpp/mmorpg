@@ -40,7 +40,7 @@ namespace deploy
             ::google::protobuf::Closure* done)override;
 
     private:
-        void LoadRegionDeploy(uint32_t region_id, ::region_server_db* response);
+        void LoadRegionDeployFromDb(uint32_t region_id, ::region_server_db* response);
 
         MysqlClientPtr db_;
         GSMap logic_server_map_;
