@@ -1,8 +1,8 @@
 /*
 * https://github.com/alecthomas/entityx
  */
-#ifndef COMMON_SRC_EVENT_EVENT_H_
-#define COMMON_SRC_EVENT_EVENT_H_
+#ifndef COMMON_SRC_EVENT_EVENT_EVENT_H_
+#define COMMON_SRC_EVENT_EVENT_EVENT_H_
 
 #include <cassert>
 #include <cstddef>
@@ -296,4 +296,4 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
 
 }  // namespace common
 
-#endif // COMMON_SRC_EVENT_EVENT_H_
+#endif // COMMON_SRC_EVENT_EVENT_EVENT_H_

@@ -308,5 +308,8 @@
     <ClInclude Include="src\game_logic\comp\mission_comp.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\game_logic\tiime_unit\time_unit.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
