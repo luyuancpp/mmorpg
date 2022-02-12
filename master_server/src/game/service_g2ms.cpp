@@ -26,7 +26,7 @@ namespace g2ms
         ::g2ms::StartGSResponse* response,
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         response->set_master_node_id(g_master_server->master_node_id());
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());

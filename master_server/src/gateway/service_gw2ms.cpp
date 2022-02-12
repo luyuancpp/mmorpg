@@ -21,7 +21,7 @@ namespace gw2ms
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         for (auto e : reg.view<RpcServerConnection>())
         {
@@ -45,7 +45,7 @@ namespace gw2ms
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
         if (it == connection_map.end())
@@ -58,8 +58,8 @@ namespace gw2ms
         reg.destroy(player_entity);
         connection_map.erase(it);
 
-        MasterPlayerList::GetSingleton().LeaveGame(guid);
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
+        PlayerList::GetSingleton().LeaveGame(guid);
+        assert(!PlayerList::GetSingleton().HasPlayer(guid));
     }
 
     void Gw2msServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
@@ -67,7 +67,7 @@ namespace gw2ms
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
         assert(it != connection_map.end());
@@ -82,10 +82,10 @@ namespace gw2ms
         LeaveScene(leave_scene);
 
         auto guid = reg.get<Guid>(player_entity);
-        assert(MasterPlayerList::GetSingleton().HasPlayer(guid));
+        assert(PlayerList::GetSingleton().HasPlayer(guid));
         reg.destroy(player_entity);
-        MasterPlayerList::GetSingleton().LeaveGame(guid);
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
+        PlayerList::GetSingleton().LeaveGame(guid);
+        assert(!PlayerList::GetSingleton().HasPlayer(guid));
 
         connection_map.erase(it);
     }

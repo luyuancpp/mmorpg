@@ -17,7 +17,7 @@ namespace l2db
         l2db::LoginResponse* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         ::account_database& db = *response->mutable_account_player();
         auto& account = request->account();
         redis_->Load(db, account);
@@ -38,7 +38,7 @@ namespace l2db
         ::l2db::CreatePlayerResponse* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         ::account_database& r_db = *response->mutable_account_player();
         redis_->Load(r_db, request->account());
         player_database new_player;
@@ -56,7 +56,7 @@ namespace l2db
         ::l2db::EnterGameResponse* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         player_database new_player;
         std::string where_case = std::string("guid = '") + 
             std::to_string(request->guid()) + 

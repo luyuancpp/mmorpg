@@ -6,13 +6,13 @@
 
 namespace master
 {
-    class MasterPlayerList
+    class PlayerList
     {
     public:
         using GameGuidEntityIdMap = std::unordered_map<common::Guid, entt::entity>;
-        static MasterPlayerList& GetSingleton()
+        static PlayerList& GetSingleton()
         {
-            thread_local MasterPlayerList singleton;
+            thread_local PlayerList singleton;
             return singleton;
         }
 

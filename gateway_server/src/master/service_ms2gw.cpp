@@ -20,7 +20,7 @@ namespace ms2gw
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         InetAddress gs_addr(request->ip(), request->port());
         for (auto e : reg.view<InetAddress>())
         {
@@ -47,7 +47,7 @@ namespace ms2gw
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         for (auto e : GameClient::GetSingleton().view<InetAddress>())
         {
             auto& c = GameClient::GetSingleton().get<InetAddress>(e);
@@ -66,7 +66,7 @@ namespace ms2gw
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         auto it = g_gate_clients_->find(request->connection_id());
         if (it == g_gate_clients_->end())
         {

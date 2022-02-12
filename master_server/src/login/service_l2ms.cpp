@@ -24,17 +24,17 @@ namespace l2ms
         ::l2ms::LoginAccountResponse* response,
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
-        auto lit = login_accounts_.find(request->account());
-        if (lit == login_accounts_.end() && 
-            (MasterPlayerList::GetSingleton().player_size() + login_accounts_.size()) >= kMaxPlayerSize)
+        AutoRecycleClosure cp(done);
+        auto lit = logined_accounts_.find(request->account());
+        if (lit == logined_accounts_.end() && 
+            (PlayerList::GetSingleton().player_size() + logined_accounts_.size()) >= kMaxPlayerSize)
         {
             //如果登录的是新账号,满了得去排队
             response->mutable_error()->set_error_no(RET_LOGIN_MAX_PLAYER_SIZE);
             return;
         }
         
-        if (lit != login_accounts_.end())
+        if (lit != logined_accounts_.end())
         {
             auto& lc = lit->second;
             //如果不是同一个登录服务器,踢掉已经登录的账号
@@ -49,7 +49,7 @@ namespace l2ms
         }
         else
         {
-            auto result = login_accounts_.emplace(request->account(), MSLoginAccount());
+            auto result = logined_accounts_.emplace(request->account(), MSLoginAccount());
             if (result.second)
             {
                 auto& lc = result.first->second;
@@ -64,13 +64,13 @@ namespace l2ms
         ::l2ms::EnterGameResponese* response,
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         auto guid = request->guid();   
         auto connection_id = request->connection_id();
         auto e = reg.create();
         reg.emplace<Guid>(e, guid);
         reg.emplace<GatewayConnectionId>(e, connection_id);
-        MasterPlayerList::GetSingleton().EnterGame(guid, e);
+        PlayerList::GetSingleton().EnterGame(guid, e);
         ms2gw::PlayerEnterGSRequest gw_request;
         gw_request.set_connection_id(connection_id);//error
         for (auto e : GameClient::GetSingleton().view<uint32_t>())
@@ -85,14 +85,14 @@ namespace l2ms
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         auto guid = request->guid();
-        auto e = MasterPlayerList::GetSingleton().GetPlayer(guid);
+        auto e = PlayerList::GetSingleton().GetPlayer(guid);
         assert(reg.get<Guid>(e) == guid);
         reg.destroy(e);
-        MasterPlayerList::GetSingleton().LeaveGame(guid);  
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
-        assert(MasterPlayerList::GetSingleton().GetPlayer(guid) == entt::null); 
+        PlayerList::GetSingleton().LeaveGame(guid);  
+        assert(!PlayerList::GetSingleton().HasPlayer(guid));
+        assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null); 
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
@@ -100,18 +100,18 @@ namespace l2ms
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         auto guid = request->guid();
-        auto e = MasterPlayerList::GetSingleton().GetPlayer(guid);
+        auto e = PlayerList::GetSingleton().GetPlayer(guid);
         if (entt::null  == e)
         {
             return;
         }
         assert(reg.get<Guid>(e) == guid);
         reg.destroy(e);
-        MasterPlayerList::GetSingleton().LeaveGame(guid);
-        assert(!MasterPlayerList::GetSingleton().HasPlayer(guid));
-        assert(MasterPlayerList::GetSingleton().GetPlayer(guid) == entt::null);
+        PlayerList::GetSingleton().LeaveGame(guid);
+        assert(!PlayerList::GetSingleton().HasPlayer(guid));
+        assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
     }
 
 }//namespace master
