@@ -40,11 +40,11 @@ namespace common
     class MissionsComp : public EntityHandle
     {
     public:
-        using Uint32KeyUint32SetValue = std::unordered_map<uint32_t, UInt32Set>;
+        using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
         MissionsComp();
         MissionsComp(IMissionConfig* config);
 
-        const Uint32KeyUint32SetValue& classify_for_unittest() const { return  classify_missions_; }
+        const event_mission_classify_type& classify_for_unittest() const { return   event_missions_classify_; }
         const MissionMap& missions() { return missions_; }
         const CompleteMissionsId& complete_ids() { return complete_ids_; }
         std::size_t mission_size()const { return missions_.missions().size(); }
@@ -81,7 +81,7 @@ namespace common
         IMissionConfig* config_{ nullptr };
         MissionMap missions_;
         CompleteMissionsId complete_ids_;  
-        Uint32KeyUint32SetValue classify_missions_;//key : event classify , value misison list
+        event_mission_classify_type  event_missions_classify_;//key : classify mision by event type  , value :  misison list
         UInt32PairSet type_filter_;
     };
 }//namespace common
