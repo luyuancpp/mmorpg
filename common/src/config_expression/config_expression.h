@@ -16,18 +16,18 @@ public:
     using symbol_table_type = exprtk::symbol_table<T>;
     using expression_type = exprtk::expression<T>;
     using parser_type =  exprtk::parser<T>;
-    using param_vector_type =  std::vector<T>;
+    using int_params =  std::vector<T>;
     using value_list_type =  std::vector<std::string>;
 
-    bool Init(const value_list_type& value_name_list, const std::string& expression_string)
+    bool Init(const value_list_type& params_name, const std::string& expression_string)
     {
-        param_vec_.clear();
-        param_vec_.resize(value_name_list.size());
+        iparams_.clear();
+        iparams_.resize(params_name.size());
         std::size_t value_index = 0;
         symbol_table_.add_function("random", randu);
-        for (auto& value_name : value_name_list)
+        for (auto& nane : params_name)
         {
-            symbol_table_.add_variable(value_name, param_vec_[value_index++]);
+            symbol_table_.add_variable(nane, iparams_[value_index++]);
         }
         expression_.register_symbol_table(symbol_table_);
 
@@ -40,11 +40,11 @@ public:
 
     void SetParam(std::size_t vec_index, T value)
     {
-        if (vec_index < 0 || vec_index >= param_vec_.size())
+        if (vec_index < 0 || vec_index >= iparams_.size())
         {
             return;
         }
-        param_vec_[vec_index] = value;
+        iparams_[vec_index] = value;
     }
 
     T Value()
@@ -53,7 +53,7 @@ public:
     }
 
 private:
-    param_vector_type param_vec_;
+    int_params iparams_;
     expression_type expression_;
     symbol_table_type symbol_table_;
     parser_type parser_;

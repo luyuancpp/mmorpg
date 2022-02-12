@@ -57,21 +57,21 @@ def getcpph(datastring, sheetname):
         s += "#include <unordered_map>\n"
         s += '#include "%s_config.pb.h" \n' % (sheetname)
         s += 'class %s_config\n{\npublic:\n' % (sheetname)
-        s += '  using rowptr = const %s_row*;\n' % (sheetname)
-        s += '  using keydatastype = std::unordered_map<uint32_t, rowptr>;\n'
+        s += '  using row_type = const %s_row*;\n' % (sheetname)
+        s += '  using kv_type = std::unordered_map<uint32_t, row_type>;\n'
         s += '  static %s_config& GetSingleton(){thread_local %s_config singleton; return singleton;}\n' % (sheetname,sheetname)
         s += '  const %s_table& all()const{return data_;}\n'% (sheetname)
-        s += '  rowptr get(uint32_t keyid);\n'
+        s += '  row_type get(uint32_t keyid);\n'
         counter = 0
         pd = ''
         for d in datastring:
                 for v in d.values():
-                        s += '  rowptr key_%s(uint32_t keyid)const;\n' % (v) 
-                        pd += ' keydatastype key_data_%s_;\n'%(counter)
+                        s += '  row_type key_%s(uint32_t keyid)const;\n' % (v) 
+                        pd += ' kv_type key_data_%s_;\n'%(counter)
                         counter += 1
         s += '  void load();\n'
         s += 'private:\n %s_table data_;\n' % (sheetname)
-        s += ' keydatastype key_data_;\n'
+        s += ' kv_type key_data_;\n'
         s += pd
         s += '};\n'
         s += "#endif// %s_config_h_\n"% (sheetname)

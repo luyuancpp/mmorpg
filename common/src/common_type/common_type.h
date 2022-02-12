@@ -24,10 +24,10 @@ namespace common
     using UInt32Vector = std::vector<uint32_t>;
     using UInt64Vector = std::vector<uint64_t>;
 
+	using UInt32Pair = std::pair<uint32_t, uint32_t>;
+
     using UInt32Set = std::unordered_set<uint32_t>;
     using UInt64Set = std::unordered_set<uint64_t>;
-
-    using UInt32Pair = std::pair<uint32_t, uint32_t>;
     using UInt32PairSet = std::set<UInt32Pair>;
 
     using EntitySet = std::unordered_set<entt::entity>;
