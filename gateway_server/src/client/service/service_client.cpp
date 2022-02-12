@@ -63,12 +63,12 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
 {
-    LoginRpcReplied p(std::make_shared<LoginRpcReplied::element_type>(conn));
-    p->s_reqst_.set_account(message->account());
-    p->s_reqst_.set_password(message->password());
-    p->s_reqst_.set_connection_id(p->connection_id());
+    LoginRpcReplied c(std::make_shared<LoginRpcReplied::element_type>(conn));
+    c->s_reqst_.set_account(message->account());
+    c->s_reqst_.set_password(message->password());
+    c->s_reqst_.set_connection_id(c->connection_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
-        p, 
+        c, 
         this, 
         &gw2l::LoginService_Stub::Login);
 }
@@ -88,10 +88,10 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     const CreatePlayerRequestPtr& message, 
                                     muduo::Timestamp)
 {
-    auto p(std::make_shared<CreatePlayeReplied::element_type>(conn));
-    p->s_reqst_.set_connection_id(p->connection_id());
+    auto c(std::make_shared<CreatePlayeReplied::element_type>(conn));
+    c->s_reqst_.set_connection_id(c->connection_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
-        p, 
+        c, 
         this, 
         &gw2l::LoginService_Stub::CreatPlayer);
 }
@@ -111,11 +111,11 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 const EnterGameRequestPtr& message, 
                                 muduo::Timestamp)
 {
-    auto p(std::make_shared<EnterGameRpcRplied::element_type>(conn));
-    p->s_reqst_.set_connection_id(p->connection_id());
-    p->s_reqst_.set_guid(message->guid());
+    auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
+    c->s_reqst_.set_connection_id(c->connection_id());
+    c->s_reqst_.set_guid(message->guid());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
-        p,
+        c,
         this,
         &gw2l::LoginService_Stub::EnterGame);
 }

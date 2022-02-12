@@ -11,9 +11,9 @@ namespace gateway
         uint32_t node_id_{ 0 };
     };
 
-    using GateClientList = std::unordered_map<uint64_t, GateClient>;
+    using ClientSessions = std::unordered_map<uint64_t, GateClient>;
 
-    extern GateClientList* g_client_sessions_;
+    extern ClientSessions* g_client_sessions_;
 }
 
 #endif//GATEWAY_SERVER_SRC_GATEWAY_PLAYER_GATEWAY_PLAYER_LIST_H_
