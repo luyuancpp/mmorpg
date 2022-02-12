@@ -34,7 +34,7 @@ namespace deploy
             std::string where_case = std::to_string(request->region_id()) + " = region_id  ";
             db_->LoadAll<::master_server_db>(*response->mutable_region_masters(), where_case);
         }
-        LoadRegionDeploy(request->region_id(), servers_deploy.mutable_regin_info());
+        LoadRegionDeployFromDb(request->region_id(), servers_deploy.mutable_regin_info());
     }
 
     void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller, 
@@ -68,7 +68,7 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         AutoRecycleClosure cp(done);
-        LoadRegionDeploy(request->region_id(), response->mutable_info());
+        LoadRegionDeployFromDb(request->region_id(), response->mutable_info());
     }
 
     void DeployServiceImpl::LoadRegionDeploy(::google::protobuf::RpcController* controller,
@@ -77,10 +77,10 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         AutoRecycleClosure cp(done);
-        LoadRegionDeploy(request->region_id(), response->mutable_info());
+        LoadRegionDeployFromDb(request->region_id(), response->mutable_info());
     }
 
-    void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
+    void DeployServiceImpl::LoadRegionDeployFromDb(uint32_t region_id,
         ::region_server_db* response)
     {
         std::string where_case = std::to_string(region_id) + " = id  ";
