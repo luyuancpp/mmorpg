@@ -4,7 +4,7 @@ using namespace common;
 
 namespace master
 {
-    entt::entity MasterPlayerList::GetPlayer(Guid guid)
+    entt::entity PlayerList::GetPlayer(Guid guid)
     {
         auto it = player_list_.find(guid);
         if (it == player_list_.end())

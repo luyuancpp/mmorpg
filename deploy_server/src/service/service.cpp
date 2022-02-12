@@ -17,7 +17,7 @@ namespace deploy
         ::deploy::ServerInfoResponse* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         auto group_id = request->group();
         auto& servers_info = *response->mutable_info();
         if (group_id > 0)
@@ -42,7 +42,7 @@ namespace deploy
         ::deploy::StartGSResponse* response,
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         auto& server_info = *response->mutable_my_info();
         auto& rpc_client = request->rpc_client();
         muduo::net::InetAddress ip_port(rpc_client.ip(), rpc_client.port());
@@ -67,7 +67,7 @@ namespace deploy
         ::deploy::RegionInfoResponse* response,
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         RegionServer(request->region_id(), response->mutable_info());
     }
 
@@ -76,7 +76,7 @@ namespace deploy
         ::deploy::RegionInfoResponse* response, 
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         RegionServer(request->region_id(), response->mutable_info());
     }
 

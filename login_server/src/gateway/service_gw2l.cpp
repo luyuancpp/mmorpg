@@ -217,7 +217,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response, 
     ::google::protobuf::Closure* done)
 {
-    ClosurePtr cp(done);
+    AutoRecycleClosure cp(done);
     //连接过，登录过
     auto cit = connections_.find(request->connection_id());
     if (cit == connections_.end())
@@ -243,7 +243,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    ClosurePtr cp(done);
+    AutoRecycleClosure cp(done);
     auto cit = connections_.find(request->connection_id());
     if (cit == connections_.end())//连接并没有登录
     {

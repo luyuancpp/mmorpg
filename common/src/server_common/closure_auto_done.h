@@ -12,7 +12,7 @@ namespace common
         void operator()(::google::protobuf::Closure* done) { done->Run(); }
     };
 
-    using ClosurePtr = std::unique_ptr<::google::protobuf::Closure, ClosureDeleter>;
+    using AutoRecycleClosure = std::unique_ptr<::google::protobuf::Closure, ClosureDeleter>;
 
 }//namespace common
 

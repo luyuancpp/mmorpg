@@ -14,7 +14,7 @@ namespace ms2g
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
-        ClosurePtr cp(done);
+        AutoRecycleClosure cp(done);
         //LOG_INFO << request->DebugString().c_str();
     }
 

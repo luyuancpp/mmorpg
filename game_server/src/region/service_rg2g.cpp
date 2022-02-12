@@ -13,7 +13,7 @@ void Rg2gServiceImpl::EnterRoom(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    ClosurePtr cp(done);
+    AutoRecycleClosure cp(done);
 }
 }//namespace rg2g
 
