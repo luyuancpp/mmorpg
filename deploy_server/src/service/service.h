@@ -34,13 +34,13 @@ namespace deploy
             ::deploy::RegionInfoResponse* response,
             ::google::protobuf::Closure* done)override;
 
-        virtual void LoadRegionDeploy(::google::protobuf::RpcController* controller,
-            const ::deploy::RegionInfoRequest* request,
-            ::deploy::RegionInfoResponse* response,
-            ::google::protobuf::Closure* done)override;
+		virtual void LoadRegionDeploy(::google::protobuf::RpcController* controller,
+			const ::deploy::RegionInfoRequest* request,
+			::deploy::RegionInfoResponse* response,
+			::google::protobuf::Closure* done)override;
 
     private:
-        void LoadRegionDeployFromDb(uint32_t region_id, ::region_server_db* response);
+        void LoadRegionDeploy(uint32_t region_id, ::region_server_db* response);
 
         MysqlClientPtr db_;
         GSMap logic_server_map_;
