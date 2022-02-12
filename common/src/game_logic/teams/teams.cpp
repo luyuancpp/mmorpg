@@ -66,7 +66,7 @@ namespace common
         auto it = player_team_map_.find(guid);
         if (it == player_team_map_.end())
         {
-            return kEmptyGuid;
+            return kInvalidGuid;
         }
         return entt::to_integral(it->second);
     }
@@ -84,7 +84,7 @@ namespace common
 
     Guid Teams::get_leader_id_by_teamid(Guid team_id) const
     {
-        GetTeamReturn(kEmptyGuid);
+        GetTeamReturn(kInvalidGuid);
         return team.leader_id();
     }
 

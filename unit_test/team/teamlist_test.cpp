@@ -428,11 +428,11 @@ TEST(TeamManger, PlayerTeamId)
 	m = (3);
 	EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(), m));
 	EXPECT_FALSE(team_list.HasTeam(m));
-	EXPECT_EQ(kEmptyGuid, team_list.GetTeamId(m));
+	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
 
 	EXPECT_EQ(RET_OK, team_list.DelApplicant(team_list.last_team_id(), m));
 	EXPECT_FALSE(team_list.HasTeam(m));
-	EXPECT_EQ(kEmptyGuid, team_list.GetTeamId(m));
+	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
 
 
 	EXPECT_EQ(RET_OK, team_list.ApplyToTeam(team_list.last_team_id(),  m));
@@ -452,21 +452,21 @@ TEST(TeamManger, PlayerTeamId)
 	m = (1);
 	EXPECT_EQ(RET_OK, team_list.LeaveTeam(m));
 	EXPECT_FALSE(team_list.HasTeam(m));
-	EXPECT_EQ(kEmptyGuid, team_list.GetTeamId(m));
+	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
 	
 	EXPECT_EQ(2, team_list.get_leader_id_by_teamid(team_list.last_team_id()));
 
 	m = (3);
 	EXPECT_EQ(RET_OK, team_list.KickMember(team_list.last_team_id(), 2, m));
 	EXPECT_FALSE(team_list.HasTeam(m));
-	EXPECT_EQ(kEmptyGuid, team_list.GetTeamId(m));
+	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
 	
 
 	EXPECT_EQ(RET_OK, team_list.DissMissTeam(team_list.last_team_id(), 2));
 	for (std::size_t i = 4; i <= kMaxMemberSize; ++i)
 	{
 		EXPECT_FALSE(team_list.HasTeam(m));
-		EXPECT_EQ(kEmptyGuid, team_list.GetTeamId(m));
+		EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
 	}
 
 
@@ -501,7 +501,7 @@ TEST(TeamManger, PlayerInTeam)
 	EXPECT_EQ(RET_TEAM_MEMBER_IN_TEAM, team_list.JoinTeam(team_id1, m));
 	auto team_id2 = team_list.last_team_id();
 
-	EXPECT_EQ(RET_TEAM_HAS_NOT_TEAM_ID, team_list.LeaveTeam(kEmptyGuid));
+	EXPECT_EQ(RET_TEAM_HAS_NOT_TEAM_ID, team_list.LeaveTeam(kInvalidGuid));
 	EXPECT_EQ(RET_OK, team_list.LeaveTeam(m));
 	EXPECT_EQ(RET_OK, team_list.JoinTeam(team_id1, m));
 

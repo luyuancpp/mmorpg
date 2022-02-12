@@ -31,7 +31,7 @@ void RedisClient::Save(const google::protobuf::Message& message)
 void RedisClient::Save(const google::protobuf::Message& message, Guid guid)
 {
     const auto* desc = message.GetDescriptor();
-    if (kEmptyGuid == guid)
+    if (kInvalidGuid == guid)
     {
         LOG_ERROR << "Message Save To Redis Gameguid Key Empty : " << desc->full_name();
         return;
