@@ -22,7 +22,7 @@ namespace deploy
 
         DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr);
 
-        MysqlClientPtr& player_mysql_client() { return database_; }
+        MysqlClientPtr& player_mysql_client() { return db_; }
         ReuseGSId& reuse_game_id() { return reuse_id_; }
 
         void Start();
@@ -39,14 +39,14 @@ namespace deploy
    
         void receive(const common::ServerConnectionEvent& es);
     private:
-        void InitGroupDatabaseServerDb();
+        void InitGroupDb();
 
         template<typename DbMessage>
-        void InitGroupServerDb(uint32_t begin_port, uint32_t server_size )
+        void InitDb(uint32_t begin_port, uint32_t server_size )
         {
             DbMessage sd;
             std::string sql = "select * from " + sd.GetTypeName() + " LIMIT 1";
-            auto q_result = database_->QueryOne(sql);
+            auto q_result = db_->QueryOne(sql);
             if (nullptr != q_result)
             {
                 return;
@@ -66,12 +66,12 @@ namespace deploy
                     sd.set_region_id(++region_id);
                 }
                 sd.set_port(i + begin_port);
-                database_->SaveOne(sd);
+                db_->SaveOne(sd);
             }
         }
    
         muduo::net::RpcServer server_;
-        MysqlClientPtr database_;   
+        MysqlClientPtr db_;   
         std::string redis_ip_ = "127.0.0.1";
         ReuseGSId reuse_id_;
         common::TimerTask scan_over_timer_;

@@ -16,7 +16,7 @@ namespace deploy
 
         void set_player_mysql_client(MysqlClientPtr& ptr)
         {
-            database_ = ptr;
+            db_ = ptr;
         }
 
         virtual void ServerInfo(::google::protobuf::RpcController* controller,
@@ -34,15 +34,15 @@ namespace deploy
             ::deploy::RegionInfoResponse* response,
             ::google::protobuf::Closure* done)override;
 
-        virtual void RegionServer(::google::protobuf::RpcController* controller,
+        virtual void LoadRegionDeploy(::google::protobuf::RpcController* controller,
             const ::deploy::RegionInfoRequest* request,
             ::deploy::RegionInfoResponse* response,
             ::google::protobuf::Closure* done)override;
 
     private:
-        void RegionServer(uint32_t region_id, ::region_server_db* response);
+        void LoadRegionDeploy(uint32_t region_id, ::region_server_db* response);
 
-        MysqlClientPtr database_;
+        MysqlClientPtr db_;
         GSMap logic_server_map_;
         
     };
