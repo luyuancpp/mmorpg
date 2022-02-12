@@ -19,22 +19,22 @@ namespace deploy
     {
         AutoRecycleClosure cp(done);
         auto group_id = request->group();
-        auto& servers_info = *response->mutable_info();
+        auto& servers_deploy = *response->mutable_info();
         if (group_id > 0)
         {
             std::string where_case = std::to_string(group_id) + " = id  ";
-            database_->LoadOne(*servers_info.mutable_database_info(), where_case);
-            database_->LoadOne(*servers_info.mutable_login_info(), where_case);
-            database_->LoadOne(*servers_info.mutable_master_info(), where_case);
-            database_->LoadOne(*servers_info.mutable_gateway_info(), where_case);
-            database_->LoadOne(*servers_info.mutable_redis_info(), where_case);
+            db_->LoadOne(*servers_deploy.mutable_database_info(), where_case);
+            db_->LoadOne(*servers_deploy.mutable_login_info(), where_case);
+            db_->LoadOne(*servers_deploy.mutable_master_info(), where_case);
+            db_->LoadOne(*servers_deploy.mutable_gateway_info(), where_case);
+            db_->LoadOne(*servers_deploy.mutable_redis_info(), where_case);
         }
         else
         {
             std::string where_case = std::to_string(request->region_id()) + " = region_id  ";
-            database_->LoadAll<::master_server_db>(*response->mutable_region_masters(), where_case);
+            db_->LoadAll<::master_server_db>(*response->mutable_region_masters(), where_case);
         }
-        RegionServer(request->region_id(), servers_info.mutable_regin_info());
+        LoadRegionDeploy(request->region_id(), servers_deploy.mutable_regin_info());
     }
 
     void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller, 
@@ -43,19 +43,19 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         AutoRecycleClosure cp(done);
-        auto& server_info = *response->mutable_my_info();
-        auto& rpc_client = request->rpc_client();
-        muduo::net::InetAddress ip_port(rpc_client.ip(), rpc_client.port());
-        if (server_info.id() > 0)
+        auto& server_deploy = *response->mutable_my_info();
+        auto& client_info = request->rpc_client();
+        muduo::net::InetAddress ip_port(client_info.ip(), client_info.port());
+        if (server_deploy.id() > 0)
         {
-            g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), server_info.id());
+            g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), server_deploy.id());
             return;
         }
-        server_info.set_ip(request->my_info().ip());
+        server_deploy.set_ip(request->my_info().ip());
         uint32_t node_id = g_deploy_server->CreateGSId();
         LOG_INFO << "new server id " << node_id;
-        server_info.set_id(node_id);
-        server_info.set_port(node_id + kGSBeginPort);
+        server_deploy.set_id(node_id);
+        server_deploy.set_port(node_id + kGSBeginPort);
 
         g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
         g_deploy_server->SaveGSDb();
@@ -68,23 +68,23 @@ namespace deploy
         ::google::protobuf::Closure* done)
     {
         AutoRecycleClosure cp(done);
-        RegionServer(request->region_id(), response->mutable_info());
+        LoadRegionDeploy(request->region_id(), response->mutable_info());
     }
 
-    void DeployServiceImpl::RegionServer(::google::protobuf::RpcController* controller,
+    void DeployServiceImpl::LoadRegionDeploy(::google::protobuf::RpcController* controller,
         const ::deploy::RegionInfoRequest* request, 
         ::deploy::RegionInfoResponse* response, 
         ::google::protobuf::Closure* done)
     {
         AutoRecycleClosure cp(done);
-        RegionServer(request->region_id(), response->mutable_info());
+        LoadRegionDeploy(request->region_id(), response->mutable_info());
     }
 
-    void DeployServiceImpl::RegionServer(uint32_t region_id,
+    void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
         ::region_server_db* response)
     {
         std::string where_case = std::to_string(region_id) + " = id  ";
-        database_->LoadOne(*response, where_case);
+        db_->LoadOne(*response, where_case);
     }
 
 }//namespace deploy

@@ -7,7 +7,7 @@
 
 namespace game
 {
-using MasterClientPtr = std::shared_ptr<common::RpcClient>;
+using MasterSessionPtr = std::shared_ptr<common::RpcClient>;
 
 }//namespace game
 

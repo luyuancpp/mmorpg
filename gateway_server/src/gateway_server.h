@@ -86,15 +86,15 @@ private:
 
     TcpServerPtr server_;
 
-    servers_info_data serverinfo_database_;
+    servers_info_data serverinfo_data_;
 
-    common::RpcClientPtr deploy_rpc_client_;
+    common::RpcClientPtr deploy_session_;
     deploy::DeployStub deploy_stub_;
 
-    common::RpcClientPtr login_rpc_client_;
+    common::RpcClientPtr login_session_;
     RpcStubgw2l gw2l_login_stub_;
 
-    common::RpcClientPtr master_rpc_client_;
+    common::RpcClientPtr master_session_;
     ms2gw::Ms2gwServiceImpl ms2gw_service_impl_;
     RpcStubgw2ms gw2ms_stub_;
 

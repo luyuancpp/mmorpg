@@ -16,9 +16,9 @@ void RepliedMs2g::StartGSMasterReplied(StartGameMasterRpcRC cp)
 {
     auto rsp = cp->s_resp_;
     //LOG_INFO << "master server info " << rsp->DebugString().c_str();
-    for (auto e : reg.view<MasterClientPtr>())
+    for (auto e : reg.view<MasterSessionPtr>())
     {
-        auto& master_rpc_client = reg.get<MasterClientPtr>(e);
+        auto& master_rpc_client = reg.get<MasterSessionPtr>(e);
         if (cp->s_reqst_.master_server_addr() == (uint64_t)master_rpc_client.get())
         {
             reg.emplace<uint32_t>(e, rsp->master_node_id());

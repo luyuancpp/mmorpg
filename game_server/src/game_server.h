@@ -42,7 +42,7 @@ public:
     using StartGSRpcRC = std::shared_ptr<StartGSInfoRpcClosure>;
     void StartGSDeployReplied(StartGSRpcRC cp);
 
-    void Register2Master(MasterClientPtr& master_rpc_client);
+    void Register2Master(MasterSessionPtr& master_rpc_client);
 
     void receive(const common::RpcClientConnectionEvent& es);
 
@@ -58,15 +58,15 @@ private:
 
     RpcServerPtr server_;
 
-    common::RpcClientPtr deploy_rpc_client_;
+    common::RpcClientPtr deploy_session_;
     deploy::DeployStub deploy_stub_;
 
     StubG2ms g2ms_stub_;
 
-    common::RpcClientPtr region_rpc_client_;
+    common::RpcClientPtr region_session_;
     StubG2rg g2rg_stub_;
 
-    ::game_server_db server_info_;
+    ::game_server_db server_deploy_;
 
     ms2g::Ms2gServiceImpl ms2g_service_impl_;
     rg2g::Rg2gServiceImpl rg2g_service_impl_;
