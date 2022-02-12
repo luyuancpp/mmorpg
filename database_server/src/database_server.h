@@ -40,7 +40,7 @@ namespace database
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
 
-        void receive(const common::RpcClientConnectionES& es);
+        void receive(const common::RpcClientConnectionEvent& es);
 
     private:
         muduo::net::EventLoop* loop_{ nullptr };
@@ -49,7 +49,7 @@ namespace database
         RpcServerPtr server_;
 
         common::RpcClientPtr deploy_rpc_client_;
-        deploy::DeployRpcStub deploy_stub_;
+        deploy::DeployStub deploy_stub_;
 
         l2db::LoginServiceImpl impl_;
     };

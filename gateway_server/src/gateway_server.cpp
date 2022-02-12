@@ -21,8 +21,8 @@ void GatewayServer::InitNetwork()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
+    deploy_rpc_client_->subscribe<RpcClientConnectionEvent>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -33,14 +33,14 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     InetAddress login_addr(login_info.ip(), login_info.port());
     login_rpc_client_ = std::make_unique<RpcClient>(loop_, login_addr);
     login_rpc_client_->connect();
-    login_rpc_client_->subscribe<RegisterStubES>(gw2l_login_stub_);
+    login_rpc_client_->subscribe<RegisterStubEvent>(gw2l_login_stub_);
 
     auto& master_info = serverinfo_database_.master_info();
     InetAddress master_addr(master_info.ip(), master_info.port());
     master_rpc_client_ = std::make_unique<RpcClient>(loop_, master_addr);
     master_rpc_client_->registerService(&ms2gw_service_impl_);
-    master_rpc_client_->subscribe<RegisterStubES>(gw2ms_stub_);
-    master_rpc_client_->subscribe<RpcClientConnectionES>(*this);
+    master_rpc_client_->subscribe<RegisterStubEvent>(gw2ms_stub_);
+    master_rpc_client_->subscribe<RpcClientConnectionEvent>(*this);
     master_rpc_client_->connect();        
 
     auto& myinfo = serverinfo_database_.gateway_info();
@@ -62,7 +62,7 @@ void GatewayServer::Register2Master()
     gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
 }
 
-void GatewayServer::receive(const RpcClientConnectionES& es)
+void GatewayServer::receive(const RpcClientConnectionEvent& es)
 {
     if (!es.conn_->connected())
     {

@@ -26,8 +26,8 @@ namespace database
         const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
         InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
         deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-        deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
-        deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this); 
+        deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
+        deploy_rpc_client_->subscribe<RpcClientConnectionEvent>(*this); 
         deploy_rpc_client_->connect();
     }
 
@@ -59,7 +59,7 @@ namespace database
         Start();
     }
 
-    void DatabaseServer::receive(const RpcClientConnectionES& es)
+    void DatabaseServer::receive(const RpcClientConnectionEvent& es)
     {
         if (!es.conn_->connected())
         {

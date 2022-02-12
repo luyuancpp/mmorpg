@@ -60,8 +60,8 @@ private:
             conn->setTcpNoDelay(true);
             channel_->setConnection(conn);
         }
-        emp_->emit<RegisterStubES>(conn, channel_);
-        emp_->emit<RpcClientConnectionES>(conn);
+        emp_->emit<RegisterStubEvent>(conn, channel_);
+        emp_->emit<RpcClientConnectionEvent>(conn);
     }
 
     TcpClient client_;

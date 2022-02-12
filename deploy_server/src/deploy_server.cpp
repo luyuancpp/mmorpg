@@ -43,7 +43,7 @@ namespace deploy
         InitGroupServerDb<gateway_server_db>(kGateSBeginPort, kGroup);
 
         LoadGSDb();
-        server_.subscribe<ServerConnectionES>(*this);
+        server_.subscribe<ServerConnectionEvent>(*this);
         server_.start();
     }
 
@@ -90,7 +90,7 @@ namespace deploy
         scan_over_timer_.RunAfter(kScanOverSeconds, std::bind(&ReuseGSId::ScanOver, &reuse_id_));
     }
 
-    void DeployServer::receive(const ServerConnectionES& es)
+    void DeployServer::receive(const ServerConnectionEvent& es)
     {
         auto& conn = es.conn_;
         if (!conn->connected())

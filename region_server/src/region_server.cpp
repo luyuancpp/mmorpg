@@ -28,8 +28,8 @@ namespace region
         const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
         InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
         deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-        deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
-        deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this);
+        deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
+        deploy_rpc_client_->subscribe<RpcClientConnectionEvent>(*this);
         deploy_rpc_client_->connect();
     }
 
@@ -38,12 +38,12 @@ namespace region
         auto& myinfo = cp->s_resp_->info();
         InetAddress region_addr(myinfo.ip(), myinfo.port());
         server_ = std::make_shared<muduo::net::RpcServer>(loop_, region_addr);
-        server_->subscribe<ServerConnectionES>(*this);
+        server_->subscribe<ServerConnectionEvent>(*this);
         //LOG_INFO << myinfo.DebugString().c_str();
         server_->start();
     }
 
-    void RegionServer::receive(const RpcClientConnectionES& es)
+    void RegionServer::receive(const RpcClientConnectionEvent& es)
     {
         if (!es.conn_->connected())
         {
@@ -63,7 +63,7 @@ namespace region
             &deploy::DeployService_Stub::StartRegionServer);
     }
 
-    void RegionServer::receive(const ServerConnectionES& es)
+    void RegionServer::receive(const ServerConnectionEvent& es)
     {
     }
 }

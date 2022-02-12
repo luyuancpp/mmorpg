@@ -109,7 +109,7 @@ public:
 
     static void DoNothing() {}
 
-    void receive(const RegisterStubES& es)
+    void receive(const RegisterStubEvent& es)
     {
         if (es.conn_->connected())
         {

@@ -39,8 +39,8 @@ void GameServer::InitNetwork()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
+    deploy_rpc_client_->subscribe<RpcClientConnectionEvent>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -103,7 +103,7 @@ void GameServer::Register2Master(MasterClientPtr& master_rpc_client)
         &g2ms::G2msService_Stub::StartGS);
 }
 
-void GameServer::receive(const RpcClientConnectionES& es)
+void GameServer::receive(const RpcClientConnectionEvent& es)
 {
     if (!es.conn_->connected())
     {
@@ -172,18 +172,18 @@ void GameServer::ConnectMaster()
     for (auto e : reg.view<MasterClientPtr>())
     {
         auto& master_rpc_client = reg.get<MasterClientPtr>(e);
-        master_rpc_client->subscribe<RegisterStubES>(g2ms_stub_);
+        master_rpc_client->subscribe<RegisterStubEvent>(g2ms_stub_);
         master_rpc_client->registerService(&ms2g_service_impl_);
-        master_rpc_client->subscribe<RpcClientConnectionES>(*this);
+        master_rpc_client->subscribe<RpcClientConnectionEvent>(*this);
         master_rpc_client->connect();
     }    
 }
 
 void GameServer::ConnectRegion()
 {
-    region_rpc_client_->subscribe<RegisterStubES>(g2rg_stub_);
+    region_rpc_client_->subscribe<RegisterStubEvent>(g2rg_stub_);
     region_rpc_client_->registerService(&rg2g_service_impl_);
-    region_rpc_client_->subscribe<RpcClientConnectionES>(*this);
+    region_rpc_client_->subscribe<RpcClientConnectionEvent>(*this);
     region_rpc_client_->connect();
 }
 

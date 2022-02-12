@@ -8,9 +8,6 @@
 
 namespace game
 {
-
-
-
 time_t StringToTime(const std::string & timeStr, const char* formatStr);
 time_t YmdHmsStringToTime(const std::string & timeStr);
 time_t GetZeroUnixTime(time_t n);

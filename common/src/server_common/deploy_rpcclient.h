@@ -10,7 +10,7 @@ using namespace muduo::net;
 
 namespace deploy
 {
-    using DeployRpcStub = common::RpcStub<deploy::DeployService_Stub>;
+    using DeployStub = common::RpcStub<deploy::DeployService_Stub>;
 }// namespace deploy
 
 #endif // COMMON_SRC_NET_DEPLOY_RPCCLIENT_DEPLOY_RPC_CLIENT_H_
