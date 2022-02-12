@@ -6,7 +6,7 @@ using namespace gateway;
 int main(int argc, char* argv[])
 {
     GateClientList gate_clients;
-    g_gate_clients_ = &gate_clients;
+    g_client_sessions_ = &gate_clients;
     EventLoop loop;
     GatewayServer server(&loop);
     g_gateway_server = &server;

@@ -13,7 +13,7 @@ namespace gateway
 
     using GateClientList = std::unordered_map<uint64_t, GateClient>;
 
-    extern GateClientList* g_gate_clients_;
+    extern GateClientList* g_client_sessions_;
 }
 
 #endif//GATEWAY_SERVER_SRC_GATEWAY_PLAYER_GATEWAY_PLAYER_LIST_H_

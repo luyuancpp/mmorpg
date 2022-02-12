@@ -40,25 +40,22 @@ public:
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
-    using LoginCC = common::ClientClosure<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>;
-    using LoginCCPtr = std::shared_ptr<LoginCC>;
-    void OnServerLoginReplied(LoginCCPtr cp);
+    using LoginRpcReplied = std::shared_ptr<common::ClientClosure<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>>;
+    void OnServerLoginReplied(LoginRpcReplied cp);
 
-    void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
-        const CreatePlayerRequestPtr& message,
+    void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
+        const CreatePlayerRequestPtr& message, 
         muduo::Timestamp);
 
-    using CreatePlayerCC = common::ClientClosure<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>;
-    using CreatePlayerCCPtr = std::shared_ptr<CreatePlayerCC>;
-    void OnServerCreatePlayerReplied(CreatePlayerCCPtr cp);
+    using CreatePlayeReplied = std::shared_ptr<common::ClientClosure<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>>;
+    void OnServerCreatePlayerReplied(CreatePlayeReplied cp);
 
     void OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
 
-    using EnterGameCC = common::ClientClosure<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>;
-    using EnterGameCCPtr = std::shared_ptr<EnterGameCC>;
-    void OnServerEnterGameReplied(EnterGameCCPtr cp);
+    using EnterGameRpcRplied = std::shared_ptr<common::ClientClosure<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
+    void OnServerEnterGameReplied(EnterGameRpcRplied cp);
 
     void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
         const LeaveGameRequestPtr& message,
