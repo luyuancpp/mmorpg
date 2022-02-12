@@ -15,8 +15,8 @@ struct TeamEvent
     {
 
     }
-    entt::entity teamid_{ kEmptyGuid };
-    Guid guid_{ kEmptyGuid };
+    entt::entity teamid_{ kInvalidGuid };
+    Guid guid_{ kInvalidGuid };
 };
 
 struct TeamESTeamIdBase
@@ -25,7 +25,7 @@ struct TeamESTeamIdBase
         : teamid_(team_id)
     {
     }
-    entt::entity teamid_{ kEmptyGuid };
+    entt::entity teamid_{ kInvalidGuid };
 };
 
 struct JoinTeamEvent : public TeamEvent { using TeamEvent::TeamEvent; };
@@ -43,9 +43,9 @@ struct AppointLeaderEvent
           new_leader_guid_(new_guid)
     {
     }
-    entt::entity teamid_{ kEmptyGuid };
-    Guid current_leader_guid_{ kEmptyGuid };
-    Guid new_leader_guid_{ kEmptyGuid };
+    entt::entity teamid_{ kInvalidGuid };
+    Guid current_leader_guid_{ kInvalidGuid };
+    Guid new_leader_guid_{ kInvalidGuid };
 };
 }
 

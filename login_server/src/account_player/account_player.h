@@ -36,7 +36,7 @@ namespace gw2l
 
         common::LoginStateMachine login_state_machine_;
         ::account_database account_data_;
-        common::Guid playing_id_{ common::kEmptyGuid };
+        common::Guid playing_id_{ common::kInvalidGuid };
     };
 }//namespace gw2l
 

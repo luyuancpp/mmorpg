@@ -30,7 +30,7 @@ namespace common
     {
         if (applicants_.empty())
         {
-            return kEmptyGuid;
+            return kInvalidGuid;
         }
         return *applicants_.begin();
     }
