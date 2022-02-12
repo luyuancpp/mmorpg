@@ -79,17 +79,11 @@ public:
         mysql_set_character_set(connection(), "utf8");
     }
 
-    void Execute(
-        const std::string& query);
-    ResultRowPtr QueryOne(
-        const std::string& query);  
-    void Query(
-      const std::string& query,
-      const RowProcessor& processor);
+    void Execute( const std::string& query);
+    ResultRowPtr QueryOne(const std::string& query);  
+    void Query( const std::string& query, const RowProcessor& processor);
 
-    void QueryResultRowProcessor(
-        const std::string& query,
-        const ResultRowProcessor& processor);
+    void QueryResultRowProcessor( const std::string& query, const ResultRowProcessor& processor);
 
     uint64_t LastInsertId();
 protected:

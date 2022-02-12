@@ -44,8 +44,8 @@ namespace master
 
         void GatewayConnectGame(entt::entity ge);
 
-        void receive(const common::RpcClientConnectionES& es);
-        void receive(const common::ServerConnectionES& es);
+        void receive(const common::RpcClientConnectionEvent& es);
+        void receive(const common::ServerConnectionEvent& es);
 
     private:
         void OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn);
@@ -59,7 +59,7 @@ namespace master
         RpcServerPtr server_;
 
         common::RpcClientPtr deploy_rpc_client_;
-        deploy::DeployRpcStub deploy_stub_;
+        deploy::DeployStub deploy_stub_;
 
         common::RpcClientPtr db_rpc_client_;
         LoginStubms2db msl2_login_stub_;

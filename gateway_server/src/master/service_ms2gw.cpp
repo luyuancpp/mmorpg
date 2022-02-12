@@ -35,7 +35,7 @@ namespace ms2gw
             std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr));
         using Gw2gStubPtr = RpcStub<gw2g::Gw2gService_Stub>::MyType;
         auto& sc =  GameClient::GetSingleton().emplace<Gw2gStubPtr>(e, std::make_unique<RpcStub<gw2g::Gw2gService_Stub>>());
-        c->subscribe<RegisterStubES>(*(sc.get()));
+        c->subscribe<RegisterStubEvent>(*(sc.get()));
         c->connect();
         GameClient::GetSingleton().emplace<InetAddress>(e, gs_addr);
         GameClient::GetSingleton().emplace<uint32_t>(e, request->node_id());

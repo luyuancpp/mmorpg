@@ -30,8 +30,8 @@ void LoginServer::ConnectDeploy()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
+    deploy_rpc_client_->subscribe<RpcClientConnectionEvent>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -49,13 +49,13 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
     db_rpc_client_->connect();
-    db_rpc_client_->subscribe<RegisterStubES>(l2db_login_stub_);
+    db_rpc_client_->subscribe<RegisterStubEvent>(l2db_login_stub_);
 
     auto& masterinfo = info.master_info();
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
     master_rpc_client_ = std::make_unique<RpcClient>(loop_, master_addr);
     master_rpc_client_->connect();
-    master_rpc_client_->subscribe<RegisterStubES>(l2ms_login_stub_);
+    master_rpc_client_->subscribe<RegisterStubEvent>(l2ms_login_stub_);
     
     auto& redisinfo = info.redis_info();
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
@@ -68,7 +68,7 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     Start();
 }
 
-void LoginServer::receive(const RpcClientConnectionES& es)
+void LoginServer::receive(const RpcClientConnectionEvent& es)
 {
     if (!es.conn_->connected())
     {

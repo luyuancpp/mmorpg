@@ -40,8 +40,8 @@ void MasterServer::ConnectDeploy()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<RegisterStubES>(deploy_stub_);
-    deploy_rpc_client_->subscribe<RpcClientConnectionES>(*this);
+    deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
+    deploy_rpc_client_->subscribe<RpcClientConnectionEvent>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -51,13 +51,13 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
-    db_rpc_client_->subscribe<RegisterStubES>(msl2_login_stub_);
+    db_rpc_client_->subscribe<RegisterStubEvent>(msl2_login_stub_);
     db_rpc_client_->connect();    
 
     auto& myinfo = serverinfos_.master_info();
     InetAddress master_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
-    server_->subscribe<ServerConnectionES>(*this);
+    server_->subscribe<ServerConnectionEvent>(*this);
 
     server_->registerService(&l2ms_impl_);
     server_->registerService(&g2ms_impl_);
@@ -79,7 +79,7 @@ void MasterServer::GatewayConnectGame(entt::entity ge)
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGS");
 }
 
-void MasterServer::receive(const RpcClientConnectionES& es)
+void MasterServer::receive(const RpcClientConnectionEvent& es)
 {
     if (!es.conn_->connected())
     {
@@ -100,7 +100,7 @@ void MasterServer::receive(const RpcClientConnectionES& es)
         &deploy::DeployService_Stub::ServerInfo);
 }
 
-void MasterServer::receive(const ServerConnectionES& es)
+void MasterServer::receive(const ServerConnectionEvent& es)
 {
     auto& conn = es.conn_;
     if (conn->connected())

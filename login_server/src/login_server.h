@@ -37,7 +37,7 @@ namespace login
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
 
-        void receive(const common::RpcClientConnectionES& es);
+        void receive(const common::RpcClientConnectionEvent& es);
 
     private:
         muduo::net::EventLoop* loop_{ nullptr };
@@ -46,7 +46,7 @@ namespace login
         RpcServerPtr server_;
 
         common::RpcClientPtr deploy_rpc_client_;
-        deploy::DeployRpcStub deploy_stub_;
+        deploy::DeployStub deploy_stub_;
 
         common::RpcClientPtr master_rpc_client_;
         LoginStubl2ms l2ms_login_stub_;

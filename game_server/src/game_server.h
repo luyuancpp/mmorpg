@@ -44,7 +44,7 @@ public:
 
     void Register2Master(MasterClientPtr& master_rpc_client);
 
-    void receive(const common::RpcClientConnectionES& es);
+    void receive(const common::RpcClientConnectionEvent& es);
 
 private:    
     void InitGlobalEntities();
@@ -59,7 +59,7 @@ private:
     RpcServerPtr server_;
 
     common::RpcClientPtr deploy_rpc_client_;
-    deploy::DeployRpcStub deploy_stub_;
+    deploy::DeployStub deploy_stub_;
 
     StubG2ms g2ms_stub_;
 
