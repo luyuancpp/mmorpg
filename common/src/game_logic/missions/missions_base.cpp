@@ -141,7 +141,7 @@ namespace common
                 continue;
             }
             auto& mission = mit->second;
-            if (!TriggerChangeByMatchCondition(c, mission))
+            if (!UpdateWhenMatchCondition(c, mission))
             {
                 continue;
             }
@@ -185,7 +185,7 @@ namespace common
         type_filter_.erase(p);
     }
 
-    bool MissionsComp::TriggerChangeByMatchCondition(const ConditionEvent& c, Mission& mission)
+    bool MissionsComp::UpdateWhenMatchCondition(const ConditionEvent& c, Mission& mission)
     {
         if (c.match_condtion_ids_.empty())
         {

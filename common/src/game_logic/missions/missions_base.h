@@ -74,7 +74,7 @@ namespace common
     private:
         void DelClassify(uint32_t mission_id);
        
-        bool TriggerChangeByMatchCondition(const ConditionEvent& c, Mission& mission);
+        bool UpdateWhenMatchCondition(const ConditionEvent& c, Mission& mission);
         
         void OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete);
         
