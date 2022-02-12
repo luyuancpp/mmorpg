@@ -5,11 +5,11 @@
 
 namespace gateway
 {
-    class GameClient : public entt::registry
+    class SessionReg : public entt::registry
     {
     public:
-        static GameClient& GetSingleton() {
-            thread_local GameClient singleton;
+        static SessionReg& GetSingleton() {
+            thread_local SessionReg singleton;
             return singleton;
         }
     private:
