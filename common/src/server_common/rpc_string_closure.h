@@ -12,29 +12,29 @@ namespace common
     {
         RpcString(ClientResponse* client_response,
             ::google::protobuf::Closure* client_closure)
-            : c_resp_(client_response),
-            s_resp_(new ServerResponse()),// delete for rpcchanel
+            : c_rp_(client_response),
+            s_rp_(new ServerResponse()),// delete for rpcchanel
             cc_(client_closure)
             {}
 
         template <typename MoveRpcString>
         RpcString(MoveRpcString& rpcstring)
-            : s_resp_(new ServerResponse())// delete for rpcchanel
+            : s_rp_(new ServerResponse())// delete for rpcchanel
         {
-            rpcstring.Move(c_resp_, cc_);
+            rpcstring.Move(c_rp_, cc_);
         }
 
         ~RpcString() { if (nullptr != cc_) { cc_->Run(); } };//this function delete server_response_ if not move
-        ClientResponse* c_resp_{ nullptr };
-        ServerRequest s_reqst_;
-        ServerResponse* s_resp_{ nullptr }; 
+        ClientResponse* c_rp_{ nullptr };
+        ServerRequest s_rq_;
+        ServerResponse* s_rp_{ nullptr }; 
 
         //just for enter master , un safe
-        void Move(ClientResponse*& client_response,
-            ::google::protobuf::Closure*& client_closure)
+        void Move(ClientResponse*& c_rp,
+            ::google::protobuf::Closure*& cc)
         {
-            client_response = c_resp_;
-            client_closure = cc_;
+            c_rp = c_rp_;
+            cc = cc_;
             cc_ = nullptr;
         }
     private:

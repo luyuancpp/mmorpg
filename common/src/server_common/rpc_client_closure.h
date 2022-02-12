@@ -7,7 +7,7 @@ namespace common
     struct ClientClosure
     {
         ClientClosure(const muduo::net::TcpConnectionPtr& cc)
-            : s_resp_(new ServerResponse()),
+            : s_rp_(new ServerResponse()),
               client_connection_(cc)
         {
         }
@@ -17,9 +17,9 @@ namespace common
         }
 
         ~ClientClosure() {};
-        ClientResponse c_resp_;
-        ServerRequest s_reqst_;
-        ServerResponse* s_resp_{ nullptr };
+        ClientResponse c_rp_;
+        ServerRequest s_rq_;
+        ServerResponse* s_rp_{ nullptr };
         const muduo::net::TcpConnectionPtr client_connection_;
     };
 

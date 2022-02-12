@@ -48,7 +48,7 @@ namespace database
 
     void DatabaseServer::StartServer(ServerInfoRpcRC cp)
     {
-        auto& info = cp->s_resp_->info();
+        auto& info = cp->s_rp_->info();
         auto& redisinfo = info.redis_info();
         auto& myinfo = info.database_info();
         InetAddress listenAddr(myinfo.ip(), myinfo.port());
@@ -71,7 +71,7 @@ namespace database
             return;
         }
         ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-        cp->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
+        cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
         deploy_stub_.CallMethod(
             &DatabaseServer::StartServer,
             cp,

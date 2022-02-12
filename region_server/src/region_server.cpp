@@ -35,7 +35,7 @@ namespace region
 
     void RegionServer::StartServer(RegionInfoRpcRpcRC cp)
     {
-        auto& myinfo = cp->s_resp_->info();
+        auto& myinfo = cp->s_rp_->info();
         InetAddress region_addr(myinfo.ip(), myinfo.port());
         server_ = std::make_shared<muduo::net::RpcServer>(loop_, region_addr);
         server_->subscribe<ServerConnectionEvent>(*this);
@@ -55,7 +55,7 @@ namespace region
             return;
         }
         RegionInfoRpcRpcRC cp(std::make_shared<RegionInfoRpcClosure>());
-        cp->s_reqst_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+        cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
         deploy_stub_.CallMethod(
             &RegionServer::StartServer,
             cp,
