@@ -47,7 +47,7 @@ void MasterServer::ConnectDeploy()
 
 void MasterServer::StartServer(ServerInfoRpcRC cp)
 {
-    serverinfos_ = cp->s_resp_->info();
+    serverinfos_ = cp->s_rp_->info();
     auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
@@ -91,8 +91,8 @@ void MasterServer::receive(const RpcClientConnectionEvent& es)
         return;
     }
     ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
-    cp->s_reqst_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+    cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+    cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
     deploy_stub_.CallMethod(
         &MasterServer::StartServer,
         cp,

@@ -28,7 +28,7 @@ void GatewayServer::InitNetwork()
 
 void GatewayServer::StartServer(ServerInfoRpcRC cp)
 {
-    serverinfo_data_ = cp->s_resp_->info();
+    serverinfo_data_ = cp->s_rp_->info();
     auto& login_info = serverinfo_data_.login_info();
     InetAddress login_addr(login_info.ip(), login_info.port());
     login_session_ = std::make_unique<RpcClient>(loop_, login_addr);
@@ -77,7 +77,7 @@ void GatewayServer::receive(const RpcClientConnectionEvent& es)
             return;
         }
         ServerInfoRpcRC c(std::make_shared<ServerInfoRpcClosure>());
-        c->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
+        c->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
         deploy_stub_.CallMethod(
             &GatewayServer::StartServer,
             c,

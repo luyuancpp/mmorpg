@@ -50,8 +50,8 @@ public:
             return;
         }
         ((*stub_).*stub_method)(nullptr,
-            &method_param->s_reqst_,
-            method_param->s_resp_,
+            &method_param->s_rq_,
+            method_param->s_rp_,
             NewCallback(object, method, method_param));
     }
 
@@ -67,8 +67,8 @@ public:
             return; 
         }
         ((*stub_).*stub_method)(nullptr,
-            &method_param->s_reqst_,
-            method_param->s_resp_,
+            &method_param->s_rq_,
+            method_param->s_rp_,
             NewCallback(object, method, method_param));
     }
 
@@ -84,8 +84,8 @@ public:
             return; 
         }
         ((*stub_).*stub_method)(nullptr,
-            &method_param->s_reqst_,
-            method_param->s_resp_,
+            &method_param->s_rq_,
+            method_param->s_rp_,
             NewCallback(method, method_param));
     }
 

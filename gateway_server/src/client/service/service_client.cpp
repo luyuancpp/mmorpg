@@ -64,9 +64,9 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     LoginRpcReplied c(std::make_shared<LoginRpcReplied::element_type>(conn));
-    c->s_reqst_.set_account(message->account());
-    c->s_reqst_.set_password(message->password());
-    c->s_reqst_.set_connection_id(c->connection_id());
+    c->s_rq_.set_account(message->account());
+    c->s_rq_.set_password(message->password());
+    c->s_rq_.set_connection_id(c->connection_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
         c, 
         this, 
@@ -75,13 +75,13 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerLoginReplied(LoginRpcReplied cp)
 {
-    auto& player_list = cp->s_resp_->account_player().simple_players().players();
+    auto& player_list = cp->s_rp_->account_player().simple_players().players();
     for (auto it : player_list)
     {
-        auto p = cp->c_resp_.add_players();
+        auto p = cp->c_rp_.add_players();
         p->set_guid(it.guid());
     }
-    codec_.send(cp->client_connection_, cp->c_resp_);
+    codec_.send(cp->client_connection_, cp->c_rp_);
 }
 
 void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
@@ -89,7 +89,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     muduo::Timestamp)
 {
     auto c(std::make_shared<CreatePlayeReplied::element_type>(conn));
-    c->s_reqst_.set_connection_id(c->connection_id());
+    c->s_rq_.set_connection_id(c->connection_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         c, 
         this, 
@@ -98,13 +98,13 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeReplied cp)
 {
-    auto& player_list = cp->s_resp_->account_player().simple_players().players();
+    auto& player_list = cp->s_rp_->account_player().simple_players().players();
     for (auto it : player_list)
     {
-        auto p = cp->c_resp_.add_players();
+        auto p = cp->c_rp_.add_players();
         p->set_guid(it.guid());
     }
-    codec_.send(cp->client_connection_, cp->c_resp_);
+    codec_.send(cp->client_connection_, cp->c_rp_);
 }
 
 void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -112,8 +112,8 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 muduo::Timestamp)
 {
     auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
-    c->s_reqst_.set_connection_id(c->connection_id());
-    c->s_reqst_.set_guid(message->guid());
+    c->s_rq_.set_connection_id(c->connection_id());
+    c->s_rq_.set_guid(message->guid());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         c,
         this,
@@ -123,7 +123,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
 {
     //这里设置player id 还是会有串话问题
-    auto& resp_ = cp->c_resp_;
+    auto& resp_ = cp->c_rp_;
     if (resp_.error().error_no() == RET_OK)
     {
         auto it = g_client_sessions_->find(cp->connection_id());
@@ -131,8 +131,8 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
         {
             return;
         }
-        it->second.node_id_ = cp->s_resp_->gs_node_id();
-        it->second.guid_ = cp->s_resp_->guid();
+        it->second.node_id_ = cp->s_rp_->gs_node_id();
+        it->second.guid_ = cp->s_rp_->guid();
     }    
     codec_.send(cp->client_connection_, resp_);
 }

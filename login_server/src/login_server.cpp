@@ -44,7 +44,7 @@ void LoginServer::Start()
 
 void LoginServer::StartServer(ServerInfoRpcRC cp)
 {
-    auto& info = cp->s_resp_->info();
+    auto& info = cp->s_rp_->info();
     auto& databaseinfo = info.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
@@ -80,7 +80,7 @@ void LoginServer::receive(const RpcClientConnectionEvent& es)
         return;
     }
     ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_reqst_.set_group(GameConfig::GetSingleton().config_info().group_id());
+    cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
     deploy_stub_.CallMethod(
         &LoginServer::StartServer,
         cp,

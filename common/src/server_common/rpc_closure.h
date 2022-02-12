@@ -7,11 +7,11 @@ template <typename ServerRequest, typename ServerResponse>
 struct RpcClosure
 {
     RpcClosure()
-        : s_resp_(new ServerResponse())// delete for rpcchanel
+        : s_rp_(new ServerResponse())// delete for rpcchanel
     {}
 
-    ServerRequest s_reqst_;
-    ServerResponse* s_resp_{ nullptr };
+    ServerRequest s_rq_;
+    ServerResponse* s_rp_{ nullptr };
 private:
 
 };
