@@ -2,5 +2,5 @@
 
 namespace gateway
 {
-GateClientList* g_gate_clients_ = nullptr;
+GateClientList* g_client_sessions_ = nullptr;
 }

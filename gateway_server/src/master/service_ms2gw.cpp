@@ -67,8 +67,8 @@ namespace ms2gw
         ::google::protobuf::Closure* done)
     {
         AutoRecycleClosure cp(done);
-        auto it = g_gate_clients_->find(request->connection_id());
-        if (it == g_gate_clients_->end())
+        auto it = g_client_sessions_->find(request->connection_id());
+        if (it == g_client_sessions_->end())
         {
             return;
         }
