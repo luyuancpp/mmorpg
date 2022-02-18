@@ -10,6 +10,7 @@ rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
 service = ''
 tabstr = '    '
+cpprpcpart = 2
 cppmaxpart = 4
 controller = '(::google::protobuf::RpcController* controller'
 
@@ -136,19 +137,19 @@ def gencppfile(filename, writedir):
                 if skipheadline < 1 :
                     skipheadline += 1
                     continue
-                if fileline.find(yourcodebegin) >= 0 and (part < 2 or part > 2):
+                if part != cpprpcpart and fileline.find(yourcodebegin) >= 0:
                     generated = 0
                     owncode = 1
                     newstr += fileline
                     continue
-                elif fileline.find(yourcodeend) >= 0 and (part < 2 or part > 2):
+                elif part != cpprpcpart and fileline.find(yourcodeend) >= 0:
                     owncode = 0
                     newstr += fileline + '\n'
                     part += 1
                     if part == 1 :
                         newstr += namespacebegin()
                     continue     
-                elif part == 2:
+                elif part == cpprpcpart:
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
@@ -169,7 +170,6 @@ def gencppfile(filename, writedir):
                         continue
                     elif fileline.find(rpcend) >= 0:
                         owncode = 0
-                        print(rpcarry)
                         while serviceidx < len(rpcarry) :
                             newstr += gencpprpcfunbegin(serviceidx)
                             newstr += yourcodebegin + ' ' + curservicename + '\n'
@@ -184,7 +184,15 @@ def gencppfile(filename, writedir):
                 if part > cppmaxpart :
                     break
     except FileNotFoundError:
-        newstr += genheadrpcfun()
+            newstr += namespacebegin()
+            newstr += yourcode()
+            serviceidx = 0
+            while serviceidx < len(rpcarry) :
+                newstr += gencpprpcfunbegin(serviceidx)
+                newstr += yourcodebegin + ' ' + servicenames[serviceidx] + '\n'
+                newstr += yourcodeend + ' ' + servicenames[serviceidx] + '\n}\n\n'
+                serviceidx += 1 
+            newstr += yourcode()
     newstr += '}// namespace ' + pkg + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
