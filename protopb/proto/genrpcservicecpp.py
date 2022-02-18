@@ -37,7 +37,7 @@ def genheadrpcfun():
     servicenames = []
     for service in rpcarry:
         s = service.strip(' ').split(' ')
-        line = tabstr + 'void ' + s[1] + controller + '\n'
+        line = tabstr + 'void ' + s[1] + controller + ',\n'
         servicenames.append(s[1])
         line += tabstr + tabstr + 'const ' + pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
@@ -54,7 +54,7 @@ def gencpprpcfunbegin(rpcindex):
     servicestr = ''
     s = rpcarry[rpcindex]
     s = s.strip(' ').split(' ')
-    servicestr = 'void ' + service + 'Impl::' + s[1] + controller + '\n'
+    servicestr = 'void ' + service + 'Impl::' + s[1] + controller + ',\n'
     servicestr +=  tabstr + 'const ' + pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
     if rsp == 'google.protobuf.Empty' :
@@ -80,7 +80,8 @@ def genheadfile(filename, writedir):
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
-    newstr += '#include "' + hfilename + '.pb.h"\n'
+    pbfolder_path, pbfile_name = os.path.split(hfilename)
+    newstr += '#include "' + pbfile_name.replace('.h', '') + '.pb.h"\n'
     try:
         with open(hfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -126,7 +127,7 @@ def gencppfile(filename, writedir):
     newstr = '#include "' + hfilename + '.h"\n'
     global servicenames
     try:
-        with open(cppfilename,'r', encoding='utf-8') as file:
+        with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
             owncode = 1 
             skipheadline = 0 
@@ -202,4 +203,4 @@ def generate(filename, writedir):
     genheadfile(filename, writedir)
     gencppfile(filename, writedir)
 
-generate('1.proto', './src/service')
+generate('gw2l.proto', '../../login_server/src/service')
