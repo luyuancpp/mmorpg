@@ -13,6 +13,7 @@ tabstr = '    '
 cpprpcpart = 2
 cppmaxpart = 4
 controller = '(::google::protobuf::RpcController* controller'
+hfilename = ''
 
 def parsefile(filename):
     global rpcarry
@@ -74,16 +75,17 @@ def headclass():
     return 'class ' + service + 'Impl : public ' + service + '{\npublic:\n' +  genheadrpcfun()    
 
 def genheadfile(filename, writedir):
+    global hfilename
     headfun = [headfilestart, namespacebegin, headclass]
-    hfilename = writedir + '/' + filename.replace('.proto', '.h')
+    hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     newheadfilename = writedir + '/' + filename.replace('.proto', '.h.new')
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
-    pbfolder_path, pbfile_name = os.path.split(hfilename)
-    newstr += '#include "' + pbfile_name.replace('.h', '') + '.pb.h"\n'
+    pbfolder_path, hfilename = os.path.split(hfullfilename)
+    newstr += '#include "' + hfilename.replace('.h', '') + '.pb.h"\n'
     try:
-        with open(hfilename,'r+', encoding='utf-8') as file:
+        with open(hfullfilename,'r+', encoding='utf-8') as file:
             part = 0
             owncode = 1 
             generated = 0
@@ -121,10 +123,10 @@ def genheadfile(filename, writedir):
 
 def gencppfile(filename, writedir):
     global cppmaxpart
-    hfilename = writedir + '/' + filename.replace('.proto', '.h')
+    hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp')
     newcppfilename = writedir + '/' + filename.replace('.proto', '.cpp.new')
-    newstr = '#include "' + hfilename + '.h"\n'
+    newstr = '#include "' + hfilename + '"\n'
     global servicenames
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
