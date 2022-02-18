@@ -74,7 +74,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
         &LoginServiceImpl::CreatePlayerDbReplied,
         c,
         &l2db::LoginService_Stub::CreatePlayer);
-    ///<<< BEGIN WRITING YOUR CODE 
+	///<<< END WRITING YOUR CODE
 }
 
 
@@ -124,7 +124,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		&LoginServiceImpl::EnterGameDbReplied,
 		c,
 		&l2db::LoginService_Stub::EnterGame);
-    ///<<< BEGIN WRITING YOUR CODE 
+	///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
@@ -152,7 +152,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	l2ms_login_stub_.CallMethod(ms_request,
 		&l2ms::LoginService_Stub::LeaveGame);
 	connections_.erase(cit);
-    ///<<< BEGIN WRITING YOUR CODE 
+	///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
@@ -179,7 +179,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	l2ms_login_stub_.CallMethod(ms_disconnect,
 		&l2ms::LoginService_Stub::Disconect);
 	connections_.erase(cit);
-    ///<<< BEGIN WRITING YOUR CODE 
+	///<<< END WRITING YOUR CODE
 }
 ///<<<rpc end
 ///<<< BEGIN WRITING YOUR CODE 
