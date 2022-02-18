@@ -1,4 +1,4 @@
-#include "gw2l.h"
+ï»¿#include "gw2l.h"
 ///<<< BEGIN WRITING YOUR CODE  
 #include "muduo/base/Logging.h"
 
@@ -27,8 +27,8 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     gw2l::LoginResponse* response,
     ::google::protobuf::Closure* done)
 { 
-    //²âÊÔÓÃÀıÁ¬½Ó²»µÇÂ¼ÂíÉÏ¶ÏÏß£¬
-    //ÕËºÅµÇÂ¼ÂíÉÏÔÚredis ÀïÃæ£¬¿¼ÂÇµÚÒ»Ìì×¢²áºÜ¶àÕËºÅµÄÊ±ºòÕËºÅÄÚ´æºÜ¶à£¬ºÎÊ±»ØÊÕ
+    //æµ‹è¯•ç”¨ä¾‹è¿æ¥ä¸ç™»å½•é©¬ä¸Šæ–­çº¿ï¼Œ
+    //è´¦å·ç™»å½•é©¬ä¸Šåœ¨redis é‡Œé¢ï¼Œè€ƒè™‘ç¬¬ä¸€å¤©æ³¨å†Œå¾ˆå¤šè´¦å·çš„æ—¶å€™è´¦å·å†…å­˜å¾ˆå¤šï¼Œä½•æ—¶å›æ”¶
     //login master
     auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
     auto& s_reqst = c->s_rq_;
@@ -52,7 +52,7 @@ void LoginServiceImpl::LoginAccountDbReplied(LoginRpcReplied d)
 
 void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 {
-    //Ö»Á¬½Ó²»µÇÂ¼,Õ¼ÓÃÁ¬½Ó
+    //åªè¿æ¥ä¸ç™»å½•,å ç”¨è¿æ¥
     // login process
     // check account rule: empty , errno
     //check string rule
@@ -174,7 +174,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	::google::protobuf::Closure* done)
 {
 	AutoRecycleClosure cp(done);
-	//Á¬½Ó¹ı£¬µÇÂ¼¹ı
+	//è¿æ¥è¿‡ï¼Œç™»å½•è¿‡
 	auto cit = connections_.find(request->connection_id());
 	if (cit == connections_.end())
 	{
@@ -201,11 +201,11 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
 	AutoRecycleClosure cp(done);
 	auto cit = connections_.find(request->connection_id());
-	if (cit == connections_.end())//Á¬½Ó²¢Ã»ÓĞµÇÂ¼
+	if (cit == connections_.end())//è¿æ¥å¹¶æ²¡æœ‰ç™»å½•
 	{
 		return;
 	}
-	//Á¬½ÓÒÑ¾­µÇÂ¼¹ı
+	//è¿æ¥å·²ç»ç™»å½•è¿‡
 	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
 	if (nullptr == p_player)
 	{
@@ -229,7 +229,7 @@ void LoginServiceImpl::CreatePlayerDbReplied(CreatePlayerRpcReplied d)
 
 void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 {
-    //db ¼ÓÔØ¹ı³ÌÖĞ¶ÏÏßÁË
+    //db åŠ è½½è¿‡ç¨‹ä¸­æ–­çº¿äº†
     auto& srq = d->s_rq_;
     auto cit = connections_.find(d->c_rp_->connection_id());
     if (cit == connections_.end())
@@ -270,7 +270,7 @@ void LoginServiceImpl::EnterMS(common::Guid guid,
 void LoginServiceImpl::UpdateAccount(uint64_t connection_id, const ::account_database& a_d)
 {
     auto cit = connections_.find(connection_id);
-    if (cit == connections_.end())//¶ÏÏßÁË
+    if (cit == connections_.end())//æ–­çº¿äº†
     {
         return;
     }
