@@ -45,47 +45,6 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE
 }
 
-void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
-{
-    //只连接不登录,占用连接
-    // login process
-    // check account rule: empty , errno
-    //check string rule
-    auto cit = connections_.find(d->s_rq_.connection_id());
-    if (cit == connections_.end())
-    {
-        d->c_rp_->mutable_error()->set_error_no(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
-        return;
-    }
-    auto& account = d->s_rq_.account();
-    auto& response = d->c_rp_;
-
-    //has dat
-    {
-        auto& player = reg.emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
-        auto ret = player->Login();
-        if (ret != RET_OK)
-        {
-            response->mutable_error()->set_error_no(ret);
-            return;
-        }
-        auto& account_data = player->account_data();
-        redis_->Load(account_data, account);
-        if (!account_data.password().empty())
-        {
-            response->mutable_account_player()->CopyFrom(account_data);
-            player->OnDbLoaded();
-            return;
-        }
-    }
-     // database process
-    auto c(std::make_shared<LoginRpcReplied::element_type>(*d));
-    c->s_rq_.set_account(account);
-    c->s_rq_.set_connection_id(d->s_rq_.connection_id());
-    l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountDbReplied, c,  &l2db::LoginService_Stub::Login);
-    ///<<< BEGIN WRITING YOUR CODE 
-}
-
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
     const gw2l::CreatePlayerRequest* request, 
     gw2l::CreatePlayerResponse* response, 
@@ -224,7 +183,48 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 }
 ///<<<rpc end
 ///<<< BEGIN WRITING YOUR CODE 
-/// 
+
+void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
+{
+	//只连接不登录,占用连接
+	// login process
+	// check account rule: empty , errno
+	//check string rule
+	auto cit = connections_.find(d->s_rq_.connection_id());
+	if (cit == connections_.end())
+	{
+		d->c_rp_->mutable_error()->set_error_no(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+		return;
+	}
+	auto& account = d->s_rq_.account();
+	auto& response = d->c_rp_;
+
+	//has dat
+	{
+		auto& player = reg.emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
+		auto ret = player->Login();
+		if (ret != RET_OK)
+		{
+			response->mutable_error()->set_error_no(ret);
+			return;
+		}
+		auto& account_data = player->account_data();
+		redis_->Load(account_data, account);
+		if (!account_data.password().empty())
+		{
+			response->mutable_account_player()->CopyFrom(account_data);
+			player->OnDbLoaded();
+			return;
+		}
+	}
+	// database process
+	auto c(std::make_shared<LoginRpcReplied::element_type>(*d));
+	c->s_rq_.set_account(account);
+	c->s_rq_.set_connection_id(d->s_rq_.connection_id());
+	l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountDbReplied, c, &l2db::LoginService_Stub::Login);
+	///<<< BEGIN WRITING YOUR CODE 
+}
+
 void LoginServiceImpl::LoginAccountDbReplied(LoginRpcReplied d)
 {
 	auto& srp = d->s_rp_;
