@@ -21,10 +21,10 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\gw2l.cpp">
+    <ClCompile Include="src\account_player\account_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\account_player\account_player.cpp">
+    <ClCompile Include="src\service\gw2l.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
