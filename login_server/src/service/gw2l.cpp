@@ -12,8 +12,8 @@ using namespace muduo;
 using namespace muduo::net;
 using namespace common;
 ///<<< END WRITING YOUR CODE
-namespace gw2l
-{
+
+namespace gw2l{
  ///<<< BEGIN WRITING YOUR CODE 
 LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
     LoginStubl2db& l2db_login_stub)
@@ -21,13 +21,14 @@ LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
         l2db_login_stub_(l2db_login_stub)
 {}
  ///<<< END WRITING YOUR CODE
+
 ///<<<rpc begin
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     const gw2l::LoginRequest* request,
     gw2l::LoginResponse* response,
     ::google::protobuf::Closure* done)
-{ 
-///<<< BEGIN WRITING YOUR CODE 
+{
+///<<< BEGIN WRITING YOUR CODE Login
     //测试用例连接不登录马上断线，
     //账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
     //login master
@@ -42,15 +43,15 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         reg.emplace<std::string>(it.first->second.entity(), request->account());
     }
     l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &l2ms::LoginService_Stub::LoginAccount);
-///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE Login
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
-    const gw2l::CreatePlayerRequest* request, 
-    gw2l::CreatePlayerResponse* response, 
+    const gw2l::CreatePlayerRequest* request,
+    gw2l::CreatePlayerResponse* response,
     ::google::protobuf::Closure* done)
 {
-    ///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE CreatPlayer
     // login process
     //check name rule
     auto cit = connections_.find(request->connection_id());
@@ -74,16 +75,15 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
         &LoginServiceImpl::CreatePlayerDbReplied,
         c,
         &l2db::LoginService_Stub::CreatePlayer);
-	///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE CreatPlayer
 }
 
-
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-	const ::gw2l::EnterGameRequest* request,
-	::gw2l::EnterGameResponse* response,
-	::google::protobuf::Closure* done)
+    const gw2l::EnterGameRequest* request,
+    gw2l::EnterGameResponse* response,
+    ::google::protobuf::Closure* done)
 {
-    ///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE EnterGame
 	auto connection_id = request->connection_id();
 	auto cit = connections_.find(connection_id);
 	if (cit == connections_.end())
@@ -124,15 +124,15 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		&LoginServiceImpl::EnterGameDbReplied,
 		c,
 		&l2db::LoginService_Stub::EnterGame);
-	///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE EnterGame
 }
 
 void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
-	const ::gw2l::LeaveGameRequest* request,
-	::google::protobuf::Empty* response,
-	::google::protobuf::Closure* done)
+    const gw2l::LeaveGameRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
 {
-    ///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE LeaveGame
 	AutoRecycleClosure cp(done);
 	//连接过，登录过
 	auto cit = connections_.find(request->connection_id());
@@ -152,15 +152,15 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	l2ms_login_stub_.CallMethod(ms_request,
 		&l2ms::LoginService_Stub::LeaveGame);
 	connections_.erase(cit);
-	///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE LeaveGame
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
-	const ::gw2l::DisconnectRequest* request,
-	::google::protobuf::Empty* response,
-	::google::protobuf::Closure* done)
+    const gw2l::DisconnectRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
 {
-    ///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE Disconnect
 	AutoRecycleClosure cp(done);
 	auto cit = connections_.find(request->connection_id());
 	if (cit == connections_.end())//连接并没有登录
@@ -179,8 +179,9 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	l2ms_login_stub_.CallMethod(ms_disconnect,
 		&l2ms::LoginService_Stub::Disconect);
 	connections_.erase(cit);
-	///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE Disconnect
 }
+
 ///<<<rpc end
 ///<<< BEGIN WRITING YOUR CODE 
 
@@ -296,4 +297,5 @@ void LoginServiceImpl::UpdateAccount(uint64_t connection_id, const ::account_dat
     ap->OnDbLoaded();
 }
 ///<<< END WRITING YOUR CODE
-}  // namespace gw2l
+
+}// namespace gw2l
