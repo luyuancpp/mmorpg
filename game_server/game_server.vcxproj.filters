@@ -21,16 +21,16 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\master\service_ms2g.cpp">
+    <ClCompile Include="src\service\service_ms2g.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\factories\server_global_entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\region\service_rg2g.cpp">
+    <ClCompile Include="src\service\service_rg2g.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\master\replied_ms2g.cpp">
+    <ClCompile Include="src\service\replied_ms2g.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,19 +38,19 @@
     <ClInclude Include="src\game_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\master\service_ms2g.h">
+    <ClInclude Include="src\service\service_ms2g.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\factories\server_global_entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\region\service_rg2g.h">
+    <ClInclude Include="src\service\service_rg2g.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\comp\master.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\master\replied_ms2g.h">
+    <ClInclude Include="src\service\replied_ms2g.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

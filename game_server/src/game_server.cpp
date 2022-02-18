@@ -11,7 +11,7 @@
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/enum/server_enum.h"
 #include "src/game_logic/game_registry.h"
-#include "src/master/replied_ms2g.h"
+#include "src/service/replied_ms2g.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/deploy_variable.h"
 
