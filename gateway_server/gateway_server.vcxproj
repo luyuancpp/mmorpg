@@ -22,14 +22,14 @@
     <ClCompile Include="src\gate_player\gate_player_list.cpp" />
     <ClCompile Include="src\gateway_server.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\client\service\service_client.cpp" />
-    <ClCompile Include="src\master\service_ms2gw.cpp" />
+    <ClCompile Include="src\service\service_client.cpp" />
+    <ClCompile Include="src\service\service_ms2gw.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\gate_player\gate_player_list.h" />
     <ClInclude Include="src\gateway_server.h" />
-    <ClInclude Include="src\client\service\service_client.h" />
-    <ClInclude Include="src\master\service_ms2gw.h" />
+    <ClInclude Include="src\service\service_client.h" />
+    <ClInclude Include="src\service\service_ms2gw.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
