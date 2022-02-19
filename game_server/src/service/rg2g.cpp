@@ -1,4 +1,4 @@
-#include "service_rg2g.h"
+#include "rg2g.h"
 
 #include "src/game_server.h"
 

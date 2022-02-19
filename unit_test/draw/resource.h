@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ ���ɵİ����ļ���
-// �� draw.rc ʹ��
+// Microsoft Visual C++ 生成的包含文件。
+// 供 draw.rc 使用
 //
 #define IDD_ABOUTBOX                    100
 #define IDR_MAINFRAME                   128

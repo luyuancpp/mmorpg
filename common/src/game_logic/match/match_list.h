@@ -68,7 +68,7 @@ namespace GameMMR
 
         bool InGroupMatch(GUID_t  playerguid);
 
-        //ֻ���ֶ����˳������ʱ����ܴ�ƥ�����ɾ��
+        //只有手动和退出房间的时候才能从匹配队列删除
         int32_t CancelMatch(GUID_t  playerguid, int32_t nCancelSelfMatchUnitTeam = 1);
         
 

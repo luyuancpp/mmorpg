@@ -30,12 +30,12 @@ namespace deploy
 
     void ReuseGSId::ScanOver()
     {
-        //等待一段时间后连接上来得先处理
+        //绛夊緟涓�娈垫椂闂村悗杩炴帴涓婃潵寰楀厛澶勭悊
         for (auto& it : gs_entities_)
         {
             scan_node_ids_.erase(it.second);
         }
-        //超过一段时间后，没有连接上来得id 重用
+        //瓒呰繃涓�娈垫椂闂村悗锛屾病鏈夎繛鎺ヤ笂鏉ュ緱id 閲嶇敤
         for (auto& it : scan_node_ids_)
         {
             Destroy(it);

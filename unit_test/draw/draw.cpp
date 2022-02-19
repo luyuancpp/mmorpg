@@ -1,5 +1,5 @@
 
-// draw.cpp : ¶¨ÒåÓ¦ÓÃ³ÌĞòµÄÀàĞĞÎª¡£
+// draw.cpp : å®šä¹‰åº”ç”¨ç¨‹åºçš„ç±»è¡Œä¸ºã€‚
 //
 
 #include "stdafx.h"
@@ -21,24 +21,24 @@ BEGIN_MESSAGE_MAP(CdrawApp, CWinApp)
 END_MESSAGE_MAP()
 
 
-// CdrawApp ¹¹Ôì
+// CdrawApp æ„é€ 
 
 CdrawApp::CdrawApp()
 {
-	// TODO:  ½«ÒÔÏÂÓ¦ÓÃ³ÌĞò ID ×Ö·û´®Ìæ»»ÎªÎ¨Ò»µÄ ID ×Ö·û´®£»½¨ÒéµÄ×Ö·û´®¸ñÊ½
-	//Îª CompanyName.ProductName.SubProduct.VersionInformation
+	// TODO:  å°†ä»¥ä¸‹åº”ç”¨ç¨‹åº ID å­—ç¬¦ä¸²æ›¿æ¢ä¸ºå”¯ä¸€çš„ ID å­—ç¬¦ä¸²ï¼›å»ºè®®çš„å­—ç¬¦ä¸²æ ¼å¼
+	//ä¸º CompanyName.ProductName.SubProduct.VersionInformation
 	SetAppID(_T("draw.AppID.NoVersion"));
 
-	// TODO:  ÔÚ´Ë´¦Ìí¼Ó¹¹Ôì´úÂë£¬
-	// ½«ËùÓĞÖØÒªµÄ³õÊ¼»¯·ÅÖÃÔÚ InitInstance ÖĞ
+	// TODO:  åœ¨æ­¤å¤„æ·»åŠ æ„é€ ä»£ç ï¼Œ
+	// å°†æ‰€æœ‰é‡è¦çš„åˆå§‹åŒ–æ”¾ç½®åœ¨ InitInstance ä¸­
 }
 
-// Î¨Ò»µÄÒ»¸ö CdrawApp ¶ÔÏó
+// å”¯ä¸€çš„ä¸€ä¸ª CdrawApp å¯¹è±¡
 
 CdrawApp theApp;
 
 
-// CdrawApp ³õÊ¼»¯
+// CdrawApp åˆå§‹åŒ–
 
 BOOL CdrawApp::InitInstance()
 {
@@ -47,26 +47,26 @@ BOOL CdrawApp::InitInstance()
 
 	EnableTaskbarInteraction(FALSE);
 
-	// Ê¹ÓÃ RichEdit ¿Ø¼şĞèÒª  AfxInitRichEdit2()	
+	// ä½¿ç”¨ RichEdit æ§ä»¶éœ€è¦  AfxInitRichEdit2()	
 	// AfxInitRichEdit2();
 
-	// ±ê×¼³õÊ¼»¯
-	// Èç¹ûÎ´Ê¹ÓÃÕâĞ©¹¦ÄÜ²¢Ï£Íû¼õĞ¡
-	// ×îÖÕ¿ÉÖ´ĞĞÎÄ¼şµÄ´óĞ¡£¬ÔòÓ¦ÒÆ³ıÏÂÁĞ
-	// ²»ĞèÒªµÄÌØ¶¨³õÊ¼»¯Àı³Ì
-	// ¸ü¸ÄÓÃÓÚ´æ´¢ÉèÖÃµÄ×¢²á±íÏî
-	// TODO:  Ó¦ÊÊµ±ĞŞ¸Ä¸Ã×Ö·û´®£¬
-	// ÀıÈçĞŞ¸ÄÎª¹«Ë¾»ò×éÖ¯Ãû
-	SetRegistryKey(_T("Ó¦ÓÃ³ÌĞòÏòµ¼Éú³ÉµÄ±¾µØÓ¦ÓÃ³ÌĞò"));
+	// æ ‡å‡†åˆå§‹åŒ–
+	// å¦‚æœæœªä½¿ç”¨è¿™äº›åŠŸèƒ½å¹¶å¸Œæœ›å‡å°
+	// æœ€ç»ˆå¯æ‰§è¡Œæ–‡ä»¶çš„å¤§å°ï¼Œåˆ™åº”ç§»é™¤ä¸‹åˆ—
+	// ä¸éœ€è¦çš„ç‰¹å®šåˆå§‹åŒ–ä¾‹ç¨‹
+	// æ›´æ”¹ç”¨äºå­˜å‚¨è®¾ç½®çš„æ³¨å†Œè¡¨é¡¹
+	// TODO:  åº”é€‚å½“ä¿®æ”¹è¯¥å­—ç¬¦ä¸²ï¼Œ
+	// ä¾‹å¦‚ä¿®æ”¹ä¸ºå…¬å¸æˆ–ç»„ç»‡å
+	SetRegistryKey(_T("åº”ç”¨ç¨‹åºå‘å¯¼ç”Ÿæˆçš„æœ¬åœ°åº”ç”¨ç¨‹åº"));
 
 
-	// ÈôÒª´´½¨Ö÷´°¿Ú£¬´Ë´úÂë½«´´½¨ĞÂµÄ¿ò¼Ü´°¿Ú
-	// ¶ÔÏó£¬È»ºó½«ÆäÉèÖÃÎªÓ¦ÓÃ³ÌĞòµÄÖ÷´°¿Ú¶ÔÏó
+	// è‹¥è¦åˆ›å»ºä¸»çª—å£ï¼Œæ­¤ä»£ç å°†åˆ›å»ºæ–°çš„æ¡†æ¶çª—å£
+	// å¯¹è±¡ï¼Œç„¶åå°†å…¶è®¾ç½®ä¸ºåº”ç”¨ç¨‹åºçš„ä¸»çª—å£å¯¹è±¡
 	CMainFrame* pFrame = new CMainFrame;
 	if (!pFrame)
 		return FALSE;
 	m_pMainWnd = pFrame;
-	// ´´½¨²¢¼ÓÔØ¿ò¼Ü¼°Æä×ÊÔ´
+	// åˆ›å»ºå¹¶åŠ è½½æ¡†æ¶åŠå…¶èµ„æº
 	pFrame->LoadFrame(IDR_MAINFRAME,
 		WS_OVERLAPPEDWINDOW | FWS_ADDTOTITLE, NULL,
 		NULL);
@@ -75,7 +75,7 @@ BOOL CdrawApp::InitInstance()
 
 
 
-	// Î¨Ò»µÄÒ»¸ö´°¿ÚÒÑ³õÊ¼»¯£¬Òò´ËÏÔÊ¾Ëü²¢¶ÔÆä½øĞĞ¸üĞÂ
+	// å”¯ä¸€çš„ä¸€ä¸ªçª—å£å·²åˆå§‹åŒ–ï¼Œå› æ­¤æ˜¾ç¤ºå®ƒå¹¶å¯¹å…¶è¿›è¡Œæ›´æ–°
 	pFrame->ShowWindow(SW_SHOW);
 	pFrame->UpdateWindow();
 	return TRUE;
@@ -83,27 +83,27 @@ BOOL CdrawApp::InitInstance()
 
 int CdrawApp::ExitInstance()
 {
-	//TODO:  ´¦Àí¿ÉÄÜÒÑÌí¼ÓµÄ¸½¼Ó×ÊÔ´
+	//TODO:  å¤„ç†å¯èƒ½å·²æ·»åŠ çš„é™„åŠ èµ„æº
 	return CWinApp::ExitInstance();
 }
 
-// CdrawApp ÏûÏ¢´¦Àí³ÌĞò
+// CdrawApp æ¶ˆæ¯å¤„ç†ç¨‹åº
 
 
-// ÓÃÓÚÓ¦ÓÃ³ÌĞò¡°¹ØÓÚ¡±²Ëµ¥ÏîµÄ CAboutDlg ¶Ô»°¿ò
+// ç”¨äºåº”ç”¨ç¨‹åºâ€œå…³äºâ€èœå•é¡¹çš„ CAboutDlg å¯¹è¯æ¡†
 
 class CAboutDlg : public CDialogEx
 {
 public:
 	CAboutDlg();
 
-// ¶Ô»°¿òÊı¾İ
+// å¯¹è¯æ¡†æ•°æ®
 	enum { IDD = IDD_ABOUTBOX };
 
 protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV Ö§³Ö
+	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV æ”¯æŒ
 
-// ÊµÏÖ
+// å®ç°
 protected:
 	DECLARE_MESSAGE_MAP()
 public:
@@ -123,14 +123,14 @@ BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 	ON_BN_CLICKED(IDOK, &CAboutDlg::OnBnClickedOk)
 END_MESSAGE_MAP()
 
-// ÓÃÓÚÔËĞĞ¶Ô»°¿òµÄÓ¦ÓÃ³ÌĞòÃüÁî
+// ç”¨äºè¿è¡Œå¯¹è¯æ¡†çš„åº”ç”¨ç¨‹åºå‘½ä»¤
 void CdrawApp::OnAppAbout()
 {
 	CAboutDlg aboutDlg;
 	aboutDlg.DoModal();
 }
 
-// CdrawApp ÏûÏ¢´¦Àí³ÌĞò
+// CdrawApp æ¶ˆæ¯å¤„ç†ç¨‹åº
 
 
 
@@ -138,6 +138,6 @@ void CdrawApp::OnAppAbout()
 
 void CAboutDlg::OnBnClickedOk()
 {
-	// TODO:  ÔÚ´ËÌí¼Ó¿Ø¼şÍ¨Öª´¦Àí³ÌĞò´úÂë
+	// TODO:  åœ¨æ­¤æ·»åŠ æ§ä»¶é€šçŸ¥å¤„ç†ç¨‹åºä»£ç 
 	CDialogEx::OnOK();
 }

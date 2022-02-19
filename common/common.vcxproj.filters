@@ -96,6 +96,9 @@
     <ClCompile Include="src\file2string\file2string.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\server_sequence\server_sequence.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
@@ -309,6 +312,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\tiime_unit\time_variable.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_sequence\server_sequence.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -55,7 +55,7 @@ namespace game
         return mktime(&tm_today);
     }
 
-//本周的周一
+//鏈懆鐨勫懆涓�
  muduo::Date GetWeekBeginDay(muduo::Date & dateNow)
  {
 	 int32_t nWeekDay = dateNow.weekDay();

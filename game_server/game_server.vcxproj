@@ -115,7 +115,7 @@
       <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../protopb/pbc/;../third_party/redis/;../third_party/muduo/;../third_party/muduo/contrib/windows/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <DisableSpecificWarnings>4200</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4200;4819</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -129,16 +129,16 @@
     <ClCompile Include="src\factories\server_global_entity.cpp" />
     <ClCompile Include="src\game_server.cpp" />
     <ClCompile Include="src\service\replied_ms2g.cpp" />
-    <ClCompile Include="src\service\service_ms2g.cpp" />
-    <ClCompile Include="src\service\service_rg2g.cpp" />
+    <ClCompile Include="src\service\ms2g.cpp" />
+    <ClCompile Include="src\service\rg2g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\master.hpp" />
     <ClInclude Include="src\factories\server_global_entity.hpp" />
     <ClInclude Include="src\game_server.h" />
     <ClInclude Include="src\service\replied_ms2g.h" />
-    <ClInclude Include="src\service\service_ms2g.h" />
-    <ClInclude Include="src\service\service_rg2g.h" />
+    <ClInclude Include="src\service\ms2g.h" />
+    <ClInclude Include="src\service\rg2g.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

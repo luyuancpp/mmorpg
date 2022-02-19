@@ -545,7 +545,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 
 }
 
-//崩溃时候的消息不能处理
+//宕╂簝鏃跺�欑殑娑堟伅涓嶈兘澶勭悊
 TEST(GS, CrashMovePlayer2NewServer)
 {
     ScenesManager sm;

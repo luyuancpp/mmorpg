@@ -1,6 +1,6 @@
 // ObjSingleManager.h
 // 
-// ¹¦ÄÜ£ºµ¥Ò»ÀàĞÍµÄObj¶ÔÏóµÄ¹ÜÀí
+// åŠŸèƒ½ï¼šå•ä¸€ç±»å‹çš„Objå¯¹è±¡çš„ç®¡ç†
 //////////////////////////////////////////////////////
 
 #pragma once
@@ -19,8 +19,8 @@ struct _OBJSINGLEMANAGER_INIT
 {
 	UINT	m_uLength;
 	Scene	*m_pScene;
-	UINT	m_uLogicInterval;		// Õı³£×´Ì¬ÏÂÃ¿Á½¸öÂß¼­Ö¡Ö®¼äµÄÊ±¼ä¼ä¸ô
-	UINT	m_uCurrentTime;		// µ±Ç°Ê±¼ä£¬³õÊ¼ObjSingleManager::m_LogicTimerµÄ²ÎÊı
+	UINT	m_uLogicInterval;		// æ­£å¸¸çŠ¶æ€ä¸‹æ¯ä¸¤ä¸ªé€»è¾‘å¸§ä¹‹é—´çš„æ—¶é—´é—´éš”
+	UINT	m_uCurrentTime;		// å½“å‰æ—¶é—´ï¼Œåˆå§‹ObjSingleManager::m_LogicTimerçš„å‚æ•°
 	_OBJSINGLEMANAGER_INIT(  )
 	{
 		m_uLength			= 0;
@@ -110,8 +110,8 @@ protected:
 	obj_type_list				m_papObjs;
 	uint32_t			m_uCount;
 	UINT			m_uLength;
-	UINT			m_uLogicInterval;			// Õı³£×´Ì¬ÏÂÃ¿Á½¸öÂß¼­Ö¡Ö®¼äµÄÊ±¼ä¼ä¸ô
-	UINT			m_uCurrentLogicInterval;	// µ±Ç°µÄÃ¿Á½¸öÂß¼­Ö¡Ö®¼äµÄÊ±¼ä¼ä¸ô
+	UINT			m_uLogicInterval;			// æ­£å¸¸çŠ¶æ€ä¸‹æ¯ä¸¤ä¸ªé€»è¾‘å¸§ä¹‹é—´çš„æ—¶é—´é—´éš”
+	UINT			m_uCurrentLogicInterval;	// å½“å‰çš„æ¯ä¸¤ä¸ªé€»è¾‘å¸§ä¹‹é—´çš„æ—¶é—´é—´éš”
 
 	Scene			*m_pScene;
 	CMyTimer		m_LogicTimer;

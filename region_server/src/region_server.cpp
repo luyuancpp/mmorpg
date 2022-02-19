@@ -1,4 +1,4 @@
-﻿#include "region_server.h"
+#include "region_server.h"
 
 #include "muduo/base/Logging.h"
 

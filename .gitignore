@@ -31,4 +31,5 @@ bin/config/cpp/
 common/src/game_config/
 bin/config/
 protopb/proto/md5/
+protopb/proto/service/
 

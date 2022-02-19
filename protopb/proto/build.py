@@ -11,7 +11,7 @@ from os import system
 
 md5str = "md5"
 
-def get_file_info_dictionaries(walkdir, protobufdir, cppdir):
+def gen_protoc(walkdir, protobufdir, cppdir):
     for (dirpath, dirnames, filenames) in os.walk(walkdir):
         for each_filename in filenames:
             is_proto_file = (each_filename[-6:].lower() == '.proto')
@@ -24,7 +24,6 @@ def get_file_info_dictionaries(walkdir, protobufdir, cppdir):
                 first = True
             else:
                 error = md5tool.check_against_md5_file(each_filename, filenamemd5)
-
             hfilename = cppdir + each_filename + ".pb.h"
             cfilename = cppdir + each_filename + ".pb.cc"
             hfilename = hfilename.replace(".proto", "")
@@ -48,5 +47,5 @@ def genmd5():
                 continue            
             md5tool.generate_md5_file_for(each_filename, md5str + "/" + each_filename + '.md5')
 
-get_file_info_dictionaries("./", "../../third_party/protobuf/src", "../pbc/")
+gen_protoc("./", "../../third_party/protobuf/src", "../pbc/")
 genmd5()

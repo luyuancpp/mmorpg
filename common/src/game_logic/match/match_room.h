@@ -112,7 +112,7 @@ namespace GameMMR
 	 }
 
 	 Team::team_id_type tId = iterteammem->second->GetTeamId();
-	 // ¾µÏñµÄ»° ½øÈëÐÇÒ«¼ÆÊý²Ù×÷
+	 // é•œåƒçš„è¯ è¿›å…¥æ˜Ÿè€€è®¡æ•°æ“ä½œ
 	 if (E_SCENE_MIRROR == m_oTarget.scenetype())
 	 {
 		 m_oMirrorMatchCallBack(m_oTarget.sceneconfigid(), m_oTarget.starbattleid(), MIRROR_MATCH_IN, tId);
@@ -329,7 +329,7 @@ namespace GameMMR
          m_oReMatchCallBack(m_vUnits, m_nGroup, m_nRoomId);
      }
    
-	 // ¾µÏñµÄ»° ½øÈëÐÇÒ«¼ÆÊý²Ù×÷
+	 // é•œåƒçš„è¯ è¿›å…¥æ˜Ÿè€€è®¡æ•°æ“ä½œ
 	 if (E_SCENE_MIRROR == m_oTarget.scenetype())
 	 {
 		 m_oMirrorMatchCallBack(m_oTarget.sceneconfigid(), m_oTarget.starbattleid(), MIRROR_MATCH_OUT, tId);
@@ -448,7 +448,7 @@ namespace GameMMR
          }
      }
      
-	 // ¾µÏñµÄ»° ½øÈëÐÇÒ«¼ÆÊý²Ù×÷
+	 // é•œåƒçš„è¯ è¿›å…¥æ˜Ÿè€€è®¡æ•°æ“ä½œ
 	 if (E_SCENE_MIRROR == m_oTarget.scenetype())
 	 {
 		 m_oMirrorMatchCallBack(m_oTarget.sceneconfigid(), m_oTarget.starbattleid(), MIRROR_MATCH_OUT, tId);

@@ -1,17 +1,17 @@
 
-// draw.h : draw Ó¦ÓÃ³ÌĞòµÄÖ÷Í·ÎÄ¼ş
+// draw.h : draw åº”ç”¨ç¨‹åºçš„ä¸»å¤´æ–‡ä»¶
 //
 #pragma once
 
 #ifndef __AFXWIN_H__
-	#error "ÔÚ°üº¬´ËÎÄ¼şÖ®Ç°°üº¬¡°stdafx.h¡±ÒÔÉú³É PCH ÎÄ¼ş"
+	#error "åœ¨åŒ…å«æ­¤æ–‡ä»¶ä¹‹å‰åŒ…å«â€œstdafx.hâ€ä»¥ç”Ÿæˆ PCH æ–‡ä»¶"
 #endif
 
-#include "resource.h"       // Ö÷·ûºÅ
+#include "resource.h"       // ä¸»ç¬¦å·
 
 
 // CdrawApp:
-// ÓĞ¹Ø´ËÀàµÄÊµÏÖ£¬Çë²ÎÔÄ draw.cpp
+// æœ‰å…³æ­¤ç±»çš„å®ç°ï¼Œè¯·å‚é˜… draw.cpp
 //
 
 class CdrawApp : public CWinApp
@@ -20,12 +20,12 @@ public:
 	CdrawApp();
 
 
-// ÖØĞ´
+// é‡å†™
 public:
 	virtual BOOL InitInstance();
 	virtual int ExitInstance();
 
-// ÊµÏÖ
+// å®ç°
 
 public:
 	afx_msg void OnAppAbout();

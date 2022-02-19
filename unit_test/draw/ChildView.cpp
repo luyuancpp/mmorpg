@@ -1,5 +1,5 @@
 
-// ChildView.cpp : CChildView ÀàµÄÊµÏÖ
+// ChildView.cpp : CChildView ç±»çš„å®ç°
 //
 
 #include "stdafx.h"
@@ -40,7 +40,7 @@ END_MESSAGE_MAP()
 
 
 
-// CChildView ÏûÏ¢´¦Àí³ÌĞò
+// CChildView æ¶ˆæ¯å¤„ç†ç¨‹åº
 
 BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs) 
 {
@@ -58,11 +58,11 @@ BOOL CChildView::PreCreateWindow(CREATESTRUCT& cs)
 
 void CChildView::OnPaint() 
 {
-	//CPaintDC dc(this); // ÓÃÓÚ»æÖÆµÄÉè±¸ÉÏÏÂÎÄ
+	//CPaintDC dc(this); // ç”¨äºç»˜åˆ¶çš„è®¾å¤‡ä¸Šä¸‹æ–‡
 	
-	// TODO:  ÔÚ´Ë´¦Ìí¼ÓÏûÏ¢´¦Àí³ÌĞò´úÂë
+	// TODO:  åœ¨æ­¤å¤„æ·»åŠ æ¶ˆæ¯å¤„ç†ç¨‹åºä»£ç 
 	
-	// ²»ÒªÎª»æÖÆÏûÏ¢¶øµ÷ÓÃ CWnd::OnPaint()
+	// ä¸è¦ä¸ºç»˜åˆ¶æ¶ˆæ¯è€Œè°ƒç”¨ CWnd::OnPaint()
 
 	
 	std::unordered_map<int32_t, Shape::shapepointer_type>::iterator it = m_mShape.find(m_nCurShapeType);
