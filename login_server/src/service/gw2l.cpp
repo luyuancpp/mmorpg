@@ -1,8 +1,9 @@
-#include "gw2l.h"
-///<<< BEGIN WRITING YOUR CODE 
+Ôªø#include "gw2l.h"
+///<<< BEGIN WRITING YOUR CODE  
 #include "muduo/base/Logging.h"
 
 #include "src/game_logic/game_registry.h"
+#include "src/server_common/rpc_server.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/return_code/error_code.h"
 #include "src/login_server.h"
@@ -11,75 +12,78 @@ using namespace muduo;
 using namespace muduo::net;
 using namespace common;
 ///<<< END WRITING YOUR CODE
-namespace gw2l {
-///<<< BEGIN WRITING YOUR CODE
+
+namespace gw2l{
+ ///<<< BEGIN WRITING YOUR CODE 
 LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
-		LoginStubl2db& l2db_login_stub)
-		:l2ms_login_stub_(l2ms_login_stub),
-		 l2db_login_stub_(l2db_login_stub) {}
-///<<< END WRITING YOUR CODE
+    LoginStubl2db& l2db_login_stub)
+    : l2ms_login_stub_(l2ms_login_stub),
+        l2db_login_stub_(l2db_login_stub)
+{}
+ ///<<< END WRITING YOUR CODE
+
 ///<<<rpc begin
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
-	const gw2l::LoginRequest* request,
-	gw2l::LoginResponse* response,
-	::google::protobuf::Closure* done)
+    const gw2l::LoginRequest* request,
+    gw2l::LoginResponse* response,
+    ::google::protobuf::Closure* done)
 {
-	///<<< BEGIN WRITING YOUR CODE Login
-		//≤‚ ‘”√¿˝¡¨Ω”≤ªµ«¬º¬Ì…œ∂œœﬂ£¨
-		//’À∫≈µ«¬º¬Ì…œ‘⁄redis ¿Ô√Ê£¨øº¬«µ⁄“ªÃÏ◊¢≤·∫‹∂‡’À∫≈µƒ ±∫Ú’À∫≈ƒ⁄¥Ê∫‹∂‡£¨∫Œ ±ªÿ ’
-		//login master
-	auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
-	auto& s_reqst = c->s_rq_;
-	s_reqst.set_account(request->account());
-	s_reqst.set_login_node_id(g_login_server->node_id());
-	s_reqst.set_connection_id(request->connection_id());
-	auto it = connections_.emplace(request->connection_id(), common::EntityHandle());
-	if (it.second)
-	{
-		reg.emplace<std::string>(it.first->second.entity(), request->account());
-	}
-	l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &l2ms::LoginService_Stub::LoginAccount);
-	///<<< END WRITING YOUR CODE Login
+///<<< BEGIN WRITING YOUR CODE Login
+    //ÊµãËØïÁî®‰æãËøûÊé•‰∏çÁôªÂΩïÈ©¨‰∏äÊñ≠Á∫øÔºå
+    //Ë¥¶Âè∑ÁôªÂΩïÈ©¨‰∏äÂú®redis ÈáåÈù¢ÔºåËÄÉËôëÁ¨¨‰∏ÄÂ§©Ê≥®ÂÜåÂæàÂ§öË¥¶Âè∑ÁöÑÊó∂ÂÄôË¥¶Âè∑ÂÜÖÂ≠òÂæàÂ§öÔºå‰ΩïÊó∂ÂõûÊî∂
+    //login master
+    auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
+    auto& s_reqst = c->s_rq_;
+    s_reqst.set_account(request->account());
+    s_reqst.set_login_node_id(g_login_server->node_id());
+    s_reqst.set_connection_id(request->connection_id());
+    auto it =  connections_.emplace(request->connection_id(), common::EntityHandle());
+    if (it.second)
+    {
+        reg.emplace<std::string>(it.first->second.entity(), request->account());
+    }
+    l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &l2ms::LoginService_Stub::LoginAccount);
+///<<< END WRITING YOUR CODE Login
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
-	const gw2l::CreatePlayerRequest* request,
-	gw2l::CreatePlayerResponse* response,
-	::google::protobuf::Closure* done)
+    const gw2l::CreatePlayerRequest* request,
+    gw2l::CreatePlayerResponse* response,
+    ::google::protobuf::Closure* done)
 {
-	///<<< BEGIN WRITING YOUR CODE CreatPlayer
-		// login process
-		//check name rule
-	auto cit = connections_.find(request->connection_id());
-	if (cit == connections_.end())
-	{
-		ReturnCloseureError(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
-	}
-	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
-	if (nullptr == p_player)
-	{
-		ReturnCloseureError(REG_LOGIN_CREATEPLAYER_CONNECTION_ACCOUNT_EMPTY);
-	}
-	auto& ap = *p_player;
-	CheckReturnCloseureError(ap->CreatePlayer());
+///<<< BEGIN WRITING YOUR CODE CreatPlayer
+    // login process
+    //check name rule
+    auto cit = connections_.find(request->connection_id());
+    if (cit == connections_.end())
+    {
+        ReturnCloseureError(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+    }
+    auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
+    if (nullptr == p_player)
+    {
+        ReturnCloseureError(REG_LOGIN_CREATEPLAYER_CONNECTION_ACCOUNT_EMPTY);
+    }
+    auto& ap = *p_player;
+    CheckReturnCloseureError(ap->CreatePlayer());
 
-	// database process
-	auto c(std::make_shared<CreatePlayerRpcReplied::element_type>(response, done));
-	c->s_rq_.set_connection_id(request->connection_id());
-	c->s_rq_.set_account(ap->account());
-	l2db_login_stub_.CallMethodString(this,
-		&LoginServiceImpl::CreatePlayerDbReplied,
-		c,
-		&l2db::LoginService_Stub::CreatePlayer);
-	///<<< END WRITING YOUR CODE CreatPlayer
+    // database process
+    auto c(std::make_shared<CreatePlayerRpcReplied::element_type>(response, done));
+    c->s_rq_.set_connection_id(request->connection_id());
+    c->s_rq_.set_account(ap->account());
+    l2db_login_stub_.CallMethodString(this,
+        &LoginServiceImpl::CreatePlayerDbReplied,
+        c,
+        &l2db::LoginService_Stub::CreatePlayer);
+///<<< END WRITING YOUR CODE CreatPlayer
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-	const gw2l::EnterGameRequest* request,
-	gw2l::EnterGameResponse* response,
-	::google::protobuf::Closure* done)
+    const gw2l::EnterGameRequest* request,
+    gw2l::EnterGameResponse* response,
+    ::google::protobuf::Closure* done)
 {
-	///<<< BEGIN WRITING YOUR CODE EnterGame
+///<<< BEGIN WRITING YOUR CODE EnterGame
 	auto connection_id = request->connection_id();
 	auto cit = connections_.find(connection_id);
 	if (cit == connections_.end())
@@ -120,17 +124,17 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		&LoginServiceImpl::EnterGameDbReplied,
 		c,
 		&l2db::LoginService_Stub::EnterGame);
-	///<<< END WRITING YOUR CODE EnterGame
+///<<< END WRITING YOUR CODE EnterGame
 }
 
 void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
-	const gw2l::LeaveGameRequest* request,
-	::google::protobuf::Empty* response,
-	::google::protobuf::Closure* done)
+    const gw2l::LeaveGameRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
 {
-	///<<< BEGIN WRITING YOUR CODE LeaveGame
+///<<< BEGIN WRITING YOUR CODE LeaveGame
 	AutoRecycleClosure cp(done);
-	//¡¨Ω”π˝£¨µ«¬ºπ˝
+	//ËøûÊé•ËøáÔºåÁôªÂΩïËøá
 	auto cit = connections_.find(request->connection_id());
 	if (cit == connections_.end())
 	{
@@ -148,22 +152,22 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	l2ms_login_stub_.CallMethod(ms_request,
 		&l2ms::LoginService_Stub::LeaveGame);
 	connections_.erase(cit);
-	///<<< END WRITING YOUR CODE LeaveGame
+///<<< END WRITING YOUR CODE LeaveGame
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
-	const gw2l::DisconnectRequest* request,
-	::google::protobuf::Empty* response,
-	::google::protobuf::Closure* done)
+    const gw2l::DisconnectRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
 {
-	///<<< BEGIN WRITING YOUR CODE Disconnect
+///<<< BEGIN WRITING YOUR CODE Disconnect
 	AutoRecycleClosure cp(done);
 	auto cit = connections_.find(request->connection_id());
-	if (cit == connections_.end())//¡¨Ω”≤¢√ª”–µ«¬º
+	if (cit == connections_.end())//ËøûÊé•Âπ∂Ê≤°ÊúâÁôªÂΩï
 	{
 		return;
 	}
-	//¡¨Ω”“—æ≠µ«¬ºπ˝
+	//ËøûÊé•Â∑≤ÁªèÁôªÂΩïËøá
 	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
 	if (nullptr == p_player)
 	{
@@ -175,12 +179,15 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	l2ms_login_stub_.CallMethod(ms_disconnect,
 		&l2ms::LoginService_Stub::Disconect);
 	connections_.erase(cit);
-	///<<< END WRITING YOUR CODE Disconnect
+///<<< END WRITING YOUR CODE Disconnect
 }
+
 ///<<<rpc end
-///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+
 void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 {
+	//Âè™ËøûÊé•‰∏çÁôªÂΩï,Âç†Áî®ËøûÊé•
 	// login process
 	// check account rule: empty , errno
 	//check string rule
@@ -193,7 +200,7 @@ void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 	auto& account = d->s_rq_.account();
 	auto& response = d->c_rp_;
 
-	//has data
+	//has dat
 	{
 		auto& player = reg.emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
 		auto ret = player->Login();
@@ -227,67 +234,67 @@ void LoginServiceImpl::LoginAccountDbReplied(LoginRpcReplied d)
 
 void LoginServiceImpl::CreatePlayerDbReplied(CreatePlayerRpcReplied d)
 {
-	auto& srp = d->s_rp_;
-	d->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
-	UpdateAccount(d->s_rq_.connection_id(), srp->account_player());
+    auto& srp = d->s_rp_;
+    d->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
+    UpdateAccount(d->s_rq_.connection_id(), srp->account_player());
 }
 
 void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 {
-	//db º”‘ÿπ˝≥Ã÷–∂œœﬂ¡À
-	auto& srq = d->s_rq_;
-	auto cit = connections_.find(d->c_rp_->connection_id());
-	if (cit == connections_.end())
-	{
-		return;
-	}
-	::gw2l::EnterGameResponse* response = nullptr;
-	::google::protobuf::Closure* done = nullptr;
-	d->Move(response, done);
-	EnterMS(srq.guid(), response->connection_id(), response, done);
+    //db Âä†ËΩΩËøáÁ®ã‰∏≠Êñ≠Á∫ø‰∫Ü
+    auto& srq = d->s_rq_;
+    auto cit = connections_.find(d->c_rp_->connection_id());
+    if (cit == connections_.end())
+    {
+        return;
+    }
+    ::gw2l::EnterGameResponse* response = nullptr;
+    ::google::protobuf::Closure* done = nullptr;
+    d->Move(response, done);
+    EnterMS(srq.guid(), response->connection_id(), response, done);
 }
 
 void LoginServiceImpl::EnterMSReplied(EnterGameMSRpcReplied d)
 {
-	d->c_rp_->set_gs_node_id(d->s_rp_->gs_node_id());
-	connections_.erase(d->s_rq_.connection_id());
+    d->c_rp_->set_gs_node_id(d->s_rp_->gs_node_id());
+    connections_.erase(d->s_rq_.connection_id());
 }
 
 void LoginServiceImpl::EnterMS(common::Guid guid,
-	uint64_t connection_id,
-	::gw2l::EnterGameResponse* response,
-	::google::protobuf::Closure* done)
-{
-	auto it = connections_.find(connection_id);
-	if (connections_.end() == it)
-	{
-		ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
-	}
-	auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
-	cp->s_rq_.set_guid(guid);
-	cp->s_rq_.set_connection_id(response->connection_id());
-	l2ms_login_stub_.CallMethodString(this,
-		&LoginServiceImpl::EnterMSReplied,
-		cp,
-		&l2ms::LoginService_Stub::EnterGame);
+    uint64_t connection_id,
+    ::gw2l::EnterGameResponse* response,
+    ::google::protobuf::Closure* done)
+{   
+    auto it = connections_.find(connection_id);
+    if (connections_.end() == it)
+    {
+        ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
+    }
+    auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
+    cp->s_rq_.set_guid(guid);
+    cp->s_rq_.set_connection_id(response->connection_id());
+    l2ms_login_stub_.CallMethodString(this,
+        &LoginServiceImpl::EnterMSReplied,
+        cp,
+        &l2ms::LoginService_Stub::EnterGame);
 }
 
 void LoginServiceImpl::UpdateAccount(uint64_t connection_id, const ::account_database& a_d)
 {
-	auto cit = connections_.find(connection_id);
-	if (cit == connections_.end())//∂œœﬂ¡À
-	{
-		return;
-	}
-	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
-	if (nullptr == p_player)
-	{
-		return;
-	}
-	auto& ap = *p_player;
-	ap->set_account_data(a_d);
-	ap->OnDbLoaded();
+    auto cit = connections_.find(connection_id);
+    if (cit == connections_.end())//Êñ≠Á∫ø‰∫Ü
+    {
+        return;
+    }
+    auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
+    if (nullptr == p_player)
+    {
+        return;
+    }
+    auto& ap = *p_player;
+    ap->set_account_data(a_d);
+    ap->OnDbLoaded();
 }
-
 ///<<< END WRITING YOUR CODE
+
 }// namespace gw2l
