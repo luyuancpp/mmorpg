@@ -38,7 +38,7 @@ def genheadrpcfun():
     servicenames = []
     for service in rpcarry:
         s = service.strip(' ').split(' ')
-        line = tabstr + 'void ' + s[1] + controller + ',s\n'
+        line = tabstr + 'void ' + s[1] + controller + ',\n'
         servicenames.append(s[1])
         line += tabstr + tabstr + 'const ' + pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
