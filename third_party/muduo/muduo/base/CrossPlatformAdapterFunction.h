@@ -233,51 +233,51 @@ struct tcp_info {
     typedef uint32_t __u32;
     typedef uint64_t __u64;
     __u8	tcpi_state;		   //tcp state: TCP_SYN_SENT,TCP_SYN_RECV,TCP_FIN_WAIT1,TCP_CLOSE etc
-    __u8	tcpi_ca_state;     //congestion state��
-    __u8	tcpi_retransmits;  //�ش�������ʾ��ǰ���ش��İ��������ֵ���ش���Ϻ�����
-    __u8	tcpi_probes;		///* ������ʱ���򱣻ʱ��������δȷ�ϵĶ���*/
-    __u8	tcpi_backoff;		//�������������ʱ������һ�����ֵ��ָ���˱��㷨ָ�����ڴ��ͳ�ʱ�ǻ������
-    __u8	tcpi_options;		//tcpͷ��ѡ���Ƿ��������չ���ӡ�ʱ�����MSS������
-    __u8	tcpi_snd_wscale : 4, tcpi_rcv_wscale : 4; //��չ������ֵ
-    __u8	tcpi_delivery_rate_app_limited : 1;  //���ٱ�־
+    __u8	tcpi_ca_state;     //congestion state：
+    __u8	tcpi_retransmits;  //重传数，表示当前待重传的包数，这个值在重传完毕后清零
+    __u8	tcpi_probes;		///* 持续定时器或保活定时器发送且未确认的段数*/
+    __u8	tcpi_backoff;		//用来计算持续定时器的下一个设计值的指数退避算法指数，在传送超时是会递增。
+    __u8	tcpi_options;		//tcp头部选项是否包含：扩展因子、时间戳、MSS等内容
+    __u8	tcpi_snd_wscale : 4, tcpi_rcv_wscale : 4; //扩展因子数值
+    __u8	tcpi_delivery_rate_app_limited : 1;  //限速标志
 
-    __u32	tcpi_rto;		//�ش���ʱʱ�䣬�����RTT�й�ϵ��RTTԽ��rtoԽ��
-    __u32	tcpi_ato;		//������ʱȷ�ϵĹ�ֵ����λΪ΢��. 
-                            //���յ�TCP����ʱ������ݱ������ϴν��յ�ʱ�������������ƣ��������ӳ�ȷ�϶�ʱ��Ҳ�����
-                            //�����޸ĸ�ֵ
-    __u32	tcpi_snd_mss;	// ���˵�MSS
-    __u32	tcpi_rcv_mss;	// �Զ˵�MSS
+    __u32	tcpi_rto;		//重传超时时间，这个和RTT有关系，RTT越大，rto越大
+    __u32	tcpi_ato;		//用来延时确认的估值，单位为微秒. 
+                            //在收到TCP报文时，会根据本次与上次接收的时间间隔来调整改制，在设置延迟确认定时器也会根据
+                            //条件修改该值
+    __u32	tcpi_snd_mss;	// 本端的MSS
+    __u32	tcpi_rcv_mss;	// 对端的MSS
 
-    __u32	tcpi_unacked;	//δȷ�ϵ����ݶ���
-    __u32	tcpi_sacked;    //2�����壺server����listen�׶Σ����Խ������ӵ��������յ���SACK��������
-    __u32	tcpi_lost;		//�����ڷ��ͳ�ȥ����ʧ�ı��������ش���ɺ�����
-    __u32	tcpi_retrans;   /* �ش���δȷ�ϵ����ݶ��� */
+    __u32	tcpi_unacked;	//未确认的数据段数
+    __u32	tcpi_sacked;    //2个含义：server端在listen阶段，可以接收连接的数量；收到的SACK报文数量
+    __u32	tcpi_lost;		//本端在发送出去被丢失的报文数。重传完成后清零
+    __u32	tcpi_retrans;   /* 重传且未确认的数据段数 */
     __u32	tcpi_fackets;
 
     /* Times. */
-    __u32	tcpi_last_data_sent;	//��ǰʱ��-���һ�����ķ���ʱ�䣬��λ�Ǻ���
-    __u32	tcpi_last_ack_sent;     /* δʹ��*/
-    __u32	tcpi_last_data_recv;	//��ǰʱ��-����������ݰ���ʱ�䣬��λ�Ǻ���
-    __u32	tcpi_last_ack_recv;     //��ǰʱ��-�������ack��ʱ�䣬��λ�Ǻ���
+    __u32	tcpi_last_data_sent;	//当前时间-最近一个包的发送时间，单位是毫秒
+    __u32	tcpi_last_ack_sent;     /* 未使用*/
+    __u32	tcpi_last_data_recv;	//当前时间-最近接收数据包的时间，单位是毫秒
+    __u32	tcpi_last_ack_recv;     //当前时间-最近接收ack的时间，单位是毫秒
 
     /* Metrics. */
-    __u32	tcpi_pmtu;			/* ���һ�θ��µ�·��MTU */
-    __u32	tcpi_rcv_ssthresh;   //��ǰ���մ��ڵĴ�С
-    __u32	tcpi_rtt;			//smoothed round trip time,΢��	
-    __u32	tcpi_rttvar;		//����RTT��ƽ��ƫ���ֵԽ��˵��RTT����Խ��
-    __u32	tcpi_snd_ssthresh;  //ӵ����������ʼ��ֵ
-    __u32	tcpi_snd_cwnd;		//ӵ�����ƴ��ڴ�С
-    __u32	tcpi_advmss;		//���˵�MSS����
-    __u32	tcpi_reordering;	/* û�ж���ʱ������������������ݶ��� */
+    __u32	tcpi_pmtu;			/* 最后一次更新的路径MTU */
+    __u32	tcpi_rcv_ssthresh;   //当前接收窗口的大小
+    __u32	tcpi_rtt;			//smoothed round trip time,微妙	
+    __u32	tcpi_rttvar;		//描述RTT的平均偏差，该值越大，说明RTT抖动越大
+    __u32	tcpi_snd_ssthresh;  //拥塞控制慢开始阈值
+    __u32	tcpi_snd_cwnd;		//拥塞控制窗口大小
+    __u32	tcpi_advmss;		//本端的MSS上限
+    __u32	tcpi_reordering;	/* 没有丢包时，可以重新排序的数据段数 */
 
-    __u32	tcpi_rcv_rtt;		// ��Ϊ���նˣ������RTTֵ����λΪ΢��. ���ֵ���ǶԷ����㲢���͹�����rtt��������Ϊ���նˣ���û�������ݵ������
-                                // ͨ�����շ��Ͷ˷��͵����ݵ��������õ���rttֵ�������ݷ��ͷ���������������ݣ����ֵһ�������Ϊ0��
-    __u32	tcpi_rcv_space;		/* ��ǰ���ջ���Ĵ�С */
+    __u32	tcpi_rcv_rtt;		// 作为接收端，测出的RTT值，单位为微秒. 这个值不是对方计算并传送过来的rtt，而是作为接收端，在没发送数据的情况下
+                                // 通过接收发送端发送的数据的情况计算得到的rtt值。在数据发送方，如果不接受数据，这个值一般情况下为0。
+    __u32	tcpi_rcv_space;		/* 当前接收缓存的大小 */
 
-    __u32	tcpi_total_retrans;  //ͳ�����ش��İ���������������
+    __u32	tcpi_total_retrans;  //统计总重传的包数，持续增长。
 
-    __u64	tcpi_pacing_rate;		//��������
-    __u64	tcpi_max_pacing_rate;	//��������ʣ�Ĭ����unlimited������ͨ��SO_MAX_PACING_RATE������
+    __u64	tcpi_pacing_rate;		//发送速率
+    __u64	tcpi_max_pacing_rate;	//最大发送速率，默认是unlimited，可以通过SO_MAX_PACING_RATE来设置
     __u64	tcpi_bytes_acked;    /* RFC4898 tcpEStatsAppHCThruOctetsAcked */
     __u64	tcpi_bytes_received; /* RFC4898 tcpEStatsAppHCThruOctetsReceived */
     __u32	tcpi_segs_out;	     /* RFC4898 tcpEStatsPerfSegsOut */
