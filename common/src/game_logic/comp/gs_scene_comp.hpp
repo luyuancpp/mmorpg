@@ -11,7 +11,7 @@ namespace common
 {
     using SceneMapComp = std::unordered_map<Guid, entt::entity>;
     using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
-    using PlayersComp = EntitySet;//ÈõÒıÓÃ£¬Òª½â³ıÍæ¼ÒºÍ³¡¾°µÄñîºÏ
+    using PlayersComp = EntitySet;//å¼±å¼•ç”¨ï¼Œè¦è§£é™¤ç©å®¶å’Œåœºæ™¯çš„è€¦åˆ
     using SceneConfigComp = uint32_t;
 
     class SceneEntity
@@ -103,9 +103,9 @@ namespace common
     struct MainSceneServerComp {};
     struct RoomSceneServerComp {};
 
-    struct GSNormalComp{};//game server Õı³£×´Ì¬
-    struct GSMainTainComp{};//game server Î¬»¤×´Ì¬
-    struct GSCrashComp{};//±ÀÀ£×´Ì¬
+    struct GSNormalComp{};//game server æ­£å¸¸çŠ¶æ€
+    struct GSMainTainComp{};//game server ç»´æŠ¤çŠ¶æ€
+    struct GSCrashComp{};//å´©æºƒçŠ¶æ€
 
     struct NoPressureComp {};//
     struct PressureComp {};//

@@ -1,4 +1,4 @@
-﻿#include "gw2l.h"
+#include "gw2l.h"
 ///<<< BEGIN WRITING YOUR CODE  
 #include "muduo/base/Logging.h"
 

@@ -1,4 +1,4 @@
-#include "service_l2ms.h"
+#include "l2ms.h"
 
 #include "muduo/base/Logging.h"
 
@@ -29,7 +29,7 @@ namespace l2ms
         if (lit == logined_accounts_.end() && 
             (PlayerList::GetSingleton().player_size() + logined_accounts_.size()) >= kMaxPlayerSize)
         {
-            //�����¼�������˺�,���˵�ȥ�Ŷ�
+            //如果登录的是新账号,满了得去排队
             response->mutable_error()->set_error_no(RET_LOGIN_MAX_PLAYER_SIZE);
             return;
         }
@@ -37,12 +37,12 @@ namespace l2ms
         if (lit != logined_accounts_.end())
         {
             auto& lc = lit->second;
-            //�������ͬһ����¼������,�ߵ��Ѿ���¼���˺�
+            //如果不是同一个登录服务器,踢掉已经登录的账号
             if (reg.get<AccountLoginNode>(lc.entity()).node_id_ != request->login_node_id())
             {
 
             }
-            else//���߿ͻ��˵�¼��
+            else//告诉客户端登录中
             {
                 response->mutable_error()->set_error_no(RET_LOGIN_LOGIN_ING);
             }

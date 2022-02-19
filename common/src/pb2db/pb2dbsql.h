@@ -1,4 +1,4 @@
-﻿#ifndef COMMON_SRC_PB2DB_PB2DBSQL_H_
+#ifndef COMMON_SRC_PB2DB_PB2DBSQL_H_
 #define COMMON_SRC_PB2DB_PB2DBSQL_H_
 
 #include <cctype>

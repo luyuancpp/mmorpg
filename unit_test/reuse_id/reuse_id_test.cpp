@@ -1,4 +1,4 @@
-﻿#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #include "src/game_logic/reuse_id/reuse_id.h"
 #include "src/reuse_game_id/reuse_game_id.h"

@@ -10,7 +10,7 @@ namespace common
 	using muduo::net::TimerCallback;
 	using muduo::net::EventLoop;
 
-     //AÀàµÄ¶¨Ê±Æ÷²»ÄÜ·Åµ½BÀàÀïÃæ£¬·ñÕßBÀà¶¨Ê±(µ÷ÓÃAÀàº¯Êı)Æ÷×ßµÄÊ±ºòAÒÑ¾­Ïú»Ù
+     //Aç±»çš„å®šæ—¶å™¨ä¸èƒ½æ”¾åˆ°Bç±»é‡Œé¢ï¼Œå¦è€…Bç±»å®šæ—¶(è°ƒç”¨Aç±»å‡½æ•°)å™¨èµ°çš„æ—¶å€™Aå·²ç»é”€æ¯
 	class TimerTask
 	{
 	public:

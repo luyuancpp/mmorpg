@@ -4,10 +4,10 @@
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "src/event/event.h"
-#include "src/login/service_l2ms.h"
+#include "src/service/l2ms.h"
 #include "src/redis_client/redis_client.h"
 #include "src/game/service_g2ms.h"
-#include "src/gateway/service_gw2ms.h"
+#include "src/service/gw2ms.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
