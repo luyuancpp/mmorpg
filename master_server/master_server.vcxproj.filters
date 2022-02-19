@@ -18,7 +18,7 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\login\service_l2ms.cpp">
+    <ClCompile Include="src\service\l2ms.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\master_server.cpp">
@@ -27,7 +27,7 @@
     <ClCompile Include="src\game\service_g2ms.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\gateway\service_gw2ms.cpp">
+    <ClCompile Include="src\service\gw2ms.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\sys\scene_sys.cpp">
@@ -53,7 +53,7 @@
     <ClInclude Include="src\master_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\login\service_l2ms.h">
+    <ClInclude Include="src\service\l2ms.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\master_registry\master_registry.h">
@@ -62,7 +62,7 @@
     <ClInclude Include="src\game\service_g2ms.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\gateway\service_gw2ms.h">
+    <ClInclude Include="src\service\gw2ms.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\sys\scene_sys.hpp">
