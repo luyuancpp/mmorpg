@@ -1,4 +1,4 @@
-#include "service_ms2gw.h"
+#include "ms2gw.h"
 
 #include "src/game/game_client.h"
 #include "src/game_logic/comp/player_comp.hpp"

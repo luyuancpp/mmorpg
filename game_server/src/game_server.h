@@ -5,8 +5,8 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/comp/master.hpp"
-#include "src/service/service_ms2g.h"
-#include "src/service/service_rg2g.h"
+#include "src/service/ms2g.h"
+#include "src/service/rg2g.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/rpc_stub.h"

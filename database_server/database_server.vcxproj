@@ -153,11 +153,11 @@
   <ItemGroup>
     <ClCompile Include="src\database_server.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\service\service_l2db.cpp" />
+    <ClCompile Include="src\service\l2db.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\database_server.h" />
-    <ClInclude Include="src\service\service_l2db.h" />
+    <ClInclude Include="src\service\l2db.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
