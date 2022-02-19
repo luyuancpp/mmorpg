@@ -44,8 +44,8 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     if (!conn->connected())
     {
         auto connection_id = uint64_t(conn.get());
-        //¶ÏÁËÏßÖ®ºó²»ÄÜ°ÑÏûÏ¢´®µ½±ðÈËµÄµØ·½£¬´®»°
-        //Èç¹ûÎÒÃ»µÇÂ¼¾Í·¢ËÍÆäËûÐ­Òéµ½master game server ÔõÃ´°ì
+        //æ–­äº†çº¿ä¹‹åŽä¸èƒ½æŠŠæ¶ˆæ¯ä¸²åˆ°åˆ«äººçš„åœ°æ–¹ï¼Œä¸²è¯
+        //å¦‚æžœæˆ‘æ²¡ç™»å½•å°±å‘é€å…¶ä»–åè®®åˆ°master game server æ€Žä¹ˆåŠž
         gw2l::DisconnectRequest request;
         request.set_connection_id(connection_id);
         g_client_sessions_->erase(connection_id);
@@ -53,7 +53,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     }
     else
     {
-        //ºÜ¼«¶ËÇé¿öÏÂ»áÓÐÎÊÌâ,Èç¹û×ßÁËÒ»È¦Ç°ÃæµÄÈË»¹Ã»ÏÂÏß£¬ÔÚÏÂÒ»¸öidÏÂÏßµÄË²¼äÓÖÖØÓÃÁË,¾Í»áµ¼ÖÂ´®»°
+        //å¾ˆæžç«¯æƒ…å†µä¸‹ä¼šæœ‰é—®é¢˜,å¦‚æžœèµ°äº†ä¸€åœˆå‰é¢çš„äººè¿˜æ²¡ä¸‹çº¿ï¼Œåœ¨ä¸‹ä¸€ä¸ªidä¸‹çº¿çš„çž¬é—´åˆé‡ç”¨äº†,å°±ä¼šå¯¼è‡´ä¸²è¯
         GateClient gc;
         g_client_sessions_->emplace(uint64_t(conn.get()), gc);
     }
@@ -122,7 +122,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
 {
-    //ÕâÀïÉèÖÃplayer id »¹ÊÇ»áÓÐ´®»°ÎÊÌâ
+    //è¿™é‡Œè®¾ç½®player id è¿˜æ˜¯ä¼šæœ‰ä¸²è¯é—®é¢˜
     auto& resp_ = cp->c_rp_;
     if (resp_.error().error_no() == RET_OK)
     {

@@ -1,4 +1,4 @@
-﻿#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #include "src/return_code/error_code.h"
 #include "src/login_state/login_state_machine.h"

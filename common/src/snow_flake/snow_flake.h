@@ -11,7 +11,7 @@
 //https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_uuid
 
 
-//ʱ�ӻص�
+//Ê±ÖÓ»Øµ÷
 
 namespace common
 {

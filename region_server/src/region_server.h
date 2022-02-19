@@ -1,4 +1,4 @@
-﻿#ifndef REGION_SERVER_SRC_REGION_SERVER_H_
+#ifndef REGION_SERVER_SRC_REGION_SERVER_H_
 #define REGION_SERVER_SRC_REGION_SERVER_H_
 
 #include "muduo/net/EventLoop.h"

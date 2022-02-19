@@ -26,7 +26,7 @@ namespace GameMMR
     {
         E_NOMAL_TEAM_MATCH = 0,
         E_RELATION_UNION_ALLY = 1,//
-        E_CROSS_SERVER_MATCH_DUNGEON_TYPE,//¿ç·þÆ¥Åä
+        E_CROSS_SERVER_MATCH_DUNGEON_TYPE,//Â¿Ã§Â·Ã¾Ã†Â¥Ã…Ã¤
         E_MATCH_3V3,
         E_MATCH_15V15,
         E_TEST_NOMAL_TEAM_RANK_MATCH,

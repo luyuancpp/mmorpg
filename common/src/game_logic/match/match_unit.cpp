@@ -427,7 +427,7 @@ namespace GameMMR
             }
         }
 
-        //¸öÊı¹»ÁËÔõÃ´¼Ó¶¼ĞĞ
+        //ä¸ªæ•°å¤Ÿäº†æ€ä¹ˆåŠ éƒ½è¡Œ
         if (fullProfession)
         {
             return OR_OK;
@@ -438,7 +438,7 @@ namespace GameMMR
             return OR_OK;
         }
 
-        //ĞèÇóÀïÃæµÄÖ°ÒµÖ±½ÓÍ¨¹ı
+        //éœ€æ±‚é‡Œé¢çš„èŒä¸šç›´æ¥é€šè¿‡
         for (auto && it : vNeedPrefessions)
         {
             if (it.first == professionId)

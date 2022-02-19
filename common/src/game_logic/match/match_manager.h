@@ -159,7 +159,7 @@ namespace GameMMR
         send_callback_type m_oSendCallBack;
         send_scene_callback_type m_oSendGameCallBack;
         enter_dungeon_callback m_oEnterDungeonCallBack;
-		mirror_match_callback_type m_oMirrorMatchCallBack;	//镜像准备回调
+		mirror_match_callback_type m_oMirrorMatchCallBack;	//闀滃儚鍑嗗鍥炶皟
     };
 }//namespace GameMMR
 

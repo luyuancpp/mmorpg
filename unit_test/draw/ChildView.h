@@ -1,5 +1,5 @@
 
-// ChildView.h : CChildView ÀàµÄ½Ó¿Ú
+// ChildView.h : CChildView ç±»çš„æ¥å£
 //
 
 
@@ -10,30 +10,30 @@
 #include <unordered_map>
 
 #include "Shape.h"
-// CChildView ´°¿Ú
+// CChildView çª—å£
 
 class CChildView : public CWnd
 {
-// ¹¹Ôì
+// æ„é€ 
 public:
 	
 	CChildView();
 
-// ÌØĞÔ
+// ç‰¹æ€§
 public:
 
-// ²Ù×÷
+// æ“ä½œ
 public:
 
-// ÖØĞ´
+// é‡å†™
 	protected:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 
-// ÊµÏÖ
+// å®ç°
 public:
 	virtual ~CChildView();
 
-	// Éú³ÉµÄÏûÏ¢Ó³Éäº¯Êı
+	// ç”Ÿæˆçš„æ¶ˆæ¯æ˜ å°„å‡½æ•°
 protected:
 	afx_msg void OnPaint();
 	DECLARE_MESSAGE_MAP()
