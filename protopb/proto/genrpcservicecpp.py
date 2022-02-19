@@ -1,5 +1,8 @@
 import os
 
+import md5tool
+import shutil
+
 rpcarry = []
 servicenames = []
 pkg = ''
@@ -14,6 +17,11 @@ cpprpcpart = 2
 cppmaxpart = 4
 controller = '(::google::protobuf::RpcController* controller'
 hfilename = ''
+servicedir = './service/'
+
+
+if not os.path.exists(servicedir):
+    os.makedirs(servicedir)
 
 def parsefile(filename):
     global rpcarry
@@ -78,11 +86,11 @@ def genheadfile(filename, writedir):
     global hfilename
     headfun = [headfilestart, namespacebegin, headclass]
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
-    newheadfilename = writedir + '/' + filename.replace('.proto', '.h.new')
+    folder_path, hfilename = os.path.split(hfullfilename)    
+    newheadfilename = servicedir + hfilename.replace('.proto', '.h')
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
-    pbfolder_path, hfilename = os.path.split(hfullfilename)
     newstr += '#include "' + hfilename.replace('.h', '') + '.pb.h"\n'
     try:
         with open(hfullfilename,'r+', encoding='utf-8') as file:
@@ -125,7 +133,7 @@ def gencppfile(filename, writedir):
     global cppmaxpart
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp')
-    newcppfilename = writedir + '/' + filename.replace('.proto', '.cpp.new')
+    newcppfilename = servicedir + hfilename.replace('.h', '.cpp')
     newstr = '#include "' + hfilename + '"\n'
     global servicenames
     try:
@@ -200,9 +208,29 @@ def gencppfile(filename, writedir):
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
+
+def md5copy(filename, writedir, fileextend):
+        gennewfilename = servicedir + filename.replace('.proto', fileextend)
+        filenamemd5 = gennewfilename + '.md5'
+        error = None
+        emptymd5 = False
+        if  not os.path.exists(filenamemd5):
+            emptymd5 = True
+        else:
+            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
+        hfullfilename = writedir + '/' + filename.replace('.proto', fileextend)
+        if error == None and os.path.exists(hfullfilename) and emptymd5 == False:
+            return
+        print("copy %s ---> %s" % (gennewfilename, hfullfilename))
+        if not os.path.exists(filenamemd5):
+                md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+        shutil.copy(gennewfilename, hfullfilename)
+
 def generate(filename, writedir):
     parsefile(filename)
     genheadfile(filename, writedir)
     gencppfile(filename, writedir)
+    md5copy(filename, writedir, '.h')
+    md5copy(filename, writedir, '.cpp')
 
 generate('gw2l.proto', '../../login_server/src/service')
