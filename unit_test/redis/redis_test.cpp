@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 
 #include "c2gw.pb.h"
 

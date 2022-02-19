@@ -1,4 +1,4 @@
-﻿#include <gtest/gtest.h>
+#include <gtest/gtest.h>
 
 #include "src/game_config/condition_config.h"
 #include "src/game_config/mission_config.h"

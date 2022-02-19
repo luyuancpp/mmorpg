@@ -1,4 +1,4 @@
-﻿#include "pb2dbsql.h"
+#include "pb2dbsql.h"
 
 #include <boost/algorithm/string.hpp>
 

@@ -349,8 +349,8 @@ namespace GameMMR
     {
         std::size_t matchsize = 0;
 
-        room_camps_vec_type roomcamps(GetMaxRoomCampSize());//15v15: 2ÕóÓª
-        std::size_t nTeamSize = GetPerCampPlayerSize() / GetPerTeamMemberMaxSize();//15v15: 3¶ÓÎé
+        room_camps_vec_type roomcamps(GetMaxRoomCampSize());//15v15: 2Ã•Ã³Ã“Âª
+        std::size_t nTeamSize = GetPerCampPlayerSize() / GetPerTeamMemberMaxSize();//15v15: 3Â¶Ã“ÃŽÃ©
 
         match_queue_type successList;
         i32_v_type  vEraseIndex;
