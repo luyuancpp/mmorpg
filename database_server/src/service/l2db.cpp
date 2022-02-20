@@ -9,18 +9,19 @@
 #include "comp.pb.h"
 
 using namespace common;
-///<<< END WRITING YOUR COD
-namespace l2db
-{
+///<<< END WRITING YOUR CODE
+
+namespace l2db{
 ///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR COD
+///<<< END WRITING YOUR CODE
+
 ///<<<rpc begin
-void LoginServiceImpl::Login(::google::protobuf::RpcController* controller, 
+void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     const l2db::LoginRequest* request,
-    l2db::LoginResponse* response, 
+    l2db::LoginResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE Login
     AutoRecycleClosure cp(done);
     ::account_database& db = *response->mutable_account_player();
     auto& account = request->account();
@@ -35,15 +36,15 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         db.set_account(account);
         redis_->Save(db, account);
     }        
-///<<< END WRITING YOUR COD
+///<<< END WRITING YOUR CODE Login
 }
 
 void LoginServiceImpl::CreatePlayer(::google::protobuf::RpcController* controller,
-    const ::l2db::CreatePlayerRequest* request, 
-    ::l2db::CreatePlayerResponse* response, 
+    const l2db::CreatePlayerRequest* request,
+    l2db::CreatePlayerResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE CreatePlayer
     AutoRecycleClosure cp(done);
     ::account_database& r_db = *response->mutable_account_player();
     redis_->Load(r_db, request->account());
@@ -55,13 +56,13 @@ void LoginServiceImpl::CreatePlayer(::google::protobuf::RpcController* controlle
     r_db.mutable_simple_players()->add_players()->set_guid(response->guid());
     redis_->Save(new_player, new_player.guid());
     redis_->Save(r_db, r_db.account());
-///<<< END WRITING YOUR COD
+///<<< END WRITING YOUR CODE CreatePlayer
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-const l2db::EnterGameRequest* request,
-l2db::EnterGameResponse* response,
-::google::protobuf::Closure* done)
+    const l2db::EnterGameRequest* request,
+    l2db::EnterGameResponse* response,
+    ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterGame
     AutoRecycleClosure cp(done);
@@ -72,9 +73,11 @@ l2db::EnterGameResponse* response,
     database_->LoadOne(new_player, where_case);
     assert(new_player.guid() > 0);
     redis_->Save(new_player, new_player.guid());
-    ///<<< END WRITING YOUR COD
+///<<< END WRITING YOUR CODE EnterGame
 }
+
 ///<<<rpc end
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR
+///<<< END WRITING YOUR CODE
+
 }// namespace l2db

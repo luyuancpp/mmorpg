@@ -27,10 +27,10 @@
     <ClCompile Include="src\factories\server_global_entity.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\rg2g.cpp">
+    <ClCompile Include="src\service\replied_ms2g.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\replied_ms2g.cpp">
+    <ClCompile Include="src\service\rg2g.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,13 +44,13 @@
     <ClInclude Include="src\factories\server_global_entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\rg2g.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\comp\master.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\replied_ms2g.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\rg2g.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

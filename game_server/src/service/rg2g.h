@@ -1,21 +1,20 @@
-#ifndef GAME_SERVER_SRC_MASTER_SERVICE_MS2G_H_
-#define GAME_SERVER_SRC_MASTER_SERVICE_MS2G_H_
-
+#ifndef GAME_SERVER_SRC_SERVICE_RG2G_H_
+#define GAME_SERVER_SRC_SERVICE_RG2G_H_
 #include "rg2g.pb.h"
-
-namespace rg2g
-{
-class Rg2gServiceImpl : public Rg2gService
-{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+namespace rg2g{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+class Rg2gServiceImpl : public Rg2gService{
 public:
-    virtual void EnterRoom(::google::protobuf::RpcController* controller,
-        const ::google::protobuf::Empty* request,
+    void EnterRoom(::google::protobuf::RpcController* controller,
+        const rg2g::Rg2gTest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-private:
-
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 };
-}//namespace rg2g
-
-#endif//GAME_SERVER_SRC_MASTER_SERVICE_MS2G_H_
+}// namespace rg2g
+#endif//GAME_SERVER_SRC_SERVICE_RG2G_H_
