@@ -1,5 +1,5 @@
 #include "gw2ms.h"
-
+///<<< BEGIN WRITING YOUR CODE
 #include "muduo/net/InetAddress.h"
 
 #include "src/factories/server_global_entity.hpp"
@@ -13,14 +13,18 @@
 
 using namespace common;
 using namespace master;
-
+///<<< END WRITING YOUR CODE
 namespace gw2ms
 {
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+///<<<rpc begin
     void Gw2msServiceImpl::GwConnectMaster(::google::protobuf::RpcController* controller, 
         const ::gw2ms::ConnectRequest* request, 
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
+///<<< BEGIN WRITING YOUR CODE
         AutoRecycleClosure cp(done);
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         for (auto e : reg.view<RpcServerConnection>())
@@ -38,6 +42,7 @@ namespace gw2ms
         {
             g_master_server->GatewayConnectGame(e);
         }
+ ///<<< END WRITING YOUR CODE
     }
 
     void Gw2msServiceImpl::PlayerDisconnect(::google::protobuf::RpcController* controller, 
@@ -45,6 +50,7 @@ namespace gw2ms
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
+///<<< BEGIN WRITING YOUR CODE
         AutoRecycleClosure cp(done);
         auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
@@ -60,6 +66,7 @@ namespace gw2ms
 
         PlayerList::GetSingleton().LeaveGame(guid);
         assert(!PlayerList::GetSingleton().HasPlayer(guid));
+ ///<<< END WRITING YOUR CODE
     }
 
     void Gw2msServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
@@ -67,6 +74,7 @@ namespace gw2ms
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
+///<<< BEGIN WRITING YOUR CODE
         AutoRecycleClosure cp(done);
         auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
@@ -88,6 +96,9 @@ namespace gw2ms
         assert(!PlayerList::GetSingleton().HasPlayer(guid));
 
         connection_map.erase(it);
+ ///<<< END WRITING YOUR CODE
     }
-
+ ///<<<rpc end
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }//namespace gw2ms

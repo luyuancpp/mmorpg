@@ -1,5 +1,5 @@
 #include "l2ms.h"
-
+///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
 #include "src/game_logic/comp/player_comp.hpp"
@@ -16,14 +16,19 @@ using namespace master;
 using namespace common;
 
 std::size_t kMaxPlayerSize = 1000;
+///<<< END WRITING YOUR CODE
 
 namespace l2ms
 {
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+///<<<rpc begin
     void LoginServiceImpl::LoginAccount(::google::protobuf::RpcController* controller,
         const ::l2ms::LoginAccountRequest* request,
         ::l2ms::LoginAccountResponse* response,
         ::google::protobuf::Closure* done)
     {
+///<<< BEGIN WRITING YOUR CODE
         AutoRecycleClosure cp(done);
         auto lit = logined_accounts_.find(request->account());
         if (lit == logined_accounts_.end() && 
@@ -57,6 +62,7 @@ namespace l2ms
                 reg.emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id()});
             }
         }
+ ///<<< END WRITING YOUR CODE
     }
 
     void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
@@ -64,6 +70,7 @@ namespace l2ms
         ::l2ms::EnterGameResponese* response,
         ::google::protobuf::Closure* done)
     {
+///<<< BEGIN WRITING YOUR CODE
         AutoRecycleClosure cp(done);
         auto guid = request->guid();   
         auto connection_id = request->connection_id();
@@ -78,6 +85,7 @@ namespace l2ms
             response->set_gs_node_id(SessionReg::GetSingleton().get<uint32_t>(e));
             break;
         }
+ ///<<< END WRITING YOUR CODE
     }
 
     void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
@@ -85,6 +93,7 @@ namespace l2ms
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
+///<<< BEGIN WRITING YOUR CODE
         AutoRecycleClosure cp(done);
         auto guid = request->guid();
         auto e = PlayerList::GetSingleton().GetPlayer(guid);
@@ -100,6 +109,7 @@ namespace l2ms
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
+///<<< BEGIN WRITING YOUR CODE
         AutoRecycleClosure cp(done);
         auto guid = request->guid();
         auto e = PlayerList::GetSingleton().GetPlayer(guid);
@@ -112,8 +122,11 @@ namespace l2ms
         PlayerList::GetSingleton().LeaveGame(guid);
         assert(!PlayerList::GetSingleton().HasPlayer(guid));
         assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
+ ///<<< END WRITING YOUR CODE
     }
-
+///<<<rpc end
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }//namespace master
 
 

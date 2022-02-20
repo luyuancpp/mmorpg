@@ -9,8 +9,8 @@ namespace gateway
 }//namespace gateway
 ///<<< END WRITING YOUR CODE
 namespace ms2gw{
-    ///<<< BEGIN WRITING YOUR CODE
-    ///<<< END WRITING YOUR CODE
+ ///<<< BEGIN WRITING YOUR CODE
+ ///<<< END WRITING YOUR CODE
 class Ms2gwServiceImpl : public Ms2gwService{
 public:
     void StartGS(::google::protobuf::RpcController* controller,
