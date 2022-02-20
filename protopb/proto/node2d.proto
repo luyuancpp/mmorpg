@@ -47,6 +47,6 @@ message RegionInfoResponse
 service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
   rpc StartGS (StartGSRequest) returns (StartGSResponse);
-  rpc StartRegionServer(RegionInfoRequest) returns (RegionInfoResponse);
-  rpc LoadRegionDeploy(RegionInfoRequest) returns (RegionInfoResponse);
+  rpc StartRegionServer (RegionInfoRequest) returns (RegionInfoResponse);
+  rpc LoadRegionDeploy (RegionInfoRequest) returns (RegionInfoResponse);
 }
