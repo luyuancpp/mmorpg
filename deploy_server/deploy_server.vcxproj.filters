@@ -21,7 +21,7 @@
     <ClCompile Include="src\deploy_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\deploy.cpp">
+    <ClCompile Include="src\service\node2d.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\reuse_game_id\reuse_game_id.cpp">
@@ -32,7 +32,7 @@
     <ClInclude Include="src\deploy_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\deploy.h">
+    <ClInclude Include="src\service\node2d.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\reuse_game_id\reuse_game_id.h">

@@ -150,12 +150,12 @@
     <ClCompile Include="src\deploy_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\reuse_game_id\reuse_game_id.cpp" />
-    <ClCompile Include="src\service\deploy.cpp" />
+    <ClCompile Include="src\service\node2d.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\deploy_server.h" />
     <ClInclude Include="src\reuse_game_id\reuse_game_id.h" />
-    <ClInclude Include="src\service\deploy.h" />
+    <ClInclude Include="src\service\node2d.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
