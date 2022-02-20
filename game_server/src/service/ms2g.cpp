@@ -12,6 +12,7 @@ using namespace common;
 namespace ms2g{
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE
+
 /// ///<<<rpc begin
 void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     const ms2g::EnterGameRequest* request,
