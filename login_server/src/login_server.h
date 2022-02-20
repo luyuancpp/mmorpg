@@ -9,7 +9,7 @@
 #include "src/server_common/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
 
-#include "deploy.pb.h"
+#include "node2d.pb.h"
 
 namespace login
 {

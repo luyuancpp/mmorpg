@@ -1,7 +1,7 @@
 #ifndef COMMON_SRC_NET_DEPLOY_RPCCLIENT_DEPLOY_RPC_CLIENT_H_
 #define COMMON_SRC_NET_DEPLOY_RPCCLIENT_DEPLOY_RPC_CLIENT_H_
 
-#include "deploy.pb.h"
+#include "node2d.pb.h"
 
 #include "src/server_common/rpc_stub.h"
 

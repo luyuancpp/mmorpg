@@ -60,9 +60,6 @@
     <ClInclude Include="pbc\client_logic_common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pbc\deploy.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="pbc\deploy_database_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -97,6 +94,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="pbc\rg2g.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="pbc\node2d.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -146,9 +146,6 @@
     <ClCompile Include="pbc\client_logic_common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="pbc\deploy.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="pbc\deploy_database_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -183,6 +180,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="pbc\rg2g.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="pbc\node2d.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
