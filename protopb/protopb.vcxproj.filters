@@ -96,7 +96,7 @@
     <ClInclude Include="pbc\rg2g.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="pbc\node2d.pb.h">
+    <ClInclude Include="pbc\node2deploy.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -182,7 +182,7 @@
     <ClCompile Include="pbc\rg2g.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="pbc\node2d.pb.cc">
+    <ClCompile Include="pbc\node2deploy.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
