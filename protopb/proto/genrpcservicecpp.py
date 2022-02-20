@@ -225,9 +225,8 @@ def md5copy(filename, writedir, fileextend):
         hfullfilename = writedir + '/' + filename.replace('.proto', fileextend)
         if error == None and os.path.exists(hfullfilename) and emptymd5 == False:
             return
-        print("copy %s ---> %s" % (gennewfilename, hfullfilename))
-        if not os.path.exists(filenamemd5):
-                md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+        --print("copy %s ---> %s" % (gennewfilename, hfullfilename))
+        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, hfullfilename)
 
 def generate(filename, writedir):
