@@ -1,6 +1,6 @@
-#ifndef DEPLOY_SERVER_SRC_SERVICE_NODE2D_H_
-#define DEPLOY_SERVER_SRC_SERVICE_NODE2D_H_
-#include "node2d.pb.h"
+#ifndef DEPLOY_SERVER_SRC_SERVICE_NODE2DEPLOY_H_
+#define DEPLOY_SERVER_SRC_SERVICE_NODE2DEPLOY_H_
+#include "node2deploy.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/mysql_database/mysql_database.h"
 
@@ -48,4 +48,4 @@ public:
         ///<<< END WRITING YOUR CODE
 };
 }// namespace deploy
-#endif//DEPLOY_SERVER_SRC_SERVICE_NODE2D_H_
+#endif//DEPLOY_SERVER_SRC_SERVICE_NODE2DEPLOY_H_

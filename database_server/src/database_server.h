@@ -13,7 +13,7 @@
 
 #include "src/service/l2db.h"
 
-#include "node2d.pb.h"
+#include "node2deploy.pb.h"
 
 namespace database
 {
