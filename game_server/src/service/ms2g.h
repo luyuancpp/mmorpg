@@ -13,8 +13,8 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-	///<<< BEGIN WRITING YOUR CODE
-	///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 };
 }// namespace ms2g
 #endif//GAME_SERVER_SRC_SERVICE_MS2G_H_

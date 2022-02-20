@@ -30,7 +30,7 @@ public:
         deploy::RegionInfoResponse* response,
         ::google::protobuf::Closure* done)override;
 
-	///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
 		using ServerId = uint32_t;
 		using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
 		using GSMap = std::unordered_map<uint32_t, ::game_server_db>;
