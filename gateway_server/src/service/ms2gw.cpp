@@ -1,5 +1,6 @@
 #include "ms2gw.h"
 
+///<<< BEGIN WRITING YOUR CODE
 #include "src/game/game_client.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
@@ -12,14 +13,19 @@
 
 using namespace  gateway;
 using namespace  common;
+///<<< END WRITING YOUR CODE
 
 namespace ms2gw
 {
+	///<<< BEGIN WRITING YOUR CODE
+	///<<< END WRITING YOUR CODE
+    /// ///<<<rpc begin
     void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
         const ::ms2gw::StartGSRequest* request, 
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)
     {
+        ///<<< BEGIN WRITING YOUR CODE
         AutoRecycleClosure cp(done);
         InetAddress gs_addr(request->ip(), request->port());
         for (auto e : reg.view<InetAddress>())
@@ -40,6 +46,7 @@ namespace ms2gw
         SessionReg::GetSingleton().emplace<InetAddress>(e, gs_addr);
         SessionReg::GetSingleton().emplace<uint32_t>(e, request->node_id());
         LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->node_id();
+        ///<<< END WRITING YOUR CODE
     }
 
     void Ms2gwServiceImpl::StopGS(::google::protobuf::RpcController* controller, 
@@ -47,6 +54,7 @@ namespace ms2gw
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
+        ///<<< BEGIN WRITING YOUR CODE 
         AutoRecycleClosure cp(done);
         for (auto e : SessionReg::GetSingleton().view<InetAddress>())
         {
@@ -59,6 +67,7 @@ namespace ms2gw
             SessionReg::GetSingleton().destroy(e);
             break;
         }
+        ///<<< END WRITING YOUR CODE
     }
 
     void Ms2gwServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* controller, 
@@ -66,6 +75,7 @@ namespace ms2gw
         ::google::protobuf::Empty* response, 
         ::google::protobuf::Closure* done)
     {
+        ///<<< BEGIN WRITING YOUR CODE 
         AutoRecycleClosure cp(done);
         auto it = g_client_sessions_->find(request->connection_id());
         if (it == g_client_sessions_->end())
@@ -73,7 +83,11 @@ namespace ms2gw
             return;
         }
         it->second.node_id_ = request->node_id();
+        ///<<< END WRITING YOUR CODE
     }
+///<<<rpc end
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 
