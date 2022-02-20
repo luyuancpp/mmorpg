@@ -1,8 +1,8 @@
-#ifndef SRC_LOGIN_SERVICE_SERVICE_H_
-#define SRC_LOGIN_SERVICE_SERVICE_H_
-
+#ifndef DATABASE_SERVER_SRC_SERVICE_H_
+#define DATABASE_SERVER_SRC_SERVICE_H_
 #include "l2db.pb.h"
-
+#include "l2db.pb.h"
+///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "src/server_common/rpc_server.h"
 #include "src/mysql_database/mysql_database.h"
@@ -20,34 +20,36 @@ namespace common
     class RedisClient;
 }//namespace common;
 
-namespace l2db
-{
-    class LoginServiceImpl : public LoginService
-    {
-    public:
-        using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
-        using RedisClientPtr = std::shared_ptr<common::RedisClient>;
+///<<< END WRITING YOUR CODE
+namespace l2db{
+    ///<<< BEGIN WRITING YOUR CODE
+    ///<<< END WRITING YOUR CODE
+class LoginServiceImpl : public LoginService{
+public:
+    void Login(::google::protobuf::RpcController* controller,
+        const l2db::LoginRequest* request,
+        l2db::LoginResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-        static LoginServiceImpl& GetSingleton()
-        {
-            thread_local LoginServiceImpl singleton;
-            return singleton;
-        }
+    void CreatePlayer(::google::protobuf::RpcController* controller,
+        const l2db::CreatePlayerRequest* request,
+        l2db::CreatePlayerResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-        virtual void Login(::google::protobuf::RpcController* controller,
-            const l2db::LoginRequest* request,
-            l2db::LoginResponse* response,
-            ::google::protobuf::Closure* done)override;
+    void EnterGame(::google::protobuf::RpcController* controller,
+        const l2db::EnterGameRequest* request,
+        l2db::EnterGameResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-        virtual void CreatePlayer(::google::protobuf::RpcController* controller,
-            const ::l2db::CreatePlayerRequest* request,
-            ::l2db::CreatePlayerResponse* response,
-            ::google::protobuf::Closure* done)override;
+        ///<<< BEGIN WRITING YOUR CODE
+		using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
+		using RedisClientPtr = std::shared_ptr<common::RedisClient>;
 
-        virtual void EnterGame(::google::protobuf::RpcController* controller,
-            const ::l2db::EnterGameRequest* request,
-            ::l2db::EnterGameResponse* response,
-            ::google::protobuf::Closure* done)override;
+		static LoginServiceImpl& GetSingleton()
+		{
+			thread_local LoginServiceImpl singleton;
+			return singleton;
+		}
 
         void set_player_mysql_client(MysqlClientPtr& ptr)
         {
@@ -61,8 +63,7 @@ namespace l2db
     private:
         MysqlClientPtr database_;
         RedisClientPtr redis_;
-    };
-
-}  // namespace l2db
-
-#endif // SRC_LOGIN_SERVICE_SERVICE_H_
+        ///<<< END WRITING YOUR CODE
+};
+}// namespace l2db
+#endif//DATABASE_SERVER_SRC_SERVICE_H_

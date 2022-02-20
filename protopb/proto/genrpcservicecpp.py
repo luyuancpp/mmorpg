@@ -234,3 +234,4 @@ def generate(filename, writedir):
     md5copy(filename, writedir, '.cpp')
 
 generate('gw2l.proto', '../../login_server/src/service')
+generate('l2db.proto', '../../database_server/src/service')
