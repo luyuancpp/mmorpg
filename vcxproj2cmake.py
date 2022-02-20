@@ -59,9 +59,11 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += ("project(%s)\n\n" % projectName)
 
     # add define
-    fileLines += "add_definitions(-D__LINUX__)\n"
-    fileLines += "add_definitions(-D__linux__)\n\n"
+    fileLines += 'add_definitions(-D__LINUX__)\n'
+    fileLines += 'add_definitions(-D__linux__)\n'
+    fileLines += "add_definitions(-DNOMINMAX)\n"
     fileLines += "add_definitions(-DENTT_ID_TYPE=uint64_t)\n\n"
+    
 
     # include directory
     fileLines += "include_directories("
