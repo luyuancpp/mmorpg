@@ -1,5 +1,5 @@
-#ifndef LOGIN_SERVER_SRC_SERVICE_H_
-#define LOGIN_SERVER_SRC_SERVICE_H_
+#ifndef LOGIN_SERVER_SRC_SERVICE_GW2L_H_
+#define LOGIN_SERVER_SRC_SERVICE_GW2L_H_
 #include "gw2l.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/account_player.h"
@@ -87,4 +87,4 @@ public:
  ///<<< END WRITING YOUR CODE
 };
 }// namespace gw2l
-#endif//LOGIN_SERVER_SRC_SERVICE_H_
+#endif//LOGIN_SERVER_SRC_SERVICE_GW2L_H_

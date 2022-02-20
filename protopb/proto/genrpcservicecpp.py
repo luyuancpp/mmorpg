@@ -88,7 +88,7 @@ def genheadfile(filename, writedir):
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     folder_path, hfilename = os.path.split(hfullfilename)    
     newheadfilename = servicedir + hfilename.replace('.proto', '.h')
-    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_')
+    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper()
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
     newstr += '#include "' + hfilename.replace('.h', '') + '.pb.h"\n'
@@ -235,3 +235,4 @@ def generate(filename, writedir):
 
 generate('gw2l.proto', '../../login_server/src/service')
 generate('l2db.proto', '../../database_server/src/service')
+generate('ms2g.proto', '../../game_server/src/service')

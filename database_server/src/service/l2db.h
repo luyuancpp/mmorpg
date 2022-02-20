@@ -1,6 +1,5 @@
-#ifndef DATABASE_SERVER_SRC_SERVICE_H_
-#define DATABASE_SERVER_SRC_SERVICE_H_
-#include "l2db.pb.h"
+#ifndef DATABASE_SERVER_SRC_SERVICE_L2DB_H_
+#define DATABASE_SERVER_SRC_SERVICE_L2DB_H_
 #include "l2db.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
@@ -66,4 +65,4 @@ public:
         ///<<< END WRITING YOUR CODE
 };
 }// namespace l2db
-#endif//DATABASE_SERVER_SRC_SERVICE_H_
+#endif//DATABASE_SERVER_SRC_SERVICE_L2DB_H_
