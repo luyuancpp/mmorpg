@@ -15,9 +15,9 @@
 #include "l2ms.pb.h"
 ///<<< END WRITING YOUR CODE
 namespace gw2l{
-    ///<<< BEGIN WRITING YOUR CODE
+ ///<<< BEGIN WRITING YOUR CODE
     using common::RedisClientPtr;
-    ///<<< END WRITING YOUR CODE
+ ///<<< END WRITING YOUR CODE
 class LoginServiceImpl : public LoginService{
 public:
     void Login(::google::protobuf::RpcController* controller,
@@ -45,7 +45,7 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-        ///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
         using PlayerPtr = std::shared_ptr<AccountPlayer>;
         using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
         using ConnectionEntityMap = std::unordered_map<common::Guid, common::EntityHandle>;

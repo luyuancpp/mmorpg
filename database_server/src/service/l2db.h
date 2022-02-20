@@ -21,8 +21,8 @@ namespace common
 
 ///<<< END WRITING YOUR CODE
 namespace l2db{
-    ///<<< BEGIN WRITING YOUR CODE
-    ///<<< END WRITING YOUR CODE
+ ///<<< BEGIN WRITING YOUR CODE
+ ///<<< END WRITING YOUR CODE
 class LoginServiceImpl : public LoginService{
 public:
     void Login(::google::protobuf::RpcController* controller,
@@ -40,7 +40,7 @@ public:
         l2db::EnterGameResponse* response,
         ::google::protobuf::Closure* done)override;
 
-        ///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
 		using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
 		using RedisClientPtr = std::shared_ptr<common::RedisClient>;
 
@@ -62,7 +62,7 @@ public:
     private:
         MysqlClientPtr database_;
         RedisClientPtr redis_;
-        ///<<< END WRITING YOUR CODE
+ ///<<< END WRITING YOUR CODE
 };
 }// namespace l2db
 #endif//DATABASE_SERVER_SRC_SERVICE_L2DB_H_

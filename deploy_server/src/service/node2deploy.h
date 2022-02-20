@@ -6,8 +6,8 @@
 
 ///<<< END WRITING YOUR CODE
 namespace deploy{
-    ///<<< BEGIN WRITING YOUR CODE
-    ///<<< END WRITING YOUR CODE
+ ///<<< BEGIN WRITING YOUR CODE
+ ///<<< END WRITING YOUR CODE
 class DeployServiceImpl : public DeployService{
 public:
     void ServerInfo(::google::protobuf::RpcController* controller,
@@ -45,7 +45,7 @@ public:
 
         MysqlClientPtr db_;
         GSMap logic_server_map_;
-        ///<<< END WRITING YOUR CODE
+ ///<<< END WRITING YOUR CODE
 };
 }// namespace deploy
 #endif//DEPLOY_SERVER_SRC_SERVICE_NODE2DEPLOY_H_
