@@ -195,14 +195,17 @@ def gencppfile(filename, writedir):
                 if part > cppmaxpart :
                     break
     except FileNotFoundError:
+            newstr += yourcode() + '\n'
             newstr += namespacebegin()
-            newstr += yourcode()
+            newstr += yourcode() + '\n'
             serviceidx = 0
+            newstr += rpcbegin + '\n'
             while serviceidx < len(rpcarry) :
                 newstr += gencpprpcfunbegin(serviceidx)
                 newstr += yourcodebegin + ' ' + servicenames[serviceidx] + '\n'
                 newstr += yourcodeend + ' ' + servicenames[serviceidx] + '\n}\n\n'
                 serviceidx += 1 
+            newstr += rpcend + '\n'
             newstr += yourcode()
     newstr += '}// namespace ' + pkg + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
@@ -236,3 +239,4 @@ def generate(filename, writedir):
 generate('gw2l.proto', '../../login_server/src/service')
 generate('l2db.proto', '../../database_server/src/service')
 generate('ms2g.proto', '../../game_server/src/service')
+generate('rg2g.proto', '../../game_server/src/service')

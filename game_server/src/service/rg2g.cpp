@@ -1,20 +1,23 @@
 #include "rg2g.h"
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 
-#include "src/game_server.h"
+namespace rg2g{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 
-#include "src/server_common/closure_auto_done.h"
-
-using namespace common;
-
-namespace rg2g
-{
+///<<<rpc begin
 void Rg2gServiceImpl::EnterRoom(::google::protobuf::RpcController* controller,
-    const ::google::protobuf::Empty* request,
+    const rg2g::Rg2gTest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure cp(done);
+///<<< BEGIN WRITING YOUR CODE EnterRoom
+///<<< END WRITING YOUR CODE EnterRoom
 }
-}//namespace rg2g
 
+///<<<rpc end
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 
+}// namespace rg2g
