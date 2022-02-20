@@ -16,8 +16,8 @@ using namespace  common;
 ///<<< END WRITING YOUR CODE
 
 namespace ms2gw{
-	///<<< BEGIN WRITING YOUR CODE
-	///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 
     /// ///<<<rpc begin
 void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,

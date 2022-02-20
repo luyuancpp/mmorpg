@@ -13,10 +13,10 @@ using namespace common;
 ///<<< END WRITING YOUR CODE
 
 namespace deploy{
-	///<<< BEGIN WRITING YOUR CODE
-	///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 
-	///<<<rpc begin
+///<<<rpc begin
 void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller,
     const deploy::ServerInfoRequest* request,
     deploy::ServerInfoResponse* response,
@@ -93,14 +93,14 @@ void DeployServiceImpl::LoadRegionDeploy(::google::protobuf::RpcController* cont
 ///<<< END WRITING YOUR CODE LoadRegionDeploy
 }
 
-	///<<<rpc end
-	///<<< BEGIN WRITING YOUR CODE
+///<<<rpc end
+///<<< BEGIN WRITING YOUR CODE
 	void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
 		::region_server_db* response)
 	{
 		std::string where_case = std::to_string(region_id) + " = id  ";
 		db_->LoadOne(*response, where_case);
 	}
-	///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 
 }// namespace deploy
