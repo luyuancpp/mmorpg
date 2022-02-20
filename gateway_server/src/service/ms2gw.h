@@ -2,14 +2,16 @@
 #define GATEWAY_SERVER_MASTER_SERVICE_SERVICE_MASTER_H_
 
 #include "ms2gw.pb.h"
-
+///<<< BEGIN WRITING YOUR CODE
 namespace gateway
 {
     class GatewayServer;
 }//namespace gateway
-
+///<<< END WRITING YOUR CODE
 namespace ms2gw
 {
+    ///<<< BEGIN WRITING YOUR CODE
+    ///<<< END WRITING YOUR CODE
     class Ms2gwServiceImpl : public Ms2gwService
     {
     public:
@@ -25,8 +27,8 @@ namespace ms2gw
             const ::ms2gw::PlayerEnterGSRequest* request,
             ::google::protobuf::Empty* response,
             ::google::protobuf::Closure* done)override;
-
-    private:
+		///<<< BEGIN WRITING YOUR CODE
+		///<<< END WRITING YOUR CODE
     };
 }//namespace gw2ms
 
