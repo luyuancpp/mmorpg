@@ -14,7 +14,7 @@
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/server_component.h"
 
-#include "deploy.pb.h"
+#include "node2d.pb.h"
 #include "l2ms.pb.h"
 #include "ms2db.pb.h"
 

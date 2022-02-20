@@ -26,7 +26,6 @@
     <ClInclude Include="pbc\comp.pb.h" />
     <ClInclude Include="pbc\condition_config.pb.h" />
     <ClInclude Include="pbc\db_base.pb.h" />
-    <ClInclude Include="pbc\deploy.pb.h" />
     <ClInclude Include="pbc\deploy_database_table.pb.h" />
     <ClInclude Include="pbc\g2db.pb.h" />
     <ClInclude Include="pbc\g2gw.pb.h" />
@@ -44,6 +43,7 @@
     <ClInclude Include="pbc\ms2g.pb.h" />
     <ClInclude Include="pbc\ms2gw.pb.h" />
     <ClInclude Include="pbc\mysql_database_table.pb.h" />
+    <ClInclude Include="pbc\node2d.pb.h" />
     <ClInclude Include="pbc\pb3.pb.h" />
     <ClInclude Include="pbc\rg2g.pb.h" />
     <ClInclude Include="pbc\scene_config.pb.h" />
@@ -56,7 +56,6 @@
     <ClCompile Include="pbc\comp.pb.cc" />
     <ClCompile Include="pbc\condition_config.pb.cc" />
     <ClCompile Include="pbc\db_base.pb.cc" />
-    <ClCompile Include="pbc\deploy.pb.cc" />
     <ClCompile Include="pbc\deploy_database_table.pb.cc" />
     <ClCompile Include="pbc\g2db.pb.cc" />
     <ClCompile Include="pbc\g2gw.pb.cc" />
@@ -74,6 +73,7 @@
     <ClCompile Include="pbc\ms2g.pb.cc" />
     <ClCompile Include="pbc\ms2gw.pb.cc" />
     <ClCompile Include="pbc\mysql_database_table.pb.cc" />
+    <ClCompile Include="pbc\node2d.pb.cc" />
     <ClCompile Include="pbc\pb3.pb.cc" />
     <ClCompile Include="pbc\rg2g.pb.cc" />
     <ClCompile Include="pbc\scene_config.pb.cc" />

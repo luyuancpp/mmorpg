@@ -30,15 +30,16 @@ def parsefile(filename):
     rpcarry = []
     pkg = ''
     service = ''
+    rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
-            if fileline.find('rpc') >= 0:
+            if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 rpcarry.append(fileline)
             elif fileline.find(cpkg) >= 0:
                 pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-            elif fileline.find('service') >= 0:
+            elif fileline.find('service ') >= 0:
+                rpcbegin = 1
                 service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-
 def genheadrpcfun():
     servicestr = ''
     global servicenames
@@ -240,3 +241,4 @@ generate('gw2l.proto', '../../login_server/src/service')
 generate('l2db.proto', '../../database_server/src/service')
 generate('ms2g.proto', '../../game_server/src/service')
 generate('rg2g.proto', '../../game_server/src/service')
+generate('node2d.proto', '../../deploy_server/src/service')
