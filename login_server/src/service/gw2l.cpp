@@ -20,6 +20,118 @@ LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
     : l2ms_login_stub_(l2ms_login_stub),
         l2db_login_stub_(l2db_login_stub)
 {}
+
+
+void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
+{
+	//只连接不登录,占用连接
+	// login process
+	// check account rule: empty , errno
+	//check string rule
+	auto cit = connections_.find(d->s_rq_.connection_id());
+	if (cit == connections_.end())
+	{
+		d->c_rp_->mutable_error()->set_error_no(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+		return;
+	}
+	auto& account = d->s_rq_.account();
+	auto& response = d->c_rp_;
+
+	//has dat
+	{
+		auto& player = reg.emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
+		auto ret = player->Login();
+		if (ret != RET_OK)
+		{
+			response->mutable_error()->set_error_no(ret);
+			return;
+		}
+		auto& account_data = player->account_data();
+		redis_->Load(account_data, account);
+		if (!account_data.password().empty())
+		{
+			response->mutable_account_player()->CopyFrom(account_data);
+			player->OnDbLoaded();
+			return;
+		}
+	}
+	// database process
+	auto c(std::make_shared<LoginRpcReplied::element_type>(*d));
+	c->s_rq_.set_account(account);
+	c->s_rq_.set_connection_id(d->s_rq_.connection_id());
+	l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountDbReplied, c, &l2db::LoginService_Stub::Login);
+}
+
+void LoginServiceImpl::LoginAccountDbReplied(LoginRpcReplied d)
+{
+	auto& srp = d->s_rp_;
+	d->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
+	UpdateAccount(d->s_rq_.connection_id(), srp->account_player());
+}
+
+void LoginServiceImpl::CreatePlayerDbReplied(CreatePlayerRpcReplied d)
+{
+	auto& srp = d->s_rp_;
+	d->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
+	UpdateAccount(d->s_rq_.connection_id(), srp->account_player());
+}
+
+void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
+{
+	//db 加载过程中断线了
+	auto& srq = d->s_rq_;
+	auto cit = connections_.find(d->c_rp_->connection_id());
+	if (cit == connections_.end())
+	{
+		return;
+	}
+	::gw2l::EnterGameResponse* response = nullptr;
+	::google::protobuf::Closure* done = nullptr;
+	d->Move(response, done);
+	EnterMS(srq.guid(), response->connection_id(), response, done);
+}
+
+void LoginServiceImpl::EnterMSReplied(EnterGameMSRpcReplied d)
+{
+	d->c_rp_->set_gs_node_id(d->s_rp_->gs_node_id());
+	connections_.erase(d->s_rq_.connection_id());
+}
+
+void LoginServiceImpl::EnterMS(common::Guid guid,
+	uint64_t connection_id,
+	::gw2l::EnterGameResponse* response,
+	::google::protobuf::Closure* done)
+{
+	auto it = connections_.find(connection_id);
+	if (connections_.end() == it)
+	{
+		ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
+	}
+	auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
+	cp->s_rq_.set_guid(guid);
+	cp->s_rq_.set_connection_id(response->connection_id());
+	l2ms_login_stub_.CallMethodString(this,
+		&LoginServiceImpl::EnterMSReplied,
+		cp,
+		&l2ms::LoginService_Stub::EnterGame);
+}
+
+void LoginServiceImpl::UpdateAccount(uint64_t connection_id, const ::account_database& a_d)
+{
+	auto cit = connections_.find(connection_id);
+	if (cit == connections_.end())//断线了
+	{
+		return;
+	}
+	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
+	if (nullptr == p_player)
+	{
+		return;
+	}
+	auto& ap = *p_player;
+	ap->set_account_data(a_d);
+	ap->OnDbLoaded();
+}
  ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -183,118 +295,4 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 }
 
 ///<<<rpc end
-///<<< BEGIN WRITING YOUR CODE 
-
-void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
-{
-	//只连接不登录,占用连接
-	// login process
-	// check account rule: empty , errno
-	//check string rule
-	auto cit = connections_.find(d->s_rq_.connection_id());
-	if (cit == connections_.end())
-	{
-		d->c_rp_->mutable_error()->set_error_no(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
-		return;
-	}
-	auto& account = d->s_rq_.account();
-	auto& response = d->c_rp_;
-
-	//has dat
-	{
-		auto& player = reg.emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
-		auto ret = player->Login();
-		if (ret != RET_OK)
-		{
-			response->mutable_error()->set_error_no(ret);
-			return;
-		}
-		auto& account_data = player->account_data();
-		redis_->Load(account_data, account);
-		if (!account_data.password().empty())
-		{
-			response->mutable_account_player()->CopyFrom(account_data);
-			player->OnDbLoaded();
-			return;
-		}
-	}
-	// database process
-	auto c(std::make_shared<LoginRpcReplied::element_type>(*d));
-	c->s_rq_.set_account(account);
-	c->s_rq_.set_connection_id(d->s_rq_.connection_id());
-	l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountDbReplied, c, &l2db::LoginService_Stub::Login);
-}
-
-void LoginServiceImpl::LoginAccountDbReplied(LoginRpcReplied d)
-{
-	auto& srp = d->s_rp_;
-	d->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
-	UpdateAccount(d->s_rq_.connection_id(), srp->account_player());
-}
-
-void LoginServiceImpl::CreatePlayerDbReplied(CreatePlayerRpcReplied d)
-{
-    auto& srp = d->s_rp_;
-    d->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
-    UpdateAccount(d->s_rq_.connection_id(), srp->account_player());
-}
-
-void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
-{
-    //db 加载过程中断线了
-    auto& srq = d->s_rq_;
-    auto cit = connections_.find(d->c_rp_->connection_id());
-    if (cit == connections_.end())
-    {
-        return;
-    }
-    ::gw2l::EnterGameResponse* response = nullptr;
-    ::google::protobuf::Closure* done = nullptr;
-    d->Move(response, done);
-    EnterMS(srq.guid(), response->connection_id(), response, done);
-}
-
-void LoginServiceImpl::EnterMSReplied(EnterGameMSRpcReplied d)
-{
-    d->c_rp_->set_gs_node_id(d->s_rp_->gs_node_id());
-    connections_.erase(d->s_rq_.connection_id());
-}
-
-void LoginServiceImpl::EnterMS(common::Guid guid,
-    uint64_t connection_id,
-    ::gw2l::EnterGameResponse* response,
-    ::google::protobuf::Closure* done)
-{   
-    auto it = connections_.find(connection_id);
-    if (connections_.end() == it)
-    {
-        ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
-    }
-    auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
-    cp->s_rq_.set_guid(guid);
-    cp->s_rq_.set_connection_id(response->connection_id());
-    l2ms_login_stub_.CallMethodString(this,
-        &LoginServiceImpl::EnterMSReplied,
-        cp,
-        &l2ms::LoginService_Stub::EnterGame);
-}
-
-void LoginServiceImpl::UpdateAccount(uint64_t connection_id, const ::account_database& a_d)
-{
-    auto cit = connections_.find(connection_id);
-    if (cit == connections_.end())//断线了
-    {
-        return;
-    }
-    auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
-    if (nullptr == p_player)
-    {
-        return;
-    }
-    auto& ap = *p_player;
-    ap->set_account_data(a_d);
-    ap->OnDbLoaded();
-}
-///<<< END WRITING YOUR CODE
-
 }// namespace gw2l

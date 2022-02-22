@@ -77,7 +77,4 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 ///<<<rpc end
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 }// namespace l2db
