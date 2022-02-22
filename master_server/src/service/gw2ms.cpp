@@ -99,6 +99,5 @@ namespace gw2ms
  ///<<< END WRITING YOUR CODE
     }
  ///<<<rpc end
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 }//namespace gw2ms

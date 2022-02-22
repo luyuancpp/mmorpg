@@ -26,7 +26,4 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 ///<<<rpc end
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE
-
 }// namespace ms2g
