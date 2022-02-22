@@ -30,9 +30,6 @@ public:
         const ms2gw::PlayerEnterGSRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
-
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 };
 }// namespace ms2gw
 #endif//GATEWAY_SERVER_SRC_SERVICE_MS2GW_H_
