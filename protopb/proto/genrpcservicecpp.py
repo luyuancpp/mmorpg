@@ -212,7 +212,6 @@ def gencppfile(filename, writedir):
                 newstr += yourcodeend + ' ' + servicenames[serviceidx] + '\n}\n\n'
                 serviceidx += 1 
             newstr += rpcend + '\n'
-            newstr += yourcode()
     newstr += '}// namespace ' + pkg + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
