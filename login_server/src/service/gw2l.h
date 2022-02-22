@@ -20,6 +20,9 @@ namespace gw2l{
  ///<<< END WRITING YOUR CODE
 class LoginServiceImpl : public LoginService{
 public:
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+public:
     void Login(::google::protobuf::RpcController* controller,
         const gw2l::LoginRequest* request,
         gw2l::LoginResponse* response,

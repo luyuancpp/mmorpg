@@ -41,7 +41,7 @@ def parsefile(filename):
                 rpcbegin = 1
                 service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
 def genheadrpcfun():
-    servicestr = ''
+    servicestr = 'public:\n'
     global servicenames
     global controller
     servicenames = []
@@ -81,7 +81,7 @@ def headfilestart():
 def namespacebegin():
     return 'namespace ' + pkg + '{\n'
 def headclass():
-    return 'class ' + service + 'Impl : public ' + service + '{\npublic:\n' +  genheadrpcfun()    
+    return 'class ' + service + 'Impl : public ' + service + '{\npublic:\n' +  yourcode() + genheadrpcfun()    
 
 def genheadfile(filename, writedir):
     global hfilename
@@ -225,7 +225,7 @@ def md5copy(filename, writedir, fileextend):
         hfullfilename = writedir + '/' + filename.replace('.proto', fileextend)
         if error == None and os.path.exists(hfullfilename) and emptymd5 == False:
             return
-        --print("copy %s ---> %s" % (gennewfilename, hfullfilename))
+        #print("copy %s ---> %s" % (gennewfilename, hfullfilename))
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, hfullfilename)
 

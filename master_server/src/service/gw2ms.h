@@ -1,6 +1,6 @@
-#ifndef MASTER_SERVER_SRC_GATEWAY_SERVICE_GW2MS_H_
-#define MASTER_SERVER_SRC_GATEWAY_SERVICE_GW2MS_H_
-
+#ifndef MASTER_SERVER_SRC_SERVICE_GW2MS_H_
+#define MASTER_SERVER_SRC_SERVICE_GW2MS_H_
+#include "gw2ms.pb.h"
 #include "gw2ms.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 namespace master
@@ -8,31 +8,36 @@ namespace master
     class MasterServer;
 }//master
 ///<<< END WRITING YOUR CODE
-namespace gw2ms
-{
+namespace gw2ms{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-    class Gw2msServiceImpl : public gw2ms::Gw2msService
-    {
-    public:
-        virtual void GwConnectMaster(::google::protobuf::RpcController* controller,
-            const ::gw2ms::ConnectRequest* request,
-            ::google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done)override;
-
-        virtual void PlayerDisconnect(::google::protobuf::RpcController* controller,
-            const ::gw2ms::PlayerDisconnectRequest* request,
-            ::google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done)override;
-
-        virtual void LeaveGame(::google::protobuf::RpcController* controller,
-            const ::gw2ms::LeaveGameRequest* request,
-            ::google::protobuf::Empty* response,
-            ::google::protobuf::Closure* done)override;
+class Gw2msServiceImpl : public Gw2msService{
+public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+public:
+    /*void PlayerService(::google::protobuf::RpcController* controller,
+        const ::google::protobuf::Empty* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;*/
 
-    };
-}//namespace gw2ms
+    void GwConnectMaster(::google::protobuf::RpcController* controller,
+        const gw2ms::ConnectRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
 
-#endif//MASTER_SERVER_SRC_GATEWAY_SERVICE_GW2MS_H_
+    void PlayerDisconnect(::google::protobuf::RpcController* controller,
+        const gw2ms::PlayerDisconnectRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
+    void LeaveGame(::google::protobuf::RpcController* controller,
+        const gw2ms::LeaveGameRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+};
+}// namespace gw2ms
+#endif//MASTER_SERVER_SRC_SERVICE_GW2MS_H_
