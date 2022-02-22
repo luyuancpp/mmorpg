@@ -10,7 +10,22 @@ namespace deploy{
  ///<<< END WRITING YOUR CODE
 class DeployServiceImpl : public DeployService{
 public:
+
 ///<<< BEGIN WRITING YOUR CODE
+	using ServerId = uint32_t;
+	using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
+	using GSMap = std::unordered_map<uint32_t, ::game_server_db>;
+
+	void set_player_mysql_client(MysqlClientPtr& ptr)
+	{
+		db_ = ptr;
+	}
+
+private:
+	void LoadRegionDeploy(uint32_t region_id, ::region_server_db* response);
+
+	MysqlClientPtr db_;
+	GSMap logic_server_map_;
 ///<<< END WRITING YOUR CODE
 public:
     void ServerInfo(::google::protobuf::RpcController* controller,
@@ -32,23 +47,6 @@ public:
         const deploy::RegionInfoRequest* request,
         deploy::RegionInfoResponse* response,
         ::google::protobuf::Closure* done)override;
-
-///<<< BEGIN WRITING YOUR CODE
-		using ServerId = uint32_t;
-		using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
-		using GSMap = std::unordered_map<uint32_t, ::game_server_db>;
-
-		void set_player_mysql_client(MysqlClientPtr& ptr)
-		{
-			db_ = ptr;
-		}
-
-    private:
-        void LoadRegionDeploy(uint32_t region_id, ::region_server_db* response);
-
-        MysqlClientPtr db_;
-        GSMap logic_server_map_;
- ///<<< END WRITING YOUR CODE
 };
 }// namespace deploy
 #endif//DEPLOY_SERVER_SRC_SERVICE_NODE2DEPLOY_H_
