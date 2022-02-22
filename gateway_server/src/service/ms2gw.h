@@ -13,6 +13,9 @@ namespace ms2gw{
  ///<<< END WRITING YOUR CODE
 class Ms2gwServiceImpl : public Ms2gwService{
 public:
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+public:
     void StartGS(::google::protobuf::RpcController* controller,
         const ms2gw::StartGSRequest* request,
         ::google::protobuf::Empty* response,

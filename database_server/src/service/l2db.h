@@ -25,6 +25,9 @@ namespace l2db{
  ///<<< END WRITING YOUR CODE
 class LoginServiceImpl : public LoginService{
 public:
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+public:
     void Login(::google::protobuf::RpcController* controller,
         const l2db::LoginRequest* request,
         l2db::LoginResponse* response,

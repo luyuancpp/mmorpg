@@ -8,6 +8,9 @@ namespace rg2g{
 ///<<< END WRITING YOUR CODE
 class Rg2gServiceImpl : public Rg2gService{
 public:
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+public:
     void EnterRoom(::google::protobuf::RpcController* controller,
         const rg2g::Rg2gTest* request,
         ::google::protobuf::Empty* response,

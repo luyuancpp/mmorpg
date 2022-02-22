@@ -31,7 +31,7 @@ message PlayerDisconnectRequest
 }
 
 service Gw2msService {
-  rpc PlayerService (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc PlayerService (ConnectRequest) returns (google.protobuf.Empty);
   rpc GwConnectMaster (ConnectRequest) returns (google.protobuf.Empty);
   rpc PlayerDisconnect (PlayerDisconnectRequest) returns (google.protobuf.Empty);
   rpc LeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);

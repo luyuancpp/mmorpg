@@ -10,6 +10,9 @@ namespace deploy{
  ///<<< END WRITING YOUR CODE
 class DeployServiceImpl : public DeployService{
 public:
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+public:
     void ServerInfo(::google::protobuf::RpcController* controller,
         const deploy::ServerInfoRequest* request,
         deploy::ServerInfoResponse* response,
