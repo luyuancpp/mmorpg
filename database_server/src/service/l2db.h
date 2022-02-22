@@ -25,8 +25,29 @@ namespace l2db{
  ///<<< END WRITING YOUR CODE
 class LoginServiceImpl : public LoginService{
 public:
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+	///<<< BEGIN WRITING YOUR CODE
+	using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
+	using RedisClientPtr = std::shared_ptr<common::RedisClient>;
+
+	static LoginServiceImpl& GetSingleton()
+	{
+		thread_local LoginServiceImpl singleton;
+		return singleton;
+	}
+
+	void set_player_mysql_client(MysqlClientPtr& ptr)
+	{
+		database_ = ptr;
+	}
+
+	void set_redis_client(RedisClientPtr& ptr)
+	{
+		redis_ = ptr;
+	}
+private:
+	MysqlClientPtr database_;
+	RedisClientPtr redis_;
+	///<<< END WRITING YOUR CODE
 public:
     void Login(::google::protobuf::RpcController* controller,
         const l2db::LoginRequest* request,
@@ -43,29 +64,6 @@ public:
         l2db::EnterGameResponse* response,
         ::google::protobuf::Closure* done)override;
 
-///<<< BEGIN WRITING YOUR CODE
-		using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
-		using RedisClientPtr = std::shared_ptr<common::RedisClient>;
-
-		static LoginServiceImpl& GetSingleton()
-		{
-			thread_local LoginServiceImpl singleton;
-			return singleton;
-		}
-
-        void set_player_mysql_client(MysqlClientPtr& ptr)
-        {
-            database_ = ptr;
-        }
-
-        void set_redis_client(RedisClientPtr& ptr)
-        {
-            redis_ = ptr;
-        }
-    private:
-        MysqlClientPtr database_;
-        RedisClientPtr redis_;
- ///<<< END WRITING YOUR CODE
 };
 }// namespace l2db
 #endif//DATABASE_SERVER_SRC_SERVICE_L2DB_H_
