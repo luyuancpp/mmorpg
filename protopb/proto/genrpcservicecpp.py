@@ -76,16 +76,16 @@ def gencpprpcfunbegin(rpcindex):
 
 def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
-def headfilestart():
-    return ''
 def namespacebegin():
     return 'namespace ' + pkg + '{\n'
-def headclass():
-    return 'class ' + service + 'Impl : public ' + service + '{\npublic:\n' +  yourcode() + genheadrpcfun()    
+def classbegin():
+    return 'class ' + service + 'Impl : public ' + service + '{\npublic:\n'  
+def emptyfun():
+    return ''
 
 def genheadfile(filename, writedir):
     global hfilename
-    headfun = [headfilestart, namespacebegin, headclass]
+    headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     folder_path, hfilename = os.path.split(hfullfilename)    
     newheadfilename = servicedir + hfilename.replace('.proto', '.h')
@@ -97,14 +97,12 @@ def genheadfile(filename, writedir):
         with open(hfullfilename,'r+', encoding='utf-8') as file:
             part = 0
             owncode = 1 
-            generated = 0
             skipheadline = 0 
             for fileline in file:
                 if skipheadline < 3 :
                     skipheadline += 1
                     continue
                 if fileline.find(yourcodebegin) >= 0:
-                    generated = 0
                     owncode = 1
                     newstr += fileline
                     continue
@@ -116,12 +114,20 @@ def genheadfile(filename, writedir):
                 if owncode == 1 :
                     newstr += fileline
                     continue
-                if owncode == 0  and generated == 0:
-                    generated = 1
+                if part > 0 and part < 3 and owncode == 0 :
                     if part < len(headfun) :
                         newstr += headfun[part]()
+                    part += 1
+                    continue
+                elif part == 3 :
+                    newstr += yourcode()
+                    newstr += genheadrpcfun()
+                    break
+
     except FileNotFoundError:
-        for i in range(0, 3) :
+        for i in range(0, 4) :
+            if i > 0:
+                newstr += yourcode()
             newstr += headfun[i]()
 
     newstr += '};\n}// namespace ' + pkg + '\n'
