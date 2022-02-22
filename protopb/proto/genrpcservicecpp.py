@@ -123,7 +123,6 @@ def genheadfile(filename, writedir):
     except FileNotFoundError:
         for i in range(0, 3) :
             newstr += headfun[i]()
-            newstr += yourcode()
 
     newstr += '};\n}// namespace ' + pkg + '\n'
     newstr += '#endif//' + headdefine + '_H_\n'

@@ -14,6 +14,10 @@ namespace l2ms{
 class LoginServiceImpl : public LoginService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
+	using AccountMap = std::unordered_map<std::string, master::MSLoginAccount>;
+
+private:
+	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE
 public:
     void LoginAccount(::google::protobuf::RpcController* controller,
@@ -35,13 +39,6 @@ public:
         const l2ms::DisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
-
-///<<< BEGIN WRITING YOUR CODE
-		using AccountMap = std::unordered_map<std::string, master::MSLoginAccount>;
-
-    private:
-        AccountMap logined_accounts_;
-///<<< END WRITING YOUR CODE
 };
 }// namespace l2ms
 #endif//MASTER_SERVER_SRC_SERVICE_L2MS_H_

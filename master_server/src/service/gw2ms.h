@@ -35,9 +35,6 @@ public:
         const gw2ms::LeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
-
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 };
 }// namespace gw2ms
 #endif//MASTER_SERVER_SRC_SERVICE_GW2MS_H_

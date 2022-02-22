@@ -16,8 +16,6 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 };
 }// namespace rg2g
 #endif//GAME_SERVER_SRC_SERVICE_RG2G_H_
