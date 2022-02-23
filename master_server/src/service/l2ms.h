@@ -39,6 +39,7 @@ public:
         const l2ms::DisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
+
 };
 }// namespace l2ms
 #endif//MASTER_SERVER_SRC_SERVICE_L2MS_H_

@@ -10,7 +10,6 @@ namespace deploy{
  ///<<< END WRITING YOUR CODE
 class DeployServiceImpl : public DeployService{
 public:
-
 ///<<< BEGIN WRITING YOUR CODE
 	using ServerId = uint32_t;
 	using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
@@ -47,6 +46,7 @@ public:
         const deploy::RegionInfoRequest* request,
         deploy::RegionInfoResponse* response,
         ::google::protobuf::Closure* done)override;
+
 };
 }// namespace deploy
 #endif//DEPLOY_SERVER_SRC_SERVICE_NODE2DEPLOY_H_
