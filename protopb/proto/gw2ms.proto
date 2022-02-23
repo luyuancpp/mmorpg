@@ -4,6 +4,11 @@ import "common.proto";
 import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
+message ClientMessageRequest
+{
+  IpPort rpc_client = 1;
+}
+
 message ConnectRequest
 {
   IpPort rpc_client = 1;
@@ -31,8 +36,8 @@ message PlayerDisconnectRequest
 }
 
 service Gw2msService {
-  rpc PlayerService (ConnectRequest) returns (google.protobuf.Empty);
   rpc GwConnectMaster (ConnectRequest) returns (google.protobuf.Empty);
   rpc PlayerDisconnect (PlayerDisconnectRequest) returns (google.protobuf.Empty);
   rpc LeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
+  rpc PlayerService (ClientMessageRequest) returns (google.protobuf.Empty);
 }

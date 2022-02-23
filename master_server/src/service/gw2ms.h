@@ -16,11 +16,6 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
-    /*void PlayerService(::google::protobuf::RpcController* controller,
-        const ::google::protobuf::Empty* request,
-        ::google::protobuf::Empty* response,
-        ::google::protobuf::Closure* done)override;*/
-
     void GwConnectMaster(::google::protobuf::RpcController* controller,
         const gw2ms::ConnectRequest* request,
         ::google::protobuf::Empty* response,
@@ -35,6 +30,12 @@ public:
         const gw2ms::LeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
+
+    void PlayerService(::google::protobuf::RpcController* controller,
+        const gw2ms::ClientMessageRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
 };
 }// namespace gw2ms
 #endif//MASTER_SERVER_SRC_SERVICE_GW2MS_H_
