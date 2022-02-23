@@ -35,12 +35,11 @@ void ClientService::OnDisconnect()
 
 void ClientService::ReadyGo()
 {
-    auto& lua = LuaModule::GetSingleton().lua();
-    lua["LoginRequest"]["Send"] = [this](LoginRequest& request) ->void
+    thread_lua_["LoginRequest"]["Send"] = [this](LoginRequest& request) ->void
     {
         this->codec_.send(this->conn_, request);
     };
-   lua["ReadyGo"]();
+    thread_lua_["ReadyGo"]();
 }
 
 void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -49,12 +48,11 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
 {
     if (message->players().empty())
     {        
-        auto& lua = LuaModule::GetSingleton().lua();
-        lua["CreatePlayerRequest"]["Send"] = [this](CreatePlayerRequest& request) ->void
+        thread_lua_["CreatePlayerRequest"]["Send"] = [this](CreatePlayerRequest& request) ->void
         {
             this->codec_.send(this->conn_, request);
         };
-        lua["CreatePlayer"]();
+        thread_lua_["CreatePlayer"]();
         return;
     }
     EnterGame(message->players(0).guid());   
@@ -71,12 +69,11 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-    auto& lua = LuaModule::GetSingleton().lua();
-    lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
+    thread_lua_["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
     {
         this->codec_.send(this->conn_, request);
     };
-    lua["LeaveGame"]();
+    thread_lua_["LeaveGame"]();
 }
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -88,12 +85,11 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientService::EnterGame(Guid guid)
 {
-    auto& lua = LuaModule::GetSingleton().lua();
-    lua["EnterGameRequest"]["Send"] = [this](EnterGameRequest& request) ->void
+    thread_lua_["EnterGameRequest"]["Send"] = [this](EnterGameRequest& request) ->void
     {
         this->codec_.send(this->conn_, request);
     };
-    lua["EnterGame"](guid);
+    thread_lua_["EnterGame"](guid);
 }
 
 void ClientService::DisConnect()

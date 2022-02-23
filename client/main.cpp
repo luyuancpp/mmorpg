@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
     if (argc > 0)
     {
-        LuaModule::GetSingleton().Init();
+        InitLua();
        
         int32_t nClients = 1;
 
