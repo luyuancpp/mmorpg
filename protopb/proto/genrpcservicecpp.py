@@ -111,10 +111,10 @@ def genheadfile(filename, writedir):
                     newstr += fileline
                     part += 1
                     continue
-                elif owncode == 1 :
+                if owncode == 1 :
                     newstr += fileline
                     continue
-                elif part > 0 and part < len(headfun) and owncode == 0 :
+                if part > 0 and part < len(headfun) and owncode == 0 :
                     if part == 3 :
                         newstr += yourcode()
                     newstr += headfun[part]()
