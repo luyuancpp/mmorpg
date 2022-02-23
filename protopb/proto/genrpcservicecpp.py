@@ -111,17 +111,16 @@ def genheadfile(filename, writedir):
                     newstr += fileline
                     part += 1
                     continue
-                if owncode == 1 :
+                elif owncode == 1 :
                     newstr += fileline
                     continue
-                if part > 0 and part < 3 and owncode == 0 :
-                    if part < len(headfun) :
-                        newstr += headfun[part]()
+                elif part > 0 and part < len(headfun) and owncode == 0 :
+                    if part == 3 :
+                        newstr += yourcode()
+                    newstr += headfun[part]()
                     part += 1
                     continue
-                elif part == 3 :
-                    newstr += yourcode()
-                    newstr += genheadrpcfun()
+                elif part >= len(headfun):
                     break
 
     except FileNotFoundError:
