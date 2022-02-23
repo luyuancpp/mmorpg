@@ -98,6 +98,7 @@ def genheadfile(filename, writedir):
             part = 0
             owncode = 1 
             skipheadline = 0 
+            partend = 0
             for fileline in file:
                 if skipheadline < 3 :
                     skipheadline += 1
@@ -108,17 +109,16 @@ def genheadfile(filename, writedir):
                     continue
                 elif fileline.find(yourcodeend) >= 0:
                     owncode = 0
+                    partend = 1
                     newstr += fileline
                     part += 1
                     continue
                 if owncode == 1 :
                     newstr += fileline
                     continue
-                if part > 0 and part < len(headfun) and owncode == 0 :
-                    if part == 3 :
-                        newstr += yourcode()
+                if part > 0 and part < len(headfun) and owncode == 0 and partend == 1:
                     newstr += headfun[part]()
-                    part += 1
+                    partend = 0
                     continue
                 elif part >= len(headfun):
                     break
