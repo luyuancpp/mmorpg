@@ -20,7 +20,6 @@ namespace gw2l{
  ///<<< END WRITING YOUR CODE
 class LoginServiceImpl : public LoginService{
 public:
-
 ///<<< BEGIN WRITING YOUR CODE
 	using PlayerPtr = std::shared_ptr<AccountPlayer>;
 	using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;

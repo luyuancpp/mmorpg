@@ -15,6 +15,7 @@ public:
         const ms2g::EnterGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
+
 };
 }// namespace ms2g
 #endif//GAME_SERVER_SRC_SERVICE_MS2G_H_
