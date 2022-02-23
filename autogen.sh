@@ -5,10 +5,6 @@ python vcxproj2cmake.py
 cat /proc/cpuinfo  | grep "processor" | wc -l
 cat=$1
 
-if [ ! -d "protopb/pbc" ];then
-  mkdir protopb/pbc
-fi
-
 cd bin/config && python build.py
 if test $? -ne 0; then 
    exit 
