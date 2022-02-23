@@ -35,11 +35,11 @@ void ClientService::OnDisconnect()
 
 void ClientService::ReadyGo()
 {
-    thread_lua_["LoginRequest"]["Send"] = [this](LoginRequest& request) ->void
+    g_lua["LoginRequest"]["Send"] = [this](LoginRequest& request) ->void
     {
         this->codec_.send(this->conn_, request);
     };
-    thread_lua_["ReadyGo"]();
+    g_lua["ReadyGo"]();
 }
 
 void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -48,11 +48,11 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
 {
     if (message->players().empty())
     {        
-        thread_lua_["CreatePlayerRequest"]["Send"] = [this](CreatePlayerRequest& request) ->void
+        g_lua["CreatePlayerRequest"]["Send"] = [this](CreatePlayerRequest& request) ->void
         {
             this->codec_.send(this->conn_, request);
         };
-        thread_lua_["CreatePlayer"]();
+        g_lua["CreatePlayer"]();
         return;
     }
     EnterGame(message->players(0).guid());   
@@ -69,11 +69,11 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-    thread_lua_["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
+    g_lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
     {
         this->codec_.send(this->conn_, request);
     };
-    thread_lua_["LeaveGame"]();
+    g_lua["LeaveGame"]();
 }
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -85,11 +85,11 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientService::EnterGame(Guid guid)
 {
-    thread_lua_["EnterGameRequest"]["Send"] = [this](EnterGameRequest& request) ->void
+    g_lua["EnterGameRequest"]["Send"] = [this](EnterGameRequest& request) ->void
     {
         this->codec_.send(this->conn_, request);
     };
-    thread_lua_["EnterGame"](guid);
+    g_lua["EnterGame"](guid);
 }
 
 void ClientService::DisConnect()

@@ -6,6 +6,6 @@
 
 void InitLua();
 
-extern thread_local sol::state thread_lua_;
+extern thread_local sol::state g_lua;
 
 #endif//CLIENT_SRC_LUA_CPP_LUA_MODULE_H_

@@ -13,25 +13,25 @@ public:
 };
 thread_local uint64_t PlayerId::guid = 100;
 
-thread_local sol::state thread_lua_;
+thread_local sol::state g_lua;
 
 void InitLua()
 {
-    thread_lua_.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
+    g_lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
-    thread_lua_.new_usertype<LoginRequest>("LoginRequest", "account",
+    g_lua.new_usertype<LoginRequest>("LoginRequest", "account",
         sol::property(&LoginRequest::account, &LoginRequest::set_account<const std::string&>));
-    thread_lua_.new_usertype<CreatePlayerRequest>("CreatePlayerRequest");
-    thread_lua_.new_usertype<EnterGameRequest>("EnterGameRequest", "guid",
+    g_lua.new_usertype<CreatePlayerRequest>("CreatePlayerRequest");
+    g_lua.new_usertype<EnterGameRequest>("EnterGameRequest", "guid",
         sol::property(&EnterGameRequest::set_guid, &EnterGameRequest::guid));
-    thread_lua_.new_usertype<LeaveGameRequest>("LeaveGameRequest");
+    g_lua.new_usertype<LeaveGameRequest>("LeaveGameRequest");
 
-    thread_lua_.new_usertype<PlayerId>("PlayerId",
+    g_lua.new_usertype<PlayerId>("PlayerId",
         "guid",
         sol::var(PlayerId::guid));
 
     auto contents = File2String("script/client.lua");
-    auto r = thread_lua_.script(contents);
+    auto r = g_lua.script(contents);
     if (!r.valid())
     {
         sol::error err = r;
