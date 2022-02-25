@@ -102,6 +102,7 @@ namespace l2ms
         PlayerList::GetSingleton().LeaveGame(guid);  
         assert(!PlayerList::GetSingleton().HasPlayer(guid));
         assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null); 
+///<<< END WRITING YOUR CODE
     }
 
     void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
