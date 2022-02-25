@@ -159,6 +159,8 @@
     <ClCompile Include="src\game_config\region_config.cpp" />
     <ClCompile Include="src\game_config\scene_config.cpp" />
     <ClCompile Include="src\game_logic\entity_class\entity_class.cpp" />
+    <ClCompile Include="src\game_logic\login_state\login_state.cpp" />
+    <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
     <ClCompile Include="src\pb\pbc\account_database.pb.cc" />
     <ClCompile Include="src\pb\pbc\c2gw.pb.cc" />
@@ -196,8 +198,6 @@
     <ClCompile Include="src\game_logic\teams\team.cpp" />
     <ClCompile Include="src\game_logic\teams\teams.cpp" />
     <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
-    <ClCompile Include="src\login_state\login_state.cpp" />
-    <ClCompile Include="src\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\mysql_client\mysql_client.cpp" />
     <ClCompile Include="src\mysql_database\mysql_database.cpp" />
     <ClCompile Include="src\pb2db\pb2dbsql.cpp" />
@@ -226,6 +226,9 @@
     <ClInclude Include="src\game_logic\comp\server_list.hpp" />
     <ClInclude Include="src\game_logic\entity_class\entity_class.h" />
     <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
+    <ClInclude Include="src\game_logic\login_state\login_state.h" />
+    <ClInclude Include="src\game_logic\login_state\login_state_concrete.h" />
+    <ClInclude Include="src\game_logic\login_state\login_state_machine.h" />
     <ClInclude Include="src\game_logic\tiime_unit\time_variable.h" />
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
     <ClInclude Include="src\pb\pbc\account_database.pb.h" />
@@ -273,14 +276,6 @@
     <ClInclude Include="src\game_logic\teams\teams.h" />
     <ClInclude Include="src\game_logic\teams\team_event.h" />
     <ClInclude Include="src\jsoncpp\json.h" />
-    <ClInclude Include="src\login_player\login_event.h" />
-    <ClInclude Include="src\login_player\login_state.h" />
-    <ClInclude Include="src\login_player\login_state_concrete.h" />
-    <ClInclude Include="src\login_player\login_state_machine.h" />
-    <ClInclude Include="src\login_state\login_event.h" />
-    <ClInclude Include="src\login_state\login_state.h" />
-    <ClInclude Include="src\login_state\login_state_concrete.h" />
-    <ClInclude Include="src\login_state\login_state_machine.h" />
     <ClInclude Include="src\mysql_client\mysql_client.h" />
     <ClInclude Include="src\mysql_client\mysql_result.h" />
     <ClInclude Include="src\mysql_database\mysql_database.h" />

@@ -2,7 +2,7 @@
 #define LOGIN_SRC_ACCOUNT_PLAYER_ACCOUNT_PLAYER_H_
 
 #include "src/common_type/common_type.h"
-#include "src/login_state/login_state_machine.h"
+#include "src/game_logic/login_state/login_state_machine.h"
 #include "mysql_database_table.pb.h"
 
 namespace gw2l
