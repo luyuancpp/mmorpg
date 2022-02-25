@@ -117,6 +117,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../../common/;../../game_proto/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4819</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -143,14 +144,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\src\event\event.cc" />
-    <ClCompile Include="..\..\common\src\login_state\login_state.cpp" />
-    <ClCompile Include="..\..\common\src\login_state\login_state_machine.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\login_state\login_state.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\login_state\login_state_machine.cpp" />
     <ClCompile Include="login_state_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\login_state\login_state.h" />
-    <ClInclude Include="..\..\common\src\login_state\login_state_concrete.h" />
-    <ClInclude Include="..\..\common\src\login_state\login_state_machine.h" />
+    <ClInclude Include="..\..\common\src\game_logic\login_state\login_state.h" />
+    <ClInclude Include="..\..\common\src\game_logic\login_state\login_state_concrete.h" />
+    <ClInclude Include="..\..\common\src\game_logic\login_state\login_state_machine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

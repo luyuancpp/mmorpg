@@ -21,24 +21,21 @@
     <ClCompile Include="..\..\common\src\event\event.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\login_state\login_state.cpp">
+    <ClCompile Include="..\..\common\src\game_logic\login_state\login_state.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\login_state\login_state_machine.cpp">
+    <ClCompile Include="..\..\common\src\game_logic\login_state\login_state_machine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\event\event.h">
+    <ClInclude Include="..\..\common\src\game_logic\login_state\login_state.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\login_state\login_state.h">
+    <ClInclude Include="..\..\common\src\game_logic\login_state\login_state_concrete.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\login_state\login_state_concrete.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\login_state\login_state_machine.h">
+    <ClInclude Include="..\..\common\src\game_logic\login_state\login_state_machine.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
