@@ -126,7 +126,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;protopb.lib;zlib.lib;mysqlclient.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;zlib.lib;mysqlclient.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../bin/</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
