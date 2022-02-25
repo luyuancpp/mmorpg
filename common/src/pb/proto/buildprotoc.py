@@ -47,5 +47,5 @@ def genmd5():
                 continue            
             md5tool.generate_md5_file_for(each_filename, md5str + "/" + each_filename + '.md5')
 
-gen_protoc("./", "../../third_party/protobuf/src", "../pbc/")
+gen_protoc("./", "../../../../third_party/protobuf/src", "../pbc/")
 genmd5()
