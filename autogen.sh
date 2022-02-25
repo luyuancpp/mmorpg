@@ -11,11 +11,11 @@ if test $? -ne 0; then
 fi
 cd ../..
 
-cd protopb/proto && python build.py
+cd common/src/pb/proto && python build.py
 if test $? -ne 0; then 
    exit 
 fi
-cd ../..
+cd ../../../..
 
 cd protopb && cmake . && make -j$cpu
 if test $? -ne 0; then 
