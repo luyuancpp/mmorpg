@@ -18,7 +18,7 @@ compile_commands.json
 *.exp
 *.pyc
 *CMakeLists.txt
-protopb/pbc/
+common/src/pb/pbc/
 third_party/
 output/
 x64/
@@ -30,6 +30,6 @@ bin/config/proto
 bin/config/cpp/
 common/src/game_config/
 bin/config/
-protopb/proto/md5/
-protopb/proto/service/
+common/src/pb/proto/md5/
+common/src/pb/proto/service/
 
