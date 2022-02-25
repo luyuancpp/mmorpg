@@ -134,7 +134,7 @@ def generate(vcxprojfile, vcxprojDir, target_type):
 
 link_mysql = "mysqlclient"
 generate("./common/common.vcxproj", "./common/", "lib")
-generate("./protopb/protopb.vcxproj", "./protopb/", "lib")
+generate("./pb/pb.vcxproj", "./pb/", "lib")
 generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 generate("./deploy_server/deploy_server.vcxproj", "./deploy_server/", "")
 generate("./region_server/region_server.vcxproj", "./region_server/", "")
