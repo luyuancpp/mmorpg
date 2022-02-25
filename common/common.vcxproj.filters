@@ -186,6 +186,12 @@
     <ClCompile Include="src\pb\pbc\scene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\game_logic\login_state\login_state.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
@@ -489,6 +495,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\scene_config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\login_state\login_state.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\login_state\login_state_concrete.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game_logic\login_state\login_state_machine.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
