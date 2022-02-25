@@ -100,5 +100,4 @@ void DeployServiceImpl::LoadRegionDeploy(::google::protobuf::RpcController* cont
 }
 
 ///<<<rpc end
-
 }// namespace deploy

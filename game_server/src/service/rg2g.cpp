@@ -17,5 +17,4 @@ void Rg2gServiceImpl::EnterRoom(::google::protobuf::RpcController* controller,
 }
 
 ///<<<rpc end
-
 }// namespace rg2g

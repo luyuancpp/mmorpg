@@ -105,8 +105,8 @@ void Gw2msServiceImpl::PlayerService(::google::protobuf::RpcController* controll
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE LeaveGame
-///<<< END WRITING YOUR CODE LeaveGame
+///<<< BEGIN WRITING YOUR CODE PlayerService
+///<<< END WRITING YOUR CODE PlayerService
 }
 
  ///<<<rpc end

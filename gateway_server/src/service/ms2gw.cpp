@@ -87,5 +87,4 @@ void Ms2gwServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* controll
 }
 
 ///<<<rpc end
-
 }// namespace ms2gw
