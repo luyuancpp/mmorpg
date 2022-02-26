@@ -6,8 +6,8 @@
 namespace master
 {
 
-static std::size_t kMaxServerPlayerSize = 2000;
-static std::size_t kMaxScenePlayerSize = 1000;
+static const std::size_t kMaxServerPlayerSize = 2000;
+static const std::size_t kMaxScenePlayerSize = 1000;
 
 struct EnterSceneParam
 {
