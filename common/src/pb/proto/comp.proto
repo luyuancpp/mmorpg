@@ -9,13 +9,25 @@ message Vector3
 
 message Condition
 {
-	uint32 id = 1;
+	enum eConditionStatus{
+        E_CONDITION_NORMAL = 0;
+        E_CONDITION_COMPLETE = 1;
+    }
+    uint32 id = 1;
 	uint32 progress = 2;
 	uint32 status = 3;
 }
 
 message Mission
 {
+	enum eMissionStatus
+	{
+	    E_MISSION_NORMAL = 0;
+	    E_MISSION_ACHIEVEMENT = 1;
+	    E_MISSION_COMPLETE = 2;
+	    E_MISSION_TIME_OUT = 3;
+	    E_MISSION_FAILD = 4;
+	};
 	uint32 id = 1;
 	uint32 status = 2;
 	repeated Condition conditions = 3;

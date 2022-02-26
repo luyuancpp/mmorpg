@@ -56,7 +56,7 @@ void MakeScenes();
 
 entt::entity MakeMainScene(entt::registry& reg, const MakeMainSceneP& param);
 
-entt::entity MakeMainSceneGS(entt::registry& reg, const MakeGSParam& param);
+entt::entity MakeMainSceneNode(entt::registry& reg, const MakeGSParam& param);
 
 }//namespace master
 

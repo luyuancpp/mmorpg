@@ -148,7 +148,7 @@ namespace common
             bool all_complete = true;
             for (int32_t i = 0; i < mission.conditions_size(); ++i)
             {
-                if (mission.mutable_conditions(i)->status() == E_CONDITION_COMPLETE)
+                if (mission.mutable_conditions(i)->status() == Condition::E_CONDITION_COMPLETE)
                 {
                     continue;
                 }
@@ -159,7 +159,7 @@ namespace common
             {
                 break;
             }
-            mission.set_status(E_MISSION_COMPLETE);
+            mission.set_status(Mission::E_MISSION_COMPLETE);
             mission.clear_conditions();
             temp_complete.emplace(mission.id());
             mm->erase(mit);
@@ -197,7 +197,7 @@ namespace common
         for (int32_t i = 0; i < mission.conditions_size(); ++i)
         {
             auto condition = mission.mutable_conditions(i);
-            if (condition->status() == E_CONDITION_COMPLETE)
+            if (condition->status() == Condition::E_CONDITION_COMPLETE)
             {
                 continue;
             }
@@ -249,7 +249,7 @@ namespace common
 
             // to client
             condition->set_progress(p->amount());
-            condition->set_status(E_CONDITION_COMPLETE);
+            condition->set_status(Condition::E_CONDITION_COMPLETE);
             // to client
         }
         return mission_change;

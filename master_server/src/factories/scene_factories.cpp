@@ -53,7 +53,7 @@ namespace master
         return e;
     }
 
-    entt::entity MakeMainSceneGS(entt::registry& reg,  const MakeGSParam& param)
+    entt::entity MakeMainSceneNode(entt::registry& reg,  const MakeGSParam& param)
     {
         auto e = reg.create();
         GSDataPtrComp p_server_data = std::make_shared<GSData>();
