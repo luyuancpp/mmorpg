@@ -87,10 +87,10 @@ namespace common
         }
         Mission m;
         m.set_id(mission_id);
-        const auto& conditions = config_->condition_id(mission_id);
-        for (int32_t i = 0; i < conditions.size(); ++i)
+        const auto& conditionids = config_->condition_id(mission_id);
+        for (int32_t i = 0; i < conditionids.size(); ++i)
         {
-            auto cid = conditions[i];
+            auto cid = conditionids[i];
             auto p = condition_config::GetSingleton().get(cid);
             if (nullptr == p)
             {
@@ -285,8 +285,8 @@ namespace common
             {
                 for (int32_t i = 0; i < next_missions.size(); ++i)
                 {
-                    auto next_condition_id = next_missions.Get(i);
-                    AcceptMissionP param{ next_condition_id};
+                    auto next_mission = next_missions.Get(i);
+                    AcceptMissionP param{ next_mission};
                     Accept(param);
                 }
             }
