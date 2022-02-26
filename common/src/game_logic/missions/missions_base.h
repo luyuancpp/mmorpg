@@ -10,24 +10,13 @@
 
 namespace common
 {
-    class AcceptMissionBaseP
+    class AcceptMissionP
     {
     public:
-        using PBUint32V = ::google::protobuf::RepeatedField<::google::protobuf::uint32 >;
-        AcceptMissionBaseP(uint32_t mid, const PBUint32V* condition_id) 
-            : mission_id_(mid),
-              conditions_id_(condition_id){}
-
-        AcceptMissionBaseP(uint32_t mid, const PBUint32V& condition_id)
-            : AcceptMissionBaseP(mid, &condition_id) {}
-
-    protected:
-        AcceptMissionBaseP(uint32_t mid) : mission_id_(mid) {}
-
+        AcceptMissionP(uint32_t mid) 
+            : mission_id_(mid){}
     public:
         uint32_t mission_id_{ 0 };
-        const PBUint32V* conditions_id_{ nullptr };
-        bool is_random_condition_{ false };
     };
     
     struct ConditionEvent
@@ -64,8 +53,8 @@ namespace common
         }
 
         uint32_t GetReward(uint32_t mission_id);
-        uint32_t Accept(const AcceptMissionBaseP& param);
-        uint32_t AcceptCheck(const AcceptMissionBaseP& param);
+        uint32_t Accept(const AcceptMissionP& param);
+        uint32_t AcceptCheck(const AcceptMissionP& param);
         uint32_t Abandon(uint32_t mission_id);
         void CompleteAllMission();
 

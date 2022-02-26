@@ -13,9 +13,8 @@ message Condition
         E_CONDITION_NORMAL = 0;
         E_CONDITION_COMPLETE = 1;
     }
-    uint32 id = 1;
-	uint32 progress = 2;
-	uint32 status = 3;
+	uint32 progress = 1;
+	uint32 status = 2;
 }
 
 message Mission
