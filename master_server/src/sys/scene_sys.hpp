@@ -52,17 +52,23 @@ struct CompelChangeSceneParam
     uint32_t scene_confid_{0};
 };
 
-entt::entity GetWeightRoundRobinMainScene(const GetWeightRoundRobinSceneParam& param);
+class ServerNodeSystem
+{
+public:
 
-entt::entity GetWeightRoundRobinRoomScene(const GetWeightRoundRobinSceneParam& param);
+	entt::entity GetWeightRoundRobinMainScene(const GetWeightRoundRobinSceneParam& param);
 
-void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
+	entt::entity GetWeightRoundRobinRoomScene(const GetWeightRoundRobinSceneParam& param);
 
-void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param);
+	void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
 
-void ServerCrashed(entt::registry& reg, const ServerCrashParam& param);
+	void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param);
 
-void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
+	void ServerCrashed(entt::registry& reg, const ServerCrashParam& param);
+
+	void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
+};
+
 
 }//namespace master
 

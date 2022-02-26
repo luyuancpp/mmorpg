@@ -89,7 +89,7 @@ void Gw2msServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 
         LeaveSceneParam leave_scene;
         leave_scene.leave_entity_ = player_entity;
-        g_scene_manager->LeaveScene(leave_scene);
+        g_scene_sys->LeaveScene(leave_scene);
 
         auto guid = reg.get<Guid>(player_entity);
         assert(PlayerList::GetSingleton().HasPlayer(guid));

@@ -50,7 +50,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetWeightRoundRobinSceneParam& para
     return scene_entity;
 }
 
-entt::entity GetWeightRoundRobinMainScene(const GetWeightRoundRobinSceneParam& param)
+entt::entity ServerNodeSystem::GetWeightRoundRobinMainScene(const GetWeightRoundRobinSceneParam& param)
 {
     auto scene_entity = GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, NoPressureComp>( param);
     if (entt::null != scene_entity)
@@ -60,7 +60,7 @@ entt::entity GetWeightRoundRobinMainScene(const GetWeightRoundRobinSceneParam& p
     return GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, PressureComp>( param);
 }
 
-entt::entity GetWeightRoundRobinRoomScene(const GetWeightRoundRobinSceneParam& param)
+entt::entity ServerNodeSystem::GetWeightRoundRobinRoomScene(const GetWeightRoundRobinSceneParam& param)
 {
     auto scene_entity = GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, NoPressureComp>( param);
     if (entt::null != scene_entity)
@@ -70,25 +70,25 @@ entt::entity GetWeightRoundRobinRoomScene(const GetWeightRoundRobinSceneParam& p
     return GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, PressureComp>(param);
 }
 
-void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
+void ServerNodeSystem::ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
 {
     reg.remove<NoPressureComp>(param.server_entity_);
     reg.emplace<PressureComp>(param.server_entity_);
 }
 
-void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param)
+void ServerNodeSystem::ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param)
 {
     reg.remove<PressureComp>(param.server_entity_);
     reg.emplace<NoPressureComp>(param.server_entity_);
 }
 
-void ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
+void ServerNodeSystem::ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
 {
     reg.remove<GSNormalComp>(param.crash_entity_);
     reg.emplace<GSCrashComp>(param.crash_entity_);
 }
 
-void ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
+void ServerNodeSystem::ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
 {
     reg.remove<GSNormalComp>(param.maintain_entity_);
     reg.emplace<GSMainTainComp>(param.maintain_entity_);

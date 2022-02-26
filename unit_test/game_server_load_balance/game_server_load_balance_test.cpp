@@ -15,7 +15,7 @@ uint32_t per_scene_config_size = 2;
 
 TEST(GS, CreateMainScene)
 {
-    ScenesManager sm;
+    ScenesSystem sm;
     MakeMainSceneP param;
    
     for (uint32_t i = 0; i < confid_scenelist_size; ++i)
@@ -33,7 +33,7 @@ TEST(GS, CreateMainScene)
 
 TEST(GS, MakeScene2Sever )
 {
-    ScenesManager sm;
+    ScenesSystem sm;
 
     MakeGSParam param1;
     param1.node_id_ = 1;
@@ -78,7 +78,7 @@ TEST(GS, MakeScene2Sever )
 
 TEST(GS, PutScene2Sever)
 {
-    ScenesManager sm;
+    ScenesSystem sm;
 
     MakeGSParam param1;
     param1.node_id_ = 1;
@@ -102,7 +102,7 @@ TEST(GS, PutScene2Sever)
 
 TEST(GS, DestroyScene)
 {
-    ScenesManager sm;
+    ScenesSystem sm;
 
     MakeGSParam param1;
     param1.node_id_ = 1;
@@ -136,7 +136,7 @@ TEST(GS, DestroyScene)
 
 TEST(GS, DestroySever)
 {
-    ScenesManager sm;
+    ScenesSystem sm;
 
     MakeGSParam param1;
     param1.node_id_ = 1;
@@ -204,7 +204,7 @@ TEST(GS, DestroySever)
 
 TEST(GS, ServerScene2Sever)
 {
-    ScenesManager sm;
+    ScenesSystem sm;
 
     MakeGSParam cgs1;
     cgs1.node_id_ = 1;
@@ -267,7 +267,7 @@ TEST(GS, ServerScene2Sever)
 
 TEST(GS, PlayerLeaveEnterScene)
 {
-    ScenesManager sm;
+    ScenesSystem sm;
     MakeGSParam cgs1;
     cgs1.node_id_ = 1;
 
@@ -359,7 +359,8 @@ TEST(GS, PlayerLeaveEnterScene)
 TEST(GS, MainTainWeightRoundRobinMainScene)
 {
     reg.clear();
-    ScenesManager sm;
+    ScenesSystem sm;
+    ServerNodeSystem snsys;
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
@@ -407,7 +408,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 
     MaintainServerParam maintain;
     maintain.maintain_entity_ = *server_entities.begin();
-    ServerMaintain(reg, maintain);
+    snsys.ServerMaintain(reg, maintain);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -415,7 +416,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     weight_round_robin_scene.scene_confid_ = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
         EXPECT_TRUE(reg.get<common::GSDataPtrComp>(can_enter)->server_entity() != entt::null);
         EXPECT_TRUE(reg.get<common::GSDataPtrComp>(can_enter)->server_entity() != maintain.maintain_entity_);
     }
@@ -423,7 +424,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 
 TEST(GS, CompelChangeScene)
 {
-    ScenesManager sm;
+    ScenesSystem sm;
     MakeGSParam cgs1;
     cgs1.node_id_ = 1;
 
@@ -482,7 +483,8 @@ TEST(GS, CompelChangeScene)
 
 TEST(GS, CrashWeightRoundRobinMainScene)
 {
-    ScenesManager sm;
+    ScenesSystem sm;
+    ServerNodeSystem snsys;
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
@@ -530,7 +532,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 
     ServerCrashParam crash1;
     crash1.crash_entity_ = *server_entities.begin();
-    ServerCrashed(reg, crash1);
+    snsys.ServerCrashed(reg, crash1);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -538,7 +540,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     weight_round_robin_scene.scene_confid_ = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
         EXPECT_TRUE(reg.get<common::GSDataPtrComp>(can_enter)->server_entity() != entt::null);
         EXPECT_TRUE(reg.get<common::GSDataPtrComp>(can_enter)->server_entity() != crash1.crash_entity_);
     }
@@ -548,7 +550,8 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 //崩溃时候的消息不能处理
 TEST(GS, CrashMovePlayer2NewServer)
 {
-    ScenesManager sm;
+    ScenesSystem sm;
+    ServerNodeSystem snsys;
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
@@ -595,7 +598,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 
     ServerCrashParam crash1;
     crash1.crash_entity_ = *server_entities.begin();
-    ServerCrashed(reg, crash1);
+    snsys.ServerCrashed(reg, crash1);
 
     ReplaceCrashServerParam replace_crash;
     replace_crash.cransh_server_entity_ = *server_entities.begin();
@@ -629,7 +632,8 @@ TEST(GS, CrashMovePlayer2NewServer)
 TEST(GS, WeightRoundRobinMainScene)
 {
     reg.clear();
-    ScenesManager sm;
+    ScenesSystem sm;
+    ServerNodeSystem snsys;
     EntitySet server_entities;
     uint32_t server_size = 10;
     uint32_t per_server_scene = 10;
@@ -653,7 +657,7 @@ TEST(GS, WeightRoundRobinMainScene)
         }        
     }
 
-    auto enter_leave_lambda = [&server_entities, server_size, per_server_scene, &sm]()->void
+    auto enter_leave_lambda = [&server_entities, server_size, per_server_scene, &sm, &snsys]()->void
     {
         uint32_t scene_config_id0 = 0;
         uint32_t scene_config_id1 = 1;
@@ -669,7 +673,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
         for (uint32_t i = 0; i < player_size; ++i)
         {
-            auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
+            auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
             auto p_e = reg.create();
             enter_param1.enter_entity_ = p_e;
             enter_param1.scene_entity_ = can_enter;
@@ -690,7 +694,7 @@ TEST(GS, WeightRoundRobinMainScene)
         weight_round_robin_scene.scene_confid_ = scene_config_id1;
         for (uint32_t i = 0; i < player_size; ++i)
         {
-            auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
+            auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
             auto p_e = reg.create();
             enter_param1.enter_entity_ = p_e;
             enter_param1.scene_entity_ = can_enter;
@@ -753,7 +757,8 @@ TEST(GS, WeightRoundRobinMainScene)
 TEST(GS, ServerEnterLeavePressure)
 {
     reg.clear();
-    ScenesManager sm;
+    ScenesSystem sm;
+    ServerNodeSystem snsys;
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 10;
@@ -778,7 +783,7 @@ TEST(GS, ServerEnterLeavePressure)
     }
     ServerPressureParam pressure1;
     pressure1.server_entity_ = *server_entities.begin();
-    ServerEnterPressure(reg, pressure1);
+    snsys.ServerEnterPressure(reg, pressure1);
     
 
     uint32_t scene_config_id0 = 0;
@@ -793,7 +798,7 @@ TEST(GS, ServerEnterLeavePressure)
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
         auto p_e = reg.create();
         enter_param1.enter_entity_ = p_e;
         enter_param1.scene_entity_ = can_enter;
@@ -808,13 +813,13 @@ TEST(GS, ServerEnterLeavePressure)
         EXPECT_TRUE(psr->server_entity() != pressure1.server_entity_);
     }
 
-    ServerEnterNoPressure(reg, pressure1);
+    snsys.ServerEnterNoPressure(reg, pressure1);
 
     std::unordered_map<entt::entity, entt::entity> player_scene2;
     weight_round_robin_scene.scene_confid_ = scene_config_id1;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
         auto p_e = reg.create();
         enter_param1.enter_entity_ = p_e;
         enter_param1.scene_entity_ = can_enter;

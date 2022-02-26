@@ -12,7 +12,7 @@
 namespace master
 {
 
-class ScenesManager : public common::EntityHandle
+class ScenesSystem : public common::EntityHandle
 {
 public:
 
@@ -62,6 +62,6 @@ private:
 };
 }//namespace master
 
-extern master::ScenesManager* g_scene_manager;
+extern master::ScenesSystem* g_scene_sys;
 
 #endif//MASTER_SERVER_SRC_SCENE_SCENES_H_
