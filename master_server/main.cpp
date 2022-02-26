@@ -13,8 +13,8 @@ int main(int argc, char* argv[])
     MasterServer server(&loop);
     g_master_server = &server;
 
-    ScenesManager scene_manager;
-    g_scene_manager = &scene_manager;
+    ScenesSystem scene_scene;
+    g_scene_sys = &scene_scene;
 
     server.Init();
     server.ConnectDeploy();

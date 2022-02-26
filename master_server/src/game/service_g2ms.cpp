@@ -62,7 +62,7 @@ namespace g2ms
             for (int32_t i = 0; i < config_all.data_size(); ++i)
             {
                 create_scene_param.scene_confid_ = config_all.data(i).id();
-                auto scene_entity = g_scene_manager->MakeSceneGSScene( create_scene_param);
+                auto scene_entity = g_scene_sys->MakeSceneGSScene( create_scene_param);
                 if (!reg.valid(scene_entity))
                 {
                     continue;
