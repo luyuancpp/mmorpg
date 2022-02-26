@@ -39,7 +39,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t MissionsComp::Accept(const AcceptMissionBaseP& param)
+    uint32_t MissionsComp::Accept(const AcceptMissionP& param)
     {
         auto mission_id = param.mission_id_;
         if (missions_.missions().count(mission_id) > 0)
@@ -49,11 +49,6 @@ namespace common
         if (complete_ids_.missions().count(mission_id) > 0)
         {
             return RET_MISSION_COMPLETE;
-        }
-        auto condition_id_ = param.conditions_id_;
-        if (nullptr == condition_id_)
-        {
-            return RET_MISSION_NO_CONDITION;
         }
         if (!config_->HasKey(mission_id))
         {
@@ -69,18 +64,18 @@ namespace common
         }
         Mission m;
         m.set_id(mission_id);
-        for (int32_t i = 0; i < condition_id_->size(); ++i)
+        const auto& conditions = config_->condition_id(mission_id);
+        for (int32_t i = 0; i < conditions.size(); ++i)
         {
-            auto condition_id = condition_id_->Get(i);
-            auto p = condition_config::GetSingleton().get(condition_id);
+            auto cid = conditions[i];
+            auto p = condition_config::GetSingleton().get(cid);
             if (nullptr == p)
             {
-                LOG_ERROR << "has not condtion" << condition_id;
+                LOG_ERROR << "has not condtion" << cid;
                 continue;
             }
             auto pcs = m.add_conditions();
-            pcs->set_id(condition_id);
-             event_missions_classify_[p->condition_type()].emplace(mission_id);
+            event_missions_classify_[p->condition_type()].emplace(mission_id);
         }
         missions_.mutable_missions()->insert({ mission_id, std::move(m) });
         if (check_type_filter)
@@ -91,7 +86,7 @@ namespace common
         return RET_OK;
     }
 
-    uint32_t MissionsComp::AcceptCheck(const AcceptMissionBaseP& param)
+    uint32_t MissionsComp::AcceptCheck(const AcceptMissionP& param)
     {
         return RET_OK;
     }
@@ -190,18 +185,23 @@ namespace common
         if (c.match_condtion_ids_.empty())
         {
             return false;
-         }
+        }
+        if (nullptr == config_)
+        {
+            return false;
+        }
         auto& row_condtion1 = c.match_condtion_ids_[E_CONDITION_1];//to do condition 2
         //compare condition
         bool mission_change = false;
-        for (int32_t i = 0; i < mission.conditions_size(); ++i)
+        auto& condtionids = config_->condition_id(mission.id());
+        for (int32_t i = 0; i < mission.conditions_size() && i < condtionids.size(); ++i)
         {
             auto condition = mission.mutable_conditions(i);
             if (condition->status() == Condition::E_CONDITION_COMPLETE)
             {
                 continue;
             }
-            auto p = condition_config::GetSingleton().get(condition->id());
+            auto p = condition_config::GetSingleton().get(condtionids.at(i));
             if (nullptr == p)
             {
                 continue;
@@ -220,6 +220,7 @@ namespace common
                 conform = true;
                 break;
             }
+
             if (!conform)
             {
                 continue;
@@ -277,8 +278,7 @@ namespace common
                 for (int32_t i = 0; i < next_missions.size(); ++i)
                 {
                     auto next_condition_id = next_missions.Get(i);
-                    AcceptMissionBaseP param{ next_condition_id,
-                        config_->condition_id(next_condition_id) };
+                    AcceptMissionP param{ next_condition_id};
                     Accept(param);
                 }
             }

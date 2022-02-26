@@ -19,14 +19,13 @@ TEST(MissionsComp, AcceptMission)
     uint32_t mid = 1;
     MissionsComp ms;
     reg.remove<CheckSubType>(ms.entity());
-    AcceptMissionBaseP param{mid,mission_config::GetSingleton().get(mid)->condition_id()};
+    AcceptMissionP param{mid};
     auto& data = mission_config::GetSingleton().all();
     std::size_t sz = 0;
     for (int32_t i = 0; i < data.data_size(); ++i)
     {
         auto id = data.data(i).id();
         param.mission_id_ = id;
-        param.conditions_id_ = &mission_config::GetSingleton().get(id)->condition_id();
         auto m = ms.Accept(param);
         ++sz;
     }
@@ -46,20 +45,6 @@ TEST(MissionsComp, RadomCondtion1)
     tv.emplace(1, MissionsComp());
 }
 
-TEST(MissionsComp, RadomCondtion)
-{
-    uint32_t mid = 3;
-    MissionsComp ms;
-    AcceptPlayerRandomMissionP param{ mid};    
-    auto cids = mission_config::GetSingleton().get(mid);    
-    RandomMision(param, ms);
-    auto& missions = ms.missions();
-    auto it =  std::find(cids->random_condition_pool().begin(), cids->random_condition_pool().end(),
-        missions.missions().find(mid)->second.conditions(0).id());
-    EXPECT_TRUE(it != cids->random_condition_pool().end());
-    EXPECT_EQ(1, missions.missions().find(mid)->second.conditions_size());
-}
-
 TEST(MissionsComp, RepeatedMission)
 {
     MissionsComp ms;
@@ -71,10 +56,10 @@ TEST(MissionsComp, RepeatedMission)
     }
 
     {
-        AcceptPlayerRandomMissionP param{3};
-        AcceptMissionP param2{2};
-        EXPECT_EQ(RET_OK, RandomMision(param, ms));
-        EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, ms.Accept(param2));
+        AcceptMissionP param{ 3 };
+		AcceptMissionP param2{ 2 };
+		EXPECT_EQ(RET_OK, ms.Accept(param));
+		EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, ms.Accept(param2));
     }
 }
 
@@ -327,13 +312,34 @@ TEST(MissionsComp, MissionTimeOut)
 
 }
 
+class C
+{
+    uint32_t status = 2;
+    uint32_t id = 1;
+};
+
+class M
+{
+public:
+
+	uint32_t id = 1;
+	uint32_t status = 2;
+    std::array<C, 5> cs;
+};
+
+using ms = std::array<C, 10000>;
+std::array<ms, 10000> ps; //计算10000个玩家占用多少任务内存
+
+
 int main(int argc, char** argv)
 {
     Random::GetSingleton();
     condition_config::GetSingleton().load();
     mission_config::GetSingleton().load();
     testing::InitGoogleTest(&argc, argv);
-
+    std::cout << sizeof(ps) << std::endl;
+    std::cout << sizeof(Mission) << std::endl;
+    std::cout << sizeof(M) << std::endl;
     return RUN_ALL_TESTS();
 }
 
