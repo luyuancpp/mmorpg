@@ -400,7 +400,7 @@ public:
 
     struct AddInfo
     {
-        int32_t config_id_{ INVALID_ID };
+        int32_t confid_{ INVALID_ID };
         GUID_t item_guid_{ 0 };
         int32_t count_{ 0 };
     };

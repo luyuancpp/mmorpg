@@ -2606,12 +2606,12 @@ namespace HumanBag
         i32_map_type v;
         for (auto& it : outparam.add_list_)
         {
-            auto p_bag = GetBagByItemConfig(it.config_id_);
+            auto p_bag = GetBagByItemConfig(it.confid_);
             if (nullptr == p_bag)
             {
                 continue;
             }
-            auto p_ele = ItemProtoTable::Instance().GetElement(it.config_id_);
+            auto p_ele = ItemProtoTable::Instance().GetElement(it.confid_);
             if (p_ele == nullptr)
             {
                 continue;
@@ -2620,7 +2620,7 @@ namespace HumanBag
             {
                 continue;
             }
-            p.m_nConfigId = it.config_id_;
+            p.m_nConfigId = it.confid_;
             p.m_nItemPos = p_bag->GetItemPos(it.item_guid_);
             p.m_nUseSize = it.count_;
             v.emplace(p.m_nConfigId, p.m_nUseSize);

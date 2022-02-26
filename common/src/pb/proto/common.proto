@@ -41,6 +41,6 @@ message IpPort
 
 message SceneInfo
 {
-  uint32 scene_config_id = 1;
+  uint32 scene_confid = 1;
   uint64 scene_id = 2;
 }

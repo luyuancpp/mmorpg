@@ -7,6 +7,7 @@
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/master_server.h"
 #include "src/master_player/ms_player_list.h"
+#include "src/scene/sceces.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/server_common/server_component.h"
 #include "src/sys/scene_sys.hpp"
@@ -88,7 +89,7 @@ void Gw2msServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 
         LeaveSceneParam leave_scene;
         leave_scene.leave_entity_ = player_entity;
-        LeaveScene(leave_scene);
+        g_scene_manager->LeaveScene(leave_scene);
 
         auto guid = reg.get<Guid>(player_entity);
         assert(PlayerList::GetSingleton().HasPlayer(guid));

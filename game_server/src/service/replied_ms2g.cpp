@@ -32,7 +32,7 @@ void RepliedMs2g::StartGSMasterReplied(StartGameMasterRpcRC cp)
     {
         auto& pb = rsp->scenes_info(i);
         auto e = reg.create();
-        reg.emplace<SceneConfigComp>(e, pb.scene_config_id());
+        reg.emplace<ConfigIdComp>(e, pb.scene_confid());
         reg.emplace<Guid>(e, pb.scene_id());
         scenemap.emplace(pb.scene_id(), e);
     }
