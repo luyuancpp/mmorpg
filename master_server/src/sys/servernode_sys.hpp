@@ -5,6 +5,10 @@
 
 namespace master
 {
+
+static std::size_t kMaxServerPlayerSize = 2000;
+static std::size_t kMaxScenePlayerSize = 1000;
+
 struct EnterSceneParam
 {
     entt::entity scene_entity_{ entt::null };

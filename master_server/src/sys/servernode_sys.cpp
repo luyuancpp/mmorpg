@@ -9,9 +9,7 @@ using namespace common;
 namespace master
 {
 
-static std::size_t kMaxServerPlayerSize = 2000;
-static std::size_t kMaxScenePlayerSize = 1000;
-
+//从当前符服务器中找到一个对应场景人数最少的
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
 {
@@ -53,6 +51,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     return scene_entity;
 }
 
+//选择不满人得服务器场景
 template<typename ServerType, typename ServerStatus, typename ServerPressure>
 entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 {
@@ -67,12 +66,13 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 			continue;
 		}
 		std::size_t server_player_size = (*reg.get<GSDataPtrComp>(e)).player_size();
-		if (server_player_size >= scene_player_max_size)
+		if (server_player_size >= kMaxServerPlayerSize)
 		{
 			continue;
 		}
 		server_entity = e;
 		min_player_size = server_player_size;
+        break;
 	}
 	entt::entity scene_entity{ entt::null };
 	if (entt::null == server_entity)
@@ -80,17 +80,16 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 		return scene_entity;
 	}
 	auto& scenes = reg.get<SceneComp>(server_entity);
-	std::size_t scene_min_player_size = UINT64_MAX;
 	auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
 	for (auto& ji : server_scenes)
 	{
 		std::size_t scene_player_size = reg.get<PlayersComp>(ji).size();
-		if (scene_player_size >= scene_min_player_size)
+		if (scene_player_size >= kMaxScenePlayerSize)
 		{
 			continue;
 		}
-		scene_min_player_size = scene_player_size;
 		scene_entity = ji;
+        break;
 	}
 	return scene_entity;
 }
