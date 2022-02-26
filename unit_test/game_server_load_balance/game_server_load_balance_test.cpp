@@ -4,7 +4,7 @@
 #include "src/factories/scene_factories.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/game_registry.h"
-#include "src/sys/scene_sys.hpp"
+#include "src/sys/servernode_sys.hpp"
 #include "src/scene/sceces.h"
 
 using namespace  master;
@@ -412,7 +412,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
-    GetWeightRoundRobinSceneParam weight_round_robin_scene;
+    GetSceneParam weight_round_robin_scene;
     weight_round_robin_scene.scene_confid_ = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
@@ -536,7 +536,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
-    GetWeightRoundRobinSceneParam weight_round_robin_scene;
+    GetSceneParam weight_round_robin_scene;
     weight_round_robin_scene.scene_confid_ = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
@@ -661,7 +661,7 @@ TEST(GS, WeightRoundRobinMainScene)
     {
         uint32_t scene_config_id0 = 0;
         uint32_t scene_config_id1 = 1;
-        GetWeightRoundRobinSceneParam weight_round_robin_scene;
+        GetSceneParam weight_round_robin_scene;
         weight_round_robin_scene.scene_confid_ = scene_config_id0;
 
         uint32_t player_size = 1000;
@@ -789,7 +789,7 @@ TEST(GS, ServerEnterLeavePressure)
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
 
-    GetWeightRoundRobinSceneParam weight_round_robin_scene;
+    GetSceneParam weight_round_robin_scene;
     weight_round_robin_scene.scene_confid_ = scene_config_id0;
 
     std::unordered_map<entt::entity, entt::entity> player_scene1;

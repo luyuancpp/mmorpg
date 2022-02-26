@@ -18,7 +18,7 @@ struct LeaveSceneParam
     uint32_t op_{ 1 };
 };
 
-struct GetWeightRoundRobinSceneParam
+struct GetSceneParam
 {
     uint32_t scene_confid_{0};
     uint32_t op_{ 0 };
@@ -56,9 +56,11 @@ class ServerNodeSystem
 {
 public:
 
-	entt::entity GetWeightRoundRobinMainScene(const GetWeightRoundRobinSceneParam& param);
+	entt::entity GetWeightRoundRobinMainScene(const GetSceneParam& param);
 
-	entt::entity GetWeightRoundRobinRoomScene(const GetWeightRoundRobinSceneParam& param);
+	entt::entity GetWeightRoundRobinRoomScene(const GetSceneParam& param);
+
+    entt::entity GetMainSceneNotFull(const GetSceneParam& param);
 
 	void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
 

@@ -21,7 +21,7 @@
     <ClCompile Include="..\..\master_server\src\factories\scene_factories.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\master_server\src\sys\scene_sys.cpp">
+    <ClCompile Include="..\..\master_server\src\sys\servernode_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
