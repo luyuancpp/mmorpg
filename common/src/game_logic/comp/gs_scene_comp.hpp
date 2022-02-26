@@ -12,7 +12,7 @@ namespace common
     using SceneMapComp = std::unordered_map<Guid, entt::entity>;
     using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
     using PlayersComp = EntitySet;//弱引用，要解除玩家和场景的耦合
-    using SceneConfigComp = uint32_t;
+    using ConfigIdComp = uint32_t;
 
     class SceneEntity
     {

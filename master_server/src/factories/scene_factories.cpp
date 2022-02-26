@@ -23,7 +23,7 @@ namespace master
 
     void OnDestroyScene(entt::registry& reg, entt::entity scene_entity, SceneComp& scene_map)
     {
-        auto scene_config_id = reg.get<SceneConfigComp>(scene_entity);
+        auto scene_config_id = reg.get<ConfigIdComp>(scene_entity);
         scene_map.RemoveScene(scene_config_id, scene_entity);
         auto scene_guid = reg.get<Guid>(scene_entity);
         reg.get<SceneMapComp>(scenes_entity()).erase(scene_guid);
@@ -40,10 +40,10 @@ namespace master
     entt::entity MakeMainScene(entt::registry& reg, const MakeMainSceneP& param)
     {
         auto e = reg.create();
-        reg.emplace<SceneConfigComp>(e, param.scene_config_id_);
+        reg.emplace<ConfigIdComp>(e, param.scene_confid_);
         reg.emplace<MainSceneComp>(e);
         reg.emplace<PlayersComp>(e);
-        auto& scene_config = reg.get<SceneConfigComp>(e);
+        auto& scene_config = reg.get<ConfigIdComp>(e);
         auto& c = reg.get<SceneComp>(scenes_entity());
         auto& sn = reg.get<SnowFlake>(scenes_entity());
         auto scene_guid = sn.Generate();

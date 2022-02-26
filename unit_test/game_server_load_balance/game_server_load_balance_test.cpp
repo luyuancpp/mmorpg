@@ -20,12 +20,12 @@ TEST(GS, CreateMainScene)
    
     for (uint32_t i = 0; i < confid_scenelist_size; ++i)
     {
-        param.scene_config_id_ = i;
+        param.scene_confid_ = i;
         for (uint32_t j = 0; j < per_scene_config_size; ++j)
         {
             sm.MakeMainScene(param);
         }
-        EXPECT_EQ(sm.confid_scenelist_size(i), std::size_t(per_scene_config_size));
+        EXPECT_EQ(sm.scenes_size(i), std::size_t(per_scene_config_size));
     }
     EXPECT_EQ(sm.scenes_size(), std::size_t(confid_scenelist_size * per_scene_config_size));
     EXPECT_EQ(sm.scenes_size(), std::size_t(confid_scenelist_size * per_scene_config_size));
@@ -47,10 +47,10 @@ TEST(GS, MakeScene2Sever )
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
 
-    server1_param.scene_config_id_ = 2;
+    server1_param.scene_confid_ = 2;
     server1_param.server_entity_ = server_entity1;
 
-    server2_param.scene_config_id_ = 3;
+    server2_param.scene_confid_ = 3;
     server2_param.server_entity_ = server_entity2;
 
     sm.MakeSceneGSScene(server1_param);
@@ -63,15 +63,15 @@ TEST(GS, MakeScene2Sever )
     auto& scenes_id2 = reg.get<common::SceneComp>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
-    EXPECT_EQ(server1_param.scene_config_id_, reg.get<common::SceneConfigComp>(scenes_id1.first_scene_id()));
-    EXPECT_EQ(1, sm.confid_scenelist_size(server1_param.scene_config_id_));
+    EXPECT_EQ(server1_param.scene_confid_, reg.get<common::ConfigIdComp>(scenes_id1.first_scene_id()));
+    EXPECT_EQ(1, sm.scenes_size(server1_param.scene_confid_));
     EXPECT_EQ(server_data1.node_id(), param1.node_id_);
 
     EXPECT_EQ(1, scenes_id2.scenes_size());
-    EXPECT_EQ(server2_param.scene_config_id_, reg.get<common::SceneConfigComp>(scenes_id2.first_scene_id()));
+    EXPECT_EQ(server2_param.scene_confid_, reg.get<common::ConfigIdComp>(scenes_id2.first_scene_id()));
     EXPECT_EQ(server_data2.node_id(), param2.node_id_);
 
-    EXPECT_EQ(1, sm.confid_scenelist_size(server2_param.scene_config_id_));
+    EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 }
@@ -94,7 +94,7 @@ TEST(GS, PutScene2Sever)
     sm.PutScene2GS(put_param);
 
     EXPECT_EQ(1, sm.scenes_size());
-    EXPECT_EQ(1, sm.confid_scenelist_size(cparam.scene_config_id_));
+    EXPECT_EQ(1, sm.scenes_size(cparam.scene_confid_));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 
     EXPECT_EQ(1, sm.scenes_size());
@@ -118,7 +118,7 @@ TEST(GS, DestroyScene)
     sm.PutScene2GS(put_param);
 
     EXPECT_EQ(1, sm.scenes_size());
-    EXPECT_EQ(1, sm.confid_scenelist_size(cparam.scene_config_id_));
+    EXPECT_EQ(1, sm.scenes_size(cparam.scene_confid_));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 
     auto& server_scenes = reg.get<common::SceneComp>(server_entity1);
@@ -128,7 +128,7 @@ TEST(GS, DestroyScene)
     dparam.scene_entity_ = scene_entity;
     sm.DestroyScene(dparam);
     EXPECT_TRUE(sm.Empty());
-    EXPECT_TRUE(sm.IsConfigSceneEmpty(cparam.scene_config_id_));
+    EXPECT_TRUE(sm.HasScene(cparam.scene_confid_));
     EXPECT_TRUE(server_scenes.scenes_empty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
     EXPECT_FALSE(reg.valid(scene_entity));
@@ -151,10 +151,10 @@ TEST(GS, DestroySever)
     
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
-    server1_param.scene_config_id_ = 3;
+    server1_param.scene_confid_ = 3;
     server1_param.server_entity_ = server_entity1;
 
-    server2_param.scene_config_id_ = 2;
+    server2_param.scene_confid_ = 2;
     server2_param.server_entity_ = server_entity2;
 
     auto scene_id1 = sm.MakeSceneGSScene(server1_param);
@@ -185,8 +185,8 @@ TEST(GS, DestroySever)
 
     EXPECT_EQ(1, reg.get<common::SceneComp>(server_entity2).scenes_size());
     EXPECT_EQ(1, sm.scenes_size());
-    EXPECT_EQ(0, sm.confid_scenelist_size(server1_param.scene_config_id_));
-    EXPECT_EQ(1, sm.confid_scenelist_size(server2_param.scene_config_id_));
+    EXPECT_EQ(0, sm.scenes_size(server1_param.scene_confid_));
+    EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
 
     destroy_server_param.server_entity_ = server_entity2;
     sm.DestroyServer(destroy_server_param);
@@ -197,8 +197,8 @@ TEST(GS, DestroySever)
     EXPECT_FALSE(reg.valid(server_entity2));
     EXPECT_FALSE(reg.valid(scene_id2));
 
-    EXPECT_EQ(0, sm.confid_scenelist_size(server1_param.scene_config_id_));
-    EXPECT_EQ(0, sm.confid_scenelist_size(server2_param.scene_config_id_));
+    EXPECT_EQ(0, sm.scenes_size(server1_param.scene_confid_));
+    EXPECT_EQ(0, sm.scenes_size(server2_param.scene_confid_));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 }
 
@@ -221,10 +221,10 @@ TEST(GS, ServerScene2Sever)
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
 
-    server1_param.scene_config_id_ = 3;
+    server1_param.scene_confid_ = 3;
     server1_param.server_entity_ = server_entity1;
 
-    server2_param.scene_config_id_ = 2;
+    server2_param.scene_confid_ = 2;
     server2_param.server_entity_ = server_entity2;
 
     auto scene_id1 = sm.MakeSceneGSScene(server1_param);
@@ -258,8 +258,8 @@ TEST(GS, ServerScene2Sever)
     EXPECT_EQ(0, reg.get<common::SceneComp>(server_entity1).scenes_size());
     EXPECT_EQ(2, reg.get<common::SceneComp>(server_entity2).scenes_size());
     EXPECT_EQ(2, sm.scenes_size());
-    EXPECT_EQ(1, sm.confid_scenelist_size(server1_param.scene_config_id_));
-    EXPECT_EQ(1, sm.confid_scenelist_size(server2_param.scene_config_id_));
+    EXPECT_EQ(1, sm.scenes_size(server1_param.scene_confid_));
+    EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
     EXPECT_EQ(reg.get<common::GSDataPtrComp>(scene_id1)->node_id(), cgs2.node_id_);
     EXPECT_EQ(reg.get<common::GSDataPtrComp>(scene_id2)->node_id(), cgs2.node_id_);
     EXPECT_EQ(reg.get<common::GSDataPtrComp>(server_entity1).use_count(), 1);
@@ -280,10 +280,10 @@ TEST(GS, PlayerLeaveEnterScene)
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
 
-    server1_param.scene_config_id_ = 3;
+    server1_param.scene_confid_ = 3;
     server1_param.server_entity_ = server_entity1;
 ;
-    server2_param.scene_config_id_ = 2;
+    server2_param.scene_confid_ = 2;
     server2_param.server_entity_ = server_entity2;
 
     auto scene_id1 = sm.MakeSceneGSScene(server1_param);
@@ -375,7 +375,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     MakeGSSceneP make_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        make_server_scene_param.scene_config_id_ = i;
+        make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
             make_server_scene_param.server_entity_ = it;
@@ -412,7 +412,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
     GetWeightRoundRobinSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.scene_config_id_ = scene_config_id0;
+    weight_round_robin_scene.scene_confid_ = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
@@ -436,10 +436,10 @@ TEST(GS, CompelChangeScene)
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
 
-    server1_param.scene_config_id_ = 2;
+    server1_param.scene_confid_ = 2;
     server1_param.server_entity_ = server_entity1;
 
-    server2_param.scene_config_id_ = 2;
+    server2_param.scene_confid_ = 2;
     server2_param.server_entity_ = server_entity2;
 
     auto scene_id1 = sm.MakeSceneGSScene(server1_param);
@@ -464,7 +464,7 @@ TEST(GS, CompelChangeScene)
 
     CompelChangeSceneParam compel_change_param1;
     compel_change_param1.new_server_entity_ = server_entity2;
-    compel_change_param1.scene_config_id_ = server2_param.scene_config_id_;
+    compel_change_param1.scene_confid_ = server2_param.scene_confid_;
     for (auto& it : player_entities_set1)
     {
         compel_change_param1.compel_change_entity_ = it;
@@ -498,7 +498,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     MakeGSSceneP make_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        make_server_scene_param.scene_config_id_ = i;
+        make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
             make_server_scene_param.server_entity_ = it;
@@ -535,7 +535,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
     GetWeightRoundRobinSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.scene_config_id_ = scene_config_id0;
+    weight_round_robin_scene.scene_confid_ = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
@@ -565,7 +565,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     MakeGSSceneP make_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        make_server_scene_param.scene_config_id_ = i;
+        make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
             make_server_scene_param.server_entity_ = it;
@@ -645,7 +645,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        make_server_scene_param.scene_config_id_ = i;
+        make_server_scene_param.scene_confid_ = i;
         for (auto& it :server_entities)
         {
             make_server_scene_param.server_entity_ = it;
@@ -658,7 +658,7 @@ TEST(GS, WeightRoundRobinMainScene)
         uint32_t scene_config_id0 = 0;
         uint32_t scene_config_id1 = 1;
         GetWeightRoundRobinSceneParam weight_round_robin_scene;
-        weight_round_robin_scene.scene_config_id_ = scene_config_id0;
+        weight_round_robin_scene.scene_confid_ = scene_config_id0;
 
         uint32_t player_size = 1000;
 
@@ -683,11 +683,11 @@ TEST(GS, WeightRoundRobinMainScene)
         {
             auto& pse = reg.get<common::SceneEntity>(it.first);
             EXPECT_TRUE(pse.scene_entity() == it.second);
-            EXPECT_EQ(reg.get<common::SceneConfigComp>(pse.scene_entity()), scene_config_id0);
+            EXPECT_EQ(reg.get<common::ConfigIdComp>(pse.scene_entity()), scene_config_id0);
         }
 
         std::unordered_map<entt::entity, entt::entity> player_scene2;
-        weight_round_robin_scene.scene_config_id_ = scene_config_id1;
+        weight_round_robin_scene.scene_confid_ = scene_config_id1;
         for (uint32_t i = 0; i < player_size; ++i)
         {
             auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);
@@ -703,7 +703,7 @@ TEST(GS, WeightRoundRobinMainScene)
         {
             auto& pse = reg.get<common::SceneEntity>(it.first);
             EXPECT_TRUE(pse.scene_entity() == it.second);
-            EXPECT_EQ(reg.get<common::SceneConfigComp>(pse.scene_entity()), scene_config_id1);
+            EXPECT_EQ(reg.get<common::ConfigIdComp>(pse.scene_entity()), scene_config_id1);
         }
 
         std::size_t server_player_size = player_size * 2 / server_size;
@@ -769,7 +769,7 @@ TEST(GS, ServerEnterLeavePressure)
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        make_server_scene_param.scene_config_id_ = i;
+        make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
             make_server_scene_param.server_entity_ = it;
@@ -785,7 +785,7 @@ TEST(GS, ServerEnterLeavePressure)
     uint32_t scene_config_id1 = 1;
 
     GetWeightRoundRobinSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.scene_config_id_ = scene_config_id0;
+    weight_round_robin_scene.scene_confid_ = scene_config_id0;
 
     std::unordered_map<entt::entity, entt::entity> player_scene1;
 
@@ -811,7 +811,7 @@ TEST(GS, ServerEnterLeavePressure)
     ServerEnterNoPressure(reg, pressure1);
 
     std::unordered_map<entt::entity, entt::entity> player_scene2;
-    weight_round_robin_scene.scene_config_id_ = scene_config_id1;
+    weight_round_robin_scene.scene_confid_ = scene_config_id1;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         auto can_enter = GetWeightRoundRobinMainScene(weight_round_robin_scene);

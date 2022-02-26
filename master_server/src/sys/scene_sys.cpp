@@ -11,7 +11,7 @@ namespace master
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetWeightRoundRobinSceneParam& param)
 {
-    auto scene_config_id = param.scene_config_id_;
+    auto scene_config_id = param.scene_confid_;
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
 
