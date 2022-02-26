@@ -57,8 +57,6 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 {
 	auto scene_config_id = param.scene_confid_;
 	entt::entity server_entity{ entt::null };
-	std::size_t min_player_size = UINT64_MAX;
-    std::size_t scene_player_max_size = 1000;
 	for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
 	{
 		if (!reg.get<SceneComp>(e).HasConfig(scene_config_id))
@@ -71,7 +69,6 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 			continue;
 		}
 		server_entity = e;
-		min_player_size = server_player_size;
         break;
 	}
 	entt::entity scene_entity{ entt::null };
