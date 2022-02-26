@@ -97,7 +97,7 @@ namespace common
                 LOG_ERROR << "has not condtion" << cid;
                 continue;
             }
-            m.add_conditions(0);
+            m.add_progress(0);
             event_missions_classify_[p->condition_type()].emplace(mission_id);
         }
         missions_.mutable_missions()->insert({ mission_id, std::move(m) });
@@ -166,9 +166,9 @@ namespace common
             }
             const auto& conditions = config_->condition_id(mission.id());
             bool all_complete = true;
-            for (int32_t i = 0; i < mission.conditions_size() && i < conditions.size(); ++i)
+            for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i)
             {
-                if (IsConditionComplete(conditions[i], mission.conditions(i)))
+                if (IsConditionComplete(conditions[i], mission.progress(i)))
                 {
                     continue;
                 }
@@ -180,7 +180,7 @@ namespace common
                 break;
             }
             mission.set_status(Mission::E_MISSION_COMPLETE);
-            mission.clear_conditions();
+            mission.clear_progress();
             temp_complete.emplace(mission.id());
             mm->erase(mit);
             // can not use mission and mit 
@@ -219,15 +219,15 @@ namespace common
         //compare condition
         bool mission_change = false;
         auto& condtionids = config_->condition_id(mission.id());
-        for (int32_t i = 0; i < mission.conditions_size() && i < condtionids.size(); ++i)
+        for (int32_t i = 0; i < mission.progress_size() && i < condtionids.size(); ++i)
         {
-            auto condition = mission.conditions(i);
+            auto old_progress = mission.progress(i);
             auto p = condition_config::GetSingleton().get(condtionids.at(i));
             if (nullptr == p)
             {
                 continue;
             }
-			if (IsConditionComplete(p->id(), condition))
+			if (IsConditionComplete(p->id(), old_progress))
 			{
 				continue;
 			}
@@ -251,14 +251,14 @@ namespace common
                 continue;
             }
             mission_change = true;
-            mission.set_conditions(i , c.ammount_ + condition);
-
-           if (!IsConditionComplete(p->id(), mission.conditions(i)))
+            mission.set_progress(i , c.ammount_ + old_progress);
+            auto new_progress = mission.progress(i);
+           if (!IsConditionComplete(p->id(), new_progress))
            {
                continue;
            }
             // to client
-           mission.set_conditions(i, std::min(mission.conditions(i), p->amount()));
+           mission.set_progress(i, std::min(new_progress, p->amount()));
             // to client
         }
         return mission_change;
