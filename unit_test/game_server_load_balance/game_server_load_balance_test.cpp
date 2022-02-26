@@ -401,7 +401,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
             enter_param1.enter_entity_ = p_e;
             enter_param1.scene_entity_ = it;
             player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
-            EnterScene(enter_param1);
+            sm.EnterScene(enter_param1);
         }
     }
 

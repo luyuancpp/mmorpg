@@ -8,36 +8,6 @@ using namespace common;
 
 namespace master
 {
-void EnterScene(const EnterSceneParam& param)
-{
-    auto scene_entity = param.scene_entity_;
-    auto& players =  reg.get<PlayersComp>(scene_entity);
-    players.emplace(param.enter_entity_);
-    reg.emplace<SceneEntity>(param.enter_entity_, scene_entity);
-    auto p_gs_data_comp = reg.try_get<GSDataPtrComp>(scene_entity);
-    if (nullptr == p_gs_data_comp)
-    {
-        return;
-    }
-    (*p_gs_data_comp)->OnPlayerEnter();
-}
-
-void LeaveScene(const LeaveSceneParam& param)
-{
-    auto leave_entity = param.leave_entity_;
-    auto& player_scene_entity = reg.get<SceneEntity>(leave_entity);
-    auto scene_entity = player_scene_entity.scene_entity();
-    auto& players = reg.get<PlayersComp>(scene_entity);
-    players.erase(leave_entity);
-    reg.remove<SceneEntity>(leave_entity);
-    auto p_gs_data_comp = reg.try_get<GSDataPtrComp>(scene_entity);
-    if (nullptr == p_gs_data_comp)
-    {
-        return; 
-    }
-    (*p_gs_data_comp)->OnPlayerLeave();
-}
-
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetWeightRoundRobinSceneParam& param)
 {
