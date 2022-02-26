@@ -23,7 +23,7 @@
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp" />
     <ClCompile Include="..\..\master_server\src\factories\scene_factories.cpp" />
     <ClCompile Include="..\..\master_server\src\scene\sceces.cpp" />
-    <ClCompile Include="..\..\master_server\src\sys\scene_sys.cpp" />
+    <ClCompile Include="..\..\master_server\src\sys\servernode_sys.cpp" />
     <ClCompile Include="game_server_load_balance_test.cpp" />
   </ItemGroup>
   <ItemGroup>

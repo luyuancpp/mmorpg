@@ -10,7 +10,7 @@
 #include "src/scene/sceces.h"
 #include "src/server_common/closure_auto_done.h"
 #include "src/server_common/server_component.h"
-#include "src/sys/scene_sys.hpp"
+#include "src/sys/servernode_sys.hpp"
 
 using namespace common;
 using namespace master;

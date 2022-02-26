@@ -162,7 +162,7 @@
     <ClCompile Include="src\service\l2ms.cpp" />
     <ClCompile Include="src\scene\sceces.cpp" />
     <ClCompile Include="src\sys\message_sys.cpp" />
-    <ClCompile Include="src\sys\scene_sys.cpp" />
+    <ClCompile Include="src\sys\servernode_sys.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\ms_login_account_comp.hpp" />
@@ -176,7 +176,7 @@
     <ClInclude Include="src\master_registry\master_registry.h" />
     <ClInclude Include="src\scene\sceces.h" />
     <ClInclude Include="src\sys\message_sys.hpp" />
-    <ClInclude Include="src\sys\scene_sys.hpp" />
+    <ClInclude Include="src\sys\servernode_sys.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

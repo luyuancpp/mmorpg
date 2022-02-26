@@ -7,7 +7,7 @@
 #include "src/game_logic/entity_class/entity_class.h"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/snow_flake/snow_flake.h"
-#include "src/sys/scene_sys.hpp"
+#include "src/sys/servernode_sys.hpp"
 
 namespace master
 {
