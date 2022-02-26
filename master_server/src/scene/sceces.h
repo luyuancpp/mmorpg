@@ -15,21 +15,20 @@ namespace master
 class ScenesManager : public common::EntityHandle
 {
 public:
-    ScenesManager();
 
     entt::entity first_scene() { if (scenes_.empty()) { return entt::null; } return *scenes_.begin(); }
     const common::EntitySet& scenes_id() const { return scenes_; }
-    const common::Uint32KeyEntitySetValue& scenes_config_id() const { return confid_scenelist_; }
-    const common::EntitySet& scenes_config_id(uint32_t scene_config_id) const;
+    const common::Uint32KeyEntitySetValue& scenes_entitiy() const { return confid_scenes_; }
+    const common::EntitySet& scenes_entitiy(uint32_t scene_config_id) const;
     common::EntitySet copy_scenes_id() { return scenes_; }
-    entt::entity scenelist(uint32_t scene_config_id)const;
-    std::size_t confid_scenelist_size(uint32_t scene_config_id)const;
+    entt::entity first_scene(uint32_t scene_config_id)const;
+    std::size_t scenes_size(uint32_t scene_config_id)const;
     std::size_t scenes_size() const { return scenes_.size(); }
     std::size_t scenes_map_size() const { return scenes_map_.size(); }
 
-    bool IsConfigSceneEmpty(uint32_t scene_config_id);
+    bool HasScene(uint32_t scene_config_id);
     inline bool Empty() const { return scenes_.empty(); }
-    inline bool HasConfig(uint32_t scene_config_id) { return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
+    inline bool HasConfig(uint32_t scene_config_id) { return confid_scenes_.find(scene_config_id) != confid_scenes_.end(); }
 
     entt::entity MakeMainScene(const MakeMainSceneP& param);
     entt::entity MakeSceneGSScene(const MakeGSSceneP& param);
@@ -56,7 +55,7 @@ private:
 
     void OnDestroyScene(entt::entity scene_entity);
 
-    common::Uint32KeyEntitySetValue confid_scenelist_;
+    common::Uint32KeyEntitySetValue confid_scenes_;
     common::EntitySet scenes_;
     common::SceneMapComp scenes_map_;
     common::SnowFlake snow_flake_;

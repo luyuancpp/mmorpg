@@ -20,7 +20,7 @@ struct LeaveSceneParam
 
 struct GetWeightRoundRobinSceneParam
 {
-    uint32_t scene_config_id_{0};
+    uint32_t scene_confid_{0};
     uint32_t op_{ 0 };
 };
 
@@ -49,7 +49,7 @@ struct CompelChangeSceneParam
 {
     entt::entity compel_change_entity_{ entt::null };
     entt::entity new_server_entity_{ entt::null };
-    uint32_t scene_config_id_{0};
+    uint32_t scene_confid_{0};
 };
 
 entt::entity GetWeightRoundRobinMainScene(const GetWeightRoundRobinSceneParam& param);

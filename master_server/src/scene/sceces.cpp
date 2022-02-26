@@ -8,25 +8,21 @@ master::ScenesManager* g_scene_manager = nullptr;
 
 namespace master
 {
-    ScenesManager::ScenesManager()
+    const EntitySet& ScenesManager::scenes_entitiy(uint32_t scene_config_id) const
     {
-    }
-
-    const EntitySet& ScenesManager::scenes_config_id(uint32_t scene_config_id) const
-    {
-        auto it = confid_scenelist_.find(scene_config_id);
-        if (it == confid_scenelist_.end())
+        auto it = confid_scenes_.find(scene_config_id);
+        if (it == confid_scenes_.end())
         {
-             static EntitySet s;
+            static EntitySet s;
             return s;
         }
         return it->second;
     }
 
-    entt::entity ScenesManager::scenelist(uint32_t scene_config_id) const
+    entt::entity ScenesManager::first_scene(uint32_t scene_config_id) const
     {
-        auto it = confid_scenelist_.find(scene_config_id);
-        if (it == confid_scenelist_.end())
+        auto it = confid_scenes_.find(scene_config_id);
+        if (it == confid_scenes_.end())
         {
             return entt::null;
         }
@@ -37,20 +33,20 @@ namespace master
         return *it->second.begin();
     }
 
-    std::size_t ScenesManager::confid_scenelist_size(uint32_t scene_config_id)const
+    std::size_t ScenesManager::scenes_size(uint32_t scene_config_id)const
     {
-        auto it = confid_scenelist_.find(scene_config_id);
-        if (it == confid_scenelist_.end())
+        auto it = confid_scenes_.find(scene_config_id);
+        if (it == confid_scenes_.end())
         {
             return 0;
         }
         return it->second.size();
     }
 
-    bool ScenesManager::IsConfigSceneEmpty(uint32_t scene_config_id)
+    bool ScenesManager::HasScene(uint32_t scene_config_id)
     {
-        auto it = confid_scenelist_.find(scene_config_id);
-        if (it == confid_scenelist_.end())
+        auto it = confid_scenes_.find(scene_config_id);
+        if (it == confid_scenes_.end())
         {
             return true;
         }
@@ -60,23 +56,22 @@ namespace master
     entt::entity ScenesManager::MakeMainScene(const MakeMainSceneP& param)
     {
         auto e = reg.create();
-        reg.emplace<SceneConfigComp>(e, param.scene_config_id_);
+        auto& confid = reg.emplace<ConfigIdComp>(e, param.scene_confid_);
         reg.emplace<MainSceneComp>(e);
         reg.emplace<PlayersComp>(e);
-        auto& scene_config = reg.get<SceneConfigComp>(e);
-        auto scene_guid = snow_flake_.Generate();
-        reg.emplace<Guid>(e, scene_guid);
-        scenes_map_.emplace(scene_guid, e);
-        AddScene(scene_config, e);
+        auto guid = snow_flake_.Generate();
+        reg.emplace<Guid>(e, guid);
+        scenes_map_.emplace(guid, e);
+        AddScene(confid, e);
         return e;
     }
 
     entt::entity ScenesManager::MakeSceneGSScene(const MakeGSSceneP& param)
     {
-        MakeMainSceneP main_scene_param;
-        main_scene_param.op_ = param.op_;
-        main_scene_param.scene_config_id_ = param.scene_config_id_;
-        auto e = MakeMainScene(main_scene_param);
+        MakeMainSceneP make_p;
+        make_p.op_ = param.op_;
+        make_p.scene_confid_ = param.scene_confid_;
+        auto e = MakeMainScene(make_p);
         PutScene2GSParam put_param;
         put_param.scene_entity_ = e;
         put_param.server_entity_ = param.server_entity_;
@@ -87,7 +82,7 @@ namespace master
     void ScenesManager::PutScene2GS(const PutScene2GSParam& param)
     {
         auto scene_entity = param.scene_entity_;
-        auto& scene_config = reg.get<SceneConfigComp>(scene_entity);
+        auto& scene_config = reg.get<ConfigIdComp>(scene_entity);
         auto server_entity = param.server_entity_;
         auto& server_scenes = reg.get<SceneComp>(server_entity);
         server_scenes.AddScene(scene_config, scene_entity);
@@ -165,20 +160,20 @@ namespace master
         auto new_server_entity = param.new_server_entity_;
         auto compel_entity = param.compel_change_entity_;
         auto& new_server_scene = reg.get<SceneComp>(new_server_entity);
-        auto scene_config_id = param.scene_config_id_;
+        auto scene_config_id = param.scene_confid_;
 
         entt::entity server_scene_enitity = entt::null;
 
-        if (!new_server_scene.HasConfig(param.scene_config_id_))
+        if (!new_server_scene.HasConfig(param.scene_confid_))
         {
             MakeGSSceneP make_server_scene_param;
-            make_server_scene_param.scene_config_id_ = scene_config_id;
+            make_server_scene_param.scene_confid_ = scene_config_id;
             make_server_scene_param.server_entity_ = new_server_entity;
             server_scene_enitity = MakeSceneGSScene(make_server_scene_param);
         }
         else
         {
-            server_scene_enitity = new_server_scene.scenelist(param.scene_config_id_);
+            server_scene_enitity = new_server_scene.scenelist(param.scene_confid_);
         }
 
         if (entt::null == server_scene_enitity)
@@ -207,19 +202,19 @@ namespace master
 
     void ScenesManager::AddScene(uint32_t scene_config_id, entt::entity scene_entity)
     {
-        confid_scenelist_[scene_config_id].emplace(scene_entity);
+        confid_scenes_[scene_config_id].emplace(scene_entity);
         scenes_.emplace(scene_entity);
     }
 
     void ScenesManager::RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
     {
-        confid_scenelist_[scene_config_id].erase(scene_entity);
+        confid_scenes_[scene_config_id].erase(scene_entity);
         scenes_.erase(scene_entity);
     }
 
     void ScenesManager::OnDestroyScene(entt::entity scene_entity)
     {
-        auto scene_config_id = reg.get<SceneConfigComp>(scene_entity);
+        auto scene_config_id = reg.get<ConfigIdComp>(scene_entity);
         RemoveScene(scene_config_id, scene_entity);
         auto scene_guid = reg.get<Guid>(scene_entity);
         scenes_map_.erase(scene_guid);
