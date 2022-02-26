@@ -10,6 +10,13 @@
 
 namespace common
 {
+	static std::vector<std::function<bool(int32_t, int32_t)>> f_c{
+		{[](int32_t a, int32_t b) {return a >= b; }},
+		{[](int32_t a, int32_t b) {return a > b; }},
+		{[](int32_t a, int32_t b) {return a <= b; }},
+		{[](int32_t a, int32_t b) {return a < b; }},
+		{[](int32_t a, int32_t b) {return a == b; }},
+	};
 
     MissionsComp::MissionsComp()
         : MissionsComp(&MissionConfig::GetSingleton()){}
@@ -27,7 +34,23 @@ namespace common
         }
     }
 
-    uint32_t MissionsComp::GetReward(uint32_t missin_id)
+	bool MissionsComp::IsConditionComplete(uint32_t condition_id, uint32_t progress_value)
+	{
+		auto p = condition_config::GetSingleton().get(condition_id);
+		if (nullptr == p)
+		{
+            return false;
+		}
+		std::size_t operator_id = std::size_t(p->operation());
+
+		if (!(operator_id >= 0 && operator_id < f_c.size()))
+		{
+			operator_id = 0;
+		}
+        return f_c[operator_id](progress_value, p->amount());
+	}
+
+	uint32_t MissionsComp::GetReward(uint32_t missin_id)
     {
         auto rmid = complete_ids_.mutable_can_reward_mission_id();
         auto it = complete_ids_.mutable_can_reward_mission_id()->find(missin_id);
@@ -74,7 +97,7 @@ namespace common
                 LOG_ERROR << "has not condtion" << cid;
                 continue;
             }
-            auto pcs = m.add_conditions();
+            m.add_conditions(0);
             event_missions_classify_[p->condition_type()].emplace(mission_id);
         }
         missions_.mutable_missions()->insert({ mission_id, std::move(m) });
@@ -126,6 +149,7 @@ namespace common
         {
             return;
         }
+
         TempCompleteList temp_complete;
         auto& mission_list = it->second;
         for (auto lit : mission_list)
@@ -140,10 +164,11 @@ namespace common
             {
                 continue;
             }
+            const auto& conditions = config_->condition_id(mission.id());
             bool all_complete = true;
-            for (int32_t i = 0; i < mission.conditions_size(); ++i)
+            for (int32_t i = 0; i < mission.conditions_size() && i < conditions.size(); ++i)
             {
-                if (mission.mutable_conditions(i)->status() == Condition::E_CONDITION_COMPLETE)
+                if (IsConditionComplete(conditions[i], mission.conditions(i)))
                 {
                     continue;
                 }
@@ -196,16 +221,16 @@ namespace common
         auto& condtionids = config_->condition_id(mission.id());
         for (int32_t i = 0; i < mission.conditions_size() && i < condtionids.size(); ++i)
         {
-            auto condition = mission.mutable_conditions(i);
-            if (condition->status() == Condition::E_CONDITION_COMPLETE)
-            {
-                continue;
-            }
+            auto condition = mission.conditions(i);
             auto p = condition_config::GetSingleton().get(condtionids.at(i));
             if (nullptr == p)
             {
                 continue;
             }
+			if (IsConditionComplete(p->id(), condition))
+			{
+				continue;
+			}
             if (c.type_ != p->condition_type())
             {
                 continue;
@@ -226,31 +251,14 @@ namespace common
                 continue;
             }
             mission_change = true;
-            condition->set_progress(c.ammount_ + condition->progress());
+            mission.set_conditions(i , c.ammount_ + condition);
 
-            static std::vector<std::function<bool(int32_t, int32_t)>> f_c{
-                {[](int32_t a, int32_t b) {return a >=   b; }},
-                {[](int32_t a, int32_t b) {return a > b; }},
-                {[](int32_t a, int32_t b) {return a <= b; }},
-                {[](int32_t a, int32_t b) {return a < b; }},
-                {[](int32_t a, int32_t b) {return a == b; }},
-            };
-
-            std::size_t operator_id = std::size_t(p->operation());
-
-            if (!(operator_id >= 0 && operator_id < f_c.size()))
-            {
-                operator_id = 0;
-            }
-
-            if (!f_c[operator_id](condition->progress(), p->amount()))
-            {
-                continue;
-            }
-
+           if (!IsConditionComplete(p->id(), mission.conditions(i)))
+           {
+               continue;
+           }
             // to client
-            condition->set_progress(p->amount());
-            condition->set_status(Condition::E_CONDITION_COMPLETE);
+           mission.set_conditions(i, std::min(mission.conditions(i), p->amount()));
             // to client
         }
         return mission_change;

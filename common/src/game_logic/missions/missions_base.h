@@ -51,6 +51,7 @@ namespace common
             auto& complete_ids = complete_ids_.missions();
             return complete_ids.find(mission_id) != complete_ids.end();
         }
+        bool IsConditionComplete(uint32_t condition_id, uint32_t progress_value);
 
         uint32_t GetReward(uint32_t mission_id);
         uint32_t Accept(const AcceptMissionP& param);

@@ -7,16 +7,6 @@ message Vector3
 	double z = 3;
 }
 
-message Condition
-{
-	enum eConditionStatus{
-        E_CONDITION_NORMAL = 0;
-        E_CONDITION_COMPLETE = 1;
-    }
-	uint32 progress = 1;
-	uint32 status = 2;
-}
-
 message Mission
 {
 	enum eMissionStatus
@@ -29,7 +19,7 @@ message Mission
 	};
 	uint32 id = 1;
 	uint32 status = 2;
-	repeated Condition conditions = 3;
+	repeated uint32 progress = 3;
 }
 
 message MissionMap
