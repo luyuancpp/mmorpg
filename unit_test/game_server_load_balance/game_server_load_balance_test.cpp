@@ -835,6 +835,144 @@ TEST(GS, ServerEnterLeavePressure)
     
 }
 
+TEST(GS, GetNotFullMainSceneSceneFull)
+{
+	reg.clear();
+	ScenesSystem sm;
+	ServerNodeSystem snsys;
+	EntitySet server_entities;
+	uint32_t server_size = 10;
+	uint32_t per_server_scene = 10;
+	MakeGSParam cgs1;
+
+	for (uint32_t i = 0; i < server_size; ++i)
+	{
+		cgs1.node_id_ = i;
+		server_entities.emplace(MakeMainSceneGS(reg, cgs1));
+	}
+
+	MakeGSSceneP make_server_scene_param;
+
+	for (uint32_t i = 0; i < per_server_scene; ++i)
+	{
+		make_server_scene_param.scene_confid_ = i;
+		for (auto& it : server_entities)
+		{
+			make_server_scene_param.server_entity_ = it;
+			sm.MakeSceneGSScene(make_server_scene_param);
+            sm.MakeSceneGSScene(make_server_scene_param);
+		}
+	}
+
+	auto enter_leave_lambda = [&server_entities, server_size, per_server_scene, &sm, &snsys]()->void
+	{
+		uint32_t scene_config_id0 = 0;
+		uint32_t scene_config_id1 = 1;
+		GetSceneParam weight_round_robin_scene;
+		weight_round_robin_scene.scene_confid_ = scene_config_id0;
+
+		uint32_t player_size = 1001;
+
+		std::unordered_map<entt::entity, entt::entity> player_scene1;
+		EnterSceneParam enter_param1;
+
+		EntitySet scene_sets;
+
+		for (uint32_t i = 0; i < player_size; ++i)
+		{
+			auto can_enter = snsys.GetMainSceneNotFull(weight_round_robin_scene);
+            if (can_enter == entt::null)
+            {
+                continue;
+            }
+			auto p_e = reg.create();
+			enter_param1.enter_entity_ = p_e;
+			enter_param1.scene_entity_ = can_enter;
+			player_scene1.emplace(enter_param1.enter_entity_, can_enter);
+			scene_sets.emplace(can_enter);
+			sm.EnterScene(enter_param1);
+		}
+
+		uint32_t player_scene_id = 0;
+		for (auto& it : player_scene1)
+		{
+			auto& pse = reg.get<common::SceneEntity>(it.first);
+			EXPECT_TRUE(pse.scene_entity() == it.second);
+			EXPECT_EQ(reg.get<common::ConfigIdComp>(pse.scene_entity()), scene_config_id0);
+		}
+
+		std::unordered_map<entt::entity, entt::entity> player_scene2;
+		weight_round_robin_scene.scene_confid_ = scene_config_id1;
+		for (uint32_t i = 0; i < player_size; ++i)
+		{
+			auto can_enter = snsys.GetMainSceneNotFull(weight_round_robin_scene);
+			auto p_e = reg.create();
+			enter_param1.enter_entity_ = p_e;
+			enter_param1.scene_entity_ = can_enter;
+			player_scene2.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+			scene_sets.emplace(can_enter);
+			sm.EnterScene(enter_param1);
+		}
+		player_scene_id = 0;
+		for (auto& it : player_scene2)
+		{
+			auto& pse = reg.get<common::SceneEntity>(it.first);
+			EXPECT_TRUE(pse.scene_entity() == it.second);
+			EXPECT_EQ(reg.get<common::ConfigIdComp>(pse.scene_entity()), scene_config_id1);
+		}
+
+		std::size_t server_player_size = player_size * 2 / server_size;
+        std::size_t remain_server_size = player_size * 2 - kMaxScenePlayerSize * 2;
+		for (auto& it : server_entities)
+		{
+			auto& ps = reg.get<common::GSDataPtrComp>(it);
+            if (ps->node_id() == 9)
+            {
+                EXPECT_EQ((*ps).player_size(), kMaxServerPlayerSize);
+            }
+            else if (ps->node_id() == 8)
+            {
+                EXPECT_EQ((*ps).player_size(), remain_server_size);
+            }
+            else
+            {
+                EXPECT_EQ((*ps).player_size(), 0);
+            }
+		}
+		EXPECT_EQ(scene_sets.size(), std::size_t(4));
+
+		LeaveSceneParam leave_scene;
+		for (auto& it : player_scene1)
+		{
+			auto& pse = reg.get<common::SceneEntity>(it.first);
+			leave_scene.leave_entity_ = it.first;
+			sm.LeaveScene(leave_scene);
+		}
+		for (auto& it : player_scene2)
+		{
+			auto& pse = reg.get<common::SceneEntity>(it.first);
+			leave_scene.leave_entity_ = it.first;
+			sm.LeaveScene(leave_scene);
+		}
+		for (auto& it : server_entities)
+		{
+			auto& ps = reg.get<common::GSDataPtrComp>(it);
+			EXPECT_EQ((*ps).player_size(), 0);
+		}
+		for (auto& it : player_scene1)
+		{
+			EXPECT_EQ(reg.get<common::PlayersComp>(it.second).size(), 0);
+		}
+		for (auto& it : player_scene2)
+		{
+			EXPECT_EQ(reg.get<common::PlayersComp>(it.second).size(), 0);
+		}
+	};
+	for (uint32_t i = 0; i < 2; ++i)
+	{
+		enter_leave_lambda();
+	}
+}
 
 TEST(GS, CreateDungeon)
 {
