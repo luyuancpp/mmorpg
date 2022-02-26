@@ -8,13 +8,16 @@ using namespace common;
 
 namespace master
 {
+
+static std::size_t kMaxServerPlayerSize = 2000;
+static std::size_t kMaxScenePlayerSize = 1000;
+
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
 {
     auto scene_config_id = param.scene_confid_;
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
-
     for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
     {
         if (!reg.get<SceneComp>(e).HasConfig(scene_config_id))
@@ -22,7 +25,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
             continue;
         }
         std::size_t server_player_size = (*reg.get<GSDataPtrComp>(e)).player_size();
-        if (server_player_size >= min_player_size)
+        if (server_player_size >= min_player_size || server_player_size >= kMaxServerPlayerSize)
         {
             continue;
         }
@@ -40,7 +43,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     for (auto& ji : server_scenes)
     {
         std::size_t scene_player_size = reg.get<PlayersComp>(ji).size();
-        if (scene_player_size >= scene_min_player_size)
+        if (scene_player_size >= scene_min_player_size || scene_player_size >= kMaxScenePlayerSize)
         {
             continue;
         }
@@ -56,7 +59,7 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 	auto scene_config_id = param.scene_confid_;
 	entt::entity server_entity{ entt::null };
 	std::size_t min_player_size = UINT64_MAX;
-    std::size_t scene_player_max_size = UINT64_MAX;
+    std::size_t scene_player_max_size = 1000;
 	for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
 	{
 		if (!reg.get<SceneComp>(e).HasConfig(scene_config_id))
@@ -64,7 +67,7 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 			continue;
 		}
 		std::size_t server_player_size = (*reg.get<GSDataPtrComp>(e)).player_size();
-		if (server_player_size >= min_player_size)
+		if (server_player_size >= scene_player_max_size)
 		{
 			continue;
 		}
