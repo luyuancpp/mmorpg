@@ -61,14 +61,14 @@ namespace g2ms
             create_scene_param.server_entity_ = server_entity;
             for (int32_t i = 0; i < config_all.data_size(); ++i)
             {
-                create_scene_param.scene_config_id_ = config_all.data(i).id();
+                create_scene_param.scene_confid_ = config_all.data(i).id();
                 auto scene_entity = g_scene_manager->MakeSceneGSScene( create_scene_param);
                 if (!reg.valid(scene_entity))
                 {
                     continue;
                 }
                 auto scene_info = response->add_scenes_info();
-                scene_info->set_scene_config_id(reg.get<SceneConfigComp>(scene_entity));
+                scene_info->set_scene_confid(reg.get<ConfigIdComp>(scene_entity));
                 scene_info->set_scene_id(reg.get<Guid>(scene_entity));
             }
         }

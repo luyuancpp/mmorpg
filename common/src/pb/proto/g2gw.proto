@@ -5,7 +5,7 @@ option cc_generic_services = true;
 
 message PlayerMsgNotifyRequest
 {
-  uint32 scene_config_id = 1;
+  uint32 scene_confid = 1;
   uint64 scene_gameguid = 2;
 }
 

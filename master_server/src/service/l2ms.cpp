@@ -18,17 +18,17 @@ using namespace common;
 std::size_t kMaxPlayerSize = 1000;
 ///<<< END WRITING YOUR CODE
 
-namespace l2ms
-{
+namespace l2ms{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+
 ///<<<rpc begin
-    void LoginServiceImpl::LoginAccount(::google::protobuf::RpcController* controller,
-        const ::l2ms::LoginAccountRequest* request,
-        ::l2ms::LoginAccountResponse* response,
-        ::google::protobuf::Closure* done)
-    {
-///<<< BEGIN WRITING YOUR CODE
+void LoginServiceImpl::LoginAccount(::google::protobuf::RpcController* controller,
+    const l2ms::LoginAccountRequest* request,
+    l2ms::LoginAccountResponse* response,
+    ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE LoginAccount
         AutoRecycleClosure cp(done);
         auto lit = logined_accounts_.find(request->account());
         if (lit == logined_accounts_.end() && 
@@ -62,15 +62,15 @@ namespace l2ms
                 reg.emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id()});
             }
         }
- ///<<< END WRITING YOUR CODE
-    }
+///<<< END WRITING YOUR CODE LoginAccount
+}
 
-    void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-        const ::l2ms::EnterGameRequest* request,
-        ::l2ms::EnterGameResponese* response,
-        ::google::protobuf::Closure* done)
-    {
-///<<< BEGIN WRITING YOUR CODE
+void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
+    const l2ms::EnterGameRequest* request,
+    l2ms::EnterGameResponese* response,
+    ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE EnterGame
         AutoRecycleClosure cp(done);
         auto guid = request->guid();   
         auto connection_id = request->connection_id();
@@ -85,15 +85,15 @@ namespace l2ms
             response->set_gs_node_id(SessionReg::GetSingleton().get<uint32_t>(e));
             break;
         }
- ///<<< END WRITING YOUR CODE
-    }
+///<<< END WRITING YOUR CODE EnterGame
+}
 
-    void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller, 
-        const ::l2ms::LeaveGameRequest* request, 
-        ::google::protobuf::Empty* response,
-        ::google::protobuf::Closure* done)
-    {
-///<<< BEGIN WRITING YOUR CODE
+void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
+    const l2ms::LeaveGameRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE LeaveGame
         AutoRecycleClosure cp(done);
         auto guid = request->guid();
         auto e = PlayerList::GetSingleton().GetPlayer(guid);
@@ -102,15 +102,15 @@ namespace l2ms
         PlayerList::GetSingleton().LeaveGame(guid);  
         assert(!PlayerList::GetSingleton().HasPlayer(guid));
         assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null); 
-///<<< END WRITING YOUR CODE
-    }
+///<<< END WRITING YOUR CODE LeaveGame
+}
 
-    void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller, 
-        const ::l2ms::DisconnectRequest* request,
-        ::google::protobuf::Empty* response,
-        ::google::protobuf::Closure* done)
-    {
-///<<< BEGIN WRITING YOUR CODE
+void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller,
+    const l2ms::DisconnectRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE Disconect
         AutoRecycleClosure cp(done);
         auto guid = request->guid();
         auto e = PlayerList::GetSingleton().GetPlayer(guid);
@@ -123,10 +123,8 @@ namespace l2ms
         PlayerList::GetSingleton().LeaveGame(guid);
         assert(!PlayerList::GetSingleton().HasPlayer(guid));
         assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
- ///<<< END WRITING YOUR CODE
-    }
+///<<< END WRITING YOUR CODE Disconect
+}
+
 ///<<<rpc end
-}//namespace master
-
-
-
+}// namespace l2ms
