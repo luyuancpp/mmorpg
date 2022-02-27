@@ -17,7 +17,7 @@
 
 using namespace common;
 
-master::MasterServer* g_master_server = nullptr;
+master::MasterServer* g_ms_node = nullptr;
 
 namespace master
 {

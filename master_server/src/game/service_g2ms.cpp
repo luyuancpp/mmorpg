@@ -27,7 +27,7 @@ namespace g2ms
         ::google::protobuf::Closure* done)
     {
         AutoRecycleClosure cp(done);
-        response->set_master_node_id(g_master_server->master_node_id());
+        response->set_master_node_id(g_ms_node->master_node_id());
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
 
@@ -77,7 +77,7 @@ namespace g2ms
             reg.remove<MainSceneServerComp>(server_entity);
             reg.emplace<RoomSceneServerComp>(server_entity);
         }
-        g_master_server->GatewayConnectGame(server_entity);
+        g_ms_node->GatewayConnectGame(server_entity);
         LOG_INFO << "game connected " << request->node_id();
        
     }
