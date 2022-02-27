@@ -47,15 +47,18 @@ def genluasol(filename, srcdir):
                 msgcode = 0 
                 continue             
             elif msgcode == 1 and filedbegin == 1 :
-                s = fileline.split(' ')
-                typename = s[2]
-                fildename = s[3]
+                s = fileline.strip('\t').strip(' ').split(' ')
+                if len(s) < 3:
+                    continue
+                typename = s[0]
+                fildename = s[1]
                 templatename = ''
                 sn = setname
                 if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
                     templatename = ''
                 elif typename == 'string' :
                     templatename = '<const std::string&>'
+
                 else :  
                     continue
                 newstr += '"' + fildename + '",\n'
@@ -119,6 +122,7 @@ def gentotalfile(destdir, srcdir):
         file.write(cppnewstr)    
 
 genluasol('gw2ms.proto', srcdir)
+genluasol('c2gw.proto', srcdir)
 
 gentotalfile(destdir, srcdir)
 md5copy(destdir, srcdir, '.h')

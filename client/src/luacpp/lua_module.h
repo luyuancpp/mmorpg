@@ -4,8 +4,7 @@
 #define SOL_ALL_SAFETIES_ON 1
 #include <sol/sol.hpp>
 
+#include "src/pb/pb2sol2/pb2sol2.h"
 void InitLua();
-
-extern thread_local sol::state g_lua;
 
 #endif//CLIENT_SRC_LUA_CPP_LUA_MODULE_H_

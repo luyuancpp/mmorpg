@@ -16,6 +16,7 @@
 #include "gw2l.pb.h"
 
 using namespace common;
+using namespace c2gw;
 
 static const uint64_t kEmptyId = 0;
 

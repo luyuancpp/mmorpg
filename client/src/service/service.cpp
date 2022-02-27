@@ -6,6 +6,7 @@
 #include "src/luacpp/lua_module.h"
 
 using namespace common;
+using namespace c2gw;
 
 ClientService::ClientService(ProtobufDispatcher& dispatcher,
                              ProtobufCodec& codec, 

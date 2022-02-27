@@ -192,6 +192,9 @@
     <ClCompile Include="src\pb\pb2sol2\pb2sol2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\pb\pb2sol2\c2gw_sol2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
