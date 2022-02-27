@@ -37,12 +37,12 @@ void Gw2msServiceImpl::GwConnectMaster(::google::protobuf::RpcController* contro
             {
                 continue;
             }
-            g_master_server->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
+            g_ms_node->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
             break;
         }
         for (auto e : reg.view<muduo::net::InetAddress>())
         {
-            g_master_server->GatewayConnectGame(e);
+            g_ms_node->GatewayConnectGame(e);
         }
 ///<<< END WRITING YOUR CODE GwConnectMaster
 }

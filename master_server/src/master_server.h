@@ -74,6 +74,6 @@ namespace master
     };
 }//namespace master
 
-extern master::MasterServer* g_master_server;
+extern master::MasterServer* g_ms_node;
 
 #endif//MASTER_SERVER_MASTER_SERVER_H_

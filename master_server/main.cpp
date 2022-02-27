@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
 {
     EventLoop loop;
     MasterServer server(&loop);
-    g_master_server = &server;
+    g_ms_node = &server;
 
     ScenesSystem scene_scene;
     g_scene_sys = &scene_scene;
