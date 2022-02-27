@@ -122,7 +122,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING;NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/src/pb/pbc/;../third_party/muduo/;../third_party/mysql/include/;../third_party/redis/;../third_party/muduo/contrib/windows/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/src/pb/pbc/;../third_party/muduo/;../third_party/mysql/include/;../third_party/redis/;../third_party/muduo/contrib/windows/include;../third_party/sol2/include/;../third_party/lua/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -162,6 +162,8 @@
     <ClCompile Include="src\game_logic\login_state\login_state.cpp" />
     <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\gw2ms_sol2.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\pb2sol2.cpp" />
     <ClCompile Include="src\pb\pbc\account_database.pb.cc" />
     <ClCompile Include="src\pb\pbc\c2gw.pb.cc" />
     <ClCompile Include="src\pb\pbc\client_logic_common.pb.cc" />
@@ -231,6 +233,7 @@
     <ClInclude Include="src\game_logic\login_state\login_state_machine.h" />
     <ClInclude Include="src\game_logic\tiime_unit\time_variable.h" />
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
+    <ClInclude Include="src\pb\pb2sol2\pb2sol2.h" />
     <ClInclude Include="src\pb\pbc\account_database.pb.h" />
     <ClInclude Include="src\pb\pbc\c2gw.pb.h" />
     <ClInclude Include="src\pb\pbc\client_logic_common.pb.h" />

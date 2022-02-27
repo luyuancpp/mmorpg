@@ -2,6 +2,7 @@
 
 #include "muduo/base/Logging.h"
 #include "src/file2string/file2string.h"
+//#include "src/pb/pb2sol2/pb2sol2.h"
 
 #include "c2gw.pb.h"
 
@@ -20,7 +21,7 @@ void InitLua()
     g_lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
     g_lua.new_usertype<LoginRequest>("LoginRequest", "account",
-        sol::property(&LoginRequest::account, &LoginRequest::set_account<const std::string&>));
+        sol::property(&LoginRequest::account, &LoginRequest::set_account<const std::string&>)); 
     g_lua.new_usertype<CreatePlayerRequest>("CreatePlayerRequest");
     g_lua.new_usertype<EnterGameRequest>("EnterGameRequest", "guid",
         sol::property(&EnterGameRequest::set_guid, &EnterGameRequest::guid));
