@@ -7,12 +7,16 @@
 
 namespace common
 {
-    class ClosureDeleter {
+    class AutoRecycleClosure
+    {
     public:
-        void operator()(::google::protobuf::Closure* done) { done->Run(); }
+		using element_type = ::google::protobuf::Closure;
+        AutoRecycleClosure(element_type* done) :  done_(done) {}
+        ~AutoRecycleClosure() { if (nullptr != done_) { done_->Run(); } }
+        void SelfDelete() { done_ = nullptr; }
+    private:
+        element_type* done_{nullptr};
     };
-
-    using AutoRecycleClosure = std::unique_ptr<::google::protobuf::Closure, ClosureDeleter>;
 
 }//namespace common
 
