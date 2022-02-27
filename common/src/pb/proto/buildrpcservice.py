@@ -10,3 +10,4 @@ buildrpcservicetool.generate('node2deploy.proto', '../../../../deploy_server/src
 buildrpcservicetool.generate('ms2gw.proto', '../../../../gateway_server/src/service')
 buildrpcservicetool.generate('gw2ms.proto', '../../../../master_server/src/service')
 buildrpcservicetool.generate('l2ms.proto', '../../../../master_server/src/service')
+buildrpcservicetool.generate('g2ms.proto', '../../../../master_server/src/service')
