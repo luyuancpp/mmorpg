@@ -18,6 +18,7 @@
 
 using namespace muduo;
 using namespace muduo::net;
+using namespace c2gw;;
 
 namespace gateway
 {
