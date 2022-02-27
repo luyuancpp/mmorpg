@@ -28,8 +28,8 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
     deploy::ServerInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE ServerInfo
-		AutoRecycleClosure cp(done);
 		auto group_id = request->group();
 		auto& servers_deploy = *response->mutable_info();
 		if (group_id > 0)
@@ -55,8 +55,8 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     deploy::StartGSResponse* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StartGS
-		AutoRecycleClosure cp(done);
 		auto& server_deploy = *response->mutable_my_info();
 		auto& client_info = request->rpc_client();
 		muduo::net::InetAddress ip_port(client_info.ip(), client_info.port());
@@ -82,8 +82,8 @@ void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* con
     deploy::RegionInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StartRegionServer
-		AutoRecycleClosure cp(done);
 		LoadRegionDeploy(request->region_id(), response->mutable_info());
 ///<<< END WRITING YOUR CODE StartRegionServer
 }
@@ -93,8 +93,8 @@ void DeployServiceImpl::LoadRegionDeploy(::google::protobuf::RpcController* cont
     deploy::RegionInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE LoadRegionDeploy
-		AutoRecycleClosure cp(done);
 		LoadRegionDeploy(request->region_id(), response->mutable_info());
 ///<<< END WRITING YOUR CODE LoadRegionDeploy
 }

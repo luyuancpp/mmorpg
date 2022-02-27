@@ -140,7 +140,9 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     gw2l::LoginResponse* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Login
+	d.SelfDelete();
     //测试用例连接不登录马上断线，
     //账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
     //login master
@@ -163,7 +165,9 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     gw2l::CreatePlayerResponse* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE CreatPlayer
+	d.SelfDelete();
     // login process
     //check name rule
     auto cit = connections_.find(request->connection_id());
@@ -195,7 +199,9 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     gw2l::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterGame
+	d.SelfDelete();
 	auto connection_id = request->connection_id();
 	auto cit = connections_.find(connection_id);
 	if (cit == connections_.end())
@@ -244,8 +250,8 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE LeaveGame
-	AutoRecycleClosure cp(done);
 	//连接过，登录过
 	auto cit = connections_.find(request->connection_id());
 	if (cit == connections_.end())
@@ -272,8 +278,8 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Disconnect
-	AutoRecycleClosure cp(done);
 	auto cit = connections_.find(request->connection_id());
 	if (cit == connections_.end())//连接并没有登录
 	{

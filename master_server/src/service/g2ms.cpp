@@ -30,8 +30,8 @@ void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     g2ms::StartGSResponse* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StartGS
-        AutoRecycleClosure cp(done);
         response->set_master_node_id(g_ms_node->master_node_id());
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());

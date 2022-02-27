@@ -25,8 +25,8 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StartGS
-        AutoRecycleClosure cp(done);
         InetAddress gs_addr(request->ip(), request->port());
         for (auto e : reg.view<InetAddress>())
         {
@@ -54,8 +54,8 @@ void Ms2gwServiceImpl::StopGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StopGS
-        AutoRecycleClosure cp(done);
         for (auto e : SessionReg::GetSingleton().view<InetAddress>())
         {
             auto& c = SessionReg::GetSingleton().get<InetAddress>(e);
@@ -75,8 +75,8 @@ void Ms2gwServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* controll
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerEnterGS
-        AutoRecycleClosure cp(done);
         auto it = g_client_sessions_->find(request->connection_id());
         if (it == g_client_sessions_->end())
         {
