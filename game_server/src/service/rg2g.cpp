@@ -1,5 +1,8 @@
 #include "rg2g.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "src/server_common/closure_auto_done.h"
+
+using namespace common;
 ///<<< END WRITING YOUR CODE
 
 namespace rg2g{
@@ -12,6 +15,7 @@ void Rg2gServiceImpl::EnterRoom(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterRoom
 ///<<< END WRITING YOUR CODE EnterRoom
 }

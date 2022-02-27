@@ -72,6 +72,7 @@ def gencpprpcfunbegin(rpcindex):
     else :
         servicestr +=  tabstr + pkg + '::' + rsp + '* response,\n'
     servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
+    servicestr +=  tabstr + 'AutoRecycleClosure d(done);\n'
     return servicestr
 
 def yourcode():

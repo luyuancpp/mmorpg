@@ -19,9 +19,9 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterGame
-        AutoRecycleClosure cp(done);
-        //LOG_INFO << request->DebugString().c_str();、
+    //LOG_INFO << request->DebugString().c_str();、
 ///<<< END WRITING YOUR CODE EnterGame
 }
 

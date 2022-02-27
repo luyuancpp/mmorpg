@@ -26,8 +26,8 @@ void Gw2msServiceImpl::GwConnectMaster(::google::protobuf::RpcController* contro
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE GwConnectMaster
-        AutoRecycleClosure cp(done);
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
         for (auto e : reg.view<RpcServerConnection>())
         {
@@ -52,8 +52,8 @@ void Gw2msServiceImpl::PlayerDisconnect(::google::protobuf::RpcController* contr
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerDisconnect
-        AutoRecycleClosure cp(done);
         auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
         if (it == connection_map.end())
@@ -76,8 +76,8 @@ void Gw2msServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE LeaveGame
-        AutoRecycleClosure cp(done);
         auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
         auto it = connection_map.find(request->connection_id());
         assert(it != connection_map.end());
@@ -106,6 +106,7 @@ void Gw2msServiceImpl::PlayerService(::google::protobuf::RpcController* controll
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerService
 ///<<< END WRITING YOUR CODE PlayerService
 }

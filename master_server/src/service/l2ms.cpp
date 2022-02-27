@@ -28,8 +28,8 @@ void LoginServiceImpl::LoginAccount(::google::protobuf::RpcController* controlle
     l2ms::LoginAccountResponse* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE LoginAccount
-        AutoRecycleClosure cp(done);
         auto lit = logined_accounts_.find(request->account());
         if (lit == logined_accounts_.end() && 
             (PlayerList::GetSingleton().player_size() + logined_accounts_.size()) >= kMaxPlayerSize)
@@ -70,8 +70,8 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     l2ms::EnterGameResponese* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterGame
-        AutoRecycleClosure cp(done);
         auto guid = request->guid();   
         auto connection_id = request->connection_id();
         auto e = reg.create();
@@ -93,8 +93,8 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE LeaveGame
-        AutoRecycleClosure cp(done);
         auto guid = request->guid();
         auto e = PlayerList::GetSingleton().GetPlayer(guid);
         assert(reg.get<Guid>(e) == guid);
@@ -110,8 +110,8 @@ void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
+    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Disconect
-        AutoRecycleClosure cp(done);
         auto guid = request->guid();
         auto e = PlayerList::GetSingleton().GetPlayer(guid);
         if (entt::null  == e)
