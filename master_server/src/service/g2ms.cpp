@@ -1,5 +1,5 @@
 #include "g2ms.h"
-
+///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
 
@@ -18,14 +18,19 @@
 using namespace master;
 using namespace common;
 using namespace muduo::net;
-
+///<<< END WRITING YOUR CODE
 namespace g2ms
 {
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+
+///<<<rpc begin
     void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller, 
         const ::g2ms::StartGSRequest* request, 
         ::g2ms::StartGSResponse* response,
         ::google::protobuf::Closure* done)
     {
+///<<< BEGIN WRITING YOUR CODE
         AutoRecycleClosure cp(done);
         response->set_master_node_id(g_ms_node->master_node_id());
         InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
@@ -79,7 +84,8 @@ namespace g2ms
         }
         g_ms_node->GatewayConnectGame(server_entity);
         LOG_INFO << "game connected " << request->node_id();
-       
+///<<< END WRITING YOUR CODE
     }
+///<<<rpc end
 
 }//namespace g2ms
