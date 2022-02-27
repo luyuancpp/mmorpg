@@ -28,22 +28,22 @@ void Gw2msServiceImpl::GwConnectMaster(::google::protobuf::RpcController* contro
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE GwConnectMaster
-        InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-        for (auto e : reg.view<RpcServerConnection>())
+    InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
+    for (auto e : reg.view<RpcServerConnection>())
+    {
+        auto c = reg.get<RpcServerConnection>(e);
+        auto& local_addr = c.conn_->peerAddress();
+        if (local_addr.toIpPort() != rpc_client_peer_addr.toIpPort())
         {
-            auto c = reg.get<RpcServerConnection>(e);
-            auto& local_addr = c.conn_->peerAddress();
-            if (local_addr.toIpPort() != rpc_client_peer_addr.toIpPort())
-            {
-                continue;
-            }
-            g_ms_node->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
-            break;
+            continue;
         }
-        for (auto e : reg.view<muduo::net::InetAddress>())
-        {
-            g_ms_node->GatewayConnectGame(e);
-        }
+        g_ms_node->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
+        break;
+    }
+    for (auto e : reg.view<muduo::net::InetAddress>())
+    {
+        g_ms_node->GatewayConnectGame(e);
+    }
 ///<<< END WRITING YOUR CODE GwConnectMaster
 }
 
@@ -54,20 +54,20 @@ void Gw2msServiceImpl::PlayerDisconnect(::google::protobuf::RpcController* contr
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerDisconnect
-        auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
-        auto it = connection_map.find(request->connection_id());
-        if (it == connection_map.end())
-        {
-            return;
-        }
-        auto player_entity = it->second;
-        auto guid = reg.get<Guid>(player_entity);
+    auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
+    auto it = connection_map.find(request->connection_id());
+    if (it == connection_map.end())
+    {
+        return;
+    }
+    auto player_entity = it->second;
+    auto guid = reg.get<Guid>(player_entity);
 
-        reg.destroy(player_entity);
-        connection_map.erase(it);
+    reg.destroy(player_entity);
+    connection_map.erase(it);
 
-        PlayerList::GetSingleton().LeaveGame(guid);
-        assert(!PlayerList::GetSingleton().HasPlayer(guid));
+    PlayerList::GetSingleton().LeaveGame(guid);
+    assert(!PlayerList::GetSingleton().HasPlayer(guid));
 ///<<< END WRITING YOUR CODE PlayerDisconnect
 }
 
@@ -78,26 +78,26 @@ void Gw2msServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE LeaveGame
-        auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
-        auto it = connection_map.find(request->connection_id());
-        assert(it != connection_map.end());
-        if (it == connection_map.end())
-        {
-            return;
-        }
-        auto player_entity = it->second;
+    auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
+    auto it = connection_map.find(request->connection_id());
+    assert(it != connection_map.end());
+    if (it == connection_map.end())
+    {
+        return;
+    }
+    auto player_entity = it->second;
 
-        LeaveSceneParam leave_scene;
-        leave_scene.leave_entity_ = player_entity;
-        g_scene_sys->LeaveScene(leave_scene);
+    LeaveSceneParam leave_scene;
+    leave_scene.leave_entity_ = player_entity;
+    g_scene_sys->LeaveScene(leave_scene);
 
-        auto guid = reg.get<Guid>(player_entity);
-        assert(PlayerList::GetSingleton().HasPlayer(guid));
-        reg.destroy(player_entity);
-        PlayerList::GetSingleton().LeaveGame(guid);
-        assert(!PlayerList::GetSingleton().HasPlayer(guid));
+    auto guid = reg.get<Guid>(player_entity);
+    assert(PlayerList::GetSingleton().HasPlayer(guid));
+    reg.destroy(player_entity);
+    PlayerList::GetSingleton().LeaveGame(guid);
+    assert(!PlayerList::GetSingleton().HasPlayer(guid));
 
-        connection_map.erase(it);
+    connection_map.erase(it);
 ///<<< END WRITING YOUR CODE LeaveGame
 }
 
