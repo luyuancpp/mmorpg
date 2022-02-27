@@ -50,5 +50,26 @@ def genluasol(filename, writedir):
     with open(newfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)                
 
+def md5copy(destdir, srcdir, fileextend):
+    for (dirpath, dirnames, filenames) in os.walk(srcdir):
+        for each_filename in filenames:
+            if not (each_filename[-4:].lower() == fileextend):
+                continue
+            filenamemd5 = srcdir + "/" + each_filename + '.md5'
+            error = None
+            first = False
+            if not os.path.exists(filenamemd5):
+                first = True
+            else:
+                error = md5tool.check_against_md5_file(each_filename, filenamemd5)
+            destfilename = destdir + each_filename 
+            if error == None and os.path.exists(destfilename) :
+                continue
+            print("copy %s %s" % (each_filename, destfilename))
+            md5tool.generate_md5_file_for(each_filename, filenamemd5)
+            shutil.copy(destfilename, each_filename)
+
 genluasol('gw2ms.proto', writedir)
+
+md5copy(writedir, '../pb2sol/', '.cpp')
 
