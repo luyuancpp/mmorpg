@@ -7,8 +7,11 @@ funsname = []
 msg = 'message'
 begin = '{'
 end = '}'
-srcdir = './proto2sol2/'
+srcdir = './pb2sol2/'
 destdir = '../pb2sol2/'
+namespacestr = 'namespace common'
+setname = '::set_'
+mutablename = '::mutable_'
 
 if not os.path.exists(srcdir):
     os.makedirs(srcdir)
@@ -16,9 +19,15 @@ if not os.path.exists(srcdir):
 def genluasol(filename, srcdir):
     global funsname
     msgcode = 0
+    pbnamespace = filename.replace('.proto', '')
     funcname = 'void Pb2sol2' + filename.replace('.proto', '') + '()'
     funsname.append(funcname)
-    newstr = funcname + '\n{\n'
+    newstr = '#include "' + pbnamespace + '.pb.h"\n'
+    newstr += '#include <sol/sol.hpp>\n'
+    newstr += 'using namespace ' + pbnamespace + ';\n'
+    newstr += namespacestr + '\n{\n' 
+    newstr += 'extern thread_local sol::state g_lua;\n'
+    newstr +=  funcname + '\n{\n'    
     newfilename = srcdir + filename.replace('.proto', '_sol2.cpp')
     with open(filename,'r', encoding='utf-8') as file:
         filedbegin = 0
@@ -33,23 +42,28 @@ def genluasol(filename, srcdir):
                 continue
             elif fileline.find(end) >= 0 and msgcode == 1:
                 filedbegin = 0
-                newstr = newstr.strip(',')
-                newstr += ');\n'
+                newstr = newstr.strip(',\n')
+                newstr += ');\n\n'
                 msgcode = 0 
                 continue             
             elif msgcode == 1 and filedbegin == 1 :
                 s = fileline.split(' ')
-                typename = s[0]
-                fildename = s[1]
+                typename = s[2]
+                fildename = s[3]
                 templatename = ''
+                sn = setname
                 if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
                     templatename = ''
                 elif typename == 'string' :
-                    templatename = '<const std::string&>'  
-                newstr +=  'sol::property(&' + classname + '::' + fildename + ', &' + classname + '::set_' + fildename
-                newstr += templatename + '),'
+                    templatename = '<const std::string&>'
+                else :  
+                    continue
+                newstr += '"' + fildename + '",\n'
+                newstr +=  'sol::property(&' + classname + '::' + fildename + ', &' + classname + sn + fildename
+                newstr += templatename + '),\n'
                 continue
     newstr += '}\n'
+    newstr += '}//' + namespacestr + '\n'
     with open(newfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)                
 
@@ -75,17 +89,34 @@ def md5copy(destdir, srcdir, fileextend):
 
 def gentotalfile(destdir, srcdir):
     global funsname
-    headfilename = srcdir + 'pb2sol2.h'
+    headfilename = 'pb2sol2.h'
+    srcheadfilename = srcdir + 'pb2sol2.h'
     cppfilename = srcdir + 'pb2sol2.cpp'    
     totalfuncitonname = 'void pb2sol2()'
-    newstr = totalfuncitonname + '\n{\n'
-    for fn in funsname:
-        newstr += fn.replace('void', '').strip(' ') + ';\n'
-    newstr += '}\n'
-    with open(headfilename, 'w', encoding='utf-8')as file:
-        file.write(totalfuncitonname + ';')     
+    
+    with open(srcheadfilename, 'w', encoding='utf-8')as file:
+        definestr = 'COMMON_SRC_PB_PB2SOL2_H_'
+        headstr = '#ifndef ' + definestr + '\n'
+        headstr += '#define ' + definestr + '\n'
+        headstr += '#include <sol/sol.hpp>\n'
+        headstr += namespacestr + '\n{\n'
+        headstr += totalfuncitonname + ';\n'
+        headstr += 'extern thread_local sol::state g_lua;\n'
+        headstr += '}//' + namespacestr + '\n'
+        headstr += '#endif//' + definestr + '\n' 
+        file.write(headstr)            
     with open(cppfilename, 'w', encoding='utf-8')as file:
-        file.write(newstr)    
+        cppnewstr = '#include "' + headfilename + '"\n'
+        cppnewstr += namespacestr + '\n{\n'
+        cppnewstr += 'thread_local sol::state g_lua;\n'
+        for fn in funsname:
+            cppnewstr += fn + ';\n'
+        cppnewstr += totalfuncitonname + '\n{\n'
+        for fn in funsname:
+            cppnewstr += fn.replace('void', '').strip(' ') + ';\n'
+        cppnewstr += '}\n'
+        cppnewstr += '}//' + namespacestr + '\n'
+        file.write(cppnewstr)    
 
 genluasol('gw2ms.proto', srcdir)
 
