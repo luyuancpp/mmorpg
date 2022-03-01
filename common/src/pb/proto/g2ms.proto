@@ -18,6 +18,7 @@ message StartGSResponse
 {
   uint32 master_node_id = 1;
   repeated SceneInfo scenes_info = 2;
+  uint32 gateway_node_id = 3;
 }
 
 service G2msService {

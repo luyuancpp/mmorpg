@@ -123,7 +123,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
 {
-    //这里设置player id 还是会有串话问题
+    //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断  
     auto& resp_ = cp->c_rp_;
     if (resp_.error().error_no() == RET_OK)
     {
@@ -132,7 +132,7 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
         {
             return;
         }
-        it->second.node_id_ = cp->s_rp_->gs_node_id();
+        it->second.gs_node_id_ = cp->s_rp_->gs_node_id();
         it->second.guid_ = cp->s_rp_->guid();
     }    
     codec_.send(cp->client_connection_, resp_);
