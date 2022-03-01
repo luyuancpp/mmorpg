@@ -5,7 +5,6 @@ end
 
 function ReadyGo()
 	request = LoginRequest.new()
-	request:ReadyGo()
 	request:Send()
 end
 

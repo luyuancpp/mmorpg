@@ -56,17 +56,17 @@ void Ms2gwServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StopGS
-for (auto e : SessionReg::GetSingleton().view<InetAddress>())
-{
-    auto& c = SessionReg::GetSingleton().get<InetAddress>(e);
-    if (c.toIp() != request->ip() ||
-        c.port() != request->port())
-    {
-        continue;
-    }
-    SessionReg::GetSingleton().destroy(e);
-    break;
-}
+	for (auto e : SessionReg::GetSingleton().view<InetAddress>())
+	{
+		auto& c = SessionReg::GetSingleton().get<InetAddress>(e);
+		if (c.toIp() != request->ip() ||
+			c.port() != request->port())
+		{
+			continue;
+		}
+		SessionReg::GetSingleton().destroy(e);
+		break;
+	}
 ///<<< END WRITING YOUR CODE StopGS
 }
 
@@ -82,7 +82,7 @@ void Ms2gwServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* controll
     {
         return;
     }
-    it->second.node_id_ = request->node_id();
+    it->second.gs_node_id_ = request->node_id();
 ///<<< END WRITING YOUR CODE PlayerEnterGS
 }
 
