@@ -56,3 +56,36 @@ message EnterSceneResponse
 	ClientError error = 1;
 	SceneInfo scenes_info = 2;
 }
+
+enum ClientMessageType
+{
+  CLIENT_REQUEST = 0;
+  CLIENT_RESPONSE = 1;
+  CLIENT_RPC_ERROR = 2; // not used
+}
+
+enum ClientErrorCode
+{
+  CLIENT_RPC_NO_ERROR = 0;
+  CLIENT_WRONG_PROTO = 1;
+  CLIENT_NO_SERVICE = 2;
+  CLIENT_NO_METHOD = 3;
+  CLIENT_INVALID_REQUEST = 4;
+  CLIENT_INVALID_RESPONSE = 5;
+  CLIENT_TIMEOUT = 6;
+}
+
+message RpcClientMessage
+{
+  ClientMessageType type = 1;
+  fixed64 id = 2;
+  string service = 3;
+  string method = 4;
+  bytes request = 5;
+  bytes response = 6;
+  ClientErrorCode error = 7;
+}
+
+service C2LService {
+  rpc Login (LoginRequest) returns (LoginResponse);
+}
