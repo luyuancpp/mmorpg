@@ -25,10 +25,12 @@ namespace gateway
 
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
     ProtobufDispatcher& dispatcher, 
-    RpcStubgw2l& gw2l_login_stub)
+    RpcStubgw2l& gw2l_login_stub, 
+    RpcStubgw2g& gw2g_stub)
     : codec_(codec),
       dispatcher_(dispatcher),
-      gw2l_login_stub_(gw2l_login_stub)
+      gw2l_login_stub_(gw2l_login_stub),
+      gw2g_stub_(gw2g_stub)
 {
     dispatcher_.registerMessageCallback<LoginRequest>(
         std::bind(&ClientReceiver::OnLogin, this, _1, _2, _3));
@@ -38,6 +40,8 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
         std::bind(&ClientReceiver::OnEnterGame, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<LeaveGameRequest>(
         std::bind(&ClientReceiver::OnLeaveGame, this, _1, _2, _3));
+	dispatcher_.registerMessageCallback<RpcClientMessage>(
+		std::bind(&ClientReceiver::OnRpcClientMessage, this, _1, _2, _3));
 }
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
@@ -144,6 +148,22 @@ void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
 {
     LeaveGameResponse response;
     codec_.send(conn, response);
+}
+
+void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
+    const RpcClientMessagePtr& message,
+    muduo::Timestamp)
+{
+	/*auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
+    gw2g_stub_.CallMethod(&ClientReceiver::OnRpcClientReplied,
+		c,
+		this,
+		&gw2g::Gw2gService_Stub::PlayerService);*/
+}
+
+void ClientReceiver::OnRpcClientReplied(EnterGameRpcRplied cp)
+{
+
 }
 
 }

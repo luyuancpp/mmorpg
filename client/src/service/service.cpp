@@ -24,14 +24,18 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
         std::bind(&ClientService::OnLeaveGameReplied, this, _1, _2, _3));
 }
 
+void ClientService::Send(const google::protobuf::Message& message)
+{
+    RpcClientMessage rpcmessage;
+    rpcmessage.set_id(++id_);
+    rpcmessage.set_request(message.SerializeAsString());
+    rpcmessage.set_method("c2gw.C2LService");    
+    codec_.send(conn_, rpcmessage);
+}
+
 void ClientService::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     conn_ = conn;
-}
-
-void ClientService::OnDisconnect()
-{
-
 }
 
 void ClientService::ReadyGo()

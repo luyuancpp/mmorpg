@@ -27,9 +27,8 @@ public:
         ProtobufCodec& codec,
         TcpClient& client);
 
-    inline void Send(const google::protobuf::Message& message){ codec_.send(conn_, message);}
+    void Send(const google::protobuf::Message& message);
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
-    void OnDisconnect();
     void ReadyGo();
     
     void OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
@@ -56,7 +55,7 @@ private:
     ProtobufDispatcher& dispatcher_;
 
     uint64_t guid_{ 0 };
-
+    uint64_t id_{ 0 };
     common::TimerTask timer_task_;
 };
 
