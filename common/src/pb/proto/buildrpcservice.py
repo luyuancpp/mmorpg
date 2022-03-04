@@ -7,13 +7,14 @@ local = threading.local()
 
 local.rpcarry = []
 local.servicenames = []
+local.service = ''
+
 pkg = ''
 cpkg = 'package'
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
-local.service = ''
 tabstr = '    '
 cpprpcpart = 2
 cppmaxpart = 4
