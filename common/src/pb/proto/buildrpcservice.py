@@ -3,13 +3,18 @@ import os
 import md5tool
 import shutil
 import threading
+import _thread
+from multiprocessing import cpu_count
+
 local = threading.local()
 
 local.rpcarry = []
 local.servicenames = []
 local.service = ''
+local.hfilename = ''
 
-pkg = ''
+threads = []
+local.pkg = ''
 cpkg = 'package'
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'
@@ -19,7 +24,6 @@ tabstr = '    '
 cpprpcpart = 2
 cppmaxpart = 4
 controller = '(::google::protobuf::RpcController* controller'
-hfilename = ''
 servicedir = './service/'
 
 
@@ -27,9 +31,8 @@ if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
 def parsefile(filename):
-    global pkg
     local.rpcarry = []
-    pkg = ''
+    local.pkg = ''
     local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
@@ -37,7 +40,7 @@ def parsefile(filename):
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 local.rpcarry.append(fileline)
             elif fileline.find(cpkg) >= 0:
-                pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
+                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif fileline.find('service ') >= 0:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
@@ -49,12 +52,12 @@ def genheadrpcfun():
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
-        line += tabstr + tabstr + 'const ' + pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
+        line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
         else :
-            line += tabstr + tabstr + pkg + '::' + rsp + '* response,\n'
+            line += tabstr + tabstr + local.pkg + '::' + rsp + '* response,\n'
         line += tabstr + tabstr + '::google::protobuf::Closure* done)override;\n\n'
         servicestr += line
     return servicestr
@@ -64,12 +67,12 @@ def gencpprpcfunbegin(rpcindex):
     s = local.rpcarry[rpcindex]
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
-    servicestr +=  tabstr + 'const ' + pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
+    servicestr +=  tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
     if rsp == 'google.protobuf.Empty' :
         servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
     else :
-        servicestr +=  tabstr + pkg + '::' + rsp + '* response,\n'
+        servicestr +=  tabstr + local.pkg + '::' + rsp + '* response,\n'
     servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
     servicestr +=  tabstr + 'AutoRecycleClosure d(done);\n'
     return servicestr
@@ -77,22 +80,21 @@ def gencpprpcfunbegin(rpcindex):
 def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 def namespacebegin():
-    return 'namespace ' + pkg + '{\n'
+    return 'namespace ' + local.pkg + '{\n'
 def classbegin():
     return 'class ' + local.service + 'Impl : public ' + local.service + '{\npublic:\n'  
 def emptyfun():
     return ''
 
 def genheadfile(filename, writedir):
-    global hfilename
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
-    folder_path, hfilename = os.path.split(hfullfilename)    
-    newheadfilename = servicedir + hfilename.replace('.proto', '.h')
+    folder_path, local.hfilename = os.path.split(hfullfilename)    
+    newheadfilename = servicedir + local.hfilename.replace('.proto', '.h')
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper()
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
-    newstr += '#include "' + hfilename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "' + local.hfilename.replace('.h', '') + '.pb.h"\n'
     try:
         with open(hfullfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -129,7 +131,7 @@ def genheadfile(filename, writedir):
                 newstr += yourcode()
             newstr += headfun[i]()
 
-    newstr += '};\n}// namespace ' + pkg + '\n'
+    newstr += '};\n}// namespace ' + local.pkg + '\n'
     newstr += '#endif//' + headdefine + '_H_\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -138,8 +140,8 @@ def gencppfile(filename, writedir):
     global cppmaxpart
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp')
-    newcppfilename = servicedir + hfilename.replace('.h', '.cpp')
-    newstr = '#include "' + hfilename + '"\n'
+    newcppfilename = servicedir + local.hfilename.replace('.h', '.cpp')
+    newstr = '#include "' + local.hfilename + '"\n'
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -210,7 +212,7 @@ def gencppfile(filename, writedir):
                 newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
                 serviceidx += 1 
             newstr += rpcend + '\n'
-    newstr += '}// namespace ' + pkg + '\n'
+    newstr += '}// namespace ' + local.pkg + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -238,12 +240,39 @@ def generate(filename, writedir):
     md5copy(filename, writedir, '.h')
     md5copy(filename, writedir, '.cpp')
 
-generate('gw2l.proto', '../../../../login_server/src/service')
-generate('l2db.proto', '../../../../database_server/src/service')
-generate('ms2g.proto', '../../../../game_server/src/service')
-generate('rg2g.proto', '../../../../game_server/src/service')
-generate('node2deploy.proto', '../../../../deploy_server/src/service')
-generate('ms2gw.proto', '../../../../gateway_server/src/service')
-generate('gw2ms.proto', '../../../../master_server/src/service')
-generate('l2ms.proto', '../../../../master_server/src/service')
-generate('g2ms.proto', '../../../../master_server/src/service')
+genfile = [['gw2l.proto', '../../../../login_server/src/service'],
+['l2db.proto', '../../../../database_server/src/service'],
+['ms2g.proto', '../../../../game_server/src/service'],
+['rg2g.proto', '../../../../game_server/src/service'],
+['node2deploy.proto', '../../../../deploy_server/src/service'],
+['ms2gw.proto', '../../../../gateway_server/src/service'],
+['gw2ms.proto', '../../../../master_server/src/service'],
+['l2ms.proto', '../../../../master_server/src/service'],
+['g2ms.proto', '../../../../master_server/src/service']]
+
+class myThread (threading.Thread):
+    def __init__(self, filename, writedir):
+        threading.Thread.__init__(self)
+        self.filename = str(filename)
+        self.writedir = str(writedir)
+    def run(self):
+        generate(self.filename, self.writedir)
+
+def main():
+    filelen = len(genfile)
+    global threads
+    step = filelen / cpu_count() + 1
+    if cpu_count() > filelen:
+        for i in range(0, filelen):
+            t = myThread( genfile[i][0], genfile[i][1])
+            t.start()
+            threads.append(t)
+    else :
+        for i in range(0, cpu_count()):
+            for j in range(i, i * step) :
+                t = myThread(genfile[j][0], genfile[j][1])
+                t.start()
+                threads.append(t)
+    for t in threads :
+        t.join()
+main()
