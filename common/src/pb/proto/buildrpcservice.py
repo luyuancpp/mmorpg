@@ -2,16 +2,18 @@ import os
 
 import md5tool
 import shutil
+import threading
+local = threading.local()
 
-rpcarry = []
-servicenames = []
+local.rpcarry = []
+local.servicenames = []
 pkg = ''
 cpkg = 'package'
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
-service = ''
+local.service = ''
 tabstr = '    '
 cpprpcpart = 2
 cppmaxpart = 4
@@ -24,31 +26,28 @@ if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
 def parsefile(filename):
-    global rpcarry
     global pkg
-    global service
-    rpcarry = []
+    local.rpcarry = []
     pkg = ''
-    service = ''
+    local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
-                rpcarry.append(fileline)
+                local.rpcarry.append(fileline)
             elif fileline.find(cpkg) >= 0:
                 pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif fileline.find('service ') >= 0:
                 rpcbegin = 1
-                service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
+                local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
 def genheadrpcfun():
     servicestr = 'public:\n'
-    global servicenames
     global controller
-    servicenames = []
-    for service in rpcarry:
+    local.servicenames = []
+    for service in local.rpcarry:
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
-        servicenames.append(s[1])
+        local.servicenames.append(s[1])
         line += tabstr + tabstr + 'const ' + pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
@@ -60,11 +59,10 @@ def genheadrpcfun():
     return servicestr
 
 def gencpprpcfunbegin(rpcindex):
-    global service
     servicestr = ''
-    s = rpcarry[rpcindex]
+    s = local.rpcarry[rpcindex]
     s = s.strip(' ').split(' ')
-    servicestr = 'void ' + service + 'Impl::' + s[1] + controller + ',\n'
+    servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
     servicestr +=  tabstr + 'const ' + pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
     if rsp == 'google.protobuf.Empty' :
@@ -80,7 +78,7 @@ def yourcode():
 def namespacebegin():
     return 'namespace ' + pkg + '{\n'
 def classbegin():
-    return 'class ' + service + 'Impl : public ' + service + '{\npublic:\n'  
+    return 'class ' + local.service + 'Impl : public ' + local.service + '{\npublic:\n'  
 def emptyfun():
     return ''
 
@@ -141,7 +139,6 @@ def gencppfile(filename, writedir):
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp')
     newcppfilename = servicedir + hfilename.replace('.h', '.cpp')
     newstr = '#include "' + hfilename + '"\n'
-    global servicenames
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -170,8 +167,8 @@ def gencppfile(filename, writedir):
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
-                    elif serviceidx < len(rpcarry) and fileline.find(servicenames[serviceidx] + controller) >= 0 :
-                        curservicename = servicenames[serviceidx]
+                    elif serviceidx < len(local.rpcarry) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
+                        curservicename = local.servicenames[serviceidx]
                         owncode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
@@ -187,7 +184,7 @@ def gencppfile(filename, writedir):
                         continue
                     elif fileline.find(rpcend) >= 0:
                         owncode = 0
-                        while serviceidx < len(rpcarry) :
+                        while serviceidx < len(local.rpcarry) :
                             newstr += gencpprpcfunbegin(serviceidx)
                             newstr += yourcodebegin + ' ' + curservicename + '\n'
                             newstr += yourcodeend + ' ' + curservicename + '\n}\n\n'
@@ -206,10 +203,10 @@ def gencppfile(filename, writedir):
             newstr += yourcode() + '\n'
             serviceidx = 0
             newstr += rpcbegin + '\n'
-            while serviceidx < len(rpcarry) :
+            while serviceidx < len(local.rpcarry) :
                 newstr += gencpprpcfunbegin(serviceidx)
-                newstr += yourcodebegin + ' ' + servicenames[serviceidx] + '\n'
-                newstr += yourcodeend + ' ' + servicenames[serviceidx] + '\n}\n\n'
+                newstr += yourcodebegin + ' ' + local.servicenames[serviceidx] + '\n'
+                newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
                 serviceidx += 1 
             newstr += rpcend + '\n'
     newstr += '}// namespace ' + pkg + '\n'
