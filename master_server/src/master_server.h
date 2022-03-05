@@ -6,7 +6,7 @@
 #include "src/event/event.h"
 #include "src/service/l2ms.h"
 #include "src/redis_client/redis_client.h"
-#include "src/service/g2ms.h"
+#include "src/service/gs2ms.h"
 #include "src/service/gw2ms.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"

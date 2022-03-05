@@ -24,7 +24,7 @@
     <ClCompile Include="src\master_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\g2ms.cpp">
+    <ClCompile Include="src\service\gs2ms.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\gw2ms.cpp">
@@ -59,7 +59,7 @@
     <ClInclude Include="src\master_registry\master_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\g2ms.h">
+    <ClInclude Include="src\service\gs2ms.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\gw2ms.h">
