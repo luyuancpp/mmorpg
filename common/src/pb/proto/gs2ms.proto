@@ -1,7 +1,7 @@
 syntax = "proto3";
 import "common.proto";
 //import "google/protobuf/empty.proto";
-package g2ms;
+package gs2ms;
 option cc_generic_services = true;
 
 

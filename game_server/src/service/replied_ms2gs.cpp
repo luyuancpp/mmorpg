@@ -1,4 +1,4 @@
-#include "replied_ms2g.h"
+#include "replied_ms2gs.h"
 
 #include "muduo/base/Logging.h"
 
@@ -10,7 +10,7 @@
 using namespace common;
 using namespace game;
 
-namespace ms2g
+namespace ms2gs
 {
 void RepliedMs2g::StartGSMasterReplied(StartGameMasterRpcRC cp)
 {

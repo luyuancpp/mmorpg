@@ -65,7 +65,7 @@ namespace master
         LoginStubms2db msl2_login_stub_;
 
         l2ms::LoginServiceImpl l2ms_impl_;
-        g2ms::G2msServiceImpl g2ms_impl_;
+        gs2ms::G2msServiceImpl g2ms_impl_;
         gw2ms::Gw2msServiceImpl gw2ms_impl_;        
  
         servers_info_data serverinfos_;

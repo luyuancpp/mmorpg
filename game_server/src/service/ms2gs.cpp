@@ -9,13 +9,13 @@
 using namespace common;
 ///<<< END WRITING YOUR CODE
 
-namespace ms2g{
+namespace ms2gs{
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE
 
 /// ///<<<rpc begin
 void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-    const ms2g::EnterGameRequest* request,
+    const ms2gs::EnterGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

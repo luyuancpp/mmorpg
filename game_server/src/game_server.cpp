@@ -11,7 +11,7 @@
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/enum/server_enum.h"
 #include "src/game_logic/game_registry.h"
-#include "src/service/replied_ms2g.h"
+#include "src/service/replied_ms2gs.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/deploy_variable.h"
 
@@ -84,9 +84,9 @@ void GameServer::StartGSDeployReplied(StartGSRpcRC cp)
 
 void GameServer::Register2Master(MasterSessionPtr& master_rpc_client)
 {
-    ms2g::RepliedMs2g::StartGameMasterRpcRC scp(std::make_shared<ms2g::RepliedMs2g::StartGameMasterRpcClosure>());
+    ms2gs::RepliedMs2g::StartGameMasterRpcRC scp(std::make_shared<ms2gs::RepliedMs2g::StartGameMasterRpcClosure>());
     auto& master_local_addr = master_rpc_client->local_addr();
-    g2ms::StartGSRequest& request = scp->s_rq_;
+    gs2ms::StartGSRequest& request = scp->s_rq_;
     auto session_info = request.mutable_rpc_client();
     auto node_info = request.mutable_rpc_server();
     session_info->set_ip(master_local_addr.toIp());
@@ -97,10 +97,10 @@ void GameServer::Register2Master(MasterSessionPtr& master_rpc_client)
     request.set_node_id(server_deploy_.id());
     request.set_master_server_addr(uint64_t(master_rpc_client.get()));
     g2ms_stub_.CallMethod(
-        &ms2g::RepliedMs2g::StartGSMasterReplied,
+        &ms2gs::RepliedMs2g::StartGSMasterReplied,
         scp,
-        &ms2g::RepliedMs2g::GetSingleton(),
-        &g2ms::G2msService_Stub::StartGS);
+        &ms2gs::RepliedMs2g::GetSingleton(),
+        &gs2ms::G2msService_Stub::StartGS);
 }
 
 void GameServer::receive(const RpcClientConnectionEvent& es)

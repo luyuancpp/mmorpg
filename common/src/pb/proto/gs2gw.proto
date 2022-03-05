@@ -1,6 +1,6 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
-package g2gw;
+package gs2gw;
 option cc_generic_services = true;
 
 message PlayerMsgNotifyRequest

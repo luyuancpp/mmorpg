@@ -5,7 +5,7 @@
 
 #include "gs2ms.pb.h"
 
-namespace ms2g
+namespace ms2gs
 {
 class RepliedMs2g
 {
@@ -13,8 +13,8 @@ public:
 
     static RepliedMs2g& GetSingleton() { thread_local RepliedMs2g singleton; return singleton; }
 
-    using StartGameMasterRpcClosure = common::RpcClosure<g2ms::StartGSRequest,
-        g2ms::StartGSResponse>;
+    using StartGameMasterRpcClosure = common::RpcClosure<gs2ms::StartGSRequest,
+        gs2ms::StartGSResponse>;
     using StartGameMasterRpcRC = std::shared_ptr<StartGameMasterRpcClosure>;
     void StartGSMasterReplied(StartGameMasterRpcRC cp);
 private:
