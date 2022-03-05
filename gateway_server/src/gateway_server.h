@@ -30,7 +30,7 @@ class GatewayServer : noncopyable, public common::Receiver<GatewayServer>
 public:
     using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
     using RpcStubgw2ms = common::RpcStub<gw2ms::Gw2msService_Stub>;
-    using RpcStubgw2g = common::RpcStub<gw2g::Gw2gsService_Stub>;
+    using RpcStubgw2g = common::RpcStub<gw2gs::Gw2gsService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GatewayServer(EventLoop* loop)
