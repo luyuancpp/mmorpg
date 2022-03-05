@@ -23,7 +23,7 @@ class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
 public:
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-    using StubG2ms = common::RpcStub<g2ms::G2msService_Stub>;
+    using StubG2ms = common::RpcStub<gs2ms::G2msService_Stub>;
     using StubG2rg = common::RpcStub<g2rg::G2rgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
@@ -68,8 +68,8 @@ private:
 
     ::game_server_db server_deploy_;
 
-    ms2g::Ms2gServiceImpl ms2g_service_impl_;
-    rg2g::Rg2gServiceImpl rg2g_service_impl_;
+    ms2gs::Ms2gServiceImpl ms2g_service_impl_;
+    rg2gs::Rg2gServiceImpl rg2g_service_impl_;
 };
 
 };//namespace game

@@ -1,6 +1,6 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
-package g2rg;
+package gs2rg;
 option cc_generic_services = true;
 
 message StartGSRequest

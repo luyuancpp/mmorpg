@@ -5,13 +5,13 @@
 using namespace common;
 ///<<< END WRITING YOUR CODE
 
-namespace rg2g{
+namespace rg2gs{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
 void Rg2gServiceImpl::EnterRoom(::google::protobuf::RpcController* controller,
-    const rg2g::Rg2gTest* request,
+    const rg2gs::Rg2gTest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

@@ -1,7 +1,7 @@
 syntax = "proto3";
 import "common.proto";
 import "google/protobuf/empty.proto";
-package ms2g;
+package ms2gs;
 option cc_generic_services = true;
 
 message EnterGameRequest

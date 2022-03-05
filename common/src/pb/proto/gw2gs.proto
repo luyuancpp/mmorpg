@@ -1,5 +1,5 @@
 syntax = "proto3";
-package gw2g;
+package gsw2g;
 import "common.proto";
 option cc_generic_services = true;
 

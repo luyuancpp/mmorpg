@@ -20,14 +20,14 @@ using namespace common;
 using namespace muduo::net;
 ///<<< END WRITING YOUR CODE
 
-namespace g2ms{
+namespace gs2ms{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
 void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller,
-    const g2ms::StartGSRequest* request,
-    g2ms::StartGSResponse* response,
+    const gs2ms::StartGSRequest* request,
+    gs2ms::StartGSResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);

@@ -7,7 +7,7 @@ namespace master
     class MasterServer;
 }//master
 ///<<< END WRITING YOUR CODE
-namespace g2ms{
+namespace gs2ms{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 class G2msServiceImpl : public G2msService{
@@ -16,8 +16,8 @@ public:
 ///<<< END WRITING YOUR CODE
 public:
     void StartGS(::google::protobuf::RpcController* controller,
-        const g2ms::StartGSRequest* request,
-        g2ms::StartGSResponse* response,
+        const gs2ms::StartGSRequest* request,
+        gs2ms::StartGSResponse* response,
         ::google::protobuf::Closure* done)override;
 
 };

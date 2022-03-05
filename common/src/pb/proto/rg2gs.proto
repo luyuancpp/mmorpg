@@ -1,6 +1,6 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
-package rg2g;
+package rg2gs;
 option cc_generic_services = true;
 
 message Rg2gTest
