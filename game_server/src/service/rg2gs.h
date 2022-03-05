@@ -1,5 +1,5 @@
-#ifndef GAME_SERVER_SRC_SERVICE_RG2G_H_
-#define GAME_SERVER_SRC_SERVICE_RG2G_H_
+#ifndef GAME_SERVER_SRC_SERVICE_RG2GS_H_
+#define GAME_SERVER_SRC_SERVICE_RG2GS_H_
 #include "rg2gs.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -17,5 +17,5 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace rg2g
-#endif//GAME_SERVER_SRC_SERVICE_RG2G_H_
+}// namespace rg2gs
+#endif//GAME_SERVER_SRC_SERVICE_RG2GS_H_

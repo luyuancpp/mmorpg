@@ -88,4 +88,4 @@ void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 }
 
 ///<<<rpc end
-}// namespace g2ms
+}// namespace gs2ms
