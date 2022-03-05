@@ -129,16 +129,16 @@
     <ClCompile Include="src\factories\server_global_entity.cpp" />
     <ClCompile Include="src\game_server.cpp" />
     <ClCompile Include="src\service\replied_ms2g.cpp" />
-    <ClCompile Include="src\service\ms2g.cpp" />
-    <ClCompile Include="src\service\rg2g.cpp" />
+    <ClCompile Include="src\service\ms2gs.cpp" />
+    <ClCompile Include="src\service\rg2gs.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\master.hpp" />
     <ClInclude Include="src\factories\server_global_entity.hpp" />
     <ClInclude Include="src\game_server.h" />
     <ClInclude Include="src\service\replied_ms2g.h" />
-    <ClInclude Include="src\service\ms2g.h" />
-    <ClInclude Include="src\service\rg2g.h" />
+    <ClInclude Include="src\service\ms2gs.h" />
+    <ClInclude Include="src\service\rg2gs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
