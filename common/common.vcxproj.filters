@@ -521,5 +521,8 @@
     <ClInclude Include="src\pb\pbc\gw2gs.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\pb\pbc\c2gsid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
