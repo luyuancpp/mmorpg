@@ -1,5 +1,5 @@
-#ifndef MASTER_SERVER_SRC_SERVICE_G2MS_H_
-#define MASTER_SERVER_SRC_SERVICE_G2MS_H_
+#ifndef MASTER_SERVER_SRC_SERVICE_GS2MS_H_
+#define MASTER_SERVER_SRC_SERVICE_GS2MS_H_
 #include "gs2ms.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 namespace master
@@ -21,5 +21,5 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace g2ms
-#endif//MASTER_SERVER_SRC_SERVICE_G2MS_H_
+}// namespace gs2ms
+#endif//MASTER_SERVER_SRC_SERVICE_GS2MS_H_
