@@ -238,6 +238,7 @@
     <ClInclude Include="src\pb\pb2sol2\pb2sol2.h" />
     <ClInclude Include="src\pb\pbc\account_database.pb.h" />
     <ClInclude Include="src\pb\pbc\c2gs.pb.h" />
+    <ClInclude Include="src\pb\pbc\c2gsid.h" />
     <ClInclude Include="src\pb\pbc\c2gw.pb.h" />
     <ClInclude Include="src\pb\pbc\client_logic_common.pb.h" />
     <ClInclude Include="src\pb\pbc\common.pb.h" />

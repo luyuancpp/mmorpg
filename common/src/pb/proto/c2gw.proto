@@ -45,18 +45,6 @@ message LeaveGameResponse
 	ClientError error = 1;
 }
 
-message EnterSceneRequest
-{
-	uint64 player_id  = 1;
-	uint64 scene_confid = 2;
-}
-
-message EnterSceneResponse
-{
-	ClientError error = 1;
-	SceneInfo scenes_info = 2;
-}
-
 enum ClientMessageType
 {
   CLIENT_REQUEST = 0;
@@ -84,8 +72,4 @@ message RpcClientMessage
   bytes request = 5;
   bytes response = 6;
   ClientErrorCode error = 7;
-}
-
-service C2LService {
-  rpc Login (LoginRequest) returns (LoginResponse);
 }

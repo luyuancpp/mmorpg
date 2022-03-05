@@ -3,5 +3,19 @@ package c2gs;
 import "common.proto";
 import "client_logic_common.proto";
 
-service C2GSService {
+
+message EnterSceneRequest
+{
+	uint64 player_id  = 1;
+	uint64 scene_confid = 2;
+}
+
+message EnterSceneResponse
+{
+	ClientError error = 1;
+	SceneInfo scenes_info = 2;
+}
+
+service C2GService {
+  rpc EnterScene (EnterSceneRequest) returns (EnterSceneResponse);
 }
