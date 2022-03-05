@@ -4,6 +4,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/luacpp/lua_module.h"
+#include "src/pb/pbc/msgmap.h"
 
 using namespace common;
 using namespace c2gw;
@@ -29,7 +30,10 @@ void ClientService::Send(const google::protobuf::Message& message)
     RpcClientMessage rpcmessage;
     rpcmessage.set_id(++id_);
     rpcmessage.set_request(message.SerializeAsString());
-    rpcmessage.set_method("c2gw.C2LService");    
+    rpcmessage.set_method("c2gw.C2LService");
+    rpcmessage.set_msg_id(g_msgid[message.GetDescriptor()->full_name()]);    
+    rpcmessage.set_service(g_idservice[rpcmessage.msg_id()]);
+    rpcmessage.set_service(g_idmsg[rpcmessage.msg_id()]);
     codec_.send(conn_, rpcmessage);
 }
 

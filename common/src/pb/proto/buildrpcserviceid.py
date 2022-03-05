@@ -13,10 +13,10 @@ local.rpcarry = []
 local.servicenames = []
 local.servicebeginid = []
 local.service = ''
-local.hfilename = ''
 local.rpcmsgnameid = []
 local.msgcount = 0
 local.cppfilename = 'msgmap.cpp'
+local.hfilename = 'msgmap.h'
 
 threads = []
 local.pkg = ''
@@ -53,9 +53,7 @@ def parsefile(filename, fileid):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
 
 def genmsgidcpp(fullfilename):
-    newstr = '#include <array>\n'
-    newstr += '#include <string>\n'
-    newstr += '#include <unordered_map>\n\n'
+    newstr = '#include "msgmap.h"\n'
     newstr += 'std::unordered_map<std::string, uint32_t> g_msgid{\n'
     #msg 2 id
     for kv in local.rpcmsgnameid:
@@ -77,21 +75,37 @@ def genmsgidcpp(fullfilename):
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(hfullfilename):
-        gennewfilename = servicedir + local.cppfilename
-        filenamemd5 = gennewfilename + '.md5'
-        error = None
-        copy = False
-        if  not os.path.exists(filenamemd5) or not os.path.exists(hfullfilename):
-            copy = True
-        else:
-            error = md5tool.check_against_md5_file(hfullfilename, filenamemd5)              
-        
-        if error == None and copy == False:
-            return
-        #print("copy %s ---> %s" % (gennewfilename, hfullfilename))
-        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-        shutil.copy(gennewfilename, hfullfilename)
+def genmsgidhead(fullfilename):
+    HEAD_FILE = 'COMMON_SRC_PB_PBC_' + local.cppfilename.replace('.', '_').upper()
+    newstr = '#ifndef  ' + HEAD_FILE + '\n'
+    newstr += '#define  ' + HEAD_FILE + '\n'
+    newstr += '#include <array>\n'
+    newstr += '#include <string>\n'
+    newstr += '#include <unordered_map>\n\n'
+    newstr += 'extern std::unordered_map<std::string, uint32_t> g_msgid;\n'
+    newstr += 'extern std::array<std::string, ' + str(local.msgcount) + '> g_idservice;\n'
+    newstr += 'extern std::array<std::string, ' + str(local.msgcount) + '> g_idmsg;\n'
+    newstr += 'void InitMsgId2Servcie();\n'
+    newstr += 'void InitMsgId2Msg();\n'
+    newstr += '#endif  ' + HEAD_FILE + '\n'
+    with open(fullfilename, 'w', encoding='utf-8')as file:
+        file.write(newstr)
+
+def md5copy(destfilename, filename):
+    gennewfilename = servicedir + filename
+    filenamemd5 = gennewfilename + '.md5'
+    error = None
+    copy = False
+    if  not os.path.exists(filenamemd5) or not os.path.exists(destfilename):
+        copy = True
+    else:
+        error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
+    print(filenamemd5)
+    if error == None and copy == False:
+        return
+    #print("copy %s ---> %s" % (gennewfilename, destfilename))
+    md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+    shutil.copy(gennewfilename, destfilename)
 
 def generate(filename, fileid):
     parsefile(filename, fileid)
@@ -104,7 +118,12 @@ def main():
     for i in range(0, filelen):
            generate(genfile[i], i)
 main()
-genfilename = servicedir + local.cppfilename
-fullfilename = writedir + local.cppfilename
-genmsgidcpp(genfilename)
-md5copy(fullfilename)
+cppsrcfilename = servicedir + local.cppfilename
+cppdestfilename = writedir + local.cppfilename
+hsrcfilename = servicedir + local.hfilename
+hdestfilename = writedir + local.hfilename
+
+genmsgidcpp(cppsrcfilename)
+genmsgidhead(hsrcfilename)
+md5copy(cppdestfilename, local.cppfilename)
+md5copy(hdestfilename, local.hfilename)

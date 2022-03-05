@@ -72,4 +72,5 @@ message RpcClientMessage
   bytes request = 5;
   bytes response = 6;
   ClientErrorCode error = 7;
+  uint32 msg_id = 8;
 }

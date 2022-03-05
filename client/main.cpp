@@ -5,6 +5,7 @@
 #include "src/file2string/file2string.h"
 #include "src/game_logic/game_registry.h"
 #include "src/luacpp/lua_module.h"
+#include "src/pb/pbc/msgmap.h"
 
 using namespace common;
 
@@ -15,7 +16,6 @@ int main(int argc, char* argv[])
     if (argc > 0)
     {
         InitLua();
-       
         int32_t nClients = 1;
 
         if (argc > 1)
