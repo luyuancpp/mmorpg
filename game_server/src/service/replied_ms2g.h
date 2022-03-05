@@ -3,7 +3,7 @@
 
 #include "src/server_common/rpc_closure.h"
 
-#include "g2ms.pb.h"
+#include "gs2ms.pb.h"
 
 namespace ms2g
 {

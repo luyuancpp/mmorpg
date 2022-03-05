@@ -12,7 +12,7 @@
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/game_logic/game_registry.h"
 
-#include "ms2g.pb.h"
+#include "ms2gs.pb.h"
 #include "ms2gw.pb.h"
 
 using namespace common;

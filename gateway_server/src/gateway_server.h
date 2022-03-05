@@ -17,7 +17,7 @@
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
 
-#include "gw2g.pb.h"
+#include "gw2gs.pb.h"
 #include "gw2ms.pb.h"
 
 using namespace muduo;
@@ -30,7 +30,7 @@ class GatewayServer : noncopyable, public common::Receiver<GatewayServer>
 public:
     using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
     using RpcStubgw2ms = common::RpcStub<gw2ms::Gw2msService_Stub>;
-    using RpcStubgw2g = common::RpcStub<gw2g::Gw2gService_Stub>;
+    using RpcStubgw2g = common::RpcStub<gw2g::Gw2gsService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GatewayServer(EventLoop* loop)

@@ -13,7 +13,7 @@
 #include "src/server_sequence/server_sequence.h"
 
 #include "c2gw.pb.h"
-#include "gw2g.pb.h"
+#include "gw2gs.pb.h"
 #include "gw2l.pb.h"
 #include "gw2ms.pb.h"
 
@@ -35,7 +35,7 @@ class ClientReceiver : muduo::noncopyable
 public:
 
     using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
-    using RpcStubgw2g = common::RpcStub<gw2g::Gw2gService_Stub>;
+    using RpcStubgw2g = common::RpcStub<gw2g::Gw2gsService_Stub>;
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher, RpcStubgw2l& gw2l_login_stub, RpcStubgw2g& gw2g_stub);
 

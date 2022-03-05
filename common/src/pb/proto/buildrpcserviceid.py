@@ -53,7 +53,7 @@ def genheadrpcfun(fileid):
         line += ';\n'
         serviceid += 1
         servicestr += line
-    print(servicestr)
+    #print(servicestr)
     return servicestr
 
 def genheadfile(filename, fileid):

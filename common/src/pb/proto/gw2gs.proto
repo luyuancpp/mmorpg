@@ -13,6 +13,6 @@ message LogicResponse
 	ClientError error = 1;
 }
 
-service Gw2gService {
+service Gw2gsService {
   rpc PlayerService (LogicRequest) returns (LogicResponse);
 }

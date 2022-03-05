@@ -13,8 +13,8 @@
 #include "src/redis_client/redis_client.h"
 #include "src/server_common/rpc_closure.h"
 
-#include "g2ms.pb.h"
-#include "g2rg.pb.h"
+#include "gs2ms.pb.h"
+#include "gs2rg.pb.h"
 
 namespace game
 {

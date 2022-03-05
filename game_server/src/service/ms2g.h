@@ -1,6 +1,6 @@
 #ifndef GAME_SERVER_SRC_SERVICE_MS2G_H_
 #define GAME_SERVER_SRC_SERVICE_MS2G_H_
-#include "ms2g.pb.h"
+#include "ms2gs.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 namespace ms2g{

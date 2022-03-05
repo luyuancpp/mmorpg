@@ -9,7 +9,7 @@
 #include "src/gateway_server.h"
 #include "src/server_common/closure_auto_done.h"
 
-#include "gw2g.pb.h"
+#include "gw2gs.pb.h"
 
 using namespace  gateway;
 using namespace  common;
@@ -39,8 +39,8 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     auto e = SessionReg::GetSingleton().create();
     auto& c = SessionReg::GetSingleton().emplace<RpcClientPtr>(e, 
         std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr));
-    using Gw2gStubPtr = RpcStub<gw2g::Gw2gService_Stub>::MyType;
-    auto& sc =  SessionReg::GetSingleton().emplace<Gw2gStubPtr>(e, std::make_unique<RpcStub<gw2g::Gw2gService_Stub>>());
+    using Gw2gStubPtr = RpcStub<gw2g::Gw2gsService_Stub>::MyType;
+    auto& sc =  SessionReg::GetSingleton().emplace<Gw2gStubPtr>(e, std::make_unique<RpcStub<gw2g::Gw2gsService_Stub>>());
     c->subscribe<RegisterStubEvent>(*(sc.get()));
     c->connect();
     SessionReg::GetSingleton().emplace<InetAddress>(e, gs_addr);

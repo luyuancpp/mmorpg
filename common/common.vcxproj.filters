@@ -117,25 +117,7 @@
     <ClCompile Include="src\pb\pbc\deploy_database_table.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pb\pbc\g2db.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pb\pbc\g2gw.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pb\pbc\g2ms.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pb\pbc\g2rg.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pb\pbc\global_variable_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pb\pbc\gw2g.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pb\pbc\gw2l.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\gw2ms.pb.cc">
@@ -156,9 +138,6 @@
     <ClCompile Include="src\pb\pbc\ms2db.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pb\pbc\ms2g.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pb\pbc\ms2gw.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -172,9 +151,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\pb3.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pb\pbc\rg2g.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\scene_config.pb.cc">
@@ -193,6 +169,33 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pb2sol2\c2gw_sol2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\c2gs.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\gs2db.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\gs2gw.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\gs2ms.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\gs2rg.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\ms2gs.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\rg2gs.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\gw2l.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\gw2gs.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -413,25 +416,7 @@
     <ClInclude Include="src\pb\pbc\deploy_database_table.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pb\pbc\g2db.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\g2gw.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\g2ms.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\g2rg.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pb\pbc\global_variable_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\gw2g.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\gw2l.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\gw2ms.pb.h">
@@ -452,9 +437,6 @@
     <ClInclude Include="src\pb\pbc\ms2db.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pb\pbc\ms2g.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pb\pbc\ms2gw.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -470,9 +452,6 @@
     <ClInclude Include="src\pb\pbc\pb3.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pb\pbc\rg2g.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pb\pbc\scene_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -486,6 +465,60 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pb2sol2\pb2sol2.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gw2msid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\l2dbid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\l2msid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\ms2gwid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\node2deployid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\c2gs.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gs2db.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gs2gw.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gs2ms.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gs2msid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gs2rg.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\ms2gsid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\ms2gs.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\rg2gs.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\rg2gsid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gw2l.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gw2lid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gw2gs.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
