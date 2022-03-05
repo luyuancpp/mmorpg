@@ -1,6 +1,6 @@
 #ifndef GAME_SERVER_SRC_SERVICE_RG2G_H_
 #define GAME_SERVER_SRC_SERVICE_RG2G_H_
-#include "rg2g.pb.h"
+#include "rg2gs.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 namespace rg2g{

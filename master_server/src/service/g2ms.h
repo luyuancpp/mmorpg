@@ -1,7 +1,6 @@
 #ifndef MASTER_SERVER_SRC_SERVICE_G2MS_H_
 #define MASTER_SERVER_SRC_SERVICE_G2MS_H_
-#include "g2ms.pb.h"
-#include "g2ms.pb.h"
+#include "gs2ms.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 namespace master
 {

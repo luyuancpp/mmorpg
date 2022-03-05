@@ -1,0 +1,7 @@
+syntax = "proto3";
+package c2gs;
+import "common.proto";
+import "client_logic_common.proto";
+
+service C2GSService {
+}

@@ -42,6 +42,7 @@ void ClientService::ReadyGo()
 {
     g_lua["LoginRequest"]["Send"] = [this](LoginRequest& request) ->void
     {
+        //LOG_INFO << request.DebugString();
         this->codec_.send(this->conn_, request);
     };
     g_lua["ReadyGo"]();
