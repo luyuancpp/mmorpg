@@ -497,5 +497,8 @@
     <ClInclude Include="src\pb\pbc\scene_config.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\pb\pbc\msgmap.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

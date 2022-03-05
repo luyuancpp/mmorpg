@@ -261,6 +261,7 @@
     <ClInclude Include="src\pb\pbc\ms2db.pb.h" />
     <ClInclude Include="src\pb\pbc\ms2gs.pb.h" />
     <ClInclude Include="src\pb\pbc\ms2gw.pb.h" />
+    <ClInclude Include="src\pb\pbc\msgmap.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_table.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_test.pb.h" />
     <ClInclude Include="src\pb\pbc\node2deploy.pb.h" />
