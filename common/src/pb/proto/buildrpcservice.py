@@ -4,6 +4,7 @@ import md5tool
 import shutil
 import threading
 import _thread
+import protofilearray
 from multiprocessing import cpu_count
 
 local = threading.local()
@@ -240,15 +241,7 @@ def generate(filename, writedir):
     md5copy(filename, writedir, '.h')
     md5copy(filename, writedir, '.cpp')
 
-genfile = [['gw2l.proto', '../../../../login_server/src/service'],
-['l2db.proto', '../../../../database_server/src/service'],
-['ms2g.proto', '../../../../game_server/src/service'],
-['rg2g.proto', '../../../../game_server/src/service'],
-['node2deploy.proto', '../../../../deploy_server/src/service'],
-['ms2gw.proto', '../../../../gateway_server/src/service'],
-['gw2ms.proto', '../../../../master_server/src/service'],
-['l2ms.proto', '../../../../master_server/src/service'],
-['g2ms.proto', '../../../../master_server/src/service']]
+genfile = protofilearray.genfile
 
 class myThread (threading.Thread):
     def __init__(self, filename, writedir):
