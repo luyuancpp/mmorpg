@@ -4,6 +4,7 @@ import md5tool
 import shutil
 import threading
 import _thread
+import protofilearray
 from multiprocessing import cpu_count
 
 local = threading.local()
@@ -88,15 +89,7 @@ def generate(filename, fileid):
     genheadfile(filename, fileid)
     md5copy(filename, 'id.h')
 
-genfile = [['gw2l.proto'],
-['l2db.proto'],
-['ms2g.proto'],
-['rg2g.proto'],
-['node2deploy.proto',],
-['ms2gw.proto'],
-['gw2ms.proto'],
-['l2ms.proto'],
-['g2ms.proto']]
+genfile = protofilearray.genfile
 
 class myThread (threading.Thread):
     def __init__(self, filename,  fileid):
