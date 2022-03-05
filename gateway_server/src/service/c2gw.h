@@ -20,7 +20,7 @@
 using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
-using namespace gw2g;
+using namespace gw2gs;
 
 namespace gateway
 {
@@ -35,7 +35,7 @@ class ClientReceiver : muduo::noncopyable
 public:
 
     using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
-    using RpcStubgw2g = common::RpcStub<gw2g::Gw2gsService_Stub>;
+    using RpcStubgw2g = common::RpcStub<gw2gs::Gw2gsService_Stub>;
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher, RpcStubgw2l& gw2l_login_stub, RpcStubgw2g& gw2g_stub);
 

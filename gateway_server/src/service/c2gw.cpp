@@ -158,7 +158,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     gw2g_stub_.CallMethod(&ClientReceiver::OnRpcClientReplied,
 		c,
 		this,
-		&gw2g::Gw2gService_Stub::PlayerService);*/
+		&gw2gs::Gw2gService_Stub::PlayerService);*/
 }
 
 void ClientReceiver::OnRpcClientReplied(EnterGameRpcRplied cp)
