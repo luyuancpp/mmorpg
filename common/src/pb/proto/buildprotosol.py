@@ -15,6 +15,8 @@ mutablename = '::mutable_'
 
 if not os.path.exists(srcdir):
     os.makedirs(srcdir)
+if not os.path.exists(destdir):
+    os.makedirs(destdir)    
 
 def genluasol(filename, srcdir):
     global funsname
