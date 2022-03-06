@@ -52,6 +52,14 @@ public:
         client_.connect();
     }
 
+    void CallMethod(const ::google::protobuf::Message& request,
+        const std::string service_name,
+        std::string method_name,
+        ::google::protobuf::Message* response,
+        ::google::protobuf::Closure* done) 
+    {
+        channel_->CallMethod(request, service_name, method_name, response, done);
+    }
 private:
     void onConnection(const TcpConnectionPtr& conn)
     {

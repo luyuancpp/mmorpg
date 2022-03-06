@@ -30,6 +30,9 @@
     <ClCompile Include="src\gate_player\gate_player_list.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\gs\gs_sessio.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\service\c2gw.h">

@@ -78,7 +78,7 @@ void RpcChannel::CallMethod(const ::google::protobuf::Message& request,
                             const std::string service_name, 
                             std::string method_name,
 	                        ::google::protobuf::Message* response,
-	                        ::google::protobuf::Closure* done)
+	                        ::google::protobuf::Closure* done)  
 {
 	RpcMessage message;
 	message.set_type(REQUEST);

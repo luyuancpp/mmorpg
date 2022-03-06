@@ -10,8 +10,9 @@
 #include "src/server_common/rpc_client_closure.h"
 #include "src/server_common/rpc_stub.h"
 #include "src/server_common/rpc_client.h"
-#include "src/server_sequence/server_sequence.h"
+#include "src/server_common/server_sequence.h"
 
+#include "c2gs.pb.h"
 #include "c2gw.pb.h"
 #include "gw2l.pb.h"
 #include "gw2ms.pb.h"
@@ -68,13 +69,23 @@ public:
 		const RpcClientMessagePtr& message,
 		muduo::Timestamp);
 
-	using GSReplied = std::shared_ptr<common::ClientClosure<RpcClientMessage, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
-	void OnRpcClientReplied(GSReplied cp);
+    
+    struct ClientGsRpcClosure
+    {
+        ClientGsRpcClosure(const muduo::net::TcpConnectionPtr& cc)
+			: client_connection_(cc){}
+        std::unique_ptr<google::protobuf::Message> c_rp_;
+        const muduo::net::TcpConnectionPtr client_connection_;
+    };
+	using ClientGSMessageReplied = std::shared_ptr<ClientGsRpcClosure>;
+	void OnRpcClientReplied(ClientGSMessageReplied cp);
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;
     RpcStubgw2l& gw2l_login_stub_;
     common::ServerSequence server_sequence_;
+    class C2GsServiceImpl : public c2gs::C2GsService {};
+    C2GsServiceImpl c2gs_service_;
 };
 }//namespace gateway
 

@@ -211,7 +211,6 @@
     <ClCompile Include="src\server_common\game_rpc.pb.cc" />
     <ClCompile Include="src\server_common\rpc_channel.cc" />
     <ClCompile Include="src\server_common\rpc_server.cc" />
-    <ClCompile Include="src\server_sequence\server_sequence.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\closure_auto_done\closure_aouto_done.h" />
@@ -273,10 +272,10 @@
     <ClInclude Include="src\server_common\codec\dispatcher.h" />
     <ClInclude Include="src\server_common\codec\dispatcher_lite.h" />
     <ClInclude Include="src\common_type\common_type.h" />
-    <ClInclude Include="src\config_expression\config_expression.h" />
+    <ClInclude Include="src\game_logic\config_expression\config_expression.h" />
     <ClInclude Include="src\server_common\deploy_rpcclient.h" />
     <ClInclude Include="src\event\event.h" />
-    <ClInclude Include="src\exprtk\exprtk.hpp" />
+    <ClInclude Include="src\game_logic\exprtk\exprtk.hpp" />
     <ClInclude Include="src\file2string\file2string.h" />
     <ClInclude Include="src\game_config\deploy_json.h" />
     <ClInclude Include="src\game_ecs\game_registry.h" />
@@ -294,6 +293,7 @@
     <ClInclude Include="src\return_code\return_code.h" />
     <ClInclude Include="src\server_common\deploy_variable.h" />
     <ClInclude Include="src\server_common\game_rpc.pb.h" />
+    <ClInclude Include="src\server_common\node_info.h" />
     <ClInclude Include="src\server_common\rpc_channel.h" />
     <ClInclude Include="src\server_common\rpc_client_closure.h" />
     <ClInclude Include="src\server_common\rpc_closure.h" />
@@ -311,7 +311,7 @@
     <ClInclude Include="src\server_common\rpc_stub.h" />
     <ClInclude Include="src\server_common\rpc_client.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
-    <ClInclude Include="src\server_sequence\server_sequence.h" />
+    <ClInclude Include="src\server_common\server_sequence.h" />
     <ClInclude Include="src\snow_flake\snow_flake.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
