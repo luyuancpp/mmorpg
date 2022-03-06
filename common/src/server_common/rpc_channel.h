@@ -121,6 +121,12 @@ class RpcChannel : public ::google::protobuf::RpcChannel
                   ::google::protobuf::Message* response,
                   ::google::protobuf::Closure* done) override;
 
+  void CallMethod(const ::google::protobuf::Message& request,
+	  const std::string service_name,
+	  std::string method_name,
+	  ::google::protobuf::Message* response,
+	  ::google::protobuf::Closure* done);
+
   void ServerToClient(const ::google::protobuf::Message& request, 
       const std::string service_name, 
       std::string method_name);

@@ -13,14 +13,13 @@
 #include "src/server_sequence/server_sequence.h"
 
 #include "c2gw.pb.h"
-#include "gw2gs.pb.h"
 #include "gw2l.pb.h"
 #include "gw2ms.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
-using namespace gw2gs;
+
 
 namespace gateway
 {
@@ -33,11 +32,9 @@ using RpcClientMessagePtr = std::shared_ptr<RpcClientMessage>;
 class ClientReceiver : muduo::noncopyable
 {
 public:
-
     using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
-    using RpcStubgw2g = common::RpcStub<gw2gs::Gw2gsService_Stub>;
 
-    ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher, RpcStubgw2l& gw2l_login_stub, RpcStubgw2g& gw2g_stub);
+    ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher, RpcStubgw2l& gw2l_login_stub);
 
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
 
@@ -71,13 +68,12 @@ public:
 		const RpcClientMessagePtr& message,
 		muduo::Timestamp);
 
-	using EnterGameRpcRplied = std::shared_ptr<common::ClientClosure<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
-	void OnRpcClientReplied(EnterGameRpcRplied cp);
+	using GSReplied = std::shared_ptr<common::ClientClosure<RpcClientMessage, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
+	void OnRpcClientReplied(GSReplied cp);
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;
     RpcStubgw2l& gw2l_login_stub_;
-    RpcStubgw2g& gw2g_stub_;
     common::ServerSequence server_sequence_;
 };
 }//namespace gateway
