@@ -87,7 +87,7 @@ def genmsgidhead(fullfilename):
     newstr += 'extern std::array<std::string, ' + str(local.msgcount) + '> g_idmsg;\n'
     newstr += 'void InitMsgId2Servcie();\n'
     newstr += 'void InitMsgId2Msg();\n'
-    newstr += '#endif  ' + HEAD_FILE + '\n'
+    newstr += '#endif//  ' + HEAD_FILE + '\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
