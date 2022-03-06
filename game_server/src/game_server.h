@@ -5,6 +5,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/comp/master.hpp"
+#include "src/service/c2gs.h"
 #include "src/service/ms2gs.h"
 #include "src/service/rg2gs.h"
 #include "src/server_common/deploy_rpcclient.h"
@@ -13,6 +14,7 @@
 #include "src/redis_client/redis_client.h"
 #include "src/server_common/rpc_closure.h"
 
+#include "c2gs.pb.h"
 #include "gs2ms.pb.h"
 #include "gs2rg.pb.h"
 
@@ -68,8 +70,9 @@ private:
 
     ::game_server_db server_deploy_;
 
-    ms2gs::Ms2gServiceImpl ms2g_service_impl_;
-    rg2gs::Rg2gServiceImpl rg2g_service_impl_;
+    ms2gs::Ms2gServiceImpl ms2g_impl_;
+    rg2gs::Rg2gServiceImpl rg2g_impl_;
+    c2gs::C2GsServiceImpl c2gs_impl_;
 };
 
 };//namespace game
