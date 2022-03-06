@@ -74,7 +74,7 @@ public:
     {
         ClientGsRpcClosure(const muduo::net::TcpConnectionPtr& cc)
 			: client_connection_(cc){}
-        std::unique_ptr<google::protobuf::Message> c_rp_;
+        google::protobuf::Message* c_rp_{nullptr};
         const muduo::net::TcpConnectionPtr client_connection_;
     };
 	using ClientGSMessageReplied = std::shared_ptr<ClientGsRpcClosure>;

@@ -60,19 +60,19 @@ class ServerNodeSystem
 {
 public:
 
-	entt::entity GetWeightRoundRobinMainScene(const GetSceneParam& param);
+	static entt::entity GetWeightRoundRobinMainScene(const GetSceneParam& param);
 
-	entt::entity GetWeightRoundRobinRoomScene(const GetSceneParam& param);
+    static  entt::entity GetWeightRoundRobinRoomScene(const GetSceneParam& param);
 
-    entt::entity GetMainSceneNotFull(const GetSceneParam& param);
+    static  entt::entity GetMainSceneNotFull(const GetSceneParam& param);
 
-	void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
+    static  void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
 
-	void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param);
+    static  void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param);
 
-	void ServerCrashed(entt::registry& reg, const ServerCrashParam& param);
+    static  void ServerCrashed(entt::registry& reg, const ServerCrashParam& param);
 
-	void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
+    static      void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
 };
 
 

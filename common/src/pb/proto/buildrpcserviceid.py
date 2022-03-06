@@ -67,11 +67,13 @@ def genmsgidcpp(fullfilename):
         newstr += tabstr + 'g_idservice[' + str(kv[1]) + '] = "' +  kv[0][2] + '.' + kv[0][3] +'";\n'
     newstr += '}\n'
     #id 2 service 
-    newstr += '\nstd::array<std::string, ' + str(local.msgcount) + '> g_idmsg;\n'
+    newstr += '\nstd::array<std::string, ' + str(local.msgcount) + '> g_idmethod;\n'
     newstr += 'void InitMsgId2Msg()\n{\n'
     for kv in local.rpcmsgnameid:
-        newstr += tabstr + 'g_idmsg[' + str(kv[1]) + '] = "' + kv[0][1] +'";\n'
+        newstr += tabstr + 'g_idmethod[' + str(kv[1]) + '] = "' + kv[0][0] +'";\n'
     newstr += '}\n'
+    newstr += 'void InitMsgService()\n{\n'
+    newstr += tabstr + 'InitMsgId2Servcie();\n' + tabstr + 'InitMsgId2Msg();\n}'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -84,14 +86,13 @@ def genmsgidhead(fullfilename):
     newstr += '#include <unordered_map>\n\n'
     newstr += 'extern std::unordered_map<std::string, uint32_t> g_msgid;\n'
     newstr += 'extern std::array<std::string, ' + str(local.msgcount) + '> g_idservice;\n'
-    newstr += 'extern std::array<std::string, ' + str(local.msgcount) + '> g_idmsg;\n'
-    newstr += 'void InitMsgId2Servcie();\n'
-    newstr += 'void InitMsgId2Msg();\n'
+    newstr += 'extern std::array<std::string, ' + str(local.msgcount) + '> g_idmethod;\n'
+    newstr += 'void InitMsgService();\n'
     newstr += '#endif//  ' + HEAD_FILE + '\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(destfilename, filename):
+def md5copy(destfilename, filename):    
     gennewfilename = servicedir + filename
     filenamemd5 = gennewfilename + '.md5'
     error = None

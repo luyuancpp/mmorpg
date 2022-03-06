@@ -16,6 +16,8 @@ int main(int argc, char* argv[])
     if (argc > 0)
     {
         InitLua();
+        InitMsgService();
+
         int32_t nClients = 1;
 
         if (argc > 1)

@@ -10,15 +10,18 @@
 #include "src/server_common/codec/dispatcher.h"
 
 #include "c2gw.pb.h"
+#include "c2gs.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
+using namespace c2gs;
 
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
 using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;
 using EnterGameResponsePtr = std::shared_ptr<EnterGameResponse>;
 using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
+using EnterSceneResponsePtr = std::shared_ptr<EnterSceneResponse>;
 
 class ClientService
 {
@@ -44,6 +47,10 @@ public:
     void OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
         const LeaveGameResponsePtr& message,
         muduo::Timestamp);
+
+	void OnEnterSceneResponseReplied(const muduo::net::TcpConnectionPtr& conn,
+		const EnterSceneResponsePtr& message,
+		muduo::Timestamp);
     
     void EnterGame(common::Guid guid);
 private:

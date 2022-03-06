@@ -23,6 +23,8 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
         std::bind(&ClientService::OnEnterGameReplied, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<LeaveGameResponse>(
         std::bind(&ClientService::OnLeaveGameReplied, this, _1, _2, _3));
+	dispatcher_.registerMessageCallback<EnterSceneResponse>(
+		std::bind(&ClientService::OnEnterSceneResponseReplied, this, _1, _2, _3));
 }
 
 void ClientService::Send(const google::protobuf::Message& message)
@@ -30,10 +32,10 @@ void ClientService::Send(const google::protobuf::Message& message)
     RpcClientMessage rpcmessage;
     rpcmessage.set_id(++id_);
     rpcmessage.set_request(message.SerializeAsString());
-    rpcmessage.set_method("c2gw.C2LService");
+    rpcmessage.set_method(g_idmethod[rpcmessage.msg_id()]);
     rpcmessage.set_msg_id(g_msgid[message.GetDescriptor()->full_name()]);    
     rpcmessage.set_service(g_idservice[rpcmessage.msg_id()]);
-    rpcmessage.set_service(g_idmsg[rpcmessage.msg_id()]);
+   
     codec_.send(conn_, rpcmessage);
 }
 
@@ -82,7 +84,8 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     {
         this->codec_.send(this->conn_, request);
     };
-    g_lua["LeaveGame"]();
+    EnterSceneRequest request;
+    Send(request);
 }
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -90,6 +93,13 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     timer_task_.RunAfter(1, std::bind(&ClientService::DisConnect, this));
+}
+
+void ClientService::OnEnterSceneResponseReplied(const muduo::net::TcpConnectionPtr& conn,
+    const EnterSceneResponsePtr& message,
+    muduo::Timestamp)
+{
+    g_lua["LeaveGame"]();
 }
 
 void ClientService::EnterGame(Guid guid)
