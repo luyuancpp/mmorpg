@@ -1,7 +1,7 @@
 #ifndef COMMON_SRC_CONFIG_EXPRESSION_CONFIG_EXPRESSION_CONFIG_EXPRESSION_H
 #define COMMON_SRC_CONFIG_EXPRESSION_CONFIG_EXPRESSION_CONFIG_EXPRESSION_H
 
-#include "src/exprtk/exprtk.hpp"
+#include "src/game_logic/exprtk/exprtk.hpp"
 
 template<class T>
 inline T randu()

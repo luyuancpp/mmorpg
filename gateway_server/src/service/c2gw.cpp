@@ -11,12 +11,14 @@
 #include "src/game_logic/entity_cast.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/gate_player/gate_player_list.h"
+#include "src/gs/gs_session.h"
 #include "src/return_code/error_code.h"
 
 #include "gw2l.pb.h"
 
 using namespace common;
 using namespace c2gw;
+using namespace gateway;
 
 static const uint64_t kEmptyId = 0;
 
@@ -152,16 +154,44 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const RpcClientMessagePtr& message,
     muduo::Timestamp)
 {
-	/*auto c(std::make_shared<GSReplied::element_type>(conn));
-    gw2gs_stub_.CallMethod(&ClientReceiver::OnRpcClientReplied,
-		c,
-		this,
-		&gw2gs::Gw2gsService_Stub::PlayerService);*/
+	auto it = g_client_sessions_->find(uint64_t(conn.get()));
+	if (it == g_client_sessions_->end())
+	{
+		return;
+	}
+
+    auto gs = g_gs_sesssion.GetSeesion(it->second.gs_node_id_);
+    if (nullptr == gs)
+    {
+        //to client error;
+        return;
+    }
+    const ::google::protobuf::ServiceDescriptor* c2gs_service = c2gs::C2GsService::descriptor();
+    if (message->service() == c2gs_service->full_name())
+    {
+		google::protobuf::Service* service = &c2gs_service_;
+		assert(service != NULL);
+		const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+		const google::protobuf::MethodDescriptor* method
+			= desc->FindMethodByName(message->method());
+		if (nullptr ==  method)
+		{
+            //to client error;
+            return;          
+		}
+        std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
+        request->ParseFromString(message->request());
+        google::protobuf::Message* response = service->GetResponsePrototype(method).New();        
+		auto c = std::make_shared<ClientGSMessageReplied::element_type>(conn);
+		c->c_rp_.reset(response);
+        gs->gs_session_->CallMethod(*request, message->service(), message->method(), response,
+            google::protobuf::NewCallback(this, &ClientReceiver::OnRpcClientReplied, c));
+    }
 }
 
-void ClientReceiver::OnRpcClientReplied(GSReplied cp)
+void ClientReceiver::OnRpcClientReplied(ClientGSMessageReplied cp)
 {
-
+    codec_.send(cp->client_connection_, *cp->c_rp_);
 }
 
 }

@@ -22,6 +22,7 @@
     <ClCompile Include="src\gate_player\gate_player_list.cpp" />
     <ClCompile Include="src\gateway_server.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\gs\gs_sessio.cpp" />
     <ClCompile Include="src\service\c2gw.cpp" />
     <ClCompile Include="src\service\ms2gw.cpp" />
   </ItemGroup>

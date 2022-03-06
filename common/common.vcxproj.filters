@@ -90,9 +90,6 @@
     <ClCompile Include="src\file2string\file2string.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\server_sequence\server_sequence.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\game_logic\login_state\login_state.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -212,10 +209,10 @@
     <ClInclude Include="src\server_common\codec\dispatcher_lite.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\config_expression\config_expression.h">
+    <ClInclude Include="src\game_logic\config_expression\config_expression.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\exprtk\exprtk.hpp">
+    <ClInclude Include="src\game_logic\exprtk\exprtk.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\common_type\common_type.h">
@@ -392,7 +389,7 @@
     <ClInclude Include="src\game_logic\tiime_unit\time_variable.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_sequence\server_sequence.h">
+    <ClInclude Include="src\server_common\server_sequence.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\login_state\login_state.h">
@@ -498,6 +495,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\msgmap.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\node_info.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

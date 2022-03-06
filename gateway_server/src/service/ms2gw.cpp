@@ -1,7 +1,7 @@
 #include "ms2gw.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/game/game_client.h"
+#include "src/gs/gs_session.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/entity_cast.h"
@@ -12,8 +12,8 @@
 #include "c2gs.pb.h"
 #include "gw2gs.pb.h"
 
-using namespace  gateway;
-using namespace  common;
+using namespace common;
+using namespace gateway;
 ///<<< END WRITING YOUR CODE
 
 namespace ms2gw{
@@ -32,23 +32,23 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     for (auto e : reg.view<InetAddress>())
     {
         auto& c = reg.get<InetAddress>(e);
-        if (gs_addr.toIpPort() == c.toIpPort())
+        if (gs_addr.toIpPort() == c.toIpPort())// to do node id
         {
             return;
         }
     }
-    auto e = SessionReg::GetSingleton().create();
-    auto& c = SessionReg::GetSingleton().emplace<RpcClientPtr>(e, 
-        std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr));
-    using Gw2gsStubPtr = RpcStub<gw2gs::Gw2gsService_Stub>::MyType;
-    auto& gw2gs_stub =  SessionReg::GetSingleton().emplace<Gw2gsStubPtr>(e, std::make_unique<RpcStub<gw2gs::Gw2gsService_Stub>>());
-	using C2GsStubPtr = RpcStub<c2gs::C2GsService_Stub>::MyType;
-	auto& c2gs_stub = SessionReg::GetSingleton().emplace<C2GsStubPtr>(e, std::make_unique<RpcStub<c2gs::C2GsService_Stub>>());
-    c->subscribe<RegisterStubEvent>(*(gw2gs_stub.get()));
-    c->subscribe<RegisterStubEvent>(*(c2gs_stub.get()));
-    c->connect();
-    SessionReg::GetSingleton().emplace<InetAddress>(e, gs_addr);
-    SessionReg::GetSingleton().emplace<uint32_t>(e, request->node_id());
+    GSSessionInfo gsi;
+    gsi.node_info_.node_id_ = request->node_id();
+    gsi.node_info_.node_type_ = GAME_SERVER_NODTE_TYPE;
+    gsi.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
+    gsi.gw2gs_stub_ = std::make_unique<RpcStub<gw2gs::Gw2gsService_Stub>>();
+    gsi.c2gs_stub_proxy_ =std::make_unique<RpcStub<c2gs::C2GsService_Stub>>();
+    //gsi.entity_id = GsSessionReg::GetSingleton().create();
+    gsi.gs_session_->subscribe<RegisterStubEvent>(*(gsi.gw2gs_stub_.get()));
+    gsi.gs_session_->subscribe<RegisterStubEvent>(*(gsi.c2gs_stub_proxy_.get()));
+    gsi.gs_session_->connect();
+    //GsSessionReg::GetSingleton().emplace<InetAddress>(gsi.entity_id, gs_addr);
+    g_gs_sesssion.AddGs(request->node_id(), std::move(gsi));
     LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->node_id();
 ///<<< END WRITING YOUR CODE StartGS
 }
@@ -60,17 +60,17 @@ void Ms2gwServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StopGS
-	for (auto e : SessionReg::GetSingleton().view<InetAddress>())
+	/*for (auto e : GsSessionReg::GetSingleton().view<InetAddress>())
 	{
-		auto& c = SessionReg::GetSingleton().get<InetAddress>(e);
+		auto& c = GsSessionReg::GetSingleton().get<InetAddress>(e);
 		if (c.toIp() != request->ip() ||
 			c.port() != request->port())
 		{
 			continue;
 		}
-		SessionReg::GetSingleton().destroy(e);
+		GsSessionReg::GetSingleton().destroy(e);
 		break;
-	}
+	}*/
 ///<<< END WRITING YOUR CODE StopGS
 }
 
