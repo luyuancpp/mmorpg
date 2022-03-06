@@ -74,6 +74,30 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   codec_.send(conn_, message);
 }
 
+void RpcChannel::CallMethod(const ::google::protobuf::Message& request, 
+                            const std::string service_name, 
+                            std::string method_name,
+	                        ::google::protobuf::Message* response,
+	                        ::google::protobuf::Closure* done)
+{
+	RpcMessage message;
+	message.set_type(REQUEST);
+	int64_t id = id_.incrementAndGet();
+	message.set_id(id);
+	message.set_service(service_name);
+	message.set_method(method_name);
+	message.set_request(request.SerializeAsString()); // FIXME: error check
+
+	OutstandingCall out = { response, done };
+	{
+#ifdef MUDUO_RPC_LOCK
+		MutexLockGuard lock(mutex_);
+#endif // MUDUO_RPC_LOCK
+		outstandings_[id] = out;
+	}
+	codec_.send(conn_, message);
+}
+
 void RpcChannel::ServerToClient(const ::google::protobuf::Message& request, 
     const std::string service_name, 
     std::string method_name)

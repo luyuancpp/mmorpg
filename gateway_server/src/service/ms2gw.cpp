@@ -9,6 +9,7 @@
 #include "src/gateway_server.h"
 #include "src/server_common/closure_auto_done.h"
 
+#include "c2gs.pb.h"
 #include "gw2gs.pb.h"
 
 using namespace  gateway;
@@ -39,9 +40,12 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     auto e = SessionReg::GetSingleton().create();
     auto& c = SessionReg::GetSingleton().emplace<RpcClientPtr>(e, 
         std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr));
-    using Gw2gStubPtr = RpcStub<gw2gs::Gw2gsService_Stub>::MyType;
-    auto& sc =  SessionReg::GetSingleton().emplace<Gw2gStubPtr>(e, std::make_unique<RpcStub<gw2gs::Gw2gsService_Stub>>());
-    c->subscribe<RegisterStubEvent>(*(sc.get()));
+    using Gw2gsStubPtr = RpcStub<gw2gs::Gw2gsService_Stub>::MyType;
+    auto& gw2gs_stub =  SessionReg::GetSingleton().emplace<Gw2gsStubPtr>(e, std::make_unique<RpcStub<gw2gs::Gw2gsService_Stub>>());
+	using C2GsStubPtr = RpcStub<c2gs::C2GsService_Stub>::MyType;
+	auto& c2gs_stub = SessionReg::GetSingleton().emplace<C2GsStubPtr>(e, std::make_unique<RpcStub<c2gs::C2GsService_Stub>>());
+    c->subscribe<RegisterStubEvent>(*(gw2gs_stub.get()));
+    c->subscribe<RegisterStubEvent>(*(c2gs_stub.get()));
     c->connect();
     SessionReg::GetSingleton().emplace<InetAddress>(e, gs_addr);
     SessionReg::GetSingleton().emplace<uint32_t>(e, request->node_id());

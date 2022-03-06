@@ -17,7 +17,6 @@
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
 
-#include "gw2gs.pb.h"
 #include "gw2ms.pb.h"
 
 using namespace muduo;
@@ -30,14 +29,13 @@ class GatewayServer : noncopyable, public common::Receiver<GatewayServer>
 public:
     using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
     using RpcStubgw2ms = common::RpcStub<gw2ms::Gw2msService_Stub>;
-    using RpcStubgw2g = common::RpcStub<gw2gs::Gw2gsService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GatewayServer(EventLoop* loop)
         : loop_(loop),
         dispatcher_(std::bind(&GatewayServer::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-        client_receiver_(codec_, dispatcher_, gw2l_login_stub_, gw2g_stub_)
+        client_receiver_(codec_, dispatcher_, gw2l_login_stub_)
     { }
 
     RpcStubgw2l& gw2l_stub() { return gw2l_login_stub_; }
@@ -96,8 +94,6 @@ private:
     common::RpcClientPtr master_session_;
     ms2gw::Ms2gwServiceImpl ms2gw_service_impl_;
     RpcStubgw2ms gw2ms_stub_;
-
-    RpcStubgw2g gw2g_stub_;
 };
 
 } // namespace gateway
