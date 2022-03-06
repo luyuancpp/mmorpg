@@ -9,6 +9,8 @@
 #include "src/master_server.h"
 #include "src/return_code/error_code.h"
 #include "src/server_common/closure_auto_done.h"
+#include "src/sys/servernode_sys.hpp"
+#include "src/game_logic/comp/gs_scene_comp.hpp"
 
 #include "ms2gw.pb.h"
 
@@ -80,11 +82,24 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     PlayerList::GetSingleton().EnterGame(guid, e);
     ms2gw::PlayerEnterGSRequest gw_request;
     gw_request.set_connection_id(connection_id);//error
-    for (auto e : SessionReg::GetSingleton().view<uint32_t>())
+
+    GetSceneParam getp;
+    getp.scene_confid_ = 1;
+    auto se = ServerNodeSystem::GetMainSceneNotFull(getp);
+    if (se == entt::null)
     {
-        response->set_gs_node_id(SessionReg::GetSingleton().get<uint32_t>(e));
-        break;
+        // todo default
+        LOG_INFO << "player " << guid << " enter default secne";
+        return;
     }
+    auto* p_gs_data = reg.try_get<GSDataPtrComp>(se);
+    if (nullptr == p_gs_data)
+    {
+		// todo default
+		LOG_INFO << "player " << guid << " enter default secne";
+		return;
+    }
+    response->set_gs_node_id((*p_gs_data)->node_id());    
 ///<<< END WRITING YOUR CODE EnterGame
 }
 

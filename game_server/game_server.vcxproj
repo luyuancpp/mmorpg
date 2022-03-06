@@ -128,6 +128,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\factories\server_global_entity.cpp" />
     <ClCompile Include="src\game_server.cpp" />
+    <ClCompile Include="src\service\c2gs.cpp" />
     <ClCompile Include="src\service\replied_ms2gs.cpp" />
     <ClCompile Include="src\service\ms2gs.cpp" />
     <ClCompile Include="src\service\rg2gs.cpp" />
@@ -136,6 +137,7 @@
     <ClInclude Include="src\comp\master.hpp" />
     <ClInclude Include="src\factories\server_global_entity.hpp" />
     <ClInclude Include="src\game_server.h" />
+    <ClInclude Include="src\service\c2gs.h" />
     <ClInclude Include="src\service\replied_ms2gs.h" />
     <ClInclude Include="src\service\ms2gs.h" />
     <ClInclude Include="src\service\rg2gs.h" />

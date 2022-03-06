@@ -5,16 +5,6 @@
 
 namespace master
 {
-    class SessionReg : public entt::registry
-    {
-    public:
-        static SessionReg& GetSingleton() {
-            thread_local SessionReg singleton;
-            return singleton;
-        }
-    private:
-
-    };
 }//namespace master
 
 #endif//MASTER_SERVER_GAME_GAME_CLIENT_H_

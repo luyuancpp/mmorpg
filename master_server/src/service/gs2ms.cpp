@@ -50,12 +50,14 @@ void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     }
     if (game_server_entity == entt::null)
     {
+		//todo
+        LOG_INFO << "game connection not found " << request->node_id();
         return;
     }
     auto c = reg.get<RpcServerConnection>(game_server_entity);
-    MakeGSParam cparam;
-    cparam.node_id_ = request->node_id();
-    auto server_entity = MakeMainSceneNode(reg, cparam);
+    MakeGSParam make_gs_p;
+    make_gs_p.node_id_ = request->node_id();
+    auto server_entity = MakeMainSceneNode(reg, make_gs_p);
     reg.emplace<RpcServerConnection>(server_entity, RpcServerConnection{ c.conn_ });
     reg.emplace<InetAddress>(server_entity, rpc_server_peer_addr);
 

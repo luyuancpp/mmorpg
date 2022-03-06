@@ -163,7 +163,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     auto gs = g_gs_sesssion.GetSeesion(it->second.gs_node_id_);
     if (nullptr == gs)
     {
-        //to client error;
+        //todo client error;
         return;
     }
     const ::google::protobuf::ServiceDescriptor* c2gs_service = c2gs::C2GsService::descriptor();
@@ -172,18 +172,17 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		google::protobuf::Service* service = &c2gs_service_;
 		assert(service != NULL);
 		const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-		const google::protobuf::MethodDescriptor* method
-			= desc->FindMethodByName(message->method());
+		const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message->method());
 		if (nullptr ==  method)
 		{
-            //to client error;
+            //todo client error;
             return;          
 		}
         std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
         request->ParseFromString(message->request());
         google::protobuf::Message* response = service->GetResponsePrototype(method).New();        
 		auto c = std::make_shared<ClientGSMessageReplied::element_type>(conn);
-		c->c_rp_.reset(response);
+		c->c_rp_ = response;
         gs->gs_session_->CallMethod(*request, message->service(), message->method(), response,
             google::protobuf::NewCallback(this, &ClientReceiver::OnRpcClientReplied, c));
     }
