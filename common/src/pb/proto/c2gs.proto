@@ -15,6 +15,7 @@ message EnterSceneResponse
 	SceneInfo scenes_info = 2;
 }
 
-service C2GsService {
+service C2GsService 
+{
   rpc EnterScene (EnterSceneRequest) returns (EnterSceneResponse);
 }
