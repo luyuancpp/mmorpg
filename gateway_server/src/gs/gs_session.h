@@ -7,7 +7,6 @@
 #include "src/server_common/rpc_client.h"
 #include "src/server_common/rpc_stub.h"
 
-#include "c2gs.pb.h"
 #include "gw2gs.pb.h"
 
 namespace gateway
@@ -15,10 +14,8 @@ namespace gateway
     struct GSSessionInfo
     {
 		using Gw2gsStubPtr = std::unique_ptr<common::RpcStub<gw2gs::Gw2gsService_Stub>>;
-		using C2GsStubPtr = std::unique_ptr <common::RpcStub<c2gs::C2GsService_Stub>>;
         common::RpcClientPtr gs_session_;		
         Gw2gsStubPtr gw2gs_stub_;
-        C2GsStubPtr c2gs_stub_proxy_;//客户端存根代理
         common::NodeInfo node_info_;
         entt::entity entity_id{ entt::null };
     };

@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/comp/master.hpp"
+#include "src/module/network/master.h"
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/game_registry.h"

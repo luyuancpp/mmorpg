@@ -16,6 +16,7 @@
 #include "c2gw.pb.h"
 #include "gw2l.pb.h"
 #include "gw2ms.pb.h"
+#include "gw2gs.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -28,7 +29,7 @@ using LoginRequestPtr = std::shared_ptr<LoginRequest> ;
 using CreatePlayerRequestPtr = std::shared_ptr<CreatePlayerRequest>;
 using EnterGameRequestPtr = std::shared_ptr<EnterGameRequest>;
 using LeaveGameRequestPtr = std::shared_ptr<LeaveGameRequest>;
-using RpcClientMessagePtr = std::shared_ptr<RpcClientMessage>;
+using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 
 class ClientReceiver : muduo::noncopyable
 {
@@ -79,6 +80,9 @@ public:
     };
 	using ClientGSMessageReplied = std::shared_ptr<ClientGsRpcClosure>;
 	void OnRpcClientReplied(ClientGSMessageReplied cp);
+
+	using GsPlayerServiceRpcRplied = std::shared_ptr<common::ClientClosure<ClientResponse, gw2gs::RpcClientRequest, gw2gs::RpcClientResponse>>;
+	void OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp);
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;

@@ -47,7 +47,6 @@ public:
         return server_info.ip() == conn_addr.toIp() && server_info.port() == conn_addr.port();
     }
 
-
     void LoadConfig();
 
     void InitNetwork();

@@ -4,7 +4,7 @@
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
 
-#include "src/comp/master.hpp"
+#include "src/module/network/master.h"
 #include "src/service/c2gs.h"
 #include "src/service/ms2gs.h"
 #include "src/service/rg2gs.h"
@@ -29,6 +29,8 @@ public:
     using StubG2rg = common::RpcStub<gs2rg::G2rgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
+
+    inline ::google::protobuf::Service* C2gsService() { return &c2gs_impl_; }
 
     void Init();
 
