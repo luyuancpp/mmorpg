@@ -151,7 +151,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     s_reqst.set_account(request->account());
     s_reqst.set_login_node_id(g_login_server->node_id());
     s_reqst.set_connection_id(request->connection_id());
-    auto it =  connections_.emplace(request->connection_id(), common::EntityHandle());
+    auto it =  connections_.emplace(request->connection_id(), common::EntityPtr());
     if (it.second)
     {
         reg.emplace<std::string>(it.first->second.entity(), request->account());

@@ -40,7 +40,7 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
         std::bind(&ClientReceiver::OnEnterGame, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<LeaveGameRequest>(
         std::bind(&ClientReceiver::OnLeaveGame, this, _1, _2, _3));
-	dispatcher_.registerMessageCallback<RpcClientMessage>(
+	dispatcher_.registerMessageCallback<ClientRequest>(
 		std::bind(&ClientReceiver::OnRpcClientMessage, this, _1, _2, _3));
 }
 
@@ -166,31 +166,43 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         //todo client error;
         return;
     }
+    //todo msg id error
     const ::google::protobuf::ServiceDescriptor* c2gs_service = c2gs::C2GsService::descriptor();
     if (message->service() == c2gs_service->full_name())
     {
-		google::protobuf::Service* service = &c2gs_service_;
-		assert(service != NULL);
-		const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-		const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message->method());
-		if (nullptr ==  method)
-		{
-            //todo client error;
-            return;          
-		}
-        std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-        request->ParseFromString(message->request());
-        google::protobuf::Message* response = service->GetResponsePrototype(method).New();        
-		auto c = std::make_shared<ClientGSMessageReplied::element_type>(conn);
-		c->c_rp_ = response;
-        gs->gs_session_->CallMethod(*request, message->service(), message->method(), response,
-            google::protobuf::NewCallback(this, &ClientReceiver::OnRpcClientReplied, c));
+		//google::protobuf::Service* service = &c2gs_service_;
+		//assert(service != NULL);
+		//const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+		//const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message->method());
+		//if (nullptr ==  method)
+		//{
+  //          //todo client error;
+  //          return;          
+		//}
+  //      std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
+  //      request->ParseFromString(message->request());
+  //      google::protobuf::Message* response = service->GetResponsePrototype(method).New();        
+		//auto c = std::make_shared<ClientGSMessageReplied::element_type>(conn);
+		//c->c_rp_ = response;
+  //      gs->gs_session_->CallMethod(*request, message->service(), message->method(), response,
+  //          google::protobuf::NewCallback(this, &ClientReceiver::OnRpcClientReplied, c));
+		auto c(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
+        c->s_rq_.set_request(message->SerializeAsString());
+		gs->gw2gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
+			c,
+			this,
+			&gw2gs::Gw2gsService_Stub::PlayerService);
     }
 }
 
 void ClientReceiver::OnRpcClientReplied(ClientGSMessageReplied cp)
 {
     codec_.send(cp->client_connection_, *cp->c_rp_);
+}
+
+void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp)
+{
+
 }
 
 }

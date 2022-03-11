@@ -1,18 +1,19 @@
 syntax = "proto3";
 package gw2gs;
-import "common.proto";
 option cc_generic_services = true;
 
-message LogicRequest
+message RpcClientRequest
 {
- 
+  bytes request = 1;
+  uint64 player_id = 2;
 }
 
-message LogicResponse
+message RpcClientResponse
 {
-	ClientError error = 1;
+  bytes response = 1;
+  uint64 player_id = 2;
 }
 
 service Gw2gsService {
-  rpc PlayerService (LogicRequest) returns (LogicResponse);
+  rpc PlayerService (RpcClientRequest) returns (RpcClientResponse);
 }

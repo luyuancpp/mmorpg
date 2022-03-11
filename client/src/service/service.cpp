@@ -29,7 +29,7 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 
 void ClientService::Send(const google::protobuf::Message& message)
 {
-    RpcClientMessage rpcmessage;
+    ClientRequest rpcmessage;
     rpcmessage.set_id(++id_);
     rpcmessage.set_request(message.SerializeAsString());
     rpcmessage.set_method(g_idmethod[rpcmessage.msg_id()]);

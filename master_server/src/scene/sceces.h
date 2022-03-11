@@ -12,7 +12,7 @@
 namespace master
 {
 
-class ScenesSystem : public common::EntityHandle
+class ScenesSystem : public common::EntityPtr
 {
 public:
 

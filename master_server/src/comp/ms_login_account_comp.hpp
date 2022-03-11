@@ -5,7 +5,7 @@
 
 namespace master
 {
-struct MSLoginAccount : public common::EntityHandle
+struct MSLoginAccount : public common::EntityPtr
 {
     common::GuidVector playing_guids_;
 };

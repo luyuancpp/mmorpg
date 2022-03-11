@@ -42,10 +42,8 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     gsi.node_info_.node_type_ = GAME_SERVER_NODTE_TYPE;
     gsi.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
     gsi.gw2gs_stub_ = std::make_unique<RpcStub<gw2gs::Gw2gsService_Stub>>();
-    gsi.c2gs_stub_proxy_ =std::make_unique<RpcStub<c2gs::C2GsService_Stub>>();
     //gsi.entity_id = GsSessionReg::GetSingleton().create();
     gsi.gs_session_->subscribe<RegisterStubEvent>(*(gsi.gw2gs_stub_.get()));
-    gsi.gs_session_->subscribe<RegisterStubEvent>(*(gsi.c2gs_stub_proxy_.get()));
     gsi.gs_session_->connect();
     //GsSessionReg::GetSingleton().emplace<InetAddress>(gsi.entity_id, gs_addr);
     g_gs_sesssion.AddGs(request->node_id(), std::move(gsi));
