@@ -160,7 +160,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		return;
 	}
 
-    auto gs = g_gs_sesssion.GetSeesion(it->second.gs_node_id_);
+    auto gs = g_gs_nodes.GetSeesion(it->second.gs_node_id_);
     if (nullptr == gs)
     {
         //todo client error;
@@ -170,24 +170,9 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const ::google::protobuf::ServiceDescriptor* c2gs_service = c2gs::C2GsService::descriptor();
     if (message->service() == c2gs_service->full_name())
     {
-		//google::protobuf::Service* service = &c2gs_service_;
-		//assert(service != NULL);
-		//const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-		//const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message->method());
-		//if (nullptr ==  method)
-		//{
-  //          //todo client error;
-  //          return;          
-		//}
-  //      std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-  //      request->ParseFromString(message->request());
-  //      google::protobuf::Message* response = service->GetResponsePrototype(method).New();        
-		//auto c = std::make_shared<ClientGSMessageReplied::element_type>(conn);
-		//c->c_rp_ = response;
-  //      gs->gs_session_->CallMethod(*request, message->service(), message->method(), response,
-  //          google::protobuf::NewCallback(this, &ClientReceiver::OnRpcClientReplied, c));
 		auto c(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
         c->s_rq_.set_request(message->SerializeAsString());
+        c->s_rq_.set_player_id(it->second.guid_);
 		gs->gw2gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
 			c,
 			this,

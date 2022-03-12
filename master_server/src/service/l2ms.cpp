@@ -4,7 +4,7 @@
 
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
-#include "src/game/game_client.h"
+#include "src/game/gs_node.h"
 #include "src/master_player/ms_player_list.h"
 #include "src/master_server.h"
 #include "src/return_code/error_code.h"

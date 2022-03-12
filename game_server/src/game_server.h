@@ -8,6 +8,7 @@
 #include "src/service/c2gs.h"
 #include "src/service/ms2gs.h"
 #include "src/service/rg2gs.h"
+#include "src/service/gw2gs.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/rpc_stub.h"
@@ -72,7 +73,7 @@ private:
 
     ms2gs::Ms2gServiceImpl ms2g_impl_;
     rg2gs::Rg2gServiceImpl rg2g_impl_;
-
+    gw2gs::Gw2gsServiceImpl gw2gs_impl_;
 };
 
 };//namespace game

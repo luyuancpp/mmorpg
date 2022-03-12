@@ -105,32 +105,22 @@ void MasterServer::receive(const ServerConnectionEvent& es)
     auto& conn = es.conn_;
     if (conn->connected())
     {
-        OnRpcClientConnectionConnect(conn);
+		auto e = reg.create();
+		reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
     }
     else
     {
-        OnRpcClientConnectionDisConnect(conn);
-    }
-}
-
-void MasterServer::OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn)
-{
-    auto e = reg.create();
-    reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
-}
-
-void MasterServer::OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn)
-{
-    auto& peer_addr = conn->peerAddress();
-    for (auto e : reg.view<RpcServerConnection>())
-    {
-        auto& local_addr = reg.get<RpcServerConnection>(e).conn_->peerAddress();
-        if (local_addr.toIpPort() != peer_addr.toIpPort())
-        {
-            continue;
-        }
-        reg.destroy(e);
-        break;
+		auto& peer_addr = conn->peerAddress();
+		for (auto e : reg.view<RpcServerConnection>())
+		{
+			auto& local_addr = reg.get<RpcServerConnection>(e).conn_->peerAddress();
+			if (local_addr.toIpPort() != peer_addr.toIpPort())
+			{
+				continue;
+			}
+			reg.destroy(e);
+			break;
+		}
     }
 }
 

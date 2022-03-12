@@ -81,6 +81,7 @@ void GameServer::StartGSDeployReplied(StartGSRpcRC cp)
     server_deploy_ = cp->s_rp_->my_info();
     InetAddress node_addr(server_deploy_.ip(), server_deploy_.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, node_addr);
+    server_->registerService(&gw2gs_impl_);
     server_->start();   
 }
 
