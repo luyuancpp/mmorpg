@@ -30,8 +30,6 @@ public:
 
     GameServer(muduo::net::EventLoop* loop);
 
-    inline ::google::protobuf::Service* C2gsService() { return &c2gs_impl_; }
-
     void Init();
 
     void InitNetwork();
@@ -74,7 +72,7 @@ private:
 
     ms2gs::Ms2gServiceImpl ms2g_impl_;
     rg2gs::Rg2gServiceImpl rg2g_impl_;
-    c2gs::C2GsServiceImpl c2gs_impl_;
+
 };
 
 };//namespace game

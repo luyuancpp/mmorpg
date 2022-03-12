@@ -21,11 +21,14 @@ void Gw2gsServiceImpl::PlayerService(::google::protobuf::RpcController* controll
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerService
-
 	c2gw::ClientRequest clientrequest;
 	clientrequest.ParseFromString(request->request());
-	google::protobuf::Service* service = g_gs->C2gsService();
-    assert(service != NULL);
+    auto it = services_.find(clientrequest.service());
+    if (it == services_.end())
+    {
+        return;
+    }
+    google::protobuf::Service* service = it->second;
     const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
     const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(clientrequest.method());
     if (nullptr ==  method)
@@ -41,6 +44,7 @@ void Gw2gsServiceImpl::PlayerService(::google::protobuf::RpcController* controll
     std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
     player_request->ParseFromString(clientrequest.request());
     std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
+
         
 ///<<< END WRITING YOUR CODE PlayerService
 }
