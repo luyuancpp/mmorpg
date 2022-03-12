@@ -1,5 +1,6 @@
 #include "c2gs_player.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "muduo/base/Logging.h"
 ///<<< END WRITING YOUR CODE
 
 namespace c2gs{
@@ -12,6 +13,7 @@ void PlayerC2GsServiceImpl::EnterScene(common::EntityPtr& entity,
     c2gs::EnterSceneResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterScene
+    LOG_INFO << request->DebugString();
 ///<<< END WRITING YOUR CODE EnterScene
 }
 

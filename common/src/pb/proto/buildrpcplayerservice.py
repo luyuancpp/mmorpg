@@ -64,27 +64,33 @@ def genheadrpcfun():
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
         else :
-            line += tabstr + tabstr + local.pkg + '::' + rsp + '* response)override;\n\n'
+            line += tabstr + tabstr + local.pkg + '::' + rsp + '* response);\n\n'
         servicestr += line
 
     servicestr += tabstr + tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
     servicestr += tabstr + tabstr +  controller.replace('(', '') + ',\n'
-    servicestr += tabstr + tabstr + 'const ::PROTOBUF_NAMESPACE_ID::Message* request,\n'
-    servicestr += tabstr + tabstr + '::PROTOBUF_NAMESPACE_ID::Message* response)\n'
+    servicestr += tabstr + tabstr + 'const ::google::protobuf::Message* request,\n'
+    servicestr += tabstr + tabstr + '::google::protobuf::Message* response)override\n'
     servicestr += tabstr + tabstr + '{\n'
-    servicestr += tabstr + 'switch(method->index()) {\n'
+    servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
     index = 0
     for service in local.rpcarry:
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
         servicestr += tabstr + tabstr + tabstr + s[1] + '(entity,\n'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
+        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+        if rsp == 'google.protobuf.Empty' :
+            respone = '::google::protobuf::Empty*>(response'
+        else :
+            respone = local.pkg + '::' + rsp + '*>(response'
         servicestr += local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '*>( request),\n'
-        servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
-        servicestr += local.pkg + '::' + s[3].replace('(', '').replace(')', '') + '*>( response));\n'
+        servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<' 
+        servicestr += respone + '));\n'
         servicestr += tabstr + tabstr +'break;\n'
     servicestr += tabstr + tabstr + 'default:\n'
     servicestr += tabstr + tabstr + tabstr + 'GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";\n'
     servicestr += tabstr + tabstr + 'break;\n'
+    servicestr += tabstr + tabstr + '}\n'
     servicestr += tabstr + tabstr + '}\n'
     return servicestr
 
@@ -108,27 +114,28 @@ def yourcode():
 def namespacebegin():
     return 'namespace ' + local.pkg + '{\n'
 def classbegin():
-    return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n'  
+    return 'class ' + local.playerservice + 'Impl : public game::PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
 def emptyfun():
     return ''
 
 def genheadfile(filename, writedir):
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
-    hfullfilename = writedir + '/' + filename.replace('.proto', '_player.h')
-    folder_path, local.hfilename = os.path.split(hfullfilename)    
+    fullfilename = writedir + '/' + filename.replace('.proto', '_player.h')
+    folder_path, local.hfilename = os.path.split(fullfilename)    
     newheadfilename = servicedir + local.hfilename.replace('.proto', '.h')
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper()
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
-    newstr += '#include "' + local.hfilename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "player_service.h"\n'
+    newstr += '#include "' + local.hfilename.replace('.h', '').replace('_player', '') + '.pb.h"\n'
     try:
-        with open(hfullfilename,'r+', encoding='utf-8') as file:
+        with open(fullfilename,'r+', encoding='utf-8') as file:
             part = 0
             owncode = 1 
             skipheadline = 0 
             partend = 0
             for fileline in file:
-                if skipheadline < 3 :
+                if skipheadline < 4 :
                     skipheadline += 1
                     continue
                 if fileline.find(yourcodebegin) >= 0:
@@ -235,7 +242,7 @@ def gencppfile(filename, writedir):
                 newstr += yourcodebegin + ' ' + local.servicenames[serviceidx] + '\n'
                 newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
                 serviceidx += 1 
-    newstr += rpcend + '\n'
+                newstr += rpcend + '\n'
     newstr += '}// namespace ' + local.pkg + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -244,8 +251,6 @@ def generate(filename, writedir):
     parsefile(filename)
     genheadfile(filename, writedir)
     gencppfile(filename, writedir)
-    #md5copy(filename, writedir, '_player.h')
-    #md5copy(filename, writedir, '_player.cpp')
 
 def parseplayerservcie(filename):
     local.fileservice.append(filename.replace('.proto', ''))
@@ -260,17 +265,45 @@ def parseplayerservcie(filename):
 def genplayerservcielist(filename):
     fullfilename = servicedir + filename
     newstr =  '#include <memory>\n'
+    newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
+        newstr += '#include "' + f + '.pb.h"\n'
         newstr += '#include "' + f + '_player.h"\n'
-    newstr += 'std::map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
+    newstr += 'namespace game\n{\n'
+    newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
+    for service in local.playerservicearray:
+        newstr += 'class ' + service.split('.')[1] + 'Impl : public ' + service.replace('.', '::')  + '{};\n'
     newstr += 'void InitPlayerServcie()\n{\n'
     for service in local.playerservicearray:
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
-        newstr += ', std::make_unique_ptr<Player' + service.split('.')[1] + '>());\n'
-    newstr += '}\n'
+        newstr += ', std::make_unique<' + service.split('.')[0] + '::Player' + service.split('.')[1] + 'Impl>(new '
+        newstr +=  service.split('.')[1] + 'Impl));\n'
+    newstr += '}\n}//namespace game\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
+
+def md5copy(filename, writedir):
+        if filename[-4:].lower() == '.md5':
+            return
+        gennewfilename = servicedir + filename
+        filenamemd5 = gennewfilename + '.md5'
+        error = None
+        emptymd5 = False
+        if  not os.path.exists(filenamemd5):
+            emptymd5 = True
+        else:
+            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
+        fullfilename = writedir + '/' + filename
+        if error == None and os.path.exists(fullfilename) and emptymd5 == False:
+            return
+        print("copy %s ---> %s" % (gennewfilename, fullfilename))
+        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+        shutil.copy(gennewfilename, fullfilename)
+def md5copydir():
+    for (dirpath, dirnames, filenames) in os.walk(servicedir):
+        for filename in filenames:        
+            md5copy(filename, '../../../../game_server/src/service')
 
 genfile = [['c2gs.proto', '../../../../game_server/src/service']]
 
@@ -304,6 +337,4 @@ def main():
     genplayerservcielist('player_service.cpp')
     
 main()
-
-system("python md5tool.py md5copy player_service/ ../../../../game_server/src/service/")
-system("python md5tool.py generate player_service/ ")
+md5copydir()
