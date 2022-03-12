@@ -47,9 +47,7 @@ namespace master
         void receive(const common::RpcClientConnectionEvent& es);
         void receive(const common::ServerConnectionEvent& es);
 
-    private:
-        void OnRpcClientConnectionConnect(const muduo::net::TcpConnectionPtr& conn);
-        void OnRpcClientConnectionDisConnect(const muduo::net::TcpConnectionPtr& conn);        
+    private:      
 
         void InitConfig();
         void InitGlobalEntities();

@@ -2,5 +2,5 @@
 
 namespace gateway
 {	
-thread_local GsSessionReg g_gs_sesssion;
+thread_local GsNode g_gs_nodes;
 }//namespace gateway
