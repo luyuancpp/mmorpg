@@ -72,7 +72,7 @@ public:
 
     static  void ServerCrashed(entt::registry& reg, const ServerCrashParam& param);
 
-    static      void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
+    static  void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
 };
 
 
