@@ -8,7 +8,7 @@ enum MessageType
 {
   REQUEST = 0;
   RESPONSE = 1;
-  SERVER_TO_CLIENT = 2;
+  S2C_REQUEST = 2;//服务器到客户端
   RPC_ERROR = 3; // not used
 }
 

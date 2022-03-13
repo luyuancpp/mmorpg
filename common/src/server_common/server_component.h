@@ -19,7 +19,7 @@ namespace common
             const std::string service_name,
             std::string method_name)
         {
-            channel_->ServerToClient(request, service_name, method_name);
+            channel_->S2C(request, service_name, method_name);
         }
 
         muduo::net::TcpConnectionPtr conn_;

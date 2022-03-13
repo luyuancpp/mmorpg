@@ -72,18 +72,18 @@ const char descriptor_table_protodef_game_5frpc_2eproto[] PROTOBUF_SECTION_VARIA
   "ge\022$\n\004type\030\001 \001(\0162\026.muduo.net.MessageType"
   "\022\n\n\002id\030\002 \001(\006\022\017\n\007service\030\003 \001(\t\022\016\n\006method\030"
   "\004 \001(\t\022\017\n\007request\030\005 \001(\014\022\020\n\010response\030\006 \001(\014"
-  "\022#\n\005error\030\007 \001(\0162\024.muduo.net.ErrorCode*M\n"
+  "\022#\n\005error\030\007 \001(\0162\024.muduo.net.ErrorCode*H\n"
   "\013MessageType\022\013\n\007REQUEST\020\000\022\014\n\010RESPONSE\020\001\022"
-  "\024\n\020SERVER_TO_CLIENT\020\002\022\r\n\tRPC_ERROR\020\003*\205\001\n"
-  "\tErrorCode\022\020\n\014RPC_NO_ERROR\020\000\022\017\n\013WRONG_PR"
-  "OTO\020\001\022\016\n\nNO_SERVICE\020\002\022\r\n\tNO_METHOD\020\003\022\023\n\017"
-  "INVALID_REQUEST\020\004\022\024\n\020INVALID_RESPONSE\020\005\022"
-  "\013\n\007TIMEOUT\020\006B\'\n\033com.chenshuo.muduo.proto"
-  "rpcB\010RpcProtob\006proto3"
+  "\017\n\013S2C_REQUEST\020\002\022\r\n\tRPC_ERROR\020\003*\205\001\n\tErro"
+  "rCode\022\020\n\014RPC_NO_ERROR\020\000\022\017\n\013WRONG_PROTO\020\001"
+  "\022\016\n\nNO_SERVICE\020\002\022\r\n\tNO_METHOD\020\003\022\023\n\017INVAL"
+  "ID_REQUEST\020\004\022\024\n\020INVALID_RESPONSE\020\005\022\013\n\007TI"
+  "MEOUT\020\006B\'\n\033com.chenshuo.muduo.protorpcB\010"
+  "RpcProtob\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_game_5frpc_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_game_5frpc_2eproto = {
-  false, false, 461, descriptor_table_protodef_game_5frpc_2eproto, "game_rpc.proto", 
+  false, false, 456, descriptor_table_protodef_game_5frpc_2eproto, "game_rpc.proto", 
   &descriptor_table_game_5frpc_2eproto_once, nullptr, 0, 1,
   schemas, file_default_instances, TableStruct_game_5frpc_2eproto::offsets,
   file_level_metadata_game_5frpc_2eproto, file_level_enum_descriptors_game_5frpc_2eproto, file_level_service_descriptors_game_5frpc_2eproto,
