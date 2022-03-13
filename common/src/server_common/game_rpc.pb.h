@@ -70,7 +70,7 @@ namespace net {
 enum MessageType : int {
   REQUEST = 0,
   RESPONSE = 1,
-  SERVER_TO_CLIENT = 2,
+  S2C_REQUEST = 2,
   RPC_ERROR = 3,
   MessageType_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::min(),
   MessageType_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<int32_t>::max()

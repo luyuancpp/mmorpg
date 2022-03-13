@@ -4,8 +4,13 @@
 
 namespace common
 {
+    void EnityPtrDeleter(entt::entity* p)
+    {
+        reg.destroy(*p);
+        delete p;
+    }
     EntityPtr::EntityPtr()
-        : entity_(new entt::entity(reg.create()), [](entt::entity* p){reg.destroy(*p);delete p;})
+        : entity_(new entt::entity(reg.create()), EnityPtrDeleter)
     {
 
     }

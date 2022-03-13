@@ -11,6 +11,7 @@
 #include "muduo/base/Logging.h"
 
 #include <google/protobuf/descriptor.h>
+#include <google/protobuf/empty.pb.h>
 
 #include "game_rpc.pb.h"
 
@@ -98,12 +99,12 @@ void RpcChannel::CallMethod(const ::google::protobuf::Message& request,
 	codec_.send(conn_, message);
 }
 
-void RpcChannel::ServerToClient(const ::google::protobuf::Message& request, 
+void RpcChannel::S2C(const ::google::protobuf::Message& request, 
     const std::string service_name, 
     std::string method_name)
 {
     RpcMessage message;
-    message.set_type(SERVER_TO_CLIENT);
+    message.set_type(S2C_REQUEST);
     message.set_request(request.SerializeAsString()); // FIXME: error check
     message.set_service(service_name);
     message.set_method(method_name);
@@ -179,11 +180,20 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
           std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
           if (request->ParseFromString(message.request()))
           {
-            google::protobuf::Message* response = service->GetResponsePrototype(method).New();
-            // response is deleted in doneCallback
-            int64_t id = message.id();
-            service->CallMethod(method, NULL, get_pointer(request), response,
-                                NewCallback(this, &RpcChannel::doneCallback, response, id));
+			  auto& prototype = service->GetResponsePrototype(method);
+			  if (prototype.GetDescriptor() == ::google::protobuf::Empty::GetDescriptor())
+			  {
+				  int64_t id = message.id();
+				  service->CallMethod(method, NULL, get_pointer(request), nullptr, nullptr);
+			  }
+              else
+              {
+				  google::protobuf::Message* response = service->GetResponsePrototype(method).New();
+				  // response is deleted in doneCallback
+				  int64_t id = message.id();
+				  service->CallMethod(method, NULL, get_pointer(request), response,
+					  NewCallback(this, &RpcChannel::doneCallback, response, id));
+              }
             error = RPC_NO_ERROR;
           }
           else
@@ -214,7 +224,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       codec_.send(conn_, response);
     }
   }
-  else if (message.type() == SERVER_TO_CLIENT)
+  else if (message.type() == S2C_REQUEST)
   {
       // FIXME: extract to a function
       if (services_)
