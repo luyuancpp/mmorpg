@@ -44,7 +44,7 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     gsi.gw2gs_stub_ = std::make_unique<RpcStub<gw2gs::Gw2gsService_Stub>>();
     gsi.gs_session_->subscribe<RegisterStubEvent>(*(gsi.gw2gs_stub_.get()));
     gsi.gs_session_->connect();
-    g_gs_nodes.emplace<InetAddress>(gsi.entity_id.entity(), gs_addr);
+    reg.emplace<InetAddress>(gsi.entity_id.entity(), gs_addr);
     g_gs_nodes.AddGs(request->node_id(), std::move(gsi));
     LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->node_id();
 ///<<< END WRITING YOUR CODE StartGS

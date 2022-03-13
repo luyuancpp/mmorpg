@@ -8,7 +8,7 @@ namespace gateway
     struct GateClient
     {
         common::Guid guid_{ 0 };
-        uint32_t gs_node_id_{ 0 };
+        uint32_t gs_node_id_{ UINT32_MAX };
     };
 
     using ClientSessions = std::unordered_map<uint64_t, GateClient>;

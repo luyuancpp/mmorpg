@@ -93,7 +93,6 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 
 void LoginServiceImpl::EnterMSReplied(EnterGameMSRpcReplied d)
 {
-	d->c_rp_->set_gs_node_id(d->s_rp_->gs_node_id());
 	connections_.erase(d->s_rq_.connection_id());
 }
 

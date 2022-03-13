@@ -99,7 +99,6 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		LOG_INFO << "player " << guid << " enter default secne";
 		return;
     }
-    response->set_gs_node_id((*p_gs_data)->node_id());    
 ///<<< END WRITING YOUR CODE EnterGame
 }
 
