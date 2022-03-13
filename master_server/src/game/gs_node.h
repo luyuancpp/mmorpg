@@ -1,10 +1,25 @@
 #ifndef MASTER_SERVER_GAME_GAME_CLIENT_H_
 #define MASTER_SERVER_GAME_GAME_CLIENT_H_
 
-#include "entt/src/entt/entity/registry.hpp"
+#include "muduo/net/TcpConnection.h"
+
+#include "src/game_logic/entity_class/entity_class.h"
+#include "src/server_common/node_info.h"
+#include "src/server_common/server_component.h"
 
 namespace master
 {
+	struct GsNode
+	{
+		GsNode(const muduo::net::TcpConnectionPtr& conn)
+			: session_(conn)
+		{
+		}
+		common::NodeInfo node_info_;
+		common::RpcServerConnection session_;
+	};
+
+	using GsNodePtr = std::shared_ptr<GsNode>;
 }//namespace master
 
 #endif//MASTER_SERVER_GAME_GAME_CLIENT_H_

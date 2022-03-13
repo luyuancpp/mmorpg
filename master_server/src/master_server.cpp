@@ -6,6 +6,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/region_config.h"
 
+#include "src/game/gs_node.h"
 #include "src/factories/scene_factories.hpp"
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player_comp.hpp"
@@ -65,18 +66,24 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
-void MasterServer::GatewayConnectGame(entt::entity ge)
+void MasterServer::GatewayConnectGame(entt::entity gs)
 {
     if (nullptr == gate_client_ || !gate_client_->Connected())
     {
         return;
     }
-    auto& connection_info = reg.get<InetAddress>(ge);
+    auto& connection_info = reg.get<InetAddress>(gs);
     ms2gw::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
-    request.set_node_id(reg.get<GSDataPtrComp>(ge)->node_id());
+    request.set_node_id(reg.get<GSDataPtrComp>(gs)->node_id());
     gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGS");
+}
+
+void MasterServer::OnGsNodeStart(entt::entity gs)
+{
+    auto& gsnode = reg.get<GsNodePtr>(gs);
+    gs_nodes_.emplace(gsnode->node_info_.node_id_, gs);
 }
 
 void MasterServer::receive(const RpcClientConnectionEvent& es)
@@ -118,6 +125,14 @@ void MasterServer::receive(const ServerConnectionEvent& es)
 			{
 				continue;
 			}
+            auto gsnode = reg.try_get<GsNodePtr>(e);
+            if (nullptr != gsnode)
+            {
+                if ((*gsnode)->node_info_.node_type_ == GAME_SERVER_NODTE_TYPE)
+                {
+                    gs_nodes_.erase((*gsnode)->node_info_.node_id_);
+                }
+            }
 			reg.destroy(e);
 			break;
 		}

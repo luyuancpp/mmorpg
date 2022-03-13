@@ -56,16 +56,21 @@ namespace master
     entt::entity MakeMainSceneNode(entt::registry& reg,  const MakeGSParam& param)
     {
         auto e = reg.create();
-        GSDataPtrComp p_server_data = std::make_shared<GSData>();
-        p_server_data->set_node_id(param.node_id_);
-        p_server_data->set_node_entity(e);
-        reg.emplace<MainSceneServerComp>(e);
-        reg.emplace<GSDataPtrComp>(e, p_server_data);
-        reg.emplace<GSNormalComp>(e);
-        reg.emplace<NoPressureComp>(e);
-        reg.emplace<SceneComp>(e);
+        AddMainSceneNodeCompnent(e, param);
         return e;
     }
 
+
+	void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param)
+	{
+		GSDataPtrComp p_server_data = std::make_shared<GSData>();
+		p_server_data->set_node_id(param.node_id_);
+		p_server_data->set_node_entity(e);
+		reg.emplace<MainSceneServerComp>(e);
+		reg.emplace<GSDataPtrComp>(e, p_server_data);
+		reg.emplace<GSNormalComp>(e);
+		reg.emplace<NoPressureComp>(e);
+		reg.emplace<SceneComp>(e);
+	}
 
 }//namespace master

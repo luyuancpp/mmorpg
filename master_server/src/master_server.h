@@ -26,12 +26,13 @@ namespace master
         using RedisClientPtr = common::RedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using LoginStubms2db = common::RpcStub<ms2db::LoginService_Stub>;
+        using GsNode = std::unordered_map<uint32_t, entt::entity>;
 
         MasterServer(muduo::net::EventLoop* loop);           
 
         inline RedisClientPtr& redis_client() { return redis_; }
         inline common::RpcServerConnectionPtr& gate_client() { return gate_client_; }
-        inline uint32_t master_node_id()const { return serverinfos_.master_info().id(); };
+        inline uint32_t master_node_id()const { return serverinfos_.master_info().id(); }
 
         void Init();
 
@@ -43,6 +44,7 @@ namespace master
         void StartServer(ServerInfoRpcRC cp);
 
         void GatewayConnectGame(entt::entity ge);
+        void OnGsNodeStart(entt::entity gs);
 
         void receive(const common::RpcClientConnectionEvent& es);
         void receive(const common::ServerConnectionEvent& es);
@@ -69,6 +71,8 @@ namespace master
         servers_info_data serverinfos_;
 
         common::RpcServerConnectionPtr gate_client_;
+
+        GsNode gs_nodes_;
     };
 }//namespace master
 

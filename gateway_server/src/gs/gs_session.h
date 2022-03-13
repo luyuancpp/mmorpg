@@ -22,7 +22,7 @@ namespace gateway
     };
 
 
-    class GsNode : public entt::registry
+    class GsNode 
     {
     public:
         using GsNodes = std::unordered_map<uint32_t, GSNode>;
