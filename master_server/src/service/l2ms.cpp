@@ -11,8 +11,10 @@
 #include "src/server_common/closure_auto_done.h"
 #include "src/sys/servernode_sys.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/sys/message_sys.hpp"
 
 #include "ms2gw.pb.h"
+#include "ms2gs.pb.h"
 
 using namespace master;
 using namespace common;
@@ -99,6 +101,9 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		LOG_INFO << "player " << guid << " enter default secne";
 		return;
     }
+    ms2gs::EnterGameRequest gs_message;
+    gs_message.set_player_id(guid);
+    Send2Gs(gs_message, "ms2gs.Ms2gService", "EnterGame", (*p_gs_data)->node_id());
 ///<<< END WRITING YOUR CODE EnterGame
 }
 
