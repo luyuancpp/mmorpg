@@ -12,7 +12,7 @@
 
 namespace gateway
 {
-    struct GSNode
+    struct GsNode
     {
 		using Gw2gsStubPtr = std::unique_ptr<common::RpcStub<gw2gs::Gw2gsService_Stub>>;
         common::RpcClientPtr gs_session_;		
@@ -22,11 +22,11 @@ namespace gateway
     };
 
 
-    class GsNode 
+    class GsNodes 
     {
     public:
-        using GsNodes = std::unordered_map<uint32_t, GSNode>;
-		GSNode* GetSeesion(uint32_t node_id)
+        using GsSession = std::unordered_map<uint32_t, GsNode>;
+		GsNode* GetSession(uint32_t node_id)
 		{
 			auto it = gs_sessions_.find(node_id);
 			if (it == gs_sessions_.end())
@@ -36,13 +36,13 @@ namespace gateway
 			return &it->second;
 		}
 
-        void AddGs(uint32_t node_id, GSNode&& gsi) { gs_sessions_.emplace(node_id, std::move(gsi)); }
+        void AddGs(uint32_t node_id, GsNode&& gsi) { gs_sessions_.emplace(node_id, std::move(gsi)); }
         void RemoveGs(uint32_t node_id) { gs_sessions_.erase(node_id); }
 
     private:
-        GsNodes gs_sessions_;
+        GsSession gs_sessions_;
     };
-    extern thread_local GsNode g_gs_nodes;
+    extern thread_local GsNodes g_gs_nodes;
 }//namespace gateway
 
 #endif//GATEWAY_SERVER_GS_SESSION_H_

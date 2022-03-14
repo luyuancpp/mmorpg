@@ -37,7 +37,7 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
             return;
         }
     }
-    GSNode gsi;
+    GsNode gsi;
     gsi.node_info_.node_id_ = request->node_id();
     gsi.node_info_.node_type_ = GAME_SERVER_NODTE_TYPE;
     gsi.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);

@@ -159,7 +159,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		return;
 	}
 
-    auto gs = g_gs_nodes.GetSeesion(it->second.gs_node_id_);
+    auto gs = g_gs_nodes.GetSession(it->second.gs_node_id_);
     if (nullptr == gs)
     {
         //todo client error;

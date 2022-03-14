@@ -21,6 +21,10 @@ public:
     using StubPtr = std::unique_ptr<StubClass>;
     using MyType = std::unique_ptr<RpcStub>;
 
+    RpcStub() {}
+    RpcStub(muduo::net::RpcChannelPtr&& channel)
+        :stub_(std::make_unique<StubClass>(get_pointer(channel))){}
+
     template<typename Request, typename Response, typename StubMethod>
     void CallMethod(const Request& request,
         void (method)(Response*),
@@ -115,16 +119,10 @@ public:
         {
             stub_ = std::make_unique<StubClass>(get_pointer(es.channel_));
         }
-        else
-        {
-            LOG_ERROR << "Server Disconnected";
-            stub_.reset();
-        }
     }
 
 private:  
     StubPtr stub_;
-    EventManagerPtr emp_;
 };
 
 }//namespace common

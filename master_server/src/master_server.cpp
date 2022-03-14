@@ -28,6 +28,7 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
       g2ms_impl_(),
       gw2ms_impl_()
 { 
+    reg.emplace<GsNodes>(global_entity());
 }    
 
 void MasterServer::Init()
@@ -83,7 +84,8 @@ void MasterServer::GatewayConnectGame(entt::entity gs)
 void MasterServer::OnGsNodeStart(entt::entity gs)
 {
     auto& gsnode = reg.get<GsNodePtr>(gs);
-    gs_nodes_.emplace(gsnode->node_info_.node_id_, gs);
+    auto& gs_nodes = reg.get<GsNodes>(global_entity());
+    gs_nodes.emplace(gsnode->node_info_.node_id_, gs);
 }
 
 void MasterServer::receive(const RpcClientConnectionEvent& es)
@@ -117,6 +119,7 @@ void MasterServer::receive(const ServerConnectionEvent& es)
     }
     else
     {
+        auto& gs_nodes = reg.get<GsNodes>(global_entity());
 		auto& peer_addr = conn->peerAddress();
 		for (auto e : reg.view<RpcServerConnection>())
 		{
@@ -130,7 +133,7 @@ void MasterServer::receive(const ServerConnectionEvent& es)
             {
                 if ((*gsnode)->node_info_.node_type_ == GAME_SERVER_NODTE_TYPE)
                 {
-                    gs_nodes_.erase((*gsnode)->node_info_.node_id_);
+                    gs_nodes.erase((*gsnode)->node_info_.node_id_);
                 }
             }
 			reg.destroy(e);
