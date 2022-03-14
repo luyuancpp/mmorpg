@@ -16,6 +16,8 @@
 #include "src/server_common/closure_auto_done.h"
 #include "src/server_common/server_component.h"
 
+#include "ms2gs.pb.h"
+
 using namespace master;
 using namespace common;
 using namespace muduo::net;
@@ -65,6 +67,8 @@ void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     AddMainSceneNodeCompnent(gs_entity, make_gs_p);
     reg.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);
     reg.emplace<GsNodePtr>(gs_entity, gs);
+    using Ms2GsStubPtr = std::unique_ptr < common::RpcStub<ms2gs::Ms2gService_Stub>>;
+    reg.emplace<Ms2GsStubPtr>(gs_entity, std::make_unique<Ms2GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
     if (request->server_type() == kMainServer)
     {
         auto& config_all = mainscene_config::GetSingleton().all();

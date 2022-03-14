@@ -1,12 +1,7 @@
 #include "message_sys.hpp"
 
-#include "muduo/base/Logging.h"
-
 #include "src/common_type/common_type.h"
-#include "src/game/gs_node.h"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
-#include "src/game_logic/game_registry.h"
-#include "src/master_server.h"
 #include "src/server_common/server_component.h"
 
 using namespace common;
@@ -18,8 +13,9 @@ namespace master
 		const std::string& method,
 		uint32_t node_id)
 {
-		auto it = g_ms_node->gs_nodes().find(node_id);
-		if (it == g_ms_node->gs_nodes().end())
+		auto& gs_nodes = reg.get<GsNodes>(global_entity());
+		auto it = gs_nodes.find(node_id);
+		if (it == gs_nodes.end())
 		{
 			LOG_INFO << "gs not found ->" << node_id << "->" << service << "->" << method;
 			return;
