@@ -26,7 +26,8 @@ void Send2GsPlayer(const google::protobuf::Message& message,
  void CallMethod(const Request& request,
         void (method)(Response*),
         StubMethod stub_method,
-	    uint32_t node_id)
+	    uint32_t node_id,
+	    Stub s)
 {
 	auto& gs_nodes = common::reg.get<master::GsNodes>(master::global_entity());
 	auto it = gs_nodes.find(node_id);
@@ -41,9 +42,9 @@ void Send2GsPlayer(const google::protobuf::Message& message,
 		LOG_INFO << "gs not found ->" << node_id;
 		return;
 	}
-	auto& stub = common::reg.get<Stub>(it->second);
+	auto& stub = *common::reg.get<Stub>(it->second);
 	Response* presponse = new Response;
-	((*stub).*stub_method)(nullptr,
+	((*stub.stub()).*stub_method)(nullptr,
 	&request,
 	presponse,
 	NewCallback(method, presponse));

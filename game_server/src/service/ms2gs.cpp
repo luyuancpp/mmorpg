@@ -17,7 +17,7 @@ namespace ms2gs{
 /// ///<<<rpc begin
 void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     const ms2gs::EnterGameRequest* request,
-    ::google::protobuf::Empty* response,
+    ms2gs::EnterGameRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);

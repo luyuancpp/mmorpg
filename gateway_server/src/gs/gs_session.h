@@ -21,7 +21,6 @@ namespace gateway
         common::EntityPtr entity_id;
     };
 
-
     class GsNodes 
     {
     public:

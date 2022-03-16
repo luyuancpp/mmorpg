@@ -1,12 +1,13 @@
 #ifndef MASTER_SERVER_SRC_SERVICE_L2MS_H_
 #define MASTER_SERVER_SRC_SERVICE_L2MS_H_
 #include "l2ms.pb.h"
-#include "l2ms.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/ms_account.h"
 #include "src/common_type/common_type.h"
 #include "src/comp/ms_login_account_comp.hpp"
 #include "src/game_logic/comp/account_comp.hpp"
+
+#include "ms2gs.pb.h"
 ///<<< END WRITING YOUR CODE
 namespace l2ms{
 ///<<< BEGIN WRITING YOUR CODE
@@ -16,6 +17,7 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 	using AccountMap = std::unordered_map<std::string, master::MSLoginAccount>;
 
+    static void Ms2gsEnterGameReplied(ms2gs::EnterGameRespone* respone);
 private:
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE

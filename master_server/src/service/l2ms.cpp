@@ -19,11 +19,18 @@
 using namespace master;
 using namespace common;
 
+using Ms2GsStubPtr = std::unique_ptr <common::RpcStub<ms2gs::Ms2gService_Stub>>;
+
 std::size_t kMaxPlayerSize = 1000;
+
 ///<<< END WRITING YOUR CODE
 
 namespace l2ms{
 ///<<< BEGIN WRITING YOUR CODE
+void LoginServiceImpl::Ms2gsEnterGameReplied(ms2gs::EnterGameRespone* respone)
+{
+
+}
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -103,7 +110,9 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     }
     ms2gs::EnterGameRequest gs_message;
     gs_message.set_player_id(guid);
-    Send2Gs(gs_message, "ms2gs.Ms2gService", "EnterGame", (*p_gs_data)->node_id());
+    //Send2Gs(gs_message, "ms2gs.Ms2gService", "EnterGame", (*p_gs_data)->node_id());
+    
+    master::CallMethod(gs_message, &LoginServiceImpl::Ms2gsEnterGameReplied, &ms2gs::Ms2gService_Stub::EnterGame, (*p_gs_data)->node_id(), Ms2GsStubPtr());
 ///<<< END WRITING YOUR CODE EnterGame
 }
 
