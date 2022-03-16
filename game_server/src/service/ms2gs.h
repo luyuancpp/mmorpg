@@ -13,7 +13,7 @@ public:
 public:
     void EnterGame(::google::protobuf::RpcController* controller,
         const ms2gs::EnterGameRequest* request,
-        ::google::protobuf::Empty* response,
+        ms2gs::EnterGameRespone* response,
         ::google::protobuf::Closure* done)override;
 
 };

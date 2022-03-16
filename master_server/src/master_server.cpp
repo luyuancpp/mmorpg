@@ -28,6 +28,7 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
       g2ms_impl_(),
       gw2ms_impl_()
 { 
+    global_entity() = reg.create();
     reg.emplace<GsNodes>(global_entity());
 }    
 
@@ -153,7 +154,6 @@ void MasterServer::InitConfig()
 void MasterServer::InitGlobalEntities()
 {
     MakeScenes();
-    global_entity() = reg.create();
     reg.emplace<ConnectionPlayerEnitiesMap>(global_entity());
 }
 

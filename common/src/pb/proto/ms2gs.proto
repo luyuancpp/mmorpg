@@ -10,6 +10,10 @@ message EnterGameRequest
   SceneInfo scenes_info = 2;
 }
 
+message EnterGameRespone
+{
+}
+
 service Ms2gService {
-  rpc EnterGame (EnterGameRequest) returns (google.protobuf.Empty);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameRespone);
 }

@@ -25,6 +25,8 @@ public:
     RpcStub(muduo::net::RpcChannelPtr&& channel)
         :stub_(std::make_unique<StubClass>(get_pointer(channel))){}
 
+	StubClass* stub() {return stub_.get();}
+    
     template<typename Request, typename Response, typename StubMethod>
     void CallMethod(const Request& request,
         void (method)(Response*),
