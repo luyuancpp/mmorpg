@@ -24,7 +24,7 @@ namespace login
         LoginServer(muduo::net::EventLoop* loop);
             
         RedisClientPtr& redis_client() { return redis_; }
-        uint32_t node_id() const { return node_info_.id(); }
+        uint32_t login_node_id() const { return node_info_.id(); }
 
         void LoadConfig();
 

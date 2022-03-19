@@ -168,6 +168,7 @@
     <ClInclude Include="src\comp\ms_login_account_comp.hpp" />
     <ClInclude Include="src\factories\scene_factories.hpp" />
     <ClInclude Include="src\factories\server_global_entity.hpp" />
+    <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\service\gs2ms.h" />
     <ClInclude Include="src\service\gw2ms.h" />
     <ClInclude Include="src\master_player\ms_player_list.h" />

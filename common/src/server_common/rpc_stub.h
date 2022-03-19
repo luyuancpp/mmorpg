@@ -19,7 +19,6 @@ class RpcStub : noncopyable,  public Receiver<RpcStub<StubClass>>
 {
 public:
     using StubPtr = std::unique_ptr<StubClass>;
-    using MyType = std::unique_ptr<RpcStub>;
 
     RpcStub() {}
     RpcStub(muduo::net::RpcChannelPtr&& channel)
@@ -32,11 +31,6 @@ public:
         void (method)(Response*),
         StubMethod stub_method)
     {
-        if (nullptr == stub_)
-        {
-            LOG_ERROR << "Server Disconnected";
-            return;
-        }
         Response* presponse = new Response;
         ((*stub_).*stub_method)(nullptr, 
             &request, 
@@ -50,16 +44,23 @@ public:
         Class* object,
         StubMethod stub_method)
     {
-        if (nullptr == stub_)
-        {
-            LOG_ERROR << "Server Disconnected";
-            return;
-        }
         ((*stub_).*stub_method)(nullptr,
             &method_param->s_rq_,
             method_param->s_rp_,
             NewCallback(object, method, method_param));
     }
+
+	template<typename MethodParam, typename Class, typename StubMethod>
+	void CallMethod1(void (Class::* method)(MethodParam),
+		MethodParam& method_param,
+		Class* object,
+		StubMethod stub_method)
+	{
+		((*stub_).*stub_method)(nullptr,
+			&method_param.s_rq_,
+			method_param.s_rp_,
+			NewCallback(object, method, method_param));
+	}
 
     template<typename Class, typename MethodParam, typename StubMethod>
     void CallMethodString(Class* object,
@@ -67,11 +68,6 @@ public:
         MethodParam& method_param,
         StubMethod stub_method)
     {
-        if (nullptr == stub_) 
-        { 
-            LOG_ERROR << "Server Disconnected";
-            return; 
-        }
         ((*stub_).*stub_method)(nullptr,
             &method_param->s_rq_,
             method_param->s_rp_,
@@ -84,11 +80,6 @@ public:
         MethodParam& method_param,
         StubMethod stub_method)
     {
-        if (nullptr == stub_) 
-        { 
-            LOG_ERROR << "Server Disconnected";
-            return; 
-        }
         ((*stub_).*stub_method)(nullptr,
             &method_param->s_rq_,
             method_param->s_rp_,
@@ -101,11 +92,6 @@ public:
         const Request& request,
         StubMethod stub_method)
     {
-        if (nullptr == stub_)
-        {
-            LOG_ERROR << "Server Disconnected";
-            return;
-        }
         google::protobuf::Empty* presponse = new google::protobuf::Empty;
         ((*stub_).*stub_method)(nullptr,
             &request,

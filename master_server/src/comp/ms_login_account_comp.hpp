@@ -11,7 +11,8 @@ struct MSLoginAccount : public common::EntityPtr
 };
 struct AccountLoginNode
 {
-    uint32_t node_id_{0};
+    uint32_t login_node_id_{UINT32_MAX};
+    uint32_t gate_node_id_{ UINT32_MAX };
 };
 }//namespace master
 

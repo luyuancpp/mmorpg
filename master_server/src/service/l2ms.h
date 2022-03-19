@@ -6,6 +6,7 @@
 #include "src/common_type/common_type.h"
 #include "src/comp/ms_login_account_comp.hpp"
 #include "src/game_logic/comp/account_comp.hpp"
+#include "src/server_common/rpc_client_closure.h"
 
 #include "ms2gs.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -17,7 +18,8 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 	using AccountMap = std::unordered_map<std::string, master::MSLoginAccount>;
 
-    static void Ms2gsEnterGameReplied(ms2gs::EnterGameRespone* respone);
+    using Ms2gsEnterGameRpcRplied = common::NormalClosure<ms2gs::EnterGameRequest, ms2gs::EnterGameRespone>;
+    void Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied);
 private:
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE

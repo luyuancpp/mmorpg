@@ -6,13 +6,14 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
 
-#include "src/server_common/rpc_client_closure.h"
+#include "src/gateway_server.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/entity_cast.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/gate_player/gate_player_list.h"
 #include "src/gs/gs_session.h"
 #include "src/return_code/error_code.h"
+#include "src/server_common/rpc_client_closure.h"
 
 #include "gw2l.pb.h"
 
@@ -72,6 +73,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     c->s_rq_.set_account(message->account());
     c->s_rq_.set_password(message->password());
     c->s_rq_.set_connection_id(c->connection_id());
+    c->s_rq_.set_gate_node_id(g_gateway_server->node_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
         c, 
         this, 
@@ -169,11 +171,11 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const ::google::protobuf::ServiceDescriptor* c2gs_service = c2gs::C2GsService::descriptor();
     if (message->service() == c2gs_service->full_name())
     {
-		auto c(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
-        c->s_rq_.set_request(message->SerializeAsString());
-        c->s_rq_.set_player_id(it->second.guid_);
+		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
+        msg->s_rq_.set_request(message->SerializeAsString());
+        msg->s_rq_.set_player_id(it->second.guid_);
 		gs->gw2gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
-			c,
+			msg,
 			this,
 			&gw2gs::Gw2gsService_Stub::PlayerService);
     }

@@ -11,7 +11,7 @@
 namespace common
 {
 
-struct GatewayConnectionId
+struct GateConnectionId
 {
     uint64_t connection_id_{UINT64_MAX};
 };

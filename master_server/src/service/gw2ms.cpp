@@ -2,6 +2,8 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/net/InetAddress.h"
 
+#include "src/network/gate_node.h"
+#include "src/network/gs_node.h"
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/player_comp.hpp"
@@ -29,6 +31,7 @@ void Gw2msServiceImpl::GwConnectMaster(::google::protobuf::RpcController* contro
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE GwConnectMaster
     InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
+    entt::entity gate_entity{ entt::null };
     for (auto e : reg.view<RpcServerConnection>())
     {
         auto c = reg.get<RpcServerConnection>(e);
@@ -37,12 +40,18 @@ void Gw2msServiceImpl::GwConnectMaster(::google::protobuf::RpcController* contro
         {
             continue;
         }
-        g_ms_node->gate_client() =  std::make_unique<RpcServerConnection>(c.conn_);
+        gate_entity = e;
+        auto& gate_nodes = reg.get<GateNodes>(global_entity());
+        auto& gate_node = reg.emplace<GateNode>(gate_entity, GateNode(c.conn_));
+        gate_node.node_info_.node_id_ = request->node_id();
+        gate_node.node_info_.node_type_ = GATEWAY_NOTE_TYPE;
+        gate_nodes.emplace(request->node_id(), gate_entity);
         break;
     }
-    for (auto e : reg.view<muduo::net::InetAddress>())
+
+    for (auto e : reg.view<GsNodePtr>())
     {
-        g_ms_node->GatewayConnectGame(e);
+        g_ms_node->DoGateConnectGs(e, gate_entity);
     }
 ///<<< END WRITING YOUR CODE GwConnectMaster
 }

@@ -5,7 +5,8 @@
 
 #include "src/game_config/mainscene_config.h"
 
-#include "src/game/gs_node.h"
+#include "src/network/gs_node.h"
+#include "src/network/gate_node.h"
 #include "src/game_logic/enum/server_enum.h"
 #include "src/factories/scene_factories.hpp"
 #include "src/factories/server_global_entity.hpp"
@@ -40,13 +41,10 @@ void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     response->set_master_node_id(g_ms_node->master_node_id());
     InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
     InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
-
     entt::entity gs_entity{ entt::null };
     for (auto e : reg.view<RpcServerConnection>())
     {
-        auto c = reg.get<RpcServerConnection>(e);
-        auto& local_addr = c.conn_->peerAddress();
-        if (local_addr.toIpPort() != rpc_client_peer_addr.toIpPort())
+        if (reg.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
         {
             continue;
         }
@@ -94,7 +92,11 @@ void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller,
         reg.remove<MainSceneServerComp>(gs_entity);
         reg.emplace<RoomSceneServerComp>(gs_entity);
     }
-    g_ms_node->GatewayConnectGame(gs_entity);
+
+	for (auto e : reg.view<GateNodePtr>())
+	{
+		g_ms_node->DoGateConnectGs(gs_entity, e);
+	}
     g_ms_node->OnGsNodeStart(gs_entity);
     LOG_INFO << "game connected " << request->node_id();
 ///<<< END WRITING YOUR CODE StartGS

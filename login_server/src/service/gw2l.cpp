@@ -37,7 +37,7 @@ void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 	auto& account = d->s_rq_.account();
 	auto& response = d->c_rp_;
 
-	//has dat
+	//has data
 	{
 		auto& player = reg.emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
 		auto ret = player->Login();
@@ -109,6 +109,7 @@ void LoginServiceImpl::EnterMS(common::Guid guid,
 	auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
 	cp->s_rq_.set_guid(guid);
 	cp->s_rq_.set_connection_id(response->connection_id());
+	cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
 	l2ms_login_stub_.CallMethodString(this,
 		&LoginServiceImpl::EnterMSReplied,
 		cp,
@@ -148,12 +149,14 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
     auto& s_reqst = c->s_rq_;
     s_reqst.set_account(request->account());
-    s_reqst.set_login_node_id(g_login_server->node_id());
+    s_reqst.set_login_node_id(g_login_server->login_node_id());
     s_reqst.set_connection_id(request->connection_id());
+	s_reqst.set_gate_node_id(request->gate_node_id());
     auto it =  connections_.emplace(request->connection_id(), common::EntityPtr());
     if (it.second)
     {
         reg.emplace<std::string>(it.first->second.entity(), request->account());
+		reg.emplace<uint32_t>(it.first->second.entity(), request->gate_node_id());
     }
     l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &l2ms::LoginService_Stub::LoginAccount);
 ///<<< END WRITING YOUR CODE Login
