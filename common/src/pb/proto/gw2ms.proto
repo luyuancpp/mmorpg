@@ -12,6 +12,7 @@ message ClientMessageRequest
 message ConnectRequest
 {
   IpPort rpc_client = 1;
+  uint32 node_id = 2;
 }
 
 message ConnectedGameRequest

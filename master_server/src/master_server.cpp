@@ -6,7 +6,8 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/region_config.h"
 
-#include "src/game/gs_node.h"
+#include "src/network/gate_node.h"
+#include "src/network/gs_node.h"
 #include "src/factories/scene_factories.hpp"
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player_comp.hpp"
@@ -30,6 +31,7 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
 { 
     global_entity() = reg.create();
     reg.emplace<GsNodes>(global_entity());
+    reg.emplace<GateNodes>(global_entity());   
 }    
 
 void MasterServer::Init()
@@ -68,18 +70,14 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
-void MasterServer::GatewayConnectGame(entt::entity gs)
+void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
 {
-    if (nullptr == gate_client_ || !gate_client_->Connected())
-    {
-        return;
-    }
     auto& connection_info = reg.get<InetAddress>(gs);
     ms2gw::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
     request.set_node_id(reg.get<GSDataPtrComp>(gs)->node_id());
-    gate_client_->Send(request, "ms2gw.Ms2gwService", "StartGS");
+    reg.get<GateNode>(gate).session_.Send(request, "ms2gw.Ms2gwService", "StartGS");
 }
 
 void MasterServer::OnGsNodeStart(entt::entity gs)
@@ -121,6 +119,7 @@ void MasterServer::receive(const ServerConnectionEvent& es)
     else
     {
         auto& gs_nodes = reg.get<GsNodes>(global_entity());
+        auto& gate_nodes = reg.get<GateNodes>(global_entity());
 		auto& peer_addr = conn->peerAddress();
 		for (auto e : reg.view<RpcServerConnection>())
 		{
@@ -129,14 +128,16 @@ void MasterServer::receive(const ServerConnectionEvent& es)
 			{
 				continue;
 			}
-            auto gsnode = reg.try_get<GsNodePtr>(e);
-            if (nullptr != gsnode)
+            auto gsnode = reg.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+            if (nullptr != gsnode && (*gsnode)->node_info_.node_type_ == GAME_SERVER_NODTE_TYPE)
             {
-                if ((*gsnode)->node_info_.node_type_ == GAME_SERVER_NODTE_TYPE)
-                {
-                    gs_nodes.erase((*gsnode)->node_info_.node_id_);
-                }
+                gs_nodes.erase((*gsnode)->node_info_.node_id_);
             }
+			auto gatenode = reg.try_get<GateNodePtr>(e);//如果是gate
+			if (nullptr != gatenode && (*gatenode)->node_info_.node_type_ == GATEWAY_NOTE_TYPE)
+			{
+                 gate_nodes.erase((*gatenode)->node_info_.node_id_);
+			}
 			reg.destroy(e);
 			break;
 		}

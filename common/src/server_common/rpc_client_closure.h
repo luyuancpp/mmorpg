@@ -1,6 +1,8 @@
 #ifndef COMMON_SRC_server_common_RPC_CLIENT_CLOSURE_H_
 #define COMMON_SRC_server_common_RPC_CLIENT_CLOSURE_H_
 
+#include "muduo/net/TcpConnection.h"
+
 namespace common
 {
     template <typename ClientResponse, typename ServerRequest, typename ServerResponse>
@@ -22,6 +24,17 @@ namespace common
         ServerResponse* s_rp_{ nullptr };
         const muduo::net::TcpConnectionPtr client_connection_;
     };
+
+	template <typename Request, typename Response>
+	struct NormalClosure
+	{
+        NormalClosure()
+			: s_rp_(new Response())//delete from rpc_chanel respone
+		{
+		}
+        Request s_rq_;
+        Response* s_rp_{ nullptr };
+	};
 
 }//namespace common
 

@@ -4,7 +4,8 @@
 
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
-#include "src/game/gs_node.h"
+#include "src/network/gate_node.h"
+#include "src/network/gs_node.h"
 #include "src/master_player/ms_player_list.h"
 #include "src/master_server.h"
 #include "src/return_code/error_code.h"
@@ -27,9 +28,10 @@ std::size_t kMaxPlayerSize = 1000;
 
 namespace l2ms{
 ///<<< BEGIN WRITING YOUR CODE
-void LoginServiceImpl::Ms2gsEnterGameReplied(ms2gs::EnterGameRespone* respone)
+void LoginServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
 {
-
+	ms2gw::PlayerEnterGSRequest gw_request;
+	//gw_request.set_connection_id(connection_id);//error
 }
 ///<<< END WRITING YOUR CODE
 
@@ -54,7 +56,7 @@ void LoginServiceImpl::LoginAccount(::google::protobuf::RpcController* controlle
     {
         auto& lc = lit->second;
         //如果不是同一个登录服务器,踢掉已经登录的账号
-        if (reg.get<AccountLoginNode>(lc.entity()).node_id_ != request->login_node_id())
+        if (reg.get<AccountLoginNode>(lc.entity()).login_node_id_ != request->login_node_id())
         {
 
         }
@@ -70,7 +72,7 @@ void LoginServiceImpl::LoginAccount(::google::protobuf::RpcController* controlle
         {
             auto& lc = result.first->second;
             reg.emplace<SharedAccountString>(lc.entity(), std::make_shared<std::string>(request->account()));
-            reg.emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id()});
+            reg.emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id(), request->gate_node_id()});
         }
     }
 ///<<< END WRITING YOUR CODE LoginAccount
@@ -84,35 +86,51 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterGame
     auto guid = request->guid();   
-    auto connection_id = request->connection_id();
     auto e = reg.create();
     reg.emplace<Guid>(e, guid);
-    reg.emplace<GatewayConnectionId>(e, connection_id);
+    reg.emplace<GateConnectionId>(e, request->connection_id());
+
+	auto& gate_nodes = reg.get<GateNodes>(global_entity());
+    auto gate_it = gate_nodes.find(request->gate_node_id());
+	if (gate_it != gate_nodes.end())
+	{
+        auto gate = reg.try_get<GateNodePtr>(gate_it->second);
+        if (nullptr != gate)
+        {
+            reg.emplace<GateNodePtr>(e, *gate);
+        }       
+	}
+
     PlayerList::GetSingleton().EnterGame(guid, e);
-    ms2gw::PlayerEnterGSRequest gw_request;
-    gw_request.set_connection_id(connection_id);//error
 
     GetSceneParam getp;
     getp.scene_confid_ = 1;
-    auto se = ServerNodeSystem::GetMainSceneNotFull(getp);
-    if (se == entt::null)
+    auto scene = ServerNodeSystem::GetMainSceneNotFull(getp);
+    if (scene == entt::null)
     {
         // todo default
         LOG_INFO << "player " << guid << " enter default secne";
-        return;
     }
-    auto* p_gs_data = reg.try_get<GSDataPtrComp>(se);
+    auto* p_gs_data = reg.try_get<GSDataPtrComp>(scene);
     if (nullptr == p_gs_data)
     {
 		// todo default
 		LOG_INFO << "player " << guid << " enter default secne";
 		return;
     }
-    ms2gs::EnterGameRequest gs_message;
-    gs_message.set_player_id(guid);
-    //Send2Gs(gs_message, "ms2gs.Ms2gService", "EnterGame", (*p_gs_data)->node_id());
-    
-    master::CallMethod(gs_message, &LoginServiceImpl::Ms2gsEnterGameReplied, &ms2gs::Ms2gService_Stub::EnterGame, (*p_gs_data)->node_id(), Ms2GsStubPtr());
+    auto gs_node_id = (*p_gs_data)->node_id();
+
+	auto& gs_nodes = common::reg.get<master::GsNodes>(master::global_entity());
+	auto it = gs_nodes.find(gs_node_id);
+	if (it != gs_nodes.end())
+	{
+        Ms2gsEnterGameRpcRplied msg;
+        msg.s_rq_.set_player_id(guid);
+		reg.get<Ms2GsStubPtr>(it->second)->CallMethod1(&LoginServiceImpl::Ms2gsEnterGameReplied,
+			msg,
+			this,
+            &ms2gs::Ms2gService_Stub::EnterGame);
+	}
 ///<<< END WRITING YOUR CODE EnterGame
 }
 

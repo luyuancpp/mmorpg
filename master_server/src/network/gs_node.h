@@ -19,7 +19,8 @@ namespace master
 	};
 
 	using GsNodePtr = std::shared_ptr<GsNode>;
-	using GsNodes = std::unordered_map<uint32_t, entt::entity>;
+
+	struct GsNodes : public std::unordered_map<uint32_t, entt::entity> {};
 }//namespace master
 
 #endif//MASTER_SERVER_GAME_GAME_CLIENT_H_
