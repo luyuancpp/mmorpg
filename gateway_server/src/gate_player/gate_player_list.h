@@ -9,7 +9,7 @@ namespace gateway
 {
     struct GateClient
     {
-        common::Guid guid_{ 0 };
+        common::Guid guid_{ common::kInvalidGuid };
         uint32_t gs_node_id_{ UINT32_MAX };
         muduo::net::TcpConnectionPtr conn_;
     };

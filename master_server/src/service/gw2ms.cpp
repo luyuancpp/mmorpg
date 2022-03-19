@@ -120,5 +120,26 @@ void Gw2msServiceImpl::PlayerService(::google::protobuf::RpcController* controll
 ///<<< END WRITING YOUR CODE PlayerService
 }
 
+void Gw2msServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
+    const gw2ms::DisconnectRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE Disconnect
+    auto guid = request->guid();
+	auto e = PlayerList::GetSingleton().GetPlayer(guid);
+	if (entt::null == e)
+	{
+		return;
+	}
+	assert(reg.get<Guid>(e) == guid);
+	reg.destroy(e);
+	PlayerList::GetSingleton().LeaveGame(guid);
+	assert(!PlayerList::GetSingleton().HasPlayer(guid));
+	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
+///<<< END WRITING YOUR CODE Disconnect
+}
+
  ///<<<rpc end
 }// namespace gw2ms

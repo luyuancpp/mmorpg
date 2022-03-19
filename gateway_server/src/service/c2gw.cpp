@@ -49,13 +49,46 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     if (!conn->connected())
     {
-        auto connection_id = uint64_t(conn.get());
+        auto conn_id = uint64_t(conn.get());
         //断了线之后不能把消息串到别人的地方，串话
         //如果我没登录就发送其他协议到master game server 怎么办
-        gw2l::DisconnectRequest request;
-        request.set_connection_id(connection_id);
-        g_client_sessions_->erase(connection_id);
-        gw2l_login_stub_.CallMethod(request,  &gw2l::LoginService_Stub::Disconnect);
+        auto it = g_client_sessions_->find(conn_id);
+        auto guid = it->second.guid_;        
+        {
+			gw2l::DisconnectRequest request;
+			request.set_connection_id(conn_id);
+			gw2l_login_stub_.CallMethod(request, &gw2l::LoginService_Stub::Disconnect);
+        }
+       
+        // master
+        {
+            if (guid != common::kInvalidGuid)
+            {
+				gw2ms::DisconnectRequest request;
+				request.set_conn_id(conn_id);
+				request.set_guid(guid);
+				//注意这里可能会有问题，如果发的connit 到ms 但是player id不对应怎么办?
+				g_gateway_server->gw2ms_stub().CallMethod(request, &gw2ms::Gw2msService_Stub::Disconnect);
+            }           
+        }
+
+		// gs
+		{
+			if (guid != common::kInvalidGuid)
+			{
+				auto gs = g_gs_nodes.GetSession(it->second.gs_node_id_);
+				if (nullptr != gs)
+				{
+					gw2gs::DisconnectRequest request;
+					request.set_conn_id(conn_id);
+					request.set_guid(guid);
+					//注意这里可能会有问题，如果发的connit 到ms 但是player id不对应怎么办?
+                    gs->gw2gs_stub_->CallMethod(request, &gw2gs::Gw2gsService_Stub::Disconnect);
+				}
+				
+			}
+		}
+        g_client_sessions_->erase(conn_id);
     }
     else
     {
