@@ -40,7 +40,9 @@ public:
 
     RpcStubgw2l& gw2l_stub() { return gw2l_login_stub_; }
     RpcStubgw2ms& gw2ms_stub() { return gw2ms_stub_; }
-    inline uint32_t node_id()const { return serverinfo_data_.gateway_info().id(); }
+    inline uint32_t gate_node_id()const { return serverinfo_data_.gateway_info().id(); }
+
+    inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
 
     template<typename ServerInfo>
     bool IsSameAddr(const InetAddress& conn_addr, const ServerInfo& server_info)

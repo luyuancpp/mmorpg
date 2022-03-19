@@ -1,1 +1,1 @@
-for /l %%i in (0, 1, 1) do   client.exe 1 3 
+for /l %%i in (0, 1, 1) do   client.exe 1 1 

@@ -7,7 +7,7 @@ message StartGSRequest
 {
   string ip = 1;
   uint32 port = 2;
-  uint32 node_id = 3;
+  uint32 gs_node_id = 3;
 }
 
 message StopGSRequest
@@ -19,7 +19,8 @@ message StopGSRequest
 message PlayerEnterGSRequest
 {
   uint64 connection_id = 1;
-  uint32 node_id = 2;
+  uint32 gs_node_id = 2;
+  uint64 player_id = 3;
 }
 
 

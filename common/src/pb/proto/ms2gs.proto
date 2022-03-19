@@ -8,6 +8,7 @@ message EnterGameRequest
 {
   uint64 player_id = 1;
   SceneInfo scenes_info = 2;
+  uint64 conn_id = 3;
 }
 
 message EnterGameRespone

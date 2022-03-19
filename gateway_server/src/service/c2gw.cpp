@@ -61,6 +61,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     {
         //很极端情况下会有问题,如果走了一圈前面的人还没下线，在下一个id下线的瞬间又重用了,就会导致串话
         GateClient gc;
+        gc.conn_ = conn;
         g_client_sessions_->emplace(uint64_t(conn.get()), gc);
     }
 }
@@ -73,7 +74,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     c->s_rq_.set_account(message->account());
     c->s_rq_.set_password(message->password());
     c->s_rq_.set_connection_id(c->connection_id());
-    c->s_rq_.set_gate_node_id(g_gateway_server->node_id());
+    c->s_rq_.set_gate_node_id(g_gateway_server->gate_node_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
         c, 
         this, 
@@ -130,17 +131,19 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
 {
     //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断  
-    auto& resp_ = cp->c_rp_;
-    if (resp_.error().error_no() == RET_OK)
+    auto& resp_ = cp->s_rp_;
+    if (resp_->error().error_no() == RET_OK)//进入游戏有错误，直接返回给客户端
     {
-        auto it = g_client_sessions_->find(cp->connection_id());
-        if (it == g_client_sessions_->end())
-        {
-            return;
-        }
-        it->second.guid_ = cp->s_rp_->guid();
-    }    
-    codec_.send(cp->client_connection_, resp_);
+		auto it = g_client_sessions_->find(cp->connection_id());
+		if (it == g_client_sessions_->end())
+		{
+			return;
+		}
+        return;
+    }      
+	cp->c_rp_.mutable_error()->set_error_no(resp_->error().error_no());
+	codec_.send(cp->client_connection_, cp->c_rp_);
+	return;
 }
 
 void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -152,7 +155,7 @@ void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
 }
 
 void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
-    const RpcClientMessagePtr& message,
+    const RpcClientMessagePtr& request,
     muduo::Timestamp)
 {
 	auto it = g_client_sessions_->find(uint64_t(conn.get()));
@@ -169,11 +172,13 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     }
     //todo msg id error
     const ::google::protobuf::ServiceDescriptor* c2gs_service = c2gs::C2GsService::descriptor();
-    if (message->service() == c2gs_service->full_name())
+    if (request->service() == c2gs_service->full_name())
     {
 		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
-        msg->s_rq_.set_request(message->SerializeAsString());
+        msg->s_rq_.set_request(request->SerializeAsString());
         msg->s_rq_.set_player_id(it->second.guid_);
+        msg->c_rp_.set_id(request->id());
+        msg->c_rp_.set_msg_id(request->msg_id());
 		gs->gw2gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
 			msg,
 			this,
@@ -188,7 +193,19 @@ void ClientReceiver::OnRpcClientReplied(ClientGSMessageReplied cp)
 
 void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp)
 {
-
+	auto it = g_client_sessions_->find(cp->s_rp_->conn_id());
+	if (it == g_client_sessions_->end())
+	{
+		return;
+	}
+    auto& srp = cp->s_rp_;
+    auto& crp = cp->c_rp_;
+    if (it->second.guid_ != srp->player_id())
+    {
+        return;
+    };
+    crp.set_response(srp->response());
+    codec_.send(cp->client_connection_, crp);
 }
 
 }

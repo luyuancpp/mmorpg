@@ -1,5 +1,7 @@
 #include "gw2gs.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "src/game_logic/comp/player_comp.hpp"
+#include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
 #include "src/module/player_list/player_list.h"
 #include "src/server_common/closure_auto_done.h"
@@ -41,6 +43,11 @@ void Gw2gsServiceImpl::PlayerService(::google::protobuf::RpcController* controll
     {
         return;
     }
+    auto gate_conn_id = reg.try_get<common::GateConnId>(player->second.entity());
+    if (nullptr == gate_conn_id)
+    {
+        return;
+    }
     //if (request->)
     {
     }
@@ -48,7 +55,9 @@ void Gw2gsServiceImpl::PlayerService(::google::protobuf::RpcController* controll
     player_request->ParseFromString(clientrequest.request());
     std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
     it->second->CallMethod(method, player->second, get_pointer(player_request), get_pointer(player_response));
-        
+    response->set_player_id(request->player_id());
+    response->set_conn_id((*gate_conn_id).conn_id_);
+    response->set_response(player_response->SerializeAsString());
 ///<<< END WRITING YOUR CODE PlayerService
 }
 

@@ -76,8 +76,8 @@ void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
     ms2gw::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
-    request.set_node_id(reg.get<GSDataPtrComp>(gs)->node_id());
-    reg.get<GateNode>(gate).session_.Send(request, "ms2gw.Ms2gwService", "StartGS");
+    request.set_gs_node_id(reg.get<GSDataPtrComp>(gs)->node_id());
+    reg.get<GateNodePtr>(gate)->session_.Send(request, "ms2gw.Ms2gwService", "StartGS");
 }
 
 void MasterServer::OnGsNodeStart(entt::entity gs)

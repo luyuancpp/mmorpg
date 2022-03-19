@@ -40,6 +40,8 @@ public:
 
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
 
+    void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { codec_.send(conn, messag); }
+
     //client to gateway 
     void OnLogin(const muduo::net::TcpConnectionPtr& conn,
         const LoginRequestPtr& message,
