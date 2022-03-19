@@ -43,8 +43,9 @@ def parsefile(filename, fileid):
                 line = 'const uint32_t ' + idstr + ' = ' + str(serviceid)
                 line += ';\n'
                 rq = s[2].replace('(', '').replace(')', '')
+                rp = s[4].replace('(', '').replace(')', '').replace(';', '').replace('\n', '')
                 pbfullname = local.pkg + '.' + s[2].replace('(', '').replace(')', '')
-                local.rpcmsgnameid.append([[s[1], rq, local.pkg, local.service],serviceid])
+                local.rpcmsgnameid.append([[s[1], rq, rp, local.pkg, local.service],serviceid])
                 serviceid += 1
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
@@ -57,23 +58,18 @@ def genmsgidcpp(fullfilename):
     newstr += 'std::unordered_map<std::string, uint32_t> g_msgid{\n'
     #msg 2 id
     for kv in local.rpcmsgnameid:
-        newstr += '{"' + kv[0][2] + '.' + kv[0][0] + '", ' + str(kv[1]) + '},\n'
+        newstr += '{"' + kv[0][3] + '.' + kv[0][0] + '", ' + str(kv[1]) + '},\n'
     newstr = newstr.strip('\n').strip(',')
     newstr += '};\n'
-    newstr += '\nstd::array<std::string, ' + str(local.msgcount) + '> g_idservice;\n'
-    newstr += 'void InitMsgId2Servcie()\n{\n'
-    #id 2 service 
-    for kv in local.rpcmsgnameid:
-        newstr += tabstr + 'g_idservice[' + str(kv[1]) + '] = "' +  kv[0][2] + '.' + kv[0][3] +'";\n'
-    newstr += '}\n'
-    #id 2 service 
-    newstr += '\nstd::array<std::string, ' + str(local.msgcount) + '> g_idmethod;\n'
-    newstr += 'void InitMsgId2Msg()\n{\n'
-    for kv in local.rpcmsgnameid:
-        newstr += tabstr + 'g_idmethod[' + str(kv[1]) + '] = "' + kv[0][0] +'";\n'
-    newstr += '}\n'
+    newstr += '\nstd::array<RpcService, ' + str(local.msgcount) + '> g_idservice;\n'
     newstr += 'void InitMsgService()\n{\n'
-    newstr += tabstr + 'InitMsgId2Servcie();\n' + tabstr + 'InitMsgId2Msg();\n}'
+    for kv in local.rpcmsgnameid:
+        curpkg = kv[0][3]
+        newstr += tabstr + 'g_idservice[' + str(kv[1]) + '].service = "' + curpkg + '.' + kv[0][4] +'";\n'
+        newstr += tabstr + 'g_idservice[' + str(kv[1]) + '].method = "'  + kv[0][0] +'";\n'
+        newstr += tabstr + 'g_idservice[' + str(kv[1]) + '].request = "' + curpkg + '.' + kv[0][1] +'";\n'
+        newstr += tabstr + 'g_idservice[' + str(kv[1]) + '].response = "' + curpkg + '.' + kv[0][2] +'";\n\n'
+    newstr += '}\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -84,9 +80,15 @@ def genmsgidhead(fullfilename):
     newstr += '#include <array>\n'
     newstr += '#include <string>\n'
     newstr += '#include <unordered_map>\n\n'
+    newstr += 'struct RpcService\n'
+    newstr += '{\n'
+    newstr +=  tabstr + 'const char* service{nullptr};\n'
+    newstr +=  tabstr + 'const char* method{nullptr};\n'
+    newstr +=  tabstr + 'const char* request{nullptr};\n'
+    newstr +=  tabstr + 'const char* response{nullptr};\n'
+    newstr += '};\n'
     newstr += 'extern std::unordered_map<std::string, uint32_t> g_msgid;\n'
-    newstr += 'extern std::array<std::string, ' + str(local.msgcount) + '> g_idservice;\n'
-    newstr += 'extern std::array<std::string, ' + str(local.msgcount) + '> g_idmethod;\n'
+    newstr += 'extern std::array<RpcService, ' + str(local.msgcount) + '> g_idservice;\n'
     newstr += 'void InitMsgService();\n'
     newstr += '#endif//  ' + HEAD_FILE + '\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:

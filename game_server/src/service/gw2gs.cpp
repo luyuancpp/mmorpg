@@ -61,5 +61,16 @@ void Gw2gsServiceImpl::PlayerService(::google::protobuf::RpcController* controll
 ///<<< END WRITING YOUR CODE PlayerService
 }
 
+void Gw2gsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
+    const gw2gs::DisconnectRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE Disconnect
+    g_players.erase(request->guid());
+///<<< END WRITING YOUR CODE Disconnect
+}
+
 ///<<<rpc end
 }// namespace gw2gs

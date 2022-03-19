@@ -35,6 +35,11 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
+    void Disconnect(::google::protobuf::RpcController* controller,
+        const gw2ms::DisconnectRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
 };
 }// namespace gw2ms
 #endif//MASTER_SERVER_SRC_SERVICE_GW2MS_H_

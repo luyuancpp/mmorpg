@@ -36,9 +36,8 @@ void ClientService::Send(const google::protobuf::Message& message)
     rpcmessage.set_request(message.SerializeAsString());
     auto message_id = g_msgid[message.GetDescriptor()->full_name()];
     rpcmessage.set_msg_id(message_id);
-    rpcmessage.set_method(g_idmethod[message_id]);
-    rpcmessage.set_service(g_idservice[message_id]);
-   
+    rpcmessage.set_method(g_idservice[message_id].method);
+    rpcmessage.set_service(g_idservice[message_id].service);
     codec_.send(conn_, rpcmessage);
 }
 
@@ -110,8 +109,9 @@ void ClientService::OnGsReplied(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp t)
 {
     auto msg_id = message->msg_id();
-    std::unique_ptr<google::protobuf::Message> player_response(codec_.createMessage(g_idservice[msg_id]));
-    dispatcher_.onProtobufMessage(conn, message, t);
+    MessagePtr response(codec_.createMessage(g_idservice[msg_id].response));
+    response->ParseFromString(message->response());
+    dispatcher_.onProtobufMessage(conn, response, t);
 }
 
 void ClientService::EnterGame(Guid guid)
