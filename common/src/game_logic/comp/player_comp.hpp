@@ -11,19 +11,14 @@
 namespace common
 {
 
-struct GateConnectionId
+struct GateConnId
 {
-    uint64_t connection_id_{UINT64_MAX};
+     uint64_t conn_id_{UINT64_MAX};
 };
 
 using ConnectionPlayerEnitiesMap = std::unordered_map<uint64_t, entt::entity>;
 
-struct TryEnterGamePlayerId
-{
-    Guid guid_{ 0 };
-};
-
-struct PlayerId
+struct PlayerId 
 {
     Guid guid_{0};
 };

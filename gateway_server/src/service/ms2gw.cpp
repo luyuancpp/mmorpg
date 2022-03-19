@@ -7,10 +7,12 @@
 #include "src/game_logic/entity_cast.h"
 #include "src/gate_player/gate_player_list.h"
 #include "src/gateway_server.h"
+#include "src/return_code/error_code.h"
 #include "src/server_common/closure_auto_done.h"
 
 #include "c2gs.pb.h"
 #include "gw2gs.pb.h"
+#include "c2gw.pb.h"
 
 using namespace common;
 using namespace gateway;
@@ -38,15 +40,15 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
         }
     }
     GsNode gsi;
-    gsi.node_info_.node_id_ = request->node_id();
+    gsi.node_info_.node_id_ = request->gs_node_id();
     gsi.node_info_.node_type_ = GAME_SERVER_NODTE_TYPE;
     gsi.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
     gsi.gw2gs_stub_ = std::make_unique<RpcStub<gw2gs::Gw2gsService_Stub>>();
     gsi.gs_session_->subscribe<RegisterStubEvent>(*(gsi.gw2gs_stub_.get()));
     gsi.gs_session_->connect();
     reg.emplace<InetAddress>(gsi.entity_id.entity(), gs_addr);
-    g_gs_nodes.AddGs(request->node_id(), std::move(gsi));
-    LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->node_id();
+    g_gs_nodes.AddGs(request->gs_node_id(), std::move(gsi));
+    LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE StartGS
 }
 
@@ -81,9 +83,15 @@ void Ms2gwServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* controll
     auto it = g_client_sessions_->find(request->connection_id());
     if (it == g_client_sessions_->end())
     {
+        LOG_INFO << "connid not found  player id " << request->player_id() << "," << request->connection_id();
         return;
     }
-    it->second.gs_node_id_ = request->node_id();
+    it->second.guid_ = request->player_id();
+    it->second.gs_node_id_ = request->gs_node_id();
+    c2gw::EnterGameResponse message;
+    message.mutable_error()->set_error_no(RET_OK);
+    g_gateway_server->Send2Client(it->second.conn_, message);
+
 ///<<< END WRITING YOUR CODE PlayerEnterGS
 }
 

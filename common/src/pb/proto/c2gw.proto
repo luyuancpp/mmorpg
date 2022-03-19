@@ -65,7 +65,7 @@ enum ClientErrorCode
 
 message ClientRequest
 {
-  fixed64 id = 1;
+  uint64 id = 1;
   string service = 2;
   string method = 3;
   bytes request = 4;
@@ -76,7 +76,7 @@ message ClientRequest
 
 message ClientResponse
 {
-  fixed64 id = 1;
+  uint64 id = 1;
   bytes response = 2;
   uint32 msg_id = 3;
 }

@@ -54,16 +54,16 @@ void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     if (gs_entity == entt::null)
     {
 		//todo
-        LOG_INFO << "game connection not found " << request->node_id();
+        LOG_INFO << "game connection not found " << request->gs_node_id();
         return;
     }
    
     auto c = reg.get<RpcServerConnection>(gs_entity);
     GsNodePtr gs = std::make_shared<GsNode>(c.conn_);
-	gs->node_info_.node_id_ = request->node_id();
+	gs->node_info_.node_id_ = request->gs_node_id();
 	gs->node_info_.node_type_ = GAME_SERVER_NODTE_TYPE;
     MakeGSParam make_gs_p;
-    make_gs_p.node_id_ = request->node_id();
+    make_gs_p.node_id_ = request->gs_node_id();
     AddMainSceneNodeCompnent(gs_entity, make_gs_p);
     reg.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);
     reg.emplace<GsNodePtr>(gs_entity, gs);
@@ -98,7 +98,7 @@ void G2msServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 		g_ms_node->DoGateConnectGs(gs_entity, e);
 	}
     g_ms_node->OnGsNodeStart(gs_entity);
-    LOG_INFO << "game connected " << request->node_id();
+    LOG_INFO << "game connected " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE StartGS
 }
 

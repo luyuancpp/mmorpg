@@ -97,7 +97,7 @@ void GameServer::Register2Master(MasterSessionPtr& master_rpc_client)
     node_info->set_ip(server_deploy_.ip());
     node_info->set_port(server_deploy_.port());
     request.set_server_type(reg.get<eServerType>(game::global_entity()));
-    request.set_node_id(server_deploy_.id());
+    request.set_gs_node_id(server_deploy_.id());
     request.set_master_server_addr(uint64_t(master_rpc_client.get()));
     g2ms_stub_.CallMethod(
         &ms2gs::RepliedMs2g::StartGSMasterReplied,

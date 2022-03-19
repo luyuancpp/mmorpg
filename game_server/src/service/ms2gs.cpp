@@ -3,6 +3,8 @@
 ///<<< BEGIN WRITING YOUR CODE 
 #include "muduo/base/Logging.h"
 
+#include "src/game_logic/comp/player_comp.hpp"
+#include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
 #include "src/module/player_list/player_list.h"
 #include "src/server_common/closure_auto_done.h"
@@ -22,7 +24,11 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterGame
-    g_players.emplace(request->player_id(), common::EntityPtr());
+    auto it =  g_players.emplace(request->player_id(), common::EntityPtr());
+    if (it.second)
+    {
+        reg.emplace<GateConnId>(it.first->second.entity(), request->conn_id());
+    }
 ///<<< END WRITING YOUR CODE EnterGame
 }
 
