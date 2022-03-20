@@ -15,7 +15,7 @@
 namespace common
 {
 template<typename StubClass>
-class RpcStub : noncopyable,  public Receiver<RpcStub<StubClass>>
+class RpcStub :  public Receiver<RpcStub<StubClass>>
 {
 public:
     using StubPtr = std::unique_ptr<StubClass>;
@@ -26,8 +26,6 @@ public:
 
 	StubClass* stub() {return stub_.get();}
     
-  
-
     template<typename MethodParam, typename Class, typename StubMethod>
     void CallMethod(void (Class::* method)(MethodParam),
         MethodParam& method_param,
