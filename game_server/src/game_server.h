@@ -5,7 +5,6 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/module/network/master.h"
-#include "src/service/c2gs.h"
 #include "src/service/ms2gs.h"
 #include "src/service/rg2gs.h"
 #include "src/service/gw2gs.h"

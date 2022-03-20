@@ -33,9 +33,6 @@
     <ClCompile Include="src\service\rg2gs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\c2gs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\service\gw2gs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -66,9 +63,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\rg2gs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\c2gs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\gw2gs.h">

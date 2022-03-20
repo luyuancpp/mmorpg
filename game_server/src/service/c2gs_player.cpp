@@ -13,7 +13,7 @@ void PlayerC2GsServiceImpl::EnterScene(common::EntityPtr& entity,
     c2gs::EnterSceneResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterScene
-    LOG_INFO << request->DebugString();
+    response->mutable_error()->set_error_no(222);
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
