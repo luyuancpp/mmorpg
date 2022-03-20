@@ -5,7 +5,6 @@
 
 namespace common
 {
-
 	enum EnumNodeType : uint32_t
 	{
 		LOGIN_NODE_TYPE,
