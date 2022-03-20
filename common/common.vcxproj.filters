@@ -248,7 +248,7 @@
     <ClInclude Include="src\server_common\rpc_closure_param\closure_auto_done.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_client_closure.h">
+    <ClInclude Include="src\server_common\rpc_closure_param\rpc_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\rpc_closure_param\rpc_closure.h">
@@ -302,7 +302,7 @@
     <ClInclude Include="src\server_common\rpc_channel.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_common\rpc_client_closure.h">
+    <ClInclude Include="src\server_common\rpc_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\rpc_closure.h">

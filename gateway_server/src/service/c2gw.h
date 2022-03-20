@@ -7,7 +7,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/server_common/codec/dispatcher.h"
-#include "src/server_common/rpc_client_closure.h"
+#include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_stub.h"
 #include "src/server_common/rpc_client.h"
 #include "src/server_common/server_sequence.h"

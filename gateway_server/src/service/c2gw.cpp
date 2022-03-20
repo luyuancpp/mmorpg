@@ -13,7 +13,7 @@
 #include "src/gate_player/gate_player_list.h"
 #include "src/gs/gs_session.h"
 #include "src/return_code/error_code.h"
-#include "src/server_common/rpc_client_closure.h"
+#include "src/server_common/rpc_closure.h"
 
 #include "gw2l.pb.h"
 
