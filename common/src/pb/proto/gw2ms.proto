@@ -23,17 +23,17 @@ message ConnectedGameRequest
 message GSIdRequest
 {
   uint64 guid = 1;
-  uint64 connection_id = 2;
+  uint64 conn_id = 2;
 }
 
 message LeaveGameRequest
 {
-  uint64 connection_id = 1;
+  uint64 conn_id = 1;
 }
 
 message PlayerDisconnectRequest
 {
-  uint64 connection_id = 1;
+  uint64 conn_id = 1;
 }
 
 message DisconnectRequest

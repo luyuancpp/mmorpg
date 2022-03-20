@@ -11,7 +11,7 @@ message LoginRequest
 {
   string account = 1;
   string password = 2;
-  uint64 connection_id = 3;
+  uint64 conn_id = 3;
   uint32 gate_node_id = 4;
 }
 
@@ -23,7 +23,7 @@ message LoginResponse
 
 message CreatePlayerRequest
 {
-  uint64 connection_id = 3;
+  uint64 conn_id = 3;
 }
 
 message CreatePlayerResponse
@@ -35,7 +35,7 @@ message CreatePlayerResponse
 
 message EnterGameRequest
 {
-  uint64 connection_id = 1;
+  uint64 conn_id = 1;
   uint64 guid = 2;
 }
 
@@ -43,12 +43,12 @@ message EnterGameResponse
 {
   ClientError error = 1;
   uint64 guid = 2;
-  uint64 connection_id = 3;// for logic
+  uint64 conn_id = 3;// for logic
 }
 
 message DisconnectRequest
 {
-  uint64 connection_id = 1;
+  uint64 conn_id = 1;
 }
 
 message DisconnectResponse
@@ -57,7 +57,7 @@ message DisconnectResponse
 
 message LeaveGameRequest
 {
-  uint64 connection_id = 1;
+  uint64 conn_id = 1;
 }
 
 service LoginService {

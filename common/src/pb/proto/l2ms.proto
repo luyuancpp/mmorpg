@@ -8,7 +8,7 @@ message LoginAccountRequest
 {
   string account = 1;
   uint32 login_node_id = 2;
-  uint64 connection_id = 3;
+  uint64 conn_id = 3;
   uint32 gate_node_id = 4;
 }
 
@@ -20,13 +20,13 @@ message LoginAccountResponse
 message EnterGameRequest
 {
   uint64 guid = 1;
-  uint64 connection_id = 2;
+  uint64 conn_id = 2;
   uint32 gate_node_id = 3;
 }
 
 message EnterGameResponese
 {
-  uint64 connection_id = 1;
+  uint64 conn_id = 1;
 }
 
 message LeaveGameRequest
