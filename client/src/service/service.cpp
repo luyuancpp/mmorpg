@@ -82,10 +82,6 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-    g_lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
-    {
-        this->codec_.send(this->conn_, request);
-    };
     EnterSceneRequest request;
     Send(request);
 }
@@ -101,6 +97,10 @@ void ClientService::OnEnterSceneResponseReplied(const muduo::net::TcpConnectionP
     const EnterSceneResponsePtr& message,
     muduo::Timestamp)
 {
+	g_lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
+	{
+		this->codec_.send(this->conn_, request);
+	};
     g_lua["LeaveGame"]();
 }
 

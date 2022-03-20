@@ -37,7 +37,7 @@ message LeaveGameRequest
 message DisconnectRequest
 {
   uint64 guid = 1;
-
+  string account = 2;
 }
 
 service LoginService 
