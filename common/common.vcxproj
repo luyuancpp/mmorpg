@@ -297,13 +297,6 @@
     <ClInclude Include="src\server_common\rpc_channel.h" />
     <ClInclude Include="src\server_common\rpc_client_closure.h" />
     <ClInclude Include="src\server_common\rpc_closure.h" />
-    <ClInclude Include="src\server_common\rpc_closure_param\closure_auto_done.h" />
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_client_closure.h" />
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_closure.h" />
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_connection_event.h" />
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_string_closure.h" />
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub.h" />
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub_client.h" />
     <ClInclude Include="src\server_common\rpc_connection_event.h" />
     <ClInclude Include="src\server_common\rpc_server.h" />
     <ClInclude Include="src\server_common\server_component.h" />
