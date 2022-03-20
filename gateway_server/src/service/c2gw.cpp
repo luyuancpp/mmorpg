@@ -56,7 +56,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         auto guid = it->second.guid_;        
         {
 			gw2l::DisconnectRequest request;
-			request.set_connection_id(conn_id);
+			request.set_conn_id(conn_id);
 			gw2l_login_stub_.CallMethod(request, &gw2l::LoginService_Stub::Disconnect);
         }
        
@@ -106,7 +106,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     LoginRpcReplied c(std::make_shared<LoginRpcReplied::element_type>(conn));
     c->s_rq_.set_account(message->account());
     c->s_rq_.set_password(message->password());
-    c->s_rq_.set_connection_id(c->connection_id());
+    c->s_rq_.set_conn_id(c->conn_id());
     c->s_rq_.set_gate_node_id(g_gateway_server->gate_node_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
         c, 
@@ -130,7 +130,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     muduo::Timestamp)
 {
     auto c(std::make_shared<CreatePlayeReplied::element_type>(conn));
-    c->s_rq_.set_connection_id(c->connection_id());
+    c->s_rq_.set_conn_id(c->conn_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         c, 
         this, 
@@ -153,7 +153,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 muduo::Timestamp)
 {
     auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
-    c->s_rq_.set_connection_id(c->connection_id());
+    c->s_rq_.set_conn_id(c->conn_id());
     c->s_rq_.set_guid(message->guid());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         c,
@@ -167,7 +167,7 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
     auto& resp_ = cp->s_rp_;
     if (resp_->error().error_no() == RET_OK)//进入游戏有错误，直接返回给客户端
     {
-		auto it = g_client_sessions_->find(cp->connection_id());
+		auto it = g_client_sessions_->find(cp->conn_id());
 		if (it == g_client_sessions_->end())
 		{
 			return;

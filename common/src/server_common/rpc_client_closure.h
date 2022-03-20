@@ -14,7 +14,7 @@ namespace common
         {
         }
 
-        uint64_t connection_id() const{
+        uint64_t conn_id() const{
             return  uint64_t(client_connection_.get());
         }
 

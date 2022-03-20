@@ -47,7 +47,7 @@ void LoginServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
     }
 	ms2gw::PlayerEnterGSRequest messag;
     auto cid = reg.get<GateConnId>(player);
-    messag.set_connection_id(cid.conn_id_);
+    messag.set_conn_id(cid.conn_id_);
     messag.set_gs_node_id((*gs)->node_id());
     messag.set_player_id(replied.s_rq_.player_id());
     (*gate)->session_.Send(messag, "ms2gw.Ms2gwService", "PlayerEnterGS");
@@ -107,7 +107,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     auto guid = request->guid();   
     auto player = reg.create();
     reg.emplace<Guid>(player, guid);
-    reg.emplace<GateConnId>(player, request->connection_id());
+    reg.emplace<GateConnId>(player, request->conn_id());
 
 	auto& gate_nodes = reg.get<GateNodes>(global_entity());
     auto gate_it = gate_nodes.find(request->gate_node_id());
@@ -144,7 +144,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	{
         Ms2gsEnterGameRpcRplied message;
         message.s_rq_.set_player_id(guid);
-        message.s_rq_.set_conn_id(request->connection_id());
+        message.s_rq_.set_conn_id(request->conn_id());
 		reg.get<Ms2GsStubPtr>(it->second)->CallMethod1(&LoginServiceImpl::Ms2gsEnterGameReplied,
 			message,
 			this,

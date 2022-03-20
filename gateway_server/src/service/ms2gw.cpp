@@ -80,10 +80,10 @@ void Ms2gwServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* controll
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerEnterGS
-    auto it = g_client_sessions_->find(request->connection_id());
+    auto it = g_client_sessions_->find(request->conn_id());
     if (it == g_client_sessions_->end())
     {
-        LOG_INFO << "connid not found  player id " << request->player_id() << "," << request->connection_id();
+        LOG_INFO << "connid not found  player id " << request->player_id() << "," << request->conn_id();
         return;
     }
     it->second.guid_ = request->player_id();

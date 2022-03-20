@@ -64,7 +64,7 @@ void Gw2msServiceImpl::PlayerDisconnect(::google::protobuf::RpcController* contr
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerDisconnect
     auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
-    auto it = connection_map.find(request->connection_id());
+    auto it = connection_map.find(request->conn_id());
     if (it == connection_map.end())
     {
         return;
@@ -88,7 +88,7 @@ void Gw2msServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE LeaveGame
     auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
-    auto it = connection_map.find(request->connection_id());
+    auto it = connection_map.find(request->conn_id());
     assert(it != connection_map.end());
     if (it == connection_map.end())
     {
