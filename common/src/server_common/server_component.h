@@ -26,12 +26,6 @@ namespace common
     private:
         muduo::net::RpcChannelPtr channel_;
     };
-    using RpcServerConnectionPtr = std::unique_ptr<RpcServerConnection>;
-
-    struct GatewayConnected
-    {
-        muduo::net::InetAddress addr_;
-    };
 }//namespace common
 
 #endif//COMMON_SRC_SERVER_COMMON_RPC_SERVER_CONNECTION_H_
