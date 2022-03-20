@@ -9,6 +9,5 @@ genfile = [['gw2l.proto', '../../../../login_server/src/service'],
 ['gw2ms.proto', '../../../../master_server/src/service'],
 ['l2ms.proto', '../../../../master_server/src/service'],
 ['gs2ms.proto', '../../../../master_server/src/service'],
-['c2gs.proto', '../../../../game_server/src/service'],
 ['gw2gs.proto', '../../../../game_server/src/service']
 ]

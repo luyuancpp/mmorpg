@@ -103,10 +103,8 @@ def md5copy(destfilename, filename):
         copy = True
     else:
         error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-    print(filenamemd5)
     if error == None and copy == False:
         return
-    #print("copy %s ---> %s" % (gennewfilename, destfilename))
     md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
     shutil.copy(gennewfilename, destfilename)
 

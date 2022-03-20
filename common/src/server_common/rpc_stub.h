@@ -26,17 +26,7 @@ public:
 
 	StubClass* stub() {return stub_.get();}
     
-    template<typename Request, typename Response, typename StubMethod>
-    void CallMethod(const Request& request,
-        void (method)(Response*),
-        StubMethod stub_method)
-    {
-        Response* presponse = new Response;
-        ((*stub_).*stub_method)(nullptr, 
-            &request, 
-            presponse, 
-            NewCallback(method, presponse));
-    }
+  
 
     template<typename MethodParam, typename Class, typename StubMethod>
     void CallMethod(void (Class::* method)(MethodParam),
