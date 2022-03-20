@@ -21,7 +21,7 @@ public:
 
     void ConnectDeploy();
 
-    using RegionInfoRpcClosure = common::RpcClosure<deploy::RegionInfoRequest,
+    using RegionInfoRpcClosure = common::NormalClosure<deploy::RegionInfoRequest,
         deploy::RegionInfoResponse>;
     using RegionInfoRpcRpcRC = std::shared_ptr<RegionInfoRpcClosure>;
     void StartServer(RegionInfoRpcRpcRC cp);

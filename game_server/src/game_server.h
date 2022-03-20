@@ -34,12 +34,12 @@ public:
 
     void InitNetwork();
 
-    using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
+    using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void ServerInfo(ServerInfoRpcRC cp);
 
-    using StartGSInfoRpcClosure = common::RpcClosure<deploy::StartGSRequest,
+    using StartGSInfoRpcClosure = common::NormalClosure<deploy::StartGSRequest,
         deploy::StartGSResponse>;
     using StartGSRpcRC = std::shared_ptr<StartGSInfoRpcClosure>;
     void StartGSDeployReplied(StartGSRpcRC cp);
