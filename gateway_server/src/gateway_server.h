@@ -54,7 +54,7 @@ public:
 
     void InitNetwork();
 
-    using ServerInfoRpcClosure = common::RpcClosure<deploy::ServerInfoRequest,
+    using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void StartServer(ServerInfoRpcRC cp);

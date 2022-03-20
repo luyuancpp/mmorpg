@@ -19,15 +19,7 @@ namespace common
         const muduo::net::TcpConnectionPtr client_conn_;
     };
 
-	template <typename Request, typename Response>
-	struct NormalClosure
-	{
-        NormalClosure()
-            : s_rp_(new Response())//delete from rpc_chanel respone
-        {}
-        Request s_rq_;
-        Response* s_rp_{ nullptr };
-	};
+	
 
 }//namespace common
 

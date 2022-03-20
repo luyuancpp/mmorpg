@@ -13,7 +13,7 @@ public:
 
     static RepliedMs2g& GetSingleton() { thread_local RepliedMs2g singleton; return singleton; }
 
-    using StartGameMasterRpcClosure = common::RpcClosure<gs2ms::StartGSRequest,
+    using StartGameMasterRpcClosure = common::NormalClosure<gs2ms::StartGSRequest,
         gs2ms::StartGSResponse>;
     using StartGameMasterRpcRC = std::shared_ptr<StartGameMasterRpcClosure>;
     void StartGSMasterReplied(StartGameMasterRpcRC cp);
