@@ -47,21 +47,21 @@ public:
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
-    using LoginRpcReplied = std::shared_ptr<common::ClientClosure<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>>;
+    using LoginRpcReplied = std::shared_ptr<common::ServerReplied<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>>;
     void OnServerLoginReplied(LoginRpcReplied cp);
 
     void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
         const CreatePlayerRequestPtr& message, 
         muduo::Timestamp);
 
-    using CreatePlayeReplied = std::shared_ptr<common::ClientClosure<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>>;
+    using CreatePlayeReplied = std::shared_ptr<common::ServerReplied<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>>;
     void OnServerCreatePlayerReplied(CreatePlayeReplied cp);
 
     void OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
 
-    using EnterGameRpcRplied = std::shared_ptr<common::ClientClosure<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
+    using EnterGameRpcRplied = std::shared_ptr<common::ServerReplied<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
     void OnServerEnterGameReplied(EnterGameRpcRplied cp);
 
     void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
@@ -83,7 +83,7 @@ public:
 	using ClientGSMessageReplied = std::shared_ptr<ClientGsRpcClosure>;
 	void OnRpcClientReplied(ClientGSMessageReplied cp);
 
-	using GsPlayerServiceRpcRplied = std::shared_ptr<common::ClientClosure<ClientResponse, gw2gs::RpcClientRequest, gw2gs::RpcClientResponse>>;
+	using GsPlayerServiceRpcRplied = std::shared_ptr<common::ServerReplied<ClientResponse, gw2gs::RpcClientRequest, gw2gs::RpcClientResponse>>;
 	void OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp);
 private:
     ProtobufCodec& codec_;

@@ -122,7 +122,7 @@ void ClientReceiver::OnServerLoginReplied(LoginRpcReplied cp)
         auto p = cp->c_rp_.add_players();
         p->set_guid(it.guid());
     }
-    codec_.send(cp->client_connection_, cp->c_rp_);
+    codec_.send(cp->client_conn_, cp->c_rp_);
 }
 
 void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
@@ -145,7 +145,7 @@ void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeReplied cp)
         auto p = cp->c_rp_.add_players();
         p->set_guid(it.guid());
     }
-    codec_.send(cp->client_connection_, cp->c_rp_);
+    codec_.send(cp->client_conn_, cp->c_rp_);
 }
 
 void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -175,7 +175,7 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
         return;
     }      
 	cp->c_rp_.mutable_error()->set_error_no(resp_->error().error_no());
-	codec_.send(cp->client_connection_, cp->c_rp_);
+	codec_.send(cp->client_conn_, cp->c_rp_);
 	return;
 }
 
@@ -238,7 +238,7 @@ void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp)
         return;
     };
     crp.set_response(srp->response());
-    codec_.send(cp->client_connection_, crp);
+    codec_.send(cp->client_conn_, crp);
 }
 
 }
