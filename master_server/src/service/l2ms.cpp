@@ -177,6 +177,7 @@ void LoginServiceImpl::Disconect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Disconect
+    logined_accounts_.erase(request->account());
     auto guid = request->guid();
     auto e = PlayerList::GetSingleton().GetPlayer(guid);
     if (entt::null  == e)

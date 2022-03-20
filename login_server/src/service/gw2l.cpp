@@ -288,15 +288,17 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 		return;
 	}
 	//连接已经登录过
+
+	l2ms::DisconnectRequest message;
+	auto conn = cit->second.entity();
+	message.set_account(reg.get<std::string>(conn));
 	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
-	if (nullptr == p_player)
+	if (nullptr != p_player)
 	{
-		return;
+		auto& player = (*p_player);
+		message.set_guid(player->PlayingId());
 	}
-	auto& player = (*p_player);
-	l2ms::DisconnectRequest ms_disconnect;
-	ms_disconnect.set_guid(player->PlayingId());
-	l2ms_login_stub_.CallMethod(ms_disconnect,
+	l2ms_login_stub_.CallMethod(message,
 		&l2ms::LoginService_Stub::Disconect);
 	connections_.erase(cit);
 ///<<< END WRITING YOUR CODE Disconnect

@@ -31,7 +31,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         database_->LoadOne(db,
             std::string("account = '") + account + std::string("'"));
     }
-    if (db.password().empty())
+    if (!db.password().empty())
     {
         db.set_account(account);
         redis_->Save(db, account);
