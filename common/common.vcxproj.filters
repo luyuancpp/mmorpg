@@ -245,9 +245,6 @@
     <ClInclude Include="src\server_registry\server_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_closure.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\file2string\file2string.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -294,9 +291,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\rpc_server.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_common\rpc_string_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\rpc_stub.h">
