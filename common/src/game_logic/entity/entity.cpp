@@ -1,4 +1,4 @@
-#include "entity_class.h"
+#include "entity.h"
 
 #include "src/game_logic/game_registry.h"
 

@@ -6,7 +6,7 @@
 #include "src/server_common/node_info.h"
 #include "src/server_common/rpc_client.h"
 #include "src/server_common/rpc_stub.h"
-#include "src/game_logic/entity_class/entity_class.h"
+#include "src/game_logic/entity/entity.h"
 
 #include "gw2gs.pb.h"
 

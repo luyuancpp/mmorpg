@@ -3,7 +3,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/mission_comp.hpp"
-#include "src/game_logic/entity_class/entity_class.h"
+#include "src/game_logic/entity/entity.h"
 #include "src/game_logic/missions/missions_config_template.h"
 
 #include "comp.pb.h"

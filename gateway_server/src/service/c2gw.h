@@ -90,8 +90,6 @@ private:
     ProtobufDispatcher& dispatcher_;
     RpcStubgw2l& gw2l_login_stub_;
     common::ServerSequence server_sequence_;
-    class C2GsServiceImpl : public c2gs::C2GsService {};
-    C2GsServiceImpl c2gs_service_;
 };
 }//namespace gateway
 
