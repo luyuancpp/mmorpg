@@ -5,6 +5,11 @@
 
 namespace common
 {
+	enum eServerType : uint8_t
+	{
+		kMainServer,
+		kRoomServer
+	};
 	enum EnumNodeType : uint32_t
 	{
 		LOGIN_NODE_TYPE,

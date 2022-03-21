@@ -2,8 +2,8 @@
 
 #include "src/game_server.h"
 #include "src/factories/server_global_entity.hpp"
-#include "src/game_logic/enum/server_enum.h"
 #include "src/game_logic/game_registry.h"
+#include "src/server_common/node_info.h"
 
 using namespace muduo;
 using namespace muduo::net;
