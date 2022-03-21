@@ -18,7 +18,7 @@ namespace common
 		Cancel();
         timer_function_callback_ = cb;
 		timer_id_ = gs_thread_even_loop->runAt(time, std::bind(&TimerTask::OnTimer, this));
-        UpdateEndTeamDate();
+        UpdateEndStamp();
 	}
 
 	void TimerTask::RunAfter(double delay, const TimerCallback& cb)
@@ -26,7 +26,7 @@ namespace common
 		Cancel();
         timer_function_callback_ = cb;
         timer_id_ = gs_thread_even_loop->runAfter(delay, std::bind(&TimerTask::OnTimer, this));
-        UpdateEndTeamDate();
+        UpdateEndStamp();
 	}
 
 	void TimerTask::RunEvery(double interval, const TimerCallback& cb)
@@ -34,7 +34,7 @@ namespace common
         Cancel();	
         timer_function_callback_ = cb;
         timer_id_ = gs_thread_even_loop->runEvery(interval, std::bind(&TimerTask::OnTimer, this));
-        UpdateEndTeamDate();
+        UpdateEndStamp();
 	}
 
     void TimerTask::Call()
@@ -68,12 +68,13 @@ namespace common
         return (int32_t)timer_id_.GetTimer()->expiration().secondsSinceEpoch();
     }
 
-    void TimerTask::UpdateEndTeamDate()
+    void TimerTask::UpdateEndStamp()
     {
-        if (nullptr != timer_id_.GetTimer())
+        if (nullptr == timer_id_.GetTimer())
         {
-            end_timestamp_ = timer_id_.GetTimer()->expiration();
+            return;
         }
+        end_timestamp_ = timer_id_.GetTimer()->expiration();
     }
 
     void TimerTask::SetCallBack(const TimerCallback& cb)

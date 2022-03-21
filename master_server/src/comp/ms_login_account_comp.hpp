@@ -1,7 +1,7 @@
 #ifndef MASTER_SRC_COMP_MS_LOGIN_ACCOUNT_COMP_H_
 #define MASTER_SRC_COMP_MS_LOGIN_ACCOUNT_COMP_H_
 
-#include "src/game_logic/entity_class/entity_class.h"
+#include "src/game_logic/entity/entity.h"
 
 namespace master
 {

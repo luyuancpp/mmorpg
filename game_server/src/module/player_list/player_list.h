@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/entity_class/entity_class.h"
+#include "src/game_logic/entity/entity.h"
 
 namespace game
 {

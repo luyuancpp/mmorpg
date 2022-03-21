@@ -3,7 +3,7 @@
 #include "gw2l.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/account_player.h"
-#include "src/game_logic/entity_class/entity_class.h"
+#include "src/game_logic/entity/entity.h"
 #include "src/server_common/rpc_string_closure.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_stub.h"

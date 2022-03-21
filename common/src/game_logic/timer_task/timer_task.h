@@ -30,7 +30,7 @@ namespace common
         bool ActiveTimer();
 
         int32_t GetEndTime();
-        void UpdateEndTeamDate();
+        void UpdateEndStamp();
 
         void SetCallBack(const TimerCallback& cb);
 	private:

@@ -84,7 +84,7 @@
     <ClCompile Include="src\game_config\region_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_logic\entity_class\entity_class.cpp">
+    <ClCompile Include="src\game_logic\entity\entity.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\file2string\file2string.cpp">
@@ -245,25 +245,7 @@
     <ClInclude Include="src\server_registry\server_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_common\rpc_closure_param\closure_auto_done.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\server_common\rpc_closure_param\rpc_closure.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_closure.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_string_closure.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub_client.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_stub.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_common\rpc_closure_param\rpc_connection_event.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\file2string\file2string.h">
@@ -371,7 +353,7 @@
     <ClInclude Include="src\game_config\region_config.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\game_logic\entity_class\entity_class.h">
+    <ClInclude Include="src\game_logic\entity\entity.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\comp\account_comp.hpp">
@@ -498,6 +480,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\node_info.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\server_common\rpc_client_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

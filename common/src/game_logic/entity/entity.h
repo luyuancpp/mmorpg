@@ -17,4 +17,11 @@ namespace common
     };
 }//namespace common
 
+namespace entt
+{
+	[[nodiscard]] static constexpr entt::entity to_entity(uint64_t value) ENTT_NOEXCEPT {
+		return static_cast<entt::entity>(value);
+	}
+}//namespace common
+
 #endif//COMMON_SRC_GAME_LOGIC_ENTITY_CLASS_H_
