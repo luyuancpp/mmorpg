@@ -9,12 +9,12 @@
 
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
-#include "src/game_logic/enum/server_enum.h"
 #include "src/game_logic/game_registry.h"
 #include "src/service/player_service.h"
 #include "src/service/replied_ms2gs.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/deploy_variable.h"
+#include "src/server_common/node_info.h"
 
 using namespace common;
 

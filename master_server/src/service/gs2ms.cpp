@@ -7,7 +7,6 @@
 
 #include "src/network/gs_node.h"
 #include "src/network/gate_node.h"
-#include "src/game_logic/enum/server_enum.h"
 #include "src/factories/scene_factories.hpp"
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player_comp.hpp"
@@ -15,7 +14,9 @@
 #include "src/master_server.h"
 #include "src/scene/sceces.h"
 #include "src/server_common/closure_auto_done.h"
+#include "src/server_common/node_info.h"
 #include "src/server_common/server_component.h"
+
 
 #include "ms2gs.pb.h"
 
