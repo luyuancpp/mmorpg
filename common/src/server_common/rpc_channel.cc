@@ -13,6 +13,8 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/empty.pb.h>
 
+#include "msgmap.h"
+
 #include "game_rpc.pb.h"
 
 using namespace muduo;
@@ -99,15 +101,20 @@ void RpcChannel::CallMethod(const ::google::protobuf::Message& request,
 	codec_.send(conn_, message);
 }
 
-void RpcChannel::S2C(const ::google::protobuf::Message& request, 
-    const std::string service_name, 
-    std::string method_name)
+void RpcChannel::S2C(const ::google::protobuf::Message& request)
 {
-    RpcMessage message;
+    auto& name = request.GetDescriptor()->full_name();
+    auto it = g_msgid.find(name);
+    if (it == g_msgid.end())
+    {
+        return;
+    }
+    auto& serviceinfo = g_serviceinfo[it->second];
+    RpcMessage message;    
     message.set_type(S2C_REQUEST);
     message.set_request(request.SerializeAsString()); // FIXME: error check
-    message.set_service(service_name);
-    message.set_method(method_name);
+    message.set_service(serviceinfo.service);
+    message.set_method(serviceinfo.method);
     codec_.send(conn_, message);
 }
 

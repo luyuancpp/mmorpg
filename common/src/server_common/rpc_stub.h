@@ -32,6 +32,11 @@ public:
         Class* object,
         StubMethod stub_method)
     {
+		if (nullptr == stub_)
+		{
+			LOG_ERROR << "Server Disconnected";
+			return;
+		}
         ((*stub_).*stub_method)(nullptr,
             &method_param->s_rq_,
             method_param->s_rp_,
@@ -44,6 +49,11 @@ public:
 		Class* object,
 		StubMethod stub_method)
 	{
+		if (nullptr == stub_)
+		{
+			LOG_ERROR << "Server Disconnected";
+			return;
+		}
 		((*stub_).*stub_method)(nullptr,
 			&method_param.s_rq_,
 			method_param.s_rp_,
@@ -56,6 +66,11 @@ public:
         MethodParam& method_param,
         StubMethod stub_method)
     {
+		if (nullptr == stub_)
+		{
+			LOG_ERROR << "Server Disconnected";
+			return;
+		}
         ((*stub_).*stub_method)(nullptr,
             &method_param->s_rq_,
             method_param->s_rp_,
@@ -68,6 +83,11 @@ public:
         const Request& request,
         StubMethod stub_method)
     {
+		if (nullptr == stub_)
+		{
+			LOG_ERROR << "Server Disconnected";
+			return;
+		}
         google::protobuf::Empty* presponse = new google::protobuf::Empty;
         ((*stub_).*stub_method)(nullptr,
             &request,

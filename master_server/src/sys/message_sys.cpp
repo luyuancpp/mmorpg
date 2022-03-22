@@ -8,31 +8,25 @@ using namespace common;
 
 namespace master
 {
-	void Send2Gs(const google::protobuf::Message& message,
-		const std::string& service,
-		const std::string& method,
-		uint32_t node_id)
+	void Send2Gs(const google::protobuf::Message& message, uint32_t node_id)
 {
 		auto& gs_nodes = reg.get<GsNodes>(global_entity());
 		auto it = gs_nodes.find(node_id);
 		if (it == gs_nodes.end())
 		{
-			LOG_INFO << "gs not found ->" << node_id << "->" << service << "->" << method;
+			LOG_INFO << "gs not found ->" << node_id;
 			return;
 		}
 		auto node =  reg.try_get<GsNodePtr>(it->second);
 		if (nullptr == node)
 		{
-			LOG_INFO << "gs not found ->" << node_id << "->" << service << "->" << method;
+			LOG_INFO << "gs not found ->" << node_id;
 			return;
 		}
-		(*node)->session_.Send(message, service, method);
+		(*node)->session_.Send(message);
 }
 
-void Send2GsPlayer(const google::protobuf::Message& message,
-	const std::string& service,
-	const std::string& method,
-	entt::entity player_entity)
+void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player_entity)
 {
 	auto ptr_gse = reg.try_get<GSEntity>(player_entity);
 	if (nullptr == ptr_gse)
@@ -42,7 +36,7 @@ void Send2GsPlayer(const google::protobuf::Message& message,
 		return;
 	}
 	auto& gs = reg.get<RpcServerConnection>(ptr_gse->server_entity());
-	gs.Send(message, service, method);
+	gs.Send(message);
 }
 
 }//namespace master
