@@ -13,6 +13,7 @@
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/game_logic/game_registry.h"
+#include "src/pb/pbc/msgmap.h"
 
 #include "ms2gs.pb.h"
 #include "ms2gw.pb.h"
@@ -37,6 +38,7 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
 void MasterServer::Init()
 {
     InitConfig();
+    InitMsgService();
     InitGlobalEntities();
 }
 
@@ -77,7 +79,7 @@ void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
     request.set_gs_node_id(reg.get<GSDataPtrComp>(gs)->node_id());
-    reg.get<GateNodePtr>(gate)->session_.Send(request, "ms2gw.Ms2gwService", "StartGS");
+    reg.get<GateNodePtr>(gate)->session_.Send(request);
 }
 
 void MasterServer::OnGsNodeStart(entt::entity gs)

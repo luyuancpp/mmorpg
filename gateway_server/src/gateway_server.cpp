@@ -2,6 +2,7 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/server_common/deploy_rpcclient.h"
+#include "src/pb/pbc/msgmap.h"
 
 using namespace common;
 
@@ -16,8 +17,10 @@ void GatewayServer::LoadConfig()
     DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void GatewayServer::InitNetwork()
+void GatewayServer::Init()
 {
+    LoadConfig();
+    InitMsgService();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);

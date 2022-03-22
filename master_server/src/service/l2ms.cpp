@@ -50,7 +50,7 @@ void LoginServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
     messag.set_conn_id(cid.conn_id_);
     messag.set_gs_node_id((*gs)->node_id());
     messag.set_player_id(replied.s_rq_.player_id());
-    (*gate)->session_.Send(messag, "ms2gw.Ms2gwService", "PlayerEnterGS");
+    (*gate)->session_.Send(messag);
 }
 ///<<< END WRITING YOUR CODE
 

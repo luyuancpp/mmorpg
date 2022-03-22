@@ -36,8 +36,8 @@ void ClientService::Send(const google::protobuf::Message& message)
     rpcmessage.set_request(message.SerializeAsString());
     auto message_id = g_msgid[message.GetDescriptor()->full_name()];
     rpcmessage.set_msg_id(message_id);
-    rpcmessage.set_method(g_idservice[message_id].method);
-    rpcmessage.set_service(g_idservice[message_id].service);
+    rpcmessage.set_method(g_serviceinfo[message_id].method);
+    rpcmessage.set_service(g_serviceinfo[message_id].service);
     codec_.send(conn_, rpcmessage);
 }
 
@@ -109,7 +109,7 @@ void ClientService::OnGsReplied(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp t)
 {
     auto msg_id = message->msg_id();
-    MessagePtr response(codec_.createMessage(g_idservice[msg_id].response));
+    MessagePtr response(codec_.createMessage(g_serviceinfo[msg_id].response));
     response->ParseFromString(message->response());
     dispatcher_.onProtobufMessage(conn, response, t);
 }

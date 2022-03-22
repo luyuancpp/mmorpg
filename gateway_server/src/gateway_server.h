@@ -52,7 +52,7 @@ public:
 
     void LoadConfig();
 
-    void InitNetwork();
+    void Init();
 
     using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;

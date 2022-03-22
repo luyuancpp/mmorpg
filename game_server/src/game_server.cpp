@@ -15,6 +15,7 @@
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/deploy_variable.h"
 #include "src/server_common/node_info.h"
+#include "src/pb/pbc/msgmap.h"
 
 using namespace common;
 
@@ -31,6 +32,7 @@ void GameServer::Init()
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     RegionConfig::GetSingleton().Load("region.json");
+    InitMsgService();
     loadallconfig();
     InitGlobalEntities();
     InitPlayerServcie();

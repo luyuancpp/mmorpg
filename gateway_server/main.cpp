@@ -10,8 +10,7 @@ int main(int argc, char* argv[])
     EventLoop loop;
     GatewayServer server(&loop);
     g_gateway_server = &server;
-    server.LoadConfig();
-    server.InitNetwork();
+    server.Init();
     loop.loop();
     return 0;
 }

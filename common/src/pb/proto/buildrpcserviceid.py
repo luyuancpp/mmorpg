@@ -58,17 +58,17 @@ def genmsgidcpp(fullfilename):
     newstr += 'std::unordered_map<std::string, uint32_t> g_msgid{\n'
     #msg 2 id
     for kv in local.rpcmsgnameid:
-        newstr += '{"' + kv[0][3] + '.' + kv[0][0] + '", ' + str(kv[1]) + '},\n'
+        newstr += '{"' + kv[0][3] + '.' + kv[0][1] + '", ' + str(kv[1]) + '},\n'
     newstr = newstr.strip('\n').strip(',')
     newstr += '};\n'
-    newstr += '\nstd::array<RpcService, ' + str(local.msgcount) + '> g_idservice;\n'
+    newstr += '\nstd::array<RpcService, ' + str(local.msgcount) + '> g_serviceinfo;\n'
     newstr += 'void InitMsgService()\n{\n'
     for kv in local.rpcmsgnameid:
         curpkg = kv[0][3]
-        newstr += tabstr + 'g_idservice[' + str(kv[1]) + '].service = "' + curpkg + '.' + kv[0][4] +'";\n'
-        newstr += tabstr + 'g_idservice[' + str(kv[1]) + '].method = "'  + kv[0][0] +'";\n'
-        newstr += tabstr + 'g_idservice[' + str(kv[1]) + '].request = "' + curpkg + '.' + kv[0][1] +'";\n'
-        newstr += tabstr + 'g_idservice[' + str(kv[1]) + '].response = "' + curpkg + '.' + kv[0][2] +'";\n\n'
+        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].service = "' + curpkg + '.' + kv[0][4] +'";\n'
+        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].method = "'  + kv[0][0] +'";\n'
+        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].request = "' + curpkg + '.' + kv[0][1] +'";\n'
+        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].response = "' + curpkg + '.' + kv[0][2] +'";\n\n'
     newstr += '}\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -88,7 +88,7 @@ def genmsgidhead(fullfilename):
     newstr +=  tabstr + 'const char* response{nullptr};\n'
     newstr += '};\n'
     newstr += 'extern std::unordered_map<std::string, uint32_t> g_msgid;\n'
-    newstr += 'extern std::array<RpcService, ' + str(local.msgcount) + '> g_idservice;\n'
+    newstr += 'extern std::array<RpcService, ' + str(local.msgcount) + '> g_serviceinfo;\n'
     newstr += 'void InitMsgService();\n'
     newstr += '#endif//  ' + HEAD_FILE + '\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
@@ -111,7 +111,7 @@ def md5copy(destfilename, filename):
 def generate(filename, fileid):
     parsefile(filename, fileid)
 
-genfile = ['c2gs.proto']
+genfile = ['c2gs.proto', 'ms2gw.proto']
 
 def main():
     filelen = len(genfile)
