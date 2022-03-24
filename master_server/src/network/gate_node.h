@@ -17,6 +17,7 @@ namespace master
 		common::RpcServerConnection session_;
 	};
 	using GateNodePtr = std::shared_ptr<GateNode>;
+	using GateNodeWPtr = std::weak_ptr<GateNode>;
 	struct GateNodes : public std::unordered_map<uint32_t, entt::entity> {};
 }//namespace master
 

@@ -122,12 +122,13 @@ namespace common
         inline void OnPlayerEnter() { ++player_size_; }
         inline void OnPlayerLeave() { --player_size_; }
     private:
-        uint32_t node_id_{0};
+        uint32_t node_id_{common::kInvalidU32Id};
         entt::entity server_entity_{};
         uint32_t player_size_{ 0 };
     };
 
     using GSDataPtrComp = std::shared_ptr<GSData>;
+    using GSDataWeakPtr = std::weak_ptr<GSData>;
 
     class GSEntity
     {
