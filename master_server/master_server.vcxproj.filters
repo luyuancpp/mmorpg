@@ -89,5 +89,8 @@
     <ClInclude Include="src\network\gate_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\network\player_session.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

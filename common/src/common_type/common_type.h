@@ -36,7 +36,7 @@ namespace common
     using GuidUint64Map = std::unordered_map<Guid, uint64_t>;
 
     static const Guid kInvalidGuid{ 0 };
-    static const Guid kInvalidU32Id{ UINT32_MAX };
+    static const uint32_t kInvalidU32Id{ UINT32_MAX };
 }//namespace common
 
 #endif//COMMON_SRC_COMMON_TYPE_CommonType

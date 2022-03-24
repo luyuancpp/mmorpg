@@ -6,6 +6,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
+#include "src/network/player_session.h"
 #include "src/master_player/ms_player_list.h"
 #include "src/master_server.h"
 #include "src/return_code/error_code.h"
@@ -35,22 +36,12 @@ void LoginServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
     {
         return;
     }
-    auto gate = reg.try_get<GateNodePtr>(player);
-    if (nullptr == gate)
-    {
-        return;
-    }
-    auto gs = reg.try_get<GSDataPtrComp>(player);
-    if (nullptr == gs)
-    {
-        return;
-    }
+    auto player_session = reg.get<PlayerSession>(player);
 	ms2gw::PlayerEnterGSRequest messag;
-    auto cid = reg.get<GateConnId>(player);
-    messag.set_conn_id(cid.conn_id_);
-    messag.set_gs_node_id((*gs)->node_id());
+    messag.set_conn_id(player_session.gate_conn_id_.conn_id_);
+    messag.set_gs_node_id(player_session.gs_node_id());
     messag.set_player_id(replied.s_rq_.player_id());
-    (*gate)->session_.Send(messag);
+    player_session.Send2Gate(messag);
 }
 ///<<< END WRITING YOUR CODE
 
@@ -107,8 +98,8 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     auto guid = request->guid();   
     auto player = reg.create();
     reg.emplace<Guid>(player, guid);
-    reg.emplace<GateConnId>(player, request->conn_id());
-
+    auto& player_session = reg.emplace_or_replace<PlayerSession>(player);
+    player_session.gate_conn_id_.conn_id_ = request->conn_id();
 	auto& gate_nodes = reg.get<GateNodes>(global_entity());
     auto gate_it = gate_nodes.find(request->gate_node_id());
 	if (gate_it != gate_nodes.end())
@@ -116,7 +107,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
         auto gate = reg.try_get<GateNodePtr>(gate_it->second);
         if (nullptr != gate)
         {
-            reg.emplace<GateNodePtr>(player, *gate);
+            player_session.gate_ = *gate;
         }       
 	}
     PlayerList::GetSingleton().EnterGame(guid, player);
@@ -127,6 +118,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     {
         // todo default
         LOG_INFO << "player " << guid << " enter default secne";
+        return;
     }
     auto* p_gs_data = reg.try_get<GSDataPtrComp>(scene);
     if (nullptr == p_gs_data)
@@ -136,7 +128,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		return;
     }
     auto& gs_data = (*p_gs_data);
-    reg.emplace<GSDataPtrComp>(player, gs_data);
+    player_session.gs_ = gs_data;
     auto gs_node_id = gs_data->node_id();
 	auto& gs_nodes = common::reg.get<master::GsNodes>(master::global_entity());
 	auto it = gs_nodes.find(gs_node_id);
