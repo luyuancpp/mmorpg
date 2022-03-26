@@ -11,6 +11,7 @@ namespace master
 {
 void Send2Gs(const google::protobuf::Message& message,   uint32_t gs_node_id);
 void Send2GsPlayer(const google::protobuf::Message& message,	entt::entity player_entity);
+void Send2GsPlayer(const google::protobuf::Message& message, common::Guid player_id);
 void Send2Player(const google::protobuf::Message& message, entt::entity player);
 void Send2Player(const google::protobuf::Message& message, common::Guid player_id);
 void Send2Gate(const google::protobuf::Message& message, uint32_t gate_id);

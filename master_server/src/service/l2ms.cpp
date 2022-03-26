@@ -14,7 +14,7 @@
 #include "src/server_common/closure_auto_done.h"
 #include "src/sys/servernode_sys.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
-#include "src/sys/message_sys.hpp"
+#include "src/network/message_sys.hpp"
 
 #include "ms2gw.pb.h"
 #include "ms2gs.pb.h"
