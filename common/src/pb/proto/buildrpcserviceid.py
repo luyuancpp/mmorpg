@@ -111,7 +111,8 @@ def md5copy(destfilename, filename):
 def generate(filename, fileid):
     parsefile(filename, fileid)
 
-genfile = ['c2gs.proto', 'ms2gw.proto']
+genfile = ['c2gs.proto', 'ms2gw.proto', './logic_proto/ms2gs_scene.proto', 
+            './logic_proto/player_scene.proto', './logic_proto/player_team.proto']
 
 def main():
     filelen = len(genfile)

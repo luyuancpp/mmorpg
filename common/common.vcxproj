@@ -183,6 +183,9 @@
     <ClCompile Include="src\pb\pbc\gw2ms.pb.cc" />
     <ClCompile Include="src\pb\pbc\l2db.pb.cc" />
     <ClCompile Include="src\pb\pbc\l2ms.pb.cc" />
+    <ClCompile Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.cc" />
+    <ClCompile Include="src\pb\pbc\logic_proto\player_scene.pb.cc" />
+    <ClCompile Include="src\pb\pbc\logic_proto\player_team.pb.cc" />
     <ClCompile Include="src\pb\pbc\mainscene_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\mission_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\ms2db.pb.cc" />
@@ -253,6 +256,9 @@
     <ClInclude Include="src\pb\pbc\gw2ms.pb.h" />
     <ClInclude Include="src\pb\pbc\l2db.pb.h" />
     <ClInclude Include="src\pb\pbc\l2ms.pb.h" />
+    <ClInclude Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.h" />
+    <ClInclude Include="src\pb\pbc\logic_proto\player_scene.pb.h" />
+    <ClInclude Include="src\pb\pbc\logic_proto\player_team.pb.h" />
     <ClInclude Include="src\pb\pbc\mainscene_config.pb.h" />
     <ClInclude Include="src\pb\pbc\mission_config.pb.h" />
     <ClInclude Include="src\pb\pbc\ms2db.pb.h" />
