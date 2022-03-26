@@ -2,10 +2,10 @@
 # coding=utf-8
 import os
 from os import system
-print(system("python buildprotoc.py"))
-print(system("python buildrpcservice.py"))
-print(system("python buildrpcserviceid.py"))
-print(system("python buildprotosol.py"))
-print(system("python buildrpcserviceid.py"))
-print(system("python buildrpcplayerservice.py"))
+system("python buildprotoc.py")
+system("python buildrpcservice.py")
+system("python buildrpcserviceid.py")
+system("python buildprotosol.py")
+system("python buildrpcserviceid.py")
+system("python buildrpcplayerservice.py")
 
