@@ -32,5 +32,25 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE EnterGame
 }
 
+void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
+    const ms2gs::Ms2GsPlayerMessageRequest* request,
+    ms2gs::Ms2GsPlayerMessageRespone* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE PlayerService
+///<<< END WRITING YOUR CODE PlayerService
+}
+
+void Ms2gServiceImpl::PlayerServiceNoRespone(::google::protobuf::RpcController* controller,
+    const ms2gs::Ms2GsPlayerMessageRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE PlayerServiceNoRespone
+///<<< END WRITING YOUR CODE PlayerServiceNoRespone
+}
+
 ///<<<rpc end
 }// namespace ms2gs

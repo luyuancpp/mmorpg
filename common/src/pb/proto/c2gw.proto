@@ -1,7 +1,6 @@
 syntax = "proto3";
 package c2gw;
 import "common.proto";
-import "client_logic_common.proto";
 
 message LoginRequest
 {

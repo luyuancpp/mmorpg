@@ -168,7 +168,6 @@
     <ClCompile Include="src\pb\pbc\account_database.pb.cc" />
     <ClCompile Include="src\pb\pbc\c2gs.pb.cc" />
     <ClCompile Include="src\pb\pbc\c2gw.pb.cc" />
-    <ClCompile Include="src\pb\pbc\client_logic_common.pb.cc" />
     <ClCompile Include="src\pb\pbc\common.pb.cc" />
     <ClCompile Include="src\pb\pbc\comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\condition_config.pb.cc" />
@@ -239,7 +238,6 @@
     <ClInclude Include="src\pb\pbc\account_database.pb.h" />
     <ClInclude Include="src\pb\pbc\c2gs.pb.h" />
     <ClInclude Include="src\pb\pbc\c2gw.pb.h" />
-    <ClInclude Include="src\pb\pbc\client_logic_common.pb.h" />
     <ClInclude Include="src\pb\pbc\common.pb.h" />
     <ClInclude Include="src\pb\pbc\comp.pb.h" />
     <ClInclude Include="src\pb\pbc\condition_config.pb.h" />

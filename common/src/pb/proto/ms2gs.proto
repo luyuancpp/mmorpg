@@ -15,6 +15,25 @@ message EnterGameRespone
 {
 }
 
+message Ms2GsPlayerMessageExtern
+{
+  uint64 player_id = 1;
+}
+
+message Ms2GsPlayerMessageRequest
+{
+  Node2PlayerMessage player_message = 1;
+  Ms2GsPlayerMessageExtern request_extern = 2;
+}
+
+message Ms2GsPlayerMessageRespone
+{
+  Node2PlayerMessage player_message = 1;
+  Ms2GsPlayerMessageExtern request_extern = 2;
+}
+
 service Ms2gService {
   rpc EnterGame (EnterGameRequest) returns (EnterGameRespone);
+  rpc PlayerService (Ms2GsPlayerMessageRequest) returns (Ms2GsPlayerMessageRespone);
+  rpc PlayerServiceNoRespone (Ms2GsPlayerMessageRequest) returns (google.protobuf.Empty);
 }
