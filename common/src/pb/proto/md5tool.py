@@ -92,7 +92,7 @@ def generate_md5_file_for(filename, md5_filename):
     output_file.write("{0} *{1}\n".format(generated_hash, os.path.basename(filename)))
     output_file.close()
 
-    sys.stdout.write("\rDONE        {0}\n".format(filename))
+    #sys.stdout.write("\rDONE        {0}\n".format(filename))
     sys.stdout.flush()
 
 
