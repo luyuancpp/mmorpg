@@ -131,7 +131,10 @@
     <ClCompile Include="src\module\player_list\player_list.cpp" />
     <ClCompile Include="src\service\c2gs_player.cpp" />
     <ClCompile Include="src\service\gw2gs.cpp" />
+    <ClCompile Include="src\service\ms2gs_scene_player.cpp" />
+    <ClCompile Include="src\service\player_scene_player.cpp" />
     <ClCompile Include="src\service\player_service.cpp" />
+    <ClCompile Include="src\service\player_team_player.cpp" />
     <ClCompile Include="src\service\replied_ms2gs.cpp" />
     <ClCompile Include="src\service\ms2gs.cpp" />
     <ClCompile Include="src\service\rg2gs.cpp" />
@@ -143,7 +146,10 @@
     <ClInclude Include="src\module\player_list\player_list.h" />
     <ClInclude Include="src\service\c2gs_player.h" />
     <ClInclude Include="src\service\gw2gs.h" />
+    <ClInclude Include="src\service\ms2gs_scene_player.h" />
+    <ClInclude Include="src\service\player_scene_player.h" />
     <ClInclude Include="src\service\player_service.h" />
+    <ClInclude Include="src\service\player_team_player.h" />
     <ClInclude Include="src\service\replied_ms2gs.h" />
     <ClInclude Include="src\service\ms2gs.h" />
     <ClInclude Include="src\service\rg2gs.h" />

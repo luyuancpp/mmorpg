@@ -30,7 +30,8 @@ cpprpcpart = 2
 cppmaxpart = 4
 controller = '(common::EntityPtr& entity'
 servicedir = './md5/'
-
+protodir = 'logic_proto/'
+playerservicedir = '../../../../game_server/src/service'
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
@@ -62,7 +63,7 @@ def genheadrpcfun():
         line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
-            line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
+            line += tabstr + tabstr + '::google::protobuf::Empty* response);\n'
         else :
             line += tabstr + tabstr + local.pkg + '::' + rsp + '* response);\n\n'
         servicestr += line
@@ -102,7 +103,7 @@ def gencpprpcfunbegin(rpcindex):
     servicestr +=  tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
     if rsp == 'google.protobuf.Empty' :
-        servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
+        servicestr +=  tabstr + '::google::protobuf::Empty* response)\n{\n'
     else :
         servicestr +=  tabstr + local.pkg + '::' + rsp + '* response)\n{\n'
     return servicestr
@@ -123,11 +124,11 @@ def genheadfile(filename, writedir):
     fullfilename = writedir + '/' + filename.replace('.proto', '_player.h')
     folder_path, local.hfilename = os.path.split(fullfilename)    
     newheadfilename = servicedir + local.hfilename.replace('.proto', '.h')
-    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper()
+    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper().replace('/', '_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
     newstr += '#include "player_service.h"\n'
-    newstr += '#include "' + local.hfilename.replace('.h', '').replace('_player', '') + '.pb.h"\n'
+    newstr += '#include "' + protodir  + local.hfilename.replace('.h', '').replace('_player', '') + '.pb.h"\n'
     try:
         with open(fullfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -269,7 +270,7 @@ def genplayerservcielist(filename):
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + f + '_player.h"\n'
+        newstr += '#include "' + f.replace(protodir, '') + '_player.h"\n'
     newstr += 'namespace game\n{\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     for service in local.playerservicearray:
@@ -305,7 +306,11 @@ def md5copydir():
         for filename in filenames:        
             md5copy(filename, '../../../../game_server/src/service')
 
-genfile = [['c2gs.proto', '../../../../game_server/src/service']]
+genfile = []
+
+def inputfile():
+    for each_filename in os.listdir(protodir):
+        genfile.append([protodir  + each_filename, playerservicedir])
 
 class myThread (threading.Thread):
     def __init__(self, filename, writedir):
@@ -335,6 +340,6 @@ def main():
     for file in genfile:
         parseplayerservcie(file[0])
     genplayerservcielist('player_service.cpp')
-    
+inputfile() 
 main()
 md5copydir()
