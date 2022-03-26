@@ -114,9 +114,6 @@
     <ClCompile Include="src\pb\pbc\c2gw.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pb\pbc\client_logic_common.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pb\pbc\common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -387,9 +384,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\c2gw.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\client_logic_common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\common.pb.h">

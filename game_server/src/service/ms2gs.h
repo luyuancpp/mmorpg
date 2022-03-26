@@ -16,6 +16,16 @@ public:
         ms2gs::EnterGameRespone* response,
         ::google::protobuf::Closure* done)override;
 
+    void PlayerService(::google::protobuf::RpcController* controller,
+        const ms2gs::Ms2GsPlayerMessageRequest* request,
+        ms2gs::Ms2GsPlayerMessageRespone* response,
+        ::google::protobuf::Closure* done)override;
+
+    void PlayerServiceNoRespone(::google::protobuf::RpcController* controller,
+        const ms2gs::Ms2GsPlayerMessageRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
 };
 }// namespace ms2gs
 #endif//GAME_SERVER_SRC_SERVICE_MS2GS_H_
