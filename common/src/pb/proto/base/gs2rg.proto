@@ -1,0 +1,13 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+package gs2rg;
+option cc_generic_services = true;
+
+message StartGSRequest
+{
+
+}
+
+service G2rgService {
+  rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
+}

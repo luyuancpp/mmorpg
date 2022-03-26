@@ -1,0 +1,28 @@
+syntax = "proto3";
+package gw2gs;
+import "google/protobuf/empty.proto";
+option cc_generic_services = true;
+
+message RpcClientRequest
+{
+  bytes request = 1;
+  uint64 player_id = 2;
+}
+
+message RpcClientResponse
+{
+  bytes response = 1;
+  uint64 player_id = 2;
+  uint64 conn_id = 3;
+}
+
+message DisconnectRequest
+{
+  uint64 guid = 1;
+  uint64 conn_id = 2;
+}
+
+service Gw2gsService {
+  rpc PlayerService (RpcClientRequest) returns (RpcClientResponse);
+  rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
+}

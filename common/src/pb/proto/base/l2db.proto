@@ -1,0 +1,47 @@
+syntax = "proto3";
+package l2db;
+import "common.proto";
+import "mysql_database_table.proto";
+option cc_generic_services = true;
+
+message LoginRequest
+{
+  string account = 1;
+  uint64 conn_id = 2;
+}
+
+message LoginResponse
+{
+	ClientError error = 1;
+  account_database account_player = 2;
+}
+
+message CreatePlayerRequest
+{
+  string account = 1;
+  uint64 conn_id = 2;
+}
+
+message CreatePlayerResponse
+{
+  ClientError error = 1;
+  account_database account_player = 2;
+  uint64 guid = 3;
+}
+
+message EnterGameRequest
+{
+  uint64 guid = 1;
+}
+
+message EnterGameResponse
+{
+  ClientError error = 1;
+  uint64 guid = 2;
+}
+
+service LoginService {
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc CreatePlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
+}
