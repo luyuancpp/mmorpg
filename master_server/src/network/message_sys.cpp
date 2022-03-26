@@ -49,6 +49,12 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	gs.Send(message);
 }
 
+void Send2GsPlayer(const google::protobuf::Message& message, common::Guid player_id)
+{
+	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
+	Send2GsPlayer(message, player);
+}
+
 void Send2Player(const google::protobuf::Message& message, entt::entity player)
 {
 	if (!reg.valid(player))
