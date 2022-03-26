@@ -1,5 +1,10 @@
 syntax = "proto3";
 
+message c_account_simple_player
+{
+  uint64 guid = 1;
+}
+
 message ClientError
 {
   uint32 error_no = 1;

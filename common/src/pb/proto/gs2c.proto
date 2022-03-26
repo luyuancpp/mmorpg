@@ -1,4 +1,4 @@
-yntax = "proto3";
+syntax = "proto3";
 package gs2c;
 import "common.proto";
 option cc_generic_services = true;
