@@ -18,7 +18,7 @@ using namespace common;
 
 namespace master
 {
-	void Send2Gs(const google::protobuf::Message& message, uint32_t node_id)
+void Send2Gs(const google::protobuf::Message& message, uint32_t node_id)
 {
 		auto& gs_nodes = reg.get<GsNodes>(global_entity());
 		auto it = gs_nodes.find(node_id);
