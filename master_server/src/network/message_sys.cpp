@@ -13,6 +13,7 @@
 #include "src/pb/pbc/msgmap.h"
 
 #include "ms2gw.pb.h"
+#include "ms2gs.pb.h"
 
 using namespace common;
 
@@ -36,17 +37,31 @@ void Send2Gs(const google::protobuf::Message& message, uint32_t node_id)
 		(*node)->session_.Send(message);
 }
 
-void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player_entity)
+void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player)
 {
-	auto ptr_gse = reg.try_get<GSEntity>(player_entity);
-	if (nullptr == ptr_gse)
+	if (!reg.valid(player))
 	{
-		LOG_ERROR << "player send message empty server:" << reg.get<Guid>(player_entity)
-			<< "message:" << message.GetTypeName();
 		return;
 	}
-	auto& gs = reg.get<RpcServerConnection>(ptr_gse->server_entity());
-	gs.Send(message);
+	auto player_session = reg.get<PlayerSession>(player);
+	auto gs = player_session.gs_.lock();
+	if (nullptr == gs)
+	{
+		LOG_INFO << "gs not found ";
+		return;
+	}
+	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
+	if (message_it == g_msgid.end())
+	{
+		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
+		return;
+	}
+	ms2gs::Ms2GsPlayerMessageRequest ms2gs_messag;
+	ms2gs_messag.mutable_player_message()->set_msg_id(message_it->second);
+	ms2gs_messag.mutable_player_message()->set_message_byte(message.SerializeAsString());
+	ms2gs_messag.mutable_request_extern()->set_player_id(reg.get<common::Guid>(player));
+	auto& gs_session = reg.get<RpcServerConnection>(gs->server_entity());
+	gs_session.Send(ms2gs_messag);
 }
 
 void Send2GsPlayer(const google::protobuf::Message& message, common::Guid player_id)
@@ -67,15 +82,16 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 	{
 		return;
 	}
-	auto it = g_msgid.find(message.GetDescriptor()->full_name());
-	if (it == g_msgid.end())
+	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
+	if (message_it == g_msgid.end())
 	{
+		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
 	ms2gw::Ms2PlayerMessageRequest ms2gw_messag;
 	ms2gw_messag.mutable_request_extern()->set_conn_id(player_session.gate_conn_id_.conn_id_);
 	ms2gw_messag.mutable_player_message()->set_response(message.SerializeAsString());
-	ms2gw_messag.mutable_player_message()->set_msg_id(it->second);
+	ms2gw_messag.mutable_player_message()->set_msg_id(message_it->second);
 	gate->session_.Send(message);
 }
 

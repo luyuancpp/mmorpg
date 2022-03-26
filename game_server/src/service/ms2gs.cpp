@@ -29,7 +29,9 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     auto it =  g_players.emplace(request->player_id(), common::EntityPtr());
     if (it.second)
     {
-        reg.emplace<GateConnId>(it.first->second.entity(), request->conn_id());
+        auto entity = it.first->second.entity();
+        reg.emplace<GateConnId>(entity, request->conn_id());
+        reg.emplace<common::Guid>(entity, request->player_id());
     }
 ///<<< END WRITING YOUR CODE EnterGame
 }

@@ -112,7 +112,7 @@ def md5copy(destfilename, filename):
 def generate(filename, fileid):
     parsefile(filename, fileid)
 
-genfile = []
+genfile = ['ms2gs.proto']
 
 def inputfile():
     for each_filename in os.listdir(protodir):
