@@ -195,6 +195,15 @@
     <ClCompile Include="src\pb\pbc\scene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\logic_proto\player_scene.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\logic_proto\player_team.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server_common\codec\codec.h">
@@ -471,6 +480,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\rpc_client_closure.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\logic_proto\player_scene.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\logic_proto\player_team.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
