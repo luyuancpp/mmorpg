@@ -24,7 +24,7 @@ message PlayerEnterGSRequest
   uint64 player_id = 3;
 }
 
-message Ms2GwNodeMessageExtern
+message Ms2GwMessageExtern
 {
   uint64 conn_id = 1;
   uint32 gs_node_id = 2;
@@ -34,7 +34,7 @@ message Ms2GwNodeMessageExtern
 message Ms2PlayerMessageRequest
 {
   Node2PlayerMessage player_message = 1;
-  Ms2GwNodeMessageExtern request_extern = 2;
+  Ms2GwMessageExtern request_extern = 2;
 }
 
 service Ms2gwService {
