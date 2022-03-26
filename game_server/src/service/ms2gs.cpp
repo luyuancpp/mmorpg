@@ -7,7 +7,9 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
 #include "src/module/player_list/player_list.h"
+#include "src/pb/pbc/msgmap.h"
 #include "src/server_common/closure_auto_done.h"
+#include "src/service/player_service.h"
 using namespace common;
 using namespace game;
 ///<<< END WRITING YOUR CODE
@@ -39,6 +41,43 @@ void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controlle
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerService
+    auto& message_extern = request->request_extern();
+    auto& player_message = request->player_message();
+	auto it = g_players.find(message_extern.player_id());
+	if (it == g_players.end())
+	{
+        LOG_INFO << "player not found " << message_extern.player_id();
+        return;
+	}
+    auto msg_id = request->player_message().msg_id();
+    if (msg_id >= g_serviceinfo.size() || nullptr == g_serviceinfo[msg_id].method)
+    {
+        LOG_INFO << "msg not found " << msg_id;
+        return;
+    }
+	auto service_it = g_player_services.find(g_serviceinfo[msg_id].service);
+	if (service_it == g_player_services.end())
+	{
+        LOG_INFO << "msg not found " << msg_id;
+		return;
+	}
+    auto& serviceimpl = service_it->second;
+	google::protobuf::Service* service = serviceimpl->service();
+	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(g_serviceinfo[msg_id].method);
+	if (nullptr == method)
+	{
+        LOG_INFO << "msg not found " << msg_id;
+		//todo client error;
+		return;
+	}
+	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
+	player_request->ParseFromString(player_message.message_byte());
+	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
+    serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
+	response->mutable_request_extern()->set_player_id(request->request_extern().player_id());
+	response->mutable_player_message()->set_message_byte(player_response->SerializeAsString());
+    response->mutable_player_message()->set_msg_id(msg_id);
 ///<<< END WRITING YOUR CODE PlayerService
 }
 
