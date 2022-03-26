@@ -25,7 +25,7 @@ tabstr = '    '
 cpprpcpart = 2
 cppmaxpart = 4
 controller = '(::google::protobuf::RpcController* controller'
-servicedir = './service/'
+servicedir = './md5/'
 
 
 if not os.path.exists(servicedir):

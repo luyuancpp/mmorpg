@@ -22,7 +22,7 @@ threads = []
 local.pkg = ''
 tabstr = '    '
 cpkg = 'package'
-servicedir = './service/'
+servicedir = './md5/'
 writedir = '../pbc/'
 perserviceidcount = 150
 

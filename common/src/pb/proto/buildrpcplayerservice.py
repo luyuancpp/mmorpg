@@ -29,7 +29,7 @@ tabstr = '    '
 cpprpcpart = 2
 cppmaxpart = 4
 controller = '(common::EntityPtr& entity'
-servicedir = './player_service/'
+servicedir = './md5/'
 
 
 if not os.path.exists(servicedir):
@@ -284,7 +284,7 @@ def genplayerservcielist(filename):
         file.write(newstr)
 
 def md5copy(filename, writedir):
-        if filename[-4:].lower() == '.md5':
+        if not (filename.endswith("player.cpp") or  filename.endswith("player.h") or filename == "player_service.cpp" or filename == "player_service.h"):
             return
         gennewfilename = servicedir + filename
         filenamemd5 = gennewfilename + '.md5'
