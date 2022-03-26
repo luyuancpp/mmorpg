@@ -27,6 +27,11 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 		std::bind(&ClientService::OnEnterSceneResponseReplied, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<ClientResponse>(
 		std::bind(&ClientService::OnGsReplied, this, _1, _2, _3));
+	dispatcher_.registerMessageCallback<ClientResponse>(
+		std::bind(&ClientService::OnGsReplied, this, _1, _2, _3));
+	dispatcher_.registerMessageCallback<Node2PlayerMessage>(
+		std::bind(&ClientService::OnNode2PlayerReplied, this, _1, _2, _3));
+    
 }
 
 void ClientService::Send(const google::protobuf::Message& message)
@@ -112,6 +117,16 @@ void ClientService::OnGsReplied(const muduo::net::TcpConnectionPtr& conn,
     MessagePtr response(codec_.createMessage(g_serviceinfo[msg_id].response));
     response->ParseFromString(message->response());
     dispatcher_.onProtobufMessage(conn, response, t);
+}
+
+void ClientService::OnNode2PlayerReplied(const muduo::net::TcpConnectionPtr& conn,
+    const Node2PlayerMessagePtr& message,
+    muduo::Timestamp t)
+{
+	auto msg_id = message->msg_id();
+	MessagePtr response(codec_.createMessage(g_serviceinfo[msg_id].response));
+	response->ParseFromString(message->response());
+	dispatcher_.onProtobufMessage(conn, response, t);
 }
 
 void ClientService::EnterGame(Guid guid)

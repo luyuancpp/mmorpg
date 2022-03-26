@@ -31,6 +31,11 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
+    void PlayerMessage(::google::protobuf::RpcController* controller,
+        const ms2gw::Ms2PlayerMessageRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
 };
 }// namespace ms2gw
 #endif//GATEWAY_SERVER_SRC_SERVICE_MS2GW_H_

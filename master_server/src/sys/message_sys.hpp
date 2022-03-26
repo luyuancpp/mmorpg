@@ -49,6 +49,10 @@ void Send2GsPlayer(const google::protobuf::Message& message,
 	presponse,
 	NewCallback(method, presponse));
 }
+
+ void Send2Player(const google::protobuf::Message& message, common::Guid player_id);
+ void Send2Gate(const google::protobuf::Message& message, uint32_t gate_id);
+
 }//namespace master
 
 #endif//MASTER_SERVER_SRC_MESSAGE_SYS_HPP_
