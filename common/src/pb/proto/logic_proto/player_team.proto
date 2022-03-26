@@ -1,5 +1,5 @@
 syntax = "proto3";
-package c2gs;
+package playerteam;
 import "common.proto";
 option cc_generic_services = true;
 
@@ -15,7 +15,7 @@ message EnterSceneResponse
 	SceneInfo scenes_info = 2;
 }
 
-service C2GsService 
+service C2GsSceneService 
 {
   rpc EnterScene (EnterSceneRequest) returns (EnterSceneResponse);
 }
