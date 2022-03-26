@@ -1,1 +1,0 @@
-for /l %%i in (100, 1, 1500) do   redis-cli -h 127.0.0.1 -p 6379 del key player_database%%i
