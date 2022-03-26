@@ -18,6 +18,7 @@
 
 #include "ms2gw.pb.h"
 #include "ms2gs.pb.h"
+#include "logic_proto/ms2gs_scene.pb.h"
 
 using namespace master;
 using namespace common;
@@ -43,6 +44,9 @@ void LoginServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
     messag.set_gs_node_id(player_session.gs_node_id());
     messag.set_player_id(replied.s_rq_.player_id());
     Send2Gate(messag, player_session.gate_node_id());
+
+    ms2gsscene::OnLoginRequest login_message;
+    Send2GsPlayer(login_message, player);
 }
 ///<<< END WRITING YOUR CODE
 

@@ -127,6 +127,6 @@ genluasol('gw2ms.proto', srcdir)
 genluasol('c2gw.proto', srcdir)
 
 gentotalfile(destdir, srcdir)
-md5copy(destdir, srcdir, '.h')
-md5copy(destdir, srcdir, '.cpp')
+md5copy(destdir, srcdir, 'sol2.h')
+md5copy(destdir, srcdir, 'sol2.cpp')
 
