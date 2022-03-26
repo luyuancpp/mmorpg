@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message account_simple_player
+{
+  uint64 guid = 1;
+}
+
+message account_simple_players
+{
+  repeated account_simple_player players = 1;
+}

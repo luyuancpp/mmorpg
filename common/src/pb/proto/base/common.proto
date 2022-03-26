@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+message c_account_simple_player
+{
+  uint64 guid = 1;
+}
+
+message ClientError
+{
+  uint32 error_no = 1;
+  repeated string error_param = 2;
+}
+
+message ConnetionParam
+{
+  string ip = 1;
+  uint32 port = 2;
+  string db_host = 3;
+  string db_user = 4;
+  string db_password = 5;
+  uint32 db_port = 6;
+  string db_dbname = 7;
+}
+
+message ConnetionParamJsonFormat
+{
+  repeated ConnetionParam data = 1;
+}
+
+message GameConfigInfo
+{
+  uint32 group_id = 1;
+  uint32 region_id = 2;
+}
+
+message RegionConfigInfo
+{
+  uint32 region_id = 1;
+}
+
+message IpPort
+{
+  string ip = 1;
+  uint32 port = 2;
+}
+
+message SceneInfo
+{
+  uint32 scene_confid = 1;
+  uint64 scene_id = 2;
+}
+
+message Node2PlayerMessage
+{
+  bytes response = 1;
+  uint32 msg_id = 2;
+}
