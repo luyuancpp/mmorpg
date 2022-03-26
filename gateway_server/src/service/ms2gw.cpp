@@ -10,7 +10,6 @@
 #include "src/return_code/error_code.h"
 #include "src/server_common/closure_auto_done.h"
 
-#include "c2gs.pb.h"
 #include "gw2gs.pb.h"
 #include "c2gw.pb.h"
 

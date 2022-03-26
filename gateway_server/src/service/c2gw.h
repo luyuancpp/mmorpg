@@ -12,7 +12,6 @@
 #include "src/server_common/rpc_client.h"
 #include "src/server_common/server_sequence.h"
 
-#include "c2gs.pb.h"
 #include "c2gw.pb.h"
 #include "gw2l.pb.h"
 #include "gw2ms.pb.h"

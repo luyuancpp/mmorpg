@@ -14,7 +14,6 @@
 #include "src/redis_client/redis_client.h"
 #include "src/server_common/rpc_closure.h"
 
-#include "c2gs.pb.h"
 #include "gs2ms.pb.h"
 #include "gs2rg.pb.h"
 

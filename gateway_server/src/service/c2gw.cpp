@@ -16,6 +16,7 @@
 #include "src/server_common/rpc_closure.h"
 
 #include "gw2l.pb.h"
+#include "logic_proto/player_scene.pb.h"
 
 using namespace common;
 using namespace c2gw;
@@ -196,7 +197,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 	{
 		return;
 	}
-
+    //检测玩家可以不可以发这个消息id过来给服务器
     auto gs = g_gs_nodes.GetSession(it->second.gs_node_id_);
     if (nullptr == gs)
     {
@@ -204,8 +205,8 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         return;
     }
     //todo msg id error
-    const ::google::protobuf::ServiceDescriptor* c2gs_service = c2gs::C2GsService::descriptor();
-    if (request->service() == c2gs_service->full_name())
+    const ::google::protobuf::ServiceDescriptor* player_service = playerscene::C2GsSceneService::descriptor();
+    if (request->service() == player_service->full_name())
     {
 		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
         msg->s_rq_.set_request(request->SerializeAsString());
