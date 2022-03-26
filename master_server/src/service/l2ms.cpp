@@ -38,10 +38,10 @@ void LoginServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
     }
     auto player_session = reg.get<PlayerSession>(player);
 	ms2gw::PlayerEnterGSRequest messag;
-    messag.set_conn_id(player_session.gate_conn_id_.conn_id_);
+    messag.set_conn_id(replied.s_rq_.conn_id());
     messag.set_gs_node_id(player_session.gs_node_id());
     messag.set_player_id(replied.s_rq_.player_id());
-    player_session.Send2Gate(messag);
+    Send2Gate(messag, player_session.gate_node_id());
 }
 ///<<< END WRITING YOUR CODE
 
@@ -100,6 +100,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     reg.emplace<Guid>(player, guid);
     auto& player_session = reg.emplace_or_replace<PlayerSession>(player);
     player_session.gate_conn_id_.conn_id_ = request->conn_id();
+    player_session.player_ = player;
 	auto& gate_nodes = reg.get<GateNodes>(global_entity());
     auto gate_it = gate_nodes.find(request->gate_node_id());
 	if (gate_it != gate_nodes.end())

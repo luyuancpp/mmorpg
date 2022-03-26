@@ -13,6 +13,9 @@ namespace master
 	{
 		GateNode(const muduo::net::TcpConnectionPtr& conn)
 			: session_(conn) {}
+
+		uint32_t node_id() const { return node_info_.node_id_; }
+
 		common::NodeInfo node_info_;
 		common::RpcServerConnection session_;
 	};

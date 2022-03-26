@@ -95,5 +95,23 @@ void Ms2gwServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* controll
 ///<<< END WRITING YOUR CODE PlayerEnterGS
 }
 
+void Ms2gwServiceImpl::PlayerMessage(::google::protobuf::RpcController* controller,
+    const ms2gw::Ms2PlayerMessageRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE PlayerMessage
+    auto conn_id = request->request_extern().conn_id();
+	auto it = g_client_sessions_->find(conn_id);
+	if (it == g_client_sessions_->end())
+	{
+		LOG_ERROR << "connid not found  player id " << request->request_extern().player_id() << "," << conn_id;
+		return;
+	}
+	g_gateway_server->Send2Client(it->second.conn_, request->player_message());
+///<<< END WRITING YOUR CODE PlayerMessage
+}
+
 ///<<<rpc end
 }// namespace ms2gw

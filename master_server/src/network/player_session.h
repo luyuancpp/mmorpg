@@ -3,7 +3,9 @@
 
 #include "gate_node.h"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/player_comp.hpp"
+#include "src/sys/message_sys.hpp"
 
 namespace master
 {
@@ -21,14 +23,19 @@ namespace master
 			return gs->node_id();
 		}
 
-		void Send2Gate(::google::protobuf::Message& message)
+		uint32_t gate_node_id()const
 		{
 			auto gate = gate_.lock();
 			if (nullptr == gate)
 			{
-				return;
+				return common::kInvalidU32Id;
 			}
-			gate->session_.Send(message);
+			return gate->node_id();
+		}
+
+		inline void Send(::google::protobuf::Message& message)
+		{
+			master::Send2Player(message, common::reg.get<common::Guid>(player_));
 		}
 
 		void Send2Gs(::google::protobuf::Message& message)
@@ -41,7 +48,7 @@ namespace master
 			//gs->.Send(message);
 		}
 
-
+		entt::entity player_{ entt::null};
 		common::GateConnId gate_conn_id_;
 		GateNodeWPtr gate_;
 		common::GSDataWeakPtr gs_;

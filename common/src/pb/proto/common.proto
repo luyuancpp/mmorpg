@@ -44,3 +44,9 @@ message SceneInfo
   uint32 scene_confid = 1;
   uint64 scene_id = 2;
 }
+
+message Node2PlayerMessage
+{
+  bytes response = 1;
+  uint32 msg_id = 2;
+}
