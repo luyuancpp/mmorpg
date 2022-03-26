@@ -108,9 +108,6 @@
     <ClCompile Include="src\pb\pbc\account_database.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pb\pbc\c2gs.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pb\pbc\c2gw.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -387,9 +384,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\account_database.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\c2gs.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\c2gw.pb.h">

@@ -166,7 +166,6 @@
     <ClCompile Include="src\pb\pb2sol2\gw2ms_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\pb2sol2.cpp" />
     <ClCompile Include="src\pb\pbc\account_database.pb.cc" />
-    <ClCompile Include="src\pb\pbc\c2gs.pb.cc" />
     <ClCompile Include="src\pb\pbc\c2gw.pb.cc" />
     <ClCompile Include="src\pb\pbc\common.pb.cc" />
     <ClCompile Include="src\pb\pbc\comp.pb.cc" />
@@ -239,7 +238,6 @@
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
     <ClInclude Include="src\pb\pb2sol2\pb2sol2.h" />
     <ClInclude Include="src\pb\pbc\account_database.pb.h" />
-    <ClInclude Include="src\pb\pbc\c2gs.pb.h" />
     <ClInclude Include="src\pb\pbc\c2gw.pb.h" />
     <ClInclude Include="src\pb\pbc\common.pb.h" />
     <ClInclude Include="src\pb\pbc\comp.pb.h" />

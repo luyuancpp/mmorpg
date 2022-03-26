@@ -10,12 +10,12 @@
 #include "src/server_common/codec/dispatcher.h"
 
 #include "c2gw.pb.h"
-#include "c2gs.pb.h"
+#include "logic_proto/player_scene.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
-using namespace c2gs;
+using namespace playerscene;
 
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
 using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;
