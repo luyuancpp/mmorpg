@@ -20,15 +20,21 @@ message Ms2GsPlayerMessageExtern
   uint64 player_id = 1;
 }
 
+message Ms2GsPlayerMessage
+{
+    bytes message_byte = 1;
+    uint32 msg_id = 2;
+}
+
 message Ms2GsPlayerMessageRequest
 {
-  Node2PlayerMessage player_message = 1;
+  Ms2GsPlayerMessage player_message = 1;
   Ms2GsPlayerMessageExtern request_extern = 2;
 }
 
 message Ms2GsPlayerMessageRespone
 {
-  Node2PlayerMessage player_message = 1;
+  Ms2GsPlayerMessage player_message = 1;
   Ms2GsPlayerMessageExtern request_extern = 2;
 }
 
