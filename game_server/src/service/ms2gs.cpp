@@ -77,6 +77,10 @@ void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controlle
 	player_request->ParseFromString(player_message.message_byte());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
     serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
+    if (nullptr == response)//不需要回复
+    {
+        return;
+    }
 	response->mutable_request_extern()->set_player_id(request->request_extern().player_id());
 	response->mutable_player_message()->set_message_byte(player_response->SerializeAsString());
     response->mutable_player_message()->set_msg_id(msg_id);
