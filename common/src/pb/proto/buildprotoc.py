@@ -41,9 +41,10 @@ def genmd5(walkdir):
     for filename in os.listdir(walkdir):
         if not (filename[-6:].lower() == '.proto'):
             continue            
-        md5tool.generate_md5_file_for(filename, md5str + '/' + filename + '.md5')
+        md5tool.generate_md5_file_for(walkdir + filename, md5str + '/' + filename + '.md5')
 
 gen_protoc('./', '../../../../third_party/protobuf/src/', '../pbc/')
 gen_protoc('./logic_proto/', '../../../../third_party/protobuf/src/', '../pbc/')
 genmd5('./')
+genmd5('./logic_proto/')
 
