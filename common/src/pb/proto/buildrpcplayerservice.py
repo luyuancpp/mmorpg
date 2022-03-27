@@ -171,7 +171,7 @@ def genheadfile(filename, writedir):
 
 def gencppfile(filename, writedir):
     global cppmaxpart
-    cppfilename = writedir + '/' + filename.replace('.proto', '_player.cpp')
+    cppfilename = writedir + '/' + filename.replace('.proto', '_player.cpp').replace(protodir, '')
     newcppfilename = servicedir + local.hfilename.replace('.h', '.cpp')
     newstr = '#include "' + local.hfilename + '"\n'
     try:
