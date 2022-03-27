@@ -11,39 +11,37 @@ from os import system
 
 md5str = 'md5'
 
-def gen_protoc(walkdir, protobufdir, cppdir):
-    for each_filename in os.listdir(walkdir):
-        if not (each_filename[-6:].lower() == '.proto'):
+def gen_protoc(walkdir, protobufdir, dest_dir):
+    for filename in os.listdir(walkdir):
+        if not (filename[-6:].lower() == '.proto'):
             continue
-        fullname = walkdir +  each_filename
-        filenamemd5 = md5str + '/' + each_filename + '.md5'
+        proto_fullfilename = walkdir +  filename
+        proto_md5_fullfilename = md5str + '/' + filename + '.md5'
         error = None
         first = False
-        if not os.path.exists(filenamemd5):
+        if not os.path.exists(proto_md5_fullfilename):
             first = True
         else:
-            error = md5tool.check_against_md5_file(fullname, filenamemd5)
-        pbcdir = cppdir + walkdir.replace('./', '')
-        hfilename = pbcdir + each_filename + '.pb.h'
-        cfilename = pbcdir + each_filename + '.pb.cc'
-        hfilename = hfilename.replace('.proto', '')
-        cfilename = cfilename.replace('.proto', '')
-        if error == None and os.path.exists(hfilename) and os.path.exists(cfilename) :
+            error = md5tool.check_against_md5_file(proto_fullfilename, proto_md5_fullfilename)
+        pbcdir = dest_dir + walkdir.replace('./', '')
+        head_fullfilename = pbcdir + filename.replace('.proto', '') + '.pb.h'
+        cpp_fullfilename = pbcdir + filename.replace('.proto', '') + '.pb.cc'
+        if error == None and os.path.exists(head_fullfilename) and os.path.exists(cpp_fullfilename) :
                 continue
-        print('copy %s %s' % (hfilename, cfilename))
-        if not os.path.exists(filenamemd5):
-                md5tool.generate_md5_file_for(fullname, filenamemd5)
-        commond = 'protoc  -I=./ -I=./logic_proto -I=%s --cpp_out=%s %s' % (protobufdir, cppdir, fullname)
+        print('copy %s %s' % (head_fullfilename, cpp_fullfilename))
+        if not os.path.exists(proto_md5_fullfilename):
+                md5tool.generate_md5_file_for(proto_fullfilename, proto_md5_fullfilename)
+        commond = 'protoc  -I=./ -I=./logic_proto -I=%s --cpp_out=%s %s' % (protobufdir, dest_dir, proto_fullfilename)
         system(commond)
 
 if not os.path.exists(md5str):
     os.makedirs(md5str)
 
 def genmd5(walkdir):
-    for each_filename in os.listdir(walkdir):
-        if not (each_filename[-6:].lower() == '.proto'):
+    for filename in os.listdir(walkdir):
+        if not (filename[-6:].lower() == '.proto'):
             continue            
-        md5tool.generate_md5_file_for(each_filename, md5str + '/' + each_filename + '.md5')
+        md5tool.generate_md5_file_for(filename, md5str + '/' + filename + '.md5')
 
 gen_protoc('./', '../../../../third_party/protobuf/src/', '../pbc/')
 gen_protoc('./logic_proto/', '../../../../third_party/protobuf/src/', '../pbc/')
