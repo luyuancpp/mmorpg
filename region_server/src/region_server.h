@@ -27,7 +27,7 @@ public:
     void StartServer(RegionInfoRpcRpcRC cp);
 
     void receive(const common::OnClientConnectedEvent& es);
-    void receive(const common::ServerConnectionEvent& es);
+    void receive(const common::OnConnectedServerEvent& es);
 private:
     muduo::net::EventLoop* loop_{ nullptr };
     RpcServerPtr server_;

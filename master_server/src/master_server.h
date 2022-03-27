@@ -45,7 +45,7 @@ namespace master
         void OnGsNodeStart(entt::entity gs);
 
         void receive(const common::OnClientConnectedEvent& es);
-        void receive(const common::ServerConnectionEvent& es);
+        void receive(const common::OnConnectedServerEvent& es);
 
     private:      
 

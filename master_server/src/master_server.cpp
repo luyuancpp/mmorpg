@@ -64,7 +64,7 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     auto& myinfo = serverinfos_.master_info();
     InetAddress master_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
-    server_->subscribe<ServerConnectionEvent>(*this);
+    server_->subscribe<OnConnectedServerEvent>(*this);
 
     server_->registerService(&l2ms_impl_);
     server_->registerService(&g2ms_impl_);
@@ -110,7 +110,7 @@ void MasterServer::receive(const OnClientConnectedEvent& es)
         &deploy::DeployService_Stub::ServerInfo);
 }
 
-void MasterServer::receive(const ServerConnectionEvent& es)
+void MasterServer::receive(const OnConnectedServerEvent& es)
 {
     auto& conn = es.conn_;
     if (conn->connected())
