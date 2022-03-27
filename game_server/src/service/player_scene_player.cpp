@@ -2,18 +2,18 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-namespace playerscene{
+namespace playerservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void PlayerC2GsSceneServiceImpl::EnterScene(common::EntityPtr& entity,
-    const playerscene::EnterSceneRequest* request,
-    playerscene::EnterSceneResponse* response)
+void PlayerPlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
+    const playerservice::SeceneTestRequest* request,
+    playerservice::SeceneTestResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterScene
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
 ///<<<rpc end
-}// namespace playerscene
+}// namespace playerservice
