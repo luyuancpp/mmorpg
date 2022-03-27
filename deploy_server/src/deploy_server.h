@@ -37,7 +37,7 @@ namespace deploy
         void OnDisConnected(const muduo::net::TcpConnectionPtr& conn);
         void LogReuseInfo();
    
-        void receive(const common::ServerConnectionEvent& es);
+        void receive(const common::OnConnectedServerEvent& es);
     private:
         void InitGroupDb();
 
