@@ -61,7 +61,7 @@ public:
 
     void Register2Master();
 
-    void receive(const common::OnClientConnectEvent& es);
+    void receive(const common::OnClientConnectedEvent& es);
 
 private:
     void OnConnection(const TcpConnectionPtr& conn)

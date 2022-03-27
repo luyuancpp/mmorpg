@@ -37,7 +37,7 @@ namespace login
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
 
-        void receive(const common::OnClientConnectEvent& es);
+        void receive(const common::OnClientConnectedEvent& es);
 
     private:
         muduo::net::EventLoop* loop_{ nullptr };
