@@ -25,6 +25,7 @@
     <ClCompile Include="src\gs\gs_sessio.cpp" />
     <ClCompile Include="src\service\c2gw.cpp" />
     <ClCompile Include="src\service\ms2gw.cpp" />
+    <ClCompile Include="src\service\open_service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\gate_player\gate_player_list.h" />

@@ -10,6 +10,7 @@ gateway::GatewayServer* g_gateway_server = nullptr;
 
 namespace gateway
 {
+void OpenPlayerServcie();
 
 void GatewayServer::LoadConfig()
 {
@@ -21,6 +22,7 @@ void GatewayServer::Init()
 {
     LoadConfig();
     InitMsgService();
+    OpenPlayerServcie();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
