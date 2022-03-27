@@ -45,7 +45,7 @@ void LoginServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
     messag.set_player_id(replied.s_rq_.player_id());
     Send2Gate(messag, player_session.gate_node_id());
 
-    ms2gsscene::OnLoginRequest login_message;
+    ms2gs::OnLoginRequest login_message;
     Send2GsPlayer(login_message, player);
 }
 ///<<< END WRITING YOUR CODE

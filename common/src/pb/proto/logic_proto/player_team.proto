@@ -1,21 +1,19 @@
 syntax = "proto3";
-package playerteam;
+package playerservice;
 import "common.proto";
 option cc_generic_services = true;
 
-message EnterSceneRequest
+message TeamTestRequest
 {
-	uint64 player_id  = 1;
-	uint64 scene_confid = 2;
 }
 
-message EnterSceneResponse
+message TeamTestResponse
 {
 	ClientError error = 1;
-	SceneInfo scenes_info = 2;
 }
 
-service C2GsTeamService 
+
+service PlayerTeamService
 {
-  rpc EnterScene (EnterSceneRequest) returns (EnterSceneResponse);
+  rpc EnterScene (TeamTestRequest) returns (TeamTestResponse);
 }

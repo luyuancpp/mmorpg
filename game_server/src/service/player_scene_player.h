@@ -4,18 +4,18 @@
 #include "logic_proto/player_scene.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace playerscene{
+namespace playerservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class PlayerC2GsSceneServiceImpl : public game::PlayerService {
+class PlayerPlayerSceneServiceImpl : public game::PlayerService {
 public:
     using PlayerService::PlayerService;
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
     void EnterScene(common::EntityPtr& entity,
-        const playerscene::EnterSceneRequest* request,
-        playerscene::EnterSceneResponse* response);
+        const playerservice::SeceneTestRequest* request,
+        playerservice::SeceneTestResponse* response);
 
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         common::EntityPtr& entity,
@@ -25,8 +25,8 @@ public:
         switch(method->index()) {
         case 0:
             EnterScene(entity,
-            ::google::protobuf::internal::DownCast<const playerscene::EnterSceneRequest*>( request),
-            ::google::protobuf::internal::DownCast<playerscene::EnterSceneResponse*>(response));
+            ::google::protobuf::internal::DownCast<const playerservice::SeceneTestRequest*>( request),
+            ::google::protobuf::internal::DownCast<playerservice::SeceneTestResponse*>(response));
         break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -34,5 +34,5 @@ public:
         }
         }
 };
-}// namespace playerscene
+}// namespace playerservice
 #endif//GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_SCENE_H_

@@ -4,18 +4,18 @@
 #include "logic_proto/player_team.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace playerteam{
+namespace playerservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class PlayerC2GsTeamServiceImpl : public game::PlayerService {
+class PlayerPlayerTeamServiceImpl : public game::PlayerService {
 public:
     using PlayerService::PlayerService;
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
     void EnterScene(common::EntityPtr& entity,
-        const playerteam::EnterSceneRequest* request,
-        playerteam::EnterSceneResponse* response);
+        const playerservice::TeamTestRequest* request,
+        playerservice::TeamTestResponse* response);
 
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         common::EntityPtr& entity,
@@ -25,8 +25,8 @@ public:
         switch(method->index()) {
         case 0:
             EnterScene(entity,
-            ::google::protobuf::internal::DownCast<const playerteam::EnterSceneRequest*>( request),
-            ::google::protobuf::internal::DownCast<playerteam::EnterSceneResponse*>(response));
+            ::google::protobuf::internal::DownCast<const playerservice::TeamTestRequest*>( request),
+            ::google::protobuf::internal::DownCast<playerservice::TeamTestResponse*>(response));
         break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -34,5 +34,5 @@ public:
         }
         }
 };
-}// namespace playerteam
+}// namespace playerservice
 #endif//GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_TEAM_H_

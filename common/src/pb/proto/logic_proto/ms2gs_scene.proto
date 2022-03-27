@@ -1,6 +1,6 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
-package ms2gsscene;
+package ms2gs;
 option cc_generic_services = true;
 
 message OnLoginRequest

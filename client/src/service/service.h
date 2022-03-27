@@ -15,13 +15,13 @@
 using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
-using namespace playerscene;
+using namespace playerservice;
 
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
 using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;
 using EnterGameResponsePtr = std::shared_ptr<EnterGameResponse>;
 using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
-using EnterSceneResponsePtr = std::shared_ptr<EnterSceneResponse>;
+using EnterSceneResponsePtr = std::shared_ptr<SeceneTestResponse>;
 using ClientResponsePtr = std::shared_ptr<ClientResponse>;
 using Node2PlayerMessagePtr = std::shared_ptr<Node2PlayerMessage>;
 

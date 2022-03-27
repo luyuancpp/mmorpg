@@ -23,7 +23,7 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
         std::bind(&ClientService::OnEnterGameReplied, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<LeaveGameResponse>(
         std::bind(&ClientService::OnLeaveGameReplied, this, _1, _2, _3));
-	dispatcher_.registerMessageCallback<EnterSceneResponse>(
+	dispatcher_.registerMessageCallback<SeceneTestResponse>(
 		std::bind(&ClientService::OnEnterSceneResponseReplied, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<ClientResponse>(
 		std::bind(&ClientService::OnGsReplied, this, _1, _2, _3));
@@ -87,7 +87,7 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-    EnterSceneRequest request;
+    SeceneTestRequest request;
     Send(request);
 }
 

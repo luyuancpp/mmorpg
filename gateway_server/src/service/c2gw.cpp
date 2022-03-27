@@ -205,7 +205,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         return;
     }
     //todo msg id error
-    const ::google::protobuf::ServiceDescriptor* player_service = playerscene::C2GsSceneService::descriptor();
+    const ::google::protobuf::ServiceDescriptor* player_service = playerservice::PlayerSceneService::descriptor();
     if (request->service() == player_service->full_name())
     {
 		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
