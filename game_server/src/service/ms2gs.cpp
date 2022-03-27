@@ -77,7 +77,7 @@ void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controlle
 	player_request->ParseFromString(player_message.message_byte());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
     serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
-    if (nullptr == response)//²»ĞèÒª»Ø¸´
+    if (nullptr == response)//ä¸éœ€è¦å›å¤
     {
         return;
     }
