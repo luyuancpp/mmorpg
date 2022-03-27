@@ -273,10 +273,13 @@ def genplayerservcielist(filename):
         newstr += '#include "' + f.replace(protodir, '') + '_player.h"\n'
     newstr += 'namespace game\n{\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
+    newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
         newstr += 'class ' + service.split('.')[1] + 'Impl : public ' + service.replace('.', '::')  + '{};\n'
     newstr += 'void InitPlayerServcie()\n{\n'
     for service in local.playerservicearray:
+        if service.find('playerservice') >= 0:
+            newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
         newstr += ', std::make_unique<' + service.split('.')[0] + '::Player' + service.split('.')[1] + 'Impl>(new '
         newstr +=  service.split('.')[1] + 'Impl));\n'
