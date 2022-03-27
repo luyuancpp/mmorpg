@@ -26,6 +26,7 @@ static const uint64_t kEmptyId = 0;
 
 namespace gateway
 {
+    extern std::unordered_set<std::string> g_open_player_services;
 
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
     ProtobufDispatcher& dispatcher, 
@@ -205,8 +206,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         return;
     }
     //todo msg id error
-    const ::google::protobuf::ServiceDescriptor* player_service = playerservice::PlayerSceneService::descriptor();
-    if (request->service() == player_service->full_name())
+    if (g_open_player_services.find(request->service()) != g_open_player_services.end())
     {
 		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
         msg->s_rq_.set_request(request->SerializeAsString());
