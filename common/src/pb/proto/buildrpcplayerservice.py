@@ -308,8 +308,17 @@ def md5copydir():
 
 genfile = []
 
+def get_file_list(file_path):
+    dir_list = os.listdir(file_path)
+    if not dir_list:
+        return
+    else:
+        dir_list = sorted(dir_list,key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
+        return dir_list
+
 def inputfile():
-    for each_filename in os.listdir(protodir):
+    dir_list  = get_file_list(protodir)
+    for each_filename in dir_list:
         genfile.append([protodir  + each_filename, playerservicedir])
 
 class myThread (threading.Thread):
