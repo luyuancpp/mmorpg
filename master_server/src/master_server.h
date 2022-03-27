@@ -44,7 +44,7 @@ namespace master
         void DoGateConnectGs(entt::entity gs, entt::entity gate);
         void OnGsNodeStart(entt::entity gs);
 
-        void receive(const common::RpcClientConnectionEvent& es);
+        void receive(const common::OnClientConnectEvent& es);
         void receive(const common::ServerConnectionEvent& es);
 
     private:      

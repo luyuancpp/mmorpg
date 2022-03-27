@@ -1,0 +1,26 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+import "common.proto";
+package gs2gw;
+option cc_generic_services = true;
+
+message MessageExtern
+{
+  uint64 conn_id = 1;
+}
+
+message MessageBody
+{
+  bytes body = 1;
+  uint32 msg_id = 2;
+}
+
+message PlayerMessageRequest
+{
+  MessageBody body = 1;
+  MessageExtern extern = 2;
+}
+
+service G2rgService {
+  rpc PlayerService (PlayerMessageRequest) returns (google.protobuf.Empty);
+}

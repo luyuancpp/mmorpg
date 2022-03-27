@@ -69,7 +69,7 @@ private:
             channel_->setConnection(conn);
         }
         emp_->emit<RegisterStubEvent>(conn, channel_);
-        emp_->emit<RpcClientConnectionEvent>(conn);
+        emp_->emit<OnClientConnectEvent>(conn);
     }
 
     TcpClient client_;
