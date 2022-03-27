@@ -24,6 +24,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\gs\gs_sessio.cpp" />
     <ClCompile Include="src\service\c2gw.cpp" />
+    <ClCompile Include="src\service\gs2gw.cpp" />
     <ClCompile Include="src\service\ms2gw.cpp" />
     <ClCompile Include="src\service\open_service.cpp" />
   </ItemGroup>
@@ -31,6 +32,7 @@
     <ClInclude Include="src\gate_player\gate_player_list.h" />
     <ClInclude Include="src\gateway_server.h" />
     <ClInclude Include="src\service\c2gw.h" />
+    <ClInclude Include="src\service\gs2gw.h" />
     <ClInclude Include="src\service\ms2gw.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

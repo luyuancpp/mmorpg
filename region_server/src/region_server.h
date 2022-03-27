@@ -26,7 +26,7 @@ public:
     using RegionInfoRpcRpcRC = std::shared_ptr<RegionInfoRpcClosure>;
     void StartServer(RegionInfoRpcRpcRC cp);
 
-    void receive(const common::RpcClientConnectionEvent& es);
+    void receive(const common::OnClientConnectEvent& es);
     void receive(const common::ServerConnectionEvent& es);
 private:
     muduo::net::EventLoop* loop_{ nullptr };

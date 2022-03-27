@@ -40,7 +40,7 @@ namespace database
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
 
-        void receive(const common::RpcClientConnectionEvent& es);
+        void receive(const common::OnClientConnectEvent& es);
 
     private:
         muduo::net::EventLoop* loop_{ nullptr };
