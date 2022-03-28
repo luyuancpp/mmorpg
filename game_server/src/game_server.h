@@ -46,6 +46,7 @@ public:
     void Register2Master(MasterSessionPtr& master_rpc_client);
 
     void receive(const common::OnConnected2ServerEvent& es);
+    void receive(const common::OnBeConnectedEvent& es);
 
 private:    
     void InitGlobalEntities();
