@@ -1,7 +1,7 @@
 #include "ms2gw.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/gs/gs_session.h"
+#include "src/network/gs_node.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/entity/entity.h"

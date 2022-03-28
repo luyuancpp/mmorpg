@@ -1,4 +1,4 @@
-#include "gs_session.h"
+#include "gs_node.h"
 
 namespace gateway
 {	

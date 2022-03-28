@@ -30,7 +30,7 @@
     <ClCompile Include="src\gate_player\gate_player_list.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\gs\gs_sessio.cpp">
+    <ClCompile Include="src\network\gs_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\open_service.cpp">
