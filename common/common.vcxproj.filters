@@ -278,7 +278,7 @@
     <ClInclude Include="src\server_common\rpc_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_common\closure_auto_done.h">
+    <ClInclude Include="src\server_common\rpc_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\rpc_channel.h">

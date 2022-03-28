@@ -8,7 +8,7 @@
 #include "src/gate_player/gate_player_list.h"
 #include "src/gateway_server.h"
 #include "src/return_code/error_code.h"
-#include "src/server_common/closure_auto_done.h"
+#include "src/server_common/rpc_closure.h"
 
 #include "gw2gs.pb.h"
 #include "c2gw.pb.h"

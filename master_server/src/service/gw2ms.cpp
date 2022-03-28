@@ -10,7 +10,7 @@
 #include "src/master_server.h"
 #include "src/master_player/ms_player_list.h"
 #include "src/scene/sceces.h"
-#include "src/server_common/closure_auto_done.h"
+#include "src/server_common/rpc_closure.h"
 #include "src/server_common/server_component.h"
 #include "src/sys/servernode_sys.hpp"
 

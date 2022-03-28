@@ -3,7 +3,7 @@
 #include "muduo/base/Timestamp.h"
 
 #include "src/mysql_database/mysql_database.h"
-#include "src/server_common/closure_auto_done.h"
+#include "src/server_common/rpc_closure.h"
 #include "src/redis_client/redis_client.h"
 
 #include "comp.pb.h"

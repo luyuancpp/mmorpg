@@ -1,6 +1,6 @@
 #include "rg2gs.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/server_common/closure_auto_done.h"
+#include "src/server_common/rpc_closure.h"
 
 using namespace common;
 ///<<< END WRITING YOUR CODE

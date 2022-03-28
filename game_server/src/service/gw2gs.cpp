@@ -4,7 +4,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
 #include "src/module/player_list/player_list.h"
-#include "src/server_common/closure_auto_done.h"
+#include "src/server_common/rpc_closure.h"
 #include "player_service.h"
 #include "c2gw.pb.h"
 using namespace common;
