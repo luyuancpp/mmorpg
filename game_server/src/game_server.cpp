@@ -43,7 +43,7 @@ void GameServer::InitNetwork()
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
     deploy_session_->subscribe<RegisterStubEvent>(deploy_stub_);
-    deploy_session_->subscribe<OnClientConnectedEvent>(*this);
+    deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
     deploy_session_->connect();
 }
 
@@ -107,7 +107,7 @@ void GameServer::Register2Master(MasterSessionPtr& master_rpc_client)
         &gs2ms::G2msService_Stub::StartGS);
 }
 
-void GameServer::receive(const OnClientConnectedEvent& es)
+void GameServer::receive(const OnConnected2ServerEvent& es)
 {
     if (!es.conn_->connected())
     {
@@ -182,7 +182,7 @@ void GameServer::ConnectMaster()
         auto& master_rpc_client = reg.get<MasterSessionPtr>(e);
         master_rpc_client->subscribe<RegisterStubEvent>(g2ms_stub_);
         master_rpc_client->registerService(&ms2g_impl_);
-        master_rpc_client->subscribe<OnClientConnectedEvent>(*this);
+        master_rpc_client->subscribe<OnConnected2ServerEvent>(*this);
         master_rpc_client->connect();
     }    
 }
@@ -191,7 +191,7 @@ void GameServer::ConnectRegion()
 {
     region_session_->subscribe<RegisterStubEvent>(g2rg_stub_);
     region_session_->registerService(&rg2g_impl_);
-    region_session_->subscribe<OnClientConnectedEvent>(*this);
+    region_session_->subscribe<OnConnected2ServerEvent>(*this);
     region_session_->connect();
 }
 

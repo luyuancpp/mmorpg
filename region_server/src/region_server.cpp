@@ -29,7 +29,7 @@ namespace region
         InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
         deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
         deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
-        deploy_rpc_client_->subscribe<OnClientConnectedEvent>(*this);
+        deploy_rpc_client_->subscribe<OnConnected2ServerEvent>(*this);
         deploy_rpc_client_->connect();
     }
 
@@ -43,7 +43,7 @@ namespace region
         server_->start();
     }
 
-    void RegionServer::receive(const OnClientConnectedEvent& es)
+    void RegionServer::receive(const OnConnected2ServerEvent& es)
     {
         if (!es.conn_->connected())
         {

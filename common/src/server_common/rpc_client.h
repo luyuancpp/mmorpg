@@ -69,7 +69,7 @@ private:
             channel_->setConnection(conn);
         }
         emp_->emit<RegisterStubEvent>(conn, channel_);
-        emp_->emit<OnClientConnectedEvent>(conn);
+        emp_->emit<OnConnected2ServerEvent>(conn);
     }
 
     TcpClient client_;
