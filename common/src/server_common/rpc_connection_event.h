@@ -20,9 +20,9 @@ namespace common
 
     };
 
-    struct OnClientConnectedEvent
+    struct OnConnected2ServerEvent
     {
-        OnClientConnectedEvent(const muduo::net::TcpConnectionPtr& conn)
+        OnConnected2ServerEvent(const muduo::net::TcpConnectionPtr& conn)
             : conn_(conn)
         {   
         }

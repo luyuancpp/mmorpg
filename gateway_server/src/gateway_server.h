@@ -65,7 +65,7 @@ public:
     void StartServer(ServerInfoRpcRC cp);
 
 
-    void receive(const common::OnClientConnectedEvent& es);
+    void receive(const common::OnConnected2ServerEvent& es);
 
 private:
     void OnConnection(const TcpConnectionPtr& conn)

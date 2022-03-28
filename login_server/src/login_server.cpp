@@ -31,7 +31,7 @@ void LoginServer::ConnectDeploy()
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
     deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
-    deploy_rpc_client_->subscribe<OnClientConnectedEvent>(*this);
+    deploy_rpc_client_->subscribe<OnConnected2ServerEvent>(*this);
     deploy_rpc_client_->connect();
 }
 
@@ -68,7 +68,7 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     Start();
 }
 
-void LoginServer::receive(const OnClientConnectedEvent& es)
+void LoginServer::receive(const OnConnected2ServerEvent& es)
 {
     if (!es.conn_->connected())
     {
