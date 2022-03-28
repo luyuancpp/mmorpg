@@ -142,6 +142,7 @@
     <ClInclude Include="src\module\master.hpp" />
     <ClInclude Include="src\factories\server_global_entity.hpp" />
     <ClInclude Include="src\game_server.h" />
+    <ClInclude Include="src\module\network\gate_node.h" />
     <ClInclude Include="src\module\player_list\player_list.h" />
     <ClInclude Include="src\service\gw2gs.h" />
     <ClInclude Include="src\service\ms2gs_scene_player.h" />

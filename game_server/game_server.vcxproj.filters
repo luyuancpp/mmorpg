@@ -89,5 +89,8 @@
     <ClInclude Include="src\service\ms2gs_scene_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\module\network\gate_node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

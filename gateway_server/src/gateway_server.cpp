@@ -58,16 +58,6 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
-void GatewayServer::Register2Master()
-{ 
-    auto& master_addr = master_session_->local_addr();
-    gw2ms::ConnectRequest request;
-    request.mutable_rpc_client()->set_ip(master_addr.toIp());
-    request.mutable_rpc_client()->set_port(master_addr.port());
-    request.set_gate_node_id(gate_node_id());
-    gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
-}
-
 void GatewayServer::receive(const OnClientConnectedEvent& es)
 {
     if (!es.conn_->connected())
@@ -82,17 +72,32 @@ void GatewayServer::receive(const OnClientConnectedEvent& es)
         {
             return;
         }
-        ServerInfoRpcRC c(std::make_shared<ServerInfoRpcClosure>());
-        c->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-        deploy_stub_.CallMethod(
-            &GatewayServer::StartServer,
-            c,
-            this,
-            &deploy::DeployService_Stub::ServerInfo);
+        EventLoop::getEventLoopOfCurrentThread()->runInLoop(
+            [this]() ->void
+            {
+                ServerInfoRpcRC c(std::make_shared<ServerInfoRpcClosure>());
+                c->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+                deploy_stub_.CallMethod(
+                    &GatewayServer::StartServer,
+                    c,
+                    this,
+                    &deploy::DeployService_Stub::ServerInfo);
+            }
+        );
     }
     else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_data_.master_info()))
     {
-        Register2Master();
+		EventLoop::getEventLoopOfCurrentThread()->runInLoop(
+            [this]() ->void
+			{
+				auto& master_addr = master_session_->local_addr();
+				gw2ms::ConnectRequest request;
+				request.mutable_rpc_client()->set_ip(master_addr.toIp());
+				request.mutable_rpc_client()->set_port(master_addr.port());
+				request.set_gate_node_id(gate_node_id());
+				gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
+			}
+        );
     }
 }
 

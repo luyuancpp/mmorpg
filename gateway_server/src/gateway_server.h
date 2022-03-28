@@ -59,7 +59,6 @@ public:
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void StartServer(ServerInfoRpcRC cp);
 
-    void Register2Master();
 
     void receive(const common::OnClientConnectedEvent& es);
 
