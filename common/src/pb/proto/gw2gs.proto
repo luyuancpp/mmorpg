@@ -1,6 +1,7 @@
 syntax = "proto3";
 package gw2gs;
 import "google/protobuf/empty.proto";
+import "common.proto";
 option cc_generic_services = true;
 
 message RpcClientRequest
@@ -22,7 +23,15 @@ message DisconnectRequest
   uint64 conn_id = 2;
 }
 
+message ConnectRequest
+{
+  IpPort rpc_client = 1;
+  uint32 gate_node_id = 2;
+}
+
+
 service Gw2gsService {
   rpc PlayerService (RpcClientRequest) returns (RpcClientResponse);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
+  rpc GwConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
 }
