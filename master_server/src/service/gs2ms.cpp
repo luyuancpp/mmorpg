@@ -1,4 +1,5 @@
 #include "gs2ms.h"
+#include "src/server_common/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
@@ -13,7 +14,6 @@
 #include "src/game_logic/game_registry.h"
 #include "src/master_server.h"
 #include "src/scene/sceces.h"
-#include "src/server_common/rpc_closure.h"
 #include "src/server_common/node_info.h"
 #include "src/server_common/server_component.h"
 
@@ -21,12 +21,12 @@
 #include "ms2gs.pb.h"
 
 using namespace master;
-using namespace common;
 using namespace muduo::net;
 
 using Ms2GsStubPtr = std::unique_ptr <common::RpcStub<ms2gs::Ms2gService_Stub>>;
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace gs2ms{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

@@ -1,4 +1,5 @@
 #include "ms2gw.h"
+#include "src/server_common/rpc_closure.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/network/gs_node.h"
@@ -17,6 +18,7 @@ using namespace common;
 using namespace gateway;
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace ms2gw{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

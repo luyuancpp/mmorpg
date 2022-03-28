@@ -1,16 +1,15 @@
 #include "l2db.h"
+#include "src/server_common/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE 
 #include "muduo/base/Timestamp.h"
 
 #include "src/mysql_database/mysql_database.h"
-#include "src/server_common/rpc_closure.h"
 #include "src/redis_client/redis_client.h"
 
 #include "comp.pb.h"
-
-using namespace common;
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace l2db{
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE

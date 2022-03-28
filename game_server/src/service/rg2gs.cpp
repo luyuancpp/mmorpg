@@ -1,10 +1,9 @@
 #include "rg2gs.h"
-///<<< BEGIN WRITING YOUR CODE
 #include "src/server_common/rpc_closure.h"
-
-using namespace common;
+///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace rg2gs{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

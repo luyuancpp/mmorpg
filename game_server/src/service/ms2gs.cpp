@@ -1,4 +1,5 @@
 #include "ms2gs.h"
+#include "src/server_common/rpc_closure.h"
 
 ///<<< BEGIN WRITING YOUR CODE 
 #include "muduo/base/Logging.h"
@@ -8,12 +9,11 @@
 #include "src/game_server.h"
 #include "src/module/player_list/player_list.h"
 #include "src/pb/pbc/msgmap.h"
-#include "src/server_common/rpc_closure.h"
 #include "src/service/player_service.h"
-using namespace common;
 using namespace game;
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace ms2gs{
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE

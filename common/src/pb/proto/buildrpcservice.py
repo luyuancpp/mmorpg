@@ -143,6 +143,7 @@ def gencppfile(filename, writedir):
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp')
     newcppfilename = servicedir + local.hfilename.replace('.h', '.cpp')
     newstr = '#include "' + local.hfilename + '"\n'
+    newstr += '#include "src/server_common/rpc_closure.h"\n'
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -165,6 +166,7 @@ def gencppfile(filename, writedir):
                     newstr += fileline + '\n'
                     part += 1
                     if part == 1 :
+                        newstr += 'using namespace common;\n'
                         newstr += namespacebegin()
                     continue     
                 elif part == cpprpcpart:
@@ -203,6 +205,7 @@ def gencppfile(filename, writedir):
                     break
     except FileNotFoundError:
             newstr += yourcode() + '\n'
+            newstr += 'using namespace common;\n'
             newstr += namespacebegin()
             newstr += yourcode() + '\n'
             serviceidx = 0

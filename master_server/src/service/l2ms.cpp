@@ -1,4 +1,5 @@
 #include "l2ms.h"
+#include "src/server_common/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
@@ -11,7 +12,6 @@
 #include "src/master_player/ms_player_list.h"
 #include "src/master_server.h"
 #include "src/return_code/error_code.h"
-#include "src/server_common/rpc_closure.h"
 #include "src/sys/servernode_sys.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/network/message_sys.hpp"
@@ -21,7 +21,6 @@
 #include "logic_proto/ms2gs_scene.pb.h"
 
 using namespace master;
-using namespace common;
 
 using Ms2GsStubPtr = std::unique_ptr <common::RpcStub<ms2gs::Ms2gService_Stub>>;
 
@@ -29,6 +28,7 @@ std::size_t kMaxPlayerSize = 1000;
 
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace l2ms{
 ///<<< BEGIN WRITING YOUR CODE
 void LoginServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
