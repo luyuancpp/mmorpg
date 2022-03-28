@@ -13,7 +13,6 @@
 #include "src/service/player_service.h"
 #include "src/service/replied_ms2gs.h"
 #include "src/server_common/deploy_rpcclient.h"
-#include "src/server_common/deploy_variable.h"
 #include "src/server_common/node_info.h"
 #include "src/pb/pbc/msgmap.h"
 

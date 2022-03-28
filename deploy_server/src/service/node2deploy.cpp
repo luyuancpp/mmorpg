@@ -6,7 +6,7 @@
 
 #include "src/deploy_server.h"
 #include "src/game_logic/entity/entity.h"
-#include "src/server_common/deploy_variable.h"
+#include "src/deploy_variable.h"
 #include "src/return_code/error_code.h"
 
 ///<<< END WRITING YOUR CODE
