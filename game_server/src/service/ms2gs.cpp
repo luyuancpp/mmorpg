@@ -8,7 +8,7 @@
 #include "src/game_server.h"
 #include "src/module/player_list/player_list.h"
 #include "src/pb/pbc/msgmap.h"
-#include "src/server_common/closure_auto_done.h"
+#include "src/server_common/rpc_closure.h"
 #include "src/service/player_service.h"
 using namespace common;
 using namespace game;

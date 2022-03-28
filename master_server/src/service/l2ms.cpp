@@ -11,7 +11,7 @@
 #include "src/master_player/ms_player_list.h"
 #include "src/master_server.h"
 #include "src/return_code/error_code.h"
-#include "src/server_common/closure_auto_done.h"
+#include "src/server_common/rpc_closure.h"
 #include "src/sys/servernode_sys.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/network/message_sys.hpp"

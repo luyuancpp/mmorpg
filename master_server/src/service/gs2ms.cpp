@@ -13,7 +13,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/master_server.h"
 #include "src/scene/sceces.h"
-#include "src/server_common/closure_auto_done.h"
+#include "src/server_common/rpc_closure.h"
 #include "src/server_common/node_info.h"
 #include "src/server_common/server_component.h"
 
