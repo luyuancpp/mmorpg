@@ -1,16 +1,16 @@
 #include "gw2gs.h"
+#include "src/server_common/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
 #include "src/module/player_list/player_list.h"
-#include "src/server_common/rpc_closure.h"
 #include "player_service.h"
 #include "c2gw.pb.h"
-using namespace common;
 using namespace game;
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace gw2gs{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -78,8 +78,8 @@ void Gw2gsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE Disconnect
-///<<< END WRITING YOUR CODE Disconnect
+///<<< BEGIN WRITING YOUR CODE GwConnectGs
+///<<< END WRITING YOUR CODE GwConnectGs
 }
 
 ///<<<rpc end

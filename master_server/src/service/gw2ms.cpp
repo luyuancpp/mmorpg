@@ -1,4 +1,5 @@
 #include "gw2ms.h"
+#include "src/server_common/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/net/InetAddress.h"
 
@@ -18,6 +19,7 @@ using namespace common;
 using namespace master;
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace gw2ms{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

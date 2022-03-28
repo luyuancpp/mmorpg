@@ -1,17 +1,17 @@
 #include "node2deploy.h"
+#include "src/server_common/rpc_closure.h"
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
 #include "src/deploy_server.h"
 #include "src/game_logic/entity/entity.h"
-#include "src/server_common/rpc_closure.h"
 #include "src/server_common/deploy_variable.h"
 #include "src/return_code/error_code.h"
 
-using namespace common;
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace deploy{
 ///<<< BEGIN WRITING YOUR CODE
 void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,

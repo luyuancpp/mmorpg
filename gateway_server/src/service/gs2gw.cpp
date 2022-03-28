@@ -1,9 +1,9 @@
 #include "gs2gw.h"
-///<<< BEGIN WRITING YOUR CODE
 #include "src/server_common/rpc_closure.h"
-using namespace common;
+///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
+using namespace common;
 namespace gs2gw{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
