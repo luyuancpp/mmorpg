@@ -122,18 +122,22 @@ void GameServer::receive(const OnClientConnectedEvent& es)
         {
             return;
         }
-
-        ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-        if (reg.get<eServerType>(game::global_entity()) == kMainServer)
-        {
-            cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-        }        
-        cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
-        deploy_stub_.CallMethod(
-            &GameServer::ServerInfo,
-            cp,
-            this,
-            &deploy::DeployService_Stub::ServerInfo);
+        EventLoop::getEventLoopOfCurrentThread()->runInLoop(
+            [this]() ->void
+            {
+                ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
+                if (reg.get<eServerType>(game::global_entity()) == kMainServer)
+                {
+                    cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+                }
+                cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+                deploy_stub_.CallMethod(
+                    &GameServer::ServerInfo,
+                    cp,
+                    this,
+                    &deploy::DeployService_Stub::ServerInfo);
+            }
+        );
     }
 
     for (auto e : reg.view<MasterSessionPtr>())
@@ -142,7 +146,7 @@ void GameServer::receive(const OnClientConnectedEvent& es)
         if (master_session->connected() &&
             master_session->peer_addr().toIpPort() == es.conn_->peerAddress().toIpPort())
         {
-            Register2Master(master_session);
+            EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&GameServer::Register2Master, this, master_session));
             break;
         }
     }
