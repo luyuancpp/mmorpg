@@ -11,7 +11,7 @@
 #include "src/game_logic/entity/entity.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/gate_player/gate_player_list.h"
-#include "src/gs/gs_session.h"
+#include "src/network/gs_node.h"
 #include "src/return_code/error_code.h"
 #include "src/server_common/rpc_closure.h"
 
