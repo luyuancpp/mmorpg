@@ -59,7 +59,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
     conn->setContext(RpcChannelPtr());
     // FIXME:
   }
-  emp_->emit<common::OnConnectedServerEvent>(conn);
+  emp_->emit<common::OnBeConnectedEvent>(conn);
 }
 
 // void RpcServer::onMessage(const TcpConnectionPtr& conn,
