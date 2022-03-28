@@ -9,6 +9,7 @@
 #include "src/game_logic/entity/entity.h"
 
 #include "gw2gs.pb.h"
+#include "common.pb.h"
 
 namespace gateway
 {
@@ -17,7 +18,7 @@ namespace gateway
 		using Gw2gsStubPtr = std::unique_ptr<common::RpcStub<gw2gs::Gw2gsService_Stub>>;
         common::RpcClientPtr gs_session_;		
         Gw2gsStubPtr gw2gs_stub_;
-        common::NodeInfo node_info_;
+        NodeInfo node_info_;
         common::EntityPtr entity_id;
     };
 

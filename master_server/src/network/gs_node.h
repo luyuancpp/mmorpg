@@ -8,13 +8,15 @@
 #include "src/server_common/rpc_stub.h"
 #include "src/server_common/server_component.h"
 
+#include "common.pb.h"
+
 namespace master
 {
 	struct GsNode
 	{
 		GsNode(const muduo::net::TcpConnectionPtr& conn)
 			: session_(conn){}
-		common::NodeInfo node_info_;
+		NodeInfo node_info_;
 		common::RpcServerConnection session_;
 	};
 

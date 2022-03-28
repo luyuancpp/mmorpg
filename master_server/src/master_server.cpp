@@ -86,7 +86,7 @@ void MasterServer::OnGsNodeStart(entt::entity gs)
 {
     auto& gsnode = reg.get<GsNodePtr>(gs);
     auto& gs_nodes = reg.get<GsNodes>(global_entity());
-    gs_nodes.emplace(gsnode->node_info_.node_id_, gs);
+    gs_nodes.emplace(gsnode->node_info_.node_id(), gs);
 }
 
 void MasterServer::receive(const OnClientConnectedEvent& es)
@@ -131,14 +131,14 @@ void MasterServer::receive(const OnConnectedServerEvent& es)
 				continue;
 			}
             auto gsnode = reg.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
-            if (nullptr != gsnode && (*gsnode)->node_info_.node_type_ == GAME_SERVER_NODTE_TYPE)
+            if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == GAME_SERVER_NODTE_TYPE)
             {
-                gs_nodes.erase((*gsnode)->node_info_.node_id_);
+                gs_nodes.erase((*gsnode)->node_info_.node_id());
             }
 			auto gatenode = reg.try_get<GateNodePtr>(e);//如果是gate
-			if (nullptr != gatenode && (*gatenode)->node_info_.node_type_ == GATEWAY_NOTE_TYPE)
+			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == GATEWAY_NOTE_TYPE)
 			{
-                 gate_nodes.erase((*gatenode)->node_info_.node_id_);
+                 gate_nodes.erase((*gatenode)->node_info_.node_id());
 			}
 			reg.destroy(e);
 			break;

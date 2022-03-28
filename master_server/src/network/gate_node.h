@@ -7,6 +7,8 @@
 #include "src/server_common/node_info.h"
 #include "src/server_common/server_component.h"
 
+#include "common.pb.h"
+
 namespace master
 {
 	struct GateNode
@@ -14,9 +16,9 @@ namespace master
 		GateNode(const muduo::net::TcpConnectionPtr& conn)
 			: session_(conn) {}
 
-		uint32_t node_id() const { return node_info_.node_id_; }
+		inline uint32_t node_id() const { return node_info_.node_id(); }
 
-		common::NodeInfo node_info_;
+		NodeInfo node_info_;
 		common::RpcServerConnection session_;
 	};
 	using GateNodePtr = std::shared_ptr<GateNode>;
