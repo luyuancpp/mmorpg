@@ -29,9 +29,9 @@ namespace common
         const muduo::net::TcpConnectionPtr& conn_;
     };
 
-    struct OnConnectedServerEvent
+    struct OnBeConnectedEvent//服务器被连接
     {
-        OnConnectedServerEvent(const muduo::net::TcpConnectionPtr& conn)
+        OnBeConnectedEvent(const muduo::net::TcpConnectionPtr& conn)
             : conn_(conn)
         {
         }
