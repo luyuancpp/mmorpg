@@ -72,5 +72,15 @@ void Gw2gsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE Disconnect
 }
 
+void Gw2gsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
+    const gw2gs::ConnectRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE Disconnect
+///<<< END WRITING YOUR CODE Disconnect
+}
+
 ///<<<rpc end
 }// namespace gw2gs

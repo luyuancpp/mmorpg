@@ -50,6 +50,11 @@ public:
         return server_info.ip() == conn_addr.toIp() && server_info.port() == conn_addr.port();
     }
 
+	bool IsSameAddr(const InetAddress& conn_addr, const InetAddress& server_info)
+	{
+		return server_info.toIp() == conn_addr.toIp() && server_info.port() == conn_addr.port();
+	}
+
     void LoadConfig();
 
     void Init();

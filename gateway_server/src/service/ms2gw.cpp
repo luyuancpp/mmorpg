@@ -33,7 +33,7 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     for (auto e : reg.view<InetAddress>())
     {
         auto& c = reg.get<InetAddress>(e);
-        if (gs_addr.toIpPort() == c.toIpPort())// to do node id
+        if (gs_addr.toIpPort() == c.toIpPort())// to do node id，已经连接过了
         {
             return;
         }

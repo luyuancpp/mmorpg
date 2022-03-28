@@ -1,8 +1,11 @@
 #include "gateway_server.h"
 
 #include "src/game_config/deploy_json.h"
+#include "src/network/gs_node.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/pb/pbc/msgmap.h"
+
+#include "gw2gs.pb.h"
 
 using namespace common;
 
@@ -60,12 +63,13 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
 
 void GatewayServer::receive(const OnClientConnectedEvent& es)
 {
-    if (!es.conn_->connected())
+    auto& conn = es.conn_;
+    if (!conn->connected())
     {
         return;
     }
 
-    if (IsSameAddr(es.conn_->peerAddress(), DeployConfig::GetSingleton().deploy_info()))
+    if (IsSameAddr(conn->peerAddress(), DeployConfig::GetSingleton().deploy_info()))
     {
         // started 
         if (nullptr != server_)
@@ -85,7 +89,7 @@ void GatewayServer::receive(const OnClientConnectedEvent& es)
             }
         );
     }
-    else if (IsSameAddr(es.conn_->peerAddress(), serverinfo_data_.master_info()))
+    else if (IsSameAddr(conn->peerAddress(), serverinfo_data_.master_info()))
     {
 		EventLoop::getEventLoopOfCurrentThread()->runInLoop(
             [this]() ->void
@@ -98,6 +102,27 @@ void GatewayServer::receive(const OnClientConnectedEvent& es)
 				gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
 			}
         );
+    }
+    else
+    {
+        for (auto& it : g_gs_nodes)
+        {
+            if (!IsSameAddr(it.second.gs_session_->peer_addr(), conn->peerAddress()))
+            {
+                break;
+            }
+            auto& gs_session = it.second;
+			EventLoop::getEventLoopOfCurrentThread()->runInLoop(
+				[this, &gs_session, &conn]() ->void
+				{
+					gw2gs::ConnectRequest request;
+                    request.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
+                    request.mutable_rpc_client()->set_port(conn->localAddress().port());
+                    request.set_gate_node_id(gate_node_id());
+                    gs_session.gw2gs_stub_->CallMethod(request, &gw2gs::Gw2gsService_Stub::GwConnectGs);
+				}
+			);
+        }
     }
 }
 
