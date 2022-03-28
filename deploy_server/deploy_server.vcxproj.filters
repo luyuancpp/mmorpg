@@ -38,5 +38,8 @@
     <ClInclude Include="src\reuse_game_id\reuse_game_id.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\deploy_variable.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

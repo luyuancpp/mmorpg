@@ -8,7 +8,6 @@
 #include "src/game_config/deploy_json.h"
 #include "src/redis_client/redis_client.h"
 #include "src/reuse_game_id/reuse_game_id.h"
-#include "src/server_common/deploy_variable.h"
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/rpc_connection_event.h"
 

@@ -299,9 +299,6 @@
     <ClInclude Include="src\server_common\rpc_stub.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\server_common\deploy_variable.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\server_common\server_component.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -318,9 +315,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_logic\comp\server_list.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\closure_auto_done\closure_aouto_done.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\game_ecs\game_registry.h">
@@ -471,9 +465,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\server_common\node_info.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\server_common\rpc_client_closure.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.h">

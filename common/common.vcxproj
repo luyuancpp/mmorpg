@@ -291,11 +291,9 @@
     <ClInclude Include="src\redis_client\redis_client.h" />
     <ClInclude Include="src\return_code\error_code.h" />
     <ClInclude Include="src\return_code\return_code.h" />
-    <ClInclude Include="src\server_common\deploy_variable.h" />
     <ClInclude Include="src\server_common\game_rpc.pb.h" />
     <ClInclude Include="src\server_common\node_info.h" />
     <ClInclude Include="src\server_common\rpc_channel.h" />
-  
     <ClInclude Include="src\server_common\rpc_closure.h" />
     <ClInclude Include="src\server_common\rpc_connection_event.h" />
     <ClInclude Include="src\server_common\rpc_server.h" />

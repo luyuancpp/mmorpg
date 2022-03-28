@@ -154,6 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\deploy_server.h" />
+    <ClInclude Include="src\deploy_variable.h" />
     <ClInclude Include="src\reuse_game_id\reuse_game_id.h" />
     <ClInclude Include="src\service\node2deploy.h" />
   </ItemGroup>
