@@ -18,13 +18,6 @@ namespace common
 		GATEWAY_NOTE_TYPE,
 	};
 
-class NodeInfo
-{
-public:
-    uint32_t node_id_{ 0 };
-    uint8_t node_type_{ 0 };
-};
-
 }//namespace common
 
 #endif//SRC_SERVER_COMMON_NODE_INFO_H_

@@ -55,3 +55,10 @@ message Node2PlayerMessage
   bytes response = 1;
   uint32 msg_id = 2;
 }
+
+message NodeInfo
+{
+  uint32 node_id = 1;
+  uint32 node_type = 2;
+}
+
