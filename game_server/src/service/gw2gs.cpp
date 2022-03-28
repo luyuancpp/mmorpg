@@ -1,10 +1,13 @@
 #include "gw2gs.h"
 #include "src/server_common/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
+#include "src/module/network/gate_node.h"
 #include "src/module/player_list/player_list.h"
+#include "src/server_common/server_component.h"
 #include "player_service.h"
 #include "c2gw.pb.h"
 using namespace game;
@@ -79,6 +82,23 @@ void Gw2gsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE GwConnectGs
+	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
+	entt::entity gate{ entt::null };
+	for (auto e : reg.view<RpcServerConnection>())
+	{
+        auto& conn = reg.get<RpcServerConnection>(e).conn_;
+		if (conn->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
+		{
+			continue;
+		}
+		auto& gate_nodes = reg.get<GateNodes>(global_entity());
+		auto& gate_node = *reg.emplace<GateNodePtr>(gate, std::make_shared<GateNode>(conn));
+		gate_node.node_info_.set_node_id(request->gate_node_id());
+		gate_node.node_info_.set_node_type(GATEWAY_NODE_TYPE);
+		gate_nodes.emplace(request->gate_node_id(), gate);
+		break;
+	}
+
 ///<<< END WRITING YOUR CODE GwConnectGs
 }
 

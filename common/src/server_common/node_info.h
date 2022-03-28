@@ -14,8 +14,8 @@ namespace common
 	{
 		LOGIN_NODE_TYPE,
 		MASTER_NODE_TYPE,
-		GAME_SERVER_NODTE_TYPE,
-		GATEWAY_NOTE_TYPE,
+		GAME_SERVER_NODE_TYPE,
+		GATEWAY_NODE_TYPE,
 	};
 
 }//namespace common

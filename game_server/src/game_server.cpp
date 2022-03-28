@@ -10,6 +10,7 @@
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/game_registry.h"
+#include "src/module/network/gate_node.h"
 #include "src/service/player_service.h"
 #include "src/service/replied_ms2gs.h"
 #include "src/server_common/deploy_rpcclient.h"
@@ -28,6 +29,7 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 
 void GameServer::Init()
 {
+    reg.emplace<GateNodes>(global_entity());
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     RegionConfig::GetSingleton().Load("region.json");
@@ -148,6 +150,36 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&GameServer::Register2Master, this, master_session));
             break;
         }
+    }
+}
+
+void GameServer::receive(const common::OnBeConnectedEvent& es)
+{
+    auto& conn = es.conn_;
+	if (conn->connected())
+	{
+		auto e = reg.create();
+		reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+	}
+    else
+    {
+		auto& gate_nodes = reg.get<GateNodes>(global_entity());
+		auto& peer_addr = conn->peerAddress();
+		for (auto e : reg.view<RpcServerConnection>())
+		{
+			auto& local_addr = reg.get<RpcServerConnection>(e).conn_->peerAddress();
+			if (local_addr.toIpPort() != peer_addr.toIpPort())
+			{
+				continue;
+			}
+			auto gatenode = reg.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
+			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == GATEWAY_NODE_TYPE)
+			{
+				gate_nodes.erase((*gatenode)->node_info_.node_id());
+			}
+			reg.destroy(e);
+			break;
+		}
     }
 }
 
