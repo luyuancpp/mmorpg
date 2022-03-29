@@ -56,10 +56,10 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	ms2gs::Ms2GsPlayerMessageRequest ms2gs_messag;
+	ms2gs::PlayerMessageRequest ms2gs_messag;
 	ms2gs_messag.mutable_msg()->set_msg_id(message_it->second);
 	ms2gs_messag.mutable_msg()->set_body(message.SerializeAsString());
-	ms2gs_messag.mutable_request_extern()->set_player_id(reg.get<common::Guid>(player));
+	ms2gs_messag.mutable_ex()->set_player_id(reg.get<common::Guid>(player));
 	auto& gs_session = reg.get<RpcServerConnection>(gs->server_entity());
 	gs_session.Send(ms2gs_messag);
 }
@@ -88,8 +88,8 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	ms2gw::Ms2PlayerMessageRequest ms2gw_messag;
-	ms2gw_messag.mutable_request_extern()->set_conn_id(player_session.gate_conn_id_.conn_id_);
+	ms2gw::PlayerMessageRequest ms2gw_messag;
+	ms2gw_messag.mutable_ex()->set_conn_id(player_session.gate_conn_id_.conn_id_);
 	ms2gw_messag.mutable_msg()->set_body(message.SerializeAsString());
 	ms2gw_messag.mutable_msg()->set_msg_id(message_it->second);
 	gate->session_.Send(message);

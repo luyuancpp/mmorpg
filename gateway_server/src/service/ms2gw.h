@@ -32,7 +32,7 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void PlayerMessage(::google::protobuf::RpcController* controller,
-        const ms2gw::Ms2PlayerMessageRequest* request,
+        const ms2gw::PlayerMessageRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
