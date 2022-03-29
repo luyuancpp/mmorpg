@@ -23,7 +23,7 @@ using EnterGameResponsePtr = std::shared_ptr<EnterGameResponse>;
 using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
 using EnterSceneResponsePtr = std::shared_ptr<SeceneTestResponse>;
 using ClientResponsePtr = std::shared_ptr<ClientResponse>;
-using Node2PlayerMessagePtr = std::shared_ptr<Node2PlayerMessage>;
+using MessageBodyPtr = std::shared_ptr<MessageBody>;
 
 class ClientService
 {
@@ -59,7 +59,7 @@ public:
 		muduo::Timestamp);
 
 	void OnNode2PlayerReplied(const muduo::net::TcpConnectionPtr& conn,
-		const Node2PlayerMessagePtr& message,
+		const MessageBodyPtr& message,
 		muduo::Timestamp);
     
     void EnterGame(common::Guid guid);

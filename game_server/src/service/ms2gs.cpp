@@ -1,5 +1,8 @@
 #include "ms2gs.h"
 #include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_closure.h"
 
 ///<<< BEGIN WRITING YOUR CODE 
 #include "muduo/base/Logging.h"
@@ -44,14 +47,14 @@ void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controlle
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerService
     auto& message_extern = request->request_extern();
-    auto& player_message = request->player_message();
+    auto& player_msg = request->msg();
 	auto it = g_players.find(message_extern.player_id());
 	if (it == g_players.end())
 	{
         LOG_INFO << "player not found " << message_extern.player_id();
         return;
 	}
-    auto msg_id = request->player_message().msg_id();
+    auto msg_id = request->msg().msg_id();
     if (msg_id >= g_serviceinfo.size() || nullptr == g_serviceinfo[msg_id].method)
     {
         LOG_INFO << "msg not found " << msg_id;
@@ -74,7 +77,7 @@ void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controlle
 		return;
 	}
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
-	player_request->ParseFromString(player_message.message_byte());
+	player_request->ParseFromString(player_msg.body());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
     serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
     if (nullptr == response)//不需要回复
@@ -82,8 +85,8 @@ void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controlle
         return;
     }
 	response->mutable_request_extern()->set_player_id(request->request_extern().player_id());
-	response->mutable_player_message()->set_message_byte(player_response->SerializeAsString());
-    response->mutable_player_message()->set_msg_id(msg_id);
+	response->mutable_msg()->set_body(player_response->SerializeAsString());
+    response->mutable_msg()->set_msg_id(msg_id);
 ///<<< END WRITING YOUR CODE PlayerService
 }
 
