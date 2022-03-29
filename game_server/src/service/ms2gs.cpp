@@ -1,15 +1,13 @@
 #include "ms2gs.h"
 #include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
-
 ///<<< BEGIN WRITING YOUR CODE 
 #include "muduo/base/Logging.h"
 
+#include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
+#include "src/module/network/gate_node.h"
 #include "src/module/player_list/player_list.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/player_service.h"
@@ -30,12 +28,27 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterGame
     auto it =  g_players.emplace(request->player_id(), common::EntityPtr());
-    if (it.second)
+    if (!it.second)
     {
-        auto entity = it.first->second.entity();
-        reg.emplace<GateConnId>(entity, request->conn_id());
-        reg.emplace<common::Guid>(entity, request->player_id());
+        return;
     }
+	auto player = it.first->second.entity();
+	reg.emplace<GateConnId>(player, request->conn_id());
+	reg.emplace<common::Guid>(player, request->player_id());
+    auto& gate_nodes = reg.get<GateNodes>(global_entity());
+    auto gate_it = gate_nodes.find(request->gate_node_id());
+    if (gate_it == gate_nodes.end())
+    {
+        LOG_ERROR << " gate not found" << request->gate_node_id();
+        return;
+    }
+    auto p_gate = reg.try_get<GateNodePtr>(gate_it->second);
+	if (nullptr == p_gate)
+	{
+		LOG_ERROR << " gate not found" << request->gate_node_id();
+		return;
+	}
+    reg.emplace<GateNodeWPtr>(player, *p_gate);
 ///<<< END WRITING YOUR CODE EnterGame
 }
 

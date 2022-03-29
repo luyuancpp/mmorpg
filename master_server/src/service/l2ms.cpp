@@ -1,8 +1,5 @@
 #include "l2ms.h"
 #include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
@@ -146,6 +143,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
         Ms2gsEnterGameRpcRplied message;
         message.s_rq_.set_player_id(guid);
         message.s_rq_.set_conn_id(request->conn_id());
+        message.s_rq_.set_gate_node_id(request->gate_node_id());
 		reg.get<Ms2GsStubPtr>(it->second)->CallMethod1(&LoginServiceImpl::Ms2gsEnterGameReplied,
 			message,
 			this,

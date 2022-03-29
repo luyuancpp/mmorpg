@@ -153,7 +153,7 @@ def gencppfile(filename, writedir):
             curservicename = ''
             nextrpcline = 0
             for fileline in file:
-                if skipheadline < 1 :
+                if skipheadline < 2 :
                     skipheadline += 1
                     continue
                 if part != cpprpcpart and fileline.find(yourcodebegin) >= 0:
