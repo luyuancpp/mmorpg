@@ -92,10 +92,11 @@ void Gw2gsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller
 			continue;
 		}
 		auto& gate_nodes = reg.get<GateNodes>(global_entity());
-		auto& gate_node = *reg.emplace<GateNodePtr>(gate, std::make_shared<GateNode>(conn));
+		auto& gate_node = *reg.emplace<GateNodePtr>(e, std::make_shared<GateNode>(conn));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(GATEWAY_NODE_TYPE);
 		gate_nodes.emplace(request->gate_node_id(), gate);
+        LOG_INFO << "gate node id " << request->gate_node_id();
 		break;
 	}
 

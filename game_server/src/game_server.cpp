@@ -29,7 +29,7 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 
 void GameServer::Init()
 {
-    reg.emplace<GateNodes>(global_entity());
+    
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     RegionConfig::GetSingleton().Load("region.json");
@@ -84,6 +84,7 @@ void GameServer::StartGSDeployReplied(StartGSRpcRC cp)
     server_deploy_ = cp->s_rp_->my_info();
     InetAddress node_addr(server_deploy_.ip(), server_deploy_.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, node_addr);
+    server_->subscribe<OnBeConnectedEvent>(*this);
     server_->registerService(&gw2gs_impl_);
     server_->start();   
 }
@@ -186,6 +187,7 @@ void GameServer::receive(const common::OnBeConnectedEvent& es)
 void GameServer::InitGlobalEntities()
 {
     reg.emplace<SceneMapComp>(global_entity());
+    reg.emplace<GateNodes>(global_entity());
 }
 
 void GameServer::InitRoomMasters(const deploy::ServerInfoResponse* resp)
