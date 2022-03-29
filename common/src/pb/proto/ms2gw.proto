@@ -24,22 +24,22 @@ message PlayerEnterGSRequest
   uint64 player_id = 3;
 }
 
-message Ms2GwMessageExtern
+message MessageExtern
 {
   uint64 conn_id = 1;
   uint32 gs_node_id = 2;
   uint64 player_id = 3;
 }
 
-message Ms2PlayerMessageRequest
+message PlayerMessageRequest
 {
   MessageBody msg = 1;
-  Ms2GwMessageExtern request_extern = 2;
+  MessageExtern ex = 2;
 }
 
 service Ms2gwService {
   rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
   rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
   rpc PlayerEnterGS (PlayerEnterGSRequest) returns (google.protobuf.Empty);
-  rpc PlayerMessage (Ms2PlayerMessageRequest) returns (google.protobuf.Empty);
+  rpc PlayerMessage (PlayerMessageRequest) returns (google.protobuf.Empty);
 }

@@ -60,13 +60,13 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
-    const ms2gs::Ms2GsPlayerMessageRequest* request,
-    ms2gs::Ms2GsPlayerMessageRespone* response,
+    const ms2gs::PlayerMessageRequest* request,
+    ms2gs::PlayerMessageRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE PlayerService
-    auto& message_extern = request->request_extern();
+    auto& message_extern = request->ex();
     auto& player_msg = request->msg();
 	auto it = g_players.find(message_extern.player_id());
 	if (it == g_players.end())
@@ -104,14 +104,14 @@ void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controlle
     {
         return;
     }
-	response->mutable_request_extern()->set_player_id(request->request_extern().player_id());
+	response->mutable_ex()->set_player_id(request->ex().player_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
     response->mutable_msg()->set_msg_id(msg_id);
 ///<<< END WRITING YOUR CODE PlayerService
 }
 
 void Ms2gServiceImpl::PlayerServiceNoRespone(::google::protobuf::RpcController* controller,
-    const ms2gs::Ms2GsPlayerMessageRequest* request,
+    const ms2gs::PlayerMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
