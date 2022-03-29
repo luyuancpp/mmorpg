@@ -1,8 +1,5 @@
 #include "gw2gs.h"
 #include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player_comp.hpp"
@@ -86,7 +83,6 @@ void Gw2gsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE GwConnectGs
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-	entt::entity gate{ entt::null };
 	for (auto e : reg.view<RpcServerConnection>())
 	{
         auto& conn = reg.get<RpcServerConnection>(e).conn_;
@@ -98,7 +94,7 @@ void Gw2gsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller
 		auto& gate_node = *reg.emplace<GateNodePtr>(e, std::make_shared<GateNode>(conn));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(GATEWAY_NODE_TYPE);
-		gate_nodes.emplace(request->gate_node_id(), gate);
+		gate_nodes.emplace(request->gate_node_id(), e);
         LOG_INFO << "gate node id " << request->gate_node_id();
 		break;
 	}
