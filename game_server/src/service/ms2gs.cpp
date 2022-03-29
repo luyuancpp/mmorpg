@@ -8,9 +8,13 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
 #include "src/module/network/gate_node.h"
+#include "src//module/network/message_sys.h"
 #include "src/module/player_list/player_list.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/player_service.h"
+
+#include "logic_proto/player_scene.pb.h"
+
 using namespace game;
 ///<<< END WRITING YOUR CODE
 
@@ -49,6 +53,9 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		return;
 	}
     reg.emplace<GateNodeWPtr>(player, *p_gate);
+
+    playerservice::EnterSeceneNotify msg;
+    Send2Player(msg, player);
 ///<<< END WRITING YOUR CODE EnterGame
 }
 

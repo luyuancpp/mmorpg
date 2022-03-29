@@ -12,9 +12,10 @@ message MessageExtern
 message PlayerMessageRequest
 {
   MessageBody msg = 1;
-  MessageExtern extern = 2;
+  MessageExtern ex = 2;
 }
 
-service G2rgService {
+service Gs2GwService 
+{
   rpc PlayerService (PlayerMessageRequest) returns (google.protobuf.Empty);
 }

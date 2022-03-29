@@ -6,7 +6,7 @@
 namespace gs2gw{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class G2rgServiceImpl : public G2rgService{
+class Gs2GwServiceImpl : public Gs2GwService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
