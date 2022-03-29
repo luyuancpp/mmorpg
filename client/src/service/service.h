@@ -58,7 +58,7 @@ public:
 		const ClientResponsePtr& message,
 		muduo::Timestamp);
 
-	void OnNode2PlayerReplied(const muduo::net::TcpConnectionPtr& conn,
+	void OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& conn,
 		const MessageBodyPtr& message,
 		muduo::Timestamp);
     

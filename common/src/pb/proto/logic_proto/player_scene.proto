@@ -12,6 +12,10 @@ message SeceneTestResponse
 	ClientError error = 1;
 }
 
+message EnterSeceneNotify
+{
+}
+
 service PlayerSceneService 
 {
   rpc EnterScene (SeceneTestRequest) returns (SeceneTestResponse);

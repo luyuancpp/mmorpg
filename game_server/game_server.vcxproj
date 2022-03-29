@@ -128,6 +128,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\factories\server_global_entity.cpp" />
     <ClCompile Include="src\game_server.cpp" />
+    <ClCompile Include="src\module\network\message_sys.cpp" />
     <ClCompile Include="src\module\player_list\player_list.cpp" />
     <ClCompile Include="src\service\gw2gs.cpp" />
     <ClCompile Include="src\service\ms2gs_scene_player.cpp" />
@@ -143,6 +144,7 @@
     <ClInclude Include="src\factories\server_global_entity.hpp" />
     <ClInclude Include="src\game_server.h" />
     <ClInclude Include="src\module\network\gate_node.h" />
+    <ClInclude Include="src\module\network\message_sys.h" />
     <ClInclude Include="src\module\player_list\player_list.h" />
     <ClInclude Include="src\service\gw2gs.h" />
     <ClInclude Include="src\service\ms2gs_scene_player.h" />

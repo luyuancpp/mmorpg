@@ -30,7 +30,7 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 	dispatcher_.registerMessageCallback<ClientResponse>(
 		std::bind(&ClientService::OnGsReplied, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<MessageBody>(
-		std::bind(&ClientService::OnNode2PlayerReplied, this, _1, _2, _3));
+		std::bind(&ClientService::OnMessageBodyReplied, this, _1, _2, _3));
     
 }
 
@@ -119,7 +119,7 @@ void ClientService::OnGsReplied(const muduo::net::TcpConnectionPtr& conn,
     dispatcher_.onProtobufMessage(conn, response, t);
 }
 
-void ClientService::OnNode2PlayerReplied(const muduo::net::TcpConnectionPtr& conn,
+void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& conn,
     const MessageBodyPtr& message,
     muduo::Timestamp t)
 {

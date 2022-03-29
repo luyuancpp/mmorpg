@@ -12,6 +12,7 @@ void PlayerPlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
     playerservice::SeceneTestResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterScene
+
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
