@@ -1,5 +1,8 @@
 #include "gw2gs.h"
 #include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_closure.h"
+#include "src/server_common/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player_comp.hpp"

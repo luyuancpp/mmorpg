@@ -33,7 +33,7 @@ message Ms2GwMessageExtern
 
 message Ms2PlayerMessageRequest
 {
-  Node2PlayerMessage player_message = 1;
+  MessageBody msg = 1;
   Ms2GwMessageExtern request_extern = 2;
 }
 

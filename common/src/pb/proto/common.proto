@@ -50,9 +50,9 @@ message SceneInfo
   uint64 scene_id = 2;
 }
 
-message Node2PlayerMessage
+message MessageBody
 {
-  bytes response = 1;
+  bytes body = 1;
   uint32 msg_id = 2;
 }
 
