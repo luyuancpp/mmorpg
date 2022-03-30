@@ -89,6 +89,12 @@ message LsLeaveGameRequest
   uint64 guid = 1;
 }
 
+message LsDisconnectRequest
+{
+  uint64 guid = 1;
+  string account = 2;
+}
+
 service MasterNodeService {
   rpc StartGS (StartGSRequest) returns (StartGSResponse);
   rpc OnGwConnect (ConnectRequest) returns (google.protobuf.Empty);
@@ -98,6 +104,6 @@ service MasterNodeService {
   rpc OnGwDisconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc OnLsLoginAccount (LoginAccountRequest) returns (LoginAccountResponse);
   rpc OnLsEnterGame (EnterGameRequest) returns (EnterGameResponese);
-  rpc OnLsLeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
-  rpc OnLsDisconnect (DisconnectRequest) returns (google.protobuf.Empty); 
+  rpc OnLsLeaveGame (LsLeaveGameRequest) returns (google.protobuf.Empty);
+  rpc OnLsDisconnect (LsDisconnectRequest) returns (google.protobuf.Empty); 
 }
