@@ -4,7 +4,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "src/event/event.h"
-#include "src/service/l2ms.h"
+#include "src/service/ms_node.h"
 #include "src/redis_client/redis_client.h"
 #include "src/service/ms_node.h"
 #include "src/server_common/deploy_rpcclient.h"
@@ -14,7 +14,6 @@
 #include "src/server_common/server_component.h"
 
 #include "node2deploy.pb.h"
-#include "l2ms.pb.h"
 #include "ms2db.pb.h"
 
 namespace master
@@ -61,7 +60,6 @@ namespace master
         common::RpcClientPtr db_rpc_client_;
         LoginStubms2db msl2_login_stub_;
 
-        l2ms::LoginServiceImpl l2ms_impl_;
         msservice::MasterNodeServiceImpl node_service_impl_;
  
         servers_info_data serverinfos_;

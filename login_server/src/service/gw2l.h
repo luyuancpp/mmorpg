@@ -12,7 +12,7 @@
 
 #include "gw2l.pb.h"
 #include "l2db.pb.h"
-#include "l2ms.pb.h"
+#include "ms_node.pb.h"
 ///<<< END WRITING YOUR CODE
 namespace gw2l{
  ///<<< BEGIN WRITING YOUR CODE
@@ -24,7 +24,7 @@ public:
 	using PlayerPtr = std::shared_ptr<AccountPlayer>;
 	using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
 	using ConnectionEntityMap = std::unordered_map<common::Guid, common::EntityPtr>;
-	using LoginStubl2ms = common::RpcStub<l2ms::LoginService_Stub>;
+	using LoginStubl2ms = common::RpcStub<msservice::MasterNodeService_Stub>;
 	using LoginStubl2db = common::RpcStub<l2db::LoginService_Stub>;
 
 	LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
@@ -35,7 +35,7 @@ public:
 	using LoginRpcReplied = std::shared_ptr< common::RpcString<l2db::LoginRequest, l2db::LoginResponse, gw2l::LoginResponse>>;
 	void LoginAccountDbReplied(LoginRpcReplied d);
 
-	using LoginMasterRP = std::shared_ptr<common::RpcString<l2ms::LoginAccountRequest, l2ms::LoginAccountResponse, gw2l::LoginResponse>>;
+	using LoginMasterRP = std::shared_ptr<common::RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
 	void LoginAccountMSReplied(LoginMasterRP d);
 
 	using CreatePlayerRpcReplied = std::shared_ptr<common::RpcString<l2db::CreatePlayerRequest, l2db::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
@@ -44,7 +44,7 @@ public:
 	using EnterGameDbRpcReplied = std::shared_ptr<common::RpcString<l2db::EnterGameRequest, l2db::EnterGameResponse, gw2l::EnterGameResponse>>;
 	void EnterGameDbReplied(EnterGameDbRpcReplied d);
 
-	using EnterGameMSRpcReplied = std::shared_ptr<common::RpcString<l2ms::EnterGameRequest, l2ms::EnterGameResponese, gw2l::EnterGameResponse>>;
+	using EnterGameMSRpcReplied = std::shared_ptr<common::RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
 	void EnterMSReplied(EnterGameMSRpcReplied d);
 
 	void EnterMS(common::Guid guid,
@@ -57,7 +57,7 @@ private:
 
 	RedisClientPtr redis_;
 	ConnectionEntityMap connections_;
-	LoginStubl2ms& l2ms_login_stub_;
+	LoginStubl2ms& ms_node_stub_;
 	LoginStubl2db& l2db_login_stub_;
 ///<<< END WRITING YOUR CODE
 public:

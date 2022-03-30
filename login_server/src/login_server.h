@@ -11,6 +11,8 @@
 
 #include "node2deploy.pb.h"
 
+#include "ms_node.pb.h"
+
 namespace login
 {
     class LoginServer : muduo::noncopyable, public common::Receiver<LoginServer>
@@ -18,7 +20,7 @@ namespace login
     public:
         using RedisClientPtr = common::RedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-        using LoginStubl2ms = common::RpcStub<l2ms::LoginService_Stub>;
+        using LoginStubl2ms = common::RpcStub<msservice::MasterNodeService_Stub>;
         using LoginStubl2db = common::RpcStub<l2db::LoginService_Stub>;
 
         LoginServer(muduo::net::EventLoop* loop);

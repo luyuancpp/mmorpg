@@ -17,7 +17,7 @@ namespace gw2l{
  ///<<< BEGIN WRITING YOUR CODE 
 LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
     LoginStubl2db& l2db_login_stub)
-    : l2ms_login_stub_(l2ms_login_stub),
+    : ms_node_stub_(l2ms_login_stub),
         l2db_login_stub_(l2db_login_stub)
 {}
 
@@ -110,10 +110,10 @@ void LoginServiceImpl::EnterMS(common::Guid guid,
 	cp->s_rq_.set_guid(guid);
 	cp->s_rq_.set_conn_id(response->conn_id());
 	cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
-	l2ms_login_stub_.CallMethodString(this,
+	ms_node_stub_.CallMethodString(this,
 		&LoginServiceImpl::EnterMSReplied,
 		cp,
-		&l2ms::LoginService_Stub::EnterGame);
+		&msservice::MasterNodeService_Stub::OnLsEnterGame);
 }
 
 void LoginServiceImpl::UpdateAccount(uint64_t conn_id, const ::account_database& a_d)
@@ -158,7 +158,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
         reg.emplace<std::string>(it.first->second.entity(), request->account());
 		reg.emplace<uint32_t>(it.first->second.entity(), request->gate_node_id());
     }
-    l2ms_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &l2ms::LoginService_Stub::LoginAccount);
+    ms_node_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE Login
 }
 
@@ -267,10 +267,10 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 		return;
 	}
 	auto& player = (*p_player);
-	l2ms::LeaveGameRequest ms_request;
+	msservice::LsLeaveGameRequest ms_request;
 	ms_request.set_guid(player->PlayingId());
-	l2ms_login_stub_.CallMethod(ms_request,
-		&l2ms::LoginService_Stub::LeaveGame);
+	ms_node_stub_.CallMethod(ms_request,
+		&msservice::MasterNodeService_Stub::OnLsLeaveGame);
 	connections_.erase(cit);
 ///<<< END WRITING YOUR CODE LeaveGame
 }
@@ -289,7 +289,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	}
 	//连接已经登录过
 
-	l2ms::DisconnectRequest message;
+	msservice::LsDisconnectRequest message;
 	auto conn = cit->second.entity();
 	message.set_account(reg.get<std::string>(conn));
 	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
@@ -298,8 +298,8 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 		auto& player = (*p_player);
 		message.set_guid(player->PlayingId());
 	}
-	l2ms_login_stub_.CallMethod(message,
-		&l2ms::LoginService_Stub::Disconect);
+	ms_node_stub_.CallMethod(message,
+		&msservice::MasterNodeService_Stub::OnLsDisconnect);
 	connections_.erase(cit);
 ///<<< END WRITING YOUR CODE Disconnect
 }

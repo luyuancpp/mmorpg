@@ -144,9 +144,6 @@
     <ClCompile Include="src\pb\pbc\l2db.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pb\pbc\l2ms.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pb\pbc\mainscene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -411,9 +408,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\l2db.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\l2ms.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\mainscene_config.pb.h">
