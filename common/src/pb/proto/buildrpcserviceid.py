@@ -71,7 +71,7 @@ def genmsgidcpp(fullfilename):
         newstr += '{"' + kv[0][3] + '.' + kv[0][1] + '", ' + str(kv[1]) + '},\n'
     newstr = newstr.strip('\n').strip(',')
     newstr += '};\n'
-    newstr += '\nstd::array<RpcService, ' + str(local.msgcount) + '> g_serviceinfo;\n'
+    newstr += '\nstd::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
     newstr += 'void InitMsgService()\n{\n'
     for kv in local.rpcmsgnameid:
         curpkg = kv[0][3]
@@ -87,7 +87,6 @@ def genmsgidhead(fullfilename):
     HEAD_FILE = 'COMMON_SRC_PB_PBC_' + local.cppfilename.replace('.', '_').upper()
     newstr = '#ifndef  ' + HEAD_FILE + '\n'
     newstr += '#define  ' + HEAD_FILE + '\n'
-    newstr += '#include <array>\n'
     newstr += '#include <string>\n'
     newstr += '#include <unordered_map>\n\n'
     newstr += 'struct RpcService\n'
@@ -98,7 +97,7 @@ def genmsgidhead(fullfilename):
     newstr +=  tabstr + 'const char* response{nullptr};\n'
     newstr += '};\n'
     newstr += 'extern std::unordered_map<std::string, uint32_t> g_msgid;\n'
-    newstr += 'extern std::array<RpcService, ' + str(local.msgcount) + '> g_serviceinfo;\n'
+    newstr += 'extern std::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
     newstr += 'void InitMsgService();\n'
     newstr += '#endif//  ' + HEAD_FILE + '\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
