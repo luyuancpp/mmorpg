@@ -25,29 +25,38 @@ cpkg = 'package'
 servicedir = './md5/'
 writedir = '../pbc/'
 protodir = './logic_proto/'
-perserviceidcount = 150
+local.baseserviceid = 0
+local.basemsgidcount = 200
+local.playerserviceid = local.basemsgidcount + 1
+local.perserviceidcount = 150
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
-def parsefile(filename, fileid):
+def parsefile(filename):
     local.rpcarry = []
     local.pkg = ''
     local.service = ''
     rpcbegin = 0 
-    serviceid = fileid * perserviceidcount
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 s = fileline.strip(' ').split(' ')
                 idstr = local.pkg.upper() + '_' + s[1].upper()  + '_ID'
-                line = 'const uint32_t ' + idstr + ' = ' + str(serviceid)
+                index = 0
+                if local.pkg != 'playerservice' :
+                    index = local.baseserviceid
+                    line = 'const uint32_t ' + idstr + ' = ' + str(local.baseserviceid)
+                    local.baseserviceid += 1
+                else:
+                    index = local.playerserviceid 
+                    line = 'const uint32_t ' + idstr + ' = ' + str(index)
+                    local.playerserviceid  += local.perserviceidcount
                 line += ';\n'
                 rq = s[2].replace('(', '').replace(')', '')
                 rp = s[4].replace('(', '').replace(')', '').replace(';', '').replace('\n', '')
                 pbfullname = local.pkg + '.' + s[2].replace('(', '').replace(')', '')
-                local.rpcmsgnameid.append([[s[1], rq, rp, local.pkg, local.service],serviceid])
-                serviceid += 1
+                local.rpcmsgnameid.append([[s[1], rq, rp, local.pkg, local.service],index])
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif fileline.find('service ') >= 0:
@@ -109,9 +118,6 @@ def md5copy(destfilename, filename):
     md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
     shutil.copy(gennewfilename, destfilename)
 
-def generate(filename, fileid):
-    parsefile(filename, fileid)
-
 genfile = ['ms2gs.proto', 'ms2gw.proto', 'gs2gw.proto']
 
 def inputfile():
@@ -119,10 +125,8 @@ def inputfile():
         genfile.append(protodir + '/' + each_filename)
 
 def main():
-    filelen = len(genfile)
-    local.msgcount = filelen * perserviceidcount
-    for i in range(0, filelen):
-           generate(genfile[i], i)
+    for file in genfile:
+           parsefile(file)
 inputfile()
 main()
 cppsrcfilename = servicedir + local.cppfilename
