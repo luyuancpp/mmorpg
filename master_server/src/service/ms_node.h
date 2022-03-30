@@ -2,6 +2,13 @@
 #define MASTER_SERVER_SRC_SERVICE_MS_NODE_H_
 #include "ms_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "src/account_player/ms_account.h"
+#include "src/common_type/common_type.h"
+#include "src/comp/ms_login_account_comp.hpp"
+#include "src/game_logic/comp/account_comp.hpp"
+#include "src/server_common/rpc_closure.h"
+
+#include "ms2gs.pb.h"
 ///<<< END WRITING YOUR CODE
 namespace msservice{
 ///<<< BEGIN WRITING YOUR CODE
@@ -9,6 +16,12 @@ namespace msservice{
 class MasterNodeServiceImpl : public MasterNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
+	using AccountMap = std::unordered_map<std::string, master::MSLoginAccount>;
+
+    using Ms2gsEnterGameRpcRplied = common::NormalClosure<ms2gs::EnterGameRequest, ms2gs::EnterGameRespone>;
+	void Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied);
+private:
+	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE
 public:
     void StartGS(::google::protobuf::RpcController* controller,
@@ -38,6 +51,26 @@ public:
 
     void OnGwDisconnect(::google::protobuf::RpcController* controller,
         const msservice::DisconnectRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
+    void OnLsLoginAccount(::google::protobuf::RpcController* controller,
+        const msservice::LoginAccountRequest* request,
+        msservice::LoginAccountResponse* response,
+        ::google::protobuf::Closure* done)override;
+
+    void OnLsEnterGame(::google::protobuf::RpcController* controller,
+        const msservice::EnterGameRequest* request,
+        msservice::EnterGameResponese* response,
+        ::google::protobuf::Closure* done)override;
+
+    void OnLsLeaveGame(::google::protobuf::RpcController* controller,
+        const msservice::LsLeaveGameRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
+    void OnLsDisconnect(::google::protobuf::RpcController* controller,
+        const msservice::LsDisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
