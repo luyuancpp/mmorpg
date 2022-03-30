@@ -19,5 +19,5 @@ message EnterSeceneS2C
 service PlayerSceneService 
 {
   rpc EnterScene (SeceneTestRequest) returns (SeceneTestResponse);
-  rpc EnterSceneNotify (EnterSeceneS2C) returns (SeceneTestResponse);
+  rpc EnterSceneNotify (EnterSeceneS2C) returns (EnterSeceneS2C);
 }
