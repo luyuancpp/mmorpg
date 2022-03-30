@@ -18,7 +18,7 @@
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
 
-#include "gw2ms.pb.h"
+#include "ms_node.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -29,7 +29,7 @@ class GatewayServer : noncopyable, public common::Receiver<GatewayServer>
 {
 public:
     using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
-    using RpcStubgw2ms = common::RpcStub<gw2ms::Gw2msService_Stub>;
+    using RpcStubMsNode = common::RpcStub<msservice::MasterNodeService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GatewayServer(EventLoop* loop)
@@ -40,7 +40,7 @@ public:
     { }
 
     RpcStubgw2l& gw2l_stub() { return gw2l_login_stub_; }
-    RpcStubgw2ms& gw2ms_stub() { return gw2ms_stub_; }
+    RpcStubMsNode& gw2ms_stub() { return gw2ms_stub_; }
     gs2gw::Gs2GwServiceImpl& gs2gw_service_impl() { return gs2gw_service_impl_; }
     inline uint32_t gate_node_id()const { return serverinfo_data_.gateway_info().id(); }
 
@@ -101,7 +101,7 @@ private:
 
     common::RpcClientPtr master_session_;
     ms2gw::Ms2gwServiceImpl ms2gw_service_impl_;
-    RpcStubgw2ms gw2ms_stub_;
+    RpcStubMsNode gw2ms_stub_;
 
     gs2gw::Gs2GwServiceImpl gs2gw_service_impl_;
 };

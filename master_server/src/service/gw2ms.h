@@ -1,6 +1,6 @@
 #ifndef MASTER_SERVER_SRC_SERVICE_GW2MS_H_
 #define MASTER_SERVER_SRC_SERVICE_GW2MS_H_
-#include "gw2ms.pb.h"
+#include "ms_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 namespace master
 {

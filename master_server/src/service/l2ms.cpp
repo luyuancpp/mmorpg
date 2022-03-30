@@ -24,7 +24,7 @@ using namespace master;
 
 using Ms2GsStubPtr = std::unique_ptr <common::RpcStub<ms2gs::Ms2gService_Stub>>;
 
-std::size_t kMaxPlayerSize = 1000;
+static std::size_t kMaxPlayerSize = 1000;
 
 ///<<< END WRITING YOUR CODE
 

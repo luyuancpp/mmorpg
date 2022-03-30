@@ -3,7 +3,7 @@
 
 #include "src/server_common/rpc_closure.h"
 
-#include "gs2ms.pb.h"
+#include "ms_node.pb.h"
 
 namespace ms2gs
 {
@@ -13,8 +13,8 @@ public:
 
     static RepliedMs2g& GetSingleton() { thread_local RepliedMs2g singleton; return singleton; }
 
-    using StartGameMasterRpcClosure = common::NormalClosure<gs2ms::StartGSRequest,
-        gs2ms::StartGSResponse>;
+    using StartGameMasterRpcClosure = common::NormalClosure<msservice::StartGSRequest,
+        msservice::StartGSResponse>;
     using StartGameMasterRpcRC = std::shared_ptr<StartGameMasterRpcClosure>;
     void StartGSMasterReplied(StartGameMasterRpcRC cp);
 private:

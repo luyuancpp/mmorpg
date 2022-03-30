@@ -26,9 +26,7 @@ namespace master
 {
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-      redis_(std::make_shared<RedisClient>()),
-      g2ms_impl_(),
-      gw2ms_impl_()
+      redis_(std::make_shared<RedisClient>())
 { 
     global_entity() = reg.create();
     reg.emplace<GsNodes>(global_entity());
@@ -67,8 +65,7 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     server_->subscribe<OnBeConnectedEvent>(*this);
 
     server_->registerService(&l2ms_impl_);
-    server_->registerService(&g2ms_impl_);
-    server_->registerService(&gw2ms_impl_);
+    server_->registerService(&node_service_impl_);
     server_->start();
 }
 

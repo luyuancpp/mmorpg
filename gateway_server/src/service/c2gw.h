@@ -14,7 +14,7 @@
 
 #include "c2gw.pb.h"
 #include "gw2l.pb.h"
-#include "gw2ms.pb.h"
+#include "ms_node.pb.h"
 #include "gw2gs.pb.h"
 
 using namespace muduo;

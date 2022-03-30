@@ -6,8 +6,7 @@
 #include "src/event/event.h"
 #include "src/service/l2ms.h"
 #include "src/redis_client/redis_client.h"
-#include "src/service/gs2ms.h"
-#include "src/service/gw2ms.h"
+#include "src/service/ms_node.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
@@ -63,8 +62,7 @@ namespace master
         LoginStubms2db msl2_login_stub_;
 
         l2ms::LoginServiceImpl l2ms_impl_;
-        gs2ms::G2msServiceImpl g2ms_impl_;
-        gw2ms::Gw2msServiceImpl gw2ms_impl_;        
+        msservice::MasterNodeServiceImpl node_service_impl_;
  
         servers_info_data serverinfos_;
     };

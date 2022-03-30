@@ -1,0 +1,70 @@
+syntax = "proto3";
+import "common.proto";
+import "google/protobuf/empty.proto";
+package msservice;
+option cc_generic_services = true;
+
+
+message StartGSRequest
+{
+  IpPort rpc_client = 1;
+  IpPort rpc_server = 2;
+  uint32 gs_node_id = 3;
+  uint32 server_type = 4;
+  uint64 master_server_addr = 5;
+}
+
+message StartGSResponse
+{
+  uint32 master_node_id = 1;
+  repeated SceneInfo scenes_info = 2;
+  uint32 gate_node_id = 3;
+}
+
+message ClientMessageRequest
+{
+  IpPort rpc_client = 1;
+}
+
+message ConnectRequest
+{
+  IpPort rpc_client = 1;
+  uint32 gate_node_id = 2;
+}
+
+message ConnectedGameRequest
+{
+  IpPort rpc_client = 1;
+}
+
+message GSIdRequest
+{
+  uint64 guid = 1;
+  uint64 conn_id = 2;
+}
+
+message LeaveGameRequest
+{
+  uint64 conn_id = 1;
+}
+
+message PlayerDisconnectRequest
+{
+  uint64 conn_id = 1;
+}
+
+message DisconnectRequest
+{
+  uint64 guid = 1;
+  uint64 conn_id = 2;
+}
+
+
+service MasterNodeService {
+  rpc StartGS (StartGSRequest) returns (StartGSResponse);
+  rpc OnGwConnect (ConnectRequest) returns (google.protobuf.Empty);
+  rpc OnGwPlayerDisconnect (PlayerDisconnectRequest) returns (google.protobuf.Empty);
+  rpc OnGwLeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
+  rpc OnGwPlayerService (ClientMessageRequest) returns (google.protobuf.Empty);
+  rpc OnGwDisconnect (DisconnectRequest) returns (google.protobuf.Empty); 
+}

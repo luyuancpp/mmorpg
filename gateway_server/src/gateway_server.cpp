@@ -95,11 +95,11 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
             [this]() ->void
 			{
 				auto& master_addr = master_session_->local_addr();
-				gw2ms::ConnectRequest request;
+				msservice::ConnectRequest request;
 				request.mutable_rpc_client()->set_ip(master_addr.toIp());
 				request.mutable_rpc_client()->set_port(master_addr.port());
 				request.set_gate_node_id(gate_node_id());
-				gw2ms_stub_.CallMethod(request, &gw2ms::Gw2msService_Stub::GwConnectMaster);
+				gw2ms_stub_.CallMethod(request, &msservice::MasterNodeService_Stub::OnGwConnect);
 			}
         );
     }

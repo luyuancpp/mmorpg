@@ -13,7 +13,7 @@
 #include "src/redis_client/redis_client.h"
 #include "src/server_common/rpc_closure.h"
 
-#include "gs2ms.pb.h"
+#include "ms_node.pb.h"
 #include "gs2rg.pb.h"
 
 namespace game
@@ -25,7 +25,7 @@ class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
 public:
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-    using StubG2ms = common::RpcStub<gs2ms::G2msService_Stub>;
+    using StubMsNode = common::RpcStub<msservice::MasterNodeService_Stub>;
     using StubG2rg = common::RpcStub<gs2rg::G2rgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
@@ -64,7 +64,7 @@ private:
     common::RpcClientPtr deploy_session_;
     deploy::DeployStub deploy_stub_;
 
-    StubG2ms g2ms_stub_;
+    StubMsNode g2ms_stub_;
 
     common::RpcClientPtr region_session_;
     StubG2rg g2rg_stub_;
