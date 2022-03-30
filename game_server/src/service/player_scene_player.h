@@ -19,7 +19,7 @@ public:
 
     void EnterSceneNotify(common::EntityPtr& entity,
         const playerservice::EnterSeceneS2C* request,
-        playerservice::SeceneTestResponse* response);
+        playerservice::EnterSeceneS2C* response);
 
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         common::EntityPtr& entity,
@@ -35,7 +35,7 @@ public:
         case 1:
             EnterSceneNotify(entity,
             ::google::protobuf::internal::DownCast<const playerservice::EnterSeceneS2C*>( request),
-            ::google::protobuf::internal::DownCast<playerservice::SeceneTestResponse*>(response));
+            ::google::protobuf::internal::DownCast<playerservice::EnterSeceneS2C*>(response));
         break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";

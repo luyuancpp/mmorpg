@@ -18,7 +18,7 @@ void PlayerPlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
 
 void PlayerPlayerSceneServiceImpl::EnterSceneNotify(common::EntityPtr& entity,
     const playerservice::EnterSeceneS2C* request,
-    playerservice::SeceneTestResponse* response)
+    playerservice::EnterSeceneS2C* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterSceneNotify
 ///<<< END WRITING YOUR CODE EnterSceneNotify
