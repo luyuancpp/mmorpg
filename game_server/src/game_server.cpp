@@ -93,7 +93,7 @@ void GameServer::Register2Master(MasterSessionPtr& master_rpc_client)
 {
     ms2gs::RepliedMs2g::StartGameMasterRpcRC scp(std::make_shared<ms2gs::RepliedMs2g::StartGameMasterRpcClosure>());
     auto& master_local_addr = master_rpc_client->local_addr();
-    gs2ms::StartGSRequest& request = scp->s_rq_;
+    msservice::StartGSRequest& request = scp->s_rq_;
     auto session_info = request.mutable_rpc_client();
     auto node_info = request.mutable_rpc_server();
     session_info->set_ip(master_local_addr.toIp());
@@ -107,7 +107,7 @@ void GameServer::Register2Master(MasterSessionPtr& master_rpc_client)
         &ms2gs::RepliedMs2g::StartGSMasterReplied,
         scp,
         &ms2gs::RepliedMs2g::GetSingleton(),
-        &gs2ms::G2msService_Stub::StartGS);
+        &msservice::MasterNodeService_Stub::StartGS);
 }
 
 void GameServer::receive(const OnConnected2ServerEvent& es)

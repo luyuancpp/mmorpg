@@ -24,12 +24,6 @@
     <ClCompile Include="src\master_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\gs2ms.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\gw2ms.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\factories\scene_factories.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -48,6 +42,9 @@
     <ClCompile Include="src\sys\servernode_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\ms_node.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h">
@@ -57,12 +54,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\master_registry\master_registry.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\gs2ms.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\gw2ms.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\factories\server_global_entity.hpp">
@@ -90,6 +81,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\network\player_session.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\ms_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

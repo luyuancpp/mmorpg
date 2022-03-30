@@ -49,6 +49,7 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
+    //todo 玩家没登录直接发其他消息，乱发消息
     if (!conn->connected())
     {
         auto conn_id = uint64_t(conn.get());
@@ -66,11 +67,11 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             if (guid != common::kInvalidGuid)
             {
-				gw2ms::DisconnectRequest request;
+				msservice::DisconnectRequest request;
 				request.set_conn_id(conn_id);
 				request.set_guid(guid);
 				//注意这里可能会有问题，如果发的connit 到ms 但是player id不对应怎么办?
-				g_gateway_server->gw2ms_stub().CallMethod(request, &gw2ms::Gw2msService_Stub::Disconnect);
+				g_gateway_server->gw2ms_stub().CallMethod(request, &msservice::MasterNodeService_Stub::OnGwDisconnect);
             }           
         }
 

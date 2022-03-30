@@ -96,9 +96,6 @@
     <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pb\pb2sol2\gw2ms_sol2.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pb\pb2sol2\pb2sol2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -135,9 +132,6 @@
     <ClCompile Include="src\pb\pbc\gs2gw.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pb\pbc\gs2ms.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\pb\pbc\gs2rg.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -145,9 +139,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\gw2l.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pb\pbc\gw2ms.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\l2db.pb.cc">
@@ -199,6 +190,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\logic_proto\player_team.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\ms_node.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -407,9 +401,6 @@
     <ClInclude Include="src\pb\pbc\gs2gw.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pb\pbc\gs2ms.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pb\pbc\gs2rg.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -417,9 +408,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\gw2l.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\gw2ms.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\l2db.pb.h">
@@ -474,6 +462,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\logic_proto\player_team.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\ms_node.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -123,7 +123,7 @@ def gentotalfile(destdir, srcdir):
         cppnewstr += '}//' + namespacestr + '\n'
         file.write(cppnewstr)    
 
-genluasol('gw2ms.proto', srcdir)
+#genluasol('gw2ms.proto', srcdir)
 genluasol('c2gw.proto', srcdir)
 
 gentotalfile(destdir, srcdir)
