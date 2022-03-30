@@ -17,6 +17,10 @@ public:
         const playerservice::SeceneTestRequest* request,
         playerservice::SeceneTestResponse* response);
 
+    void EnterSceneNotify(common::EntityPtr& entity,
+        const playerservice::EnterSeceneS2C* request,
+        playerservice::SeceneTestResponse* response);
+
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         common::EntityPtr& entity,
         const ::google::protobuf::Message* request,
@@ -26,6 +30,11 @@ public:
         case 0:
             EnterScene(entity,
             ::google::protobuf::internal::DownCast<const playerservice::SeceneTestRequest*>( request),
+            ::google::protobuf::internal::DownCast<playerservice::SeceneTestResponse*>(response));
+        break;
+        case 1:
+            EnterSceneNotify(entity,
+            ::google::protobuf::internal::DownCast<const playerservice::EnterSeceneS2C*>( request),
             ::google::protobuf::internal::DownCast<playerservice::SeceneTestResponse*>(response));
         break;
         default:

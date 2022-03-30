@@ -54,7 +54,7 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	}
     reg.emplace<GateNodeWPtr>(player, *p_gate);
 
-    playerservice::EnterSeceneNotify msg;
+    playerservice::EnterSeceneS2C msg;
     Send2Player(msg, player);
 ///<<< END WRITING YOUR CODE EnterGame
 }

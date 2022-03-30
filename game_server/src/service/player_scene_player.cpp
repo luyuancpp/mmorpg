@@ -16,5 +16,13 @@ void PlayerPlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
+void PlayerPlayerSceneServiceImpl::EnterSceneNotify(common::EntityPtr& entity,
+    const playerservice::EnterSeceneS2C* request,
+    playerservice::SeceneTestResponse* response)
+{
+///<<< BEGIN WRITING YOUR CODE EnterSceneNotify
+///<<< END WRITING YOUR CODE EnterSceneNotify
+}
+
 ///<<<rpc end
 }// namespace playerservice

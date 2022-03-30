@@ -53,7 +53,7 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 	gs2gw_messag.mutable_msg()->set_msg_id(message_it->second);
 	gs2gw_messag.mutable_msg()->set_body(message.SerializeAsString());
 	gs2gw_messag.mutable_ex()->set_conn_id(reg.get<GateConnId>(player).conn_id_);
-	gate->session_.Send(message);
+	gate->session_.Send(gs2gw_messag);
 }
 
 void Send2MsPlayer(const google::protobuf::Message& message, common::Guid player_id)

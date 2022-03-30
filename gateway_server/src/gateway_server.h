@@ -13,6 +13,7 @@
 #include "src/server_common/codec/codec.h"
 #include "src/server_common/codec/dispatcher.h"
 #include "src/service/ms2gw.h"
+#include "src/service/gs2gw.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
@@ -40,6 +41,7 @@ public:
 
     RpcStubgw2l& gw2l_stub() { return gw2l_login_stub_; }
     RpcStubgw2ms& gw2ms_stub() { return gw2ms_stub_; }
+    gs2gw::Gs2GwServiceImpl& gs2gw_service_impl() { return gs2gw_service_impl_; }
     inline uint32_t gate_node_id()const { return serverinfo_data_.gateway_info().id(); }
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
@@ -100,6 +102,8 @@ private:
     common::RpcClientPtr master_session_;
     ms2gw::Ms2gwServiceImpl ms2gw_service_impl_;
     RpcStubgw2ms gw2ms_stub_;
+
+    gs2gw::Gs2GwServiceImpl gs2gw_service_impl_;
 };
 
 } // namespace gateway
