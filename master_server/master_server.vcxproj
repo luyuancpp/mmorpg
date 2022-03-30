@@ -157,7 +157,6 @@
     <ClCompile Include="src\factories\server_global_entity.cpp" />
     <ClCompile Include="src\master_player\ms_player_list.cpp" />
     <ClCompile Include="src\master_server.cpp" />
-    <ClCompile Include="src\service\l2ms.cpp" />
     <ClCompile Include="src\scene\sceces.cpp" />
     <ClCompile Include="src\network\message_sys.cpp" />
     <ClCompile Include="src\service\ms_node.cpp" />
@@ -171,7 +170,6 @@
     <ClInclude Include="src\network\player_session.h" />
     <ClInclude Include="src\master_player\ms_player_list.h" />
     <ClInclude Include="src\master_server.h" />
-    <ClInclude Include="src\service\l2ms.h" />
     <ClInclude Include="src\master_registry\master_registry.h" />
     <ClInclude Include="src\scene\sceces.h" />
     <ClInclude Include="src\network\message_sys.hpp" />

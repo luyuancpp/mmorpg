@@ -18,9 +18,6 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\l2ms.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\master_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -48,9 +45,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\l2ms.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\master_registry\master_registry.h">

@@ -64,7 +64,6 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
 
-    server_->registerService(&l2ms_impl_);
     server_->registerService(&node_service_impl_);
     server_->start();
 }
