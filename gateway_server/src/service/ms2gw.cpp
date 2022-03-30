@@ -46,6 +46,7 @@ void Ms2gwServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     gsi.gw2gs_stub_ = std::make_unique<RpcStub<gw2gs::Gw2gsService_Stub>>();
     gsi.gs_session_->subscribe<RegisterStubEvent>(*(gsi.gw2gs_stub_.get()));
     gsi.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gateway_server);
+    gsi.gs_session_->registerService(&g_gateway_server->gs2gw_service_impl());
     gsi.gs_session_->connect();
     reg.emplace<InetAddress>(gsi.entity_id.entity(), gs_addr);
     g_gs_nodes.emplace(request->gs_node_id(), std::move(gsi));

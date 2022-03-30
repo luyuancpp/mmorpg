@@ -76,6 +76,7 @@ def genheadrpcfun():
     servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
     index = 0
     for service in local.rpcarry:
+        s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
         servicestr += tabstr + tabstr + tabstr + s[1] + '(entity,\n'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
@@ -88,6 +89,7 @@ def genheadrpcfun():
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<' 
         servicestr += respone + '));\n'
         servicestr += tabstr + tabstr +'break;\n'
+        index += 1
     servicestr += tabstr + tabstr + 'default:\n'
     servicestr += tabstr + tabstr + tabstr + 'GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";\n'
     servicestr += tabstr + tabstr + 'break;\n'
