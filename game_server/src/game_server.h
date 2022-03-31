@@ -5,7 +5,6 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/service/gs_node.h"
-#include "src/service/rg2gs.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/rpc_stub.h"
@@ -70,7 +69,6 @@ private:
 
     ::game_server_db server_deploy_;
 
-    rg2gs::Rg2gServiceImpl rg2g_impl_;
     gsservice::GsServiceImpl gs_service_impl_;
 };
 

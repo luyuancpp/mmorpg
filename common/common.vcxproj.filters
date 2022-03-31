@@ -40,7 +40,6 @@
     <ClCompile Include="src\pb\pbc\mysql_database_test.pb.cc" />
     <ClCompile Include="src\pb\pbc\node2deploy.pb.cc" />
     <ClCompile Include="src\pb\pbc\pb3.pb.cc" />
-    <ClCompile Include="src\pb\pbc\rg2gs.pb.cc" />
     <ClCompile Include="src\pb\pbc\scene_config.pb.cc" />
     <ClCompile Include="src\server_common\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
@@ -107,7 +106,6 @@
     <ClInclude Include="src\pb\pbc\mysql_database_test.pb.h" />
     <ClInclude Include="src\pb\pbc\node2deploy.pb.h" />
     <ClInclude Include="src\pb\pbc\pb3.pb.h" />
-    <ClInclude Include="src\pb\pbc\rg2gs.pb.h" />
     <ClInclude Include="src\pb\pbc\scene_config.pb.h" />
     <ClInclude Include="src\server_common\codec\codec.h" />
     <ClInclude Include="src\server_common\codec\dispatcher.h" />

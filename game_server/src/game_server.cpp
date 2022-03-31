@@ -224,7 +224,7 @@ void GameServer::ConnectMaster()
 void GameServer::ConnectRegion()
 {
     region_session_->subscribe<RegisterStubEvent>(g2rg_stub_);
-    region_session_->registerService(&rg2g_impl_);
+    region_session_->registerService(&gs_service_impl_);
     region_session_->subscribe<OnConnected2ServerEvent>(*this);
     region_session_->connect();
 }
