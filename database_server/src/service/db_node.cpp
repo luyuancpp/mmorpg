@@ -10,14 +10,14 @@
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace l2db{
+namespace dbservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
-    const l2db::LoginRequest* request,
-    l2db::LoginResponse* response,
+void DbServiceImpl::Login(::google::protobuf::RpcController* controller,
+    const dbservice::LoginRequest* request,
+    dbservice::LoginResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -38,9 +38,9 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE Login
 }
 
-void LoginServiceImpl::CreatePlayer(::google::protobuf::RpcController* controller,
-    const l2db::CreatePlayerRequest* request,
-    l2db::CreatePlayerResponse* response,
+void DbServiceImpl::CreatePlayer(::google::protobuf::RpcController* controller,
+    const dbservice::CreatePlayerRequest* request,
+    dbservice::CreatePlayerResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -58,9 +58,9 @@ void LoginServiceImpl::CreatePlayer(::google::protobuf::RpcController* controlle
 ///<<< END WRITING YOUR CODE CreatePlayer
 }
 
-void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-    const l2db::EnterGameRequest* request,
-    l2db::EnterGameResponse* response,
+void DbServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
+    const dbservice::EnterGameRequest* request,
+    dbservice::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -76,4 +76,4 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 ///<<<rpc end
-}// namespace l2db
+}// namespace dbservice

@@ -59,7 +59,7 @@ namespace gw2l{
 		auto c(std::make_shared<LoginRpcReplied::element_type>(*d));
 		c->s_rq_.set_account(account);
 		c->s_rq_.set_conn_id(d->s_rq_.conn_id());
-		l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountDbReplied, c, &l2db::LoginService_Stub::Login);
+		l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountDbReplied, c, &dbservice::DbService_Stub::Login);
 	}
 
 	void LoginServiceImpl::LoginAccountDbReplied(LoginRpcReplied d)
@@ -192,7 +192,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 		l2db_login_stub_.CallMethodString(this,
 			&LoginServiceImpl::CreatePlayerDbReplied,
 			c,
-			&l2db::LoginService_Stub::CreatePlayer);
+			&dbservice::DbService_Stub::CreatePlayer);
 ///<<< END WRITING YOUR CODE CreatPlayer
 }
 
@@ -243,7 +243,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		l2db_login_stub_.CallMethodString(this,
 			&LoginServiceImpl::EnterGameDbReplied,
 			c,
-			&l2db::LoginService_Stub::EnterGame);
+			&dbservice::DbService_Stub::EnterGame);
 ///<<< END WRITING YOUR CODE EnterGame
 }
 

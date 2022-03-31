@@ -24,7 +24,7 @@ public:
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     using StubMsNode = common::RpcStub<msservice::MasterNodeService_Stub>;
-    using StubG2rg = common::RpcStub<gs2rg::G2rgService_Stub>;
+    using StubG2rg = common::RpcStub<regionservcie::G2rgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
 

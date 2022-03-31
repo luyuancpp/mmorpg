@@ -21,7 +21,7 @@ namespace login
         using RedisClientPtr = common::RedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using LoginStubl2ms = common::RpcStub<msservice::MasterNodeService_Stub>;
-        using LoginStubl2db = common::RpcStub<l2db::LoginService_Stub>;
+        using LoginStubl2db = common::RpcStub<dbservice::DbService_Stub>;
 
         LoginServer(muduo::net::EventLoop* loop);
             
