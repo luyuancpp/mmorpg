@@ -16,7 +16,7 @@
 #include "src/pb/pbc/msgmap.h"
 
 #include "ms2gs.pb.h"
-#include "ms2gw.pb.h"
+#include "gw_node.pb.h"
 
 using namespace common;
 
@@ -71,7 +71,7 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
 void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
 {
     auto& connection_info = reg.get<InetAddress>(gs);
-    ms2gw::StartGSRequest request;
+    gwservice::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
     request.set_gs_node_id(reg.get<GSDataPtrComp>(gs)->node_id());

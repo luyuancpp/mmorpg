@@ -12,7 +12,7 @@
 #include "src/server_common/server_component.h"
 #include "src/pb/pbc/msgmap.h"
 
-#include "ms2gw.pb.h"
+#include "gw_node.pb.h"
 #include "ms2gs.pb.h"
 
 using namespace common;
@@ -88,10 +88,10 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	ms2gw::PlayerMessageRequest ms2gw_messag;
-	ms2gw_messag.mutable_ex()->set_conn_id(player_session.gate_conn_id_.conn_id_);
-	ms2gw_messag.mutable_msg()->set_body(message.SerializeAsString());
-	ms2gw_messag.mutable_msg()->set_msg_id(message_it->second);
+	gwservice::PlayerMessageRequest msg_wrapper;
+	msg_wrapper.mutable_ex()->set_conn_id(player_session.gate_conn_id_.conn_id_);
+	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
+	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	gate->session_.Send(message);
 }
 

@@ -46,7 +46,7 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     auto& master_info = serverinfo_data_.master_info();
     InetAddress master_addr(master_info.ip(), master_info.port());
     master_session_ = std::make_unique<RpcClient>(loop_, master_addr);
-    master_session_->registerService(&ms2gw_service_impl_);
+    master_session_->registerService(&node_service_impl_);
     master_session_->subscribe<RegisterStubEvent>(gw2ms_stub_);
     master_session_->subscribe<OnConnected2ServerEvent>(*this);
     master_session_->connect();        

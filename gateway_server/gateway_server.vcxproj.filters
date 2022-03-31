@@ -24,9 +24,6 @@
     <ClCompile Include="src\gateway_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\ms2gw.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\gate_player\gate_player_list.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -36,7 +33,7 @@
     <ClCompile Include="src\service\open_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\gs2gw.cpp">
+    <ClCompile Include="src\service\gw_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,13 +44,10 @@
     <ClInclude Include="src\gateway_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\ms2gw.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\gate_player\gate_player_list.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\gs2gw.h">
+    <ClInclude Include="src\service\gw_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

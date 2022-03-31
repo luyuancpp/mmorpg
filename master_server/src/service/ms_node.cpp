@@ -24,7 +24,7 @@
 #include "src/sys/servernode_sys.hpp"
 
 #include "ms2gs.pb.h"
-#include "ms2gw.pb.h"
+#include "gw_node.pb.h"
 #include "logic_proto/ms2gs_scene.pb.h"
 
 using namespace master;
@@ -45,7 +45,7 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 		return;
 	}
 	auto player_session = reg.get<PlayerSession>(player);
-	ms2gw::PlayerEnterGSRequest messag;
+	gwservice::PlayerEnterGSRequest messag;
 	messag.set_conn_id(replied.s_rq_.conn_id());
 	messag.set_gs_node_id(player_session.gs_node_id());
 	messag.set_player_id(replied.s_rq_.player_id());
