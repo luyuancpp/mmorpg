@@ -12,7 +12,7 @@
 #include "src/server_common/rpc_closure.h"
 
 #include "ms_node.pb.h"
-#include "gs2rg.pb.h"
+#include "rg_node.pb.h"
 
 namespace game
 {

@@ -23,11 +23,7 @@
     <ClCompile Include="src\pb\pbc\db_base.pb.cc" />
     <ClCompile Include="src\pb\pbc\deploy_database_table.pb.cc" />
     <ClCompile Include="src\pb\pbc\global_variable_config.pb.cc" />
-    <ClCompile Include="src\pb\pbc\gs2db.pb.cc" />
-    <ClCompile Include="src\pb\pbc\gs2rg.pb.cc" />
-    <ClCompile Include="src\pb\pbc\gw2l.pb.cc" />
     <ClCompile Include="src\pb\pbc\gw_node.pb.cc" />
-    <ClCompile Include="src\pb\pbc\l2db.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\player_scene.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\player_team.pb.cc" />
@@ -38,7 +34,6 @@
     <ClCompile Include="src\pb\pbc\ms_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_table.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_test.pb.cc" />
-    <ClCompile Include="src\pb\pbc\node2deploy.pb.cc" />
     <ClCompile Include="src\pb\pbc\pb3.pb.cc" />
     <ClCompile Include="src\pb\pbc\scene_config.pb.cc" />
     <ClCompile Include="src\server_common\codec\codec.cc" />
@@ -57,6 +52,10 @@
     <ClCompile Include="src\server_common\rpc_channel.cc" />
     <ClCompile Include="src\server_common\rpc_server.cc" />
     <ClCompile Include="src\pb\pbc\gs_node.pb.cc" />
+    <ClCompile Include="src\pb\pbc\db_node.pb.cc" />
+    <ClCompile Include="src\pb\pbc\deploy_node.pb.cc" />
+    <ClCompile Include="src\pb\pbc\login_node.pb.cc" />
+    <ClCompile Include="src\pb\pbc\rg_node.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -89,11 +88,7 @@
     <ClInclude Include="src\pb\pbc\db_base.pb.h" />
     <ClInclude Include="src\pb\pbc\deploy_database_table.pb.h" />
     <ClInclude Include="src\pb\pbc\global_variable_config.pb.h" />
-    <ClInclude Include="src\pb\pbc\gs2db.pb.h" />
-    <ClInclude Include="src\pb\pbc\gs2rg.pb.h" />
-    <ClInclude Include="src\pb\pbc\gw2l.pb.h" />
     <ClInclude Include="src\pb\pbc\gw_node.pb.h" />
-    <ClInclude Include="src\pb\pbc\l2db.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\player_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\player_team.pb.h" />
@@ -104,7 +99,6 @@
     <ClInclude Include="src\pb\pbc\ms_node.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_table.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_test.pb.h" />
-    <ClInclude Include="src\pb\pbc\node2deploy.pb.h" />
     <ClInclude Include="src\pb\pbc\pb3.pb.h" />
     <ClInclude Include="src\pb\pbc\scene_config.pb.h" />
     <ClInclude Include="src\server_common\codec\codec.h" />
@@ -143,5 +137,9 @@
     <ClInclude Include="src\server_common\server_sequence.h" />
     <ClInclude Include="src\snow_flake\snow_flake.h" />
     <ClInclude Include="src\pb\pbc\gs_node.pb.h" />
+    <ClInclude Include="src\pb\pbc\db_node.pb.h" />
+    <ClInclude Include="src\pb\pbc\deploy_node.pb.h" />
+    <ClInclude Include="src\pb\pbc\login_node.pb.h" />
+    <ClInclude Include="src\pb\pbc\rg_node.pb.h" />
   </ItemGroup>
 </Project>

@@ -13,7 +13,7 @@
 #include "src/server_common/server_sequence.h"
 
 #include "c2gw.pb.h"
-#include "gw2l.pb.h"
+#include "login_node.pb.h"
 #include "ms_node.pb.h"
 #include "gs_node.pb.h"
 

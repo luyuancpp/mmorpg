@@ -13,7 +13,7 @@
 #include "src/server_common/rpc_server.h"
 #include "src/server_common/server_component.h"
 
-#include "node2deploy.pb.h"
+#include "deploy_node.pb.h"
 #include "ms2db.pb.h"
 
 namespace master
