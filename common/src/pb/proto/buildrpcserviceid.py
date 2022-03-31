@@ -117,7 +117,7 @@ def md5copy(destfilename, filename):
     md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
     shutil.copy(gennewfilename, destfilename)
 
-genfile = ['ms2gs.proto', 'ms_node.proto', 'gw_node.proto']
+genfile = ['gs_node.proto', 'ms_node.proto', 'gw_node.proto']
 
 def inputfile():
     for each_filename in os.listdir(protodir):

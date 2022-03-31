@@ -23,13 +23,13 @@
 #include "src/server_common/server_component.h"
 #include "src/sys/servernode_sys.hpp"
 
-#include "ms2gs.pb.h"
+#include "gs_node.pb.h"
 #include "gw_node.pb.h"
 #include "logic_proto/ms2gs_scene.pb.h"
 
 using namespace master;
 
-using Ms2GsStubPtr = std::unique_ptr <common::RpcStub<ms2gs::Ms2gService_Stub>>;
+using GsStubPtr = std::unique_ptr <common::RpcStub<gsservice::GsService_Stub>>;
 
 std::size_t kMaxPlayerSize = 1000;
 ///<<< END WRITING YOUR CODE
@@ -94,7 +94,7 @@ void MasterNodeServiceImpl::StartGS(::google::protobuf::RpcController* controlle
 	reg.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);
 	reg.emplace<GsNodePtr>(gs_entity, gs);
 
-	reg.emplace<Ms2GsStubPtr>(gs_entity, std::make_unique<Ms2GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+	reg.emplace<GsStubPtr>(gs_entity, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
@@ -341,10 +341,10 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		message.s_rq_.set_player_id(guid);
 		message.s_rq_.set_conn_id(request->conn_id());
 		message.s_rq_.set_gate_node_id(request->gate_node_id());
-		reg.get<Ms2GsStubPtr>(it->second)->CallMethod1(&MasterNodeServiceImpl::Ms2gsEnterGameReplied,
+		reg.get<GsStubPtr>(it->second)->CallMethod1(&MasterNodeServiceImpl::Ms2gsEnterGameReplied,
 			message,
 			this,
-			&ms2gs::Ms2gService_Stub::EnterGame);
+			&gsservice::GsService_Stub::EnterGame);
 	}
 ///<<< END WRITING YOUR CODE OnLsEnterGame
 }

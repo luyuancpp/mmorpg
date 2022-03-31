@@ -85,7 +85,7 @@ void GameServer::StartGSDeployReplied(StartGSRpcRC cp)
     InetAddress node_addr(server_deploy_.ip(), server_deploy_.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, node_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
-    server_->registerService(&gw2gs_impl_);
+    server_->registerService(&gs_service_impl_);
     server_->start();   
 }
 
@@ -215,7 +215,7 @@ void GameServer::ConnectMaster()
     {
         auto& master_rpc_client = reg.get<MasterSessionPtr>(e);
         master_rpc_client->subscribe<RegisterStubEvent>(g2ms_stub_);
-        master_rpc_client->registerService(&ms2g_impl_);
+        master_rpc_client->registerService(&gs_service_impl_);
         master_rpc_client->subscribe<OnConnected2ServerEvent>(*this);
         master_rpc_client->connect();
     }    

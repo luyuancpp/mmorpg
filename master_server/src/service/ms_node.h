@@ -8,7 +8,7 @@
 #include "src/game_logic/comp/account_comp.hpp"
 #include "src/server_common/rpc_closure.h"
 
-#include "ms2gs.pb.h"
+#include "gs_node.pb.h"
 ///<<< END WRITING YOUR CODE
 namespace msservice{
 ///<<< BEGIN WRITING YOUR CODE
@@ -18,7 +18,7 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 	using AccountMap = std::unordered_map<std::string, master::MSLoginAccount>;
 
-    using Ms2gsEnterGameRpcRplied = common::NormalClosure<ms2gs::EnterGameRequest, ms2gs::EnterGameRespone>;
+    using Ms2gsEnterGameRpcRplied = common::NormalClosure<gsservice::EnterGameRequest, gsservice::EnterGameRespone>;
 	void Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied);
 private:
 	AccountMap logined_accounts_;

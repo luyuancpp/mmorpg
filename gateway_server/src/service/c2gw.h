@@ -15,7 +15,7 @@
 #include "c2gw.pb.h"
 #include "gw2l.pb.h"
 #include "ms_node.pb.h"
-#include "gw2gs.pb.h"
+#include "gs_node.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -82,7 +82,7 @@ public:
 	using ClientGSMessageReplied = std::shared_ptr<ClientGsRpcClosure>;
 	void OnRpcClientReplied(ClientGSMessageReplied cp);
 
-	using GsPlayerServiceRpcRplied = std::shared_ptr<common::ClosureReplied<ClientResponse, gw2gs::RpcClientRequest, gw2gs::RpcClientResponse>>;
+	using GsPlayerServiceRpcRplied = std::shared_ptr<common::ClosureReplied<ClientResponse, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
 	void OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp);
 private:
     ProtobufCodec& codec_;
