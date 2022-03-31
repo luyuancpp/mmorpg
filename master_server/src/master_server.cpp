@@ -15,7 +15,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/pb/pbc/msgmap.h"
 
-#include "ms2gs.pb.h"
+#include "gs_node.pb.h"
 #include "gw_node.pb.h"
 
 using namespace common;

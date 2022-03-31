@@ -82,11 +82,11 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 				auto gs = g_gs_nodes.find(it->second.gs_node_id_);
 				if (g_gs_nodes.end() != gs)
 				{
-					gw2gs::DisconnectRequest request;
+                    gsservice::DisconnectRequest request;
 					request.set_conn_id(conn_id);
 					request.set_guid(guid);
 					//注意这里可能会有问题，如果发的connit 到ms 但是player id不对应怎么办?
-                    gs->second.gw2gs_stub_->CallMethod(request, &gw2gs::Gw2gsService_Stub::Disconnect);
+                    gs->second.gs_stub_->CallMethod(request, &gsservice::GsService_Stub::Disconnect);
 				}
 				
 			}
@@ -214,10 +214,10 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         msg->s_rq_.set_player_id(it->second.guid_);
         msg->c_rp_.set_id(request->id());
         msg->c_rp_.set_msg_id(request->msg_id());
-        gs->second.gw2gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
+        gs->second.gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
 			msg,
 			this,
-			&gw2gs::Gw2gsService_Stub::PlayerService);
+			&gsservice::GsService_Stub::GwPlayerService);
     }
 }
 

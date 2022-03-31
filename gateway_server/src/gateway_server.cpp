@@ -5,7 +5,7 @@
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/pb/pbc/msgmap.h"
 
-#include "gw2gs.pb.h"
+#include "gs_node.pb.h"
 
 using namespace common;
 
@@ -115,11 +115,11 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
 			EventLoop::getEventLoopOfCurrentThread()->runInLoop(
 				[this, &gs_session, &conn]() ->void
 				{
-					gw2gs::ConnectRequest request;
+					gsservice::ConnectRequest request;
                     request.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
                     request.mutable_rpc_client()->set_port(conn->localAddress().port());
                     request.set_gate_node_id(gate_node_id());
-                    gs_session.gw2gs_stub_->CallMethod(request, &gw2gs::Gw2gsService_Stub::GwConnectGs);
+                    gs_session.gs_stub_->CallMethod(request, &gsservice::GsService_Stub::GwConnectGs);
 				}
 			);
         }
