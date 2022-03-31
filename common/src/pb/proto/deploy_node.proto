@@ -1,7 +1,7 @@
 syntax = "proto3";
 package deploy;
 import "common.proto";
-import "deploy_database_table.proto";
+import "mysql_database_table.proto";
 option cc_generic_services = true;
 
 message ServerInfoRequest

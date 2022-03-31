@@ -14,7 +14,6 @@
 #include "muduo/base/Logging.h"
 
 #include "common.pb.h"
-#include "deploy_database_table.pb.h"
 
 namespace common
 {
