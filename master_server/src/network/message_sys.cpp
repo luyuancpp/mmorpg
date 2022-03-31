@@ -56,7 +56,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	ms2gs::PlayerMessageRequest ms2gs_messag;
+	ms2gs::MsPlayerMessageRequest ms2gs_messag;
 	ms2gs_messag.mutable_msg()->set_msg_id(message_it->second);
 	ms2gs_messag.mutable_msg()->set_body(message.SerializeAsString());
 	ms2gs_messag.mutable_ex()->set_player_id(reg.get<common::Guid>(player));
