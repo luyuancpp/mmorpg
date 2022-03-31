@@ -13,7 +13,7 @@ using namespace muduo::net;
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace gw2l {
+namespace gw2l{
 	///<<< BEGIN WRITING YOUR CODE 
 	LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 		LoginStubl2db& l2db_login_stub)
@@ -24,7 +24,7 @@ namespace gw2l {
 
 	void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 	{
-		//÷ª¡¨Ω”≤ªµ«¬º,’º”√¡¨Ω”
+		//Âè™ËøûÊé•‰∏çÁôªÂΩï,Âç†Áî®ËøûÊé•
 		// login process
 		// check account rule: empty , errno
 		//check string rule
@@ -78,7 +78,7 @@ namespace gw2l {
 
 	void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 	{
-		//db º”‘ÿπ˝≥Ã÷–∂œœﬂ¡À
+		//db Âä†ËΩΩËøáÁ®ã‰∏≠Êñ≠Á∫ø‰∫Ü
 		auto& srq = d->s_rq_;
 		auto cit = connections_.find(d->c_rp_->conn_id());
 		if (cit == connections_.end())
@@ -119,7 +119,7 @@ namespace gw2l {
 	void LoginServiceImpl::UpdateAccount(uint64_t conn_id, const ::account_database& a_d)
 	{
 		auto cit = connections_.find(conn_id);
-		if (cit == connections_.end())//∂œœﬂ¡À
+		if (cit == connections_.end())//Êñ≠Á∫ø‰∫Ü
 		{
 			return;
 		}
@@ -135,16 +135,16 @@ namespace gw2l {
 	///<<< END WRITING YOUR CODE
 
    ///<<<rpc begin
-	void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
-		const gw2l::LoginRequest* request,
-		gw2l::LoginResponse* response,
-		::google::protobuf::Closure* done)
-	{
-		AutoRecycleClosure d(done);
-		///<<< BEGIN WRITING YOUR CODE Login
+void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
+    const gw2l::LoginRequest* request,
+    gw2l::LoginResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE Login
 		d.SelfDelete();
-		//≤‚ ‘”√¿˝¡¨Ω”≤ªµ«¬º¬Ì…œ∂œœﬂ£¨
-		//’À∫≈µ«¬º¬Ì…œ‘⁄redis ¿Ô√Ê£¨øº¬«µ⁄“ªÃÏ◊¢≤·∫‹∂‡’À∫≈µƒ ±∫Ú’À∫≈ƒ⁄¥Ê∫‹∂‡£¨∫Œ ±ªÿ ’
+		//ÊµãËØïÁî®‰æãËøûÊé•‰∏çÁôªÂΩïÈ©¨‰∏äÊñ≠Á∫øÔºå
+		//Ë¥¶Âè∑ÁôªÂΩïÈ©¨‰∏äÂú®redis ÈáåÈù¢ÔºåËÄÉËôëÁ¨¨‰∏ÄÂ§©Ê≥®ÂÜåÂæàÂ§öË¥¶Âè∑ÁöÑÊó∂ÂÄôË¥¶Âè∑ÂÜÖÂ≠òÂæàÂ§öÔºå‰ΩïÊó∂ÂõûÊî∂
 		//login master
 		auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
 		auto& s_reqst = c->s_rq_;
@@ -159,16 +159,16 @@ namespace gw2l {
 			reg.emplace<uint32_t>(it.first->second.entity(), request->gate_node_id());
 		}
 		ms_node_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
-		///<<< END WRITING YOUR CODE Login
-	}
+///<<< END WRITING YOUR CODE Login
+}
 
-	void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
-		const gw2l::CreatePlayerRequest* request,
-		gw2l::CreatePlayerResponse* response,
-		::google::protobuf::Closure* done)
-	{
-		AutoRecycleClosure d(done);
-		///<<< BEGIN WRITING YOUR CODE CreatPlayer
+void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
+    const gw2l::CreatePlayerRequest* request,
+    gw2l::CreatePlayerResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE CreatPlayer
 		d.SelfDelete();
 		// login process
 		//check name rule
@@ -193,16 +193,16 @@ namespace gw2l {
 			&LoginServiceImpl::CreatePlayerDbReplied,
 			c,
 			&l2db::LoginService_Stub::CreatePlayer);
-		///<<< END WRITING YOUR CODE CreatPlayer
-	}
+///<<< END WRITING YOUR CODE CreatPlayer
+}
 
-	void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-		const gw2l::EnterGameRequest* request,
-		gw2l::EnterGameResponse* response,
-		::google::protobuf::Closure* done)
-	{
-		AutoRecycleClosure d(done);
-		///<<< BEGIN WRITING YOUR CODE EnterGame
+void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
+    const gw2l::EnterGameRequest* request,
+    gw2l::EnterGameResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE EnterGame
 		d.SelfDelete();
 		auto conn_id = request->conn_id();
 		auto cit = connections_.find(conn_id);
@@ -244,17 +244,17 @@ namespace gw2l {
 			&LoginServiceImpl::EnterGameDbReplied,
 			c,
 			&l2db::LoginService_Stub::EnterGame);
-		///<<< END WRITING YOUR CODE EnterGame
-	}
+///<<< END WRITING YOUR CODE EnterGame
+}
 
-	void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
-		const gw2l::LeaveGameRequest* request,
-		::google::protobuf::Empty* response,
-		::google::protobuf::Closure* done)
-	{
-		AutoRecycleClosure d(done);
-		///<<< BEGIN WRITING YOUR CODE LeaveGame
-			//¡¨Ω”π˝£¨µ«¬ºπ˝
+void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
+    const gw2l::LeaveGameRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE LeaveGame
+			//ËøûÊé•ËøáÔºåÁôªÂΩïËøá
 		auto cit = connections_.find(request->conn_id());
 		if (cit == connections_.end())
 		{
@@ -272,22 +272,22 @@ namespace gw2l {
 		ms_node_stub_.CallMethod(ms_request,
 			&msservice::MasterNodeService_Stub::OnLsLeaveGame);
 		connections_.erase(cit);
-		///<<< END WRITING YOUR CODE LeaveGame
-	}
+///<<< END WRITING YOUR CODE LeaveGame
+}
 
-	void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
-		const gw2l::DisconnectRequest* request,
-		::google::protobuf::Empty* response,
-		::google::protobuf::Closure* done)
-	{
-		AutoRecycleClosure d(done);
-		///<<< BEGIN WRITING YOUR CODE Disconnect
+void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
+    const gw2l::DisconnectRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE Disconnect
 		auto cit = connections_.find(request->conn_id());
-		if (cit == connections_.end())//¡¨Ω”≤¢√ª”–µ«¬º
+		if (cit == connections_.end())//ËøûÊé•Âπ∂Ê≤°ÊúâÁôªÂΩï
 		{
 			return;
 		}
-		//¡¨Ω”“—æ≠µ«¬ºπ˝
+		//ËøûÊé•Â∑≤ÁªèÁôªÂΩïËøá
 
 		msservice::LsDisconnectRequest message;
 		auto conn = cit->second.entity();
@@ -301,8 +301,8 @@ namespace gw2l {
 		ms_node_stub_.CallMethod(message,
 			&msservice::MasterNodeService_Stub::OnLsDisconnect);
 		connections_.erase(cit);
-		///<<< END WRITING YOUR CODE Disconnect
-	}
+///<<< END WRITING YOUR CODE Disconnect
+}
 
 	///<<<rpc end
 }// namespace gw2l

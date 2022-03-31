@@ -1,15 +1,15 @@
-#ifndef DEPLOY_SERVER_SRC_SERVICE_NODE2DEPLOY_H_
-#define DEPLOY_SERVER_SRC_SERVICE_NODE2DEPLOY_H_
+#ifndef DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_
+#define DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_
 #include "deploy_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/mysql_database/mysql_database.h"
 
 ///<<< END WRITING YOUR CODE
-namespace deploy {
+namespace deploy{
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
-	class DeployServiceImpl : public DeployService {
-	public:
+class DeployServiceImpl : public DeployService{
+public:
 		///<<< BEGIN WRITING YOUR CODE
 		using ServerId = uint32_t;
 		using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
@@ -26,27 +26,27 @@ namespace deploy {
 		MysqlClientPtr db_;
 		GSMap logic_server_map_;
 		///<<< END WRITING YOUR CODE
-	public:
-		void ServerInfo(::google::protobuf::RpcController* controller,
-			const deploy::ServerInfoRequest* request,
-			deploy::ServerInfoResponse* response,
-			::google::protobuf::Closure* done)override;
+public:
+    void ServerInfo(::google::protobuf::RpcController* controller,
+        const deploy::ServerInfoRequest* request,
+        deploy::ServerInfoResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-		void StartGS(::google::protobuf::RpcController* controller,
-			const deploy::StartGSRequest* request,
-			deploy::StartGSResponse* response,
-			::google::protobuf::Closure* done)override;
+    void StartGS(::google::protobuf::RpcController* controller,
+        const deploy::StartGSRequest* request,
+        deploy::StartGSResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-		void StartRegionServer(::google::protobuf::RpcController* controller,
-			const deploy::RegionInfoRequest* request,
-			deploy::RegionInfoResponse* response,
-			::google::protobuf::Closure* done)override;
+    void StartRegionServer(::google::protobuf::RpcController* controller,
+        const deploy::RegionInfoRequest* request,
+        deploy::RegionInfoResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-		void LoadRegionDeploy(::google::protobuf::RpcController* controller,
-			const deploy::RegionInfoRequest* request,
-			deploy::RegionInfoResponse* response,
-			::google::protobuf::Closure* done)override;
+    void LoadRegionDeploy(::google::protobuf::RpcController* controller,
+        const deploy::RegionInfoRequest* request,
+        deploy::RegionInfoResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-	};
+};
 }// namespace deploy
-#endif//DEPLOY_SERVER_SRC_SERVICE_NODE2DEPLOY_H_
+#endif//DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_
