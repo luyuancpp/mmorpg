@@ -129,8 +129,6 @@
     <ClCompile Include="src\pb\pbc\gs2db.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\pb\pbc\gs2gw.pb.cc">
-      <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\gs2rg.pb.cc">
       <Filter>源文件</Filter>
@@ -154,9 +152,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\ms2gs.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\pb\pbc\ms2gw.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\msgmap.cpp">
@@ -190,6 +185,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\pb\pbc\ms_node.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\pb\pbc\gw_node.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -395,9 +393,6 @@
     <ClInclude Include="src\pb\pbc\gs2db.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\pb\pbc\gs2gw.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\pb\pbc\gs2rg.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -420,9 +415,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\ms2gs.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pb\pbc\ms2gw.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\mysql_database_table.pb.h">
@@ -459,6 +451,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\pb\pbc\ms_node.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pb\pbc\gw_node.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

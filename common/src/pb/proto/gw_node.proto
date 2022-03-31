@@ -1,8 +1,19 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
 import "common.proto";
-package ms2gw;
+package gwservice;
 option cc_generic_services = true;
+
+message GsMessageExtern
+{
+  uint64 conn_id = 1;
+}
+
+message GsPlayerMessageRequest
+{
+  MessageBody msg = 1;
+  GsMessageExtern ex = 2;
+}
 
 message StartGSRequest
 {
@@ -37,9 +48,10 @@ message PlayerMessageRequest
   MessageExtern ex = 2;
 }
 
-service Ms2gwService {
+service GwNodeService {
   rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
   rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
   rpc PlayerEnterGS (PlayerEnterGSRequest) returns (google.protobuf.Empty);
   rpc PlayerMessage (PlayerMessageRequest) returns (google.protobuf.Empty);
+  rpc GsPlayerService (GsPlayerMessageRequest) returns (google.protobuf.Empty);
 }
