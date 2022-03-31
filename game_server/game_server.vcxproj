@@ -136,7 +136,6 @@
     <ClCompile Include="src\service\player_service.cpp" />
     <ClCompile Include="src\service\player_team_player.cpp" />
     <ClCompile Include="src\service\replied_ms2gs.cpp" />
-    <ClCompile Include="src\service\rg2gs.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\module\master.hpp" />
@@ -151,7 +150,6 @@
     <ClInclude Include="src\service\player_service.h" />
     <ClInclude Include="src\service\player_team_player.h" />
     <ClInclude Include="src\service\replied_ms2gs.h" />
-    <ClInclude Include="src\service\rg2gs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
