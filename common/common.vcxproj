@@ -171,7 +171,6 @@
     <ClCompile Include="src\pb\pbc\condition_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\db_base.pb.cc" />
     <ClCompile Include="src\pb\pbc\db_node.pb.cc" />
-    <ClCompile Include="src\pb\pbc\deploy_database_table.pb.cc" />
     <ClCompile Include="src\pb\pbc\deploy_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\global_variable_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\gs_node.pb.cc" />
@@ -236,7 +235,6 @@
     <ClInclude Include="src\pb\pbc\condition_config.pb.h" />
     <ClInclude Include="src\pb\pbc\db_base.pb.h" />
     <ClInclude Include="src\pb\pbc\db_node.pb.h" />
-    <ClInclude Include="src\pb\pbc\deploy_database_table.pb.h" />
     <ClInclude Include="src\pb\pbc\deploy_node.pb.h" />
     <ClInclude Include="src\pb\pbc\global_variable_config.pb.h" />
     <ClInclude Include="src\pb\pbc\gs_node.pb.h" />

@@ -4,7 +4,7 @@
 
 #include "src/deploy_variable.h"
 
-#include "deploy_database_table.pb.h"
+#include "mysql_database_table.pb.h"
 
 using namespace common;
 
