@@ -15,7 +15,7 @@
 #include "src/return_code/error_code.h"
 #include "src/server_common/rpc_closure.h"
 
-#include "gw2l.pb.h"
+#include "login_node.pb.h"
 #include "logic_proto/player_scene.pb.h"
 
 using namespace common;

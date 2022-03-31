@@ -3,13 +3,13 @@
 
 #include "src/event/event.h"
 #include "src/server_common/rpc_server.h"
-#include "src/service/gw2l.h"
+#include "src/service/login_node.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_closure.h"
 #include "src/server_common/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
 
-#include "node2deploy.pb.h"
+#include "deploy_node.pb.h"
 
 #include "ms_node.pb.h"
 

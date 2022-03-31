@@ -1,8 +1,7 @@
-#ifndef DATABASE_SERVER_SRC_SERVICE_L2DB_H_
-#define DATABASE_SERVER_SRC_SERVICE_L2DB_H_
-#include "l2db.pb.h"
+#ifndef DATABASE_SERVER_SRC_SERVICE_DB_NODE_H_
+#define DATABASE_SERVER_SRC_SERVICE_DB_NODE_H_
+#include "db_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "muduo/base/Logging.h"
 #include "src/server_common/rpc_server.h"
 #include "src/mysql_database/mysql_database.h"
 
@@ -11,21 +10,21 @@ using namespace muduo::net;
 
 namespace database
 {
-    class MysqlDatabase;
+	class MysqlDatabase;
 }//namespace database;
 
 namespace common
 {
-    class RedisClient;
+	class RedisClient;
 }//namespace common;
 
 ///<<< END WRITING YOUR CODE
 namespace l2db{
- ///<<< BEGIN WRITING YOUR CODE
- ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 class LoginServiceImpl : public LoginService{
 public:
-	///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
 	using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
 	using RedisClientPtr = std::shared_ptr<common::RedisClient>;
 
@@ -47,7 +46,7 @@ public:
 private:
 	MysqlClientPtr database_;
 	RedisClientPtr redis_;
-	///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 public:
     void Login(::google::protobuf::RpcController* controller,
         const l2db::LoginRequest* request,
@@ -66,4 +65,4 @@ public:
 
 };
 }// namespace l2db
-#endif//DATABASE_SERVER_SRC_SERVICE_L2DB_H_
+#endif//DATABASE_SERVER_SRC_SERVICE_DB_NODE_H_

@@ -4,7 +4,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/deploy_server.h"
 
-#include "src/service/node2deploy.h"
+#include "src/service/deploy_node.h"
 
 using namespace muduo::net;
 using namespace common;

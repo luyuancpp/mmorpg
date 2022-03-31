@@ -11,9 +11,9 @@
 #include "src/server_common/rpc_client.h"
 #include "src/server_common/rpc_closure.h"
 
-#include "src/service/l2db.h"
+#include "src/service/db_node.h"
 
-#include "node2deploy.pb.h"
+#include "deploy_node.pb.h"
 
 namespace database
 {
