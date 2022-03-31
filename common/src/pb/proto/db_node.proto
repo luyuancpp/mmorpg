@@ -1,5 +1,5 @@
 syntax = "proto3";
-package l2db;
+package dbservice;
 import "common.proto";
 import "mysql_database_table.proto";
 option cc_generic_services = true;
@@ -40,7 +40,7 @@ message EnterGameResponse
   uint64 guid = 2;
 }
 
-service LoginService {
+service DbService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc CreatePlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);

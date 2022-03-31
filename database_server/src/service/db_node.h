@@ -19,18 +19,18 @@ namespace common
 }//namespace common;
 
 ///<<< END WRITING YOUR CODE
-namespace l2db{
+namespace dbservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class LoginServiceImpl : public LoginService{
+class DbServiceImpl : public DbService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
 	using RedisClientPtr = std::shared_ptr<common::RedisClient>;
 
-	static LoginServiceImpl& GetSingleton()
+	static DbServiceImpl& GetSingleton()
 	{
-		thread_local LoginServiceImpl singleton;
+		thread_local DbServiceImpl singleton;
 		return singleton;
 	}
 
@@ -49,20 +49,20 @@ private:
 ///<<< END WRITING YOUR CODE
 public:
     void Login(::google::protobuf::RpcController* controller,
-        const l2db::LoginRequest* request,
-        l2db::LoginResponse* response,
+        const dbservice::LoginRequest* request,
+        dbservice::LoginResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void CreatePlayer(::google::protobuf::RpcController* controller,
-        const l2db::CreatePlayerRequest* request,
-        l2db::CreatePlayerResponse* response,
+        const dbservice::CreatePlayerRequest* request,
+        dbservice::CreatePlayerResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterGame(::google::protobuf::RpcController* controller,
-        const l2db::EnterGameRequest* request,
-        l2db::EnterGameResponse* response,
+        const dbservice::EnterGameRequest* request,
+        dbservice::EnterGameResponse* response,
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace l2db
+}// namespace dbservice
 #endif//DATABASE_SERVER_SRC_SERVICE_DB_NODE_H_

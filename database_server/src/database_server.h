@@ -51,7 +51,7 @@ namespace database
         common::RpcClientPtr deploy_rpc_client_;
         deploy::DeployStub deploy_stub_;
 
-        l2db::LoginServiceImpl impl_;
+        dbservice::DbServiceImpl impl_;
     };
 
 }//namespace database
