@@ -60,8 +60,8 @@ void Ms2gServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
-    const ms2gs::PlayerMessageRequest* request,
-    ms2gs::PlayerMessageRespone* response,
+    const ms2gs::MsPlayerMessageRequest* request,
+    ms2gs::MsPlayerMessageRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -111,7 +111,7 @@ void Ms2gServiceImpl::PlayerService(::google::protobuf::RpcController* controlle
 }
 
 void Ms2gServiceImpl::PlayerServiceNoRespone(::google::protobuf::RpcController* controller,
-    const ms2gs::PlayerMessageRequest* request,
+    const ms2gs::MsPlayerMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

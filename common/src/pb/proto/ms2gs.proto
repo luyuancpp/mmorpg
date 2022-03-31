@@ -16,26 +16,26 @@ message EnterGameRespone
 {
 }
 
-message PlayerMessageExtern
+message MsPlayerMessageExtern
 {
   uint64 player_id = 1;
 }
 
 
-message PlayerMessageRequest
+message MsPlayerMessageRequest
 {
   MessageBody msg = 1;
-  PlayerMessageExtern ex = 2;
+  MsPlayerMessageExtern ex = 2;
 }
 
-message PlayerMessageRespone
+message MsPlayerMessageRespone
 {
   MessageBody msg = 1;
-  PlayerMessageExtern ex = 2;
+  MsPlayerMessageExtern ex = 2;
 }
 
 service Ms2gService {
   rpc EnterGame (EnterGameRequest) returns (EnterGameRespone);
-  rpc PlayerService (PlayerMessageRequest) returns (PlayerMessageRespone);
-  rpc PlayerServiceNoRespone (PlayerMessageRequest) returns (google.protobuf.Empty);
+  rpc PlayerService (MsPlayerMessageRequest) returns (MsPlayerMessageRespone);
+  rpc PlayerServiceNoRespone (MsPlayerMessageRequest) returns (google.protobuf.Empty);
 }

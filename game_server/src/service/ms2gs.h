@@ -17,12 +17,12 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void PlayerService(::google::protobuf::RpcController* controller,
-        const ms2gs::PlayerMessageRequest* request,
-        ms2gs::PlayerMessageRespone* response,
+        const ms2gs::MsPlayerMessageRequest* request,
+        ms2gs::MsPlayerMessageRespone* response,
         ::google::protobuf::Closure* done)override;
 
     void PlayerServiceNoRespone(::google::protobuf::RpcController* controller,
-        const ms2gs::PlayerMessageRequest* request,
+        const ms2gs::MsPlayerMessageRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
