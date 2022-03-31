@@ -11,7 +11,7 @@
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace deploy {
+namespace deploy{
 	///<<< BEGIN WRITING YOUR CODE
 	void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
 		::region_server_db* response)
@@ -22,13 +22,13 @@ namespace deploy {
 	///<<< END WRITING YOUR CODE
 
 	///<<<rpc begin
-	void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller,
-		const deploy::ServerInfoRequest* request,
-		deploy::ServerInfoResponse* response,
-		::google::protobuf::Closure* done)
-	{
-		AutoRecycleClosure d(done);
-		///<<< BEGIN WRITING YOUR CODE ServerInfo
+void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller,
+    const deploy::ServerInfoRequest* request,
+    deploy::ServerInfoResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE ServerInfo
 		auto group_id = request->group();
 		auto& servers_deploy = *response->mutable_info();
 		if (group_id > 0)
@@ -46,16 +46,16 @@ namespace deploy {
 			db_->LoadAll<::master_server_db>(*response->mutable_region_masters(), where_case);
 		}
 		LoadRegionDeploy(request->region_id(), servers_deploy.mutable_regin_info());
-		///<<< END WRITING YOUR CODE ServerInfo
-	}
+///<<< END WRITING YOUR CODE ServerInfo
+}
 
-	void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
-		const deploy::StartGSRequest* request,
-		deploy::StartGSResponse* response,
-		::google::protobuf::Closure* done)
-	{
-		AutoRecycleClosure d(done);
-		///<<< BEGIN WRITING YOUR CODE StartGS
+void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
+    const deploy::StartGSRequest* request,
+    deploy::StartGSResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE StartGS
 		auto& server_deploy = *response->mutable_my_info();
 		auto& client_info = request->rpc_client();
 		muduo::net::InetAddress ip_port(client_info.ip(), client_info.port());
@@ -73,30 +73,30 @@ namespace deploy {
 		g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
 		g_deploy_server->SaveGSDb();
 		//g_deploy_server->LogReuseInfo();
-	///<<< END WRITING YOUR CODE StartGS
-	}
+///<<< END WRITING YOUR CODE StartGS
+}
 
-	void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* controller,
-		const deploy::RegionInfoRequest* request,
-		deploy::RegionInfoResponse* response,
-		::google::protobuf::Closure* done)
-	{
-		AutoRecycleClosure d(done);
-		///<<< BEGIN WRITING YOUR CODE StartRegionServer
+void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* controller,
+    const deploy::RegionInfoRequest* request,
+    deploy::RegionInfoResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE StartRegionServer
 		LoadRegionDeploy(request->region_id(), response->mutable_info());
-		///<<< END WRITING YOUR CODE StartRegionServer
-	}
+///<<< END WRITING YOUR CODE StartRegionServer
+}
 
-	void DeployServiceImpl::LoadRegionDeploy(::google::protobuf::RpcController* controller,
-		const deploy::RegionInfoRequest* request,
-		deploy::RegionInfoResponse* response,
-		::google::protobuf::Closure* done)
-	{
-		AutoRecycleClosure d(done);
-		///<<< BEGIN WRITING YOUR CODE LoadRegionDeploy
+void DeployServiceImpl::LoadRegionDeploy(::google::protobuf::RpcController* controller,
+    const deploy::RegionInfoRequest* request,
+    deploy::RegionInfoResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE LoadRegionDeploy
 		LoadRegionDeploy(request->region_id(), response->mutable_info());
-		///<<< END WRITING YOUR CODE LoadRegionDeploy
-	}
+///<<< END WRITING YOUR CODE LoadRegionDeploy
+}
 
 	///<<<rpc end
 }// namespace deploy

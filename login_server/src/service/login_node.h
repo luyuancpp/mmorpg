@@ -1,5 +1,5 @@
-#ifndef LOGIN_SERVER_SRC_SERVICE_GW2L_H_
-#define LOGIN_SERVER_SRC_SERVICE_GW2L_H_
+#ifndef LOGIN_SERVER_SRC_SERVICE_LOGIN_NODE_H_
+#define LOGIN_SERVER_SRC_SERVICE_LOGIN_NODE_H_
 #include "login_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/account_player.h"
@@ -14,12 +14,12 @@
 #include "db_node.pb.h"
 #include "ms_node.pb.h"
 ///<<< END WRITING YOUR CODE
-namespace gw2l {
+namespace gw2l{
 	///<<< BEGIN WRITING YOUR CODE
 	using common::RedisClientPtr;
 	///<<< END WRITING YOUR CODE
-	class LoginServiceImpl : public LoginService {
-	public:
+class LoginServiceImpl : public LoginService{
+public:
 		///<<< BEGIN WRITING YOUR CODE
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
 		using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
@@ -60,32 +60,32 @@ namespace gw2l {
 		LoginStubl2ms& ms_node_stub_;
 		LoginStubl2db& l2db_login_stub_;
 		///<<< END WRITING YOUR CODE
-	public:
-		void Login(::google::protobuf::RpcController* controller,
-			const gw2l::LoginRequest* request,
-			gw2l::LoginResponse* response,
-			::google::protobuf::Closure* done)override;
+public:
+    void Login(::google::protobuf::RpcController* controller,
+        const gw2l::LoginRequest* request,
+        gw2l::LoginResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-		void CreatPlayer(::google::protobuf::RpcController* controller,
-			const gw2l::CreatePlayerRequest* request,
-			gw2l::CreatePlayerResponse* response,
-			::google::protobuf::Closure* done)override;
+    void CreatPlayer(::google::protobuf::RpcController* controller,
+        const gw2l::CreatePlayerRequest* request,
+        gw2l::CreatePlayerResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-		void EnterGame(::google::protobuf::RpcController* controller,
-			const gw2l::EnterGameRequest* request,
-			gw2l::EnterGameResponse* response,
-			::google::protobuf::Closure* done)override;
+    void EnterGame(::google::protobuf::RpcController* controller,
+        const gw2l::EnterGameRequest* request,
+        gw2l::EnterGameResponse* response,
+        ::google::protobuf::Closure* done)override;
 
-		void LeaveGame(::google::protobuf::RpcController* controller,
-			const gw2l::LeaveGameRequest* request,
-			::google::protobuf::Empty* response,
-			::google::protobuf::Closure* done)override;
+    void LeaveGame(::google::protobuf::RpcController* controller,
+        const gw2l::LeaveGameRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
 
-		void Disconnect(::google::protobuf::RpcController* controller,
-			const gw2l::DisconnectRequest* request,
-			::google::protobuf::Empty* response,
-			::google::protobuf::Closure* done)override;
+    void Disconnect(::google::protobuf::RpcController* controller,
+        const gw2l::DisconnectRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
 
-	};
+};
 }// namespace gw2l
-#endif//LOGIN_SERVER_SRC_SERVICE_GW2L_H_
+#endif//LOGIN_SERVER_SRC_SERVICE_LOGIN_NODE_H_
