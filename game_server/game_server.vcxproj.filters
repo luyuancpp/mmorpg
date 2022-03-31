@@ -33,13 +33,13 @@
     <ClCompile Include="src\service\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\player_team_player.cpp">
+    <ClCompile Include="src\service\player_team_gs_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\ms2gs_scene_player.cpp">
+    <ClCompile Include="src\service\scene_ms2gs_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\player_scene_player.cpp">
+    <ClCompile Include="src\service\player_scene_gs_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\module\network\message_sys.cpp">
@@ -68,13 +68,13 @@
     <ClInclude Include="src\service\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\player_team_player.h">
+    <ClInclude Include="src\service\player_team_gs_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\player_scene_player.h">
+    <ClInclude Include="src\service\player_scene_gs_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\ms2gs_scene_player.h">
+    <ClInclude Include="src\service\scene_ms2gs_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\module\network\gate_node.h">

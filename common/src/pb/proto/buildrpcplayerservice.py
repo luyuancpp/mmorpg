@@ -309,7 +309,7 @@ def md5copy(filename, writedir):
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
         for filename in filenames:        
-            md5copy(filename, '../../../../game_server/src/service')
+            md5copy(filename, playerservicedir)
 
 genfile = []
 
