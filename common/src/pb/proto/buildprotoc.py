@@ -44,7 +44,7 @@ def genmd5(walkdir):
         md5tool.generate_md5_file_for(walkdir + filename, md5str + '/' + filename + '.md5')
 
 gen_protoc('./', '../../../../third_party/protobuf/src/', '../pbc/')
-gen_protoc('./logic_proto/player/', '../../../../third_party/protobuf/src/', '../pbc/')
+gen_protoc('./logic_proto/', '../../../../third_party/protobuf/src/', '../pbc/')
 genmd5('./')
-genmd5('./logic_proto/player/')
+genmd5('./logic_proto/')
 

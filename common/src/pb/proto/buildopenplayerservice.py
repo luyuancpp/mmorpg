@@ -30,7 +30,7 @@ cpprpcpart = 2
 cppmaxpart = 4
 controller = '(common::EntityPtr& entity'
 servicedir = './md5/'
-protodir = 'logic_proto/player/'
+protodir = 'logic_proto/'
 playerservicedir = '../../../../gateway_server/src/service'
 
 if not os.path.exists(servicedir):
