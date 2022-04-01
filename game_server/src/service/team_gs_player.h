@@ -1,7 +1,7 @@
-#ifndef GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_TEAM_GS_H_
-#define GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_TEAM_GS_H_
+#ifndef _LOGIC_PROTO_PLAYER_TEAM_GS_H_
+#define _LOGIC_PROTO_PLAYER_TEAM_GS_H_
 #include "player_service.h"
-#include "logic_proto/player_team_gs.pb.h"
+#include "logic_proto/player/team_gs.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 namespace playerservice{
@@ -35,4 +35,4 @@ public:
         }
 };
 }// namespace playerservice
-#endif//GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_TEAM_GS_H_
+#endif//_LOGIC_PROTO_PLAYER_TEAM_GS_H_

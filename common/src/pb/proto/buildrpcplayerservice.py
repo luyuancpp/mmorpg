@@ -30,8 +30,11 @@ cpprpcpart = 2
 cppmaxpart = 4
 controller = '(common::EntityPtr& entity'
 servicedir = './md5/'
-protodir = 'logic_proto/'
-playerservicedir = '../../../../game_server/src/service'
+protodir = 'logic_proto/player/'
+gsplayerservicedir = '../../../../game_server/src/service'
+msplayerservicedir = '../../../../master_server/src/service'
+gsendproto = 'gs.proto'
+msendproto = 'ms.proto'
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
@@ -121,7 +124,8 @@ def classbegin():
 def emptyfun():
     return ''
 
-def genheadfile(filename, writedir):
+def genheadfile(filename):
+    writedir = getwritedirname(filename)
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
     fullfilename = writedir + '/' + filename.replace('.proto', '_player.h')
     folder_path, local.hfilename = os.path.split(fullfilename)    
@@ -171,7 +175,8 @@ def genheadfile(filename, writedir):
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(filename, writedir):
+def gencppfile(filename):
+    writedir = getwritedirname(filename)
     global cppmaxpart
     cppfilename = writedir + '/' + filename.replace('.proto', '_player.cpp').replace(protodir, '')
     newcppfilename = servicedir + local.hfilename.replace('.h', '.cpp')
@@ -250,10 +255,10 @@ def gencppfile(filename, writedir):
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def generate(filename, writedir):
+def generate(filename):
     parsefile(filename)
-    genheadfile(filename, writedir)
-    gencppfile(filename, writedir)
+    genheadfile(filename)
+    gencppfile(filename)
 
 def parseplayerservcie(filename):
     local.fileservice.append(filename.replace('.proto', ''))
@@ -289,7 +294,15 @@ def genplayerservcielist(filename):
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(filename, writedir):
+def getwritedirname(filename):
+    writedir = ''
+    if filename.find('gs_player') >= 0:
+        writedir = gsplayerservicedir
+    elif filename.find('ms_player') >= 0:
+        writedir = msplayerservicedir
+    return writedir
+
+def md5copy(filename):
         if not (filename.endswith("player.cpp") or  filename.endswith("player.h") or filename == "player_service.cpp" or filename == "player_service.h"):
             return
         gennewfilename = servicedir + filename
@@ -300,6 +313,7 @@ def md5copy(filename, writedir):
             emptymd5 = True
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
+        writedir = getwritedirname(filename)
         fullfilename = writedir + '/' + filename
         if error == None and os.path.exists(fullfilename) and emptymd5 == False:
             return
@@ -309,22 +323,29 @@ def md5copy(filename, writedir):
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
         for filename in filenames:        
-            md5copy(filename, playerservicedir)
+            md5copy(filename)
 
 genfile = []
 
 def get_file_list(file_path):
-    dir_list = os.listdir(file_path)
+    dir_list = os.listdir('./logic_proto/player')
     if not dir_list:
         return
     else:
         dir_list = sorted(dir_list,key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
+        print(file_path)
         return dir_list
 
 def inputfile():
     dir_list  = get_file_list(protodir)
-    for each_filename in dir_list:
-        genfile.append([protodir  + each_filename, playerservicedir])
+    for filename in dir_list:
+        if not ((filename[-8:].lower() == gsendproto) or (filename[-8:].lower() == msendproto)):
+            print("exit: player service %s must be endwith gs_.proto or ms_.proto " % (filename))
+            return
+    for filename in dir_list:
+        if not (filename[-6:].lower() == '.proto'):
+            continue
+        genfile.append([protodir  + filename, gsplayerservicedir])
 
 class myThread (threading.Thread):
     def __init__(self, filename, writedir):
@@ -332,7 +353,7 @@ class myThread (threading.Thread):
         self.filename = str(filename)
         self.writedir = str(writedir)
     def run(self):
-        generate(self.filename, self.writedir)
+        generate(self.filename)
 
 def main():
     filelen = len(genfile)

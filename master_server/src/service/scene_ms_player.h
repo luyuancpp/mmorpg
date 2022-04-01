@@ -1,10 +1,10 @@
-#ifndef GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_SCENE_GS_H_
-#define GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_SCENE_GS_H_
+#ifndef _LOGIC_PROTO_PLAYER_SCENE_MS_H_
+#define _LOGIC_PROTO_PLAYER_SCENE_MS_H_
 #include "player_service.h"
-#include "logic_proto/player_scene_gs.pb.h"
+#include "logic_proto/player/scene_ms.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace playerservice{
+namespace msplayerservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 class PlayerPlayerSceneServiceImpl : public game::PlayerService {
@@ -14,12 +14,12 @@ public:
 ///<<< END WRITING YOUR CODE
 public:
     void EnterScene(common::EntityPtr& entity,
-        const playerservice::SeceneTestRequest* request,
-        playerservice::SeceneTestResponse* response);
+        const msplayerservice::SeceneTestRequest* request,
+        msplayerservice::SeceneTestResponse* response);
 
     void EnterSceneNotify(common::EntityPtr& entity,
-        const playerservice::EnterSeceneS2C* request,
-        playerservice::EnterSeceneS2C* response);
+        const msplayerservice::EnterSeceneS2C* request,
+        msplayerservice::EnterSeceneS2C* response);
 
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         common::EntityPtr& entity,
@@ -29,13 +29,13 @@ public:
         switch(method->index()) {
         case 0:
             EnterScene(entity,
-            ::google::protobuf::internal::DownCast<const playerservice::SeceneTestRequest*>( request),
-            ::google::protobuf::internal::DownCast<playerservice::SeceneTestResponse*>(response));
+            ::google::protobuf::internal::DownCast<const msplayerservice::SeceneTestRequest*>( request),
+            ::google::protobuf::internal::DownCast<msplayerservice::SeceneTestResponse*>(response));
         break;
         case 1:
             EnterSceneNotify(entity,
-            ::google::protobuf::internal::DownCast<const playerservice::EnterSeceneS2C*>( request),
-            ::google::protobuf::internal::DownCast<playerservice::EnterSeceneS2C*>(response));
+            ::google::protobuf::internal::DownCast<const msplayerservice::EnterSeceneS2C*>( request),
+            ::google::protobuf::internal::DownCast<msplayerservice::EnterSeceneS2C*>(response));
         break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -43,5 +43,5 @@ public:
         }
         }
 };
-}// namespace playerservice
-#endif//GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_SCENE_GS_H_
+}// namespace msplayerservice
+#endif//_LOGIC_PROTO_PLAYER_SCENE_MS_H_

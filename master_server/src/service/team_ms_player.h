@@ -1,10 +1,10 @@
-#ifndef GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_TEAM_GS_H_
-#define GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_TEAM_GS_H_
+#ifndef _LOGIC_PROTO_PLAYER_TEAM_MS_H_
+#define _LOGIC_PROTO_PLAYER_TEAM_MS_H_
 #include "player_service.h"
-#include "logic_proto/player_team_gs.pb.h"
+#include "logic_proto/player/team_ms.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace playerservice{
+namespace msplayerservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 class PlayerPlayerTeamServiceImpl : public game::PlayerService {
@@ -14,8 +14,8 @@ public:
 ///<<< END WRITING YOUR CODE
 public:
     void EnterScene(common::EntityPtr& entity,
-        const playerservice::TeamTestRequest* request,
-        playerservice::TeamTestResponse* response);
+        const msplayerservice::TeamTestRequest* request,
+        msplayerservice::TeamTestResponse* response);
 
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         common::EntityPtr& entity,
@@ -25,8 +25,8 @@ public:
         switch(method->index()) {
         case 0:
             EnterScene(entity,
-            ::google::protobuf::internal::DownCast<const playerservice::TeamTestRequest*>( request),
-            ::google::protobuf::internal::DownCast<playerservice::TeamTestResponse*>(response));
+            ::google::protobuf::internal::DownCast<const msplayerservice::TeamTestRequest*>( request),
+            ::google::protobuf::internal::DownCast<msplayerservice::TeamTestResponse*>(response));
         break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -34,5 +34,5 @@ public:
         }
         }
 };
-}// namespace playerservice
-#endif//GAME_SERVER_SRC_SERVICE_LOGIC_PROTO_PLAYER_TEAM_GS_H_
+}// namespace msplayerservice
+#endif//_LOGIC_PROTO_PLAYER_TEAM_MS_H_
