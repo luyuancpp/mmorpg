@@ -19,8 +19,8 @@ void PlayerPlayerSceneServiceImpl::EnterSceneNotify(common::EntityPtr& entity,
     const msplayerservice::EnterSeceneS2C* request,
     msplayerservice::EnterSeceneS2C* response)
 {
-///<<< BEGIN WRITING YOUR CODE EnterScene
-///<<< END WRITING YOUR CODE EnterScene
+///<<< BEGIN WRITING YOUR CODE EnterSceneNotify
+///<<< END WRITING YOUR CODE EnterSceneNotify
 }
 
 ///<<<rpc end

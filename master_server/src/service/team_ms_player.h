@@ -1,7 +1,7 @@
-#ifndef _LOGIC_PROTO_PLAYER_TEAM_MS_H_
-#define _LOGIC_PROTO_PLAYER_TEAM_MS_H_
+#ifndef MASTER_SERVER_SRC_SERVICE_LOGIC_PROTO_TEAM_MS_H_
+#define MASTER_SERVER_SRC_SERVICE_LOGIC_PROTO_TEAM_MS_H_
 #include "player_service.h"
-#include "logic_proto/player/team_ms.pb.h"
+#include "logic_proto/team_ms.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 namespace msplayerservice{
@@ -35,4 +35,4 @@ public:
         }
 };
 }// namespace msplayerservice
-#endif//_LOGIC_PROTO_PLAYER_TEAM_MS_H_
+#endif//MASTER_SERVER_SRC_SERVICE_LOGIC_PROTO_TEAM_MS_H_

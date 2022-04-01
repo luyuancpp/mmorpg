@@ -160,6 +160,8 @@
     <ClCompile Include="src\scene\sceces.cpp" />
     <ClCompile Include="src\network\message_sys.cpp" />
     <ClCompile Include="src\service\ms_node.cpp" />
+    <ClCompile Include="src\service\scene_ms_player.cpp" />
+    <ClCompile Include="src\service\team_ms_player.cpp" />
     <ClCompile Include="src\sys\servernode_sys.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -174,6 +176,8 @@
     <ClInclude Include="src\scene\sceces.h" />
     <ClInclude Include="src\network\message_sys.hpp" />
     <ClInclude Include="src\service\ms_node.h" />
+    <ClInclude Include="src\service\scene_ms_player.h" />
+    <ClInclude Include="src\service\team_ms_player.h" />
     <ClInclude Include="src\sys\servernode_sys.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

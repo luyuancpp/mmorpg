@@ -72,7 +72,7 @@ def inputfiledestdir(filename):
                     filesrcdestpath[keycpp] = gsplayerservicedir
                 elif local.pkg == 'msplayerservice' or local.pkg == 'msservice':
                     filesrcdestpath[keyhead] = msplayerservicedir
-                    filesrcdestpath[keycpp] = gsplayerservicedir
+                    filesrcdestpath[keycpp] = msplayerservicedir
                 break
 def genheadrpcfun():
     global controller
