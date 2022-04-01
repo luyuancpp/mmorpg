@@ -24,7 +24,7 @@ tabstr = '    '
 cpkg = 'package'
 servicedir = './md5/'
 writedir = '../pbc/'
-protodir = './logic_proto/'
+protodir = './logic_proto/player/'
 local.baseserviceid = 0
 local.basemsgidcount = 200
 local.playerserviceid = local.basemsgidcount + 1
@@ -120,8 +120,10 @@ def md5copy(destfilename, filename):
 genfile = ['gs_node.proto', 'ms_node.proto', 'gw_node.proto']
 
 def inputfile():
-    for each_filename in os.listdir(protodir):
-        genfile.append(protodir + '/' + each_filename)
+    for filename in os.listdir(protodir):
+        if not (filename[-6:].lower() == '.proto'):
+            continue
+        genfile.append(protodir + '/' + filename)
 
 def main():
     for file in genfile:
