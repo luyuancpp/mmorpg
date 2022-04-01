@@ -30,11 +30,13 @@ cpprpcpart = 2
 cppmaxpart = 4
 controller = '(common::EntityPtr& entity'
 servicedir = './md5/'
-protodir = 'logic_proto/player/'
+protodir = 'logic_proto/'
 gsplayerservicedir = '../../../../game_server/src/service'
 msplayerservicedir = '../../../../master_server/src/service'
 gsendproto = 'gs.proto'
 msendproto = 'ms.proto'
+
+filesrcdestpath = {}
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
@@ -55,6 +57,23 @@ def parsefile(filename):
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = 'Player' + local.service
+
+def inputfiledestdir(filename):
+    global filesrcdestpath
+    local.pkg = ''
+    with open(filename,'r', encoding='utf-8') as file:
+        for fileline in file:
+            if fileline.find(cpkg) >= 0:
+                keyhead = filename.replace(protodir, '').replace('.proto', '_player.h')
+                keycpp = filename.replace(protodir, '').replace('.proto', '_player.cpp')
+                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
+                if local.pkg == 'gsplayerservice' or local.pkg == 'gsservice':
+                    filesrcdestpath[keyhead] = gsplayerservicedir
+                    filesrcdestpath[keycpp] = gsplayerservicedir
+                elif local.pkg == 'msplayerservice' or local.pkg == 'msservice':
+                    filesrcdestpath[keyhead] = msplayerservicedir
+                    filesrcdestpath[keycpp] = gsplayerservicedir
+                break
 def genheadrpcfun():
     global controller
     servicestr = 'public:\n'
@@ -113,8 +132,6 @@ def gencpprpcfunbegin(rpcindex):
         servicestr +=  tabstr + local.pkg + '::' + rsp + '* response)\n{\n'
     return servicestr
 
-
-
 def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 def namespacebegin():
@@ -123,6 +140,10 @@ def classbegin():
     return 'class ' + local.playerservice + 'Impl : public game::PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
 def emptyfun():
     return ''
+
+def getwritedirname(filename):
+    key = filename.replace(protodir, '').replace('.proto', '_player.h')
+    return filesrcdestpath[key]
 
 def genheadfile(filename):
     writedir = getwritedirname(filename)
@@ -294,16 +315,8 @@ def genplayerservcielist(filename):
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def getwritedirname(filename):
-    writedir = ''
-    if filename.find('gs_player') >= 0:
-        writedir = gsplayerservicedir
-    elif filename.find('ms_player') >= 0:
-        writedir = msplayerservicedir
-    return writedir
-
 def md5copy(filename):
-        if not (filename.endswith("player.cpp") or  filename.endswith("player.h") or filename == "player_service.cpp" or filename == "player_service.h"):
+        if not (filename.endswith('player.cpp') or  filename.endswith('player.h') or filename == 'player_service.cpp' or filename == 'player_service.h'):
             return
         gennewfilename = servicedir + filename
         filenamemd5 = gennewfilename + '.md5'
@@ -328,30 +341,28 @@ def md5copydir():
 genfile = []
 
 def get_file_list(file_path):
-    dir_list = os.listdir('./logic_proto/player')
+    dir_list = os.listdir(file_path)
     if not dir_list:
         return
     else:
         dir_list = sorted(dir_list,key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
-        print(file_path)
         return dir_list
 
 def inputfile():
+    global filesrcdestpath
+    filesrcdestpath['player_service.cpp'] = gsplayerservicedir
+    filesrcdestpath['player_service.h'] = gsplayerservicedir
     dir_list  = get_file_list(protodir)
-    for filename in dir_list:
-        if not ((filename[-8:].lower() == gsendproto) or (filename[-8:].lower() == msendproto)):
-            print("exit: player service %s must be endwith gs_.proto or ms_.proto " % (filename))
-            return
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
-        genfile.append([protodir  + filename, gsplayerservicedir])
+        inputfiledestdir(protodir + filename)
+        genfile.append(protodir  + filename)
 
 class myThread (threading.Thread):
-    def __init__(self, filename, writedir):
+    def __init__(self, filename):
         threading.Thread.__init__(self)
         self.filename = str(filename)
-        self.writedir = str(writedir)
     def run(self):
         generate(self.filename)
 
@@ -361,7 +372,7 @@ def main():
     step = filelen / cpu_count() + 1
     if cpu_count() > filelen:
         for i in range(0, filelen):
-            t = myThread( genfile[i][0], genfile[i][1])
+            t = myThread(genfile[i])
             t.start()
             threads.append(t)
     else :
@@ -373,8 +384,10 @@ def main():
     for t in threads :
         t.join()
     for file in genfile:
-        parseplayerservcie(file[0])
+        parseplayerservcie(file)
     genplayerservcielist('player_service.cpp')
+
 inputfile() 
 main()
 md5copydir()
+
