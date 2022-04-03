@@ -1,9 +1,14 @@
 syntax = "proto3";
 package serverplayer;
 import "common.proto";
+import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
-message SeceneGsRequest
+message Ms2GsLoginRequest
+{
+}
+
+message Ms2GsReconnectRequest
 {
 }
 
@@ -14,6 +19,6 @@ message SeceneGsResponse
 
 service PlayerSceneService 
 {
-  rpc EnterSceneGs2Ms (SeceneGsRequest) returns (SeceneGsResponse);
-  rpc EnterSceneMs2Gs (SeceneGsRequest) returns (SeceneGsResponse);
+  rpc LogincMs2Gs (Ms2GsLoginRequest) returns (google.protobuf.Empty);
+  rpc ReconnectMs2Gs (Ms2GsReconnectRequest) returns (google.protobuf.Empty);
 }

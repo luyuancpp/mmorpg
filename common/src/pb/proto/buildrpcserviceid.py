@@ -44,7 +44,7 @@ def parsefile(filename):
                 s = fileline.strip(' ').split(' ')
                 idstr = local.pkg.upper() + '_' + s[1].upper()  + '_ID'
                 index = 0
-                if local.pkg != 'playerservice' :
+                if not (filename.find('client_player') >= 0 or filename.find('server_player') >= 0 or filename.find('normal') >= 0) :
                     index = local.baseserviceid
                     line = 'const uint32_t ' + idstr + ' = ' + str(local.baseserviceid)
                     local.baseserviceid += 1

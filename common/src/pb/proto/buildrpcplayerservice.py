@@ -280,6 +280,8 @@ def generate(filename):
         gencppfile(filename, msplayerservicedir)
 
 def parseplayerservcie(filename):
+    if filename.find('normal') >= 0:
+        return
     local.fileservice.append(filename.replace('.proto', ''))
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
@@ -297,8 +299,6 @@ def genplayerservcielist(filename):
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
-        if f.find('normal') >= 0:
-            continue
         newstr += '#include "' + f + '.pb.h"\n'
         newstr += '#include "' + includedir + f.replace(protodir, '') + '.h"\n'
     newstr += 'namespace game\n{\n'
@@ -332,8 +332,8 @@ def md5copy(filename, writedir):
         if error == None and os.path.exists(fullfilename) and emptymd5 == False:
             return
         print("copy %s ---> %s" % (gennewfilename, fullfilename))
-        md5tool.generate_md5_file_for(fullfilename, filenamemd5)
         shutil.copy(gennewfilename, fullfilename)
+        md5tool.generate_md5_file_for(fullfilename, filenamemd5)
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
         for filename in filenames:    

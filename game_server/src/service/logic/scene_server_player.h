@@ -13,14 +13,12 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
-    void EnterSceneGs2Ms(common::EntityPtr& entity,
-        const serverplayer::SeceneGsRequest* request,
-        serverplayer::SeceneGsResponse* response);
-
-    void EnterSceneMs2Gs(common::EntityPtr& entity,
-        const serverplayer::SeceneGsRequest* request,
-        serverplayer::SeceneGsResponse* response);
-
+    void LogincMs2Gs(common::EntityPtr& entity,
+        const serverplayer::Ms2GsLoginRequest* request,
+        ::google::protobuf::Empty* response);
+    void ReconnectMs2Gs(common::EntityPtr& entity,
+        const serverplayer::Ms2GsReconnectRequest* request,
+        ::google::protobuf::Empty* response);
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         common::EntityPtr& entity,
         const ::google::protobuf::Message* request,
@@ -28,14 +26,14 @@ public:
         {
         switch(method->index()) {
         case 0:
-            EnterSceneGs2Ms(entity,
-            ::google::protobuf::internal::DownCast<const serverplayer::SeceneGsRequest*>( request),
-            ::google::protobuf::internal::DownCast<serverplayer::SeceneGsResponse*>(response));
+            LogincMs2Gs(entity,
+            ::google::protobuf::internal::DownCast<const serverplayer::Ms2GsLoginRequest*>( request),
+            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 1:
-            EnterSceneMs2Gs(entity,
-            ::google::protobuf::internal::DownCast<const serverplayer::SeceneGsRequest*>( request),
-            ::google::protobuf::internal::DownCast<serverplayer::SeceneGsResponse*>(response));
+            ReconnectMs2Gs(entity,
+            ::google::protobuf::internal::DownCast<const serverplayer::Ms2GsReconnectRequest*>( request),
+            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";

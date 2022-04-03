@@ -7,24 +7,22 @@ namespace serverplayer{
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void PlayerPlayerSceneServiceImpl::EnterSceneGs2Ms(common::EntityPtr& entity,
-    const serverplayer::SeceneGsRequest* request,
-    serverplayer::SeceneGsResponse* response)
+void PlayerPlayerSceneServiceImpl::LogincMs2Gs(common::EntityPtr& entity,
+    const serverplayer::Ms2GsLoginRequest* request,
+    ::google::protobuf::Empty* response)
 {
-///<<< BEGIN WRITING YOUR CODE EnterSceneGs2Ms
-///<<< END WRITING YOUR CODE EnterSceneGs2Ms
-}
-
-void PlayerPlayerSceneServiceImpl::EnterSceneMs2Gs(common::EntityPtr& entity,
-    const serverplayer::SeceneGsRequest* request,
-    serverplayer::SeceneGsResponse* response)
-{
-///<<< BEGIN WRITING YOUR CODE EnterSceneMs2Gs
-///<<< END WRITING YOUR CODE EnterSceneMs2Gs
+///<<< BEGIN WRITING YOUR CODE LogincMs2Gs
+///<<< END WRITING YOUR CODE LogincMs2Gs
 }
 
 ///<<<rpc end
-///<<< BEGIN WRITING YOUR CODE EnterSceneMs2Gs
-///<<< END WRITING YOUR CODE EnterSceneMs2Gs
+void PlayerPlayerSceneServiceImpl::ReconnectMs2Gs(common::EntityPtr& entity,
+    const serverplayer::Ms2GsReconnectRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE ReconnectMs2Gs
+///<<< END WRITING YOUR CODE ReconnectMs2Gs
+}
 
+///<<<rpc end
 }// namespace serverplayer
