@@ -131,10 +131,12 @@
     <ClCompile Include="src\module\network\message_sys.cpp" />
     <ClCompile Include="src\module\player_list\player_list.cpp" />
     <ClCompile Include="src\service\gs_node.cpp" />
+    <ClCompile Include="src\service\logic\scene_client_player.cpp" />
+    <ClCompile Include="src\service\logic\scene_server_player.cpp" />
+    <ClCompile Include="src\service\logic\team_client_player.cpp" />
+    <ClCompile Include="src\service\logic\team_server_player.cpp" />
     <ClCompile Include="src\service\player_service.cpp" />
     <ClCompile Include="src\service\replied_ms2gs.cpp" />
-    <ClCompile Include="src\service\scene_gs_player.cpp" />
-    <ClCompile Include="src\service\team_gs_player.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\module\master.hpp" />
@@ -144,10 +146,12 @@
     <ClInclude Include="src\module\network\message_sys.h" />
     <ClInclude Include="src\module\player_list\player_list.h" />
     <ClInclude Include="src\service\gs_node.h" />
+    <ClInclude Include="src\service\logic\scene_client_player.h" />
+    <ClInclude Include="src\service\logic\scene_server_player.h" />
+    <ClInclude Include="src\service\logic\team_client_player.h" />
+    <ClInclude Include="src\service\logic\team_server_player.h" />
     <ClInclude Include="src\service\player_service.h" />
     <ClInclude Include="src\service\replied_ms2gs.h" />
-    <ClInclude Include="src\service\scene_gs_player.h" />
-    <ClInclude Include="src\service\team_gs_player.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -39,10 +39,16 @@
     <ClCompile Include="src\service\gs_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\scene_gs_player.cpp">
+    <ClCompile Include="src\service\logic\scene_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team_gs_player.cpp">
+    <ClCompile Include="src\service\logic\scene_server_player.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\logic\team_client_player.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\logic\team_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -74,10 +80,16 @@
     <ClInclude Include="src\service\gs_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\scene_gs_player.h">
+    <ClInclude Include="src\service\logic\scene_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team_gs_player.h">
+    <ClInclude Include="src\service\logic\scene_server_player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic\team_client_player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic\team_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

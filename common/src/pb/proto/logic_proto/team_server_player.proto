@@ -1,5 +1,5 @@
 syntax = "proto3";
-package gsplayer;
+package serverplayer;
 import "common.proto";
 option cc_generic_services = true;
 

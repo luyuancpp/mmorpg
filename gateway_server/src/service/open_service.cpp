@@ -6,5 +6,7 @@ namespace gateway
 std::unordered_set<std::string> g_open_player_services;
 void OpenPlayerServcie()
 {
+    g_open_player_services.emplace("clientplayer.PlayerSceneService");
+    g_open_player_services.emplace("clientplayer.PlayerTeamService");
 }
 }//namespace gateway
