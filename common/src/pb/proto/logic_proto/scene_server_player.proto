@@ -1,0 +1,19 @@
+syntax = "proto3";
+package serverplayer;
+import "common.proto";
+option cc_generic_services = true;
+
+message SeceneGsRequest
+{
+}
+
+message SeceneGsResponse
+{
+	ClientError error = 1;
+}
+
+service PlayerSceneService 
+{
+  rpc EnterSceneGs2Ms (SeceneGsRequest) returns (SeceneGsResponse);
+  rpc EnterSceneMs2Gs (SeceneGsRequest) returns (SeceneGsResponse);
+}
