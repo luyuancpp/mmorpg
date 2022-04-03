@@ -1,0 +1,23 @@
+syntax = "proto3";
+package clientplayer;
+import "common.proto";
+option cc_generic_services = true;
+
+message SeceneTestRequest
+{
+}
+
+message SeceneTestResponse
+{
+	ClientError error = 1;
+}
+
+message EnterSeceneS2C
+{
+}
+
+service PlayerSceneService 
+{
+  rpc EnterScene (SeceneTestRequest) returns (SeceneTestResponse);
+  rpc EnterSceneNotify (EnterSeceneS2C) returns (EnterSeceneS2C);
+}
