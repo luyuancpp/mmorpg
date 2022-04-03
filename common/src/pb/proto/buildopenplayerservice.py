@@ -36,28 +36,9 @@ playerservicedir = '../../../../gateway_server/src/service'
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
-def parsefile(filename):
-    local.rpcarry = []
-    local.pkg = ''
-    local.playerservice = ''
-    local.service = ''
-    rpcbegin = 0 
-    with open(filename,'r', encoding='utf-8') as file:
-        for fileline in file:
-            if fileline.find('rpc') >= 0 and rpcbegin == 1:
-                local.rpcarry.append(fileline)
-            elif fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-            elif fileline.find('service ') >= 0:
-                rpcbegin = 1
-                local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-                local.playerservice = 'Player' + local.service
-
-
-def generate(filename, writedir):
-    parsefile(filename)
-
 def parseplayerservcie(filename):
+    if filename.find('client_player') < 0:
+        return
     local.fileservice.append(filename.replace('.proto', ''))
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
@@ -119,32 +100,7 @@ def inputfile():
     dir_list  = get_file_list(protodir)
     for each_filename in dir_list:
         genfile.append([protodir  + each_filename, playerservicedir])
-
-class myThread (threading.Thread):
-    def __init__(self, filename, writedir):
-        threading.Thread.__init__(self)
-        self.filename = str(filename)
-        self.writedir = str(writedir)
-    def run(self):
-        generate(self.filename, self.writedir)
-
 def main():
-    filelen = len(genfile)
-    global threads
-    step = filelen / cpu_count() + 1
-    if cpu_count() > filelen:
-        for i in range(0, filelen):
-            t = myThread( genfile[i][0], genfile[i][1])
-            t.start()
-            threads.append(t)
-    else :
-        for i in range(0, cpu_count()):
-            for j in range(i, i * step) :
-                t = myThread(genfile[j][0], genfile[j][1])
-                t.start()
-                threads.append(t)
-    for t in threads :
-        t.join()
     for file in genfile:
         parseplayerservcie(file[0])
     genplayerservcielist('open_service.cpp')

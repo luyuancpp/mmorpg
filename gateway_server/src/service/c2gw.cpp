@@ -16,7 +16,6 @@
 #include "src/server_common/rpc_closure.h"
 
 #include "login_node.pb.h"
-#include "logic_proto/player_scene.pb.h"
 
 using namespace common;
 using namespace c2gw;
