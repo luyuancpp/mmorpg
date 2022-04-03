@@ -23,8 +23,6 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
         std::bind(&ClientService::OnEnterGameReplied, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<LeaveGameResponse>(
         std::bind(&ClientService::OnLeaveGameReplied, this, _1, _2, _3));
-	dispatcher_.registerMessageCallback<SeceneTestResponse>(
-		std::bind(&ClientService::OnEnterSceneResponseReplied, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<ClientResponse>(
 		std::bind(&ClientService::OnGsReplied, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<ClientResponse>(
@@ -87,8 +85,11 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-    SeceneTestRequest request;
-    Send(request);
+	g_lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
+	{
+		this->codec_.send(this->conn_, request);
+	};
+	g_lua["LeaveGame"]();
 }
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -96,17 +97,6 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     timer_task_.RunAfter(1, std::bind(&ClientService::DisConnect, this));
-}
-
-void ClientService::OnEnterSceneResponseReplied(const muduo::net::TcpConnectionPtr& conn,
-    const EnterSceneResponsePtr& message,
-    muduo::Timestamp)
-{
-	g_lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
-	{
-		this->codec_.send(this->conn_, request);
-	};
-    g_lua["LeaveGame"]();
 }
 
 void ClientService::OnGsReplied(const muduo::net::TcpConnectionPtr& conn, 

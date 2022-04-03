@@ -33,8 +33,8 @@ servicedir = './md5/'
 protodir = 'logic_proto/'
 gsplayerservicedir = '../../../../game_server/src/service'
 msplayerservicedir = '../../../../master_server/src/service'
-gsendproto = 'gs.proto'
-msendproto = 'ms.proto'
+client_player = 'client_player'
+server_player = 'server_player'
 
 filesrcdestpath = {}
 
@@ -61,18 +61,12 @@ def parsefile(filename):
 def inputfiledestdir(filename):
     global filesrcdestpath
     local.pkg = ''
+    if filename.find(client_player) >= 0:
+        filesrcdestpath[filename] = gsplayerservicedir
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find(cpkg) >= 0:
-                keyhead = filename.replace(protodir, '').replace('.proto', '_player.h')
-                keycpp = filename.replace(protodir, '').replace('.proto', '_player.cpp')
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-                if local.pkg == 'gsplayerservice' or local.pkg == 'gsservice':
-                    filesrcdestpath[keyhead] = gsplayerservicedir
-                    filesrcdestpath[keycpp] = gsplayerservicedir
-                elif local.pkg == 'msplayerservice' or local.pkg == 'msservice':
-                    filesrcdestpath[keyhead] = msplayerservicedir
-                    filesrcdestpath[keycpp] = msplayerservicedir
                 break
 def genheadrpcfun():
     global controller
@@ -141,21 +135,16 @@ def classbegin():
 def emptyfun():
     return ''
 
-def getwritedirname(filename):
-    key = filename.replace(protodir, '').replace('.proto', '_player.h')
-    return filesrcdestpath[key]
-
-def genheadfile(filename):
-    writedir = getwritedirname(filename)
+def genheadfile(filename, writedir):
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
-    fullfilename = writedir + '/' + filename.replace('.proto', '_player.h')
+    fullfilename = writedir + '/' + filename.replace('.proto', '.h')
     folder_path, local.hfilename = os.path.split(fullfilename)    
     newheadfilename = servicedir + local.hfilename.replace('.proto', '.h')
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper().replace('/', '_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
     newstr += '#include "player_service.h"\n'
-    newstr += '#include "' + protodir  + local.hfilename.replace('.h', '').replace('_player', '') + '.pb.h"\n'
+    newstr += '#include "' + protodir  + local.hfilename.replace('.h', '') + '.pb.h"\n'
     try:
         with open(fullfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -196,10 +185,9 @@ def genheadfile(filename):
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(filename):
-    writedir = getwritedirname(filename)
+def gencppfile(filename, writedir):
     global cppmaxpart
-    cppfilename = writedir + '/' + filename.replace('.proto', '_player.cpp').replace(protodir, '')
+    cppfilename = writedir + '/' + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = servicedir + local.hfilename.replace('.h', '.cpp')
     newstr = '#include "' + local.hfilename + '"\n'
     try:
@@ -277,9 +265,16 @@ def gencppfile(filename):
         file.write(newstr)
 
 def generate(filename):
-    parsefile(filename)
-    genheadfile(filename)
-    gencppfile(filename)
+    if filename.find(client_player) >= 0:
+        parsefile(filename)
+        genheadfile(filename, gsplayerservicedir)
+        gencppfile(filename, gsplayerservicedir)
+    elif filename.find(server_player) >= 0:
+        parsefile(filename)
+        genheadfile(filename, gsplayerservicedir)
+        gencppfile(filename, gsplayerservicedir)
+        genheadfile(filename, msplayerservicedir)
+        gencppfile(filename, msplayerservicedir)
 
 def parseplayerservcie(filename):
     local.fileservice.append(filename.replace('.proto', ''))
@@ -298,7 +293,7 @@ def genplayerservcielist(filename):
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + f.replace(protodir, '') + '_player.h"\n'
+        newstr += '#include "' + f.replace(protodir, '') + '.h"\n'
     newstr += 'namespace game\n{\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
@@ -315,8 +310,13 @@ def genplayerservcielist(filename):
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(filename):
-        if not (filename.endswith('player.cpp') or  filename.endswith('player.h') or filename == 'player_service.cpp' or filename == 'player_service.h'):
+def md5copy(filename, writedir):
+        if filename.find('md5') >= 0:
+            return
+        if not (filename.find(client_player) >= 0 or   
+                filename.find(server_player) >= 0 or 
+                filename == 'player_service.cpp' or
+                filename == 'player_service.h'):
             return
         gennewfilename = servicedir + filename
         filenamemd5 = gennewfilename + '.md5'
@@ -326,7 +326,6 @@ def md5copy(filename):
             emptymd5 = True
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        writedir = getwritedirname(filename)
         fullfilename = writedir + '/' + filename
         if error == None and os.path.exists(fullfilename) and emptymd5 == False:
             return
@@ -335,8 +334,12 @@ def md5copy(filename):
         shutil.copy(gennewfilename, fullfilename)
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
-        for filename in filenames:        
-            md5copy(filename)
+        for filename in filenames:    
+            if filename.find(client_player) >= 0:
+                md5copy(filename, gsplayerservicedir)
+            elif filename.find(server_player) >= 0:
+                md5copy(filename, gsplayerservicedir)
+                md5copy(filename, msplayerservicedir)
 
 genfile = []
 

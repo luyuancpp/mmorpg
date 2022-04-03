@@ -10,18 +10,16 @@
 #include "src/server_common/codec/dispatcher.h"
 
 #include "c2gw.pb.h"
-#include "logic_proto/player_scene.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
-using namespace playerservice;
+
 
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
 using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;
 using EnterGameResponsePtr = std::shared_ptr<EnterGameResponse>;
 using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
-using EnterSceneResponsePtr = std::shared_ptr<SeceneTestResponse>;
 using ClientResponsePtr = std::shared_ptr<ClientResponse>;
 using MessageBodyPtr = std::shared_ptr<MessageBody>;
 
@@ -49,10 +47,6 @@ public:
     void OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
         const LeaveGameResponsePtr& message,
         muduo::Timestamp);
-
-	void OnEnterSceneResponseReplied(const muduo::net::TcpConnectionPtr& conn,
-		const EnterSceneResponsePtr& message,
-		muduo::Timestamp);
 
 	void OnGsReplied(const muduo::net::TcpConnectionPtr& conn,
 		const ClientResponsePtr& message,
