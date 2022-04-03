@@ -1,19 +1,19 @@
-#include "team_gs_player.h"
+#include "team_client_player.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-namespace gsplayerservice{
+namespace clientplayer{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
 void PlayerPlayerTeamServiceImpl::EnterScene(common::EntityPtr& entity,
-    const gsplayerservice::TeamTestRequest* request,
-    gsplayerservice::TeamTestResponse* response)
+    const clientplayer::TeamTestRequest* request,
+    clientplayer::TeamTestResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterScene
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
 ///<<<rpc end
-}// namespace gsplayerservice
+}// namespace clientplayer

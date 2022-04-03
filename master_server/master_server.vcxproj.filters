@@ -42,10 +42,10 @@
     <ClCompile Include="src\service\ms_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\scene_ms_player.cpp">
+    <ClCompile Include="src\service\logic\scene_server_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team_ms_player.cpp">
+    <ClCompile Include="src\service\logic\team_server_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -86,10 +86,10 @@
     <ClInclude Include="src\service\ms_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\scene_ms_player.h">
+    <ClInclude Include="src\service\logic\scene_server_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team_ms_player.h">
+    <ClInclude Include="src\service\logic\team_server_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

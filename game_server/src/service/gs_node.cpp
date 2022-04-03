@@ -14,7 +14,7 @@
 #include "src/service/player_service.h"
 
 #include "c2gw.pb.h"
-#include "logic_proto/scene_gs.pb.h"
+#include "logic_proto/scene_server_player.pb.h"
 using namespace game;
 ///<<< END WRITING YOUR CODE
 
@@ -55,8 +55,6 @@ void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	}
 	reg.emplace<GateNodeWPtr>(player, *p_gate);
 
-	gsplayerservice::EnterSeceneS2C msg;
-	Send2Player(msg, player);
 ///<<< END WRITING YOUR CODE EnterGame
 }
 

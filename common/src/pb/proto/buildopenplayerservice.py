@@ -58,7 +58,7 @@ def genplayerservcielist(filename):
     
     newstr += 'void OpenPlayerServcie()\n{\n'
     for service in local.playerservicearray:
-        if service.find('playerservice') >= 0:
+        if service.find('clientplayer') >= 0:
             newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
     newstr += '}\n}//namespace gateway\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:

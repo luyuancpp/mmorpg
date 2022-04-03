@@ -16,6 +16,7 @@ local.service = ''
 local.hfilename = ''
 local.playerservice = ''
 local.playerservicearray = []
+local.openplayerservicearray = []
 local.fileservice = []
 
 threads = []
@@ -31,8 +32,10 @@ cppmaxpart = 4
 controller = '(common::EntityPtr& entity'
 servicedir = './md5/'
 protodir = 'logic_proto/'
-gsplayerservicedir = '../../../../game_server/src/service'
-msplayerservicedir = '../../../../master_server/src/service'
+includedir = 'src/service/logic/'
+gsplayerservicedir = '../../../../game_server/src/service/logic'
+msplayerservicedir = '../../../../master_server/src/service/logic'
+gsservicedir = '../../../../game_server/src/service/'
 client_player = 'client_player'
 server_player = 'server_player'
 
@@ -143,7 +146,7 @@ def genheadfile(filename, writedir):
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper().replace('/', '_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
-    newstr += '#include "player_service.h"\n'
+    newstr += '#include "../player_service.h"\n'
     newstr += '#include "' + protodir  + local.hfilename.replace('.h', '') + '.pb.h"\n'
     try:
         with open(fullfilename,'r+', encoding='utf-8') as file:
@@ -285,6 +288,8 @@ def parseplayerservcie(filename):
             elif fileline.find('service ') >= 0:
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.pkg + '.' + local.service)
+                if filename.find(client_player) >= 0:
+                    local.openplayerservicearray.append(local.pkg + '.' + local.service)
                 
 def genplayerservcielist(filename):
     fullfilename = servicedir + filename
@@ -292,20 +297,22 @@ def genplayerservcielist(filename):
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
+        if f.find('normal') >= 0:
+            continue
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir + f.replace(protodir, '') + '.h"\n'
     newstr += 'namespace game\n{\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
-    for service in local.playerservicearray:
+    for service in local.openplayerservicearray:
         newstr += 'class ' + service.split('.')[1] + 'Impl : public ' + service.replace('.', '::')  + '{};\n'
     newstr += 'void InitPlayerServcie()\n{\n'
     for service in local.playerservicearray:
-        if service.find('playerservice') >= 0:
-            newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
         newstr += ', std::make_unique<' + service.split('.')[0] + '::Player' + service.split('.')[1] + 'Impl>(new '
         newstr +=  service.split('.')[1] + 'Impl));\n'
+    for service in local.openplayerservicearray:
+        newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
     newstr += '}\n}//namespace game\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -313,24 +320,19 @@ def genplayerservcielist(filename):
 def md5copy(filename, writedir):
         if filename.find('md5') >= 0:
             return
-        if not (filename.find(client_player) >= 0 or   
-                filename.find(server_player) >= 0 or 
-                filename == 'player_service.cpp' or
-                filename == 'player_service.h'):
-            return
         gennewfilename = servicedir + filename
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
-        if  not os.path.exists(filenamemd5):
+        fullfilename = writedir + '/' + filename
+        if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(fullfilename):
             emptymd5 = True
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        fullfilename = writedir + '/' + filename
         if error == None and os.path.exists(fullfilename) and emptymd5 == False:
             return
         print("copy %s ---> %s" % (gennewfilename, fullfilename))
-        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+        md5tool.generate_md5_file_for(fullfilename, filenamemd5)
         shutil.copy(gennewfilename, fullfilename)
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
@@ -340,6 +342,8 @@ def md5copydir():
             elif filename.find(server_player) >= 0:
                 md5copy(filename, gsplayerservicedir)
                 md5copy(filename, msplayerservicedir)
+            elif filename == 'player_service.cpp' or filename == 'player_service.h':
+                md5copy(filename, gsservicedir)
 
 genfile = []
 
