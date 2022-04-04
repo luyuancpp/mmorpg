@@ -21,6 +21,7 @@ struct GateNode
 };
 using GateNodePtr = std::shared_ptr<GateNode>;
 using GateNodeWPtr = std::weak_ptr<GateNode>;
-struct GateNodes : public std::unordered_map<uint32_t, entt::entity> {};
+using GateNodes = std::unordered_map<uint32_t, entt::entity>;
+extern GateNodes g_gate_nodes;
 
 #endif//GAME_SERVER_MODULE_NETWORK_GATE_NODE_H_

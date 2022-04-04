@@ -101,9 +101,8 @@ void Send2Player(const google::protobuf::Message& message, common::Guid player_i
 
 void Send2Gate(const google::protobuf::Message& message, uint32_t gate_id)
 {
-	auto& gate_nodes = reg.get<GateNodes>(global_entity());
-	auto gate_it = gate_nodes.find(gate_id);
-	if (gate_it == gate_nodes.end())
+	auto gate_it = g_gate_nodes.find(gate_id);
+	if (gate_it == g_gate_nodes.end())
 	{
 		return;
 	}
