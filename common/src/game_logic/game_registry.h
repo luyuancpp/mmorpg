@@ -28,4 +28,7 @@ namespace entt
 	}
 }//namespace entt
 
+entt::entity& global_entity();
+
+
 #endif//COMMON_SRC_GAME_ECS_GAME_REGISTRY_H_

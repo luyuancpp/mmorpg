@@ -16,7 +16,7 @@ TimerDuration::TimerDuration(time_t nBeginTime, time_t nEndTime, const muduo::Ti
 }
 
 TimerDuration::TimerDuration(const std::string & sBeginTime, const std::string & sEndTime, const muduo::TimerCallback & bCb, const muduo::TimerCallback & eCb)
-    : TimerDuration(game::YmdHmsStringToTime(sBeginTime), game::YmdHmsStringToTime(sEndTime), bCb, eCb)
+    : TimerDuration(YmdHmsStringToTime(sBeginTime), YmdHmsStringToTime(sEndTime), bCb, eCb)
 {
 }
 
@@ -68,15 +68,15 @@ TimerDuration::time_duration_ptr TimerDuration::CreateDuration(int32_t nType,
     break;
     case E_DURATION_DAILY:
     {
-        muduo::Date dateToday(game::GetTodayDate(now));
-        return  CreateDuration(nType, now, game::GetTime(dateToday, sBeginTime), game::GetTime(dateToday, sEndTime), bCb, eCb);
+        muduo::Date dateToday(GetTodayDate(now));
+        return  CreateDuration(nType, now, GetTime(dateToday, sBeginTime), GetTime(dateToday, sEndTime), bCb, eCb);
     }
     break;
     case  E_DURATION_WEEK:
     {
-        muduo::Date dateToday(game::GetTodayDate(now));
-        muduo::Date dateWeekBegin(game::GetWeekBeginDay(dateToday));
-        return  CreateDuration(nType, now, game::GetWeekTime(dateWeekBegin, sBeginTime), game::GetWeekTime(dateWeekBegin, sEndTime), bCb, eCb);
+        muduo::Date dateToday(GetTodayDate(now));
+        muduo::Date dateWeekBegin(GetWeekBeginDay(dateToday));
+        return  CreateDuration(nType, now, GetWeekTime(dateWeekBegin, sBeginTime), GetWeekTime(dateWeekBegin, sEndTime), bCb, eCb);
     }
     break;
     default:

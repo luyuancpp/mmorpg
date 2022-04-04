@@ -126,7 +126,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\factories\server_global_entity.cpp" />
     <ClCompile Include="src\game_server.cpp" />
     <ClCompile Include="src\module\network\message_sys.cpp" />
     <ClCompile Include="src\module\player_list\player_list.cpp" />
@@ -140,7 +139,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\module\master.hpp" />
-    <ClInclude Include="src\factories\server_global_entity.hpp" />
     <ClInclude Include="src\game_server.h" />
     <ClInclude Include="src\module\network\gate_node.h" />
     <ClInclude Include="src\module\network\message_sys.h" />
