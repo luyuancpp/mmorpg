@@ -7,7 +7,7 @@
 namespace serverplayer{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class PlayerPlayerTeamServiceImpl : public game::PlayerService {
+class PlayerPlayerTeamServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 ///<<< BEGIN WRITING YOUR CODE

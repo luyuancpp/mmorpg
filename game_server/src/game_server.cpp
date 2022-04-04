@@ -19,10 +19,9 @@
 
 using namespace common;
 
-game::GameServer* g_gs = nullptr;
+GameServer* g_gs = nullptr;
 
-namespace game
-{
+
 GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
      redis_(std::make_shared<RedisClient>()){}
@@ -100,7 +99,7 @@ void GameServer::Register2Master(MasterSessionPtr& master_rpc_client)
     session_info->set_port(master_local_addr.port());
     node_info->set_ip(server_deploy_.ip());
     node_info->set_port(server_deploy_.port());
-    request.set_server_type(reg.get<eServerType>(game::global_entity()));
+    request.set_server_type(reg.get<eServerType>(global_entity()));
     request.set_gs_node_id(server_deploy_.id());
     request.set_master_server_addr(uint64_t(master_rpc_client.get()));
     g2ms_stub_.CallMethod(
@@ -128,7 +127,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             [this]() ->void
             {
                 ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-                if (reg.get<eServerType>(game::global_entity()) == kMainServer)
+                if (reg.get<eServerType>(global_entity()) == kMainServer)
                 {
                     cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
                 }
@@ -228,5 +227,3 @@ void GameServer::ConnectRegion()
     region_session_->subscribe<OnConnected2ServerEvent>(*this);
     region_session_->connect();
 }
-
-}//namespace game

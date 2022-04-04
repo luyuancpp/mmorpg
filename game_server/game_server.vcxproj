@@ -131,11 +131,11 @@
     <ClCompile Include="src\module\network\message_sys.cpp" />
     <ClCompile Include="src\module\player_list\player_list.cpp" />
     <ClCompile Include="src\service\gs_node.cpp" />
+    <ClCompile Include="src\service\gs_player_service.cpp" />
     <ClCompile Include="src\service\logic\scene_client_player.cpp" />
     <ClCompile Include="src\service\logic\scene_server_player.cpp" />
     <ClCompile Include="src\service\logic\team_client_player.cpp" />
     <ClCompile Include="src\service\logic\team_server_player.cpp" />
-    <ClCompile Include="src\service\player_service.cpp" />
     <ClCompile Include="src\service\replied_ms2gs.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -135,7 +135,7 @@ def yourcode():
 def namespacebegin():
     return 'namespace ' + local.pkg + '{\n'
 def classbegin():
-    return 'class ' + local.playerservice + 'Impl : public game::PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
+    return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
 def emptyfun():
     return ''
 
@@ -304,7 +304,6 @@ def gengsplayerservcielist(filename):
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
         newstr += '#include "' + includedir + f.replace(protodir, '') + '.h"\n'
-    newstr += 'namespace game\n{\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.openplayerservicearray:
@@ -316,7 +315,7 @@ def gengsplayerservcielist(filename):
         newstr +=  service.split('.')[1] + 'Impl));\n'
     for service in local.openplayerservicearray:
         newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
-    newstr += '}\n}//namespace game\n'
+    newstr += '}\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 

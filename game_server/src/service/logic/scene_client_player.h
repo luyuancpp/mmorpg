@@ -7,7 +7,7 @@
 namespace clientplayer{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class PlayerPlayerSceneServiceImpl : public game::PlayerService {
+class PlayerPlayerSceneServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 ///<<< BEGIN WRITING YOUR CODE

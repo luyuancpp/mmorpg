@@ -8,7 +8,6 @@
 #include "src/game_logic/game_registry.h"
 
 using namespace common;
-using namespace game;
 
 namespace ms2gs
 {
@@ -29,7 +28,7 @@ void RepliedMs2g::StartGSMasterReplied(StartGameMasterRpcRC cp)
         }
     }
 
-    auto& scenemap = reg.get<SceneMapComp>(game::global_entity());
+    auto& scenemap = reg.get<SceneMapComp>(global_entity());
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
     {
         auto& pb = rsp->scenes_info(i);

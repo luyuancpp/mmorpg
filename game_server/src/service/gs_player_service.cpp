@@ -9,8 +9,6 @@
 #include "src/service/logic/team_server_player.h"
 #include "logic_proto/scene_server_player.pb.h"
 #include "src/service/logic/scene_server_player.h"
-namespace game
-{
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
 std::unordered_set<std::string> g_open_player_services;
 class PlayerSceneServiceImpl : public clientplayer::PlayerSceneService{};
@@ -24,4 +22,3 @@ void InitPlayerServcie()
     g_open_player_services.emplace("clientplayer.PlayerSceneService");
     g_open_player_services.emplace("clientplayer.PlayerTeamService");
 }
-}//namespace game
