@@ -3,17 +3,17 @@ import "common.proto";
 package normal;
 option cc_generic_services = true;
 
-message TeamTestRequest
+message SceneTestRequest
 {
 }
 
-message TeamTestResponse
+message SceneTestResponse
 {
 	ClientError error = 1;
 }
 
 
-service PlayerTeamService
+service PlayerSceneService
 {
-  rpc EnterScene (TeamTestRequest) returns (TeamTestResponse);
+  rpc EnterScene (SceneTestRequest) returns (SceneTestResponse);
 }

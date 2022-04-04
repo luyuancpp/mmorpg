@@ -6,7 +6,7 @@
 #include "google/protobuf/message.h"
 #include "google/protobuf/service.h"
 
-#include "src/game_logic/entity/entity.h"
+#include "src/game_logic/game_registry.h"
 
 namespace game
 {

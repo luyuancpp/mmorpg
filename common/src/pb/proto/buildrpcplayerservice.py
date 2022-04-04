@@ -193,6 +193,8 @@ def gencppfile(filename, writedir):
     global cppmaxpart
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = servicedir + local.hfilename.replace('.h', '.cpp')
+    newstr = '#include "src/game_logic/game_registry.h"\n'
+    newstr = 'src/module/network/message_sys.h"\n'
     newstr = '#include "' + local.hfilename + '"\n'
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
@@ -216,6 +218,8 @@ def gencppfile(filename, writedir):
                     newstr += fileline + '\n'
                     part += 1
                     if part == 1 :
+                        newstr += 'using namespace common;'
+                        newstr += 'using namespace serverplayer;'
                         newstr += namespacebegin()
                     continue     
                 elif part == cpprpcpart:
@@ -254,6 +258,8 @@ def gencppfile(filename, writedir):
                     break
     except FileNotFoundError:
             newstr += yourcode() + '\n'
+            newstr += 'using namespace common;'
+            newstr += 'using namespace serverplayer;'
             newstr += namespacebegin()
             newstr += yourcode() + '\n'
             serviceidx = 0
@@ -330,15 +336,18 @@ def genmsplayerservcielist(filename):
         newstr += '#include "' + includedir + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
-    for service in local.openplayerservicearray:
+    for service in local.playerservicearray:
+        if service.find('serverplayer') < 0:
+            continue
         newstr += 'class ' + service.split('.')[1] + 'Impl : public ' + service.replace('.', '::')  + '{};\n'
     newstr += 'void InitPlayerServcie()\n{\n'
     for service in local.playerservicearray:
-        if f.find(server_player) < 0:
+        if service.find('serverplayer') < 0:
             continue
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
         newstr += ', std::make_unique<' + service.split('.')[0] + '::Player' + service.split('.')[1] + 'Impl>(new '
         newstr +=  service.split('.')[1] + 'Impl));\n'
+    newstr += '}\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
