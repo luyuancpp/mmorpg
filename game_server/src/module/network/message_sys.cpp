@@ -11,7 +11,6 @@
 #include "gw_node.pb.h"
 
 using namespace common;
-using namespace game;
 
 void Send2Player(const google::protobuf::Message& message, common::Guid player_id)
 {

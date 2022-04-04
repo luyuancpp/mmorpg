@@ -11,18 +11,18 @@ using namespace common;
 
 int main(int argc, char* argv[])
 {
-    game::global_entity() = reg.create();
+    global_entity() = reg.create();
     if (argc > 1 && atoi(argv[1]) == kRoomServer)
     {
-        reg.emplace<eServerType>(game::global_entity(), kRoomServer);
+        reg.emplace<eServerType>(global_entity(), kRoomServer);
     }
     else
     {
-        reg.emplace<eServerType>(game::global_entity(), kMainServer);
+        reg.emplace<eServerType>(global_entity(), kMainServer);
     }
 
     EventLoop loop;
-    game::GameServer server(&loop);
+    GameServer server(&loop);
     g_gs = &server;
     server.Init();
     server.InitNetwork();

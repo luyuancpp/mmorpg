@@ -14,8 +14,7 @@
 #include "ms_node.pb.h"
 #include "rg_node.pb.h"
 
-namespace game
-{
+
 using MasterSessionPtr = std::shared_ptr<common::RpcClient>;
 
 class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
@@ -74,8 +73,6 @@ private:
     gsservice::GsServiceImpl gs_service_impl_;
 };
 
-};//namespace game
-
-extern game::GameServer* g_gs;
+extern GameServer* g_gs;
 
 #endif // !GAME_SERVER_SRC_GAME_SERVER_GAME_SERVER_H_

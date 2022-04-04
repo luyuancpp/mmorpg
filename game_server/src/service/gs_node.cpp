@@ -15,7 +15,7 @@
 
 #include "c2gw.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
-using namespace game;
+
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
