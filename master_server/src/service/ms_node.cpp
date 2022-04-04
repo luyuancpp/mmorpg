@@ -10,7 +10,6 @@
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"
 #include "src/factories/scene_factories.hpp"
-#include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"

@@ -1,7 +1,6 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/game_server.h"
-#include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/server_common/node_info.h"
 
