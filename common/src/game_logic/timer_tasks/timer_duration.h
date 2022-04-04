@@ -138,8 +138,8 @@
 
      virtual void CalcNextDuration()
      {
-         m_nBeginTime += game::kSecondsPerDay ;
-         m_nEndTime += game::kSecondsPerDay;
+         m_nBeginTime += kSecondsPerDay ;
+         m_nEndTime += kSecondsPerDay;
          InitTimer();
      }
  };
@@ -154,8 +154,8 @@
 
      virtual void CalcNextDuration()
      {
-         m_nBeginTime += game::kSecondsPerWeek;
-         m_nEndTime += game::kSecondsPerWeek;
+         m_nBeginTime += kSecondsPerWeek;
+         m_nEndTime += kSecondsPerWeek;
 		 InitTimer();
      }
  };

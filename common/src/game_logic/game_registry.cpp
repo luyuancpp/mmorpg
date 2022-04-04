@@ -29,3 +29,9 @@ namespace common
 	}
 
 }//namespace common
+
+entt::entity& global_entity()
+{
+	thread_local entt::entity singleton;
+	return singleton;
+}
