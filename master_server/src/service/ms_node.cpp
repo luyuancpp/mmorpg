@@ -25,7 +25,7 @@
 
 #include "gs_node.pb.h"
 #include "gw_node.pb.h"
-#include "logic_proto/scene_ms.pb.h"
+#include "logic_proto/scene_client_player.pb.h"
 
 using namespace master;
 
@@ -51,6 +51,8 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 	messag.set_player_id(replied.s_rq_.player_id());
 	Send2Gate(messag, player_session.gate_node_id());
 
+	clientplayer::EnterSeceneS2C msg;
+	Send2Player(msg, player);
 
 }
 ///<<< END WRITING YOUR CODE
