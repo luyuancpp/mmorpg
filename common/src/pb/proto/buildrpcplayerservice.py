@@ -193,9 +193,9 @@ def gencppfile(filename, writedir):
     global cppmaxpart
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = servicedir + local.hfilename.replace('.h', '.cpp')
-    newstr = '#include "src/game_logic/game_registry.h"\n'
-    newstr = 'src/module/network/message_sys.h"\n'
     newstr = '#include "' + local.hfilename + '"\n'
+    newstr += '#include "src/game_logic/game_registry.h"\n'
+    newstr += '#include "src/module/network/message_sys.h"\n'
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -205,7 +205,7 @@ def gencppfile(filename, writedir):
             curservicename = ''
             nextrpcline = 0
             for fileline in file:
-                if skipheadline < 1 :
+                if skipheadline < 3 :
                     skipheadline += 1
                     continue
                 if part != cpprpcpart and fileline.find(yourcodebegin) >= 0:
@@ -218,8 +218,6 @@ def gencppfile(filename, writedir):
                     newstr += fileline + '\n'
                     part += 1
                     if part == 1 :
-                        newstr += 'using namespace common;'
-                        newstr += 'using namespace serverplayer;'
                         newstr += namespacebegin()
                     continue     
                 elif part == cpprpcpart:
@@ -258,8 +256,6 @@ def gencppfile(filename, writedir):
                     break
     except FileNotFoundError:
             newstr += yourcode() + '\n'
-            newstr += 'using namespace common;'
-            newstr += 'using namespace serverplayer;'
             newstr += namespacebegin()
             newstr += yourcode() + '\n'
             serviceidx = 0

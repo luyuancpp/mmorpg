@@ -1,7 +1,7 @@
 #include "scene_client_player.h"
-///<<< BEGIN WRITING YOUR CODE
 #include "src/game_logic/game_registry.h"
 #include "src/module/network/message_sys.h"
+///<<< BEGIN WRITING YOUR CODE
 
 #include "logic_proto/scene_server_player.pb.h"
 using namespace serverplayer;
