@@ -4,7 +4,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "src/factories/scene_factories.hpp"
-#include "src/game_logic/entity/entity.h"
+#include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/snow_flake/snow_flake.h"
 #include "src/sys/servernode_sys.hpp"

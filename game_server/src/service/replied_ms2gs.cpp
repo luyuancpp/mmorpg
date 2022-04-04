@@ -2,10 +2,10 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/server_common/rpc_client.h"
-#include "src/factories/server_global_entity.hpp"
+#include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/game_registry.h"
+#include "src/server_common/rpc_client.h"
 
 using namespace common;
 

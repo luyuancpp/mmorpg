@@ -1,8 +1,7 @@
 #ifndef MASTER_SRC_COMP_MS_LOGIN_ACCOUNT_COMP_H_
 #define MASTER_SRC_COMP_MS_LOGIN_ACCOUNT_COMP_H_
 
-#include "src/game_logic/entity/entity.h"
-
+#include "src/game_logic/game_registry.h"
 
 struct MSLoginAccount : public common::EntityPtr
 {

@@ -9,10 +9,9 @@
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/factories/scene_factories.hpp"
-#include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/player_comp.hpp"
-#include "src/server_common/deploy_rpcclient.h"
 #include "src/game_logic/game_registry.h"
+#include "src/server_common/deploy_rpcclient.h"
 #include "src/pb/pbc/msgmap.h"
 
 #include "gs_node.pb.h"

@@ -6,27 +6,26 @@
 #include "google/protobuf/message.h"
 #include "google/protobuf/service.h"
 
-#include "src/game_logic/entity/entity.h"
+#include "src/game_logic/game_registry.h"
 
-
-	class PlayerService
+class PlayerService
+{
+public:
+	PlayerService(::google::protobuf::Service* pb_service)
+		: pb_service_(pb_service)
 	{
-	public:
-		PlayerService(::google::protobuf::Service* pb_service)
-			: pb_service_(pb_service)
-		{
 
-		}
+	}
 
-		virtual void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-			common::EntityPtr& entity,
-			const ::google::protobuf::Message* request,
-			::google::protobuf::Message* response) = 0;
+	virtual void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+		common::EntityPtr& entity,
+		const ::google::protobuf::Message* request,
+		::google::protobuf::Message* response) = 0;
 
-		::google::protobuf::Service* service() { return pb_service_.get(); }
-	private:
-		std::unique_ptr<::google::protobuf::Service> pb_service_;
-	};
+	::google::protobuf::Service* service() { return pb_service_.get(); }
+private:
+	std::unique_ptr<::google::protobuf::Service> pb_service_;
+};
 
 void InitPlayerServcie();
 

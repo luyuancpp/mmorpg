@@ -7,8 +7,8 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/region_config.h"
 
-#include "src/factories/server_global_entity.hpp"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/game_logic/game_registry.h"
 #include "src/game_logic/game_registry.h"
 #include "src/module/network/gate_node.h"
 #include "src/service/player_service.h"
