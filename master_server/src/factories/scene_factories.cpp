@@ -5,8 +5,7 @@
 
 using namespace common;
 
-namespace master
-{
+
     entt::entity& scenes_entity()
     {
         thread_local entt::entity g_scenes_entity;
@@ -72,5 +71,3 @@ namespace master
 		reg.emplace<NoPressureComp>(e);
 		reg.emplace<SceneComp>(e);
 	}
-
-}//namespace master

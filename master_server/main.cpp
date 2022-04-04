@@ -5,7 +5,6 @@
 
 using namespace muduo;
 using namespace muduo::net;
-using namespace master;
 
 int main(int argc, char* argv[])
 {

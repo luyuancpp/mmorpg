@@ -8,9 +8,9 @@
 
 namespace game
 {
-using PlayerListMap = std::unordered_map<common::Guid, common::EntityPtr>;
+using PlayerList = std::unordered_map<common::Guid, common::EntityPtr>;
 
-extern thread_local PlayerListMap  g_players;
+extern thread_local PlayerList  g_players;
 }
 
 #endif//GAME_SERVER_SRC_MODULE_PLAYEER_LIST_PLAYER_LIST_H_

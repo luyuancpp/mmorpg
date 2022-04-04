@@ -3,9 +3,6 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-namespace master
-{
-
 static const std::size_t kMaxServerPlayerSize = 2000;
 static const std::size_t kMaxScenePlayerSize = 1000;
 
@@ -75,7 +72,5 @@ public:
     static  void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
 };
 
-
-}//namespace master
 
 #endif//MASTER_SRC_SCENE_SYS_SCENE_SYS_HPP_

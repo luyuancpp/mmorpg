@@ -16,8 +16,6 @@
 #include "deploy_node.pb.h"
 #include "ms2db.pb.h"
 
-namespace master
-{
     class MasterServer : muduo::noncopyable, public common::Receiver<MasterServer>
     {
     public:
@@ -64,8 +62,7 @@ namespace master
  
         servers_info_data serverinfos_;
     };
-}//namespace master
 
-extern master::MasterServer* g_ms_node;
+extern MasterServer* g_ms_node;
 
 #endif//MASTER_SERVER_MASTER_SERVER_H_

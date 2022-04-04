@@ -16,7 +16,7 @@ namespace msservice{
 class MasterNodeServiceImpl : public MasterNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
-	using AccountMap = std::unordered_map<std::string, master::MSLoginAccount>;
+	using AccountMap = std::unordered_map<std::string, MSLoginAccount>;
 
     using Ms2gsEnterGameRpcRplied = common::NormalClosure<gsservice::EnterGameRequest, gsservice::EnterGameRespone>;
 	void Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied);
@@ -72,6 +72,11 @@ public:
     void OnLsDisconnect(::google::protobuf::RpcController* controller,
         const msservice::LsDisconnectRequest* request,
         ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
+    void OGsPlayerService(::google::protobuf::RpcController* controller,
+        const msservice::PlayerNodeServiceRequest* request,
+        msservice::PlayerMessageRespone* response,
         ::google::protobuf::Closure* done)override;
 
 };

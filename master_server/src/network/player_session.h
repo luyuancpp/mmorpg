@@ -7,8 +7,6 @@
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/network/message_sys.hpp"
 
-namespace master
-{
 	class PlayerSession
 	{
 	public:
@@ -35,7 +33,7 @@ namespace master
 
 		inline void Send(::google::protobuf::Message& message)
 		{
-			master::Send2Player(message, common::reg.get<common::Guid>(player_));
+			Send2Player(message, common::reg.get<common::Guid>(player_));
 		}
 
 		void Send2Gs(::google::protobuf::Message& message)
@@ -53,6 +51,4 @@ namespace master
 		GateNodeWPtr gate_;
 		common::GSDataWeakPtr gs_;
 	};
-}//namespace master
-
 #endif//MASTER_SERVER_SRC_NETWORK_PLAYER_SESSION_H_

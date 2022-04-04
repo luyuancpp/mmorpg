@@ -2,6 +2,6 @@
 
 namespace game
 {
-thread_local PlayerListMap  g_players;
+thread_local PlayerList  g_players;
 }
 

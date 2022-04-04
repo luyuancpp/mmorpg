@@ -95,6 +95,23 @@ message LsDisconnectRequest
   string account = 2;
 }
 
+message PlayerMessageExtern
+{
+  uint64 player_id = 1;
+}
+
+message PlayerNodeServiceRequest
+{
+  MessageBody msg = 1;
+  PlayerMessageExtern ex = 2;
+}
+
+message PlayerMessageRespone
+{
+  MessageBody msg = 1;
+  PlayerMessageExtern ex = 2;
+}
+
 service MasterNodeService {
   rpc StartGS (StartGSRequest) returns (StartGSResponse);
   rpc OnGwConnect (ConnectRequest) returns (google.protobuf.Empty);
@@ -106,4 +123,5 @@ service MasterNodeService {
   rpc OnLsEnterGame (EnterGameRequest) returns (EnterGameResponese);
   rpc OnLsLeaveGame (LsLeaveGameRequest) returns (google.protobuf.Empty);
   rpc OnLsDisconnect (LsDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc OGsPlayerService (PlayerNodeServiceRequest) returns (PlayerMessageRespone);
 }
