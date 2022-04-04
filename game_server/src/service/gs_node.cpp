@@ -39,6 +39,12 @@ void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	auto player = it.first->second.entity();
 	reg.emplace<GateConnId>(player, request->conn_id());
 	reg.emplace<common::Guid>(player, request->player_id());
+	auto msit = g_ms_nodes.find(request->ms_node_id());
+	if (msit != g_ms_nodes.end())
+	{
+		reg.emplace<MsNodeWPtr>(player, msit->second);
+	}
+	
 	auto& gate_nodes = reg.get<GateNodes>(global_entity());
 	auto gate_it = gate_nodes.find(request->gate_node_id());
 	if (gate_it == gate_nodes.end())
