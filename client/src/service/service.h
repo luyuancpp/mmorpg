@@ -10,10 +10,12 @@
 #include "src/server_common/codec/dispatcher.h"
 
 #include "c2gw.pb.h"
+#include "logic_proto/scene_client_player.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
+using namespace clientplayer;
 
 
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
@@ -22,6 +24,7 @@ using EnterGameResponsePtr = std::shared_ptr<EnterGameResponse>;
 using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
 using ClientResponsePtr = std::shared_ptr<ClientResponse>;
 using MessageBodyPtr = std::shared_ptr<MessageBody>;
+using EnterSeceneS2CPtr = std::shared_ptr<EnterSeceneS2C>;
 
 class ClientService
 {
@@ -55,6 +58,10 @@ public:
 	void OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& conn,
 		const MessageBodyPtr& message,
 		muduo::Timestamp);
+
+    void OnMessageEnterSeceneS2CPtr(const muduo::net::TcpConnectionPtr& conn,
+        const EnterSeceneS2CPtr& message,
+        muduo::Timestamp);
     
     void EnterGame(common::Guid guid);
 private:

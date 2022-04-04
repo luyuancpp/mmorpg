@@ -29,7 +29,8 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 		std::bind(&ClientService::OnGsReplied, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<MessageBody>(
 		std::bind(&ClientService::OnMessageBodyReplied, this, _1, _2, _3));
-    
+	dispatcher_.registerMessageCallback<EnterSeceneS2C>(
+		std::bind(&ClientService::OnMessageEnterSeceneS2CPtr, this, _1, _2, _3));
 }
 
 void ClientService::Send(const google::protobuf::Message& message)
@@ -85,11 +86,6 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-	g_lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
-	{
-		this->codec_.send(this->conn_, request);
-	};
-	g_lua["LeaveGame"]();
 }
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -117,6 +113,17 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
 	MessagePtr response(codec_.createMessage(g_serviceinfo[msg_id].response));
 	response->ParseFromString(message->body());
 	dispatcher_.onProtobufMessage(conn, response, t);
+}
+
+void ClientService::OnMessageEnterSeceneS2CPtr(const muduo::net::TcpConnectionPtr& conn,
+    const EnterSeceneS2CPtr& message,
+    muduo::Timestamp)
+{
+	g_lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
+	{
+		this->codec_.send(this->conn_, request);
+	};
+	g_lua["LeaveGame"]();
 }
 
 void ClientService::EnterGame(Guid guid)
