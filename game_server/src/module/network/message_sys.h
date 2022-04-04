@@ -10,6 +10,7 @@
 void Send2Player(const google::protobuf::Message& message, common::Guid player_id);
 void Send2Player(const google::protobuf::Message& message, entt::entity player);
 void Send2MsPlayer(const google::protobuf::Message& message, common::Guid player_id);
+void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player);
 void Send2Ms(const google::protobuf::Message& messag);
 void Send2Gate(const google::protobuf::Message& messag);
 

@@ -5,6 +5,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/module/player_list/player_list.h"
 #include "src/module/network/gate_node.h"
+#include "src/module/network/ms_node.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/pb/pbc/msgmap.h"
 
@@ -57,7 +58,44 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 
 void Send2MsPlayer(const google::protobuf::Message& message, common::Guid player_id)
 {
+	auto it = g_players.find(player_id);
+	if (it == g_players.end())
+	{
+		LOG_INFO << "player not found " << player_id;
+		return;
+	}
+	auto player = it->second.entity();
+	Send2MsPlayer(message, player_id);
+}
 
+void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player)
+{
+	if (!reg.valid(player))
+	{
+		return;
+	}
+	auto try_ms = reg.try_get<MsNodeWPtr>(player);
+	if (nullptr == try_ms)
+	{
+		LOG_DEBUG << "player gate not found " << reg.get<common::Guid>(player);
+		return;
+	}
+	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
+	if (message_it == g_msgid.end())
+	{
+		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
+		return;
+	}
+	auto& ms = (*try_ms).lock();
+	if (nullptr == ms)
+	{
+		LOG_DEBUG << "player gate not found " << reg.get<common::Guid>(player);
+		return;
+	}
+	msservice::PlayerNodeServiceRequest msg_wrapper;
+	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
+	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
+	ms->session_->Send(msg_wrapper);
 }
 
 void Send2Ms(const google::protobuf::Message& messag)

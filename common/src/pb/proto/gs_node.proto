@@ -10,6 +10,7 @@ message EnterGameRequest
   SceneInfo scenes_info = 2;
   uint64 conn_id = 3;
   uint64 gate_node_id = 4;
+  uint64 ms_node_id = 5;
 }
 
 message EnterGameRespone

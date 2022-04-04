@@ -60,6 +60,11 @@ public:
     {
         channel_->CallMethod(request, service_name, method_name, response, done);
     }
+
+    void Send(const ::google::protobuf::Message& request)
+    {
+        channel_->S2C(request);
+    }
 private:
     void onConnection(const TcpConnectionPtr& conn)
     {

@@ -339,6 +339,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		message.s_rq_.set_player_id(guid);
 		message.s_rq_.set_conn_id(request->conn_id());
 		message.s_rq_.set_gate_node_id(request->gate_node_id());
+		message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
 		reg.get<GsStubPtr>(it->second)->CallMethod1(&MasterNodeServiceImpl::Ms2gsEnterGameReplied,
 			message,
 			this,
