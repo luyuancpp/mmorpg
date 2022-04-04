@@ -26,8 +26,7 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
       redis_(std::make_shared<RedisClient>())
 { 
     global_entity() = reg.create();
-    reg.emplace<GsNodes>(global_entity());
-    reg.emplace<GateNodes>(global_entity());   
+    reg.emplace<GsNodes>(global_entity());  
 }    
 
 void MasterServer::Init()
@@ -114,7 +113,6 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
     else
     {
         auto& gs_nodes = reg.get<GsNodes>(global_entity());
-        auto& gate_nodes = reg.get<GateNodes>(global_entity());
 		auto& peer_addr = conn->peerAddress();
 		for (auto e : reg.view<RpcServerConnection>())
 		{
@@ -131,7 +129,7 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
 			auto gatenode = reg.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == GATEWAY_NODE_TYPE)
 			{
-                 gate_nodes.erase((*gatenode)->node_info_.node_id());
+                g_gate_nodes.erase((*gatenode)->node_info_.node_id());
 			}
 			reg.destroy(e);
 			break;

@@ -127,6 +127,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\game_server.cpp" />
+    <ClCompile Include="src\module\network\gate_node.cpp" />
     <ClCompile Include="src\module\network\message_sys.cpp" />
     <ClCompile Include="src\module\player_list\player_list.cpp" />
     <ClCompile Include="src\service\gs_node.cpp" />

@@ -48,6 +48,9 @@
     <ClCompile Include="src\service\ms_player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\network\gate_node.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h">

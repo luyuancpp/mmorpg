@@ -146,11 +146,10 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 			continue;
 		}
 		gate_entity = e;
-		auto& gate_nodes = reg.get<GateNodes>(global_entity());
 		auto& gate_node = *reg.emplace<GateNodePtr>(gate_entity, std::make_shared<GateNode>(c.conn_));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(GATEWAY_NODE_TYPE);
-		gate_nodes.emplace(request->gate_node_id(), gate_entity);
+		g_gate_nodes.emplace(request->gate_node_id(), gate_entity);
 		break;
 	}
 
@@ -304,9 +303,8 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto& player_session = reg.emplace_or_replace<PlayerSession>(player);
 	player_session.gate_conn_id_.conn_id_ = request->conn_id();
 	player_session.player_ = player;
-	auto& gate_nodes = reg.get<GateNodes>(global_entity());
-	auto gate_it = gate_nodes.find(request->gate_node_id());
-	if (gate_it != gate_nodes.end())
+	auto gate_it = g_gate_nodes.find(request->gate_node_id());
+	if (gate_it != g_gate_nodes.end())
 	{
 		auto gate = reg.try_get<GateNodePtr>(gate_it->second);
 		if (nullptr != gate)
