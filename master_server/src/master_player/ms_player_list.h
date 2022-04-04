@@ -3,30 +3,28 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/game_registry.h"
+#include "src/game_logic/entity/entity.h"
 
-namespace master
-{
+    using PlayerListMap = std::unordered_map<common::Guid, common::EntityPtr>;
+    extern thread_local PlayerListMap  g_players;
     class PlayerList
     {
     public:
-        using GameGuidEntityIdMap = std::unordered_map<common::Guid, entt::entity>;
+        
         static PlayerList& GetSingleton()
         {
             thread_local PlayerList singleton;
             return singleton;
         }
 
-        std::size_t player_size()const { return player_list_.size(); }
-        bool empty()const { return player_list_.empty(); }
+        std::size_t player_size()const { return g_players.size(); }
+        bool empty()const { return g_players.empty(); }
         entt::entity GetPlayer(common::Guid guid);
-        bool HasPlayer(common::Guid guid) const { return player_list_.find(guid) != player_list_.end(); }
+        bool HasPlayer(common::Guid guid) const { return g_players.find(guid) != g_players.end(); }
 
-        void EnterGame(common::Guid guid, entt::entity entity_id){  player_list_.emplace(guid, entity_id);       }
-        void LeaveGame(common::Guid guid){ player_list_.erase(guid); }
-        
-    private:
-        GameGuidEntityIdMap player_list_;
+        void EnterGame(common::Guid guid, const common::EntityPtr&& entity_id){ g_players.emplace(guid, entity_id);       }
+        void LeaveGame(common::Guid guid){ g_players.erase(guid); }
     };
-}//namespace master
+
 
 #endif//MASTER_SERVER_SRC_MASTER_PLAYER_MASTER_PLAYER_LIST_H_

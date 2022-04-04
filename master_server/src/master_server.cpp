@@ -20,10 +20,8 @@
 
 using namespace common;
 
-master::MasterServer* g_ms_node = nullptr;
+MasterServer* g_ms_node = nullptr;
 
-namespace master
-{
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<RedisClient>())
@@ -155,5 +153,3 @@ void MasterServer::InitGlobalEntities()
     MakeScenes();
     reg.emplace<ConnectionPlayerEnitiesMap>(global_entity());
 }
-
-}//namespace master

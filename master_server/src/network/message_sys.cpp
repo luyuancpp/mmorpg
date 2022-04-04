@@ -17,8 +17,7 @@
 
 using namespace common;
 
-namespace master
-{
+
 void Send2Gs(const google::protobuf::Message& message, uint32_t node_id)
 {
 		auto& gs_nodes = reg.get<GsNodes>(global_entity());
@@ -112,5 +111,3 @@ void Send2Gate(const google::protobuf::Message& message, uint32_t gate_id)
 	auto gate = reg.try_get<GateNodePtr>(gate_it->second);
 	(*gate)->session_.Send(message);
 }
-
-}//namespace master

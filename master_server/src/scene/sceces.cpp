@@ -4,10 +4,8 @@
 
 using namespace common;
 
-master::ScenesSystem* g_scene_sys = nullptr;
+ScenesSystem* g_scene_sys = nullptr;
 
-namespace master
-{
     const EntitySet& ScenesSystem::scenes_entitiy(uint32_t scene_config_id) const
     {
         auto it = confid_scenes_.find(scene_config_id);
@@ -227,5 +225,3 @@ namespace master
         auto& server_scene = reg.get<SceneComp>(p_server_data->server_entity());
         server_scene.RemoveScene(scene_config_id, scene_entity);
     }
-
-}//namespace master

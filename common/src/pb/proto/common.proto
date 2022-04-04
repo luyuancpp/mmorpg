@@ -61,3 +61,20 @@ message NodeInfo
   uint32 node_id = 1;
   uint32 node_type = 2;
 }
+
+message PlayerMessageExtern
+{
+  uint64 player_id = 1;
+}
+
+message PlayerNodeServiceRequest
+{
+  MessageBody msg = 1;
+  PlayerMessageExtern ex = 2;
+}
+
+message PlayerMessageRespone
+{
+  MessageBody msg = 1;
+  PlayerMessageExtern ex = 2;
+}

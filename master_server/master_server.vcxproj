@@ -162,6 +162,7 @@
     <ClCompile Include="src\service\logic\scene_server_player.cpp" />
     <ClCompile Include="src\service\logic\team_server_player.cpp" />
     <ClCompile Include="src\service\ms_node.cpp" />
+    <ClCompile Include="src\service\ms_player_service.cpp" />
     <ClCompile Include="src\sys\servernode_sys.cpp" />
   </ItemGroup>
   <ItemGroup>

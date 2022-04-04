@@ -9,9 +9,6 @@
 #include "src/snow_flake/snow_flake.h"
 #include "src/sys/servernode_sys.hpp"
 
-namespace master
-{
-
 class ScenesSystem : public common::EntityPtr
 {
 public:
@@ -60,8 +57,7 @@ private:
     common::SceneMapComp scenes_map_;
     common::SnowFlake snow_flake_;
 };
-}//namespace master
 
-extern master::ScenesSystem* g_scene_sys;
+extern ScenesSystem* g_scene_sys;
 
 #endif//MASTER_SERVER_SRC_SCENE_SCENES_H_

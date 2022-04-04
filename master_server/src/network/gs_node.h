@@ -10,19 +10,17 @@
 
 #include "common.pb.h"
 
-namespace master
+struct GsNode
 {
-	struct GsNode
-	{
-		GsNode(const muduo::net::TcpConnectionPtr& conn)
-			: session_(conn){}
-		NodeInfo node_info_;
-		common::RpcServerConnection session_;
-	};
+	GsNode(const muduo::net::TcpConnectionPtr& conn)
+		: session_(conn){}
+	NodeInfo node_info_;
+	common::RpcServerConnection session_;
+};
 
-	using GsNodePtr = std::shared_ptr<GsNode>;
+using GsNodePtr = std::shared_ptr<GsNode>;
 
-	struct GsNodes : public std::unordered_map<uint32_t, entt::entity> {};
-}//namespace master
+struct GsNodes : public std::unordered_map<uint32_t, entt::entity> {};
+
 
 #endif//MASTER_SERVER_GAME_GAME_CLIENT_H_

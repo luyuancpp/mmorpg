@@ -2,16 +2,15 @@
 
 using namespace common;
 
-namespace master
-{
+    thread_local PlayerListMap  g_players;
+
     entt::entity PlayerList::GetPlayer(Guid guid)
     {
-        auto it = player_list_.find(guid);
-        if (it == player_list_.end())
+        auto it = g_players.find(guid);
+        if (it == g_players.end())
         {
             return entt::null;
         }
-        return it->second;
+        return it->second.entity();
     }
 
-}//namespace master

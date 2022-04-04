@@ -5,8 +5,7 @@
 
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 
-namespace master
-{
+
 struct MakeMainSceneP
 {
     uint32_t scene_confid_{ 0 };
@@ -58,7 +57,5 @@ entt::entity MakeMainScene(entt::registry& reg, const MakeMainSceneP& param);
 
 entt::entity MakeMainSceneNode(entt::registry& reg, const MakeGSParam& param);
 void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param);
-
-}//namespace master
 
 #endif//MASTER_SRC_FACTORIES_SCENE_FACTORIES_HPP_

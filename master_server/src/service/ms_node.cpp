@@ -17,17 +17,17 @@
 #include "src/master_server.h"
 #include "src/master_player/ms_player_list.h"
 #include "src/network/message_sys.hpp"
+#include "src/pb/pbc/msgmap.h"
 #include "src/return_code/error_code.h"
 #include "src/scene/sceces.h"
 #include "src/server_common/node_info.h"
+#include "src/service/player_service.h"
 #include "src/server_common/server_component.h"
 #include "src/sys/servernode_sys.hpp"
 
 #include "gs_node.pb.h"
 #include "gw_node.pb.h"
 #include "logic_proto/scene_client_player.pb.h"
-
-using namespace master;
 
 using GsStubPtr = std::unique_ptr <common::RpcStub<gsservice::GsService_Stub>>;
 
@@ -51,8 +51,8 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 	messag.set_player_id(replied.s_rq_.player_id());
 	Send2Gate(messag, player_session.gate_node_id());
 
-	clientplayer::EnterSeceneS2C msg;
-	Send2Player(msg, player);
+	//clientplayer::EnterSeceneS2C msg;
+	//Send2Player(msg, player);
 
 }
 ///<<< END WRITING YOUR CODE
@@ -299,7 +299,8 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE OnLsEnterGame
 	auto guid = request->guid();
-	auto player = reg.create();
+	PlayerList::GetSingleton().EnterGame(guid, common::EntityPtr());
+	auto player = PlayerList::GetSingleton().GetPlayer(guid);
 	reg.emplace<Guid>(player, guid);
 	auto& player_session = reg.emplace_or_replace<PlayerSession>(player);
 	player_session.gate_conn_id_.conn_id_ = request->conn_id();
@@ -314,7 +315,6 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			player_session.gate_ = *gate;
 		}
 	}
-	PlayerList::GetSingleton().EnterGame(guid, player);
 	GetSceneParam getp;
 	getp.scene_confid_ = 1;
 	auto scene = ServerNodeSystem::GetMainSceneNotFull(getp);
@@ -334,7 +334,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto& gs_data = (*p_gs_data);
 	player_session.gs_ = gs_data;
 	auto gs_node_id = gs_data->node_id();
-	auto& gs_nodes = common::reg.get<master::GsNodes>(master::global_entity());
+	auto& gs_nodes = common::reg.get<GsNodes>(global_entity());
 	auto it = gs_nodes.find(gs_node_id);
 	if (it != gs_nodes.end())
 	{
@@ -389,6 +389,57 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 	assert(!PlayerList::GetSingleton().HasPlayer(guid));
 	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
 ///<<< END WRITING YOUR CODE OnLsDisconnect
+}
+
+void MasterNodeServiceImpl::OGsPlayerService(::google::protobuf::RpcController* controller,
+    const msservice::PlayerNodeServiceRequest* request,
+    msservice::PlayerMessageRespone* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE OGsPlayerService
+	auto& message_extern = request->ex();
+	auto& player_msg = request->msg();
+	auto it = g_players.find(message_extern.player_id());
+	if (it == g_players.end())
+	{
+		LOG_INFO << "player not found " << message_extern.player_id();
+		return;
+	}
+	auto msg_id = request->msg().msg_id();
+	if (msg_id >= g_serviceinfo.size() || nullptr == g_serviceinfo[msg_id].method)
+	{
+		LOG_INFO << "msg not found " << msg_id;
+		return;
+	}
+	auto service_it = g_player_services.find(g_serviceinfo[msg_id].service);
+	if (service_it == g_player_services.end())
+	{
+		LOG_INFO << "msg not found " << msg_id;
+		return;
+	}
+	auto& serviceimpl = service_it->second;
+	google::protobuf::Service* service = serviceimpl->service();
+	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(g_serviceinfo[msg_id].method);
+	if (nullptr == method)
+	{
+		LOG_INFO << "msg not found " << msg_id;
+		//todo client error;
+		return;
+	}
+	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
+	player_request->ParseFromString(player_msg.body());
+	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
+	serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
+	if (nullptr == response)//不需要回复
+	{
+		return;
+	}
+	response->mutable_ex()->set_player_id(request->ex().player_id());
+	response->mutable_msg()->set_body(player_response->SerializeAsString());
+	response->mutable_msg()->set_msg_id(msg_id);
+///<<< END WRITING YOUR CODE OGsPlayerService
 }
 
 ///<<<rpc end

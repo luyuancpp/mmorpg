@@ -9,8 +9,7 @@
 
 #include "common.pb.h"
 
-namespace master
-{
+
 	struct GateNode
 	{
 		GateNode(const muduo::net::TcpConnectionPtr& conn)
@@ -24,6 +23,6 @@ namespace master
 	using GateNodePtr = std::shared_ptr<GateNode>;
 	using GateNodeWPtr = std::weak_ptr<GateNode>;
 	struct GateNodes : public std::unordered_map<uint32_t, entt::entity> {};
-}//namespace master
+
 
 #endif//MASTER_SERVER_NETWORK_GATE_NODE_H_

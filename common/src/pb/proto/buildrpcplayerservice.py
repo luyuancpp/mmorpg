@@ -36,6 +36,7 @@ includedir = 'src/service/logic/'
 gsplayerservicedir = '../../../../game_server/src/service/logic'
 msplayerservicedir = '../../../../master_server/src/service/logic'
 gsservicedir = '../../../../game_server/src/service/'
+msservicedir = '../../../../master_server/src/service/'
 client_player = 'client_player'
 server_player = 'server_player'
 
@@ -293,7 +294,7 @@ def parseplayerservcie(filename):
                 if filename.find(client_player) >= 0:
                     local.openplayerservicearray.append(local.pkg + '.' + local.service)
                 
-def genplayerservcielist(filename):
+def gengsplayerservcielist(filename):
     fullfilename = servicedir + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
@@ -314,6 +315,30 @@ def genplayerservcielist(filename):
     for service in local.openplayerservicearray:
         newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
     newstr += '}\n}//namespace game\n'
+    with open(fullfilename, 'w', encoding='utf-8')as file:
+        file.write(newstr)
+
+def genmsplayerservcielist(filename):
+    fullfilename = servicedir + filename
+    newstr =  '#include <memory>\n'
+    newstr +=  '#include <unordered_map>\n'
+    newstr += '#include "player_service.h"\n'
+    for f in local.fileservice:
+        if f.find(server_player) < 0:
+            continue
+        newstr += '#include "' + f + '.pb.h"\n'
+        newstr += '#include "' + includedir + f.replace(protodir, '') + '.h"\n'
+    newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
+    newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
+    for service in local.openplayerservicearray:
+        newstr += 'class ' + service.split('.')[1] + 'Impl : public ' + service.replace('.', '::')  + '{};\n'
+    newstr += 'void InitPlayerServcie()\n{\n'
+    for service in local.playerservicearray:
+        if f.find(server_player) < 0:
+            continue
+        newstr += tabstr + 'g_player_services.emplace("' + service + '"'
+        newstr += ', std::make_unique<' + service.split('.')[0] + '::Player' + service.split('.')[1] + 'Impl>(new '
+        newstr +=  service.split('.')[1] + 'Impl));\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -342,8 +367,10 @@ def md5copydir():
             elif filename.find(server_player) >= 0:
                 md5copy(filename, gsplayerservicedir)
                 md5copy(filename, msplayerservicedir)
-            elif filename == 'player_service.cpp' or filename == 'player_service.h':
+            elif filename == 'gs_player_service.cpp':
                 md5copy(filename, gsservicedir)
+            elif filename == 'ms_player_service.cpp':
+                md5copy(filename, msservicedir)
 
 genfile = []
 
@@ -392,7 +419,8 @@ def main():
         t.join()
     for file in genfile:
         parseplayerservcie(file)
-    genplayerservcielist('player_service.cpp')
+    gengsplayerservcielist('gs_player_service.cpp')
+    genmsplayerservcielist('ms_player_service.cpp')
 
 inputfile() 
 main()
