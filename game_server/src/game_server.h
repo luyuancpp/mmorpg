@@ -28,6 +28,8 @@ public:
 
     GameServer(muduo::net::EventLoop* loop);
 
+	StubMsNode& ms_stub() { return g2ms_stub_;	}
+
     void Init();
 
     void InitNetwork();
