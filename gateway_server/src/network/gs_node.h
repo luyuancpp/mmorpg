@@ -15,9 +15,9 @@ namespace gateway
 {
     struct GsNode
     {
-		using Gw2gsStubPtr = std::unique_ptr<common::RpcStub<gsservice::GsService_Stub>>;
+		using GsStubPtr = std::unique_ptr<common::RpcStub<gsservice::GsService_Stub>>;
         common::RpcClientPtr gs_session_;		
-        Gw2gsStubPtr gs_stub_;
+        GsStubPtr gs_stub_;
         NodeInfo node_info_;
         common::EntityPtr entity_id;
     };

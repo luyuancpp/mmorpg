@@ -5,28 +5,18 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/game_registry.h"
+#include "src/module/network/ms_node.h"
 #include "src/server_common/rpc_client.h"
 
 using namespace common;
 
 namespace ms2gs
 {
-using MasterSessionPtr = std::shared_ptr<common::RpcClient>;
 
 void RepliedMs2g::StartGSMasterReplied(StartGameMasterRpcRC cp)
 {
     auto rsp = cp->s_rp_;
     //LOG_INFO << "master server info " << rsp->DebugString().c_str();
-    for (auto e : reg.view<MasterSessionPtr>())
-    {
-        auto& master_rpc_client = reg.get<MasterSessionPtr>(e);
-        if (cp->s_rq_.master_server_addr() == (uint64_t)master_rpc_client.get())
-        {
-            reg.emplace<uint32_t>(e, rsp->master_node_id());
-            LOG_INFO << "master server info " << rsp->master_node_id();
-            break;
-        }
-    }
 
     auto& scenemap = reg.get<SceneMapComp>(global_entity());
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)

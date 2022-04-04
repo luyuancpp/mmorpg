@@ -111,17 +111,22 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
             {
                 break;
             }
-            auto& gs_session = it.second;
-			EventLoop::getEventLoopOfCurrentThread()->runInLoop(
-				[this, &gs_session, &conn]() ->void
-				{
-					gsservice::ConnectRequest request;
-                    request.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
-                    request.mutable_rpc_client()->set_port(conn->localAddress().port());
-                    request.set_gate_node_id(gate_node_id());
-                    gs_session.gs_stub_->CallMethod(request, &gsservice::GsService_Stub::GwConnectGs);
-				}
-			);
+            if (conn->disconnected())
+            {
+				auto& gs_session = it.second;
+				EventLoop::getEventLoopOfCurrentThread()->runInLoop(
+					[this, &gs_session, &conn]() ->void
+					{
+						gsservice::ConnectRequest request;
+						request.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
+						request.mutable_rpc_client()->set_port(conn->localAddress().port());
+						request.set_gate_node_id(gate_node_id());
+						gs_session.gs_stub_->CallMethod(request, &gsservice::GsService_Stub::GwConnectGs);
+					}
+				);
+            }
+            else
+            { }
         }
     }
 }

@@ -129,6 +129,7 @@
     <ClCompile Include="src\game_server.cpp" />
     <ClCompile Include="src\module\network\gate_node.cpp" />
     <ClCompile Include="src\module\network\message_sys.cpp" />
+    <ClCompile Include="src\module\network\ms_node.cpp" />
     <ClCompile Include="src\module\player_list\player_list.cpp" />
     <ClCompile Include="src\service\gs_node.cpp" />
     <ClCompile Include="src\service\gs_player_service.cpp" />
@@ -143,6 +144,7 @@
     <ClInclude Include="src\game_server.h" />
     <ClInclude Include="src\module\network\gate_node.h" />
     <ClInclude Include="src\module\network\message_sys.h" />
+    <ClInclude Include="src\module\network\ms_node.h" />
     <ClInclude Include="src\module\player_list\player_list.h" />
     <ClInclude Include="src\service\gs_node.h" />
     <ClInclude Include="src\service\logic\scene_client_player.h" />
