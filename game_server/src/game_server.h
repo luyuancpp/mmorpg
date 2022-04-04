@@ -4,6 +4,7 @@
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
 
+#include "src/module/network/ms_node.h"
 #include "src/service/gs_node.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_server.h"
@@ -14,8 +15,6 @@
 #include "ms_node.pb.h"
 #include "rg_node.pb.h"
 
-
-using MasterSessionPtr = std::shared_ptr<common::RpcClient>;
 
 class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
 {
