@@ -5,7 +5,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/game_registry.h"
-#include "src/module/network/ms_node.h"
+#include "src/network/ms_node.h"
 #include "src/server_common/rpc_client.h"
 
 using namespace common;
