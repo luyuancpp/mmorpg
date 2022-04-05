@@ -1,6 +1,6 @@
-#include "team_server_player.h"
-#include "team_server_player.h"
-#include "team_server_player.h"
+#include "gsteam_server_player.h"
+#include "src/game_logic/game_registry.h"
+#include "src/network/message_sys.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 

@@ -5,7 +5,7 @@
 #include "src/game_logic/comp/gs_scene_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/player_comp.hpp"
-#include "src/network/message_sys.hpp"
+#include "src/network/message_sys.h"
 
 	class PlayerSession
 	{
