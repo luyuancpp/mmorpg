@@ -32,17 +32,13 @@ void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE EnterGame
 
 	auto it = g_players.emplace(request->player_id(), common::EntityPtr());
-	if (!it.second)
-	{
-		return;
-	}
 	auto player = it.first->second.entity();
-	reg.emplace<GateConnId>(player, request->conn_id());
-	reg.emplace<common::Guid>(player, request->player_id());
+	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
+	reg.emplace_or_replace<common::Guid>(player, request->player_id());
 	auto msit = g_ms_nodes.find(request->ms_node_id());
 	if (msit != g_ms_nodes.end())
 	{
-		reg.emplace<MsNodeWPtr>(player, msit->second);
+		reg.emplace_or_replace<MsNodeWPtr>(player, msit->second);
 	}
 	;
 	auto gate_it = g_gate_nodes.find(request->gate_node_id());
@@ -57,7 +53,7 @@ void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		LOG_ERROR << " gate not found" << request->gate_node_id();
 		return;
 	}
-	reg.emplace<GateNodeWPtr>(player, *p_gate);
+	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 
 ///<<< END WRITING YOUR CODE EnterGame
 }
