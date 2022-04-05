@@ -8,6 +8,10 @@ message Ms2GsLoginRequest
 {
 }
 
+message Gs2MsLoginRequest
+{
+}
+
 message Ms2GsReconnectRequest
 {
 }
@@ -17,8 +21,9 @@ message SeceneGsResponse
 	ClientError error = 1;
 }
 
-service PlayerSceneService 
+service ServerPlayerSceneService 
 {
-  rpc LogincMs2Gs (Ms2GsLoginRequest) returns (google.protobuf.Empty);
+  rpc LoginMs2Gs (Ms2GsLoginRequest) returns (google.protobuf.Empty);
+  rpc LoginGs2Ms (Gs2MsLoginRequest) returns (google.protobuf.Empty);
   rpc ReconnectMs2Gs (Ms2GsReconnectRequest) returns (google.protobuf.Empty);
 }

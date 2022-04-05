@@ -7,14 +7,17 @@
 namespace serverplayer{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class PlayerPlayerSceneServiceImpl : public PlayerService {
+class PlayerServerPlayerSceneServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
-    void LogincMs2Gs(common::EntityPtr& entity,
+    void LoginMs2Gs(common::EntityPtr& entity,
         const serverplayer::Ms2GsLoginRequest* request,
+        ::google::protobuf::Empty* response);
+    void LoginGs2Ms(common::EntityPtr& entity,
+        const serverplayer::Gs2MsLoginRequest* request,
         ::google::protobuf::Empty* response);
     void ReconnectMs2Gs(common::EntityPtr& entity,
         const serverplayer::Ms2GsReconnectRequest* request,
@@ -26,11 +29,16 @@ public:
         {
         switch(method->index()) {
         case 0:
-            LogincMs2Gs(entity,
+            LoginMs2Gs(entity,
             ::google::protobuf::internal::DownCast<const serverplayer::Ms2GsLoginRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 1:
+            LoginGs2Ms(entity,
+            ::google::protobuf::internal::DownCast<const serverplayer::Gs2MsLoginRequest*>( request),
+            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
+        break;
+        case 2:
             ReconnectMs2Gs(entity,
             ::google::protobuf::internal::DownCast<const serverplayer::Ms2GsReconnectRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
