@@ -4,7 +4,7 @@
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
 
-#include "src/module/network/ms_node.h"
+#include "src/network/ms_node.h"
 #include "src/service/gs_node.h"
 #include "src/server_common/deploy_rpcclient.h"
 #include "src/server_common/rpc_server.h"
