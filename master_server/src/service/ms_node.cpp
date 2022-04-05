@@ -239,7 +239,6 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 		return;
 	}
 	assert(reg.get<Guid>(e) == guid);
-	reg.destroy(e);
 	PlayerList::GetSingleton().LeaveGame(guid);
 	assert(!PlayerList::GetSingleton().HasPlayer(guid));
 	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
@@ -405,12 +404,13 @@ void MasterNodeServiceImpl::OGsPlayerService(::google::protobuf::RpcController* 
 		return;
 	}
 	auto msg_id = request->msg().msg_id();
-	if (msg_id >= g_serviceinfo.size() || nullptr == g_serviceinfo[msg_id].method)
+	auto sit = g_serviceinfo.find(msg_id);
+	if (sit == g_serviceinfo.end())
 	{
 		LOG_INFO << "msg not found " << msg_id;
 		return;
 	}
-	auto service_it = g_player_services.find(g_serviceinfo[msg_id].service);
+	auto service_it = g_player_services.find(sit->second.service);
 	if (service_it == g_player_services.end())
 	{
 		LOG_INFO << "msg not found " << msg_id;

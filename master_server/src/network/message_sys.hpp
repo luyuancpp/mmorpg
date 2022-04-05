@@ -6,10 +6,11 @@
 #include "entt/src/entt/entt.hpp"
 
 #include "src/common_type/common_type.h"
-
+#include "src/game_logic/game_registry.h"
 
 void Send2Gs(const google::protobuf::Message& message,   uint32_t gs_node_id);
 void Send2GsPlayer(const google::protobuf::Message& message,	entt::entity player);
+void Send2GsPlayer(const google::protobuf::Message& message, common::EntityPtr& entity);
 void Send2GsPlayer(const google::protobuf::Message& message, common::Guid player_id);
 /*注意，ms发给player消息和gs发给player的消息是异步的，不能保证ms gs 的消息哪个先到player
 * 如果需要保证的话，自己在收到对应的nodeserver回包以后再同步消息给player

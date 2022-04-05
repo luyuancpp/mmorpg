@@ -1,5 +1,6 @@
 #include "scene_server_player.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "src/network/message_sys.hpp"
 ///<<< END WRITING YOUR CODE
 
 namespace serverplayer{
@@ -12,6 +13,8 @@ void PlayerPlayerSceneServiceImpl::LogincMs2Gs(common::EntityPtr& entity,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE LogincMs2Gs
+    serverplayer::Ms2GsLoginRequest message;
+    Send2GsPlayer(message, entity);
 ///<<< END WRITING YOUR CODE LogincMs2Gs
 }
 
