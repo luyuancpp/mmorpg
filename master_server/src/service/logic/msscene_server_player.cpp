@@ -23,6 +23,8 @@ void ServerPlayerSceneServiceImpl::LoginGs2Ms(common::EntityPtr& entity,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE LoginGs2Ms
+    Ms2GsLoginRequest message;
+    Send2GsPlayer(message, entity);
 ///<<< END WRITING YOUR CODE LoginGs2Ms
 }
 
