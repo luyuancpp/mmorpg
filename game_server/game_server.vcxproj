@@ -127,31 +127,31 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\game_server.cpp" />
-    <ClCompile Include="src\module\network\gate_node.cpp" />
-    <ClCompile Include="src\module\network\message_sys.cpp" />
-    <ClCompile Include="src\module\network\ms_node.cpp" />
     <ClCompile Include="src\module\player_list\player_list.cpp" />
+    <ClCompile Include="src\network\gate_node.cpp" />
+    <ClCompile Include="src\network\message_sys.cpp" />
+    <ClCompile Include="src\network\ms_node.cpp" />
     <ClCompile Include="src\service\gs_node.cpp" />
-    <ClCompile Include="src\service\gs_player_service.cpp" />
-    <ClCompile Include="src\service\logic\scene_client_player.cpp" />
-    <ClCompile Include="src\service\logic\scene_server_player.cpp" />
-    <ClCompile Include="src\service\logic\team_client_player.cpp" />
-    <ClCompile Include="src\service\logic\team_server_player.cpp" />
+    <ClCompile Include="src\service\logic\gsscene_client_player.cpp" />
+    <ClCompile Include="src\service\logic\gsscene_server_player.cpp" />
+    <ClCompile Include="src\service\logic\gsteam_client_player.cpp" />
+    <ClCompile Include="src\service\logic\gsteam_server_player.cpp" />
+    <ClCompile Include="src\service\logic\gs_player_service.cpp" />
     <ClCompile Include="src\service\replied_ms2gs.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\module\master.hpp" />
     <ClInclude Include="src\game_server.h" />
-    <ClInclude Include="src\module\network\gate_node.h" />
-    <ClInclude Include="src\module\network\message_sys.h" />
-    <ClInclude Include="src\module\network\ms_node.h" />
     <ClInclude Include="src\module\player_list\player_list.h" />
+    <ClInclude Include="src\network\gate_node.h" />
+    <ClInclude Include="src\network\message_sys.h" />
+    <ClInclude Include="src\network\ms_node.h" />
     <ClInclude Include="src\service\gs_node.h" />
-    <ClInclude Include="src\service\logic\scene_client_player.h" />
-    <ClInclude Include="src\service\logic\scene_server_player.h" />
-    <ClInclude Include="src\service\logic\team_client_player.h" />
-    <ClInclude Include="src\service\logic\team_server_player.h" />
-    <ClInclude Include="src\service\player_service.h" />
+    <ClInclude Include="src\service\logic\gsscene_client_player.h" />
+    <ClInclude Include="src\service\logic\gsscene_server_player.h" />
+    <ClInclude Include="src\service\logic\gsteam_client_player.h" />
+    <ClInclude Include="src\service\logic\gsteam_server_player.h" />
+    <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\replied_ms2gs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

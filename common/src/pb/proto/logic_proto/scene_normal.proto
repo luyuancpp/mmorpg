@@ -13,7 +13,7 @@ message SceneTestResponse
 }
 
 
-service PlayerSceneService
+service ServerSceneService
 {
   rpc EnterScene (SceneTestRequest) returns (SceneTestResponse);
 }

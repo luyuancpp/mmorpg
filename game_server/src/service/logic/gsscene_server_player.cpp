@@ -1,8 +1,7 @@
-#include "scene_server_player.h"
+#include "gsscene_server_player.h"
 #include "src/game_logic/game_registry.h"
-#include "src/module/network/message_sys.h"
+#include "src/network/message_sys.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "logic_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
 
 namespace serverplayer{
@@ -15,21 +14,17 @@ void PlayerPlayerSceneServiceImpl::LogincMs2Gs(common::EntityPtr& entity,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE LogincMs2Gs
-    clientplayer::EnterSeceneS2C message;
-    Send2Player(message, entity);
-///<<< END WRITING YOUR CODE LogincMs2Gs
-}
-
-void PlayerPlayerSceneServiceImpl::ReconnectMs2Gs(common::EntityPtr& entity,
-    const serverplayer::Ms2GsReconnectRequest* request,
-    ::google::protobuf::Empty* response)
-{
-///<<< BEGIN WRITING YOUR CODE LogincMs2Gs
 ///<<< END WRITING YOUR CODE LogincMs2Gs
 }
 
 ///<<<rpc end
+void PlayerPlayerSceneServiceImpl::ReconnectMs2Gs(common::EntityPtr& entity,
+    const serverplayer::Ms2GsReconnectRequest* request,
+    ::google::protobuf::Empty* response)
+{
 ///<<< BEGIN WRITING YOUR CODE ReconnectMs2Gs
 ///<<< END WRITING YOUR CODE ReconnectMs2Gs
+}
 
+///<<<rpc end
 }// namespace serverplayer

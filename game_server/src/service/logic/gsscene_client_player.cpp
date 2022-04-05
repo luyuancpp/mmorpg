@@ -1,11 +1,7 @@
-#include "scene_client_player.h"
+#include "gsscene_client_player.h"
 #include "src/game_logic/game_registry.h"
-#include "src/module/network/message_sys.h"
+#include "src/network/message_sys.h"
 ///<<< BEGIN WRITING YOUR CODE
-
-#include "logic_proto/scene_server_player.pb.h"
-using namespace serverplayer;
-using namespace common;
 ///<<< END WRITING YOUR CODE
 
 namespace clientplayer{
@@ -18,11 +14,10 @@ void PlayerPlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
     clientplayer::SeceneTestResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterScene
-    Ms2GsLoginRequest msg;
-    Send2MsPlayer(msg, reg.get<common::Guid>(entity.entity()));
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
+///<<<rpc end
 void PlayerPlayerSceneServiceImpl::EnterSceneNotify(common::EntityPtr& entity,
     const clientplayer::EnterSeceneS2C* request,
     clientplayer::EnterSeceneS2C* response)
@@ -32,7 +27,4 @@ void PlayerPlayerSceneServiceImpl::EnterSceneNotify(common::EntityPtr& entity,
 }
 
 ///<<<rpc end
-///<<< BEGIN WRITING YOUR CODE EnterSceneNotify
-///<<< END WRITING YOUR CODE EnterSceneNotify
-
 }// namespace clientplayer

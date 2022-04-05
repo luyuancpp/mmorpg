@@ -1,6 +1,6 @@
 #ifndef GAME_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_SCENE_CLIENT_PLAYER_H_
 #define GAME_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_SCENE_CLIENT_PLAYER_H_
-#include "../player_service.h"
+#include "player_service.h"
 #include "logic_proto/scene_client_player.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
