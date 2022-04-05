@@ -6,7 +6,6 @@ system("python buildprotoc.py")
 system("python buildrpcservice.py")
 system("python buildrpcserviceid.py")
 system("python buildprotosol.py")
-system("python buildrpcserviceid.py")
 system("python buildrpcplayerservice.py")
 system("python buildopenplayerservice.py")
 

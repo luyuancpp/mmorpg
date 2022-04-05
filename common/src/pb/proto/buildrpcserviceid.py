@@ -38,30 +38,33 @@ def parsefile(filename):
     local.pkg = ''
     local.service = ''
     rpcbegin = 0 
+    index = 0
+    playerproto = False
+    if not (filename.find('client_player') >= 0 or filename.find('server_player') >= 0 or filename.find('normal') >= 0) :
+        index = local.baseserviceid
+        local.baseserviceid += 1
+        playerproto = False
+    else:
+        index = local.playerserviceid
+        playerproto = True
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 s = fileline.strip(' ').split(' ')
                 idstr = local.pkg.upper() + '_' + s[1].upper()  + '_ID'
-                index = 0
-                if not (filename.find('client_player') >= 0 or filename.find('server_player') >= 0 or filename.find('normal') >= 0) :
-                    index = local.baseserviceid
-                    line = 'const uint32_t ' + idstr + ' = ' + str(local.baseserviceid)
-                    local.baseserviceid += 1
-                else:
-                    index = local.playerserviceid 
-                    line = 'const uint32_t ' + idstr + ' = ' + str(index)
-                    local.playerserviceid  += local.perserviceidcount
-                line += ';\n'
                 rq = s[2].replace('(', '').replace(')', '')
                 rp = s[4].replace('(', '').replace(')', '').replace(';', '').replace('\n', '')
                 pbfullname = local.pkg + '.' + s[2].replace('(', '').replace(')', '')
                 local.rpcmsgnameid.append([[s[1], rq, rp, local.pkg, local.service],index])
+                index += 1
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif fileline.find('service ') >= 0:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
+    local.baseserviceid = index
+    if index != local.playerserviceid and playerproto == True:
+        local.playerserviceid  += local.perserviceidcount
 
 def genmsgidcpp(fullfilename):
     newstr = '#include "msgmap.h"\n'
@@ -127,7 +130,8 @@ def inputfile():
 
 def main():
     for file in genfile:
-           parsefile(file)
+        parsefile(file)
+        
 inputfile()
 main()
 cppsrcfilename = servicedir + local.cppfilename

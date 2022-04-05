@@ -8,9 +8,9 @@
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
 std::unordered_set<std::string> g_open_player_services;
 class PlayerTeamServiceImpl : public serverplayer::PlayerTeamService{};
-class PlayerSceneServiceImpl : public serverplayer::PlayerSceneService{};
+class ServerPlayerSceneServiceImpl : public serverplayer::ServerPlayerSceneService{};
 void InitPlayerServcie()
 {
     g_player_services.emplace("serverplayer.PlayerTeamService", std::make_unique<serverplayer::PlayerPlayerTeamServiceImpl>(new PlayerTeamServiceImpl));
-    g_player_services.emplace("serverplayer.PlayerSceneService", std::make_unique<serverplayer::PlayerPlayerSceneServiceImpl>(new PlayerSceneServiceImpl));
+    g_player_services.emplace("serverplayer.ServerPlayerSceneService", std::make_unique<serverplayer::PlayerServerPlayerSceneServiceImpl>(new ServerPlayerSceneServiceImpl));
 }
