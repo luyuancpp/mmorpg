@@ -10,7 +10,6 @@ extern thread_local PlayerListMap  g_players;
 class PlayerList
 {
 public:
-        
     static PlayerList& GetSingleton()
     {
         thread_local PlayerList singleton;
@@ -22,7 +21,7 @@ public:
     entt::entity GetPlayer(common::Guid guid);
     bool HasPlayer(common::Guid guid) const { return g_players.find(guid) != g_players.end(); }
 
-    void EnterGame(common::Guid guid, const common::EntityPtr&& entity_id){ g_players.emplace(guid, entity_id);       }
+    void EnterGame(common::Guid guid, const common::EntityPtr&& entity_id);
     void LeaveGame(common::Guid guid){ g_players.erase(guid); }
 };
 
