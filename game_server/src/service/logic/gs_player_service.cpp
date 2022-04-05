@@ -17,10 +17,10 @@ class serverplayerPlayerTeamServiceImpl : public serverplayer::PlayerTeamService
 class serverplayerServerPlayerSceneServiceImpl : public serverplayer::ServerPlayerSceneService{};
 void InitPlayerServcie()
 {
-    g_player_services.emplace("clientplayer.PlayerSceneService", std::make_unique<clientplayer::PlayerPlayerSceneServiceImpl>(new clientplayerPlayerSceneServiceImpl));
-    g_player_services.emplace("clientplayer.PlayerTeamService", std::make_unique<clientplayer::PlayerPlayerTeamServiceImpl>(new clientplayerPlayerTeamServiceImpl));
-    g_player_services.emplace("serverplayer.PlayerTeamService", std::make_unique<serverplayer::PlayerPlayerTeamServiceImpl>(new serverplayerPlayerTeamServiceImpl));
-    g_player_services.emplace("serverplayer.ServerPlayerSceneService", std::make_unique<serverplayer::PlayerServerPlayerSceneServiceImpl>(new serverplayerServerPlayerSceneServiceImpl));
+    g_player_services.emplace("clientplayer.PlayerSceneService", std::make_unique<clientplayer::PlayerSceneServiceImpl>(new clientplayerPlayerSceneServiceImpl));
+    g_player_services.emplace("clientplayer.PlayerTeamService", std::make_unique<clientplayer::PlayerTeamServiceImpl>(new clientplayerPlayerTeamServiceImpl));
+    g_player_services.emplace("serverplayer.PlayerTeamService", std::make_unique<serverplayer::PlayerTeamServiceImpl>(new serverplayerPlayerTeamServiceImpl));
+    g_player_services.emplace("serverplayer.ServerPlayerSceneService", std::make_unique<serverplayer::ServerPlayerSceneServiceImpl>(new serverplayerServerPlayerSceneServiceImpl));
     g_open_player_services.emplace("clientplayer.PlayerSceneService");
     g_open_player_services.emplace("clientplayer.PlayerTeamService");
 }

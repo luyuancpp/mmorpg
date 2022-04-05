@@ -9,7 +9,7 @@ namespace clientplayer{
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void PlayerPlayerTeamServiceImpl::EnterScene(common::EntityPtr& entity,
+void PlayerTeamServiceImpl::EnterScene(common::EntityPtr& entity,
     const clientplayer::TeamTestRequest* request,
     clientplayer::TeamTestResponse* response)
 {
