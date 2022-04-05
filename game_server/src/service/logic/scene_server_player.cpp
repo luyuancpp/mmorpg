@@ -2,6 +2,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/module/network/message_sys.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "logic_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
 
 namespace serverplayer{
@@ -14,6 +15,8 @@ void PlayerPlayerSceneServiceImpl::LogincMs2Gs(common::EntityPtr& entity,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE LogincMs2Gs
+    clientplayer::EnterSeceneS2C message;
+    Send2Player(message, entity);
 ///<<< END WRITING YOUR CODE LogincMs2Gs
 }
 

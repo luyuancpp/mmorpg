@@ -188,7 +188,6 @@ void GameServer::receive(const common::OnBeConnectedEvent& es)
 	}
     else
     {
-		auto& gate_nodes = reg.get<GateNodes>(global_entity());
 		auto& peer_addr = conn->peerAddress();
 		for (auto e : reg.view<RpcServerConnection>())
 		{
@@ -200,7 +199,7 @@ void GameServer::receive(const common::OnBeConnectedEvent& es)
 			auto gatenode = reg.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == GATEWAY_NODE_TYPE)
 			{
-				gate_nodes.erase((*gatenode)->node_info_.node_id());
+                g_gate_nodes.erase((*gatenode)->node_info_.node_id());
 			}
 			reg.destroy(e);
 			break;
@@ -211,7 +210,6 @@ void GameServer::receive(const common::OnBeConnectedEvent& es)
 void GameServer::InitGlobalEntities()
 {
     reg.emplace<SceneMapComp>(global_entity());
-    reg.emplace<GateNodes>(global_entity());
 }
 
 void GameServer::InitRoomMasters(const deploy::ServerInfoResponse* resp)

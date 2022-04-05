@@ -65,7 +65,7 @@ void Send2MsPlayer(const google::protobuf::Message& message, common::Guid player
 		return;
 	}
 	auto player = it->second.entity();
-	Send2MsPlayer(message, player_id);
+	Send2MsPlayer(message, player);
 }
 
 void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player)
@@ -95,7 +95,13 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 	msservice::PlayerNodeServiceRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
+	msg_wrapper.mutable_ex()->set_player_id(reg.get<common::Guid>(player));
 	ms->session_->Send(msg_wrapper);
+}
+
+void Send2Player(const google::protobuf::Message& message, common::EntityPtr& entity)
+{
+	Send2Player(message, entity.entity());
 }
 
 void Send2Ms(const google::protobuf::Message& messag)

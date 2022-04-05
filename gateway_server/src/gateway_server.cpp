@@ -111,7 +111,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
             {
                 break;
             }
-            if (conn->disconnected())
+            if (conn->connected())
             {
 				auto& gs_session = it.second;
 				EventLoop::getEventLoopOfCurrentThread()->runInLoop(

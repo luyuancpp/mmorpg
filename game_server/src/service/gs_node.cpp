@@ -44,10 +44,9 @@ void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	{
 		reg.emplace<MsNodeWPtr>(player, msit->second);
 	}
-	
-	auto& gate_nodes = reg.get<GateNodes>(global_entity());
-	auto gate_it = gate_nodes.find(request->gate_node_id());
-	if (gate_it == gate_nodes.end())
+	;
+	auto gate_it = g_gate_nodes.find(request->gate_node_id());
+	if (gate_it == g_gate_nodes.end())
 	{
 		LOG_ERROR << " gate not found" << request->gate_node_id();
 		return;
@@ -79,12 +78,13 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 		return;
 	}
 	auto msg_id = request->msg().msg_id();
-	if (msg_id >= g_serviceinfo.size() || nullptr == g_serviceinfo[msg_id].method)
+	auto sit = g_serviceinfo.find(msg_id);
+	if (sit == g_serviceinfo.end())
 	{
 		LOG_INFO << "msg not found " << msg_id;
 		return;
 	}
-	auto service_it = g_player_services.find(g_serviceinfo[msg_id].service);
+	auto service_it = g_player_services.find(sit->second.service);
 	if (service_it == g_player_services.end())
 	{
 		LOG_INFO << "msg not found " << msg_id;
@@ -196,11 +196,10 @@ void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
 		{
 			continue;
 		}
-		auto& gate_nodes = reg.get<GateNodes>(global_entity());
 		auto& gate_node = *reg.emplace<GateNodePtr>(e, std::make_shared<GateNode>(conn));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(GATEWAY_NODE_TYPE);
-		gate_nodes.emplace(request->gate_node_id(), e);
+		g_gate_nodes.emplace(request->gate_node_id(), e);
 		LOG_INFO << "gate node id " << request->gate_node_id();
 		break;
 	}
