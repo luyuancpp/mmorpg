@@ -12,7 +12,7 @@ namespace clientplayer{
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void PlayerPlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
+void PlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
     const clientplayer::SeceneTestRequest* request,
     clientplayer::SeceneTestResponse* response)
 {
@@ -23,7 +23,7 @@ void PlayerPlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
 }
 
 ///<<<rpc end
-void PlayerPlayerSceneServiceImpl::EnterSceneNotify(common::EntityPtr& entity,
+void PlayerSceneServiceImpl::EnterSceneNotify(common::EntityPtr& entity,
     const clientplayer::EnterSeceneS2C* request,
     clientplayer::EnterSeceneS2C* response)
 {

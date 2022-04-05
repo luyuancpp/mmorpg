@@ -9,7 +9,7 @@ namespace serverplayer{
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void PlayerServerPlayerSceneServiceImpl::LoginMs2Gs(common::EntityPtr& entity,
+void ServerPlayerSceneServiceImpl::LoginMs2Gs(common::EntityPtr& entity,
     const serverplayer::Ms2GsLoginRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -18,7 +18,7 @@ void PlayerServerPlayerSceneServiceImpl::LoginMs2Gs(common::EntityPtr& entity,
 }
 
 ///<<<rpc end
-void PlayerServerPlayerSceneServiceImpl::LoginGs2Ms(common::EntityPtr& entity,
+void ServerPlayerSceneServiceImpl::LoginGs2Ms(common::EntityPtr& entity,
     const serverplayer::Gs2MsLoginRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -27,7 +27,7 @@ void PlayerServerPlayerSceneServiceImpl::LoginGs2Ms(common::EntityPtr& entity,
 }
 
 ///<<<rpc end
-void PlayerServerPlayerSceneServiceImpl::ReconnectMs2Gs(common::EntityPtr& entity,
+void ServerPlayerSceneServiceImpl::ReconnectMs2Gs(common::EntityPtr& entity,
     const serverplayer::Ms2GsReconnectRequest* request,
     ::google::protobuf::Empty* response)
 {

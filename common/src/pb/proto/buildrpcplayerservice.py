@@ -60,7 +60,7 @@ def parsefile(filename):
             elif fileline.find('service ') >= 0:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-                local.playerservice = 'Player' + local.service
+                local.playerservice = local.service
 
 def inputfiledestdir(filename):
     global filesrcdestpath
@@ -321,7 +321,7 @@ def gengsplayerservcielist(filename):
     newstr += 'void InitPlayerServcie()\n{\n'
     for service in local.playerservicearray:
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
-        newstr += ', std::make_unique<' + service.split('.')[0] + '::Player' + service.split('.')[1] + 'Impl>(new '
+        newstr += ', std::make_unique<' + service.split('.')[0] + '::' + service.split('.')[1] + 'Impl>(new '
         newstr +=  service.replace('.', '') + 'Impl));\n'
     for service in local.openplayerservicearray:
         newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
@@ -350,7 +350,7 @@ def genmsplayerservcielist(filename):
         if service.find('serverplayer') < 0:
             continue
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
-        newstr += ', std::make_unique<' + service.split('.')[0] + '::Player' + service.split('.')[1] + 'Impl>(new '
+        newstr += ', std::make_unique<' + service.split('.')[0] + '::' + service.split('.')[1] + 'Impl>(new '
         newstr +=  service.split('.')[1] + 'Impl));\n'
     newstr += '}\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
