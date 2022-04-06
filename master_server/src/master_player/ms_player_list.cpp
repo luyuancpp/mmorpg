@@ -16,7 +16,6 @@ using namespace common;
 
 	void PlayerList::EnterGame(common::Guid guid, const common::EntityPtr&& entity_id)
 	{
-		auto it =  g_players.emplace(guid, entity_id);
-        reg.emplace_or_replace<Guid>(entity_id.entity(), guid);
+		g_players.emplace(guid, entity_id);
 	}
 
