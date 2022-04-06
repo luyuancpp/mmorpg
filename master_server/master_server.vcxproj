@@ -157,6 +157,7 @@
     <ClCompile Include="src\master_player\ms_player_list.cpp" />
     <ClCompile Include="src\master_server.cpp" />
     <ClCompile Include="src\network\gate_node.cpp" />
+    <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\scene\sceces.cpp" />
     <ClCompile Include="src\network\message_sys.cpp" />
     <ClCompile Include="src\service\logic\msscene_server_player.cpp" />

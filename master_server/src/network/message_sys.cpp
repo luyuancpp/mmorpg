@@ -19,9 +19,8 @@ using namespace common;
 
 void Send2Gs(const google::protobuf::Message& message, uint32_t node_id)
 {
-		auto& gs_nodes = reg.get<GsNodes>(global_entity());
-		auto it = gs_nodes.find(node_id);
-		if (it == gs_nodes.end())
+		auto it = g_gs_nodes.find(node_id);
+		if (it == g_gs_nodes.end())
 		{
 			LOG_INFO << "gs not found ->" << node_id;
 			return;

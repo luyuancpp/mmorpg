@@ -295,6 +295,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto guid = request->guid();
 	PlayerList::GetSingleton().EnterGame(guid, common::EntityPtr());
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
+	reg.emplace_or_replace<Guid>(player, guid);
 	auto& player_session = reg.emplace_or_replace<PlayerSession>(player);
 	player_session.gate_conn_id_.conn_id_ = request->conn_id();
 	player_session.player_ = player;
@@ -326,9 +327,8 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto& gs_data = (*p_gs_data);
 	player_session.gs_ = gs_data;
 	auto gs_node_id = gs_data->node_id();
-	auto& gs_nodes = common::reg.get<GsNodes>(global_entity());
-	auto it = gs_nodes.find(gs_node_id);
-	if (it != gs_nodes.end())
+	auto it = g_gs_nodes.find(gs_node_id);
+	if (it != g_gs_nodes.end())
 	{
 		Ms2gsEnterGameRpcRplied message;
 		message.s_rq_.set_player_id(guid);

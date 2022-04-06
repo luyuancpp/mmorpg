@@ -30,7 +30,6 @@ void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterGame
-
 	auto it = g_players.emplace(request->player_id(), common::EntityPtr());
 	auto player = it.first->second.entity();
 	reg.emplace_or_replace<GateConnId>(player, request->conn_id());

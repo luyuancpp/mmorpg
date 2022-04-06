@@ -27,7 +27,6 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
       redis_(std::make_shared<RedisClient>())
 { 
     global_entity() = reg.create();
-    reg.emplace<GsNodes>(global_entity());  
 }    
 
 void MasterServer::Init()
@@ -79,8 +78,7 @@ void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
 void MasterServer::OnGsNodeStart(entt::entity gs)
 {
     auto& gsnode = reg.get<GsNodePtr>(gs);
-    auto& gs_nodes = reg.get<GsNodes>(global_entity());
-    gs_nodes.emplace(gsnode->node_info_.node_id(), gs);
+    g_gs_nodes.emplace(gsnode->node_info_.node_id(), gs);
 }
 
 void MasterServer::receive(const OnConnected2ServerEvent& es)
@@ -114,7 +112,6 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
     }
     else
     {
-        auto& gs_nodes = reg.get<GsNodes>(global_entity());
 		auto& peer_addr = conn->peerAddress();
 		for (auto e : reg.view<RpcServerConnection>())
 		{
@@ -126,7 +123,7 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
             auto gsnode = reg.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
             if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == GAME_SERVER_NODE_TYPE)
             {
-                gs_nodes.erase((*gsnode)->node_info_.node_id());
+                g_gs_nodes.erase((*gsnode)->node_info_.node_id());
             }
 			auto gatenode = reg.try_get<GateNodePtr>(e);//如果是gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == GATEWAY_NODE_TYPE)

@@ -51,6 +51,9 @@
     <ClCompile Include="src\service\logic\ms_player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\network\gs_node.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h">
