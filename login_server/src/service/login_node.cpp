@@ -110,6 +110,7 @@ namespace gw2l{
 		cp->s_rq_.set_guid(guid);
 		cp->s_rq_.set_conn_id(response->conn_id());
 		cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
+		cp->s_rq_.set_account(reg.get<std::string>(it->second.entity()));
 		ms_node_stub_.CallMethodString(this,
 			&LoginServiceImpl::EnterMSReplied,
 			cp,
@@ -282,25 +283,25 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Disconnect
-		auto cit = connections_.find(request->conn_id());
-		if (cit == connections_.end())//连接并没有登录
-		{
-			return;
-		}
-		//连接已经登录过
+	auto cit = connections_.find(request->conn_id());
+	if (cit == connections_.end())//连接并没有登录
+	{
+		return;
+	}
+	//连接已经登录过
 
-		msservice::LsDisconnectRequest message;
-		auto conn = cit->second.entity();
-		message.set_account(reg.get<std::string>(conn));
-		auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
-		if (nullptr != p_player)
-		{
-			auto& player = (*p_player);
-			message.set_guid(player->PlayingId());
-		}
-		ms_node_stub_.CallMethod(message,
-			&msservice::MasterNodeService_Stub::OnLsDisconnect);
-		connections_.erase(cit);
+	msservice::LsDisconnectRequest message;
+	auto conn = cit->second.entity();
+	message.set_account(reg.get<std::string>(conn));
+	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
+	if (nullptr != p_player)
+	{
+		auto& player = (*p_player);
+		message.set_guid(player->PlayingId());
+	}
+	ms_node_stub_.CallMethod(message,
+		&msservice::MasterNodeService_Stub::OnLsDisconnect);
+	connections_.erase(cit);
 ///<<< END WRITING YOUR CODE Disconnect
 }
 

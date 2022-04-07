@@ -172,7 +172,7 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Disconnect
- 	g_players.erase(request->guid());
+ 	g_players.erase(request->guid());//todo  应该是ms 通知过来
 ///<<< END WRITING YOUR CODE Disconnect
 }
 

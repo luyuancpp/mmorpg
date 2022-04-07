@@ -189,26 +189,6 @@ void MasterNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* con
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE OnGwLeaveGame
-
-	auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
-	auto it = connection_map.find(request->conn_id());
-	assert(it != connection_map.end());
-	if (it == connection_map.end())
-	{
-		return;
-	}
-	auto player_entity = it->second;
-
-	LeaveSceneParam leave_scene;
-	leave_scene.leave_entity_ = player_entity;
-	g_scene_sys->LeaveScene(leave_scene);
-
-	auto guid = reg.get<Guid>(player_entity);
-	assert(PlayerList::GetSingleton().HasPlayer(guid));
-	PlayerList::GetSingleton().LeaveGame(guid);
-	assert(!PlayerList::GetSingleton().HasPlayer(guid));
-
-	connection_map.erase(it);
 ///<<< END WRITING YOUR CODE OnGwLeaveGame
 }
 
@@ -230,12 +210,13 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE OnGwDisconnect
 	auto guid = request->guid();
-	auto e = PlayerList::GetSingleton().GetPlayer(guid);
-	if (entt::null == e)
+	auto player = PlayerList::GetSingleton().GetPlayer(guid);
+	if (entt::null == player)
 	{
 		return;
 	}
-	assert(reg.get<Guid>(e) == guid);
+	logined_accounts_.erase(*reg.get<PlayerAccount>(player));
+	assert(reg.get<Guid>(player) == guid);
 	PlayerList::GetSingleton().LeaveGame(guid);
 	assert(!PlayerList::GetSingleton().HasPlayer(guid));
 	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
@@ -278,7 +259,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 		if (result.second)
 		{
 			auto& lc = result.first->second;
-			reg.emplace<SharedAccountString>(lc.entity(), std::make_shared<std::string>(request->account()));
+			reg.emplace<PlayerAccount>(lc.entity(), std::make_shared<std::string>(request->account()));
 			reg.emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id(), request->gate_node_id() });
 		}
 	}
@@ -296,6 +277,11 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	PlayerList::GetSingleton().EnterGame(guid, common::EntityPtr());
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
 	reg.emplace_or_replace<Guid>(player, guid);
+	auto cit = logined_accounts_.find(request->account());
+	if (cit != logined_accounts_.end())
+	{
+		reg.emplace_or_replace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
+	}
 	auto& player_session = reg.emplace_or_replace<PlayerSession>(player);
 	player_session.gate_conn_id_.conn_id_ = request->conn_id();
 	player_session.player_ = player;
@@ -352,8 +338,9 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE OnLsLeaveGame
 
 	auto guid = request->guid();
-	auto e = PlayerList::GetSingleton().GetPlayer(guid);
-	assert(reg.get<Guid>(e) == guid);
+	auto player = PlayerList::GetSingleton().GetPlayer(guid);
+	logined_accounts_.erase(*reg.get<PlayerAccount>(player));
+	assert(reg.get<Guid>(player) == guid);
 	PlayerList::GetSingleton().LeaveGame(guid);
 	assert(!PlayerList::GetSingleton().HasPlayer(guid));
 	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);

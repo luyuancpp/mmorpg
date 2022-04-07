@@ -80,6 +80,9 @@ void GameServer::StartGSDeployReplied(StartGSRpcRC cp)
     ConnectMaster();
     ConnectRegion();
 
+    auto& redisinfo = cp->s_rp_->redis_info();
+	redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
+
     server_deploy_ = cp->s_rp_->my_info();
     InetAddress node_addr(server_deploy_.ip(), server_deploy_.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, node_addr);
