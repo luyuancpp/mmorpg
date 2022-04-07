@@ -69,7 +69,8 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 		LOG_INFO << "new server id " << node_id;
 		server_deploy.set_id(node_id);
 		server_deploy.set_port(node_id + kGSBeginPort);
-
+		std::string where_case = std::to_string(request->group()) + " = id  ";
+		db_->LoadOne(*response->mutable_redis_info(), where_case);
 		g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
 		g_deploy_server->SaveGSDb();
 		//g_deploy_server->LogReuseInfo();

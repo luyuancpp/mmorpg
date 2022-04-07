@@ -86,7 +86,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 					//注意这里可能会有问题，如果发的connit 到ms 但是player id不对应怎么办?
                     gs->second.gs_stub_->CallMethod(request, &gsservice::GsService_Stub::Disconnect);
 				}
-				
 			}
 		}
         g_client_sessions_->erase(conn_id);

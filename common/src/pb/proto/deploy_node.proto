@@ -32,6 +32,7 @@ message StartGSResponse
 {
   game_server_db my_info = 1;
   uint32 error_no = 2;
+  redis_server_db redis_info = 5;
 }
 
 message RegionInfoRequest

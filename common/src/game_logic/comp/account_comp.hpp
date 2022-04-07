@@ -10,7 +10,7 @@
 
 namespace common
 {
-    using SharedAccountString = std::shared_ptr<std::string>;
+    using PlayerAccount = std::shared_ptr<std::string>;
 
 }//namespace common
 
