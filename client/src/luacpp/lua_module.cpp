@@ -16,14 +16,14 @@ thread_local uint64_t PlayerId::guid = 100;
 
 namespace common
 {
-    void Pb2sol2c2gw();
+    void pb2sol2();
 }
 
 void InitLua()
 {
     g_lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
 
-    Pb2sol2c2gw();
+    pb2sol2();
 
     g_lua.new_usertype<PlayerId>("PlayerId",
         "guid",
