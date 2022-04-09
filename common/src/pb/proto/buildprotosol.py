@@ -48,8 +48,7 @@ def genluasol(filename, srcdir):
                 continue
             elif fileline.find(end) >= 0 and msgcode == 1:
                 filedbegin = 0
-                newstr = newstr.strip(',\n')
-                newstr += ');\n\n'
+                newstr += 'sol::base_classes, sol::bases<::google::protobuf::Message>());\n\n'
                 msgcode = 0 
                 continue             
             elif msgcode == 1 and filedbegin == 1 :
@@ -162,6 +161,7 @@ def gentotalfile(destdir, srcdir):
         definestr = 'COMMON_SRC_PB_PB2SOL2_H_'
         headstr = '#ifndef ' + definestr + '\n'
         headstr += '#define ' + definestr + '\n'
+        headstr += '#include <google/protobuf/message.h>\n'
         headstr += '#include <sol/sol.hpp>\n'
         headstr += namespacestr + '\n{\n'
         headstr += totalfuncitonname + ';\n'
@@ -176,6 +176,7 @@ def gentotalfile(destdir, srcdir):
         for fn in funsname:
             cppnewstr += fn + ';\n'
         cppnewstr += totalfuncitonname + '\n{\n'
+        cppnewstr += 'g_lua.new_usertype<::google::protobuf::Message>("Message");\n'
         for fn in funsname:
             cppnewstr += fn.replace('void', '').strip(' ') + ';\n'
         cppnewstr += '}\n'

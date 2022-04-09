@@ -52,7 +52,7 @@ void ClientService::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 
 void ClientService::ReadyGo()
 {
-    g_lua["LoginRequest"]["Send"] = [this](LoginRequest& request) ->void
+    g_lua["LoginRequest"]["Send"] = [this](::google::protobuf::Message& request) ->void
     {
         this->codec_.send(this->conn_, request);
     };
