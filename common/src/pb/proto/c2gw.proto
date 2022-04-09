@@ -14,6 +14,14 @@ message LoginResponse
   repeated c_account_simple_player players = 2;
 }
 
+message TestResponse
+{
+  ClientError error = 1;
+  repeated c_account_simple_player players = 2;
+  repeated string teststring = 3;
+  repeated int32 testint = 4;
+}
+
 message CreatePlayerRequest
 {
 	
