@@ -56,16 +56,30 @@ def genluasol(filename, srcdir):
                 fildename = s[1]
                 templatename = ''
                 sn = setname
+                repeatedfiled = True
                 if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
                     templatename = ''
+                    repeatedfiled = False
                 elif typename == 'string' :
                     templatename = '<const std::string&>'
-
-                else :  
+                    repeatedfiled = False
+                elif typename == 'repeated':  
+                    typename = s[1]
+                    fildename = s[2]
+                else:
                     continue
-                newstr += '"' + fildename + '",\n'
-                newstr +=  'sol::property(&' + classname + '::' + fildename + ', &' + classname + sn + fildename
-                newstr += templatename + '),\n'
+                if repeatedfiled == False :
+                    newstr += '"' + fildename + '",\n'
+                    newstr +=  'sol::property(&' + classname + '::' + fildename + ', &' + classname + sn + fildename
+                    newstr += templatename + '),\n'
+                else:
+                    newstr += '"add_' + fildename + '",\n'
+                    newstr += '&' + classname + '::add_' + fildename + ',\n'
+                    newstr += '"' + fildename + '",\n'
+
+                    newstr += '[]() ->decltype(auto){const ::'
+                    newstr += typename +' & (' + classname +'::* pf)(int index) const = &'
+                    newstr += classname +'::players; return pf;  }\n'
                 continue
     newstr += '}\n'
     newstr += '}//' + namespacestr + '\n'
