@@ -74,15 +74,25 @@ def genluasol(filename, srcdir):
                     newstr += templatename + '),\n'
                 else:
                     if typename == 'string' :
+                        #add string
                         templatename = '<const std::string&>'
                         newstr += '"add_' + fildename + '",\n'
-                        newstr += '[]() ->decltype(auto){void (' + classname +'::* pf)(const std::string& ) = &'
+                        newstr += '[]() ->decltype(auto){ void (' + classname +'::* pf)( const std::string& ) = &'
                         newstr += classname +'::add_' + fildename + '; return pf;  },\n'
 
+                        #get const string
                         newstr += '"' + fildename + '",\n'
-                        newstr += '[]() ->decltype(auto){const std::'
+                        newstr += '[]() ->decltype(auto){ const std::'
                         newstr += typename +' & (' + classname +'::* pf)(int ) const = &'
                         newstr += classname +'::' + fildename + '; return pf;  },\n'
+
+                        #set string by index
+                        newstr += '"set_' + fildename + '",\n'
+                        newstr += '[]() ->decltype(auto){ void '
+                        newstr += '(' + classname +'::* pf)(int, const std::string& ) = &'
+                        newstr += classname +'::set_' + fildename + '; return pf;  },\n'
+
+                        
                     else:
                         if typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
                             typename = typename + '_t'
@@ -93,15 +103,34 @@ def genluasol(filename, srcdir):
                             newstr += '[]() ->decltype(auto){'
                             newstr += typename +' (' + classname +'::* pf)(int ) const = &'
                             newstr += classname +'::' + fildename + '; return pf;  },\n'
+
+                            #set int by index
+                            newstr += '"set_' + fildename + '",\n'
+                            newstr += '[]() ->decltype(auto){ void '
+                            newstr += ' (' + classname +'::* pf)(int, ' + typename + ') = &'
+                            newstr += classname +'::set_' + fildename + '; return pf;  },\n'
                         else:
                             newstr += '"add_' + fildename + '",\n'
                             newstr += '&' + classname + '::add_' + fildename + ',\n'
 
                             newstr += '"' + fildename + '",\n'
-                            newstr += '[]() ->decltype(auto){const ::'
+                            newstr += '[]() ->decltype(auto){ const ::'
                             newstr += typename +' & (' + classname +'::* pf)(int ) const = &'
                             newstr += classname +'::' + fildename + '; return pf;  },\n'
-                continue
+
+                            #set int by index
+                            newstr += '"mutable_' + fildename + '",\n'
+                            newstr += '[]() ->decltype(auto){ ::'
+                            newstr += typename + '* (' + classname +'::* pf)(int) = &'
+                            newstr += classname +'::mutable_' + fildename + '; return pf;  },\n'
+                    #fileds size 
+                    newstr += '"' + fildename + '_size",\n'
+                    newstr += '&' + classname + '::' + fildename + '_size,\n'
+
+                    #clear fileds 
+                    newstr += '"clear_' + fildename + '",\n'
+                    newstr += '&' + classname + '::clear_' + fildename + ',\n'
+                
     newstr += '}\n'
     newstr += '}//' + namespacestr + '\n'
     with open(newfilename, 'w', encoding='utf-8')as file:
