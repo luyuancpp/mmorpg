@@ -73,13 +73,34 @@ def genluasol(filename, srcdir):
                     newstr +=  'sol::property(&' + classname + '::' + fildename + ', &' + classname + sn + fildename
                     newstr += templatename + '),\n'
                 else:
-                    newstr += '"add_' + fildename + '",\n'
-                    newstr += '&' + classname + '::add_' + fildename + ',\n'
-                    newstr += '"' + fildename + '",\n'
+                    if typename == 'string' :
+                        templatename = '<const std::string&>'
+                        newstr += '"add_' + fildename + '",\n'
+                        newstr += '[]() ->decltype(auto){void (' + classname +'::* pf)(const std::string& ) = &'
+                        newstr += classname +'::add_' + fildename + '; return pf;  },\n'
 
-                    newstr += '[]() ->decltype(auto){const ::'
-                    newstr += typename +' & (' + classname +'::* pf)(int index) const = &'
-                    newstr += classname +'::players; return pf;  }\n'
+                        newstr += '"' + fildename + '",\n'
+                        newstr += '[]() ->decltype(auto){const std::'
+                        newstr += typename +' & (' + classname +'::* pf)(int ) const = &'
+                        newstr += classname +'::' + fildename + '; return pf;  },\n'
+                    else:
+                        if typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
+                            typename = typename + '_t'
+                            newstr += '"add_' + fildename + '",\n'
+                            newstr += '&' + classname + '::add_' + fildename + ',\n'
+
+                            newstr += '"' + fildename + '",\n'
+                            newstr += '[]() ->decltype(auto){'
+                            newstr += typename +' (' + classname +'::* pf)(int ) const = &'
+                            newstr += classname +'::' + fildename + '; return pf;  },\n'
+                        else:
+                            newstr += '"add_' + fildename + '",\n'
+                            newstr += '&' + classname + '::add_' + fildename + ',\n'
+
+                            newstr += '"' + fildename + '",\n'
+                            newstr += '[]() ->decltype(auto){const ::'
+                            newstr += typename +' & (' + classname +'::* pf)(int ) const = &'
+                            newstr += classname +'::' + fildename + '; return pf;  },\n'
                 continue
     newstr += '}\n'
     newstr += '}//' + namespacestr + '\n'
