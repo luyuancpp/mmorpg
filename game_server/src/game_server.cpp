@@ -227,7 +227,7 @@ void GameServer::InitRoomMasters(const deploy::ServerInfoResponse* resp)
         auto& ms = *it.first->second;
         ms.session_ = std::make_shared<RpcClient>(loop_, master_addr);
         ms.node_info_.set_node_id(masterinfo.id());
-        //reg.emplace<MasterSessionPtr>(e, std::make_shared<RpcClient>(loop_, master_addr));
+        reg.emplace<MsNodeWPtr>(e, it.first->second);
         return;
     }
     for (int32_t i = 0; i < regionmaster.masters_size(); ++i)
@@ -238,7 +238,7 @@ void GameServer::InitRoomMasters(const deploy::ServerInfoResponse* resp)
         auto& ms = *it.first->second;
 		ms.session_ = std::make_shared<RpcClient>(loop_, master_addr);
         ms.node_info_.set_node_id(masterinfo.id());
-        //reg.emplace<MasterSessionPtr>(e, std::make_shared<RpcClient>(loop_, master_addr));
+        reg.emplace<MsNodeWPtr>(e, it.first->second);
     }
 }
 
