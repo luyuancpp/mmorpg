@@ -2,7 +2,7 @@
 
 #include "google/protobuf/util/json_util.h"
 
-#include "src/file2string/file2string.h"
+#include "src/util/file2string.h"
 
 namespace common
 {

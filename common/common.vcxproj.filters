@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="src\file2string\file2string.cpp" />
+    <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
     <ClCompile Include="src\game_config\condition_config.cpp" />
     <ClCompile Include="src\game_config\global_variable_config.cpp" />
@@ -40,7 +40,7 @@
     <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
     <ClCompile Include="src\mysql_wrapper\mysql_client.cpp" />
     <ClCompile Include="src\mysql_wrapper\mysql_database.cpp" />
-    <ClCompile Include="src\pb2db\pb2dbsql.cpp" />
+    <ClCompile Include="src\mysql_wrapper\pb2dbsql.cpp" />
     <ClCompile Include="src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
@@ -109,7 +109,7 @@
     <ClInclude Include="src\network\deploy_rpcclient.h" />
     <ClInclude Include="src\event\event.h" />
     <ClInclude Include="src\game_logic\exprtk\exprtk.hpp" />
-    <ClInclude Include="src\file2string\file2string.h" />
+    <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\game_config\deploy_json.h" />
     <ClInclude Include="src\game_ecs\game_registry.h" />
     <ClInclude Include="src\game_logic\teams\team.h" />
@@ -119,7 +119,7 @@
     <ClInclude Include="src\mysql_wrapper\mysql_client.h" />
     <ClInclude Include="src\mysql_wrapper\mysql_result.h" />
     <ClInclude Include="src\mysql_wrapper\mysql_database.h" />
-    <ClInclude Include="src\pb2db\pb2dbsql.h" />
+    <ClInclude Include="src\mysql_wrapper\pb2dbsql.h" />
     <ClInclude Include="src\redis_client\async_redis_client.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />
     <ClInclude Include="src\return_code\error_code.h" />
@@ -134,7 +134,7 @@
     <ClInclude Include="src\network\rpc_stub.h" />
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
-    <ClInclude Include="src\snow_flake\snow_flake.h" />
+    <ClInclude Include="src\util\snow_flake.h" />
     <ClInclude Include="src\pb\pbc\gs_node.pb.h" />
     <ClInclude Include="src\pb\pbc\db_node.pb.h" />
     <ClInclude Include="src\pb\pbc\deploy_node.pb.h" />

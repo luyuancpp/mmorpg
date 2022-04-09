@@ -6,7 +6,7 @@
 #include "src/factories/scene_factories.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/gs_scene_comp.hpp"
-#include "src/snow_flake/snow_flake.h"
+#include "src/util/snow_flake.h"
 #include "src/sys/servernode_sys.hpp"
 
 class ScenesSystem : public common::EntityPtr
