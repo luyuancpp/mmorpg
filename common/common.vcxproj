@@ -162,6 +162,7 @@
     <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
     <ClCompile Include="src\pb\pb2sol2\c2gw_sol2.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\common_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\pb2sol2.cpp" />
     <ClCompile Include="src\pb\pbc\account_database.pb.cc" />
     <ClCompile Include="src\pb\pbc\c2gw.pb.cc" />

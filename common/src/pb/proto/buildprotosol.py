@@ -26,7 +26,8 @@ def genluasol(filename, srcdir):
     funsname.append(funcname)
     newstr = '#include "' + pbnamespace + '.pb.h"\n'
     newstr += '#include <sol/sol.hpp>\n'
-    newstr += 'using namespace ' + pbnamespace + ';\n'
+    if pbnamespace != 'common':
+        newstr += 'using namespace ' + pbnamespace + ';\n'
     newstr += namespacestr + '\n{\n' 
     newstr += 'extern thread_local sol::state g_lua;\n'
     newstr +=  funcname + '\n{\n'    
@@ -77,20 +78,15 @@ def genluasol(filename, srcdir):
                         #add string
                         templatename = '<const std::string&>'
                         newstr += '"add_' + fildename + '",\n'
-                        newstr += '[]() ->decltype(auto){ void (' + classname +'::* pf)( const std::string& ) = &'
-                        newstr += classname +'::add_' + fildename + '; return pf;  },\n'
+                        newstr += '[](' + classname + '& pb, const std::string& value) ->decltype(auto){ return pb.add_' + fildename +'(value);},\n'
 
                         #get const string
                         newstr += '"' + fildename + '",\n'
-                        newstr += '[]() ->decltype(auto){ const std::'
-                        newstr += typename +' & (' + classname +'::* pf)(int ) const = &'
-                        newstr += classname +'::' + fildename + '; return pf;  },\n'
+                        newstr += '[](' + classname + '& pb, int index) ->decltype(auto){ return pb.' + fildename +'(index);},\n'
 
                         #set string by index
                         newstr += '"set_' + fildename + '",\n'
-                        newstr += '[]() ->decltype(auto){ void '
-                        newstr += '(' + classname +'::* pf)(int, const std::string& ) = &'
-                        newstr += classname +'::set_' + fildename + '; return pf;  },\n'
+                        newstr += '[](' + classname + '& pb, int index, const std::string& value) ->decltype(auto){ return pb.set_' + fildename +'(index, value);},\n'
 
                         
                     else:
@@ -100,29 +96,21 @@ def genluasol(filename, srcdir):
                             newstr += '&' + classname + '::add_' + fildename + ',\n'
 
                             newstr += '"' + fildename + '",\n'
-                            newstr += '[]() ->decltype(auto){'
-                            newstr += typename +' (' + classname +'::* pf)(int ) const = &'
-                            newstr += classname +'::' + fildename + '; return pf;  },\n'
+                            newstr += '[](' + classname + '& pb, int index) ->decltype(auto){ return pb.' + fildename +'(index);},\n'
 
                             #set int by index
                             newstr += '"set_' + fildename + '",\n'
-                            newstr += '[]() ->decltype(auto){ void '
-                            newstr += ' (' + classname +'::* pf)(int, ' + typename + ') = &'
-                            newstr += classname +'::set_' + fildename + '; return pf;  },\n'
+                            newstr += '[](' + classname + '& pb, int index, ' + typename + ' value) ->decltype(auto){ return pb.set_' + fildename +'(index, value);},\n'
                         else:
                             newstr += '"add_' + fildename + '",\n'
                             newstr += '&' + classname + '::add_' + fildename + ',\n'
 
                             newstr += '"' + fildename + '",\n'
-                            newstr += '[]() ->decltype(auto){ const ::'
-                            newstr += typename +' & (' + classname +'::* pf)(int ) const = &'
-                            newstr += classname +'::' + fildename + '; return pf;  },\n'
+                            newstr += '[](' + classname + '& pb, int index) ->decltype(auto){ return pb.' + fildename +'(index);},\n'
 
                             #set int by index
                             newstr += '"mutable_' + fildename + '",\n'
-                            newstr += '[]() ->decltype(auto){ ::'
-                            newstr += typename + '* (' + classname +'::* pf)(int) = &'
-                            newstr += classname +'::mutable_' + fildename + '; return pf;  },\n'
+                            newstr += '[](' + classname + '& pb, int index) ->decltype(auto){ return pb.mutable_' + fildename +'(index);},\n'
                     #fileds size 
                     newstr += '"' + fildename + '_size",\n'
                     newstr += '&' + classname + '::' + fildename + '_size,\n'
@@ -187,7 +175,7 @@ def gentotalfile(destdir, srcdir):
         cppnewstr += '}//' + namespacestr + '\n'
         file.write(cppnewstr)    
 
-#genluasol('gw2ms.proto', srcdir)
+genluasol('common.proto', srcdir)
 genluasol('c2gw.proto', srcdir)
 
 gentotalfile(destdir, srcdir)
