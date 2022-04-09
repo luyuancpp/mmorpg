@@ -69,10 +69,7 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
 {
     if (message->players().empty())
     {        
-        g_lua["CreatePlayerRequest"]["Send"] = [this](CreatePlayerRequest& request) ->void
-        {
-            this->codec_.send(this->conn_, request);
-        };
+        g_lua["player"] = this;
         g_lua["CreatePlayer"]();
         return;
     }
@@ -125,19 +122,13 @@ void ClientService::OnMessageEnterSeceneS2CPtr(const muduo::net::TcpConnectionPt
     const EnterSeceneS2CPtr& message,
     muduo::Timestamp)
 {
-	g_lua["LeaveGameRequest"]["Send"] = [this](LeaveGameRequest& request) ->void
-	{
-		this->codec_.send(this->conn_, request);
-	};
+    g_lua["player"] = this;
 	g_lua["LeaveGame"]();
 }
 
 void ClientService::EnterGame(Guid guid)
 {
-    g_lua["EnterGameRequest"]["Send"] = [this](EnterGameRequest& request) ->void
-    {
-        this->codec_.send(this->conn_, request);
-    };
+    g_lua["player"] = this;
     g_lua["EnterGame"](guid);
 }
 

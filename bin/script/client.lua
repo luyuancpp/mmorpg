@@ -23,16 +23,16 @@ end
 
 function CreatePlayer()
 	request = CreatePlayerRequest.new()
-	request:Send()
+	player:sendother(request)
 end
 
 function EnterGame(guid)
 	request = EnterGameRequest.new()
 	request.guid = guid
-	request:Send()
+	player:sendother(request)
 end
 
 function LeaveGame()
 	request = LeaveGameRequest.new()
-	request:Send()
+	player:sendother(request)
 end

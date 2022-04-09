@@ -215,7 +215,11 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	{
 		return;
 	}
-	logined_accounts_.erase(*reg.get<PlayerAccount>(player));
+	auto try_acount = reg.try_get<PlayerAccount>(player);
+	if (nullptr != try_acount)
+	{
+		logined_accounts_.erase(**try_acount);
+	}	
 	assert(reg.get<Guid>(player) == guid);
 	PlayerList::GetSingleton().LeaveGame(guid);
 	assert(!PlayerList::GetSingleton().HasPlayer(guid));
