@@ -12,6 +12,7 @@ destdir = '../pb2sol2/'
 namespacestr = 'namespace common'
 setname = '::set_'
 mutablename = '::mutable_'
+enum = {}
 
 if not os.path.exists(srcdir):
     os.makedirs(srcdir)
@@ -35,6 +36,8 @@ def genluasol(filename, srcdir):
     with open(filename,'r', encoding='utf-8') as file:
         filedbegin = 0
         for fileline in file:
+            if fileline.find('enum') >= 0 :
+                enum[fileline.replace('\n', '').split(' ')[1]] = 1             
             if fileline.find(msg) >= 0 :
                 msgcode = 1
                 classname = fileline.split(' ')[1].strip('\n')
@@ -58,7 +61,7 @@ def genluasol(filename, srcdir):
                 templatename = ''
                 sn = setname
                 repeatedfiled = True
-                if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
+                if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' or typename in enum:
                     templatename = ''
                     repeatedfiled = False
                 elif typename == 'string' :
@@ -68,6 +71,10 @@ def genluasol(filename, srcdir):
                     typename = s[1]
                     fildename = s[2]
                 else:
+                    newstr += '"' + fildename + '",\n'
+                    newstr += '[](' + classname + '& pb) ->decltype(auto){ return pb.' + fildename +'();},\n'
+                    newstr += '"mutable_' + fildename + '",\n'
+                    newstr += '[](' + classname + '& pb) ->decltype(auto){ return pb.mutable_' + fildename +'();},\n'
                     continue
                 if repeatedfiled == False :
                     newstr += '"' + fildename + '",\n'

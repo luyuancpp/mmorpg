@@ -9,6 +9,18 @@ function ReadyGo()
 	request:Send()
 end
 
+function Example()
+	responese = TestResponse.new()
+	player = responese:add_players()
+	player.guid = 1
+	for i=0,responese:players_size() - 1 do
+		p = responese:players(i)
+		print(p.guid)
+	end
+	responese:mutable_error().error_no = 1
+	print(responese:error().error_no)
+end
+
 function CreatePlayer()
 	request = CreatePlayerRequest.new()
 	request:Send()
