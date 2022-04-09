@@ -10,7 +10,7 @@
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_stub.h"
 #include "src/network/rpc_client.h"
-#include "src/snow_flake/snow_flake.h"
+#include "src/util/snow_flake.h"
 
 #include "c2gw.pb.h"
 #include "login_node.pb.h"

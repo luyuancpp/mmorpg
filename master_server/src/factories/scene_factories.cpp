@@ -1,7 +1,7 @@
 #include "scene_factories.hpp"
 
 #include "src/game_logic/game_registry.h"
-#include "src/snow_flake/snow_flake.h"
+#include "src/util/snow_flake.h"
 
 using namespace common;
 
