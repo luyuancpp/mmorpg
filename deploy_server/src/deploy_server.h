@@ -8,8 +8,8 @@
 #include "src/game_config/deploy_json.h"
 #include "src/redis_client/redis_client.h"
 #include "src/reuse_game_id/reuse_game_id.h"
-#include "src/server_common/rpc_server.h"
-#include "src/server_common/rpc_connection_event.h"
+#include "src/network/rpc_server.h"
+#include "src/network/rpc_connection_event.h"
 
 namespace deploy
 {

@@ -14,7 +14,7 @@
 #include "muduo/base/Atomic.h"
 #include "muduo/base/Mutex.h"
 #include "muduo/net/protorpc/RpcCodec.h"
-#include "src/server_common/codec/dispatcher.h"
+#include "src/network/codec/dispatcher.h"
 
 #include <google/protobuf/service.h>
 

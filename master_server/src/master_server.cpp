@@ -11,7 +11,7 @@
 #include "src/factories/scene_factories.hpp"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
-#include "src/server_common/deploy_rpcclient.h"
+#include "src/network/deploy_rpcclient.h"
 #include "src/service/logic/player_service.h"
 #include "src/pb/pbc/msgmap.h"
 

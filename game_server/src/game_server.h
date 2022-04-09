@@ -6,11 +6,11 @@
 
 #include "src/network/ms_node.h"
 #include "src/service/gs_node.h"
-#include "src/server_common/deploy_rpcclient.h"
-#include "src/server_common/rpc_server.h"
-#include "src/server_common/rpc_stub.h"
+#include "src/network/deploy_rpcclient.h"
+#include "src/network/rpc_server.h"
+#include "src/network/rpc_stub.h"
 #include "src/redis_client/redis_client.h"
-#include "src/server_common/rpc_closure.h"
+#include "src/network/rpc_closure.h"
 
 #include "ms_node.pb.h"
 #include "rg_node.pb.h"

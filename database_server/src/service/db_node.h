@@ -2,7 +2,7 @@
 #define DATABASE_SERVER_SRC_SERVICE_DB_NODE_H_
 #include "db_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/server_common/rpc_server.h"
+#include "src/network/rpc_server.h"
 #include "src/mysql_database/mysql_database.h"
 
 using namespace muduo;

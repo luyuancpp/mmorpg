@@ -1,5 +1,5 @@
 #include "ms_node.h"
-#include "src/server_common/rpc_closure.h"
+#include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 /// #include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
@@ -19,9 +19,9 @@
 #include "src/pb/pbc/msgmap.h"
 #include "src/return_code/error_code.h"
 #include "src/scene/sceces.h"
-#include "src/server_common/node_info.h"
+#include "src/network/node_info.h"
 #include "src/service/logic/player_service.h"
-#include "src/server_common/server_component.h"
+#include "src/network/server_component.h"
 #include "src/sys/servernode_sys.hpp"
 
 #include "gs_node.pb.h"

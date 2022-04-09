@@ -1,5 +1,5 @@
 #include "gs_node.h"
-#include "src/server_common/rpc_closure.h"
+#include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "src/game_logic/comp/player_comp.hpp"
@@ -8,7 +8,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/message_sys.h"
 #include "src/module/player_list/player_list.h"
-#include "src/server_common/server_component.h"
+#include "src/network/server_component.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic/player_service.h"
 

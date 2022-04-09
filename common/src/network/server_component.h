@@ -3,7 +3,7 @@
 
 #include "muduo/net/TcpConnection.h"
 
-#include "src/server_common/rpc_channel.h"
+#include "src/network/rpc_channel.h"
 
 namespace common
 {

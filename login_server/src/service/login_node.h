@@ -4,10 +4,10 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/account_player.h"
 #include "src/game_logic/game_registry.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_stub.h"
-#include "src/server_common/rpc_client.h"
+#include "src/network/rpc_closure.h"
+#include "src/network/rpc_closure.h"
+#include "src/network/rpc_stub.h"
+#include "src/network/rpc_client.h"
 #include "src/redis_client/redis_client.h"
 
 #include "login_node.pb.h"

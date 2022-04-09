@@ -3,9 +3,9 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "src/server_common/node_info.h"
-#include "src/server_common/rpc_client.h"
-#include "src/server_common/rpc_stub.h"
+#include "src/network/node_info.h"
+#include "src/network/rpc_client.h"
+#include "src/network/rpc_stub.h"
 #include "src/game_logic/game_registry.h"
 
 #include "gs_node.pb.h"

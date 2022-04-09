@@ -13,8 +13,8 @@
 #include "src/network/gate_node.h"
 #include "src/service/logic/player_service.h"
 #include "src/service/replied_ms2gs.h"
-#include "src/server_common/deploy_rpcclient.h"
-#include "src/server_common/node_info.h"
+#include "src/network/deploy_rpcclient.h"
+#include "src/network/node_info.h"
 #include "src/pb/pbc/msgmap.h"
 
 using namespace common;

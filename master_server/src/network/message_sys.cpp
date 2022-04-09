@@ -8,7 +8,7 @@
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"
 #include "src/network/gate_node.h"
-#include "src/server_common/server_component.h"
+#include "src/network/server_component.h"
 #include "src/pb/pbc/msgmap.h"
 
 #include "gw_node.pb.h"

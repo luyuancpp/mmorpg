@@ -2,7 +2,7 @@
 
 #include "src/game_server.h"
 #include "src/game_logic/game_registry.h"
-#include "src/server_common/node_info.h"
+#include "src/network/node_info.h"
 
 using namespace muduo;
 using namespace muduo::net;

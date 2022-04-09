@@ -10,13 +10,13 @@
 
 #include "src/event/event.h"
 #include "src/service/c2gw.h"
-#include "src/server_common/codec/codec.h"
-#include "src/server_common/codec/dispatcher.h"
+#include "src/network/codec/codec.h"
+#include "src/network/codec/dispatcher.h"
 #include "src/service/gw_node.h"
 #include "src/service/gw_node.h"
-#include "src/server_common/deploy_rpcclient.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_connection_event.h"
+#include "src/network/deploy_rpcclient.h"
+#include "src/network/rpc_closure.h"
+#include "src/network/rpc_connection_event.h"
 
 #include "ms_node.pb.h"
 

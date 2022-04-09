@@ -160,6 +160,23 @@ namespace common
         uint64_t last_time_{ 0 };
         uint32_t sequence_{ 0 };
     };
+
+	class ServerSequence
+	{
+	public:
+		void set_server_id(uint32_t server_id)
+		{
+			server_id_ = server_id;
+		}
+
+		Guid Generate()
+		{
+			return server_id_ ^ ++seq_;
+		}
+	private:
+		uint32_t server_id_{ 0 };
+		uint32_t seq_{ 0 };
+	};
 }//namespace common
 
 
