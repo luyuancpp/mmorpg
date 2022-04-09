@@ -21,7 +21,6 @@ void Send2Player(const google::protobuf::Message& message, common::Guid player_i
 		LOG_INFO << "player not found " << player_id;
 		return;
 	}
-	auto player = it->second.entity();
 	Send2Player(message, player_id);
 }
 
@@ -43,7 +42,7 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	auto& gate = (*try_gate).lock();
+	auto gate = (*try_gate).lock();
 	if (nullptr == gate)
 	{
 		LOG_DEBUG << "player gate not found " << reg.get<common::Guid>(player);
@@ -86,7 +85,7 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	auto& ms = (*try_ms).lock();
+	auto ms = (*try_ms).lock();
 	if (nullptr == ms)
 	{
 		LOG_DEBUG << "player gate not found " << reg.get<common::Guid>(player);
