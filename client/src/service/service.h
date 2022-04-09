@@ -34,6 +34,7 @@ public:
         TcpClient& client);
 
     void Send(const google::protobuf::Message& message);
+    void SendOhter(const google::protobuf::Message& message);
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
     void ReadyGo();
     

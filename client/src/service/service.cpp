@@ -31,6 +31,8 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 		std::bind(&ClientService::OnMessageBodyReplied, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<EnterSeceneS2C>(
 		std::bind(&ClientService::OnMessageEnterSeceneS2CPtr, this, _1, _2, _3));
+    g_lua.new_usertype<ClientService>("player", "sendother",
+        sol::as_function(&ClientService::SendOhter));
 }
 
 void ClientService::Send(const google::protobuf::Message& message)
@@ -45,6 +47,11 @@ void ClientService::Send(const google::protobuf::Message& message)
     codec_.send(conn_, rpcmessage);
 }
 
+void ClientService::SendOhter(const google::protobuf::Message& message)
+{
+    codec_.send(conn_, message);
+}
+
 void ClientService::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     conn_ = conn;
@@ -52,10 +59,7 @@ void ClientService::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 
 void ClientService::ReadyGo()
 {
-    g_lua["LoginRequest"]["Send"] = [this](::google::protobuf::Message& request) ->void
-    {
-        this->codec_.send(this->conn_, request);
-    };
+    g_lua["player"] = this;
     g_lua["ReadyGo"]();
 }
 
