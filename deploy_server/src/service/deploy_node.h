@@ -2,7 +2,7 @@
 #define DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_
 #include "deploy_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/mysql_database/mysql_database.h"
+#include "src/mysql_wrapper/mysql_database.h"
 
 ///<<< END WRITING YOUR CODE
 namespace deploy{

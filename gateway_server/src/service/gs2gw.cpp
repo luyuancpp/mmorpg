@@ -1,5 +1,5 @@
 #include "gs2gw.h"
-#include "src/server_common/rpc_closure.h"
+#include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 

@@ -9,7 +9,7 @@
 #include <mysql.h>
 
 #include "src/util/expected.h"
-#include "src/mysql_client/mysql_result.h"
+#include "src/mysql_wrapper/mysql_result.h"
 
 #include "muduo/base/Logging.h"
 

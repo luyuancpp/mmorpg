@@ -15,7 +15,7 @@
 #include "google/protobuf/message.h"
 
 #include "src/common_type/common_type.h"
-#include "src/mysql_client/mysql_result.h"
+#include "src/mysql_wrapper/mysql_result.h"
 
 namespace common
 {
