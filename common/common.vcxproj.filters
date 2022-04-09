@@ -57,6 +57,7 @@
     <ClCompile Include="src\pb\pbc\logic_proto\team_client_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\team_normal.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\team_server_player.pb.cc" />
+    <ClCompile Include="src\pb\pb2sol2\common_sol2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
