@@ -8,6 +8,7 @@
 #include "src/game_logic/timer_task/timer_task.h"
 #include "src/server_common/codec/codec.h"
 #include "src/server_common/codec/dispatcher.h"
+#include "src/pb/pb2sol2/pb2sol2.h"
 
 #include "c2gw.pb.h"
 #include "logic_proto/scene_client_player.pb.h"
@@ -25,6 +26,13 @@ using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
 using ClientResponsePtr = std::shared_ptr<ClientResponse>;
 using MessageBodyPtr = std::shared_ptr<MessageBody>;
 using EnterSeceneS2CPtr = std::shared_ptr<EnterSeceneS2C>;
+
+struct AutoLuaPlayer
+{
+	void operator()(sol::state_view* v) { common::g_lua.set("player", sol::lua_nil); }
+};
+
+using AutoLuaPlayerPtr = std::unique_ptr<sol::state_view, AutoLuaPlayer>;
 
 class ClientService
 {
@@ -65,6 +73,7 @@ public:
         muduo::Timestamp);
     
     void EnterGame(common::Guid guid);
+
 private:
     void DisConnect();
 
