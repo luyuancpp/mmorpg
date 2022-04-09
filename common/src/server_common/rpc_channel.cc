@@ -190,7 +190,6 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 			  auto& prototype = service->GetResponsePrototype(method);
 			  if (prototype.GetDescriptor() == ::google::protobuf::Empty::GetDescriptor())
 			  {
-				  int64_t id = message.id();
 				  service->CallMethod(method, NULL, get_pointer(request), nullptr, nullptr);
 			  }
               else
