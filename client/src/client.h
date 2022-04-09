@@ -12,8 +12,8 @@
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/protorpc/RpcChannel.h"
 
-#include "src/server_common/codec/dispatcher.h"
-#include "src/server_common/codec/codec.h"
+#include "src/network/codec/dispatcher.h"
+#include "src/network/codec/codec.h"
 #include "src/service/service.h"
 
 #include "c2gw.pb.h"

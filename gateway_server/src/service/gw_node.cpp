@@ -1,5 +1,5 @@
 #include "gw_node.h"
-#include "src/server_common/rpc_closure.h"
+#include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
@@ -9,7 +9,7 @@
 #include "src/gate_player/gate_player_list.h"
 #include "src/gateway_server.h"
 #include "src/return_code/error_code.h"
-#include "src/server_common/rpc_closure.h"
+#include "src/network/rpc_closure.h"
 
 using namespace gateway;
 ///<<< END WRITING YOUR CODE

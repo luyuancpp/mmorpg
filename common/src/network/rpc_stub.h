@@ -6,7 +6,7 @@
 #include "rpc_connection_event.h"
 #include "rpc_client.h"
 #include "src/event/event.h"
-#include "src/server_common/rpc_channel.h"
+#include "src/network/rpc_channel.h"
 
 #include "muduo/base/Logging.h"
 

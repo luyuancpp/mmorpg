@@ -143,7 +143,7 @@ def gencppfile(filename, writedir):
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp')
     newcppfilename = servicedir + local.hfilename.replace('.h', '.cpp')
     newstr = '#include "' + local.hfilename + '"\n'
-    newstr += '#include "src/server_common/rpc_closure.h"\n'
+    newstr += '#include "src/network/rpc_closure.h"\n'
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0

@@ -1,16 +1,16 @@
 #ifndef GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_
 #define GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_
 
-#include "src/server_common/codec/codec.h"
+#include "src/network/codec/codec.h"
 
 #include "muduo/base/noncopyable.h"
 #include "muduo/net/EventLoop.h"
 
-#include "src/server_common/codec/dispatcher.h"
-#include "src/server_common/rpc_closure.h"
-#include "src/server_common/rpc_stub.h"
-#include "src/server_common/rpc_client.h"
-#include "src/server_common/server_sequence.h"
+#include "src/network/codec/dispatcher.h"
+#include "src/network/rpc_closure.h"
+#include "src/network/rpc_stub.h"
+#include "src/network/rpc_client.h"
+#include "src/snow_flake/snow_flake.h"
 
 #include "c2gw.pb.h"
 #include "login_node.pb.h"

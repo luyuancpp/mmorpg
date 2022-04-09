@@ -1,7 +1,7 @@
 #ifndef GAME_SERVER_SRC_MASTER_REPLIED_MS2G_H_
 #define GAME_SERVER_SRC_MASTER_REPLIED_MS2G_H_
 
-#include "src/server_common/rpc_closure.h"
+#include "src/network/rpc_closure.h"
 
 #include "ms_node.pb.h"
 

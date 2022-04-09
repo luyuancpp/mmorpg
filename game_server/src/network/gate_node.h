@@ -4,8 +4,8 @@
 #include "muduo/net/TcpConnection.h"
 
 #include "src/game_logic/game_registry.h"
-#include "src/server_common/node_info.h"
-#include "src/server_common/server_component.h"
+#include "src/network/node_info.h"
+#include "src/network/server_component.h"
 
 #include "common.pb.h"
 

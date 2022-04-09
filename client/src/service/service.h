@@ -6,8 +6,8 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/timer_task/timer_task.h"
-#include "src/server_common/codec/codec.h"
-#include "src/server_common/codec/dispatcher.h"
+#include "src/network/codec/codec.h"
+#include "src/network/codec/dispatcher.h"
 #include "src/pb/pb2sol2/pb2sol2.h"
 
 #include "c2gw.pb.h"

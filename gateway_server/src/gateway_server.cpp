@@ -2,7 +2,7 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/network/gs_node.h"
-#include "src/server_common/deploy_rpcclient.h"
+#include "src/network/deploy_rpcclient.h"
 #include "src/pb/pbc/msgmap.h"
 
 #include "gs_node.pb.h"

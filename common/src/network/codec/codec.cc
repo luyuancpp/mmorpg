@@ -6,7 +6,7 @@
 //
 // Author: Shuo Chen (chenshuo at chenshuo dot com)
 
-#include "src/server_common/codec/codec.h"
+#include "src/network/codec/codec.h"
 
 #include "muduo/base/Logging.h"
 #include "muduo/net/Endian.h"
