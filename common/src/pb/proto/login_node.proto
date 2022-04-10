@@ -23,7 +23,8 @@ message LoginResponse
 
 message CreatePlayerRequest
 {
-  uint64 conn_id = 3;
+  uint64 conn_id = 1;
+  uint32 gate_node_id = 2;
 }
 
 message CreatePlayerResponse
@@ -36,7 +37,8 @@ message CreatePlayerResponse
 message EnterGameRequest
 {
   uint64 conn_id = 1;
-  uint64 guid = 2;
+  uint32 gate_node_id = 2;
+  uint64 guid = 3;
 }
 
 message EnterGameResponse
