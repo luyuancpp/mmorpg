@@ -61,7 +61,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 			request.set_conn_id(conn_id);
 			gw2l_login_stub_.CallMethod(request, &gw2l::LoginService_Stub::Disconnect);
         }
-       
         // master
         {
             if (guid != common::kInvalidGuid)
@@ -89,7 +88,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         conn->setContext(id);
         GateClient gc;
         gc.conn_ = conn;
-        g_client_sessions_->emplace(id, gc);
+        g_client_sessions_->emplace(id, std::move(gc));
     }
 }
 
@@ -161,11 +160,6 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
     auto& resp_ = cp->s_rp_;
     if (resp_->error().error_no() == RET_OK)//进入游戏有错误，直接返回给客户端
     {
-		auto it = g_client_sessions_->find(cp->conn_id());
-		if (it == g_client_sessions_->end())
-		{
-			return;
-		}
         return;
     }      
 	cp->c_rp_.mutable_error()->set_error_no(resp_->error().error_no());
@@ -214,11 +208,6 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 
 void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp)
 {
-	auto it = g_client_sessions_->find(cp->s_rp_->conn_id());
-	if (it == g_client_sessions_->end())
-	{
-		return;
-	}
     auto& crp = cp->c_rp_;
     crp.set_response(std::move(cp->s_rp_->response()));
     codec_.send(cp->client_conn_, crp);
