@@ -29,12 +29,15 @@ struct ClosureReplied
 {
 	ClosureReplied(const muduo::net::TcpConnectionPtr& cc)
 		: s_rp_(new ServerResponse()),
-		client_conn_(cc) {}
-    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_connected_ids.erase(boost::any_cast<uint64_t>(client_conn_->getContext())); } }
+		client_conn_(cc),
+        conn_id_(boost::any_cast<uint64_t>(client_conn_->getContext())) {}
+    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_connected_ids.erase(conn_id_); } }
+    inline common::Guid conn_id()const { return conn_id_; }
 	ClientResponse c_rp_;
 	ServerRequest s_rq_;
 	ServerResponse* s_rp_{ nullptr };
 	const muduo::net::TcpConnectionPtr client_conn_;
+    common::Guid conn_id_{ common::kInvalidGuid };
 };
 
 namespace gateway
