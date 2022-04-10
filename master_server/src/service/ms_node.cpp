@@ -43,7 +43,7 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 	{
 		return;
 	}
-	auto player_session = reg.get<PlayerSession>(player);
+	auto& player_session = reg.get<PlayerSession>(player);
 	gwservice::PlayerEnterGSRequest messag;
 	messag.set_conn_id(replied.s_rq_.conn_id());
 	messag.set_gs_node_id(player_session.gs_node_id());
@@ -189,15 +189,6 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 ///<<< BEGIN WRITING YOUR CODE OnGwDisconnect
 	//todo 先重连过来，然后断开才到
 	auto guid = request->guid();
-	auto it = g_gs_nodes.find(request->gate_node_id());
-	if (it != g_gs_nodes.end())
-	{
-		gsservice::DisconnectRequest message;
-		message.set_guid(guid);
-		reg.get<GsStubPtr>(it->second)->CallMethod(
-			message,
-			&gsservice::GsService_Stub::Disconnect);
-	}
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
 	if (entt::null == player)
 	{
@@ -208,6 +199,16 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	{
 		logined_accounts_.erase(**try_acount);
 	}	
+	auto& player_session = reg.get<PlayerSession>(player);
+	auto it = g_gs_nodes.find(player_session.gs_node_id());
+	if (it != g_gs_nodes.end())
+	{
+		gsservice::DisconnectRequest message;
+		message.set_guid(guid);
+		reg.get<GsStubPtr>(it->second)->CallMethod(
+			message,
+			&gsservice::GsService_Stub::Disconnect);
+	}
 	assert(reg.get<Guid>(player) == guid);
 	PlayerList::GetSingleton().LeaveGame(guid);
 	assert(!PlayerList::GetSingleton().HasPlayer(guid));
