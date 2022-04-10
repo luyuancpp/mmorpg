@@ -143,23 +143,23 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Login
-		d.SelfDelete();
-		//测试用例连接不登录马上断线，
-		//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
-		//login master
-		auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
-		auto& s_reqst = c->s_rq_;
-		s_reqst.set_account(request->account());
-		s_reqst.set_login_node_id(g_login_server->login_node_id());
-		s_reqst.set_conn_id(request->conn_id());
-		s_reqst.set_gate_node_id(request->gate_node_id());
-		auto it = connections_.emplace(request->conn_id(), common::EntityPtr());
-		if (it.second)
-		{
-			reg.emplace<std::string>(it.first->second.entity(), request->account());
-			reg.emplace<uint32_t>(it.first->second.entity(), request->gate_node_id());
-		}
-		ms_node_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
+	d.SelfDelete();
+	//测试用例连接不登录马上断线，
+	//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
+	//login master
+	auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
+	auto& s_reqst = c->s_rq_;
+	s_reqst.set_account(request->account());
+	s_reqst.set_login_node_id(g_login_server->login_node_id());
+	s_reqst.set_conn_id(request->conn_id());
+	s_reqst.set_gate_node_id(request->gate_node_id());
+	auto it = connections_.emplace(request->conn_id(), common::EntityPtr());
+	if (it.second)
+	{
+		reg.emplace<std::string>(it.first->second.entity(), request->account());
+		reg.emplace<uint32_t>(it.first->second.entity(), request->gate_node_id());
+	}
+	ms_node_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE Login
 }
 
@@ -283,6 +283,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Disconnect
+	//todo 不同的gate 相同的connect id
 	auto cit = connections_.find(request->conn_id());
 	if (cit == connections_.end())//连接并没有登录
 	{
