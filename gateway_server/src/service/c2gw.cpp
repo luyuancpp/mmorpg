@@ -68,7 +68,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 				msservice::DisconnectRequest request;
                 request.set_gate_node_id(g_gateway_server->gate_node_id());
 				request.set_guid(guid);
-				//注意这里可能会有问题，如果发的connit 到ms 但是player id不对应怎么办?
+				//注意这里可能会有问题，如果发的connid 到ms 但是player id不对应怎么办?
 				g_gateway_server->gw2ms_stub().CallMethod(request, &msservice::MasterNodeService_Stub::OnGwDisconnect);
             }           
         }
@@ -99,7 +99,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     LoginRpcReplied c(std::make_shared<LoginRpcReplied::element_type>(conn));
     c->s_rq_.set_account(message->account());
     c->s_rq_.set_password(message->password());
-    c->s_rq_.set_conn_id(c->conn_id());
+    c->s_rq_.set_conn_id(tcp_conn_id(conn));
     c->s_rq_.set_gate_node_id(g_gateway_server->gate_node_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
         c, 
@@ -123,7 +123,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     muduo::Timestamp)
 {
     auto c(std::make_shared<CreatePlayeReplied::element_type>(conn));
-    c->s_rq_.set_conn_id(c->conn_id());
+    c->s_rq_.set_conn_id(tcp_conn_id(conn));
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         c, 
         this, 
@@ -146,7 +146,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 muduo::Timestamp)
 {
     auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
-    c->s_rq_.set_conn_id(c->conn_id());
+    c->s_rq_.set_conn_id(tcp_conn_id(conn));
     c->s_rq_.set_guid(message->guid());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         c,
