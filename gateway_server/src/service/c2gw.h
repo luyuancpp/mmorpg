@@ -30,9 +30,7 @@ struct ClosureReplied
 	ClosureReplied(const muduo::net::TcpConnectionPtr& cc)
 		: s_rp_(new ServerResponse()),
 		client_conn_(cc) {}
-    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_connected_ids.erase(conn_id()); } }
-
-	inline uint64_t conn_id() const {return  boost::any_cast<uint64_t>(client_conn_->getContext());}
+    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_connected_ids.erase(boost::any_cast<uint64_t>(client_conn_->getContext())); } }
 	ClientResponse c_rp_;
 	ServerRequest s_rq_;
 	ServerResponse* s_rp_{ nullptr };
