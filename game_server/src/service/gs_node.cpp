@@ -147,19 +147,10 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	{
 		return;
 	}
-	auto gate_conn_id = reg.try_get<common::GateConnId>(player->second.entity());
-	if (nullptr == gate_conn_id)
-	{
-		return;
-	}
-	//if (request->)
-	{
-	}
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
 	player_request->ParseFromString(clientrequest.request());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
 	it->second->CallMethod(method, player->second, get_pointer(player_request), get_pointer(player_response));
-	response->set_conn_id((*gate_conn_id).conn_id_);
 	response->set_response(player_response->SerializeAsString());
 ///<<< END WRITING YOUR CODE GwPlayerService
 }
