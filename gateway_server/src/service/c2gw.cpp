@@ -20,7 +20,8 @@ using namespace common;
 using namespace c2gw;
 using namespace gateway;
 
-static const uint64_t kEmptyId = 0;
+std::unordered_set<common::Guid> g_connected_ids;
+common::ServerSequence g_server_sequence_;
 
 namespace gateway
 {
@@ -50,7 +51,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     //todo 玩家没登录直接发其他消息，乱发消息
     if (!conn->connected())
     {
-        auto conn_id = uint64_t(conn.get());
+        auto conn_id = tcp_conn_id(conn);
         //断了线之后不能把消息串到别人的地方，串话
         //如果我没登录就发送其他协议到master game server 怎么办
         auto it = g_client_sessions_->find(conn_id);
@@ -74,12 +75,22 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             }           
         }
         g_client_sessions_->erase(conn_id);
+        if (conn.use_count() == 1)//两处，一处是rpc server 返回,返回证明已经断开，而且该连接没有消息要处理了
+        { 
+            g_connected_ids.erase(conn_id); 
+        }
     }
     else
     {
+        auto id = g_server_sequence_.Generate();
+        while (g_connected_ids.find(id) != g_connected_ids.end())
+        {
+            id = g_server_sequence_.Generate();
+        }
+        conn->setContext(id);
         GateClient gc;
         gc.conn_ = conn;
-        g_client_sessions_->emplace(uint64_t(conn.get()), gc);
+        g_client_sessions_->emplace(id, gc);
     }
 }
 
@@ -177,7 +188,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const RpcClientMessagePtr& request,
     muduo::Timestamp)
 {
-	auto it = g_client_sessions_->find(uint64_t(conn.get()));
+	auto it = g_client_sessions_->find(tcp_conn_id(conn));
 	if (it == g_client_sessions_->end())
 	{
 		return;

@@ -21,14 +21,18 @@ using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
 
+extern std::unordered_set<common::Guid> g_connected_ids;
+extern common::ServerSequence g_server_sequence_;
+
 template <typename ClientResponse, typename ServerRequest, typename ServerResponse>
 struct ClosureReplied
 {
 	ClosureReplied(const muduo::net::TcpConnectionPtr& cc)
 		: s_rp_(new ServerResponse()),
 		client_conn_(cc) {}
+    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_connected_ids.erase(conn_id()); } }
 
-	inline uint64_t conn_id() const { return  uint64_t(client_conn_.get()); }
+	inline uint64_t conn_id() const {return  boost::any_cast<uint64_t>(client_conn_->getContext());}
 	ClientResponse c_rp_;
 	ServerRequest s_rq_;
 	ServerResponse* s_rp_{ nullptr };
@@ -97,11 +101,13 @@ public:
 
 	using GsPlayerServiceRpcRplied = std::shared_ptr<ClosureReplied<ClientResponse, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
 	void OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp);
+
+    inline uint64_t tcp_conn_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<uint64_t>(conn->getContext()); }
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;
     RpcStubgw2l& gw2l_login_stub_;
-    common::ServerSequence server_sequence_;
+    
 };
 }//namespace gateway
 
