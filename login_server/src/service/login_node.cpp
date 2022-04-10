@@ -27,7 +27,7 @@ void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 	//只连接不登录,占用连接
 	// login process
 	// check account rule: empty , errno
-	//check string rule
+	// check string rule
 	auto cit = connections_.find(d->s_rq_.conn_id());
 	if (cit == connections_.end())
 	{
@@ -146,6 +146,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	d.SelfDelete();
 	//测试用例连接不登录马上断线，
 	//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
+	//登录的时候马上断开连接换了个gate应该可以登录成功
 	//login master
 	auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
 	auto& s_reqst = c->s_rq_;
@@ -154,10 +155,10 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	s_reqst.set_conn_id(request->conn_id());
 	s_reqst.set_gate_node_id(request->gate_node_id());
 	auto it = connections_.emplace(request->conn_id(), common::EntityPtr());
-	if (it.second)
+	if (it.first != connections_.end())
 	{
-		reg.emplace<std::string>(it.first->second.entity(), request->account());
-		reg.emplace<uint32_t>(it.first->second.entity(), request->gate_node_id());
+		reg.emplace_or_replace<std::string>(it.first->second.entity(), request->account());
+		reg.emplace_or_replace<uint32_t>(it.first->second.entity(), request->gate_node_id());
 	}
 	ms_node_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE Login
