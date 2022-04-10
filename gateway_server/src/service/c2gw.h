@@ -96,8 +96,6 @@ public:
         google::protobuf::Message* c_rp_{nullptr};
         const muduo::net::TcpConnectionPtr client_connection_;
     };
-	using ClientGSMessageReplied = std::shared_ptr<ClientGsRpcClosure>;
-	void OnRpcClientReplied(ClientGSMessageReplied cp);
 
 	using GsPlayerServiceRpcRplied = std::shared_ptr<ClosureReplied<ClientResponse, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
 	void OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp);

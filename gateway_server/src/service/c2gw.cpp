@@ -212,11 +212,6 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     }
 }
 
-void ClientReceiver::OnRpcClientReplied(ClientGSMessageReplied cp)
-{
-    codec_.send(cp->client_connection_, *cp->c_rp_);
-}
-
 void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp)
 {
 	auto it = g_client_sessions_->find(cp->s_rp_->conn_id());
@@ -224,13 +219,8 @@ void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp)
 	{
 		return;
 	}
-    auto& srp = cp->s_rp_;
     auto& crp = cp->c_rp_;
-    if (it->second.guid_ != srp->player_id())
-    {
-        return;
-    };
-    crp.set_response(srp->response());
+    crp.set_response(std::move(cp->s_rp_->response()));
     codec_.send(cp->client_conn_, crp);
 }
 

@@ -44,8 +44,7 @@ message RpcClientRequest
 message RpcClientResponse
 {
   bytes response = 1;
-  uint64 player_id = 2;
-  uint64 conn_id = 3;
+  uint64 conn_id = 2;
 }
 
 message DisconnectRequest
