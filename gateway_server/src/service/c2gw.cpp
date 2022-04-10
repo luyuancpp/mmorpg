@@ -99,7 +99,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     LoginRpcReplied c(std::make_shared<LoginRpcReplied::element_type>(conn));
     c->s_rq_.set_account(std::move(message->account()));
     c->s_rq_.set_password(std::move(message->password()));
-    c->s_rq_.set_conn_id(tcp_conn_id(conn));
+    c->s_rq_.set_conn_id(c->conn_id());
     c->s_rq_.set_gate_node_id(g_gateway_server->gate_node_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
         c, 
@@ -123,7 +123,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     muduo::Timestamp)
 {
     auto c(std::make_shared<CreatePlayeReplied::element_type>(conn));
-    c->s_rq_.set_conn_id(tcp_conn_id(conn));
+    c->s_rq_.set_conn_id(c->conn_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         c, 
         this, 
@@ -146,7 +146,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 muduo::Timestamp)
 {
     auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
-    c->s_rq_.set_conn_id(tcp_conn_id(conn));
+    c->s_rq_.set_conn_id(c->conn_id());
     c->s_rq_.set_guid(message->guid());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         c,
@@ -195,8 +195,9 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     if (g_open_player_services.find(request->service()) != g_open_player_services.end())
     {
 		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
-        msg->s_rq_.set_request(std::move(request->SerializeAsString()));
+        msg->s_rq_.set_request(request->request());
         msg->s_rq_.set_player_id(it->second.guid_);
+        msg->s_rq_.set_msg_id(request->msg_id());
         msg->c_rp_.set_id(request->id());
         msg->c_rp_.set_msg_id(request->msg_id());
         gs->second.gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,

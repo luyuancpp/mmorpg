@@ -127,16 +127,20 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE GwPlayerService
 
-	c2gw::ClientRequest clientrequest;
-	clientrequest.ParseFromString(request->request());
-	auto it = g_player_services.find(clientrequest.service());
+	auto mit = g_serviceinfo.find(request->msg_id());
+	if (mit == g_serviceinfo.end())
+	{
+		return;
+	}
+	auto& serviceinfo = mit->second;
+	auto it = g_player_services.find(serviceinfo.service);
 	if (it == g_player_services.end())
 	{
 		return;
 	}
 	google::protobuf::Service* service = it->second->service();
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(clientrequest.method());
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(serviceinfo.method);
 	if (nullptr == method)
 	{
 		//todo client error;
@@ -148,7 +152,7 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 		return;
 	}
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
-	player_request->ParseFromString(clientrequest.request());
+	player_request->ParseFromString(request->request());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
 	it->second->CallMethod(method, player->second, get_pointer(player_request), get_pointer(player_response));
 	response->set_response(player_response->SerializeAsString());
