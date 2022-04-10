@@ -59,7 +59,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
 			gw2l::DisconnectRequest request;
 			request.set_conn_id(conn_id);
-            request.set_gate_node_id(g_gateway_server->gate_node_id());//多个gate 可能会有同样的connid,所以把自己服务器发过去做个唯一区分
 			gw2l_login_stub_.CallMethod(request, &gw2l::LoginService_Stub::Disconnect);
         }
        
@@ -126,7 +125,6 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 {
     auto c(std::make_shared<CreatePlayeReplied::element_type>(conn));
     c->s_rq_.set_conn_id(c->conn_id());
-    c->s_rq_.set_gate_node_id(g_gateway_server->gate_node_id());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         c, 
         this, 
@@ -150,7 +148,6 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 {
     auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
     c->s_rq_.set_conn_id(c->conn_id());
-    c->s_rq_.set_gate_node_id(g_gateway_server->gate_node_id());
     c->s_rq_.set_guid(message->guid());
     gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         c,
