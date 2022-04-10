@@ -187,7 +187,17 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE OnGwDisconnect
+	//todo 先重连过来，然后断开才到
 	auto guid = request->guid();
+	auto it = g_gs_nodes.find(request->gate_node_id());
+	if (it != g_gs_nodes.end())
+	{
+		gsservice::DisconnectRequest message;
+		message.set_guid(guid);
+		reg.get<GsStubPtr>(it->second)->CallMethod(
+			message,
+			&gsservice::GsService_Stub::Disconnect);
+	}
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
 	if (entt::null == player)
 	{
