@@ -16,8 +16,6 @@ struct GateConnId
      uint64_t conn_id_{UINT64_MAX};
 };
 
-using ConnectionPlayerEnitiesMap = std::unordered_map<uint64_t, entt::entity>;
-
 struct PlayerId 
 {
     Guid guid_{0};

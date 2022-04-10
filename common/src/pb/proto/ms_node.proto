@@ -116,7 +116,6 @@ message PlayerMessageRespone
 service MasterNodeService {
   rpc StartGS (StartGSRequest) returns (StartGSResponse);
   rpc OnGwConnect (ConnectRequest) returns (google.protobuf.Empty);
-  rpc OnGwPlayerDisconnect (PlayerDisconnectRequest) returns (google.protobuf.Empty);
   rpc OnGwLeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
   rpc OnGwPlayerService (ClientMessageRequest) returns (google.protobuf.Empty);
   rpc OnGwDisconnect (DisconnectRequest) returns (google.protobuf.Empty); 

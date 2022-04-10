@@ -14,8 +14,4 @@ using namespace common;
         return it->second.entity();
     }
 
-	void PlayerList::EnterGame(common::Guid guid, const common::EntityPtr&& entity_id)
-	{
-		g_players.emplace(guid, entity_id);
-	}
 

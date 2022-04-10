@@ -160,28 +160,6 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE OnGwConnect
 }
 
-void MasterNodeServiceImpl::OnGwPlayerDisconnect(::google::protobuf::RpcController* controller,
-    const msservice::PlayerDisconnectRequest* request,
-    ::google::protobuf::Empty* response,
-    ::google::protobuf::Closure* done)
-{
-    AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnGwPlayerDisconnect
-	auto& connection_map = reg.get<ConnectionPlayerEnitiesMap>(global_entity());
-	auto it = connection_map.find(request->conn_id());
-	if (it == connection_map.end())
-	{
-		return;
-	}
-	auto player_entity = it->second;
-	auto guid = reg.get<Guid>(player_entity);
-	connection_map.erase(it);
-
-	PlayerList::GetSingleton().LeaveGame(guid);
-	assert(!PlayerList::GetSingleton().HasPlayer(guid));
-///<<< END WRITING YOUR CODE OnGwPlayerDisconnect
-}
-
 void MasterNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* controller,
     const msservice::LeaveGameRequest* request,
     ::google::protobuf::Empty* response,

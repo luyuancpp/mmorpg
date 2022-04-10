@@ -92,7 +92,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     }
     else
     {
-        //很极端情况下会有问题,如果走了一圈前面的人还没下线，在下一个id下线的瞬间又重用了,就会导致串话
         GateClient gc;
         gc.conn_ = conn;
         g_client_sessions_->emplace(uint64_t(conn.get()), gc);

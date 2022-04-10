@@ -147,5 +147,4 @@ void MasterServer::InitConfig()
 void MasterServer::InitGlobalEntities()
 {
     MakeScenes();
-    reg.emplace<ConnectionPlayerEnitiesMap>(global_entity());
 }

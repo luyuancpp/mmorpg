@@ -34,11 +34,6 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGwPlayerDisconnect(::google::protobuf::RpcController* controller,
-        const msservice::PlayerDisconnectRequest* request,
-        ::google::protobuf::Empty* response,
-        ::google::protobuf::Closure* done)override;
-
     void OnGwLeaveGame(::google::protobuf::RpcController* controller,
         const msservice::LeaveGameRequest* request,
         ::google::protobuf::Empty* response,
