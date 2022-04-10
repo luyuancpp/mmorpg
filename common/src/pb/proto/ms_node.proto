@@ -48,15 +48,10 @@ message LeaveGameRequest
   uint64 conn_id = 1;
 }
 
-message PlayerDisconnectRequest
-{
-  uint64 conn_id = 1;
-}
-
 message DisconnectRequest
 {
   uint64 guid = 1;
-  uint64 conn_id = 2;
+  uint32 gate_node_id = 2;
 }
 
 message LoginAccountRequest

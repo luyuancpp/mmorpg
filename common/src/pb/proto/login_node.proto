@@ -49,6 +49,7 @@ message EnterGameResponse
 message DisconnectRequest
 {
   uint64 conn_id = 1;
+  uint32 gate_node_id = 2;
 }
 
 message DisconnectResponse
