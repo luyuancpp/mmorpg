@@ -37,6 +37,7 @@ void GatewayServer::Init()
 void GatewayServer::StartServer(ServerInfoRpcRC cp)
 {
     serverinfo_data_ = cp->s_rp_->info();
+    g_server_sequence_.set_server_id(gate_node_id());
     auto& login_info = serverinfo_data_.login_info();
     InetAddress login_addr(login_info.ip(), login_info.port());
     login_session_ = std::make_unique<RpcClient>(loop_, login_addr);

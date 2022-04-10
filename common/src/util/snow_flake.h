@@ -167,14 +167,15 @@ namespace common
 		void set_server_id(uint32_t server_id)
 		{
 			server_id_ = server_id;
+            server_id_ = server_id_ << 32;
 		}
 
 		Guid Generate()
 		{
-			return server_id_ ^ ++seq_;
+			return server_id_ | ++seq_;
 		}
 	private:
-		uint32_t server_id_{ 0 };
+		uint64_t server_id_{ 0 };
 		uint32_t seq_{ 0 };
 	};
 }//namespace common
