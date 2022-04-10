@@ -51,7 +51,6 @@ message RpcClientResponse
 message DisconnectRequest
 {
   uint64 guid = 1;
-  uint64 conn_id = 2;
 }
 
 message ConnectRequest
