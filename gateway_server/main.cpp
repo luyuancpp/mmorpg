@@ -1,5 +1,5 @@
 #include "src/gateway_server.h"
-#include "src/gate_player/gate_player_list.h"
+#include "src/network/gate_player_list.h"
 
 using namespace gateway;
 
