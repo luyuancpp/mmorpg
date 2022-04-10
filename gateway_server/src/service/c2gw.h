@@ -21,6 +21,19 @@ using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
 
+template <typename ClientResponse, typename ServerRequest, typename ServerResponse>
+struct ClosureReplied
+{
+	ClosureReplied(const muduo::net::TcpConnectionPtr& cc)
+		: s_rp_(new ServerResponse()),
+		client_conn_(cc) {}
+
+	inline uint64_t conn_id() const { return  uint64_t(client_conn_.get()); }
+	ClientResponse c_rp_;
+	ServerRequest s_rq_;
+	ServerResponse* s_rp_{ nullptr };
+	const muduo::net::TcpConnectionPtr client_conn_;
+};
 
 namespace gateway
 {
@@ -46,21 +59,21 @@ public:
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
-    using LoginRpcReplied = std::shared_ptr<common::ClosureReplied<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>>;
+    using LoginRpcReplied = std::shared_ptr<ClosureReplied<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>>;
     void OnServerLoginReplied(LoginRpcReplied cp);
 
     void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
         const CreatePlayerRequestPtr& message, 
         muduo::Timestamp);
 
-    using CreatePlayeReplied = std::shared_ptr<common::ClosureReplied<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>>;
+    using CreatePlayeReplied = std::shared_ptr<ClosureReplied<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>>;
     void OnServerCreatePlayerReplied(CreatePlayeReplied cp);
 
     void OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
 
-    using EnterGameRpcRplied = std::shared_ptr<common::ClosureReplied<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
+    using EnterGameRpcRplied = std::shared_ptr<ClosureReplied<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
     void OnServerEnterGameReplied(EnterGameRpcRplied cp);
 
     void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
@@ -82,7 +95,7 @@ public:
 	using ClientGSMessageReplied = std::shared_ptr<ClientGsRpcClosure>;
 	void OnRpcClientReplied(ClientGSMessageReplied cp);
 
-	using GsPlayerServiceRpcRplied = std::shared_ptr<common::ClosureReplied<ClientResponse, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
+	using GsPlayerServiceRpcRplied = std::shared_ptr<ClosureReplied<ClientResponse, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
 	void OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp);
 private:
     ProtobufCodec& codec_;
