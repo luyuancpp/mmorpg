@@ -36,14 +36,13 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 
 void ClientService::Send(const google::protobuf::Message& message)
 {
-    ClientRequest rpcmessage;
-    rpcmessage.set_id(++id_);
-    rpcmessage.set_request(message.SerializeAsString());
+    ClientRequest wrapper_message;
+    wrapper_message.set_id(++id_);
+    wrapper_message.set_request(message.SerializeAsString());
     auto message_id = g_msgid[message.GetDescriptor()->full_name()];
-    rpcmessage.set_msg_id(message_id);
-    rpcmessage.set_method(g_serviceinfo[message_id].method);
-    rpcmessage.set_service(g_serviceinfo[message_id].service);
-    codec_.send(conn_, rpcmessage);
+    wrapper_message.set_msg_id(message_id);
+    wrapper_message.set_service(g_serviceinfo[message_id].service);
+    codec_.send(conn_, wrapper_message);
 }
 
 void ClientService::SendOhter(const google::protobuf::Message& message)

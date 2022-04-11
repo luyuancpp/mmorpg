@@ -74,7 +74,6 @@ message ClientRequest
 {
   uint64 id = 1;
   string service = 2;
-  string method = 3;
   bytes request = 4;
   bytes response = 5;
   ClientErrorCode error = 6;
