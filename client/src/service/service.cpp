@@ -41,7 +41,6 @@ void ClientService::Send(const google::protobuf::Message& message)
     wrapper_message.set_request(message.SerializeAsString());
     auto message_id = g_msgid[message.GetDescriptor()->full_name()];
     wrapper_message.set_msg_id(message_id);
-    wrapper_message.set_service(g_serviceinfo[message_id].service);
     codec_.send(conn_, wrapper_message);
 }
 

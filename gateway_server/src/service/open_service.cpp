@@ -1,12 +1,7 @@
 #include <unordered_set>
-#include "logic_proto/scene_client_player.pb.h"
-#include "logic_proto/team_client_player.pb.h"
-namespace gateway
-{
-std::unordered_set<std::string> g_open_player_services;
-void OpenPlayerServcie()
-{
-    g_open_player_services.emplace("clientplayer.PlayerSceneService");
-    g_open_player_services.emplace("clientplayer.PlayerTeamService");
-}
-}//namespace gateway
+std::unordered_set<uint32_t> g_open_player_msgids{
+     201,
+     202,
+     651,
+     951
+};
