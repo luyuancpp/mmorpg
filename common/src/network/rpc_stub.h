@@ -61,9 +61,10 @@ public:
 	}
 
     template<typename Class, typename MethodParam, typename StubMethod>
-    void CallMethodString(Class* object,
+    void CallMethodString(
         void (Class::* method)(MethodParam),
         MethodParam& method_param,
+        Class* object,
         StubMethod stub_method)
     {
 		if (nullptr == stub_)

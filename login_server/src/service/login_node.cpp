@@ -59,7 +59,7 @@ void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 	auto c(std::make_shared<LoginRpcReplied::element_type>(*d));
 	c->s_rq_.set_account(account);
 	c->s_rq_.set_conn_id(d->s_rq_.conn_id());
-	l2db_login_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountDbReplied, c, &dbservice::DbService_Stub::Login);
+	l2db_login_stub_.CallMethodString(&LoginServiceImpl::LoginAccountDbReplied, c, this, &dbservice::DbService_Stub::Login);
 }
 
 void LoginServiceImpl::LoginAccountDbReplied(LoginRpcReplied d)
@@ -111,9 +111,10 @@ void LoginServiceImpl::EnterMS(common::Guid guid,
 	cp->s_rq_.set_conn_id(response->conn_id());
 	cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
 	cp->s_rq_.set_account(reg.get<std::string>(it->second.entity()));
-	ms_node_stub_.CallMethodString(this,
+	ms_node_stub_.CallMethodString(
 		&LoginServiceImpl::EnterMSReplied,
 		cp,
+		this,
 		&msservice::MasterNodeService_Stub::OnLsEnterGame);
 }
 
@@ -160,7 +161,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 		reg.emplace_or_replace<std::string>(it.first->second.entity(), request->account());
 		reg.emplace_or_replace<uint32_t>(it.first->second.entity(), request->gate_node_id());
 	}
-	ms_node_stub_.CallMethodString(this, &LoginServiceImpl::LoginAccountMSReplied, c, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
+	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMSReplied, c, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE Login
 }
 
@@ -191,9 +192,10 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	auto c(std::make_shared<CreatePlayerRpcReplied::element_type>(response, done));
 	c->s_rq_.set_conn_id(request->conn_id());
 	c->s_rq_.set_account(ap->account());
-	l2db_login_stub_.CallMethodString(this,
+	l2db_login_stub_.CallMethodString(
 		&LoginServiceImpl::CreatePlayerDbReplied,
 		c,
+		this,
 		&dbservice::DbService_Stub::CreatePlayer);
 ///<<< END WRITING YOUR CODE CreatPlayer
 }
@@ -242,9 +244,10 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	auto c(std::make_shared<EnterGameDbRpcReplied::element_type>(response, done));
 	auto& srq = c->s_rq_;
 	srq.set_guid(guid);
-	l2db_login_stub_.CallMethodString(this,
+	l2db_login_stub_.CallMethodString(
 		&LoginServiceImpl::EnterGameDbReplied,
 		c,
+		this,
 		&dbservice::DbService_Stub::EnterGame);
 ///<<< END WRITING YOUR CODE EnterGame
 }
