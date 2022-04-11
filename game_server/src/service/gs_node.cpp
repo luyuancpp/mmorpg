@@ -126,10 +126,10 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE GwPlayerService
-
 	auto mit = g_serviceinfo.find(request->msg_id());
 	if (mit == g_serviceinfo.end())
 	{
+		//todo client error;
 		return;
 	}
 	auto& serviceinfo = mit->second;
@@ -143,7 +143,6 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(serviceinfo.method);
 	if (nullptr == method)
 	{
-		//todo client error;
 		return;
 	}
 	auto player = g_players.find(request->player_id());
