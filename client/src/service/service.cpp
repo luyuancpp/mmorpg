@@ -31,8 +31,7 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 		std::bind(&ClientService::OnMessageBodyReplied, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<EnterSeceneS2C>(
 		std::bind(&ClientService::OnMessageEnterSeceneS2CPtr, this, _1, _2, _3));
-    g_lua.new_usertype<ClientService>("player", "sendother",
-        sol::as_function(&ClientService::SendOhter));
+
 }
 
 void ClientService::Send(const google::protobuf::Message& message)
