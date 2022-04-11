@@ -36,31 +36,19 @@ playerservicedir = '../../../../gateway_server/src/service'
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
-def parseplayerservcie(filename):
-    if filename.find('client_player') < 0:
-        return
-    local.fileservice.append(filename.replace('.proto', ''))
-    with open(filename,'r', encoding='utf-8') as file:
-        for fileline in file:
-            if fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-            elif fileline.find('service ') >= 0:
-                local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-                local.playerservicearray.append(local.pkg + '.' + local.service)
-                
-def genplayerservcielist(filename):
+def gen(readfilename, filename):
     fullfilename = servicedir + filename
     newstr =  '#include <unordered_set>\n'
-    for f in local.fileservice:
-        newstr += '#include "' + f + '.pb.h"\n'
-    newstr += 'namespace gateway\n{\n'
-    newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
-    
-    newstr += 'void OpenPlayerServcie()\n{\n'
-    for service in local.playerservicearray:
-        if service.find('clientplayer') >= 0:
-            newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
-    newstr += '}\n}//namespace gateway\n'
+    newstr += 'std::unordered_set<uint32_t> g_open_player_msgids{\n'
+    with open(servicedir + readfilename,'r', encoding='utf-8') as file:
+        for fileline in file:
+            if fileline.find('};') >= 0:
+                msgid = fileline.split(',')[1].replace('}', '').replace(';', '')
+                newstr += tabstr  + msgid + '};\n'
+                break
+            elif fileline.find('clientplayer') >= 0:
+                msgid = fileline.split(',')[1].replace('}', '').replace('"', '')
+                newstr += tabstr  + msgid + ',\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -86,24 +74,5 @@ def md5copydir():
         for filename in filenames:        
             md5copy(filename, '../../../../gateway_server/src/service')
 
-genfile = []
-
-def get_file_list(file_path):
-    dir_list = os.listdir(file_path)
-    if not dir_list:
-        return
-    else:
-        dir_list = sorted(dir_list,key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
-        return dir_list
-
-def inputfile():
-    dir_list  = get_file_list(protodir)
-    for each_filename in dir_list:
-        genfile.append([protodir  + each_filename, playerservicedir])
-def main():
-    for file in genfile:
-        parseplayerservcie(file[0])
-    genplayerservcielist('open_service.cpp')
-inputfile() 
-main()
+gen('msgmap.cpp', 'open_service.cpp')
 md5copydir()

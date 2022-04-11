@@ -23,10 +23,11 @@ using namespace gateway;
 std::unordered_set<common::Guid> g_connected_ids;
 common::ServerSequence g_server_sequence_;
 
+extern std::unordered_set<uint32_t> g_open_player_msgids;
+
 namespace gateway
 {
-    extern std::unordered_set<std::string> g_open_player_services;
-
+  
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
     ProtobufDispatcher& dispatcher, 
     RpcStubgw2l& gw2l_login_stub)
@@ -192,7 +193,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         return;
     }
     //todo msg id error
-    if (g_open_player_services.find(request->service()) != g_open_player_services.end())
+    if (g_open_player_msgids.find(request->msg_id()) != g_open_player_msgids.end())
     {
 		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
         msg->s_rq_.set_request(request->request());
