@@ -8,7 +8,7 @@
 
 namespace common
 {
-    class NoneState : public LoginStateBase<NoneState, RET_LOGIN_DONOT_LOGIN>
+    class NoneState : public LoginStateBase<RET_LOGIN_DONOT_LOGIN>
     {
     public:
         using LoginStateBase::LoginStateBase;
@@ -22,7 +22,7 @@ namespace common
         virtual void WaitingEnterGame()override{}
     };
 
-    class LoginState : public LoginStateBase<LoginState, RET_LOGIN_LOGIN_ING>
+    class LoginState : public LoginStateBase<RET_LOGIN_LOGIN_ING>
     {
     public:
         using LoginStateBase::LoginStateBase;
@@ -33,26 +33,26 @@ namespace common
         }
     };
 
-    class CreatePlayerState : public LoginStateBase<CreatePlayerState, RET_LOGIN_BEING_CREATE_PLAYER>
+    class CreatePlayerState : public LoginStateBase<RET_LOGIN_BEING_CREATE_PLAYER>
     {
     public:
         using LoginStateBase::LoginStateBase;
     };
 
-    class EnterGameState : public LoginStateBase< EnterGameState, RET_LOGIN_BEING_ENTER_GAME>
+    class EnterGameState : public LoginStateBase<RET_LOGIN_BEING_ENTER_GAME>
     {
     public:
         using LoginStateBase::LoginStateBase;
         virtual void OnPlaying()override { login_machine_.set_state(E_LGOIN_ACCOUNT_PLAYING ); }
     };
 
-    class PlayingState : public LoginStateBase <PlayingState, RET_LOGIN_PLAYEING>
+    class PlayingState : public LoginStateBase <RET_LOGIN_PLAYEING>
     {
     public:
         using LoginStateBase::LoginStateBase;
     };
 
-    class WaitingEnterGameState : public LoginStateBase<WaitingEnterGameState, RET_LOGIN_WAITING_ENTER_GAME>
+    class WaitingEnterGameState : public LoginStateBase<RET_LOGIN_WAITING_ENTER_GAME>
     {
     public:
         using LoginStateBase::LoginStateBase;
@@ -70,7 +70,7 @@ namespace common
         }
     };
 
-    class EmptyPlayerState : public LoginStateBase <EmptyPlayerState, RET_LOGIN_WAITING_ENTER_GAME>
+    class EmptyPlayerState : public LoginStateBase <RET_LOGIN_WAITING_ENTER_GAME>
     {
     public:
         using LoginStateBase::LoginStateBase;
@@ -87,7 +87,7 @@ namespace common
         }
     };
 
-    class FullPlayerState : public LoginStateBase <FullPlayerState, RET_LOGIN_WAITING_ENTER_GAME>
+    class FullPlayerState : public LoginStateBase < RET_LOGIN_WAITING_ENTER_GAME>
     {
     public:
         using LoginStateBase::LoginStateBase;
