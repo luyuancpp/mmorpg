@@ -57,14 +57,11 @@ namespace common
     public:
         using IAccountState::IAccountState;
 
-        uint32_t processing()const { return processing_code_; }
+        uint32_t processing()const { return ProcessingCode; }
 
         virtual uint32_t LoginAccount() override { return processing(); }
         virtual uint32_t CreatePlayer() override { return processing(); }
         virtual uint32_t EnterGame()override { return processing(); }
-
-    protected:
-        static const uint32_t processing_code_{ ProcessingCode };
     };
 }//namespace common
 
