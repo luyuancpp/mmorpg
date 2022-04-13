@@ -21,9 +21,6 @@
     <ClCompile Include="..\..\common\src\game_config\mission_config.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\game_logic\missions\missions_base.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -40,6 +37,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\src\pb\pbc\condition_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_config\condition_config.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\util\file2string.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

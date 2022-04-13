@@ -7,7 +7,7 @@
 #include "src/game_logic/op_code.h"
 #include "src/game_logic/missions/missions_base.h"
 #include "src/game_logic/missions/player_mission.h"
-#include "src/random/random.h"
+#include "src/util/random.h"
 #include "src/return_code/error_code.h"
 
 #include "comp.pb.h"
