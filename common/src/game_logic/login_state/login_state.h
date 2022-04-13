@@ -51,7 +51,7 @@ namespace common
     };
 
     //login state interfase
-    template <typename Derived, uint32_t ProcessingCode>
+    template <uint32_t ProcessingCode>
     class LoginStateBase : public IAccountState
     {
     public:
