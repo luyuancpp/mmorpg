@@ -124,7 +124,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../bin/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;protopb.lib;zlib.lib;gtestd.lib</AdditionalDependencies>
+      <AdditionalDependencies>gtestd.lib;libprotobufd.lib;third_party.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -144,14 +144,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\common\src\game_config\condition_config.cpp" />
     <ClCompile Include="..\..\common\src\game_config\mission_config.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\entity_class\entity_class.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\missions\missions_base.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\missions\player_mission.cpp" />
     <ClCompile Include="..\..\common\src\pb\pbc\comp.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\condition_config.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\mission_config.pb.cc" />
+    <ClCompile Include="..\..\common\src\util\file2string.cpp" />
     <ClCompile Include="missions_test.cpp" />
   </ItemGroup>
   <ItemGroup>

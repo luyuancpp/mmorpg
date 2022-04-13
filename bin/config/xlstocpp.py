@@ -79,7 +79,7 @@ def getcpph(datastring, sheetname):
 
 def getcpp(datastring, sheetname):
         s = '#include "google/protobuf/util/json_util.h"\n'
-        s += '#include "src/file2string/file2string.h"\n'
+        s += '#include "src/util/file2string.h"\n'
         s += '#include "%s_config.h" \n' % (sheetname)
         s += 'using namespace common;\n' 
         s += 'using namespace std;\n'
