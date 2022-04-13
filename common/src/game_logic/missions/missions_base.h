@@ -3,7 +3,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/mission_comp.hpp"
-#include "src/game_logic/entity/entity.h"
+#include "src/game_logic/game_registry.h"
 #include "src/game_logic/missions/missions_config_template.h"
 
 #include "comp.pb.h"
@@ -26,7 +26,7 @@ namespace common
         uint32_t ammount_{ 1 };
     };
 
-    class MissionsComp : public EntityHandle
+    class MissionsComp : public EntityPtr
     {
     public:
         using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
