@@ -53,7 +53,7 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
-    db_rpc_client_->subscribe<RegisterStubEvent>(msl2_login_stub_);
+    db_rpc_client_->subscribe<RegisterStubEvent>(db_node_stub_);
     db_rpc_client_->connect();    
 
     auto& myinfo = serverinfos_.master_info();
