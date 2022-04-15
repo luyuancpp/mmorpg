@@ -36,10 +36,9 @@ public:
         : loop_(loop),
         dispatcher_(std::bind(&GatewayServer::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
-        client_receiver_(codec_, dispatcher_, gw2l_login_stub_)
+        client_receiver_(codec_, dispatcher_)
     { }
 
-    RpcStubgw2l& gw2l_stub() { return gw2l_login_stub_; }
     RpcStubMsNode& gw2ms_stub() { return gw2ms_stub_; }
     gwservice::GwNodeServiceImpl& node_service_impl() { return node_service_impl_; }
     inline uint32_t gate_node_id()const { return serverinfo_data_.gateway_info().id(); }
@@ -66,6 +65,7 @@ public:
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void StartServer(ServerInfoRpcRC cp);
 
+    void ConnectLogin(const login_server_db& login_addr);
 
     void receive(const common::OnConnected2ServerEvent& es);
 
@@ -95,9 +95,6 @@ private:
 
     common::RpcClientPtr deploy_session_;
     deploy::DeployStub deploy_stub_;
-
-    common::RpcClientPtr login_session_;
-    RpcStubgw2l gw2l_login_stub_;
 
     common::RpcClientPtr master_session_;
     RpcStubMsNode gw2ms_stub_;
