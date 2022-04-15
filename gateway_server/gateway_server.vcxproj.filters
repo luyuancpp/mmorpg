@@ -36,6 +36,9 @@
     <ClCompile Include="src\service\gw_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\network\login_node.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\service\c2gw.h">
@@ -48,6 +51,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\gw_node.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\login_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

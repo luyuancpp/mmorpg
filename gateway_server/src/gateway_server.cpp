@@ -2,6 +2,7 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/network/gs_node.h"
+#include "src/network/login_node.h"
 #include "src/network/deploy_rpcclient.h"
 #include "src/pb/pbc/msgmap.h"
 
@@ -36,10 +37,7 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     serverinfo_data_ = cp->s_rp_->info();
     g_server_sequence_.set_server_id(gate_node_id());
     auto& login_info = serverinfo_data_.login_info();
-    InetAddress login_addr(login_info.ip(), login_info.port());
-    login_session_ = std::make_unique<RpcClient>(loop_, login_addr);
-    login_session_->connect();
-    login_session_->subscribe<RegisterStubEvent>(gw2l_login_stub_);
+    ConnectLogin(login_info);
 
     auto& master_info = serverinfo_data_.master_info();
     InetAddress master_addr(master_info.ip(), master_info.port());
@@ -59,14 +57,27 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
+void GatewayServer::ConnectLogin(const login_server_db& login_info)
+{
+    auto it = g_login_nodes.emplace(login_info.id(), LoginNode());
+    if (!it.second)
+    {
+        LOG_ERROR << "login server connected" << login_info.DebugString();
+        return;
+    }
+    LOG_INFO << "login server connected" << login_info.DebugString();
+    InetAddress login_addr(login_info.ip(), login_info.port());
+	auto& login_node = it.first->second;
+	login_node.login_session_ = std::make_unique<common::RpcClientPtr::element_type>(loop_, login_addr);
+	login_node.login_stub_ = std::make_unique<LoginNode::LoginStubPtr::element_type>();
+	login_node.login_session_->subscribe<RegisterStubEvent>(*login_node.login_stub_);
+    login_node.login_session_->connect();
+}
+
 void GatewayServer::receive(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
-    if (!conn->connected())
-    {
-        return;
-    }
-
+   
     if (IsSameAddr(conn->peerAddress(), DeployConfig::GetSingleton().deploy_info()))
     {
         // started 
@@ -74,6 +85,10 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
         {
             return;
         }
+		if (!conn->connected())
+		{
+			return;
+		}
         EventLoop::getEventLoopOfCurrentThread()->runInLoop(
             [this]() ->void
             {
@@ -89,6 +104,10 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
     }
     else if (IsSameAddr(conn->peerAddress(), serverinfo_data_.master_info()))
     {
+		if (!conn->connected())
+		{
+			return;
+		}
 		EventLoop::getEventLoopOfCurrentThread()->runInLoop(
             [this]() ->void
 			{
@@ -107,7 +126,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
         {
             if (!IsSameAddr(it.second.gs_session_->peer_addr(), conn->peerAddress()))
             {
-                break;
+                continue;
             }
             if (conn->connected())
             {
@@ -124,7 +143,27 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
 				);
             }
             else
-            { }
+            { 
+                //g_gs_nodes.erase()
+            }
+        }
+
+        for (auto& it : g_login_nodes)
+        {
+            LOG_INFO << it.second.login_session_->peer_addr().toIpPort() << "," << conn->peerAddress().toIpPort();
+			if (!IsSameAddr(it.second.login_session_->peer_addr(), conn->peerAddress()))
+			{
+				continue;
+			}
+            if (conn->connected())
+            {
+                
+            }
+            else
+            {
+                g_login_nodes.erase(it.first);
+                break;
+            }
         }
     }
 }

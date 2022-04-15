@@ -11,6 +11,7 @@
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/network/gate_player_list.h"
 #include "src/network/gs_node.h"
+#include "src/network/login_node.h"
 #include "src/return_code/error_code.h"
 #include "src/network/rpc_closure.h"
 
@@ -29,11 +30,9 @@ namespace gateway
 {
   
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
-    ProtobufDispatcher& dispatcher, 
-    RpcStubgw2l& gw2l_login_stub)
+    ProtobufDispatcher& dispatcher)
     : codec_(codec),
-      dispatcher_(dispatcher),
-      gw2l_login_stub_(gw2l_login_stub)
+      dispatcher_(dispatcher)
 {
     dispatcher_.registerMessageCallback<LoginRequest>(
         std::bind(&ClientReceiver::OnLogin, this, _1, _2, _3));
@@ -45,6 +44,11 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
         std::bind(&ClientReceiver::OnLeaveGame, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<ClientRequest>(
 		std::bind(&ClientReceiver::OnRpcClientMessage, this, _1, _2, _3));
+}
+
+gateway::ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub()
+{
+    return *g_login_nodes.begin()->second.login_stub_;
 }
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
@@ -60,7 +64,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
 			gw2l::DisconnectRequest request;
 			request.set_conn_id(conn_id);
-			gw2l_login_stub_.CallMethod(request, &gw2l::LoginService_Stub::Disconnect);
+			login_stub().CallMethod(request, &gw2l::LoginService_Stub::Disconnect);
         }
         // master
         {
@@ -102,7 +106,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     c->s_rq_.set_password(std::move(message->password()));
     c->s_rq_.set_conn_id(c->conn_id());
     c->s_rq_.set_gate_node_id(g_gateway_server->gate_node_id());
-    gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerLoginReplied,
+    login_stub().CallMethod(&ClientReceiver::OnServerLoginReplied,
         c, 
         this, 
         &gw2l::LoginService_Stub::Login);
@@ -125,7 +129,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 {
     auto c(std::make_shared<CreatePlayeReplied::element_type>(conn));
     c->s_rq_.set_conn_id(c->conn_id());
-    gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
+    login_stub().CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         c, 
         this, 
         &gw2l::LoginService_Stub::CreatPlayer);
@@ -149,7 +153,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
     auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
     c->s_rq_.set_conn_id(c->conn_id());
     c->s_rq_.set_guid(message->guid());
-    gw2l_login_stub_.CallMethod(&ClientReceiver::OnServerEnterGameReplied,
+    login_stub().CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         c,
         this,
         &gw2l::LoginService_Stub::EnterGame);

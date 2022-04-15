@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\network\login_node.cpp" />
     <ClCompile Include="src\network\gate_player_list.cpp" />
     <ClCompile Include="src\gateway_server.cpp" />
     <ClCompile Include="main.cpp" />
@@ -28,6 +29,7 @@
     <ClCompile Include="src\service\open_service.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\network\login_node.h" />
     <ClInclude Include="src\network\gate_player_list.h" />
     <ClInclude Include="src\gateway_server.h" />
     <ClInclude Include="src\service\c2gw.h" />
