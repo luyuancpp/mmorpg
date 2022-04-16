@@ -30,9 +30,6 @@
     <ClCompile Include="..\..\master_server\src\scene\sceces.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\entity\entity.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\master_server\src\scene\sceces.h">

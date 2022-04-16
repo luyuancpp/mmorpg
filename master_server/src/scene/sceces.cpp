@@ -51,7 +51,7 @@ ScenesSystem* g_scene_sys = nullptr;
         return it->second.empty();
     }
 
-    entt::entity ScenesSystem::MakeMainScene(const MakeMainSceneP& param)
+    entt::entity ScenesSystem::MakeScene(const MakeSceneP& param)
     {
         auto e = reg.create();
         auto& confid = reg.emplace<ConfigIdComp>(e, param.scene_confid_);
@@ -66,10 +66,10 @@ ScenesSystem* g_scene_sys = nullptr;
 
     entt::entity ScenesSystem::MakeSceneGSScene(const MakeGSSceneP& param)
     {
-        MakeMainSceneP make_p;
+        MakeSceneP make_p;
         make_p.op_ = param.op_;
         make_p.scene_confid_ = param.scene_confid_;
-        auto e = MakeMainScene(make_p);
+        auto e = MakeScene(make_p);
         PutScene2GSParam put_param;
         put_param.scene_entity_ = e;
         put_param.server_entity_ = param.server_entity_;

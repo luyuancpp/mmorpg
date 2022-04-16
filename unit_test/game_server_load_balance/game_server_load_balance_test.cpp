@@ -7,7 +7,6 @@
 #include "src/sys/servernode_sys.hpp"
 #include "src/scene/sceces.h"
 
-using namespace  master;
 using namespace  common;
 
 uint32_t confid_scenelist_size = 50;
@@ -16,14 +15,14 @@ uint32_t per_scene_config_size = 2;
 TEST(GS, CreateMainScene)
 {
     ScenesSystem sm;
-    MakeMainSceneP param;
+    MakeSceneP param;
    
     for (uint32_t i = 0; i < confid_scenelist_size; ++i)
     {
         param.scene_confid_ = i;
         for (uint32_t j = 0; j < per_scene_config_size; ++j)
         {
-            sm.MakeMainScene(param);
+            sm.MakeScene(param);
         }
         EXPECT_EQ(sm.scenes_size(i), std::size_t(per_scene_config_size));
     }
@@ -83,8 +82,8 @@ TEST(GS, PutScene2Sever)
     MakeGSParam param1;
     param1.node_id_ = 1;
 
-    MakeMainSceneP cparam;
-    auto scene_entity = sm.MakeMainScene(cparam);
+    MakeSceneP cparam;
+    auto scene_entity = sm.MakeScene(cparam);
 
     auto server_entity1 = MakeMainSceneNode(reg, param1);
         
@@ -107,8 +106,8 @@ TEST(GS, DestroyScene)
     MakeGSParam param1;
     param1.node_id_ = 1;
 
-    MakeMainSceneP cparam;
-    auto scene_entity = sm.MakeMainScene(cparam);
+    MakeSceneP cparam;
+    auto scene_entity = sm.MakeScene(cparam);
 
     auto server_entity1 = MakeMainSceneNode(reg, param1);
 

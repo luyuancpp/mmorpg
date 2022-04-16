@@ -98,7 +98,6 @@ namespace common
     };
 
     struct MainSceneComp {};
-    struct RoomSceneComp {};
 
     struct MainSceneServerComp {};
     struct RoomSceneServerComp {};

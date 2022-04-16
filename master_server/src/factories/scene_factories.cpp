@@ -36,22 +36,6 @@ using namespace common;
         server_scene.RemoveScene(scene_config_id, scene_entity);
     }
 
-    entt::entity MakeMainScene(entt::registry& reg, const MakeMainSceneP& param)
-    {
-        auto e = reg.create();
-        reg.emplace<ConfigIdComp>(e, param.scene_confid_);
-        reg.emplace<MainSceneComp>(e);
-        reg.emplace<PlayersComp>(e);
-        auto& scene_config = reg.get<ConfigIdComp>(e);
-        auto& c = reg.get<SceneComp>(scenes_entity());
-        auto& sn = reg.get<SnowFlake>(scenes_entity());
-        auto scene_guid = sn.Generate();
-        reg.emplace<Guid>(e, scene_guid);
-        reg.get<SceneMapComp>(scenes_entity()).emplace(scene_guid, e);
-        c.AddScene(scene_config, e);
-        return e;
-    }
-
     entt::entity MakeMainSceneNode(entt::registry& reg,  const MakeGSParam& param)
     {
         auto e = reg.create();
