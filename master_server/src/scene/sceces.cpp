@@ -60,7 +60,7 @@ ScenesSystem* g_scene_sys = nullptr;
         auto guid = snow_flake_.Generate();
         reg.emplace<Guid>(e, guid);
         scenes_map_.emplace(guid, e);
-        AddScene(confid, e);
+        confid_scenes_[confid].emplace(e);
         return e;
     }
 
@@ -198,22 +198,10 @@ ScenesSystem* g_scene_sys = nullptr;
         reg.destroy(move_param.from_server_entity_);
     }
 
-    void ScenesSystem::AddScene(uint32_t scene_config_id, entt::entity scene_entity)
-    {
-        confid_scenes_[scene_config_id].emplace(scene_entity);
-        scenes_.emplace(scene_entity);
-    }
-
-    void ScenesSystem::RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
-    {
-        confid_scenes_[scene_config_id].erase(scene_entity);
-        scenes_.erase(scene_entity);
-    }
-
     void ScenesSystem::OnDestroyScene(entt::entity scene_entity)
     {
         auto scene_config_id = reg.get<ConfigIdComp>(scene_entity);
-        RemoveScene(scene_config_id, scene_entity);
+        confid_scenes_[scene_config_id].erase(scene_entity);
         auto scene_guid = reg.get<Guid>(scene_entity);
         scenes_map_.erase(scene_guid);
         auto p_server_data = reg.get<GSDataPtrComp>(scene_entity);
