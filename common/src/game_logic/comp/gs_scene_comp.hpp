@@ -11,7 +11,7 @@ namespace common
 {
     using SceneMapComp = std::unordered_map<Guid, entt::entity>;
     using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
-    using PlayersComp = EntitySet;//弱引用，要解除玩家和场景的耦合
+    using ScenePlayers = EntitySet;//弱引用，要解除玩家和场景的耦合
     using SceneConfigId = uint32_t;
 
     class SceneEntity
@@ -28,7 +28,6 @@ namespace common
     {
     public:
         entt::entity first_scene_id() { if (sceneids_.empty()) { return entt::null; } return *sceneids_.begin(); }
-        const EntitySet& scenesids() const { return sceneids_; }
         const Uint32KeyEntitySetValue& confid_sceneslist() const { return confid_scenelist_; }
         const EntitySet& confid_sceneslist(uint32_t scene_config_id) const 
         {
@@ -53,26 +52,6 @@ namespace common
                 return entt::null;
             }
             return *it->second.begin();
-        }
-
-        std::size_t confid_scenelist_size(uint32_t scene_config_id)
-        {
-            auto it = confid_scenelist_.find(scene_config_id);
-            if (it == confid_scenelist_.end())
-            {
-                return 0;
-            }
-            return it->second.size();
-        }
-
-        bool scene_config_empty(uint32_t scene_config_id)
-        {
-            auto it = confid_scenelist_.find(scene_config_id);
-            if (it == confid_scenelist_.end())
-            {
-                return true;
-            }
-            return it->second.empty();
         }
 
         std::size_t scenes_size() const { return sceneids_.size(); }

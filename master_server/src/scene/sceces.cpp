@@ -31,7 +31,7 @@ ScenesSystem* g_scene_sys = nullptr;
         auto e = reg.create();
         auto& confid = reg.emplace<SceneConfigId>(e, param.scene_confid_);
         reg.emplace<MainScene>(e);
-        reg.emplace<PlayersComp>(e);
+        reg.emplace<ScenePlayers>(e);
         auto guid = snow_flake_.Generate();
         reg.emplace<Guid>(e, guid);
         scenes_map_.emplace(guid, e);
@@ -101,7 +101,7 @@ ScenesSystem* g_scene_sys = nullptr;
     void ScenesSystem::EnterScene(const EnterSceneParam& param)
     {
         auto scene_entity = param.scene_entity_;
-        auto& player_entities = reg.get<PlayersComp>(scene_entity);
+        auto& player_entities = reg.get<ScenePlayers>(scene_entity);
         player_entities.emplace(param.enter_entity_);
         reg.emplace<common::SceneEntity>(param.enter_entity_, scene_entity);
         auto p_server_data = reg.try_get<GSDataPtrComp>(scene_entity);
@@ -117,7 +117,7 @@ ScenesSystem* g_scene_sys = nullptr;
         auto leave_entity = param.leave_entity_;
         auto& player_scene_entity = reg.get<common::SceneEntity>(leave_entity);
         auto scene_entity = player_scene_entity.scene_entity();
-        auto& player_entities = reg.get<PlayersComp>(scene_entity);
+        auto& player_entities = reg.get<ScenePlayers>(scene_entity);
         player_entities.erase(leave_entity);
         reg.remove<common::SceneEntity>(leave_entity);
         auto p_server_data = reg.try_get<GSDataPtrComp>(scene_entity);
