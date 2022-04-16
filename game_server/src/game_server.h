@@ -42,15 +42,18 @@ public:
     using StartGSRpcRC = std::shared_ptr<StartGSInfoRpcClosure>;
     void StartGSDeployReplied(StartGSRpcRC cp);
 
+	using RegionClosure = common::NormalClosure<deploy::RegionRequest,
+		deploy::RegionInfoResponse>;
+	using RegionRpcClosureRC = std::shared_ptr<RegionClosure>;
+	void RegionInfoReplied(RegionRpcClosureRC cp);
+
     void Register2Master(MasterSessionPtr& master_rpc_client);
 
     void receive(const common::OnConnected2ServerEvent& es);
     void receive(const common::OnBeConnectedEvent& es);
 
 private:    
-    void InitGlobalEntities();
-    void InitRoomMasters(const deploy::ServerInfoResponse* resp);
-    void ConnectMaster();
+	void InitGlobalEntities();
     void ConnectRegion();
 
     muduo::net::EventLoop* loop_{ nullptr };
