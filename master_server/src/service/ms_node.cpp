@@ -95,7 +95,7 @@ void MasterNodeServiceImpl::StartGS(::google::protobuf::RpcController* controlle
 	reg.emplace<GsNodePtr>(gs_entity, gs);
 
 	reg.emplace<GsStubPtr>(gs_entity, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
-	if (request->server_type() == kMainServer)
+	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
 		MakeGSSceneP create_scene_param;

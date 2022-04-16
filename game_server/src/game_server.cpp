@@ -153,7 +153,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             [this]() ->void
             {
                 ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-                if (reg.get<eServerType>(global_entity()) == kMainServer)
+                if (reg.get<eServerType>(global_entity()) == kMainSceneServer)
                 {
                     cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
                 }
