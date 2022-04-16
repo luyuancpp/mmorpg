@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        reg.emplace<eServerType>(global_entity(), kMainServer);
+        reg.emplace<eServerType>(global_entity(), kMainSceneServer);
     }
 
     EventLoop loop;
