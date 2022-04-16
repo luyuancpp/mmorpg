@@ -38,12 +38,17 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void StartRegionServer(::google::protobuf::RpcController* controller,
-        const deploy::RegionInfoRequest* request,
-        deploy::RegionInfoResponse* response,
+        const deploy::RegionRequest* request,
+        deploy::RegionServerResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void LoadRegionDeploy(::google::protobuf::RpcController* controller,
-        const deploy::RegionInfoRequest* request,
+        const deploy::RegionRequest* request,
+        deploy::RegionServerResponse* response,
+        ::google::protobuf::Closure* done)override;
+
+    void RegionInfo(::google::protobuf::RpcController* controller,
+        const deploy::RegionRequest* request,
         deploy::RegionInfoResponse* response,
         ::google::protobuf::Closure* done)override;
 

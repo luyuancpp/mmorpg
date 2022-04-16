@@ -35,19 +35,25 @@ message StartGSResponse
   redis_server_db redis_info = 5;
 }
 
-message RegionInfoRequest
+message RegionRequest
 {
   uint32 region_id = 1;
 }
 
-message RegionInfoResponse
+message RegionServerResponse
 {
   region_server_db info = 1;
+}
+
+message RegionInfoResponse
+{
+  MasterServersDb region_masters = 1;
 }
 
 service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
   rpc StartGS (StartGSRequest) returns (StartGSResponse);
-  rpc StartRegionServer (RegionInfoRequest) returns (RegionInfoResponse);
-  rpc LoadRegionDeploy (RegionInfoRequest) returns (RegionInfoResponse);
+  rpc StartRegionServer (RegionRequest) returns (RegionServerResponse);
+  rpc LoadRegionDeploy (RegionRequest) returns (RegionServerResponse);
+  rpc RegionInfo (RegionRequest) returns (RegionInfoResponse);
 }
