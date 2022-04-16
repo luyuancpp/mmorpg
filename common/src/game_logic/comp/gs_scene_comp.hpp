@@ -142,7 +142,7 @@ namespace common
         uint32_t player_size_{ 0 };
     };
 
-    using GSDataPtrComp = std::shared_ptr<GSData>;
+    using GSDataPtr = std::shared_ptr<GSData>;
     using GSDataWeakPtr = std::weak_ptr<GSData>;
 }//namespace common
 
