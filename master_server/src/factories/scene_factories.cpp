@@ -26,7 +26,7 @@ using namespace common;
         scene_map.RemoveScene(scene_config_id, scene_entity);
         auto scene_guid = reg.get<Guid>(scene_entity);
         reg.get<SceneMapComp>(scenes_entity()).erase(scene_guid);
-        auto p_server_data = reg.get<GSDataPtrComp>(scene_entity);
+        auto p_server_data = reg.get<GSDataPtr>(scene_entity);
         reg.destroy(scene_entity);
         if (nullptr == p_server_data)
         {
@@ -46,11 +46,11 @@ using namespace common;
 
 	void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param)
 	{
-		GSDataPtrComp p_server_data = std::make_shared<GSData>();
+		GSDataPtr p_server_data = std::make_shared<GSData>();
 		p_server_data->set_node_id(param.node_id_);
 		p_server_data->set_node_entity(e);
 		reg.emplace<MainSceneServer>(e);
-		reg.emplace<GSDataPtrComp>(e, p_server_data);
+		reg.emplace<GSDataPtr>(e, p_server_data);
 		reg.emplace<GSNormal>(e);
 		reg.emplace<NoPressure>(e);
 		reg.emplace<SceneComp>(e);
