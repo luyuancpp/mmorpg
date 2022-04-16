@@ -27,7 +27,18 @@ namespace common
     class SceneComp
     {
     public:
-        entt::entity first_scene_id() { if (sceneids_.empty()) { return entt::null; } return *sceneids_.begin(); }
+        entt::entity first_scene_id() 
+        { 
+            for (auto& it : confid_scenelist_)
+            {
+                if (it.second.empty())
+                {
+                    continue;
+                }
+                return *it.second.begin();
+            }
+            return entt::null;
+        }
         const Uint32KeyEntitySetValue& confid_sceneslist() const { return confid_scenelist_; }
         const EntitySet& confid_sceneslist(uint32_t scene_config_id) const 
         {
@@ -39,7 +50,18 @@ namespace common
             }
             return it->second;
         }
-        EntitySet scenesids_clone() { return sceneids_; }
+        EntitySet scenesids_clone() 
+        { 
+            EntitySet s;
+			for (auto& it : confid_scenelist_)
+			{
+				for (auto& ji : it.second)
+				{
+                    s.emplace(ji);
+				}
+			}
+			return s;
+        }
         entt::entity scenelist(uint32_t scene_config_id)const
         {
             auto it = confid_scenelist_.find(scene_config_id);
@@ -54,26 +76,41 @@ namespace common
             return *it->second.begin();
         }
 
-        std::size_t scenes_size() const { return sceneids_.size(); }
+        inline std::size_t scenes_size() const { 
+            std::size_t s = 0;
+			for (auto& it : confid_scenelist_)
+			{
+                s += it.second.size();
+			}
+            return s;
+        }
 
-        inline bool scenes_empty() const { return sceneids_.empty(); }
+        inline bool scenes_empty() const 
+        { 
+			for (auto& it : confid_scenelist_)
+			{
+				if (it.second.empty())
+				{
+					continue;
+				}
+				return false;
+			}
+			return true;
+        }
 
         inline bool HasConfig(uint32_t scene_config_id)const{ return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
 
         void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
         {
             confid_scenelist_[scene_config_id].emplace(scene_entity);
-            sceneids_.emplace(scene_entity);
         }
 
         void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
         {
             confid_scenelist_[scene_config_id].erase(scene_entity);
-            sceneids_.erase(scene_entity);
         }
     private:
         Uint32KeyEntitySetValue confid_scenelist_;
-        EntitySet sceneids_;
     };
 
     struct MainScene {};
