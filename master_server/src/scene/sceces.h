@@ -12,13 +12,7 @@
 class ScenesSystem : public common::EntityPtr
 {
 public:
-
-    entt::entity first_scene() { if (scenes_map_.empty()) { return entt::null; } return scenes_map_.begin()->second; }
-    const common::SceneMapComp& scenes_id() const { return scenes_map_; }
-    const common::Uint32KeyEntitySetValue& scenes_entitiy() const { return confid_scenes_; }
-    const common::EntitySet& scenes_entitiy(uint32_t scene_config_id) const;
     common::SceneMapComp copy_scenes_id() { return scenes_map_; }
-    entt::entity first_scene(uint32_t scene_config_id)const;
     std::size_t scenes_size(uint32_t scene_config_id)const;
     std::size_t scenes_size() const { return scenes_map_.size(); }
     std::size_t scenes_map_size() const { return scenes_map_.size(); }

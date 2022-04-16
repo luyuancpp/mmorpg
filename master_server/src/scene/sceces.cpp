@@ -6,31 +6,6 @@ using namespace common;
 
 ScenesSystem* g_scene_sys = nullptr;
 
-    const EntitySet& ScenesSystem::scenes_entitiy(uint32_t scene_config_id) const
-    {
-        auto it = confid_scenes_.find(scene_config_id);
-        if (it == confid_scenes_.end())
-        {
-            static EntitySet s;
-            return s;
-        }
-        return it->second;
-    }
-
-    entt::entity ScenesSystem::first_scene(uint32_t scene_config_id) const
-    {
-        auto it = confid_scenes_.find(scene_config_id);
-        if (it == confid_scenes_.end())
-        {
-            return entt::null;
-        }
-        if (it->second.empty())
-        {
-            return entt::null;
-        }
-        return *it->second.begin();
-    }
-
     std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
     {
         auto it = confid_scenes_.find(scene_config_id);
