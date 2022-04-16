@@ -109,14 +109,14 @@ void MasterNodeServiceImpl::StartGS(::google::protobuf::RpcController* controlle
 				continue;
 			}
 			auto scene_info = response->add_scenes_info();
-			scene_info->set_scene_confid(reg.get<ConfigIdComp>(scene_entity));
+			scene_info->set_scene_confid(reg.get<SceneConfigId>(scene_entity));
 			scene_info->set_scene_id(reg.get<Guid>(scene_entity));
 		}
 	}
 	else
 	{
-		reg.remove<MainSceneServerComp>(gs_entity);
-		reg.emplace<RoomSceneServerComp>(gs_entity);
+		reg.remove<MainSceneServer>(gs_entity);
+		reg.emplace<RoomSceneServer>(gs_entity);
 	}
 
 	for (auto e : reg.view<GateNodePtr>())
