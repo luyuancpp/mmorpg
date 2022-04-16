@@ -90,56 +90,56 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 
 entt::entity ServerNodeSystem::GetWeightRoundRobinMainScene(const GetSceneParam& param)
 {
-    auto scene_entity = GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, NoPressureComp>( param);
+    auto scene_entity = GetWeightRoundRobinSceneT<MainSceneServer, GSNormal, NoPressure>( param);
     if (entt::null != scene_entity)
     {
         return scene_entity;
     }
-    return GetWeightRoundRobinSceneT<MainSceneServerComp, GSNormalComp, PressureComp>( param);
+    return GetWeightRoundRobinSceneT<MainSceneServer, GSNormal, Pressure>( param);
 }
 
 entt::entity ServerNodeSystem::GetWeightRoundRobinRoomScene(const GetSceneParam& param)
 {
-    auto scene_entity = GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, NoPressureComp>( param);
+    auto scene_entity = GetWeightRoundRobinSceneT<RoomSceneServer, GSNormal, NoPressure>( param);
     if (entt::null != scene_entity)
     {
         return scene_entity;
     }
-    return GetWeightRoundRobinSceneT<RoomSceneServerComp, GSNormalComp, PressureComp>(param);
+    return GetWeightRoundRobinSceneT<RoomSceneServer, GSNormal, Pressure>(param);
 }
 
 entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 {
-	auto scene_entity = GetGetMainSceneNotFullT<MainSceneServerComp, GSNormalComp, NoPressureComp>(param);
+	auto scene_entity = GetGetMainSceneNotFullT<MainSceneServer, GSNormal, NoPressure>(param);
 	if (entt::null != scene_entity)
 	{
 		return scene_entity;
 	}
-	return GetGetMainSceneNotFullT<MainSceneServerComp, GSNormalComp, PressureComp>(param);
+	return GetGetMainSceneNotFullT<MainSceneServer, GSNormal, Pressure>(param);
 }
 
 
 void ServerNodeSystem::ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
 {
-    reg.remove<NoPressureComp>(param.server_entity_);
-    reg.emplace<PressureComp>(param.server_entity_);
+    reg.remove<NoPressure>(param.server_entity_);
+    reg.emplace<Pressure>(param.server_entity_);
 }
 
 void ServerNodeSystem::ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param)
 {
-    reg.remove<PressureComp>(param.server_entity_);
-    reg.emplace<NoPressureComp>(param.server_entity_);
+    reg.remove<Pressure>(param.server_entity_);
+    reg.emplace<NoPressure>(param.server_entity_);
 }
 
 void ServerNodeSystem::ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
 {
-    reg.remove<GSNormalComp>(param.crash_entity_);
-    reg.emplace<GSCrashComp>(param.crash_entity_);
+    reg.remove<GSNormal>(param.crash_entity_);
+    reg.emplace<GSCrash>(param.crash_entity_);
 }
 
 void ServerNodeSystem::ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
 {
-    reg.remove<GSNormalComp>(param.maintain_entity_);
-    reg.emplace<GSMainTainComp>(param.maintain_entity_);
+    reg.remove<GSNormal>(param.maintain_entity_);
+    reg.emplace<GSMainTain>(param.maintain_entity_);
 }
 
