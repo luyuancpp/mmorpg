@@ -37,12 +37,12 @@ namespace deploy
 
         InitGroupDb();
 
-        InitDb<region_server_db>(kRSBeginPort, kGroup);
-        InitDb<redis_server_db>(kRedisPort, kGroup);
-        InitDb<login_server_db>(kLSBeginPort, kGroup);
-        InitDb<master_server_db>(kMSBeginPort, kGroup);
-        InitDb<game_server_db>(kGSBeginPort, kGroup * 2);
-        InitDb<gateway_server_db>(kGateSBeginPort, kGroup);
+        InitRegionDb<region_server_db>(kRSBeginPort, kGroup);
+        InitGroupDb<redis_server_db>(kRedisPort, kGroup);
+        InitGroupDb<login_server_db>(kLSBeginPort, kGroup);
+        InitRegionDb<master_server_db>(kMSBeginPort, kGroup);
+        InitRegionDb<game_server_db>(kGSBeginPort, kGroup * 2);
+        InitRegionDb<gateway_server_db>(kGateSBeginPort, kGroup);
 
         LoadGSDb();
         server_.subscribe<OnBeConnectedEvent>(*this);
