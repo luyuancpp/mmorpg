@@ -13,18 +13,18 @@ class ScenesSystem : public common::EntityPtr
 {
 public:
 
-    entt::entity first_scene() { if (scenes_.empty()) { return entt::null; } return *scenes_.begin(); }
+    entt::entity first_scene() { if (scenes_map_.empty()) { return entt::null; } return scenes_map_.begin()->second; }
     const common::EntitySet& scenes_id() const { return scenes_; }
     const common::Uint32KeyEntitySetValue& scenes_entitiy() const { return confid_scenes_; }
     const common::EntitySet& scenes_entitiy(uint32_t scene_config_id) const;
     common::EntitySet copy_scenes_id() { return scenes_; }
     entt::entity first_scene(uint32_t scene_config_id)const;
     std::size_t scenes_size(uint32_t scene_config_id)const;
-    std::size_t scenes_size() const { return scenes_.size(); }
+    std::size_t scenes_size() const { return scenes_map_.size(); }
     std::size_t scenes_map_size() const { return scenes_map_.size(); }
 
     bool HasScene(uint32_t scene_config_id);
-    inline bool Empty() const { return scenes_.empty(); }
+    inline bool Empty() const { return scenes_map_.empty(); }
     inline bool HasConfig(uint32_t scene_config_id) { return confid_scenes_.find(scene_config_id) != confid_scenes_.end(); }
 
     entt::entity MakeScene(const MakeSceneP& param);
