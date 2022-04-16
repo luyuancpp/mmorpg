@@ -29,8 +29,8 @@ ScenesSystem* g_scene_sys = nullptr;
     entt::entity ScenesSystem::MakeScene(const MakeSceneP& param)
     {
         auto e = reg.create();
-        auto& confid = reg.emplace<ConfigIdComp>(e, param.scene_confid_);
-        reg.emplace<MainSceneComp>(e);
+        auto& confid = reg.emplace<SceneConfigId>(e, param.scene_confid_);
+        reg.emplace<MainScene>(e);
         reg.emplace<PlayersComp>(e);
         auto guid = snow_flake_.Generate();
         reg.emplace<Guid>(e, guid);
@@ -55,7 +55,7 @@ ScenesSystem* g_scene_sys = nullptr;
     void ScenesSystem::PutScene2GS(const PutScene2GSParam& param)
     {
         auto scene_entity = param.scene_entity_;
-        auto& scene_config = reg.get<ConfigIdComp>(scene_entity);
+        auto& scene_config = reg.get<SceneConfigId>(scene_entity);
         auto server_entity = param.server_entity_;
         auto& server_scenes = reg.get<SceneComp>(server_entity);
         server_scenes.AddScene(scene_config, scene_entity);
@@ -175,7 +175,7 @@ ScenesSystem* g_scene_sys = nullptr;
 
     void ScenesSystem::OnDestroyScene(entt::entity scene_entity)
     {
-        auto scene_config_id = reg.get<ConfigIdComp>(scene_entity);
+        auto scene_config_id = reg.get<SceneConfigId>(scene_entity);
         confid_scenes_[scene_config_id].erase(scene_entity);
         auto scene_guid = reg.get<Guid>(scene_entity);
         scenes_map_.erase(scene_guid);

@@ -22,7 +22,7 @@ using namespace common;
 
     void OnDestroyScene(entt::registry& reg, entt::entity scene_entity, SceneComp& scene_map)
     {
-        auto scene_config_id = reg.get<ConfigIdComp>(scene_entity);
+        auto scene_config_id = reg.get<SceneConfigId>(scene_entity);
         scene_map.RemoveScene(scene_config_id, scene_entity);
         auto scene_guid = reg.get<Guid>(scene_entity);
         reg.get<SceneMapComp>(scenes_entity()).erase(scene_guid);
@@ -49,9 +49,9 @@ using namespace common;
 		GSDataPtrComp p_server_data = std::make_shared<GSData>();
 		p_server_data->set_node_id(param.node_id_);
 		p_server_data->set_node_entity(e);
-		reg.emplace<MainSceneServerComp>(e);
+		reg.emplace<MainSceneServer>(e);
 		reg.emplace<GSDataPtrComp>(e, p_server_data);
-		reg.emplace<GSNormalComp>(e);
-		reg.emplace<NoPressureComp>(e);
+		reg.emplace<GSNormal>(e);
+		reg.emplace<NoPressure>(e);
 		reg.emplace<SceneComp>(e);
 	}

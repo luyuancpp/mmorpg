@@ -12,7 +12,7 @@ namespace common
     using SceneMapComp = std::unordered_map<Guid, entt::entity>;
     using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
     using PlayersComp = EntitySet;//弱引用，要解除玩家和场景的耦合
-    using ConfigIdComp = uint32_t;
+    using SceneConfigId = uint32_t;
 
     class SceneEntity
     {
@@ -97,17 +97,17 @@ namespace common
         EntitySet sceneids_;
     };
 
-    struct MainSceneComp {};
+    struct MainScene {};
 
-    struct MainSceneServerComp {};
-    struct RoomSceneServerComp {};
+    struct MainSceneServer {};
+    struct RoomSceneServer {};
 
-    struct GSNormalComp{};//game server 正常状态
-    struct GSMainTainComp{};//game server 维护状态
-    struct GSCrashComp{};//崩溃状态
+    struct GSNormal{};//game server 正常状态
+    struct GSMainTain{};//game server 维护状态
+    struct GSCrash{};//崩溃状态
 
-    struct NoPressureComp {};//
-    struct PressureComp {};//
+    struct NoPressure {};//
+    struct Pressure {};//
 
     class GSData
     {
