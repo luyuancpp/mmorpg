@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\common\src\game_logic\entity\entity.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp" />
     <ClCompile Include="..\..\master_server\src\factories\scene_factories.cpp" />
     <ClCompile Include="..\..\master_server\src\scene\sceces.cpp" />

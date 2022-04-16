@@ -27,7 +27,7 @@ public:
     inline bool Empty() const { return scenes_.empty(); }
     inline bool HasConfig(uint32_t scene_config_id) { return confid_scenes_.find(scene_config_id) != confid_scenes_.end(); }
 
-    entt::entity MakeMainScene(const MakeMainSceneP& param);
+    entt::entity MakeScene(const MakeSceneP& param);
     entt::entity MakeSceneGSScene(const MakeGSSceneP& param);
 
     void PutScene2GS(const PutScene2GSParam& param);
