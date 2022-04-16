@@ -315,8 +315,8 @@ TEST(GS, PlayerLeaveEnterScene)
         }
     }
 
-    auto& scenes_players1 = reg.get<common::PlayersComp>(scene_id1);
-    auto& scenes_players2 = reg.get<common::PlayersComp>(scene_id2);
+    auto& scenes_players1 = reg.get<common::ScenePlayers>(scene_id1);
+    auto& scenes_players2 = reg.get<common::ScenePlayers>(scene_id2);
     for (auto&it : player_entities_set1)
     {
         EXPECT_TRUE(scenes_players1.find(it) != scenes_players1.end());
@@ -349,8 +349,8 @@ TEST(GS, PlayerLeaveEnterScene)
     }
     
     EXPECT_EQ(reg.get<common::GSDataPtrComp>(server_entity2)->player_size(), 0);
-    auto& scenes_players11 = reg.get<common::PlayersComp>(scene_id1);
-    auto& scenes_players22 = reg.get<common::PlayersComp>(scene_id2);
+    auto& scenes_players11 = reg.get<common::ScenePlayers>(scene_id1);
+    auto& scenes_players22 = reg.get<common::ScenePlayers>(scene_id2);
     EXPECT_TRUE(scenes_players11.empty());
     EXPECT_TRUE(scenes_players22.empty());
 }
@@ -473,8 +473,8 @@ TEST(GS, CompelChangeScene)
     }
     EXPECT_EQ(reg.get<common::GSDataPtrComp>(server_entity1)->player_size(), 0);
     EXPECT_EQ(reg.get<common::GSDataPtrComp>(server_entity2)->player_size(), player_entities_set1.size());
-    auto& scenes_players11 = reg.get<common::PlayersComp>(scene_id1);
-    auto& scenes_players22 = reg.get<common::PlayersComp>(scene_id2);
+    auto& scenes_players11 = reg.get<common::ScenePlayers>(scene_id1);
+    auto& scenes_players22 = reg.get<common::ScenePlayers>(scene_id2);
     EXPECT_TRUE(scenes_players11.empty());
     EXPECT_EQ(scenes_players22.size(), player_entities_set1.size());
 }
@@ -739,11 +739,11 @@ TEST(GS, WeightRoundRobinMainScene)
         }
         for (auto& it : player_scene1)
         {
-            EXPECT_EQ(reg.get<common::PlayersComp>(it.second).size(), 0);
+            EXPECT_EQ(reg.get<common::ScenePlayers>(it.second).size(), 0);
         }
         for (auto& it : player_scene2)
         {
-            EXPECT_EQ(reg.get<common::PlayersComp>(it.second).size(), 0);
+            EXPECT_EQ(reg.get<common::ScenePlayers>(it.second).size(), 0);
         }
     };
     for (uint32_t i = 0; i < 2; ++i)
@@ -960,11 +960,11 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		}
 		for (auto& it : player_scene1)
 		{
-			EXPECT_EQ(reg.get<common::PlayersComp>(it.second).size(), 0);
+			EXPECT_EQ(reg.get<common::ScenePlayers>(it.second).size(), 0);
 		}
 		for (auto& it : player_scene2)
 		{
-			EXPECT_EQ(reg.get<common::PlayersComp>(it.second).size(), 0);
+			EXPECT_EQ(reg.get<common::ScenePlayers>(it.second).size(), 0);
 		}
 	};
 	for (uint32_t i = 0; i < 2; ++i)

@@ -37,7 +37,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
     for (auto& ji : server_scenes)
     {
-        std::size_t scene_player_size = reg.get<PlayersComp>(ji).size();
+        std::size_t scene_player_size = reg.get<ScenePlayers>(ji).size();
         if (scene_player_size >= scene_min_player_size || scene_player_size >= kMaxScenePlayerSize)
         {
             continue;
@@ -77,7 +77,7 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 	auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
 	for (auto& ji : server_scenes)
 	{
-		std::size_t scene_player_size = reg.get<PlayersComp>(ji).size();
+		std::size_t scene_player_size = reg.get<ScenePlayers>(ji).size();
 		if (scene_player_size >= kMaxScenePlayerSize)
 		{
 			continue;
