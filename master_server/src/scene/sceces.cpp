@@ -1,5 +1,7 @@
 #include "src/scene/sceces.h"
 
+#include "muduo/base/Logging.h"
+
 #include "src/game_logic/game_registry.h"
 
 using namespace common;
@@ -16,7 +18,17 @@ ScenesSystem* g_scene_sys = nullptr;
         return it->second.size();
     }
 
-    bool ScenesSystem::HasScene(uint32_t scene_config_id)
+	entt::entity ScenesSystem::get_scene(common::Guid scene_id)
+	{
+        auto it = scenes_map_.find(scene_id);
+        if (it == scenes_map_.end())
+        {
+            return entt::null;
+        }
+        return it->second;
+	}
+
+	bool ScenesSystem::HasScene(uint32_t scene_config_id)
     {
         auto it = confid_scenes_.find(scene_config_id);
         if (it == confid_scenes_.end())
@@ -34,8 +46,29 @@ ScenesSystem* g_scene_sys = nullptr;
         reg.emplace<ScenePlayers>(e);
         auto guid = snow_flake_.Generate();
         reg.emplace<Guid>(e, guid);
-        scenes_map_.emplace(guid, e);
+        auto sit = scenes_map_.emplace(guid, e);
+		if (!sit.second)
+		{
+            LOG_ERROR << "already has scene" << guid;
+		}
         confid_scenes_[confid].emplace(e);
+        return e;
+    }
+
+    entt::entity ScenesSystem::MakeSceneByGuid(const MakeSceneWithGuidP& param)
+    {
+		auto e = reg.create();
+		auto& confid = reg.emplace<SceneConfigId>(e, param.scene_confid_);
+		reg.emplace<MainScene>(e);
+		reg.emplace<ScenePlayers>(e);
+		auto guid = param.scene_id;
+		reg.emplace<Guid>(e, guid);
+		auto sit = scenes_map_.emplace(guid, e);
+		if (!sit.second)
+		{
+			LOG_ERROR << "already has scene" << guid;
+		}
+		confid_scenes_[confid].emplace(e);
         return e;
     }
 

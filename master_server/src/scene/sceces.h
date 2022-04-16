@@ -17,11 +17,14 @@ public:
     std::size_t scenes_size() const { return scenes_map_.size(); }
     std::size_t scenes_map_size() const { return scenes_map_.size(); }
 
+    entt::entity get_scene(common::Guid scene_id);
+
     bool HasScene(uint32_t scene_config_id);
     inline bool Empty() const { return scenes_map_.empty(); }
     inline bool HasConfig(uint32_t scene_config_id) { return confid_scenes_.find(scene_config_id) != confid_scenes_.end(); }
 
     entt::entity MakeScene(const MakeSceneP& param);
+    entt::entity MakeSceneByGuid(const MakeSceneWithGuidP& param);
     entt::entity MakeSceneGSScene(const MakeGSSceneP& param);
 
     void PutScene2GS(const PutScene2GSParam& param);
