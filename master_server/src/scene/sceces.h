@@ -14,10 +14,10 @@ class ScenesSystem : public common::EntityPtr
 public:
 
     entt::entity first_scene() { if (scenes_map_.empty()) { return entt::null; } return scenes_map_.begin()->second; }
-    const common::EntitySet& scenes_id() const { return scenes_; }
+    const common::SceneMapComp& scenes_id() const { return scenes_map_; }
     const common::Uint32KeyEntitySetValue& scenes_entitiy() const { return confid_scenes_; }
     const common::EntitySet& scenes_entitiy(uint32_t scene_config_id) const;
-    common::EntitySet copy_scenes_id() { return scenes_; }
+    common::SceneMapComp copy_scenes_id() { return scenes_map_; }
     entt::entity first_scene(uint32_t scene_config_id)const;
     std::size_t scenes_size(uint32_t scene_config_id)const;
     std::size_t scenes_size() const { return scenes_map_.size(); }
@@ -46,14 +46,9 @@ public:
     void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 private:
 
-    void AddScene(uint32_t scene_config_id, entt::entity scene_entity);
-
-    void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity);
-
     void OnDestroyScene(entt::entity scene_entity);
 
     common::Uint32KeyEntitySetValue confid_scenes_;
-    common::EntitySet scenes_;
     common::SceneMapComp scenes_map_;
     common::SnowFlake snow_flake_;
 };
