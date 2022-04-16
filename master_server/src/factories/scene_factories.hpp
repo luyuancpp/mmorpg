@@ -12,6 +12,11 @@ struct MakeSceneP
     uint32_t op_{ 0 };
 };
 
+struct MakeSceneWithGuidP : public MakeSceneP
+{
+    common::Guid scene_id{common::kInvalidGuid};
+};
+
 struct MakeGSParam
 {
     uint32_t node_id_{};
