@@ -11,7 +11,6 @@ message StartGSRequest
   IpPort rpc_server = 2;
   uint32 gs_node_id = 3;
   uint32 server_type = 4;
-  uint64 master_server_addr = 5;
 }
 
 message StartGSResponse

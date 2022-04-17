@@ -24,9 +24,15 @@
     <ClCompile Include="src\service\rg_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\network\ms_node.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\service\rg_node.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\ms_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

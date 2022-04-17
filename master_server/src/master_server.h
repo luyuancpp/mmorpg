@@ -15,6 +15,7 @@
 
 #include "deploy_node.pb.h"
 #include "db_node.pb.h"
+#include "rg_node.pb.h"
 
     class MasterServer : muduo::noncopyable, public common::Receiver<MasterServer>
     {
@@ -22,6 +23,7 @@
         using RedisClientPtr = common::RedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using DbNodeStub = common::RpcStub<dbservice::DbService_Stub>;
+        using RgNodeStub = common::RpcStub<rgservcie::RgService_Stub>;
 
         MasterServer(muduo::net::EventLoop* loop);           
 
@@ -54,6 +56,9 @@
 
         common::RpcClientPtr deploy_rpc_client_;
         deploy::DeployStub deploy_stub_;
+
+		common::RpcClientPtr region_rpc_client_;
+		RgNodeStub region_stub_;
 
         common::RpcClientPtr db_rpc_client_;
         DbNodeStub db_node_stub_;

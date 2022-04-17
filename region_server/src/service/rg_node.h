@@ -3,7 +3,7 @@
 #include "rg_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace regionservcie{
+namespace rgservcie{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 class RgServiceImpl : public RgService{
@@ -12,15 +12,20 @@ public:
 ///<<< END WRITING YOUR CODE
 public:
     void StartCrossMainGS(::google::protobuf::RpcController* controller,
-        const regionservcie::StartMainRoomGSRequest* request,
+        const rgservcie::StartMainRoomGSRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void StartCrossRoomGS(::google::protobuf::RpcController* controller,
-        const regionservcie::StartCrossRoomGSRequest* request,
+        const rgservcie::StartCrossRoomGSRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
+    void StartMs(::google::protobuf::RpcController* controller,
+        const rgservcie::StartMsRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace regionservcie
+}// namespace rgservcie
 #endif//REGION_SERVER_SRC_SERVICE_RG_NODE_H_

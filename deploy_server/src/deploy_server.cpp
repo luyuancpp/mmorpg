@@ -37,7 +37,7 @@ namespace deploy
 
         InitGroupDb();
 
-        InitRegionDb<region_server_db>(kRSBeginPort, kGroup);
+        InitRegionServer<region_server_db>(kRSBeginPort, kGroup);
         InitGroupDb<redis_server_db>(kRedisPort, kGroup);
         InitGroupDb<login_server_db>(kLSBeginPort, kGroup);
         InitRegionDb<master_server_db>(kMSBeginPort, kGroup);
