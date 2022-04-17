@@ -24,12 +24,10 @@
     <ClCompile Include="src\pb\pbc\gw_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\mainscene_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\mission_config.pb.cc" />
-    <ClCompile Include="src\pb\pbc\ms2db.pb.cc" />
     <ClCompile Include="src\pb\pbc\msgmap.cpp" />
     <ClCompile Include="src\pb\pbc\ms_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_table.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_test.pb.cc" />
-    <ClCompile Include="src\pb\pbc\pb3.pb.cc" />
     <ClCompile Include="src\pb\pbc\scene_config.pb.cc" />
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
@@ -58,6 +56,7 @@
     <ClCompile Include="src\pb\pbc\logic_proto\team_normal.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\team_server_player.pb.cc" />
     <ClCompile Include="src\pb\pb2sol2\common_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\component_proto\player_comp.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -146,5 +145,6 @@
     <ClInclude Include="src\pb\pbc\logic_proto\team_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\team_normal.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\team_server_player.pb.h" />
+    <ClInclude Include="src\pb\pbc\component_proto\player_comp.pb.h" />
   </ItemGroup>
 </Project>

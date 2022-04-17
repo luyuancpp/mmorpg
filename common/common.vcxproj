@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\pb\pbc\component_proto\player_comp.pb.cc" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
     <ClCompile Include="src\game_config\condition_config.cpp" />
@@ -233,6 +234,7 @@
     <ClInclude Include="src\pb\pbc\c2gw.pb.h" />
     <ClInclude Include="src\pb\pbc\common.pb.h" />
     <ClInclude Include="src\pb\pbc\comp.pb.h" />
+    <ClInclude Include="src\pb\pbc\component_proto\player_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\condition_config.pb.h" />
     <ClInclude Include="src\pb\pbc\db_base.pb.h" />
     <ClInclude Include="src\pb\pbc\db_node.pb.h" />

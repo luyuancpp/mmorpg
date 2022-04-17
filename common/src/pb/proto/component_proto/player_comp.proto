@@ -1,0 +1,7 @@
+syntax = "proto3";
+package playercomp;
+
+message SceneInfo
+{
+	uint64 scene_id = 1;
+}

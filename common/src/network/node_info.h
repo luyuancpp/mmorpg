@@ -8,7 +8,9 @@ namespace common
 	enum eServerType : uint8_t
 	{
 		kMainSceneServer,//主世界场景
-		kRoomServer//副本场景
+		kRoomServer,//副本场景
+		kMainSceneCrossServer,//跨服主世界场景
+		kRoomSceneCrossServer,//跨服副本场景
 	};
 	enum EnumNodeType : uint32_t
 	{

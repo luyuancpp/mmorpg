@@ -79,7 +79,7 @@ ScenesSystem* g_scene_sys = nullptr;
         make_p.scene_confid_ = param.scene_confid_;
         auto e = MakeScene(make_p);
         PutScene2GSParam put_param;
-        put_param.scene_entity_ = e;
+        put_param.scene_ = e;
         put_param.server_entity_ = param.server_entity_;
         PutScene2GS(put_param);
         return e;
@@ -87,7 +87,7 @@ ScenesSystem* g_scene_sys = nullptr;
 
     void ScenesSystem::PutScene2GS(const PutScene2GSParam& param)
     {
-        auto scene_entity = param.scene_entity_;
+        auto scene_entity = param.scene_;
         auto& scene_config = reg.get<SceneConfigId>(scene_entity);
         auto server_entity = param.server_entity_;
         auto& server_scenes = reg.get<SceneComp>(server_entity);
@@ -99,7 +99,7 @@ ScenesSystem* g_scene_sys = nullptr;
 
     void ScenesSystem::DestroyScene(const DestroySceneParam& param)
     {
-        OnDestroyScene(param.scene_entity_);
+        OnDestroyScene(param.scene_);
     }
 
     void ScenesSystem::DestroyServer(const DestroyServerParam& param)
@@ -133,10 +133,10 @@ ScenesSystem* g_scene_sys = nullptr;
 
     void ScenesSystem::EnterScene(const EnterSceneParam& param)
     {
-        auto scene_entity = param.scene_entity_;
+        auto scene_entity = param.scene_;
         auto& player_entities = reg.get<ScenePlayers>(scene_entity);
-        player_entities.emplace(param.enter_entity_);
-        reg.emplace<common::SceneEntity>(param.enter_entity_, scene_entity);
+        player_entities.emplace(param.enterer_);
+        reg.emplace<common::SceneEntity>(param.enterer_, scene_entity);
         auto p_server_data = reg.try_get<GSDataPtr>(scene_entity);
         if (nullptr == p_server_data)
         {
@@ -192,8 +192,8 @@ ScenesSystem* g_scene_sys = nullptr;
         LeaveScene(leave_param);
 
         EnterSceneParam enter_param;
-        enter_param.enter_entity_ = compel_entity;
-        enter_param.scene_entity_ = server_scene_enitity;
+        enter_param.enterer_ = compel_entity;
+        enter_param.scene_ = server_scene_enitity;
         EnterScene(enter_param);
     }
 
