@@ -9,8 +9,8 @@ namespace regionservcie{
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void G2rgServiceImpl::StartCrossMainGS(::google::protobuf::RpcController* controller,
-    const regionservcie::StartGSRequest* request,
+void RgServiceImpl::StartCrossMainGS(::google::protobuf::RpcController* controller,
+    const regionservcie::StartMainRoomGSRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -19,8 +19,8 @@ void G2rgServiceImpl::StartCrossMainGS(::google::protobuf::RpcController* contro
 ///<<< END WRITING YOUR CODE StartCrossMainGS
 }
 
-void G2rgServiceImpl::StartCrossRoomGS(::google::protobuf::RpcController* controller,
-    const regionservcie::StartGSRequest* request,
+void RgServiceImpl::StartCrossRoomGS(::google::protobuf::RpcController* controller,
+    const regionservcie::StartCrossRoomGSRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
