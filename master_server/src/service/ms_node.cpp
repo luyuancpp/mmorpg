@@ -309,6 +309,10 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto it = g_gs_nodes.find(gs_node_id);
 	if (it != g_gs_nodes.end())
 	{
+		EnterSceneParam ep;
+		ep.enterer_ = player;
+		ep.scene_ = scene;
+		g_scene_sys->EnterScene(ep);
 		Ms2gsEnterGameRpcRplied message;
 		message.s_rq_.set_player_id(guid);
 		message.s_rq_.set_conn_id(request->conn_id());

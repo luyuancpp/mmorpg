@@ -22,7 +22,7 @@ public:
     bool HasPlayer(common::Guid guid) const { return g_players.find(guid) != g_players.end(); }
 
     void EnterGame(common::Guid guid, const common::EntityPtr&& entity_id) { g_players.emplace(guid, entity_id); }
-    void LeaveGame(common::Guid guid) { g_players.erase(guid); }//todo 断线不能马上下线，这里之后会改
+    void LeaveGame(common::Guid guid);
 };
 
 

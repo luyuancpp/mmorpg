@@ -99,10 +99,10 @@ void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE LoadRegionDeploy
+///<<< BEGIN WRITING YOUR CODE RegionInfo
 	std::string where_case = std::to_string(request->region_id()) + " = region_id  ";
 	db_->LoadAll<::master_server_db>(*response->mutable_region_masters(), where_case);
-///<<< END WRITING YOUR CODE LoadRegionDeploy
+///<<< END WRITING YOUR CODE RegionInfo
 }
 
 	///<<<rpc end

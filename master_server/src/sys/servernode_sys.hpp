@@ -8,8 +8,8 @@ static const std::size_t kMaxScenePlayerSize = 1000;
 
 struct EnterSceneParam
 {
-    entt::entity scene_entity_{ entt::null };
-    entt::entity enter_entity_{ entt::null };
+    entt::entity scene_{ entt::null };
+    entt::entity enterer_{ entt::null };
     uint32_t op_{ 0 };
 };
 

@@ -88,7 +88,7 @@ TEST(GS, PutScene2Sever)
     auto server_entity1 = MakeMainSceneNode(reg, param1);
         
     PutScene2GSParam put_param;
-    put_param.scene_entity_ = scene_entity;
+    put_param.scene_ = scene_entity;
     put_param.server_entity_ = server_entity1;
     sm.PutScene2GS(put_param);
 
@@ -112,7 +112,7 @@ TEST(GS, DestroyScene)
     auto server_entity1 = MakeMainSceneNode(reg, param1);
 
     PutScene2GSParam put_param;
-    put_param.scene_entity_ = scene_entity;
+    put_param.scene_ = scene_entity;
     put_param.server_entity_ = server_entity1;
     sm.PutScene2GS(put_param);
 
@@ -124,7 +124,7 @@ TEST(GS, DestroyScene)
     EXPECT_EQ(1, server_scenes.scenes_size());
 
     DestroySceneParam dparam;
-    dparam.scene_entity_ = scene_entity;
+    dparam.scene_ = scene_entity;
     sm.DestroyScene(dparam);
     EXPECT_TRUE(sm.Empty());
     EXPECT_TRUE(sm.HasScene(cparam.scene_confid_));
@@ -289,10 +289,10 @@ TEST(GS, PlayerLeaveEnterScene)
     auto scene_id2 = sm.MakeSceneGSScene(server2_param);
 
     EnterSceneParam enter_param1;
-    enter_param1.scene_entity_ = scene_id1;
+    enter_param1.scene_ = scene_id1;
     
     EnterSceneParam enter_param2;
-    enter_param2.scene_entity_ = scene_id2;
+    enter_param2.scene_ = scene_id2;
 
     uint32_t player_size = 100;
     EntitySet player_entities_set1;
@@ -304,13 +304,13 @@ TEST(GS, PlayerLeaveEnterScene)
         if (i % 2 == 0)
         {
             player_entities_set1.emplace(pe);
-            enter_param1.enter_entity_ = pe;
+            enter_param1.enterer_ = pe;
             sm.EnterScene(enter_param1);
         }
         else
         {
             player_entities_set2.emplace(pe);
-            enter_param2.enter_entity_ = pe;
+            enter_param2.enterer_ = pe;
             sm.EnterScene(enter_param2);
         }
     }
@@ -398,9 +398,9 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
         for (auto it : scene_entities)
         {
             auto p_e = reg.create();
-            enter_param1.enter_entity_ = p_e;
-            enter_param1.scene_entity_ = it;
-            player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+            enter_param1.enterer_ = p_e;
+            enter_param1.scene_ = it;
+            player_scene1.emplace(enter_param1.enterer_, enter_param1.scene_);
             sm.EnterScene(enter_param1);
         }
     }
@@ -446,10 +446,10 @@ TEST(GS, CompelChangeScene)
     auto scene_id2 = sm.MakeSceneGSScene(server2_param);
 
     EnterSceneParam enter_param1;
-    enter_param1.scene_entity_ = scene_id1;
+    enter_param1.scene_ = scene_id1;
 
     EnterSceneParam enter_param2;
-    enter_param2.scene_entity_ = scene_id2;
+    enter_param2.scene_ = scene_id2;
 
     uint32_t player_size = 100;
     EntitySet player_entities_set1;
@@ -458,7 +458,7 @@ TEST(GS, CompelChangeScene)
     {
         auto pe = reg.create();
         player_entities_set1.emplace(pe);
-        enter_param1.enter_entity_ = pe;
+        enter_param1.enterer_ = pe;
         sm.EnterScene(enter_param1);
     }
 
@@ -522,9 +522,9 @@ TEST(GS, CrashWeightRoundRobinMainScene)
         for (auto it : scene_entities)
         {
             auto p_e = reg.create();
-            enter_param1.enter_entity_ = p_e;
-            enter_param1.scene_entity_ = it;
-            player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+            enter_param1.enterer_ = p_e;
+            enter_param1.scene_ = it;
+            player_scene1.emplace(enter_param1.enterer_, enter_param1.scene_);
             sm.EnterScene(enter_param1);
         }
     }
@@ -589,9 +589,9 @@ TEST(GS, CrashMovePlayer2NewServer)
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto p_e = reg.create();
-        enter_param1.enter_entity_ = p_e;
-        enter_param1.scene_entity_ = first_scene_id;
-        player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+        enter_param1.enterer_ = p_e;
+        enter_param1.scene_ = first_scene_id;
+        player_scene1.emplace(enter_param1.enterer_, enter_param1.scene_);
         sm.EnterScene(enter_param1);
     }
 
@@ -674,9 +674,9 @@ TEST(GS, WeightRoundRobinMainScene)
         {
             auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
             auto p_e = reg.create();
-            enter_param1.enter_entity_ = p_e;
-            enter_param1.scene_entity_ = can_enter;
-            player_scene1.emplace(enter_param1.enter_entity_, can_enter);
+            enter_param1.enterer_ = p_e;
+            enter_param1.scene_ = can_enter;
+            player_scene1.emplace(enter_param1.enterer_, can_enter);
             scene_sets.emplace(can_enter);
             sm.EnterScene(enter_param1);
         }
@@ -695,9 +695,9 @@ TEST(GS, WeightRoundRobinMainScene)
         {
             auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
             auto p_e = reg.create();
-            enter_param1.enter_entity_ = p_e;
-            enter_param1.scene_entity_ = can_enter;
-            player_scene2.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+            enter_param1.enterer_ = p_e;
+            enter_param1.scene_ = can_enter;
+            player_scene2.emplace(enter_param1.enterer_, enter_param1.scene_);
             scene_sets.emplace(can_enter);
             sm.EnterScene(enter_param1);
         }
@@ -799,9 +799,9 @@ TEST(GS, ServerEnterLeavePressure)
     {
         auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
         auto p_e = reg.create();
-        enter_param1.enter_entity_ = p_e;
-        enter_param1.scene_entity_ = can_enter;
-        player_scene1.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+        enter_param1.enterer_ = p_e;
+        enter_param1.scene_ = can_enter;
+        player_scene1.emplace(enter_param1.enterer_, enter_param1.scene_);
         sm.EnterScene(enter_param1);
     }
 
@@ -820,9 +820,9 @@ TEST(GS, ServerEnterLeavePressure)
     {
         auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
         auto p_e = reg.create();
-        enter_param1.enter_entity_ = p_e;
-        enter_param1.scene_entity_ = can_enter;
-        player_scene2.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+        enter_param1.enterer_ = p_e;
+        enter_param1.scene_ = can_enter;
+        player_scene2.emplace(enter_param1.enterer_, enter_param1.scene_);
         sm.EnterScene(enter_param1);
     }
     player_scene_id = 0;
@@ -885,9 +885,9 @@ TEST(GS, GetNotFullMainSceneSceneFull)
                 continue;
             }
 			auto p_e = reg.create();
-			enter_param1.enter_entity_ = p_e;
-			enter_param1.scene_entity_ = can_enter;
-			player_scene1.emplace(enter_param1.enter_entity_, can_enter);
+			enter_param1.enterer_ = p_e;
+			enter_param1.scene_ = can_enter;
+			player_scene1.emplace(enter_param1.enterer_, can_enter);
 			scene_sets.emplace(can_enter);
 			sm.EnterScene(enter_param1);
 		}
@@ -906,9 +906,9 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		{
 			auto can_enter = snsys.GetMainSceneNotFull(weight_round_robin_scene);
 			auto p_e = reg.create();
-			enter_param1.enter_entity_ = p_e;
-			enter_param1.scene_entity_ = can_enter;
-			player_scene2.emplace(enter_param1.enter_entity_, enter_param1.scene_entity_);
+			enter_param1.enterer_ = p_e;
+			enter_param1.scene_ = can_enter;
+			player_scene2.emplace(enter_param1.enterer_, enter_param1.scene_);
 			scene_sets.emplace(can_enter);
 			sm.EnterScene(enter_param1);
 		}
