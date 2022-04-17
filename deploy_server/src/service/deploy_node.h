@@ -42,7 +42,7 @@ public:
         deploy::RegionServerResponse* response,
         ::google::protobuf::Closure* done)override;
 
-    void LoadRegionDeploy(::google::protobuf::RpcController* controller,
+    void RegionServerInfo(::google::protobuf::RpcController* controller,
         const deploy::RegionRequest* request,
         deploy::RegionServerResponse* response,
         ::google::protobuf::Closure* done)override;
