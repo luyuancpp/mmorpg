@@ -4,6 +4,8 @@
 
 #include "src/game_config/region_config.h"
 #include "src/game_config/deploy_json.h"
+#include "src/game_logic/game_registry.h"
+#include "src/network/server_component.h"
 
 using namespace common;
 
@@ -39,32 +41,38 @@ namespace region
         InetAddress region_addr(myinfo.ip(), myinfo.port());
         server_ = std::make_shared<muduo::net::RpcServer>(loop_, region_addr);
         server_->subscribe<OnBeConnectedEvent>(*this);
-        //LOG_INFO << myinfo.DebugString().c_str();
         server_->start();
     }
 
     void RegionServer::receive(const OnConnected2ServerEvent& es)
     {
-        if (!es.conn_->connected())
-        {
-            return;
-        }
+		
         // started 
         if (nullptr != server_)
         {
             return;
         }
-        RegionInfoRpcRpcRC cp(std::make_shared<RegionInfoRpcClosure>());
-        cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
-        deploy_stub_.CallMethod(
-            &RegionServer::StartServer,
-            cp,
-            this,
-            &deploy::DeployService_Stub::StartRegionServer);
+		if (!es.conn_->connected())
+		{
+			RegionInfoRpcRpcRC cp(std::make_shared<RegionInfoRpcClosure>());
+			cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+			deploy_stub_.CallMethod(
+				&RegionServer::StartServer,
+				cp,
+				this,
+				&deploy::DeployService_Stub::StartRegionServer);
+		}
+      
     }
 
     void RegionServer::receive(const OnBeConnectedEvent& es)
     {
+        auto& conn = es.conn_;
+        if (!es.conn_->connected())
+        {
+            auto e = reg.create();
+            reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+        }
     }
 }
 

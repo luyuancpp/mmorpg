@@ -4,13 +4,13 @@
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace regionservcie{
+namespace rgservcie{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
 void RgServiceImpl::StartCrossMainGS(::google::protobuf::RpcController* controller,
-    const regionservcie::StartMainRoomGSRequest* request,
+    const rgservcie::StartMainRoomGSRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -20,7 +20,7 @@ void RgServiceImpl::StartCrossMainGS(::google::protobuf::RpcController* controll
 }
 
 void RgServiceImpl::StartCrossRoomGS(::google::protobuf::RpcController* controller,
-    const regionservcie::StartCrossRoomGSRequest* request,
+    const rgservcie::StartCrossRoomGSRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -29,5 +29,15 @@ void RgServiceImpl::StartCrossRoomGS(::google::protobuf::RpcController* controll
 ///<<< END WRITING YOUR CODE StartCrossRoomGS
 }
 
+void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
+    const rgservcie::StartMsRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE StartMs
+///<<< END WRITING YOUR CODE StartMs
+}
+
 ///<<<rpc end
-}// namespace regionservcie
+}// namespace rgservcie
