@@ -92,7 +92,8 @@ def genheadfile(filename, writedir):
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     folder_path, local.hfilename = os.path.split(hfullfilename)    
     newheadfilename = servicedir + local.hfilename.replace('.proto', '.h')
-    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper()
+    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_'
+    headdefine += filename.replace('.proto', '').upper().replace('/', '_').replace('.', '').upper().strip('_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
     newstr += '#include "' + local.hfilename.replace('.h', '') + '.pb.h"\n'
