@@ -88,7 +88,6 @@ namespace deploy
 
 			for (uint32_t i = 0; i < server_size; ++i)
 			{
-				sd.set_region_id(i);
 				sd.set_port(i + begin_port);
 				db_->SaveOne(sd);
 			}

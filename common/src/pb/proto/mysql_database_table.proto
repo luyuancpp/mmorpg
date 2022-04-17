@@ -33,7 +33,6 @@ message region_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 region_id = 4;
 }
 
 message redis_server_db
