@@ -34,11 +34,13 @@ servicedir = './md5/'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
 gsplayerservicedir = '../../../../game_server/src/service/logic/'
+rgplayerservicedir = '../../../../region_server/src/service/logic/'
 msplayerservicedir = '../../../../master_server/src/service/logic/'
 gsservicedir = '../../../../game_server/src/service/'
 msservicedir = '../../../../master_server/src/service/'
 client_player = 'client_player'
 server_player = 'server_player'
+rg = 'rg'
 
 filesrcdestpath = {}
 
@@ -145,6 +147,8 @@ def getwritedir(serverstr):
         writedir = gsplayerservicedir
     elif serverstr == 'ms':
         writedir = msplayerservicedir
+    elif serverstr == 'rg':
+        writedir = rgplayerservicedir
     return writedir
 
 def genheadfile(filename, serverstr):
@@ -291,9 +295,13 @@ def generate(filename):
         gencppfile(filename, 'gs')
         genheadfile(filename, 'ms')
         gencppfile(filename, 'ms')
+    elif filename.find(rg) >= 0:
+        parsefile(filename)
+        genheadfile(filename, 'rg')
+        gencppfile(filename, 'rg')
 
 def parseplayerservcie(filename):
-    if filename.find('normal') >= 0:
+    if filename.find('normal') >= 0  or filename.find(rg) >= 0:
         return
     local.fileservice.append(filename.replace('.proto', ''))
     with open(filename,'r', encoding='utf-8') as file:
@@ -385,6 +393,8 @@ def md5copydir():
                 md5copy(filename, 'gs')
             elif filename.find(server_player) >= 0 and filename.find('ms') >= 0:
                 md5copy(filename, 'ms')
+            elif filename.find(rg) >= 0 and filename.find('rg') >= 0 and filename.find('rg_node') < 0: 
+                md5copy(filename, 'rg')
             elif filename == 'gs_player_service.cpp':
                 md5copy(filename, 'gs')
             elif filename == 'ms_player_service.cpp':
