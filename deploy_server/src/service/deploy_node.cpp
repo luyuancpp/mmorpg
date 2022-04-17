@@ -78,19 +78,19 @@ void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* con
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StartRegionServer
-		LoadRegionDeploy(request->region_id(), response->mutable_info());
+	LoadRegionDeploy(request->region_id(), response->mutable_info());
 ///<<< END WRITING YOUR CODE StartRegionServer
 }
 
-void DeployServiceImpl::LoadRegionDeploy(::google::protobuf::RpcController* controller,
+void DeployServiceImpl::RegionServerInfo(::google::protobuf::RpcController* controller,
     const deploy::RegionRequest* request,
     deploy::RegionServerResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE LoadRegionDeploy
-		LoadRegionDeploy(request->region_id(), response->mutable_info());
-///<<< END WRITING YOUR CODE LoadRegionDeploy
+///<<< BEGIN WRITING YOUR CODE RegionServerInfo
+	LoadRegionDeploy(request->region_id(), response->mutable_info());
+///<<< END WRITING YOUR CODE RegionServerInfo
 }
 
 void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller,

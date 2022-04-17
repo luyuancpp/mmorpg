@@ -18,7 +18,6 @@ message MasterServersDb
 message ServerInfoResponse
 {
   servers_info_data info = 1;
-  MasterServersDb region_masters = 2;
 }
 
 message StartGSRequest
@@ -54,6 +53,6 @@ service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
   rpc StartGS (StartGSRequest) returns (StartGSResponse);
   rpc StartRegionServer (RegionRequest) returns (RegionServerResponse);
-  rpc LoadRegionDeploy (RegionRequest) returns (RegionServerResponse);
+  rpc RegionServerInfo (RegionRequest) returns (RegionServerResponse);
   rpc RegionInfo (RegionRequest) returns (RegionInfoResponse);
 }
