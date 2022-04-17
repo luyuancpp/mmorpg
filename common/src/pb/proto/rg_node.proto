@@ -9,6 +9,7 @@ message StartMainRoomGSRequest
   uint32 gs_node_id = 1;
   IpPort rpc_client = 2;
   IpPort rpc_server = 3;
+  uint32 gs_server_type = 4;
 }
 
 message StartCrossRoomGSRequest
@@ -27,7 +28,6 @@ message StartMsRequest
 
 service RgService 
 {
-  rpc StartCrossMainGS (StartMainRoomGSRequest) returns (google.protobuf.Empty);
-  rpc StartCrossRoomGS (StartCrossRoomGSRequest) returns (google.protobuf.Empty);
+  rpc StartCrossGS (StartMainRoomGSRequest) returns (google.protobuf.Empty);
   rpc StartMs (StartMsRequest) returns (google.protobuf.Empty);
 }

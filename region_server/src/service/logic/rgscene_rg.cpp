@@ -14,6 +14,7 @@ void RgServiceImpl::StartCrossMainGS(common::EntityPtr& entity,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE StartCrossMainGS
+    
 ///<<< END WRITING YOUR CODE StartCrossMainGS
 }
 
@@ -23,6 +24,7 @@ void RgServiceImpl::StartCrossRoomGS(common::EntityPtr& entity,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE StartCrossRoomGS
+    
 ///<<< END WRITING YOUR CODE StartCrossRoomGS
 }
 
