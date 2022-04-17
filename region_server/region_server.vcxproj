@@ -147,11 +147,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\network\ms_node.cpp" />
     <ClCompile Include="src\region_server.cpp" />
     <ClCompile Include="src\service\rg_node.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\network\gs_node.h" />
     <ClInclude Include="src\network\ms_node.h" />
     <ClInclude Include="src\service\rg_node.h" />
   </ItemGroup>

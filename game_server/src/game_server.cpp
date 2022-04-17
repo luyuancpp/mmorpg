@@ -61,7 +61,7 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
     StartGSRpcRC scp(std::make_shared<StartGSInfoRpcClosure>());
     scp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
     scp->s_rq_.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
-    scp->s_rq_.mutable_my_info()->set_id(server_deploy_.id());
+    scp->s_rq_.mutable_my_info()->set_id(gs_.id());
     scp->s_rq_.mutable_rpc_client()->set_ip(deploy_session_->local_addr().toIp());
     scp->s_rq_.mutable_rpc_client()->set_port(deploy_session_->local_addr().port());
     deploy_stub_.CallMethod(
@@ -87,8 +87,8 @@ void GameServer::StartGSDeployReplied(StartGSRpcRC cp)
     auto& redisinfo = cp->s_rp_->redis_info();
 	redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
 
-    server_deploy_ = cp->s_rp_->my_info();
-    InetAddress node_addr(server_deploy_.ip(), server_deploy_.port());
+    gs_ = cp->s_rp_->my_info();
+    InetAddress node_addr(gs_.ip(), gs_.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, node_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
     server_->registerService(&gs_service_impl_);
@@ -128,10 +128,10 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
     auto node_info = request.mutable_rpc_server();
     session_info->set_ip(master_local_addr.toIp());
     session_info->set_port(master_local_addr.port());
-    node_info->set_ip(server_deploy_.ip());
-    node_info->set_port(server_deploy_.port());
+    node_info->set_ip(gs_.ip());
+    node_info->set_port(gs_.port());
     request.set_server_type(reg.get<eServerType>(global_entity()));
-    request.set_gs_node_id(server_deploy_.id());
+    request.set_gs_node_id(gs_.id());
     g2ms_stub_.CallMethod(
         &ms2gs::RepliedMs2g::StartGSMasterReplied,
         scp,
@@ -205,6 +205,29 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
 			break;
 		}
 	}
+
+    if (region_session_->connected())
+    {
+        auto& server_type = reg.get<eServerType>(global_entity());
+        if (server_type == kMainSceneCrossServer ||
+            server_type == kRoomSceneCrossServer)
+        {
+            rgservcie::StartMainRoomGSRequest rq;
+			auto session_info = rq.mutable_rpc_client();
+			auto node_info = rq.mutable_rpc_server();
+			session_info->set_ip(region_session_->local_addr().toIp());
+			session_info->set_port(region_session_->local_addr().port());
+			node_info->set_ip(gs_.ip());
+			node_info->set_port(gs_.port());
+            rq.set_gs_node_id(gs_.id());
+            rq.set_gs_server_type(server_type);
+            rg_stub_.CallMethod(rq, &rgservcie::RgService_Stub::StartCrossGS);
+        }
+    }
+    else
+    {
+
+    }
 }
 
 void GameServer::receive(const common::OnBeConnectedEvent& es)
@@ -243,7 +266,7 @@ void GameServer::InitGlobalEntities()
 
 void GameServer::ConnectRegion()
 {
-    region_session_->subscribe<RegisterStubEvent>(g2rg_stub_);
+    region_session_->subscribe<RegisterStubEvent>(rg_stub_);
     region_session_->registerService(&gs_service_impl_);
     region_session_->subscribe<OnConnected2ServerEvent>(*this);
     region_session_->connect();

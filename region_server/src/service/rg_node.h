@@ -11,13 +11,8 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
-    void StartCrossMainGS(::google::protobuf::RpcController* controller,
+    void StartCrossGS(::google::protobuf::RpcController* controller,
         const rgservcie::StartMainRoomGSRequest* request,
-        ::google::protobuf::Empty* response,
-        ::google::protobuf::Closure* done)override;
-
-    void StartCrossRoomGS(::google::protobuf::RpcController* controller,
-        const rgservcie::StartCrossRoomGSRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
