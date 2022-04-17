@@ -16,8 +16,6 @@ namespace ms2gs
 void RepliedMs2g::StartGSMasterReplied(StartGameMasterRpcRC cp)
 {
     auto rsp = cp->s_rp_;
-    //LOG_INFO << "master server info " << rsp->DebugString().c_str();
-
     auto& scenemap = reg.get<SceneMapComp>(global_entity());
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
     {
