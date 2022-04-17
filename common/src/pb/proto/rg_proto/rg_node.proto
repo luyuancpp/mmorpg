@@ -9,5 +9,6 @@ message StartGSRequest
 }
 
 service G2rgService {
-  rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
+  rpc StartCrossMainGS (StartGSRequest) returns (google.protobuf.Empty);
+  rpc StartCrossRoomGS (StartGSRequest) returns (google.protobuf.Empty);
 }

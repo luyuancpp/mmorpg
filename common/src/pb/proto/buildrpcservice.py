@@ -222,6 +222,9 @@ def gencppfile(filename, writedir):
 
 
 def md5copy(filename, writedir, fileextend):
+        if filename.find('/') >= 0 :
+            s = filename.split('/')
+            filename = s[len(s) - 1]
         gennewfilename = servicedir + filename.replace('.proto', fileextend)
         filenamemd5 = gennewfilename + '.md5'
         error = None
