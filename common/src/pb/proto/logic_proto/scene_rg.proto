@@ -6,6 +6,9 @@ option cc_generic_services = true;
 
 message StartCrossMainGSRequest
 {
+  IpPort rpc_client = 1;
+  IpPort rpc_server = 2;
+  uint32 gs_node_id = 3;
 }
 
 message StartCrossMainGSResponse
@@ -15,6 +18,9 @@ message StartCrossMainGSResponse
 
 message StartCrossRoomGSRequest
 {
+IpPort rpc_client = 1;
+  IpPort rpc_server = 2;
+  uint32 gs_node_id = 3;
 }
 
 message StartCrossRoomGSResponse
