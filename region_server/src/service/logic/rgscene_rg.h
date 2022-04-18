@@ -14,11 +14,13 @@ public:
 ///<<< END WRITING YOUR CODE
 public:
     void StartCrossMainGS(common::EntityPtr& entity,
-        const regionservcie::StartMainRoomGSRequest* request,
-        ::google::protobuf::Empty* response);
+        const regionservcie::StartCrossMainGSRequest* request,
+        regionservcie::StartCrossMainGSResponse* response);
+
     void StartCrossRoomGS(common::EntityPtr& entity,
         const regionservcie::StartCrossRoomGSRequest* request,
-        ::google::protobuf::Empty* response);
+        regionservcie::StartCrossRoomGSResponse* response);
+
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         common::EntityPtr& entity,
         const ::google::protobuf::Message* request,
@@ -27,13 +29,13 @@ public:
         switch(method->index()) {
         case 0:
             StartCrossMainGS(entity,
-            ::google::protobuf::internal::DownCast<const regionservcie::StartMainRoomGSRequest*>( request),
-            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
+            ::google::protobuf::internal::DownCast<const regionservcie::StartCrossMainGSRequest*>( request),
+            ::google::protobuf::internal::DownCast<regionservcie::StartCrossMainGSResponse*>(response));
         break;
         case 1:
             StartCrossRoomGS(entity,
             ::google::protobuf::internal::DownCast<const regionservcie::StartCrossRoomGSRequest*>( request),
-            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
+            ::google::protobuf::internal::DownCast<regionservcie::StartCrossRoomGSResponse*>(response));
         break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
