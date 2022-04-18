@@ -10,21 +10,19 @@ namespace regionservcie{
 
 ///<<<rpc begin
 void RgServiceImpl::StartCrossMainGS(common::EntityPtr& entity,
-    const regionservcie::StartMainRoomGSRequest* request,
-    ::google::protobuf::Empty* response)
+    const regionservcie::StartCrossMainGSRequest* request,
+    regionservcie::StartCrossMainGSResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE StartCrossMainGS
-    
 ///<<< END WRITING YOUR CODE StartCrossMainGS
 }
 
 ///<<<rpc end
 void RgServiceImpl::StartCrossRoomGS(common::EntityPtr& entity,
     const regionservcie::StartCrossRoomGSRequest* request,
-    ::google::protobuf::Empty* response)
+    regionservcie::StartCrossRoomGSResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE StartCrossRoomGS
-    
 ///<<< END WRITING YOUR CODE StartCrossRoomGS
 }
 

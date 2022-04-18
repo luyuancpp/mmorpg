@@ -151,6 +151,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\game_logic\scene\sceces.cpp" />
+    <ClCompile Include="src\game_logic\scene\scene_factories.cpp" />
+    <ClCompile Include="src\game_logic\scene\servernode_sys.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\player_comp.pb.cc" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
@@ -227,6 +230,9 @@
     <ClInclude Include="src\game_logic\login_state\login_state.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_concrete.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_machine.h" />
+    <ClInclude Include="src\game_logic\scene\sceces.h" />
+    <ClInclude Include="src\game_logic\scene\scene_factories.h" />
+    <ClInclude Include="src\game_logic\scene\servernode_sys.h" />
     <ClInclude Include="src\game_logic\tiime_unit\time_variable.h" />
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
     <ClInclude Include="src\pb\pb2sol2\pb2sol2.h" />

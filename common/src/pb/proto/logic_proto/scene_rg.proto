@@ -1,19 +1,29 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
+//import "google/protobuf/empty.proto";
+import "common.proto";
 package regionservcie;
 option cc_generic_services = true;
 
-message StartMainRoomGSRequest
+message StartCrossMainGSRequest
 {
+}
 
+message StartCrossMainGSResponse
+{
+  repeated SceneInfo scenes_info = 1;
 }
 
 message StartCrossRoomGSRequest
 {
-
 }
 
-service RgService {
-  rpc StartCrossMainGS (StartMainRoomGSRequest) returns (google.protobuf.Empty);
-  rpc StartCrossRoomGS (StartCrossRoomGSRequest) returns (google.protobuf.Empty);
+message StartCrossRoomGSResponse
+{
+  repeated SceneInfo scenes_info = 1;
+}
+
+service RgService 
+{
+  rpc StartCrossMainGS (StartCrossMainGSRequest) returns (StartCrossMainGSResponse);
+  rpc StartCrossRoomGS (StartCrossRoomGSRequest) returns (StartCrossRoomGSResponse);
 }
