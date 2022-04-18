@@ -1,6 +1,6 @@
 #ifndef REGION_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_SCENE_RG_H_
 #define REGION_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_SCENE_RG_H_
-#include "scene_rg.pb.h"
+#include "src/pb/pbc/logic_proto/scene_rg.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 namespace regionservcie{

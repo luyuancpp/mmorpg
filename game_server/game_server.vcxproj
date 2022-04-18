@@ -133,8 +133,10 @@
     <ClCompile Include="src\network\ms_node.cpp" />
     <ClCompile Include="src\service\gs_node.cpp" />
     <ClCompile Include="src\service\logic\gsscene_client_player.cpp" />
+    <ClCompile Include="src\service\logic\gsscene_normal.cpp" />
     <ClCompile Include="src\service\logic\gsscene_server_player.cpp" />
     <ClCompile Include="src\service\logic\gsteam_client_player.cpp" />
+    <ClCompile Include="src\service\logic\gsteam_normal.cpp" />
     <ClCompile Include="src\service\logic\gsteam_server_player.cpp" />
     <ClCompile Include="src\service\logic\gs_player_service.cpp" />
     <ClCompile Include="src\service\replied_ms2gs.cpp" />
@@ -148,8 +150,10 @@
     <ClInclude Include="src\network\ms_node.h" />
     <ClInclude Include="src\service\gs_node.h" />
     <ClInclude Include="src\service\logic\gsscene_client_player.h" />
+    <ClInclude Include="src\service\logic\gsscene_normal.h" />
     <ClInclude Include="src\service\logic\gsscene_server_player.h" />
     <ClInclude Include="src\service\logic\gsteam_client_player.h" />
+    <ClInclude Include="src\service\logic\gsteam_normal.h" />
     <ClInclude Include="src\service\logic\gsteam_server_player.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\replied_ms2gs.h" />

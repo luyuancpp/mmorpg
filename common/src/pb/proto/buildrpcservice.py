@@ -110,6 +110,11 @@ def getprevfilename(filename, writedir):
             return 'rg'
     return ''
 
+def getpbdir(filename, writedir):
+    if filename.find(logicprotodir) >= 0:
+        return 'src/pb/pbc/logic_proto/'
+    return ''
+
 def genheadfile(filename, writedir):
     
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
@@ -120,7 +125,7 @@ def genheadfile(filename, writedir):
     headdefine += filename.replace('.proto', '').upper().replace('/', '_').replace('.', '').upper().strip('_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
-    newstr += '#include "' + local.hfilename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "' + getpbdir(filename, writedir) + local.hfilename.replace('.h', '') + '.pb.h"\n'
     try:
         with open(hfullfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -167,7 +172,7 @@ def gencppfile(filename, writedir):
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp')
     newcppfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.h', '.cpp')
-    newstr = '#include "' + local.hfilename + '"\n'
+    newstr = '#include "' + getprevfilename(filename, writedir) + local.hfilename + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
@@ -272,7 +277,7 @@ def md5copy(filename, writedir, fileextend):
         #print("copy %s ---> %s  %s" % (filename, writedir, gennewfilename))
         if error == None and os.path.exists(hfullfilename) and emptymd5 == False:
             return
-        #print("copy %s ---> %s" % (gennewfilename, hfullfilename))
+        print("copy %s ---> %s" % (gennewfilename, hfullfilename))
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, hfullfilename)
 

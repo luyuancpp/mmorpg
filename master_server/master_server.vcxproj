@@ -160,7 +160,9 @@
     <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\scene\sceces.cpp" />
     <ClCompile Include="src\network\message_sys.cpp" />
+    <ClCompile Include="src\service\logic\msscene_normal.cpp" />
     <ClCompile Include="src\service\logic\msscene_server_player.cpp" />
+    <ClCompile Include="src\service\logic\msteam_normal.cpp" />
     <ClCompile Include="src\service\logic\msteam_server_player.cpp" />
     <ClCompile Include="src\service\logic\ms_player_service.cpp" />
     <ClCompile Include="src\service\ms_node.cpp" />
@@ -176,7 +178,9 @@
     <ClInclude Include="src\master_registry\master_registry.h" />
     <ClInclude Include="src\scene\sceces.h" />
     <ClInclude Include="src\network\message_sys.h" />
+    <ClInclude Include="src\service\logic\msscene_normal.h" />
     <ClInclude Include="src\service\logic\msscene_server_player.h" />
+    <ClInclude Include="src\service\logic\msteam_normal.h" />
     <ClInclude Include="src\service\logic\msteam_server_player.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\ms_node.h" />
