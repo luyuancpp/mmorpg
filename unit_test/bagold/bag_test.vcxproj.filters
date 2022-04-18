@@ -1,0 +1,2634 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="源文件\Config">
+      <UniqueIdentifier>{120f1e9a-5af0-4bab-8f71-e88a43b99bc1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="bag_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\CommonLogic\Bag\Item.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\CommonLogic\Bag\Bag.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ConfigModule.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Bag\BagRpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Bag\BagV1Data.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\Game\Snowflake.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\BaseAttr\BaseAttrV1Data.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\GameServer\Main\SyncOtherProperty.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\netproto\DbBase.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\netproto\GameDB.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\CommonLogic\Bag\ItemModule.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\jsoncpp\jsoncpp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\netproto\PublicStruct.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Pet\PetRpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\luascript_test.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AccumulateSignInCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ActionEventCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ActivityCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ActivityRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ActivitySevenDayTargetDetailsCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ActivitySpecLoginCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceBossCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceBuildingCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceFlagCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceLimitsCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceNameColorCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AlliancePositionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceSkillBaseCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceSkillLevelCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceTowerCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceWelfareCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ArenaBuffCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ArenaMatchCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ArenaRankRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ArenaRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AttackCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AttributeCategoryCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AttributeFormatConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AuctionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BackpackUnlockCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BattlefieldCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BubbleChatCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BuffCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BuffConflictConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BuffrRenovateCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BuinessCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BuinessMainCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BulletCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BusinessNPCCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BusinessQuestCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CameraConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CampBattleCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CampCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CatchMountsCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CatchMountsItemCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CgAnimationCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ChapterQuestUiCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CharacterConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CharacterCustomizeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ChatConsumptionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ChatmenuCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ClientQuestTargetTypeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ConfigRpc.pb.cc">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ConfigRpcImp.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ContractEventCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ContractPrivilegeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ContractPrivilegeIndexCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ContractTaskCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreateRoleCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreatureCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreatureCombatBasicCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreatureCombatCoeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreatureCombatCorCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreatureDummyCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreatureHideCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreatureIntroduceUiCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreatureSpawnCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CreatureTemperConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CurrencyCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DamageFloatCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DeathEffectCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DropRateCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DropWeightCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DungeonCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DungeonListCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EmblemBoxCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EmblemMakeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EmblemPromotionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EmblemProtoCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EmblemRecastCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipBuildCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipBuildIndexCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipDisplayCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipExtraAttributeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipInheritCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipProtoCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipRefineCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipResonanceCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipSlotEnhanceCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipSlotRankupCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipSuitCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EssentialSuitCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EventAreaCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EventObjCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ExperienceCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ExpressionActionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FactionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSAppearanceCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSBeardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSBodyCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSCameraCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSColorCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSExportCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSFirstMenuCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSFourMenuCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSFourUICfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSHairCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSPictureCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSPrefabCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSRobotCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSRoleCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSSecondMenuCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FSThirdMenuCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FunctionTutorialCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GemCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GeminsertCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GemsuitCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GemtypeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GiftCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GlobalCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GMCodeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GVGRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GVGSignUpCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\HeadFlagCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\HeadHealthresCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\HeadUpInfoCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\HuntCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ItemDissolveFilterCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ItemOptionalCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ItemProtoCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ItemSourceCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ItemTypeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\KillChainNameCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LampSortCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LayerCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LeaderBoardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LeaderBoardIndexCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LetterCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LevelCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LevelUpBonusCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LifeCollectAreaCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LifeCollectCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LifeCollectorCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LifeMakeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LifeSkillCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LifeSkillLvCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LifeSkillRelevanCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LimitCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LinkStringCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MagicFlexibleCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MagicMotionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MainAttributeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MatchCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MercenaryCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MiniMapConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MirrorCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MixInfoCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MonthlySignInCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountCloseCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountExpCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountIdCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountSkillCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountSkillTypeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountSkinCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountSkinUnlockCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountSystemCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\NameFirstNameCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\NameLastNameCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OnlineBattleCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OnlineBonusCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesAllServerAimsDungeonTypeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesAllServerAimsTimesCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesExchangeDetailsCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesTimelimitBOSSCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesTimelimitDropCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesTimelimitDropPropDeleteCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PerformanceCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetAttributeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetAttributeFormatConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetCaptureCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetCaptureDropCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetCaptureShowCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetCaptureWayCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetFeedCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetIndexCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetProtoCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetRankCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetReleaseCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetSkillCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetTalentCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PKConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PKDisplayCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PotionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ProfessionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ProfessionComboPointCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PveRobotAttributeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PveRobotConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PvpRobotAttributeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PvpRobotConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\QteCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\QteUiCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\QuestCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\QuestGroupCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\QuestRandomCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RechargeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RedPointCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RepeatedQuestCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ResourceDungeonCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RewardRecoveryCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RoleAttributeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RoleCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RuneCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SceneCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ServerListCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ServerScriptCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ShapeshiftCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ShopitemsCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ShoplistCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ShoutCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SingleTowerCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SingleTowerOverallCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SkillCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SkillPrepareCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SkillRageCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SkillSlotUpgradeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SkillUpgradeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SkillValueModCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoulBuildCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoulBuildIndexCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoulCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoulInlayAttributesCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoulPropertyCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoulSuitCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoulTroughCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoulUpgradeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoundCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StarBattleCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StarBattleMapCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringBuffCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringChapterCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringChatmenuCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringCreatureCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringErrorCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringFSCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringGuideCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringHintCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringItemCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringLetterCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringMiniMapCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringMiscCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringNameFemaleNameCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringNameLastNameCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringNameMaleNameCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringNoticeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringQuestCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringRobotNameMalenameCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringSkillCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringUiCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringZoneTextCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SummonMonsterCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SystemPreviewCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SystemUnlockCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TalentCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TalentDirectionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TalentSkillCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TalentSkillLevelCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TargetCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TeamMatchingCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TeamMatchingGroupCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TeleportTargetCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TimeLineCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TitleListCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TrapCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TreasureCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TreasureLensCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TreasureLevelCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TreasureMapCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\UICategoryCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ValueCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\VechicleCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WarningCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WayPointCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WeatherCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WorldBossCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WorldEliteCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WorldEventCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WorldLevelCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BotAttriWeightCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BotRandomIntervalCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CharacterDisplayCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DownExpCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GlobalDropListCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ServerLvCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\zCheckSpriteCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ZoneEventCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GuildWagesCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ItemExchangeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\HonorCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AchievementCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AdvancedMonthlyCardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AdvancedMonthlyCardPreCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AllianceShopRandomCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AuctionItemCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AuctionItemGuildCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AuctionSortCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AuctionSortGuildCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BattlePass1RewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BattlePass1SetUpCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BattlePass2BuyExpCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BattlePass2RewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BattlePass2SetUpCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ChargeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CompetitionFirstRankCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CompetitionRankRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CompetitionRobotRangeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DirectPurchaseEveryDayCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DonateGuildCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GetStrongCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GlobalRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MonthlyCardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationFirstchargeAwardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationGrowUpFundCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationRanklistCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationRankRewardsCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationTotalConsumeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationTotalRechargeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\QuestToTaskGuildCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RedPacketCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RedPacketQualificationCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ShopGoodsCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ShowTypeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TaskGuildCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TaskGuildLibraryCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TransRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TransTeleportTargetCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WorldBossImageCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DurationEventPackCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DurationEventPackOpenCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GmeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GuildProsperityCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GuildTrialBonusCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GuildTrialWordsCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GuiltyConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationLotteryCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationLotteryRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WorldBossPersonalRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WorldBossUnionRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CustomEventDotCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\QteActionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ActivationNameCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ActivityAwardShowCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ActivityPushSwitchCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AuctionplayCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\BattlefieldSingleDungeonCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DevilDropCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\JpushCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationLotteryRedeemCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PromotionHallBuffCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PromotionHallRewardCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PromotionHallSignUpCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RemindMessageCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TreasureColorCfg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\CommonLogic\FunctionSwitch\FunctionSwtich.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ActivityValueCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DevilAwardShowCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipEnhanceStageAttCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\EquipForgeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AchievementDataCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AchievementVisibleCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\LoadingPicCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperateGrowUpFundCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperateGrowUpFundRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesWorldGameCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesWorldGameRushCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationFirstchargePlusAwardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\QuickPurchaseCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TreasureProtoCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\UIReverseMutexCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\ChatPopSetCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\HeadPortraitCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationGuildRankCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationGuildRankTotalCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationPersonalRankCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationPersonalRankTotalCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\RuneRecommandCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\StringTimelineCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\TimelineBarrageCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\XinShouHelpCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\AddupRechargeCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CameraActionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CameraFilterCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\CameraWeatherCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\DemoninvasionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GuildEscortCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GuildEscortRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GuildquestionCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\GuildSignInCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\HoleLeveConfigCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\NightmaresCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationActivitiesWorldRewardCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationSevenDayGoalCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationSevenDayGoalGatherCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\OperationSevenDayGoalTotalCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetArchiveCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetLotteryCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\PetLotteryInfoCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SoloCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WeekendWishCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\WildHunterMapCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountEquipCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountEquipProtoCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\MountEquipSetCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\SevenDayQuestCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\GenCode\Config\FriendshipExpCfg.cpp">
+      <Filter>源文件\Config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\servers\Common\CommonLogic\GameEvent\GameEvent.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\servers\Common\CommonLogic\Bag\Item.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\CommonLogic\Bag\Bag.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Bag\BagRpc.pb.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Bag\BagV1Data.pb.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\BaseAttr\BaseAttrV1Data.pb.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\netproto\DbBase.pb.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\netproto\GameDB.pb.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\CommonLogic\Bag\ItemModule.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\testdef.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\jsoncpp\json.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\netproto\PublicStruct.pb.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Pet\PetRpc.pb.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AccumulateSignInCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ActionEventCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ActivityCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ActivityRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ActivitySevenDayTargetDetailsCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ActivitySpecLoginCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceBossCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceBuildingCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceFlagCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceLimitsCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceNameColorCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AlliancePositionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceSkillBaseCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceSkillLevelCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceTowerCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceWelfareCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ArenaBuffCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ArenaMatchCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ArenaRankRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ArenaRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AttackCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AttributeCategoryCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AttributeFormatConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AuctionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BackpackUnlockCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BattlefieldCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BubbleChatCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BuffCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BuffConflictConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BuffrRenovateCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BuinessCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BuinessMainCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BulletCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BusinessNPCCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BusinessQuestCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CameraConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CampBattleCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CampCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CatchMountsCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CatchMountsItemCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CgAnimationCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ChapterQuestUiCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CharacterConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CharacterCustomizeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ChatConsumptionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ChatmenuCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ClientQuestTargetTypeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ConfigModule.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ConfigRpc.pb.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ConfigRpcWraper.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ContractEventCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ContractPrivilegeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ContractPrivilegeIndexCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ContractTaskCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreateRoleCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreatureCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreatureCombatBasicCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreatureCombatCoeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreatureCombatCorCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreatureDummyCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreatureHideCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreatureIntroduceUiCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreatureSpawnCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CreatureTemperConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CurrencyCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DamageFloatCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DeathEffectCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DropRateCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DropWeightCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DungeonCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DungeonListCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EmblemBoxCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EmblemMakeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EmblemPromotionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EmblemProtoCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EmblemRecastCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipBuildCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipBuildIndexCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipDisplayCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipExtraAttributeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipInheritCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipProtoCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipRefineCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipResonanceCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipSlotEnhanceCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipSlotRankupCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipSuitCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EssentialSuitCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EventAreaCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EventObjCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ExperienceCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ExpressionActionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FactionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSAppearanceCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSBeardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSBodyCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSCameraCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSColorCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSExportCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSFirstMenuCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSFourMenuCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSFourUICfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSHairCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSPictureCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSPrefabCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSRobotCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSRoleCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSSecondMenuCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FSThirdMenuCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FunctionTutorialCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GemCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GeminsertCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GemsuitCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GemtypeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GiftCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GlobalCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GMCodeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GVGRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GVGSignUpCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\HeadFlagCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\HeadHealthresCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\HeadUpInfoCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\HuntCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ItemDissolveFilterCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ItemOptionalCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ItemProtoCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ItemSourceCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ItemTypeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\KillChainNameCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LampSortCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LayerCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LeaderBoardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LeaderBoardIndexCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LetterCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LevelCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LevelUpBonusCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LifeCollectAreaCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LifeCollectCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LifeCollectorCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LifeMakeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LifeSkillCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LifeSkillLvCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LifeSkillRelevanCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LimitCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LinkStringCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MagicFlexibleCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MagicMotionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MainAttributeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MatchCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MercenaryCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MiniMapConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MirrorCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MixInfoCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MonsterCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MonthlySignInCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountCloseCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountExpCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountIdCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountSkillCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountSkillTypeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountSkinCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountSkinUnlockCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountSystemCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\NameFirstNameCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\NameLastNameCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OnlineBattleCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OnlineBonusCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesAllServerAimsDungeonTypeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesAllServerAimsTimesCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesExchangeDetailsCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesFestalBOSSAwardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesFestalBossCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesFestalBOSStimeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesTimelimitBOSSCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesTimelimitDropCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesTimelimitDropPropDeleteCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PerformanceCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetAttributeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetAttributeFormatConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetCaptureCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetCaptureDropCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetCaptureShowCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetCaptureWayCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetFeedCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetIndexCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetProtoCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetRankCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetReleaseCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetSkillCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetTalentCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PKConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PKDisplayCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PotionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ProfessionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ProfessionComboPointCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PveRobotAttributeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PveRobotConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PvpRobotAttributeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PvpRobotConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\QteCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\QteUiCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\QuestCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\QuestGroupCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\QuestRandomCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RacequestCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RechargeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RedPointCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RepeatedQuestCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ResourceDungeonCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RewardRecoveryCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RobotAttributeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RobotConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RobotNameCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RoleAttributeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RoleCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RuneCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SceneAreaCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SceneCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SceneEventObjCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SceneResourceCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ServerListCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ServerScriptCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ShapeshiftCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ShopitemsCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ShoplistCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ShoutCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SingleTowerCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SingleTowerOverallCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SkillCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SkillPrepareCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SkillRageCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SkillSlotUpgradeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SkillUpgradeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SkillValueModCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoulBuildCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoulBuildIndexCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoulCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoulInlayAttributesCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoulPropertyCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoulSuitCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoulTroughCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoulUpgradeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoundCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StarBattleCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StarBattleMapCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringBuffCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringChapterCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringChatmenuCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringCreatureCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringErrorCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringFSCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringGuideCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringHintCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringItemCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringLetterCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringMiniMapCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringMiscCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringNameFemaleNameCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringNameLastNameCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringNameMaleNameCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringNoticeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringQuestCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringRobotNameMalenameCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringSkillCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringUiCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringZoneTextCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SummonMonsterCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SystemPreviewCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SystemUnlockCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TalentCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TalentDirectionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TalentSkillCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TalentSkillLevelCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TargetCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TeamMatchingCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TeamMatchingGroupCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TeleportTargetCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TimeLineCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TimerManagerCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TitleListCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TradeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TrapCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TreasureCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TreasureLensCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TreasureLevelCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TreasureMapCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\UICategoryCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ValueCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\VechicleCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WarningCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WayPointCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WeatherCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WorldBossCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WorldEliteCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WorldEventCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WorldLevelCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BotAttriWeightCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BotRandomIntervalCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CharacterDisplayCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DownExpCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GlobalDropListCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ServerLvCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\zCheckSpriteCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ZoneEventCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GuildWagesCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ItemExchangeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\HonorCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AchievementCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AdvancedMonthlyCardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AdvancedMonthlyCardPreCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AllianceShopRandomCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AuctionItemCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AuctionItemGuildCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AuctionSortCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AuctionSortGuildCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BattlePass1RewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BattlePass1SetUpCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BattlePass2BuyExpCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BattlePass2RewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BattlePass2SetUpCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ChargeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CompetitionFirstRankCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CompetitionRankRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CompetitionRobotRangeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DirectPurchaseEveryDayCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DonateGuildCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GetStrongCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GlobalRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MonthlyCardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationFirstchargeAwardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationGrowUpFundCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationRanklistCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationRankRewardsCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationTotalConsumeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationTotalRechargeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\QuestToTaskGuildCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RedPacketCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RedPacketQualificationCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ShopGoodsCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ShowTypeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TaskGuildCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TaskGuildLibraryCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TransRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TransTeleportTargetCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WorldBossImageCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DurationEventPackCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DurationEventPackOpenCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GmeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GuildProsperityCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GuildTrialBonusCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GuildTrialWordsCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GuiltyConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationLotteryCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationLotteryRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WorldBossPersonalRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WorldBossUnionRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CustomEventDotCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\QteActionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ActivationNameCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ActivityAwardShowCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ActivityPushSwitchCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AuctionplayCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\BattlefieldSingleDungeonCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DevilDropCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\JpushCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OpcodeSwitcherCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationLotteryRedeemCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PromotionHallBuffCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PromotionHallRewardCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PromotionHallSignUpCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RemindMessageCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TreasureColorCfg.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\CommonLogic\FunctionSwitch\FunctionSwtich.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ActivityValueCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DevilAwardShowCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipEnhanceStageAttCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\EquipForgeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AchievementDataCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AchievementVisibleCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\LoadingPicCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperateGrowUpFundCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperateGrowUpFundRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesWorldGameCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesWorldGameRushCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationFirstchargePlusAwardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\QuickPurchaseCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TreasureProtoCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\UIReverseMutexCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\ChatPopSetCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\HeadPortraitCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationGuildRankCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationGuildRankTotalCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationPersonalRankCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationPersonalRankTotalCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\RuneRecommandCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\StringTimelineCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\TimelineBarrageCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\XinShouHelpCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\AddupRechargeCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CameraActionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CameraFilterCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\CameraWeatherCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\DemoninvasionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GuildEscortCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GuildEscortRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GuildquestionCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\GuildSignInCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\HoleLeveConfigCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\NightmaresCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationActivitiesWorldRewardCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationSevenDayGoalCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationSevenDayGoalGatherCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\OperationSevenDayGoalTotalCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetArchiveCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetLotteryCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\PetLotteryInfoCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SoloCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WeekendWishCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\WildHunterMapCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountEquipCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountEquipProtoCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\MountEquipSetCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\SevenDayQuestCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\GenCode\Config\FriendshipExpCfg.h">
+      <Filter>源文件\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\CommonLogic\GameEvent\EmidClass.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\servers\Common\CommonLogic\GameEvent\GameEvent.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
