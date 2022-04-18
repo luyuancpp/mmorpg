@@ -10,6 +10,7 @@ entt::entity& error_entity();
 entt::entity& op_enitty();
 
 using EntityWeakPtr = std::weak_ptr<entt::entity>;
+
 class EntityPtr
 {
 public:
