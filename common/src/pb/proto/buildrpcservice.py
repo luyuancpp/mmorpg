@@ -21,12 +21,25 @@ yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
+gsservicedir = '../../../../game_server/src/service/logic/'
+rgservicedir = '../../../../region_server/src/service/logic/'
+msservicedir = '../../../../master_server/src/service/logic/'
+logicprotodir = './logic_proto/'
 tabstr = '    '
 cpprpcpart = 2
 cppmaxpart = 4
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/'
 
+def getwritedir(serverstr):
+    writedir = ''
+    if serverstr == 'gs':
+        writedir = gsservicedir
+    elif serverstr == 'ms':
+        writedir = msservicedir
+    elif serverstr == 'rg':
+        writedir = rgservicedir
+    return writedir
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
@@ -87,11 +100,22 @@ def classbegin():
 def emptyfun():
     return ''
 
+def getprevfilename(filename, writedir):
+    if filename.find(logicprotodir) >= 0:
+        if writedir == gsservicedir:
+            return 'gs'
+        if writedir == msservicedir:
+            return 'ms'
+        if writedir == rgservicedir:
+            return 'rg'
+    return ''
+
 def genheadfile(filename, writedir):
+    
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     folder_path, local.hfilename = os.path.split(hfullfilename)    
-    newheadfilename = servicedir + local.hfilename.replace('.proto', '.h')
+    newheadfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.proto', '.h')
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_'
     headdefine += filename.replace('.proto', '').upper().replace('/', '_').replace('.', '').upper().strip('_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
@@ -142,7 +166,7 @@ def gencppfile(filename, writedir):
     global cppmaxpart
     hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
     cppfilename = writedir + '/' + filename.replace('.proto', '.cpp')
-    newcppfilename = servicedir + local.hfilename.replace('.h', '.cpp')
+    newcppfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.h', '.cpp')
     newstr = '#include "' + local.hfilename + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     try:
@@ -222,11 +246,21 @@ def gencppfile(filename, writedir):
         file.write(newstr)
 
 
+def getmd5prevfilename(filename, writedir):
+    if filename.find('normal') >= 0 or filename.find('rg.proto') >= 0:
+        if writedir == gsservicedir:
+            return 'gs'
+        if writedir == msservicedir:
+            return 'ms'
+        if writedir == rgservicedir:
+            return 'rg'
+    return ''
+
 def md5copy(filename, writedir, fileextend):
         if filename.find('/') >= 0 :
             s = filename.split('/')
             filename = s[len(s) - 1]
-        gennewfilename = servicedir + filename.replace('.proto', fileextend)
+        gennewfilename = servicedir + getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
@@ -234,7 +268,8 @@ def md5copy(filename, writedir, fileextend):
             emptymd5 = True
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        hfullfilename = writedir + '/' + filename.replace('.proto', fileextend)
+        hfullfilename = writedir + '/' + getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
+        #print("copy %s ---> %s  %s" % (filename, writedir, gennewfilename))
         if error == None and os.path.exists(hfullfilename) and emptymd5 == False:
             return
         #print("copy %s ---> %s" % (gennewfilename, hfullfilename))
@@ -275,4 +310,24 @@ def main():
                 threads.append(t)
     for t in threads :
         t.join()
+
+def get_file_list(file_path):
+    dir_list = os.listdir(file_path)
+    if not dir_list:
+        return
+    else:
+        dir_list = sorted(dir_list,key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
+        return dir_list
+
+def inputfile():
+    dir_list  = get_file_list(logicprotodir)
+    for filename in dir_list:
+        if not (filename[-6:].lower() == '.proto'):
+            continue
+        if filename.find('normal') >= 0:
+            genfile.append([logicprotodir + filename, getwritedir('ms')])
+            genfile.append([logicprotodir + filename, getwritedir('gs')])
+        elif filename.find('rg') >= 0:
+            genfile.append([logicprotodir +  filename, getwritedir('rg')])
+inputfile()
 main()

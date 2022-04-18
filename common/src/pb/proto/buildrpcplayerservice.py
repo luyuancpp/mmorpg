@@ -296,9 +296,7 @@ def generate(filename):
         genheadfile(filename, 'ms')
         gencppfile(filename, 'ms')
     elif filename.find(rg) >= 0:
-        parsefile(filename)
-        genheadfile(filename, 'rg')
-        gencppfile(filename, 'rg')
+        pass
 
 def parseplayerservcie(filename):
     if filename.find('normal') >= 0  or filename.find(rg) >= 0:
@@ -394,7 +392,7 @@ def md5copydir():
             elif filename.find(server_player) >= 0 and filename.find('ms') >= 0:
                 md5copy(filename, 'ms')
             elif filename.find(rg) >= 0 and filename.find('rg') >= 0 and filename.find('rg_node') < 0: 
-                md5copy(filename, 'rg')
+                pass
             elif filename == 'gs_player_service.cpp':
                 md5copy(filename, 'gs')
             elif filename == 'ms_player_service.cpp':

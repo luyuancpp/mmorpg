@@ -150,12 +150,12 @@
     <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\network\ms_node.cpp" />
     <ClCompile Include="src\region_server.cpp" />
-    <ClCompile Include="src\service\rg_node.cpp" />
+    <ClCompile Include="src\service\logic\rgscene_rg.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\network\gs_node.h" />
     <ClInclude Include="src\network\ms_node.h" />
-    <ClInclude Include="src\service\rg_node.h" />
+    <ClInclude Include="src\service\logic\rgscene_rg.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
