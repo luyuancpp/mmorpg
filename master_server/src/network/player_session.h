@@ -2,7 +2,7 @@
 #define MASTER_SERVER_SRC_NETWORK_PLAYER_SESSION_H_
 
 #include "gate_node.h"
-#include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/game_logic/comp/gs_scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/network/message_sys.h"

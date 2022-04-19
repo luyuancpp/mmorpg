@@ -3,7 +3,7 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/game_logic/comp/gs_scene_comp.h"
 
 
 struct MakeSceneP
