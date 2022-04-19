@@ -21,19 +21,10 @@
     <ClCompile Include="src\master_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\factories\scene_factories.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\network\message_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene\sceces.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\master_player\ms_player_list.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\sys\servernode_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\ms_node.cpp">
@@ -68,22 +59,13 @@
     <ClInclude Include="src\master_registry\master_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\factories\scene_factories.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\network\message_sys.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\scene\sceces.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\master_player\ms_player_list.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\comp\ms_login_account_comp.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\sys\servernode_sys.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gate_node.h">

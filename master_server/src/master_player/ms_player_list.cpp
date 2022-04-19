@@ -1,6 +1,6 @@
 #include "ms_player_list.h"
 
-#include "src/scene/sceces.h"
+#include "src/game_logic/scene/scene.h"
 
 thread_local PlayerListMap  g_players;
 

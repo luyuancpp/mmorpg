@@ -153,12 +153,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\factories\scene_factories.cpp" />
     <ClCompile Include="src\master_player\ms_player_list.cpp" />
     <ClCompile Include="src\master_server.cpp" />
     <ClCompile Include="src\network\gate_node.cpp" />
     <ClCompile Include="src\network\gs_node.cpp" />
-    <ClCompile Include="src\scene\sceces.cpp" />
     <ClCompile Include="src\network\message_sys.cpp" />
     <ClCompile Include="src\service\logic\msscene_normal.cpp" />
     <ClCompile Include="src\service\logic\msscene_server_player.cpp" />
@@ -166,17 +164,14 @@
     <ClCompile Include="src\service\logic\msteam_server_player.cpp" />
     <ClCompile Include="src\service\logic\ms_player_service.cpp" />
     <ClCompile Include="src\service\ms_node.cpp" />
-    <ClCompile Include="src\sys\servernode_sys.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\ms_login_account_comp.hpp" />
-    <ClInclude Include="src\factories\scene_factories.hpp" />
     <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\network\player_session.h" />
     <ClInclude Include="src\master_player\ms_player_list.h" />
     <ClInclude Include="src\master_server.h" />
     <ClInclude Include="src\master_registry\master_registry.h" />
-    <ClInclude Include="src\scene\sceces.h" />
     <ClInclude Include="src\network\message_sys.h" />
     <ClInclude Include="src\service\logic\msscene_normal.h" />
     <ClInclude Include="src\service\logic\msscene_server_player.h" />
@@ -184,7 +179,6 @@
     <ClInclude Include="src\service\logic\msteam_server_player.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\ms_node.h" />
-    <ClInclude Include="src\sys\servernode_sys.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
