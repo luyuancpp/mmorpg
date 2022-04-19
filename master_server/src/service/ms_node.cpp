@@ -11,7 +11,7 @@
 #include "src/network/player_session.h"
 #include "src/game_logic/scene/scene_factories.h"
 #include "src/game_logic/comp/gs_scene_comp.h"
-#include "src/game_logic/comp/player_comp.hpp"
+#include "src/game_logic/comp/player_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/master_server.h"
 #include "src/master_player/ms_player_list.h"

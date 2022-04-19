@@ -8,7 +8,7 @@
 
 #include "src/gateway_server.h"
 #include "src/game_logic/game_registry.h"
-#include "src/game_logic/comp/player_comp.hpp"
+#include "src/game_logic/comp/player_comp.h"
 #include "src/network/gate_player_list.h"
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
