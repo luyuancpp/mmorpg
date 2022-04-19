@@ -4,8 +4,8 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/ms_account.h"
 #include "src/common_type/common_type.h"
-#include "src/comp/ms_login_account_comp.hpp"
-#include "src/game_logic/comp/account_comp.hpp"
+#include "src/comp/ms_login_account_comp.h"
+#include "src/game_logic/comp/account_comp.h"
 #include "src/network/rpc_closure.h"
 
 #include "gs_node.pb.h"

@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/game_logic/comp/gs_scene_comp.h"
 #include "src/master_player/ms_player_list.h"
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"

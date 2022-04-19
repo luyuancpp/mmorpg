@@ -1,6 +1,6 @@
 #include "servernode_sys.h"
 
-#include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/game_logic/comp/gs_scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/scene/scene_factories.h"
 

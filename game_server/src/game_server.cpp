@@ -7,7 +7,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/region_config.h"
 
-#include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/game_logic/comp/gs_scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_node.h"
