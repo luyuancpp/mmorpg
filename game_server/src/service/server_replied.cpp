@@ -1,4 +1,4 @@
-#include "replied_ms2gs.h"
+#include "server_replied.h"
 
 #include "muduo/base/Logging.h"
 
@@ -10,10 +10,8 @@
 
 using namespace common;
 
-namespace ms2gs
-{
 
-void RepliedMs2g::StartGSMasterReplied(StartGameMasterRpcRC cp)
+void ServerReplied::StartGSMasterReplied(StartGameMasterRpcRC cp)
 {
     auto rsp = cp->s_rp_;
     auto& scenemap = reg.get<SceneMapComp>(global_entity());
@@ -26,4 +24,13 @@ void RepliedMs2g::StartGSMasterReplied(StartGameMasterRpcRC cp)
         scenemap.emplace(pb.scene_id(), e);
     }
 }
+
+void ServerReplied::StartCrossMainGSRegionReplied(StartCrossMainGSReplied cp)
+{
+
+}
+
+void ServerReplied::StartCrossRoomGSRegionReplied(StartCrossRoomGSReplied cp)
+{
+
 }

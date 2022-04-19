@@ -44,7 +44,7 @@ public:
     }
 
 	template<typename MethodParam, typename Class, typename StubMethod>
-	void CallMethod1(void (Class::* method)(MethodParam),
+	void CallMethodByRowStub(void (Class::* method)(MethodParam),
 		MethodParam& method_param,
 		Class* object,
 		StubMethod stub_method)
@@ -80,9 +80,7 @@ public:
 
     // no responese
     template<typename Request, typename StubMethod>
-    void CallMethod(
-        const Request& request,
-        StubMethod stub_method)
+    void CallMethod( const Request& request, StubMethod stub_method)
     {
 		if (nullptr == stub_)
 		{

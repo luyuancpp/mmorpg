@@ -13,7 +13,7 @@
 #include "src/network/rpc_closure.h"
 
 #include "ms_node.pb.h"
-#include "rg_node.pb.h"
+#include "logic_proto/scene_rg.pb.h"
 
 
 class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
@@ -22,7 +22,7 @@ public:
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     using StubMsNode = common::RpcStub<msservice::MasterNodeService_Stub>;
-    using StubRg = common::RpcStub<rgservcie::RgService_Stub>;
+    using StubRg = common::RpcStub<regionservcie::RgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
 
@@ -48,6 +48,7 @@ public:
 	void RegionInfoReplied(RegionRpcClosureRC cp);
 
     void Register2Master(MasterSessionPtr& master_rpc_client);
+    void Register2Region();
 
     void receive(const common::OnConnected2ServerEvent& es);
     void receive(const common::OnBeConnectedEvent& es);

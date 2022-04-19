@@ -155,6 +155,7 @@
     <ClCompile Include="src\game_logic\scene\scene_factories.cpp" />
     <ClCompile Include="src\game_logic\scene\servernode_sys.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\player_comp.pb.cc" />
+    <ClCompile Include="src\pb\pbc\logic_proto\scene_rg.pb.cc" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
     <ClCompile Include="src\game_config\condition_config.cpp" />
@@ -253,6 +254,7 @@
     <ClInclude Include="src\pb\pbc\logic_proto\player_team.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_normal.pb.h" />
+    <ClInclude Include="src\pb\pbc\logic_proto\scene_rg.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_server_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\team_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\team_normal.pb.h" />

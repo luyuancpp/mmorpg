@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\replied_ms2gs.cpp">
+    <ClCompile Include="src\service\server_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\module\player_list\player_list.cpp">
@@ -68,7 +68,7 @@
     <ClInclude Include="src\module\master.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\replied_ms2gs.h">
+    <ClInclude Include="src\service\server_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\module\player_list\player_list.h">
