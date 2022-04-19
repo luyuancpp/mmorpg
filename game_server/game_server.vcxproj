@@ -139,7 +139,7 @@
     <ClCompile Include="src\service\logic\gsteam_normal.cpp" />
     <ClCompile Include="src\service\logic\gsteam_server_player.cpp" />
     <ClCompile Include="src\service\logic\gs_player_service.cpp" />
-    <ClCompile Include="src\service\replied_ms2gs.cpp" />
+    <ClCompile Include="src\service\server_replied.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\module\master.hpp" />
@@ -156,7 +156,7 @@
     <ClInclude Include="src\service\logic\gsteam_normal.h" />
     <ClInclude Include="src\service\logic\gsteam_server_player.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
-    <ClInclude Include="src\service\replied_ms2gs.h" />
+    <ClInclude Include="src\service\server_replied.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

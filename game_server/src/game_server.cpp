@@ -12,7 +12,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_node.h"
 #include "src/service/logic/player_service.h"
-#include "src/service/replied_ms2gs.h"
+#include "src/service/server_replied.h"
 #include "src/network/deploy_rpcclient.h"
 #include "src/network/node_info.h"
 #include "src/pb/pbc/msgmap.h"
@@ -121,7 +121,7 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRC cp)
 
 void GameServer::Register2Master(MasterSessionPtr& ms_node)
 {
-    ms2gs::RepliedMs2g::StartGameMasterRpcRC scp(std::make_shared<ms2gs::RepliedMs2g::StartGameMasterRpcClosure>());
+    ServerReplied::StartGameMasterRpcRC scp(std::make_shared<ServerReplied::StartGameMasterRpcClosure>());
     auto& master_local_addr = ms_node->local_addr();
     msservice::StartGSRequest& request = scp->s_rq_;
     auto session_info = request.mutable_rpc_client();
@@ -133,10 +133,49 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
     request.set_server_type(reg.get<eServerType>(global_entity()));
     request.set_gs_node_id(gs_.id());
     g2ms_stub_.CallMethod(
-        &ms2gs::RepliedMs2g::StartGSMasterReplied,
+        &ServerReplied::StartGSMasterReplied,
         scp,
-        &ms2gs::RepliedMs2g::GetSingleton(),
+        &ServerReplied::GetSingleton(),
         &msservice::MasterNodeService_Stub::StartGS);
+}
+
+void GameServer::Register2Region()
+{
+	auto& server_type = reg.get<eServerType>(global_entity());
+	if (server_type == kMainSceneCrossServer)
+	{
+        ServerReplied::StartCrossMainGSReplied cp(std::make_shared< ServerReplied::StartCrossMainGSReplied::element_type>());
+		auto& rq = cp->s_rq_;
+		auto session_info = rq.mutable_rpc_client();
+		auto node_info = rq.mutable_rpc_server();
+		session_info->set_ip(region_session_->local_addr().toIp());
+		session_info->set_port(region_session_->local_addr().port());
+		node_info->set_ip(gs_.ip());
+		node_info->set_port(gs_.port());
+		rq.set_gs_node_id(gs_.id());
+		rg_stub_.CallMethod(
+            &ServerReplied::StartCrossMainGSRegionReplied,
+            cp,
+            &ServerReplied::GetSingleton(),
+            &regionservcie::RgService_Stub::StartCrossMainGS);
+	}
+	else if (server_type == kRoomSceneCrossServer)
+	{
+        ServerReplied::StartCrossRoomGSReplied cp(std::make_shared< ServerReplied::StartCrossRoomGSReplied::element_type>());
+        auto& rq = cp->s_rq_;
+		auto session_info = rq.mutable_rpc_client();
+		auto node_info = rq.mutable_rpc_server();
+		session_info->set_ip(region_session_->local_addr().toIp());
+		session_info->set_port(region_session_->local_addr().port());
+		node_info->set_ip(gs_.ip());
+		node_info->set_port(gs_.port());
+		rq.set_gs_node_id(gs_.id());
+		rg_stub_.CallMethod(
+			&ServerReplied::StartCrossRoomGSRegionReplied,
+			cp,
+			&ServerReplied::GetSingleton(),
+			&regionservcie::RgService_Stub::StartCrossRoomGS);
+	}
 }
 
 void GameServer::receive(const OnConnected2ServerEvent& es)
@@ -206,28 +245,18 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
 		}
 	}
 
-    if (region_session_->connected())
+    if (nullptr != region_session_)
     {
-        auto& server_type = reg.get<eServerType>(global_entity());
-        if (server_type == kMainSceneCrossServer ||
-            server_type == kRoomSceneCrossServer)
-        {
-            rgservcie::StartMainRoomGSRequest rq;
-			auto session_info = rq.mutable_rpc_client();
-			auto node_info = rq.mutable_rpc_server();
-			session_info->set_ip(region_session_->local_addr().toIp());
-			session_info->set_port(region_session_->local_addr().port());
-			node_info->set_ip(gs_.ip());
-			node_info->set_port(gs_.port());
-            rq.set_gs_node_id(gs_.id());
-            rq.set_gs_server_type(server_type);
-            rg_stub_.CallMethod(rq, &rgservcie::RgService_Stub::StartCrossGS);
-        }
-    }
-    else
-    {
+		if (region_session_->connected())
+		{
+			EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&GameServer::Register2Region, this));
+		}
+		else
+		{
 
+		}
     }
+  
 }
 
 void GameServer::receive(const common::OnBeConnectedEvent& es)
