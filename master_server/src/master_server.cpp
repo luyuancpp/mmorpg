@@ -8,7 +8,7 @@
 
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
-#include "src/factories/scene_factories.hpp"
+#include "src/game_logic/scene/scene_factories.h"
 #include "src/game_logic/comp/player_comp.hpp"
 #include "src/game_logic/game_registry.h"
 #include "src/network/deploy_rpcclient.h"

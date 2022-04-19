@@ -1,7 +1,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/master_server.h"
-#include "src/scene/sceces.h"
+#include "src/game_logic/scene/scene.h"
 
 using namespace muduo;
 using namespace muduo::net;
