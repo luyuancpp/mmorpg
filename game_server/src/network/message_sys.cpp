@@ -6,7 +6,7 @@
 #include "src/module/player_list/player_list.h"
 #include "src/network/gate_node.h"
 #include "src/network/ms_node.h"
-#include "src/game_logic/comp/player_comp.hpp"
+#include "src/game_logic/comp/player_comp.h"
 #include "src/pb/pbc/msgmap.h"
 
 #include "gw_node.pb.h"
