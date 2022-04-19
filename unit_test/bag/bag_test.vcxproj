@@ -144,15 +144,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\common\src\game_config\item_config.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\bag\bag.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\bag\item.cpp" />
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\item_base.pb.cc" />
+    <ClCompile Include="..\..\common\src\pb\pbc\item_config.pb.cc" />
+    <ClCompile Include="..\..\common\src\util\file2string.cpp" />
     <ClCompile Include="bag_test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\common\src\game_config\item_config.h" />
     <ClInclude Include="..\..\common\src\game_logic\bag\bag.h" />
     <ClInclude Include="..\..\common\src\game_logic\bag\item.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\item_base.pb.h" />
+    <ClInclude Include="..\..\common\src\pb\pbc\item_config.pb.h" />
+    <ClInclude Include="..\..\common\src\util\file2string.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

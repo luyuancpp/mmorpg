@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-message ItemBase
+message ItemBaseDb
 {
 	uint64 guid = 1;
 	int32 config_id = 2;
-	uint64 count = 3;
+	uint64 size = 3;
 }

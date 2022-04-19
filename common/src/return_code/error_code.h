@@ -11,6 +11,7 @@ namespace common
     {
         RET_OK = 0,
         RET_TABLE_ID_ERROR = 2,
+        RET_TABLE_DTATA_ERROR = 3,
 
         //login server 
         RET_LOGIN_CNAT_FIND_ACCOUNT = 1000,//找不到
@@ -59,6 +60,7 @@ namespace common
         RET_BAG_ADD_ITEM_HAS_NOT_BASE_COMPONENT = 7002,
         RET_BAG_ADD_ITEM_INVALID_GUID = 7003,
         RET_BAG_ADD_ITEM_INVALID_PARAM = 7004,
+        RET_BAG_ADD_ITEM_BAG_FULL = 7005,
     };
 }//namespace common
 

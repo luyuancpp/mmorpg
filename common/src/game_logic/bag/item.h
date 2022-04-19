@@ -1,11 +1,13 @@
 #pragma once
 
-#include "src/game_logic/game_registry.h"
 #include "src/common_type/common_type.h"
+#include "src/game_logic/game_registry.h"
+#include "src/util/snow_flake.h"
 
 #include "src/pb/pbc/component_proto/item_base.pb.h"
 
 extern thread_local entt::registry item_reg;
+extern thread_local common::ServerSequence g_server_sequence;
 
 class ItemEntity
 {
@@ -19,15 +21,14 @@ private:
 class Item
 {
 public:
-	Item();
-	inline entt::entity entity() const { return entity_.entity(); }
-	inline common::Guid guid()const { return itembase().guid(); }
-	inline common::Guid config_id()const { return itembase().config_id(); }
-	inline decltype(auto) count()const { return itembase().count(); }
+	inline decltype(auto) entity() const { return entity_.entity(); }
+	inline decltype(auto) guid()const { return itembase().guid(); }
+	inline decltype(auto) config_id()const { return itembase().config_id(); }
+	inline decltype(auto) size()const { return itembase().size(); }
 private:
-	inline const ItemBase& itembase()const { return item_reg.get<ItemBase>(entity()); }
+	inline const ItemBaseDb& itembase()const { return item_reg.get<ItemBaseDb>(entity()); }
 	ItemEntity entity_;
 };
 
 Item CreateItem();
-Item CreateItem(const ItemBase& pb);
+Item CreateItem(const ItemBaseDb& pb);

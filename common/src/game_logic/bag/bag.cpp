@@ -1,10 +1,19 @@
 #include "bag.h"
 
+#include <vector>
+
 #include "muduo/base/Logging.h"
 
 #include "src/return_code/error_code.h"
 
+#include"src/game_config/item_config.h"
+
 using namespace common;
+
+Bag::Bag()
+{
+	item_reg.emplace<BagCurrentSize>(entity());
+}
 
 Item* Bag::GetItem(common::Guid guid)
 {
@@ -16,41 +25,144 @@ Item* Bag::GetItem(common::Guid guid)
 	return &it->second;
 }
 
-uint32_t Bag::AddItem(Item& item)
+uint32_t Bag::AddItem(const Item& add_item)
 {
-	auto p_item_base = item_reg.try_get<ItemBase>(item.entity());
+	auto p_item_base = item_reg.try_get<ItemBaseDb>(add_item.entity());
 	if (nullptr == p_item_base)
 	{
 		return RET_BAG_ADD_ITEM_HAS_NOT_BASE_COMPONENT;
 	}
-	auto& item_base = *p_item_base;
-	if (item_base.guid() == kInvalidGuid)
+	auto& item_base_db = *p_item_base;
+	if (item_base_db.config_id() <= 0 || item_base_db.size() <= 0)
 	{
-		LOG_ERROR << "bag add item " << player_guid();
-		return RET_BAG_ADD_ITEM_INVALID_GUID;
-	}
-	if (item_base.config_id() <= 0 || item_base.count() <= 0)
-	{
-		LOG_ERROR << "bag add item" << player_guid();
+		LOG_ERROR << "bag add item player:" << player_guid();
 		return RET_BAG_ADD_ITEM_INVALID_PARAM;
 	}
-
-	auto it = items_.find(item_base.guid());
-	if (it != items_.end())
+	auto p_c_item = get_item_conf(item_base_db.config_id());
+	if (nullptr == p_c_item)
 	{
-		LOG_ERROR << "bag add item" << player_guid();
-		return RET_BAG_DELETE_ITEM_HAS_GUID;
+		return RET_TABLE_ID_ERROR;
+	}
+	if (p_c_item->max_statck_size() <= 0)
+	{
+		LOG_ERROR << "config error:" << item_base_db.config_id()  << "player:" << player_guid();
+		return RET_TABLE_DTATA_ERROR;
+	}
+	if (p_c_item->max_statck_size() == 1)//不可以堆叠直接生成新guid
+	{
+		if (items_.size() >= size())
+		{
+			return RET_BAG_ADD_ITEM_BAG_FULL;
+		}
+		if (item_base_db.guid() == kInvalidGuid)
+		{
+			item_base_db.set_guid(g_server_sequence.Generate());
+		}
+		auto it = items_.emplace(item_base_db.guid(), std::move(add_item));
+		if (!it.second)
+		{
+			LOG_ERROR << "bag add item" << player_guid();
+			return RET_BAG_DELETE_ITEM_HAS_GUID;
+		}
+		OnNewPos(it.first->second);
+	}
+	else if(p_c_item->max_statck_size() > 1)
+	{
+		std::vector<Item*> can_overlay;//原来可以叠加的物品
+		std::size_t check_need_stack_size = add_item.size();
+		for (auto& it : items_)
+		{
+			auto& item = it.second;
+			if (item.config_id() != add_item.config_id())
+			{
+				continue;
+			}
+			assert(p_c_item->max_statck_size() >= item.size());
+			auto remain_stack_size = p_c_item->max_statck_size() - item.size();	
+			if (remain_stack_size > 0)//可以叠加
+			{
+				can_overlay.emplace_back(&item);
+			}
+			if (check_need_stack_size > remain_stack_size )
+			{
+				check_need_stack_size -= remain_stack_size;
+			}
+			else
+			{
+				check_need_stack_size = 0;//能放完
+				break;
+			}
+		}
+		std::size_t need_item_size = 0;
+		//不可以放完继续检测,如果满了就不行了
+		if (check_need_stack_size > 0)
+		{
+			//物品中可以堆叠的数量,用除法防止溢出,上面判断过大于0了
+			need_item_size = check_need_stack_size / p_c_item->max_statck_size();
+			if (NotAdequateSize(need_item_size))
+			{
+				return RET_BAG_ADD_ITEM_BAG_FULL;
+			}
+		}
+		std::size_t need_stack_size = add_item.size();
+		for (auto& it : can_overlay)
+		{
+			auto& item = *it;
+			auto& item_base_db = item_reg.get<ItemBaseDb>(it->entity());
+			auto remain_stack_size = p_c_item->max_statck_size() - item.size();
+			if (remain_stack_size >= need_stack_size)
+			{
+				item_base_db.set_size(item_base_db.size() + need_stack_size);
+			}
+			else
+			{
+				item_base_db.set_size(item_base_db.size() + remain_stack_size);
+				need_stack_size -= remain_stack_size;
+			}
+		}
+		for (size_t i = 0; i < need_item_size; ++i)
+		{
+			ItemBaseDb item_base_db;
+			item_base_db.set_config_id(add_item.config_id());
+			item_base_db.set_guid(g_server_sequence.Generate());
+			if (p_c_item->max_statck_size() >= need_stack_size)
+			{
+				item_base_db.set_size(need_stack_size);
+			}
+			else
+			{
+				item_base_db.set_size(p_c_item->max_statck_size());
+				need_stack_size -= p_c_item->max_statck_size();
+			}
+			auto new_item = CreateItem(item_base_db);
+			auto it = items_.emplace(item_base_db.guid(), std::move(new_item));
+			if (!it.second)
+			{
+				LOG_ERROR << "bag add item" << player_guid();
+				continue;
+			}
+			OnNewPos(it.first->second);
+		}
 	}
 	return RET_OK;
 }
 
-uint32_t Bag::DelItem(common::Guid guid)
+uint32_t Bag::DelItem(common::Guid del_guid)
 {
-	auto it = items_.find(guid);
+	auto it = items_.find(del_guid);
 	if (it == items_.end())
 	{
 		return RET_BAG_DELETE_ITEM_HASNOT_GUID;
 	}
-	items_.erase(guid);
+	items_.erase(del_guid);
 	return RET_OK;
+}
+
+void Bag::OnNewPos(const Item& item)
+{
+	uint32_t add_pos = 0;
+	for (size_t i = 0; i < size(); ++i)
+	{
+
+	}
 }

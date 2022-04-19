@@ -13,6 +13,15 @@
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\item_base.pb.cc">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\item_config.pb.cc">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_config\item_config.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\util\file2string.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Include">
@@ -30,6 +39,15 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\item_base.pb.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\item_config.pb.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_config\item_config.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\util\file2string.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>
