@@ -176,7 +176,7 @@ namespace common
 		}
 	private:
 		uint64_t server_id_{ 0 };
-		uint32_t seq_{ 0 };
+        uint64_t seq_{ 0 };
 	};
 }//namespace common
 

@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "src/game_logic/bag/bag.h"
+#include "src/game_config/item_config.h"
 
+#include "src/game_logic/bag/bag.h"
 #include "src/return_code/error_code.h"
 
 using namespace common;
@@ -15,6 +16,7 @@ TEST(BagTest, NullItem)
 TEST(BagTest, Add)
 {
     Bag bag;
+    item_reg.emplace<Guid>(bag.entity(), 0);
     auto item = CreateItem();
     EXPECT_EQ(RET_OK, bag.AddItem(item));
 }
@@ -22,6 +24,7 @@ TEST(BagTest, Add)
 TEST(BagTest, Del)
 {
     Bag bag;
+    item_reg.emplace<Guid>(bag.entity(), 0);
     Guid guid{kInvalidGuid};
     EXPECT_EQ(RET_OK, bag.DelItem(guid));
 }
@@ -39,6 +42,7 @@ TEST(BagTest, Query)
 
 int main(int argc, char** argv)
 {
+    item_config::GetSingleton().load();
     return RUN_ALL_TESTS();
 }
 

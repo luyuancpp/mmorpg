@@ -74,7 +74,8 @@ def getcpph(datastring, sheetname):
         s += ' kv_type key_data_;\n'
         s += pd
         s += '};\n'
-        s += "#endif// %s_config_h_\n"% (sheetname)
+        s +=  ' const %s_config::row_type get_%s_conf(uint32_t keyid);\n' % (sheetname, sheetname)
+        s += "#endif// %s_config_h_\n" % (sheetname)
         return s;
 
 def getcpp(datastring, sheetname):
@@ -118,6 +119,7 @@ def getcpp(datastring, sheetname):
                         s += 'const %s_row* %s_config::key_%s(uint32_t keyid)const\n{\n' % (sheetname,sheetname,v)
                         s += '  auto it = key_data_%s_.find(keyid);\n  return it == key_data_%s_.end() ? nullptr : it->second;\n}\n'% (counter,counter) 
                         counter += 1
+        s +=  ' const %s_config::row_type get_%s_conf(uint32_t keyid){ return %s_config::GetSingleton().get(keyid);}\n' % (sheetname,sheetname, sheetname)
         return s;
 
 def getallconfig():
