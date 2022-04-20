@@ -31,7 +31,7 @@ def gen_protoc(walkdir, protobufdir, dest_dir):
         print('copy %s %s' % (head_fullfilename, cpp_fullfilename))
         if not os.path.exists(proto_md5_fullfilename):
                 md5tool.generate_md5_file_for(proto_fullfilename, proto_md5_fullfilename)
-        commond = 'protoc  -I=./ -I=./logic_proto -I=%s --cpp_out=%s %s' % (protobufdir, dest_dir, proto_fullfilename)
+        commond = 'protoc  -I=./ -I=./logic_proto/ -I=./component_proto/ -I=%s --cpp_out=%s %s' % (protobufdir, dest_dir, proto_fullfilename)
         system(commond)
 
 if not os.path.exists(md5str):

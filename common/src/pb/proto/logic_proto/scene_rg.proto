@@ -1,6 +1,7 @@
 syntax = "proto3";
 //import "google/protobuf/empty.proto";
 import "common.proto";
+import "scene_comp.proto";
 package regionservcie;
 option cc_generic_services = true;
 

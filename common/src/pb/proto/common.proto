@@ -44,12 +44,6 @@ message IpPort
   uint32 port = 2;
 }
 
-message SceneInfo
-{
-  uint32 scene_confid = 1;
-  uint64 scene_id = 2;
-}
-
 message MessageBody
 {
   bytes body = 1;
