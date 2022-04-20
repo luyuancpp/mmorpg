@@ -3,8 +3,6 @@
 #include "src/game_logic/game_registry.h"
 #include "src/util/snow_flake.h"
 
-#include "src/pb/pbc/component_proto/scene_comp.pb.h"
-
 using namespace common;
 
 
@@ -24,9 +22,10 @@ using namespace common;
 
     void OnDestroyScene(entt::registry& reg, entt::entity scene_entity, SceneComp& scene_map)
     {
-        auto& si = reg.get<SceneInfo>(scene_entity);
-        scene_map.RemoveScene(si.scene_confid(), scene_entity);
-        reg.get<SceneMapComp>(scenes_entity()).erase(si.scene_id());
+        auto scene_config_id = reg.get<SceneConfigId>(scene_entity);
+        scene_map.RemoveScene(scene_config_id, scene_entity);
+        auto scene_guid = reg.get<Guid>(scene_entity);
+        reg.get<SceneMapComp>(scenes_entity()).erase(scene_guid);
         auto p_server_data = reg.get<GSDataPtr>(scene_entity);
         reg.destroy(scene_entity);
         if (nullptr == p_server_data)
@@ -34,7 +33,7 @@ using namespace common;
             return;
         }
         auto& server_scene = reg.get<SceneComp>(p_server_data->server_entity());
-        server_scene.RemoveScene(si.scene_confid(), scene_entity);
+        server_scene.RemoveScene(scene_config_id, scene_entity);
     }
 
     entt::entity MakeMainSceneNode(entt::registry& reg,  const MakeGSParam& param)

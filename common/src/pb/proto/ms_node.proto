@@ -1,6 +1,7 @@
 syntax = "proto3";
-import "common.proto";
 import "google/protobuf/empty.proto";
+import "common.proto";
+import "component_proto/scene_comp.proto";
 package msservice;
 option cc_generic_services = true;
 
