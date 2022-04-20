@@ -44,11 +44,11 @@ namespace common
     {
         if (HasTeam(guid))
         {
-            return RET_TEAM_MEMBER_IN_TEAM;
+            return kRetTeamMemberInTeam;
         }
         if (IsFull())
         {
-            return RET_TEAM_MEMBERS_FULL;
+            return kRetTeamMembersFull;
         }
         DelApplicant(guid);
         members_.emplace_back(guid);
@@ -61,7 +61,7 @@ namespace common
     {
         if (!IsMember(guid))
         {
-            return RET_TEAM_MEMBER_NOT_IN_TEAM;
+            return kRetTeamMemberNotInTeam;
         }
         bool leader_leave = IsLeader(guid);
         emp_->emit<BeforeLeaveTeamEvent>(teamid_, guid);
@@ -80,15 +80,15 @@ namespace common
     {
         if (leader_id_ != current_leader)
         {
-            return RET_TEAM_KICK_NOT_LEADER;
+            return kRetTeamKickNotLeader;
         }
         if (leader_id_ == kick_guid)
         {
-            return RET_TEAM_KICK_SELF;
+            return kRetTeamKickSelf;
         }
         if (current_leader == kick_guid)
         {
-            return RET_TEAM_KICK_SELF;
+            return kRetTeamKickSelf;
         }
         RET_CHECK_RET(LeaveTeam(kick_guid));
         return kRetOK;
@@ -98,15 +98,15 @@ namespace common
     {
         if (leader_id_ == new_leader)
         {
-            return RET_TEAM_APPOINT_SELF;
+            return kRetTeamAppointSelf;
         }
         if (!IsMember(new_leader))
         {
-            return RET_TEAM_HAS_NOT_TEAM_ID;
+            return kRetTeamHasNotTeamId;
         }
         if (leader_id_ != current_leader)
         {
-            return RET_TEAM_APPOINT_SELF;
+            return kRetTeamAppointSelf;
         }
         OnAppointLeader(new_leader);
         return kRetOK;
@@ -123,7 +123,7 @@ namespace common
     {
         if (leader_id() != current_leader_id)
         {
-            return RET_TEAM_DISMISS_NOT_LEADER;
+            return kRetTeamDismissNotLeader;
         }
         auto& ms = playerid_team_map();
         for (auto& it : members_)
@@ -143,11 +143,11 @@ namespace common
 	{
 		if (HasTeam(guid))
 		{
-			return RET_TEAM_MEMBER_IN_TEAM;
+			return kRetTeamMemberInTeam;
 		}
 		if (IsFull())
 		{
-			return RET_TEAM_MEMBERS_FULL;
+			return kRetTeamMembersFull;
 		}
 		RET_CHECK_RET(CheckLimt(guid));
 		if (applicants_.size() >= kMaxApplicantSize)

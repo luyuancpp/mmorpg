@@ -8,14 +8,14 @@ namespace common
     auto e = entt::to_entity(team_id);\
     if (!reg.valid(e))\
     {\
-        return RET_TEAM_HAS_NOT_TEAM_ID;\
+        return kRetTeamHasNotTeamId;\
     }\
     auto& team = reg.get<Team>(e);\
 
 #define GetTeamEntityReturnError \
     if (!reg.valid(team_id))\
     {\
-        return RET_TEAM_HAS_NOT_TEAM_ID;\
+        return kRetTeamHasNotTeamId;\
     }\
     auto& team = reg.get<Team>(team_id);\
 
@@ -128,11 +128,11 @@ namespace common
     {
         if (IsTeamListMax())
         {
-            return RET_TEAM_TEAM_LIST_MAX;
+            return kRetTeamListMaxSize;
         }
         if (HasTeam(param.leader_id_))
         {
-            return RET_TEAM_MEMBER_IN_TEAM;
+            return kRetTeamMemberInTeam;
         }
         RET_CHECK_RET(CheckMemberInTeam(param.members));
         auto e = reg.create();
@@ -165,7 +165,7 @@ namespace common
         {
             if (HasTeam(it))
             {
-                return RET_TEAM_MEMBER_IN_TEAM;
+                return kRetTeamMemberInTeam;
             }
         }
         return kRetOK;
