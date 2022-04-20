@@ -18,16 +18,16 @@
     <ClCompile Include="game_server_load_balance_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\master_server\src\factories\scene_factories.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\master_server\src\sys\servernode_sys.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\master_server\src\scene\sceces.cpp">
+    <ClCompile Include="..\..\common\src\game_logic\scene\scene.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_logic\scene\scene_factories.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_logic\scene\servernode_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -36,6 +36,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\entity\entity.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\scene\scene.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\scene\scene_factories.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\scene\servernode_sys.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
