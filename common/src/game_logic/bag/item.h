@@ -25,6 +25,7 @@ public:
 	inline decltype(auto) guid()const { return itembase().guid(); }
 	inline decltype(auto) config_id()const { return itembase().config_id(); }
 	inline decltype(auto) size()const { return itembase().size(); }
+
 private:
 	inline const ItemBaseDb& itembase()const { return item_reg.get<ItemBaseDb>(entity()); }
 	ItemEntity entity_;
@@ -33,7 +34,7 @@ private:
 struct CreateItemParam
 {
 	uint32_t config_id_{ common::kInvalidU32Id };
-	uint64_t size_{ 1 };
+	uint32_t size_{ 1 };
 };
 
 Item CreateItem(const CreateItemParam& p);
