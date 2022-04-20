@@ -61,6 +61,7 @@
     <ClCompile Include="src\game_logic\scene\servernode_sys.cpp" />
     <ClCompile Include="src\game_logic\scene\scene.cpp" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_rg.pb.cc" />
+    <ClCompile Include="src\pb\pbc\component_proto\scene_comp.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -150,5 +151,11 @@
     <ClInclude Include="src\game_logic\scene\scene.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_rg.pb.h" />
     <ClInclude Include="src\game_logic\comp\player_comp.h" />
+    <ClInclude Include="src\game_logic\comp\player.hpp" />
+    <ClInclude Include="src\game_logic\comp\player_comp.hpp" />
+    <ClInclude Include="src\game_logic\comp\server_list.hpp" />
+    <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
+    <ClInclude Include="src\server_registry\server_registry.h" />
+    <ClInclude Include="src\pb\pbc\component_proto\scene_comp.pb.h" />
   </ItemGroup>
 </Project>
