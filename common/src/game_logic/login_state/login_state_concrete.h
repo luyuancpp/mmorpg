@@ -8,7 +8,7 @@
 
 namespace common
 {
-    class NoneState : public LoginStateBase<RET_LOGIN_DONOT_LOGIN>
+    class NoneState : public LoginStateBase<kRetLoginHadnotLogin>
     {
     public:
         using LoginStateBase::LoginStateBase;
@@ -22,7 +22,7 @@ namespace common
         virtual void WaitingEnterGame()override{}
     };
 
-    class LoginState : public LoginStateBase<RET_LOGIN_LOGIN_ING>
+    class LoginState : public LoginStateBase<kRetLoginIng>
     {
     public:
         using LoginStateBase::LoginStateBase;
@@ -33,26 +33,26 @@ namespace common
         }
     };
 
-    class CreatePlayerState : public LoginStateBase<RET_LOGIN_BEING_CREATE_PLAYER>
+    class CreatePlayerState : public LoginStateBase<kRetLoignCreatingPlayer>
     {
     public:
         using LoginStateBase::LoginStateBase;
     };
 
-    class EnterGameState : public LoginStateBase<RET_LOGIN_BEING_ENTER_GAME>
+    class EnterGameState : public LoginStateBase<kRetLoginEnteringGame>
     {
     public:
         using LoginStateBase::LoginStateBase;
         virtual void OnPlaying()override { login_machine_.set_state(kLoignAccountPling ); }
     };
 
-    class PlayingState : public LoginStateBase <RET_LOGIN_PLAYEING>
+    class PlayingState : public LoginStateBase <kRetLoginPlaying>
     {
     public:
         using LoginStateBase::LoginStateBase;
     };
 
-    class WaitingEnterGameState : public LoginStateBase<RET_LOGIN_WAITING_ENTER_GAME>
+    class WaitingEnterGameState : public LoginStateBase<kRetLoignWatingEnterGame>
     {
     public:
         using LoginStateBase::LoginStateBase;
@@ -70,7 +70,7 @@ namespace common
         }
     };
 
-    class EmptyPlayerState : public LoginStateBase <RET_LOGIN_WAITING_ENTER_GAME>
+    class EmptyPlayerState : public LoginStateBase <kRetLoignWatingEnterGame>
     {
     public:
         using LoginStateBase::LoginStateBase;
@@ -83,17 +83,17 @@ namespace common
 
         virtual uint32_t EnterGame()override
         {
-            return RET_LOGIN_LOGIN_NO_PLAYER;
+            return kRetLoginPlayerGuidError;
         }
     };
 
-    class FullPlayerState : public LoginStateBase < RET_LOGIN_WAITING_ENTER_GAME>
+    class FullPlayerState : public LoginStateBase < kRetLoignWatingEnterGame>
     {
     public:
         using LoginStateBase::LoginStateBase;
         virtual uint32_t CreatePlayer() override
         {
-            return RET_LOGIN_MAX_PLAYER_SIZE;
+            return kRetLoginAccountPlayerFull;
         }
 
         virtual uint32_t EnterGame()override
