@@ -11,7 +11,7 @@ namespace common
     {
         RET_OK = 0,
         RET_TABLE_ID_ERROR = 2,
-        RET_TABLE_DTATA_ERROR = 3,
+        kRetCofnigData = 3,
 
         //login server 
         RET_LOGIN_CNAT_FIND_ACCOUNT = 1000,//找不到
@@ -61,6 +61,8 @@ namespace common
         kRetBagAddItemInvalidGuid = 7003,
         kRetBagAddItemInvalidParam = 7004,
         kRetBagAddItemBagFull = 7005,
+        kRetBagAdequateAddItemSize = 7006,//不可叠加
+        kRetBagAdequatetem = 7007,//不够物品
     };
 }//namespace common
 

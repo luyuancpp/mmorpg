@@ -42,17 +42,21 @@ public:
 	Item* GetItemByGuid(common::Guid guid);
 	Item* GetItemByBos(uint32_t pos);
 	uint32_t GetItemPos(common::Guid guid);//for test
-
+	
 	inline bool HasItem(common::Guid guid)const { return items_.find(guid) != items_.end();	}
 	inline bool IsFull()const { return size() >= items_.size(); }
 	inline bool AdequateSize(std::size_t s) const { return size() - items_.size() >= s; }//足够空格子
 	inline bool NotAdequateSize(std::size_t s) const { return size() - items_.size() < s; }//足够空格子
+	uint32_t AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_items);//足够空间放物品
+	uint32_t AdequateItem(const common::UInt32UInt32UnorderedMap& try_items);//足够物品
 
 	uint32_t AddItem(const Item&  add_item);
 	uint32_t DelItem(common::Guid del_guid);	
 	void Unlock(std::size_t sz);
 private:
+	inline std::size_t empty_grid_size() const { return items_.size() - size(); }
 	void OnNewGrid(const Item& item);
+	bool CanStack(const Item& litem, const Item& ritem);
 
 	BagEntity entity_;
 	ItemsMap items_;

@@ -4,5 +4,5 @@ message ItemBaseDb
 {
 	uint64 guid = 1;
 	uint32 config_id = 2;
-	uint64 size = 3;
+	uint32 size = 3;
 }

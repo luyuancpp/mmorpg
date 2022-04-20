@@ -33,6 +33,8 @@ namespace common
     using EntitySet = std::unordered_set<entt::entity>;
 
     using UInt64UInt64UnorderedMap = std::unordered_map<uint64_t, uint64_t>;
+    using UInt32UInt32UnorderedMap = std::unordered_map<uint32_t, uint32_t>;
+    using UInt32UInt64UnorderedMap = std::unordered_map<uint32_t, uint64_t>;
     using GuidUint64Map = std::unordered_map<Guid, uint64_t>;
 
     static const Guid kInvalidGuid{ 0 };
