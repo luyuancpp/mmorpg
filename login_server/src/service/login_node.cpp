@@ -41,7 +41,7 @@ void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 	{
 		auto& player = reg.emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
 		auto ret = player->Login();
-		if (ret != RET_OK)
+		if (ret != kRetOK)
 		{
 			response->mutable_error()->set_error_no(ret);
 			return;

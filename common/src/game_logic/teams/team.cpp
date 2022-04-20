@@ -37,7 +37,7 @@ namespace common
 
     uint32_t Team::CheckLimt(Guid  guid)
     {
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Team::JoinTeam(Guid  guid)
@@ -54,7 +54,7 @@ namespace common
         members_.emplace_back(guid);
         playerid_team_map().emplace(guid, teamid_);
         emp_->emit<JoinTeamEvent>(teamid_, guid);
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Team::LeaveTeam(Guid guid)
@@ -73,7 +73,7 @@ namespace common
         }        
         playerid_team_map().erase(guid);
         emp_->emit<AfterLeaveTeamEvent>(teamid_, guid);     
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Team::KickMember(Guid current_leader, Guid  kick_guid)
@@ -91,7 +91,7 @@ namespace common
             return RET_TEAM_KICK_SELF;
         }
         RET_CHECK_RET(LeaveTeam(kick_guid));
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Team::AppointLeader(Guid current_leader, Guid new_leader)
@@ -109,7 +109,7 @@ namespace common
             return RET_TEAM_APPOINT_SELF;
         }
         OnAppointLeader(new_leader);
-        return RET_OK;
+        return kRetOK;
     }
 
     void Team::OnAppointLeader(Guid guid)
@@ -131,7 +131,7 @@ namespace common
             emp_->emit<DissmisTeamEvent>(teamid_, it);
             ms.erase(it);               
         }
-        return RET_OK;
+        return kRetOK;
     }
 
     void Team::ClearApplyList()
@@ -155,7 +155,7 @@ namespace common
 			applicants_.erase(applicants_.begin());
 		}
 		applicants_.emplace_back(guid);
-		return RET_OK;
+		return kRetOK;
 	}
 
 
@@ -166,7 +166,7 @@ namespace common
         {
             applicants_.erase(it);
         }
-        return RET_OK;
+        return kRetOK;
     }
 
 }//namespace common

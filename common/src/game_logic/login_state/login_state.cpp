@@ -8,18 +8,18 @@ namespace common
 
     uint32_t IAccountState::LogoutAccount()
     {
-        login_machine_.set_state(E_LOGIN_NONE);
-        return RET_OK;
+        login_machine_.set_state(kLoginNone);
+        return kRetOK;
     }
 
     void IAccountState::WaitingEnterGame()
     {
-        login_machine_.set_state(E_LOGIN_WAITING_ENTER_GAME);
+        login_machine_.set_state(kLoginWatingEnterGame);
     }
 
     void IAccountState::OnFullPlayer()
     {
-        login_machine_.set_state(E_LOGIN_ACCOUNT_FULL_PLAYER); 
+        login_machine_.set_state(kLoginAccountFullPlayer); 
     }
 
 }//namespace common

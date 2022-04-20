@@ -12,7 +12,7 @@ namespace common
     {
     public:
         using StatePtr = std::shared_ptr<IAccountState>;
-        using StatePtrList = std::array<StatePtr, E_LOGIN_STATE_MAX>;
+        using StatePtrList = std::array<StatePtr, kLoginStateMax>;
 
         LoginStateMachine();
 
