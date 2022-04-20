@@ -14,21 +14,21 @@ namespace common
         kRetCofnigData = 3,
 
         //login server 
-        RET_LOGIN_CNAT_FIND_ACCOUNT = 1000,//找不到
-        RET_LOGIN_MAX_PLAYER_SIZE = 1001,
-        RET_LOGIN_CREATE_PLAYER_DONOT_LOAD_ACCOUNT = 1002,
-        RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT = 1003,
-        RET_LOGIN_DONOT_LOGIN = 1004,
-        RET_LOGIN_LOGIN_ING = 1005,
-        RET_LOGIN_LOGIN_NO_PLAYER = 1006,
-        RET_LOGIN_BEING_ENTER_GAME = 1007,
-        RET_LOGIN_PLAYEING = 1008,
-        RET_LOGIN_BEING_CREATE_PLAYER = 1009,
-        RET_LOGIN_WAITING_ENTER_GAME = 1010,//已经登录了，等待进入游戏
-        RET_LOGIN_ENTER_GUID = 1011,
-        RET_LOGIN_ACCOUNT_NAME_EMPTY = 1012,
-        REG_LOGIN_CREATEPLAYER_CONNECTION_ACCOUNT_EMPTY = 1013,
-        REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY = 1014,
+        kRetLoginCantFindAccount = 1000,//找不到
+        kRetLoginAccountPlayerFull = 1001,
+        kRetLoginCreatePlayerDonotLoadAccount = 1002,
+        kRetLoignCreatePlayerConnectionHasNotAccount = 1003,
+        kRetLoginHadnotLogin = 1004,
+        kRetLoginIng = 1005,
+        kRetLoginPlayerGuidError = 1006,
+        kRetLoginEnteringGame = 1007,
+        kRetLoginPlaying = 1008,
+        kRetLoignCreatingPlayer = 1009,
+        kRetLoignWatingEnterGame = 1010,//已经登录了，等待进入游戏
+        kRetLoignEnterGuid = 1011,
+        kRetLoignAccountNameEmpty = 1012,
+        kRetLoginCreateConnectionAccountEmpty = 1013,
+        kRetLoginEnterGameConnectionAccountEmpty = 1014,
 
         //Team
         RET_TEAM_NOT_IN_APPLICANTS = 5000,

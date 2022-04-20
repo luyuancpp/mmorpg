@@ -75,9 +75,7 @@ void RgServiceImpl::StartCrossMainGS(::google::protobuf::RpcController* controll
 		{
 			continue;
 		}
-		auto scene_info = response->add_scenes_info();
-		scene_info->set_scene_confid(reg.get<SceneConfigId>(scene_entity));
-		scene_info->set_scene_id(reg.get<Guid>(scene_entity));
+		response->add_scenes_info()->CopyFrom(reg.get<SceneInfo>(scene_entity));
 	}
 
 	LOG_INFO << "game connected " << request->gs_node_id();

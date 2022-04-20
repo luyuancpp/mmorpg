@@ -107,9 +107,7 @@ void MasterNodeServiceImpl::StartGS(::google::protobuf::RpcController* controlle
 			{
 				continue;
 			}
-			auto scene_info = response->add_scenes_info();
-			scene_info->set_scene_confid(reg.get<SceneConfigId>(scene_entity));
-			scene_info->set_scene_id(reg.get<Guid>(scene_entity));
+			response->add_scenes_info()->CopyFrom(reg.get<SceneInfo>(scene_entity));
 		}
 	}
 	else
@@ -228,7 +226,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 		(PlayerList::GetSingleton().player_size() + logined_accounts_.size()) >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队
-		response->mutable_error()->set_error_no(RET_LOGIN_MAX_PLAYER_SIZE);
+		response->mutable_error()->set_error_no(kRetLoginAccountPlayerFull);
 		return;
 	}
 
@@ -242,7 +240,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 		}
 		else//告诉客户端登录中
 		{
-			response->mutable_error()->set_error_no(RET_LOGIN_LOGIN_ING);
+			response->mutable_error()->set_error_no(kRetLoginIng);
 		}
 	}
 	else

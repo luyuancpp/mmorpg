@@ -31,7 +31,7 @@ void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 	auto cit = connections_.find(d->s_rq_.conn_id());
 	if (cit == connections_.end())
 	{
-		d->c_rp_->mutable_error()->set_error_no(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+		d->c_rp_->mutable_error()->set_error_no(kRetLoignCreatePlayerConnectionHasNotAccount);
 		return;
 	}
 	auto& account = d->s_rq_.account();
@@ -104,7 +104,7 @@ void LoginServiceImpl::EnterMS(common::Guid guid,
 	auto it = connections_.find(conn_id);
 	if (connections_.end() == it)
 	{
-		ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
+		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
 	auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
 	cp->s_rq_.set_guid(guid);
@@ -178,12 +178,12 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	auto cit = connections_.find(request->conn_id());
 	if (cit == connections_.end())
 	{
-		ReturnCloseureError(RET_LOGIN_CREATE_PLAYER_CONNECTION_HAS_NOT_ACCOUNT);
+		ReturnCloseureError(kRetLoignCreatePlayerConnectionHasNotAccount);
 	}
 	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
 	if (nullptr == p_player)
 	{
-		ReturnCloseureError(REG_LOGIN_CREATEPLAYER_CONNECTION_ACCOUNT_EMPTY);
+		ReturnCloseureError(kRetLoginCreateConnectionAccountEmpty);
 	}
 	auto& ap = *p_player;
 	CheckReturnCloseureError(ap->CreatePlayer());
@@ -212,12 +212,12 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	auto cit = connections_.find(conn_id);
 	if (cit == connections_.end())
 	{
-		ReturnCloseureError(REG_LOGIN_ENTERGAMEE_CONNECTION_ACCOUNT_EMPTY);
+		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
 	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
 	if (nullptr == p_player)
 	{
-		ReturnCloseureError(REG_LOGIN_CREATEPLAYER_CONNECTION_ACCOUNT_EMPTY);
+		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
 	// check second times change player id error 
 	auto& ap = *p_player;
@@ -227,7 +227,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	auto guid = request->guid();
 	if (!ap->IsInPlayerList(guid))
 	{
-		ReturnCloseureError(RET_LOGIN_ENTER_GUID);
+		ReturnCloseureError(kRetLoginPlayerGuidError);
 	}
 	// player in redis return ok
 	player_database new_player;

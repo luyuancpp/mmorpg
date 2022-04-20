@@ -8,11 +8,11 @@ using namespace common;
 TEST(LoginStateMachineTest, LoginRepetition)
 {
     LoginStateMachine lsm;
-    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginHadnotLogin, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoginHadnotLogin, lsm.EnterGame());
     EXPECT_EQ(kRetOK, lsm.Login());
-    EXPECT_EQ(RET_LOGIN_LOGIN_ING, lsm.Login());
-    EXPECT_EQ(RET_LOGIN_LOGIN_ING, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginIng, lsm.Login());
+    EXPECT_EQ(kRetLoginIng, lsm.EnterGame());
 }
 
 TEST(LoginStateMachineTest, LoginNoPlayer)
@@ -20,12 +20,12 @@ TEST(LoginStateMachineTest, LoginNoPlayer)
     LoginStateMachine lsm;
     EXPECT_EQ(kRetOK, lsm.Login());
     lsm.OnEmptyPlayer();
-    EXPECT_EQ(RET_LOGIN_WAITING_ENTER_GAME, lsm.Login());
-    EXPECT_EQ(RET_LOGIN_LOGIN_NO_PLAYER, lsm.EnterGame());
+    EXPECT_EQ(kRetLoignWatingEnterGame, lsm.Login());
+    EXPECT_EQ(kRetLoginNotPlayer, lsm.EnterGame());
     EXPECT_EQ(kRetOK, lsm.CreatePlayer());
     lsm.WaitingEnterGame();
     EXPECT_EQ(kRetOK, lsm.EnterGame());
-    EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginEnteringGame, lsm.EnterGame());
 }
 
 TEST(LoginStateMachineTest, LoginNoPlayerCreateFull)
@@ -33,20 +33,20 @@ TEST(LoginStateMachineTest, LoginNoPlayerCreateFull)
     LoginStateMachine lsm;
     EXPECT_EQ(kRetOK, lsm.Login());
     lsm.OnEmptyPlayer();
-    EXPECT_EQ(RET_LOGIN_LOGIN_NO_PLAYER, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginNotPlayer, lsm.EnterGame());
     EXPECT_EQ(kRetOK, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.EnterGame());
+    EXPECT_EQ(kRetLoignCreatingPlayer, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoignCreatingPlayer, lsm.EnterGame());
     lsm.WaitingEnterGame();
     EXPECT_EQ(kRetOK, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoignCreatingPlayer, lsm.CreatePlayer());
     lsm.WaitingEnterGame();
     EXPECT_EQ(kRetOK, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoignCreatingPlayer, lsm.CreatePlayer());
     lsm.OnFullPlayer();
-    EXPECT_EQ(RET_LOGIN_MAX_PLAYER_SIZE, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoginAccountPlayerFull, lsm.CreatePlayer());
     EXPECT_EQ(kRetOK, lsm.EnterGame());
-    EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginEnteringGame, lsm.EnterGame());
 }
 
 TEST(LoginStateMachineTest, RenterGame)
@@ -55,9 +55,9 @@ TEST(LoginStateMachineTest, RenterGame)
     EXPECT_EQ(kRetOK, lsm.Login());
     lsm.WaitingEnterGame();
     EXPECT_EQ(kRetOK, lsm.EnterGame());
-    EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginEnteringGame, lsm.EnterGame());
     lsm.OnPlaying();
-    EXPECT_EQ(RET_LOGIN_PLAYEING, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginPlaying, lsm.EnterGame());
 }
 
 
@@ -65,8 +65,8 @@ TEST(LoginStateMachineTest, LoginNotReturn)
 {
     LoginStateMachine lsm;
     EXPECT_EQ(kRetOK, lsm.Login());
-    EXPECT_EQ(RET_LOGIN_LOGIN_ING, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_LOGIN_ING, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginIng, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoginIng, lsm.EnterGame());
 }
 
 TEST(LoginStateMachineTest, CreatePlayerNotReturn)
@@ -74,11 +74,11 @@ TEST(LoginStateMachineTest, CreatePlayerNotReturn)
     LoginStateMachine lsm;
     EXPECT_EQ(kRetOK, lsm.Login());
     lsm.WaitingEnterGame();
-    EXPECT_EQ(RET_LOGIN_WAITING_ENTER_GAME, lsm.Login());
+    EXPECT_EQ(kRetLoignWatingEnterGame, lsm.Login());
     EXPECT_EQ(kRetOK, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.Login());
-    EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_BEING_CREATE_PLAYER, lsm.EnterGame());
+    EXPECT_EQ(kRetLoignCreatingPlayer, lsm.Login());
+    EXPECT_EQ(kRetLoignCreatingPlayer, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoignCreatingPlayer, lsm.EnterGame());
 }
 
 TEST(LoginStateMachineTest, EnterGameNotReturn)
@@ -89,9 +89,9 @@ TEST(LoginStateMachineTest, EnterGameNotReturn)
     EXPECT_EQ(kRetOK, lsm.CreatePlayer());
     lsm.WaitingEnterGame();
     EXPECT_EQ(kRetOK, lsm.EnterGame());
-    EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.Login());
-    EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_BEING_ENTER_GAME, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginEnteringGame, lsm.Login());
+    EXPECT_EQ(kRetLoginEnteringGame, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoginEnteringGame, lsm.EnterGame());
 }
 
 TEST(LoginStateMachineTest, PlayerLoginLogout)
@@ -100,8 +100,8 @@ TEST(LoginStateMachineTest, PlayerLoginLogout)
     EXPECT_EQ(kRetOK, lsm.Login());
     EXPECT_EQ(kRetOK, lsm.Logout());
     lsm.WaitingEnterGame();
-    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginHadnotLogin, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoginHadnotLogin, lsm.EnterGame());
     EXPECT_EQ(kRetOK, lsm.Login());
 }
 
@@ -113,7 +113,7 @@ TEST(LoginStateMachineTest, PlayerCreatePlayerLogout)
     EXPECT_EQ(kRetOK, lsm.CreatePlayer());
     EXPECT_EQ(kRetOK, lsm.Logout());
     lsm.WaitingEnterGame();
-    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginHadnotLogin, lsm.EnterGame());
     EXPECT_EQ(kRetOK, lsm.Login());
 }
 
@@ -127,8 +127,8 @@ TEST(LoginStateMachineTest, PlayerEnterGameLogout)
     EXPECT_EQ(kRetOK, lsm.EnterGame());
     EXPECT_EQ(kRetOK, lsm.Logout());
     lsm.OnPlaying();
-    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.CreatePlayer());
-    EXPECT_EQ(RET_LOGIN_DONOT_LOGIN, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginHadnotLogin, lsm.CreatePlayer());
+    EXPECT_EQ(kRetLoginHadnotLogin, lsm.EnterGame());
     EXPECT_EQ(kRetOK, lsm.Login());
 }
 
@@ -137,7 +137,7 @@ TEST(LoginStateMachineTest, PlayerAfterEnterGameLogin)
     LoginStateMachine lsm;
     EXPECT_EQ(kRetOK, lsm.Login());
     lsm.WaitingEnterGame();
-    EXPECT_EQ(RET_LOGIN_WAITING_ENTER_GAME, lsm.Login());
+    EXPECT_EQ(kRetLoignWatingEnterGame, lsm.Login());
 }
 
 int main(int argc, char** argv)
