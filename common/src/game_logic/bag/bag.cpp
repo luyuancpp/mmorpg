@@ -12,10 +12,10 @@ using namespace common;
 
 Bag::Bag()
 {
-	item_reg.emplace<BagCurrentSize>(entity());
+	item_reg.emplace<BagCapacity>(entity());
 }
 
-Item* Bag::GetItem(common::Guid guid)
+Item* Bag::GetItemByGuid(common::Guid guid)
 {
 	auto it = items_.find(guid);
 	if (it == items_.end())
@@ -23,6 +23,16 @@ Item* Bag::GetItem(common::Guid guid)
 		return nullptr;
 	}
 	return &it->second;
+}
+
+Item* Bag::GetItemByBos(uint32_t pos)
+{
+	auto it = pos_.find(pos);
+	if (it == pos_.end())
+	{
+		return nullptr;
+	}
+	return GetItemByGuid(it->second);
 }
 
 uint32_t Bag::AddItem(const Item& add_item)
@@ -64,16 +74,16 @@ uint32_t Bag::AddItem(const Item& add_item)
 			LOG_ERROR << "bag add item" << player_guid();
 			return RET_BAG_DELETE_ITEM_HAS_GUID;
 		}
-		OnNewPos(it.first->second);
+		OnNewGrid(it.first->second);
 	}
-	else if(p_c_item->max_statck_size() > 1)
+	else if(p_c_item->max_statck_size() > 1)//尝试堆叠到旧格子上
 	{
 		std::vector<Item*> can_overlay;//原来可以叠加的物品
 		std::size_t check_need_stack_size = add_item.size();
 		for (auto& it : items_)
 		{
 			auto& item = it.second;
-			if (item.config_id() != add_item.config_id())
+			if (item.config_id() != add_item.config_id())//堆叠判断
 			{
 				continue;
 			}
@@ -93,13 +103,13 @@ uint32_t Bag::AddItem(const Item& add_item)
 				break;
 			}
 		}
-		std::size_t need_item_size = 0;
+		std::size_t need_grid_size = 0;
 		//不可以放完继续检测,如果满了就不行了
 		if (check_need_stack_size > 0)
 		{
 			//物品中可以堆叠的数量,用除法防止溢出,上面判断过大于0了
-			need_item_size = check_need_stack_size / p_c_item->max_statck_size();
-			if (NotAdequateSize(need_item_size))
+			need_grid_size = check_need_stack_size / p_c_item->max_statck_size();
+			if (NotAdequateSize(need_grid_size))
 			{
 				return RET_BAG_ADD_ITEM_BAG_FULL;
 			}
@@ -120,7 +130,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 				need_stack_size -= remain_stack_size;
 			}
 		}
-		for (size_t i = 0; i < need_item_size; ++i)
+		for (size_t i = 0; i < need_grid_size; ++i)
 		{
 			ItemBaseDb item_base_db;
 			item_base_db.set_config_id(add_item.config_id());
@@ -141,7 +151,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 				LOG_ERROR << "bag add item" << player_guid();
 				continue;
 			}
-			OnNewPos(it.first->second);
+			OnNewGrid(it.first->second);
 		}
 	}
 	return RET_OK;
@@ -155,14 +165,29 @@ uint32_t Bag::DelItem(common::Guid del_guid)
 		return RET_BAG_DELETE_ITEM_HASNOT_GUID;
 	}
 	items_.erase(del_guid);
+	for (auto& pit : pos_)
+	{
+		if (pit.second != del_guid)
+		{
+			continue;
+		}
+		pos_.erase(pit.first);
+		break;
+	}
 	return RET_OK;
 }
 
-void Bag::OnNewPos(const Item& item)
+void Bag::OnNewGrid(const Item& item)
 {
 	uint32_t add_pos = 0;
-	for (size_t i = 0; i < size(); ++i)
+	uint32_t sz = uint32_t(size());
+	for (uint32_t i = 0; i < sz; ++i)
 	{
-
+		if (pos_.find(i) != pos_.end())
+		{
+			continue;
+		}
+		pos_.emplace(i, item.guid());
+		break;
 	}
 }

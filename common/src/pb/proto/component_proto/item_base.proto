@@ -3,6 +3,6 @@ syntax = "proto3";
 message ItemBaseDb
 {
 	uint64 guid = 1;
-	int32 config_id = 2;
+	uint32 config_id = 2;
 	uint64 size = 3;
 }

@@ -13,10 +13,12 @@ void BagEnityPtrDeleter(entt::entity* p)
 
 ItemEntity::ItemEntity() : entity_(new entt::entity(item_reg.create()), BagEnityPtrDeleter) {}
 
-Item CreateItem()
+Item CreateItem(const CreateItemParam& p)
 {
 	Item item;
-	item_reg.emplace<ItemBaseDb>(item.entity(), ItemBaseDb());
+	auto& item_base = item_reg.emplace<ItemBaseDb>(item.entity(), ItemBaseDb());
+	item_base.set_config_id(p.config_id_);
+	item_base.set_size(p.size_);
 	assert(item_reg.any_of<ItemBaseDb>(item.entity()));
 	return item;
 }

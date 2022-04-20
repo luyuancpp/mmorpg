@@ -30,5 +30,11 @@ private:
 	ItemEntity entity_;
 };
 
-Item CreateItem();
+struct CreateItemParam
+{
+	uint32_t config_id_{ common::kInvalidU32Id };
+	uint64_t size_{ 1 };
+};
+
+Item CreateItem(const CreateItemParam& p);
 Item CreateItem(const ItemBaseDb& pb);
