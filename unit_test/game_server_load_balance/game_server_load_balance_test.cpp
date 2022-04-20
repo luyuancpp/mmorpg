@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
 #include "src/common_type/common_type.h"
-#include "src/factories/scene_factories.hpp"
-#include "src/game_logic/comp/gs_scene_comp.hpp"
+#include "src/game_logic/scene/scene_factories.h"
+#include "src/game_logic/comp/gs_scene_comp.h"
 #include "src/game_logic/game_registry.h"
-#include "src/sys/servernode_sys.hpp"
-#include "src/scene/sceces.h"
+#include "src/game_logic/scene/servernode_sys.h"
+#include "src/game_logic/scene/scene.h"
 
 using namespace  common;
 
