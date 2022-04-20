@@ -23,6 +23,7 @@
     <ClCompile Include="..\..\common\src\game_logic\scene\scene.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\scene\scene_factories.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\scene\servernode_sys.cpp" />
+    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc" />
     <ClCompile Include="game_server_load_balance_test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +31,7 @@
     <ClInclude Include="..\..\common\src\game_logic\scene\scene.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\scene_factories.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\servernode_sys.h" />
+    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h" />
     <ClInclude Include="..\..\master_server\src\scene\sceces.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -130,7 +132,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;ENTT_ID_TYPE=uint64_t;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../common/;../../protopb/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../master_server/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../common/;../../protopb/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../master_server/;../../common/src/pb/pbc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <DisableSpecificWarnings>4819</DisableSpecificWarnings>
     </ClCompile>

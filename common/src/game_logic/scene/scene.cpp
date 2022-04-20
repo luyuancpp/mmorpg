@@ -4,6 +4,8 @@
 
 #include "src/game_logic/game_registry.h"
 
+#include "src/pb/pbc/component_proto/scene_comp.pb.h"
+
 using namespace common;
 
 ScenesSystem* g_scene_sys = nullptr;
@@ -41,34 +43,36 @@ bool ScenesSystem::HasScene(uint32_t scene_config_id)
 entt::entity ScenesSystem::MakeScene(const MakeSceneP& param)
 {
     auto e = reg.create();
-    auto& confid = reg.emplace<SceneConfigId>(e, param.scene_confid_);
+    auto& si = reg.emplace<SceneInfo>(e);
+    si.set_scene_confid(param.scene_confid_);
     reg.emplace<MainScene>(e);
     reg.emplace<ScenePlayers>(e);
     auto guid = snow_flake_.Generate();
-    reg.emplace<Guid>(e, guid);
+    si.set_scene_id(guid);
     auto sit = scenes_map_.emplace(guid, e);
 	if (!sit.second)
 	{
         LOG_ERROR << "already has scene" << guid;
 	}
-    confid_scenes_[confid].emplace(e);
+    confid_scenes_[si.scene_confid()].emplace(e);
     return e;
 }
 
 entt::entity ScenesSystem::MakeSceneByGuid(const MakeSceneWithGuidP& param)
 {
 	auto e = reg.create();
-	auto& confid = reg.emplace<SceneConfigId>(e, param.scene_confid_);
+    auto guid = param.scene_id;
+	auto& si = reg.emplace<SceneInfo>(e);
+    si.set_scene_confid(param.scene_confid_);
+    si.set_scene_id(guid);
 	reg.emplace<MainScene>(e);
 	reg.emplace<ScenePlayers>(e);
-	auto guid = param.scene_id;
-	reg.emplace<Guid>(e, guid);
 	auto sit = scenes_map_.emplace(guid, e);
 	if (!sit.second)
 	{
 		LOG_ERROR << "already has scene" << guid;
 	}
-	confid_scenes_[confid].emplace(e);
+	confid_scenes_[si.scene_confid()].emplace(e);
     return e;
 }
 
@@ -88,10 +92,9 @@ entt::entity ScenesSystem::MakeSceneGSScene(const MakeGSSceneP& param)
 void ScenesSystem::PutScene2GS(const PutScene2GSParam& param)
 {
     auto scene_entity = param.scene_;
-    auto& scene_config = reg.get<SceneConfigId>(scene_entity);
     auto server_entity = param.server_entity_;
     auto& server_scenes = reg.get<SceneComp>(server_entity);
-    server_scenes.AddScene(scene_config, scene_entity);
+    server_scenes.AddScene(reg.get<SceneInfo>(scene_entity).scene_confid(), scene_entity);
     auto& p_server_data = reg.get<GSDataPtr>(server_entity);
     reg.emplace<GSDataPtr>(scene_entity, p_server_data);
 }
@@ -208,10 +211,9 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
 
 void ScenesSystem::OnDestroyScene(entt::entity scene_entity)
 {
-    auto scene_config_id = reg.get<SceneConfigId>(scene_entity);
-    confid_scenes_[scene_config_id].erase(scene_entity);
-    auto scene_guid = reg.get<Guid>(scene_entity);
-    scenes_map_.erase(scene_guid);
+    auto& si = reg.get<SceneInfo>(scene_entity);
+    confid_scenes_[si.scene_confid()].erase(scene_entity);
+    scenes_map_.erase(si.scene_id());
     auto p_server_data = reg.get<GSDataPtr>(scene_entity);
     reg.destroy(scene_entity);
     if (nullptr == p_server_data)
@@ -219,5 +221,5 @@ void ScenesSystem::OnDestroyScene(entt::entity scene_entity)
         return;
     }
     auto& server_scene = reg.get<SceneComp>(p_server_data->server_entity());
-    server_scene.RemoveScene(scene_config_id, scene_entity);
+    server_scene.RemoveScene(si.scene_confid(), scene_entity);
 }

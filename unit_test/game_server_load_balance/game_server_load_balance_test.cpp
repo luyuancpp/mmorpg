@@ -7,6 +7,8 @@
 #include "src/game_logic/scene/servernode_sys.h"
 #include "src/game_logic/scene/scene.h"
 
+#include "src/pb/pbc/component_proto/scene_comp.pb.h"
+
 using namespace  common;
 
 uint32_t confid_scenelist_size = 50;
@@ -62,12 +64,12 @@ TEST(GS, MakeScene2Sever )
     auto& scenes_id2 = reg.get<common::SceneComp>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
-    EXPECT_EQ(server1_param.scene_confid_, reg.get<common::SceneConfigId>(scenes_id1.first_scene_id()));
+    EXPECT_EQ(server1_param.scene_confid_, reg.get<SceneInfo>(scenes_id1.first_scene_id()).scene_confid());
     EXPECT_EQ(1, sm.scenes_size(server1_param.scene_confid_));
     EXPECT_EQ(server_data1.node_id(), param1.node_id_);
 
     EXPECT_EQ(1, scenes_id2.scenes_size());
-    EXPECT_EQ(server2_param.scene_confid_, reg.get<common::SceneConfigId>(scenes_id2.first_scene_id()));
+    EXPECT_EQ(server2_param.scene_confid_, reg.get<SceneInfo>(scenes_id2.first_scene_id()).scene_confid());
     EXPECT_EQ(server_data2.node_id(), param2.node_id_);
 
     EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
@@ -686,7 +688,7 @@ TEST(GS, WeightRoundRobinMainScene)
         {
             auto& pse = reg.get<common::SceneEntity>(it.first);
             EXPECT_TRUE(pse.scene_entity() == it.second);
-            EXPECT_EQ(reg.get<common::SceneConfigId>(pse.scene_entity()), scene_config_id0);
+            EXPECT_EQ(reg.get<SceneInfo>(pse.scene_entity()).scene_confid(), scene_config_id0);
         }
 
         std::unordered_map<entt::entity, entt::entity> player_scene2;
@@ -706,7 +708,7 @@ TEST(GS, WeightRoundRobinMainScene)
         {
             auto& pse = reg.get<common::SceneEntity>(it.first);
             EXPECT_TRUE(pse.scene_entity() == it.second);
-            EXPECT_EQ(reg.get<common::SceneConfigId>(pse.scene_entity()), scene_config_id1);
+            EXPECT_EQ(reg.get<SceneInfo>(pse.scene_entity()).scene_confid(), scene_config_id1);
         }
 
         std::size_t server_player_size = player_size * 2 / server_size;
@@ -897,7 +899,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		{
 			auto& pse = reg.get<common::SceneEntity>(it.first);
 			EXPECT_TRUE(pse.scene_entity() == it.second);
-			EXPECT_EQ(reg.get<common::SceneConfigId>(pse.scene_entity()), scene_config_id0);
+			EXPECT_EQ(reg.get<SceneInfo>(pse.scene_entity()).scene_confid(), scene_config_id0);
 		}
 
 		std::unordered_map<entt::entity, entt::entity> player_scene2;
@@ -917,7 +919,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		{
 			auto& pse = reg.get<common::SceneEntity>(it.first);
 			EXPECT_TRUE(pse.scene_entity() == it.second);
-			EXPECT_EQ(reg.get<common::SceneConfigId>(pse.scene_entity()), scene_config_id1);
+			EXPECT_EQ(reg.get<SceneInfo>(pse.scene_entity()).scene_confid(), scene_config_id1);
 		}
 
 		std::size_t server_player_size = player_size * 2 / server_size;

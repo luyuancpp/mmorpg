@@ -30,6 +30,9 @@
     <ClCompile Include="..\..\common\src\game_logic\scene\servernode_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\master_server\src\scene\sceces.h">
@@ -45,6 +48,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\scene\servernode_sys.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
