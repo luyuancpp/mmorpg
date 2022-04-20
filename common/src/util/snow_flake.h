@@ -174,6 +174,12 @@ namespace common
 		{
 			return server_id_ | ++seq_;
 		}
+
+        //for test
+        Guid Current()
+        {
+            return  server_id_ | seq_;
+        }
 	private:
 		uint64_t server_id_{ 0 };
         uint64_t seq_{ 0 };
