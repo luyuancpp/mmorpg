@@ -50,5 +50,8 @@
     <ClInclude Include="..\..\common\src\util\file2string.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\return_code\error_code.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

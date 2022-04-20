@@ -158,6 +158,7 @@
     <ClInclude Include="..\..\common\src\game_logic\bag\item.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\item_base.pb.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\item_config.pb.h" />
+    <ClInclude Include="..\..\common\src\return_code\error_code.h" />
     <ClInclude Include="..\..\common\src\util\file2string.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
