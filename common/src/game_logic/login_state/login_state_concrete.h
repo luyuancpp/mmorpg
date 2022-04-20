@@ -15,8 +15,8 @@ namespace common
 
         virtual uint32_t LoginAccount()override
         {
-            login_machine_.set_state(E_LOGIN_ACCOUNT_LOGIN);
-            return RET_OK;
+            login_machine_.set_state(kLoginAccountLogining);
+            return kRetOK;
         }
 
         virtual void WaitingEnterGame()override{}
@@ -29,7 +29,7 @@ namespace common
 
         virtual void OnEmptyPlayer() override 
         {
-            login_machine_.set_state(E_LOGIN_ACCOUNT_NO_PLAYER );
+            login_machine_.set_state(kLoginAccountNoPlayer );
         }
     };
 
@@ -43,7 +43,7 @@ namespace common
     {
     public:
         using LoginStateBase::LoginStateBase;
-        virtual void OnPlaying()override { login_machine_.set_state(E_LGOIN_ACCOUNT_PLAYING ); }
+        virtual void OnPlaying()override { login_machine_.set_state(kLoignAccountPling ); }
     };
 
     class PlayingState : public LoginStateBase <RET_LOGIN_PLAYEING>
@@ -59,14 +59,14 @@ namespace common
   
         virtual uint32_t CreatePlayer() override
         {
-            login_machine_.set_state(E_LOGIN_ACCOUNT_CREATE_PLAYER );
-            return RET_OK;
+            login_machine_.set_state(kLoginAcccountCreatePlayer );
+            return kRetOK;
         }
 
         virtual uint32_t EnterGame()override
         {
-            login_machine_.set_state(E_LOGIN_ACCOUNT_ENTER_GAME );
-            return RET_OK;
+            login_machine_.set_state(kLoginAccountEnterGame );
+            return kRetOK;
         }
     };
 
@@ -77,8 +77,8 @@ namespace common
 
         virtual uint32_t CreatePlayer() override
         {
-            login_machine_.set_state(E_LOGIN_ACCOUNT_CREATE_PLAYER);
-            return RET_OK;
+            login_machine_.set_state(kLoginAcccountCreatePlayer);
+            return kRetOK;
         }
 
         virtual uint32_t EnterGame()override
@@ -98,8 +98,8 @@ namespace common
 
         virtual uint32_t EnterGame()override
         {
-            login_machine_.set_state(E_LOGIN_ACCOUNT_ENTER_GAME);
-            return RET_OK;
+            login_machine_.set_state(kLoginAccountEnterGame);
+            return kRetOK;
         }
     };
 

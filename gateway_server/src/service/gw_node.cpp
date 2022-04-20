@@ -89,7 +89,7 @@ void GwNodeServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* control
 	it->second.guid_ = request->player_id();
 	it->second.gs_node_id_ = request->gs_node_id();
 	c2gw::EnterGameResponse message;
-	message.mutable_error()->set_error_no(RET_OK);
+	message.mutable_error()->set_error_no(kRetOK);
 	g_gateway_server->Send2Client(it->second.conn_, message);
 ///<<< END WRITING YOUR CODE PlayerEnterGS
 }

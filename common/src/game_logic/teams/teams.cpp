@@ -139,7 +139,7 @@ namespace common
         TeamsP ts_param{e, my_entity_id_, emp_, &reg };
         reg.emplace<Team>(e, param, ts_param);
         last_team_id_ = entt::to_integral(e);//for test
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Teams::JoinTeam(Guid team_id, Guid guid)
@@ -156,7 +156,7 @@ namespace common
         {
             RET_CHECK_RET(team.JoinTeam(it));
         }
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Teams::CheckMemberInTeam(const UInt64Set& member_list)
@@ -168,7 +168,7 @@ namespace common
                 return RET_TEAM_MEMBER_IN_TEAM;
             }
         }
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Teams::LeaveTeam(Guid guid)
@@ -180,14 +180,14 @@ namespace common
         {
             EraseTeam(team.to_entityid());
         }
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Teams::KickMember(Guid team_id, Guid current_leader, Guid  kick_guid)
     {
         GetTeamPtrReturnError;
         RET_CHECK_RET(team.KickMember(current_leader, kick_guid));
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Teams::DissMissTeam(Guid team_id, Guid current_leader)
@@ -195,7 +195,7 @@ namespace common
         GetTeamPtrReturnError;
         RET_CHECK_RET(team.DissMiss(current_leader));
         EraseTeam(e);
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t Teams::DissMissTeamNoLeader(Guid team_id)

@@ -9,8 +9,8 @@ namespace common
 {
     enum  EnumCode : uint32_t
     {
-        RET_OK = 0,
-        RET_TABLE_ID_ERROR = 2,
+        kRetOK = 0,
+        kRetTableId = 2,
         kRetCofnigData = 3,
 
         //login server 
@@ -69,14 +69,14 @@ namespace common
 #define RET_CHECK_RET(f)\
 {\
 uint32_t ret(f);\
-if (ret != RET_OK)\
+if (ret != kRetOK)\
 {\
     return  ret;\
 }\
 }
 
 #define  CheckReturnCloseureError(return_code)\
-if (return_code != RET_OK)\
+if (return_code != kRetOK)\
 {\
     response->mutable_error()->set_error_no(return_code);\
     done->Run();\
@@ -94,6 +94,6 @@ response->mutable_error()->set_error_no(f);\
 done->Run();\
 return;
 
-#define ReturnCloseureOK ReturnCloseureError(RET_OK);
+#define ReturnCloseureOK ReturnCloseureError(kRetOK);
 
 #endif // !COMMON_SRC_RETURN_CODE_ERROR_CODE

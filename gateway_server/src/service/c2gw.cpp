@@ -163,7 +163,7 @@ void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
 {
     //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断  
     auto& resp_ = cp->s_rp_;
-    if (resp_->error().error_no() == RET_OK)//进入游戏有错误，直接返回给客户端
+    if (resp_->error().error_no() == kRetOK)//进入游戏有错误，直接返回给客户端
     {
         return;
     }      
