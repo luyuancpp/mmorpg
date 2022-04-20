@@ -35,18 +35,30 @@ Item* Bag::GetItemByBos(uint32_t pos)
 	return GetItemByGuid(it->second);
 }
 
+uint32_t Bag::GetItemPos(common::Guid guid)
+{
+	for (auto& pit : pos_)
+	{
+		if (pit.second == guid)
+		{
+			return pit.first;
+		}
+	}
+	return kInvalidU32Id;
+}
+
 uint32_t Bag::AddItem(const Item& add_item)
 {
 	auto p_item_base = item_reg.try_get<ItemBaseDb>(add_item.entity());
 	if (nullptr == p_item_base)
 	{
-		return RET_BAG_ADD_ITEM_HAS_NOT_BASE_COMPONENT;
+		return kRetBagAddItemHasNotBaseComponent;
 	}
 	auto& item_base_db = *p_item_base;
 	if (item_base_db.config_id() <= 0 || item_base_db.size() <= 0)
 	{
 		LOG_ERROR << "bag add item player:" << player_guid();
-		return RET_BAG_ADD_ITEM_INVALID_PARAM;
+		return kRetBagAddItemInvalidParam;
 	}
 	auto p_c_item = get_item_conf(item_base_db.config_id());
 	if (nullptr == p_c_item)
@@ -62,7 +74,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 	{
 		if (items_.size() >= size())
 		{
-			return RET_BAG_ADD_ITEM_BAG_FULL;
+			return kRetBagAddItemBagFull;
 		}
 		if (item_base_db.guid() == kInvalidGuid)
 		{
@@ -72,7 +84,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 		if (!it.second)
 		{
 			LOG_ERROR << "bag add item" << player_guid();
-			return RET_BAG_DELETE_ITEM_HAS_GUID;
+			return kRetBagDeleteItemAlreadyHasGuid;
 		}
 		OnNewGrid(it.first->second);
 	}
@@ -111,7 +123,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 			need_grid_size = check_need_stack_size / p_c_item->max_statck_size();
 			if (NotAdequateSize(need_grid_size))
 			{
-				return RET_BAG_ADD_ITEM_BAG_FULL;
+				return kRetBagAddItemBagFull;
 			}
 		}
 		std::size_t need_stack_size = add_item.size();
@@ -162,7 +174,7 @@ uint32_t Bag::DelItem(common::Guid del_guid)
 	auto it = items_.find(del_guid);
 	if (it == items_.end())
 	{
-		return RET_BAG_DELETE_ITEM_HASNOT_GUID;
+		return kRetBagDeleteItemHasnotGuid;
 	}
 	items_.erase(del_guid);
 	for (auto& pit : pos_)
@@ -175,6 +187,11 @@ uint32_t Bag::DelItem(common::Guid del_guid)
 		break;
 	}
 	return RET_OK;
+}
+
+void Bag::Unlock(std::size_t sz)
+{
+	item_reg.get<BagCapacity>(entity()).size_ += sz;
 }
 
 void Bag::OnNewGrid(const Item& item)

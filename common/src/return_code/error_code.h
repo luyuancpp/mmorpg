@@ -55,12 +55,12 @@ namespace common
         RET_MISSION_GET_REWARD_NO_MISSION_ID = 6004,
 
         //bag 
-        RET_BAG_DELETE_ITEM_HASNOT_GUID = 7000,
-        RET_BAG_DELETE_ITEM_HAS_GUID = 7001,
-        RET_BAG_ADD_ITEM_HAS_NOT_BASE_COMPONENT = 7002,
-        RET_BAG_ADD_ITEM_INVALID_GUID = 7003,
-        RET_BAG_ADD_ITEM_INVALID_PARAM = 7004,
-        RET_BAG_ADD_ITEM_BAG_FULL = 7005,
+        kRetBagDeleteItemHasnotGuid = 7000,
+        kRetBagDeleteItemAlreadyHasGuid = 7001,
+        kRetBagAddItemHasNotBaseComponent = 7002,
+        kRetBagAddItemInvalidGuid = 7003,
+        kRetBagAddItemInvalidParam = 7004,
+        kRetBagAddItemBagFull = 7005,
     };
 }//namespace common
 

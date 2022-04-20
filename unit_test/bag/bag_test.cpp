@@ -27,6 +27,7 @@ TEST(BagTest, AddNewGridItem)
     EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->config_id(), p.config_id_);
     EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->size(), p.size_);
     EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByBos(0)->guid());
+    EXPECT_EQ(0, bag.GetItemPos(g_server_sequence.Current()));
     EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByGuid(g_server_sequence.Current())->guid());
 }
 
@@ -47,6 +48,7 @@ TEST(BagTest, AddNewGridItemFull)
         EXPECT_EQ(bag.GetItemByBos(i)->size(), p.size_);
         EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->config_id(), p.config_id_);
         EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->size(), p.size_);
+        EXPECT_EQ(i, bag.GetItemPos(g_server_sequence.Current()));
         EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByBos(i)->guid());
         EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByGuid(g_server_sequence.Current())->guid());
     }   
@@ -54,7 +56,76 @@ TEST(BagTest, AddNewGridItemFull)
     EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.pos_size());
 
     auto item = CreateItem(p);
-    EXPECT_EQ(RET_BAG_ADD_ITEM_BAG_FULL, bag.AddItem(item));
+    EXPECT_EQ(kRetBagAddItemBagFull, bag.AddItem(item));
+    bag.Unlock(BagCapacity::kDefualtCapacity);
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
+    {
+        auto item = CreateItem(p);
+        EXPECT_EQ(RET_OK, bag.AddItem(item));
+        uint32_t newindex = i + (uint32_t)BagCapacity::kDefualtCapacity;
+        EXPECT_EQ(newindex + 1 , bag.item_size());
+        EXPECT_EQ(newindex + 1, bag.pos_size());
+        EXPECT_EQ(bag.GetItemByBos(newindex)->config_id(), p.config_id_);
+        EXPECT_EQ(bag.GetItemByBos(newindex)->size(), p.size_);
+        EXPECT_EQ(bag.GetItemByBos(newindex)->config_id(), p.config_id_);
+        EXPECT_EQ(bag.GetItemByBos(newindex)->size(), p.size_);
+        EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->config_id(), p.config_id_);
+        EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->size(), p.size_);
+        EXPECT_EQ(newindex, bag.GetItemPos(g_server_sequence.Current()));
+        EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByBos(newindex)->guid());
+        EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByGuid(g_server_sequence.Current())->guid());
+    }
+    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.pos_size());
+}
+
+TEST(BagTest, AddStackItemFull)
+{
+    Bag bag;
+    CreateItemParam p;
+    p.config_id_ = 15;
+    p.size_ = get_item_conf(p.config_id_)->max_statck_size();
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
+    {
+        auto item = CreateItem(p);
+        EXPECT_EQ(RET_OK, bag.AddItem(item));
+        EXPECT_EQ(i + 1, bag.item_size());
+        EXPECT_EQ(i + 1, bag.pos_size());
+        EXPECT_EQ(bag.GetItemByBos(i)->config_id(), p.config_id_);
+        EXPECT_EQ(bag.GetItemByBos(i)->size(), p.size_);
+        EXPECT_EQ(bag.GetItemByBos(i)->config_id(), p.config_id_);
+        EXPECT_EQ(bag.GetItemByBos(i)->size(), p.size_);
+        EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->config_id(), p.config_id_);
+        EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->size(), p.size_);
+        EXPECT_EQ(i, bag.GetItemPos(g_server_sequence.Current()));
+        EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByBos(i)->guid());
+        EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByGuid(g_server_sequence.Current())->guid());
+    }
+    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.pos_size());
+
+    auto item = CreateItem(p);
+    EXPECT_EQ(kRetBagAddItemBagFull, bag.AddItem(item));
+    bag.Unlock(BagCapacity::kDefualtCapacity);
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
+    {
+        auto item = CreateItem(p);
+        EXPECT_EQ(RET_OK, bag.AddItem(item));
+        uint32_t newindex = i + (uint32_t)BagCapacity::kDefualtCapacity;
+        EXPECT_EQ(newindex + 1, bag.item_size());
+        EXPECT_EQ(newindex + 1, bag.pos_size());
+        EXPECT_EQ(bag.GetItemByBos(newindex)->config_id(), p.config_id_);
+        EXPECT_EQ(bag.GetItemByBos(newindex)->size(), p.size_);
+        EXPECT_EQ(bag.GetItemByBos(newindex)->config_id(), p.config_id_);
+        EXPECT_EQ(bag.GetItemByBos(newindex)->size(), p.size_);
+        EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->config_id(), p.config_id_);
+        EXPECT_EQ(bag.GetItemByGuid(g_server_sequence.Current())->size(), p.size_);
+        EXPECT_EQ(newindex, bag.GetItemPos(g_server_sequence.Current()));
+        EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByBos(newindex)->guid());
+        EXPECT_EQ(g_server_sequence.Current(), bag.GetItemByGuid(g_server_sequence.Current())->guid());
+    }
+    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.pos_size());
 }
 
 TEST(BagTest, Del)
