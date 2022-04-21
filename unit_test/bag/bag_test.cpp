@@ -19,7 +19,7 @@ TEST(BagTest, AddNewGridItem)
     CreateItemParam p;
     p.config_id_ = 1;
     auto item = CreateItem(p);
-    EXPECT_EQ(RET_OK, bag.AddItem(item));
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
     EXPECT_EQ(1, bag.item_size());
     EXPECT_EQ(1, bag.pos_size());
     EXPECT_EQ(bag.GetItemByBos(0)->config_id(), p.config_id_);
@@ -39,7 +39,7 @@ TEST(BagTest, AddNewGridItemFull)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
     {
         auto item = CreateItem(p);
-        EXPECT_EQ(RET_OK, bag.AddItem(item));
+        EXPECT_EQ(kRetOK, bag.AddItem(item));
         EXPECT_EQ(i + 1, bag.item_size());
         EXPECT_EQ(i + 1, bag.pos_size());
         EXPECT_EQ(bag.GetItemByBos(i)->config_id(), p.config_id_);
@@ -61,7 +61,7 @@ TEST(BagTest, AddNewGridItemFull)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
     {
         auto item = CreateItem(p);
-        EXPECT_EQ(RET_OK, bag.AddItem(item));
+        EXPECT_EQ(kRetOK, bag.AddItem(item));
         uint32_t newindex = i + (uint32_t)BagCapacity::kDefualtCapacity;
         EXPECT_EQ(newindex + 1 , bag.item_size());
         EXPECT_EQ(newindex + 1, bag.pos_size());
@@ -88,7 +88,7 @@ TEST(BagTest, AddStackItemFull)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
     {
         auto item = CreateItem(p);
-        EXPECT_EQ(RET_OK, bag.AddItem(item));
+        EXPECT_EQ(kRetOK, bag.AddItem(item));
         EXPECT_EQ(i + 1, bag.item_size());
         EXPECT_EQ(i + 1, bag.pos_size());
         EXPECT_EQ(bag.GetItemByBos(i)->config_id(), p.config_id_);
@@ -110,7 +110,7 @@ TEST(BagTest, AddStackItemFull)
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
     {
         auto item = CreateItem(p);
-        EXPECT_EQ(RET_OK, bag.AddItem(item));
+        EXPECT_EQ(kRetOK, bag.AddItem(item));
         uint32_t newindex = i + (uint32_t)BagCapacity::kDefualtCapacity;
         EXPECT_EQ(newindex + 1, bag.item_size());
         EXPECT_EQ(newindex + 1, bag.pos_size());
@@ -132,7 +132,7 @@ TEST(BagTest, Del)
 {
     Bag bag;
     Guid guid{kInvalidGuid};
-    EXPECT_EQ(RET_OK, bag.DelItem(guid));
+    EXPECT_EQ(kRetOK, bag.DelItem(guid));
 }
 
 TEST(BagTest, Update)
@@ -143,7 +143,7 @@ TEST(BagTest, Query)
 {
     Bag bag;
     Guid guid{ kInvalidGuid };
-    EXPECT_EQ(RET_OK, bag.DelItem(guid));
+    EXPECT_EQ(kRetOK, bag.DelItem(guid));
 }
 
 int main(int argc, char** argv)
