@@ -194,7 +194,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 	}
 	if (p_c_item->max_statck_size() == 1)//不可以堆叠直接生成新guid
 	{
-		if (items_.size() >= size())
+		if (IsFull())
 		{
 			return kRetBagAddItemBagFull;
 		}
@@ -217,16 +217,18 @@ uint32_t Bag::AddItem(const Item& add_item)
 		for (auto& it : items_)
 		{
 			auto& item = it.second;
-			if (item.config_id() != add_item.config_id())//堆叠判断
+			if (!CanStack(item, add_item))//堆叠判断
 			{
 				continue;
 			}
 			assert(p_c_item->max_statck_size() >= item.size());
 			auto remain_stack_size = p_c_item->max_statck_size() - item.size();	
-			if (remain_stack_size > 0)//可以叠加
+			if (remain_stack_size <= 0)
 			{
-				can_stack.emplace_back(&item);
+				continue;
 			}
+			//可以叠加,先把叠加的物品放进去
+			can_stack.emplace_back(&item);
 			if (check_need_stack_size > remain_stack_size )
 			{
 				check_need_stack_size -= remain_stack_size;
@@ -238,16 +240,17 @@ uint32_t Bag::AddItem(const Item& add_item)
 			}
 		}
 		std::size_t need_grid_size = 0;
-		//不可以放完继续检测,如果满了就不行了
+		//不可以放完继续检测,先检测格子够不够放，不够放就不行了
 		if (check_need_stack_size > 0)
 		{
-			//物品中可以堆叠的数量,用除法防止溢出,上面判断过大于0了
 			need_grid_size = calc_item_need_grid_size(check_need_stack_size, p_c_item->max_statck_size());
 			if (NotAdequateSize(need_grid_size))
 			{
 				return kRetBagAddItemBagFull;
 			}
 		}
+
+		//叠加到物品里面
 		auto need_stack_size = add_item.size();
 		for (auto& it : can_stack)
 		{
@@ -257,6 +260,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 			if (remain_stack_size >= need_stack_size)
 			{
 				item_base_db.set_size(item_base_db.size() + need_stack_size);
+				break;//可以放完了跳出循环，效率会高一点，不用遍历后面的了
 			}
 			else
 			{
@@ -264,6 +268,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 				need_stack_size -= remain_stack_size;
 			}
 		}
+		//放到新格子里面
 		for (size_t i = 0; i < need_grid_size; ++i)
 		{
 			ItemBaseDb item_base_db;
@@ -318,10 +323,11 @@ void Bag::Unlock(std::size_t sz)
 
 std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t stack_size)
 {
-	if (stack_size == 0)
+	if (stack_size <= 0)
 	{
 		return UINT64_MAX;
 	}
+	//物品中可以堆叠的数量,用除法防止溢出,上面判断过大于0了
 	auto stack_grid_size = item_size / stack_size;//满叠加的格子
 	if (item_size % stack_size > 0)
 	{
@@ -348,4 +354,9 @@ void Bag::OnNewGrid(const Item& item)
 bool Bag::CanStack(const Item& litem, const Item& ritem)
 {
 	return litem.config_id() == ritem.config_id();
+}
+
+bool Bag::CanStack(const Item& litem, uint32_t item_config_id)
+{
+	return litem.config_id() == item_config_id;
 }

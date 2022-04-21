@@ -44,7 +44,7 @@ public:
 	uint32_t GetItemPos(common::Guid guid);//for test
 	
 	inline bool HasItem(common::Guid guid)const { return items_.find(guid) != items_.end();	}
-	inline bool IsFull()const { return size() >= items_.size(); }
+	inline bool IsFull()const { return items_.size() >= size(); }
 	inline bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }//足够空格子
 	inline bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }//足够空格子
 	uint32_t AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_items);//足够空间放物品
@@ -60,6 +60,7 @@ private:
 	void sizeassert() const { assert(size() >= items_.size()); }
 	void OnNewGrid(const Item& item);
 	bool CanStack(const Item& litem, const Item& ritem);
+	bool CanStack(const Item& litem, uint32_t item_config_id);
 
 	BagEntity entity_;
 	ItemsMap items_;
