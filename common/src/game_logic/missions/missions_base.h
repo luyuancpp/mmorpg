@@ -2,7 +2,7 @@
 #define COMON_SRC_GAME_LOGIC_MISSIONS_MISSIONS_BASE_H_
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/comp/mission_comp.hpp"
+#include "src/game_logic/comp/mission_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/missions/missions_config_template.h"
 
