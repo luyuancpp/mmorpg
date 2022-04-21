@@ -128,6 +128,30 @@ TEST(BagTest, AddStackItemFull)
     EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.pos_size());
 }
 
+//不可叠加物品
+TEST(BagTest, AdequateSizeAddItemCannotStackItemFull)
+{
+    uint32_t config_id = 1;
+    Bag bag;
+    UInt32UInt32UnorderedMap adequate_add{ {config_id, (uint32_t)BagCapacity::kDefualtCapacity + 1 } };
+    EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));
+    adequate_add[config_id] = (uint32_t)BagCapacity::kDefualtCapacity;
+    EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
+}
+
+//可叠加混合
+TEST(BagTest, AdequateSizeAddItemmixtureFull)
+{
+    uint32_t cannot_stack_config_id = 1;
+    uint32_t stack_config_id = 10;
+    Bag bag;
+    UInt32UInt32UnorderedMap adequate_add{ {cannot_stack_config_id, 1 },
+        {stack_config_id, get_item_conf(stack_config_id)->max_statck_size() * (uint32_t)BagCapacity::kDefualtCapacity} };
+    EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));
+    adequate_add[stack_config_id] = (uint32_t)BagCapacity::kDefualtCapacity - 1;
+    EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
+}
+
 TEST(BagTest, Del)
 {
     Bag bag;
