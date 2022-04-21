@@ -271,7 +271,8 @@ uint32_t Bag::AddItem(const Item& add_item)
 		//放到新格子里面
 		for (size_t i = 0; i < need_grid_size; ++i)
 		{
-			ItemBaseDb item_base_db;
+			CreateItemParam p;
+			auto& item_base_db = p.item_base_db;
 			item_base_db.set_config_id(add_item.config_id());
 			item_base_db.set_guid(g_server_sequence.Generate());
 			if (p_c_item->max_statck_size() >= need_stack_size)
@@ -283,7 +284,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 				item_base_db.set_size(p_c_item->max_statck_size());
 				need_stack_size -= p_c_item->max_statck_size();
 			}
-			auto new_item = CreateItem(item_base_db);
+			auto new_item = CreateItem(p);
 			auto it = items_.emplace(item_base_db.guid(), std::move(new_item));
 			if (!it.second)
 			{

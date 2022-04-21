@@ -33,9 +33,8 @@ private:
 
 struct CreateItemParam
 {
-	uint32_t config_id_{ common::kInvalidU32Id };
-	uint32_t size_{ 1 };
+	CreateItemParam() { item_base_db.set_size(1); }
+	ItemBaseDb item_base_db;
 };
 
 Item CreateItem(const CreateItemParam& p);
-Item CreateItem(const ItemBaseDb& pb);
