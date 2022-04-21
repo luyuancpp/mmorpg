@@ -15,6 +15,20 @@ Bag::Bag()
 	item_reg.emplace<BagCapacity>(entity());
 }
 
+std::size_t Bag::GetItemStackSize(uint32_t config_id)const
+{
+	std::size_t sz = 0;
+	for (auto&  it : items_)
+	{
+		if (it.second.config_id() != config_id)
+		{
+			continue;
+		}
+		sz += it.second.size();
+	}
+	return sz;
+}
+
 Item* Bag::GetItemByGuid(common::Guid guid)
 {
 	auto it = items_.find(guid);
@@ -160,6 +174,42 @@ uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& try_items)
 	if (!stack_item_list.empty())
 	{
 		return kRetBagAdequatetem;
+	}
+	return kRetOK;
+}
+
+uint32_t  Bag::DelItem(const common::UInt32UInt32UnorderedMap& try_del_items)
+{
+	RET_CHECK_RET(AdequateItem(try_del_items));
+	auto del_items = try_del_items;
+	std::vector<Item*> del_item;//删除的物品
+	for (auto& it : items_)
+	{
+		for (auto& ji : del_items)
+		{
+			if (it.second.config_id() != ji.first)
+			{
+				continue;
+			}
+			auto sz = it.second.size();
+			if (ji.second <= sz)
+			{
+				it.second.set_size(sz - ji.second);
+				del_item.emplace_back(&it.second);
+				del_items.erase(ji.first);//该物品叠加成功,从列表删除
+				break;
+			}
+			else
+			{
+				ji.second -= it.second.size();
+				it.second.set_size(0);
+				del_item.emplace_back(&it.second);
+			}			
+		}
+		if (del_items.empty())
+		{
+			return kRetOK;
+		}
 	}
 	return kRetOK;
 }
@@ -339,6 +389,11 @@ std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t sta
 
 void Bag::OnNewGrid(const Item& item)
 {
+	if (items_.find(item.guid()) == items_.end())
+	{
+		LOG_ERROR << "bag add item" << player_guid() << " guid:" << item.guid();
+		return;
+	}
 	uint32_t add_pos = 0;
 	uint32_t sz = uint32_t(size());
 	for (uint32_t i = 0; i < sz; ++i)

@@ -26,8 +26,11 @@ public:
 	inline decltype(auto) config_id()const { return itembase().config_id(); }
 	inline decltype(auto) size()const { return itembase().size(); }
 
+	void set_size(uint32_t sz) { itembase().set_size(sz); }
+
 private:
 	inline const ItemBaseDb& itembase()const { return item_reg.get<ItemBaseDb>(entity()); }
+	inline ItemBaseDb& itembase(){ return item_reg.get<ItemBaseDb>(entity()); }
 	ItemEntity entity_;
 };
 

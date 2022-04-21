@@ -36,9 +36,10 @@ public:
 	inline std::size_t size() const { return item_reg.get<BagCapacity>(entity()).size_; }
 	inline std::size_t item_size() const { return items_.size(); }
 	inline std::size_t pos_size() const { return pos_.size(); }
-	
+		
 	inline void set_player(common::Guid guid) { item_reg.emplace<common::Guid>(entity(), guid); }
 
+	std::size_t GetItemStackSize(uint32_t config_id)const;
 	Item* GetItemByGuid(common::Guid guid);
 	Item* GetItemByBos(uint32_t pos);
 	uint32_t GetItemPos(common::Guid guid);//for test
@@ -49,7 +50,8 @@ public:
 	inline bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }//足够空格子
 	uint32_t AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_items);//足够空间放物品
 	uint32_t AdequateItem(const common::UInt32UInt32UnorderedMap& try_items);//足够物品
-	
+
+	uint32_t DelItem(const common::UInt32UInt32UnorderedMap& try_del_items);
 	void Neaten();
 	uint32_t AddItem(const Item&  add_item);
 	uint32_t DelItem(common::Guid del_guid);	
