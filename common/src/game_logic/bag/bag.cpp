@@ -102,7 +102,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 			}
 			if (ji.second <= remain_stack_size)
 			{
-				stack_item_list.erase(ji.first);//该物品叠加成功,从列表删除
+				stack_item_list.erase(ji.first);//该物品个数足够,从判断列表删除
 				break;
 			}
 			ji.second -= remain_stack_size;
@@ -249,7 +249,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 				return kRetBagAddItemBagFull;
 			}
 		}
-
+		//检测完毕真正放叠加物品在这里
 		//叠加到物品里面
 		auto need_stack_size = add_item.size();
 		for (auto& it : can_stack)
