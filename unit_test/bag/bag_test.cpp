@@ -83,7 +83,7 @@ TEST(BagTest, AddStackItemFull)
 {
     Bag bag;
     CreateItemParam p;
-    p.config_id_ = 15;
+    p.config_id_ = 10;
     p.size_ = get_item_conf(p.config_id_)->max_statck_size();
     for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
     {
@@ -148,8 +148,16 @@ TEST(BagTest, AdequateSizeAddItemmixtureFull)
     UInt32UInt32UnorderedMap adequate_add{ {cannot_stack_config_id, 1 },
         {stack_config_id, get_item_conf(stack_config_id)->max_statck_size() * (uint32_t)BagCapacity::kDefualtCapacity} };
     EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));
-    adequate_add[stack_config_id] = (uint32_t)BagCapacity::kDefualtCapacity - 1;
+    adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefualtCapacity - 1) * get_item_conf(stack_config_id)->max_statck_size();;
     EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
+
+    //添加一个格子以后不可以叠加了
+    CreateItemParam p;
+    p.config_id_ = cannot_stack_config_id;
+    p.size_ = get_item_conf(p.config_id_)->max_statck_size();
+    auto item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));
 }
 
 TEST(BagTest, Del)
