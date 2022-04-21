@@ -224,6 +224,62 @@ TEST(BagTest, AdequateSizeAddItemmixtureFull)
     EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//因为占用了三个格子，所以总共不满十个格子
 }
 
+//物品足够测试
+TEST(BagTest, AdequateItem)
+{
+    Bag bag;
+    bag.Unlock(20);
+    uint32_t test_config_id = 10;
+    uint32_t test_config_id1 = 1;
+    uint32_t test_config_id2 = 2;
+    uint32_t test_config_id3 = 11;
+    common::UInt32UInt32UnorderedMap adequate_item{ {test_config_id , 1} };
+    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//空背包测试
+    CreateItemParam p;
+    p.item_base_db.set_config_id(test_config_id);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
+    auto item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+    adequate_item[test_config_id] = get_item_conf(p.item_base_db.config_id())->max_statck_size() / 2;
+    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+    adequate_item.emplace(test_config_id1, 1);//不可叠加一个
+    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));
+
+    p.item_base_db.set_config_id(test_config_id1);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
+    item = CreateItem(p);//创建一个不可以叠加的
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+    adequate_item[test_config_id] = get_item_conf(test_config_id)->max_statck_size();//1个10可叠加999
+    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+    adequate_item[test_config_id] = get_item_conf(test_config_id)->max_statck_size() + 1;//1个10可叠加1000
+    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));
+    adequate_item[test_config_id] = get_item_conf(test_config_id)->max_statck_size() * 3;//3个10可叠加999*3
+    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));
+
+    p.item_base_db.set_config_id(test_config_id);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
+    item = CreateItem(p);//创建一个可以叠加的
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//2个10的叠加999
+
+    p.item_base_db.set_config_id(test_config_id3);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * 3);
+    item = CreateItem(p);//创建一个可以叠加的
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//2个10的叠加999
+
+    p.item_base_db.set_config_id(test_config_id);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
+    item = CreateItem(p);//创建一个可以叠加的
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));//3个10的叠加999
+
+    adequate_item[test_config_id3] = get_item_conf(test_config_id3)->max_statck_size() * 3;//3个10可叠加999 3个11可叠加999
+    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
+}
+
 TEST(BagTest, Del)
 {
     Bag bag;
