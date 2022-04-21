@@ -52,7 +52,7 @@ namespace region
         {
             return;
         }
-		if (!es.conn_->connected())
+		if (es.conn_->connected())
 		{
 			RegionInfoRpcRpcRC cp(std::make_shared<RegionInfoRpcClosure>());
 			cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
