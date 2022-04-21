@@ -113,11 +113,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 	for (auto& it : stack_item_list)
 	{
 		auto p_c_item = get_item_conf(it.first);//前面判断过空了，以及除0
-		auto stack_grid_size =  it.second / p_c_item->max_statck_size();//满叠加的格子
-		if (it.second % p_c_item->max_statck_size() > 0)
-		{
-			stack_grid_size += 1;
-		}
+		auto stack_grid_size = calc_item_need_grid_size(it.second, p_c_item->max_statck_size());//满叠加的格子
 		if (empty_size <= 0 || empty_size < stack_grid_size)
 		{
 			return kRetBagAdequateAddItemSize;
@@ -246,7 +242,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 		if (check_need_stack_size > 0)
 		{
 			//物品中可以堆叠的数量,用除法防止溢出,上面判断过大于0了
-			need_grid_size = check_need_stack_size / p_c_item->max_statck_size();
+			need_grid_size = calc_item_need_grid_size(check_need_stack_size, p_c_item->max_statck_size());
 			if (NotAdequateSize(need_grid_size))
 			{
 				return kRetBagAddItemBagFull;
@@ -318,6 +314,20 @@ uint32_t Bag::DelItem(common::Guid del_guid)
 void Bag::Unlock(std::size_t sz)
 {
 	item_reg.get<BagCapacity>(entity()).size_ += sz;
+}
+
+std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t stack_size)
+{
+	if (stack_size == 0)
+	{
+		return UINT64_MAX;
+	}
+	auto stack_grid_size = item_size / stack_size;//满叠加的格子
+	if (item_size % stack_size > 0)
+	{
+		stack_grid_size += 1;
+	}
+	return stack_grid_size;
 }
 
 void Bag::OnNewGrid(const Item& item)
