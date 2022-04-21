@@ -2,7 +2,7 @@
 
 #include "src/game_config/condition_config.h"
 #include "src/game_config/mission_config.h"
-#include "src/game_logic/comp/mission_comp.hpp"
+#include "src/game_logic/comp/mission_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/op_code.h"
 #include "src/game_logic/missions/missions_base.h"
@@ -44,14 +44,14 @@ TEST(MissionsComp, RepeatedMission)
     {
         uint32_t mid = 1;
         AcceptMissionP param{mid};
-        EXPECT_EQ(RET_OK, ms.Accept(param));
+        EXPECT_EQ(kRetOK, ms.Accept(param));
         EXPECT_EQ(RET_MISSION_ID_REPTEATED, ms.Accept(param));
     }
 
     {
         AcceptMissionP param{ 3 };
 		AcceptMissionP param2{ 2 };
-		EXPECT_EQ(RET_OK, ms.Accept(param));
+		EXPECT_EQ(kRetOK, ms.Accept(param));
 		EXPECT_EQ(RET_MISSION_TYPE_REPTEATED, ms.Accept(param2));
     }
 }
@@ -62,7 +62,7 @@ TEST(MissionsComp, TriggerCondition)
     uint32_t mid = 1;
     //auto mrow = mission_config::GetSingleton().get(mid);
     AcceptMissionP param{mid};
-    EXPECT_EQ(RET_OK, ms.Accept(param));
+    EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{ E_CONDITION_KILL_MONSTER, {1}, 1 };
     ms.receive(ce);
@@ -92,7 +92,7 @@ TEST(MissionsComp, TypeSize)
     uint32_t mid = 6;
     //auto mrow = mission_config::GetSingleton().get(mid);
     AcceptMissionP param{ mid };
-    EXPECT_EQ(RET_OK, ms.Accept(param));
+    EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_COMSTUM; ++i)
@@ -147,7 +147,7 @@ TEST(MissionsComp, CompleteAcceptMission)
     uint32_t mid = 4;
     //auto mrow = mission_config::GetSingleton().get(mid);
     AcceptMissionP param{ mid };
-    EXPECT_EQ(RET_OK, ms.Accept(param));
+    EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
     ms.receive(ce);
@@ -162,7 +162,7 @@ TEST(MissionsComp, OnCompleteMission)
     uint32_t mid = 7;
 
     AcceptMissionP param{ mid };
-    EXPECT_EQ(RET_OK, ms.Accept(param));
+    EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
     ms.receive(ce);
@@ -191,7 +191,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
     uint32_t mid = 7;
     auto& next_mission_set =  reg.emplace<NextTimeAcceptMission>(ms.entity());
     AcceptMissionP param{ mid };
-    EXPECT_EQ(RET_OK, ms.Accept(param));
+    EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
     ms.receive(ce);
@@ -213,11 +213,11 @@ TEST(MissionsComp, MissionCondition)
     uint32_t mid1 = 15;
     uint32_t mid2 = 16;
     AcceptMissionP param{ mid };
-    EXPECT_EQ(RET_OK, ms.Accept(param));
+    EXPECT_EQ(kRetOK, ms.Accept(param));
     AcceptMissionP param1{ mid1 };
-    EXPECT_EQ(RET_OK, ms.Accept(param1));
+    EXPECT_EQ(kRetOK, ms.Accept(param1));
     AcceptMissionP param2{ mid2 };
-    EXPECT_EQ(RET_OK, ms.Accept(param2));
+    EXPECT_EQ(kRetOK, ms.Accept(param2));
 
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
@@ -238,7 +238,7 @@ TEST(MissionsComp, ConditionAmount)
     uint32_t mid = 13;
 
     AcceptMissionP param{ mid };
-    EXPECT_EQ(RET_OK, ms.Accept(param));
+    EXPECT_EQ(kRetOK, ms.Accept(param));
 
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
@@ -260,7 +260,7 @@ TEST(MissionsComp, MissionRewardList)
     uint32_t mid = 12;
 
     AcceptMissionP param{ mid };
-    EXPECT_EQ(RET_OK, ms.Accept(param));
+    EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(RET_MISSION_GET_REWARD_NO_MISSION_ID, ms.GetReward(mid));
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
@@ -268,7 +268,7 @@ TEST(MissionsComp, MissionRewardList)
     ms.receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
-    EXPECT_EQ(RET_OK, ms.GetReward(mid));
+    EXPECT_EQ(kRetOK, ms.GetReward(mid));
     EXPECT_EQ(RET_MISSION_GET_REWARD_NO_MISSION_ID, ms.GetReward(mid));
     EXPECT_EQ(0, ms.can_reward_size());
 }
@@ -278,7 +278,7 @@ TEST(MissionsComp, RemoveMission)
     MissionsComp ms;
     uint32_t mid = 12;
     AcceptMissionP param{ mid };
-    EXPECT_EQ(RET_OK, ms.Accept(param));
+    EXPECT_EQ(kRetOK, ms.Accept(param));
 
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.can_reward_size());

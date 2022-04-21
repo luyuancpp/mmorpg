@@ -61,7 +61,7 @@ namespace common
             return RET_MISSION_GET_REWARD_NO_MISSION_ID;
         }
         rmid->erase(missin_id);
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t MissionsComp::Accept(const AcceptMissionP& param)
@@ -77,7 +77,7 @@ namespace common
         }
         if (!config_->HasKey(mission_id))
         {
-            return RET_TABLE_ID_ERROR;
+            return kRetTableId;
         }
         auto mission_sub_type = config_->mission_sub_type(mission_id);
         auto mission_type = config_->mission_type(mission_id);
@@ -108,12 +108,12 @@ namespace common
             UInt32PairSet::value_type p(mission_type, mission_sub_type);
             type_filter_.emplace(p);
         }
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t MissionsComp::AcceptCheck(const AcceptMissionP& param)
     {
-        return RET_OK;
+        return kRetOK;
     }
 
     uint32_t MissionsComp::Abandon(uint32_t mission_id)
@@ -127,7 +127,7 @@ namespace common
             begin_times->mutable_mission_begin_time()->erase(mission_id);
         }
         DelClassify(mission_id);
-        return RET_OK;
+        return kRetOK;
     }
 
     void MissionsComp::CompleteAllMission()
