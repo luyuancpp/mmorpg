@@ -67,11 +67,12 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 		}
 		else if (p_c_item->max_statck_size() == 1)//不可叠加占用一个格子
 		{
-			if (empty_size <= 0)
+			std::size_t need_size = static_cast<std::size_t>(p_c_item->max_statck_size() * it.second);
+			if (empty_size <= 0 || empty_size < need_size)
 			{
 				return kRetBagAdequateAddItemSize;
 			}
-			empty_size -= 1;
+			empty_size -= need_size;
 		}
 		else //可以叠加
 		{
@@ -117,7 +118,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 		{
 			stack_grid_size += 1;
 		}
-		if (empty_size <= 0)
+		if (empty_size <= 0 || empty_size < stack_grid_size)
 		{
 			return kRetBagAdequateAddItemSize;
 		}
@@ -165,6 +166,11 @@ uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& try_items)
 		return kRetBagAdequatetem;
 	}
 	return kRetOK;
+}
+
+void Bag::Neaten()
+{
+
 }
 
 uint32_t Bag::AddItem(const Item& add_item)
