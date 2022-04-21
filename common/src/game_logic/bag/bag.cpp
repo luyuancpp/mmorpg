@@ -58,7 +58,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 		auto p_c_item = get_item_conf(it.first);
 		if (nullptr == p_c_item)
 		{
-			return RET_TABLE_ID_ERROR;
+			return kRetTableId;
 		}
 		if (p_c_item->max_statck_size() <= 0)
 		{
@@ -82,7 +82,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 
 	if (!has_stack_item)//没有需要去背包里面叠加的物品
 	{
-		return RET_OK;
+		return kRetOK;
 	}
 
 	for (auto& it : items_)
@@ -123,7 +123,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 		}
 		empty_size -= stack_grid_size;
 	}
-	return RET_OK;
+	return kRetOK;
 }
 
 uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& try_items)
@@ -140,7 +140,7 @@ uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& try_items)
 			auto p_c_item = get_item_conf(ji.first);
 			if (nullptr == p_c_item)
 			{
-				return RET_TABLE_ID_ERROR;
+				return kRetTableId;
 			}
 			if (p_c_item->max_statck_size() <= 0)
 			{
@@ -157,14 +157,14 @@ uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& try_items)
 		}
 		if (stack_item_list.empty())
 		{
-			return RET_OK;
+			return kRetOK;
 		}
 	}
 	if (!stack_item_list.empty())
 	{
 		return kRetBagAdequatetem;
 	}
-	return RET_OK;
+	return kRetOK;
 }
 
 uint32_t Bag::AddItem(const Item& add_item)
@@ -183,7 +183,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 	auto p_c_item = get_item_conf(item_base_db.config_id());
 	if (nullptr == p_c_item)
 	{
-		return RET_TABLE_ID_ERROR;
+		return kRetTableId;
 	}
 	if (p_c_item->max_statck_size() <= 0)
 	{
@@ -286,7 +286,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 			OnNewGrid(it.first->second);
 		}
 	}
-	return RET_OK;
+	return kRetOK;
 }
 
 uint32_t Bag::DelItem(common::Guid del_guid)
@@ -306,7 +306,7 @@ uint32_t Bag::DelItem(common::Guid del_guid)
 		pos_.erase(pit.first);
 		break;
 	}
-	return RET_OK;
+	return kRetOK;
 }
 
 void Bag::Unlock(std::size_t sz)
