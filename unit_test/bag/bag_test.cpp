@@ -301,9 +301,6 @@ TEST(BagTest, DelItem)
     item = CreateItem(p);//创建一个不可以叠加的
     EXPECT_EQ(kRetOK, bag.AddItem(item));
 
-    item = CreateItem(p);//创建一个可以叠加的
-    EXPECT_EQ(kRetOK, bag.AddItem(item));//10 999 * 3
-
     p.item_base_db.set_config_id(config_id2);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());//  1
     item = CreateItem(p);//创建一个可以叠加的
@@ -318,29 +315,56 @@ TEST(BagTest, DelItem)
     try_del.emplace(test_config_id10, 1);
     EXPECT_EQ(kRetOK, bag.DelItem(try_del));
     EXPECT_EQ(get_item_conf(test_config_id10)->max_statck_size() * 2 - 1, bag.GetItemStackSize(test_config_id10));
+    EXPECT_EQ(get_item_conf(config_id1)->max_statck_size(), bag.GetItemStackSize(config_id1));
+    EXPECT_EQ(get_item_conf(config_id2)->max_statck_size(), bag.GetItemStackSize(config_id2));
+    EXPECT_EQ(get_item_conf(config_id11)->max_statck_size(), bag.GetItemStackSize(config_id11));
+    try_del[test_config_id10] = get_item_conf(test_config_id10)->max_statck_size() * 2 - 1;
+    try_del[config_id1] = get_item_conf(config_id1)->max_statck_size();
+    try_del[config_id2] = get_item_conf(config_id2)->max_statck_size();
+    try_del[config_id11] = get_item_conf(config_id11)->max_statck_size();
+    EXPECT_EQ(kRetOK, bag.DelItem(try_del));
+    EXPECT_EQ(0, bag.GetItemStackSize(test_config_id10));
+    EXPECT_EQ(0, bag.GetItemStackSize(config_id1));
+    EXPECT_EQ(0, bag.GetItemStackSize(config_id2));
+    EXPECT_EQ(0, bag.GetItemStackSize(config_id11));
+
+    EXPECT_EQ(5, bag.item_size());
+    EXPECT_EQ(5, bag.pos_size());
+    
+    std::vector<uint32_t> ps{ 0, 1, 2, 3, 4 };
+    for (auto& it : ps)
+    {
+        EXPECT_TRUE(bag.pos().find(it) != bag.pos().end());
+    }
 }
 
 TEST(BagTest, Del)
 {
     Bag bag;
-    Guid guid{kInvalidGuid};
-    EXPECT_EQ(kRetOK, bag.DelItem(guid));
+    CreateItemParam p;
+    uint32_t config_id1 = 1;
+    p.item_base_db.set_config_id(config_id1);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());// 1
+    auto item = CreateItem(p);//创建一个不可以叠加的
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(1, bag.item_size());
+    EXPECT_EQ(1, bag.pos_size());
+    EXPECT_EQ(kRetOK, bag.DelItem(g_server_sequence.Current()));
+    EXPECT_EQ(0, bag.item_size());
+    EXPECT_EQ(0, bag.pos_size());
 }
 
-TEST(BagTest, Update)
-{
-}
-
-TEST(BagTest, Query)
+TEST(BagTest, Neaten)
 {
     Bag bag;
-    Guid guid{ kInvalidGuid };
-    EXPECT_EQ(kRetOK, bag.DelItem(guid));
+    bag.Unlock(20);
+
 }
 
 int main(int argc, char** argv)
 {
     item_config::GetSingleton().load();
+    testing::InitGoogleTest();
     return RUN_ALL_TESTS();
 }
 

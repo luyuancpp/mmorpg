@@ -214,6 +214,40 @@ uint32_t  Bag::DelItem(const common::UInt32UInt32UnorderedMap& try_del_items)
 	return kRetOK;
 }
 
+uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
+{
+	if (p.size_ <= 0)
+	{
+		return kRetBagDelItemSize;
+	}
+	auto pit = pos_.find(p.pos_);
+	if (pit == pos_.end())
+	{
+		return kRetBagDelItemPos;
+	}
+	if (pit->second != p.item_guid_)
+	{
+		return kRetBagDelItemGuid;
+	}
+	auto item_it = items_.find(p.item_guid_);
+	if (item_it == items_.end())
+	{
+		return kRetBagDelItemFindItem;
+	}
+	auto& item = item_it->second;
+	if (item.config_id() != p.item_config_id_)
+	{
+		return kRetBagDelItemConfig;
+	}
+	auto old_size = item.size();
+	if (old_size < p.size_)
+	{
+		return kRetBagDelItemNotAdequateSize;
+	}
+	item.set_size(old_size - p.size_);
+	return kRetOK;
+}
+
 void Bag::Neaten()
 {
 
