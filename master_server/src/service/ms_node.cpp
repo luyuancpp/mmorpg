@@ -87,7 +87,7 @@ void MasterNodeServiceImpl::StartGS(::google::protobuf::RpcController* controlle
 	auto c = reg.get<RpcServerConnection>(gs_entity);
 	GsNodePtr gs = std::make_shared<GsNode>(c.conn_);
 	gs->node_info_.set_node_id(request->gs_node_id());
-	gs->node_info_.set_node_type(GAME_SERVER_NODE_TYPE);
+	gs->node_info_.set_node_type(kGsNode);
 	MakeGSParam make_gs_p;
 	make_gs_p.node_id_ = request->gs_node_id();
 	AddMainSceneNodeCompnent(gs_entity, make_gs_p);
@@ -145,7 +145,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 		gate_entity = e;
 		auto& gate_node = *reg.emplace<GateNodePtr>(gate_entity, std::make_shared<GateNode>(c.conn_));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
-		gate_node.node_info_.set_node_type(GATEWAY_NODE_TYPE);
+		gate_node.node_info_.set_node_type(kGateWayNode);
 		g_gate_nodes.emplace(request->gate_node_id(), gate_entity);
 		break;
 	}

@@ -5,19 +5,25 @@
 
 namespace common
 {
-	enum eServerType : uint8_t
+	enum eServerType : uint32_t
 	{
 		kMainSceneServer,//主世界场景
 		kRoomServer,//副本场景
 		kMainSceneCrossServer,//跨服主世界场景
 		kRoomSceneCrossServer,//跨服副本场景
 	};
+
+	struct GsServerType
+	{
+		uint32_t server_type_{ kMainSceneServer };
+	};
+
 	enum EnumNodeType : uint32_t
 	{
-		LOGIN_NODE_TYPE,
-		MASTER_NODE_TYPE,
-		GAME_SERVER_NODE_TYPE,
-		GATEWAY_NODE_TYPE,
+		kLoginNode,
+		kMasterNode,
+		kGsNode,
+		kGateWayNode,
 	};
 
 }//namespace common

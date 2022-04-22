@@ -56,7 +56,7 @@ void RgServiceImpl::StartCrossMainGS(::google::protobuf::RpcController* controll
 	auto c = reg.get<RpcServerConnection>(gs_entity);
 	GsNodePtr gs = std::make_shared<GsNode>(c.conn_);
 	gs->node_info_.set_node_id(request->gs_node_id());
-	gs->node_info_.set_node_type(GAME_SERVER_NODE_TYPE);
+	gs->node_info_.set_node_type(kGsNode);
 	MakeGSParam make_gs_p;
 	make_gs_p.node_id_ = request->gs_node_id();
 	AddMainSceneNodeCompnent(gs_entity, make_gs_p);

@@ -10,16 +10,6 @@ using namespace common;
 
 int main(int argc, char* argv[])
 {
-    global_entity() = reg.create();
-    if (argc > 1 && atoi(argv[1]) == kRoomServer)
-    {
-        reg.emplace<eServerType>(global_entity(), kRoomServer);
-    }
-    else
-    {
-        reg.emplace<eServerType>(global_entity(), kMainSceneServer);
-    }
-
     EventLoop loop;
     GameServer server(&loop);
     g_gs = &server;
