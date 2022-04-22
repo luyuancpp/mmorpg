@@ -176,7 +176,7 @@ namespace common
 		}
 
         //for test
-        Guid Current()
+        Guid LastId()
         {
             return  server_id_ | seq_;
         }
