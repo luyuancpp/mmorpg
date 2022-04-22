@@ -354,6 +354,35 @@ TEST(BagTest, Del)
     EXPECT_EQ(0, bag.pos_size());
 }
 
+TEST(BagTest, DelItemByPos)
+{
+    Bag bag;
+    CreateItemParam p;
+    uint32_t config_id10 = 10;
+    p.item_base_db.set_config_id(config_id10);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());// 999
+    auto item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(1, bag.item_size());
+    EXPECT_EQ(1, bag.pos_size());
+    DelItemByPosParam dp;
+    EXPECT_EQ(kRetBagDelItemPos, bag.DelItemByPos(dp));
+    dp.pos_ = 0;
+    EXPECT_EQ(kRetBagDelItemGuid, bag.DelItemByPos(dp));
+    dp.item_guid_ = g_server_sequence.Current();
+    EXPECT_EQ(kRetBagDelItemConfig, bag.DelItemByPos(dp));
+    dp.item_config_id_ = config_id10;
+    EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+    EXPECT_EQ(get_item_conf(config_id10)->max_statck_size() - 1, bag.GetItemStackSize(config_id10));
+    dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
+    EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+    EXPECT_EQ(0, bag.GetItemStackSize(config_id10));
+    EXPECT_EQ(1, bag.item_size());
+    EXPECT_EQ(1, bag.pos_size());
+    EXPECT_EQ(0, bag.GetItemByBos(0)->size());
+    EXPECT_EQ(0, bag.GetItemByGuid(g_server_sequence.Current())->size());
+}
+
 TEST(BagTest, Neaten)
 {
     Bag bag;
