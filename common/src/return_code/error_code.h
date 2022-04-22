@@ -63,6 +63,12 @@ namespace common
         kRetBagAddItemBagFull = 7005,
         kRetBagAdequateAddItemSize = 7006,//不可叠加
         kRetBagAdequatetem = 7007,//不够物品
+        kRetBagDelItemPos = 7008,
+        kRetBagDelItemConfig = 7009,
+        kRetBagDelItemGuid = 7010,
+        kRetBagDelItemFindItem = 7011,
+        kRetBagDelItemSize = 7012,
+        kRetBagDelItemNotAdequateSize = 7013,
     };
 }//namespace common
 

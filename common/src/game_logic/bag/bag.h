@@ -26,6 +26,14 @@ enum EnumBagType : uint32_t
 	kBagMax = 4,//占位
 };
 
+struct DelItemByPosParam
+{
+	common::Guid item_guid_{ common::kInvalidGuid};
+	uint32_t item_config_id_{ common::kInvalidU32Id};
+	uint32_t pos_{ common::kInvalidU32Id };
+	uint32_t size_{ 1 };
+};
+
 class Bag 
 {
 public:
@@ -36,6 +44,7 @@ public:
 	inline std::size_t size() const { return item_reg.get<BagCapacity>(entity()).size_; }
 	inline std::size_t item_size() const { return items_.size(); }
 	inline std::size_t pos_size() const { return pos_.size(); }
+	inline const PosMap& pos()const { return pos_; }
 		
 	inline void set_player(common::Guid guid) { item_reg.emplace<common::Guid>(entity(), guid); }
 
@@ -52,6 +61,7 @@ public:
 	uint32_t AdequateItem(const common::UInt32UInt32UnorderedMap& try_items);//足够物品
 
 	uint32_t DelItem(const common::UInt32UInt32UnorderedMap& try_del_items);
+	uint32_t DelItemByPos(const DelItemByPosParam& p);
 	void Neaten();
 	uint32_t AddItem(const Item&  add_item);
 	uint32_t DelItem(common::Guid del_guid);	
