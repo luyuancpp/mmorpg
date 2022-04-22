@@ -28,10 +28,11 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 
 void GameServer::Init()
 {
-    
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     RegionConfig::GetSingleton().Load("region.json");
+    global_entity() = reg.create();
+    reg.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
     InitMsgService();
     loadallconfig();
     InitGlobalEntities();
@@ -130,7 +131,7 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
     session_info->set_port(master_local_addr.port());
     node_info->set_ip(gs_.ip());
     node_info->set_port(gs_.port());
-    request.set_server_type(reg.get<eServerType>(global_entity()));
+    request.set_server_type(reg.get<GsServerType>(global_entity()).server_type_);
     request.set_gs_node_id(gs_.id());
     g2ms_stub_.CallMethod(
         &ServerReplied::StartGSMasterReplied,
@@ -141,7 +142,7 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
 
 void GameServer::Register2Region()
 {
-	auto& server_type = reg.get<eServerType>(global_entity());
+	auto& server_type = reg.get<GsServerType>(global_entity()).server_type_;
 	if (server_type == kMainSceneCrossServer)
 	{
         ServerReplied::StartCrossMainGSReplied cp(std::make_shared< ServerReplied::StartCrossMainGSReplied::element_type>());
@@ -192,7 +193,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             [this]() ->void
             {
                 ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-                if (reg.get<eServerType>(global_entity()) == kMainSceneServer)
+                if (reg.get<GsServerType>(global_entity()).server_type_ == kMainSceneServer)
                 {
                     cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
                 }
@@ -278,7 +279,7 @@ void GameServer::receive(const common::OnBeConnectedEvent& es)
 				continue;
 			}
 			auto gatenode = reg.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
-			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == GATEWAY_NODE_TYPE)
+			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateWayNode)
 			{
                 g_gate_nodes.erase((*gatenode)->node_info_.node_id());
 			}

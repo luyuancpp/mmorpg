@@ -38,7 +38,7 @@ void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 	}
 	GsNode gsi;
 	gsi.node_info_.set_node_id(request->gs_node_id());
-	gsi.node_info_.set_node_type(GAME_SERVER_NODE_TYPE);
+	gsi.node_info_.set_node_type(kGsNode);
 	gsi.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
 	gsi.gs_stub_ = std::make_unique<RpcStub<gsservice::GsService_Stub>>();
 	gsi.gs_session_->subscribe<RegisterStubEvent>(*(gsi.gs_stub_.get()));
