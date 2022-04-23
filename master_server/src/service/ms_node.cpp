@@ -120,7 +120,7 @@ void MasterNodeServiceImpl::StartGS(::google::protobuf::RpcController* controlle
 	{
 		g_ms_node->DoGateConnectGs(gs_entity, e);
 	}
-	g_ms_node->OnGsNodeStart(gs_entity);
+	g_ms_node->AddGsNode(gs_entity);
 	LOG_INFO << "game connected " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE StartGS
 }
