@@ -16,6 +16,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StartCrossGs
+    
 ///<<< END WRITING YOUR CODE StartCrossGs
 }
 
@@ -26,6 +27,7 @@ void RgServiceImpl::StartMS(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StartMS
+    
 ///<<< END WRITING YOUR CODE StartMS
 }
 

@@ -11,7 +11,7 @@
 using namespace common;
 
 
-void ServerReplied::StartGSMasterReplied(StartGameMasterRpcRC cp)
+void ServerReplied::StartGSMasterReplied(StartGsMasterRpcRC cp)
 {
     auto rsp = cp->s_rp_;
     auto& scenemap = reg.get<SceneMapComp>(global_entity());

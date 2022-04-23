@@ -24,9 +24,9 @@ private:
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE
 public:
-    void StartGS(::google::protobuf::RpcController* controller,
-        const msservice::StartGSRequest* request,
-        msservice::StartGSResponse* response,
+    void StartGs(::google::protobuf::RpcController* controller,
+        const msservice::StartGsRequest* request,
+        msservice::StartGsResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGwConnect(::google::protobuf::RpcController* controller,

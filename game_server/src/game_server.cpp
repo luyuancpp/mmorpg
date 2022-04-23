@@ -127,9 +127,9 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRC cp)
 
 void GameServer::Register2Master(MasterSessionPtr& ms_node)
 {
-    ServerReplied::StartGameMasterRpcRC scp(std::make_shared<ServerReplied::StartGameMasterRpcClosure>());
+    ServerReplied::StartGsMasterRpcRC scp(std::make_shared<ServerReplied::StartGsMasterRpcClosure>());
     auto& master_local_addr = ms_node->local_addr();
-    msservice::StartGSRequest& request = scp->s_rq_;
+    msservice::StartGsRequest& request = scp->s_rq_;
     auto session_info = request.mutable_rpc_client();
     auto node_info = request.mutable_rpc_server();
     session_info->set_ip(master_local_addr.toIp());
@@ -142,7 +142,7 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
         &ServerReplied::StartGSMasterReplied,
         scp,
         &ServerReplied::GetSingleton(),
-        &msservice::MasterNodeService_Stub::StartGS);
+        &msservice::MasterNodeService_Stub::StartGs);
 }
 
 void GameServer::Register2Region()

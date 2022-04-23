@@ -71,8 +71,8 @@ void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE StopGS
 }
 
-void GwNodeServiceImpl::PlayerEnterGS(::google::protobuf::RpcController* controller,
-    const gwservice::PlayerEnterGSRequest* request,
+void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controller,
+    const gwservice::PlayerEnterGsRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

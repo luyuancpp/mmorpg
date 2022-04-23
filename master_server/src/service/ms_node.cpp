@@ -44,7 +44,7 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 		return;
 	}
 	auto& player_session = reg.get<PlayerSession>(player);
-	gwservice::PlayerEnterGSRequest messag;
+	gwservice::PlayerEnterGsRequest messag;
 	messag.set_conn_id(replied.s_rq_.conn_id());
 	messag.set_gs_node_id(player_session.gs_node_id());
 	messag.set_player_id(replied.s_rq_.player_id());
@@ -57,13 +57,13 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void MasterNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
-    const msservice::StartGSRequest* request,
-    msservice::StartGSResponse* response,
+void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controller,
+    const msservice::StartGsRequest* request,
+    msservice::StartGsResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StartGS
+///<<< BEGIN WRITING YOUR CODE StartGs
 	response->set_master_node_id(g_ms_node->master_node_id());
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
@@ -122,7 +122,7 @@ void MasterNodeServiceImpl::StartGS(::google::protobuf::RpcController* controlle
 	}
 	g_ms_node->AddGsNode(gs_entity);
 	LOG_INFO << "game connected " << request->gs_node_id();
-///<<< END WRITING YOUR CODE StartGS
+///<<< END WRITING YOUR CODE StartGs
 }
 
 void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* controller,
