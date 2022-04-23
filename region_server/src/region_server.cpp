@@ -6,6 +6,8 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/server_component.h"
+#include "src/network/gs_node.h"
+#include "src/network/ms_node.h"
 
 using namespace common;
 
@@ -71,12 +73,40 @@ namespace region
 
     void RegionServer::receive(const OnBeConnectedEvent& es)
     {
-        auto& conn = es.conn_;
-        if (!es.conn_->connected())
+		auto& conn = es.conn_;
+        if (conn->connected())
         {
-            auto e = reg.create();
-            reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+            auto& conn = es.conn_;
+            if (!es.conn_->connected())
+            {
+                auto e = reg.create();
+                reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+            }
         }
+        else
+        {
+			auto& peer_addr = conn->peerAddress();
+			for (auto e : reg.view<RpcServerConnection>())
+			{
+				auto& local_addr = reg.get<RpcServerConnection>(e).conn_->peerAddress();
+				if (local_addr.toIpPort() != peer_addr.toIpPort())
+				{
+					continue;
+				}
+				auto gsnode = reg.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+				if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGsNode)
+				{
+					g_gs_nodes.erase((*gsnode)->node_info_.node_id());
+				}
+				auto msnode = reg.try_get<MsNodePtr>(e);//如果是gate
+				if (nullptr != msnode && (*msnode)->node_info_.node_type() == kMasterNode)
+				{
+                    g_ms_nodes.erase((*msnode)->node_info_.node_id());
+				}
+				reg.destroy(e);
+				break;
+			}
+        }		
     }
 }
 
