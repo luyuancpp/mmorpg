@@ -22,7 +22,7 @@ public:
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     using StubMsNode = common::RpcStub<msservice::MasterNodeService_Stub>;
-    using StubRg = common::RpcStub<regionservcie::RgService_Stub>;
+    using RgNodeStub = common::RpcStub<regionservcie::RgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
 
@@ -55,7 +55,7 @@ public:
 
 private:    
 	void InitGlobalEntities();
-    void ConnectRegion();
+    void Connect2Region();
 
     muduo::net::EventLoop* loop_{ nullptr };
 
@@ -69,9 +69,9 @@ private:
     StubMsNode g2ms_stub_;
 
     common::RpcClientPtr region_session_;
-    StubRg rg_stub_;
+    RgNodeStub rg_stub_;
 
-    ::game_server_db gs_;
+    ::game_server_db gs_info_;
 
     gsservice::GsServiceImpl gs_service_impl_;
 };
