@@ -147,41 +147,22 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
 
 void GameServer::Register2Region()
 {
-	auto& server_type = reg.get<GsServerType>(global_entity()).server_type_;
-	if (server_type == kMainSceneCrossServer)
-	{
-        ServerReplied::StartCrossMainGSReplied cp(std::make_shared< ServerReplied::StartCrossMainGSReplied::element_type>());
-		auto& rq = cp->s_rq_;
-		auto session_info = rq.mutable_rpc_client();
-		auto node_info = rq.mutable_rpc_server();
-		session_info->set_ip(region_session_->local_addr().toIp());
-		session_info->set_port(region_session_->local_addr().port());
-		node_info->set_ip(gs_info_.ip());
-		node_info->set_port(gs_info_.port());
-		rq.set_gs_node_id(gs_info_.id());
-		rg_stub_.CallMethod(
-            &ServerReplied::StartCrossMainGSRegionReplied,
-            cp,
-            &ServerReplied::GetSingleton(),
-            &regionservcie::RgService_Stub::StartCrossMainGS);
-	}
-	else if (server_type == kRoomSceneCrossServer)
-	{
-        ServerReplied::StartCrossRoomGSReplied cp(std::make_shared< ServerReplied::StartCrossRoomGSReplied::element_type>());
-        auto& rq = cp->s_rq_;
-		auto session_info = rq.mutable_rpc_client();
-		auto node_info = rq.mutable_rpc_server();
-		session_info->set_ip(region_session_->local_addr().toIp());
-		session_info->set_port(region_session_->local_addr().port());
-		node_info->set_ip(gs_info_.ip());
-		node_info->set_port(gs_info_.port());
-		rq.set_gs_node_id(gs_info_.id());
-		rg_stub_.CallMethod(
-			&ServerReplied::StartCrossRoomGSRegionReplied,
-			cp,
-			&ServerReplied::GetSingleton(),
-			&regionservcie::RgService_Stub::StartCrossRoomGS);
-	}
+	ServerReplied::StartCrossGsReplied cp(std::make_shared< ServerReplied::StartCrossGsReplied::element_type>());
+	auto& rq = cp->s_rq_;
+	auto session_info = rq.mutable_rpc_client();
+	auto node_info = rq.mutable_rpc_server();
+	session_info->set_ip(region_session_->local_addr().toIp());
+	session_info->set_port(region_session_->local_addr().port());
+	node_info->set_ip(gs_info_.ip());
+	node_info->set_port(gs_info_.port());
+    rq.set_server_type(reg.get<GsServerType>(global_entity()).server_type_);
+	rq.set_gs_node_id(gs_info_.id());
+	rg_stub_.CallMethod(
+		&ServerReplied::StartCrossGsRegionReplied,
+		cp,
+		&ServerReplied::GetSingleton(),
+		&regionservcie::RgService_Stub::StartCrossGs);
+
 }
 
 void GameServer::receive(const OnConnected2ServerEvent& es)
