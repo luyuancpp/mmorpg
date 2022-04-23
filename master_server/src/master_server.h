@@ -15,7 +15,7 @@
 
 #include "deploy_node.pb.h"
 #include "db_node.pb.h"
-#include "rg_node.pb.h"
+#include "logic_proto/scene_rg.pb.h"
 
     class MasterServer : muduo::noncopyable, public common::Receiver<MasterServer>
     {
@@ -23,7 +23,7 @@
         using RedisClientPtr = common::RedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using DbNodeStub = common::RpcStub<dbservice::DbService_Stub>;
-        using RgNodeStub = common::RpcStub<rgservcie::RgService_Stub>;
+        using RgNodeStub = common::RpcStub<regionservcie::RgService_Stub>;
 
         MasterServer(muduo::net::EventLoop* loop);           
 
@@ -31,16 +31,8 @@
         inline uint32_t master_node_id()const { return serverinfos_.master_info().id(); }
 
         void Init();
-
-        void Connect2Deploy();
-
-        using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
-            deploy::ServerInfoResponse>;
-        using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
-        void StartServer(ServerInfoRpcRC cp);
-
-        void DoGateConnectGs(entt::entity gs, entt::entity gate);
-        void AddGsNode(entt::entity gs);
+		void DoGateConnectGs(entt::entity gs, entt::entity gate);
+		void AddGsNode(entt::entity gs);
 
         void receive(const common::OnConnected2ServerEvent& es);
         void receive(const common::OnBeConnectedEvent& es);
@@ -50,6 +42,20 @@
         void InitConfig();
         void InitGlobalEntities();
 
+		using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
+			deploy::ServerInfoResponse>;
+		using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
+		void StartServer(ServerInfoRpcRC cp);
+
+		using StartMsClosure = common::NormalClosure<regionservcie::StartMSRequest, regionservcie::StartMSResponse>;
+		using StartMsReplied = std::shared_ptr<StartMsClosure>;
+		void StartMsRegionReplied(StartMsReplied cp);
+
+
+        void Connect2Deploy();
+        void Connect2Region();
+        void Register2Region();
+
         muduo::net::EventLoop* loop_{ nullptr };
         RedisClientPtr redis_;
         RpcServerPtr server_;
@@ -57,8 +63,8 @@
         common::RpcClientPtr deploy_rpc_client_;
         deploy::DeployStub deploy_stub_;
 
-		common::RpcClientPtr region_rpc_client_;
-		RgNodeStub region_stub_;
+		common::RpcClientPtr region_session_;
+        RgNodeStub rg_stub_;
 
         common::RpcClientPtr db_rpc_client_;
         DbNodeStub db_node_stub_;

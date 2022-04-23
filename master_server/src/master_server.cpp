@@ -1,6 +1,7 @@
 #include "master_server.h"
 
 #include "muduo/base/Logging.h"
+#include "muduo//net/EventLoop.h"
 
 #include "src/game_config/all_config.h"
 #include "src/game_config/deploy_json.h"
@@ -19,6 +20,8 @@
 #include "gw_node.pb.h"
 
 using namespace common;
+using namespace muduo;
+using namespace net;
 
 MasterServer* g_ms_node = nullptr;
 
@@ -60,6 +63,10 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     db_rpc_client_->subscribe<RegisterStubEvent>(db_node_stub_);
     db_rpc_client_->connect();    
 
+	auto& regioninfo = serverinfos_.regin_info();
+	InetAddress region_addr(regioninfo.ip(), regioninfo.port());
+	region_session_ = std::make_unique<RpcClient>(loop_, region_addr);
+
     auto& myinfo = serverinfos_.master_info();
     InetAddress master_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
@@ -67,6 +74,11 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
 
     server_->registerService(&node_service_impl_);
     server_->start();
+}
+
+void MasterServer::StartMsRegionReplied(StartMsReplied cp)
+{
+
 }
 
 void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
@@ -138,6 +150,18 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
 			break;
 		}
     }
+
+	if (nullptr != region_session_)
+	{
+		if (region_session_->connected())
+		{
+			EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&MasterServer::Register2Region, this));
+		}
+		else
+		{
+
+		}
+	}
 }
 
 void MasterServer::InitConfig()
@@ -151,4 +175,31 @@ void MasterServer::InitConfig()
 void MasterServer::InitGlobalEntities()
 {
     MakeScenes();
+}
+
+void MasterServer::Connect2Region()
+{
+	region_session_->subscribe<RegisterStubEvent>(rg_stub_);
+	region_session_->registerService(&node_service_impl_);
+	region_session_->subscribe<OnConnected2ServerEvent>(*this);
+	region_session_->connect();
+}
+
+void MasterServer::Register2Region()
+{
+    auto& myinfo = serverinfos_.master_info();
+    StartMsReplied cp(std::make_shared<StartMsReplied::element_type>());
+	auto& rq = cp->s_rq_;
+	auto session_info = rq.mutable_rpc_client();
+	auto node_info = rq.mutable_rpc_server();
+	session_info->set_ip(region_session_->local_addr().toIp());
+	session_info->set_port(region_session_->local_addr().port());
+	node_info->set_ip(myinfo.ip());
+	node_info->set_port(myinfo.port());
+	rq.set_ms_node_id(myinfo.id());
+	rg_stub_.CallMethod(
+		&MasterServer::StartMsRegionReplied,
+		cp,
+		this,
+		&regionservcie::RgService_Stub::StartMS);
 }
