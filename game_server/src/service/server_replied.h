@@ -18,13 +18,10 @@ public:
     using StartGameMasterRpcRC = std::shared_ptr<StartGameMasterRpcClosure>;
     void StartGSMasterReplied(StartGameMasterRpcRC cp);
 
-	using StartCrossMainGSClosure = common::NormalClosure<regionservcie::StartCrossMainGSRequest, regionservcie::StartCrossMainGSResponse>;
-	using StartCrossMainGSReplied = std::shared_ptr<StartCrossMainGSClosure>;
-	void StartCrossMainGSRegionReplied(StartCrossMainGSReplied cp);
+	using StartCrossMainGSClosure = common::NormalClosure<regionservcie::StartCrossGsRequest, regionservcie::StartCrossGsResponse>;
+	using StartCrossGsReplied = std::shared_ptr<StartCrossMainGSClosure>;
+	void StartCrossGsRegionReplied(StartCrossGsReplied cp);
 
-	using StartCrossRoomGSClosure = common::NormalClosure<regionservcie::StartCrossRoomGSRequest, regionservcie::StartCrossRoomGSResponse>;
-	using StartCrossRoomGSReplied = std::shared_ptr<StartCrossRoomGSClosure>;
-	void StartCrossRoomGSRegionReplied(StartCrossRoomGSReplied cp);
 private:
 };
 

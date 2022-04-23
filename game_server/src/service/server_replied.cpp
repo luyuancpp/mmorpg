@@ -24,7 +24,7 @@ void ServerReplied::StartGSMasterReplied(StartGameMasterRpcRC cp)
     }
 }
 
-void ServerReplied::StartCrossMainGSRegionReplied(StartCrossMainGSReplied cp)
+void ServerReplied::StartCrossGsRegionReplied(StartCrossGsReplied cp)
 {
 	auto rsp = cp->s_rp_;
 	auto& scenemap = reg.get<SceneMapComp>(global_entity());
@@ -37,15 +37,3 @@ void ServerReplied::StartCrossMainGSRegionReplied(StartCrossMainGSReplied cp)
 	}
 }
 
-void ServerReplied::StartCrossRoomGSRegionReplied(StartCrossRoomGSReplied cp)
-{
-	auto rsp = cp->s_rp_;
-	auto& scenemap = reg.get<SceneMapComp>(global_entity());
-	for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
-	{
-		auto& pb = rsp->scenes_info(i);
-		auto e = reg.create();
-		reg.emplace<SceneInfo>(e, pb);
-		scenemap.emplace(pb.scene_id(), e);
-	}
-}
