@@ -12,9 +12,7 @@ int main(int argc, char* argv[])
 {
     EventLoop loop;
     GameServer server(&loop);
-    g_gs = &server;
     server.Init();
-    server.InitNetwork();
     loop.loop();
     return 0;
 }

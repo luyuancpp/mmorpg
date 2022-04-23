@@ -10,6 +10,7 @@
 #include "src/reuse_game_id/reuse_game_id.h"
 #include "src/network/rpc_server.h"
 #include "src/network/rpc_connection_event.h"
+#include "src/service/deploy_node.h"
 
 namespace deploy
 {
@@ -128,6 +129,8 @@ namespace deploy
         std::string redis_ip_ = "127.0.0.1";
         ReuseGSId reuse_id_;
         common::TimerTask scan_over_timer_;
+
+        deploy::DeployServiceImpl impl_;
     };
 }//namespace deploy
 

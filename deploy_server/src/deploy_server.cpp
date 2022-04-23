@@ -24,6 +24,10 @@ namespace deploy
 
     void DeployServer::Start()
     {
+		impl_.set_player_mysql_client(player_mysql_client());
+		RegisterService(&impl_);
+
+        g_deploy_server = this;
         db_->AddTable(region_server_db::default_instance());
         db_->AddTable(database_server_db::default_instance());
         db_->AddTable(redis_server_db::default_instance());

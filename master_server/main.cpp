@@ -8,15 +8,13 @@ using namespace muduo::net;
 
 int main(int argc, char* argv[])
 {
+    //other global value
+	ScenesSystem scene_scene;
+	g_scene_sys = &scene_scene;
+
     EventLoop loop;
     MasterServer server(&loop);
-    g_ms_node = &server;
-
-    ScenesSystem scene_scene;
-    g_scene_sys = &scene_scene;
-
     server.Init();
-    server.Connect2Deploy();
     loop.loop();
     return 0;
 }

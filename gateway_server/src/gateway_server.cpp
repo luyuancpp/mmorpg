@@ -22,6 +22,7 @@ void GatewayServer::LoadConfig()
 
 void GatewayServer::Init()
 {
+    g_gateway_server = this;
     LoadConfig();
     InitMsgService();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();

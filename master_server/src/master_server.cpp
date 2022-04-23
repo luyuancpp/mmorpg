@@ -31,10 +31,14 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
 
 void MasterServer::Init()
 {
+    g_ms_node = this;
     InitConfig();
     InitMsgService();
     InitGlobalEntities();
     InitPlayerServcie();
+
+    //connect 
+    Connect2Deploy();
 }
 
 void MasterServer::Connect2Deploy()

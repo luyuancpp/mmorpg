@@ -21,8 +21,12 @@ namespace region
 
     void RegionServer::Init()
     {
+        g_region_server = this;
+
         RegionConfig::GetSingleton().Load("region.json");
         DeployConfig::GetSingleton().Load("deploy.json");
+
+        ConnectDeploy();
     }
 
     void RegionServer::ConnectDeploy()
