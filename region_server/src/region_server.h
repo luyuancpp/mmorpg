@@ -7,6 +7,7 @@
 #include "src/network/deploy_rpcclient.h"
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_server.h"
+#include "src/service/logic/rgscene_rg.h"
 
 namespace region
 {
@@ -34,6 +35,8 @@ private:
 
     common::RpcClientPtr deploy_rpc_client_;
     deploy::DeployStub deploy_stub_;
+
+    regionservcie::RgServiceImpl impl_;
 };
 }
 

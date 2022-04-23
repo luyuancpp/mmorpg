@@ -1,6 +1,7 @@
 #include "rgscene_rg.h"
 #include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "muduo/base/Logging.h"
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
@@ -26,6 +27,7 @@ void RgServiceImpl::StartCrossRoomGS(::google::protobuf::RpcController* controll
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StartCrossRoomGS
+    
 ///<<< END WRITING YOUR CODE StartCrossRoomGS
 }
 
@@ -36,6 +38,7 @@ void RgServiceImpl::StartMS(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE StartMS
+    //LOG_INFO << request->ms_node_id();
 ///<<< END WRITING YOUR CODE StartMS
 }
 

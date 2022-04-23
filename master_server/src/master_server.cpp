@@ -63,10 +63,8 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     db_rpc_client_->subscribe<RegisterStubEvent>(db_node_stub_);
     db_rpc_client_->connect();    
 
-	auto& regioninfo = serverinfos_.regin_info();
-	InetAddress region_addr(regioninfo.ip(), regioninfo.port());
-	region_session_ = std::make_unique<RpcClient>(loop_, region_addr);
-
+    Connect2Region();
+	
     auto& myinfo = serverinfos_.master_info();
     InetAddress master_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
@@ -99,23 +97,38 @@ void MasterServer::AddGsNode(entt::entity gs)
 
 void MasterServer::receive(const OnConnected2ServerEvent& es)
 {
-    if (!es.conn_->connected())
+    if (es.conn_->connected())
     {
-        return;
+		// started 
+		if (nullptr == server_)
+		{
+			ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
+			cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+			cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+			deploy_stub_.CallMethod(
+				&MasterServer::StartServer,
+				cp,
+				this,
+				&deploy::DeployService_Stub::ServerInfo);
+		}
+		
+		if (nullptr != region_session_)
+		{
+			if (region_session_->connected())
+			{
+				EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&MasterServer::Register2Region, this));
+			}
+			else
+			{
+
+			}
+		}
     }
-    // started 
-    if (nullptr != server_)
-    {
-        return;
-    }
-    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-    cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
-    deploy_stub_.CallMethod(
-        &MasterServer::StartServer,
-        cp,
-        this,
-        &deploy::DeployService_Stub::ServerInfo);
+	else
+	{
+		
+	}
+	
 }
 
 void MasterServer::receive(const OnBeConnectedEvent& es)
@@ -151,17 +164,7 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
 		}
     }
 
-	if (nullptr != region_session_)
-	{
-		if (region_session_->connected())
-		{
-			EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&MasterServer::Register2Region, this));
-		}
-		else
-		{
 
-		}
-	}
 }
 
 void MasterServer::InitConfig()
@@ -179,6 +182,9 @@ void MasterServer::InitGlobalEntities()
 
 void MasterServer::Connect2Region()
 {
+	auto& regioninfo = serverinfos_.regin_info();
+	InetAddress region_addr(regioninfo.ip(), regioninfo.port());
+	region_session_ = std::make_unique<RpcClient>(loop_, region_addr);
 	region_session_->subscribe<RegisterStubEvent>(rg_stub_);
 	region_session_->registerService(&node_service_impl_);
 	region_session_->subscribe<OnConnected2ServerEvent>(*this);
