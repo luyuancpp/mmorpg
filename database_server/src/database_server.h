@@ -29,7 +29,7 @@ namespace database
         MysqlClientPtr& player_mysql_client(){ return database_; }
         RedisClientPtr& redis_client() { return redis_; }
 
-        void LoadConfig();
+        void Init();
 
         void ConnectDeploy();
 

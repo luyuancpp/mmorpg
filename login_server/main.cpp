@@ -2,15 +2,11 @@
 
 #include "src/login_server.h"
 
-using namespace login;
-
 int main(int argc, char* argv[])
 {
     EventLoop loop;
-    LoginServer server(&loop);
-    g_login_server = &server;
-    server.LoadConfig();
-    server.ConnectDeploy();
+    login::LoginServer server(&loop);
+    server.Init();
     loop.loop();
     return 0;
 }

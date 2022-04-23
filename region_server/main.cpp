@@ -9,12 +9,12 @@ using namespace region;
 
 int32_t main()
 {
-    EventLoop loop;
-    RegionServer server(&loop);
-    g_region_server = &server;
+    //other global value
 	ScenesSystem scene_scene;
 	g_scene_sys = &scene_scene;
+
+    EventLoop loop;
+    RegionServer server(&loop);
     server.Init();
-    server.ConnectDeploy();
     loop.loop();
 }

@@ -15,10 +15,12 @@ namespace database
           database_(std::make_shared<common::MysqlDatabase>()),
           redis_(std::make_shared<RedisClient>()){}
 
-    void DatabaseServer::LoadConfig()
+    void DatabaseServer::Init()
     {
         GameConfig::GetSingleton().Load("game.json");
         DeployConfig::GetSingleton().Load("deploy.json");
+
+        ConnectDeploy();
     }
 
     void DatabaseServer::ConnectDeploy()

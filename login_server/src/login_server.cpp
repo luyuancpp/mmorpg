@@ -19,10 +19,13 @@ LoginServer::LoginServer(muduo::net::EventLoop* loop)
 {
 }
 
-void LoginServer::LoadConfig()
+void LoginServer::Init()
 {
+    g_login_server = this;
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
+
+    ConnectDeploy();
 }
 
 void LoginServer::ConnectDeploy()

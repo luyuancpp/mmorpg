@@ -28,7 +28,7 @@ namespace login
         RedisClientPtr& redis_client() { return redis_; }
         uint32_t login_node_id() const { return node_info_.id(); }
 
-        void LoadConfig();
+        void Init();
 
         void ConnectDeploy();
 

@@ -10,8 +10,7 @@ int32_t main(int argc, char* argv[])
 {
     EventLoop loop;
     DatabaseServer server(&loop);
-    server.LoadConfig();
-    server.ConnectDeploy();
+    server.Init();
     loop.loop();
     return 0;
 }

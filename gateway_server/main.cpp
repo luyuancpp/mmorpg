@@ -5,11 +5,12 @@ using namespace gateway;
 
 int main(int argc, char* argv[])
 {
+    //other global value
     ClientSessions gate_clients;
     g_client_sessions_ = &gate_clients;
+
     EventLoop loop;
     GatewayServer server(&loop);
-    g_gateway_server = &server;
     server.Init();
     loop.loop();
     return 0;

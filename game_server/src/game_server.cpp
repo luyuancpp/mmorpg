@@ -28,6 +28,8 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 
 void GameServer::Init()
 {
+    g_gs = this; 
+
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     RegionConfig::GetSingleton().Load("region.json");
@@ -37,6 +39,9 @@ void GameServer::Init()
     loadallconfig();
     InitGlobalEntities();
     InitPlayerServcie();
+
+
+    InitNetwork();
 }
 
 void GameServer::InitNetwork()
