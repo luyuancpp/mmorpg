@@ -23,8 +23,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-namespace gateway
-{
+
 class GatewayServer : noncopyable, public common::Receiver<GatewayServer>
 {
 public:
@@ -102,9 +101,7 @@ private:
     gwservice::GwNodeServiceImpl node_service_impl_;
 };
 
-} // namespace gateway
-
-extern gateway::GatewayServer* g_gateway_server;
+extern GatewayServer* g_gateway_server;
 
 #endif // !GATEWAY_GATEWAY_SERVER_H_
 

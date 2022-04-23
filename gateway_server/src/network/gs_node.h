@@ -11,19 +11,17 @@
 #include "gs_node.pb.h"
 #include "common.pb.h"
 
-namespace gateway
+struct GsNode
 {
-    struct GsNode
-    {
-		using GsStubPtr = std::unique_ptr<common::RpcStub<gsservice::GsService_Stub>>;
-        common::RpcClientPtr gs_session_;		
-        GsStubPtr gs_stub_;
-        NodeInfo node_info_;
-        common::EntityPtr entity_id;
-    };
+	using GsStubPtr = std::unique_ptr<common::RpcStub<gsservice::GsService_Stub>>;
+	common::RpcClientPtr gs_session_;
+	GsStubPtr gs_stub_;
+	NodeInfo node_info_;
+	common::EntityPtr entity_id;
+};
 
-    using GsNodes = std::unordered_map<uint32_t, GsNode>;
-    extern thread_local GsNodes g_gs_nodes;
-}//namespace gateway
+using GsNodes = std::unordered_map<uint32_t, GsNode>;
+extern thread_local GsNodes g_gs_nodes;
+
 
 #endif//GATEWAY_SERVER_GS_SESSION_H_
