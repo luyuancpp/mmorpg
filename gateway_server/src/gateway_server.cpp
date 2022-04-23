@@ -10,10 +10,9 @@
 
 using namespace common;
 
-gateway::GatewayServer* g_gateway_server = nullptr; 
+GatewayServer* g_gateway_server = nullptr; 
 
-namespace gateway
-{
+
 void GatewayServer::LoadConfig()
 {
     GameConfig::GetSingleton().Load("game.json");
@@ -169,4 +168,3 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
     }
 }
 
-}//namespace gateway

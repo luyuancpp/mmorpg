@@ -19,15 +19,13 @@
 
 using namespace common;
 using namespace c2gw;
-using namespace gateway;
+
 
 std::unordered_set<common::Guid> g_connected_ids;
 common::ServerSequence g_server_sequence_;
 
 extern std::unordered_set<uint32_t> g_open_player_msgids;
 
-namespace gateway
-{
   
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
     ProtobufDispatcher& dispatcher)
@@ -46,7 +44,7 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 		std::bind(&ClientReceiver::OnRpcClientMessage, this, _1, _2, _3));
 }
 
-gateway::ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub()
+ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub()
 {
     return *g_login_nodes.begin()->second.login_stub_;
 }
@@ -217,8 +215,6 @@ void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp)
     auto& crp = cp->c_rp_;
     crp.set_response(std::move(cp->s_rp_->response()));
     codec_.send(cp->client_conn_, crp);
-}
-
 }
 
 

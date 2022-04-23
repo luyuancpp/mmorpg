@@ -40,8 +40,6 @@ struct ClosureReplied
     common::Guid conn_id_{ common::kInvalidGuid };
 };
 
-namespace gateway
-{
 using LoginRequestPtr = std::shared_ptr<LoginRequest> ;
 using CreatePlayerRequestPtr = std::shared_ptr<CreatePlayerRequest>;
 using EnterGameRequestPtr = std::shared_ptr<EnterGameRequest>;
@@ -108,6 +106,6 @@ private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;   
 };
-}//namespace gateway
+
 
 #endif // GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_

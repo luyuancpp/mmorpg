@@ -5,18 +5,16 @@
 
 #include "src/common_type/common_type.h"
 
-namespace gateway
+struct GateClient
 {
-    struct GateClient
-    {
-        common::Guid guid_{ common::kInvalidGuid };
-        uint32_t gs_node_id_{ UINT32_MAX };
-        muduo::net::TcpConnectionPtr conn_;
-    };
+	common::Guid guid_{ common::kInvalidGuid };
+	uint32_t gs_node_id_{ UINT32_MAX };
+	muduo::net::TcpConnectionPtr conn_;
+};
 
-    using ClientSessions = std::unordered_map<uint64_t, GateClient>;
+using ClientSessions = std::unordered_map<uint64_t, GateClient>;
 
-    extern ClientSessions* g_client_sessions_;
-}
+extern ClientSessions* g_client_sessions_;
+
 
 #endif//GATEWAY_SERVER_SRC_GATEWAY_PLAYER_GATEWAY_PLAYER_LIST_H_

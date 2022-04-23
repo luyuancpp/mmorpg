@@ -11,7 +11,6 @@
 #include "src/return_code/error_code.h"
 #include "src/network/rpc_closure.h"
 
-using namespace gateway;
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
