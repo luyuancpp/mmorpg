@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
     g_scene_sys = &scene_scene;
 
     server.Init();
-    server.ConnectDeploy();
+    server.Connect2Deploy();
     loop.loop();
     return 0;
 }

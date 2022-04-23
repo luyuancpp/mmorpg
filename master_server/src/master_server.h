@@ -32,7 +32,7 @@
 
         void Init();
 
-        void ConnectDeploy();
+        void Connect2Deploy();
 
         using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
             deploy::ServerInfoResponse>;
@@ -40,7 +40,7 @@
         void StartServer(ServerInfoRpcRC cp);
 
         void DoGateConnectGs(entt::entity gs, entt::entity gate);
-        void OnGsNodeStart(entt::entity gs);
+        void AddGsNode(entt::entity gs);
 
         void receive(const common::OnConnected2ServerEvent& es);
         void receive(const common::OnBeConnectedEvent& es);

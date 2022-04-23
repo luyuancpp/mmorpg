@@ -37,7 +37,7 @@ void MasterServer::Init()
     InitPlayerServcie();
 }
 
-void MasterServer::ConnectDeploy()
+void MasterServer::Connect2Deploy()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
@@ -75,7 +75,7 @@ void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
     reg.get<GateNodePtr>(gate)->session_.Send(request);
 }
 
-void MasterServer::OnGsNodeStart(entt::entity gs)
+void MasterServer::AddGsNode(entt::entity gs)
 {
     auto& gsnode = reg.get<GsNodePtr>(gs);
     g_gs_nodes.emplace(gsnode->node_info_.node_id(), gs);
