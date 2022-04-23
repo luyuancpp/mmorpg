@@ -28,7 +28,7 @@ message StopGSRequest
   uint32 port = 2;
 }
 
-message PlayerEnterGSRequest
+message PlayerEnterGsRequest
 {
   uint64 conn_id = 1;
   uint32 gs_node_id = 2;
@@ -51,7 +51,7 @@ message PlayerMessageRequest
 service GwNodeService {
   rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
   rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
-  rpc PlayerEnterGS (PlayerEnterGSRequest) returns (google.protobuf.Empty);
+  rpc PlayerEnterGs (PlayerEnterGsRequest) returns (google.protobuf.Empty);
   rpc PlayerMessage (PlayerMessageRequest) returns (google.protobuf.Empty);
   rpc GsPlayerService (GsPlayerMessageRequest) returns (google.protobuf.Empty);
 }

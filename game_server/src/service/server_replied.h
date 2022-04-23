@@ -14,9 +14,9 @@ public:
 
     static ServerReplied& GetSingleton() { thread_local ServerReplied singleton; return singleton; }
 
-    using StartGameMasterRpcClosure = common::NormalClosure<msservice::StartGSRequest,msservice::StartGSResponse>;
-    using StartGameMasterRpcRC = std::shared_ptr<StartGameMasterRpcClosure>;
-    void StartGSMasterReplied(StartGameMasterRpcRC cp);
+    using StartGsMasterRpcClosure = common::NormalClosure<msservice::StartGsRequest,msservice::StartGsResponse>;
+    using StartGsMasterRpcRC = std::shared_ptr<StartGsMasterRpcClosure>;
+    void StartGSMasterReplied(StartGsMasterRpcRC cp);
 
 	using StartCrossMainGSClosure = common::NormalClosure<regionservcie::StartCrossGsRequest, regionservcie::StartCrossGsResponse>;
 	using StartCrossGsReplied = std::shared_ptr<StartCrossMainGSClosure>;

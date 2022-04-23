@@ -5,8 +5,7 @@ import "component_proto/scene_comp.proto";
 package msservice;
 option cc_generic_services = true;
 
-
-message StartGSRequest
+message StartGsRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
@@ -14,7 +13,7 @@ message StartGSRequest
   uint32 server_type = 4;
 }
 
-message StartGSResponse
+message StartGsResponse
 {
   uint32 master_node_id = 1;
   repeated SceneInfo scenes_info = 2;
@@ -35,12 +34,6 @@ message ConnectRequest
 message ConnectedGameRequest
 {
   IpPort rpc_client = 1;
-}
-
-message GSIdRequest
-{
-  uint64 guid = 1;
-  uint64 conn_id = 2;
 }
 
 message LeaveGameRequest
@@ -109,7 +102,7 @@ message PlayerMessageRespone
 }
 
 service MasterNodeService {
-  rpc StartGS (StartGSRequest) returns (StartGSResponse);
+  rpc StartGs (StartGsRequest) returns (StartGsResponse);
   rpc OnGwConnect (ConnectRequest) returns (google.protobuf.Empty);
   rpc OnGwLeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
   rpc OnGwPlayerService (ClientMessageRequest) returns (google.protobuf.Empty);
