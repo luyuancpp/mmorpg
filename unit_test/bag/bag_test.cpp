@@ -499,18 +499,18 @@ TEST(BagTest, Neaten400_1)
     uint32_t config_id10 = 10;
     uint32_t config_id11 = 11;
     std::size_t item_statck_max_sz = 999;
-    auto grid_size = unlock_size / 2;
+    auto per_grid_size = unlock_size / 2;
     p.item_base_db.set_config_id(config_id10);
-    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(grid_size));// 999 * 200
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(per_grid_size));// 999 * 200
     auto item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
     auto id10 = g_server_sequence.LastId();
     p.item_base_db.set_config_id(config_id11);
-    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(grid_size));// 999 * 200
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(per_grid_size));// 999 * 200
     item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
     auto id11 = g_server_sequence.LastId();
-    auto config_id10_sz = unlock_size / 2;
+    auto config_id10_sz = per_grid_size;
     auto use_config_id10_sz = unlock_size / 4;
     for (uint32_t i = 0; i < config_id10_sz; ++i)
     {
@@ -588,10 +588,10 @@ TEST(BagTest, Neaten400_1)
             EXPECT_FALSE(true);
         }
     }
-    EXPECT_EQ(grid_size , pos999.size());
+    EXPECT_EQ(per_grid_size , pos999.size());
     EXPECT_EQ(2, pos100.size());
-    EXPECT_EQ(grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id10));
-    EXPECT_EQ(grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id11));
+    EXPECT_EQ(per_grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id10));
+    EXPECT_EQ(per_grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id11));
 }
 
 
