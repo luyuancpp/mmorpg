@@ -19,7 +19,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
         {
             continue;
         }
-        std::size_t server_player_size = (*reg.get<GSDataPtr>(e)).player_size();
+        std::size_t server_player_size = (*reg.get<GsDataPtr>(e)).player_size();
         if (server_player_size >= min_player_size || server_player_size >= kMaxServerPlayerSize)
         {
             continue;
@@ -60,7 +60,7 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 		{
 			continue;
 		}
-		std::size_t server_player_size = (*reg.get<GSDataPtr>(e)).player_size();
+		std::size_t server_player_size = (*reg.get<GsDataPtr>(e)).player_size();
 		if (server_player_size >= kMaxServerPlayerSize)
 		{
 			continue;

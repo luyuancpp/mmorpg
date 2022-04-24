@@ -293,7 +293,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		LOG_INFO << "player " << guid << " enter default secne";
 		return;
 	}
-	auto* p_gs_data = reg.try_get<GSDataPtr>(scene);
+	auto* p_gs_data = reg.try_get<GsDataPtr>(scene);
 	if (nullptr == p_gs_data)
 	{
 		// todo default
