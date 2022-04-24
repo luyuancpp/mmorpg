@@ -435,6 +435,166 @@ TEST(BagTest, Neaten1)
     EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.GetItemStackSize(config_id11));
 }
 
+//测试400格子，每个用998
+TEST(BagTest, Neaten400)
+{
+    Bag bag;
+    std::size_t unlock_size = 400;
+    bag.Unlock(unlock_size);
+    CreateItemParam p;
+    uint32_t config_id10 = 10;
+    uint32_t config_id11 = 11;
+    p.item_base_db.set_config_id(config_id10);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(unlock_size / 2));// 999 * 200
+    auto item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    auto id10 = g_server_sequence.LastId();
+    p.item_base_db.set_config_id(config_id11);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(unlock_size / 2));// 999 * 200
+    item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    auto id11 = g_server_sequence.LastId();
+    auto config_id10_sz = unlock_size / 2;
+    for (uint32_t i = 0; i < config_id10_sz; ++i)
+    {
+        DelItemByPosParam dp;
+        dp.pos_ = i;
+        dp.item_guid_ = id10 - (config_id10_sz - i) + 1;
+        dp.item_config_id_ = config_id10;
+        dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
+        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+    }
+    for (uint32_t i = uint32_t(config_id10_sz); i < bag.pos_size(); ++i)
+    {
+        DelItemByPosParam dp;
+        dp.pos_ = i;
+        dp.item_guid_ = id11 - (config_id10_sz - (i - config_id10_sz)) + 1;
+        dp.item_config_id_ = config_id11;
+        dp.size_ = get_item_conf(config_id11)->max_statck_size() - 1;
+        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+    }
+    for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
+    {
+        EXPECT_EQ(1, bag.GetItemByBos(i)->size());
+    }
+    bag.Neaten();
+    EXPECT_EQ(2, bag.item_size());
+    EXPECT_EQ(2, bag.pos_size());
+    std::size_t grid_sz = 200;
+    for (auto& it : bag.pos())
+    {
+        EXPECT_EQ(grid_sz, (std::size_t)bag.GetItemByBos(bag.GetItemPos(it.second))->size());
+    }
+    EXPECT_EQ(grid_sz, bag.GetItemStackSize(config_id10));
+    EXPECT_EQ(grid_sz, bag.GetItemStackSize(config_id11));
+}
+
+//测试400格子，每种物品前100个用998
+TEST(BagTest, Neaten400_1)
+{
+    Bag bag;
+    std::size_t unlock_size = 400;
+    bag.Unlock(unlock_size);
+    CreateItemParam p;
+    uint32_t config_id10 = 10;
+    uint32_t config_id11 = 11;
+    std::size_t item_statck_max_sz = 999;
+    auto grid_size = unlock_size / 2;
+    p.item_base_db.set_config_id(config_id10);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(grid_size));// 999 * 200
+    auto item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    auto id10 = g_server_sequence.LastId();
+    p.item_base_db.set_config_id(config_id11);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * uint32_t(grid_size));// 999 * 200
+    item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    auto id11 = g_server_sequence.LastId();
+    auto config_id10_sz = unlock_size / 2;
+    auto use_config_id10_sz = unlock_size / 4;
+    for (uint32_t i = 0; i < config_id10_sz; ++i)
+    {
+        if (i >= use_config_id10_sz)
+        {
+            break;
+        }
+        DelItemByPosParam dp;
+        dp.pos_ = i;
+        dp.item_guid_ = id10 - (config_id10_sz - i) + 1;
+        dp.item_config_id_ = config_id10;
+        dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
+        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+    }
+    auto use_config_id11_sz = unlock_size / 4 + config_id10_sz;
+    for (uint32_t i = uint32_t(config_id10_sz); i < bag.pos_size(); ++i)
+    {
+        if (i >= use_config_id11_sz)
+        {
+            break;
+        }
+        DelItemByPosParam dp;
+        dp.pos_ = i;
+        dp.item_guid_ = id11 - (config_id10_sz - (i - config_id10_sz)) + 1;
+        dp.item_config_id_ = config_id11;
+        dp.size_ = get_item_conf(config_id11)->max_statck_size() - 1;
+        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+    }
+    auto index1 = use_config_id10_sz;//第一百个格子以前1
+    auto index2 = use_config_id10_sz * 2;//第二百个格子以前999
+    auto index3 = use_config_id10_sz * 3;//第s三百个格子以前1
+    auto index4 = use_config_id10_sz * 4;//第s三百个格子以前999
+    for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
+    {
+        if (i < index1)
+        {
+            EXPECT_EQ(1, bag.GetItemByBos(i)->size());
+        }
+        else if (i < index2)
+        {
+            EXPECT_EQ(item_statck_max_sz, bag.GetItemByBos(i)->size());
+        }
+        else if (i < index3)
+        {
+            EXPECT_EQ(1, bag.GetItemByBos(i)->size());
+        }
+        else if (i < index4)
+        {
+            EXPECT_EQ(item_statck_max_sz, bag.GetItemByBos(i)->size());
+        }
+        else
+        {
+            EXPECT_EQ(0, bag.GetItemByBos(i)->size());
+        }
+    }
+    bag.Neaten();
+    std::size_t grid_sz = 200;
+    std::size_t remain_sz = 100;
+    EXPECT_EQ(grid_sz + 2, bag.item_size());
+    EXPECT_EQ(grid_sz + 2, bag.pos_size());   
+    common::UInt32Set pos999;
+    common::UInt32Set pos100;
+    for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
+    {
+        if (item_statck_max_sz == bag.GetItemByBos(i)->size())
+        {
+            pos999.emplace(i);
+        }
+        else if (100 == bag.GetItemByBos(i)->size())
+        {
+            pos100.emplace(i);
+        }
+        else
+        {
+            EXPECT_FALSE(true);
+        }
+    }
+    EXPECT_EQ(grid_size , pos999.size());
+    EXPECT_EQ(2, pos100.size());
+    EXPECT_EQ(grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id10));
+    EXPECT_EQ(grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id11));
+}
+
+
 int main(int argc, char** argv)
 {
     item_config::GetSingleton().load();
