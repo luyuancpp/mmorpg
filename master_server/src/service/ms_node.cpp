@@ -91,7 +91,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	MakeGSParam make_gs_p;
 	make_gs_p.node_id_ = request->gs_node_id();
 	AddMainSceneNodeCompnent(gs_entity, make_gs_p);
-	reg.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);
+	reg.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);//为了停掉gs，或者gs断线用
 	reg.emplace<GsNodePtr>(gs_entity, gs);
 	reg.emplace<GsStubPtr>(gs_entity, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneServer)

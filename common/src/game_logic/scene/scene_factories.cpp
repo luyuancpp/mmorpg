@@ -27,7 +27,6 @@ using namespace common;
         return e;
     }
 
-
 	void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param)
 	{
 		GSDataPtr p_server_data = std::make_shared<GSData>();
