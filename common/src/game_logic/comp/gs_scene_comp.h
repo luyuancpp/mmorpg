@@ -129,15 +129,15 @@ namespace common
     public:
         inline void set_node_id(uint32_t node_id) { node_id_ = node_id; }
         inline uint32_t node_id()const { return node_id_; }
-        inline void set_node_entity(entt::entity server_entity) { server_entity_ = server_entity; }
-        inline entt::entity server_entity()const { return server_entity_; }
+        inline void set_node_entity(entt::entity server_entity) { server_ = server_entity; }
+        inline entt::entity server_entity()const { return server_; }
         uint32_t player_size()const { return player_size_; }
 
         inline void OnPlayerEnter() { ++player_size_; }
         inline void OnPlayerLeave() { --player_size_; }
     private:
         uint32_t node_id_{common::kInvalidU32Id};
-        entt::entity server_entity_{};
+        entt::entity server_{};
         uint32_t player_size_{ 0 };
     };
 

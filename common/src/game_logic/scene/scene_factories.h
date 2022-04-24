@@ -25,7 +25,7 @@ struct MakeGSParam
 
 struct MakeGSSceneP
 {
-    entt::entity server_entity_{ entt::null };
+    entt::entity server_{ entt::null };
     uint32_t scene_confid_{ 0 };
     uint32_t op_{ 0 };
 };
@@ -33,14 +33,14 @@ struct MakeGSSceneP
 struct PutScene2GSParam
 {
     entt::entity scene_{ entt::null };
-    entt::entity server_entity_{ entt::null };
+    entt::entity server_{ entt::null };
     uint32_t op_{ 0 };
 };
 
 struct MoveServerScene2ServerSceneP
 {
-    entt::entity from_server_entity_{ entt::null };
-    entt::entity to_server_entity_{ entt::null };
+    entt::entity from_server_{ entt::null };
+    entt::entity to_server_{ entt::null };
     uint32_t op_{ 0 };
 };
 
@@ -51,7 +51,7 @@ struct DestroySceneParam
 
 struct DestroyServerParam
 {
-    entt::entity server_entity_{ entt::null };
+    entt::entity server_{ entt::null };
 };
 
 entt::entity& scenes_entity();

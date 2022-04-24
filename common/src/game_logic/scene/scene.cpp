@@ -84,7 +84,7 @@ entt::entity ScenesSystem::MakeScene2Gs(const MakeGSSceneP& param)
     auto e = MakeScene(make_p);
     PutScene2GSParam put_param;
     put_param.scene_ = e;
-    put_param.server_entity_ = param.server_entity_;
+    put_param.server_ = param.server_;
     PutScene2Gs(put_param);
     return e;
 }
@@ -92,7 +92,7 @@ entt::entity ScenesSystem::MakeScene2Gs(const MakeGSSceneP& param)
 void ScenesSystem::PutScene2Gs(const PutScene2GSParam& param)
 {
     auto scene_entity = param.scene_;
-    auto server_entity = param.server_entity_;
+    auto server_entity = param.server_;
     auto& server_scenes = reg.get<ConfigSceneMap>(server_entity);
     server_scenes.AddScene(reg.get<SceneInfo>(scene_entity).scene_confid(), scene_entity);
     auto& p_server_data = reg.get<GsDataPtr>(server_entity);
@@ -107,7 +107,7 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 
 void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 {
-    auto server_entity = param.server_entity_;
+    auto server_entity = param.server_;
     auto server_scenes = reg.get<ConfigSceneMap>(server_entity).scenesids_clone();
     DestroySceneParam destroy_param;
     for (auto& it : server_scenes)
@@ -119,8 +119,8 @@ void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 
 void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param)
 {
-    auto to_server_entity = param.to_server_entity_;
-    auto& from_scenes_id = reg.get<ConfigSceneMap>(param.from_server_entity_).confid_sceneslist();
+    auto to_server_entity = param.to_server_;
+    auto& from_scenes_id = reg.get<ConfigSceneMap>(param.from_server_).confid_sceneslist();
     auto& to_scenes_id = reg.get<ConfigSceneMap>(to_server_entity);
     auto& p_to_server_data = reg.get<GsDataPtr>(to_server_entity);
     for (auto& it : from_scenes_id)
@@ -131,7 +131,7 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
             to_scenes_id.AddScene(it.first, ji);
         }
     }
-    reg.emplace_or_replace<ConfigSceneMap>(param.from_server_entity_);
+    reg.emplace_or_replace<ConfigSceneMap>(param.from_server_);
 }
 
 void ScenesSystem::EnterScene(const EnterSceneParam& param)
@@ -166,7 +166,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 
 void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
 {
-    auto new_server_entity = param.new_server_entity_;
+    auto new_server_entity = param.new_server_;
     auto compel_entity = param.compel_change_entity_;
     auto& new_server_scene = reg.get<ConfigSceneMap>(new_server_entity);
     auto scene_config_id = param.scene_confid_;
@@ -177,7 +177,7 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
     {
         MakeGSSceneP make_server_scene_param;
         make_server_scene_param.scene_confid_ = scene_config_id;
-        make_server_scene_param.server_entity_ = new_server_entity;
+        make_server_scene_param.server_ = new_server_entity;
         server_scene_enitity = MakeScene2Gs(make_server_scene_param);
     }
     else
@@ -203,10 +203,10 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
 void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
 {
     MoveServerScene2ServerSceneP move_param;
-    move_param.from_server_entity_ = param.cransh_server_entity_;
-    move_param.to_server_entity_ = param.replace_server_entity_;
+    move_param.from_server_ = param.cransh_server_;
+    move_param.to_server_ = param.replace_server_;
     MoveServerScene2ServerScene(move_param);
-    reg.destroy(move_param.from_server_entity_);
+    reg.destroy(move_param.from_server_);
 }
 
 void ScenesSystem::OnDestroyScene(entt::entity scene_entity)
