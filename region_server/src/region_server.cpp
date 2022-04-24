@@ -76,12 +76,8 @@ namespace region
 		auto& conn = es.conn_;
         if (conn->connected())
         {
-            auto& conn = es.conn_;
-            if (!es.conn_->connected())
-            {
-                auto e = reg.create();
-                reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
-            }
+            auto e = reg.create();
+            reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
         }
         else
         {
