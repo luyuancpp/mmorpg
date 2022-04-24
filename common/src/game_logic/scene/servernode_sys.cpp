@@ -15,7 +15,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     std::size_t min_player_size = UINT64_MAX;
     for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
     {
-        if (!reg.get<SceneComp>(e).HasConfig(scene_config_id))
+        if (!reg.get<ConfigSceneMap>(e).HasConfig(scene_config_id))
         {
             continue;
         }
@@ -32,7 +32,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     {
         return scene_entity;
     }
-    auto& scenes = reg.get<SceneComp>(server_entity);
+    auto& scenes = reg.get<ConfigSceneMap>(server_entity);
     std::size_t scene_min_player_size = UINT64_MAX;
     auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
     for (auto& ji : server_scenes)
@@ -56,7 +56,7 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 	entt::entity server_entity{ entt::null };
 	for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
 	{
-		if (!reg.get<SceneComp>(e).HasConfig(scene_config_id))
+		if (!reg.get<ConfigSceneMap>(e).HasConfig(scene_config_id))
 		{
 			continue;
 		}
@@ -73,7 +73,7 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 	{
 		return scene_entity;
 	}
-	auto& scenes = reg.get<SceneComp>(server_entity);
+	auto& scenes = reg.get<ConfigSceneMap>(server_entity);
 	auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
 	for (auto& ji : server_scenes)
 	{

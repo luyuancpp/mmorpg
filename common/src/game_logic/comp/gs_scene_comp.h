@@ -23,7 +23,7 @@ namespace common
         entt::entity entity_{};
     };
 
-    class SceneComp
+    class ConfigSceneMap
     {
     public:
         entt::entity first_scene_id() 
