@@ -24,7 +24,7 @@ public:
 
     entt::entity MakeScene(const MakeSceneP& param);
     entt::entity MakeSceneByGuid(const MakeSceneWithGuidP& param);
-    entt::entity MakeSceneGSScene(const MakeGSSceneP& param);
+    entt::entity MakeScene2Gs(const MakeGSSceneP& param);
 
     void PutScene2GS(const PutScene2GSParam& param);
 

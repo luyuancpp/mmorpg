@@ -74,7 +74,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
-			auto scene_entity = g_scene_sys->MakeSceneGSScene(create_scene_param);
+			auto scene_entity = g_scene_sys->MakeScene2Gs(create_scene_param);
 			if (!reg.valid(scene_entity))
 			{
 				continue;

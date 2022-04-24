@@ -76,7 +76,7 @@ entt::entity ScenesSystem::MakeSceneByGuid(const MakeSceneWithGuidP& param)
     return e;
 }
 
-entt::entity ScenesSystem::MakeSceneGSScene(const MakeGSSceneP& param)
+entt::entity ScenesSystem::MakeScene2Gs(const MakeGSSceneP& param)
 {
     MakeSceneP make_p;
     make_p.op_ = param.op_;
@@ -178,7 +178,7 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
         MakeGSSceneP make_server_scene_param;
         make_server_scene_param.scene_confid_ = scene_config_id;
         make_server_scene_param.server_entity_ = new_server_entity;
-        server_scene_enitity = MakeSceneGSScene(make_server_scene_param);
+        server_scene_enitity = MakeScene2Gs(make_server_scene_param);
     }
     else
     {
