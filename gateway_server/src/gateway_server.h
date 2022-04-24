@@ -44,17 +44,6 @@ public:
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
 
-    template<typename ServerInfo>
-    bool IsSameAddr(const InetAddress& conn_addr, const ServerInfo& server_info)
-    {
-        return server_info.ip() == conn_addr.toIp() && server_info.port() == conn_addr.port();
-    }
-
-	bool IsSameAddr(const InetAddress& conn_addr, const InetAddress& server_info)
-	{
-		return server_info.toIp() == conn_addr.toIp() && server_info.port() == conn_addr.port();
-	}
-
     void LoadConfig();
 
     void Init();

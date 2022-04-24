@@ -32,8 +32,25 @@ public:
         client_.enableRetry();
     }
 
-    const InetAddress& local_addr()const { return client_.connection()->localAddress(); }
-    const InetAddress& peer_addr()const { return client_.connection()->peerAddress(); }
+	const InetAddress& local_addr()const 
+    {
+		if (!connected()) 
+        {
+            static InetAddress s;
+            return s;
+		}
+        return client_.connection()->localAddress(); 
+    }
+
+    const InetAddress& peer_addr()const 
+    { 
+		if (!connected())
+		{
+			static InetAddress s;
+			return s;
+		}
+        return client_.connection()->peerAddress(); 
+    }
 
     bool connected()const { return nullptr != client_.connection(); }
 
