@@ -72,8 +72,7 @@ private:
 	void sizeassert() const { assert(size() >= items_.size()); }
 	void OnNewGrid(const Item& item);
 	bool CanStack(const Item& litem, const Item& ritem);
-	bool CanStack(const Item& litem, uint32_t item_config_id);
-
+	
 	BagEntity entity_;
 	ItemsMap items_;
 	PosMap pos_;

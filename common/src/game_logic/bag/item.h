@@ -34,6 +34,8 @@ private:
 	ItemEntity entity_;
 };
 
+using IteamRawPtrVector = std::vector<Item*>;
+
 struct CreateItemParam
 {
 	CreateItemParam() { item_base_db.set_size(1); }

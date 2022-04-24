@@ -182,7 +182,7 @@ uint32_t  Bag::DelItem(const common::UInt32UInt32UnorderedMap& try_del_items)
 {
 	RET_CHECK_RET(AdequateItem(try_del_items));
 	auto del_items = try_del_items;
-	std::vector<Item*> del_item;//删除的物品
+	IteamRawPtrVector del_item;//删除的物品
 	for (auto& it : items_)
 	{
 		for (auto& ji : del_items)
@@ -250,7 +250,94 @@ uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
 
 void Bag::Neaten()
 {
-
+	std::vector<IteamRawPtrVector> same_items;////每个元素里面存相同的物品列表
+	for (auto& it : items_)
+	{
+		auto& item = it.second;
+		auto p_c_item = get_item_conf(item.config_id());
+		if (nullptr == p_c_item)
+		{
+			LOG_ERROR << "get_item_conf" << player_guid() << " config_id" << item.config_id();
+			continue;
+		}
+		if (item.size() >= p_c_item->max_statck_size())//满的不计算了
+		{
+			continue;
+		}
+		//计算未满的
+		bool has_same = false;//有没有相同的
+		for (auto& ji : same_items)
+		{
+			assert(!ji.empty());
+			if (ji.empty())
+			{
+				continue;
+			}
+			if (!CanStack(it.second, **ji.begin()))
+			{
+				continue;
+			}
+			ji.emplace_back(&it.second);//把可以叠加的放进相同物品里面
+			has_same = true;
+		}
+		if (!has_same)
+		{
+			same_items.emplace_back(IteamRawPtrVector{&it.second});//没有相同的直接放到新的物品列表里面
+		}
+	}
+	GuidVector clear_item_guid;
+	//开始叠加
+	for (auto& it : same_items)
+	{
+		if (it.size() == 1)//只有一个，自然不在叠加的计算之内
+		{
+			continue;
+		}
+		auto config_id = (*it.begin())->config_id();
+		auto p_c_item = get_item_conf(config_id);
+		if (nullptr == p_c_item)
+		{
+			LOG_ERROR << "get_item_conf" << player_guid() << " config_id" << config_id;
+			continue;
+		}
+		std::size_t sz = 0;
+		for (auto& ji : it)
+		{
+			sz += ji->size();
+		}
+		std::size_t need_grid_size = calc_item_need_grid_size(sz, p_c_item->max_statck_size());
+		std::size_t index = 0;//使用了的物品下标
+		for (index = 0; index < it.size(); ++index)
+		{
+			if (p_c_item->max_statck_size() >= sz)
+			{
+				it[index]->set_size((uint32_t)sz);
+				++index;//下标加1，break并没有加
+				break;
+			}
+			else
+			{
+				it[index]->set_size(p_c_item->max_statck_size());
+				sz -= p_c_item->max_statck_size();
+			}
+		}
+		for (; index < it.size(); ++index)
+		{
+			it[index]->set_size(0);//被清空的物品
+			clear_item_guid.emplace_back(it[index]->guid());
+		}
+	}
+	//清空物品清空格子
+	for (auto& it : clear_item_guid)
+	{
+		items_.erase(it);
+	}
+	pos_.clear();
+	//重新计算物品
+	for (auto& it : items_)
+	{
+		OnNewGrid(it.second);
+	}
 }
 
 uint32_t Bag::AddItem(const Item& add_item)
@@ -444,9 +531,4 @@ void Bag::OnNewGrid(const Item& item)
 bool Bag::CanStack(const Item& litem, const Item& ritem)
 {
 	return litem.config_id() == ritem.config_id();
-}
-
-bool Bag::CanStack(const Item& litem, uint32_t item_config_id)
-{
-	return litem.config_id() == item_config_id;
 }
