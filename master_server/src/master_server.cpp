@@ -97,7 +97,8 @@ void MasterServer::AddGsNode(entt::entity gs)
 
 void MasterServer::receive(const OnConnected2ServerEvent& es)
 {
-    if (es.conn_->connected())
+	auto& conn = es.conn_;
+    if (conn->connected())
     {
 		// started 
 		if (nullptr == server_)
@@ -114,11 +115,11 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
 		
 		if (nullptr != region_session_)
 		{
-			if (region_session_->connected())
+			if (conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 			{
 				EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&MasterServer::Register2Region, this));
 			}
-			else
+			else if(!conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 			{
 
 			}
