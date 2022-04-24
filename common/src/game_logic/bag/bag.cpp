@@ -294,7 +294,7 @@ void Bag::Neaten()
 			continue;
 		}
 		auto config_id = (*it.begin())->config_id();
-		auto p_c_item = get_item_conf(config_id);
+		auto p_c_item = get_item_conf(config_id);//上面判断过了，其他人不要模仿
 		if (nullptr == p_c_item)
 		{
 			LOG_ERROR << "get_item_conf" << player_guid() << " config_id" << config_id;
@@ -326,6 +326,10 @@ void Bag::Neaten()
 			it[index]->set_size(0);//被清空的物品
 			clear_item_guid.emplace_back(it[index]->guid());
 		}
+	}
+	if (clear_item_guid.empty())
+	{
+		return;//联系整理两次
 	}
 	//清空物品清空格子
 	for (auto& it : clear_item_guid)
