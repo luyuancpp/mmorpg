@@ -58,10 +58,10 @@ TEST(GS, MakeScene2Sever )
     sm.MakeScene2Gs(server2_param);
 
     auto& server_data1 = *reg.get<common::GsDataPtr>(server_entity1);
-    auto& scenes_id1 = reg.get<common::SceneComp>(server_entity1);
+    auto& scenes_id1 = reg.get<common::ConfigSceneMap>(server_entity1);
  
     auto& server_data2 = *reg.get<common::GsDataPtr>(server_entity2);
-    auto& scenes_id2 = reg.get<common::SceneComp>(server_entity2);
+    auto& scenes_id2 = reg.get<common::ConfigSceneMap>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
     EXPECT_EQ(server1_param.scene_confid_, reg.get<SceneInfo>(scenes_id1.first_scene_id()).scene_confid());
@@ -92,7 +92,7 @@ TEST(GS, PutScene2Sever)
     PutScene2GSParam put_param;
     put_param.scene_ = scene_entity;
     put_param.server_entity_ = server_entity1;
-    sm.PutScene2GS(put_param);
+    sm.PutScene2Gs(put_param);
 
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(1, sm.scenes_size(cparam.scene_confid_));
@@ -116,13 +116,13 @@ TEST(GS, DestroyScene)
     PutScene2GSParam put_param;
     put_param.scene_ = scene_entity;
     put_param.server_entity_ = server_entity1;
-    sm.PutScene2GS(put_param);
+    sm.PutScene2Gs(put_param);
 
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(1, sm.scenes_size(cparam.scene_confid_));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 
-    auto& server_scenes = reg.get<common::SceneComp>(server_entity1);
+    auto& server_scenes = reg.get<common::ConfigSceneMap>(server_entity1);
     EXPECT_EQ(1, server_scenes.scenes_size());
 
     DestroySceneParam dparam;
@@ -161,14 +161,14 @@ TEST(GS, DestroySever)
     auto scene_id1 = sm.MakeScene2Gs(server1_param);
     auto scene_id2 = sm.MakeScene2Gs(server2_param);
 
-    auto& scenes_id1 = reg.get<common::SceneComp>(server_entity1);
+    auto& scenes_id1 = reg.get<common::ConfigSceneMap>(server_entity1);
 
     auto& server_data2 = *reg.get<common::GsDataPtr>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
     EXPECT_EQ(server_data1.node_id(), param1.node_id_);
 
-    EXPECT_EQ(1, reg.get<common::SceneComp>(server_entity2).scenes_size());
+    EXPECT_EQ(1, reg.get<common::ConfigSceneMap>(server_entity2).scenes_size());
     EXPECT_EQ(server_data2.node_id(), param2.node_id_);
 
 
@@ -184,7 +184,7 @@ TEST(GS, DestroySever)
     EXPECT_TRUE(reg.valid(server_entity2));
     EXPECT_TRUE(reg.valid(scene_id2));
 
-    EXPECT_EQ(1, reg.get<common::SceneComp>(server_entity2).scenes_size());
+    EXPECT_EQ(1, reg.get<common::ConfigSceneMap>(server_entity2).scenes_size());
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(0, sm.scenes_size(server1_param.scene_confid_));
     EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
@@ -232,12 +232,12 @@ TEST(GS, ServerScene2Sever)
     auto scene_id2 = sm.MakeScene2Gs(server2_param);
 
     auto& server_data1 = *reg.get<common::GsDataPtr>(server_entity1);
-    auto& scenes_id1 = reg.get<common::SceneComp>(server_entity1);
+    auto& scenes_id1 = reg.get<common::ConfigSceneMap>(server_entity1);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
     EXPECT_EQ(server_data1.node_id(), cgs1.node_id_);
 
-    EXPECT_EQ(1, reg.get<common::SceneComp>(server_entity2).scenes_size());
+    EXPECT_EQ(1, reg.get<common::ConfigSceneMap>(server_entity2).scenes_size());
     EXPECT_EQ(server_data2.node_id(), cgs2.node_id_);
 
     EXPECT_EQ(2, sm.scenes_size());
@@ -256,8 +256,8 @@ TEST(GS, ServerScene2Sever)
     EXPECT_TRUE(reg.valid(server_entity2));
     EXPECT_TRUE(reg.valid(scene_id2));
 
-    EXPECT_EQ(0, reg.get<common::SceneComp>(server_entity1).scenes_size());
-    EXPECT_EQ(2, reg.get<common::SceneComp>(server_entity2).scenes_size());
+    EXPECT_EQ(0, reg.get<common::ConfigSceneMap>(server_entity1).scenes_size());
+    EXPECT_EQ(2, reg.get<common::ConfigSceneMap>(server_entity2).scenes_size());
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(1, sm.scenes_size(server1_param.scene_confid_));
     EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
@@ -610,7 +610,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     server_entities.erase(replace_crash.cransh_server_entity_);
     for (auto& it : server_entities)
     {
-        auto& server_scene =  reg.get<SceneComp>(it);
+        auto& server_scene =  reg.get<ConfigSceneMap>(it);
         EXPECT_EQ(server_scene.scenes_size(), scene_entities.size());
     }
 

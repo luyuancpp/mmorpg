@@ -15,7 +15,7 @@ using namespace common;
     void MakeScenes()
     {
         scenes_entity() = reg.create();
-        reg.emplace<SceneComp>(scenes_entity());
+        reg.emplace<ConfigSceneMap>(scenes_entity());
         reg.emplace<SnowFlake>(scenes_entity());
         reg.emplace<SceneMapComp>(scenes_entity());
     }
@@ -36,5 +36,5 @@ using namespace common;
 		reg.emplace<GsDataPtr>(e, p_server_data);
 		reg.emplace<GSNormal>(e);
 		reg.emplace<NoPressure>(e);
-		reg.emplace<SceneComp>(e);
+		reg.emplace<ConfigSceneMap>(e);
 	}
