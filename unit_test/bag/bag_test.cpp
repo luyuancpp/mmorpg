@@ -424,6 +424,15 @@ TEST(BagTest, Neaten1)
     {
         EXPECT_EQ(1, bag.GetItemByBos(i)->size());
     }
+    bag.Neaten();
+    EXPECT_EQ(2, bag.item_size());
+    EXPECT_EQ(2, bag.pos_size());
+    for (auto& it : bag.pos())
+    {
+        EXPECT_EQ(BagCapacity::kDefualtCapacity, (std::size_t)bag.GetItemByBos(bag.GetItemPos(it.second))->size());
+    }
+    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.GetItemStackSize(config_id10));
+    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.GetItemStackSize(config_id11));
 }
 
 int main(int argc, char** argv)
