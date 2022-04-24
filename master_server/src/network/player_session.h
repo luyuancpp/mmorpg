@@ -49,6 +49,6 @@
 		entt::entity player_{ entt::null};
 		common::GateConnId gate_conn_id_;
 		GateNodeWPtr gate_;
-		common::GSDataWeakPtr gs_;
+		common::GsDataWeakPtr gs_;
 	};
 #endif//MASTER_SERVER_SRC_NETWORK_PLAYER_SESSION_H_

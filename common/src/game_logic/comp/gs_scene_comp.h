@@ -124,7 +124,7 @@ namespace common
     struct NoPressure {};//
     struct Pressure {};//
 
-    class GSData
+    class GsData
     {
     public:
         inline void set_node_id(uint32_t node_id) { node_id_ = node_id; }
@@ -141,8 +141,8 @@ namespace common
         uint32_t player_size_{ 0 };
     };
 
-    using GSDataPtr = std::shared_ptr<GSData>;
-    using GSDataWeakPtr = std::weak_ptr<GSData>;
+    using GsDataPtr = std::shared_ptr<GsData>;
+    using GsDataWeakPtr = std::weak_ptr<GsData>;
 }//namespace common
 
 #endif//COMMON_SRC_GAME_LOGIC_COMP_SERVER_LIST_HPP_

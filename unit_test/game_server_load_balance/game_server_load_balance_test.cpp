@@ -57,10 +57,10 @@ TEST(GS, MakeScene2Sever )
     sm.MakeScene2Gs(server1_param);
     sm.MakeScene2Gs(server2_param);
 
-    auto& server_data1 = *reg.get<common::GSDataPtr>(server_entity1);
+    auto& server_data1 = *reg.get<common::GsDataPtr>(server_entity1);
     auto& scenes_id1 = reg.get<common::SceneComp>(server_entity1);
  
-    auto& server_data2 = *reg.get<common::GSDataPtr>(server_entity2);
+    auto& server_data2 = *reg.get<common::GsDataPtr>(server_entity2);
     auto& scenes_id2 = reg.get<common::SceneComp>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
@@ -148,7 +148,7 @@ TEST(GS, DestroySever)
     param2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneNode(reg, param2);
 
-    auto& server_data1 = *reg.get<common::GSDataPtr>(server_entity1);
+    auto& server_data1 = *reg.get<common::GsDataPtr>(server_entity1);
     
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
@@ -163,7 +163,7 @@ TEST(GS, DestroySever)
 
     auto& scenes_id1 = reg.get<common::SceneComp>(server_entity1);
 
-    auto& server_data2 = *reg.get<common::GSDataPtr>(server_entity2);
+    auto& server_data2 = *reg.get<common::GsDataPtr>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
     EXPECT_EQ(server_data1.node_id(), param1.node_id_);
@@ -217,7 +217,7 @@ TEST(GS, ServerScene2Sever)
     auto server_entity2 = MakeMainSceneNode(reg, cgs2);
 
    
-    auto& server_data2 = *reg.get<common::GSDataPtr>(server_entity2);
+    auto& server_data2 = *reg.get<common::GsDataPtr>(server_entity2);
 
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
@@ -231,7 +231,7 @@ TEST(GS, ServerScene2Sever)
     auto scene_id1 = sm.MakeScene2Gs(server1_param);
     auto scene_id2 = sm.MakeScene2Gs(server2_param);
 
-    auto& server_data1 = *reg.get<common::GSDataPtr>(server_entity1);
+    auto& server_data1 = *reg.get<common::GsDataPtr>(server_entity1);
     auto& scenes_id1 = reg.get<common::SceneComp>(server_entity1);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
@@ -243,8 +243,8 @@ TEST(GS, ServerScene2Sever)
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 
-    EXPECT_EQ(reg.get<common::GSDataPtr>(scene_id1)->node_id(), cgs1.node_id_);
-    EXPECT_EQ(reg.get<common::GSDataPtr>(scene_id2)->node_id(), cgs2.node_id_);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(scene_id1)->node_id(), cgs1.node_id_);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(scene_id2)->node_id(), cgs2.node_id_);
 
     MoveServerScene2ServerSceneP move_scene_param;
     move_scene_param.from_server_entity_ = server_entity1;
@@ -261,9 +261,9 @@ TEST(GS, ServerScene2Sever)
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(1, sm.scenes_size(server1_param.scene_confid_));
     EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
-    EXPECT_EQ(reg.get<common::GSDataPtr>(scene_id1)->node_id(), cgs2.node_id_);
-    EXPECT_EQ(reg.get<common::GSDataPtr>(scene_id2)->node_id(), cgs2.node_id_);
-    EXPECT_EQ(reg.get<common::GSDataPtr>(server_entity1).use_count(), 1);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(scene_id1)->node_id(), cgs2.node_id_);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(scene_id2)->node_id(), cgs2.node_id_);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(server_entity1).use_count(), 1);
 }
 
 TEST(GS, PlayerLeaveEnterScene)
@@ -329,8 +329,8 @@ TEST(GS, PlayerLeaveEnterScene)
         EXPECT_TRUE(scenes_players2.find(it) != scenes_players2.end());
         EXPECT_TRUE(reg.get<common::SceneEntity>(it).scene_entity() == scene_id2);
     }
-    EXPECT_EQ(reg.get<common::GSDataPtr>(server_entity1)->player_size(), player_size / 2);
-    EXPECT_EQ(reg.get<common::GSDataPtr>(server_entity2)->player_size(), player_size / 2);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(server_entity1)->player_size(), player_size / 2);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(server_entity2)->player_size(), player_size / 2);
     LeaveSceneParam leave_param1;
     for (auto& it : player_entities_set1)
     {
@@ -339,7 +339,7 @@ TEST(GS, PlayerLeaveEnterScene)
         EXPECT_FALSE(scenes_players1.find(it) != scenes_players1.end());
         EXPECT_EQ(reg.try_get<common::SceneEntity>(it), nullptr);
     }
-    EXPECT_EQ(reg.get<common::GSDataPtr>(server_entity1)->player_size(), 0);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(server_entity1)->player_size(), 0);
 
     LeaveSceneParam leave_param2;
     for (auto& it : player_entities_set2)
@@ -350,7 +350,7 @@ TEST(GS, PlayerLeaveEnterScene)
         EXPECT_EQ(reg.try_get<common::SceneEntity>(it), nullptr);
     }
     
-    EXPECT_EQ(reg.get<common::GSDataPtr>(server_entity2)->player_size(), 0);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(server_entity2)->player_size(), 0);
     auto& scenes_players11 = reg.get<common::ScenePlayers>(scene_id1);
     auto& scenes_players22 = reg.get<common::ScenePlayers>(scene_id2);
     EXPECT_TRUE(scenes_players11.empty());
@@ -418,8 +418,8 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
-        EXPECT_TRUE(reg.get<common::GSDataPtr>(can_enter)->server_entity() != entt::null);
-        EXPECT_TRUE(reg.get<common::GSDataPtr>(can_enter)->server_entity() != maintain.maintain_entity_);
+        EXPECT_TRUE(reg.get<common::GsDataPtr>(can_enter)->server_entity() != entt::null);
+        EXPECT_TRUE(reg.get<common::GsDataPtr>(can_enter)->server_entity() != maintain.maintain_entity_);
     }
 }
 
@@ -473,8 +473,8 @@ TEST(GS, CompelChangeScene)
         sm.CompelChangeScene(compel_change_param1);
         EXPECT_TRUE(reg.try_get<common::SceneEntity>(it)->scene_entity() == scene_id2);
     }
-    EXPECT_EQ(reg.get<common::GSDataPtr>(server_entity1)->player_size(), 0);
-    EXPECT_EQ(reg.get<common::GSDataPtr>(server_entity2)->player_size(), player_entities_set1.size());
+    EXPECT_EQ(reg.get<common::GsDataPtr>(server_entity1)->player_size(), 0);
+    EXPECT_EQ(reg.get<common::GsDataPtr>(server_entity2)->player_size(), player_entities_set1.size());
     auto& scenes_players11 = reg.get<common::ScenePlayers>(scene_id1);
     auto& scenes_players22 = reg.get<common::ScenePlayers>(scene_id2);
     EXPECT_TRUE(scenes_players11.empty());
@@ -542,8 +542,8 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
-        EXPECT_TRUE(reg.get<common::GSDataPtr>(can_enter)->server_entity() != entt::null);
-        EXPECT_TRUE(reg.get<common::GSDataPtr>(can_enter)->server_entity() != crash1.crash_entity_);
+        EXPECT_TRUE(reg.get<common::GsDataPtr>(can_enter)->server_entity() != entt::null);
+        EXPECT_TRUE(reg.get<common::GsDataPtr>(can_enter)->server_entity() != crash1.crash_entity_);
     }
 
 }
@@ -614,17 +614,17 @@ TEST(GS, CrashMovePlayer2NewServer)
         EXPECT_EQ(server_scene.scenes_size(), scene_entities.size());
     }
 
-    auto& eq_server_data = reg.get<GSDataPtr>(replace_crash.replace_server_entity_);
+    auto& eq_server_data = reg.get<GsDataPtr>(replace_crash.replace_server_entity_);
     EXPECT_EQ(1, eq_server_data->node_id());
     for (auto& it : scene_entities)
     {
-        auto& server_data = reg.get<GSDataPtr>(it);
+        auto& server_data = reg.get<GsDataPtr>(it);
         EXPECT_EQ(server_data->node_id(), eq_server_data->node_id());
     }
     for (auto& it : player_scene1)
     {
         auto& player_scene_entity = reg.get<common::SceneEntity>(it.first);
-        auto& server_data = reg.get<GSDataPtr>(player_scene_entity.scene_entity());
+        auto& server_data = reg.get<GsDataPtr>(player_scene_entity.scene_entity());
         EXPECT_EQ(server_data->node_id(), eq_server_data->node_id());
     }
     
@@ -716,7 +716,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
         for (auto& it : server_entities)
         {
-            auto& ps = reg.get<common::GSDataPtr>(it);
+            auto& ps = reg.get<common::GsDataPtr>(it);
             EXPECT_EQ((*ps).player_size(), server_player_size);
         }
         EXPECT_EQ(scene_sets.size(), std::size_t(2 * per_server_scene));
@@ -736,7 +736,7 @@ TEST(GS, WeightRoundRobinMainScene)
         }
         for (auto& it : server_entities)
         {
-            auto& ps = reg.get<common::GSDataPtr>(it);
+            auto& ps = reg.get<common::GsDataPtr>(it);
             EXPECT_EQ((*ps).player_size(), 0);
         }
         for (auto& it : player_scene1)
@@ -810,7 +810,7 @@ TEST(GS, ServerEnterLeavePressure)
     uint32_t player_scene_id = 0;
     for (auto& it : player_scene1)
     {
-        auto& psr = reg.get<common::GSDataPtr>(it.second);
+        auto& psr = reg.get<common::GsDataPtr>(it.second);
         EXPECT_TRUE(psr->server_entity() != pressure1.server_entity_);
     }
 
@@ -830,7 +830,7 @@ TEST(GS, ServerEnterLeavePressure)
     player_scene_id = 0;
     for (auto& it : player_scene2)
     {
-        auto& psr = reg.get<common::GSDataPtr>(it.second);
+        auto& psr = reg.get<common::GsDataPtr>(it.second);
         EXPECT_TRUE(psr->server_entity() == pressure1.server_entity_);
     }
     
@@ -926,7 +926,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
         std::size_t remain_server_size = player_size * 2 - kMaxScenePlayerSize * 2;
 		for (auto& it : server_entities)
 		{
-			auto& ps = reg.get<common::GSDataPtr>(it);
+			auto& ps = reg.get<common::GsDataPtr>(it);
             if (ps->node_id() == 9)
             {
                 EXPECT_EQ((*ps).player_size(), kMaxServerPlayerSize);
@@ -957,7 +957,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		}
 		for (auto& it : server_entities)
 		{
-			auto& ps = reg.get<common::GSDataPtr>(it);
+			auto& ps = reg.get<common::GsDataPtr>(it);
 			EXPECT_EQ((*ps).player_size(), 0);
 		}
 		for (auto& it : player_scene1)

@@ -29,11 +29,11 @@ using namespace common;
 
 	void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param)
 	{
-		GSDataPtr p_server_data = std::make_shared<GSData>();
+		GsDataPtr p_server_data = std::make_shared<GsData>();
 		p_server_data->set_node_id(param.node_id_);
 		p_server_data->set_node_entity(e);
 		reg.emplace<MainSceneServer>(e);
-		reg.emplace<GSDataPtr>(e, p_server_data);
+		reg.emplace<GsDataPtr>(e, p_server_data);
 		reg.emplace<GSNormal>(e);
 		reg.emplace<NoPressure>(e);
 		reg.emplace<SceneComp>(e);

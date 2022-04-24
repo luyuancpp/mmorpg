@@ -95,8 +95,8 @@ void ScenesSystem::PutScene2GS(const PutScene2GSParam& param)
     auto server_entity = param.server_entity_;
     auto& server_scenes = reg.get<SceneComp>(server_entity);
     server_scenes.AddScene(reg.get<SceneInfo>(scene_entity).scene_confid(), scene_entity);
-    auto& p_server_data = reg.get<GSDataPtr>(server_entity);
-    reg.emplace<GSDataPtr>(scene_entity, p_server_data);
+    auto& p_server_data = reg.get<GsDataPtr>(server_entity);
+    reg.emplace<GsDataPtr>(scene_entity, p_server_data);
 }
 
 
@@ -122,12 +122,12 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
     auto to_server_entity = param.to_server_entity_;
     auto& from_scenes_id = reg.get<SceneComp>(param.from_server_entity_).confid_sceneslist();
     auto& to_scenes_id = reg.get<SceneComp>(to_server_entity);
-    auto& p_to_server_data = reg.get<GSDataPtr>(to_server_entity);
+    auto& p_to_server_data = reg.get<GsDataPtr>(to_server_entity);
     for (auto& it : from_scenes_id)
     {
         for (auto& ji : it.second)
         {
-            reg.emplace_or_replace<GSDataPtr>(ji, p_to_server_data);
+            reg.emplace_or_replace<GsDataPtr>(ji, p_to_server_data);
             to_scenes_id.AddScene(it.first, ji);
         }
     }
@@ -140,7 +140,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
     auto& player_entities = reg.get<ScenePlayers>(scene_entity);
     player_entities.emplace(param.enterer_);
     reg.emplace<common::SceneEntity>(param.enterer_, scene_entity);
-    auto p_server_data = reg.try_get<GSDataPtr>(scene_entity);
+    auto p_server_data = reg.try_get<GsDataPtr>(scene_entity);
     if (nullptr == p_server_data)
     {
         return;
@@ -156,7 +156,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
     auto& player_entities = reg.get<ScenePlayers>(scene_entity);
     player_entities.erase(leave_entity);
     reg.remove<common::SceneEntity>(leave_entity);
-    auto p_server_data = reg.try_get<GSDataPtr>(scene_entity);
+    auto p_server_data = reg.try_get<GsDataPtr>(scene_entity);
     if (nullptr == p_server_data)
     {
         return;
@@ -214,7 +214,7 @@ void ScenesSystem::OnDestroyScene(entt::entity scene_entity)
     auto& si = reg.get<SceneInfo>(scene_entity);
     confid_scenes_[si.scene_confid()].erase(scene_entity);
     scenes_map_.erase(si.scene_id());
-    auto p_server_data = reg.get<GSDataPtr>(scene_entity);
+    auto p_server_data = reg.get<GsDataPtr>(scene_entity);
     reg.destroy(scene_entity);
     if (nullptr == p_server_data)
     {
