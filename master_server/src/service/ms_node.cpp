@@ -98,7 +98,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
 		MakeGSSceneP create_scene_param;
-		create_scene_param.server_entity_ = gs_entity;
+		create_scene_param.server_ = gs_entity;
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();

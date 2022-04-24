@@ -121,14 +121,14 @@ entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 
 void ServerNodeSystem::ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
 {
-    reg.remove<NoPressure>(param.server_entity_);
-    reg.emplace<Pressure>(param.server_entity_);
+    reg.remove<NoPressure>(param.server_);
+    reg.emplace<Pressure>(param.server_);
 }
 
 void ServerNodeSystem::ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param)
 {
-    reg.remove<Pressure>(param.server_entity_);
-    reg.emplace<NoPressure>(param.server_entity_);
+    reg.remove<Pressure>(param.server_);
+    reg.emplace<NoPressure>(param.server_);
 }
 
 void ServerNodeSystem::ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
