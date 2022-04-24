@@ -205,7 +205,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             break;
         }
 		else if (!conn->connected() &&
-			      master_session->peer_addr().toIpPort() == conn->peerAddress().toIpPort())
+                IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
         {
             g_ms_nodes.erase(ms_node->node_id());
             reg.destroy(e);
@@ -233,11 +233,13 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
 
     if (nullptr != region_session_)
     {
-		if (IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
+		if (conn->connected() && 
+            IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 		{
 			EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&GameServer::Register2Region, this));
 		}
-		else
+		else if (!conn->connected() &&
+			IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 		{
 
 		}

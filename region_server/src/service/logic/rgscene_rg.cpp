@@ -88,7 +88,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 		reg.emplace<RoomSceneServer>(gs_entity);
 	}
 	g_gs_nodes.emplace(request->gs_node_id(), gs_entity);
-	LOG_INFO << "game connected " << request->gs_node_id();
+	LOG_INFO << "game node connected " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE StartCrossGs
 }
 
@@ -125,7 +125,7 @@ void RgServiceImpl::StartMS(::google::protobuf::RpcController* controller,
 	reg.emplace<InetAddress>(ms_entity, rpc_server_peer_addr);
 	reg.emplace<MsStubPtr>(ms_entity, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	g_ms_nodes.emplace(request->ms_node_id(), ms_entity);
-	LOG_INFO << "game connected " << request->ms_node_id();
+	LOG_INFO << "ms node connected " << request->ms_node_id();
 ///<<< END WRITING YOUR CODE StartMS
 }
 
