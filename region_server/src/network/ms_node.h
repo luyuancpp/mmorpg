@@ -13,21 +13,21 @@
 #include "ms_node.pb.h"
 
 
-using MasterSessionPtr = std::shared_ptr<common::RpcClient>;
 struct MsNode
 {
 	using MsStubNode = common::RpcStub<msservice::MasterNodeService_Stub>;
-	MsNode(){}
+	MsNode(const muduo::net::TcpConnectionPtr& conn)
+		: session_(conn) {}
 
 	inline uint32_t node_id() const { return node_info_.node_id(); }
 
 	MsStubNode ms_stub_;
 	NodeInfo node_info_;
-	MasterSessionPtr session_;
+	common::RpcServerConnection session_;
 };
 using MsNodePtr = std::shared_ptr<MsNode>;
 using MsNodeWPtr = std::weak_ptr<MsNode>;
-using MsNodes = std::unordered_map<uint32_t, MsNodePtr>;
+using MsNodes = std::unordered_map<uint32_t, entt::entity>;
 extern MsNodes g_ms_nodes;
 
 

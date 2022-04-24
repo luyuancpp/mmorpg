@@ -65,7 +65,6 @@ void GatewayServer::ConnectLogin(const login_server_db& login_info)
         LOG_ERROR << "login server connected" << login_info.DebugString();
         return;
     }
-    LOG_INFO << "login server connected" << login_info.DebugString();
     InetAddress login_addr(login_info.ip(), login_info.port());
 	auto& login_node = it.first->second;
 	login_node.login_session_ = std::make_unique<common::RpcClientPtr::element_type>(loop_, login_addr);
