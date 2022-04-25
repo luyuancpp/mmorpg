@@ -34,7 +34,7 @@ private:
 	ItemEntity entity_;
 };
 
-using IteamRawPtrVector = std::vector<Item*>;
+using ItemRawPtrVector = std::vector<Item*>;
 
 struct CreateItemParam
 {

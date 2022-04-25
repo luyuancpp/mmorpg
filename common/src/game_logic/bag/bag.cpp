@@ -64,7 +64,7 @@ uint32_t Bag::GetItemPos(common::Guid guid)
 uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_items)
 {
 	auto empty_size = empty_grid_size();
-	UInt32UInt32UnorderedMap need_stack_size_list;//需要叠加的物品列表
+	UInt32UInt32UnorderedMap need_stack_sizes;//需要叠加的物品列表
 	bool has_stack_item = false;
 	//计算不可叠加商品
 	for (auto& it : try_items)
@@ -90,7 +90,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 		}
 		else //可以叠加
 		{
-			need_stack_size_list.emplace(it.first, it.second);
+			need_stack_sizes.emplace(it.first, it.second);
 			has_stack_item = true;
 		}
 	}
@@ -102,7 +102,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 
 	for (auto& it : items_)
 	{
-		for (auto& ji : need_stack_size_list)
+		for (auto& ji : need_stack_sizes)
 		{
 			if (it.second.config_id() != ji.first)
 			{
@@ -116,7 +116,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 			}
 			if (ji.second <= remain_stack_size)
 			{
-				need_stack_size_list.erase(ji.first);//该物品个数足够,从判断列表删除
+				need_stack_sizes.erase(ji.first);//该物品个数足够,从判断列表删除
 				break;
 			}
 			ji.second -= remain_stack_size;//扣除可以叠加，剩下的个数继续判断
@@ -124,7 +124,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 	}
 	std::size_t need_grid_size = 0;
 	//剩下的没叠加成功的
-	for (auto& it : need_stack_size_list)
+	for (auto& it : need_stack_sizes)
 	{
 		auto p_c_item = get_item_conf(it.first);//前面判断过空了，以及除0
 		auto need_grid_size = calc_item_need_grid_size(it.second, p_c_item->max_statck_size());//满叠加的格子
@@ -182,7 +182,7 @@ uint32_t  Bag::DelItem(const common::UInt32UInt32UnorderedMap& try_del_items)
 {
 	RET_CHECK_RET(AdequateItem(try_del_items));
 	auto try_del_items_back = try_del_items;
-	IteamRawPtrVector real_del_item;//删除的物品
+	ItemRawPtrVector real_del_item;//删除的物品
 	for (auto& it : items_)
 	{
 		for (auto& ji : try_del_items_back)
@@ -250,7 +250,7 @@ uint32_t Bag::DelItemByPos(const DelItemByPosParam& p)
 
 void Bag::Neaten()
 {
-	std::vector<IteamRawPtrVector> same_items;////每个元素里面存相同的物品列表
+	std::vector<ItemRawPtrVector> same_items;////每个元素里面存相同的物品列表
 	for (auto& it : items_)
 	{
 		auto& item = it.second;
@@ -260,36 +260,27 @@ void Bag::Neaten()
 			LOG_ERROR << "get_item_conf" << player_guid() << " config_id" << item.config_id();
 			continue;
 		}
-		if (p_c_item->max_statck_size() <= 1)
-		{
-			continue;
-		}
-		if (item.size() >= p_c_item->max_statck_size())//满的不计算了
+		if (item.size() >= p_c_item->max_statck_size())//满的不计算了,包括了不可叠加的
 		{
 			continue;
 		}
 		//计算未满的
-		bool has_same = false;//有没有相同的
+		bool hasnot_same = true;//有没有相同的
 		for (auto& ji : same_items)
 		{
-			assert(!ji.empty());
-			if (ji.empty())
-			{
-				continue;
-			}
 			if (!CanStack(item, **ji.begin()))
 			{
 				continue;
 			}
-			ji.emplace_back(&item);//把可以叠加的放进相同物品里面
-			has_same = true;
+			ji.emplace_back(&item);//把可以叠加的放进相同物品列表里面
+			hasnot_same = false;
 		}
-		if (!has_same)
+		if (hasnot_same)
 		{
-			same_items.emplace_back(IteamRawPtrVector{&item});//没有相同的直接放到新的物品列表里面
+			same_items.emplace_back(ItemRawPtrVector{&item});//没有相同的直接放到新的物品列表里面
 		}
 	}
-	GuidVector clear_item_guid;
+	GuidVector clear_item_guids;
 	//开始叠加
 	for (auto& it : same_items)
 	{
@@ -299,23 +290,17 @@ void Bag::Neaten()
 		}
 		auto config_id = (*it.begin())->config_id();
 		auto p_c_item = get_item_conf(config_id);//上面判断过了，其他人不要模仿
-		if (nullptr == p_c_item)
-		{
-			LOG_ERROR << "get_item_conf" << player_guid() << " config_id" << config_id;
-			continue;
-		}
-		std::size_t sz = 0;
+		uint32_t sz = 0;
 		for (auto& ji : it)
 		{
 			sz += ji->size();
 		}
-		std::size_t need_grid_size = calc_item_need_grid_size(sz, p_c_item->max_statck_size());
 		std::size_t index = 0;//使用了的物品下标
 		for (index = 0; index < it.size(); ++index)
 		{
 			if (p_c_item->max_statck_size() >= sz)
 			{
-				it[index]->set_size((uint32_t)sz);
+				it[index]->set_size(sz);
 				++index;//下标加1，break并没有加
 				break;
 			}
@@ -328,15 +313,15 @@ void Bag::Neaten()
 		for (; index < it.size(); ++index)
 		{
 			it[index]->set_size(0);//被清空的物品
-			clear_item_guid.emplace_back(it[index]->guid());
+			clear_item_guids.emplace_back(it[index]->guid());
 		}
 	}
-	if (clear_item_guid.empty())
+	if (clear_item_guids.empty())
 	{
 		return;//联系整理两次
 	}
 	//清空物品清空格子
-	for (auto& it : clear_item_guid)
+	for (auto& it : clear_item_guids)
 	{
 		items_.erase(it);
 	}
@@ -444,7 +429,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 		//不可以放完继续检测,先检测格子够不够放，不够放就不行了
 		if (check_need_stack_size > 0)
 		{
-			need_grid_size = calc_item_need_grid_size(check_need_stack_size, p_c_item->max_statck_size());
+			need_grid_size = calc_item_need_grid_size(check_need_stack_size, p_c_item->max_statck_size());//放不完的还需要多少个格子
 			if (NotAdequateSize(need_grid_size))
 			{
 				return kRetBagAddItemBagFull;
@@ -469,6 +454,12 @@ uint32_t Bag::AddItem(const Item& add_item)
 				need_stack_size -= remain_stack_size;
 			}
 		}
+
+		if (need_stack_size <= 0)//可以放完
+		{
+			return kRetOK;
+		}
+
 		//放到新格子里面
 		for (size_t i = 0; i < need_grid_size; ++i)
 		{
@@ -540,11 +531,6 @@ std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t sta
 
 void Bag::OnNewGrid(const Item& item)
 {
-	if (items_.find(item.guid()) == items_.end())
-	{
-		LOG_ERROR << "bag add item" << player_guid() << " guid:" << item.guid();
-		return;
-	}
 	uint32_t add_pos = 0;
 	uint32_t sz = uint32_t(size());
 	for (uint32_t i = 0; i < sz; ++i)
