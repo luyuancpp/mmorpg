@@ -58,7 +58,7 @@ public:
 	inline bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }//足够空格子
 	inline bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }//足够空格子
 	uint32_t AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_items);//足够空间放物品
-	uint32_t AdequateItem(const common::UInt32UInt32UnorderedMap& try_items);//足够物品
+	uint32_t AdequateItem(const common::UInt32UInt32UnorderedMap& adequate_items);//检测是否足够物品
 
 	uint32_t DelItem(const common::UInt32UInt32UnorderedMap& try_del_items);
 	uint32_t DelItemByPos(const DelItemByPosParam& p);

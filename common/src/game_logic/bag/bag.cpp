@@ -64,7 +64,7 @@ uint32_t Bag::GetItemPos(common::Guid guid)
 uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_items)
 {
 	auto empty_size = empty_grid_size();
-	UInt32UInt32UnorderedMap stack_item_list;
+	UInt32UInt32UnorderedMap need_stack_size_list;//需要叠加的物品列表
 	bool has_stack_item = false;
 	//计算不可叠加商品
 	for (auto& it : try_items)
@@ -81,16 +81,16 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 		}
 		else if (p_c_item->max_statck_size() == 1)//不可叠加占用一个格子
 		{
-			std::size_t need_size = static_cast<std::size_t>(p_c_item->max_statck_size() * it.second);
-			if (empty_size <= 0 || empty_size < need_size)
+			std::size_t need_grid_size = static_cast<std::size_t>(p_c_item->max_statck_size() * it.second);
+			if (empty_size <= 0 || empty_size < need_grid_size)
 			{
 				return kRetBagAdequateAddItemSize;
 			}
-			empty_size -= need_size;
+			empty_size -= need_grid_size;
 		}
 		else //可以叠加
 		{
-			stack_item_list.emplace(it.first, it.second);
+			need_stack_size_list.emplace(it.first, it.second);
 			has_stack_item = true;
 		}
 	}
@@ -102,7 +102,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 
 	for (auto& it : items_)
 	{
-		for (auto& ji : stack_item_list)
+		for (auto& ji : need_stack_size_list)
 		{
 			if (it.second.config_id() != ji.first)
 			{
@@ -116,30 +116,30 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 			}
 			if (ji.second <= remain_stack_size)
 			{
-				stack_item_list.erase(ji.first);//该物品个数足够,从判断列表删除
+				need_stack_size_list.erase(ji.first);//该物品个数足够,从判断列表删除
 				break;
 			}
-			ji.second -= remain_stack_size;
+			ji.second -= remain_stack_size;//扣除可以叠加，剩下的个数继续判断
 		}		
 	}
 	std::size_t need_grid_size = 0;
 	//剩下的没叠加成功的
-	for (auto& it : stack_item_list)
+	for (auto& it : need_stack_size_list)
 	{
 		auto p_c_item = get_item_conf(it.first);//前面判断过空了，以及除0
-		auto stack_grid_size = calc_item_need_grid_size(it.second, p_c_item->max_statck_size());//满叠加的格子
-		if (empty_size <= 0 || empty_size < stack_grid_size)
+		auto need_grid_size = calc_item_need_grid_size(it.second, p_c_item->max_statck_size());//满叠加的格子
+		if (empty_size <= 0 || empty_size < need_grid_size)
 		{
 			return kRetBagAdequateAddItemSize;
 		}
-		empty_size -= stack_grid_size;
+		empty_size -= need_grid_size;
 	}
 	return kRetOK;
 }
 
-uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& try_items)
+uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& adequate_items)
 {
-	auto stack_item_list = try_items;
+	auto stack_item_list = adequate_items;
 	for (auto& it : items_)
 	{
 		for (auto& ji : stack_item_list)
@@ -159,12 +159,12 @@ uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& try_items)
 				return kRetCofnigData;
 			}
 			auto sz = it.second.size();
-			if (ji.second <= it.second.size())
+			if (ji.second <= sz)
 			{
 				stack_item_list.erase(ji.first);//该物品叠加成功,从列表删除
 				break;
 			}
-			ji.second -= it.second.size();
+			ji.second -= sz;
 		}
 		if (stack_item_list.empty())
 		{
@@ -181,11 +181,11 @@ uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& try_items)
 uint32_t  Bag::DelItem(const common::UInt32UInt32UnorderedMap& try_del_items)
 {
 	RET_CHECK_RET(AdequateItem(try_del_items));
-	auto del_items = try_del_items;
-	IteamRawPtrVector del_item;//删除的物品
+	auto try_del_items_back = try_del_items;
+	IteamRawPtrVector real_del_item;//删除的物品
 	for (auto& it : items_)
 	{
-		for (auto& ji : del_items)
+		for (auto& ji : try_del_items_back)
 		{
 			if (it.second.config_id() != ji.first)
 			{
@@ -195,20 +195,20 @@ uint32_t  Bag::DelItem(const common::UInt32UInt32UnorderedMap& try_del_items)
 			if (ji.second <= sz)
 			{
 				it.second.set_size(sz - ji.second);
-				del_item.emplace_back(&it.second);
-				del_items.erase(ji.first);//该物品叠加成功,从列表删除
+				real_del_item.emplace_back(&it.second);
+				try_del_items_back.erase(ji.first);//该物品叠加成功,从列表删除
 				break;
 			}
 			else
 			{
-				ji.second -= it.second.size();
+				ji.second -= sz;
 				it.second.set_size(0);
-				del_item.emplace_back(&it.second);
+				real_del_item.emplace_back(&it.second);
 			}			
 		}
-		if (del_items.empty())
+		if (try_del_items_back.empty())
 		{
-			return kRetOK;
+			break;
 		}
 	}
 	return kRetOK;

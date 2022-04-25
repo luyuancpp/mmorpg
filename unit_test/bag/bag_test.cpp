@@ -80,6 +80,26 @@ TEST(BagTest, AddNewGridItemFull)
     EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.pos_size());
 }
 
+//一个一个格子添加
+TEST(BagTest, Add10CanStack10CanNotStack)
+{
+    Bag bag;
+    bag.Unlock(BagCapacity::kDefualtCapacity);
+    CreateItemParam p;
+    uint32_t config_id10 = 10;
+    uint32_t config_id1 = 1;
+    p.item_base_db.set_config_id(config_id1);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);
+    auto item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    p.item_base_db.set_config_id(config_id10);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);
+    item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.pos_size());
+}
+
 //添加可叠加测试1
 TEST(BagTest, AddStackItemHalfAdd)
 {
