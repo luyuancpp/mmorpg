@@ -377,19 +377,13 @@ uint32_t Bag::AddItem(const Item& add_item)
 		{
 			return kRetBagAddItemBagFull;
 		}
-		if (item_base_db.guid() == kInvalidGuid)
+		if (add_item.size() == 1)//只有一个
 		{
-			item_base_db.set_guid(g_server_sequence.Generate());
-		}
-		//放到新格子里面
-		for (uint32_t i = 0; i < item_base_db.size(); ++i)
-		{
-			CreateItemParam p;
-			auto& item_base_db = p.item_base_db;
-			item_base_db.set_config_id(add_item.config_id());
-			item_base_db.set_guid(g_server_sequence.Generate());
-			auto new_item = CreateItem(p);
-			auto it = items_.emplace(item_base_db.guid(), std::move(new_item));
+			if (item_base_db.guid() == kInvalidGuid)
+			{
+				item_base_db.set_guid(g_server_sequence.Generate());
+			}
+			auto it = items_.emplace(item_base_db.guid(), std::move(add_item));
 			if (!it.second)
 			{
 				LOG_ERROR << "bag add item" << player_guid();
@@ -397,6 +391,25 @@ uint32_t Bag::AddItem(const Item& add_item)
 			}
 			OnNewGrid(it.first->second);
 		}
+		else
+		{
+			//放到新格子里面
+			for (uint32_t i = 0; i < item_base_db.size(); ++i)
+			{
+				CreateItemParam p;
+				auto& item_base_db = p.item_base_db;
+				item_base_db.set_config_id(add_item.config_id());
+				item_base_db.set_guid(g_server_sequence.Generate());
+				auto new_item = CreateItem(p);
+				auto it = items_.emplace(item_base_db.guid(), std::move(new_item));
+				if (!it.second)
+				{
+					LOG_ERROR << "bag add item" << player_guid();
+					return kRetBagDeleteItemAlreadyHasGuid;
+				}
+				OnNewGrid(it.first->second);
+			}
+		}		
 	}
 	else if(p_c_item->max_statck_size() > 1)//尝试堆叠到旧格子上
 	{
