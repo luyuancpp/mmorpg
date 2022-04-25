@@ -260,6 +260,10 @@ void Bag::Neaten()
 			LOG_ERROR << "get_item_conf" << player_guid() << " config_id" << item.config_id();
 			continue;
 		}
+		if (p_c_item->max_statck_size() <= 1)
+		{
+			continue;
+		}
 		if (item.size() >= p_c_item->max_statck_size())//满的不计算了
 		{
 			continue;
@@ -273,16 +277,16 @@ void Bag::Neaten()
 			{
 				continue;
 			}
-			if (!CanStack(it.second, **ji.begin()))
+			if (!CanStack(item, **ji.begin()))
 			{
 				continue;
 			}
-			ji.emplace_back(&it.second);//把可以叠加的放进相同物品里面
+			ji.emplace_back(&item);//把可以叠加的放进相同物品里面
 			has_same = true;
 		}
 		if (!has_same)
 		{
-			same_items.emplace_back(IteamRawPtrVector{&it.second});//没有相同的直接放到新的物品列表里面
+			same_items.emplace_back(IteamRawPtrVector{&item});//没有相同的直接放到新的物品列表里面
 		}
 	}
 	GuidVector clear_item_guid;
@@ -377,13 +381,22 @@ uint32_t Bag::AddItem(const Item& add_item)
 		{
 			item_base_db.set_guid(g_server_sequence.Generate());
 		}
-		auto it = items_.emplace(item_base_db.guid(), std::move(add_item));
-		if (!it.second)
+		//放到新格子里面
+		for (uint32_t i = 0; i < item_base_db.size(); ++i)
 		{
-			LOG_ERROR << "bag add item" << player_guid();
-			return kRetBagDeleteItemAlreadyHasGuid;
+			CreateItemParam p;
+			auto& item_base_db = p.item_base_db;
+			item_base_db.set_config_id(add_item.config_id());
+			item_base_db.set_guid(g_server_sequence.Generate());
+			auto new_item = CreateItem(p);
+			auto it = items_.emplace(item_base_db.guid(), std::move(new_item));
+			if (!it.second)
+			{
+				LOG_ERROR << "bag add item" << player_guid();
+				return kRetBagDeleteItemAlreadyHasGuid;
+			}
+			OnNewGrid(it.first->second);
 		}
-		OnNewGrid(it.first->second);
 	}
 	else if(p_c_item->max_statck_size() > 1)//尝试堆叠到旧格子上
 	{
