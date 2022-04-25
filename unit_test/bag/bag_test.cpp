@@ -594,6 +594,52 @@ TEST(BagTest, Neaten400_1)
     EXPECT_EQ(per_grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id11));
 }
 
+//整理1，每个格子使用一点
+TEST(BagTest, NeatenCanNotStack)
+{
+    Bag bag;
+    auto unlock_size = BagCapacity::kDefualtCapacity;
+    bag.Unlock(unlock_size);
+    CreateItemParam p;
+    uint32_t config_id10 = 10;
+    uint32_t config_id1 = 1;
+    p.item_base_db.set_config_id(config_id10);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);// 999 * 10
+    auto item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    auto id10 = g_server_sequence.LastId();
+    p.item_base_db.set_config_id(config_id1);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);// 999 * 10
+    item = CreateItem(p);
+    EXPECT_EQ(kRetOK, bag.AddItem(item));
+    auto id11 = g_server_sequence.LastId();
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; ++i)
+    {
+        DelItemByPosParam dp;
+        dp.pos_ = i;
+        dp.item_guid_ = id10 - (BagCapacity::kDefualtCapacity - i) + 1;
+        dp.item_config_id_ = config_id10;
+        dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
+        EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
+    }
+ 
+    for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
+    {
+        EXPECT_EQ(1, bag.GetItemByBos(i)->size());
+    }
+    bag.Neaten();
+    EXPECT_EQ(BagCapacity::kDefualtCapacity + 1, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefualtCapacity + 1, bag.pos_size());
+    for (auto& it : bag.pos())
+    {
+        if ((std::size_t)bag.GetItemByBos(bag.GetItemPos(it.second))->size() != BagCapacity::kDefualtCapacity)
+        {
+            EXPECT_EQ(1, (std::size_t)bag.GetItemByBos(bag.GetItemPos(it.second))->size());
+        }
+    }
+    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.GetItemStackSize(config_id10));
+    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.GetItemStackSize(config_id1));
+}
 
 int main(int argc, char** argv)
 {
