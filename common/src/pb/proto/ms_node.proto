@@ -103,7 +103,7 @@ message PlayerMessageRespone
 
 message AddCrossServerSceneRequest
 {
-  SceneInfo scene_info = 1;
+  repeated SceneInfo scene_info = 1;
 }
 
 service MasterNodeService {

@@ -369,7 +369,7 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OGsPlayerService
+///<<< BEGIN WRITING YOUR CODE OnGsPlayerService
 	auto& message_extern = request->ex();
 	auto& player_msg = request->msg();
 	auto it = g_players.find(message_extern.player_id());
@@ -412,7 +412,17 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 	response->mutable_ex()->set_player_id(request->ex().player_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
 	response->mutable_msg()->set_msg_id(msg_id);
-///<<< END WRITING YOUR CODE OGsPlayerService
+///<<< END WRITING YOUR CODE OnGsPlayerService
+}
+
+void MasterNodeServiceImpl::OnAddCrossServerScene(::google::protobuf::RpcController* controller,
+    const msservice::AddCrossServerSceneRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE OnAddCrossServerScene
+///<<< END WRITING YOUR CODE OnAddCrossServerScene
 }
 
 ///<<<rpc end
