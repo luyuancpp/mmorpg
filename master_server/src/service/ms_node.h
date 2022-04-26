@@ -69,7 +69,7 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OGsPlayerService(::google::protobuf::RpcController* controller,
+    void OnGsPlayerService(::google::protobuf::RpcController* controller,
         const msservice::PlayerNodeServiceRequest* request,
         msservice::PlayerMessageRespone* response,
         ::google::protobuf::Closure* done)override;
