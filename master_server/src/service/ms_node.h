@@ -74,6 +74,11 @@ public:
         msservice::PlayerMessageRespone* response,
         ::google::protobuf::Closure* done)override;
 
+    void OnAddCrossServerScene(::google::protobuf::RpcController* controller,
+        const msservice::AddCrossServerSceneRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
 };
 }// namespace msservice
 #endif//MASTER_SERVER_SRC_SERVICE_MS_NODE_H_
