@@ -363,7 +363,7 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE OnLsDisconnect
 }
 
-void MasterNodeServiceImpl::OGsPlayerService(::google::protobuf::RpcController* controller,
+void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController* controller,
     const msservice::PlayerNodeServiceRequest* request,
     msservice::PlayerMessageRespone* response,
     ::google::protobuf::Closure* done)
