@@ -278,7 +278,7 @@ void GameServer::receive(const common::OnBeConnectedEvent& es)
 
 void GameServer::InitGlobalEntities()
 {
-    reg.emplace<SceneMapComp>(global_entity());
+
 }
 
 void GameServer::Connect2Region()

@@ -17,7 +17,7 @@ using namespace common;
         scenes_entity() = reg.create();
         reg.emplace<ConfigSceneMap>(scenes_entity());
         reg.emplace<SnowFlake>(scenes_entity());
-        reg.emplace<SceneMapComp>(scenes_entity());
+
     }
 
     entt::entity MakeMainSceneNode(entt::registry& reg,  const MakeGSParam& param)

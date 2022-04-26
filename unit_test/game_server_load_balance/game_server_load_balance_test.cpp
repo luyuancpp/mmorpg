@@ -334,7 +334,7 @@ TEST(GS, PlayerLeaveEnterScene)
     LeaveSceneParam leave_param1;
     for (auto& it : player_entities_set1)
     {
-        leave_param1.leave_entity_ = it;
+        leave_param1.leave_player_ = it;
         sm.LeaveScene(leave_param1);
         EXPECT_FALSE(scenes_players1.find(it) != scenes_players1.end());
         EXPECT_EQ(reg.try_get<common::SceneEntity>(it), nullptr);
@@ -344,7 +344,7 @@ TEST(GS, PlayerLeaveEnterScene)
     LeaveSceneParam leave_param2;
     for (auto& it : player_entities_set2)
     {
-        leave_param2.leave_entity_ = it;
+        leave_param2.leave_player_ = it;
         sm.LeaveScene(leave_param2);
         EXPECT_FALSE(scenes_players2.find(it) != scenes_players2.end());
         EXPECT_EQ(reg.try_get<common::SceneEntity>(it), nullptr);
@@ -725,13 +725,13 @@ TEST(GS, WeightRoundRobinMainScene)
         for (auto& it : player_scene1)
         {
             auto& pse = reg.get<common::SceneEntity>(it.first);
-            leave_scene.leave_entity_ = it.first;
+            leave_scene.leave_player_ = it.first;
             sm.LeaveScene(leave_scene);
         }
         for (auto& it : player_scene2)
         {
             auto& pse = reg.get<common::SceneEntity>(it.first);
-            leave_scene.leave_entity_ = it.first;
+            leave_scene.leave_player_ = it.first;
             sm.LeaveScene(leave_scene);
         }
         for (auto& it : server_entities)
@@ -946,13 +946,13 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		for (auto& it : player_scene1)
 		{
 			auto& pse = reg.get<common::SceneEntity>(it.first);
-			leave_scene.leave_entity_ = it.first;
+			leave_scene.leave_player_ = it.first;
 			sm.LeaveScene(leave_scene);
 		}
 		for (auto& it : player_scene2)
 		{
 			auto& pse = reg.get<common::SceneEntity>(it.first);
-			leave_scene.leave_entity_ = it.first;
+			leave_scene.leave_player_ = it.first;
 			sm.LeaveScene(leave_scene);
 		}
 		for (auto& it : server_entities)

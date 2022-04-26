@@ -79,7 +79,6 @@ entt::entity ScenesSystem::MakeSceneByGuid(const MakeSceneWithGuidP& param)
 entt::entity ScenesSystem::MakeScene2Gs(const MakeGSSceneP& param)
 {
     MakeSceneP make_p;
-    make_p.op_ = param.op_;
     make_p.scene_confid_ = param.scene_confid_;
     auto e = MakeScene(make_p);
     PutScene2GSParam put_param;
@@ -137,8 +136,7 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
 void ScenesSystem::EnterScene(const EnterSceneParam& param)
 {
     auto scene_entity = param.scene_;
-    auto& player_entities = reg.get<ScenePlayers>(scene_entity);
-    player_entities.emplace(param.enterer_);
+    reg.get<ScenePlayers>(scene_entity).emplace(param.enterer_);
     reg.emplace<common::SceneEntity>(param.enterer_, scene_entity);
     auto p_server_data = reg.try_get<GsDataPtr>(scene_entity);
     if (nullptr == p_server_data)
@@ -150,12 +148,11 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 {
-    auto leave_entity = param.leave_entity_;
-    auto& player_scene_entity = reg.get<common::SceneEntity>(leave_entity);
+    auto leave_player = param.leave_player_;
+    auto& player_scene_entity = reg.get<common::SceneEntity>(leave_player);
     auto scene_entity = player_scene_entity.scene_entity();
-    auto& player_entities = reg.get<ScenePlayers>(scene_entity);
-    player_entities.erase(leave_entity);
-    reg.remove<common::SceneEntity>(leave_entity);
+    reg.get<ScenePlayers>(scene_entity).erase(leave_player);
+    reg.remove<common::SceneEntity>(leave_player);
     auto p_server_data = reg.try_get<GsDataPtr>(scene_entity);
     if (nullptr == p_server_data)
     {
@@ -170,9 +167,7 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
     auto compel_entity = param.compel_change_entity_;
     auto& new_server_scene = reg.get<ConfigSceneMap>(new_server_entity);
     auto scene_config_id = param.scene_confid_;
-
     entt::entity server_scene_enitity = entt::null;
-
     if (!new_server_scene.HasConfig(param.scene_confid_))
     {
         MakeGSSceneP make_server_scene_param;
@@ -191,7 +186,7 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
     }
 
     LeaveSceneParam leave_param;
-    leave_param.leave_entity_ = compel_entity;
+    leave_param.leave_player_ = compel_entity;
     LeaveScene(leave_param);
 
     EnterSceneParam enter_param;
