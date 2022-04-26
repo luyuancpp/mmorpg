@@ -9,7 +9,6 @@
 struct MakeSceneP
 {
     uint32_t scene_confid_{ 0 };
-    uint32_t op_{ 0 };
 };
 
 struct MakeSceneWithGuidP : public MakeSceneP

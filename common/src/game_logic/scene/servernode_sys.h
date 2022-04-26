@@ -15,7 +15,7 @@ struct EnterSceneParam
 
 struct LeaveSceneParam
 {
-    entt::entity leave_entity_{ entt::null };
+    entt::entity leave_player_{ entt::null };
     uint32_t op_{ 1 };
 };
 
