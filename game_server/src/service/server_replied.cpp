@@ -13,7 +13,7 @@
 using namespace common;
 
 
-void ServerReplied::StartGSMasterReplied(StartGsMasterRpcRC cp)
+void ServerReplied::StartGsMasterReplied(StartGsMasterRpcRC cp)
 {
     auto rsp = cp->s_rp_;
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
