@@ -16,9 +16,9 @@ public:
         regionservcie::StartCrossGsResponse* response,
         ::google::protobuf::Closure* done)override;
 
-    void StartMS(::google::protobuf::RpcController* controller,
-        const regionservcie::StartMSRequest* request,
-        regionservcie::StartMSResponse* response,
+    void StartMs(::google::protobuf::RpcController* controller,
+        const regionservcie::StartMsRequest* request,
+        regionservcie::StartMsResponse* response,
         ::google::protobuf::Closure* done)override;
 
 };
