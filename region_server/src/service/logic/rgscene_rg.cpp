@@ -92,9 +92,9 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE StartCrossGs
 }
 
-void RgServiceImpl::StartMS(::google::protobuf::RpcController* controller,
-    const regionservcie::StartMSRequest* request,
-    regionservcie::StartMSResponse* response,
+void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
+    const regionservcie::StartMsRequest* request,
+    regionservcie::StartMsResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);

@@ -18,19 +18,32 @@ message StartCrossGsResponse
   repeated SceneInfo scenes_info = 1;
 }
 
-message StartMSRequest
+message StartMsRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
   uint32 ms_node_id = 3;
 }
 
-message StartMSResponse
+message StartMsResponse
 {
+}
+
+message EnterCrossMainScene
+{
+  
+}
+
+message EnterCrossRoomSceneScene
+{
+  
 }
 
 service RgService 
 {
   rpc StartCrossGs (StartCrossGsRequest) returns (StartCrossGsResponse);
-  rpc StartMS (StartMSRequest) returns (StartMSResponse);
+  rpc StartMs (StartMsRequest) returns (StartMsResponse);
+  rpc EnterCrossMainScene(EnterCrossMainScene ) returns (EnterCrossRoomSceneScene);
 }
+
+
