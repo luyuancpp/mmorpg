@@ -10,12 +10,12 @@ using namespace common;
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
 {
-    auto scene_config_id = param.scene_confid_;
+    auto scene_confid = param.scene_confid_;
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
     for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
     {
-        if (!reg.get<ConfigSceneMap>(e).HasConfig(scene_config_id))
+        if (!reg.get<ConfigSceneMap>(e).HasConfig(scene_confid))
         {
             continue;
         }
@@ -34,7 +34,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     }
     auto& scenes = reg.get<ConfigSceneMap>(server_entity);
     std::size_t scene_min_player_size = UINT64_MAX;
-    auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
+    auto& server_scenes = scenes.confid_sceneslist(scene_confid);
     for (auto& ji : server_scenes)
     {
         std::size_t scene_player_size = reg.get<ScenePlayers>(ji).size();
