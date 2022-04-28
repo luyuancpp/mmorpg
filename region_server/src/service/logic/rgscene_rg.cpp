@@ -136,6 +136,8 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterCrossMainScene
+
+	g_scene_sys->EnterScene();
 ///<<< END WRITING YOUR CODE EnterCrossMainScene
 }
 
