@@ -102,7 +102,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
-			auto scene_entity = g_scene_sys->MakeScene2Gs(create_scene_param);
+			auto scene_entity = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
 			if (!reg.valid(scene_entity))
 			{
 				continue;
@@ -309,7 +309,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		EnterSceneParam ep;
 		ep.enterer_ = player;
 		ep.scene_ = scene;
-		g_scene_sys->EnterScene(ep);
+		ScenesSystem::GetSingleton().EnterScene(ep);
 		Ms2gsEnterGameRpcRplied message;
 		message.s_rq_.set_player_id(guid);
 		message.s_rq_.set_conn_id(request->conn_id());

@@ -22,7 +22,7 @@ void ServerReplied::StartGsMasterReplied(StartGsMasterRpcRC cp)
 		MakeSceneWithGuidP make_scene;
 		make_scene.scene_id = pb.scene_id();
 		make_scene.scene_confid_ = pb.scene_confid();
-		g_scene_sys->MakeSceneByGuid(make_scene);
+		ScenesSystem::GetSingleton().MakeSceneByGuid(make_scene);
     }
 }
 
@@ -35,7 +35,7 @@ void ServerReplied::StartCrossGsRegionReplied(StartCrossGsReplied cp)
 		MakeSceneWithGuidP make_scene;
 		make_scene.scene_id = pb.scene_id();
 		make_scene.scene_confid_ = pb.scene_confid();
-		g_scene_sys->MakeSceneByGuid(make_scene);
+		ScenesSystem::GetSingleton().MakeSceneByGuid(make_scene);
 	}
 }
 

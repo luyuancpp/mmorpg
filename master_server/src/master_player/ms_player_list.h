@@ -4,7 +4,6 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/game_registry.h"
 
-
 using PlayerListMap = std::unordered_map<common::Guid, common::EntityPtr>;
 extern thread_local PlayerListMap  g_players;
 class PlayerList

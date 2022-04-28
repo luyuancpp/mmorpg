@@ -2,13 +2,14 @@
 
 #include "muduo/base/Logging.h"
 
+#include "src/return_code/error_code.h"
 #include "src/game_logic/game_registry.h"
 
 #include "src/pb/pbc/component_proto/scene_comp.pb.h"
 
 using namespace common;
 
-ScenesSystem* g_scene_sys = nullptr;
+static const std::size_t kMaxMainScenePlayer = 1000;
 
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
 {
@@ -133,9 +134,28 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
     reg.emplace_or_replace<ConfigSceneMap>(param.from_server_);
 }
 
+uint32_t ScenesSystem::CheckEnterSceneByGuid(const CheckEnterSceneParam& param)
+{
+    auto scene = get_scene(param.scene_id_);
+    if (scene == entt::null)
+    {
+        return kRetEnterSceneNotFound;
+    }
+    if (reg.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
+    {
+        return kRetEnterSceneNotFull;
+    }
+    return kRetOK;
+}
+
 void ScenesSystem::EnterScene(const EnterSceneParam& param)
 {
     auto scene_entity = param.scene_;
+    if (scene_entity == entt::null)
+    {
+        LOG_INFO << "enter error" << entt::to_integral(param.enterer_);
+        return;
+    }
     reg.get<ScenePlayers>(scene_entity).emplace(param.enterer_);
     reg.emplace<common::SceneEntity>(param.enterer_, scene_entity);
     auto p_server_data = reg.try_get<GsDataPtr>(scene_entity);
