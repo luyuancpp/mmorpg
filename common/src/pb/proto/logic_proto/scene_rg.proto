@@ -29,12 +29,13 @@ message StartMsResponse
 {
 }
 
-message EnterCrossMainScene
+message EnterCrossMainSceneRequest
 {
-  
+  uint32 scene_confid = 1;
+  uint64 player_id = 2;
 }
 
-message EnterCrossRoomSceneScene
+message EnterCrossRoomSceneSceneResponse
 {
   
 }
@@ -43,7 +44,7 @@ service RgService
 {
   rpc StartCrossGs (StartCrossGsRequest) returns (StartCrossGsResponse);
   rpc StartMs (StartMsRequest) returns (StartMsResponse);
-  rpc EnterCrossMainScene(EnterCrossMainScene ) returns (EnterCrossRoomSceneScene);
+  rpc EnterCrossMainScene (EnterCrossMainSceneRequest) returns (EnterCrossRoomSceneSceneResponse);
 }
 
 

@@ -208,5 +208,5 @@ void MasterServer::Register2Region()
 		&MasterServer::StartMsRegionReplied,
 		cp,
 		this,
-		&regionservcie::RgService_Stub::StartMS);
+		&regionservcie::RgService_Stub::StartMs);
 }
