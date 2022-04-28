@@ -30,6 +30,12 @@ namespace common
         kRetLoginCreateConnectionAccountEmpty = 1013,
         kRetLoginEnterGameConnectionAccountEmpty = 1014,
 
+        //Scene
+        kRetEnterSceneNotFound = 4000,
+        kRetEnterSceneNotFull = 4001,
+        kRetEnterScenetWeightRoundRobinMainScene = 4002,//所有场景已经满了
+        kRetEnterSceneCreatePlayer = 4003,//玩家进入不了跨服
+
         //Team
         kRetTeamNotInApplicants = 5000,
         kRetTeamPlayerId = 5001,

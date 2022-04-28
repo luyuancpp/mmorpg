@@ -37,7 +37,7 @@ message EnterCrossMainSceneRequest
 
 message EnterCrossRoomSceneSceneResponse
 {
-  
+  ClientError error = 1;
 }
 
 service RgService 

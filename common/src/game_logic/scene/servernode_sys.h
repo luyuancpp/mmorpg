@@ -3,6 +3,8 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
+#include "src/common_type/common_type.h"
+
 static const std::size_t kMaxServerPlayerSize = 2000;
 static const std::size_t kMaxScenePlayerSize = 1000;
 
@@ -10,19 +12,22 @@ struct EnterSceneParam
 {
     entt::entity scene_{ entt::null };
     entt::entity enterer_{ entt::null };
-    uint32_t op_{ 0 };
+};
+
+struct CheckEnterSceneParam
+{
+	common::Guid scene_id_{common::kInvalidGuid };
+	entt::entity enterer_{ entt::null };
 };
 
 struct LeaveSceneParam
 {
     entt::entity leave_player_{ entt::null };
-    uint32_t op_{ 1 };
 };
 
 struct GetSceneParam
 {
     uint32_t scene_confid_{0};
-    uint32_t op_{ 0 };
 };
 
 struct ServerPressureParam
@@ -56,6 +61,8 @@ struct CompelChangeSceneParam
 class ServerNodeSystem
 {
 public:
+
+    static ServerNodeSystem& GetSingleton() { thread_local ServerNodeSystem singleton; return singleton; }
 
 	static entt::entity GetWeightRoundRobinMainScene(const GetSceneParam& param);
 
