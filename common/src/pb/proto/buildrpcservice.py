@@ -118,7 +118,7 @@ def getpbdir(filename, writedir):
 def genheadfile(filename, writedir):
     
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
-    hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
+    hfullfilename = writedir + '/' + getprevfilename(filename, writedir) + filename.replace('.proto', '.h')
     folder_path, local.hfilename = os.path.split(hfullfilename)    
     newheadfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.proto', '.h')
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_'
@@ -169,8 +169,7 @@ def genheadfile(filename, writedir):
 
 def gencppfile(filename, writedir):
     global cppmaxpart
-    hfullfilename = writedir + '/' + filename.replace('.proto', '.h')
-    cppfilename = writedir + '/' + filename.replace('.proto', '.cpp')
+    cppfilename = writedir  + getprevfilename(filename, writedir) + filename.replace('.proto', '.cpp').replace(logicprotodir, '')
     newcppfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.h', '.cpp')
     newstr = '#include "' + getprevfilename(filename, writedir) + local.hfilename + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'

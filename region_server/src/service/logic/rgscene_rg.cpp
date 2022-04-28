@@ -98,7 +98,7 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StartMS
+///<<< BEGIN WRITING YOUR CODE StartMs
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity ms_entity{ entt::null };
@@ -126,7 +126,17 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 	reg.emplace<MsStubPtr>(ms_entity, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	g_ms_nodes.emplace(request->ms_node_id(), ms_entity);
 	LOG_INFO << "ms node connected " << request->ms_node_id();
-///<<< END WRITING YOUR CODE StartMS
+///<<< END WRITING YOUR CODE StartMs
+}
+
+void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* controller,
+    const regionservcie::EnterCrossMainSceneRequest* request,
+    regionservcie::EnterCrossRoomSceneSceneResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE EnterCrossMainScene
+///<<< END WRITING YOUR CODE EnterCrossMainScene
 }
 
 ///<<<rpc end
