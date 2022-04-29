@@ -108,4 +108,11 @@ return;
 
 #define ReturnCloseureOK ReturnCloseureError(kRetOK);
 
+#define  ReturnAutoCloseureError(return_code)\
+if (return_code != kRetOK)\
+{\
+    response->mutable_error()->set_error_no(return_code);\
+    return;\
+}\
+
 #endif // !COMMON_SRC_RETURN_CODE_ERROR_CODE

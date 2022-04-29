@@ -116,9 +116,8 @@ def getpbdir(filename, writedir):
     return ''
 
 def genheadfile(filename, writedir):
-    
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
-    hfullfilename = writedir + '/' + getprevfilename(filename, writedir) + filename.replace('.proto', '.h')
+    hfullfilename = writedir + '/' + getprevfilename(filename, writedir) + filename.replace('.proto', '.h').replace(logicprotodir, '')
     folder_path, local.hfilename = os.path.split(hfullfilename)    
     newheadfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.proto', '.h')
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_'
