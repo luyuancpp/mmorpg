@@ -1,19 +1,18 @@
 syntax = "proto3";
-import "common.proto";
+import "component_proto/scene_comp.proto";
 package normal;
 option cc_generic_services = true;
 
-message SceneTestRequest
+message UpdateCrossMainSceneInfoRequest
 {
+	repeated SceneInfo scenes_info = 1;
 }
 
-message SceneTestResponse
+message UpdateCrossMainSceneInfoResponse
 {
-	ClientError error = 1;
 }
-
 
 service ServerSceneService
 {
-  rpc EnterScene (SceneTestRequest) returns (SceneTestResponse);
+  rpc UpdateCrossMainSceneInfo (UpdateCrossMainSceneInfoRequest) returns (UpdateCrossMainSceneInfoResponse);
 }

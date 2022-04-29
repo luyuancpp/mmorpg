@@ -11,9 +11,9 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
-    void EnterScene(::google::protobuf::RpcController* controller,
-        const normal::SceneTestRequest* request,
-        normal::SceneTestResponse* response,
+    void UpdateCrossMainSceneInfo(::google::protobuf::RpcController* controller,
+        const normal::UpdateCrossMainSceneInfoRequest* request,
+        normal::UpdateCrossMainSceneInfoResponse* response,
         ::google::protobuf::Closure* done)override;
 
 };

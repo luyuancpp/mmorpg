@@ -117,14 +117,13 @@ def getpbdir(filename, writedir):
 
 def genheadfile(filename, writedir):
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
-    hfullfilename = writedir + '/' + getprevfilename(filename, writedir) + filename.replace('.proto', '.h').replace(logicprotodir, '')
-    folder_path, local.hfilename = os.path.split(hfullfilename)    
-    newheadfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.proto', '.h')
+    hfullfilename = writedir +  getprevfilename(filename, writedir) + filename.replace('.proto', '.h').replace(logicprotodir, '')  
+    newheadfilename = servicedir +  getprevfilename(filename, writedir) +  filename.replace('.proto', '.h').replace(logicprotodir, '')
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_'
     headdefine += filename.replace('.proto', '').upper().replace('/', '_').replace('.', '').upper().strip('_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
-    newstr += '#include "' + getpbdir(filename, writedir) + local.hfilename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "' + getpbdir(filename, writedir) + filename.replace('.proto', '').replace(logicprotodir, '') + '.pb.h"\n'
     try:
         with open(hfullfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -169,8 +168,8 @@ def genheadfile(filename, writedir):
 def gencppfile(filename, writedir):
     global cppmaxpart
     cppfilename = writedir  + getprevfilename(filename, writedir) + filename.replace('.proto', '.cpp').replace(logicprotodir, '')
-    newcppfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.h', '.cpp')
-    newstr = '#include "' + getprevfilename(filename, writedir) + local.hfilename + '"\n'
+    newcppfilename = servicedir + getprevfilename(filename, writedir) + filename.replace('.proto', '.cpp').replace(logicprotodir, '')
+    newstr = '#include "' + getprevfilename(filename, writedir) + filename.replace('.proto', '.h').replace(logicprotodir, '') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
