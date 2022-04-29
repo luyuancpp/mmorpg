@@ -47,7 +47,7 @@
 		using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
 		void StartServer(ServerInfoRpcRC cp);
 
-		using StartMsClosure = common::NormalClosure<regionservcie::StartMSRequest, regionservcie::StartMSResponse>;
+		using StartMsClosure = common::NormalClosure<regionservcie::StartMsRequest, regionservcie::StartMsResponse>;
 		using StartMsReplied = std::shared_ptr<StartMsClosure>;
 		void StartMsRegionReplied(StartMsReplied cp);
 

@@ -35,9 +35,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\master_server\src\scene\sceces.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\entity\entity.h">
       <Filter>头文件</Filter>
     </ClInclude>

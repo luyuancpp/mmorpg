@@ -139,7 +139,7 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
     request.set_server_type(reg.get<GsServerType>(global_entity()).server_type_);
     request.set_gs_node_id(gs_info_.id());
     g2ms_stub_.CallMethod(
-        &ServerReplied::StartGSMasterReplied,
+        &ServerReplied::StartGsMasterReplied,
         scp,
         &ServerReplied::GetSingleton(),
         &msservice::MasterNodeService_Stub::StartGs);
@@ -278,7 +278,7 @@ void GameServer::receive(const common::OnBeConnectedEvent& es)
 
 void GameServer::InitGlobalEntities()
 {
-    reg.emplace<SceneMapComp>(global_entity());
+
 }
 
 void GameServer::Connect2Region()
