@@ -32,7 +32,6 @@
     <ClInclude Include="..\..\common\src\game_logic\scene\scene_factories.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\servernode_sys.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h" />
-    <ClInclude Include="..\..\master_server\src\scene\sceces.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

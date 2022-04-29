@@ -4,6 +4,7 @@
 
 #include "muduo/base/Logging.h"
 
+
 #include "src/game_config/mainscene_config.h"
 
 #include "src/game_logic/game_registry.h"
@@ -12,6 +13,7 @@
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
 #include "src/network/ms_node.h"
+#include "src/return_code/error_code.h"
 
 #include "gs_node.pb.h"
 #include "ms_node.pb.h"
@@ -74,7 +76,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
-			auto scene_entity = g_scene_sys->MakeScene2Gs(create_scene_param);
+			auto scene_entity = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
 			if (!reg.valid(scene_entity))
 			{
 				continue;
@@ -92,13 +94,13 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE StartCrossGs
 }
 
-void RgServiceImpl::StartMS(::google::protobuf::RpcController* controller,
-    const regionservcie::StartMSRequest* request,
-    regionservcie::StartMSResponse* response,
+void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
+    const regionservcie::StartMsRequest* request,
+    regionservcie::StartMsResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StartMS
+///<<< BEGIN WRITING YOUR CODE StartMs
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity ms_entity{ entt::null };
@@ -126,7 +128,36 @@ void RgServiceImpl::StartMS(::google::protobuf::RpcController* controller,
 	reg.emplace<MsStubPtr>(ms_entity, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	g_ms_nodes.emplace(request->ms_node_id(), ms_entity);
 	LOG_INFO << "ms node connected " << request->ms_node_id();
-///<<< END WRITING YOUR CODE StartMS
+///<<< END WRITING YOUR CODE StartMs
+}
+
+void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* controller,
+    const regionservcie::EnterCrossMainSceneRequest* request,
+    regionservcie::EnterCrossRoomSceneSceneResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE EnterCrossMainScene
+	GetSceneParam weight_round_robin_scene;
+	weight_round_robin_scene.scene_confid_ = request->scene_confid();
+	auto scene = ServerNodeSystem::GetSingleton().GetWeightRoundRobinMainScene(weight_round_robin_scene);
+	if (entt::null == scene)
+	{
+		response->mutable_error()->set_error_no(kRetEnterScenetWeightRoundRobinMainScene);
+		return;
+	}
+	auto it =  players_.emplace(request->player_id(), reg.create());
+	if (!it.second)
+	{
+		response->mutable_error()->set_error_no(kRetEnterSceneCreatePlayer);
+		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
+		return;
+	}
+	EnterSceneParam esp;
+	esp.scene_ = scene;
+	esp.enterer_ = it.first->second;
+	ScenesSystem::GetSingleton().EnterScene(esp);
+///<<< END WRITING YOUR CODE EnterCrossMainScene
 }
 
 ///<<<rpc end

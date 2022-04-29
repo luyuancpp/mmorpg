@@ -101,6 +101,11 @@ message PlayerMessageRespone
   PlayerMessageExtern ex = 2;
 }
 
+message AddCrossServerSceneRequest
+{
+  repeated SceneInfo scene_info = 1;
+}
+
 service MasterNodeService {
   rpc StartGs (StartGsRequest) returns (StartGsResponse);
   rpc OnGwConnect (ConnectRequest) returns (google.protobuf.Empty);
@@ -111,5 +116,6 @@ service MasterNodeService {
   rpc OnLsEnterGame (EnterGameRequest) returns (EnterGameResponese);
   rpc OnLsLeaveGame (LsLeaveGameRequest) returns (google.protobuf.Empty);
   rpc OnLsDisconnect (LsDisconnectRequest) returns (google.protobuf.Empty); 
-  rpc OGsPlayerService (PlayerNodeServiceRequest) returns (PlayerMessageRespone);
+  rpc OnGsPlayerService (PlayerNodeServiceRequest) returns (PlayerMessageRespone);
+  rpc OnAddCrossServerScene (AddCrossServerSceneRequest) returns (google.protobuf.Empty);
 }

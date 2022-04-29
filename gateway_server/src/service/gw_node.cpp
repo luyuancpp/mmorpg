@@ -77,7 +77,7 @@ void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* control
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE PlayerEnterGS
+///<<< BEGIN WRITING YOUR CODE PlayerEnterGs
 
 	auto it = g_client_sessions_->find(request->conn_id());
 	if (it == g_client_sessions_->end())
@@ -90,7 +90,7 @@ void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* control
 	c2gw::EnterGameResponse message;
 	message.mutable_error()->set_error_no(kRetOK);
 	g_gateway_server->Send2Client(it->second.conn_, message);
-///<<< END WRITING YOUR CODE PlayerEnterGS
+///<<< END WRITING YOUR CODE PlayerEnterGs
 }
 
 void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* controller,
