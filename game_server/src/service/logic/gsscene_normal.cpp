@@ -9,14 +9,14 @@ namespace normal{
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerSceneServiceImpl::EnterScene(::google::protobuf::RpcController* controller,
-    const normal::SceneTestRequest* request,
-    normal::SceneTestResponse* response,
+void ServerSceneServiceImpl::UpdateCrossMainSceneInfo(::google::protobuf::RpcController* controller,
+    const normal::UpdateCrossMainSceneInfoRequest* request,
+    normal::UpdateCrossMainSceneInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE EnterScene
-///<<< END WRITING YOUR CODE EnterScene
+///<<< BEGIN WRITING YOUR CODE UpdateCrossMainSceneInfo
+///<<< END WRITING YOUR CODE UpdateCrossMainSceneInfo
 }
 
 ///<<<rpc end
