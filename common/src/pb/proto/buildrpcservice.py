@@ -120,10 +120,7 @@ def genheadfile(fullfilename, writedir):
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
     hfullfilename = writedir +  getprevfilename(fullfilename, writedir) + filename
     newheadfilename = servicedir +  getprevfilename(fullfilename, writedir) +  filename
-    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_'
-    headdefine += filename.replace('.h', '').upper().replace('/', '_').replace('.', '').upper().strip('_')
-    newstr = '#ifndef ' + headdefine + '_H_\n'
-    newstr += '#define ' + headdefine + '_H_\n'
+    newstr = ' #pragma once\n'
     newstr += '#include "' + getpbdir(fullfilename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
     try:
         with open(hfullfilename,'r+', encoding='utf-8') as file:
@@ -132,7 +129,7 @@ def genheadfile(fullfilename, writedir):
             skipheadline = 0 
             partend = 0
             for fileline in file:
-                if skipheadline < 3 :
+                if skipheadline < 2 :
                     skipheadline += 1
                     continue
                 if fileline.find(yourcodebegin) >= 0:
@@ -162,7 +159,6 @@ def genheadfile(fullfilename, writedir):
             newstr += headfun[i]()
 
     newstr += '};\n}// namespace ' + local.pkg + '\n'
-    newstr += '#endif//' + headdefine + '_H_\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
