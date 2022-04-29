@@ -34,6 +34,11 @@ public:
         regionservcie::EnterCrossRoomSceneSceneResponse* response,
         ::google::protobuf::Closure* done)override;
 
+    void EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
+        const regionservcie::EnterCrossMainSceneWeightRoundRobinRequest* request,
+        regionservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
+        ::google::protobuf::Closure* done)override;
+
 };
 }// namespace regionservcie
 #endif//REGION_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_SCENE_RG_H_
