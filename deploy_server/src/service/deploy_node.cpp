@@ -11,7 +11,6 @@
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace deploy{
 	///<<< BEGIN WRITING YOUR CODE
 	void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
 		::region_server_db* response)
@@ -106,4 +105,3 @@ void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller
 }
 
 	///<<<rpc end
-}// namespace deploy

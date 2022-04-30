@@ -13,11 +13,10 @@
 #include "db_node.pb.h"
 #include "ms_node.pb.h"
 ///<<< END WRITING YOUR CODE
-namespace gw2l{
 	///<<< BEGIN WRITING YOUR CODE
 	using common::RedisClientPtr;
 	///<<< END WRITING YOUR CODE
-class LoginServiceImpl : public LoginService{
+class LoginServiceImpl : public gw2l::LoginService{
 public:
 		///<<< BEGIN WRITING YOUR CODE
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
@@ -86,4 +85,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace gw2l

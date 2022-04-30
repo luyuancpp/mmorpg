@@ -14,7 +14,6 @@
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace gwservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
@@ -127,4 +126,3 @@ void GwNodeServiceImpl::GsPlayerService(::google::protobuf::RpcController* contr
 }
 
 ///<<<rpc end
-}// namespace gwservice

@@ -7,10 +7,9 @@
 
 #include "src/common_type/common_type.h"
 ///<<< END WRITING YOUR CODE
-namespace regionservcie{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class RgServiceImpl : public RgService{
+class RgServiceImpl : public regionservcie::RgService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using PlayerListMap = std::unordered_map<common::Guid, entt::entity>;
@@ -39,4 +38,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace regionservcie

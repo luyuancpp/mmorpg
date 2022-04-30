@@ -2,10 +2,9 @@
 #include "src/pb/pbc/logic_proto/scene_normal.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace normal{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class ServerSceneServiceImpl : public ServerSceneService{
+class ServerSceneServiceImpl : public normal::ServerSceneService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -16,4 +15,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace normal

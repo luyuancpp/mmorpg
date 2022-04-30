@@ -26,7 +26,6 @@ using MsStubPtr = std::unique_ptr <common::RpcStub<msservice::MasterNodeService_
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace regionservcie{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
@@ -198,4 +197,3 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 }
 
 ///<<<rpc end
-}// namespace regionservcie

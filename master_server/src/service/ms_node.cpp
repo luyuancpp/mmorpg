@@ -34,7 +34,6 @@ std::size_t kMaxPlayerSize = 1000;
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace msservice{
 ///<<< BEGIN WRITING YOUR CODE
 void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
 {
@@ -425,4 +424,3 @@ void MasterNodeServiceImpl::OnAddCrossServerScene(::google::protobuf::RpcControl
 }
 
 ///<<<rpc end
-}// namespace msservice

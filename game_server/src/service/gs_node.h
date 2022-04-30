@@ -2,10 +2,9 @@
 #include "gs_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace gsservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class GsServiceImpl : public GsService{
+class GsServiceImpl : public gsservice::GsService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -46,4 +45,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace gsservice

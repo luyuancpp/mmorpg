@@ -56,7 +56,7 @@ namespace login
         common::RpcClientPtr db_rpc_client_;
         LoginStubl2db l2db_login_stub_;
 
-        gw2l::LoginServiceImpl impl_;
+        LoginServiceImpl impl_;
 
         login_server_db node_info_;
     };

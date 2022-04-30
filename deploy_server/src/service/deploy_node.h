@@ -4,10 +4,9 @@
 #include "src/mysql_wrapper/mysql_database.h"
 
 ///<<< END WRITING YOUR CODE
-namespace deploy{
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
-class DeployServiceImpl : public DeployService{
+class DeployServiceImpl : public deploy::DeployService{
 public:
 		///<<< BEGIN WRITING YOUR CODE
 		using ServerId = uint32_t;
@@ -52,4 +51,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace deploy

@@ -39,7 +39,7 @@ public:
     { }
 
     RpcStubMsNode& gw2ms_stub() { return gw2ms_stub_; }
-    gwservice::GwNodeServiceImpl& node_service_impl() { return node_service_impl_; }
+    GwNodeServiceImpl& node_service_impl() { return node_service_impl_; }
     inline uint32_t gate_node_id()const { return serverinfo_data_.gateway_info().id(); }
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
@@ -87,7 +87,7 @@ private:
     common::RpcClientPtr master_session_;
     RpcStubMsNode gw2ms_stub_;
 
-    gwservice::GwNodeServiceImpl node_service_impl_;
+    GwNodeServiceImpl node_service_impl_;
 };
 
 extern GatewayServer* g_gateway_server;
