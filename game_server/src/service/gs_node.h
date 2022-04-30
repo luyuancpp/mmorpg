@@ -1,5 +1,4 @@
-#ifndef GAME_SERVER_SRC_SERVICE_GS_NODE_H_
-#define GAME_SERVER_SRC_SERVICE_GS_NODE_H_
+#pragma once
 #include "gs_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -48,4 +47,3 @@ public:
 
 };
 }// namespace gsservice
-#endif//GAME_SERVER_SRC_SERVICE_GS_NODE_H_

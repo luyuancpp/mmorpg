@@ -1,5 +1,4 @@
-#ifndef GATEWAY_SERVER_SRC_SERVICE_GW_NODE_H_
-#define GATEWAY_SERVER_SRC_SERVICE_GW_NODE_H_
+#pragma once
 #include "gw_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -38,4 +37,4 @@ public:
 
 };
 }// namespace gwservice
-#endif//GATEWAY_SERVER_SRC_SERVICE_GW_NODE_H_
+

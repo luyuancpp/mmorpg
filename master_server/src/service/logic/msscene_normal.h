@@ -1,5 +1,4 @@
-#ifndef MASTER_SERVER_SRC_SERVICE_LOGIC_SCENE_NORMAL_H_
-#define MASTER_SERVER_SRC_SERVICE_LOGIC_SCENE_NORMAL_H_
+#pragma once
 #include "src/pb/pbc/logic_proto/scene_normal.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -18,4 +17,4 @@ public:
 
 };
 }// namespace normal
-#endif//MASTER_SERVER_SRC_SERVICE_LOGIC_SCENE_NORMAL_H_
+
