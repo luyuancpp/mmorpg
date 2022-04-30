@@ -50,8 +50,8 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 	messag.set_player_id(replied.s_rq_.player_id());
 	Send2Gate(messag, player_session.gate_node_id());
 
-	//clientplayer::EnterSeceneS2C msg;
-	//Send2Player(msg, player);
+	clientplayer::EnterSeceneS2C msg;
+	Send2Player(msg, player);
 
 }
 ///<<< END WRITING YOUR CODE
@@ -291,14 +291,13 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	{
 		// todo default
 		LOG_INFO << "player " << guid << " enter default secne";
-		return;
+
 	}
 	auto* p_gs_data = reg.try_get<GsDataPtr>(scene);
 	if (nullptr == p_gs_data)
 	{
 		// todo default
 		LOG_INFO << "player " << guid << " enter default secne";
-		return;
 	}
 	auto& gs_data = (*p_gs_data);
 	player_session.gs_ = gs_data;

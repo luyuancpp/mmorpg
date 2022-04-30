@@ -35,6 +35,7 @@ namespace common
         kRetEnterSceneNotFull = 4001,
         kRetEnterScenetWeightRoundRobinMainScene = 4002,//所有场景已经满了
         kRetEnterSceneCreatePlayer = 4003,//玩家进入不了跨服
+        kRetEnterGameGsCrash = 4004,//当前服务器不可进入，请重新进入
 
         //Team
         kRetTeamNotInApplicants = 5000,

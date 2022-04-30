@@ -91,7 +91,7 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 	EnterMS(srq.guid(), response->conn_id(), response, done);
 }
 
-void LoginServiceImpl::EnterMSReplied(EnterGameMSRpcReplied d)
+void LoginServiceImpl::EnterMsReplied(EnterGameMSRpcReplied d)
 {
 	connections_.erase(d->s_rq_.conn_id());
 }
@@ -112,7 +112,7 @@ void LoginServiceImpl::EnterMS(common::Guid guid,
 	cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
 	cp->s_rq_.set_account(reg.get<std::string>(it->second.entity()));
 	ms_node_stub_.CallMethodString(
-		&LoginServiceImpl::EnterMSReplied,
+		&LoginServiceImpl::EnterMsReplied,
 		cp,
 		this,
 		&msservice::MasterNodeService_Stub::OnLsEnterGame);

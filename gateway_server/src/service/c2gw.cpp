@@ -159,13 +159,8 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
 {
-    //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断  
-    auto& resp_ = cp->s_rp_;
-    if (resp_->error().error_no() == kRetOK)//进入游戏有错误，直接返回给客户端
-    {
-        return;
-    }      
-	cp->c_rp_.mutable_error()->set_error_no(resp_->error().error_no());
+    //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断   
+	cp->c_rp_.mutable_error()->CopyFrom(cp->s_rp_->error());
 	codec_.send(cp->client_conn_, cp->c_rp_);
 	return;
 }
