@@ -120,7 +120,7 @@ def genheadfile(fullfilename, writedir):
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
     hfullfilename = writedir +  getprevfilename(fullfilename, writedir) + filename
     newheadfilename = servicedir +  getprevfilename(fullfilename, writedir) +  filename
-    newstr = ' #pragma once\n'
+    newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(fullfilename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
     try:
         with open(hfullfilename,'r+', encoding='utf-8') as file:

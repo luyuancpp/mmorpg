@@ -154,9 +154,12 @@ def getwritedir(serverstr):
 def genheadfile(filename, serverstr):
     writedir = getwritedir(serverstr)
     headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
-    fullfilename = writedir +  filename.replace('.proto', '.h')
+    fullfilename = writedir +  serverstr + filename.replace('.proto', '.h')
     folder_path, local.hfilename = os.path.split(fullfilename)    
-    newheadfilename = servicedir + serverstr + local.hfilename.replace('.proto', '.h')
+    newheadfilename = servicedir + serverstr + local.hfilename.replace('.proto', '.h').replace(protodir, '')
+    if not os.path.exists(newheadfilename) :
+        shutil.copy(fullfilename.replace(protodir, ''), newheadfilename)
+        return
     headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper().replace('/', '_')
     newstr = '#ifndef ' + headdefine + '_H_\n'
     newstr += '#define ' + headdefine + '_H_\n'
@@ -205,8 +208,11 @@ def genheadfile(filename, serverstr):
 def gencppfile(filename, serverstr):
     global cppmaxpart
     writedir = getwritedir(serverstr)
-    cppfilename = writedir  + filename.replace('.proto', '.cpp').replace(protodir, '')
-    newcppfilename = servicedir + serverstr + local.hfilename.replace('.h', '.cpp')
+    cppfilename = writedir  + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
+    newcppfilename = servicedir + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
+    if not os.path.exists(newcppfilename) :
+        shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
+        return
     newstr = '#include "' + serverstr + local.hfilename + '"\n'
     newstr += '#include "src/game_logic/game_registry.h"\n'
     newstr += '#include "src/network/message_sys.h"\n'
