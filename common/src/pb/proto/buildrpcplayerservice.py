@@ -223,7 +223,6 @@ def gencppfile(filename, serverstr):
             skipheadline = 0 
             serviceidx = 0
             curservicename = ''
-            nextrpcline = 0
             for fileline in file:
                 if skipheadline < 3 :
                     skipheadline += 1
@@ -256,7 +255,6 @@ def gencppfile(filename, serverstr):
                     elif fileline.find(yourcodeend) >= 0 :
                         newstr += yourcodeend + ' ' + curservicename + '\n}\n\n'
                         owncode = 0
-                        nextrpcline = 0
                         serviceidx += 1  
                         continue
                     elif fileline.find(rpcend) >= 0:

@@ -31,7 +31,6 @@ void ServerPlayerSceneServiceImpl::LoginGs2Ms(common::EntityPtr& entity,
 ///<<< END WRITING YOUR CODE LoginGs2Ms
 }
 
-///<<<rpc end
 void ServerPlayerSceneServiceImpl::ReconnectMs2Gs(common::EntityPtr& entity,
     const serverplayer::Ms2GsReconnectRequest* request,
     ::google::protobuf::Empty* response)

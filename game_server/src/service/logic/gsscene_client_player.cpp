@@ -22,7 +22,6 @@ void PlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
-///<<<rpc end
 void PlayerSceneServiceImpl::EnterSceneNotify(common::EntityPtr& entity,
     const clientplayer::EnterSeceneS2C* request,
     clientplayer::EnterSeceneS2C* response)
