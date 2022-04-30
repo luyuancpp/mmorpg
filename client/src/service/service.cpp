@@ -84,8 +84,6 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-	SeceneTestRequest request;
-	Send(request);
 }
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 

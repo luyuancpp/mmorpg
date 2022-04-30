@@ -45,7 +45,7 @@ public:
 		void EnterGameDbReplied(EnterGameDbRpcReplied d);
 
 		using EnterGameMSRpcReplied = std::shared_ptr<common::RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
-		void EnterMSReplied(EnterGameMSRpcReplied d);
+		void EnterMsReplied(EnterGameMSRpcReplied d);
 
 		void EnterMS(common::Guid guid,
 			uint64_t connection_id,
