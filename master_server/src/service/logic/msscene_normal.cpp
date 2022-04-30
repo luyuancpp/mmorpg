@@ -4,7 +4,6 @@
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace normal{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
@@ -20,4 +19,3 @@ void ServerSceneServiceImpl::UpdateCrossMainSceneInfo(::google::protobuf::RpcCon
 }
 
 ///<<<rpc end
-}// namespace normal

@@ -10,7 +10,6 @@
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace dbservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
@@ -76,4 +75,3 @@ void DbServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 ///<<<rpc end
-}// namespace dbservice

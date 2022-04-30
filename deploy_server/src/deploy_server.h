@@ -130,7 +130,7 @@ namespace deploy
         ReuseGSId reuse_id_;
         common::TimerTask scan_over_timer_;
 
-        deploy::DeployServiceImpl impl_;
+        DeployServiceImpl impl_;
     };
 }//namespace deploy
 

@@ -2,10 +2,9 @@
 #include "gw_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace gwservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class GwNodeServiceImpl : public GwNodeService{
+class GwNodeServiceImpl : public gwservice::GwNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -36,4 +35,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace gwservice

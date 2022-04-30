@@ -36,7 +36,7 @@ private:
     common::RpcClientPtr deploy_rpc_client_;
     deploy::DeployStub deploy_stub_;
 
-    regionservcie::RgServiceImpl impl_;
+    RgServiceImpl impl_;
 };
 }
 

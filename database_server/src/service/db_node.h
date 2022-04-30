@@ -18,10 +18,9 @@ namespace common
 }//namespace common;
 
 ///<<< END WRITING YOUR CODE
-namespace dbservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class DbServiceImpl : public DbService{
+class DbServiceImpl : public dbservice::DbService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
@@ -63,4 +62,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace dbservice

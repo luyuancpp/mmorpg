@@ -69,7 +69,7 @@
         common::RpcClientPtr db_rpc_client_;
         DbNodeStub db_node_stub_;
 
-        msservice::MasterNodeServiceImpl node_service_impl_;
+        MasterNodeServiceImpl node_service_impl_;
  
         servers_info_data serverinfos_;
     };

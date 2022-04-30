@@ -51,7 +51,7 @@ namespace database
         common::RpcClientPtr deploy_rpc_client_;
         deploy::DeployStub deploy_stub_;
 
-        dbservice::DbServiceImpl impl_;
+        DbServiceImpl impl_;
     };
 
 }//namespace database

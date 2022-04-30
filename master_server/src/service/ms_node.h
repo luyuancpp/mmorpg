@@ -9,10 +9,9 @@
 
 #include "gs_node.pb.h"
 ///<<< END WRITING YOUR CODE
-namespace msservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class MasterNodeServiceImpl : public MasterNodeService{
+class MasterNodeServiceImpl : public msservice::MasterNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using AccountMap = std::unordered_map<std::string, MSLoginAccount>;
@@ -79,4 +78,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace msservice

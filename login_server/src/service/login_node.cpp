@@ -13,7 +13,6 @@ using namespace muduo::net;
 ///<<< END WRITING YOUR CODE
 
 using namespace common;
-namespace gw2l{
 ///<<< BEGIN WRITING YOUR CODE 
 LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 	LoginStubl2db& l2db_login_stub)
@@ -311,4 +310,3 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 }
 
 	///<<<rpc end
-}// namespace gw2l

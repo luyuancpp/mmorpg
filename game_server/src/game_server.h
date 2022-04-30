@@ -73,7 +73,7 @@ private:
 
     ::game_server_db gs_info_;
 
-    gsservice::GsServiceImpl gs_service_impl_;
+    GsServiceImpl gs_service_impl_;
 };
 
 extern GameServer* g_gs;

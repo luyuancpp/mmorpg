@@ -94,9 +94,9 @@ def gencpprpcfunbegin(rpcindex):
 def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 def namespacebegin():
-    return 'namespace ' + local.pkg + '{\n'
+    return ''
 def classbegin():
-    return 'class ' + local.service + 'Impl : public ' + local.service + '{\npublic:\n'  
+    return 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
 def emptyfun():
     return ''
 
@@ -158,7 +158,7 @@ def genheadfile(fullfilename, writedir):
                 newstr += yourcode()
             newstr += headfun[i]()
 
-    newstr += '};\n}// namespace ' + local.pkg + '\n'
+    newstr += '};'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -241,7 +241,6 @@ def gencppfile(fullfilename, writedir):
                 newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
                 serviceidx += 1 
             newstr += rpcend + '\n'
-    newstr += '}// namespace ' + local.pkg + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
