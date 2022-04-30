@@ -1,5 +1,4 @@
-#ifndef GAME_SERVER_SRC_SERVICE_LOGIC_TEAM_NORMAL_H_
-#define GAME_SERVER_SRC_SERVICE_LOGIC_TEAM_NORMAL_H_
+#pragma once
 #include "src/pb/pbc/logic_proto/team_normal.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -18,4 +17,3 @@ public:
 
 };
 }// namespace normal
-#endif//GAME_SERVER_SRC_SERVICE_LOGIC_TEAM_NORMAL_H_

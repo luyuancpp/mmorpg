@@ -1,5 +1,4 @@
-#ifndef LOGIN_SERVER_SRC_SERVICE_LOGIN_NODE_H_
-#define LOGIN_SERVER_SRC_SERVICE_LOGIN_NODE_H_
+#pragma once
 #include "login_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/account_player.h"
@@ -88,4 +87,4 @@ public:
 
 };
 }// namespace gw2l
-#endif//LOGIN_SERVER_SRC_SERVICE_LOGIN_NODE_H_
+

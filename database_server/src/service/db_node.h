@@ -1,5 +1,4 @@
-#ifndef DATABASE_SERVER_SRC_SERVICE_DB_NODE_H_
-#define DATABASE_SERVER_SRC_SERVICE_DB_NODE_H_
+#pragma once
 #include "db_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/network/rpc_server.h"
@@ -65,4 +64,4 @@ public:
 
 };
 }// namespace dbservice
-#endif//DATABASE_SERVER_SRC_SERVICE_DB_NODE_H_
+

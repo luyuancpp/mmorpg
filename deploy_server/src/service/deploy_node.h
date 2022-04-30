@@ -1,5 +1,4 @@
-#ifndef DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_
-#define DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_
+#pragma once
 #include "deploy_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/mysql_wrapper/mysql_database.h"
@@ -54,4 +53,4 @@ public:
 
 };
 }// namespace deploy
-#endif//DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_
+

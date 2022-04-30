@@ -1,5 +1,4 @@
-#ifndef MASTER_SERVER_SRC_SERVICE_MS_NODE_H_
-#define MASTER_SERVER_SRC_SERVICE_MS_NODE_H_
+#pragma once
 #include "ms_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/ms_account.h"
@@ -81,4 +80,4 @@ public:
 
 };
 }// namespace msservice
-#endif//MASTER_SERVER_SRC_SERVICE_MS_NODE_H_
+

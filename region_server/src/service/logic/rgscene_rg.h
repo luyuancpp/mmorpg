@@ -1,5 +1,4 @@
-#ifndef REGION_SERVER_SRC_SERVICE_LOGIC_SCENE_RG_H_
-#define REGION_SERVER_SRC_SERVICE_LOGIC_SCENE_RG_H_
+#pragma once
 #include "src/pb/pbc/logic_proto/scene_rg.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include <unordered_map>
@@ -41,4 +40,4 @@ public:
 
 };
 }// namespace regionservcie
-#endif//REGION_SERVER_SRC_SERVICE_LOGIC_SCENE_RG_H_
+
