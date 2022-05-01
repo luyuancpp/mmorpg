@@ -128,7 +128,7 @@ namespace deploy
         MysqlClientPtr db_;   
         std::string redis_ip_ = "127.0.0.1";
         ReuseGSId reuse_id_;
-        common::TimerTask scan_over_timer_;
+        TimerTask scan_over_timer_;
 
         DeployServiceImpl impl_;
     };

@@ -37,7 +37,7 @@ using namespace common;
 ///<<< BEGIN WRITING YOUR CODE
 
 template<typename Replied>
-void PlayerEnterGame(Replied replied)
+void PlayerEnterGame(Replied& replied)
 {
 	auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
 	if (entt::null == player)
