@@ -1,5 +1,4 @@
-#ifndef MASTER_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_TEAM_SERVER_PLAYER_H_
-#define MASTER_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_TEAM_SERVER_PLAYER_H_
+#pragma once
 #include "player_service.h"
 #include "logic_proto/team_server_player.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
@@ -33,4 +32,3 @@ public:
         }
         }
 };
-#endif//MASTER_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_TEAM_SERVER_PLAYER_H_
