@@ -1,5 +1,4 @@
-#ifndef __TIMER_LIST__
-#define __TIMER_LIST__
+#pragma once
 
 #include <unordered_map>
 
@@ -61,6 +60,3 @@ namespace muduo
     };
 }
 
-
-
-#endif // !__TIMER_LIST__

@@ -1,5 +1,4 @@
-#ifndef COMMON_SRC_MYSQL_CLIENT_MYSQL_CLIENT_H_
-#define COMMON_SRC_MYSQL_CLIENT_MYSQL_CLIENT_H_
+#pragma once
 
 #include <functional>
 #include <string>
@@ -15,8 +14,7 @@
 
 #include "common.pb.h"
 
-namespace common
-{
+
 //https://github.com/mysql/mysql-server/blob/8.0/router/src/router/src/common/mysql_session.cc
 
 class MysqlError {
@@ -95,6 +93,4 @@ private:
 
     MYSQL* connection_;
 };
-}//namespace common
 
-#endif//COMMON_SRC_MYSQL_CLIENT_MYSQL_CLIENT_H_

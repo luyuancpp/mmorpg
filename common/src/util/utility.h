@@ -1,11 +1,8 @@
-#ifndef COMMON_SRC_UTIL_UTILITY_H_
-#define COMMON_SRC_UTIL_UTILITY_H_
+#pragma once
 
 #include <cinttypes>
 #include <sstream>
 
-namespace common
-{
 template <typename T>
 T StringToNumber(const std::string& str)
 {
@@ -14,7 +11,3 @@ T StringToNumber(const std::string& str)
     iss >> num;
     return num;
 }
-
-}//namespace common
-
-#endif//COMMON_SRC_UTIL_UTILITY_H_
