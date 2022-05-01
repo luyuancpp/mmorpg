@@ -46,7 +46,7 @@ def gen(readfilename, filename):
                 msgid = fileline.split(',')[1].replace('}', '').replace(';', '')
                 newstr += tabstr  + msgid + '};\n'
                 break
-            elif fileline.find('clientplayer') >= 0:
+            elif fileline.find('C2SRequest') >= 0:
                 msgid = fileline.split(',')[1].replace('}', '').replace('"', '')
                 newstr += tabstr  + msgid + ',\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:

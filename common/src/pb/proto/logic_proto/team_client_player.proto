@@ -1,19 +1,18 @@
 syntax = "proto3";
-package clientplayer;
 import "common.proto";
 option cc_generic_services = true;
 
-message TeamTestRequest
+message TeamInfoS2CRequest
 {
 }
 
-message TeamTestResponse
+message TeamInfoS2CResponse
 {
 	ClientError error = 1;
 }
 
 
-service PlayerTeamService
+service ClientPlayerTeamService
 {
-  rpc EnterScene (TeamTestRequest) returns (TeamTestResponse);
+  rpc TeamInfoNotify (TeamInfoS2CRequest) returns (TeamInfoS2CResponse);
 }

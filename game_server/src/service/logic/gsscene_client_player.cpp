@@ -3,17 +3,15 @@
 #include "src/network/message_sys.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "logic_proto/scene_server_player.pb.h"
-using namespace serverplayer;
 ///<<< END WRITING YOUR CODE
 
-namespace clientplayer{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void PlayerSceneServiceImpl::EnterScene(EntityPtr& entity,
-    const clientplayer::SeceneTestRequest* request,
-    clientplayer::SeceneTestResponse* response)
+void ClientPlayerSceneServiceImpl::EnterScene(EntityPtr& entity,
+    const ::EnterSeceneC2SRequest* request,
+    ::EnterSeceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterScene
     Gs2MsLoginRequest msg;
@@ -21,13 +19,12 @@ void PlayerSceneServiceImpl::EnterScene(EntityPtr& entity,
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
-void PlayerSceneServiceImpl::EnterSceneNotify(EntityPtr& entity,
-    const clientplayer::EnterSeceneS2C* request,
-    clientplayer::EnterSeceneS2C* response)
+void ClientPlayerSceneServiceImpl::EnterSceneNotify(EntityPtr& entity,
+    const ::EnterSeceneS2C* request,
+    ::EnterSeceneS2C* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterSceneNotify
 ///<<< END WRITING YOUR CODE EnterSceneNotify
 }
 
 ///<<<rpc end
-}// namespace clientplayer

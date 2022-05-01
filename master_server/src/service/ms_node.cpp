@@ -47,7 +47,7 @@ void PlayerEnterGame(Replied& replied)
 	messag.set_player_id(replied.s_rq_.player_id());
 	Send2Gate(messag, player_session.gate_node_id());
 
-	clientplayer::EnterSeceneS2C msg;
+	EnterSeceneS2C msg;
 	Send2Player(msg, player);
 }
 

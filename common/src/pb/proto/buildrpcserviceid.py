@@ -71,17 +71,23 @@ def genmsgidcpp(fullfilename):
     newstr += 'std::unordered_map<std::string, uint32_t> g_msgid{\n'
     #msg 2 id
     for kv in local.rpcmsgnameid:
-        newstr += '{"' + kv[0][3] + '.' + kv[0][1] + '", ' + str(kv[1]) + '},\n'
+        if kv[0][3] != '':
+            newstr += '{"' + kv[0][3] + '.' + kv[0][1] + '", ' + str(kv[1]) + '},\n'
+        else:
+            newstr += '{"' + kv[0][1] + '", ' + str(kv[1]) + '},\n'
     newstr = newstr.strip('\n').strip(',')
     newstr += '};\n'
     newstr += '\nstd::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
     newstr += 'void InitMsgService()\n{\n'
     for kv in local.rpcmsgnameid:
         curpkg = kv[0][3]
-        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].service = "' + curpkg + '.' + kv[0][4] +'";\n'
+        pkgstr = curpkg + '.'
+        if curpkg == '':
+            pkgstr = ''
+        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].service = "' + pkgstr + kv[0][4] +'";\n'
         newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].method = "'  + kv[0][0] +'";\n'
-        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].request = "' + curpkg + '.' + kv[0][1] +'";\n'
-        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].response = "' + curpkg + '.' + kv[0][2] +'";\n\n'
+        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].request = "' + pkgstr + kv[0][1] +'";\n'
+        newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].response = "' + pkgstr + kv[0][2] +'";\n\n'
     newstr += '}\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
