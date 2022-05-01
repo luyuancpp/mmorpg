@@ -10,7 +10,6 @@
 
 ///<<< END WRITING YOUR CODE
 
-using namespace common;
 	///<<< BEGIN WRITING YOUR CODE
 	void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
 		::region_server_db* response)

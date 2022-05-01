@@ -33,7 +33,6 @@ using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
 std::size_t kMaxPlayerSize = 1000;
 ///<<< END WRITING YOUR CODE
 
-using namespace common;
 ///<<< BEGIN WRITING YOUR CODE
 
 template<typename Replied>
@@ -277,7 +276,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
 	if (entt::null == player)
 	{
-		PlayerList::GetSingleton().EnterGame(guid, common::EntityPtr());
+		PlayerList::GetSingleton().EnterGame(guid, EntityPtr());
 		player = PlayerList::GetSingleton().GetPlayer(guid);
 		reg.emplace<Guid>(player, guid);
 		auto cit = logined_accounts_.find(request->account());

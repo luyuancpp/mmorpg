@@ -32,7 +32,7 @@ public:
 
 	inline void Send(::google::protobuf::Message& message)
 	{
-		Send2Player(message, common::reg.get<Guid>(player_));
+		Send2Player(message, reg.get<Guid>(player_));
 	}
 
 	void Send2Gs(::google::protobuf::Message& message)

@@ -98,7 +98,7 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 	ms->session_->Send(msg_wrapper);
 }
 
-void Send2Player(const google::protobuf::Message& message, common::EntityPtr& entity)
+void Send2Player(const google::protobuf::Message& message, EntityPtr& entity)
 {
 	Send2Player(message, entity.entity());
 }

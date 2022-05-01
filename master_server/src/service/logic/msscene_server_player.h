@@ -13,17 +13,17 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
-    void LoginMs2Gs(common::EntityPtr& entity,
+    void LoginMs2Gs(EntityPtr& entity,
         const serverplayer::Ms2GsLoginRequest* request,
         ::google::protobuf::Empty* response);
-    void LoginGs2Ms(common::EntityPtr& entity,
+    void LoginGs2Ms(EntityPtr& entity,
         const serverplayer::Gs2MsLoginRequest* request,
         ::google::protobuf::Empty* response);
-    void ReconnectMs2Gs(common::EntityPtr& entity,
+    void ReconnectMs2Gs(EntityPtr& entity,
         const serverplayer::Ms2GsReconnectRequest* request,
         ::google::protobuf::Empty* response);
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-        common::EntityPtr& entity,
+        EntityPtr& entity,
         const ::google::protobuf::Message* request,
         ::google::protobuf::Message* response)override
         {

@@ -12,7 +12,6 @@ using namespace muduo;
 using namespace muduo::net;
 ///<<< END WRITING YOUR CODE
 
-using namespace common;
 ///<<< BEGIN WRITING YOUR CODE 
 LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 	LoginStubl2db& l2db_login_stub)
@@ -154,7 +153,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	s_reqst.set_login_node_id(g_login_server->login_node_id());
 	s_reqst.set_conn_id(request->conn_id());
 	s_reqst.set_gate_node_id(request->gate_node_id());
-	auto it = connections_.emplace(request->conn_id(), common::EntityPtr());
+	auto it = connections_.emplace(request->conn_id(), EntityPtr());
 	if (it.first != connections_.end())
 	{
 		reg.emplace_or_replace<std::string>(it.first->second.entity(), request->account());

@@ -3,7 +3,7 @@
 
 #include "src/game_logic/game_registry.h"
 
-struct MSLoginAccount : public common::EntityPtr
+struct MSLoginAccount : public EntityPtr
 {
     GuidVector playing_guids_;
 };

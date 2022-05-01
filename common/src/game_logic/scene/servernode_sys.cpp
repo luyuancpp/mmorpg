@@ -4,9 +4,6 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/scene/scene_factories.h"
 
-using namespace common;
-
-
 //从当前符服务器中找到一个对应场景人数最少的
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)

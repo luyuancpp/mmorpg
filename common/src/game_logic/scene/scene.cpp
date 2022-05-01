@@ -7,8 +7,6 @@
 
 #include "src/pb/pbc/component_proto/scene_comp.pb.h"
 
-using namespace common;
-
 static const std::size_t kMaxMainScenePlayer = 1000;
 
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const

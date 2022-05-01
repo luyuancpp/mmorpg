@@ -61,7 +61,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	gs_session.Send(ms2gs_messag);
 }
 
-void Send2GsPlayer(const google::protobuf::Message& message, common::EntityPtr& entity)
+void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& entity)
 {
 	Send2GsPlayer(message, entity.entity());
 }

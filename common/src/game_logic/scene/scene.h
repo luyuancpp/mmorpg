@@ -7,7 +7,7 @@
 #include "src/util/snow_flake.h"
 #include "src/game_logic/scene/servernode_sys.h"
 
-class ScenesSystem : public common::EntityPtr
+class ScenesSystem : public EntityPtr
 {
 public:
 

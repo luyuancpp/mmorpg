@@ -17,7 +17,6 @@
 
 ///<<< END WRITING YOUR CODE
 
-using namespace common;
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
@@ -29,7 +28,7 @@ void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterGame
-	auto it = g_players.emplace(request->player_id(), common::EntityPtr());
+	auto it = g_players.emplace(request->player_id(), EntityPtr());
 	auto player = it.first->second.entity();
 	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
 	reg.emplace_or_replace<Guid>(player, request->player_id());
@@ -209,8 +208,8 @@ void GsServiceImpl::CoverPlayer(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE RgEnterRoom
-	auto it = g_players.emplace(request->player_id(), common::EntityPtr());
+///<<< BEGIN WRITING YOUR CODE CoverPlayer
+	auto it = g_players.emplace(request->player_id(), EntityPtr());
 	auto player = it.first->second.entity();
 	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
 	reg.emplace_or_replace<Guid>(player, request->player_id());
@@ -233,7 +232,7 @@ void GsServiceImpl::CoverPlayer(::google::protobuf::RpcController* controller,
 		return;
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
-///<<< END WRITING YOUR CODE RgEnterRoom
+///<<< END WRITING YOUR CODE CoverPlayer
 }
 
 ///<<<rpc end
