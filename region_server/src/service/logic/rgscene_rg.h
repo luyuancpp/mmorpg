@@ -12,7 +12,7 @@
 class RgServiceImpl : public regionservcie::RgService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
-	using PlayerListMap = std::unordered_map<common::Guid, entt::entity>;
+	using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 private:
 	PlayerListMap  players_;
 ///<<< END WRITING YOUR CODE

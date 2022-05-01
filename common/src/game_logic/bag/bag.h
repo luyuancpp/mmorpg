@@ -4,8 +4,8 @@
 
 #include "src/game_logic/bag/item.h"
 
-using ItemsMap = std::unordered_map<common::Guid, Item>;
-using PosMap = std::unordered_map<uint32_t, common::Guid>;
+using ItemsMap = std::unordered_map<Guid, Item>;
+using PosMap = std::unordered_map<uint32_t, Guid>;
 
 struct BagCapacity
 {
@@ -28,9 +28,9 @@ enum EnumBagType : uint32_t
 
 struct DelItemByPosParam
 {
-	common::Guid item_guid_{ common::kInvalidGuid};
-	uint32_t item_config_id_{ common::kInvalidU32Id};
-	uint32_t pos_{ common::kInvalidU32Id };
+	Guid item_guid_{ kInvalidGuid};
+	uint32_t item_config_id_{ kInvalidU32Id};
+	uint32_t pos_{ kInvalidU32Id };
 	uint32_t size_{ 1 };
 };
 
@@ -40,20 +40,20 @@ public:
 	Bag();
 	using BagEntity = ItemEntity;
 	entt::entity entity()const { return entity_.entity(); }
-	common::Guid player_guid() { return item_reg.get<common::Guid>(entity()); }
+	Guid player_guid() { return item_reg.get<Guid>(entity()); }
 	inline std::size_t size() const { return item_reg.get<BagCapacity>(entity()).size_; }
 	inline std::size_t item_size() const { return items_.size(); }
 	inline std::size_t pos_size() const { return pos_.size(); }
 	inline const PosMap& pos()const { return pos_; }
 		
-	inline void set_player(common::Guid guid) { item_reg.emplace<common::Guid>(entity(), guid); }
+	inline void set_player(Guid guid) { item_reg.emplace<Guid>(entity(), guid); }
 
 	std::size_t GetItemStackSize(uint32_t config_id)const;
-	Item* GetItemByGuid(common::Guid guid);
+	Item* GetItemByGuid(Guid guid);
 	Item* GetItemByBos(uint32_t pos);
-	uint32_t GetItemPos(common::Guid guid);//for test
+	uint32_t GetItemPos(Guid guid);//for test
 	
-	inline bool HasItem(common::Guid guid)const { return items_.find(guid) != items_.end();	}
+	inline bool HasItem(Guid guid)const { return items_.find(guid) != items_.end();	}
 	inline bool IsFull()const { return items_.size() >= size(); }
 	inline bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }//足够空格子
 	inline bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }//足够空格子
@@ -64,7 +64,7 @@ public:
 	uint32_t DelItemByPos(const DelItemByPosParam& p);
 	void Neaten();
 	uint32_t AddItem(const Item&  add_item);
-	uint32_t DelItem(common::Guid del_guid);	
+	uint32_t DelItem(Guid del_guid);	
 	void Unlock(std::size_t sz);
 private:
 	inline std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }

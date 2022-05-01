@@ -4,7 +4,7 @@
 
 thread_local PlayerListMap  g_players;
 
-entt::entity PlayerList::GetPlayer(common::Guid guid)
+entt::entity PlayerList::GetPlayer(Guid guid)
 {
     auto it = g_players.find(guid);
     if (it == g_players.end())
@@ -14,7 +14,7 @@ entt::entity PlayerList::GetPlayer(common::Guid guid)
     return it->second.entity();
 }
 
-void PlayerList::LeaveGame(common::Guid guid)
+void PlayerList::LeaveGame(Guid guid)
 {
     //todo 断线不能马上下线，这里之后会改
     auto it = g_players.find(guid);

@@ -18,7 +18,7 @@ void PlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
 {
 ///<<< BEGIN WRITING YOUR CODE EnterScene
     Gs2MsLoginRequest msg;
-	Send2MsPlayer(msg, reg.get<common::Guid>(entity.entity()));
+	Send2MsPlayer(msg, reg.get<Guid>(entity.entity()));
 ///<<< END WRITING YOUR CODE EnterScene
 }
 

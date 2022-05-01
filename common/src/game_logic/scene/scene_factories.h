@@ -1,6 +1,4 @@
-#ifndef COMMON_SRC_SCENE_SCENE_FACTORIES_H_
-#define COMMON_SRC_SCENE_SCENE_FACTORIES_H_
-
+#pragma once
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "src/game_logic/comp/gs_scene_comp.h"
@@ -13,7 +11,7 @@ struct MakeSceneP
 
 struct MakeSceneWithGuidP : public MakeSceneP
 {
-    common::Guid scene_id{common::kInvalidGuid};
+    Guid scene_id{kInvalidGuid};
 };
 
 struct MakeGSParam
@@ -61,4 +59,3 @@ void MakeScenes();
 entt::entity MakeMainSceneNode(entt::registry& reg, const MakeGSParam& param);
 void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param);
 
-#endif//COMMON_SRC_SCENE_SCENE_FACTORIES_H_

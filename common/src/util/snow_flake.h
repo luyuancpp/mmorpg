@@ -13,8 +13,6 @@
 
 //Ê±ÖÓ»Øµ÷
 
-namespace common
-{
     class SnowFlakeThreadSafe
     {
     public:
@@ -184,7 +182,5 @@ namespace common
 		uint64_t server_id_{ 0 };
         uint64_t seq_{ 0 };
 	};
-}//namespace common
-
 
 #endif // SRC_SNOW_FLAKE_SNOW_FLAKE_H_

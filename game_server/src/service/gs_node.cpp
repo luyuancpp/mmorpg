@@ -32,7 +32,7 @@ void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	auto it = g_players.emplace(request->player_id(), common::EntityPtr());
 	auto player = it.first->second.entity();
 	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
-	reg.emplace_or_replace<common::Guid>(player, request->player_id());
+	reg.emplace_or_replace<Guid>(player, request->player_id());
 	auto msit = g_ms_nodes.find(request->ms_node_id());
 	if (msit != g_ms_nodes.end())
 	{
@@ -213,7 +213,7 @@ void GsServiceImpl::CoverPlayer(::google::protobuf::RpcController* controller,
 	auto it = g_players.emplace(request->player_id(), common::EntityPtr());
 	auto player = it.first->second.entity();
 	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
-	reg.emplace_or_replace<common::Guid>(player, request->player_id());
+	reg.emplace_or_replace<Guid>(player, request->player_id());
 	auto msit = g_ms_nodes.find(request->ms_node_id());
 	if (msit != g_ms_nodes.end())
 	{

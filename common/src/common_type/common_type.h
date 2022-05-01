@@ -10,10 +10,7 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-namespace common
-{
 using Guid = uint64_t;
-
 using GuidVector = std::vector<Guid>;
 using StringVector = std::vector<std::string>;
 using Int16Vector = std::vector<int16_t>;
@@ -38,5 +35,4 @@ using GuidUint64Map = std::unordered_map<Guid, uint64_t>;
 
 static const Guid kInvalidGuid{ 0 };
 static const uint32_t kInvalidU32Id{ UINT32_MAX };
-}//namespace common
 

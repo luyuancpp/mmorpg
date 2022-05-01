@@ -95,7 +95,7 @@ void LoginServiceImpl::EnterMsReplied(EnterGameMSRpcReplied d)
 	connections_.erase(d->s_rq_.conn_id());
 }
 
-void LoginServiceImpl::EnterMS(common::Guid guid,
+void LoginServiceImpl::EnterMS(Guid guid,
 	uint64_t conn_id,
 	::gw2l::EnterGameResponse* response,
 	::google::protobuf::Closure* done)

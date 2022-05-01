@@ -11,9 +11,9 @@ public:
     void set_account_data(const account_database& pb) { account_data_ = pb; }
     account_database& account_data(){ return account_data_; }
     const std::string& account() const{ return account_data_.account(); }
-    common::Guid PlayingId() const { return playing_id_; }
+    Guid PlayingId() const { return playing_id_; }
 
-    bool IsInPlayerList(common::Guid guid);
+    bool IsInPlayerList(Guid guid);
 
     // login state machine
     inline uint32_t Login() { return login_state_machine_.Login(); }
@@ -22,7 +22,7 @@ public:
     inline uint32_t EnterGame() { return login_state_machine_.EnterGame(); }
 
     void OnDbLoaded();
-    inline void Playing(common::Guid playing_id) 
+    inline void Playing(Guid playing_id) 
     {  
         playing_id_ = playing_id;
         login_state_machine_.OnPlaying(); 
@@ -34,7 +34,7 @@ private:
 
     LoginStateMachine login_state_machine_;
     ::account_database account_data_;
-    common::Guid playing_id_{ common::kInvalidGuid };
+    Guid playing_id_{ kInvalidGuid };
 };
 
 

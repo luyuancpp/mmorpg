@@ -71,7 +71,7 @@ public:
         const EnterSeceneS2CPtr& message,
         muduo::Timestamp);
     
-    void EnterGame(common::Guid guid);
+    void EnterGame(Guid guid);
 
 private:
     void DisConnect();

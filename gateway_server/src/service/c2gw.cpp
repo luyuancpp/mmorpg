@@ -21,8 +21,8 @@ using namespace common;
 using namespace c2gw;
 
 
-std::unordered_set<common::Guid> g_connected_ids;
-common::ServerSequence g_server_sequence_;
+std::unordered_set<Guid> g_connected_ids;
+ServerSequence g_server_sequence_;
 
 extern std::unordered_set<uint32_t> g_open_player_msgids;
 
@@ -70,7 +70,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         }
         // master
         {
-            if (guid != common::kInvalidGuid)
+            if (guid != kInvalidGuid)
             {
 				msservice::DisconnectRequest request;
                 request.set_gate_node_id(g_gateway_server->gate_node_id());
