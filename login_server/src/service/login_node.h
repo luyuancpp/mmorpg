@@ -21,7 +21,7 @@ public:
 		///<<< BEGIN WRITING YOUR CODE
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
 		using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
-		using ConnectionEntityMap = std::unordered_map<Guid, common::EntityPtr>;
+		using ConnectionEntityMap = std::unordered_map<Guid, EntityPtr>;
 		using LoginStubl2ms = RpcStub<msservice::MasterNodeService_Stub>;
 		using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 

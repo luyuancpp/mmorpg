@@ -9,7 +9,6 @@
 #include "comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
-using namespace common;
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 

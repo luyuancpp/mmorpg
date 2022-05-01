@@ -16,7 +16,7 @@ struct LoginNode
 	common::RpcClientPtr login_session_;
 	LoginStubPtr login_stub_;
 	NodeInfo node_info_;
-	common::EntityPtr entity_id;
+	EntityPtr entity_id;
 };
 
 using LoginNodes = std::unordered_map<uint32_t, LoginNode>;

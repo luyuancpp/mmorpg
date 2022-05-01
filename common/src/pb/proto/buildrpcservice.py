@@ -191,7 +191,6 @@ def gencppfile(fullfilename, writedir):
                     newstr += fileline + '\n'
                     part += 1
                     if part == 1 :
-                        newstr += 'using namespace common;\n'
                         newstr += namespacebegin()
                     continue     
                 elif part == cpprpcpart:
@@ -230,7 +229,6 @@ def gencppfile(fullfilename, writedir):
                     break
     except FileNotFoundError:
             newstr += yourcode() + '\n'
-            newstr += 'using namespace common;\n'
             newstr += namespacebegin()
             newstr += yourcode() + '\n'
             serviceidx = 0

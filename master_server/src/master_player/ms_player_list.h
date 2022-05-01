@@ -4,7 +4,7 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/game_registry.h"
 
-using PlayerListMap = std::unordered_map<Guid, common::EntityPtr>;
+using PlayerListMap = std::unordered_map<Guid, EntityPtr>;
 extern thread_local PlayerListMap  g_players;
 class PlayerList
 {
@@ -20,7 +20,7 @@ public:
     entt::entity GetPlayer(Guid guid);
     bool HasPlayer(Guid guid) const { return g_players.find(guid) != g_players.end(); }
 
-    void EnterGame(Guid guid, const common::EntityPtr&& entity_id) { g_players.emplace(guid, entity_id); }
+    void EnterGame(Guid guid, const EntityPtr&& entity_id) { g_players.emplace(guid, entity_id); }
     void LeaveGame(Guid guid);
 };
 

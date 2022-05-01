@@ -13,12 +13,12 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
-    void EnterScene(common::EntityPtr& entity,
+    void EnterScene(EntityPtr& entity,
         const clientplayer::TeamTestRequest* request,
         clientplayer::TeamTestResponse* response);
 
         void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-        common::EntityPtr& entity,
+        EntityPtr& entity,
         const ::google::protobuf::Message* request,
         ::google::protobuf::Message* response)override
         {

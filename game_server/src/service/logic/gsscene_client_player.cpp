@@ -4,7 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "logic_proto/scene_server_player.pb.h"
 using namespace serverplayer;
-using namespace common;
 ///<<< END WRITING YOUR CODE
 
 namespace clientplayer{
@@ -12,7 +11,7 @@ namespace clientplayer{
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void PlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
+void PlayerSceneServiceImpl::EnterScene(EntityPtr& entity,
     const clientplayer::SeceneTestRequest* request,
     clientplayer::SeceneTestResponse* response)
 {
@@ -22,7 +21,7 @@ void PlayerSceneServiceImpl::EnterScene(common::EntityPtr& entity,
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
-void PlayerSceneServiceImpl::EnterSceneNotify(common::EntityPtr& entity,
+void PlayerSceneServiceImpl::EnterSceneNotify(EntityPtr& entity,
     const clientplayer::EnterSeceneS2C* request,
     clientplayer::EnterSeceneS2C* response)
 {
