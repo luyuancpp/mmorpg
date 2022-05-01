@@ -17,9 +17,6 @@
 
 ///<<< END WRITING YOUR CODE
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
 void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     const gsservice::EnterGameRequest* request,

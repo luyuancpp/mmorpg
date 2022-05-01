@@ -13,9 +13,6 @@
 
 ///<<< END WRITING YOUR CODE
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
 void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     const gwservice::StartGSRequest* request,

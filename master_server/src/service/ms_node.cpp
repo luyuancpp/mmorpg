@@ -31,9 +31,6 @@
 using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
 
 std::size_t kMaxPlayerSize = 1000;
-///<<< END WRITING YOUR CODE
-
-///<<< BEGIN WRITING YOUR CODE
 
 template<typename Replied>
 void PlayerEnterGame(Replied& replied)

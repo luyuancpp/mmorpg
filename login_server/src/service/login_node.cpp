@@ -10,9 +10,7 @@
 
 using namespace muduo;
 using namespace muduo::net;
-///<<< END WRITING YOUR CODE
 
-///<<< BEGIN WRITING YOUR CODE 
 LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 	LoginStubl2db& l2db_login_stub)
 	: ms_node_stub_(l2ms_login_stub),

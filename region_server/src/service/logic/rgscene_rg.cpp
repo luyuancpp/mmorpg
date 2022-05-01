@@ -25,9 +25,6 @@ using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
 using MsStubPtr = std::unique_ptr <RpcStub<msservice::MasterNodeService_Stub>>;
 ///<<< END WRITING YOUR CODE
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
 void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
     const regionservcie::StartCrossGsRequest* request,
