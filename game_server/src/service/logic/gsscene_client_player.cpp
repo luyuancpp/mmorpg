@@ -5,9 +5,6 @@
 #include "logic_proto/scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
 void ClientPlayerSceneServiceImpl::EnterScene(EntityPtr& entity,
     const ::EnterSeceneC2SRequest* request,

@@ -4,9 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
 void ServerPlayerTeamServiceImpl::EnterScene(EntityPtr& entity,
     const ::TeamTestRequest* request,

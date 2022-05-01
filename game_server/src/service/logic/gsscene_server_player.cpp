@@ -7,9 +7,6 @@
 #include "src/module/player_list/player_list.h"
 ///<<< END WRITING YOUR CODE
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
 void ServerPlayerSceneServiceImpl::LoginMs2Gs(EntityPtr& entity,
     const ::Ms2GsLoginRequest* request,
