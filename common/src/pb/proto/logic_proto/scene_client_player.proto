@@ -14,6 +14,8 @@ message SeceneTestResponse
 
 message EnterSeceneS2C
 {
+  uint64 scene_id = 1;
+  uint32 scene_confid = 2;
 }
 
 service PlayerSceneService 
