@@ -49,7 +49,7 @@ using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 class ClientReceiver : muduo::noncopyable
 {
 public:
-    using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
+    using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 

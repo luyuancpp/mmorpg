@@ -32,12 +32,12 @@ public:
 
     void Start();
 
-    using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
+    using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void StartServer(ServerInfoRpcRC cp);
 
-    void receive(const common::OnConnected2ServerEvent& es);
+    void receive(const OnConnected2ServerEvent& es);
 
 private:
     muduo::net::EventLoop* loop_{ nullptr };
@@ -46,7 +46,7 @@ private:
     RpcServerPtr server_;
 
     common::RpcClientPtr deploy_rpc_client_;
-    deploy::DeployStub deploy_stub_;
+    DeployStub deploy_stub_;
 
     DbServiceImpl impl_;
 };

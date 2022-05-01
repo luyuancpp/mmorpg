@@ -21,8 +21,8 @@ class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
 public:
     using RedisClientPtr = common::RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-    using StubMsNode = common::RpcStub<msservice::MasterNodeService_Stub>;
-    using RgNodeStub = common::RpcStub<regionservcie::RgService_Stub>;
+    using StubMsNode = RpcStub<msservice::MasterNodeService_Stub>;
+    using RgNodeStub = RpcStub<regionservcie::RgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
 
@@ -32,17 +32,17 @@ public:
 
     void InitNetwork();
 
-    using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
+    using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void ServerInfo(ServerInfoRpcRC cp);
 
-    using StartGSInfoRpcClosure = common::NormalClosure<deploy::StartGSRequest,
+    using StartGSInfoRpcClosure = NormalClosure<deploy::StartGSRequest,
         deploy::StartGSResponse>;
     using StartGSRpcRC = std::shared_ptr<StartGSInfoRpcClosure>;
     void StartGSDeployReplied(StartGSRpcRC cp);
 
-	using RegionClosure = common::NormalClosure<deploy::RegionRequest,
+	using RegionClosure = NormalClosure<deploy::RegionRequest,
 		deploy::RegionInfoResponse>;
 	using RegionRpcClosureRC = std::shared_ptr<RegionClosure>;
 	void RegionInfoReplied(RegionRpcClosureRC cp);
@@ -50,8 +50,8 @@ public:
     void Register2Master(MasterSessionPtr& master_rpc_client);
     void Register2Region();
 
-    void receive(const common::OnConnected2ServerEvent& es);
-    void receive(const common::OnBeConnectedEvent& es);
+    void receive(const OnConnected2ServerEvent& es);
+    void receive(const OnBeConnectedEvent& es);
 
 private:    
 	void InitGlobalEntities();
@@ -64,7 +64,7 @@ private:
     RpcServerPtr server_;
 
     common::RpcClientPtr deploy_session_;
-    deploy::DeployStub deploy_stub_;
+    DeployStub deploy_stub_;
 
     StubMsNode g2ms_stub_;
 

@@ -22,27 +22,27 @@ public:
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
 		using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
 		using ConnectionEntityMap = std::unordered_map<Guid, common::EntityPtr>;
-		using LoginStubl2ms = common::RpcStub<msservice::MasterNodeService_Stub>;
-		using LoginStubl2db = common::RpcStub<dbservice::DbService_Stub>;
+		using LoginStubl2ms = RpcStub<msservice::MasterNodeService_Stub>;
+		using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 
 		LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 			LoginStubl2db& l2db_login_stub);
 
 		void set_redis_client(RedisClientPtr& p) { redis_ = p; }
 
-		using LoginRpcReplied = std::shared_ptr< common::RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
+		using LoginRpcReplied = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
 		void LoginAccountDbReplied(LoginRpcReplied d);
 
-		using LoginMasterRP = std::shared_ptr<common::RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
+		using LoginMasterRP = std::shared_ptr<RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
 		void LoginAccountMSReplied(LoginMasterRP d);
 
-		using CreatePlayerRpcReplied = std::shared_ptr<common::RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
+		using CreatePlayerRpcReplied = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
 		void CreatePlayerDbReplied(CreatePlayerRpcReplied d);
 
-		using EnterGameDbRpcReplied = std::shared_ptr<common::RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
+		using EnterGameDbRpcReplied = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
 		void EnterGameDbReplied(EnterGameDbRpcReplied d);
 
-		using EnterGameMSRpcReplied = std::shared_ptr<common::RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
+		using EnterGameMSRpcReplied = std::shared_ptr<RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
 		void EnterMsReplied(EnterGameMSRpcReplied d);
 
 		void EnterMS(Guid guid,

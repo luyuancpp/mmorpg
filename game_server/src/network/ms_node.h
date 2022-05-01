@@ -16,7 +16,7 @@
 using MasterSessionPtr = std::shared_ptr<common::RpcClient>;
 struct MsNode
 {
-	using MsStubNode = common::RpcStub<msservice::MasterNodeService_Stub>;
+	using MsStubNode = RpcStub<msservice::MasterNodeService_Stub>;
 	MsNode(){}
 
 	inline uint32_t node_id() const { return node_info_.node_id(); }

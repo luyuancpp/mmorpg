@@ -1,5 +1,4 @@
-#ifndef SRC_SERVER_RPCCLIENT_RPC_STUB_H_
-#define SRC_SERVER_RPCCLIENT_RPC_STUB_H_
+#pragma once
 
 #include <google/protobuf/empty.pb.h>
 
@@ -12,10 +11,9 @@
 
 #include "common.pb.h"
 
-namespace common
-{
+
 template<typename StubClass>
-class RpcStub :  public Receiver<RpcStub<StubClass>>
+class RpcStub :  public common::Receiver<RpcStub<StubClass>>
 {
 public:
     using StubPtr = std::unique_ptr<StubClass>;
@@ -108,6 +106,3 @@ private:
     StubPtr stub_;
 };
 
-}//namespace common
-
-#endif//SRC_SERVER_RPCCLIENT_RPC_STUB_H_

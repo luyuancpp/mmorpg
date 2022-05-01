@@ -20,8 +20,8 @@ namespace login
     public:
         using RedisClientPtr = common::RedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-        using LoginStubl2ms = common::RpcStub<msservice::MasterNodeService_Stub>;
-        using LoginStubl2db = common::RpcStub<dbservice::DbService_Stub>;
+        using LoginStubl2ms = RpcStub<msservice::MasterNodeService_Stub>;
+        using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 
         LoginServer(muduo::net::EventLoop* loop);
             
@@ -34,12 +34,12 @@ namespace login
 
         void Start();
 
-        using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
+        using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
             deploy::ServerInfoResponse>;
         using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
         void StartServer(ServerInfoRpcRC cp);
 
-        void receive(const common::OnConnected2ServerEvent& es);
+        void receive(const OnConnected2ServerEvent& es);
 
     private:
         muduo::net::EventLoop* loop_{ nullptr };
@@ -48,7 +48,7 @@ namespace login
         RpcServerPtr server_;
 
         common::RpcClientPtr deploy_rpc_client_;
-        deploy::DeployStub deploy_stub_;
+        DeployStub deploy_stub_;
 
         common::RpcClientPtr master_rpc_client_;
         LoginStubl2ms l2ms_login_stub_;

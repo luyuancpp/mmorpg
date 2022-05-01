@@ -15,26 +15,26 @@ class RegionServer : muduo::noncopyable, public common::Receiver<RegionServer>
 {
 public:
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-    using DeployStub = common::RpcStub<deploy::DeployService_Stub>;
+    using DeployStub = RpcStub<deploy::DeployService_Stub>;
     RegionServer(muduo::net::EventLoop* loop);
 
     void Init();
 
     void ConnectDeploy();
 
-    using RegionInfoRpcClosure = common::NormalClosure<deploy::RegionRequest,
+    using RegionInfoRpcClosure = NormalClosure<deploy::RegionRequest,
         deploy::RegionServerResponse>;
     using RegionInfoRpcRpcRC = std::shared_ptr<RegionInfoRpcClosure>;
     void StartServer(RegionInfoRpcRpcRC cp);
 
-    void receive(const common::OnConnected2ServerEvent& es);
-    void receive(const common::OnBeConnectedEvent& es);
+    void receive(const OnConnected2ServerEvent& es);
+    void receive(const OnBeConnectedEvent& es);
 private:
     muduo::net::EventLoop* loop_{ nullptr };
     RpcServerPtr server_;
 
     common::RpcClientPtr deploy_rpc_client_;
-    deploy::DeployStub deploy_stub_;
+    DeployStub deploy_stub_;
 
     RgServiceImpl impl_;
 };
