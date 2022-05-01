@@ -341,13 +341,11 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	{
 		//告诉账号被顶
 		auto& player_session = reg.get<PlayerSession>(player);
-		if (player_session.gate_node_id() != request->gate_node_id())//gate 不同踢掉原来的gate
-		{
-			auto& player_session = reg.get<PlayerSession>(player);
-			gwservice::KickConnRequest messag;
-			messag.set_conn_id(player_session.gate_conn_id_.conn_id_);
-			Send2Gate(messag, player_session.gate_node_id());
-		}		
+
+		gwservice::KickConnRequest messag;
+		messag.set_conn_id(player_session.gate_conn_id_.conn_id_);
+		Send2Gate(messag, player_session.gate_node_id());
+
 		player_session.gate_conn_id_.conn_id_ = request->conn_id();
 		auto gate_it = g_gate_nodes.find(request->gate_node_id());
 		if (gate_it != g_gate_nodes.end())
