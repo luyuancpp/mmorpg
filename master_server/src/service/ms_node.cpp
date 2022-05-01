@@ -51,7 +51,23 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 
 	clientplayer::EnterSeceneS2C msg;
 	Send2Player(msg, player);
+}
 
+void MasterNodeServiceImpl::Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied)
+{
+	auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
+	if (entt::null == player)
+	{
+		return;
+	}
+	auto& player_session = reg.get<PlayerSession>(player);
+	gwservice::PlayerEnterGsRequest messag;
+	messag.set_conn_id(replied.s_rq_.conn_id());
+	messag.set_gs_node_id(player_session.gs_node_id());
+	messag.set_player_id(replied.s_rq_.player_id());
+	Send2Gate(messag, player_session.gate_node_id());
+	clientplayer::EnterSeceneS2C msg;
+	Send2Player(msg, player);
 }
 ///<<< END WRITING YOUR CODE
 
@@ -263,61 +279,108 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE OnLsEnterGame
 	auto guid = request->guid();
-	PlayerList::GetSingleton().EnterGame(guid, common::EntityPtr());
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
-	reg.emplace_or_replace<Guid>(player, guid);
-	auto cit = logined_accounts_.find(request->account());
-	if (cit != logined_accounts_.end())
+	if (entt::null == player)
 	{
-		reg.emplace_or_replace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
-	}
-	auto& player_session = reg.emplace_or_replace<PlayerSession>(player);
-	player_session.gate_conn_id_.conn_id_ = request->conn_id();
-	player_session.player_ = player;
-	auto gate_it = g_gate_nodes.find(request->gate_node_id());
-	if (gate_it != g_gate_nodes.end())
-	{
-		auto gate = reg.try_get<GateNodePtr>(gate_it->second);
-		if (nullptr != gate)
+		PlayerList::GetSingleton().EnterGame(guid, common::EntityPtr());
+		player = PlayerList::GetSingleton().GetPlayer(guid);
+		reg.emplace<Guid>(player, guid);
+		auto cit = logined_accounts_.find(request->account());
+		if (cit != logined_accounts_.end())
 		{
-			player_session.gate_ = *gate;
+			reg.emplace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
+		}
+		auto& player_session = reg.emplace<PlayerSession>(player);
+		player_session.gate_conn_id_.conn_id_ = request->conn_id();
+		player_session.player_ = player;
+		auto gate_it = g_gate_nodes.find(request->gate_node_id());
+		if (gate_it != g_gate_nodes.end())
+		{
+			auto gate = reg.try_get<GateNodePtr>(gate_it->second);
+			if (nullptr != gate)
+			{
+				player_session.gate_ = *gate;
+			}
+		}
+		GetSceneParam getp;
+		getp.scene_confid_ = 1;
+		auto scene = ServerNodeSystem::GetMainSceneNotFull(getp);
+		if (scene == entt::null)
+		{
+			// todo default
+			LOG_INFO << "player " << guid << " enter default secne";
+
+		}
+		auto* p_gs_data = reg.try_get<GsDataPtr>(scene);
+		if (nullptr == p_gs_data)
+		{
+			// todo default
+			LOG_INFO << "player " << guid << " enter default secne";
+		}
+		auto& gs_data = *p_gs_data;
+		player_session.gs_ = gs_data;
+		auto it = g_gs_nodes.find(gs_data->node_id());
+		if (it != g_gs_nodes.end())
+		{
+			EnterSceneParam ep;
+			ep.enterer_ = player;
+			ep.scene_ = scene;
+			ScenesSystem::GetSingleton().EnterScene(ep);//顶号的时候已经在场景里面了
+			Ms2gsEnterGameRpcRplied message;
+			message.s_rq_.set_player_id(guid);
+			message.s_rq_.set_conn_id(request->conn_id());
+			message.s_rq_.set_gate_node_id(request->gate_node_id());
+			message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
+			reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGameReplied,
+				message,
+				this,
+				&gsservice::GsService_Stub::EnterGame);
 		}
 	}
-	GetSceneParam getp;
-	getp.scene_confid_ = 1;
-	auto scene = ServerNodeSystem::GetMainSceneNotFull(getp);
-	if (scene == entt::null)
+	else//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 	{
-		// todo default
-		LOG_INFO << "player " << guid << " enter default secne";
+		//告诉账号被顶
+		auto& player_session = reg.get<PlayerSession>(player);
+		if (player_session.gate_node_id() != request->gate_node_id())//gate 不同踢掉原来的gate
+		{
+			auto& player_session = reg.get<PlayerSession>(player);
+			gwservice::KickConnRequest messag;
+			messag.set_conn_id(player_session.gate_conn_id_.conn_id_);
+			Send2Gate(messag, player_session.gate_node_id());
+		}		
+		player_session.gate_conn_id_.conn_id_ = request->conn_id();
+		auto gate_it = g_gate_nodes.find(request->gate_node_id());
+		if (gate_it != g_gate_nodes.end())
+		{
+			auto gate = reg.try_get<GateNodePtr>(gate_it->second);
+			if (nullptr != gate)
+			{
+				player_session.gate_ = *gate;
+			}
+		}
+		auto scene = reg.get<SceneEntity>(player).scene_entity();
+		auto* p_gs_data = reg.try_get<GsDataPtr>(scene);
+		if (nullptr == p_gs_data)
+		{
+			// todo default
+			LOG_INFO << "player " << guid << " enter default secne";
+		}
+		auto& gs_data = *p_gs_data;
+		auto it = g_gs_nodes.find(gs_data->node_id());
+		if (it != g_gs_nodes.end())
+		{
+			Ms2GsCoverPlayerRpcRplied message;
+			message.s_rq_.set_player_id(guid);
+			message.s_rq_.set_conn_id(request->conn_id());
+			message.s_rq_.set_gate_node_id(request->gate_node_id());
+			message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
+			reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsCoverPlayerReplied,
+				message,
+				this,
+				&gsservice::GsService_Stub::CoverPlayer);
+		}
+	}
 
-	}
-	auto* p_gs_data = reg.try_get<GsDataPtr>(scene);
-	if (nullptr == p_gs_data)
-	{
-		// todo default
-		LOG_INFO << "player " << guid << " enter default secne";
-	}
-	auto& gs_data = (*p_gs_data);
-	player_session.gs_ = gs_data;
-	auto gs_node_id = gs_data->node_id();
-	auto it = g_gs_nodes.find(gs_node_id);
-	if (it != g_gs_nodes.end())
-	{
-		EnterSceneParam ep;
-		ep.enterer_ = player;
-		ep.scene_ = scene;
-		ScenesSystem::GetSingleton().EnterScene(ep);
-		Ms2gsEnterGameRpcRplied message;
-		message.s_rq_.set_player_id(guid);
-		message.s_rq_.set_conn_id(request->conn_id());
-		message.s_rq_.set_gate_node_id(request->gate_node_id());
-		message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
-		reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGameReplied,
-			message,
-			this,
-			&gsservice::GsService_Stub::EnterGame);
-	}
 ///<<< END WRITING YOUR CODE OnLsEnterGame
 }
 

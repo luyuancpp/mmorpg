@@ -125,4 +125,15 @@ void GwNodeServiceImpl::GsPlayerService(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE GsPlayerService
 }
 
+void GwNodeServiceImpl::KickConnByMs(::google::protobuf::RpcController* controller,
+    const gwservice::KickConnRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE KickConnByMs
+	g_client_sessions_->erase(request->conn_id());
+///<<< END WRITING YOUR CODE KickConnByMs
+}
+
 ///<<<rpc end

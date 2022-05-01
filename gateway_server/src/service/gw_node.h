@@ -34,4 +34,9 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
+    void KickConnByMs(::google::protobuf::RpcController* controller,
+        const gwservice::KickConnRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
 };

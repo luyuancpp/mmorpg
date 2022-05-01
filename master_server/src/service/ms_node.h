@@ -18,6 +18,9 @@ public:
 
     using Ms2gsEnterGameRpcRplied = common::NormalClosure<gsservice::EnterGameRequest, gsservice::EnterGameRespone>;
 	void Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied);
+
+	using Ms2GsCoverPlayerRpcRplied = common::NormalClosure<gsservice::CoverPlayerRequest, gsservice::CoverPlayerRespone>;
+	void Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied);
 private:
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE
