@@ -26,7 +26,7 @@ struct TeamsP
 {
     entt::entity teamid_{};
     entt::entity teams_entity_id_{};//manager id
-    common::EventManagerPtr& emp_;
+    EventManagerPtr& emp_;
     entt::registry* teams_registry_{ nullptr };
 };
 
@@ -78,6 +78,6 @@ private:
     Guid leader_id_{};
     GuidVector members_;
     GuidVector applicants_;
-    common::EventManagerPtr emp_;
+    EventManagerPtr emp_;
     entt::registry* teams_registry_{ nullptr };
 };

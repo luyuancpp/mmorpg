@@ -17,7 +17,6 @@
 
 #include "login_node.pb.h"
 
-using namespace common;
 using namespace c2gw;
 
 

@@ -11,8 +11,6 @@
 
 #include "gw_node.pb.h"
 
-using namespace common;
-
 void Send2Player(const google::protobuf::Message& message, Guid player_id)
 {
 	auto it = g_players.find(player_id);

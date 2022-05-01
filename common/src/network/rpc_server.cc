@@ -22,7 +22,7 @@ using namespace muduo::net;
 RpcServer::RpcServer(EventLoop* loop,
                      const InetAddress& listenAddr)
     : server_(loop, listenAddr, "RpcServer"),
-    emp_(common::EventManager::New())
+    emp_(EventManager::New())
 {
   server_.setConnectionCallback(
       std::bind(&RpcServer::onConnection, this, _1));

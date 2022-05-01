@@ -13,7 +13,7 @@
 
 
 template<typename StubClass>
-class RpcStub :  public common::Receiver<RpcStub<StubClass>>
+class RpcStub :  public Receiver<RpcStub<StubClass>>
 {
 public:
     using StubPtr = std::unique_ptr<StubClass>;

@@ -16,7 +16,7 @@
 #include "logic_proto/scene_rg.pb.h"
 
 
-class GameServer : muduo::noncopyable, public common::Receiver<GameServer>
+class GameServer : muduo::noncopyable, public Receiver<GameServer>
 {
 public:
     using RedisClientPtr = common::RedisClientPtr;
@@ -63,12 +63,12 @@ private:
 
     RpcServerPtr server_;
 
-    common::RpcClientPtr deploy_session_;
+    RpcClientPtr deploy_session_;
     DeployStub deploy_stub_;
 
     StubMsNode g2ms_stub_;
 
-    common::RpcClientPtr region_session_;
+    RpcClientPtr region_session_;
     RgNodeStub rg_stub_;
 
     ::game_server_db gs_info_;

@@ -14,7 +14,7 @@
 
 #include "deploy_node.pb.h"
 
-class DatabaseServer : muduo::noncopyable, public common::Receiver<DatabaseServer>
+class DatabaseServer : muduo::noncopyable, public Receiver<DatabaseServer>
 {
 public:
     using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
@@ -45,7 +45,7 @@ private:
     RedisClientPtr redis_;
     RpcServerPtr server_;
 
-    common::RpcClientPtr deploy_rpc_client_;
+    RpcClientPtr deploy_rpc_client_;
     DeployStub deploy_stub_;
 
     DbServiceImpl impl_;

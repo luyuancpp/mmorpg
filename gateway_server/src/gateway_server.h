@@ -24,7 +24,7 @@ using namespace muduo;
 using namespace muduo::net;
 
 
-class GatewayServer : noncopyable, public common::Receiver<GatewayServer>
+class GatewayServer : noncopyable, public Receiver<GatewayServer>
 {
 public:
     using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
@@ -81,10 +81,10 @@ private:
 
     servers_info_data serverinfo_data_;
 
-    common::RpcClientPtr deploy_session_;
+    RpcClientPtr deploy_session_;
     DeployStub deploy_stub_;
 
-    common::RpcClientPtr master_session_;
+    RpcClientPtr master_session_;
     RpcStubMsNode gw2ms_stub_;
 
     GwNodeServiceImpl node_service_impl_;

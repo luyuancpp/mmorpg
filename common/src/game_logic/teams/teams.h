@@ -9,7 +9,7 @@
 
 #include "team.h"
 
-class Teams : public common::Receiver<Teams>
+class Teams : public Receiver<Teams>
 {
 public:
     static const std::size_t kMaxTeamSize = 10000;
@@ -51,7 +51,7 @@ private:
     void EraseTeam(entt::entity team_id);
 
     Guid last_team_id_{ 0 };
-    common::EventManagerPtr emp_;
+    EventManagerPtr emp_;
     entt::entity my_entity_id_{};
 };
 

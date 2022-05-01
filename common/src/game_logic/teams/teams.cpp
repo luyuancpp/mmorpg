@@ -2,8 +2,6 @@
 
 #include "src/return_code/error_code.h"
 
-using namespace common;
-
 #define GetTeamPtrReturnError \
 auto e = entt::to_entity(team_id);\
 if (!reg.valid(e))\

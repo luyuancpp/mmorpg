@@ -11,7 +11,7 @@
 
 namespace region
 {
-class RegionServer : muduo::noncopyable, public common::Receiver<RegionServer>
+class RegionServer : muduo::noncopyable, public Receiver<RegionServer>
 {
 public:
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
@@ -33,7 +33,7 @@ private:
     muduo::net::EventLoop* loop_{ nullptr };
     RpcServerPtr server_;
 
-    common::RpcClientPtr deploy_rpc_client_;
+    RpcClientPtr deploy_rpc_client_;
     DeployStub deploy_stub_;
 
     RgServiceImpl impl_;

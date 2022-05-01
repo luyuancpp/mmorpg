@@ -8,8 +8,6 @@
 
 #include"src/game_config/item_config.h"
 
-using namespace common;
-
 Bag::Bag()
 {
 	item_reg.emplace<BagCapacity>(entity());

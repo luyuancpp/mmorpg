@@ -13,7 +13,7 @@
 struct LoginNode
 {
 	using LoginStubPtr = std::unique_ptr<RpcStub<gw2l::LoginService_Stub>>;
-	common::RpcClientPtr login_session_;
+	RpcClientPtr login_session_;
 	LoginStubPtr login_stub_;
 	NodeInfo node_info_;
 	EntityPtr entity_id;
