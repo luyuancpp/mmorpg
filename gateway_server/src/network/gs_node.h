@@ -13,7 +13,7 @@
 
 struct GsNode
 {
-	using GsStubPtr = std::unique_ptr<common::RpcStub<gsservice::GsService_Stub>>;
+	using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 	common::RpcClientPtr gs_session_;
 	GsStubPtr gs_stub_;
 	NodeInfo node_info_;

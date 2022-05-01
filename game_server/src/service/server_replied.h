@@ -14,11 +14,11 @@ public:
 
     static ServerReplied& GetSingleton() { thread_local ServerReplied singleton; return singleton; }
 
-    using StartGsMasterRpcClosure = common::NormalClosure<msservice::StartGsRequest,msservice::StartGsResponse>;
+    using StartGsMasterRpcClosure = NormalClosure<msservice::StartGsRequest,msservice::StartGsResponse>;
     using StartGsMasterRpcRC = std::shared_ptr<StartGsMasterRpcClosure>;
     void StartGsMasterReplied(StartGsMasterRpcRC cp);
 
-	using StartCrossMainGSClosure = common::NormalClosure<regionservcie::StartCrossGsRequest, regionservcie::StartCrossGsResponse>;
+	using StartCrossMainGSClosure = NormalClosure<regionservcie::StartCrossGsRequest, regionservcie::StartCrossGsResponse>;
 	using StartCrossGsReplied = std::shared_ptr<StartCrossMainGSClosure>;
 	void StartCrossGsRegionReplied(StartCrossGsReplied cp);
 

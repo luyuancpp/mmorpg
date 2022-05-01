@@ -28,7 +28,7 @@
 #include "gw_node.pb.h"
 #include "logic_proto/scene_client_player.pb.h"
 
-using GsStubPtr = std::unique_ptr <common::RpcStub<gsservice::GsService_Stub>>;
+using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
 
 std::size_t kMaxPlayerSize = 1000;
 ///<<< END WRITING YOUR CODE

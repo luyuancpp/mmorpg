@@ -21,8 +21,8 @@
 using namespace muduo;
 using namespace muduo::net;
 
-using GsStubPtr = std::unique_ptr <common::RpcStub<gsservice::GsService_Stub>>;
-using MsStubPtr = std::unique_ptr <common::RpcStub<msservice::MasterNodeService_Stub>>;
+using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
+using MsStubPtr = std::unique_ptr <RpcStub<msservice::MasterNodeService_Stub>>;
 ///<<< END WRITING YOUR CODE
 
 using namespace common;

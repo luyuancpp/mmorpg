@@ -27,8 +27,8 @@ using namespace muduo::net;
 class GatewayServer : noncopyable, public common::Receiver<GatewayServer>
 {
 public:
-    using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
-    using RpcStubMsNode = common::RpcStub<msservice::MasterNodeService_Stub>;
+    using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
+    using RpcStubMsNode = RpcStub<msservice::MasterNodeService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GatewayServer(EventLoop* loop)
@@ -48,14 +48,14 @@ public:
 
     void Init();
 
-    using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
+    using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void StartServer(ServerInfoRpcRC cp);
 
     void ConnectLogin(const login_server_db& login_addr);
 
-    void receive(const common::OnConnected2ServerEvent& es);
+    void receive(const OnConnected2ServerEvent& es);
 
 private:
     void OnConnection(const TcpConnectionPtr& conn)
@@ -82,7 +82,7 @@ private:
     servers_info_data serverinfo_data_;
 
     common::RpcClientPtr deploy_session_;
-    deploy::DeployStub deploy_stub_;
+    DeployStub deploy_stub_;
 
     common::RpcClientPtr master_session_;
     RpcStubMsNode gw2ms_stub_;
