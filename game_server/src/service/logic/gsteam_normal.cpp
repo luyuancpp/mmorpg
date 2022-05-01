@@ -5,8 +5,8 @@
 
 ///<<<rpc begin
 void ServerTeamServiceImpl::EnterScene(::google::protobuf::RpcController* controller,
-    const normal::TeamTestRequest* request,
-    normal::TeamTestResponse* response,
+    const normal::TeamTestS2SRequest* request,
+    normal::TeamTestS2SRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);

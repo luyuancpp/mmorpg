@@ -7,23 +7,22 @@
 #include "src/module/player_list/player_list.h"
 ///<<< END WRITING YOUR CODE
 
-namespace serverplayer{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
 void ServerPlayerSceneServiceImpl::LoginMs2Gs(EntityPtr& entity,
-    const serverplayer::Ms2GsLoginRequest* request,
+    const ::Ms2GsLoginRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE LoginMs2Gs
-    clientplayer::EnterSeceneS2C message;
+    EnterSeceneS2C message;
     Send2Player(message, entity);
 ///<<< END WRITING YOUR CODE LoginMs2Gs
 }
 
 void ServerPlayerSceneServiceImpl::LoginGs2Ms(EntityPtr& entity,
-    const serverplayer::Gs2MsLoginRequest* request,
+    const ::Gs2MsLoginRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE LoginGs2Ms
@@ -31,7 +30,7 @@ void ServerPlayerSceneServiceImpl::LoginGs2Ms(EntityPtr& entity,
 }
 
 void ServerPlayerSceneServiceImpl::ReconnectMs2Gs(EntityPtr& entity,
-    const serverplayer::Ms2GsReconnectRequest* request,
+    const ::Ms2GsReconnectRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE ReconnectMs2Gs
@@ -39,4 +38,3 @@ void ServerPlayerSceneServiceImpl::ReconnectMs2Gs(EntityPtr& entity,
 }
 
 ///<<<rpc end
-}// namespace serverplayer

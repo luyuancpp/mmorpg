@@ -1,13 +1,13 @@
 syntax = "proto3";
-package clientplayer;
 import "common.proto";
 option cc_generic_services = true;
 
-message SeceneTestRequest
+message EnterSeceneC2SRequest
 {
+  uint64 scene_id = 1;
 }
 
-message SeceneTestResponse
+message EnterSeceneC2SResponse
 {
 	ClientError error = 1;
 }
@@ -18,8 +18,8 @@ message EnterSeceneS2C
   uint32 scene_confid = 2;
 }
 
-service PlayerSceneService 
+service ClientPlayerSceneService 
 {
-  rpc EnterScene (SeceneTestRequest) returns (SeceneTestResponse);
+  rpc EnterScene (EnterSeceneC2SRequest) returns (EnterSeceneC2SResponse);
   rpc EnterSceneNotify (EnterSeceneS2C) returns (EnterSeceneS2C);
 }

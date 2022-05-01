@@ -4,18 +4,16 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-namespace serverplayer{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void PlayerTeamServiceImpl::EnterScene(EntityPtr& entity,
-    const serverplayer::TeamTestRequest* request,
-    serverplayer::TeamTestResponse* response)
+void ServerPlayerTeamServiceImpl::EnterScene(EntityPtr& entity,
+    const ::TeamTestRequest* request,
+    ::TeamTestResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE EnterScene
 ///<<< END WRITING YOUR CODE EnterScene
 }
 
 ///<<<rpc end
-}// namespace serverplayer

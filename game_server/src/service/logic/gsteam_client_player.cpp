@@ -4,18 +4,15 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-namespace clientplayer{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void PlayerTeamServiceImpl::EnterScene(EntityPtr& entity,
-    const clientplayer::TeamTestRequest* request,
-    clientplayer::TeamTestResponse* response)
+void ClientPlayerTeamServiceImpl::TeamInfoNotify(EntityPtr& entity,
+	const ::TeamInfoS2CRequest* request,
+	::TeamInfoS2CResponse* response)
 {
-///<<< BEGIN WRITING YOUR CODE EnterScene
-///<<< END WRITING YOUR CODE EnterScene
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
+
 ///<<<rpc end
-}// namespace clientplayer

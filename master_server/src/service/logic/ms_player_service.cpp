@@ -7,10 +7,6 @@
 #include "src/service/logic/msscene_server_player.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
 std::unordered_set<std::string> g_open_player_services;
-class PlayerTeamServiceImpl : public serverplayer::PlayerTeamService{};
-class ServerPlayerSceneServiceImpl : public serverplayer::ServerPlayerSceneService{};
 void InitPlayerServcie()
 {
-    g_player_services.emplace("serverplayer.PlayerTeamService", std::make_unique<serverplayer::PlayerTeamServiceImpl>(new PlayerTeamServiceImpl));
-    g_player_services.emplace("serverplayer.ServerPlayerSceneService", std::make_unique<serverplayer::ServerPlayerSceneServiceImpl>(new ServerPlayerSceneServiceImpl));
 }

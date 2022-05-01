@@ -135,7 +135,7 @@ def gencpprpcfunbegin(rpcindex):
 def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 def namespacebegin():
-    return 'namespace ' + local.pkg + '{\n'
+    return ''
 def classbegin():
     return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
 def emptyfun():
@@ -200,7 +200,7 @@ def genheadfile(filename, serverstr):
             if i > 0:
                 newstr += yourcode()
             newstr += headfun[i]()
-    newstr += '};\n}// namespace ' + local.pkg + '\n'
+    newstr += '};\n'
     newstr += '#endif//' + headdefine + '_H_\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -284,7 +284,6 @@ def gencppfile(filename, serverstr):
                 newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
                 serviceidx += 1 
                 newstr += rpcend + '\n'
-    newstr += '}// namespace ' + local.pkg + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -312,7 +311,7 @@ def parseplayerservcie(filename):
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif fileline.find('service ') >= 0:
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-                local.playerservicearray.append(local.pkg + '.' + local.service)
+                local.playerservicearray.append(local.service)
                 if filename.find(client_player) >= 0:
                     local.openplayerservicearray.append(local.pkg + '.' + local.service)
                 
@@ -327,14 +326,14 @@ def gengsplayerservcielist(filename):
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
-        newstr += 'class ' + service.replace('.', '') + 'Impl : public ' + service.replace('.', '::')  + '{};\n'
+        newstr += 'class ' + service + 'OpenImpl : public '  + service + '{};\n'
     newstr += 'void InitPlayerServcie()\n{\n'
     for service in local.playerservicearray:
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
-        newstr += ', std::make_unique<' + service.split('.')[0] + '::' + service.split('.')[1] + 'Impl>(new '
-        newstr +=  service.replace('.', '') + 'Impl));\n'
+        newstr += ', std::make_unique<' + service + 'Impl>(new '
+        newstr +=  service.replace('.', '') + 'OpenImpl));\n'
     for service in local.openplayerservicearray:
-        newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
+        newstr += tabstr + 'g_open_player_services.emplace("' + service.replace('.', '') + '");\n'
     newstr += '}\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
