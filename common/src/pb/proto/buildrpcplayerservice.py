@@ -160,9 +160,7 @@ def genheadfile(filename, serverstr):
     if not os.path.exists(newheadfilename) :
         shutil.copy(fullfilename.replace(protodir, ''), newheadfilename)
         return
-    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper().replace('/', '_')
-    newstr = '#ifndef ' + headdefine + '_H_\n'
-    newstr += '#define ' + headdefine + '_H_\n'
+    newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
     newstr += '#include "' + protodir  + local.hfilename.replace('.h', '') + '.pb.h"\n'
     try:
@@ -172,7 +170,7 @@ def genheadfile(filename, serverstr):
             skipheadline = 0 
             partend = 0
             for fileline in file:
-                if skipheadline < 4 :
+                if skipheadline < 3 :
                     skipheadline += 1
                     continue
                 if fileline.find(yourcodebegin) >= 0:
@@ -201,7 +199,6 @@ def genheadfile(filename, serverstr):
                 newstr += yourcode()
             newstr += headfun[i]()
     newstr += '};\n'
-    newstr += '#endif//' + headdefine + '_H_\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
