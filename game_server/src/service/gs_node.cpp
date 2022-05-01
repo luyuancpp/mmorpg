@@ -203,4 +203,37 @@ void GsServiceImpl::RgEnterRoom(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE RgEnterRoom
 }
 
+void GsServiceImpl::CoverPlayer(::google::protobuf::RpcController* controller,
+    const gsservice::CoverPlayerRequest* request,
+    gsservice::CoverPlayerRespone* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE RgEnterRoom
+	auto it = g_players.emplace(request->player_id(), common::EntityPtr());
+	auto player = it.first->second.entity();
+	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
+	reg.emplace_or_replace<common::Guid>(player, request->player_id());
+	auto msit = g_ms_nodes.find(request->ms_node_id());
+	if (msit != g_ms_nodes.end())
+	{
+		reg.emplace_or_replace<MsNodeWPtr>(player, msit->second);
+	}
+	;
+	auto gate_it = g_gate_nodes.find(request->gate_node_id());
+	if (gate_it == g_gate_nodes.end())
+	{
+		LOG_ERROR << " gate not found" << request->gate_node_id();
+		return;
+	}
+	auto p_gate = reg.try_get<GateNodePtr>(gate_it->second);
+	if (nullptr == p_gate)
+	{
+		LOG_ERROR << " gate not found" << request->gate_node_id();
+		return;
+	}
+	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
+///<<< END WRITING YOUR CODE RgEnterRoom
+}
+
 ///<<<rpc end
