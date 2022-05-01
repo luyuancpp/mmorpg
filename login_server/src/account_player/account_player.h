@@ -32,7 +32,7 @@ private:
     bool IsFullPlayer()const;
     bool EmptyPlayer()const;
 
-    common::LoginStateMachine login_state_machine_;
+    LoginStateMachine login_state_machine_;
     ::account_database account_data_;
     common::Guid playing_id_{ common::kInvalidGuid };
 };

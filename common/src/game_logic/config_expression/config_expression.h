@@ -1,5 +1,4 @@
-#ifndef COMMON_SRC_CONFIG_EXPRESSION_CONFIG_EXPRESSION_CONFIG_EXPRESSION_H
-#define COMMON_SRC_CONFIG_EXPRESSION_CONFIG_EXPRESSION_CONFIG_EXPRESSION_H
+#pragma once
 
 #include "src/game_logic/exprtk/exprtk.hpp"
 
@@ -58,5 +57,3 @@ private:
     symbol_table_type symbol_table_;
     parser_type parser_;
 };
-
-#endif // !COMMON_SRC_CONFIG_EXPRESSION_CONFIG_EXPRESSION_CONFIG_EXPRESSION_H

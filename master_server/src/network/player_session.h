@@ -47,7 +47,7 @@
 		}
 
 		entt::entity player_{ entt::null};
-		common::GateConnId gate_conn_id_;
+		GateConnId gate_conn_id_;
 		GateNodeWPtr gate_;
 		common::GsDataWeakPtr gs_;
 	};
