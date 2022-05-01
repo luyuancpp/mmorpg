@@ -17,7 +17,7 @@
 #include "db_node.pb.h"
 #include "logic_proto/scene_rg.pb.h"
 
-    class MasterServer : muduo::noncopyable, public common::Receiver<MasterServer>
+    class MasterServer : muduo::noncopyable, public Receiver<MasterServer>
     {
     public:
         using RedisClientPtr = common::RedisClientPtr;
@@ -60,13 +60,13 @@
         RedisClientPtr redis_;
         RpcServerPtr server_;
 
-        common::RpcClientPtr deploy_rpc_client_;
+        RpcClientPtr deploy_rpc_client_;
         DeployStub deploy_stub_;
 
-		common::RpcClientPtr region_session_;
+		RpcClientPtr region_session_;
         RgNodeStub rg_stub_;
 
-        common::RpcClientPtr db_rpc_client_;
+        RpcClientPtr db_rpc_client_;
         DbNodeStub db_node_stub_;
 
         MasterNodeServiceImpl node_service_impl_;

@@ -7,8 +7,6 @@
 #include "src/luacpp/lua_module.h"
 #include "src/pb/pbc/msgmap.h"
 
-using namespace common;
-
 int main(int argc, char* argv[])
 {
     LOG_INFO << "pid = " << getpid();
@@ -29,7 +27,7 @@ int main(int argc, char* argv[])
         gAllFinish = reg.create();
         reg.emplace<uint32_t>(gAllFinish, nClients);
 
-        auto contents = File2String("client.json");
+        auto contents = common::File2String("client.json");
         google::protobuf::StringPiece sp(contents.data(), contents.size());
         ConnetionParamJsonFormat connetion_param_;
         google::protobuf::util::JsonStringToMessage(sp, &connetion_param_);

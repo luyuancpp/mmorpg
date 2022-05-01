@@ -15,7 +15,7 @@
 
 namespace login
 {
-    class LoginServer : muduo::noncopyable, public common::Receiver<LoginServer>
+    class LoginServer : muduo::noncopyable, public Receiver<LoginServer>
     {
     public:
         using RedisClientPtr = common::RedisClientPtr;
@@ -47,13 +47,13 @@ namespace login
         RedisClientPtr redis_;
         RpcServerPtr server_;
 
-        common::RpcClientPtr deploy_rpc_client_;
+        RpcClientPtr deploy_rpc_client_;
         DeployStub deploy_stub_;
 
-        common::RpcClientPtr master_rpc_client_;
+        RpcClientPtr master_rpc_client_;
         LoginStubl2ms l2ms_login_stub_;
 
-        common::RpcClientPtr db_rpc_client_;
+        RpcClientPtr db_rpc_client_;
         LoginStubl2db l2db_login_stub_;
 
         LoginServiceImpl impl_;

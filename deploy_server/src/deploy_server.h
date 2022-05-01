@@ -14,7 +14,7 @@
 
 namespace deploy
 {
-    class DeployServer : public common::Receiver<DeployServer>
+    class DeployServer : public Receiver<DeployServer>
     {
     public:
         using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;

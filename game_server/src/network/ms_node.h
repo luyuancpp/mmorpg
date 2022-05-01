@@ -13,7 +13,7 @@
 #include "ms_node.pb.h"
 
 
-using MasterSessionPtr = std::shared_ptr<common::RpcClient>;
+using MasterSessionPtr = std::shared_ptr<RpcClient>;
 struct MsNode
 {
 	using MsStubNode = RpcStub<msservice::MasterNodeService_Stub>;

@@ -10,8 +10,6 @@
 #include "src/network/ms_node.h"
 #include "src/network/rpc_client.h"
 
-using namespace common;
-
 
 void ServerReplied::StartGsMasterReplied(StartGsMasterRpcRC cp)
 {

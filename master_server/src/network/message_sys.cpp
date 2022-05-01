@@ -14,9 +14,6 @@
 #include "gw_node.pb.h"
 #include "gs_node.pb.h"
 
-using namespace common;
-
-
 void Send2Gs(const google::protobuf::Message& message, uint32_t node_id)
 {
 		auto it = g_gs_nodes.find(node_id);

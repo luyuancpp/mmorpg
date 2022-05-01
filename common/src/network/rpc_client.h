@@ -14,8 +14,6 @@
 using namespace muduo;
 using namespace muduo::net;
 
-namespace common
-{
 class RpcClient : noncopyable
 {
 public:
@@ -101,7 +99,5 @@ private:
 };
 
 using RpcClientPtr = std::unique_ptr<RpcClient>;
-
-} // namespace common
 
 #endif // SRC_SERVER_RPCCLIENT_RPC_STUB_CLIENT_H_

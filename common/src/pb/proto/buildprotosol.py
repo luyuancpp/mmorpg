@@ -9,7 +9,6 @@ begin = '{'
 end = '}'
 srcdir = './md5/'
 destdir = '../pb2sol2/'
-namespacestr = 'namespace common'
 setname = '::set_'
 mutablename = '::mutable_'
 enum = {}
@@ -29,7 +28,7 @@ def genluasol(filename, srcdir):
     newstr += '#include <sol/sol.hpp>\n'
     if pbnamespace != 'common':
         newstr += 'using namespace ' + pbnamespace + ';\n'
-    newstr += namespacestr + '\n{\n' 
+
     newstr += 'extern thread_local sol::state g_lua;\n'
     newstr +=  funcname + '\n{\n'    
     newfilename = srcdir + filename.replace('.proto', '_sol2.cpp')
@@ -126,7 +125,6 @@ def genluasol(filename, srcdir):
                     newstr += '&' + classname + '::clear_' + fildename + ',\n'
                 
     newstr += '}\n'
-    newstr += '}//' + namespacestr + '\n'
     with open(newfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)                
 
@@ -163,15 +161,12 @@ def gentotalfile(destdir, srcdir):
         headstr += '#define ' + definestr + '\n'
         headstr += '#include <google/protobuf/message.h>\n'
         headstr += '#include <sol/sol.hpp>\n'
-        headstr += namespacestr + '\n{\n'
         headstr += totalfuncitonname + ';\n'
         headstr += 'extern thread_local sol::state g_lua;\n'
-        headstr += '}//' + namespacestr + '\n'
         headstr += '#endif//' + definestr + '\n' 
         file.write(headstr)            
     with open(cppfilename, 'w', encoding='utf-8')as file:
         cppnewstr = '#include "' + headfilename + '"\n'
-        cppnewstr += namespacestr + '\n{\n'
         cppnewstr += 'thread_local sol::state g_lua;\n'
         for fn in funsname:
             cppnewstr += fn + ';\n'
@@ -180,7 +175,6 @@ def gentotalfile(destdir, srcdir):
         for fn in funsname:
             cppnewstr += fn.replace('void', '').strip(' ') + ';\n'
         cppnewstr += '}\n'
-        cppnewstr += '}//' + namespacestr + '\n'
         file.write(cppnewstr)    
 
 genluasol('common.proto', srcdir)
