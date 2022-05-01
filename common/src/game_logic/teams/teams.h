@@ -1,6 +1,4 @@
-#ifndef COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_
-#define COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_
-
+#pragma once
 #include <unordered_map>
 
 #include "src/common_type/common_type.h"
@@ -11,20 +9,18 @@
 
 #include "team.h"
 
-namespace common
-{
-class Teams : public Receiver<Teams>
+class Teams : public common::Receiver<Teams>
 {
 public:
     static const std::size_t kMaxTeamSize = 10000;
 
     Teams();
 
-    std::size_t team_size()const { return reg.storage<Team>().size(); }
+    std::size_t team_size()const { return common::reg.storage<Team>().size(); }
     std::size_t member_size(Guid team_id);
     std::size_t applicant_size_by_playerid(Guid guid)const;
     std::size_t applicant_size_by_team_id(Guid team_id)const;
-    std::size_t players_size()const { return reg.get<PlayerTeamMap>(my_entity_id_).size(); }
+    std::size_t players_size()const { return common::reg.get<PlayerTeamMap>(my_entity_id_).size(); }
     Guid GetTeamId(Guid guid)const;
     entt::entity GetTeamEntityId(Guid guid)const;
     Guid last_team_id() const { return last_team_id_; }
@@ -55,9 +51,7 @@ private:
     void EraseTeam(entt::entity team_id);
 
     Guid last_team_id_{ 0 };
-    EventManagerPtr emp_;
+    common::EventManagerPtr emp_;
     entt::entity my_entity_id_{};
 };
-}//namespace common
-#endif // COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_
 
