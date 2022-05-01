@@ -1,8 +1,5 @@
 #include "account_player.h"
 
-using namespace common;
-
-
 static const int32_t kMaxPlayerSize = 4;
 
 bool AccountPlayer::IsInPlayerList(Guid guid)

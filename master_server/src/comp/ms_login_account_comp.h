@@ -5,7 +5,7 @@
 
 struct MSLoginAccount : public common::EntityPtr
 {
-    common::GuidVector playing_guids_;
+    GuidVector playing_guids_;
 };
 struct AccountLoginNode
 {

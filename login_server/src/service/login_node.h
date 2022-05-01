@@ -21,7 +21,7 @@ public:
 		///<<< BEGIN WRITING YOUR CODE
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
 		using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
-		using ConnectionEntityMap = std::unordered_map<common::Guid, common::EntityPtr>;
+		using ConnectionEntityMap = std::unordered_map<Guid, common::EntityPtr>;
 		using LoginStubl2ms = common::RpcStub<msservice::MasterNodeService_Stub>;
 		using LoginStubl2db = common::RpcStub<dbservice::DbService_Stub>;
 
@@ -45,7 +45,7 @@ public:
 		using EnterGameMSRpcReplied = std::shared_ptr<common::RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
 		void EnterMsReplied(EnterGameMSRpcReplied d);
 
-		void EnterMS(common::Guid guid,
+		void EnterMS(Guid guid,
 			uint64_t connection_id,
 			::gw2l::EnterGameResponse* response,
 			::google::protobuf::Closure* done);

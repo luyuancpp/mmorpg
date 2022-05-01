@@ -13,7 +13,7 @@ struct GateConnId
 
 struct PlayerId 
 {
-    common::Guid guid_{0};
+    Guid guid_{0};
 };
 
 
