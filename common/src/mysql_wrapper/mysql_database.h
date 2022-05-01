@@ -1,11 +1,8 @@
-#ifndef COMMON_SRC_MYSQL_DATA_BASE_MYSQL_DATABASE_H_
-#define COMMON_SRC_MYSQL_DATA_BASE_MYSQL_DATABASE_H_
-
+#pragma once
 #include "src/mysql_wrapper/mysql_client.h"
 #include "src/mysql_wrapper/pb2dbsql.h"
 
-namespace common
-{
+
 class MysqlDatabase : public MysqlClient
 {
 public:
@@ -30,7 +27,7 @@ public:
         auto fill_message = [this, &rf_message, &scratch_space](const ResultRowPtr& ptr)-> bool
         {
             scratch_space.Clear();
-            common::FillMessageField(scratch_space, *ptr);
+            FillMessageField(scratch_space, *ptr);
             rf_message.Add(scratch_space);
             return true;
         };
@@ -50,7 +47,7 @@ public:
         auto fill_message = [this, &rf_message, &scratch_space](const ResultRowPtr& ptr)-> bool
         {
             scratch_space.Clear();
-            common::FillMessageField(scratch_space, *ptr);
+            FillMessageField(scratch_space, *ptr);
             rf_message.Add(scratch_space);
             return true;
         };
@@ -78,11 +75,7 @@ public:
     void Delete(const ::google::protobuf::Message& message, const std::string& where_clause);    
 
 private:
-    common::Pb2DbTables pb2db_;
+    Pb2DbTables pb2db_;
 };
 
 using DatabasePtr = std::unique_ptr<MysqlDatabase>;
-
-}//namespace common
-
-#endif // !COMMON_SRC_MYSQL_DATA_BASE_MYSQL_DATABASE_H_

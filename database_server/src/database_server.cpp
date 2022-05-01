@@ -10,7 +10,7 @@ using namespace common;
 
 DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-        database_(std::make_shared<common::MysqlDatabase>()),
+        database_(std::make_shared<MysqlDatabase>()),
         redis_(std::make_shared<RedisClient>()){}
 
 void DatabaseServer::Init()

@@ -1,5 +1,4 @@
- #ifndef __DURATION_MANAGER_H
- #define __DURATION_MANAGER_H
+#pragma once
  #include <memory>
  #include <vector>
 
@@ -50,4 +49,3 @@
      timer_duration_vec m_vTimerList;
  };
 
- #endif // __DURATION_MANAGER_H

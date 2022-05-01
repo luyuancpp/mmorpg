@@ -2,8 +2,6 @@
 
 #include <chrono>
 
-namespace common
-{
 
 void MysqlClient::Execute(const std::string& query)
 {
@@ -170,7 +168,5 @@ MysqlClient::MysqlResultExpected MysqlClient::RealQuery(const std::string& q)
     return res;
 #endif
 }
-
-}//namespace common;
 
 
