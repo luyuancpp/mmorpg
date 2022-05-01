@@ -9,9 +9,6 @@
 #include "comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
 void DbServiceImpl::Login(::google::protobuf::RpcController* controller,
     const dbservice::LoginRequest* request,
