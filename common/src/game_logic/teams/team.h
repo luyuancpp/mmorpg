@@ -1,5 +1,4 @@
-#ifndef COMMON_SRC_GAME_LOGIC_TEAM_TEAM_H_
-#define COMMON_SRC_GAME_LOGIC_TEAM_TEAM_H_
+#pragma once
 
 #include <deque>
 #include <list>
@@ -12,27 +11,26 @@
 #include "entt/src/entt/entity/entity.hpp"
 #include "entt/src/entt/entity/registry.hpp"
 
-namespace common
+
+static const std::size_t kMaxApplicantSize{ 20 };
+static const std::size_t kMaxMemberSize{ 5 };
+
+//function order get, set is, test action
+struct CreateTeamP
 {
-    static const std::size_t kMaxApplicantSize{ 20 };
-    static const std::size_t kMaxMemberSize{ 5 };
+    Guid leader_id_{ 0 };
+    const UInt64Set members;
+};
 
-    //function order get, set is, test action
-    struct CreateTeamP
-    {
-        Guid leader_id_{ 0 };
-        const UInt64Set members;
-    };
+struct TeamsP
+{
+    entt::entity teamid_{};
+    entt::entity teams_entity_id_{};//manager id
+    common::EventManagerPtr& emp_;
+    entt::registry* teams_registry_{ nullptr };
+};
 
-    struct TeamsP
-    {
-        entt::entity teamid_{};
-        entt::entity teams_entity_id_{};//manager id
-        EventManagerPtr& emp_;
-        entt::registry* teams_registry_{ nullptr };
-    };
-
-    using PlayerTeamMap = std::unordered_map<Guid, entt::entity>;
+using PlayerTeamMap = std::unordered_map<Guid, entt::entity>;
 
 class Team
 {
@@ -80,9 +78,6 @@ private:
     Guid leader_id_{};
     GuidVector members_;
     GuidVector applicants_;
-    EventManagerPtr emp_;
+    common::EventManagerPtr emp_;
     entt::registry* teams_registry_{ nullptr };
 };
-}//namespace common
-
-#endif // COMMON_SRC_GAME_LOGIC_TEAM_TEAM_H_

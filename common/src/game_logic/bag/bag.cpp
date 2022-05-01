@@ -29,7 +29,7 @@ std::size_t Bag::GetItemStackSize(uint32_t config_id)const
 	return sz;
 }
 
-Item* Bag::GetItemByGuid(common::Guid guid)
+Item* Bag::GetItemByGuid(Guid guid)
 {
 	auto it = items_.find(guid);
 	if (it == items_.end())
@@ -49,7 +49,7 @@ Item* Bag::GetItemByBos(uint32_t pos)
 	return GetItemByGuid(it->second);
 }
 
-uint32_t Bag::GetItemPos(common::Guid guid)
+uint32_t Bag::GetItemPos(Guid guid)
 {
 	for (auto& pit : pos_)
 	{
@@ -498,7 +498,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 	return kRetOK;
 }
 
-uint32_t Bag::DelItem(common::Guid del_guid)
+uint32_t Bag::DelItem(Guid del_guid)
 {
 	auto it = items_.find(del_guid);
 	if (it == items_.end())
