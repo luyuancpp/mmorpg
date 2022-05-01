@@ -3,8 +3,6 @@
 #include "logic_proto/team_client_player.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 class ClientPlayerTeamServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
