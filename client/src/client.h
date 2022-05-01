@@ -1,5 +1,4 @@
-#ifndef CLIENT_SRC_CLIENT_H_
-#define CLIENT_SRC_CLIENT_H_
+#pragma once
 
 #include <stdio.h>
 
@@ -77,4 +76,4 @@ private:
     ProtobufCodec codec_;
     ClientService service_;
 };
-#endif//CLIENT_SRC_CLIENT_H_
+

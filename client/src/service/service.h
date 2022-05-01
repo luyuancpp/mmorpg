@@ -1,5 +1,4 @@
-#ifndef CLIENT_SRC_SERVICE_SERVICE_H_
-#define CLIENT_SRC_SERVICE_SERVICE_H_
+#pragma once
 
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/TcpClient.h"
@@ -84,7 +83,6 @@ private:
 
     uint64_t guid_{ 0 };
     uint64_t id_{ 0 };
-    common::TimerTask timer_task_;
+    TimerTask timer_task_;
 };
 
-#endif//CLIENT_SRC_SERVICE_SERVICE_H_

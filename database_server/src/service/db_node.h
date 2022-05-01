@@ -7,11 +7,6 @@
 using namespace muduo;
 using namespace muduo::net;
 
-namespace database
-{
-	class MysqlDatabase;
-}//namespace database;
-
 namespace common
 {
 	class RedisClient;
