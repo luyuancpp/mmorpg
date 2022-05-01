@@ -35,7 +35,9 @@ std::size_t kMaxPlayerSize = 1000;
 
 using namespace common;
 ///<<< BEGIN WRITING YOUR CODE
-void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
+
+template<typename Replied>
+void PlayerEnterGame(Replied replied)
 {
 	auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
 	if (entt::null == player)
@@ -53,21 +55,14 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 	Send2Player(msg, player);
 }
 
+void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
+{
+	PlayerEnterGame(replied);
+}
+
 void MasterNodeServiceImpl::Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied)
 {
-	auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
-	if (entt::null == player)
-	{
-		return;
-	}
-	auto& player_session = reg.get<PlayerSession>(player);
-	gwservice::PlayerEnterGsRequest messag;
-	messag.set_conn_id(replied.s_rq_.conn_id());
-	messag.set_gs_node_id(player_session.gs_node_id());
-	messag.set_player_id(replied.s_rq_.player_id());
-	Send2Gate(messag, player_session.gate_node_id());
-	clientplayer::EnterSeceneS2C msg;
-	Send2Player(msg, player);
+	PlayerEnterGame(replied);
 }
 ///<<< END WRITING YOUR CODE
 
