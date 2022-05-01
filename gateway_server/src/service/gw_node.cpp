@@ -133,6 +133,7 @@ void GwNodeServiceImpl::KickConnByMs(::google::protobuf::RpcController* controll
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE KickConnByMs
 	g_client_sessions_->erase(request->conn_id());
+	LOG_INFO << "connid be kick " << request->conn_id();
 ///<<< END WRITING YOUR CODE KickConnByMs
 }
 

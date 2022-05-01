@@ -58,6 +58,10 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         //断了线之后不能把消息串到别人的地方，串话
         //如果我没登录就发送其他协议到master game server 怎么办
         auto it = g_client_sessions_->find(conn_id);
+        if (it == g_client_sessions_->end())
+        {
+            return;
+        }
         auto guid = it->second.guid_;        
         {
 			gw2l::DisconnectRequest request;
