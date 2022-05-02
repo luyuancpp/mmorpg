@@ -25,7 +25,7 @@
 #include "src/game_logic/scene/servernode_sys.h"
 
 #include "gs_node.pb.h"
-#include "gw_node.pb.h"
+
 #include "logic_proto/scene_client_player.pb.h"
 #include "component_proto/ms_player_comp.pb.h"
 
@@ -35,7 +35,7 @@ using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 std::size_t kMaxPlayerSize = 1000;
 
 template<typename Replied>
-void PlayerEnterGame(Replied& replied)
+void PlayerEnterGame(Replied& replied, MasterNodeServiceImpl& impl)
 {
 	auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
 	if (entt::null == player)
@@ -43,24 +43,37 @@ void PlayerEnterGame(Replied& replied)
 		return;
 	}
 	auto& player_session = reg.get<PlayerSession>(player);
-	gwservice::PlayerEnterGsRequest messag;
-	messag.set_conn_id(replied.s_rq_.conn_id());
-	messag.set_gs_node_id(player_session.gs_node_id());
-	messag.set_player_id(replied.s_rq_.player_id());
-	Send2Gate(messag, player_session.gate_node_id());
+	auto gate_it = g_gate_nodes.find(player_session.gate_node_id());
+    if (gate_it == g_gate_nodes.end())
+    {
+		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
+		return;
+    }
+
+	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpcReplied c;
+	auto& message = c.s_rq_;
+	message.set_conn_id(replied.s_rq_.conn_id());
+	message.set_gs_node_id(player_session.gs_node_id());
+	message.set_player_id(replied.s_rq_.player_id()); 
+    reg.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, c, &impl,  &gwservice::GwNodeService::PlayerEnterGs);
 
 	EnterSeceneS2C msg;//进入了gate 然后才可以开始可以给客户端发送信息了
 	Send2Player(msg, player);
 }
 
+void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied)
+{
+	LOG_INFO << "Ms2GwPlayerEnterGsReplied";
+}
+
 void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
 {
-	PlayerEnterGame(replied);
+	PlayerEnterGame(replied, *this);
 }
 
 void MasterNodeServiceImpl::Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied)
 {
-	PlayerEnterGame(replied);
+	PlayerEnterGame(replied, *this);
 }
 
 void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)

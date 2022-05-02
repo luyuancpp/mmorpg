@@ -8,6 +8,7 @@
 #include "src/network/rpc_closure.h"
 
 #include "gs_node.pb.h"
+#include "gw_node.pb.h"
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -21,6 +22,9 @@ public:
 
 	using Ms2GsCoverPlayerRpcRplied = NormalClosure<gsservice::CoverPlayerRequest, gsservice::CoverPlayerRespone>;
 	void Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied);
+
+    using Ms2GwPlayerEnterGsRpcReplied = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
+    void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied);
 
     void OnPlayerLongin(entt::entity player);
     void OnPlayerCover(entt::entity player);//顶号
