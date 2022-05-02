@@ -29,7 +29,8 @@
 #include "logic_proto/scene_client_player.pb.h"
 #include "component_proto/ms_player_comp.pb.h"
 
-using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
+using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
+using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
@@ -164,6 +165,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(kGateWayNode);
 		g_gate_nodes.emplace(request->gate_node_id(), gate_entity);
+        reg.emplace_or_replace<GwStub>(gate_entity, GwStub(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 		break;
 	}
 
