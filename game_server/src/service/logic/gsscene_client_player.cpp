@@ -2,26 +2,42 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/message_sys.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "logic_proto/scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ClientPlayerSceneServiceImpl::EnterScene(EntityPtr& entity,
-    const ::EnterSeceneC2SRequest* request,
-    ::EnterSeceneC2SResponse* response)
+void ClientPlayerSceneServiceImpl::EnterSceneBySceneIdC2S(EntityPtr& entity,
+    const ::EnterSeceneBySceneIdC2SRequest* request,
+    ::EnterSeceneBySceneIdC2SResponse* response)
 {
-///<<< BEGIN WRITING YOUR CODE EnterScene
-    Gs2MsLoginRequest msg;
-	Send2MsPlayer(msg, reg.get<Guid>(entity.entity()));
-///<<< END WRITING YOUR CODE EnterScene
+///<<< BEGIN WRITING YOUR CODE EnterSceneBySceneIdC2S
+///<<< END WRITING YOUR CODE EnterSceneBySceneIdC2S
 }
 
-void ClientPlayerSceneServiceImpl::EnterSceneNotify(EntityPtr& entity,
-    const ::EnterSeceneS2C* request,
-    ::EnterSeceneS2C* response)
+///<<<rpc end
+void ClientPlayerSceneServiceImpl::EnterSceneBySceneConfigIdC2S(EntityPtr& entity,
+    const ::EnterSeceneByConfigIdC2SRequest* request,
+    ::EnterSeceneByConfigIdC2SResponse* response)
 {
-///<<< BEGIN WRITING YOUR CODE EnterSceneNotify
-///<<< END WRITING YOUR CODE EnterSceneNotify
+///<<< BEGIN WRITING YOUR CODE EnterSceneBySceneConfigIdC2S
+///<<< END WRITING YOUR CODE EnterSceneBySceneConfigIdC2S
+}
+
+///<<<rpc end
+void ClientPlayerSceneServiceImpl::PushEnterSceneS2C(EntityPtr& entity,
+    const ::EnterSeceneS2C* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE PushEnterSceneS2C
+///<<< END WRITING YOUR CODE PushEnterSceneS2C
+}
+
+///<<<rpc end
+void ClientPlayerSceneServiceImpl::PushSceneInfoS2C(EntityPtr& entity,
+    const ::SceneInfoS2C* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE PushSceneInfoS2C
+///<<< END WRITING YOUR CODE PushSceneInfoS2C
 }
 
 ///<<<rpc end

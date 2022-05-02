@@ -271,8 +271,6 @@ def gencppfile(filename, serverstr):
                     break
     except FileNotFoundError:
             newstr += yourcode() + '\n'
-            newstr += namespacebegin()
-            newstr += yourcode() + '\n'
             serviceidx = 0
             newstr += rpcbegin + '\n'
             while serviceidx < len(local.rpcarry) :
