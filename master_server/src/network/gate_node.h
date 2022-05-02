@@ -8,7 +8,7 @@
 #include "src/network/server_component.h"
 
 #include "common.pb.h"
-
+#include "gw_node.pb.h"
 
 struct GateNode
 {
