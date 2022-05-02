@@ -3,7 +3,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-
 ///<<<rpc begin
 void ServerTeamServiceImpl::EnterScene(::google::protobuf::RpcController* controller,
     const normal::TeamTestS2SRequest* request,

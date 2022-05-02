@@ -68,7 +68,7 @@ void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 
 void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controller,
     const gwservice::PlayerEnterGsRequest* request,
-    ::google::protobuf::Empty* response,
+	gwservice::PlayerEnterGsResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -81,7 +81,8 @@ void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* control
 		return;
 	}
 	it->second.guid_ = request->player_id();
-	it->second.gs_node_id_ = request->gs_node_id();
+	it->second.gs_node_id_ = request->gs_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
+
 ///<<< END WRITING YOUR CODE PlayerEnterGs
 }
 
