@@ -21,7 +21,7 @@ public:
 
     void PlayerEnterGs(::google::protobuf::RpcController* controller,
         const gwservice::PlayerEnterGsRequest* request,
-        ::google::protobuf::Empty* response,
+        gwservice::PlayerEnterGsResponese* response,
         ::google::protobuf::Closure* done)override;
 
     void PlayerMessage(::google::protobuf::RpcController* controller,

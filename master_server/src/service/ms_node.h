@@ -21,6 +21,9 @@ public:
 
 	using Ms2GsCoverPlayerRpcRplied = NormalClosure<gsservice::CoverPlayerRequest, gsservice::CoverPlayerRespone>;
 	void Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied);
+
+    void OnPlayerLongin(entt::entity player);
+    void OnPlayerCover(entt::entity player);//顶号
 private:
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE

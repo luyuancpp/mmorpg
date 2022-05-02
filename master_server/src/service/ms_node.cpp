@@ -27,6 +27,7 @@
 #include "gs_node.pb.h"
 #include "gw_node.pb.h"
 #include "logic_proto/scene_client_player.pb.h"
+#include "component_proto/ms_player_comp.pb.h"
 
 using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
 
@@ -47,7 +48,7 @@ void PlayerEnterGame(Replied& replied)
 	messag.set_player_id(replied.s_rq_.player_id());
 	Send2Gate(messag, player_session.gate_node_id());
 
-	EnterSeceneS2C msg;
+	EnterSeceneS2C msg;//进入了gate 然后才可以开始可以给客户端发送信息了
 	Send2Player(msg, player);
 }
 
@@ -59,6 +60,16 @@ void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replie
 void MasterNodeServiceImpl::Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied)
 {
 	PlayerEnterGame(replied);
+}
+
+void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)
+{
+	//ms 的login先调用，通知gs去调用
+}
+
+void MasterNodeServiceImpl::OnPlayerCover(entt::entity player)
+{
+	//顶号
 }
 ///<<< END WRITING YOUR CODE
 
@@ -330,9 +341,11 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	}
 	else//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 	{
+		//todo换场景的过程中被顶了
+		
 		//告诉账号被顶
 		auto& player_session = reg.get<PlayerSession>(player);
-
+		reg.emplace_or_replace<playercomp::ConverPlayer>(player);//连续顶几次
 		gwservice::KickConnRequest messag;
 		messag.set_conn_id(player_session.gate_conn_id_.conn_id_);
 		Send2Gate(messag, player_session.gate_node_id());
