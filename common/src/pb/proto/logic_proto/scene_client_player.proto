@@ -1,25 +1,43 @@
 syntax = "proto3";
 import "common.proto";
+import "component_proto/scene_comp.proto";
+import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
-message EnterSeceneC2SRequest
+message EnterSeceneBySceneIdC2SRequest
 {
   uint64 scene_id = 1;
 }
 
-message EnterSeceneC2SResponse
+message EnterSeceneBySceneIdC2SResponse
 {
 	ClientError error = 1;
 }
 
-message EnterSeceneS2C
+message EnterSeceneByConfigIdC2SRequest
 {
   uint64 scene_id = 1;
-  uint32 scene_confid = 2;
+}
+
+message EnterSeceneByConfigIdC2SResponse
+{
+  ClientError error = 1;
+}
+
+message EnterSeceneS2C
+{
+  SceneInfo scene_info = 1;
+}
+
+message SceneInfoS2C
+{
+  repeated SceneInfo scene_info = 1;
 }
 
 service ClientPlayerSceneService 
 {
-  rpc EnterScene (EnterSeceneC2SRequest) returns (EnterSeceneC2SResponse);
-  rpc EnterSceneNotify (EnterSeceneS2C) returns (EnterSeceneS2C);
+  rpc EnterSceneBySceneIdC2S (EnterSeceneBySceneIdC2SRequest) returns (EnterSeceneBySceneIdC2SResponse);
+  rpc EnterSceneBySceneConfigIdC2S (EnterSeceneByConfigIdC2SRequest) returns (EnterSeceneByConfigIdC2SResponse);
+  rpc PushEnterSceneS2C (EnterSeceneS2C) returns (google.protobuf.Empty);
+  rpc PushSceneInfoS2C (SceneInfoS2C) returns (google.protobuf.Empty);
 }
