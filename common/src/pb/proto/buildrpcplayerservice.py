@@ -47,6 +47,11 @@ filesrcdestpath = {}
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
+def isserverpushrpc(service):
+    if service.find('S2C') >= 0 or service.find('Push')  >= 0 :
+        return True
+    return False
+
 def parsefile(filename):
     local.rpcarry = []
     local.pkg = ''
@@ -56,6 +61,8 @@ def parsefile(filename):
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
+                if isserverpushrpc(fileline) == True :
+                    continue
                 local.rpcarry.append(fileline)
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
@@ -79,6 +86,8 @@ def genheadrpcfun():
     servicestr = 'public:\n'
     local.servicenames = []
     for service in local.rpcarry:
+        if isserverpushrpc(service) == True :
+            continue
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
@@ -98,6 +107,9 @@ def genheadrpcfun():
     servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
     index = 0
     for service in local.rpcarry:
+        if isserverpushrpc(service) == True :
+            index += 1
+            continue
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
         servicestr += tabstr + tabstr + tabstr + s[1] + '(entity,\n'
@@ -122,6 +134,8 @@ def genheadrpcfun():
 def gencpprpcfunbegin(rpcindex):
     servicestr = ''
     s = local.rpcarry[rpcindex]
+    if isserverpushrpc(s) == True :
+        return servicestr
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.playerservice + 'Impl::' + s[1] + controller + ',\n'
     servicestr +=  tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
@@ -157,7 +171,7 @@ def genheadfile(filename, serverstr):
     fullfilename = writedir +  serverstr + filename.replace('.proto', '.h')
     folder_path, local.hfilename = os.path.split(fullfilename)    
     newheadfilename = servicedir + serverstr + local.hfilename.replace('.proto', '.h').replace(protodir, '')
-    if not os.path.exists(newheadfilename) :
+    if not os.path.exists(newheadfilename)  and os.path.exists(fullfilename.replace(protodir, '')):
         shutil.copy(fullfilename.replace(protodir, ''), newheadfilename)
         return
     newstr = '#pragma once\n'
@@ -207,7 +221,7 @@ def gencppfile(filename, serverstr):
     writedir = getwritedir(serverstr)
     cppfilename = writedir  + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = servicedir + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
-    if not os.path.exists(newcppfilename) :
+    if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
         shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
         return
     newstr = '#include "' + serverstr + local.hfilename + '"\n'
@@ -274,11 +288,14 @@ def gencppfile(filename, serverstr):
             serviceidx = 0
             newstr += rpcbegin + '\n'
             while serviceidx < len(local.rpcarry) :
-                newstr += gencpprpcfunbegin(serviceidx)
-                newstr += yourcodebegin + ' ' + local.servicenames[serviceidx] + '\n'
-                newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
-                serviceidx += 1 
-                newstr += rpcend + '\n'
+                if isserverpushrpc(local.rpcarry[serviceidx]) == True :
+                    serviceidx += 1 
+                else:
+                    newstr += gencpprpcfunbegin(serviceidx)
+                    newstr += yourcodebegin +  '\n'
+                    newstr += yourcodeend + '\n}\n\n'
+                    serviceidx += 1 
+            newstr += rpcend + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 

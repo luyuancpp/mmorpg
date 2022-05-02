@@ -2,9 +2,6 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/message_sys.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "muduo/base/Logging.h"
-#include "logic_proto/scene_client_player.pb.h"
-#include "src/module/player_list/player_list.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -13,8 +10,6 @@ void ServerPlayerSceneServiceImpl::LoginMs2Gs(EntityPtr& entity,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE LoginMs2Gs
-    EnterSeceneS2C message;
-    Send2Player(message, entity);
 ///<<< END WRITING YOUR CODE LoginMs2Gs
 }
 
