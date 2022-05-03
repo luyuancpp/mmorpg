@@ -27,7 +27,7 @@ msservicedir = '../../../../master_server/src/service/logic/'
 logicprotodir = './logic_proto/'
 tabstr = '    '
 cpprpcpart = 1
-cppmaxpart = 4
+cppmaxpart = 3
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/'
 
