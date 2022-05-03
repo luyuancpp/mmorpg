@@ -9,12 +9,8 @@ from multiprocessing import cpu_count
 
 local = threading.local()
 
-local.rpcarry = []
-local.servicenames = []
-local.servicebeginid = []
 local.service = ''
 local.rpcmsgnameid = []
-local.msgcount = 0
 local.cppfilename = 'msgmap.cpp'
 local.hfilename = 'msgmap.h'
 
@@ -34,7 +30,6 @@ if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
 def parsefile(filename):
-    local.rpcarry = []
     local.pkg = ''
     local.service = ''
     rpcbegin = 0 
