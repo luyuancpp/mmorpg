@@ -3,8 +3,6 @@
 #include "logic_proto/scene_server_player.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 class ServerPlayerSceneServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
