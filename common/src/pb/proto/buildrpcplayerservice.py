@@ -163,8 +163,9 @@ def getwritedir(serverstr):
     return writedir
 
 def genheadfile(filename, serverstr):
+    local.servicenames = []
     writedir = getwritedir(serverstr)
-    headfun = [emptyfun, emptyfun, classbegin, genheadrpcfun]
+    headfun = [classbegin, genheadrpcfun]
     fullfilename = writedir +  serverstr + filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = servicedir + serverstr + filename.replace('.proto', '.h').replace(protodir, '')
     if not os.path.exists(newheadfilename)  and os.path.exists(fullfilename):
@@ -179,7 +180,6 @@ def genheadfile(filename, serverstr):
             owncode = 0 
             skipheadline = 0 
             partend = 0
-            
             for fileline in file:
                 if skipheadline < 3 :
                     skipheadline += 1
@@ -193,21 +193,15 @@ def genheadfile(filename, serverstr):
                     partend = 1
                     newstr += fileline
                     part += 1
-                    continue
+                    break
                 if owncode == 1 :
                     newstr += fileline
                     continue
-                if part > 0 and part < len(headfun) and owncode == 0 and partend == 1:
-                    newstr += headfun[part]()
-                    partend = 0
-                    continue
-                elif part >= len(headfun):
-                    break
-
+            for i in range(0, len(headfun)) :             
+                newstr += headfun[i]()
     except FileNotFoundError:
-        for i in range(0, 3) :
-            if i > 0:
-                newstr += yourcode()
+        newstr += yourcode()
+        for i in range(0, len(headfun)) :             
             newstr += headfun[i]()
     newstr += '};\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
@@ -301,10 +295,10 @@ def generate(filename):
         gencppfile(filename, 'gs')
     elif filename.find(server_player) >= 0:
         parsefile(filename)
-        #genheadfile(filename, 'gs')
-        #gencppfile(filename, 'gs')
-        #genheadfile(filename, 'ms')
-        #gencppfile(filename, 'ms')
+        genheadfile(filename, 'gs')
+        gencppfile(filename, 'gs')
+        genheadfile(filename, 'ms')
+        gencppfile(filename, 'ms')
     elif filename.find(rg) >= 0:
         pass
 
