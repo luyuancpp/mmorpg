@@ -174,35 +174,8 @@ def genheadfile(filename, serverstr):
     newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
     newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
-    try:
-        with open(fullfilename,'r+', encoding='utf-8') as file:
-            part = 0
-            owncode = 0 
-            skipheadline = 0 
-            partend = 0
-            for fileline in file:
-                if skipheadline < 3 :
-                    skipheadline += 1
-                    continue
-                if fileline.find(yourcodebegin) >= 0:
-                    owncode = 1
-                    newstr += fileline
-                    continue
-                elif fileline.find(yourcodeend) >= 0:
-                    owncode = 0
-                    partend = 1
-                    newstr += fileline
-                    part += 1
-                    break
-                if owncode == 1 :
-                    newstr += fileline
-                    continue
-            for i in range(0, len(headfun)) :             
-                newstr += headfun[i]()
-    except FileNotFoundError:
-        newstr += yourcode()
-        for i in range(0, len(headfun)) :             
-            newstr += headfun[i]()
+    for i in range(0, len(headfun)) :             
+        newstr += headfun[i]()
     newstr += '};\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
