@@ -6,8 +6,6 @@
 class ClientPlayerSceneServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 public:
     void EnterSceneC2S(EntityPtr& entity,
         const ::EnterSeceneC2SRequest* request,
