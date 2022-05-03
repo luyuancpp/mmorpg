@@ -93,8 +93,7 @@ def gencpprpcfunbegin(rpcindex):
 
 def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
-def namespacebegin():
-    return ''
+
 def classbegin():
     return 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
 def emptyfun():
@@ -117,7 +116,7 @@ def getpbdir(filename, writedir):
 
 def genheadfile(fullfilename, writedir):
     filename = fullfilename.replace(logicprotodir, '').replace('.proto', '.h') 
-    headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
+    headfun = [emptyfun, emptyfun, classbegin, genheadrpcfun]
     hfullfilename = writedir +  getprevfilename(fullfilename, writedir) + filename
     newheadfilename = servicedir +  getprevfilename(fullfilename, writedir) +  filename
     newstr = '#pragma once\n'
@@ -190,8 +189,6 @@ def gencppfile(fullfilename, writedir):
                     owncode = 0
                     newstr += fileline + '\n'
                     part += 1
-                    if part == 1 :
-                        newstr += namespacebegin()
                     continue     
                 elif part == cpprpcpart:
                     if fileline.find(rpcbegin) >= 0:
@@ -228,8 +225,6 @@ def gencppfile(fullfilename, writedir):
                 if part > cppmaxpart :
                     break
     except FileNotFoundError:
-            newstr += yourcode() + '\n'
-            newstr += namespacebegin()
             newstr += yourcode() + '\n'
             serviceidx = 0
             newstr += rpcbegin + '\n'
