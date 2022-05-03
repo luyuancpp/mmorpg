@@ -152,7 +152,7 @@ def genheadfile(fullfilename, writedir):
                     break
 
     except FileNotFoundError:
-        for i in range(0, 4) :
+        for i in range(0, 2) :
             if i > 0:
                 newstr += yourcode()
             newstr += headfun[i]()
