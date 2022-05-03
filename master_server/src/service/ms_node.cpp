@@ -25,6 +25,7 @@
 #include "src/game_logic/scene/servernode_sys.h"
 
 #include "gs_node.pb.h"
+#include "logic_proto/scene_normal.pb.h"
 
 #include "logic_proto/scene_client_player.pb.h"
 #include "component_proto/ms_player_comp.pb.h"
@@ -63,7 +64,8 @@ void PlayerEnterGame(Replied& replied, MasterNodeServiceImpl& impl)
 
 void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied)
 {
-	LOG_INFO << "Ms2GwPlayerEnterGsReplied";
+	Ms2GsEnterSceneRequest message;
+	Send2Gs(message, replied.s_rq_.gs_node_id());
 }
 
 void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
@@ -295,6 +297,8 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE OnLsEnterGame
+	//todo正常或者顶号进入场景
+	//todo 断线重连进入场景，断线重连分时间
 	auto guid = request->guid();
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
 	if (entt::null == player)
