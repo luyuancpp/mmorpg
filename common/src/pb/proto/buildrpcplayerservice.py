@@ -98,11 +98,11 @@ def genheadrpcfun():
             line += tabstr + tabstr + local.pkg + '::' + rsp + '* response);\n\n'
         servicestr += line
 
-    servicestr += tabstr + tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
-    servicestr += tabstr + tabstr +  controller.replace('(', '') + ',\n'
-    servicestr += tabstr + tabstr + 'const ::google::protobuf::Message* request,\n'
-    servicestr += tabstr + tabstr + '::google::protobuf::Message* response)override\n'
-    servicestr += tabstr + tabstr + '{\n'
+    servicestr += tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
+    servicestr += tabstr + controller.replace('(', '') + ',\n'
+    servicestr += tabstr + 'const ::google::protobuf::Message* request,\n'
+    servicestr += tabstr + '::google::protobuf::Message* response)override\n'
+    servicestr += tabstr + '{\n'
     servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
     index = 0
     for service in local.rpcarry:
@@ -127,7 +127,7 @@ def genheadrpcfun():
     servicestr += tabstr + tabstr + tabstr + 'GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";\n'
     servicestr += tabstr + tabstr + 'break;\n'
     servicestr += tabstr + tabstr + '}\n'
-    servicestr += tabstr + tabstr + '}\n'
+    servicestr += tabstr + '}\n'
     return servicestr
 
 def gencpprpcfunbegin(rpcindex):

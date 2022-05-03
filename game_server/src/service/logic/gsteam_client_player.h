@@ -5,15 +5,15 @@ class ClientPlayerTeamServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:
-        void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-        EntityPtr& entity,
-        const ::google::protobuf::Message* request,
-        ::google::protobuf::Message* response)override
-        {
+    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+    EntityPtr& entity,
+    const ::google::protobuf::Message* request,
+    ::google::protobuf::Message* response)override
+    {
         switch(method->index()) {
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
         break;
         }
-        }
+    }
 };

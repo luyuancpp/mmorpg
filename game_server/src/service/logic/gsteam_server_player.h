@@ -9,11 +9,11 @@ public:
         const ::TeamTestRequest* request,
         ::TeamTestResponse* response);
 
-        void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-        EntityPtr& entity,
-        const ::google::protobuf::Message* request,
-        ::google::protobuf::Message* response)override
-        {
+    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+    EntityPtr& entity,
+    const ::google::protobuf::Message* request,
+    ::google::protobuf::Message* response)override
+    {
         switch(method->index()) {
         case 0:
             EnterScene(entity,
@@ -24,5 +24,5 @@ public:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
         break;
         }
-        }
+    }
 };
