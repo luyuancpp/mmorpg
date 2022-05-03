@@ -68,7 +68,7 @@ void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 
 void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controller,
     const gwservice::PlayerEnterGsRequest* request,
-	gwservice::PlayerEnterGsResponese* response,
+    gwservice::PlayerEnterGsResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
