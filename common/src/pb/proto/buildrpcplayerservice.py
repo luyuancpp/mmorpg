@@ -13,7 +13,6 @@ local.rpcarry = []
 local.servicenames = []
 local.playerservice = ''
 local.service = ''
-local.hfilename = ''
 local.playerservice = ''
 local.playerservicearray = []
 local.openplayerservicearray = []
@@ -148,8 +147,6 @@ def gencpprpcfunbegin(rpcindex):
 
 def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
-def namespacebegin():
-    return ''
 def classbegin():
     return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
 def emptyfun():
@@ -167,22 +164,22 @@ def getwritedir(serverstr):
 
 def genheadfile(filename, serverstr):
     writedir = getwritedir(serverstr)
-    headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
-    fullfilename = writedir +  serverstr + filename.replace('.proto', '.h')
-    folder_path, local.hfilename = os.path.split(fullfilename)    
-    newheadfilename = servicedir + serverstr + local.hfilename.replace('.proto', '.h').replace(protodir, '')
-    if not os.path.exists(newheadfilename)  and os.path.exists(fullfilename.replace(protodir, '')):
-        shutil.copy(fullfilename.replace(protodir, ''), newheadfilename)
+    headfun = [emptyfun, emptyfun, classbegin, genheadrpcfun]
+    fullfilename = writedir +  serverstr + filename.replace('.proto', '.h').replace(protodir, '')
+    newheadfilename = servicedir + serverstr + filename.replace('.proto', '.h').replace(protodir, '')
+    if not os.path.exists(newheadfilename)  and os.path.exists(fullfilename):
+        shutil.copy(fullfilename, newheadfilename)
         return
     newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
-    newstr += '#include "' + protodir  + local.hfilename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
     try:
         with open(fullfilename,'r+', encoding='utf-8') as file:
             part = 0
-            owncode = 1 
+            owncode = 0 
             skipheadline = 0 
             partend = 0
+            
             for fileline in file:
                 if skipheadline < 3 :
                     skipheadline += 1
@@ -208,7 +205,7 @@ def genheadfile(filename, serverstr):
                     break
 
     except FileNotFoundError:
-        for i in range(0, 4) :
+        for i in range(0, 3) :
             if i > 0:
                 newstr += yourcode()
             newstr += headfun[i]()
@@ -224,7 +221,7 @@ def gencppfile(filename, serverstr):
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
         shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
         return
-    newstr = '#include "' + serverstr + local.hfilename + '"\n'
+    newstr = '#include "' +  serverstr + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
     newstr += '#include "src/game_logic/game_registry.h"\n'
     newstr += '#include "src/network/message_sys.h"\n'
     try:
@@ -247,8 +244,6 @@ def gencppfile(filename, serverstr):
                     owncode = 0
                     newstr += fileline + '\n'
                     part += 1
-                    if part == 1 :
-                        newstr += namespacebegin()
                     continue     
                 elif part == cpprpcpart:
                     if fileline.find(rpcbegin) >= 0:
@@ -306,10 +301,10 @@ def generate(filename):
         gencppfile(filename, 'gs')
     elif filename.find(server_player) >= 0:
         parsefile(filename)
-        genheadfile(filename, 'gs')
-        gencppfile(filename, 'gs')
-        genheadfile(filename, 'ms')
-        gencppfile(filename, 'ms')
+        #genheadfile(filename, 'gs')
+        #gencppfile(filename, 'gs')
+        #genheadfile(filename, 'ms')
+        #gencppfile(filename, 'ms')
     elif filename.find(rg) >= 0:
         pass
 
