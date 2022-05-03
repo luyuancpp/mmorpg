@@ -4,9 +4,9 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerTeamServiceImpl::EnterScene(::google::protobuf::RpcController* controller,
-    const normal::TeamTestS2SRequest* request,
-    normal::TeamTestS2SRespone* response,
+void NormalS2STeamServiceImpl::EnterScene(::google::protobuf::RpcController* controller,
+    const ::TeamTestS2SRequest* request,
+    ::TeamTestS2SRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);

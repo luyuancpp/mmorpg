@@ -1,6 +1,5 @@
 syntax = "proto3";
 import "common.proto";
-package normal;
 option cc_generic_services = true;
 
 message TeamTestS2SRequest
@@ -13,7 +12,7 @@ message TeamTestS2SRespone
 }
 
 
-service ServerTeamService
+service NormalS2STeamService
 {
   rpc EnterScene (TeamTestS2SRequest) returns (TeamTestS2SRespone);
 }

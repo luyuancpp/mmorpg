@@ -4,14 +4,14 @@
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class ServerTeamServiceImpl : public normal::ServerTeamService{
+class NormalS2STeamServiceImpl : public ::NormalS2STeamService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
     void EnterScene(::google::protobuf::RpcController* controller,
-        const normal::TeamTestS2SRequest* request,
-        normal::TeamTestS2SRespone* response,
+        const ::TeamTestS2SRequest* request,
+        ::TeamTestS2SRespone* response,
         ::google::protobuf::Closure* done)override;
 
 };
