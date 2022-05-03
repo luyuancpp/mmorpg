@@ -14,11 +14,11 @@ public:
     void ReconnectMs2Gs(EntityPtr& entity,
         const ::Ms2GsReconnectRequest* request,
         ::google::protobuf::Empty* response);
-        void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-        EntityPtr& entity,
-        const ::google::protobuf::Message* request,
-        ::google::protobuf::Message* response)override
-        {
+    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+    EntityPtr& entity,
+    const ::google::protobuf::Message* request,
+    ::google::protobuf::Message* response)override
+    {
         switch(method->index()) {
         case 0:
             LoginMs2Gs(entity,
@@ -39,5 +39,5 @@ public:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
         break;
         }
-        }
+    }
 };
