@@ -17,7 +17,6 @@ public:
 
     // login state machine
     inline uint32_t Login() { return login_state_machine_.Login(); }
-    inline uint32_t Logout() { return login_state_machine_.Logout(); }
     inline uint32_t CreatePlayer() { return login_state_machine_.CreatePlayer(); }
     inline uint32_t EnterGame() { return login_state_machine_.EnterGame(); }
 
