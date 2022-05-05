@@ -59,7 +59,7 @@ uint32_t Bag::GetItemPos(Guid guid)
 	return kInvalidU32Id;
 }
 
-uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_items)
+uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items)
 {
 	auto empty_size = empty_grid_size();
 	UInt32UInt32UnorderedMap need_stack_sizes;//需要叠加的物品列表
@@ -135,7 +135,7 @@ uint32_t Bag::AdequateSizeAddItem(const common::UInt32UInt32UnorderedMap& try_it
 	return kRetOK;
 }
 
-uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& adequate_items)
+uint32_t Bag::AdequateItem(const UInt32UInt32UnorderedMap& adequate_items)
 {
 	auto stack_item_list = adequate_items;
 	for (auto& it : items_)
@@ -176,7 +176,7 @@ uint32_t Bag::AdequateItem(const common::UInt32UInt32UnorderedMap& adequate_item
 	return kRetOK;
 }
 
-uint32_t  Bag::DelItem(const common::UInt32UInt32UnorderedMap& try_del_items)
+uint32_t  Bag::DelItem(const UInt32UInt32UnorderedMap& try_del_items)
 {
 	RET_CHECK_RET(AdequateItem(try_del_items));
 	auto try_del_items_back = try_del_items;
