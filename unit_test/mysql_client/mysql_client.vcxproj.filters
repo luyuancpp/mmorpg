@@ -18,39 +18,30 @@
     <ClCompile Include="mysql_client_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\mysql_client\mysql_client.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\src\pb2db\pb2dbsql.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\protopb\pbc\db_base.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\protopb\pbc\mysql_database_test.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\mysql_database\mysql_database.cpp">
+    <ClCompile Include="..\..\protopb\pbc\common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\protopb\pbc\common.pb.cc">
+    <ClCompile Include="..\..\common\src\mysql_wrapper\mysql_client.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\mysql_wrapper\mysql_database.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\mysql_wrapper\pb2dbsql.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\mysql_client\mysql_client.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\src\util\expected.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\util\type_traits.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\mysql_client\mysql_result.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\pb2db\pb2dbsql.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\game_proto\pbc\mysql_database_test.pb.h">
@@ -62,10 +53,19 @@
     <ClInclude Include="..\..\protopb\pbc\mysql_database_test.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\mysql_database\mysql_database.h">
+    <ClInclude Include="..\..\protopb\pbc\common.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\protopb\pbc\common.pb.h">
+    <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_client.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_database.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_result.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\mysql_wrapper\pb2dbsql.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
