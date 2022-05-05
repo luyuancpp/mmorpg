@@ -6,7 +6,7 @@
 #include "src/luacpp/lua_module.h"
 #include "src/pb/pbc/msgmap.h"
 
-using namespace common;
+
 using namespace c2gw;
 
 ClientService::ClientService(ProtobufDispatcher& dispatcher,
@@ -84,8 +84,6 @@ void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const EnterGameResponsePtr& message,
     muduo::Timestamp)
 {
-	SeceneTestRequest request;
-	Send(request);
 }
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 

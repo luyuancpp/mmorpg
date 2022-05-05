@@ -35,6 +35,10 @@ message PlayerEnterGsRequest
   uint64 player_id = 3;
 }
 
+message PlayerEnterGsResponese
+{
+}
+
 message MessageExtern
 {
   uint64 conn_id = 1;
@@ -48,10 +52,16 @@ message PlayerMessageRequest
   MessageExtern ex = 2;
 }
 
+message KickConnRequest
+{
+  uint64 conn_id = 1;
+}
+
 service GwNodeService {
   rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
   rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
-  rpc PlayerEnterGs (PlayerEnterGsRequest) returns (google.protobuf.Empty);
+  rpc PlayerEnterGs (PlayerEnterGsRequest) returns (PlayerEnterGsResponese);
   rpc PlayerMessage (PlayerMessageRequest) returns (google.protobuf.Empty);
   rpc GsPlayerService (GsPlayerMessageRequest) returns (google.protobuf.Empty);
+  rpc KickConnByMs (KickConnRequest) returns (google.protobuf.Empty);
 }

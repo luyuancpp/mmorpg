@@ -33,22 +33,22 @@
     <ClCompile Include="src\network\gate_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\msscene_server_player.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\logic\msteam_server_player.cpp">
+    <ClCompile Include="src\network\gs_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\logic\ms_player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\gs_node.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\service\logic\msscene_normal.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\logic\msscene_server_player.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="src\service\logic\msteam_normal.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\logic\msteam_server_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,19 +77,19 @@
     <ClInclude Include="src\service\ms_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\player_service.h">
+    <ClInclude Include="src\service\logic\msscene_normal.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic\msscene_server_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\service\logic\msteam_normal.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="src\service\logic\msteam_server_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\msscene_normal.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic\msteam_normal.h">
+    <ClInclude Include="src\service\logic\player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

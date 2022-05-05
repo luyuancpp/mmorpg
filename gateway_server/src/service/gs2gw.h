@@ -1,5 +1,4 @@
-#ifndef GATEWAY_SERVER_SRC_SERVICE_GS2GW_H_
-#define GATEWAY_SERVER_SRC_SERVICE_GS2GW_H_
+#pragma once
 #include "gs2gw.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -18,4 +17,4 @@ public:
 
 };
 }// namespace gs2gw
-#endif//GATEWAY_SERVER_SRC_SERVICE_GS2GW_H_
+

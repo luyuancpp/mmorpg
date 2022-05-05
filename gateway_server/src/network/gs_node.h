@@ -13,11 +13,11 @@
 
 struct GsNode
 {
-	using GsStubPtr = std::unique_ptr<common::RpcStub<gsservice::GsService_Stub>>;
-	common::RpcClientPtr gs_session_;
+	using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
+	RpcClientPtr gs_session_;
 	GsStubPtr gs_stub_;
 	NodeInfo node_info_;
-	common::EntityPtr entity_id;
+	EntityPtr entity_id;
 };
 
 using GsNodes = std::unordered_map<uint32_t, GsNode>;

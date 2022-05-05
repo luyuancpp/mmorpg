@@ -1,17 +1,10 @@
-#ifndef COMMON_SRC_NET_DEPLOY_RPCCLIENT_DEPLOY_RPC_CLIENT_H_
-#define COMMON_SRC_NET_DEPLOY_RPCCLIENT_DEPLOY_RPC_CLIENT_H_
-
+#pragma once
 #include "deploy_node.pb.h"
 
 #include "src/network/rpc_stub.h"
 
-using namespace muduo;
-using namespace muduo::net;
+using DeployStub = RpcStub<deploy::DeployService_Stub>;
 
-namespace deploy
-{
-    using DeployStub = common::RpcStub<deploy::DeployService_Stub>;
-}// namespace deploy
 
-#endif // COMMON_SRC_NET_DEPLOY_RPCCLIENT_DEPLOY_RPC_CLIENT_H_
+
 

@@ -14,10 +14,10 @@
 
 namespace deploy
 {
-    class DeployServer : public common::Receiver<DeployServer>
+    class DeployServer : public Receiver<DeployServer>
     {
     public:
-        using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
+        using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
         using RedisClientPtr = std::shared_ptr<common::RedisClient>;
 
         DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr);
@@ -37,7 +37,7 @@ namespace deploy
         void OnDisConnected(const muduo::net::TcpConnectionPtr& conn);
         void LogReuseInfo();
    
-        void receive(const common::OnBeConnectedEvent& es);
+        void receive(const OnBeConnectedEvent& es);
     private:
         void InitGroupDb();
 
@@ -128,9 +128,9 @@ namespace deploy
         MysqlClientPtr db_;   
         std::string redis_ip_ = "127.0.0.1";
         ReuseGSId reuse_id_;
-        common::TimerTask scan_over_timer_;
+        TimerTask scan_over_timer_;
 
-        deploy::DeployServiceImpl impl_;
+        DeployServiceImpl impl_;
     };
 }//namespace deploy
 

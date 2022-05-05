@@ -247,7 +247,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
   
 }
 
-void GameServer::receive(const common::OnBeConnectedEvent& es)
+void GameServer::receive(const OnBeConnectedEvent& es)
 {
     auto& conn = es.conn_;
 	if (conn->connected())

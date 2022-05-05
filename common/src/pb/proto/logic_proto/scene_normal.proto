@@ -1,19 +1,30 @@
 syntax = "proto3";
-import "common.proto";
-package normal;
+import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
 
-message SceneTestRequest
+message UpdateCrossMainSceneInfoRequest
+{
+	repeated SceneInfo scenes_info = 1;
+}
+
+message UpdateCrossMainSceneInfoResponse
 {
 }
 
-message SceneTestResponse
+message Ms2GsEnterSceneRequest
 {
-	ClientError error = 1;
+	repeated SceneInfo scenes_info = 1;
 }
 
+message Ms2GsEnterSceneRespone
+{
+}
 
+//正常或者顶号进入场景
+//断线重连进入场景,断线重连分时间
 service ServerSceneService
 {
-  rpc EnterScene (SceneTestRequest) returns (SceneTestResponse);
+  rpc UpdateCrossMainSceneInfo (UpdateCrossMainSceneInfoRequest) returns (UpdateCrossMainSceneInfoResponse);
+  rpc Ms2GsEnterScene (Ms2GsEnterSceneRequest) returns (Ms2GsEnterSceneRespone);
+  rpc Ms2GsReconnectEnterScene (Ms2GsEnterSceneRequest) returns (Ms2GsEnterSceneRespone);
 }

@@ -1,5 +1,4 @@
-#ifndef COMMON_SRC_SCENE_SERVER_NODE_H_
-#define COMMON_SRC_SCENE_SERVER_NODE_H_
+#pragma once
 
 #include "entt/src/entt/entity/registry.hpp"
 
@@ -16,8 +15,8 @@ struct EnterSceneParam
 
 struct CheckEnterSceneParam
 {
-	common::Guid scene_id_{common::kInvalidGuid };
-	entt::entity enterer_{ entt::null };
+	Guid scene_id_{kInvalidGuid };
+	entt::entity enter_{ entt::null };
 };
 
 struct LeaveSceneParam
@@ -79,4 +78,3 @@ public:
     static  void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
 };
 
-#endif//COMMON_SRC_SCENE_SERVER_NODE_H_

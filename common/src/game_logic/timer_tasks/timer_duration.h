@@ -1,5 +1,4 @@
- #ifndef __DURATION_TIMER_
- #define __DURATION_TIMER_
+#pragma once
  #include <ctime>
 
  #include <cstdint>
@@ -161,4 +160,3 @@
  };
 
 
- #endif // !__DURATION_TIMER_

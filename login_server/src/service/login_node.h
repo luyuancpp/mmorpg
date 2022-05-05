@@ -1,5 +1,4 @@
-#ifndef LOGIN_SERVER_SRC_SERVICE_LOGIN_NODE_H_
-#define LOGIN_SERVER_SRC_SERVICE_LOGIN_NODE_H_
+#pragma once
 #include "login_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/account_player.h"
@@ -14,40 +13,39 @@
 #include "db_node.pb.h"
 #include "ms_node.pb.h"
 ///<<< END WRITING YOUR CODE
-namespace gw2l{
 	///<<< BEGIN WRITING YOUR CODE
 	using common::RedisClientPtr;
 	///<<< END WRITING YOUR CODE
-class LoginServiceImpl : public LoginService{
+class LoginServiceImpl : public gw2l::LoginService{
 public:
 		///<<< BEGIN WRITING YOUR CODE
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
 		using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
-		using ConnectionEntityMap = std::unordered_map<common::Guid, common::EntityPtr>;
-		using LoginStubl2ms = common::RpcStub<msservice::MasterNodeService_Stub>;
-		using LoginStubl2db = common::RpcStub<dbservice::DbService_Stub>;
+		using ConnectionEntityMap = std::unordered_map<Guid, EntityPtr>;
+		using LoginStubl2ms = RpcStub<msservice::MasterNodeService_Stub>;
+		using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 
 		LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 			LoginStubl2db& l2db_login_stub);
 
 		void set_redis_client(RedisClientPtr& p) { redis_ = p; }
 
-		using LoginRpcReplied = std::shared_ptr< common::RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
+		using LoginRpcReplied = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
 		void LoginAccountDbReplied(LoginRpcReplied d);
 
-		using LoginMasterRP = std::shared_ptr<common::RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
+		using LoginMasterRP = std::shared_ptr<RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
 		void LoginAccountMSReplied(LoginMasterRP d);
 
-		using CreatePlayerRpcReplied = std::shared_ptr<common::RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
+		using CreatePlayerRpcReplied = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
 		void CreatePlayerDbReplied(CreatePlayerRpcReplied d);
 
-		using EnterGameDbRpcReplied = std::shared_ptr<common::RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
+		using EnterGameDbRpcReplied = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
 		void EnterGameDbReplied(EnterGameDbRpcReplied d);
 
-		using EnterGameMSRpcReplied = std::shared_ptr<common::RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
-		void EnterMSReplied(EnterGameMSRpcReplied d);
+		using EnterGameMSRpcReplied = std::shared_ptr<RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
+		void EnterMsReplied(EnterGameMSRpcReplied d);
 
-		void EnterMS(common::Guid guid,
+		void EnterMS(Guid guid,
 			uint64_t connection_id,
 			::gw2l::EnterGameResponse* response,
 			::google::protobuf::Closure* done);
@@ -87,5 +85,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace gw2l
-#endif//LOGIN_SERVER_SRC_SERVICE_LOGIN_NODE_H_

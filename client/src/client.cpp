@@ -6,8 +6,6 @@
 
 entt::registry::entity_type gAllFinish;
 
-using namespace common;
-
 void PlayerClient::onDisConenction()
 {
     auto& c = reg.get<uint32_t>(gAllFinish);

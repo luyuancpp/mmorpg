@@ -9,11 +9,6 @@
 #include "comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
-using namespace common;
-namespace dbservice{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
 void DbServiceImpl::Login(::google::protobuf::RpcController* controller,
     const dbservice::LoginRequest* request,
@@ -76,4 +71,3 @@ void DbServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 ///<<<rpc end
-}// namespace dbservice

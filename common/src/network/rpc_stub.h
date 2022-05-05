@@ -1,5 +1,4 @@
-#ifndef SRC_SERVER_RPCCLIENT_RPC_STUB_H_
-#define SRC_SERVER_RPCCLIENT_RPC_STUB_H_
+#pragma once
 
 #include <google/protobuf/empty.pb.h>
 
@@ -12,8 +11,7 @@
 
 #include "common.pb.h"
 
-namespace common
-{
+
 template<typename StubClass>
 class RpcStub :  public Receiver<RpcStub<StubClass>>
 {
@@ -40,6 +38,23 @@ public:
         ((*stub_).*stub_method)(nullptr,
             &method_param->s_rq_,
             method_param->s_rp_,
+            NewCallback(object, method, method_param));
+    }
+
+    template<typename MethodParam, typename Class, typename StubMethod>
+    void CallMethodByObj(void (Class::* method)(MethodParam),
+        MethodParam& method_param,
+        Class* object,
+        StubMethod stub_method)
+    {
+        if (nullptr == stub_)
+        {
+            LOG_ERROR << "Server Disconnected";
+            return;
+        }
+        ((*stub_).*stub_method)(nullptr,
+            &method_param.s_rq_,
+            method_param.s_rp_,
             NewCallback(object, method, method_param));
     }
 
@@ -108,6 +123,3 @@ private:
     StubPtr stub_;
 };
 
-}//namespace common
-
-#endif//SRC_SERVER_RPCCLIENT_RPC_STUB_H_

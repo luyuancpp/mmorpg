@@ -17,12 +17,11 @@
 
 #include "login_node.pb.h"
 
-using namespace common;
 using namespace c2gw;
 
 
-std::unordered_set<common::Guid> g_connected_ids;
-common::ServerSequence g_server_sequence_;
+std::unordered_set<Guid> g_connected_ids;
+ServerSequence g_server_sequence_;
 
 extern std::unordered_set<uint32_t> g_open_player_msgids;
 
@@ -58,6 +57,10 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         //断了线之后不能把消息串到别人的地方，串话
         //如果我没登录就发送其他协议到master game server 怎么办
         auto it = g_client_sessions_->find(conn_id);
+        if (it == g_client_sessions_->end())
+        {
+            return;
+        }
         auto guid = it->second.guid_;        
         {
 			gw2l::DisconnectRequest request;
@@ -66,7 +69,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         }
         // master
         {
-            if (guid != common::kInvalidGuid)
+            if (guid != kInvalidGuid)
             {
 				msservice::DisconnectRequest request;
                 request.set_gate_node_id(g_gateway_server->gate_node_id());
@@ -159,13 +162,8 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
 {
-    //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断  
-    auto& resp_ = cp->s_rp_;
-    if (resp_->error().error_no() == kRetOK)//进入游戏有错误，直接返回给客户端
-    {
-        return;
-    }      
-	cp->c_rp_.mutable_error()->set_error_no(resp_->error().error_no());
+    //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断   
+	cp->c_rp_.mutable_error()->CopyFrom(cp->s_rp_->error());
 	codec_.send(cp->client_conn_, cp->c_rp_);
 	return;
 }

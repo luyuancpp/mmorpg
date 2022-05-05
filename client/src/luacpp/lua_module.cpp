@@ -7,7 +7,6 @@
 
 #include "c2gw.pb.h"
 
-using namespace common;
 using namespace c2gw;
 
 struct PlayerId {
@@ -16,10 +15,7 @@ public:
 };
 thread_local uint64_t PlayerId::guid = 100;
 
-namespace common
-{
-    void pb2sol2();
-}
+void pb2sol2();
 
 void InitLua()
 {
@@ -32,7 +28,7 @@ void InitLua()
         "guid",
         sol::var(PlayerId::guid));
 
-    auto contents = File2String("script/client.lua");
+    auto contents = common::File2String("script/client.lua");
     auto r = g_lua.script(contents);
     if (!r.valid())
     {

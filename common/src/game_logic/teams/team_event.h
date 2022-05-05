@@ -1,12 +1,9 @@
-#ifndef COMMON_SRC_TEAM_TEAM_EVENT_H
-#define COMMON_SRC_TEAM_TEAM_EVENT_H
+#pragma once
 
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "src/common_type/common_type.h"
 
-namespace common
-{
 struct TeamEvent
 {
     TeamEvent(entt::entity team_id, Guid guid)
@@ -47,6 +44,3 @@ struct AppointLeaderEvent
     Guid current_leader_guid_{ kInvalidGuid };
     Guid new_leader_guid_{ kInvalidGuid };
 };
-}
-
-#endif // !COMMON_SRC_TEAM_TEAM_EVENT_H

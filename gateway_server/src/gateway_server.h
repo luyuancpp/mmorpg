@@ -24,11 +24,11 @@ using namespace muduo;
 using namespace muduo::net;
 
 
-class GatewayServer : noncopyable, public common::Receiver<GatewayServer>
+class GatewayServer : noncopyable, public Receiver<GatewayServer>
 {
 public:
-    using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
-    using RpcStubMsNode = common::RpcStub<msservice::MasterNodeService_Stub>;
+    using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
+    using RpcStubMsNode = RpcStub<msservice::MasterNodeService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GatewayServer(EventLoop* loop)
@@ -39,7 +39,7 @@ public:
     { }
 
     RpcStubMsNode& gw2ms_stub() { return gw2ms_stub_; }
-    gwservice::GwNodeServiceImpl& node_service_impl() { return node_service_impl_; }
+    GwNodeServiceImpl& node_service_impl() { return node_service_impl_; }
     inline uint32_t gate_node_id()const { return serverinfo_data_.gateway_info().id(); }
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
@@ -48,14 +48,14 @@ public:
 
     void Init();
 
-    using ServerInfoRpcClosure = common::NormalClosure<deploy::ServerInfoRequest,
+    using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
         deploy::ServerInfoResponse>;
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void StartServer(ServerInfoRpcRC cp);
 
     void ConnectLogin(const login_server_db& login_addr);
 
-    void receive(const common::OnConnected2ServerEvent& es);
+    void receive(const OnConnected2ServerEvent& es);
 
 private:
     void OnConnection(const TcpConnectionPtr& conn)
@@ -81,13 +81,13 @@ private:
 
     servers_info_data serverinfo_data_;
 
-    common::RpcClientPtr deploy_session_;
-    deploy::DeployStub deploy_stub_;
+    RpcClientPtr deploy_session_;
+    DeployStub deploy_stub_;
 
-    common::RpcClientPtr master_session_;
+    RpcClientPtr master_session_;
     RpcStubMsNode gw2ms_stub_;
 
-    gwservice::GwNodeServiceImpl node_service_impl_;
+    GwNodeServiceImpl node_service_impl_;
 };
 
 extern GatewayServer* g_gateway_server;

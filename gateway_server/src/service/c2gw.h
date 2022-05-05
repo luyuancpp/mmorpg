@@ -21,8 +21,8 @@ using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
 
-extern std::unordered_set<common::Guid> g_connected_ids;
-extern common::ServerSequence g_server_sequence_;
+extern std::unordered_set<Guid> g_connected_ids;
+extern ServerSequence g_server_sequence_;
 
 template <typename ClientResponse, typename ServerRequest, typename ServerResponse>
 struct ClosureReplied
@@ -32,12 +32,12 @@ struct ClosureReplied
 		client_conn_(cc),
         conn_id_(boost::any_cast<uint64_t>(client_conn_->getContext())) {}
     ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_connected_ids.erase(conn_id_); } }
-    inline common::Guid conn_id()const { return conn_id_; }
+    inline Guid conn_id()const { return conn_id_; }
 	ClientResponse c_rp_;
 	ServerRequest s_rq_;
 	ServerResponse* s_rp_{ nullptr };
 	const muduo::net::TcpConnectionPtr client_conn_;
-    common::Guid conn_id_{ common::kInvalidGuid };
+    Guid conn_id_{ kInvalidGuid };
 };
 
 using LoginRequestPtr = std::shared_ptr<LoginRequest> ;
@@ -49,7 +49,7 @@ using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 class ClientReceiver : muduo::noncopyable
 {
 public:
-    using RpcStubgw2l = common::RpcStub<gw2l::LoginService_Stub>;
+    using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 

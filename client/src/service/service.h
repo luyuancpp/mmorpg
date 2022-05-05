@@ -1,5 +1,4 @@
-#ifndef CLIENT_SRC_SERVICE_SERVICE_H_
-#define CLIENT_SRC_SERVICE_SERVICE_H_
+#pragma once
 
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/TcpClient.h"
@@ -16,8 +15,6 @@
 using namespace muduo;
 using namespace muduo::net;
 using namespace c2gw;
-using namespace clientplayer;
-
 
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
 using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;
@@ -29,7 +26,7 @@ using EnterSeceneS2CPtr = std::shared_ptr<EnterSeceneS2C>;
 
 struct AutoLuaPlayer
 {
-	void operator()(sol::state_view* v) { common::g_lua.set("player", sol::lua_nil); }
+	void operator()(sol::state_view* v) { g_lua.set("player", sol::lua_nil); }
 };
 
 using AutoLuaPlayerPtr = std::unique_ptr<sol::state_view, AutoLuaPlayer>;
@@ -72,7 +69,7 @@ public:
         const EnterSeceneS2CPtr& message,
         muduo::Timestamp);
     
-    void EnterGame(common::Guid guid);
+    void EnterGame(Guid guid);
 
 private:
     void DisConnect();
@@ -84,7 +81,6 @@ private:
 
     uint64_t guid_{ 0 };
     uint64_t id_{ 0 };
-    common::TimerTask timer_task_;
+    TimerTask timer_task_;
 };
 
-#endif//CLIENT_SRC_SERVICE_SERVICE_H_

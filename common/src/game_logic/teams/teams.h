@@ -1,6 +1,4 @@
-#ifndef COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_
-#define COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_
-
+#pragma once
 #include <unordered_map>
 
 #include "src/common_type/common_type.h"
@@ -11,8 +9,6 @@
 
 #include "team.h"
 
-namespace common
-{
 class Teams : public Receiver<Teams>
 {
 public:
@@ -58,6 +54,4 @@ private:
     EventManagerPtr emp_;
     entt::entity my_entity_id_{};
 };
-}//namespace common
-#endif // COMMON_SRC_GAME_LOGIC_TEAM_TEAMS_H_
 
