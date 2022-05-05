@@ -3,8 +3,6 @@
 #include "src/return_code/error_code.h"
 #include "src/game_logic/login_state/login_state_machine.h"
 
-using namespace common;
-
 TEST(LoginStateMachineTest, LoginRepetition)
 {
     LoginStateMachine lsm;
@@ -21,7 +19,7 @@ TEST(LoginStateMachineTest, LoginNoPlayer)
     EXPECT_EQ(kRetOK, lsm.Login());
     lsm.OnEmptyPlayer();
     EXPECT_EQ(kRetLoignWatingEnterGame, lsm.Login());
-    EXPECT_EQ(kRetLoginNotPlayer, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginPlayerGuidError, lsm.EnterGame());
     EXPECT_EQ(kRetOK, lsm.CreatePlayer());
     lsm.WaitingEnterGame();
     EXPECT_EQ(kRetOK, lsm.EnterGame());
@@ -33,7 +31,7 @@ TEST(LoginStateMachineTest, LoginNoPlayerCreateFull)
     LoginStateMachine lsm;
     EXPECT_EQ(kRetOK, lsm.Login());
     lsm.OnEmptyPlayer();
-    EXPECT_EQ(kRetLoginNotPlayer, lsm.EnterGame());
+    EXPECT_EQ(kRetLoginPlayerGuidError, lsm.EnterGame());
     EXPECT_EQ(kRetOK, lsm.CreatePlayer());
     EXPECT_EQ(kRetLoignCreatingPlayer, lsm.CreatePlayer());
     EXPECT_EQ(kRetLoignCreatingPlayer, lsm.EnterGame());
