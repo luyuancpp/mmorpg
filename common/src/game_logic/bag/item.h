@@ -7,7 +7,7 @@
 #include "src/pb/pbc/component_proto/item_base.pb.h"
 
 extern thread_local entt::registry item_reg;
-extern thread_local common::ServerSequence g_server_sequence;
+extern thread_local ServerSequence g_server_sequence;
 
 class ItemEntity
 {

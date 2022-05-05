@@ -5,8 +5,6 @@
 #include "src/game_logic/bag/bag.h"
 #include "src/return_code/error_code.h"
 
-using namespace common;
-
 TEST(BagTest, NullItem)
 {
     Bag bag;
@@ -253,7 +251,7 @@ TEST(BagTest, AdequateItem)
     uint32_t config_id1 = 1;
     uint32_t config_id2 = 2;
     uint32_t config_id11 = 11;
-    common::UInt32UInt32UnorderedMap adequate_item{ {config_id10 , 1} };
+    UInt32UInt32UnorderedMap adequate_item{ {config_id10 , 1} };
     EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//¿Õ±³°ü²âÊÔ
     CreateItemParam p;
     p.item_base_db.set_config_id(config_id10);
@@ -591,8 +589,8 @@ TEST(BagTest, Neaten400_1)
     std::size_t remain_sz = 100;
     EXPECT_EQ(grid_sz + 2, bag.item_size());
     EXPECT_EQ(grid_sz + 2, bag.pos_size());   
-    common::UInt32Set pos999;
-    common::UInt32Set pos100;
+    UInt32Set pos999;
+    UInt32Set pos100;
     for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
     {
         if (item_statck_max_sz == bag.GetItemByBos(i)->size())
