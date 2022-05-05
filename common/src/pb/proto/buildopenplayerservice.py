@@ -53,22 +53,22 @@ def gen(readfilename, filename):
         file.write(newstr)
 
 def md5copy(filename, writedir):
-        if not filename.endswith("open_service.cpp"):
-            return
-        gennewfilename = servicedir + filename
-        filenamemd5 = gennewfilename + '.md5'
-        error = None
-        emptymd5 = False
-        if  not os.path.exists(filenamemd5):
-            emptymd5 = True
-        else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        fullfilename = writedir + '/' + filename
-        if error == None and os.path.exists(fullfilename) and emptymd5 == False:
-            return
-        print("copy %s ---> %s" % (gennewfilename, fullfilename))
-        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-        shutil.copy(gennewfilename, fullfilename)
+    if not filename.endswith("open_service.cpp"):
+        return
+    gennewfilename = servicedir + filename
+    filenamemd5 = gennewfilename + '.md5'
+    error = None
+    emptymd5 = False
+    if  not os.path.exists(filenamemd5):
+        emptymd5 = True
+    else:
+        error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
+    fullfilename = writedir + '/' + filename
+    if error == None and os.path.exists(fullfilename) and emptymd5 == False:
+        return
+    print("copy %s ---> %s" % (gennewfilename, fullfilename))
+    md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+    shutil.copy(gennewfilename, fullfilename)
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
         for filename in filenames:        
