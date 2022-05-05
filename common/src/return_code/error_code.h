@@ -54,11 +54,10 @@ enum  EnumCode : uint32_t
     kRetTeamDismissNotLeader = 5014,
 
     //mission
-    RET_MISSION_ID_REPTEATED = 6000,
-    RET_MISSION_TYPE_REPTEATED = 6001,
-    RET_MISSION_NO_CONDITION = 6002,
-    RET_MISSION_COMPLETE = 6003,
-    RET_MISSION_GET_REWARD_NO_MISSION_ID = 6004,
+    kRetMissionIdRepeated = 6000,
+    kRetMisionTypeRepeated = 6001,
+    kRetMissionComplete = 6002,
+    kRetMissionGetRewardNoMissionId = 6003,
 
     //bag 
     kRetBagDeleteItemHasnotGuid = 7000,
