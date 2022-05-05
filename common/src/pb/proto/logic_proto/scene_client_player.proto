@@ -1,23 +1,31 @@
 syntax = "proto3";
-package clientplayer;
 import "common.proto";
+import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
 
-message SeceneTestRequest
+message EnterSeceneC2SRequest
 {
+  SceneInfo scene_info = 1;
 }
 
-message SeceneTestResponse
+message EnterSeceneC2SResponse
 {
 	ClientError error = 1;
 }
 
 message EnterSeceneS2C
 {
+  SceneInfo scene_info = 1;
 }
 
-service PlayerSceneService 
+message SceneInfoS2C
 {
-  rpc EnterScene (SeceneTestRequest) returns (SeceneTestResponse);
-  rpc EnterSceneNotify (EnterSeceneS2C) returns (EnterSeceneS2C);
+  repeated SceneInfo scene_info = 1;
+}
+
+service ClientPlayerSceneService 
+{
+  rpc EnterSceneC2S (EnterSeceneC2SRequest) returns (EnterSeceneC2SResponse);
+  rpc PushEnterSceneS2C (EnterSeceneS2C) returns (EnterSeceneS2C);
+  rpc PushSceneInfoS2C (SceneInfoS2C) returns (SceneInfoS2C);
 }

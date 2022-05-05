@@ -3,15 +3,10 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-using namespace common;
-namespace normal{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
-void ServerTeamServiceImpl::EnterScene(::google::protobuf::RpcController* controller,
-    const normal::TeamTestRequest* request,
-    normal::TeamTestResponse* response,
+void NormalS2STeamServiceImpl::EnterScene(::google::protobuf::RpcController* controller,
+    const ::TeamTestS2SRequest* request,
+    ::TeamTestS2SRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -20,4 +15,3 @@ void ServerTeamServiceImpl::EnterScene(::google::protobuf::RpcController* contro
 }
 
 ///<<<rpc end
-}// namespace normal

@@ -26,8 +26,8 @@ rgservicedir = '../../../../region_server/src/service/logic/'
 msservicedir = '../../../../master_server/src/service/logic/'
 logicprotodir = './logic_proto/'
 tabstr = '    '
-cpprpcpart = 2
-cppmaxpart = 4
+cpprpcpart = 1
+cppmaxpart = 3
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/'
 
@@ -93,10 +93,9 @@ def gencpprpcfunbegin(rpcindex):
 
 def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
-def namespacebegin():
-    return 'namespace ' + local.pkg + '{\n'
+
 def classbegin():
-    return 'class ' + local.service + 'Impl : public ' + local.service + '{\npublic:\n'  
+    return 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
 def emptyfun():
     return ''
 
@@ -115,17 +114,13 @@ def getpbdir(filename, writedir):
         return 'src/pb/pbc/logic_proto/'
     return ''
 
-def genheadfile(filename, writedir):
-    
-    headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
-    hfullfilename = writedir + '/' + getprevfilename(filename, writedir) + filename.replace('.proto', '.h')
-    folder_path, local.hfilename = os.path.split(hfullfilename)    
-    newheadfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.proto', '.h')
-    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_'
-    headdefine += filename.replace('.proto', '').upper().replace('/', '_').replace('.', '').upper().strip('_')
-    newstr = '#ifndef ' + headdefine + '_H_\n'
-    newstr += '#define ' + headdefine + '_H_\n'
-    newstr += '#include "' + getpbdir(filename, writedir) + local.hfilename.replace('.h', '') + '.pb.h"\n'
+def genheadfile(fullfilename, writedir):
+    filename = fullfilename.replace(logicprotodir, '').replace('.proto', '.h') 
+    headfun = [emptyfun, emptyfun, classbegin, genheadrpcfun]
+    hfullfilename = writedir +  getprevfilename(fullfilename, writedir) + filename
+    newheadfilename = servicedir +  getprevfilename(fullfilename, writedir) +  filename
+    newstr = '#pragma once\n'
+    newstr += '#include "' + getpbdir(fullfilename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
     try:
         with open(hfullfilename,'r+', encoding='utf-8') as file:
             part = 0
@@ -133,7 +128,7 @@ def genheadfile(filename, writedir):
             skipheadline = 0 
             partend = 0
             for fileline in file:
-                if skipheadline < 3 :
+                if skipheadline < 2 :
                     skipheadline += 1
                     continue
                 if fileline.find(yourcodebegin) >= 0:
@@ -157,21 +152,21 @@ def genheadfile(filename, writedir):
                     break
 
     except FileNotFoundError:
-        for i in range(0, 4) :
+        for i in range(0, 2) :
             if i > 0:
                 newstr += yourcode()
             newstr += headfun[i]()
 
-    newstr += '};\n}// namespace ' + local.pkg + '\n'
-    newstr += '#endif//' + headdefine + '_H_\n'
+    newstr += '};'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(filename, writedir):
+def gencppfile(fullfilename, writedir):
     global cppmaxpart
-    cppfilename = writedir  + getprevfilename(filename, writedir) + filename.replace('.proto', '.cpp').replace(logicprotodir, '')
-    newcppfilename = servicedir + getprevfilename(filename, writedir) + local.hfilename.replace('.h', '.cpp')
-    newstr = '#include "' + getprevfilename(filename, writedir) + local.hfilename + '"\n'
+    filename = fullfilename.replace(logicprotodir, '').replace('.proto', '.cpp')
+    cppfilename = writedir  + getprevfilename(fullfilename, writedir) + filename
+    newcppfilename = servicedir + getprevfilename(fullfilename, writedir) + filename
+    newstr = '#include "' + getprevfilename(fullfilename, writedir) + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
@@ -194,9 +189,6 @@ def gencppfile(filename, writedir):
                     owncode = 0
                     newstr += fileline + '\n'
                     part += 1
-                    if part == 1 :
-                        newstr += 'using namespace common;\n'
-                        newstr += namespacebegin()
                     continue     
                 elif part == cpprpcpart:
                     if fileline.find(rpcbegin) >= 0:
@@ -234,9 +226,6 @@ def gencppfile(filename, writedir):
                     break
     except FileNotFoundError:
             newstr += yourcode() + '\n'
-            newstr += 'using namespace common;\n'
-            newstr += namespacebegin()
-            newstr += yourcode() + '\n'
             serviceidx = 0
             newstr += rpcbegin + '\n'
             while serviceidx < len(local.rpcarry) :
@@ -245,7 +234,6 @@ def gencppfile(filename, writedir):
                 newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
                 serviceidx += 1 
             newstr += rpcend + '\n'
-    newstr += '}// namespace ' + local.pkg + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 

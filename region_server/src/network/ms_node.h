@@ -15,7 +15,7 @@
 
 struct MsNode
 {
-	using MsStubNode = common::RpcStub<msservice::MasterNodeService_Stub>;
+	using MsStubNode = RpcStub<msservice::MasterNodeService_Stub>;
 	MsNode(const muduo::net::TcpConnectionPtr& conn)
 		: session_(conn) {}
 
@@ -23,7 +23,7 @@ struct MsNode
 
 	MsStubNode ms_stub_;
 	NodeInfo node_info_;
-	common::RpcServerConnection session_;
+	RpcServerConnection session_;
 };
 using MsNodePtr = std::shared_ptr<MsNode>;
 using MsNodeWPtr = std::weak_ptr<MsNode>;

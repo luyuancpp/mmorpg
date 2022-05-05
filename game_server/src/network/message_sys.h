@@ -8,10 +8,10 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/game_registry.h"
 
-void Send2Player(const google::protobuf::Message& message, common::Guid player_id);
+void Send2Player(const google::protobuf::Message& message, Guid player_id);
 void Send2Player(const google::protobuf::Message& message, entt::entity player);
-void Send2Player(const google::protobuf::Message& message, common::EntityPtr& entity);
-void Send2MsPlayer(const google::protobuf::Message& message, common::Guid player_id);
+void Send2Player(const google::protobuf::Message& message, EntityPtr& entity);
+void Send2MsPlayer(const google::protobuf::Message& message, Guid player_id);
 void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player);
 void Send2Ms(const google::protobuf::Message& messag);
 void Send2Gate(const google::protobuf::Message& messag);

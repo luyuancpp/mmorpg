@@ -1,10 +1,7 @@
-#ifndef COMMON_SRC_GAME_ECS_GAME_REGISTRY_H_
-#define COMMON_SRC_GAME_ECS_GAME_REGISTRY_H_
+#pragma once
 
 #include "entt/src/entt/entity/registry.hpp"
 
-namespace common
-{
 extern thread_local entt::registry reg;
 entt::entity& error_entity();
 entt::entity& op_enitty();
@@ -20,7 +17,6 @@ public:
 private:
 	std::shared_ptr<entt::entity> entity_;
 };
-}//namespace common
 
 namespace entt
 {
@@ -31,5 +27,3 @@ namespace entt
 
 entt::entity& global_entity();
 
-
-#endif//COMMON_SRC_GAME_ECS_GAME_REGISTRY_H_

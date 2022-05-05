@@ -8,18 +8,13 @@
 #include "src/deploy_variable.h"
 #include "src/return_code/error_code.h"
 
+void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
+	::region_server_db* response)
+{
+	std::string where_case = std::to_string(region_id) + " = id  ";
+	db_->LoadOne(*response, where_case);
+}
 ///<<< END WRITING YOUR CODE
-
-using namespace common;
-namespace deploy{
-	///<<< BEGIN WRITING YOUR CODE
-	void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
-		::region_server_db* response)
-	{
-		std::string where_case = std::to_string(region_id) + " = id  ";
-		db_->LoadOne(*response, where_case);
-	}
-	///<<< END WRITING YOUR CODE
 
 	///<<<rpc begin
 void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller,
@@ -106,4 +101,3 @@ void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller
 }
 
 	///<<<rpc end
-}// namespace deploy

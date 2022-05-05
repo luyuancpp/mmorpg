@@ -7,8 +7,6 @@
 
 #include "src/pb/pbc/component_proto/scene_comp.pb.h"
 
-using namespace common;
-
 static const std::size_t kMaxMainScenePlayer = 1000;
 
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
@@ -21,7 +19,7 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
     return it->second.size();
 }
 
-entt::entity ScenesSystem::get_scene(common::Guid scene_id)
+entt::entity ScenesSystem::get_scene(Guid scene_id)
 {
     auto it = scenes_map_.find(scene_id);
     if (it == scenes_map_.end())
@@ -157,7 +155,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
         return;
     }
     reg.get<ScenePlayers>(scene_entity).emplace(param.enterer_);
-    reg.emplace<common::SceneEntity>(param.enterer_, scene_entity);
+    reg.emplace<SceneEntity>(param.enterer_, scene_entity);
     auto p_server_data = reg.try_get<GsDataPtr>(scene_entity);
     if (nullptr == p_server_data)
     {
@@ -169,10 +167,10 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 {
     auto leave_player = param.leave_player_;
-    auto& player_scene_entity = reg.get<common::SceneEntity>(leave_player);
+    auto& player_scene_entity = reg.get<SceneEntity>(leave_player);
     auto scene_entity = player_scene_entity.scene_entity();
     reg.get<ScenePlayers>(scene_entity).erase(leave_player);
-    reg.remove<common::SceneEntity>(leave_player);
+    reg.remove<SceneEntity>(leave_player);
     auto p_server_data = reg.try_get<GsDataPtr>(scene_entity);
     if (nullptr == p_server_data)
     {
@@ -202,6 +200,7 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
 
     if (entt::null == server_scene_enitity)
     {
+        //todo 
         return;
     }
 

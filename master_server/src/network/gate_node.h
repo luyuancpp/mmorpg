@@ -8,7 +8,7 @@
 #include "src/network/server_component.h"
 
 #include "common.pb.h"
-
+#include "gw_node.pb.h"
 
 struct GateNode
 {
@@ -18,7 +18,7 @@ struct GateNode
 	inline uint32_t node_id() const { return node_info_.node_id(); }
 
 	NodeInfo node_info_;
-	common::RpcServerConnection session_;
+	RpcServerConnection session_;
 };
 using GateNodePtr = std::shared_ptr<GateNode>;
 using GateNodeWPtr = std::weak_ptr<GateNode>;

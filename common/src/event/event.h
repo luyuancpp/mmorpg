@@ -15,8 +15,7 @@
 #include <utility>
 #include <vector>
 
-namespace common 
-{
+
 using Family = uint64_t;
 
 /// Used internally by the EventManager.
@@ -293,7 +292,5 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
  private:     
      FamilyReceviers family_receviers_;
 };
-
-}  // namespace common
 
 #endif // COMMON_SRC_EVENT_EVENT_EVENT_H_

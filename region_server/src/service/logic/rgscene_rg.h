@@ -1,5 +1,4 @@
-#ifndef REGION_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_SCENE_RG_H_
-#define REGION_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_SCENE_RG_H_
+#pragma once
 #include "src/pb/pbc/logic_proto/scene_rg.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include <unordered_map>
@@ -8,13 +7,12 @@
 
 #include "src/common_type/common_type.h"
 ///<<< END WRITING YOUR CODE
-namespace regionservcie{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class RgServiceImpl : public RgService{
+class RgServiceImpl : public regionservcie::RgService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
-	using PlayerListMap = std::unordered_map<common::Guid, entt::entity>;
+	using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 private:
 	PlayerListMap  players_;
 ///<<< END WRITING YOUR CODE
@@ -34,6 +32,9 @@ public:
         regionservcie::EnterCrossRoomSceneSceneResponse* response,
         ::google::protobuf::Closure* done)override;
 
+    void EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
+        const regionservcie::EnterCrossMainSceneWeightRoundRobinRequest* request,
+        regionservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
+        ::google::protobuf::Closure* done)override;
+
 };
-}// namespace regionservcie
-#endif//REGION_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_SCENE_RG_H_

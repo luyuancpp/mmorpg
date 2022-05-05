@@ -1,18 +1,16 @@
-#ifndef DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_
-#define DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_
+#pragma once
 #include "deploy_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/mysql_wrapper/mysql_database.h"
 
 ///<<< END WRITING YOUR CODE
-namespace deploy{
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
-class DeployServiceImpl : public DeployService{
+class DeployServiceImpl : public deploy::DeployService{
 public:
 		///<<< BEGIN WRITING YOUR CODE
 		using ServerId = uint32_t;
-		using MysqlClientPtr = std::shared_ptr<common::MysqlDatabase>;
+		using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
 		using GSMap = std::unordered_map<uint32_t, ::game_server_db>;
 
 		void set_player_mysql_client(MysqlClientPtr& ptr)
@@ -53,5 +51,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace deploy
-#endif//DEPLOY_SERVER_SRC_SERVICE_DEPLOY_NODE_H_

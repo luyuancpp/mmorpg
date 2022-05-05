@@ -86,7 +86,8 @@ void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
     request.set_gs_node_id(reg.get<GsDataPtr>(gs)->node_id());
-    reg.get<GateNodePtr>(gate)->session_.Send(request);
+	auto& gate_session = reg.get<GateNodePtr>(gate)->session_;
+	gate_session.Send(request);
 }
 
 void MasterServer::AddGsNode(entt::entity gs)

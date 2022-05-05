@@ -21,13 +21,8 @@
 using namespace muduo;
 using namespace muduo::net;
 
-using GsStubPtr = std::unique_ptr <common::RpcStub<gsservice::GsService_Stub>>;
-using MsStubPtr = std::unique_ptr <common::RpcStub<msservice::MasterNodeService_Stub>>;
-///<<< END WRITING YOUR CODE
-
-using namespace common;
-namespace regionservcie{
-///<<< BEGIN WRITING YOUR CODE
+using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
+using MsStubPtr = std::unique_ptr <RpcStub<msservice::MasterNodeService_Stub>>;
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -138,6 +133,38 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE EnterCrossMainScene
+	auto scene = ScenesSystem::GetSingleton().get_scene(request->scene_id());
+	if (entt::null == scene)
+	{
+		response->mutable_error()->set_error_no(kRetEnterScenetWeightRoundRobinMainScene);
+		return;
+	}
+	auto it = players_.emplace(request->player_id(), reg.create());
+	if (!it.second)
+	{
+		response->mutable_error()->set_error_no(kRetEnterSceneCreatePlayer);
+		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
+		return;
+	}
+	CheckEnterSceneParam csp;
+	csp.scene_id_ = reg.get<Guid>(scene);
+	csp.enter_ = it.first->second;
+	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp));
+
+	EnterSceneParam esp;
+	esp.scene_ = scene;
+	esp.enterer_ = it.first->second;
+	ScenesSystem::GetSingleton().EnterScene(esp);
+///<<< END WRITING YOUR CODE EnterCrossMainScene
+}
+
+void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
+    const regionservcie::EnterCrossMainSceneWeightRoundRobinRequest* request,
+    regionservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE EnterCrossMainSceneWeightRoundRobin
 	GetSceneParam weight_round_robin_scene;
 	weight_round_robin_scene.scene_confid_ = request->scene_confid();
 	auto scene = ServerNodeSystem::GetSingleton().GetWeightRoundRobinMainScene(weight_round_robin_scene);
@@ -146,19 +173,23 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 		response->mutable_error()->set_error_no(kRetEnterScenetWeightRoundRobinMainScene);
 		return;
 	}
-	auto it =  players_.emplace(request->player_id(), reg.create());
+	auto it = players_.emplace(request->player_id(), reg.create());
 	if (!it.second)
 	{
 		response->mutable_error()->set_error_no(kRetEnterSceneCreatePlayer);
 		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
 		return;
 	}
+	CheckEnterSceneParam csp;
+	csp.scene_id_ = reg.get<Guid>(scene);
+	csp.enter_ = it.first->second;
+	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp));
+
 	EnterSceneParam esp;
 	esp.scene_ = scene;
 	esp.enterer_ = it.first->second;
 	ScenesSystem::GetSingleton().EnterScene(esp);
-///<<< END WRITING YOUR CODE EnterCrossMainScene
+///<<< END WRITING YOUR CODE EnterCrossMainSceneWeightRoundRobin
 }
 
 ///<<<rpc end
-}// namespace regionservcie

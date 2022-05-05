@@ -4,7 +4,6 @@
 
 using namespace muduo;
 using namespace muduo::net;
-using namespace database;
 
 int32_t main(int argc, char* argv[])
 {

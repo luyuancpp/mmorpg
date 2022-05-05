@@ -1,5 +1,4 @@
-#ifndef MASTER_SERVER_SRC_SERVICE_MS_NODE_H_
-#define MASTER_SERVER_SRC_SERVICE_MS_NODE_H_
+#pragma once
 #include "ms_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/account_player/ms_account.h"
@@ -9,17 +8,26 @@
 #include "src/network/rpc_closure.h"
 
 #include "gs_node.pb.h"
+#include "gw_node.pb.h"
 ///<<< END WRITING YOUR CODE
-namespace msservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class MasterNodeServiceImpl : public MasterNodeService{
+class MasterNodeServiceImpl : public msservice::MasterNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using AccountMap = std::unordered_map<std::string, MSLoginAccount>;
 
-    using Ms2gsEnterGameRpcRplied = common::NormalClosure<gsservice::EnterGameRequest, gsservice::EnterGameRespone>;
+    using Ms2gsEnterGameRpcRplied = NormalClosure<gsservice::EnterGameRequest, gsservice::EnterGameRespone>;
 	void Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied);
+
+	using Ms2GsCoverPlayerRpcRplied = NormalClosure<gsservice::CoverPlayerRequest, gsservice::CoverPlayerRespone>;
+	void Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied);
+
+    using Ms2GwPlayerEnterGsRpcReplied = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
+    void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied);
+
+    void OnPlayerLongin(entt::entity player);
+    void OnPlayerCover(entt::entity player);//顶号
 private:
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE
@@ -80,5 +88,3 @@ public:
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace msservice
-#endif//MASTER_SERVER_SRC_SERVICE_MS_NODE_H_

@@ -15,7 +15,7 @@ struct GsNode
 	GsNode(const muduo::net::TcpConnectionPtr& conn)
 		: session_(conn){}
 	NodeInfo node_info_;
-	common::RpcServerConnection session_;
+	RpcServerConnection session_;
 };
 
 using GsNodePtr = std::shared_ptr<GsNode>;

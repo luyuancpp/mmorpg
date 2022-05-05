@@ -1,12 +1,10 @@
-#ifndef GATEWAY_SERVER_SRC_SERVICE_GW_NODE_H_
-#define GATEWAY_SERVER_SRC_SERVICE_GW_NODE_H_
+#pragma once
 #include "gw_node.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace gwservice{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class GwNodeServiceImpl : public GwNodeService{
+class GwNodeServiceImpl : public gwservice::GwNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -23,7 +21,7 @@ public:
 
     void PlayerEnterGs(::google::protobuf::RpcController* controller,
         const gwservice::PlayerEnterGsRequest* request,
-        ::google::protobuf::Empty* response,
+        gwservice::PlayerEnterGsResponese* response,
         ::google::protobuf::Closure* done)override;
 
     void PlayerMessage(::google::protobuf::RpcController* controller,
@@ -36,6 +34,9 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
+    void KickConnByMs(::google::protobuf::RpcController* controller,
+        const gwservice::KickConnRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
 };
-}// namespace gwservice
-#endif//GATEWAY_SERVER_SRC_SERVICE_GW_NODE_H_

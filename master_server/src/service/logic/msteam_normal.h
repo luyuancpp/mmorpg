@@ -1,21 +1,17 @@
-#ifndef MASTER_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_TEAM_NORMAL_H_
-#define MASTER_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_TEAM_NORMAL_H_
+#pragma once
 #include "src/pb/pbc/logic_proto/team_normal.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-namespace normal{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class ServerTeamServiceImpl : public ServerTeamService{
+class NormalS2STeamServiceImpl : public ::NormalS2STeamService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
     void EnterScene(::google::protobuf::RpcController* controller,
-        const normal::TeamTestRequest* request,
-        normal::TeamTestResponse* response,
+        const ::TeamTestS2SRequest* request,
+        ::TeamTestS2SRespone* response,
         ::google::protobuf::Closure* done)override;
 
 };
-}// namespace normal
-#endif//MASTER_SERVER_SRC_SERVICE_LOGIC_LOGIC_PROTO_TEAM_NORMAL_H_

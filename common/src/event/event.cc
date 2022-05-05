@@ -1,7 +1,5 @@
-
 #include "event.h"
 
-namespace common {
 
 Family BaseEvent::family_counter_ = 0;
 
@@ -68,4 +66,3 @@ EventManager::~EventManager() {
     }
 }
 
-}  // namespace common

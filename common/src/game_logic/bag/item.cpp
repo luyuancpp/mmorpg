@@ -3,8 +3,6 @@
 thread_local entt::registry item_reg;
 thread_local common::ServerSequence g_server_sequence;
 
-using namespace common;
-
 void BagEnityPtrDeleter(entt::entity* p)
 {
 	item_reg.destroy(*p);

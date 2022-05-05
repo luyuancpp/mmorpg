@@ -10,11 +10,7 @@
 
 using namespace muduo;
 using namespace muduo::net;
-///<<< END WRITING YOUR CODE
 
-using namespace common;
-namespace gw2l{
-///<<< BEGIN WRITING YOUR CODE 
 LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 	LoginStubl2db& l2db_login_stub)
 	: ms_node_stub_(l2ms_login_stub),
@@ -91,12 +87,12 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 	EnterMS(srq.guid(), response->conn_id(), response, done);
 }
 
-void LoginServiceImpl::EnterMSReplied(EnterGameMSRpcReplied d)
+void LoginServiceImpl::EnterMsReplied(EnterGameMSRpcReplied d)
 {
 	connections_.erase(d->s_rq_.conn_id());
 }
 
-void LoginServiceImpl::EnterMS(common::Guid guid,
+void LoginServiceImpl::EnterMS(Guid guid,
 	uint64_t conn_id,
 	::gw2l::EnterGameResponse* response,
 	::google::protobuf::Closure* done)
@@ -112,7 +108,7 @@ void LoginServiceImpl::EnterMS(common::Guid guid,
 	cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
 	cp->s_rq_.set_account(reg.get<std::string>(it->second.entity()));
 	ms_node_stub_.CallMethodString(
-		&LoginServiceImpl::EnterMSReplied,
+		&LoginServiceImpl::EnterMsReplied,
 		cp,
 		this,
 		&msservice::MasterNodeService_Stub::OnLsEnterGame);
@@ -155,7 +151,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	s_reqst.set_login_node_id(g_login_server->login_node_id());
 	s_reqst.set_conn_id(request->conn_id());
 	s_reqst.set_gate_node_id(request->gate_node_id());
-	auto it = connections_.emplace(request->conn_id(), common::EntityPtr());
+	auto it = connections_.emplace(request->conn_id(), EntityPtr());
 	if (it.first != connections_.end())
 	{
 		reg.emplace_or_replace<std::string>(it.first->second.entity(), request->account());
@@ -311,4 +307,3 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 }
 
 	///<<<rpc end
-}// namespace gw2l

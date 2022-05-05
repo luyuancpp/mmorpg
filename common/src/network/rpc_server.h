@@ -53,7 +53,7 @@ class RpcServer
 
   TcpServer server_;
   std::map<std::string, ::google::protobuf::Service*> services_;
-  common::EventManagerPtr emp_;
+  EventManagerPtr emp_;
 };
 
 }  // namespace net

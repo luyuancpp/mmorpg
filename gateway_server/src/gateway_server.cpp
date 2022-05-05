@@ -68,7 +68,7 @@ void GatewayServer::ConnectLogin(const login_server_db& login_info)
     }
     InetAddress login_addr(login_info.ip(), login_info.port());
 	auto& login_node = it.first->second;
-	login_node.login_session_ = std::make_unique<common::RpcClientPtr::element_type>(loop_, login_addr);
+	login_node.login_session_ = std::make_unique<RpcClientPtr::element_type>(loop_, login_addr);
 	login_node.login_stub_ = std::make_unique<LoginNode::LoginStubPtr::element_type>();
 	login_node.login_session_->subscribe<RegisterStubEvent>(*login_node.login_stub_);
     login_node.login_session_->connect();

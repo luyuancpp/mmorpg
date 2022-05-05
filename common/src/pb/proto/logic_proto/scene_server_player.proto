@@ -1,5 +1,4 @@
 syntax = "proto3";
-package serverplayer;
 import "common.proto";
 import "google/protobuf/empty.proto";
 option cc_generic_services = true;

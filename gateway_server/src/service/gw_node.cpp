@@ -13,11 +13,6 @@
 
 ///<<< END WRITING YOUR CODE
 
-using namespace common;
-namespace gwservice{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-
 ///<<<rpc begin
 void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     const gwservice::StartGSRequest* request,
@@ -73,7 +68,7 @@ void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 
 void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controller,
     const gwservice::PlayerEnterGsRequest* request,
-    ::google::protobuf::Empty* response,
+    gwservice::PlayerEnterGsResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -86,10 +81,8 @@ void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* control
 		return;
 	}
 	it->second.guid_ = request->player_id();
-	it->second.gs_node_id_ = request->gs_node_id();
-	c2gw::EnterGameResponse message;
-	message.mutable_error()->set_error_no(kRetOK);
-	g_gateway_server->Send2Client(it->second.conn_, message);
+	it->second.gs_node_id_ = request->gs_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
+
 ///<<< END WRITING YOUR CODE PlayerEnterGs
 }
 
@@ -129,5 +122,16 @@ void GwNodeServiceImpl::GsPlayerService(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE GsPlayerService
 }
 
+void GwNodeServiceImpl::KickConnByMs(::google::protobuf::RpcController* controller,
+    const gwservice::KickConnRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE KickConnByMs
+	g_client_sessions_->erase(request->conn_id());
+	LOG_INFO << "connid be kick " << request->conn_id();
+///<<< END WRITING YOUR CODE KickConnByMs
+}
+
 ///<<<rpc end
-}// namespace gwservice

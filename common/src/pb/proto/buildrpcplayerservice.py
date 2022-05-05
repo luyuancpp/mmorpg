@@ -13,7 +13,6 @@ local.rpcarry = []
 local.servicenames = []
 local.playerservice = ''
 local.service = ''
-local.hfilename = ''
 local.playerservice = ''
 local.playerservicearray = []
 local.openplayerservicearray = []
@@ -27,9 +26,9 @@ yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
 tabstr = '    '
-cpprpcpart = 2
+cpprpcpart = 1
 cppmaxpart = 4
-controller = '(common::EntityPtr& entity'
+controller = '(EntityPtr& entity'
 servicedir = './md5/'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
@@ -47,6 +46,11 @@ filesrcdestpath = {}
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
+def isserverpushrpc(service):
+    if service.find('S2C') >= 0 or service.find('Push')  >= 0 :
+        return True
+    return False
+
 def parsefile(filename):
     local.rpcarry = []
     local.pkg = ''
@@ -56,6 +60,8 @@ def parsefile(filename):
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
+                if isserverpushrpc(fileline) == True :
+                    continue
                 local.rpcarry.append(fileline)
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
@@ -79,6 +85,8 @@ def genheadrpcfun():
     servicestr = 'public:\n'
     local.servicenames = []
     for service in local.rpcarry:
+        if isserverpushrpc(service) == True :
+            continue
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
@@ -90,14 +98,17 @@ def genheadrpcfun():
             line += tabstr + tabstr + local.pkg + '::' + rsp + '* response);\n\n'
         servicestr += line
 
-    servicestr += tabstr + tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
-    servicestr += tabstr + tabstr +  controller.replace('(', '') + ',\n'
-    servicestr += tabstr + tabstr + 'const ::google::protobuf::Message* request,\n'
-    servicestr += tabstr + tabstr + '::google::protobuf::Message* response)override\n'
-    servicestr += tabstr + tabstr + '{\n'
+    servicestr += tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
+    servicestr += tabstr + controller.replace('(', '') + ',\n'
+    servicestr += tabstr + 'const ::google::protobuf::Message* request,\n'
+    servicestr += tabstr + '::google::protobuf::Message* response)override\n'
+    servicestr += tabstr + '{\n'
     servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
     index = 0
     for service in local.rpcarry:
+        if isserverpushrpc(service) == True :
+            index += 1
+            continue
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
         servicestr += tabstr + tabstr + tabstr + s[1] + '(entity,\n'
@@ -116,12 +127,14 @@ def genheadrpcfun():
     servicestr += tabstr + tabstr + tabstr + 'GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";\n'
     servicestr += tabstr + tabstr + 'break;\n'
     servicestr += tabstr + tabstr + '}\n'
-    servicestr += tabstr + tabstr + '}\n'
+    servicestr += tabstr + '}\n'
     return servicestr
 
 def gencpprpcfunbegin(rpcindex):
     servicestr = ''
     s = local.rpcarry[rpcindex]
+    if isserverpushrpc(s) == True :
+        return servicestr
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.playerservice + 'Impl::' + s[1] + controller + ',\n'
     servicestr +=  tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
@@ -134,8 +147,6 @@ def gencpprpcfunbegin(rpcindex):
 
 def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
-def namespacebegin():
-    return 'namespace ' + local.pkg + '{\n'
 def classbegin():
     return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
 def emptyfun():
@@ -152,62 +163,32 @@ def getwritedir(serverstr):
     return writedir
 
 def genheadfile(filename, serverstr):
+    local.servicenames = []
     writedir = getwritedir(serverstr)
-    headfun = [emptyfun, namespacebegin, classbegin, genheadrpcfun]
-    fullfilename = writedir +  filename.replace('.proto', '.h')
-    folder_path, local.hfilename = os.path.split(fullfilename)    
-    newheadfilename = servicedir + serverstr + local.hfilename.replace('.proto', '.h')
-    headdefine = writedir.replace('/', '_').replace('.', '').upper().strip('_') + '_' + filename.replace('.proto', '').upper().replace('/', '_')
-    newstr = '#ifndef ' + headdefine + '_H_\n'
-    newstr += '#define ' + headdefine + '_H_\n'
+    headfun = [classbegin, genheadrpcfun]
+    fullfilename = writedir +  serverstr + filename.replace('.proto', '.h').replace(protodir, '')
+    newheadfilename = servicedir + serverstr + filename.replace('.proto', '.h').replace(protodir, '')
+    if not os.path.exists(newheadfilename)  and os.path.exists(fullfilename):
+        shutil.copy(fullfilename, newheadfilename)
+        return
+    newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
-    newstr += '#include "' + protodir  + local.hfilename.replace('.h', '') + '.pb.h"\n'
-    try:
-        with open(fullfilename,'r+', encoding='utf-8') as file:
-            part = 0
-            owncode = 1 
-            skipheadline = 0 
-            partend = 0
-            for fileline in file:
-                if skipheadline < 4 :
-                    skipheadline += 1
-                    continue
-                if fileline.find(yourcodebegin) >= 0:
-                    owncode = 1
-                    newstr += fileline
-                    continue
-                elif fileline.find(yourcodeend) >= 0:
-                    owncode = 0
-                    partend = 1
-                    newstr += fileline
-                    part += 1
-                    continue
-                if owncode == 1 :
-                    newstr += fileline
-                    continue
-                if part > 0 and part < len(headfun) and owncode == 0 and partend == 1:
-                    newstr += headfun[part]()
-                    partend = 0
-                    continue
-                elif part >= len(headfun):
-                    break
-
-    except FileNotFoundError:
-        for i in range(0, 4) :
-            if i > 0:
-                newstr += yourcode()
-            newstr += headfun[i]()
-    newstr += '};\n}// namespace ' + local.pkg + '\n'
-    newstr += '#endif//' + headdefine + '_H_\n'
+    newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
+    for i in range(0, len(headfun)) :             
+        newstr += headfun[i]()
+    newstr += '};\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def gencppfile(filename, serverstr):
     global cppmaxpart
     writedir = getwritedir(serverstr)
-    cppfilename = writedir  + filename.replace('.proto', '.cpp').replace(protodir, '')
-    newcppfilename = servicedir + serverstr + local.hfilename.replace('.h', '.cpp')
-    newstr = '#include "' + serverstr + local.hfilename + '"\n'
+    cppfilename = writedir  + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
+    newcppfilename = servicedir + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
+    if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
+        shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
+        return
+    newstr = '#include "' +  serverstr + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
     newstr += '#include "src/game_logic/game_registry.h"\n'
     newstr += '#include "src/network/message_sys.h"\n'
     try:
@@ -217,7 +198,6 @@ def gencppfile(filename, serverstr):
             skipheadline = 0 
             serviceidx = 0
             curservicename = ''
-            nextrpcline = 0
             for fileline in file:
                 if skipheadline < 3 :
                     skipheadline += 1
@@ -231,8 +211,6 @@ def gencppfile(filename, serverstr):
                     owncode = 0
                     newstr += fileline + '\n'
                     part += 1
-                    if part == 1 :
-                        newstr += namespacebegin()
                     continue     
                 elif part == cpprpcpart:
                     if fileline.find(rpcbegin) >= 0:
@@ -250,7 +228,6 @@ def gencppfile(filename, serverstr):
                     elif fileline.find(yourcodeend) >= 0 :
                         newstr += yourcodeend + ' ' + curservicename + '\n}\n\n'
                         owncode = 0
-                        nextrpcline = 0
                         serviceidx += 1  
                         continue
                     elif fileline.find(rpcend) >= 0:
@@ -270,17 +247,17 @@ def gencppfile(filename, serverstr):
                     break
     except FileNotFoundError:
             newstr += yourcode() + '\n'
-            newstr += namespacebegin()
-            newstr += yourcode() + '\n'
             serviceidx = 0
             newstr += rpcbegin + '\n'
             while serviceidx < len(local.rpcarry) :
-                newstr += gencpprpcfunbegin(serviceidx)
-                newstr += yourcodebegin + ' ' + local.servicenames[serviceidx] + '\n'
-                newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
-                serviceidx += 1 
-                newstr += rpcend + '\n'
-    newstr += '}// namespace ' + local.pkg + '\n'
+                if isserverpushrpc(local.rpcarry[serviceidx]) == True :
+                    serviceidx += 1 
+                else:
+                    newstr += gencpprpcfunbegin(serviceidx)
+                    newstr += yourcodebegin +  '\n'
+                    newstr += yourcodeend + '\n}\n\n'
+                    serviceidx += 1 
+            newstr += rpcend + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -308,7 +285,7 @@ def parseplayerservcie(filename):
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif fileline.find('service ') >= 0:
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-                local.playerservicearray.append(local.pkg + '.' + local.service)
+                local.playerservicearray.append(local.service)
                 if filename.find(client_player) >= 0:
                     local.openplayerservicearray.append(local.pkg + '.' + local.service)
                 
@@ -323,14 +300,14 @@ def gengsplayerservcielist(filename):
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
-        newstr += 'class ' + service.replace('.', '') + 'Impl : public ' + service.replace('.', '::')  + '{};\n'
+        newstr += 'class ' + service + 'OpenImpl : public '  + service + '{};\n'
     newstr += 'void InitPlayerServcie()\n{\n'
     for service in local.playerservicearray:
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
-        newstr += ', std::make_unique<' + service.split('.')[0] + '::' + service.split('.')[1] + 'Impl>(new '
-        newstr +=  service.replace('.', '') + 'Impl));\n'
+        newstr += ', std::make_unique<' + service + 'Impl>(new '
+        newstr +=  service.replace('.', '') + 'OpenImpl));\n'
     for service in local.openplayerservicearray:
-        newstr += tabstr + 'g_open_player_services.emplace("' + service + '");\n'
+        newstr += tabstr + 'g_open_player_services.emplace("' + service.replace('.', '') + '");\n'
     newstr += '}\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
