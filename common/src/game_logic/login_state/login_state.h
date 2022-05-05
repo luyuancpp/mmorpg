@@ -49,17 +49,14 @@ protected:
 };
 
 //login state interfase
-template <uint32_t ProcessingCode>
+template <uint32_t kCommonErrorCode>
 class LoginStateBase : public IAccountState
 {
 public:
     using IAccountState::IAccountState;
-
-    uint32_t processing()const { return ProcessingCode; }
-
-    virtual uint32_t LoginAccount() override { return processing(); }
-    virtual uint32_t CreatePlayer() override { return processing(); }
-    virtual uint32_t EnterGame()override { return processing(); }
+    virtual uint32_t LoginAccount() override { return kCommonErrorCode; }
+    virtual uint32_t CreatePlayer() override { return kCommonErrorCode; }
+    virtual uint32_t EnterGame()override { return kCommonErrorCode; }
 };
 
 
