@@ -6,24 +6,31 @@
 #include "src/return_code/error_code.h"
 
 
-class NoneState : public LoginStateBase<kRetLoginHadnotLogin>
+class NoneState : public IAccountState
 {
 public:
-    using LoginStateBase::LoginStateBase;
+    using IAccountState::IAccountState;
 
     virtual uint32_t LoginAccount()override
     {
         login_machine_.set_state(kLoginAccountLogining);
         return kRetOK;
     }
+    virtual uint32_t CreatePlayer() override { return kRetLoginHadnotLogin; }
+    virtual uint32_t EnterGame()override { return kRetLoginHadnotLogin; }
+
 
     virtual void WaitingEnterGame()override{}
 };
 
-class LoginState : public LoginStateBase<kRetLoginIng>
+class LoginState : public IAccountState
 {
 public:
-    using LoginStateBase::LoginStateBase;
+    using IAccountState::IAccountState;
+
+    virtual uint32_t LoginAccount() override { return kRetLoginIng; }
+    virtual uint32_t CreatePlayer() override { return kRetLoginIng; }
+    virtual uint32_t EnterGame()override { return kRetLoginIng; }
 
     virtual void OnEmptyPlayer() override 
     {
@@ -31,36 +38,45 @@ public:
     }
 };
 
-class CreatePlayerState : public LoginStateBase<kRetLoignCreatingPlayer>
+class CreatePlayerState : public IAccountState
 {
 public:
-    using LoginStateBase::LoginStateBase;
+    using IAccountState::IAccountState;
+    virtual uint32_t LoginAccount() override { return kRetLoignCreatingPlayer; }
+    virtual uint32_t CreatePlayer() override { return kRetLoignCreatingPlayer; }
+    virtual uint32_t EnterGame()override { return kRetLoignCreatingPlayer; }
 };
 
-class EnterGameState : public LoginStateBase<kRetLoginEnteringGame>
+class EnterGameState : public IAccountState
 {
 public:
-    using LoginStateBase::LoginStateBase;
+    using IAccountState::IAccountState;
+    virtual uint32_t LoginAccount() override { return kRetLoginEnteringGame; }
+    virtual uint32_t CreatePlayer() override { return kRetLoginEnteringGame; }
+    virtual uint32_t EnterGame()override { return kRetLoginEnteringGame; }
     virtual void OnPlaying()override { login_machine_.set_state(kLoignAccountPling ); }
 };
 
-class PlayingState : public LoginStateBase <kRetLoginPlaying>
+class PlayingState : public IAccountState
 {
 public:
-    using LoginStateBase::LoginStateBase;
+    using IAccountState::IAccountState;
+    virtual uint32_t LoginAccount() override { return kRetLoginPlaying; }
+    virtual uint32_t CreatePlayer() override { return kRetLoginPlaying; }
+    virtual uint32_t EnterGame()override { return kRetLoginPlaying; }
 };
 
-class WaitingEnterGameState : public LoginStateBase<kRetLoignWatingEnterGame>
+class WaitingEnterGameState : public IAccountState
 {
 public:
-    using LoginStateBase::LoginStateBase;
+    using IAccountState::IAccountState;
   
+    virtual uint32_t LoginAccount() override { return kRetLoignWatingEnterGame; }
     virtual uint32_t CreatePlayer() override
     {
-        login_machine_.set_state(kLoginAcccountCreatePlayer );
+        login_machine_.set_state(kLoginAcccountCreatePlayer);
         return kRetOK;
     }
-
     virtual uint32_t EnterGame()override
     {
         login_machine_.set_state(kLoginAccountEnterGame );
@@ -68,11 +84,12 @@ public:
     }
 };
 
-class EmptyPlayerState : public LoginStateBase <kRetLoignWatingEnterGame>
+class EmptyPlayerState : public IAccountState
 {
 public:
-    using LoginStateBase::LoginStateBase;
+    using IAccountState::IAccountState;
 
+    virtual uint32_t LoginAccount() override { return kRetLoignWatingEnterGame; }
     virtual uint32_t CreatePlayer() override
     {
         login_machine_.set_state(kLoginAcccountCreatePlayer);
@@ -85,10 +102,12 @@ public:
     }
 };
 
-class FullPlayerState : public LoginStateBase < kRetLoignWatingEnterGame>
+class FullPlayerState : public IAccountState
 {
 public:
-    using LoginStateBase::LoginStateBase;
+    using IAccountState::IAccountState;
+
+    virtual uint32_t LoginAccount() override { return kRetLoignWatingEnterGame; }
     virtual uint32_t CreatePlayer() override
     {
         return kRetLoginAccountPlayerFull;
