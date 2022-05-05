@@ -57,7 +57,7 @@ uint32_t MissionsComp::GetReward(uint32_t missin_id)
     auto it = complete_ids_.mutable_can_reward_mission_id()->find(missin_id);
     if (it == rmid->end())
     {
-        return RET_MISSION_GET_REWARD_NO_MISSION_ID;
+        return kRetMissionGetRewardNoMissionId;
     }
     rmid->erase(missin_id);
     return kRetOK;
@@ -68,11 +68,11 @@ uint32_t MissionsComp::Accept(const AcceptMissionP& param)
     auto mission_id = param.mission_id_;
     if (missions_.missions().count(mission_id) > 0)
     {
-        return RET_MISSION_ID_REPTEATED;
+        return kRetMissionIdRepeated;
     }
     if (complete_ids_.missions().count(mission_id) > 0)
     {
-        return RET_MISSION_COMPLETE;
+        return kRetMissionComplete;
     }
     if (!config_->HasKey(mission_id))
     {
@@ -84,7 +84,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionP& param)
     if (check_type_filter)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
-        CheckCondtion(type_filter_.find(p) != type_filter_.end(), RET_MISSION_TYPE_REPTEATED);
+        CheckCondtion(type_filter_.find(p) != type_filter_.end(), kRetMisionTypeRepeated);
     }
     Mission m;
     m.set_id(mission_id);
