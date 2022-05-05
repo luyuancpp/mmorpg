@@ -24,13 +24,13 @@
     <ClCompile Include="..\..\common\src\redis_client\redis_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\protopb\pbc\c2gw.pb.cc">
+    <ClCompile Include="..\..\common\src\pb\pbc\c2gw.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\protopb\pbc\common.pb.cc">
+    <ClCompile Include="..\..\common\src\pb\pbc\common.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\protopb\pbc\client_logic_common.pb.cc">
+    <ClCompile Include="..\..\common\src\pb\pbc\comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,14 +41,14 @@
     <ClInclude Include="..\..\common\src\redis_client\redis_client.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\protopb\pbc\c2gw.pb.h">
-      <Filter>源文件</Filter>
+    <ClInclude Include="..\..\common\src\pb\pbc\c2gw.pb.h">
+      <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\protopb\pbc\common.pb.h">
-      <Filter>源文件</Filter>
+    <ClInclude Include="..\..\common\src\pb\pbc\common.pb.h">
+      <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\protopb\pbc\client_logic_common.pb.h">
-      <Filter>源文件</Filter>
+    <ClInclude Include="..\..\common\src\pb\pbc\comp.pb.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
