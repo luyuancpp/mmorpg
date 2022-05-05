@@ -3,8 +3,6 @@
 #include "src/game_logic/reuse_id/reuse_id.h"
 #include "src/reuse_game_id/reuse_game_id.h"
 
-using namespace common;
-
 TEST(Reuse, SetType)
 {
     ReuseId<uint32_t, std::set<uint32_t>, UINT32_MAX> reuseid;
@@ -47,7 +45,7 @@ TEST(Reuse, UnorderSetType)
 //重启完毕以后没gameserver连接上来
 TEST(Reuse, ReuseDepolyStartNoGameserver)
 {
-    deploy::ReuseGameServerId rgs;
+    deploy::ReuseGSId rgs;
     uint32_t max_id = 100;
     rgs.set_size(max_id);
     rgs.OnDbLoadComplete();
@@ -62,7 +60,7 @@ TEST(Reuse, ReuseDepolyStartNoGameserver)
 //重启完毕以后没ameserver全部连接上来
 TEST(Reuse, DepolyStartGameserverReconnectScanOver)
 {
-    deploy::ReuseGameServerId rgs;
+    deploy::ReuseGSId rgs;
     uint32_t max_id = 100;
     rgs.set_size(max_id);
     rgs.OnDbLoadComplete();
@@ -83,7 +81,7 @@ TEST(Reuse, DepolyStartGameserverReconnectScanOver)
 //重启扫描完毕以后Gameserver部分连接上来
 TEST(Reuse, DepolyStartGameserverReconnectNoScanOver)
 {
-    deploy::ReuseGameServerId rgs;
+    deploy::ReuseGSId rgs;
     uint32_t max_id = 100;
     rgs.set_size(max_id);
     rgs.OnDbLoadComplete();
