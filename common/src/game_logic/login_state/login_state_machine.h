@@ -15,8 +15,7 @@ public:
 
 	void set_state(uint32_t state_enum);
 
-	uint32_t Login();
-	uint32_t Logout();
+	uint32_t Login();;
 	uint32_t CreatePlayer();
 	uint32_t EnterGame();
 

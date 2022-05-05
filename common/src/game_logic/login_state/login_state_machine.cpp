@@ -27,11 +27,6 @@ uint32_t LoginStateMachine::Login()
     return current_state_->LoginAccount();
 }
 
-uint32_t LoginStateMachine::Logout()
-{
-    return current_state_->LogoutAccount();
-}
-
 uint32_t LoginStateMachine::CreatePlayer()
 {
     return current_state_->CreatePlayer();

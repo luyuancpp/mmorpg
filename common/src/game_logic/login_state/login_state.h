@@ -34,7 +34,6 @@ public:
 
     // player operator
     virtual uint32_t LoginAccount() = 0;
-    uint32_t LogoutAccount();
     virtual uint32_t CreatePlayer() = 0;
     virtual uint32_t EnterGame() = 0;
     // server operator
