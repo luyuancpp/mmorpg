@@ -7,12 +7,12 @@
 #include <unordered_set>
 #include <vector>
 
-#include "src/server_sequence/server_sequence.h"
+#include "src/util/snow_flake.h"
 
-using guid_vetcor = std::vector<common::Guid>;
-using guid_set = std::unordered_set<common::Guid>;
+using guid_vetcor = std::vector<Guid>;
+using guid_set = std::unordered_set<Guid>;
 
-common::ServerSequence sf;
+ServerSequence sf;
 
 
 static const std::size_t kTestSize = 1000000;
@@ -35,7 +35,7 @@ void PutVectorInToSet(guid_set& s, guid_vetcor& v)
 
 TEST(TestSnowFlakeThreadSafe, JustGenerateTime)
 {
-    common::Guid id = sf.Generate();
+    Guid id = sf.Generate();
 }
 
 TEST(TestSnowFlakeThreadSafe, Generate)

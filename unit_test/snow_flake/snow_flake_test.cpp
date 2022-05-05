@@ -7,9 +7,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "src/snow_flake/snow_flake.h"
-
-using namespace common;
+#include "src/util/snow_flake.h"
 
 using guid_vetcor = std::vector<Guid>;
 using guid_set = std::unordered_set<Guid>;
