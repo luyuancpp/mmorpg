@@ -29,26 +29,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -142,19 +142,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\common\src\mysql_client\mysql_client.cpp" />
-    <ClCompile Include="..\..\common\src\mysql_database\mysql_database.cpp" />
-    <ClCompile Include="..\..\common\src\pb2db\pb2dbsql.cpp" />
+    <ClCompile Include="..\..\common\src\mysql_wrapper\mysql_client.cpp" />
+    <ClCompile Include="..\..\common\src\mysql_wrapper\mysql_database.cpp" />
+    <ClCompile Include="..\..\common\src\mysql_wrapper\pb2dbsql.cpp" />
     <ClCompile Include="..\..\protopb\pbc\common.pb.cc" />
     <ClCompile Include="..\..\protopb\pbc\db_base.pb.cc" />
     <ClCompile Include="..\..\protopb\pbc\mysql_database_test.pb.cc" />
     <ClCompile Include="mysql_client_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\mysql_client\mysql_client.h" />
-    <ClInclude Include="..\..\common\src\mysql_client\mysql_result.h" />
-    <ClInclude Include="..\..\common\src\mysql_database\mysql_database.h" />
-    <ClInclude Include="..\..\common\src\pb2db\pb2dbsql.h" />
+    <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_client.h" />
+    <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_database.h" />
+    <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_result.h" />
+    <ClInclude Include="..\..\common\src\mysql_wrapper\pb2dbsql.h" />
     <ClInclude Include="..\..\common\src\util\expected.h" />
     <ClInclude Include="..\..\common\src\util\type_traits.h" />
     <ClInclude Include="..\..\game_proto\pbc\mysql_database_test.pb.h" />
