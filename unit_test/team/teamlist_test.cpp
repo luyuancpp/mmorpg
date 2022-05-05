@@ -3,8 +3,6 @@
 #include "src/game_logic/teams/teams.h"
 #include "src/return_code/error_code.h"
 
-using namespace common;
-
 TEST(TeamManger, CreateFullDismiss)
 {
 	Teams team_list;
