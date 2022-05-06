@@ -54,6 +54,12 @@
     <ClCompile Include="src\service\logic\msserver_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\sys\player_scene_sys.h">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sys\player_scene_sys.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h">

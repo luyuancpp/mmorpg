@@ -13,6 +13,7 @@
 #include "src/game_logic/comp/gs_scene_comp.h"
 #include "src/game_logic/comp/player_comp.h"
 #include "src/game_logic/game_registry.h"
+#include "src/game_logic/scene/servernode_sys.h"
 #include "src/master_server.h"
 #include "src/master_player/ms_player_list.h"
 #include "src/network/message_sys.h"
@@ -21,13 +22,11 @@
 #include "src/game_logic/scene/scene.h"
 #include "src/network/node_info.h"
 #include "src/service/logic/player_service.h"
+#include "src/sys/player_scene_sys.h"
 #include "src/network/server_component.h"
-#include "src/game_logic/scene/servernode_sys.h"
 
 #include "gs_node.pb.h"
 #include "logic_proto/scene_normal.pb.h"
-
-#include "logic_proto/scene_client_player.pb.h"
 #include "component_proto/ms_player_comp.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
@@ -58,8 +57,7 @@ void PlayerEnterGame(Replied& replied, MasterNodeServiceImpl& impl)
 	message.set_player_id(replied.s_rq_.player_id()); 
     reg.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, c, &impl,  &gwservice::GwNodeService::PlayerEnterGs);
 
-	EnterSeceneS2C msg;//进入了gate 然后才可以开始可以给客户端发送信息了
-	Send2Player(msg, player);
+	g_player_scene_system.OnEnterScene(player);
 }
 
 void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied)
