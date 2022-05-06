@@ -135,6 +135,7 @@
     <ClCompile Include="src\service\logic\gsscene_client_player.cpp" />
     <ClCompile Include="src\service\logic\gsscene_normal.cpp" />
     <ClCompile Include="src\service\logic\gsscene_server_player.cpp" />
+    <ClCompile Include="src\service\logic\gsserver_service.cpp" />
     <ClCompile Include="src\service\logic\gsteam_client_player.cpp" />
     <ClCompile Include="src\service\logic\gsteam_normal.cpp" />
     <ClCompile Include="src\service\logic\gsteam_server_player.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="src\service\logic\gsteam_normal.h" />
     <ClInclude Include="src\service\logic\gsteam_server_player.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
+    <ClInclude Include="src\service\logic\server_service.h" />
     <ClInclude Include="src\service\server_replied.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

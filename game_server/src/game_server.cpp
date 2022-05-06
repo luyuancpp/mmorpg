@@ -12,6 +12,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_node.h"
 #include "src/service/logic/player_service.h"
+#include "src/service/logic/server_service.h"
 #include "src/service/server_replied.h"
 #include "src/network/deploy_rpcclient.h"
 #include "src/network/node_info.h"
@@ -98,6 +99,10 @@ void GameServer::StartGSDeployReplied(StartGSRpcRC cp)
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, node_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
     server_->registerService(&gs_service_impl_);
+    for (auto& it : g_server_nomal_service)
+    {
+        server_->registerService(it.get());
+    }
     server_->start();   
 }
 
@@ -120,6 +125,10 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRC cp)
 		auto& ms_node = ms.session_;
 		ms_node->subscribe<RegisterStubEvent>(g2ms_stub_);
 		ms_node->registerService(&gs_service_impl_);
+        for (auto& it : g_server_nomal_service)
+        {
+            ms_node->registerService(it.get());
+        }
 		ms_node->subscribe<OnConnected2ServerEvent>(*this);
 		ms_node->connect();
 	}

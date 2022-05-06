@@ -14,6 +14,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/deploy_rpcclient.h"
 #include "src/service/logic/player_service.h"
+#include "src/service/logic/server_service.h"
 #include "src/pb/pbc/msgmap.h"
 
 #include "gs_node.pb.h"
@@ -71,6 +72,10 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     server_->subscribe<OnBeConnectedEvent>(*this);
 
     server_->registerService(&node_service_impl_);
+    for (auto& it : g_server_nomal_service)
+    {
+        server_->registerService(it.get());
+    }
     server_->start();
 }
 
