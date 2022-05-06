@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -160,6 +160,7 @@
     <ClCompile Include="src\network\message_sys.cpp" />
     <ClCompile Include="src\service\logic\msscene_normal.cpp" />
     <ClCompile Include="src\service\logic\msscene_server_player.cpp" />
+    <ClCompile Include="src\service\logic\msserver_service.cpp" />
     <ClCompile Include="src\service\logic\msteam_normal.cpp" />
     <ClCompile Include="src\service\logic\msteam_server_player.cpp" />
     <ClCompile Include="src\service\logic\ms_player_service.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="src\service\logic\msteam_normal.h" />
     <ClInclude Include="src\service\logic\msteam_server_player.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
+    <ClInclude Include="src\service\logic\server_service.h" />
     <ClInclude Include="src\service\ms_node.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
