@@ -165,6 +165,8 @@
     <ClCompile Include="src\service\logic\msteam_server_player.cpp" />
     <ClCompile Include="src\service\logic\ms_player_service.cpp" />
     <ClCompile Include="src\service\ms_node.cpp" />
+    <ClCompile Include="src\sys\player_scene_sys.cpp" />
+    <ClCompile Include="src\sys\player_scene_sys.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\ms_login_account_comp.h" />

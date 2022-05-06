@@ -22,7 +22,8 @@ void ServerSceneServiceImpl::Ms2GsEnterScene(::google::protobuf::RpcController* 
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Ms2GsEnterScene
-    LOG_INFO << "Ms2GsEnterScene";
+    //顶号，或者登录走到这里
+
 ///<<< END WRITING YOUR CODE Ms2GsEnterScene
 }
 
