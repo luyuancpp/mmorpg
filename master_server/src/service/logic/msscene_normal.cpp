@@ -21,6 +21,7 @@ void ServerSceneServiceImpl::Ms2GsEnterScene(::google::protobuf::RpcController* 
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE Ms2GsEnterScene
+    
 ///<<< END WRITING YOUR CODE Ms2GsEnterScene
 }
 

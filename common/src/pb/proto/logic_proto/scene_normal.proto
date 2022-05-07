@@ -13,7 +13,8 @@ message UpdateCrossMainSceneInfoResponse
 
 message Ms2GsEnterSceneRequest
 {
-	repeated SceneInfo scenes_info = 1;
+	SceneInfo scenes_info = 1;
+  uint64 player_id = 2;
 }
 
 message Ms2GsEnterSceneRespone
