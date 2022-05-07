@@ -1,4 +1,4 @@
-#include "ms_player_list.h"
+#include "player_list.h"
 
 #include "src/game_logic/scene/scene.h"
 

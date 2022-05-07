@@ -2,7 +2,7 @@
 #include "ms_service.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/common_type/common_type.h"
-#include "src/comp/ms_login_account_comp.h"
+#include "src/comp/account_player.h"
 #include "src/game_logic/comp/account_comp.h"
 #include "src/network/rpc_closure.h"
 

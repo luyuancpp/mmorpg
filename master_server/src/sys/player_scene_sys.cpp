@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_logic/comp/gs_scene_comp.h"
+#include "src/game_logic/comp/scene_comp.h"
 #include "src/network/message_sys.h"
 #include "src/network/player_session.h"
 
