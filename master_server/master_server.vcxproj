@@ -166,7 +166,6 @@
     <ClCompile Include="src\service\logic\ms_player_service.cpp" />
     <ClCompile Include="src\service\ms_node.cpp" />
     <ClCompile Include="src\sys\player_scene_sys.cpp" />
-    <ClCompile Include="src\sys\player_scene_sys.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\ms_login_account_comp.h" />
@@ -183,6 +182,7 @@
     <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\logic\server_service.h" />
     <ClInclude Include="src\service\ms_node.h" />
+    <ClInclude Include="src\sys\player_scene_sys.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

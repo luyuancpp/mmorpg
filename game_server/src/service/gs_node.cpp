@@ -19,8 +19,8 @@
 
 ///<<<rpc begin
 void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
-    const gsservice::EnterGameRequest* request,
-    gsservice::EnterGameRespone* response,
+    const gsservice::EnterGsRequest* request,
+    gsservice::EnterGsRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);

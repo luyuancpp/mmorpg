@@ -16,8 +16,8 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 	using AccountMap = std::unordered_map<std::string, MSLoginAccount>;
 
-    using Ms2gsEnterGameRpcRplied = NormalClosure<gsservice::EnterGameRequest, gsservice::EnterGameRespone>;
-	void Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied);
+    using Ms2gsEnterGsRpcRplied = NormalClosure<gsservice::EnterGsRequest, gsservice::EnterGsRespone>;
+	void Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied);
 
 	using Ms2GsCoverPlayerRpcRplied = NormalClosure<gsservice::CoverPlayerRequest, gsservice::CoverPlayerRespone>;
 	void Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied);
