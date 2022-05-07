@@ -10,7 +10,7 @@
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_closure.h"
 
-#include "src/service/db_node.h"
+#include "src/service/db_service.h"
 
 #include "deploy_node.pb.h"
 

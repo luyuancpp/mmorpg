@@ -150,13 +150,13 @@
     <ClCompile Include="src\deploy_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\reuse_game_id\reuse_game_id.cpp" />
-    <ClCompile Include="src\service\deploy_node.cpp" />
+    <ClCompile Include="src\service\deploy_service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\deploy_server.h" />
     <ClInclude Include="src\deploy_variable.h" />
     <ClInclude Include="src\reuse_game_id\reuse_game_id.h" />
-    <ClInclude Include="src\service\deploy_node.h" />
+    <ClInclude Include="src\service\deploy_service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
