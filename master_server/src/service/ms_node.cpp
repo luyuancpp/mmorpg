@@ -35,7 +35,7 @@ using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 std::size_t kMaxPlayerSize = 1000;
 
 template<typename Replied>
-void PlayerEnterGame(Replied& replied, MasterNodeServiceImpl& impl)
+void PlayerEnterGs(Replied& replied, MasterNodeServiceImpl& impl)
 {
 	auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
 	if (entt::null == player)
@@ -72,12 +72,12 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
 
 void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
 {
-	PlayerEnterGame(replied, *this);
+	PlayerEnterGs(replied, *this);
 }
 
 void MasterNodeServiceImpl::Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied)
 {
-	PlayerEnterGame(replied, *this);
+	PlayerEnterGs(replied, *this);
 }
 
 void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)

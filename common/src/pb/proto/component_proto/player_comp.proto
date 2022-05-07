@@ -6,7 +6,12 @@ message SceneInfo
 	uint64 scene_id = 1;
 }
 
-message LoginTime
+//普通登录
+message NormalLogin
 {
-	uint64 login_time = 1;
+}
+
+//顶号登录
+message CoverPlayerLogin
+{
 }

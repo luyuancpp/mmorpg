@@ -14,6 +14,7 @@
 
 #include "c2gw.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
+#include "component_proto/player_comp.pb.h"
 
 ///<<< END WRITING YOUR CODE
 
@@ -48,7 +49,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 		return;
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
-
+	reg.emplace_or_replace<playercomp::NormalLogin>(player);
 ///<<< END WRITING YOUR CODE EnterGs
 }
 
@@ -229,6 +230,7 @@ void GsServiceImpl::CoverPlayer(::google::protobuf::RpcController* controller,
 		return;
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
+	reg.emplace_or_replace<playercomp::CoverPlayerLogin>(player);
 ///<<< END WRITING YOUR CODE CoverPlayer
 }
 
