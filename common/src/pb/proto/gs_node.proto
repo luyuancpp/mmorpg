@@ -5,7 +5,7 @@ import "component_proto/scene_comp.proto";
 package gsservice;
 option cc_generic_services = true;
 
-message EnterGameRequest
+message EnterGsRequest
 {
   uint64 player_id = 1;
   SceneInfo scenes_info = 2;
@@ -14,7 +14,7 @@ message EnterGameRequest
   uint64 ms_node_id = 5;
 }
 
-message EnterGameRespone
+message EnterGsRespone
 {
 }
 
@@ -76,7 +76,7 @@ message Rg2gTest
 {}
 
 service GsService {
-  rpc EnterGs (EnterGameRequest) returns (EnterGameRespone);
+  rpc EnterGs (EnterGsRequest) returns (EnterGsRespone);
   rpc PlayerService (MsPlayerMessageRequest) returns (MsPlayerMessageRespone);
   rpc PlayerServiceNoRespone (MsPlayerMessageRequest) returns (google.protobuf.Empty);
   rpc GwPlayerService (RpcClientRequest) returns (RpcClientResponse);

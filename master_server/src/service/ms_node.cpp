@@ -70,7 +70,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
 	g_player_scene_system.OnEnterScene(player);
 }
 
-void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
+void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
 {
 	PlayerEnterGame(replied, *this);
 }
@@ -349,12 +349,12 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			ep.enterer_ = player;
 			ep.scene_ = scene;
 			ScenesSystem::GetSingleton().EnterScene(ep);//顶号的时候已经在场景里面了
-			Ms2gsEnterGameRpcRplied message;
+			Ms2gsEnterGsRpcRplied message;
 			message.s_rq_.set_player_id(guid);
 			message.s_rq_.set_conn_id(request->conn_id());
 			message.s_rq_.set_gate_node_id(request->gate_node_id());
 			message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
-			reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGameReplied,
+			reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGsReplied,
 				message,
 				this,
 				&gsservice::GsService_Stub::EnterGs);

@@ -54,9 +54,6 @@
     <ClCompile Include="src\service\logic\msserver_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\sys\player_scene_sys.h">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\sys\player_scene_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -99,6 +96,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic\player_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic\server_service.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sys\player_scene_sys.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
