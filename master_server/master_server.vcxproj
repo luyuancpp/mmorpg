@@ -164,7 +164,7 @@
     <ClCompile Include="src\service\logic\msteam_normal.cpp" />
     <ClCompile Include="src\service\logic\msteam_server_player.cpp" />
     <ClCompile Include="src\service\logic\ms_player_service.cpp" />
-    <ClCompile Include="src\service\ms_node.cpp" />
+    <ClCompile Include="src\service\ms_service.cpp" />
     <ClCompile Include="src\sys\player_scene_sys.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -181,7 +181,7 @@
     <ClInclude Include="src\service\logic\msteam_server_player.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\logic\server_service.h" />
-    <ClInclude Include="src\service\ms_node.h" />
+    <ClInclude Include="src\service\ms_service.h" />
     <ClInclude Include="src\sys\player_scene_sys.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
