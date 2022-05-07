@@ -9,7 +9,7 @@
 #include "src/network/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
 
-#include "deploy_node.pb.h"
+#include "deploy_service.pb.h"
 
 #include "ms_service.pb.h"
 

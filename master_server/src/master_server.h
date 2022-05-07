@@ -12,8 +12,8 @@
 #include "src/network/rpc_server.h"
 #include "src/network/server_component.h"
 
-#include "deploy_node.pb.h"
-#include "db_node.pb.h"
+#include "deploy_service.pb.h"
+#include "db_service.pb.h"
 #include "logic_proto/scene_rg.pb.h"
 
     class MasterServer : muduo::noncopyable, public Receiver<MasterServer>

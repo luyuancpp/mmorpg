@@ -12,7 +12,7 @@
 
 #include "src/service/db_service.h"
 
-#include "deploy_node.pb.h"
+#include "deploy_service.pb.h"
 
 class DatabaseServer : muduo::noncopyable, public Receiver<DatabaseServer>
 {

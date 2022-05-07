@@ -13,7 +13,7 @@
 #include "src/util/snow_flake.h"
 
 #include "c2gw.pb.h"
-#include "login_node.pb.h"
+#include "login_service.pb.h"
 #include "ms_service.pb.h"
 #include "gs_service.pb.h"
 

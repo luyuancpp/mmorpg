@@ -7,7 +7,7 @@
 #include "src/network/rpc_closure.h"
 
 #include "gs_service.pb.h"
-#include "gw_node.pb.h"
+#include "gw_service.pb.h"
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

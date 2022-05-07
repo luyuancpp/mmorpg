@@ -7,7 +7,7 @@
 #include "src/network/rpc_stub.h"
 #include "src/game_logic/game_registry.h"
 
-#include "login_node.pb.h"
+#include "login_service.pb.h"
 #include "common.pb.h"
 
 struct LoginNode
