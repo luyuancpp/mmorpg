@@ -57,6 +57,9 @@
     <ClCompile Include="src\sys\player_scene_sys.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\sys\player_common_sys.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h">
@@ -102,6 +105,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\sys\player_scene_sys.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sys\player_common_sys.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

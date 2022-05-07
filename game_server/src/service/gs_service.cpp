@@ -190,16 +190,6 @@ void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE GwConnectGs
 }
 
-void GsServiceImpl::RgEnterRoom(::google::protobuf::RpcController* controller,
-    const gsservice::Rg2gTest* request,
-    ::google::protobuf::Empty* response,
-    ::google::protobuf::Closure* done)
-{
-    AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE RgEnterRoom
-///<<< END WRITING YOUR CODE RgEnterRoom
-}
-
 void GsServiceImpl::CoverPlayer(::google::protobuf::RpcController* controller,
     const gsservice::CoverPlayerRequest* request,
     gsservice::CoverPlayerRespone* response,
@@ -231,6 +221,16 @@ void GsServiceImpl::CoverPlayer(::google::protobuf::RpcController* controller,
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 	reg.emplace_or_replace<playercomp::CoverPlayerLogin>(player);
+///<<< END WRITING YOUR CODE CoverPlayer
+}
+
+void GsServiceImpl::MsSend2PlayerViaGs(::google::protobuf::RpcController* controller,
+    const gsservice::MsSend2PlayerViaGsRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE CoverPlayer
 ///<<< END WRITING YOUR CODE CoverPlayer
 }
 

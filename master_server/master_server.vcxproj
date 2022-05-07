@@ -153,6 +153,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\sys\player_common_sys.cpp" />
     <ClCompile Include="src\master_player\ms_player_list.cpp" />
     <ClCompile Include="src\master_server.cpp" />
     <ClCompile Include="src\network\gate_node.cpp" />
@@ -168,6 +169,7 @@
     <ClCompile Include="src\sys\player_scene_sys.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\sys\player_common_sys.h" />
     <ClInclude Include="src\comp\ms_login_account_comp.h" />
     <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\network\player_session.h" />

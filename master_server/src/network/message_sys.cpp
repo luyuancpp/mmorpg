@@ -16,19 +16,19 @@
 
 void Send2Gs(const google::protobuf::Message& message, uint32_t node_id)
 {
-		auto it = g_gs_nodes.find(node_id);
-		if (it == g_gs_nodes.end())
-		{
-			LOG_INFO << "gs not found ->" << node_id;
-			return;
-		}
-		auto node =  reg.try_get<GsNodePtr>(it->second);
-		if (nullptr == node)
-		{
-			LOG_INFO << "gs not found ->" << node_id;
-			return;
-		}
-		(*node)->session_.Send(message);
+	auto it = g_gs_nodes.find(node_id);
+	if (it == g_gs_nodes.end())
+	{
+		LOG_INFO << "gs not found ->" << node_id;
+		return;
+	}
+	auto node =  reg.try_get<GsNodePtr>(it->second);
+	if (nullptr == node)
+	{
+		LOG_INFO << "gs not found ->" << node_id;
+		return;
+	}
+	(*node)->session_.Send(message);
 }
 
 void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player)
@@ -65,8 +65,44 @@ void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& entity)
 
 void Send2GsPlayer(const google::protobuf::Message& message, Guid player_id)
 {
-	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
-	Send2GsPlayer(message, player);
+    Send2GsPlayer(message, PlayerList::GetSingleton().GetPlayer(player_id));
+}
+
+void Send2PlayerViaGs(const google::protobuf::Message& message, Guid player_id)
+{
+	Send2PlayerViaGs(message, PlayerList::GetSingleton().GetPlayer(player_id));
+}
+
+void Send2PlayerViaGs(const google::protobuf::Message& message, EntityPtr& player)
+{
+	Send2PlayerViaGs(message, player.entity());
+}
+
+void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity player)
+{
+    if (!reg.valid(player))
+    {
+        return;
+    }
+    auto player_session = reg.get<PlayerSession>(player);
+    auto gs = player_session.gs_.lock();
+    if (nullptr == gs)
+    {
+        LOG_INFO << "gs not found ";
+        return;
+    }
+    auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
+    if (message_it == g_msgid.end())
+    {
+        LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
+        return;
+    }
+    gsservice::MsSend2PlayerViaGsRequest ms2gs_messag;
+    ms2gs_messag.mutable_msg()->set_msg_id(message_it->second);
+    ms2gs_messag.mutable_msg()->set_body(message.SerializeAsString());
+    ms2gs_messag.mutable_ex()->set_player_id(reg.get<Guid>(player));
+    auto& gs_session = reg.get<RpcServerConnection>(gs->server_entity());
+    gs_session.Send(ms2gs_messag);
 }
 
 void Send2Player(const google::protobuf::Message& message, entt::entity player)
