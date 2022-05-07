@@ -1,7 +1,7 @@
 #pragma once
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "src/game_logic/comp/gs_scene_comp.h"
+#include "src/game_logic/comp/scene_comp.h"
 
 
 struct MakeSceneP

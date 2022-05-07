@@ -226,7 +226,7 @@
     <ClInclude Include="src\game_config\region_config.h" />
     <ClInclude Include="src\game_config\scene_config.h" />
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
-    <ClInclude Include="src\game_logic\comp\gs_scene_comp.h" />
+    <ClInclude Include="src\game_logic\comp\scene_comp.h" />
     <ClInclude Include="src\game_logic\comp\mission_comp.h" />
     <ClInclude Include="src\game_logic\comp\player.hpp" />
     <ClInclude Include="src\game_logic\comp\player_comp.h" />

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gate_node.h"
-#include "src/game_logic/comp/gs_scene_comp.h"
+#include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/player_comp.h"
 #include "src/network/message_sys.h"
