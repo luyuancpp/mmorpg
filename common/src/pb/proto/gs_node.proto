@@ -76,7 +76,7 @@ message Rg2gTest
 {}
 
 service GsService {
-  rpc EnterGame (EnterGameRequest) returns (EnterGameRespone);
+  rpc EnterGs (EnterGameRequest) returns (EnterGameRespone);
   rpc PlayerService (MsPlayerMessageRequest) returns (MsPlayerMessageRespone);
   rpc PlayerServiceNoRespone (MsPlayerMessageRequest) returns (google.protobuf.Empty);
   rpc GwPlayerService (RpcClientRequest) returns (RpcClientResponse);

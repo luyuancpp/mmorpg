@@ -48,4 +48,5 @@ gen_protoc('./logic_proto/', '../../../../third_party/protobuf/src/', '../pbc/')
 gen_protoc('./component_proto/', '../../../../third_party/protobuf/src/', '../pbc/')
 genmd5('./')
 genmd5('./logic_proto/')
+genmd5('./component_proto/')
 
