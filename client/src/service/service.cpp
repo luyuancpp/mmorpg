@@ -90,7 +90,7 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
     const LeaveGameResponsePtr& message, 
     muduo::Timestamp)
 {
-    timer_task_.RunAfter(1, std::bind(&ClientService::DisConnect, this));
+    DisConnect();
 }
 
 void ClientService::OnGsReplied(const muduo::net::TcpConnectionPtr& conn, 
