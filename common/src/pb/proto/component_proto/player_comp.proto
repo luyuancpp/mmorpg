@@ -5,3 +5,8 @@ message SceneInfo
 {
 	uint64 scene_id = 1;
 }
+
+message LoginTime
+{
+	uint64 login_time = 1;
+}

@@ -57,13 +57,17 @@ void PlayerEnterGame(Replied& replied, MasterNodeServiceImpl& impl)
 	message.set_player_id(replied.s_rq_.player_id()); 
     reg.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, c, &impl,  &gwservice::GwNodeService::PlayerEnterGs);
 
-	g_player_scene_system.OnEnterScene(player);
 }
 
 void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied)
 {
-	Ms2GsEnterSceneRequest message;
-	Send2Gs(message, replied.s_rq_.gs_node_id());
+    auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
+    if (entt::null == player)
+    {
+		LOG_ERROR << "player not found " << replied.s_rq_.player_id();
+        return;
+    }
+	g_player_scene_system.OnEnterScene(player);
 }
 
 void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGameRpcRplied replied)
@@ -353,7 +357,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGameReplied,
 				message,
 				this,
-				&gsservice::GsService_Stub::EnterGame);
+				&gsservice::GsService_Stub::EnterGs);
 		}
 	}
 	else//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了

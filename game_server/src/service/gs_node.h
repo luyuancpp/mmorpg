@@ -9,7 +9,7 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 public:
-    void EnterGame(::google::protobuf::RpcController* controller,
+    void EnterGs(::google::protobuf::RpcController* controller,
         const gsservice::EnterGameRequest* request,
         gsservice::EnterGameRespone* response,
         ::google::protobuf::Closure* done)override;

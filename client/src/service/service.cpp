@@ -70,14 +70,14 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
         g_lua["CreatePlayer"]();
         return;
     }
-    EnterGame(message->players(0).guid());   
+    EnterGs(message->players(0).guid());   
 }
 
 void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn, 
     const CreatePlayerResponsePtr& message,
     muduo::Timestamp)
 {
-    EnterGame(message->players(0).guid());
+    EnterGs(message->players(0).guid());
 }
 
 void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -121,7 +121,7 @@ void ClientService::OnMessageEnterSeceneS2CPtr(const muduo::net::TcpConnectionPt
 	g_lua["LeaveGame"]();
 }
 
-void ClientService::EnterGame(Guid guid)
+void ClientService::EnterGs(Guid guid)
 {
     AutoLuaPlayerPtr p(&g_lua.set("player", this));
     g_lua["EnterGame"](guid);

@@ -18,14 +18,14 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
+void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
     const gsservice::EnterGameRequest* request,
     gsservice::EnterGameRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE EnterGame
-	//第一次进入世界,,但是gate还没进入
+///<<< BEGIN WRITING YOUR CODE EnterGs
+	//第一次进入世界,但是gate还没进入
 	auto it = g_players.emplace(request->player_id(), EntityPtr());
 	auto player = it.first->second.entity();
 	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
@@ -49,7 +49,7 @@ void GsServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 
-///<<< END WRITING YOUR CODE EnterGame
+///<<< END WRITING YOUR CODE EnterGs
 }
 
 void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
