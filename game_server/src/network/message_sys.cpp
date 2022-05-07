@@ -9,7 +9,7 @@
 #include "src/game_logic/comp/player_comp.h"
 #include "src/pb/pbc/msgmap.h"
 
-#include "gw_node.pb.h"
+#include "gw_service.pb.h"
 
 void Send2Player(const google::protobuf::Message& message, Guid player_id)
 {
