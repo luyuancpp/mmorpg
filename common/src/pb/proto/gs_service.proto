@@ -43,6 +43,12 @@ message MsPlayerMessageRequest
   MsPlayerMessageExtern ex = 2;
 }
 
+message MsSend2PlayerViaGsRequest
+{
+  MessageBody msg = 1;
+  MsPlayerMessageExtern ex = 2;
+}
+
 message MsPlayerMessageRespone
 {
   MessageBody msg = 1;
@@ -72,8 +78,6 @@ message ConnectRequest
   uint32 gate_node_id = 2;
 }
 
-message Rg2gTest
-{}
 
 service GsService {
   rpc EnterGs (EnterGsRequest) returns (EnterGsRespone);
@@ -82,6 +86,6 @@ service GsService {
   rpc GwPlayerService (RpcClientRequest) returns (RpcClientResponse);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GwConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
-  rpc RgEnterRoom (Rg2gTest) returns (google.protobuf.Empty);
   rpc CoverPlayer (CoverPlayerRequest) returns (CoverPlayerRespone);
+  rpc MsSend2PlayerViaGs (MsSend2PlayerViaGsRequest) returns (google.protobuf.Empty);
 }

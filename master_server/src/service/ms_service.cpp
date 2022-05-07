@@ -23,6 +23,7 @@
 #include "src/network/node_info.h"
 #include "src/service/logic/player_service.h"
 #include "src/sys/player_scene_sys.h"
+#include "src/sys/player_common_sys.h"
 #include "src/network/server_component.h"
 
 #include "gs_service.pb.h"
@@ -67,6 +68,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
 		LOG_ERROR << "player not found " << replied.s_rq_.player_id();
         return;
     }
+	g_player_common_sys.OnLogin(player);
 	g_player_scene_system.OnEnterScene(player);
 }
 
