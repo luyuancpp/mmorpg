@@ -46,7 +46,6 @@
     <ClCompile Include="src\pb\pbc\db_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\deploy_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\login_node.pb.cc" />
-    <ClCompile Include="src\pb\pbc\rg_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_client_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_normal.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_server_player.pb.cc" />
@@ -63,6 +62,8 @@
     <ClCompile Include="src\pb\pbc\component_proto\ms_player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\gs_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\ms_service.pb.cc" />
+    <ClCompile Include="src\game_config\item_config.cpp" />
+    <ClCompile Include="src\pb\pbc\item_config.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -137,7 +138,6 @@
     <ClInclude Include="src\pb\pbc\db_node.pb.h" />
     <ClInclude Include="src\pb\pbc\deploy_node.pb.h" />
     <ClInclude Include="src\pb\pbc\login_node.pb.h" />
-    <ClInclude Include="src\pb\pbc\rg_node.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_normal.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_server_player.pb.h" />
@@ -159,5 +159,7 @@
     <ClInclude Include="src\pb\pbc\component_proto\ms_player_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\gs_service.pb.h" />
     <ClInclude Include="src\pb\pbc\ms_service.pb.h" />
+    <ClInclude Include="src\game_config\item_config.h" />
+    <ClInclude Include="src\pb\pbc\item_config.pb.h" />
   </ItemGroup>
 </Project>
