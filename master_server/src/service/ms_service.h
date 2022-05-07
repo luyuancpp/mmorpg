@@ -6,7 +6,7 @@
 #include "src/game_logic/comp/account_comp.h"
 #include "src/network/rpc_closure.h"
 
-#include "gs_node.pb.h"
+#include "gs_service.pb.h"
 #include "gw_node.pb.h"
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE

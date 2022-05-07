@@ -11,7 +11,7 @@
 
 #include "deploy_node.pb.h"
 
-#include "ms_node.pb.h"
+#include "ms_service.pb.h"
 
 namespace login
 {

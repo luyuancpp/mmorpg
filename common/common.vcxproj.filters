@@ -25,7 +25,6 @@
     <ClCompile Include="src\pb\pbc\mainscene_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\mission_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\msgmap.cpp" />
-    <ClCompile Include="src\pb\pbc\ms_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_table.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_test.pb.cc" />
     <ClCompile Include="src\pb\pbc\scene_config.pb.cc" />
@@ -44,7 +43,6 @@
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\rpc_channel.cc" />
     <ClCompile Include="src\network\rpc_server.cc" />
-    <ClCompile Include="src\pb\pbc\gs_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\db_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\deploy_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\login_node.pb.cc" />
@@ -63,6 +61,8 @@
     <ClCompile Include="src\pb\pbc\logic_proto\scene_rg.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\scene_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\ms_player_comp.pb.cc" />
+    <ClCompile Include="src\pb\pbc\gs_service.pb.cc" />
+    <ClCompile Include="src\pb\pbc\ms_service.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -97,7 +97,6 @@
     <ClInclude Include="src\pb\pbc\mission_config.pb.h" />
     <ClInclude Include="src\pb\pbc\ms2db.pb.h" />
     <ClInclude Include="src\pb\pbc\msgmap.h" />
-    <ClInclude Include="src\pb\pbc\ms_node.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_table.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_test.pb.h" />
     <ClInclude Include="src\pb\pbc\pb3.pb.h" />
@@ -135,7 +134,6 @@
     <ClInclude Include="src\network\rpc_stub.h" />
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\util\snow_flake.h" />
-    <ClInclude Include="src\pb\pbc\gs_node.pb.h" />
     <ClInclude Include="src\pb\pbc\db_node.pb.h" />
     <ClInclude Include="src\pb\pbc\deploy_node.pb.h" />
     <ClInclude Include="src\pb\pbc\login_node.pb.h" />
@@ -159,5 +157,7 @@
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\pb\pbc\component_proto\scene_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\ms_player_comp.pb.h" />
+    <ClInclude Include="src\pb\pbc\gs_service.pb.h" />
+    <ClInclude Include="src\pb\pbc\ms_service.pb.h" />
   </ItemGroup>
 </Project>

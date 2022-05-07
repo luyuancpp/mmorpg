@@ -15,8 +15,8 @@
 #include "src/network/ms_node.h"
 #include "src/return_code/error_code.h"
 
-#include "gs_node.pb.h"
-#include "ms_node.pb.h"
+#include "gs_service.pb.h"
+#include "ms_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

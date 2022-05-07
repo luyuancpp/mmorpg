@@ -8,7 +8,7 @@
 #include "src/network/rpc_stub.h"
 #include "src/game_logic/game_registry.h"
 
-#include "gs_node.pb.h"
+#include "gs_service.pb.h"
 #include "common.pb.h"
 
 struct GsNode
