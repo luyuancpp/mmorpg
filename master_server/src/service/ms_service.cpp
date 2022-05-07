@@ -25,7 +25,7 @@
 #include "src/sys/player_scene_sys.h"
 #include "src/network/server_component.h"
 
-#include "gs_node.pb.h"
+#include "gs_service.pb.h"
 #include "logic_proto/scene_normal.pb.h"
 #include "component_proto/ms_player_comp.pb.h"
 

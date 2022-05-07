@@ -12,7 +12,7 @@
 #include "src/pb/pbc/msgmap.h"
 
 #include "gw_node.pb.h"
-#include "gs_node.pb.h"
+#include "gs_service.pb.h"
 
 void Send2Gs(const google::protobuf::Message& message, uint32_t node_id)
 {

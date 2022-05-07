@@ -3,7 +3,7 @@
 
 #include "src/network/rpc_closure.h"
 
-#include "ms_node.pb.h"
+#include "ms_service.pb.h"
 
 #include "logic_proto/scene_rg.pb.h"
 

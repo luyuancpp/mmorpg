@@ -157,7 +157,9 @@
     <ClCompile Include="src\pb\pbc\component_proto\ms_player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\scene_comp.pb.cc" />
+    <ClCompile Include="src\pb\pbc\gs_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_rg.pb.cc" />
+    <ClCompile Include="src\pb\pbc\ms_service.pb.cc" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
     <ClCompile Include="src\game_config\condition_config.cpp" />
@@ -181,7 +183,6 @@
     <ClCompile Include="src\pb\pbc\db_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\deploy_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\global_variable_config.pb.cc" />
-    <ClCompile Include="src\pb\pbc\gs_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\gw_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_client_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_normal.pb.cc" />
@@ -193,7 +194,6 @@
     <ClCompile Include="src\pb\pbc\mainscene_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\mission_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\msgmap.cpp" />
-    <ClCompile Include="src\pb\pbc\ms_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_table.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_test.pb.cc" />
     <ClCompile Include="src\pb\pbc\rg_node.pb.cc" />
@@ -252,7 +252,7 @@
     <ClInclude Include="src\pb\pbc\db_node.pb.h" />
     <ClInclude Include="src\pb\pbc\deploy_node.pb.h" />
     <ClInclude Include="src\pb\pbc\global_variable_config.pb.h" />
-    <ClInclude Include="src\pb\pbc\gs_node.pb.h" />
+    <ClInclude Include="src\pb\pbc\gs_service.pb.h" />
     <ClInclude Include="src\pb\pbc\gw_node.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\player_scene.pb.h" />
@@ -269,7 +269,7 @@
     <ClInclude Include="src\pb\pbc\mission_config.pb.h" />
     <ClInclude Include="src\pb\pbc\ms2db.pb.h" />
     <ClInclude Include="src\pb\pbc\msgmap.h" />
-    <ClInclude Include="src\pb\pbc\ms_node.pb.h" />
+    <ClInclude Include="src\pb\pbc\ms_service.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_table.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_test.pb.h" />
     <ClInclude Include="src\pb\pbc\pb3.pb.h" />

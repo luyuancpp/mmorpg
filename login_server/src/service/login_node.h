@@ -11,7 +11,7 @@
 
 #include "login_node.pb.h"
 #include "db_node.pb.h"
-#include "ms_node.pb.h"
+#include "ms_service.pb.h"
 ///<<< END WRITING YOUR CODE
 	///<<< BEGIN WRITING YOUR CODE
 	using common::RedisClientPtr;

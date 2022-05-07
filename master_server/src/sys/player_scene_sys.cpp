@@ -6,7 +6,7 @@
 #include "src/network/message_sys.h"
 #include "src/network/player_session.h"
 
-#include "gs_node.pb.h"
+#include "gs_service.pb.h"
 #include "logic_proto/scene_normal.pb.h"
 
 PlayerSceneSystem g_player_scene_system;

@@ -14,8 +14,8 @@
 
 #include "c2gw.pb.h"
 #include "login_node.pb.h"
-#include "ms_node.pb.h"
-#include "gs_node.pb.h"
+#include "ms_service.pb.h"
+#include "gs_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

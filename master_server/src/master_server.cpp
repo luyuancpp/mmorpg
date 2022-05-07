@@ -17,7 +17,7 @@
 #include "src/service/logic/server_service.h"
 #include "src/pb/pbc/msgmap.h"
 
-#include "gs_node.pb.h"
+#include "gs_service.pb.h"
 #include "gw_node.pb.h"
 
 using namespace common;

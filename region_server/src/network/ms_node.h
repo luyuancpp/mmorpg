@@ -10,7 +10,7 @@
 #include "src/network/rpc_stub.h"
 
 #include "common.pb.h"
-#include "ms_node.pb.h"
+#include "ms_service.pb.h"
 
 
 struct MsNode

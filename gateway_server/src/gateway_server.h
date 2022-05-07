@@ -18,7 +18,7 @@
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_connection_event.h"
 
-#include "ms_node.pb.h"
+#include "ms_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
