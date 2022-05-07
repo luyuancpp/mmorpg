@@ -1,5 +1,4 @@
-#ifndef MASTER_SERVER_SRC_MASTER_PLAYER_MASTER_PLAYER_LIST_H_
-#define MASTER_SERVER_SRC_MASTER_PLAYER_MASTER_PLAYER_LIST_H_
+#pragma once
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/game_registry.h"
@@ -24,5 +23,3 @@ public:
     void LeaveGame(Guid guid);
 };
 
-
-#endif//MASTER_SERVER_SRC_MASTER_PLAYER_MASTER_PLAYER_LIST_H_

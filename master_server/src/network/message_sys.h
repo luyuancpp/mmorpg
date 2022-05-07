@@ -1,5 +1,4 @@
-#ifndef MASTER_SERVER_SRC_MESSAGE_SYS_HPP_
-#define MASTER_SERVER_SRC_MESSAGE_SYS_HPP_
+#pragma once
 
 #include "google/protobuf/message.h"
 
@@ -24,4 +23,3 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player);
 void Send2Player(const google::protobuf::Message& message, Guid player_id);
 void Send2Gate(const google::protobuf::Message& message, uint32_t gate_id);
 
-#endif//MASTER_SERVER_SRC_MESSAGE_SYS_HPP_

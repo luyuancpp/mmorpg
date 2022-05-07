@@ -1,5 +1,4 @@
-#ifndef GAME_SERVER_SRC_GAME_SERVER_GAME_SERVER_H_
-#define GAME_SERVER_SRC_GAME_SERVER_GAME_SERVER_H_
+#pragma once
 
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
@@ -77,5 +76,3 @@ private:
 };
 
 extern GameServer* g_gs;
-
-#endif // !GAME_SERVER_SRC_GAME_SERVER_GAME_SERVER_H_

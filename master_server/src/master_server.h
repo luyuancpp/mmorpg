@@ -1,5 +1,4 @@
-#ifndef MASTER_SERVER_MASTER_SERVER_H_
-#define MASTER_SERVER_MASTER_SERVER_H_
+#pragma once
 
 #include "entt/src/entt/entity/registry.hpp"
 
@@ -75,4 +74,4 @@
 
 extern MasterServer* g_ms_node;
 
-#endif//MASTER_SERVER_MASTER_SERVER_H_
+
