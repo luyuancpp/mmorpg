@@ -15,7 +15,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/scene/servernode_sys.h"
 #include "src/master_server.h"
-#include "src/master_player/ms_player_list.h"
+#include "src/comp/ms_player_list.h"
 #include "src/network/message_sys.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/return_code/error_code.h"
