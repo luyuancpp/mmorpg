@@ -1,5 +1,4 @@
-#ifndef LOGIN_SERVER_LOGIN_SERVER_H
-#define LOGIN_SERVER_LOGIN_SERVER_H
+#pragma once
 
 #include "src/event/event.h"
 #include "src/network/rpc_server.h"
@@ -64,5 +63,4 @@ namespace login
 
 extern login::LoginServer* g_login_server;
 
-#endif // LOGIN_SERVER_LOGIN_SERVER_H
 

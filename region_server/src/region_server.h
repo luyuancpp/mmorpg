@@ -1,5 +1,4 @@
-#ifndef REGION_SERVER_SRC_REGION_SERVER_H_
-#define REGION_SERVER_SRC_REGION_SERVER_H_
+#pragma once
 
 #include "muduo/net/EventLoop.h"
 
@@ -42,6 +41,5 @@ private:
 
 extern region::RegionServer* g_region_server;
 
-#endif//REGION_SERVER_SRC_REGION_SERVER_H_
 
 

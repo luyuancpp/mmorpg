@@ -1,5 +1,4 @@
-#ifndef MASTER_SERVER_NETWORK_GATE_NODE_H_
-#define MASTER_SERVER_NETWORK_GATE_NODE_H_
+#pragma once
 
 #include "muduo/net/TcpConnection.h"
 
@@ -24,5 +23,3 @@ using GateNodePtr = std::shared_ptr<GateNode>;
 using GateNodeWPtr = std::weak_ptr<GateNode>;
 using GateNodes = std::unordered_map<uint32_t, entt::entity>;
 extern GateNodes g_gate_nodes;
-
-#endif//MASTER_SERVER_NETWORK_GATE_NODE_H_
