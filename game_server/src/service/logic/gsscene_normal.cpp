@@ -3,7 +3,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
-#include "src/sys/player_list/player_list.h"
+#include "src/comp/player_list.h"
 #include "src/network/message_sys.h"
 
 #include "logic_proto/scene_client_player.pb.h"
