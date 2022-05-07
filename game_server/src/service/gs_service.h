@@ -1,5 +1,5 @@
 #pragma once
-#include "gs_node.pb.h"
+#include "gs_service.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE

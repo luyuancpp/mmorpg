@@ -130,7 +130,7 @@
     <ClCompile Include="src\network\gate_node.cpp" />
     <ClCompile Include="src\network\message_sys.cpp" />
     <ClCompile Include="src\network\ms_node.cpp" />
-    <ClCompile Include="src\service\gs_node.cpp" />
+    <ClCompile Include="src\service\gs_service.cpp" />
     <ClCompile Include="src\service\logic\gsscene_client_player.cpp" />
     <ClCompile Include="src\service\logic\gsscene_normal.cpp" />
     <ClCompile Include="src\service\logic\gsscene_server_player.cpp" />
@@ -148,7 +148,7 @@
     <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\network\message_sys.h" />
     <ClInclude Include="src\network\ms_node.h" />
-    <ClInclude Include="src\service\gs_node.h" />
+    <ClInclude Include="src\service\gs_service.h" />
     <ClInclude Include="src\service\logic\gsscene_client_player.h" />
     <ClInclude Include="src\service\logic\gsscene_normal.h" />
     <ClInclude Include="src\service\logic\gsscene_server_player.h" />
