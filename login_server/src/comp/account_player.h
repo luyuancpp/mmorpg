@@ -1,5 +1,4 @@
-#ifndef LOGIN_SRC_ACCOUNT_PLAYER_ACCOUNT_PLAYER_H_
-#define LOGIN_SRC_ACCOUNT_PLAYER_ACCOUNT_PLAYER_H_
+#pragma once
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/login_state/login_state_machine.h"
@@ -36,5 +35,3 @@ private:
     Guid playing_id_{ kInvalidGuid };
 };
 
-
-#endif//LOGIN_SRC_ACCOUNT_PLAYER_ACCOUNT_PLAYER_H_
