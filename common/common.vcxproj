@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\game_config\item_config.cpp" />
     <ClCompile Include="src\game_logic\scene\scene.cpp" />
     <ClCompile Include="src\game_logic\scene\scene_factories.cpp" />
     <ClCompile Include="src\game_logic\scene\servernode_sys.cpp" />
@@ -158,6 +159,7 @@
     <ClCompile Include="src\pb\pbc\component_proto\player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\scene_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\gs_service.pb.cc" />
+    <ClCompile Include="src\pb\pbc\item_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_rg.pb.cc" />
     <ClCompile Include="src\pb\pbc\ms_service.pb.cc" />
     <ClCompile Include="src\util\file2string.cpp" />
@@ -196,7 +198,6 @@
     <ClCompile Include="src\pb\pbc\msgmap.cpp" />
     <ClCompile Include="src\pb\pbc\mysql_database_table.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_test.pb.cc" />
-    <ClCompile Include="src\pb\pbc\rg_node.pb.cc" />
     <ClCompile Include="src\pb\pbc\scene_config.pb.cc" />
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
@@ -219,6 +220,7 @@
     <ClInclude Include="src\game_config\condition_config.h" />
     <ClInclude Include="src\game_config\global_variable_config.h" />
     <ClInclude Include="src\game_config\global_variable_config_id.h" />
+    <ClInclude Include="src\game_config\item_config.h" />
     <ClInclude Include="src\game_config\mainscene_config.h" />
     <ClInclude Include="src\game_config\mission_config.h" />
     <ClInclude Include="src\game_config\region_config.h" />
@@ -254,6 +256,7 @@
     <ClInclude Include="src\pb\pbc\global_variable_config.pb.h" />
     <ClInclude Include="src\pb\pbc\gs_service.pb.h" />
     <ClInclude Include="src\pb\pbc\gw_node.pb.h" />
+    <ClInclude Include="src\pb\pbc\item_config.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\player_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\player_team.pb.h" />
@@ -273,7 +276,6 @@
     <ClInclude Include="src\pb\pbc\mysql_database_table.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_test.pb.h" />
     <ClInclude Include="src\pb\pbc\pb3.pb.h" />
-    <ClInclude Include="src\pb\pbc\rg_node.pb.h" />
     <ClInclude Include="src\pb\pbc\scene_config.pb.h" />
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
