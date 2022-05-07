@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\db_node.cpp">
+    <ClCompile Include="src\service\db_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,7 +29,7 @@
     <ClInclude Include="src\database_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\db_node.h">
+    <ClInclude Include="src\service\db_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

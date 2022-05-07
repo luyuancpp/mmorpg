@@ -10,7 +10,7 @@
 #include "src/reuse_game_id/reuse_game_id.h"
 #include "src/network/rpc_server.h"
 #include "src/network/rpc_connection_event.h"
-#include "src/service/deploy_node.h"
+#include "src/service/deploy_service.h"
 
 namespace deploy
 {
