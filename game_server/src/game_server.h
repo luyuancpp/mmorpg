@@ -5,7 +5,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/network/ms_node.h"
-#include "src/service/gs_node.h"
+#include "src/service/gs_service.h"
 #include "src/network/deploy_rpcclient.h"
 #include "src/network/rpc_server.h"
 #include "src/network/rpc_stub.h"
