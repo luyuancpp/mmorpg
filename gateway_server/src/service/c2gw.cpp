@@ -15,7 +15,7 @@
 #include "src/return_code/error_code.h"
 #include "src/network/rpc_closure.h"
 
-#include "login_node.pb.h"
+#include "login_service.pb.h"
 
 using namespace c2gw;
 
