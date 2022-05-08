@@ -27,6 +27,9 @@
     <ClCompile Include="src\client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\logic\c_player_service.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client.h">
@@ -36,6 +39,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\luacpp\lua_module.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic\c_scene_client_player.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic\c_team_client_player.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic\player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
