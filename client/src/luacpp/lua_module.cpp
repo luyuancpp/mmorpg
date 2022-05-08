@@ -20,7 +20,7 @@ void pb2sol2();
 void InitLua()
 {
     g_lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
-    g_lua.new_usertype<ClientService>("player", "sendother",
+    g_lua.new_usertype<ClientService>("player", "send",
 			sol::as_function(&ClientService::SendOhter));
     pb2sol2();
 
