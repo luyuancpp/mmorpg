@@ -24,7 +24,6 @@ cpkg = 'package'
 tabstr = '    '
 cpprpcpart = 1
 cppmaxpart = 4
-controller = '(entt::entity& entity'
 servicedir = './md5/'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
@@ -66,12 +65,11 @@ def inputfiledestdir(filename):
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
                 break
 def genheadrpcfun():
-    global controller
     servicestr = 'public:\n'
     local.servicenames = []
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
-        line = tabstr + 'void ' + s[1] + controller + ',\n'
+        line = tabstr + 'void ' + s[1] + '('
         local.servicenames.append(s[1])
         line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
@@ -82,7 +80,6 @@ def genheadrpcfun():
         servicestr += line
 
     servicestr += tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
-    servicestr += tabstr + controller.replace('(', '') + ',\n'
     servicestr += tabstr + 'const ::google::protobuf::Message* request,\n'
     servicestr += tabstr + '::google::protobuf::Message* response)override\n'
     servicestr += tabstr + '{\n'
@@ -111,26 +108,12 @@ def genheadrpcfun():
     return servicestr
 
 def classbegin():
-    return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
+    return 'class ' + local.playerservice + 'Service : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
 
 def genheadrpcfun():
-    global controller
     servicestr = 'public:\n'
     local.servicenames = []
-    for service in local.rpcarry:
-        s = service.strip(' ').split(' ')
-        line = tabstr + 'void ' + s[1] + controller + ',\n'
-        local.servicenames.append(s[1])
-        line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
-        if rsp == 'google.protobuf.Empty' :
-            line += tabstr + tabstr + '::google::protobuf::Empty* response);\n'
-        else :
-            line += tabstr + tabstr + local.pkg + '::' + rsp + '* response);\n\n'
-        servicestr += line
-
     servicestr += tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
-    servicestr += tabstr + controller.replace('(', '') + ',\n'
     servicestr += tabstr + 'const ::google::protobuf::Message* request,\n'
     servicestr += tabstr + '::google::protobuf::Message* response)override\n'
     servicestr += tabstr + '{\n'
@@ -139,7 +122,7 @@ def genheadrpcfun():
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
-        servicestr += tabstr + tabstr + tabstr + s[1] + '(entity,\n'
+        servicestr += tabstr + tabstr + tabstr + 'g_lua["' + s[1] + '"](\n'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
@@ -167,11 +150,35 @@ def genheadfile(filename):
         shutil.copy(fullfilename, newheadfilename)
         return
     newstr = '#pragma once\n'
+    newstr += '#include <sol/sol.hpp>\n'  
+    newstr += '#include "player_service.h"\n'  
+    newstr += '#include "src/game_logic/game_registry.h"\n'  
+    newstr += 'extern thread_local sol::state g_lua;\n'
     newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
     for i in range(0, len(headfun)) :             
         newstr += headfun[i]()
     newstr += '};\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
+        file.write(newstr)
+
+def genplayerservcielist(filename):
+    fullfilename = servicedir + serverstr + filename
+    newstr =  '#include <memory>\n'
+    newstr +=  '#include <unordered_map>\n'
+    newstr += '#include "player_service.h"\n'
+    for f in local.fileservice:
+        newstr += '#include "' + f + '.pb.h"\n'
+        newstr += '#include "' + includedir + serverstr + f.replace(protodir, '') + '.h"\n'
+    newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
+    for service in local.playerservicearray:
+        newstr += 'class ' + service + 'Impl : public '  + service + '{};\n'
+    newstr += 'void InitPlayerServcie()\n{\n'
+    for service in local.playerservicearray:
+        newstr += tabstr + 'g_player_services.emplace("' + service + '"'
+        newstr += ', std::make_unique<' + service + 'Service>(new '
+        newstr +=  service.replace('.', '') + 'Impl));\n'
+    newstr += '}\n'
+    with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def generate(filename):
@@ -180,7 +187,7 @@ def generate(filename):
         genheadfile(filename)
 
 def parseplayerservcie(filename):
-    if filename.find('normal') >= 0  or filename.find(rg) >= 0:
+    if filename.find('normal') >= 0  or filename.find(rg) >= 0 or filename.find('server') >= 0:
         return
     local.fileservice.append(filename.replace('.proto', ''))
     with open(filename,'r', encoding='utf-8') as file:
@@ -214,6 +221,8 @@ def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
         for filename in filenames:    
             if filename.find(client_player) >= 0 and filename.find(serverstr) >= 0:
+                md5copy(filename)
+            if filename.find('player_service') >= 0 and filename.find(serverstr) >= 0:
                 md5copy(filename)
 
 genfile = []
@@ -258,6 +267,9 @@ def main():
                 threads.append(t)
     for t in threads :
         t.join()
+    for file in genfile:
+        parseplayerservcie(file)
+    genplayerservcielist('player_service.cpp')
 
 inputfile() 
 main()
