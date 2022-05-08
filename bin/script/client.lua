@@ -6,7 +6,7 @@ end
 function ReadyGo()
 	request = LoginRequest.new()
 	request:ReadyGo()
-	player:sendother(request)
+	player:send(request)
 end
 
 function Example()
@@ -23,16 +23,16 @@ end
 
 function CreatePlayer()
 	request = CreatePlayerRequest.new()
-	player:sendother(request)
+	player:send(request)
 end
 
 function EnterGame(guid)
 	request = EnterGameRequest.new()
 	request.guid = guid
-	player:sendother(request)
+	player:send(request)
 end
 
 function LeaveGame()
 	request = LeaveGameRequest.new()
-	player:sendother(request)
+	player:send(request)
 end
