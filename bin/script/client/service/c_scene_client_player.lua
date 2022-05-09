@@ -15,7 +15,9 @@ end
 
 function PushSceneInfoS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
-	print(response:DebugString())
+	message = EnterSeceneC2SRequest.new()
+	message.scene_info.scene_confid = 2
+	player:send(message)
 ---<<< END WRITING YOUR CODE 
 end
 

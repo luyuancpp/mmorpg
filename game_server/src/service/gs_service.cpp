@@ -49,7 +49,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 		return;
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
-	reg.emplace_or_replace<playercomp::NormalLogin>(player);
+	reg.emplace_or_replace<NormalLogin>(player);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -220,7 +220,7 @@ void GsServiceImpl::CoverPlayer(::google::protobuf::RpcController* controller,
 		return;
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
-	reg.emplace_or_replace<playercomp::CoverPlayerLogin>(player);
+	reg.emplace_or_replace<CoverPlayerLogin>(player);
 ///<<< END WRITING YOUR CODE 
 }
 

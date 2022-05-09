@@ -11,7 +11,7 @@ srcdir = './md5/'
 destdir = '../pb2sol2/'
 setname = '::set_'
 mutablename = '::mutable_'
-protodir = './logic_proto/'
+genprotodir = ['./logic_proto/', './component_proto/']
 enum = {}
 
 if not os.path.exists(srcdir):
@@ -19,7 +19,7 @@ if not os.path.exists(srcdir):
 if not os.path.exists(destdir):
     os.makedirs(destdir)    
 
-def genluasol(filename, srcdir):
+def genluasol(filename, srcdir, protodir):
     global funsname
     msgcode = 0
     pbnamespace = filename.replace('.proto', '')
@@ -178,8 +178,8 @@ def gentotalfile(destdir, srcdir):
         cppnewstr += '}\n'
         file.write(cppnewstr)    
 
-genluasol('common.proto', srcdir)
-genluasol('c2gw.proto', srcdir)
+genluasol('common.proto', srcdir, '')
+genluasol('c2gw.proto', srcdir, '')
 
 def get_file_list(file_path):
     dir_list = os.listdir(file_path)
@@ -190,11 +190,12 @@ def get_file_list(file_path):
         return dir_list
 
 def inputfile():
-    dir_list  = get_file_list(protodir)
-    for filename in dir_list:
-        if filename.find('client_player.proto') < 0:
-            continue
-        genluasol(protodir + filename, srcdir)
+    for protodir in genprotodir:
+        dir_list  = get_file_list(protodir)
+        for filename in dir_list:
+            if not (filename.find('client_player.proto') >= 0 or filename.find('comp.proto') >= 0):
+                continue
+            genluasol(protodir + filename, srcdir, protodir)
 
 inputfile()
 gentotalfile(destdir, srcdir)
