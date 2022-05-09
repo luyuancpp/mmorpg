@@ -33,7 +33,7 @@ writedir = '../../../../client/src/service/logic/'
 client_player = 'client_player'
 server_player = 'server_player'
 serverstr = 'c_'
-controller = '(request, response)\n'
+process_fun_name = 'Process(request, response)\n'
 
 filesrcdestpath = {}
 
@@ -68,7 +68,7 @@ def gencpprpcfunbegin(rpcindex):
     servicestr = ''
     s = local.rpcarry[rpcindex]
     s = s.strip(' ').split(' ')
-    servicestr = 'function ' +  s[1] + 'Process' + controller
+    servicestr = 'function ' +  s[1] + process_fun_name
     return servicestr
 
 def yourcode():
@@ -100,7 +100,7 @@ def gencppfile(filename):
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
-                    elif serviceidx < len(local.rpcarry) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
+                    elif serviceidx < len(local.rpcarry) and fileline.find(process_fun_name) >= 0 :
                         owncode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
