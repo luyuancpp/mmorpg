@@ -14,7 +14,7 @@ public:
     {
         switch(method->index()) {
         case 0:
-            g_lua["TeamInfoNotify"](
+            g_lua["TeamInfoNotifyProcess"](
             ::google::protobuf::internal::DownCast<const ::TeamInfoS2CRequest*>( request),
             ::google::protobuf::internal::DownCast<::TeamInfoS2CResponse*>(response));
         break;

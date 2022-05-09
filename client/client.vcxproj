@@ -157,6 +157,7 @@
     <ClCompile Include="src\client.cpp" />
     <ClCompile Include="src\luacpp\lua_module.cpp" />
     <ClCompile Include="src\service\logic\c_player_service.cpp" />
+    <ClCompile Include="src\service\logic\service_lua.cpp" />
     <ClCompile Include="src\service\service.cpp" />
   </ItemGroup>
   <ItemGroup>

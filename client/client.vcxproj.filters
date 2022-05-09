@@ -30,6 +30,9 @@
     <ClCompile Include="src\service\logic\c_player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\logic\service_lua.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client.h">

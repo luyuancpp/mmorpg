@@ -14,17 +14,17 @@ public:
     {
         switch(method->index()) {
         case 0:
-            g_lua["EnterSceneC2S"](
+            g_lua["EnterSceneC2SProcess"](
             ::google::protobuf::internal::DownCast<const ::EnterSeceneC2SRequest*>( request),
             ::google::protobuf::internal::DownCast<::EnterSeceneC2SResponse*>(response));
         break;
         case 1:
-            g_lua["PushEnterSceneS2C"](
+            g_lua["PushEnterSceneS2CProcess"](
             ::google::protobuf::internal::DownCast<const ::EnterSeceneS2C*>( request),
             ::google::protobuf::internal::DownCast<::EnterSeceneS2C*>(response));
         break;
         case 2:
-            g_lua["PushSceneInfoS2C"](
+            g_lua["PushSceneInfoS2CProcess"](
             ::google::protobuf::internal::DownCast<const ::SceneInfoS2C*>( request),
             ::google::protobuf::internal::DownCast<::SceneInfoS2C*>(response));
         break;

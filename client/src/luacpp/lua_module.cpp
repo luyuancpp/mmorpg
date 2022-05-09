@@ -5,8 +5,6 @@
 #include "src/client.h"
 #include "src/util/file2string.h"
 
-#include "c2gw.pb.h"
-
 using namespace c2gw;
 
 struct PlayerId {
@@ -16,6 +14,7 @@ public:
 thread_local uint64_t PlayerId::guid = 100;
 
 void pb2sol2();
+void InitServiceLua();
 
 void InitLua()
 {
@@ -34,6 +33,7 @@ void InitLua()
     {
         sol::error err = r;
         LOG_FATAL << err.what();
-    }    
+    }   
+    InitServiceLua();
 }
 
