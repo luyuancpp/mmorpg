@@ -5,6 +5,7 @@
 
 #include "src/luacpp/lua_module.h"
 #include "src/pb/pbc/msgmap.h"
+#include "src/service/logic/player_service.h"
 
 
 using namespace c2gw;
@@ -23,15 +24,8 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
         std::bind(&ClientService::OnEnterGameReplied, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<LeaveGameResponse>(
         std::bind(&ClientService::OnLeaveGameReplied, this, _1, _2, _3));
-	dispatcher_.registerMessageCallback<ClientResponse>(
-		std::bind(&ClientService::OnGsReplied, this, _1, _2, _3));
-	dispatcher_.registerMessageCallback<ClientResponse>(
-		std::bind(&ClientService::OnGsReplied, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<MessageBody>(
 		std::bind(&ClientService::OnMessageBodyReplied, this, _1, _2, _3));
-	dispatcher_.registerMessageCallback<EnterSeceneS2C>(
-		std::bind(&ClientService::OnMessageEnterSeceneS2CPtr, this, _1, _2, _3));
-
 }
 
 void ClientService::Send(const google::protobuf::Message& message)
@@ -93,32 +87,25 @@ void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
     DisConnect();
 }
 
-void ClientService::OnGsReplied(const muduo::net::TcpConnectionPtr& conn, 
-    const ClientResponsePtr& message, 
-    muduo::Timestamp t)
-{
-    auto msg_id = message->msg_id();
-    MessagePtr response(codec_.createMessage(g_serviceinfo[msg_id].response));
-    response->ParseFromString(message->response());
-    dispatcher_.onProtobufMessage(conn, response, t);
-}
-
 void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& conn,
     const MessageBodyPtr& message,
     muduo::Timestamp t)
 {
-	auto msg_id = message->msg_id();
-	MessagePtr response(codec_.createMessage(g_serviceinfo[msg_id].response));
-	response->ParseFromString(message->body());
-	dispatcher_.onProtobufMessage(conn, response, t);
-}
-
-void ClientService::OnMessageEnterSeceneS2CPtr(const muduo::net::TcpConnectionPtr& conn,
-    const EnterSeceneS2CPtr& message,
-    muduo::Timestamp)
-{
+    auto msg_id = message->msg_id();
+    auto msg_servcie = g_serviceinfo[msg_id];
+    auto sit = g_player_services.find(msg_servcie.service);
+    if (sit == g_player_services.end())
+    {
+        LOG_ERROR << "service not found " << msg_servcie.service;
+        return;
+    }
+    const google::protobuf::ServiceDescriptor* desc = sit->second->service()->GetDescriptor();
+    const google::protobuf::MethodDescriptor* method
+        = desc->FindMethodByName(msg_servcie.method);
+    MessagePtr response(codec_.createMessage(msg_servcie.response));
+    response->ParseFromString(message->body());
     AutoLuaPlayerPtr p(&g_lua.set("player", this));
-	g_lua["LeaveGame"]();
+    g_player_services[msg_servcie.service]->CallMethod(method, nullptr, response.get());
 }
 
 void ClientService::EnterGs(Guid guid)

@@ -57,17 +57,9 @@ public:
         const LeaveGameResponsePtr& message,
         muduo::Timestamp);
 
-	void OnGsReplied(const muduo::net::TcpConnectionPtr& conn,
-		const ClientResponsePtr& message,
-		muduo::Timestamp);
-
 	void OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& conn,
 		const MessageBodyPtr& message,
 		muduo::Timestamp);
-
-    void OnMessageEnterSeceneS2CPtr(const muduo::net::TcpConnectionPtr& conn,
-        const EnterSeceneS2CPtr& message,
-        muduo::Timestamp);
     
     void EnterGs(Guid guid);
 

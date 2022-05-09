@@ -36,3 +36,10 @@ function LeaveGame()
 	request = LeaveGameRequest.new()
 	player:send(request)
 end
+
+function PushSceneInfoS2C(request, response)
+end
+
+function PushEnterSceneS2C(request, response)
+	LeaveGame()
+end

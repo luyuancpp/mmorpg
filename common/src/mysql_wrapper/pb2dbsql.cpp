@@ -239,7 +239,6 @@ std::string Pb2DbSql::GetAlterTableAddFieldSql()
     {
         return "";
     }
-        
     std::string sql("ALTER TABLE ");
     sql += GetTypeName();
     for (int32_t i = 0; i < descriptor_->field_count(); ++i)
@@ -254,11 +253,12 @@ std::string Pb2DbSql::GetAlterTableAddFieldSql()
         sql += filed->name();
         sql += " ";
         sql += table_name_descriptor[filed->cpp_type()];
-        sql += ",";
+        if (i + 1 < descriptor_->field_count())
+        {
+            sql += ",";
+        }        
     }
-    sql[sql.length() - 1] = ';';
-
-        
+    
     if (nullptr == primarykey_field_)
     {
         std::string es("Table ");
@@ -267,6 +267,7 @@ std::string Pb2DbSql::GetAlterTableAddFieldSql()
         LOG_FATAL << es;
         return "";
     }
+    sql += ';';
     return sql;
 }
 
