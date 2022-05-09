@@ -159,7 +159,7 @@ def parseplayerservcie(filename):
                     local.openplayerservicearray.append(local.pkg + '.' + local.service)
                 
 def md5copy(filename):
-        if filename.find('md5') >= 0:
+        if filename.find('md5') >= 0 or filename.find('.lua') >= 0:
             return
         gennewfilename = servicedir  + filename
         filenamemd5 = gennewfilename + '.md5'
