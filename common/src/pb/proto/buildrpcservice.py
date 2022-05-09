@@ -211,7 +211,6 @@ def gencppfile(fullfilename, writedir):
     except FileNotFoundError:
         newstr += yourcode() + '\n'
         newstr += rpcbegin + '\n'
-
     while serviceidx < len(local.rpcarry) :
         newstr += gencpprpcfunbegin(serviceidx)
         newstr += yourcodebegin +  '\n'

@@ -232,7 +232,6 @@ def gencppfile(filename, serverstr):
                     continue                
     except FileNotFoundError:
         newstr += yourcode() + '\n'
-        serviceidx = 0
         newstr += rpcbegin + '\n'
     while serviceidx < len(local.rpcarry) :
         if isserverpushrpc(local.rpcarry[serviceidx]) == True :

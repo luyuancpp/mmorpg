@@ -27,7 +27,6 @@ rpcbegin = '---<<<rpc begin'
 rpcend = '---<<<rpc end'
 tabstr = '    '
 cpprpcpart = 1
-cppmaxpart = 4
 servicedir = './md5/'
 protodir = 'logic_proto/'
 writedir = '../../../../client/src/service/logic/'
@@ -76,21 +75,19 @@ def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 
 def gencppfile(filename):
-    global cppmaxpart
     cppfilename = writedir  + serverstr + filename.replace('.proto', '.lua').replace(protodir, '')
     newcppfilename = servicedir + serverstr + filename.replace('.proto', '.lua').replace(protodir, '')
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
         shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
         return
     newstr = ''
+    serviceidx = 0
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
             owncode = 1 
-            serviceidx = 0
             for fileline in file:
                 if part != cpprpcpart and fileline.find(yourcodebegin) >= 0:
-                    generated = 0
                     owncode = 1
                     newstr += fileline
                     continue
@@ -117,30 +114,20 @@ def gencppfile(filename):
                         serviceidx += 1  
                         continue
                     elif fileline.find(rpcend) >= 0:
-                        owncode = 0
-                        while serviceidx < len(local.rpcarry) :
-                            newstr += gencpprpcfunbegin(serviceidx)
-                            newstr += yourcodebegin + ' '  + '\n'
-                            newstr += yourcodeend + ' '  + '\nend\n\n'
-                            serviceidx += 1 
-                        newstr += fileline
-                        part += 1 
-                        continue
+                       break
                 if owncode == 1:
                     newstr += fileline
                     continue                
-                if part > cppmaxpart :
-                    break
+
     except FileNotFoundError:
             newstr += yourcode() + '\n'
-            serviceidx = 0
             newstr += rpcbegin + '\n'
-            while serviceidx < len(local.rpcarry) :
-                newstr += gencpprpcfunbegin(serviceidx)
-                newstr += yourcodebegin +  '\n'
-                newstr += yourcodeend + '\nend\n\n'
-                serviceidx += 1 
-            newstr += rpcend + '\n'
+    while serviceidx < len(local.rpcarry) :
+        newstr += gencpprpcfunbegin(serviceidx)
+        newstr += yourcodebegin +  '\n'
+        newstr += yourcodeend + '\nend\n\n'
+        serviceidx += 1 
+    newstr += rpcend + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
