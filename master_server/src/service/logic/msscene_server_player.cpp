@@ -10,26 +10,26 @@ void ServerPlayerSceneServiceImpl::LoginMs2Gs(EntityPtr& entity,
     const ::Ms2GsLoginRequest* request,
     ::google::protobuf::Empty* response)
 {
-///<<< BEGIN WRITING YOUR CODE LoginMs2Gs
-///<<< END WRITING YOUR CODE LoginMs2Gs
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 void ServerPlayerSceneServiceImpl::LoginGs2Ms(EntityPtr& entity,
     const ::Gs2MsLoginRequest* request,
     ::google::protobuf::Empty* response)
 {
-///<<< BEGIN WRITING YOUR CODE LoginGs2Ms
+///<<< BEGIN WRITING YOUR CODE
     Ms2GsLoginRequest message;
     Send2GsPlayer(message, entity);
-///<<< END WRITING YOUR CODE LoginGs2Ms
+///<<< END WRITING YOUR CODE
 }
 
 void ServerPlayerSceneServiceImpl::ReconnectMs2Gs(EntityPtr& entity,
     const ::Ms2GsReconnectRequest* request,
     ::google::protobuf::Empty* response)
 {
-///<<< BEGIN WRITING YOUR CODE ReconnectMs2Gs
-///<<< END WRITING YOUR CODE ReconnectMs2Gs
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end

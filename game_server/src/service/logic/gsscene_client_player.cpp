@@ -9,8 +9,8 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(EntityPtr& entity,
     const ::EnterSeceneC2SRequest* request,
     ::EnterSeceneC2SResponse* response)
 {
-///<<< BEGIN WRITING YOUR CODE EnterSceneC2S
-///<<< END WRITING YOUR CODE EnterSceneC2S
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end

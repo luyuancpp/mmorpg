@@ -10,8 +10,8 @@ void ServerPlayerTeamServiceImpl::EnterScene(EntityPtr& entity,
     const ::TeamTestRequest* request,
     ::TeamTestResponse* response)
 {
-///<<< BEGIN WRITING YOUR CODE EnterScene
-///<<< END WRITING YOUR CODE EnterScene
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end
