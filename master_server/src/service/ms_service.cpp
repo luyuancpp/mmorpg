@@ -100,7 +100,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StartGs
+///<<< BEGIN WRITING YOUR CODE 
 	response->set_master_node_id(g_ms_node->master_node_id());
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
@@ -159,7 +159,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	}
 	g_ms_node->AddGsNode(gs_entity);
 	LOG_INFO << "game connected " << request->gs_node_id();
-///<<< END WRITING YOUR CODE StartGs
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* controller,
@@ -168,7 +168,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnGwConnect
+///<<< BEGIN WRITING YOUR CODE 
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
 	entt::entity gate_entity{ entt::null };
 	for (auto e : reg.view<RpcServerConnection>())
@@ -192,7 +192,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 	{
 		g_ms_node->DoGateConnectGs(e, gate_entity);
 	}
-///<<< END WRITING YOUR CODE OnGwConnect
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* controller,
@@ -201,8 +201,8 @@ void MasterNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* con
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnGwLeaveGame
-///<<< END WRITING YOUR CODE OnGwLeaveGame
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnGwPlayerService(::google::protobuf::RpcController* controller,
@@ -211,8 +211,8 @@ void MasterNodeServiceImpl::OnGwPlayerService(::google::protobuf::RpcController*
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnGwPlayerService
-///<<< END WRITING YOUR CODE OnGwPlayerService
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* controller,
@@ -221,7 +221,7 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnGwDisconnect
+///<<< BEGIN WRITING YOUR CODE 
 	auto guid = request->guid();
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
 	if (entt::null == player)
@@ -248,7 +248,7 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	PlayerList::GetSingleton().LeaveGame(guid);
 	assert(!PlayerList::GetSingleton().HasPlayer(guid));
 	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
-///<<< END WRITING YOUR CODE OnGwDisconnect
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* controller,
@@ -257,7 +257,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnLsLoginAccount
+///<<< BEGIN WRITING YOUR CODE 
 
 	auto lit = logined_accounts_.find(request->account());
 	if (lit == logined_accounts_.end() &&
@@ -291,7 +291,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 			reg.emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id(), request->gate_node_id() });
 		}
 	}
-///<<< END WRITING YOUR CODE OnLsLoginAccount
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* controller,
@@ -300,7 +300,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnLsEnterGame
+///<<< BEGIN WRITING YOUR CODE 
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
 	auto guid = request->guid();
@@ -406,7 +406,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		}
 	}
 
-///<<< END WRITING YOUR CODE OnLsEnterGame
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* controller,
@@ -415,7 +415,7 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnLsLeaveGame
+///<<< BEGIN WRITING YOUR CODE 
 
 	auto guid = request->guid();
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
@@ -425,7 +425,7 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
 	assert(!PlayerList::GetSingleton().HasPlayer(guid));
 	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
 
-///<<< END WRITING YOUR CODE OnLsLeaveGame
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* controller,
@@ -434,7 +434,7 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnLsDisconnect
+///<<< BEGIN WRITING YOUR CODE 
 	logined_accounts_.erase(request->account());
 	auto guid = request->guid();
 	auto e = PlayerList::GetSingleton().GetPlayer(guid);
@@ -446,7 +446,7 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 	PlayerList::GetSingleton().LeaveGame(guid);
 	assert(!PlayerList::GetSingleton().HasPlayer(guid));
 	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
-///<<< END WRITING YOUR CODE OnLsDisconnect
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController* controller,
@@ -455,7 +455,7 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnGsPlayerService
+///<<< BEGIN WRITING YOUR CODE 
 	auto& message_extern = request->ex();
 	auto& player_msg = request->msg();
 	auto it = g_players.find(message_extern.player_id());
@@ -498,7 +498,7 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 	response->mutable_ex()->set_player_id(request->ex().player_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
 	response->mutable_msg()->set_msg_id(msg_id);
-///<<< END WRITING YOUR CODE OnGsPlayerService
+///<<< END WRITING YOUR CODE 
 }
 
 void MasterNodeServiceImpl::OnAddCrossServerScene(::google::protobuf::RpcController* controller,
@@ -507,8 +507,8 @@ void MasterNodeServiceImpl::OnAddCrossServerScene(::google::protobuf::RpcControl
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE OnAddCrossServerScene
-///<<< END WRITING YOUR CODE OnAddCrossServerScene
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end

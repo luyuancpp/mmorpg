@@ -32,7 +32,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StartCrossGs
+///<<< BEGIN WRITING YOUR CODE 
 
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
@@ -86,7 +86,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	}
 	g_gs_nodes.emplace(request->gs_node_id(), gs_entity);
 	LOG_INFO << "game node connected " << request->gs_node_id();
-///<<< END WRITING YOUR CODE StartCrossGs
+///<<< END WRITING YOUR CODE 
 }
 
 void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
@@ -95,7 +95,7 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StartMs
+///<<< BEGIN WRITING YOUR CODE 
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity ms_entity{ entt::null };
@@ -123,7 +123,7 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 	reg.emplace<MsStubPtr>(ms_entity, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	g_ms_nodes.emplace(request->ms_node_id(), ms_entity);
 	LOG_INFO << "ms node connected " << request->ms_node_id();
-///<<< END WRITING YOUR CODE StartMs
+///<<< END WRITING YOUR CODE 
 }
 
 void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* controller,
@@ -132,7 +132,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE EnterCrossMainScene
+///<<< BEGIN WRITING YOUR CODE 
 	auto scene = ScenesSystem::GetSingleton().get_scene(request->scene_id());
 	if (entt::null == scene)
 	{
@@ -155,7 +155,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 	esp.scene_ = scene;
 	esp.enterer_ = it.first->second;
 	ScenesSystem::GetSingleton().EnterScene(esp);
-///<<< END WRITING YOUR CODE EnterCrossMainScene
+///<<< END WRITING YOUR CODE 
 }
 
 void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
@@ -164,7 +164,7 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE EnterCrossMainSceneWeightRoundRobin
+///<<< BEGIN WRITING YOUR CODE 
 	GetSceneParam weight_round_robin_scene;
 	weight_round_robin_scene.scene_confid_ = request->scene_confid();
 	auto scene = ServerNodeSystem::GetSingleton().GetWeightRoundRobinMainScene(weight_round_robin_scene);
@@ -189,7 +189,7 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 	esp.scene_ = scene;
 	esp.enterer_ = it.first->second;
 	ScenesSystem::GetSingleton().EnterScene(esp);
-///<<< END WRITING YOUR CODE EnterCrossMainSceneWeightRoundRobin
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end

@@ -16,7 +16,7 @@ void DbServiceImpl::Login(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE Login
+///<<< BEGIN WRITING YOUR CODE 
 	::account_database& db = *response->mutable_account_player();
 	auto& account = request->account();
 	redis_->Load(db, account);
@@ -30,7 +30,7 @@ void DbServiceImpl::Login(::google::protobuf::RpcController* controller,
 		db.set_account(account);
 		redis_->Save(db, account);
 	}
-///<<< END WRITING YOUR CODE Login
+///<<< END WRITING YOUR CODE 
 }
 
 void DbServiceImpl::CreatePlayer(::google::protobuf::RpcController* controller,
@@ -39,7 +39,7 @@ void DbServiceImpl::CreatePlayer(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE CreatePlayer
+///<<< BEGIN WRITING YOUR CODE 
 	::account_database& r_db = *response->mutable_account_player();
 	redis_->Load(r_db, request->account());
 	player_database new_player;
@@ -50,7 +50,7 @@ void DbServiceImpl::CreatePlayer(::google::protobuf::RpcController* controller,
 	r_db.mutable_simple_players()->add_players()->set_guid(response->guid());
 	redis_->Save(new_player, new_player.guid());
 	redis_->Save(r_db, r_db.account());
-///<<< END WRITING YOUR CODE CreatePlayer
+///<<< END WRITING YOUR CODE 
 }
 
 void DbServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
@@ -59,7 +59,7 @@ void DbServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE EnterGame
+///<<< BEGIN WRITING YOUR CODE 
 	player_database new_player;
 	std::string where_case = std::string("guid = '") +
 		std::to_string(request->guid()) +
@@ -67,7 +67,7 @@ void DbServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	database_->LoadOne(new_player, where_case);
 	assert(new_player.guid() > 0);
 	redis_->Save(new_player, new_player.guid());
-///<<< END WRITING YOUR CODE EnterGame
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end

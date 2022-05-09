@@ -23,7 +23,7 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE ServerInfo
+///<<< BEGIN WRITING YOUR CODE 
 	auto group_id = request->group();
 	auto& servers_deploy = *response->mutable_info();
 
@@ -35,7 +35,7 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
 	db_->LoadOne(*servers_deploy.mutable_redis_info(), where_case);
 
 	LoadRegionDeploy(request->region_id(), servers_deploy.mutable_regin_info());
-///<<< END WRITING YOUR CODE ServerInfo
+///<<< END WRITING YOUR CODE 
 }
 
 void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
@@ -44,7 +44,7 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StartGS
+///<<< BEGIN WRITING YOUR CODE 
 		auto& server_deploy = *response->mutable_my_info();
 		auto& client_info = request->rpc_client();
 		muduo::net::InetAddress ip_port(client_info.ip(), client_info.port());
@@ -63,7 +63,7 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 		g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
 		g_deploy_server->SaveGSDb();
 		//g_deploy_server->LogReuseInfo();
-///<<< END WRITING YOUR CODE StartGS
+///<<< END WRITING YOUR CODE 
 }
 
 void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* controller,
@@ -72,9 +72,9 @@ void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* con
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StartRegionServer
+///<<< BEGIN WRITING YOUR CODE 
 	LoadRegionDeploy(request->region_id(), response->mutable_info());
-///<<< END WRITING YOUR CODE StartRegionServer
+///<<< END WRITING YOUR CODE 
 }
 
 void DeployServiceImpl::RegionServerInfo(::google::protobuf::RpcController* controller,
@@ -83,9 +83,9 @@ void DeployServiceImpl::RegionServerInfo(::google::protobuf::RpcController* cont
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE RegionServerInfo
+///<<< BEGIN WRITING YOUR CODE 
 	LoadRegionDeploy(request->region_id(), response->mutable_info());
-///<<< END WRITING YOUR CODE RegionServerInfo
+///<<< END WRITING YOUR CODE 
 }
 
 void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller,
@@ -94,10 +94,10 @@ void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE RegionInfo
+///<<< BEGIN WRITING YOUR CODE 
 	std::string where_case = std::to_string(request->region_id()) + " = region_id  ";
 	db_->LoadAll<::master_server_db>(*response->mutable_region_masters(), where_case);
-///<<< END WRITING YOUR CODE RegionInfo
+///<<< END WRITING YOUR CODE 
 }
 
 	///<<<rpc end

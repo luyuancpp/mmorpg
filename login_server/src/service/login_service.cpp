@@ -139,7 +139,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE Login
+///<<< BEGIN WRITING YOUR CODE 
 	d.SelfDelete();
 	//测试用例连接不登录马上断线，
 	//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
@@ -158,7 +158,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 		reg.emplace_or_replace<uint32_t>(it.first->second.entity(), request->gate_node_id());
 	}
 	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMSReplied, c, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
-///<<< END WRITING YOUR CODE Login
+///<<< END WRITING YOUR CODE 
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
@@ -167,7 +167,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE CreatPlayer
+///<<< BEGIN WRITING YOUR CODE 
 	d.SelfDelete();
 	// login process
 	//check name rule
@@ -193,7 +193,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 		c,
 		this,
 		&dbservice::DbService_Stub::CreatePlayer);
-///<<< END WRITING YOUR CODE CreatPlayer
+///<<< END WRITING YOUR CODE 
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
@@ -202,7 +202,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE EnterGame
+///<<< BEGIN WRITING YOUR CODE 
 	d.SelfDelete();
 	auto conn_id = request->conn_id();
 	auto cit = connections_.find(conn_id);
@@ -245,7 +245,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		c,
 		this,
 		&dbservice::DbService_Stub::EnterGame);
-///<<< END WRITING YOUR CODE EnterGame
+///<<< END WRITING YOUR CODE 
 }
 
 void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
@@ -254,7 +254,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE LeaveGame
+///<<< BEGIN WRITING YOUR CODE 
 	//连接过，登录过
 	auto cit = connections_.find(request->conn_id());
 	if (cit == connections_.end())
@@ -273,7 +273,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	ms_node_stub_.CallMethod(ms_request,
 		&msservice::MasterNodeService_Stub::OnLsLeaveGame);
 	connections_.erase(cit);
-///<<< END WRITING YOUR CODE LeaveGame
+///<<< END WRITING YOUR CODE 
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
@@ -282,7 +282,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE Disconnect
+///<<< BEGIN WRITING YOUR CODE 
 	//todo 不同的gate 相同的connect id
 	auto cit = connections_.find(request->conn_id());
 	if (cit == connections_.end())//连接并没有登录
@@ -303,7 +303,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	ms_node_stub_.CallMethod(message,
 		&msservice::MasterNodeService_Stub::OnLsDisconnect);
 	connections_.erase(cit);
-///<<< END WRITING YOUR CODE Disconnect
+///<<< END WRITING YOUR CODE 
 }
 
 	///<<<rpc end
