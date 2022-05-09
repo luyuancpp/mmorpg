@@ -155,6 +155,8 @@
     <ClCompile Include="src\game_logic\scene\scene.cpp" />
     <ClCompile Include="src\game_logic\scene\scene_factories.cpp" />
     <ClCompile Include="src\game_logic\scene\servernode_sys.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\scene_client_player_sol2.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\team_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\ms_player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\scene_comp.pb.cc" />

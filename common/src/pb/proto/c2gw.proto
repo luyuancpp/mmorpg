@@ -1,5 +1,4 @@
 syntax = "proto3";
-package c2gw;
 import "common.proto";
 
 message LoginRequest

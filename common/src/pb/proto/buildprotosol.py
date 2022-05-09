@@ -11,6 +11,7 @@ srcdir = './md5/'
 destdir = '../pb2sol2/'
 setname = '::set_'
 mutablename = '::mutable_'
+protodir = './logic_proto/'
 enum = {}
 
 if not os.path.exists(srcdir):
@@ -22,16 +23,14 @@ def genluasol(filename, srcdir):
     global funsname
     msgcode = 0
     pbnamespace = filename.replace('.proto', '')
-    funcname = 'void Pb2sol2' + filename.replace('.proto', '') + '()'
+    funcname = 'void Pb2sol2' + filename.replace('.proto', '').replace('.', '_').replace('/', '_') + '()'
     funsname.append(funcname)
     newstr = '#include "' + pbnamespace + '.pb.h"\n'
     newstr += '#include <sol/sol.hpp>\n'
-    if pbnamespace != 'common':
-        newstr += 'using namespace ' + pbnamespace + ';\n'
 
     newstr += 'extern thread_local sol::state g_lua;\n'
     newstr +=  funcname + '\n{\n'    
-    newfilename = srcdir + filename.replace('.proto', '_sol2.cpp')
+    newfilename = srcdir + filename.replace('.proto', '_sol2.cpp').replace(protodir, '')
     with open(filename,'r', encoding='utf-8') as file:
         filedbegin = 0
         for fileline in file:
@@ -47,6 +46,8 @@ def genluasol(filename, srcdir):
                 continue
             elif fileline.find(end) >= 0 and msgcode == 1:
                 filedbegin = 0
+                newstr += '"DebugString",\n'
+                newstr += '&' + classname + '::DebugString,\n'
                 newstr += 'sol::base_classes, sol::bases<::google::protobuf::Message>());\n\n'
                 msgcode = 0 
                 continue             
@@ -180,6 +181,22 @@ def gentotalfile(destdir, srcdir):
 genluasol('common.proto', srcdir)
 genluasol('c2gw.proto', srcdir)
 
+def get_file_list(file_path):
+    dir_list = os.listdir(file_path)
+    if not dir_list:
+        return
+    else:
+        dir_list = sorted(dir_list,key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
+        return dir_list
+
+def inputfile():
+    dir_list  = get_file_list(protodir)
+    for filename in dir_list:
+        if filename.find('client_player.proto') < 0:
+            continue
+        genluasol(protodir + filename, srcdir)
+
+inputfile()
 gentotalfile(destdir, srcdir)
 md5copy(destdir, srcdir, 'sol2.h')
 md5copy(destdir, srcdir, 'sol2.cpp')
