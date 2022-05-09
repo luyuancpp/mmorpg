@@ -2,8 +2,6 @@
 #include "src/pb/pbc/logic_proto/team_normal.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 class NormalS2STeamServiceImpl : public ::NormalS2STeamService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
