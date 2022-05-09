@@ -64,48 +64,6 @@ def inputfiledestdir(filename):
             if fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
                 break
-def genheadrpcfun():
-    servicestr = 'public:\n'
-    local.servicenames = []
-    for service in local.rpcarry:
-        s = service.strip(' ').split(' ')
-        line = tabstr + 'void ' + s[1] + '('
-        local.servicenames.append(s[1])
-        line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
-        if rsp == 'google.protobuf.Empty' :
-            line += tabstr + tabstr + '::google::protobuf::Empty* response);\n'
-        else :
-            line += tabstr + tabstr + local.pkg + '::' + rsp + '* response);\n\n'
-        servicestr += line
-
-    servicestr += tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
-    servicestr += tabstr + 'const ::google::protobuf::Message* request,\n'
-    servicestr += tabstr + '::google::protobuf::Message* response)override\n'
-    servicestr += tabstr + '{\n'
-    servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
-    index = 0
-    for service in local.rpcarry:
-        s = service.strip(' ').split(' ')
-        servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
-        servicestr += tabstr + tabstr + tabstr + s[1] + '(entity,\n'
-        servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
-        if rsp == 'google.protobuf.Empty' :
-            respone = '::google::protobuf::Empty*>(response'
-        else :
-            respone = local.pkg + '::' + rsp + '*>(response'
-        servicestr += local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '*>( request),\n'
-        servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<' 
-        servicestr += respone + '));\n'
-        servicestr += tabstr + tabstr +'break;\n'
-        index += 1
-    servicestr += tabstr + tabstr + 'default:\n'
-    servicestr += tabstr + tabstr + tabstr + 'GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";\n'
-    servicestr += tabstr + tabstr + 'break;\n'
-    servicestr += tabstr + tabstr + '}\n'
-    servicestr += tabstr + '}\n'
-    return servicestr
 
 def classbegin():
     return 'class ' + local.playerservice + 'Service : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
@@ -122,7 +80,7 @@ def genheadrpcfun():
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
-        servicestr += tabstr + tabstr + tabstr + 'g_lua["' + s[1] + '"](\n'
+        servicestr += tabstr + tabstr + tabstr + 'g_lua["' + s[1] + 'Process"](\n'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
