@@ -11,7 +11,4 @@ system("python buildopenplayerservice.py")
 system("python buildservernormalservice.py")
 system("python buildrpcclientplayerservice.py")
 system("python buildrpcclientservicelua.py")
-
-
-
-
+system("python buildclientserviceinitluacpp.py")

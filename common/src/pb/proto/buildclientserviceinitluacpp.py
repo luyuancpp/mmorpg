@@ -3,8 +3,9 @@ from os import system
 import md5tool
 import shutil
 
+luadir = '../../../../bin/script/client/service/'
 clientservicedir = '../../../../client/src/service/logic/'
-includedir = 'src/service/logic/'
+includedir = 'script/client/service/'
 md5dir = './md5/'
 cppfilename = 'service_lua.cpp'
 writedfilename = md5dir + cppfilename
@@ -20,7 +21,7 @@ def get_file_list(file_path):
         return dir_list
 
 def inputfile():
-    dir_list  = get_file_list(clientservicedir)
+    dir_list  = get_file_list(luadir)
     for filename in dir_list:
         if not (filename[-4:].lower() == '.lua'):
             continue
