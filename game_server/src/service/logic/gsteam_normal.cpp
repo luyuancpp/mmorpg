@@ -10,8 +10,8 @@ void NormalS2STeamServiceImpl::EnterScene(::google::protobuf::RpcController* con
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE EnterScene
-///<<< END WRITING YOUR CODE EnterScene
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end

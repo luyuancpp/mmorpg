@@ -115,8 +115,9 @@ def getpbdir(filename, writedir):
     return ''
 
 def genheadfile(fullfilename, writedir):
+    local.servicenames = []
     filename = fullfilename.replace(logicprotodir, '').replace('.proto', '.h') 
-    headfun = [emptyfun, emptyfun, classbegin, genheadrpcfun]
+    headfun = [classbegin, genheadrpcfun]
     hfullfilename = writedir +  getprevfilename(fullfilename, writedir) + filename
     newheadfilename = servicedir +  getprevfilename(fullfilename, writedir) +  filename
     newstr = '#pragma once\n'
@@ -139,13 +140,14 @@ def genheadfile(fullfilename, writedir):
                     owncode = 0
                     partend = 1
                     newstr += fileline
-                    part += 1
+                    
                     continue
                 if owncode == 1 :
                     newstr += fileline
                     continue
-                if part > 0 and part < len(headfun) and owncode == 0 and partend == 1:
+                if  part < len(headfun) and owncode == 0 and partend == 1:
                     newstr += headfun[part]()
+                    part += 1
                     partend = 0
                     continue
                 elif part >= len(headfun):
@@ -174,8 +176,6 @@ def gencppfile(fullfilename, writedir):
             owncode = 1 
             skipheadline = 0 
             serviceidx = 0
-            curservicename = ''
-            nextrpcline = 0
             for fileline in file:
                 if skipheadline < 2 :
                     skipheadline += 1
@@ -195,26 +195,24 @@ def gencppfile(fullfilename, writedir):
                         newstr += fileline
                         continue
                     elif serviceidx < len(local.rpcarry) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
-                        curservicename = local.servicenames[serviceidx]
                         owncode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
                     elif fileline.find(yourcodebegin) >= 0 :
-                        newstr += yourcodebegin + ' ' + curservicename + '\n'
+                        newstr += yourcodebegin + ' ' +  '\n'
                         owncode = 1
                         continue
                     elif fileline.find(yourcodeend) >= 0 :
-                        newstr += yourcodeend + ' ' + curservicename + '\n}\n\n'
+                        newstr += yourcodeend + ' ' +  '\n}\n\n'
                         owncode = 0
-                        nextrpcline = 0
                         serviceidx += 1  
                         continue
                     elif fileline.find(rpcend) >= 0:
                         owncode = 0
                         while serviceidx < len(local.rpcarry) :
                             newstr += gencpprpcfunbegin(serviceidx)
-                            newstr += yourcodebegin + ' ' + curservicename + '\n'
-                            newstr += yourcodeend + ' ' + curservicename + '\n}\n\n'
+                            newstr += yourcodebegin + ' ' +  '\n'
+                            newstr += yourcodeend + ' ' +  '\n}\n\n'
                             serviceidx += 1 
                         newstr += fileline
                         part += 1 

@@ -16,8 +16,8 @@ void ServerSceneServiceImpl::UpdateCrossMainSceneInfo(::google::protobuf::RpcCon
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE UpdateCrossMainSceneInfo
-///<<< END WRITING YOUR CODE UpdateCrossMainSceneInfo
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void ServerSceneServiceImpl::Ms2GsEnterScene(::google::protobuf::RpcController* controller,
@@ -26,7 +26,7 @@ void ServerSceneServiceImpl::Ms2GsEnterScene(::google::protobuf::RpcController* 
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE Ms2GsEnterScene
+///<<< BEGIN WRITING YOUR CODE 
     //顶号，或者登录
    
     auto it = g_players.find(request->player_id());
@@ -37,7 +37,7 @@ void ServerSceneServiceImpl::Ms2GsEnterScene(::google::protobuf::RpcController* 
     }
     EnterSeceneS2C msg;//进入了gate 然后才可以开始可以给客户端发送信息了,gs消息顺序问题要注意，进入a,再进入b gs到达客户端消息的顺序不一样
     Send2Player(msg, it->second.entity());
-///<<< END WRITING YOUR CODE Ms2GsEnterScene
+///<<< END WRITING YOUR CODE 
 }
 
 void ServerSceneServiceImpl::Ms2GsReconnectEnterScene(::google::protobuf::RpcController* controller,
@@ -46,8 +46,8 @@ void ServerSceneServiceImpl::Ms2GsReconnectEnterScene(::google::protobuf::RpcCon
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE Ms2GsReconnectEnterScene
-///<<< END WRITING YOUR CODE Ms2GsReconnectEnterScene
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end

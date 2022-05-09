@@ -10,8 +10,8 @@ void ServerSceneServiceImpl::UpdateCrossMainSceneInfo(::google::protobuf::RpcCon
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE UpdateCrossMainSceneInfo
-///<<< END WRITING YOUR CODE UpdateCrossMainSceneInfo
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void ServerSceneServiceImpl::Ms2GsEnterScene(::google::protobuf::RpcController* controller,
@@ -20,9 +20,9 @@ void ServerSceneServiceImpl::Ms2GsEnterScene(::google::protobuf::RpcController* 
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE Ms2GsEnterScene
+///<<< BEGIN WRITING YOUR CODE 
     
-///<<< END WRITING YOUR CODE Ms2GsEnterScene
+///<<< END WRITING YOUR CODE 
 }
 
 void ServerSceneServiceImpl::Ms2GsReconnectEnterScene(::google::protobuf::RpcController* controller,
@@ -31,8 +31,8 @@ void ServerSceneServiceImpl::Ms2GsReconnectEnterScene(::google::protobuf::RpcCon
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE Ms2GsReconnectEnterScene
-///<<< END WRITING YOUR CODE Ms2GsReconnectEnterScene
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end
