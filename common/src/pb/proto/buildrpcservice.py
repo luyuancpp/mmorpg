@@ -140,12 +140,11 @@ def genheadfile(fullfilename, writedir):
                     owncode = 0
                     partend = 1
                     newstr += fileline
-                    
                     continue
                 if owncode == 1 :
                     newstr += fileline
                     continue
-                if  part < len(headfun) and owncode == 0 and partend == 1:
+                if  part < len(headfun) and partend == 1:
                     newstr += headfun[part]()
                     part += 1
                     partend = 0
