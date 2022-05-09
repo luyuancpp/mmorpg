@@ -77,9 +77,3 @@ message ClientRequest
   bytes response = 5;
 }
 
-message ClientResponse
-{
-  uint64 id = 1;
-  bytes response = 2;
-  uint32 msg_id = 3;
-}

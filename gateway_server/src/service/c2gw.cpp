@@ -208,7 +208,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp)
 {
     auto& crp = cp->c_rp_;
-    crp.set_response(std::move(cp->s_rp_->response()));
+    crp.set_body(std::move(cp->s_rp_->response()));
     codec_.send(cp->client_conn_, crp);
 }
 
