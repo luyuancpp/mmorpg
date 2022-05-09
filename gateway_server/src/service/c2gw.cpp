@@ -17,9 +17,6 @@
 
 #include "login_service.pb.h"
 
-using namespace c2gw;
-
-
 std::unordered_set<Guid> g_connected_ids;
 ServerSequence g_server_sequence_;
 

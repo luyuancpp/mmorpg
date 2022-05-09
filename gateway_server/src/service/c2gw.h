@@ -19,7 +19,6 @@
 
 using namespace muduo;
 using namespace muduo::net;
-using namespace c2gw;
 
 extern std::unordered_set<Guid> g_connected_ids;
 extern ServerSequence g_server_sequence_;

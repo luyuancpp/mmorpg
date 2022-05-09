@@ -9,12 +9,13 @@ end
 
 function PushEnterSceneS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
-	LeaveGame()
+	--LeaveGame()
 ---<<< END WRITING YOUR CODE 
 end
 
 function PushSceneInfoS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
+	print(response:DebugString())
 ---<<< END WRITING YOUR CODE 
 end
 

@@ -14,7 +14,6 @@
 
 using namespace muduo;
 using namespace muduo::net;
-using namespace c2gw;
 
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
 using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;

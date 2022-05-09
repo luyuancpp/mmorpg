@@ -7,9 +7,6 @@
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic/player_service.h"
 
-
-using namespace c2gw;
-
 ClientService::ClientService(ProtobufDispatcher& dispatcher,
                              ProtobufCodec& codec, 
                              TcpClient& client) : codec_(codec), 
