@@ -368,7 +368,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		
 		//告诉账号被顶
 		auto& player_session = reg.get<PlayerSession>(player);
-		reg.emplace_or_replace<playercomp::ConverPlayer>(player);//连续顶几次
+		reg.emplace_or_replace<MsConverPlayerComp>(player);//连续顶几次
 		gwservice::KickConnRequest messag;
 		messag.set_conn_id(player_session.gate_conn_id_.conn_id_);
 		Send2Gate(messag, player_session.gate_node_id());
