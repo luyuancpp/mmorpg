@@ -214,8 +214,8 @@ def gencppfile(fullfilename, writedir):
 
     while serviceidx < len(local.rpcarry) :
         newstr += gencpprpcfunbegin(serviceidx)
-        newstr += yourcodebegin + ' ' + local.servicenames[serviceidx] + '\n'
-        newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
+        newstr += yourcodebegin +  '\n'
+        newstr += yourcodeend +  '\n}\n\n'
         serviceidx += 1 
     newstr += rpcend + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
