@@ -192,7 +192,7 @@ def gencppfile(fullfilename, writedir):
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
-                    elif serviceidx < len(local.servicenames) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
+                    elif serviceidx < len(local.rpcarry) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
                         owncode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
