@@ -47,8 +47,9 @@ message IpPort
 
 message MessageBody
 {
-  bytes body = 1;
-  uint32 msg_id = 2;
+  uint64 id = 1;
+  bytes body = 2;
+  uint32 msg_id = 3;
 }
 
 message NodeInfo

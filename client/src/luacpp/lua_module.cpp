@@ -27,8 +27,10 @@ void LogError(const std::string& s)
 void InitLua()
 {
     g_lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
-    g_lua.new_usertype<ClientService>("player", "send",
-			sol::as_function(&ClientService::SendOhter));
+    g_lua.new_usertype<ClientService>("player", "sendraw",
+			sol::as_function(&ClientService::SendOhter),
+            "send",
+            sol::as_function(&ClientService::Send));
     pb2sol2();
 
     g_lua.set_function("LogInfo", LogInfo);

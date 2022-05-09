@@ -19,7 +19,6 @@ using LoginResponsePtr = std::shared_ptr<LoginResponse>;
 using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;
 using EnterGameResponsePtr = std::shared_ptr<EnterGameResponse>;
 using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
-using ClientResponsePtr = std::shared_ptr<ClientResponse>;
 using MessageBodyPtr = std::shared_ptr<MessageBody>;
 using EnterSeceneS2CPtr = std::shared_ptr<EnterSeceneS2C>;
 
