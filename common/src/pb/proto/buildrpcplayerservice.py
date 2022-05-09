@@ -217,16 +217,15 @@ def gencppfile(filename, serverstr):
                         newstr += fileline
                         continue
                     elif serviceidx < len(local.rpcarry) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
-                        curservicename = local.servicenames[serviceidx]
                         owncode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
                     elif fileline.find(yourcodebegin) >= 0 :
-                        newstr += yourcodebegin + ' ' + curservicename + '\n'
+                        newstr += yourcodebegin  + '\n'
                         owncode = 1
                         continue
                     elif fileline.find(yourcodeend) >= 0 :
-                        newstr += yourcodeend + ' ' + curservicename + '\n}\n\n'
+                        newstr += yourcodeend + '\n}\n\n'
                         owncode = 0
                         serviceidx += 1  
                         continue
@@ -234,8 +233,8 @@ def gencppfile(filename, serverstr):
                         owncode = 0
                         while serviceidx < len(local.rpcarry) :
                             newstr += gencpprpcfunbegin(serviceidx)
-                            newstr += yourcodebegin + ' ' + curservicename + '\n'
-                            newstr += yourcodeend + ' ' + curservicename + '\n}\n\n'
+                            newstr += yourcodebegin  + '\n'
+                            newstr += yourcodeend  + '\n}\n\n'
                             serviceidx += 1 
                         newstr += fileline
                         part += 1 
