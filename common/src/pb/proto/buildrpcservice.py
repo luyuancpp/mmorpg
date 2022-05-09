@@ -27,7 +27,6 @@ msservicedir = '../../../../master_server/src/service/logic/'
 logicprotodir = './logic_proto/'
 tabstr = '    '
 cpprpcpart = 1
-cppmaxpart = 3
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/'
 
@@ -163,18 +162,17 @@ def genheadfile(fullfilename, writedir):
         file.write(newstr)
 
 def gencppfile(fullfilename, writedir):
-    global cppmaxpart
     filename = fullfilename.replace(logicprotodir, '').replace('.proto', '.cpp')
     cppfilename = writedir  + getprevfilename(fullfilename, writedir) + filename
     newcppfilename = servicedir + getprevfilename(fullfilename, writedir) + filename
     newstr = '#include "' + getprevfilename(fullfilename, writedir) + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
+    serviceidx = 0
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
             owncode = 1 
             skipheadline = 0 
-            serviceidx = 0
             for fileline in file:
                 if skipheadline < 2 :
                     skipheadline += 1
@@ -206,30 +204,20 @@ def gencppfile(fullfilename, writedir):
                         serviceidx += 1  
                         continue
                     elif fileline.find(rpcend) >= 0:
-                        owncode = 0
-                        while serviceidx < len(local.rpcarry) :
-                            newstr += gencpprpcfunbegin(serviceidx)
-                            newstr += yourcodebegin + ' ' +  '\n'
-                            newstr += yourcodeend + ' ' +  '\n}\n\n'
-                            serviceidx += 1 
-                        newstr += fileline
-                        part += 1 
-                        continue
+                        break
                 if owncode == 1:
                     newstr += fileline
                     continue                
-                if part > cppmaxpart :
-                    break
     except FileNotFoundError:
-            newstr += yourcode() + '\n'
-            serviceidx = 0
-            newstr += rpcbegin + '\n'
-            while serviceidx < len(local.rpcarry) :
-                newstr += gencpprpcfunbegin(serviceidx)
-                newstr += yourcodebegin + ' ' + local.servicenames[serviceidx] + '\n'
-                newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
-                serviceidx += 1 
-            newstr += rpcend + '\n'
+        newstr += yourcode() + '\n'
+        newstr += rpcbegin + '\n'
+
+    while serviceidx < len(local.rpcarry) :
+        newstr += gencpprpcfunbegin(serviceidx)
+        newstr += yourcodebegin + ' ' + local.servicenames[serviceidx] + '\n'
+        newstr += yourcodeend + ' ' + local.servicenames[serviceidx] + '\n}\n\n'
+        serviceidx += 1 
+    newstr += rpcend + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
