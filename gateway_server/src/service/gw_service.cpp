@@ -20,7 +20,7 @@ void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StartGS
+///<<< BEGIN WRITING YOUR CODE 
 	InetAddress gs_addr(request->ip(), request->port());
 	for (auto e : reg.view<InetAddress>())
 	{
@@ -42,7 +42,7 @@ void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 	reg.emplace<InetAddress>(gsi.entity_id.entity(), gs_addr);
 	g_gs_nodes.emplace(request->gs_node_id(), std::move(gsi));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->gs_node_id();
-///<<< END WRITING YOUR CODE StartGS
+///<<< END WRITING YOUR CODE 
 }
 
 void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
@@ -51,7 +51,7 @@ void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE StopGS
+///<<< BEGIN WRITING YOUR CODE 
 	for (auto e : reg.view<InetAddress>())
 	{
 		auto& c = reg.get<InetAddress>(e);
@@ -63,7 +63,7 @@ void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 		reg.destroy(e);
 		break;
 	}
-///<<< END WRITING YOUR CODE StopGS
+///<<< END WRITING YOUR CODE 
 }
 
 void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controller,
@@ -72,7 +72,7 @@ void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* control
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE PlayerEnterGs
+///<<< BEGIN WRITING YOUR CODE 
 
 	auto it = g_client_sessions_->find(request->conn_id());
 	if (it == g_client_sessions_->end())
@@ -83,7 +83,7 @@ void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* control
 	it->second.guid_ = request->player_id();
 	it->second.gs_node_id_ = request->gs_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
 
-///<<< END WRITING YOUR CODE PlayerEnterGs
+///<<< END WRITING YOUR CODE 
 }
 
 void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* controller,
@@ -92,7 +92,7 @@ void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* control
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE PlayerMessage
+///<<< BEGIN WRITING YOUR CODE 
 	auto conn_id = request->ex().conn_id();
 	auto it = g_client_sessions_->find(conn_id);
 	if (it == g_client_sessions_->end())
@@ -101,7 +101,7 @@ void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* control
 		return;
 	}
 	g_gateway_server->Send2Client(it->second.conn_, request->msg());
-///<<< END WRITING YOUR CODE PlayerMessage
+///<<< END WRITING YOUR CODE 
 }
 
 void GwNodeServiceImpl::GsPlayerService(::google::protobuf::RpcController* controller,
@@ -110,7 +110,7 @@ void GwNodeServiceImpl::GsPlayerService(::google::protobuf::RpcController* contr
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE GsPlayerService
+///<<< BEGIN WRITING YOUR CODE 
 	auto conn_id = request->ex().conn_id();
 	auto it = g_client_sessions_->find(conn_id);
 	if (it == g_client_sessions_->end())
@@ -119,7 +119,7 @@ void GwNodeServiceImpl::GsPlayerService(::google::protobuf::RpcController* contr
 		return;
 	}
 	g_gateway_server->Send2Client(it->second.conn_, request->msg());
-///<<< END WRITING YOUR CODE GsPlayerService
+///<<< END WRITING YOUR CODE 
 }
 
 void GwNodeServiceImpl::KickConnByMs(::google::protobuf::RpcController* controller,
@@ -128,10 +128,10 @@ void GwNodeServiceImpl::KickConnByMs(::google::protobuf::RpcController* controll
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE KickConnByMs
+///<<< BEGIN WRITING YOUR CODE 
 	g_client_sessions_->erase(request->conn_id());
 	LOG_INFO << "connid be kick " << request->conn_id();
-///<<< END WRITING YOUR CODE KickConnByMs
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end
