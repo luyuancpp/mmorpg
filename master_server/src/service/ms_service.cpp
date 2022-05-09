@@ -480,7 +480,7 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 	auto& serviceimpl = service_it->second;
 	google::protobuf::Service* service = serviceimpl->service();
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(g_serviceinfo[msg_id].method);
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
 		LOG_INFO << "msg not found " << msg_id;
