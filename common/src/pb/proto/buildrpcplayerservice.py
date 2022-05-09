@@ -27,7 +27,6 @@ rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
 tabstr = '    '
 cpprpcpart = 1
-cppmaxpart = 4
 controller = '(EntityPtr& entity'
 servicedir = './md5/'
 protodir = 'logic_proto/'
@@ -181,7 +180,6 @@ def genheadfile(filename, serverstr):
         file.write(newstr)
 
 def gencppfile(filename, serverstr):
-    global cppmaxpart
     writedir = getwritedir(serverstr)
     cppfilename = writedir  + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = servicedir + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
@@ -191,19 +189,17 @@ def gencppfile(filename, serverstr):
     newstr = '#include "' +  serverstr + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
     newstr += '#include "src/game_logic/game_registry.h"\n'
     newstr += '#include "src/network/message_sys.h"\n'
+    serviceidx = 0
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
             owncode = 1 
             skipheadline = 0 
-            serviceidx = 0
-            curservicename = ''
             for fileline in file:
                 if skipheadline < 3 :
                     skipheadline += 1
                     continue
                 if part != cpprpcpart and fileline.find(yourcodebegin) >= 0:
-                    generated = 0
                     owncode = 1
                     newstr += fileline
                     continue
@@ -230,33 +226,23 @@ def gencppfile(filename, serverstr):
                         serviceidx += 1  
                         continue
                     elif fileline.find(rpcend) >= 0:
-                        owncode = 0
-                        while serviceidx < len(local.rpcarry) :
-                            newstr += gencpprpcfunbegin(serviceidx)
-                            newstr += yourcodebegin  + '\n'
-                            newstr += yourcodeend  + '\n}\n\n'
-                            serviceidx += 1 
-                        newstr += fileline
-                        part += 1 
-                        continue
+                        break
                 if owncode == 1:
                     newstr += fileline
                     continue                
-                if part > cppmaxpart :
-                    break
     except FileNotFoundError:
-            newstr += yourcode() + '\n'
-            serviceidx = 0
-            newstr += rpcbegin + '\n'
-            while serviceidx < len(local.rpcarry) :
-                if isserverpushrpc(local.rpcarry[serviceidx]) == True :
-                    serviceidx += 1 
-                else:
-                    newstr += gencpprpcfunbegin(serviceidx)
-                    newstr += yourcodebegin +  '\n'
-                    newstr += yourcodeend + '\n}\n\n'
-                    serviceidx += 1 
-            newstr += rpcend + '\n'
+        newstr += yourcode() + '\n'
+        serviceidx = 0
+        newstr += rpcbegin + '\n'
+    while serviceidx < len(local.rpcarry) :
+        if isserverpushrpc(local.rpcarry[serviceidx]) == True :
+            serviceidx += 1 
+        else:
+            newstr += gencpprpcfunbegin(serviceidx)
+            newstr += yourcodebegin +  '\n'
+            newstr += yourcodeend + '\n}\n\n'
+            serviceidx += 1 
+    newstr += rpcend + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
