@@ -26,14 +26,6 @@ void InitLua()
     g_lua.new_usertype<PlayerId>("PlayerId",
         "guid",
         sol::var(PlayerId::guid));
-
-    auto contents = common::File2String("script/client.lua");
-    auto r = g_lua.script(contents);
-    if (!r.valid())
-    {
-        sol::error err = r;
-        LOG_FATAL << err.what();
-    }   
     InitServiceLua();
 }
 

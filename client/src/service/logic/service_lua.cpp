@@ -14,6 +14,15 @@ void InitServiceLua()
 			LOG_FATAL << err.what();
 		}
 	}
+	contents = common::File2String("script/client/service/client.lua");
+	{
+		auto r = g_lua.script(contents);
+		if (!r.valid())
+		{
+			sol::error err = r;
+			LOG_FATAL << err.what();
+		}
+	}
 	contents = common::File2String("script/client/service/c_scene_client_player.lua");
 	{
 		auto r = g_lua.script(contents);
