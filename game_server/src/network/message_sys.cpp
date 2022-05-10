@@ -53,6 +53,12 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 	gate->session_.Send(msg_wrapper);
 }
 
+
+void Send2Player(const google::protobuf::Message& message, EntityPtr& player)
+{
+    Send2Player(message, player.entity());
+}
+
 void Send2MsPlayer(const google::protobuf::Message& message, Guid player_id)
 {
 	auto it = g_players.find(player_id);
@@ -96,9 +102,9 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 	ms->session_->Send(msg_wrapper);
 }
 
-void Send2Player(const google::protobuf::Message& message, EntityPtr& entity)
+void Send2MsPlayer(const google::protobuf::Message& message, EntityPtr& player)
 {
-	Send2Player(message, entity.entity());
+	Send2MsPlayer(message, player.entity());
 }
 
 void Send2Ms(const google::protobuf::Message& messag)

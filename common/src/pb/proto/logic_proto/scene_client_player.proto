@@ -10,7 +10,7 @@ message EnterSeceneC2SRequest
 
 message EnterSeceneC2SResponse
 {
-	ClientError error = 1;
+	Tips error = 1;
 }
 
 message EnterSeceneS2C

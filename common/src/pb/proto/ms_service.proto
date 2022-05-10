@@ -57,7 +57,7 @@ message LoginAccountRequest
 
 message LoginAccountResponse
 { 
-  ClientError error = 1;
+  Tips error = 1;
 }
 
 message EnterGameRequest

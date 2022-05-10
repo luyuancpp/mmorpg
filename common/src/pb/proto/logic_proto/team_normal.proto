@@ -8,7 +8,7 @@ message TeamTestS2SRequest
 
 message TeamTestS2SRespone
 {
-	ClientError error = 1;
+	Tips error = 1;
 }
 
 

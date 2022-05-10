@@ -142,15 +142,15 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	{
 		return;
 	}
-	auto playerptr = g_players.find(request->player_id());
-	if (playerptr == g_players.end())
+	auto pit = g_players.find(request->player_id());
+	if (pit == g_players.end())
 	{
 		return;
 	}
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
 	player_request->ParseFromString(request->request());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
-	auto player = playerptr->second.entity();
+	auto player = pit->second.entity();
 	it->second->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
 	response->set_response(player_response->SerializeAsString());
 ///<<< END WRITING YOUR CODE 
