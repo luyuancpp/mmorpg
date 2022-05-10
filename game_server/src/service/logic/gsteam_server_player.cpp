@@ -5,7 +5,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerPlayerTeamServiceImpl::EnterScene(EntityPtr& entity,
+void ServerPlayerTeamServiceImpl::EnterScene(entt::entity& player,
     const ::TeamTestRequest* request,
     ::TeamTestResponse* response)
 {

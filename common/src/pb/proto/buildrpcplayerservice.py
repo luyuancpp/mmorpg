@@ -27,7 +27,7 @@ rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
 tabstr = '    '
 cpprpcpart = 1
-controller = '(EntityPtr& entity'
+controller = '(entt::entity& player'
 servicedir = './md5/'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
@@ -110,7 +110,7 @@ def genheadrpcfun():
             continue
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
-        servicestr += tabstr + tabstr + tabstr + s[1] + '(entity,\n'
+        servicestr += tabstr + tabstr + tabstr + s[1] + '(player,\n'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
