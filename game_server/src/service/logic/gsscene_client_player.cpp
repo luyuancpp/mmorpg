@@ -2,6 +2,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/message_sys.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "logic_proto/scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -10,9 +11,9 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(EntityPtr& entity,
     ::EnterSeceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    //Èç¹ûÊÇ¿ç·þ¸±±¾·þ²»ÄÜ»»³¡¾°
-
-    Send2MsPlayer();
+    //å¦‚æžœæ˜¯è·¨æœå‰¯æœ¬æœä¸èƒ½æ¢åœºæ™¯
+    Gs2MsEnterSceneRequest message;
+    Send2MsPlayer(message, entity.entity());
 ///<<< END WRITING YOUR CODE
 }
 

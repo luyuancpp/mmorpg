@@ -21,4 +21,12 @@ void ServerPlayerSceneServiceImpl::ReconnectMs2Gs(EntityPtr& entity,
 ///<<< END WRITING YOUR CODE
 }
 
+void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(EntityPtr& entity,
+    const ::Gs2MsEnterSceneRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
 ///<<<rpc end
