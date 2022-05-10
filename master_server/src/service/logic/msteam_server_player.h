@@ -5,18 +5,18 @@ class ServerPlayerTeamServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:
-    void EnterScene(EntityPtr& entity,
+    void EnterScene(entt::entity& player,
         const ::TeamTestRequest* request,
         ::TeamTestResponse* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-    EntityPtr& entity,
+    entt::entity& player,
     const ::google::protobuf::Message* request,
     ::google::protobuf::Message* response)override
     {
         switch(method->index()) {
         case 0:
-            EnterScene(entity,
+            EnterScene(player,
             ::google::protobuf::internal::DownCast<const ::TeamTestRequest*>( request),
             ::google::protobuf::internal::DownCast<::TeamTestResponse*>(response));
         break;

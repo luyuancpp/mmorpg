@@ -6,14 +6,14 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ClientPlayerSceneServiceImpl::EnterSceneC2S(EntityPtr& entity,
+void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity& player,
     const ::EnterSeceneC2SRequest* request,
     ::EnterSeceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     //如果是跨服副本服不能换场景
     Gs2MsEnterSceneRequest message;
-    Send2MsPlayer(message, entity.entity());
+    Send2MsPlayer(message, player);
 ///<<< END WRITING YOUR CODE
 }
 

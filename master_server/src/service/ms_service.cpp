@@ -489,7 +489,8 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
 	player_request->ParseFromString(player_msg.body());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
-	serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
+	auto player = it->second.entity();
+	serviceimpl->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
 	{
 		return;
