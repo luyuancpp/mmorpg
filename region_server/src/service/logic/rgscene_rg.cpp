@@ -136,13 +136,13 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 	auto scene = ScenesSystem::GetSingleton().get_scene(request->scene_id());
 	if (entt::null == scene)
 	{
-		response->mutable_error()->set_error_no(kRetEnterScenetWeightRoundRobinMainScene);
+		response->mutable_error()->set_id(kRetEnterScenetWeightRoundRobinMainScene);
 		return;
 	}
 	auto it = players_.emplace(request->player_id(), reg.create());
 	if (!it.second)
 	{
-		response->mutable_error()->set_error_no(kRetEnterSceneCreatePlayer);
+		response->mutable_error()->set_id(kRetEnterSceneCreatePlayer);
 		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
 		return;
 	}
@@ -170,13 +170,13 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 	auto scene = ServerNodeSystem::GetSingleton().GetWeightRoundRobinMainScene(weight_round_robin_scene);
 	if (entt::null == scene)
 	{
-		response->mutable_error()->set_error_no(kRetEnterScenetWeightRoundRobinMainScene);
+		response->mutable_error()->set_id(kRetEnterScenetWeightRoundRobinMainScene);
 		return;
 	}
 	auto it = players_.emplace(request->player_id(), reg.create());
 	if (!it.second)
 	{
-		response->mutable_error()->set_error_no(kRetEnterSceneCreatePlayer);
+		response->mutable_error()->set_id(kRetEnterSceneCreatePlayer);
 		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
 		return;
 	}
