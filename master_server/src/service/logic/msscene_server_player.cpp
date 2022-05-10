@@ -5,6 +5,8 @@
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/scene/servernode_sys.h"
 #include "src/return_code/error_code.h"
+
+#include "src/pb/pbc/logic_proto/common_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -38,7 +40,9 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity& player,
         scene = ServerNodeSystem::GetWeightRoundRobinMainScene(getp);
         if (entt::null == scene)
         {
-            //todo  告诉客户端不能换场景
+            TipsS2C message;
+            message.mutable_tips()->set_error_no(kRetEnterSceneSceneFull);
+            Send2Player(message, player);
             return;
         }
         scene_id = reg.get<Guid>(scene);
@@ -46,9 +50,12 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity& player,
     CheckEnterSceneParam csp;
     csp.scene_id_ = scene_id;
     csp.player_ = player;
-    if (kRetOK != ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp))
+    auto ret = ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp);
+    if (kRetOK != ret)
     {
-        //todo  告诉客户端不能进入该场景
+        TipsS2C message;
+        message.mutable_tips()->set_error_no(ret);
+        Send2Player(message, player);
         return;
     }
     

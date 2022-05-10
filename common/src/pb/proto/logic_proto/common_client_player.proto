@@ -1,0 +1,13 @@
+syntax = "proto3";
+import "common.proto";
+option cc_generic_services = true;
+
+message TipsS2C
+{
+	Tips tips = 1;
+}
+
+service ClientPlayerCommonService 
+{
+  rpc PushTipsS2C (TipsS2C) returns (TipsS2C);
+}
