@@ -35,6 +35,8 @@ enum  EnumCode : uint32_t
     kRetEnterScenetWeightRoundRobinMainScene = 4002,//所有场景已经满了
     kRetEnterSceneCreatePlayer = 4003,//玩家进入不了跨服
     kRetEnterGameGsCrash = 4004,//当前服务器不可进入，请重新进入
+    kRetEnterSceneServerType = 4005,//当前服务器不可切换场景
+    kRetEnterSceneParamError = 4006,//换场景参数错误
 
     //Team
     kRetTeamNotInApplicants = 5000,

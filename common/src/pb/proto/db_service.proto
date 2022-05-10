@@ -12,7 +12,7 @@ message LoginRequest
 
 message LoginResponse
 {
-	ClientError error = 1;
+	Tips error = 1;
   account_database account_player = 2;
 }
 
@@ -24,7 +24,7 @@ message CreatePlayerRequest
 
 message CreatePlayerResponse
 {
-  ClientError error = 1;
+  Tips error = 1;
   account_database account_player = 2;
   uint64 guid = 3;
 }
@@ -36,7 +36,7 @@ message EnterGameRequest
 
 message EnterGameResponse
 {
-  ClientError error = 1;
+  Tips error = 1;
   uint64 guid = 2;
 }
 

@@ -148,7 +148,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 	}
 	CheckEnterSceneParam csp;
 	csp.scene_id_ = reg.get<Guid>(scene);
-	csp.enter_ = it.first->second;
+	csp.player_ = it.first->second;
 	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp));
 
 	EnterSceneParam esp;
@@ -182,7 +182,7 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 	}
 	CheckEnterSceneParam csp;
 	csp.scene_id_ = reg.get<Guid>(scene);
-	csp.enter_ = it.first->second;
+	csp.player_ = it.first->second;
 	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp));
 
 	EnterSceneParam esp;

@@ -5,7 +5,7 @@ message c_account_simple_player
   uint64 guid = 1;
 }
 
-message ClientError
+message Tips
 {
   uint32 error_no = 1;
   repeated string error_param = 2;

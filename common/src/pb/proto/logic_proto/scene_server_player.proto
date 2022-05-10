@@ -1,6 +1,7 @@
 syntax = "proto3";
 import "common.proto";
 import "google/protobuf/empty.proto";
+import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
 
 message Ms2GsLoginRequest
@@ -13,11 +14,12 @@ message Ms2GsReconnectRequest
 
 message Gs2MsEnterSceneRequest
 {
+  SceneInfo scene_info = 1;
 }
 
 message SeceneGsResponse
 {
-	ClientError error = 1;
+	Tips error = 1;
 }
 
 service ServerPlayerSceneService 

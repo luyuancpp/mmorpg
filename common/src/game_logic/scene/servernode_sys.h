@@ -16,7 +16,7 @@ struct EnterSceneParam
 struct CheckEnterSceneParam
 {
 	Guid scene_id_{kInvalidGuid };
-	entt::entity enter_{ entt::null };
+	entt::entity player_{ entt::null };
 };
 
 struct LeaveSceneParam

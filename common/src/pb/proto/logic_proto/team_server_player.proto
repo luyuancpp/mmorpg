@@ -8,7 +8,7 @@ message TeamTestRequest
 
 message TeamTestResponse
 {
-	ClientError error = 1;
+	Tips error = 1;
 }
 
 service ServerPlayerTeamService
