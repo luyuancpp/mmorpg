@@ -69,7 +69,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
         return;
     }
 	g_player_common_sys.OnLogin(player);
-	g_player_scene_system.OnEnterScene(player);
+	
 }
 
 void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
@@ -355,6 +355,8 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			message.s_rq_.set_conn_id(request->conn_id());
 			message.s_rq_.set_gate_node_id(request->gate_node_id());
 			message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
+            auto& scene_info = reg.get<SceneInfo>(scene);
+			message.s_rq_.mutable_scenes_info()->CopyFrom(scene_info);
 			reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGsReplied,
 				message,
 				this,
