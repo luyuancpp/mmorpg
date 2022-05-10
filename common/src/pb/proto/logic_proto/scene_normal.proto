@@ -11,21 +11,9 @@ message UpdateCrossMainSceneInfoResponse
 {
 }
 
-message Ms2GsEnterSceneRequest
-{
-	SceneInfo scenes_info = 1;
-  uint64 player_id = 2;
-}
-
-message Ms2GsEnterSceneRespone
-{
-}
-
 //正常或者顶号进入场景
 //断线重连进入场景,断线重连分时间
 service ServerSceneService
 {
   rpc UpdateCrossMainSceneInfo (UpdateCrossMainSceneInfoRequest) returns (UpdateCrossMainSceneInfoResponse);
-  rpc Ms2GsEnterScene (Ms2GsEnterSceneRequest) returns (Ms2GsEnterSceneRespone);
-  rpc Ms2GsReconnectEnterScene (Ms2GsEnterSceneRequest) returns (Ms2GsEnterSceneRespone);
 }

@@ -17,6 +17,11 @@ message Gs2MsEnterSceneRequest
   SceneInfo scene_info = 1;
 }
 
+message Ms2GsEnterSceneRequest
+{
+  SceneInfo scene_info = 1;
+}
+
 message SeceneGsResponse
 {
 	Tips error = 1;
@@ -27,4 +32,5 @@ service ServerPlayerSceneService
   rpc LoginMs2Gs (Ms2GsLoginRequest) returns (google.protobuf.Empty);
   rpc ReconnectMs2Gs (Ms2GsReconnectRequest) returns (google.protobuf.Empty);
   rpc EnterSceneGs2Ms (Gs2MsEnterSceneRequest) returns (google.protobuf.Empty);
+  rpc EnterSceneMs2Gs (Ms2GsEnterSceneRequest) returns (google.protobuf.Empty);
 }
