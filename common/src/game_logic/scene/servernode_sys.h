@@ -21,7 +21,7 @@ struct CheckEnterSceneParam
 
 struct LeaveSceneParam
 {
-    entt::entity leave_player_{ entt::null };
+    entt::entity leaver_{ entt::null };
 };
 
 struct GetSceneParam

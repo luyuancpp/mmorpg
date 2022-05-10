@@ -7,7 +7,7 @@
 #include "src/comp/player_list.h"
 #include "src/network/message_sys.h"
 #include "src/game_logic/scene/scene.h"
-#include "src/sys/player_scene_sys.h"
+#include "src/sys/entity_scene_sys.h"
 
 #include "logic_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -24,7 +24,7 @@ void ServerPlayerSceneServiceImpl::LoginMs2Gs(entt::entity& player,
     auto scene = reg.get<SceneEntity>(player).scene_entity();
     message.mutable_scene_info()->CopyFrom(reg.get<SceneInfo>(scene));
     Send2Player(message, player);
-    g_player_scene_system.OnEnterScene(player);
+    g_entity_scene_system.OnEnterScene(player);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -49,6 +49,18 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity& player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    auto scene = ScenesSystem::GetSingleton().get_scene(request->scene_info().scene_id());
+    if (scene == entt::null)
+    {
+        LOG_FATAL << "scene not " << request->scene_info().scene_confid() << "," << request->scene_info().scene_id();
+        return;
+    }
+    g_entity_scene_system.LeaveScene(player);
+
+    EnterSceneParam ep;
+    ep.enterer_ = player;
+    ep.scene_ = scene;
+    g_entity_scene_system.EnterScene(ep);
 ///<<< END WRITING YOUR CODE
 }
 

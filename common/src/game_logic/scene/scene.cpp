@@ -166,7 +166,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 {
-    auto leave_player = param.leave_player_;
+    auto leave_player = param.leaver_;
     auto& player_scene_entity = reg.get<SceneEntity>(leave_player);
     auto scene_entity = player_scene_entity.scene_entity();
     reg.get<ScenePlayers>(scene_entity).erase(leave_player);
@@ -205,7 +205,7 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
     }
 
     LeaveSceneParam leave_param;
-    leave_param.leave_player_ = compel_entity;
+    leave_param.leaver_ = compel_entity;
     LeaveScene(leave_param);
 
     EnterSceneParam enter_param;
