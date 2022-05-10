@@ -36,7 +36,6 @@ message MsPlayerMessageExtern
   uint64 player_id = 1;
 }
 
-
 message MsPlayerMessageRequest
 {
   MessageBody msg = 1;
@@ -77,7 +76,6 @@ message ConnectRequest
   IpPort rpc_client = 1;
   uint32 gate_node_id = 2;
 }
-
 
 service GsService {
   rpc EnterGs (EnterGsRequest) returns (EnterGsRespone);

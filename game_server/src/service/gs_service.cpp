@@ -11,6 +11,7 @@
 #include "src/network/server_component.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic/player_service.h"
+#include "src/game_logic/scene/scene.h"
 
 #include "c2gw.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
@@ -26,6 +27,12 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	auto scene = ScenesSystem::GetSingleton().get_scene(request->scenes_info().scene_id());
+    if (scene == entt::null)
+    {
+        LOG_ERROR << "scene not " << request->scenes_info().scene_confid() << "," << request->scenes_info().scene_id();
+        return;
+    }
 	//第一次进入世界,但是gate还没进入
 	auto it = g_players.emplace(request->player_id(), EntityPtr());
 	auto player = it.first->second.entity();
@@ -50,6 +57,11 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 	reg.emplace_or_replace<NormalLogin>(player);
+	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
+    EnterSceneParam ep;
+    ep.enterer_ = player;
+	ep.scene_ = scene;
+    ScenesSystem::GetSingleton().EnterScene(ep);
 ///<<< END WRITING YOUR CODE 
 }
 
