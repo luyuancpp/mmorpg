@@ -258,7 +258,6 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-
 	auto lit = logined_accounts_.find(request->account());
 	if (lit == logined_accounts_.end() &&
 		(PlayerList::GetSingleton().player_size() + logined_accounts_.size()) >= kMaxPlayerSize)

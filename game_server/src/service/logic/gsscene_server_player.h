@@ -8,9 +8,6 @@ public:
     void LoginMs2Gs(EntityPtr& entity,
         const ::Ms2GsLoginRequest* request,
         ::google::protobuf::Empty* response);
-    void LoginGs2Ms(EntityPtr& entity,
-        const ::Gs2MsLoginRequest* request,
-        ::google::protobuf::Empty* response);
     void ReconnectMs2Gs(EntityPtr& entity,
         const ::Ms2GsReconnectRequest* request,
         ::google::protobuf::Empty* response);
@@ -26,11 +23,6 @@ public:
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 1:
-            LoginGs2Ms(entity,
-            ::google::protobuf::internal::DownCast<const ::Gs2MsLoginRequest*>( request),
-            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
-        break;
-        case 2:
             ReconnectMs2Gs(entity,
             ::google::protobuf::internal::DownCast<const ::Ms2GsReconnectRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));

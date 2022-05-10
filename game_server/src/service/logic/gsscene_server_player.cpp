@@ -13,14 +13,6 @@ void ServerPlayerSceneServiceImpl::LoginMs2Gs(EntityPtr& entity,
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::LoginGs2Ms(EntityPtr& entity,
-    const ::Gs2MsLoginRequest* request,
-    ::google::protobuf::Empty* response)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
 void ServerPlayerSceneServiceImpl::ReconnectMs2Gs(EntityPtr& entity,
     const ::Ms2GsReconnectRequest* request,
     ::google::protobuf::Empty* response)

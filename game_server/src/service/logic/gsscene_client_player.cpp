@@ -10,6 +10,9 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(EntityPtr& entity,
     ::EnterSeceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    //如果是跨服副本服不能换场景
+
+    Send2MsPlayer();
 ///<<< END WRITING YOUR CODE
 }
 
