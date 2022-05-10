@@ -53,5 +53,8 @@
     <ClInclude Include="src\service\logic\player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\service\logic\c_common_client_player.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
