@@ -11,6 +11,9 @@ public:
     void ReconnectMs2Gs(EntityPtr& entity,
         const ::Ms2GsReconnectRequest* request,
         ::google::protobuf::Empty* response);
+    void EnterSceneGs2Ms(EntityPtr& entity,
+        const ::Gs2MsEnterSceneRequest* request,
+        ::google::protobuf::Empty* response);
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
     EntityPtr& entity,
     const ::google::protobuf::Message* request,
@@ -25,6 +28,11 @@ public:
         case 1:
             ReconnectMs2Gs(entity,
             ::google::protobuf::internal::DownCast<const ::Ms2GsReconnectRequest*>( request),
+            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
+        break;
+        case 2:
+            EnterSceneGs2Ms(entity,
+            ::google::protobuf::internal::DownCast<const ::Gs2MsEnterSceneRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         default:
