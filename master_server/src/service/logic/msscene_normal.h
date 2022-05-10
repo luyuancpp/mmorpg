@@ -12,14 +12,4 @@ public:
         ::UpdateCrossMainSceneInfoResponse* response,
         ::google::protobuf::Closure* done)override;
 
-    void Ms2GsEnterScene(::google::protobuf::RpcController* controller,
-        const ::Ms2GsEnterSceneRequest* request,
-        ::Ms2GsEnterSceneRespone* response,
-        ::google::protobuf::Closure* done)override;
-
-    void Ms2GsReconnectEnterScene(::google::protobuf::RpcController* controller,
-        const ::Ms2GsEnterSceneRequest* request,
-        ::Ms2GsEnterSceneRespone* response,
-        ::google::protobuf::Closure* done)override;
-
 };

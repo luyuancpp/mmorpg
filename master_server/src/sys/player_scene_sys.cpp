@@ -7,7 +7,7 @@
 #include "src/network/player_session.h"
 
 #include "gs_service.pb.h"
-#include "logic_proto/scene_normal.pb.h"
+#include "logic_proto/scene_server_player.pb.h"
 
 PlayerSceneSystem g_player_scene_system;
 
@@ -27,7 +27,6 @@ void PlayerSceneSystem::OnEnterScene(entt::entity player)
         LOG_ERROR << "scene info " << player_id;
         return;
     }
-    message.mutable_scenes_info()->CopyFrom(*p_scene_info);
-    message.set_player_id(player_id);
+    message.mutable_scene_info()->CopyFrom(*p_scene_info);
     Send2Gs(message, reg.get<PlayerSession>(player).gs_node_id());
 }

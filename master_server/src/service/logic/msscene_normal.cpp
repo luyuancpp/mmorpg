@@ -14,25 +14,4 @@ void ServerSceneServiceImpl::UpdateCrossMainSceneInfo(::google::protobuf::RpcCon
 ///<<< END WRITING YOUR CODE 
 }
 
-void ServerSceneServiceImpl::Ms2GsEnterScene(::google::protobuf::RpcController* controller,
-    const ::Ms2GsEnterSceneRequest* request,
-    ::Ms2GsEnterSceneRespone* response,
-    ::google::protobuf::Closure* done)
-{
-    AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE 
-    
-///<<< END WRITING YOUR CODE 
-}
-
-void ServerSceneServiceImpl::Ms2GsReconnectEnterScene(::google::protobuf::RpcController* controller,
-    const ::Ms2GsEnterSceneRequest* request,
-    ::Ms2GsEnterSceneRespone* response,
-    ::google::protobuf::Closure* done)
-{
-    AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
-}
-
 ///<<<rpc end

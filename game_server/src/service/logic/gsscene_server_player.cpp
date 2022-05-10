@@ -7,6 +7,7 @@
 #include "src/comp/player_list.h"
 #include "src/network/message_sys.h"
 #include "src/game_logic/scene/scene.h"
+#include "src/sys/player_scene_sys.h"
 
 #include "logic_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -17,12 +18,13 @@ void ServerPlayerSceneServiceImpl::LoginMs2Gs(entt::entity& player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    //todo½øÈëÁËgate È»ºó²Å¿ÉÒÔ¿ªÊ¼¿ÉÒÔ¸ø¿Í»§¶Ë·¢ËÍÐÅÏ¢ÁË,gsÏûÏ¢Ë³ÐòÎÊÌâÒª×¢Òâ£¬½øÈëa,ÔÙ½øÈëb gsµ½´ï¿Í»§¶ËÏûÏ¢µÄË³Ðò²»Ò»Ñù
-     //¶¥ºÅ£¬»òÕßµÇÂ¼
+    //todoè¿›å…¥äº†gate ç„¶åŽæ‰å¯ä»¥å¼€å§‹å¯ä»¥ç»™å®¢æˆ·ç«¯å‘é€ä¿¡æ¯äº†,gsæ¶ˆæ¯é¡ºåºé—®é¢˜è¦æ³¨æ„ï¼Œè¿›å…¥a,å†è¿›å…¥b gsåˆ°è¾¾å®¢æˆ·ç«¯æ¶ˆæ¯çš„é¡ºåºä¸ä¸€æ ·
+     //é¡¶å·ï¼Œæˆ–è€…ç™»å½•
     EnterSeceneS2C message;
     auto scene = reg.get<SceneEntity>(player).scene_entity();
     message.mutable_scene_info()->CopyFrom(reg.get<SceneInfo>(scene));
     Send2Player(message, player);
+    g_player_scene_system.OnEnterScene(player);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -36,6 +38,14 @@ void ServerPlayerSceneServiceImpl::ReconnectMs2Gs(entt::entity& player,
 
 void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity& player,
     const ::Gs2MsEnterSceneRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity& player,
+    const ::Ms2GsEnterSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

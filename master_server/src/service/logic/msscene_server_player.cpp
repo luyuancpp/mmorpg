@@ -101,4 +101,12 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity& player,
 ///<<< END WRITING YOUR CODE
 }
 
+void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity& player,
+    const ::Ms2GsEnterSceneRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
 ///<<<rpc end
