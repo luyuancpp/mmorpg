@@ -41,7 +41,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity& player,
         if (entt::null == scene)
         {
             TipsS2C message;
-            message.mutable_tips()->set_error_no(kRetEnterSceneSceneFull);
+            message.mutable_tips()->set_id(kRetEnterSceneSceneFull);
             Send2Player(message, player);
             return;
         }
@@ -54,7 +54,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity& player,
     if (kRetOK != ret)
     {
         TipsS2C message;
-        message.mutable_tips()->set_error_no(ret);
+        message.mutable_tips()->set_id(ret);
         Send2Player(message, player);
         return;
     }

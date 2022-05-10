@@ -27,7 +27,7 @@ void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 	auto cit = connections_.find(d->s_rq_.conn_id());
 	if (cit == connections_.end())
 	{
-		d->c_rp_->mutable_error()->set_error_no(kRetLoignCreatePlayerConnectionHasNotAccount);
+		d->c_rp_->mutable_error()->set_id(kRetLoignCreatePlayerConnectionHasNotAccount);
 		return;
 	}
 	auto& account = d->s_rq_.account();
@@ -39,7 +39,7 @@ void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
 		auto ret = player->Login();
 		if (ret != kRetOK)
 		{
-			response->mutable_error()->set_error_no(ret);
+			response->mutable_error()->set_id(ret);
 			return;
 		}
 		auto& account_data = player->account_data();

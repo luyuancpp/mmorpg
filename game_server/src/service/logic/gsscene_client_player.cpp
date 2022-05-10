@@ -19,13 +19,13 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity& player,
     if (kRoomServer == server_type.server_type_ ||
         kRoomSceneCrossServer == server_type.server_type_)
     {
-        response->mutable_error()->set_error_no(kRetEnterSceneServerType);
+        response->mutable_error()->set_id(kRetEnterSceneServerType);
         return;
     }
     auto& scene_info = request->scene_info();
     if (scene_info.scene_confid() <= 0 && scene_info.scene_id() <= 0)
     {
-        response->mutable_error()->set_error_no(kRetEnterSceneParamError);
+        response->mutable_error()->set_id(kRetEnterSceneParamError);
         return;
     }
     Gs2MsEnterSceneRequest message;

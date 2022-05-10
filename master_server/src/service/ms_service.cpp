@@ -263,7 +263,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 		(PlayerList::GetSingleton().player_size() + logined_accounts_.size()) >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队
-		response->mutable_error()->set_error_no(kRetLoginAccountPlayerFull);
+		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
 		return;
 	}
 
@@ -277,7 +277,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 		}
 		else//告诉客户端登录中
 		{
-			response->mutable_error()->set_error_no(kRetLoginIng);
+			response->mutable_error()->set_id(kRetLoginIng);
 		}
 	}
 	else

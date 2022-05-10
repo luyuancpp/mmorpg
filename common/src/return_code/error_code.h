@@ -92,7 +92,7 @@ if (ret != kRetOK)\
 #define  CheckReturnCloseureError(return_code)\
 if (return_code != kRetOK)\
 {\
-    response->mutable_error()->set_error_no(return_code);\
+    response->mutable_error()->set_id(return_code);\
     done->Run();\
     return;\
 }\
@@ -104,7 +104,7 @@ if (condition)\
 }\
 
 #define  ReturnCloseureError(f)\
-response->mutable_error()->set_error_no(f);\
+response->mutable_error()->set_id(f);\
 done->Run();\
 return;
 
@@ -113,7 +113,7 @@ return;
 #define  ReturnAutoCloseureError(return_code)\
 if (return_code != kRetOK)\
 {\
-    response->mutable_error()->set_error_no(return_code);\
+    response->mutable_error()->set_id(return_code);\
     return;\
 }\
 
