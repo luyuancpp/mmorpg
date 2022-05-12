@@ -5,10 +5,14 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/EventLoop.h"
 
+#include "c2gw.pb.h"
+
 #include <string>
 
 using namespace muduo;
 using namespace muduo::net;
+
+using MessageCachedArray = std::vector<uint8_t>;
 
 string toString(long long value)
 {
@@ -105,6 +109,66 @@ void authCallback(hiredis::Hiredis* c, redisReply* reply, string* password)
 void echo(hiredis::Hiredis* c, string* s)
 {
     c->command(std::bind(echoCallback, _1, _2, s), "echo %s", s->c_str());
+}
+
+void savePbConnectCallback(hiredis::Hiredis* c, int status)
+{
+    if (status != REDIS_OK)
+    {
+        LOG_ERROR << "connectCallback Error:" << c->errstr();
+    }
+    else
+    {
+        LOG_INFO << "Connected...";
+    }
+}
+
+void savePbCallback(hiredis::Hiredis* c, redisReply* reply, google::protobuf::Message& pb)
+{
+    LOG_INFO << pb.DebugString() << " " << redisReplyToString(reply);
+}
+
+void loadPbCallback(hiredis::Hiredis* c, redisReply* reply, google::protobuf::Message& pb)
+{
+    pb.ParseFromArray(reply->str, static_cast<int32_t>(reply->len));
+    LOG_INFO << pb.DebugString() << " " << redisReplyToString(reply);
+}
+
+TEST(Muduo, mredisclipb)
+{
+    Logger::setLogLevel(Logger::DEBUG);
+
+    EventLoop loop;
+
+    InetAddress serverAddr("127.0.0.1", 6379);
+    hiredis::Hiredis hiredis(&loop, serverAddr);
+
+    hiredis.setConnectCallback(savePbConnectCallback);
+    hiredis.setDisconnectCallback(disconnectCallback);
+    hiredis.connect();
+
+    std::string key = "luhailong0000000";
+
+    LoginRequest save_message;
+    loop.runAfter(2,[&hiredis, &key, &save_message]() ->void
+    {        
+        save_message.set_account("luhailon g111");
+        save_message.set_password("12 3");
+        MessageCachedArray message_cached_array(save_message.ByteSizeLong());
+        save_message.SerializeWithCachedSizesToArray(message_cached_array.data());
+        hiredis.command(std::bind(savePbCallback, _1, _2, save_message), "SET %b %b", key.c_str(), key.length(),
+            message_cached_array.data(),
+            message_cached_array.size());
+    });
+    LoginRequest load_message;
+    loop.runAfter(3, [&hiredis, &key, &load_message]() ->void
+        {
+            LoginRequest load_message;
+            std::string format = std::string("GET ") + key; 
+            hiredis.command(std::bind(loadPbCallback, _1, _2, load_message), format.c_str());
+        });
+   
+    loop.loop();
 }
 
 TEST(Muduo, mrediscli)
