@@ -6,8 +6,6 @@
 
 #include "src/redis_client/redis_client.h"
 
-using namespace common;
-
 TEST(RedisTest, SyncMessageLoad)
 {
     LoginRequest request;

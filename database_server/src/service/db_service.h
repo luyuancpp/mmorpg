@@ -7,10 +7,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-namespace common
-{
-	class RedisClient;
-}//namespace common;
+class RedisClient;
 
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE
@@ -19,7 +16,7 @@ class DbServiceImpl : public dbservice::DbService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
-	using RedisClientPtr = std::shared_ptr<common::RedisClient>;
+	using RedisClientPtr = std::shared_ptr<RedisClient>;
 
 	static DbServiceImpl& GetSingleton()
 	{

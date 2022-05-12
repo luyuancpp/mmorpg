@@ -17,7 +17,7 @@ namespace login
     class LoginServer : muduo::noncopyable, public Receiver<LoginServer>
     {
     public:
-        using RedisClientPtr = common::RedisClientPtr;
+        using RedisClientPtr = RedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using LoginStubl2ms = RpcStub<msservice::MasterNodeService_Stub>;
         using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;

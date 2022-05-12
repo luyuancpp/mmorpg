@@ -18,7 +18,7 @@
     class MasterServer : muduo::noncopyable, public Receiver<MasterServer>
     {
     public:
-        using RedisClientPtr = common::RedisClientPtr;
+        using RedisClientPtr = RedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using DbNodeStub = RpcStub<dbservice::DbService_Stub>;
         using RgNodeStub = RpcStub<regionservcie::RgService_Stub>;
