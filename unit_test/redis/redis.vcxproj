@@ -117,7 +117,7 @@
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../../common/;../../common/src/pb/pbc/;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4200</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4200;4819</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -147,7 +147,6 @@
     <ClCompile Include="..\..\common\src\pb\pbc\c2gw.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\common.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\comp.pb.cc" />
-    <ClCompile Include="..\..\common\src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="..\..\common\src\redis_client\redis_client.cpp" />
     <ClCompile Include="redis_test.cpp" />
   </ItemGroup>
@@ -155,7 +154,6 @@
     <ClInclude Include="..\..\common\src\pb\pbc\c2gw.pb.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\common.pb.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\comp.pb.h" />
-    <ClInclude Include="..\..\common\src\redis_client\async_redis_client.h" />
     <ClInclude Include="..\..\common\src\redis_client\redis_client.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
