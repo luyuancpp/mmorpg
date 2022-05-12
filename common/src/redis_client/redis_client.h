@@ -16,7 +16,7 @@ namespace google
     }//namespace protobuf
 }// namespace google
 
-class RedisClient
+class PbSyncRedisClient
 {
 public:
     using ContextPtr = std::shared_ptr<redisContext>;
@@ -38,5 +38,5 @@ private:
     ContextPtr context_;
 };
 
-using RedisClientPtr = std::shared_ptr<RedisClient>;
+using PbSyncRedisClientPtr = std::shared_ptr<PbSyncRedisClient>;
 

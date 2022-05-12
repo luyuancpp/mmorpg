@@ -18,13 +18,13 @@ class DatabaseServer : muduo::noncopyable, public Receiver<DatabaseServer>
 {
 public:
     using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
-    using RedisClientPtr = std::shared_ptr<RedisClient>;
+    using PbSyncRedisClientPtr = std::shared_ptr<PbSyncRedisClient>;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
     DatabaseServer(muduo::net::EventLoop* loop);
 
     MysqlClientPtr& player_mysql_client(){ return database_; }
-    RedisClientPtr& redis_client() { return redis_; }
+    PbSyncRedisClientPtr& redis_client() { return redis_; }
 
     void Init();
 
@@ -42,7 +42,7 @@ public:
 private:
     muduo::net::EventLoop* loop_{ nullptr };
     MysqlClientPtr database_;
-    RedisClientPtr redis_;
+    PbSyncRedisClientPtr redis_;
     RpcServerPtr server_;
 
     RpcClientPtr deploy_rpc_client_;

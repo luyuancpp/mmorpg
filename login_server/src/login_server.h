@@ -17,14 +17,13 @@ namespace login
     class LoginServer : muduo::noncopyable, public Receiver<LoginServer>
     {
     public:
-        using RedisClientPtr = RedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using LoginStubl2ms = RpcStub<msservice::MasterNodeService_Stub>;
         using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 
         LoginServer(muduo::net::EventLoop* loop);
             
-        RedisClientPtr& redis_client() { return redis_; }
+        PbSyncRedisClientPtr& redis_client() { return redis_; }
         uint32_t login_node_id() const { return node_info_.id(); }
 
         void Init();
@@ -43,7 +42,7 @@ namespace login
     private:
         muduo::net::EventLoop* loop_{ nullptr };
         
-        RedisClientPtr redis_;
+        PbSyncRedisClientPtr redis_;
         RpcServerPtr server_;
 
         RpcClientPtr deploy_rpc_client_;

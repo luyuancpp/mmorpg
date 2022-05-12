@@ -18,14 +18,14 @@
     class MasterServer : muduo::noncopyable, public Receiver<MasterServer>
     {
     public:
-        using RedisClientPtr = RedisClientPtr;
+        using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
         using DbNodeStub = RpcStub<dbservice::DbService_Stub>;
         using RgNodeStub = RpcStub<regionservcie::RgService_Stub>;
 
         MasterServer(muduo::net::EventLoop* loop);           
 
-        inline RedisClientPtr& redis_client() { return redis_; }
+        inline PbSyncRedisClientPtr& redis_client() { return redis_; }
         inline uint32_t master_node_id()const { return serverinfos_.master_info().id(); }
 
         void Init();
@@ -55,7 +55,7 @@
         void Register2Region();
 
         muduo::net::EventLoop* loop_{ nullptr };
-        RedisClientPtr redis_;
+        PbSyncRedisClientPtr redis_;
         RpcServerPtr server_;
 
         RpcClientPtr deploy_rpc_client_;
