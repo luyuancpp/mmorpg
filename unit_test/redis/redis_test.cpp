@@ -11,7 +11,7 @@ TEST(RedisTest, SyncMessageLoad)
     LoginRequest request;
     request.set_account("luhailon g");
     request.set_password("12 3");
-    RedisClient c;
+    PbSyncRedisClient c;
     c.Connect("127.0.0.1", 6379, 1, 1);
     c.Save(request);
     LoginRequest request_load;
