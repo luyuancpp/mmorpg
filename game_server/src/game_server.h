@@ -18,7 +18,7 @@
 class GameServer : muduo::noncopyable, public Receiver<GameServer>
 {
 public:
-    using RedisClientPtr = common::RedisClientPtr;
+    using RedisClientPtr = RedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     using StubMsNode = RpcStub<msservice::MasterNodeService_Stub>;
     using RgNodeStub = RpcStub<regionservcie::RgService_Stub>;

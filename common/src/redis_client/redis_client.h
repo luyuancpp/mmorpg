@@ -1,5 +1,4 @@
-#ifndef COMMON_SRC_REDIS_CLIENT_REDIS_CLIENT_H_
-#define COMMON_SRC_REDIS_CLIENT_REDIS_CLIENT_H_
+#pragma once
 
 #include <string>
 #include <memory>
@@ -17,8 +16,6 @@ namespace google
     }//namespace protobuf
 }// namespace google
 
-namespace common
-{
 class RedisClient
 {
 public:
@@ -43,8 +40,3 @@ private:
 
 using RedisClientPtr = std::shared_ptr<RedisClient>;
 
-}// namespase common
-
-
-
-#endif // COMMON_SRC_REDIS_CLIENT_REDIS_CLIENT_H_

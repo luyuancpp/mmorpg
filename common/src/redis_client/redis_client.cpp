@@ -5,9 +5,6 @@
 
 #include "google/protobuf/message.h"
 
-namespace common
-{
-
 void RedisClient::Connect(const std::string& redis_server_addr, int32_t port, int32_t sec, int32_t usec)
 {
     struct timeval timeout = { sec, usec };
@@ -100,7 +97,5 @@ void RedisClient::OnDisconnect()
 {
     
 }
-
-}//namespace common
 
 
