@@ -7,7 +7,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-class RedisClient;
+class PbSyncRedisClient;
 
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE
@@ -16,7 +16,7 @@ class DbServiceImpl : public dbservice::DbService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
-	using RedisClientPtr = std::shared_ptr<RedisClient>;
+	using PbSyncRedisClientPtr = std::shared_ptr<PbSyncRedisClient>;
 
 	static DbServiceImpl& GetSingleton()
 	{
@@ -29,13 +29,13 @@ public:
 		database_ = ptr;
 	}
 
-	void set_redis_client(RedisClientPtr& ptr)
+	void set_redis_client(PbSyncRedisClientPtr& ptr)
 	{
 		redis_ = ptr;
 	}
 private:
 	MysqlClientPtr database_;
-	RedisClientPtr redis_;
+	PbSyncRedisClientPtr redis_;
 ///<<< END WRITING YOUR CODE
 public:
     void Login(::google::protobuf::RpcController* controller,

@@ -28,7 +28,7 @@ MasterServer* g_ms_node = nullptr;
 
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-      redis_(std::make_shared<RedisClient>())
+      redis_(std::make_shared<PbSyncRedisClient>())
 { 
     global_entity() = reg.create();
 }    

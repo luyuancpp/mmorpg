@@ -14,7 +14,7 @@ namespace login
 {
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-      redis_(std::make_shared<RedisClient>()),
+      redis_(std::make_shared<PbSyncRedisClient>()),
       impl_( l2ms_login_stub_, l2db_login_stub_)
 {
 }

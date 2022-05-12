@@ -26,7 +26,7 @@ public:
 		LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 			LoginStubl2db& l2db_login_stub);
 
-		void set_redis_client(RedisClientPtr& p) { redis_ = p; }
+		void set_redis_client(PbSyncRedisClientPtr& p) { redis_ = p; }
 
 		using LoginRpcReplied = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
 		void LoginAccountDbReplied(LoginRpcReplied d);
@@ -51,7 +51,7 @@ public:
 	private:
 		void UpdateAccount(uint64_t connection_id, const ::account_database& a_d);
 
-		RedisClientPtr redis_;
+		PbSyncRedisClientPtr redis_;
 		ConnectionEntityMap connections_;
 		LoginStubl2ms& ms_node_stub_;
 		LoginStubl2db& l2db_login_stub_;
