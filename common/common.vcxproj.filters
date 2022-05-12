@@ -38,7 +38,6 @@
     <ClCompile Include="src\mysql_wrapper\mysql_client.cpp" />
     <ClCompile Include="src\mysql_wrapper\mysql_database.cpp" />
     <ClCompile Include="src\mysql_wrapper\pb2dbsql.cpp" />
-    <ClCompile Include="src\redis_client\async_redis_client.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\rpc_channel.cc" />
@@ -132,7 +131,6 @@
     <ClInclude Include="src\mysql_wrapper\mysql_result.h" />
     <ClInclude Include="src\mysql_wrapper\mysql_database.h" />
     <ClInclude Include="src\mysql_wrapper\pb2dbsql.h" />
-    <ClInclude Include="src\redis_client\async_redis_client.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />
     <ClInclude Include="src\return_code\error_code.h" />
     <ClInclude Include="src\return_code\return_code.h" />

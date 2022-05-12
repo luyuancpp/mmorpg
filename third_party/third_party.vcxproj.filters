@@ -129,6 +129,9 @@
     <ClCompile Include="muduo\muduo\net\protorpc\RpcCodec.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="muduo\contrib\hiredis\Hiredis.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="muduo\muduo\base\AsyncLogging.h">
@@ -291,6 +294,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="muduo\muduo\net\protorpc\RpcCodec.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo\contrib\hiredis\Hiredis.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,7 +7,6 @@
 #include "src/redis_client/redis_client.h"
 
 using namespace common;
-using namespace c2gw;
 
 TEST(RedisTest, SyncMessageLoad)
 {
