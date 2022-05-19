@@ -22,8 +22,8 @@
 #include "src/game_logic/scene/scene.h"
 #include "src/network/node_info.h"
 #include "src/service/logic/player_service.h"
-#include "src/sys/player_scene_system.h"
-#include "src/sys/player_common_system.h"
+#include "src/system/player_scene_system.h"
+#include "src/system/player_common_system.h"
 #include "src/network/server_component.h"
 
 #include "gs_service.pb.h"
