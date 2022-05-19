@@ -1,10 +1,9 @@
 #include <gtest/gtest.h>
 
-#include "src/mysql_database/mysql_database.h"
+#include "src/mysql_wrapper/mysql_database.h"
 
 #include "mysql_database_test.pb.h"
 
-using namespace common;
 
 DatabasePtr query_database;
 ConnetionParam query_database_param;
