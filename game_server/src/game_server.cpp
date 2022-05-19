@@ -17,6 +17,7 @@
 #include "src/network/deploy_rpcclient.h"
 #include "src/network/node_info.h"
 #include "src/pb/pbc/msgmap.h"
+#include "src/system/redis_system.h"
 
 using namespace common;
 
@@ -40,8 +41,7 @@ void GameServer::Init()
     loadallconfig();
     InitGlobalEntities();
     InitPlayerServcie();
-
-
+    
     InitNetwork();
 }
 
@@ -65,6 +65,9 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
    
     region_session_ = std::make_unique<RpcClient>(loop_, region_addr);
     
+    InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
+    g_redis_system.Init(serverAddr);
+
     StartGSRpcRC scp(std::make_shared<StartGSInfoRpcClosure>());
     scp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
     scp->s_rq_.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());

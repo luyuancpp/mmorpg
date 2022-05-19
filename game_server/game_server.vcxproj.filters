@@ -66,6 +66,9 @@
     <ClCompile Include="src\system\entity_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\system\redis_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\system\player_reids_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -120,6 +123,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\entity_scene_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\system\redis_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\player_reids_system.h">
