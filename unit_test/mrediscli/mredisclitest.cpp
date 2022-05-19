@@ -162,11 +162,11 @@ TEST(Muduo, mredisclipb)
     });
     LoginRequest load_message;
     loop.runAfter(3, [&hiredis, &key, &load_message]() ->void
-        {
-            LoginRequest load_message;
-            std::string format = std::string("GET ") + key; 
-            hiredis.command(std::bind(loadPbCallback, _1, _2, load_message), format.c_str());
-        });
+    {
+        LoginRequest load_message;
+        std::string format = std::string("GET ") + key; 
+        hiredis.command(std::bind(loadPbCallback, _1, _2, load_message), format.c_str());
+    });
    
     loop.loop();
 }
