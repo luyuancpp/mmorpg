@@ -188,7 +188,7 @@ def gencppfile(filename, serverstr):
         return
     newstr = '#include "' +  serverstr + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
     newstr += '#include "src/game_logic/game_registry.h"\n'
-    newstr += '#include "src/network/message_sys.h"\n'
+    newstr += '#include "src/network/message_system.h"\n'
     serviceidx = 0
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:

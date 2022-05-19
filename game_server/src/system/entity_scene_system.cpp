@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_logic/scene/servernode_sys.h"
+#include "src/game_logic/scene/servernode_system.h"
 #include "src/game_logic/scene/scene.h"
 
 EntitySceneSystem g_entity_scene_system;
