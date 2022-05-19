@@ -18,19 +18,6 @@ message EnterGsRespone
 {
 }
 
-//顶号
-message CoverPlayerRequest
-{
-  uint64 player_id = 1;
-  uint64 conn_id = 3;
-  uint64 gate_node_id = 4;
-  uint64 ms_node_id = 5;
-}
-
-message CoverPlayerRespone
-{
-}
-
 message MsPlayerMessageExtern
 {
   uint64 player_id = 1;
@@ -84,6 +71,5 @@ service GsService {
   rpc GwPlayerService (RpcClientRequest) returns (RpcClientResponse);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GwConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
-  rpc CoverPlayer (CoverPlayerRequest) returns (CoverPlayerRespone);
   rpc MsSend2PlayerViaGs (MsSend2PlayerViaGsRequest) returns (google.protobuf.Empty);
 }

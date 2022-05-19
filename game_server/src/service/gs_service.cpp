@@ -34,10 +34,20 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
         return;
     }
 	//第一次进入世界,但是gate还没进入
-	auto it = g_players.emplace(request->player_id(), EntityPtr());
-	auto player = it.first->second.entity();
+	bool is_replace_player = false;//是否是顶号
+	auto it = g_players.find(request->player_id());
+	if (it == g_players.end())
+    {
+        it = g_players.emplace(request->player_id(), EntityPtr()).first;
+		auto player = it->second.entity();
+		reg.emplace<Guid>(player, request->player_id());
+	}
+	else
+	{
+		is_replace_player = true;
+	}
+	auto player = it->second.entity();
 	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
-	reg.emplace_or_replace<Guid>(player, request->player_id());
 	auto msit = g_ms_nodes.find(request->ms_node_id());
 	if (msit != g_ms_nodes.end())
 	{
@@ -56,12 +66,23 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 		return;
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
-	reg.emplace_or_replace<NormalLogin>(player);
+	if (is_replace_player)
+	{
+        reg.remove<NormalLogin>(player);
+        reg.emplace_or_replace<CoverPlayerLogin>(player);
+    }
+	else
+	{
+        reg.remove<CoverPlayerLogin>(player);
+        reg.emplace_or_replace<NormalLogin>(player);
+        EnterSceneParam ep;
+        ep.enterer_ = player;
+        ep.scene_ = scene;
+        ScenesSystem::GetSingleton().EnterScene(ep);
+	}
+	
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-    EnterSceneParam ep;
-    ep.enterer_ = player;
-	ep.scene_ = scene;
-    ScenesSystem::GetSingleton().EnterScene(ep);
+   
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -175,7 +196,16 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
- 	g_players.erase(request->guid());//todo  应该是ms 通知过来
+    auto it = g_players.find(request->guid());
+	if (it == g_players.end())
+	{
+		return;
+	}	
+    LeaveSceneParam lp;
+    lp.leaver_ = it->second.entity();
+    ScenesSystem::GetSingleton().LeaveScene(lp);
+ 	g_players.erase(it);//todo  应该是ms 通知过来
+
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -201,40 +231,6 @@ void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
 		LOG_INFO << "gate node id " << request->gate_node_id();
 		break;
 	}
-///<<< END WRITING YOUR CODE 
-}
-
-void GsServiceImpl::CoverPlayer(::google::protobuf::RpcController* controller,
-    const gsservice::CoverPlayerRequest* request,
-    gsservice::CoverPlayerRespone* response,
-    ::google::protobuf::Closure* done)
-{
-    AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE 
-	auto it = g_players.emplace(request->player_id(), EntityPtr());
-	auto player = it.first->second.entity();
-	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
-	reg.emplace_or_replace<Guid>(player, request->player_id());
-	auto msit = g_ms_nodes.find(request->ms_node_id());
-	if (msit != g_ms_nodes.end())
-	{
-		reg.emplace_or_replace<MsNodeWPtr>(player, msit->second);
-	}
-	;
-	auto gate_it = g_gate_nodes.find(request->gate_node_id());
-	if (gate_it == g_gate_nodes.end())
-	{
-		LOG_ERROR << " gate not found" << request->gate_node_id();
-		return;
-	}
-	auto p_gate = reg.try_get<GateNodePtr>(gate_it->second);
-	if (nullptr == p_gate)
-	{
-		LOG_ERROR << " gate not found" << request->gate_node_id();
-		return;
-	}
-	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
-	reg.emplace_or_replace<CoverPlayerLogin>(player);
 ///<<< END WRITING YOUR CODE 
 }
 

@@ -39,11 +39,6 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void CoverPlayer(::google::protobuf::RpcController* controller,
-        const gsservice::CoverPlayerRequest* request,
-        gsservice::CoverPlayerRespone* response,
-        ::google::protobuf::Closure* done)override;
-
     void MsSend2PlayerViaGs(::google::protobuf::RpcController* controller,
         const gsservice::MsSend2PlayerViaGsRequest* request,
         ::google::protobuf::Empty* response,

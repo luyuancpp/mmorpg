@@ -77,10 +77,6 @@ void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
 	PlayerEnterGs(replied, *this);
 }
 
-void MasterNodeServiceImpl::Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied)
-{
-	PlayerEnterGs(replied, *this);
-}
 
 void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)
 {
@@ -262,7 +258,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 	if (lit == logined_accounts_.end() &&
 		(PlayerList::GetSingleton().player_size() + logined_accounts_.size()) >= kMaxPlayerSize)
 	{
-		//如果登录的是新账号,满了得去排队
+		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
 		return;
 	}
@@ -344,12 +340,12 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		auto& gs_data = *p_gs_data;
 		player_session.gs_ = gs_data;
 		auto it = g_gs_nodes.find(gs_data->node_id());
+        EnterSceneParam ep;
+        ep.enterer_ = player;
+        ep.scene_ = scene;
+        ScenesSystem::GetSingleton().EnterScene(ep);//顶号的时候已经在场景里面了
 		if (it != g_gs_nodes.end())
-		{
-			EnterSceneParam ep;
-			ep.enterer_ = player;
-			ep.scene_ = scene;
-			ScenesSystem::GetSingleton().EnterScene(ep);//顶号的时候已经在场景里面了
+		{			
 			Ms2gsEnterGsRpcRplied message;
 			message.s_rq_.set_player_id(guid);
 			message.s_rq_.set_conn_id(request->conn_id());
@@ -395,15 +391,17 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		auto it = g_gs_nodes.find(gs_data->node_id());
 		if (it != g_gs_nodes.end())
 		{
-			Ms2GsCoverPlayerRpcRplied message;
-			message.s_rq_.set_player_id(guid);
-			message.s_rq_.set_conn_id(request->conn_id());
-			message.s_rq_.set_gate_node_id(request->gate_node_id());
-			message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
-			reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsCoverPlayerReplied,
-				message,
-				this,
-				&gsservice::GsService_Stub::CoverPlayer);
+            Ms2gsEnterGsRpcRplied message;
+            message.s_rq_.set_player_id(guid);
+            message.s_rq_.set_conn_id(request->conn_id());
+            message.s_rq_.set_gate_node_id(request->gate_node_id());
+            message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
+            auto& scene_info = reg.get<SceneInfo>(scene);
+            message.s_rq_.mutable_scenes_info()->CopyFrom(scene_info);
+            reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGsReplied,
+                message,
+                this,
+                &gsservice::GsService_Stub::EnterGs);
 		}
 	}
 
