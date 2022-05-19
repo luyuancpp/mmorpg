@@ -1,6 +1,6 @@
 #include "teams.h"
 
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 
 #define GetTeamPtrReturnError \
 auto e = entt::to_entity(team_id);\

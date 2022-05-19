@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 #include "src/game_logic/game_registry.h"
 
 #include "src/pb/pbc/component_proto/scene_comp.pb.h"

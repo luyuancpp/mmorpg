@@ -1,6 +1,6 @@
 #include "team.h"
 
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 #include "src/game_logic/teams/team_event.h"
 #include "src/game_logic/game_registry.h"
 

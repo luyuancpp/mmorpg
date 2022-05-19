@@ -5,7 +5,7 @@
 
 #include "src/game_logic/game_registry.h"
 #include "src/network/rpc_server.h"
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 #include "src/login_server.h"
 
 using namespace muduo;

@@ -13,7 +13,7 @@
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
 #include "src/network/ms_node.h"
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 
 #include "gs_service.pb.h"
 #include "ms_service.pb.h"
