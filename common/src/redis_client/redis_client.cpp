@@ -1,19 +1,16 @@
 #include "redis_client.h"
 
-#include "muduo/base/CrossPlatformAdapterFunction.h"
-#include "muduo/base/Logging.h"
-
 #include "google/protobuf/message.h"
 
 void PbSyncRedisClient::Connect(const std::string& redis_server_addr, int32_t port, int32_t sec, int32_t usec)
 {
     struct timeval timeout = { sec, usec };
-    context_ = std::shared_ptr<redisContext>(redisConnectWithTimeout(redis_server_addr.c_str(), port, timeout), redisFree);
+    context_.reset(redisConnectWithTimeout(redis_server_addr.c_str(), port, timeout));
     if (nullptr == context_)
     {
         LOG_FATAL << "Conect Redis " << redis_server_addr << ":" << port;
     }
-    else if (context_->err)
+    else if (context_->err != REDIS_OK)
     {
         LOG_FATAL << "Conect Redis " << redis_server_addr << ":" << port << context_->errstr;
     }
@@ -49,6 +46,8 @@ void PbSyncRedisClient::Save(const google::protobuf::Message& message, const std
     MessageCachedArray message_cached_array(message.ByteSizeLong());
     if (message_cached_array.empty())
     {
+        const auto* desc = message.GetDescriptor();
+        LOG_ERROR << "Message Save To Redis Message Empty : " << desc->full_name();
         return;
     }
     message.SerializeWithCachedSizesToArray(message_cached_array.data());
@@ -97,5 +96,4 @@ void PbSyncRedisClient::OnDisconnect()
 {
     
 }
-
 
