@@ -50,73 +50,77 @@ private:
 using PbSyncRedisClientPtr = std::shared_ptr<PbSyncRedisClient>;
 
 
-template<class PbType>
-class PbGuidAsyncClient
+template<class Key, class MessageValue>
+class AsyncClient
 {
 public:
-    using PbTypPtr = std::shared_ptr<PbType>;
-    using LoadingQueue = std::unordered_map<std::string, PbTypPtr>;
-    using CommandCallback = std::function<PbTypPtr&>;
-    PbGuidAsyncClient(hiredis::Hiredis& hiredis)
-        :hiredis_(hiredis)
+    using MessageValuePtr = std::shared_ptr<MessageValue>;
+    struct Element
     {
-    }
-    inline const std::string& full_name() const { return PbType::GetDescriptor()->full_name();}
+        Key key_;
+        std::string redis_key_;
+        MessageValuePtr value_;
+    };
+    using ElementPtr = std::shared_ptr<Element>;
+    using LoadingQueue = std::unordered_map<std::string, ElementPtr>;
+    using CommandCallback = std::function<void(Key, MessageValue&)>;
+    AsyncClient(hiredis::Hiredis& hiredis)
+        :hiredis_(hiredis){}
+    inline const std::string& full_name() const { return MessageValue::GetDescriptor()->full_name();}
     void SetSaveCallback(const CommandCallback& cb) { save_callback_ = cb; }
     void SetLoadCallback(const CommandCallback& cb) { load_callback_ = cb; }
 
-    void Save(PbType& message) 
+    void Save(const MessageValuePtr& message, const Key& key)
     {
-        const std::string key = full_name() + std::to_string(message->guid());
-        if (key.empty())
-        {
-            LOG_ERROR << "Message Save To Redis Key Empty : " << full_name();
-            return;
-        }
+        ElementPtr element = std::make_shared<ElementPtr::element_type>();
+        element->key_ = key;
+        element->redis_key_ = full_name() + std::to_string(key);
+        element->value_ = message;
         MessageCachedArray message_cached_array(message->ByteSizeLong());
-        if (message_cached_array.empty())
-        {
-            LOG_ERROR << "Message Save To Redis Message Empty : " << full_name();
-            return;
-        }
         message->SerializeWithCachedSizesToArray(message_cached_array.data());
-        hiredis.command(std::bind(SavePbCallback, std::placeholders::_1, std::placeholders::_2, message), "SET %b %b", key.c_str(), key.length(),
+        hiredis_.command(std::bind(&AsyncClient::SaveSave, this, std::placeholders::_1, std::placeholders::_2, element), 
+            "SET %b %b", element->redis_key_.c_str(), element->redis_key_.length(),
             message_cached_array.data(),
             message_cached_array.size());
     }
 
-    void Load(Guid guid)
+    void Load(const Key& key)
     {
-        const std::string key = full_name() + std::to_string(guid);
-        if (loading_queue_.find(key) != loading_queue_.end())
+        const std::string redis_key = full_name() + std::to_string(key);
+        if (loading_queue_.find(redis_key) != loading_queue_.end())
         {
             return;
         }
-        PbTypPtr message;
-        loading_queue_.emplace(key, message);
-        std::string format = std::string("GET ") + key;
-        hiredis.command(std::bind(LoadPbCallback, std::placeholders::_1, std::placeholders::_2, message), format.c_str());
+        ElementPtr element = std::make_shared<ElementPtr::element_type>();
+        element->key_ = key;
+        element->redis_key_ = std::move(redis_key);    
+        loading_queue_.emplace(element->redis_key_, element);
+        std::string format = std::string("GET ") + element->redis_key_;
+        hiredis_.command(std::bind(&AsyncClient::OnLoad, this, std::placeholders::_1, std::placeholders::_2, element), 
+            format.c_str());
     }
+
+    MessageValuePtr CreateMessage() { return std::make_shared<MessageValuePtr::element_type>(); }
 private:
-    void SavePbCallback(hiredis::Hiredis* c, redisReply* reply, PbTypPtr message)
+    void SaveSave(hiredis::Hiredis* c, redisReply* reply, ElementPtr element)
     {
         if (!save_callback_)
         {
             return;
         }
-        save_callback_(message);
+        save_callback_(element->key_, *element->value_);
     }
 
-    void LoadPbCallback(hiredis::Hiredis* c, redisReply* reply, PbTypPtr message)
+    void OnLoad(hiredis::Hiredis* c, redisReply* reply, ElementPtr element)
     {
-        const auto* desc = message->GetDescriptor();
-        message->ParseFromArray(reply->str, static_cast<int32_t>(reply->len));
-        loading_queue_.erase(full_name() + std::to_string(message->guid()));
+        element->value_ = CreateMessage();
+        element->value_->ParseFromArray(reply->str, static_cast<int32_t>(reply->len));
+        loading_queue_.erase(element->redis_key_);
         if (!load_callback_)
         {
             return;
         }        
-        load_callback_(message);
+        load_callback_(element->key_, *element->value_);
     }
 
     hiredis::Hiredis& hiredis_;

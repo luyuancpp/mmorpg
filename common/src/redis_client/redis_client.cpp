@@ -44,12 +44,6 @@ void PbSyncRedisClient::Save(const google::protobuf::Message& message, const std
     }
     size_t key_len = key.length();
     MessageCachedArray message_cached_array(message.ByteSizeLong());
-    if (message_cached_array.empty())
-    {
-        const auto* desc = message.GetDescriptor();
-        LOG_ERROR << "Message Save To Redis Message Empty : " << desc->full_name();
-        return;
-    }
     message.SerializeWithCachedSizesToArray(message_cached_array.data());
     redisReply* reply = (redisReply*)redisCommand(context_.get(),
         "SET %b %b",
