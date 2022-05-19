@@ -35,31 +35,6 @@ using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
-template<typename Replied>
-void PlayerEnterGs(Replied& replied, MasterNodeServiceImpl& impl)
-{
-	auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
-	if (entt::null == player)
-	{
-		return;
-	}
-	auto& player_session = reg.get<PlayerSession>(player);
-	auto gate_it = g_gate_nodes.find(player_session.gate_node_id());
-    if (gate_it == g_gate_nodes.end())
-    {
-		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
-		return;
-    }
-
-	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpcReplied c;
-	auto& message = c.s_rq_;
-	message.set_conn_id(replied.s_rq_.conn_id());
-	message.set_gs_node_id(player_session.gs_node_id());
-	message.set_player_id(replied.s_rq_.player_id()); 
-    reg.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, c, &impl,  &gwservice::GwNodeService::PlayerEnterGs);
-
-}
-
 void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied)
 {
     auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
@@ -69,12 +44,29 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
         return;
     }
 	g_player_common_sys.OnLogin(player);
-	
 }
 
 void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
 {
-	PlayerEnterGs(replied, *this);
+    auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
+    if (entt::null == player)
+    {
+        return;
+    }
+    auto& player_session = reg.get<PlayerSession>(player);
+    auto gate_it = g_gate_nodes.find(player_session.gate_node_id());
+    if (gate_it == g_gate_nodes.end())
+    {
+        LOG_ERROR << "gate crsh" << player_session.gate_node_id();
+        return;
+    }
+
+    MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpcReplied c;
+    auto& message = c.s_rq_;
+    message.set_conn_id(replied.s_rq_.conn_id());
+    message.set_gs_node_id(player_session.gs_node_id());
+    message.set_player_id(replied.s_rq_.player_id());
+    reg.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, c, this, &gwservice::GwNodeService::PlayerEnterGs);
 }
 
 
