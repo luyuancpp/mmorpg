@@ -1,7 +1,7 @@
 #include "player_common_sys.h"
 
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/network/message_sys.h"
+#include "src/network/message_system.h"
 
 #include "logic_proto/scene_client_player.pb.h"
 #include "logic_proto/scene_server_player.pb.h"

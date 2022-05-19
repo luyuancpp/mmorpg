@@ -21,7 +21,7 @@
     <ClCompile Include="src\master_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\message_sys.cpp">
+    <ClCompile Include="src\network\message_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\comp\player_list.cpp">
@@ -68,7 +68,7 @@
     <ClInclude Include="src\master_registry\master_registry.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\message_sys.h">
+    <ClInclude Include="src\network\message_system.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\comp\player_list.h">

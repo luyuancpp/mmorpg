@@ -45,7 +45,7 @@
     <ClCompile Include="src\network\gate_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\message_sys.cpp">
+    <ClCompile Include="src\network\message_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\ms_node.cpp">
@@ -63,7 +63,10 @@
     <ClCompile Include="src\comp\player_list.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\sys\entity_scene_sys.cpp">
+    <ClCompile Include="src\system\entity_scene_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\system\player_reids_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -98,7 +101,7 @@
     <ClInclude Include="src\network\gate_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\message_sys.h">
+    <ClInclude Include="src\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\ms_node.h">
@@ -116,7 +119,10 @@
     <ClInclude Include="src\comp\player_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\sys\entity_scene_sys.h">
+    <ClInclude Include="src\system\entity_scene_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\system\player_reids_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
