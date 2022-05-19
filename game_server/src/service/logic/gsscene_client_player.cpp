@@ -3,7 +3,7 @@
 #include "src/network/message_sys.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/network/node_info.h"
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 
 #include "logic_proto/scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE

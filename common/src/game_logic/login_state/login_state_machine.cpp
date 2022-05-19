@@ -1,6 +1,6 @@
 #include "login_state_machine.h"
 
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 #include "login_state_concrete.h"
 
 

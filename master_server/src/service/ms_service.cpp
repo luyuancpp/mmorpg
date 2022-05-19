@@ -18,7 +18,7 @@
 #include "src/comp/player_list.h"
 #include "src/network/message_sys.h"
 #include "src/pb/pbc/msgmap.h"
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/node_info.h"
 #include "src/service/logic/player_service.h"

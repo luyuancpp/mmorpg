@@ -310,7 +310,7 @@
     <ClInclude Include="src\mysql_wrapper\mysql_database.h" />
     <ClInclude Include="src\mysql_wrapper\message2mysqlsql.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />
-    <ClInclude Include="src\return_code\error_code.h" />
+    <ClInclude Include="src\game_logic\tips_id.h" />
     <ClInclude Include="src\return_code\return_code.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />
     <ClInclude Include="src\network\node_info.h" />

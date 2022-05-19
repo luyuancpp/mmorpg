@@ -8,7 +8,7 @@
 #include "src/game_logic/game_registry.h"
 
 #include "src/util/random.h"
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 
 
 static std::vector<std::function<bool(int32_t, int32_t)>> f_c{

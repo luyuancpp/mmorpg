@@ -12,7 +12,7 @@
 #include "src/network/gate_player_list.h"
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 #include "src/network/rpc_closure.h"
 
 #include "login_service.pb.h"

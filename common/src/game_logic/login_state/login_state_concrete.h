@@ -3,7 +3,7 @@
 //ensure you must not include this file 
 
 #include "login_state.h"
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 
 
 class NoneState : public IAccountState
