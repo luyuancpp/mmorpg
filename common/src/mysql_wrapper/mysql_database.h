@@ -1,6 +1,6 @@
 #pragma once
 #include "src/mysql_wrapper/mysql_client.h"
-#include "src/mysql_wrapper/pb2dbsql.h"
+#include "src/mysql_wrapper/message2mysqlsql.h"
 
 
 class MysqlDatabase : public MysqlClient

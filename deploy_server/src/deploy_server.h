@@ -18,7 +18,7 @@ namespace deploy
     {
     public:
         using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
-        using PbSyncRedisClientPtr = std::shared_ptr<PbSyncRedisClient>;
+        using PbSyncRedisClientPtr = std::shared_ptr<MessageSyncRedisClient>;
 
         DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr);
 

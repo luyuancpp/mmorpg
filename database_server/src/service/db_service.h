@@ -7,7 +7,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-class PbSyncRedisClient;
+class MessageSyncRedisClient;
 
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE
@@ -16,7 +16,7 @@ class DbServiceImpl : public dbservice::DbService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
-	using PbSyncRedisClientPtr = std::shared_ptr<PbSyncRedisClient>;
+	using PbSyncRedisClientPtr = std::shared_ptr<MessageSyncRedisClient>;
 
 	static DbServiceImpl& GetSingleton()
 	{

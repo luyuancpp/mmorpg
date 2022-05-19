@@ -28,7 +28,7 @@ public:
     void operator()(redisContext* res) { redisFree(res); }
 };
 
-class PbSyncRedisClient
+class MessageSyncRedisClient
 {
 public:
     using ContextPtr = std::unique_ptr<redisContext, SyncRedisContext_Deleter>;
@@ -47,11 +47,11 @@ private:
     ContextPtr context_;
 };
 
-using PbSyncRedisClientPtr = std::shared_ptr<PbSyncRedisClient>;
+using PbSyncRedisClientPtr = std::shared_ptr<MessageSyncRedisClient>;
 
 
 template<class Key, class MessageValue>
-class AsyncClient
+class MessageAsyncClient
 {
 public:
     using MessageValuePtr = std::shared_ptr<MessageValue>;
@@ -64,7 +64,7 @@ public:
     using ElementPtr = std::shared_ptr<Element>;
     using LoadingQueue = std::unordered_map<std::string, ElementPtr>;
     using CommandCallback = std::function<void(Key, MessageValue&)>;
-    AsyncClient(hiredis::Hiredis& hiredis)
+    MessageAsyncClient(hiredis::Hiredis& hiredis)
         :hiredis_(hiredis){}
     inline const std::string& full_name() const { return MessageValue::GetDescriptor()->full_name();}
     void SetSaveCallback(const CommandCallback& cb) { save_callback_ = cb; }
@@ -78,7 +78,7 @@ public:
         element->value_ = message;
         MessageCachedArray message_cached_array(message->ByteSizeLong());
         message->SerializeWithCachedSizesToArray(message_cached_array.data());
-        hiredis_.command(std::bind(&AsyncClient::SaveSave, this, std::placeholders::_1, std::placeholders::_2, element), 
+        hiredis_.command(std::bind(&MessageAsyncClient::SaveSave, this, std::placeholders::_1, std::placeholders::_2, element), 
             "SET %b %b", element->redis_key_.c_str(), element->redis_key_.length(),
             message_cached_array.data(),
             message_cached_array.size());
@@ -96,7 +96,7 @@ public:
         element->redis_key_ = std::move(redis_key);    
         loading_queue_.emplace(element->redis_key_, element);
         std::string format = std::string("GET ") + element->redis_key_;
-        hiredis_.command(std::bind(&AsyncClient::OnLoad, this, std::placeholders::_1, std::placeholders::_2, element), 
+        hiredis_.command(std::bind(&MessageAsyncClient::OnLoad, this, std::placeholders::_1, std::placeholders::_2, element), 
             format.c_str());
     }
 
