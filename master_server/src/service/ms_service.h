@@ -19,9 +19,6 @@ public:
     using Ms2gsEnterGsRpcRplied = NormalClosure<gsservice::EnterGsRequest, gsservice::EnterGsRespone>;
 	void Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied);
 
-	using Ms2GsCoverPlayerRpcRplied = NormalClosure<gsservice::CoverPlayerRequest, gsservice::CoverPlayerRespone>;
-	void Ms2gsCoverPlayerReplied(Ms2GsCoverPlayerRpcRplied replied);
-
     using Ms2GwPlayerEnterGsRpcReplied = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
     void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied);
 
