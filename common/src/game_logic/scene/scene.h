@@ -5,7 +5,7 @@
 #include "src/game_logic/scene/scene_factories.h"
 #include "src/game_logic/game_registry.h"
 #include "src/util/snow_flake.h"
-#include "src/game_logic/scene/servernode_sys.h"
+#include "src/game_logic/scene/servernode_system.h"
 
 class ScenesSystem : public EntityPtr
 {

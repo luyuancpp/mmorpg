@@ -1,4 +1,4 @@
-#include "servernode_sys.h"
+#include "servernode_system.h"
 
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"

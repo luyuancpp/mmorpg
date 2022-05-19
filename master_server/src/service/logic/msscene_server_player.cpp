@@ -6,9 +6,9 @@
 #include "muduo/base/Logging.h"
 
 #include "src/game_logic/scene/scene.h"
-#include "src/game_logic/scene/servernode_sys.h"
+#include "src/game_logic/scene/servernode_system.h"
 #include "src/game_logic/tips_id.h"
-#include "src/sys/player_scene_sys.h"
+#include "src/sys/player_scene_system.h"
 
 #include "src/pb/pbc/logic_proto/common_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
