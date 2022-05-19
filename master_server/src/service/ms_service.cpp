@@ -73,12 +73,9 @@ void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
 void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)
 {
 	//ms 的login先调用，通知gs去调用
-}
-
-void MasterNodeServiceImpl::OnPlayerCover(entt::entity player)
-{
 	//顶号
 }
+
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin

@@ -23,7 +23,7 @@ public:
     void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied);
 
     void OnPlayerLongin(entt::entity player);
-    void OnPlayerCover(entt::entity player);//顶号
+
 private:
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE
