@@ -25,7 +25,7 @@ GameServer* g_gs = nullptr;
 
 GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
-     redis_(std::make_shared<PbSyncRedisClient>()){}
+     redis_(std::make_shared<MessageSyncRedisClient>()){}
 
 void GameServer::Init()
 {

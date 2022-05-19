@@ -2,7 +2,7 @@
 
 #include "google/protobuf/message.h"
 
-void PbSyncRedisClient::Connect(const std::string& redis_server_addr, int32_t port, int32_t sec, int32_t usec)
+void MessageSyncRedisClient::Connect(const std::string& redis_server_addr, int32_t port, int32_t sec, int32_t usec)
 {
     struct timeval timeout = { sec, usec };
     context_.reset(redisConnectWithTimeout(redis_server_addr.c_str(), port, timeout));
@@ -16,13 +16,13 @@ void PbSyncRedisClient::Connect(const std::string& redis_server_addr, int32_t po
     }
 }
 
-void PbSyncRedisClient::Save(const google::protobuf::Message& message)
+void MessageSyncRedisClient::Save(const google::protobuf::Message& message)
 {
     const auto * desc = message.GetDescriptor();
     Save(message, desc->full_name());
 }
 
-void PbSyncRedisClient::Save(const google::protobuf::Message& message, Guid guid)
+void MessageSyncRedisClient::Save(const google::protobuf::Message& message, Guid guid)
 {
     const auto* desc = message.GetDescriptor();
     if (kInvalidGuid == guid)
@@ -34,7 +34,7 @@ void PbSyncRedisClient::Save(const google::protobuf::Message& message, Guid guid
     Save(message, key);
 }
 
-void PbSyncRedisClient::Save(const google::protobuf::Message& message, const std::string& key)
+void MessageSyncRedisClient::Save(const google::protobuf::Message& message, const std::string& key)
 {
     if (key.empty())
     {
@@ -54,20 +54,20 @@ void PbSyncRedisClient::Save(const google::protobuf::Message& message, const std
     freeReplyObject(reply);
 }
 
-void PbSyncRedisClient::Load(google::protobuf::Message& message)
+void MessageSyncRedisClient::Load(google::protobuf::Message& message)
 {
     const auto* desc = message.GetDescriptor();
     Load(message, desc->full_name());
 }
 
-void PbSyncRedisClient::Load(google::protobuf::Message& message, Guid guid)
+void MessageSyncRedisClient::Load(google::protobuf::Message& message, Guid guid)
 {
     const auto* desc = message.GetDescriptor();
     std::string key = desc->full_name() + std::to_string(guid);
     Load(message, key);
 }
 
-void PbSyncRedisClient::Load(google::protobuf::Message& message, const std::string& key)
+void MessageSyncRedisClient::Load(google::protobuf::Message& message, const std::string& key)
 {
     if (key.empty())
     {
@@ -86,7 +86,7 @@ void PbSyncRedisClient::Load(google::protobuf::Message& message, const std::stri
     freeReplyObject(reply);
 }
 
-void PbSyncRedisClient::OnDisconnect()
+void MessageSyncRedisClient::OnDisconnect()
 {
     
 }

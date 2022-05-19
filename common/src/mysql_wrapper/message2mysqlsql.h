@@ -21,13 +21,13 @@ static int32_t kPrimaryKeyIndex = 0;
 
 void FillMessageField(::google::protobuf::Message& message, const ResultRow& row);
     
-class Pb2DbSql
+class Message2MysqlSql
 {
 public:
     using Fields = std::unordered_map<std::size_t, std::string>;
     using ResultRowPtr = std::unique_ptr<ResultRow>;
 
-    Pb2DbSql(const ::google::protobuf::Message& message_default_instance)
+    Message2MysqlSql(const ::google::protobuf::Message& message_default_instance)
         : default_instance_(message_default_instance),
             descriptor_(default_instance_.GetDescriptor()),
             options_(descriptor_->options())
@@ -80,7 +80,7 @@ private:
 class Pb2DbTables
 {
 public:
-    using PbSqlMap = std::unordered_map<std::string, Pb2DbSql>;
+    using PbSqlMap = std::unordered_map<std::string, Message2MysqlSql>;
 
     void set_auto_increment(const ::google::protobuf::Message& message_default_instance, uint64_t auto_increment);
 

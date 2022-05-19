@@ -43,7 +43,7 @@ TEST(RedisTest, ASyncMessageLoad)
 
     hiredis.connect();
     Guid player = 1;
-    using LoginRequestAsyncClient = AsyncClient<Guid, LoginRequest>;
+    using LoginRequestAsyncClient = MessageAsyncClient<Guid, LoginRequest>;
     LoginRequestAsyncClient c(hiredis);
     c.SetLoadCallback(OnAsyncLoadMessage);
     loop.runAfter(1, [&c, player]() ->void
