@@ -5,13 +5,14 @@
 #include "src/game_logic/comp/player_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
+#include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/comp/player_list.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic/player_service.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/system/player_reids_system.h"
 
 #include "c2gw.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
@@ -27,6 +28,17 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	//load player 
+	{
+        auto guid = request->player_id();
+        auto it = g_players.find(request->player_id());
+        if (it == g_players.end())
+        {
+            g_player_data_redis_system->AsyncLoad(guid);
+        }
+        return;
+	}
+
 	auto scene = ScenesSystem::GetSingleton().get_scene(request->scenes_info().scene_id());
     if (scene == entt::null)
     {
