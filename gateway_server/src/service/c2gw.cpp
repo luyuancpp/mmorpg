@@ -58,7 +58,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             return;
         }
-        auto guid = it->second.guid_;        
+        auto player_id = it->second.player_id_;        
         {
 			gw2l::DisconnectRequest request;
 			request.set_conn_id(conn_id);
@@ -66,11 +66,11 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         }
         // master
         {
-            if (guid != kInvalidGuid)
+            if (player_id != kInvalidGuid)
             {
 				msservice::DisconnectRequest request;
                 request.set_gate_node_id(g_gateway_server->gate_node_id());
-				request.set_guid(guid);
+				request.set_player_id(player_id);
 				//注意这里可能会有问题，如果发的connid 到ms 但是player id不对应怎么办?
 				g_gateway_server->gw2ms_stub().CallMethod(request, &msservice::MasterNodeService_Stub::OnGwDisconnect);
             }           
@@ -116,7 +116,7 @@ void ClientReceiver::OnServerLoginReplied(LoginRpcReplied cp)
     for (auto it : player_list)
     {
         auto p = cp->c_rp_.add_players();
-        p->set_guid(it.guid());
+        p->set_player_id(it.player_id());
     }
     codec_.send(cp->client_conn_, cp->c_rp_);
 }
@@ -139,7 +139,7 @@ void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeReplied cp)
     for (auto it : player_list)
     {
         auto p = cp->c_rp_.add_players();
-        p->set_guid(it.guid());
+        p->set_player_id(it.player_id());
     }
     codec_.send(cp->client_conn_, cp->c_rp_);
 }
@@ -150,7 +150,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
 {
     auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
     c->s_rq_.set_conn_id(c->conn_id());
-    c->s_rq_.set_guid(message->guid());
+    c->s_rq_.set_player_id(message->player_id());
     login_stub().CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         c,
         this,
@@ -194,7 +194,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     {
 		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
         msg->s_rq_.set_request(request->request());
-        msg->s_rq_.set_player_id(it->second.guid_);
+        msg->s_rq_.set_player_id(it->second.player_id_);
         msg->s_rq_.set_msg_id(request->msg_id());
         msg->c_rp_.set_id(request->id());
         msg->c_rp_.set_msg_id(request->msg_id());

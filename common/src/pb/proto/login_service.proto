@@ -30,19 +30,19 @@ message CreatePlayerResponse
 {
   Tips error = 1;
   account_database account_player = 2;
-  uint64 guid = 3;
+  uint64 player_id = 3;
 }
 
 message EnterGameRequest
 {
   uint64 conn_id = 1;
-  uint64 guid = 2;
+  uint64 player_id = 2;
 }
 
 message EnterGameResponse
 {
   Tips error = 1;
-  uint64 guid = 2;
+  uint64 player_id = 2;
   uint64 conn_id = 3;// for logic
 }
 

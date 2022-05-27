@@ -7,7 +7,7 @@
 
 struct GateClient
 {
-	Guid guid_{ kInvalidGuid };
+	Guid player_id_{ kInvalidGuid };
 	uint32_t gs_node_id_{ UINT32_MAX };
 	muduo::net::TcpConnectionPtr conn_;
 };

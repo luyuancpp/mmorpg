@@ -123,9 +123,9 @@ message account_database
 message player_database
 {
   option(OptionTableName)  = "player";
-  option(OptionPrimaryKey) = "guid";
-  option(OptionAutoIncrementKey) = "guid";
-  uint64 guid = 1;
+  option(OptionPrimaryKey) = "player_id";
+  option(OptionAutoIncrementKey) = "player_id";
+  uint64 player_id = 1;
   Vector3 pos = 2;
   int64 register_time = 3;
 }
@@ -134,7 +134,7 @@ message player_database
 message player_database1
 {
   option(OptionTableName)  = "player1";
-  option(OptionPrimaryKey) = "guid";
-  option(OptionAutoIncrementKey) = "guid";
-  uint64 guid = 1;
+  option(OptionPrimaryKey) = "player_id";
+  option(OptionAutoIncrementKey) = "player_id";
+  uint64 player_id = 1;
 }

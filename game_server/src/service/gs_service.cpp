@@ -208,7 +208,7 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-    auto it = g_players.find(request->guid());
+    auto it = g_players.find(request->player_id());
 	if (it == g_players.end())
 	{
 		return;

@@ -207,8 +207,8 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	auto guid = request->guid();
-	auto player = PlayerList::GetSingleton().GetPlayer(guid);
+	auto player_id = request->player_id();
+	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
 	if (entt::null == player)
 	{
 		return;
@@ -224,15 +224,15 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	if (it != g_gs_nodes.end() && player_session.gate_node_id() == request->gate_node_id())
 	{
 		gsservice::DisconnectRequest message;
-		message.set_guid(guid);
+		message.set_player_id(player_id);
 		reg.get<GsStubPtr>(it->second)->CallMethod(
 			message,
 			&gsservice::GsService_Stub::Disconnect);
 	}
-	assert(reg.get<Guid>(player) == guid);
-	PlayerList::GetSingleton().LeaveGame(guid);
-	assert(!PlayerList::GetSingleton().HasPlayer(guid));
-	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
+	assert(reg.get<Guid>(player) == player_id);
+	PlayerList::GetSingleton().LeaveGame(player_id);
+	assert(!PlayerList::GetSingleton().HasPlayer(player_id));
+	assert(PlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -287,13 +287,13 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE 
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
-	auto guid = request->guid();
-	auto player = PlayerList::GetSingleton().GetPlayer(guid);
+	auto player_id = request->player_id();
+	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
 	if (entt::null == player)
 	{
-		PlayerList::GetSingleton().EnterGame(guid, EntityPtr());
-		player = PlayerList::GetSingleton().GetPlayer(guid);
-		reg.emplace<Guid>(player, guid);
+		PlayerList::GetSingleton().EnterGame(player_id, EntityPtr());
+		player = PlayerList::GetSingleton().GetPlayer(player_id);
+		reg.emplace<Guid>(player, player_id);
 		auto cit = logined_accounts_.find(request->account());
 		if (cit != logined_accounts_.end())
 		{
@@ -317,14 +317,14 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		if (scene == entt::null)
 		{
 			// todo default
-			LOG_INFO << "player " << guid << " enter default secne";
+			LOG_INFO << "player " << player_id << " enter default secne";
 
 		}
 		auto* p_gs_data = reg.try_get<GsDataPtr>(scene);
 		if (nullptr == p_gs_data)
 		{
 			// todo default
-			LOG_INFO << "player " << guid << " enter default secne";
+			LOG_INFO << "player " << player_id << " enter default secne";
 		}
 		auto& gs_data = *p_gs_data;
 		player_session.gs_ = gs_data;
@@ -336,7 +336,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		if (it != g_gs_nodes.end())
 		{			
 			Ms2gsEnterGsRpcRplied message;
-			message.s_rq_.set_player_id(guid);
+			message.s_rq_.set_player_id(player_id);
 			message.s_rq_.set_conn_id(request->conn_id());
 			message.s_rq_.set_gate_node_id(request->gate_node_id());
 			message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
@@ -374,14 +374,14 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		if (nullptr == p_gs_data)
 		{
 			// todo default
-			LOG_INFO << "player " << guid << " enter default secne";
+			LOG_INFO << "player " << player_id << " enter default secne";
 		}
 		auto& gs_data = *p_gs_data;
 		auto it = g_gs_nodes.find(gs_data->node_id());
 		if (it != g_gs_nodes.end())
 		{
             Ms2gsEnterGsRpcRplied message;
-            message.s_rq_.set_player_id(guid);
+            message.s_rq_.set_player_id(player_id);
             message.s_rq_.set_conn_id(request->conn_id());
             message.s_rq_.set_gate_node_id(request->gate_node_id());
             message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
@@ -405,7 +405,7 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 
-	auto guid = request->guid();
+	auto guid = request->player_id();
 	auto player = PlayerList::GetSingleton().GetPlayer(guid);
 	logined_accounts_.erase(*reg.get<PlayerAccount>(player));
 	assert(reg.get<Guid>(player) == guid);
@@ -424,7 +424,7 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	logined_accounts_.erase(request->account());
-	auto guid = request->guid();
+	auto guid = request->player_id();
 	auto e = PlayerList::GetSingleton().GetPlayer(guid);
 	if (entt::null == e)
 	{

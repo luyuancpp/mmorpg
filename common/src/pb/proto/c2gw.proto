@@ -34,7 +34,7 @@ message CreatePlayerResponse
 
 message EnterGameRequest
 {
-	uint64 guid  = 1;
+	uint64 player_id  = 1;
 }
 
 message EnterGameResponse

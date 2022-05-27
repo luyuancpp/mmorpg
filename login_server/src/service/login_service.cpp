@@ -84,7 +84,7 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 	::gw2l::EnterGameResponse* response = nullptr;
 	::google::protobuf::Closure* done = nullptr;
 	d->Move(response, done);
-	EnterMS(srq.guid(), response->conn_id(), response, done);
+	EnterMS(srq.player_id(), response->conn_id(), response, done);
 }
 
 void LoginServiceImpl::EnterMsReplied(EnterGameMSRpcReplied d)
@@ -103,7 +103,7 @@ void LoginServiceImpl::EnterMS(Guid guid,
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
 	auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
-	cp->s_rq_.set_guid(guid);
+	cp->s_rq_.set_player_id(guid);
 	cp->s_rq_.set_conn_id(response->conn_id());
 	cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
 	cp->s_rq_.set_account(reg.get<std::string>(it->second.entity()));
@@ -220,7 +220,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	CheckReturnCloseureError(ap->EnterGame());
 
 	// long time in login processing
-	auto guid = request->guid();
+	auto guid = request->player_id();
 	if (!ap->IsInPlayerList(guid))
 	{
 		ReturnCloseureError(kRetLoginPlayerGuidError);
@@ -230,8 +230,8 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	redis_->Load(new_player, guid);
 	ap->Playing(guid);//test
 	response->set_conn_id(conn_id);
-	response->set_guid(guid);//test
-	if (new_player.guid() > 0)
+	response->set_player_id(guid);//test
+	if (new_player.player_id() > 0)
 	{
 		EnterMS(guid, conn_id, response, done);
 		return;
@@ -239,7 +239,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	// database to redis 
 	auto c(std::make_shared<EnterGameDbRpcReplied::element_type>(response, done));
 	auto& srq = c->s_rq_;
-	srq.set_guid(guid);
+	srq.set_player_id(guid);
 	l2db_login_stub_.CallMethodString(
 		&LoginServiceImpl::EnterGameDbReplied,
 		c,
@@ -269,7 +269,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	}
 	auto& player = (*p_player);
 	msservice::LsLeaveGameRequest ms_request;
-	ms_request.set_guid(player->PlayingId());
+	ms_request.set_player_id(player->PlayingId());
 	ms_node_stub_.CallMethod(ms_request,
 		&msservice::MasterNodeService_Stub::OnLsLeaveGame);
 	connections_.erase(cit);
@@ -298,7 +298,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	if (nullptr != p_player)
 	{
 		auto& player = (*p_player);
-		message.set_guid(player->PlayingId());
+		message.set_player_id(player->PlayingId());
 	}
 	ms_node_stub_.CallMethod(message,
 		&msservice::MasterNodeService_Stub::OnLsDisconnect);
