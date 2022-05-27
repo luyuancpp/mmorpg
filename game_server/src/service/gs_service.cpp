@@ -208,6 +208,7 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	//异步加载过程中断开了？
     auto it = g_players.find(request->player_id());
 	if (it == g_players.end())
 	{
