@@ -7,4 +7,5 @@
 using PlayerDataRedisSystemPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 extern PlayerDataRedisSystemPtr g_player_data_redis_system;
 
-void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message);//如果异步加载过程中玩家断开链接了？会不会造成数据覆盖
+//濡傛灉寮傛鍔犺浇杩囩▼涓帺瀹舵柇寮�閾炬帴浜嗭紵浼氫笉浼氶�犳垚鏁版嵁瑕嗙洊
+void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message);

@@ -9,8 +9,7 @@
 #include "gs_service.pb.h"
 #include "gw_service.pb.h"
 ///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+
 class MasterNodeServiceImpl : public msservice::MasterNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
