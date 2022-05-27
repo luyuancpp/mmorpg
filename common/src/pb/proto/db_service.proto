@@ -26,18 +26,18 @@ message CreatePlayerResponse
 {
   Tips error = 1;
   account_database account_player = 2;
-  uint64 guid = 3;
+  uint64 player_id = 3;
 }
 
 message EnterGameRequest
 {
-  uint64 guid = 1;
+  uint64 player_id = 1;
 }
 
 message EnterGameResponse
 {
   Tips error = 1;
-  uint64 guid = 2;
+  uint64 player_id = 2;
 }
 
 service DbService {

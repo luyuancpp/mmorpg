@@ -13,7 +13,7 @@ struct GateConnId
 
 struct PlayerId 
 {
-    Guid guid_{0};
+    Guid player_id_{0};
 };
 
 

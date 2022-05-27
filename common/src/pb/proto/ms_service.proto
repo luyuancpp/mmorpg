@@ -43,7 +43,7 @@ message LeaveGameRequest
 
 message DisconnectRequest
 {
-  uint64 guid = 1;
+  uint64 player_id = 1;
   uint32 gate_node_id = 2;
 }
 
@@ -62,7 +62,7 @@ message LoginAccountResponse
 
 message EnterGameRequest
 {
-  uint64 guid = 1;
+  uint64 player_id = 1;
   uint64 conn_id = 2;
   uint32 gate_node_id = 3;
   string account = 4;
@@ -75,12 +75,12 @@ message EnterGameResponese
 
 message LsLeaveGameRequest
 {
-  uint64 guid = 1;
+  uint64 player_id = 1;
 }
 
 message LsDisconnectRequest
 {
-  uint64 guid = 1;
+  uint64 player_id = 1;
   string account = 2;
 }
 
