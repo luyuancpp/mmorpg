@@ -47,6 +47,7 @@ ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub()
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
+    //改包把消息发给其他玩家怎么办
     //todo 玩家没登录直接发其他消息，乱发消息
     if (!conn->connected())
     {
