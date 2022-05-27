@@ -10,6 +10,7 @@
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_stub.h"
 #include "src/network/rpc_client.h"
+#include "src/network/gate_player_list.h"
 #include "src/util/snow_flake.h"
 
 #include "c2gw.pb.h"
@@ -21,7 +22,6 @@ using namespace muduo;
 using namespace muduo::net;
 
 extern std::unordered_set<Guid> g_connected_ids;
-extern ServerSequence g_server_sequence_;
 
 template <typename ClientResponse, typename ServerRequest, typename ServerResponse>
 struct ClosureReplied
@@ -30,7 +30,7 @@ struct ClosureReplied
 		: s_rp_(new ServerResponse()),
 		client_conn_(cc),
         conn_id_(boost::any_cast<uint64_t>(client_conn_->getContext())) {}
-    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_connected_ids.erase(conn_id_); } }
+    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_client_sessions_->erase(conn_id_); } }
     inline Guid conn_id()const { return conn_id_; }
 	ClientResponse c_rp_;
 	ServerRequest s_rq_;

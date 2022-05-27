@@ -85,7 +85,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     else
     {
         auto id = g_server_sequence_.Generate();
-        while (g_connected_ids.find(id) != g_connected_ids.end())
+        while (g_client_sessions_->find(id) != g_client_sessions_->end())
         {
             id = g_server_sequence_.Generate();
         }

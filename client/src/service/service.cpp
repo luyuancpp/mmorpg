@@ -61,14 +61,14 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
         g_lua["CreatePlayer"]();
         return;
     }
-    EnterGs(message->players(0).guid());   
+    EnterGs(message->players(0).player_id());   
 }
 
 void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn, 
     const CreatePlayerResponsePtr& message,
     muduo::Timestamp)
 {
-    EnterGs(message->players(0).guid());
+    EnterGs(message->players(0).player_id());
 }
 
 void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn, 

@@ -13,6 +13,7 @@ using namespace common;
 
 GatewayServer* g_gateway_server = nullptr; 
 
+extern ServerSequence g_server_sequence_;
 
 void GatewayServer::LoadConfig()
 {
