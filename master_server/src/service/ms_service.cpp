@@ -221,18 +221,16 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	auto& player_session = reg.get<PlayerSession>(player);
 	auto it = g_gs_nodes.find(player_session.gs_node_id());
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况
-	if (it != g_gs_nodes.end() && player_session.gate_node_id() == request->gate_node_id())
+	if (it == g_gs_nodes.end() ||  player_session.gate_node_id() != request->gate_node_id())
 	{
-		gsservice::DisconnectRequest message;
-		message.set_player_id(player_id);
-		reg.get<GsStubPtr>(it->second)->CallMethod(
-			message,
-			&gsservice::GsService_Stub::Disconnect);
+		return;
 	}
-	assert(reg.get<Guid>(player) == player_id);
+	gsservice::DisconnectRequest message;
+	message.set_player_id(player_id);
+	reg.get<GsStubPtr>(it->second)->CallMethod(
+		message,
+		&gsservice::GsService_Stub::Disconnect);
 	PlayerList::GetSingleton().LeaveGame(player_id);
-	assert(!PlayerList::GetSingleton().HasPlayer(player_id));
-	assert(PlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
 ///<<< END WRITING YOUR CODE 
 }
 

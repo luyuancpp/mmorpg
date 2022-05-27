@@ -71,7 +71,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 				msservice::DisconnectRequest request;
                 request.set_gate_node_id(g_gateway_server->gate_node_id());
 				request.set_player_id(player_id);
-				//注意这里可能会有问题，如果发的connid 到ms 但是player id不对应怎么办?
+				//注意这里可能会有问题，如果发的connid 到ms 但是player id不对应怎么办?,先重连后断了
 				g_gateway_server->gw2ms_stub().CallMethod(request, &msservice::MasterNodeService_Stub::OnGwDisconnect);
             }           
         }
