@@ -5,17 +5,17 @@
 
 PlayerDataRedisSystemPtr g_player_data_redis_system;
 
-void OnAsyncLoadPlayerDatabase(Guid guid, player_database& message)
+void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message)
 {
     // on load db
-    auto ret = g_players.emplace(guid, EntityPtr());
+    auto ret = g_players.emplace(player_id, EntityPtr());
     if (!ret.second)
     {
-        LOG_ERROR << "server emplace erro" << guid;
+        LOG_ERROR << "server emplace erro" << player_id;
         return;
     }
     auto player = ret.first->second.entity();
-    reg.emplace<Guid>(player, guid);
+    reg.emplace<Guid>(player, player_id);
     reg.emplace<Vector3>(player, message.pos());
     // on load db complete
 
