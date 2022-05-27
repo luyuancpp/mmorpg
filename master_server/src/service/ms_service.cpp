@@ -46,7 +46,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
 	g_player_common_sys.OnLogin(player);
 }
 
-void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
+void MasterNodeServiceImpl::Ms2gsEnterGameReplied(Ms2gsEnterGsRpcRplied replied)
 {
     auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
     if (entt::null == player)
@@ -342,7 +342,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
             auto& scene_info = reg.get<SceneInfo>(scene);
 			message.s_rq_.mutable_scenes_info()->CopyFrom(scene_info);
-			reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGsReplied,
+			reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGameReplied,
 				message,
 				this,
 				&gsservice::GsService_Stub::EnterGs);
@@ -387,7 +387,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
             message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
             auto& scene_info = reg.get<SceneInfo>(scene);
             message.s_rq_.mutable_scenes_info()->CopyFrom(scene_info);
-            reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGsReplied,
+            reg.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGameReplied,
                 message,
                 this,
                 &gsservice::GsService_Stub::EnterGs);
