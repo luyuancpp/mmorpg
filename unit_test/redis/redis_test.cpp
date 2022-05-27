@@ -56,7 +56,7 @@ TEST(RedisTest, ASyncMessageLoad)
     loop.runAfter(2, [&c, player]() ->void
         {
             LoginRequestAsyncClient::MessageValuePtr load_message = c.CreateMessage();
-            c.Load(player);
+            c.AsyncLoad(player);
         });
     loop.loop();
 }

@@ -133,7 +133,7 @@ message player_database
 //玩家数据库表2,不重要数据放这里，不会马上加载
 message player_database1
 {
-  option(OptionTableName)  = "player";
+  option(OptionTableName)  = "player1";
   option(OptionPrimaryKey) = "guid";
   option(OptionAutoIncrementKey) = "guid";
   uint64 guid = 1;

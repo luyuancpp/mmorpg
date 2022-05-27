@@ -84,7 +84,7 @@ public:
             message_cached_array.size());
     }
 
-    void Load(const Key& key)
+    void AsyncLoad(const Key& key)
     {
         const std::string redis_key = full_name() + std::to_string(key);
         if (loading_queue_.find(redis_key) != loading_queue_.end())
