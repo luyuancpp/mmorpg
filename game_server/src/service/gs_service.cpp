@@ -7,6 +7,7 @@
 #include "src/game_server.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"
+#include "src/network/gate_session.h"
 #include "src/network/message_system.h"
 #include "src/comp/player_list.h"
 #include "src/network/server_component.h"
@@ -36,6 +37,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
         {
             g_player_data_redis_system->AsyncLoad(guid);
         }
+		g_gate_sessions.emplace(request->conn_id(), EntityPtr());
         return;
 	}
 
@@ -187,7 +189,12 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	{
 		return;
 	}
-	auto pit = g_players.find(request->player_id());
+	auto cit = g_gate_sessions.find(request->conn_id());
+	if (cit == g_gate_sessions.end())
+	{
+		return;
+	}
+	auto pit = g_players.find(reg.get<Guid>(cit->second.entity()));
 	if (pit == g_players.end())
 	{
 		return;

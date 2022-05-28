@@ -28,6 +28,7 @@ enum  EnumCode : uint32_t
     kRetLoignAccountNameEmpty = 1012,
     kRetLoginCreateConnectionAccountEmpty = 1013,
     kRetLoginEnterGameConnectionAccountEmpty = 1014,
+    kRetLoginUnkonwError = 1015,
 
     //Scene
     kRetEnterSceneNotFound = 4000,
