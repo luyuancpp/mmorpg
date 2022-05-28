@@ -17,6 +17,7 @@ public:
     std::size_t player_size()const { return g_players.size(); }
     bool empty()const { return g_players.empty(); }
     entt::entity GetPlayer(Guid guid);
+    EntityPtr GetPlayerPtr(Guid guid);
     bool HasPlayer(Guid guid) const { return g_players.find(guid) != g_players.end(); }
 
     void EnterGame(Guid guid, const EntityPtr&& entity_id) { g_players.emplace(guid, entity_id); }

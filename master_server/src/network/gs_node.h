@@ -6,7 +6,7 @@
 #include "src/network/rpc_stub.h"
 #include "src/network/server_component.h"
 
-#include "common.pb.h"
+#include "component_proto/node_comp.pb.h"
 
 struct GsNode
 {

@@ -9,7 +9,9 @@
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_stub.h"
 
-#include "common.pb.h"
+
+#include "component_proto/node_comp.pb.h"
+
 #include "ms_service.pb.h"
 
 

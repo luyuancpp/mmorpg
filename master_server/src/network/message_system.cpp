@@ -117,17 +117,22 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 	{
 		return;
 	}
-	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
-	if (message_it == g_msgid.end())
-	{
-		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
-		return;
-	}
-	gwservice::PlayerMessageRequest msg_wrapper;
-	msg_wrapper.mutable_ex()->set_conn_id(player_session.gate_conn_id_.conn_id_);
-	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
-	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
-	gate->session_.Send(msg_wrapper);
+	Send2Player(message, gate, player_session.gate_conn_id_.conn_id_);
+}
+
+void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, uint64_t conn_id)
+{
+    auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
+    if (message_it == g_msgid.end())
+    {
+        LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
+        return;
+    }
+    gwservice::PlayerMessageRequest msg_wrapper;
+    msg_wrapper.mutable_ex()->set_conn_id(conn_id);
+    msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
+    msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
+    gate->session_.Send(msg_wrapper);
 }
 
 void Send2Player(const google::protobuf::Message& message, Guid player_id)

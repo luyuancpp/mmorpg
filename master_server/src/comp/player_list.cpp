@@ -14,6 +14,16 @@ entt::entity PlayerList::GetPlayer(Guid guid)
     return it->second.entity();
 }
 
+EntityPtr PlayerList::GetPlayerPtr(Guid guid)
+{
+    auto it = g_players.find(guid);
+    if (it == g_players.end())
+    {
+        return EntityPtr();
+    }
+    return it->second;
+}
+
 void PlayerList::LeaveGame(Guid guid)
 {
     //todo 断线不能马上下线，这里之后会改
