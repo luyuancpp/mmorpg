@@ -22,6 +22,8 @@ public:
 
     void OnPlayerLongin(entt::entity player);
 
+    Guid GetPlayerIdByConnId(uint64_t conn_id);
+    entt::entity GetPlayerByConnId(uint64_t conn_id);
 private:
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE

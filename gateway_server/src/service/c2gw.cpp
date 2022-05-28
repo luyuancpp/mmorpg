@@ -8,8 +8,6 @@
 
 #include "src/gateway_server.h"
 #include "src/game_logic/game_registry.h"
-#include "src/game_logic/comp/player_comp.h"
-#include "src/network/gate_player_list.h"
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
 #include "src/game_logic/tips_id.h"
@@ -22,7 +20,6 @@ ServerSequence g_server_sequence_;
 
 extern std::unordered_set<uint32_t> g_open_player_msgids;
 
-  
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
     ProtobufDispatcher& dispatcher)
     : codec_(codec),
