@@ -82,6 +82,37 @@ void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)
 	//顶号
 }
 
+Guid MasterNodeServiceImpl::GetPlayerIdByConnId(uint64_t conn_id)
+{
+    auto cit = g_gate_sessions.find(conn_id);
+    if (cit == g_gate_sessions.end())
+    {
+        return kInvalidGuid;
+    }
+    auto p_try_player = reg.try_get<EntityPtr>(cit->second.entity());
+    if (nullptr == p_try_player)
+    {
+        return kInvalidGuid;
+    }
+    auto player_id = reg.get<Guid>((*p_try_player).entity());
+	return kInvalidGuid;
+}
+
+entt::entity MasterNodeServiceImpl::GetPlayerByConnId(uint64_t conn_id)
+{
+    auto cit = g_gate_sessions.find(conn_id);
+    if (cit == g_gate_sessions.end())
+    {
+		return entt::null;
+    }
+    auto p_try_player = reg.try_get<EntityPtr>(cit->second.entity());
+    if (nullptr == p_try_player)
+    {
+        return entt::null;
+    }
+    return (*p_try_player).entity();
+}
+
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -213,30 +244,30 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	//auto player_id = request->player_id();
-	//auto player = PlayerList::GetSingleton().GetPlayer(player_id);
-	//if (entt::null == player)
-	//{
-	//	return;
-	//}
-	//auto try_acount = reg.try_get<PlayerAccount>(player);
-	//if (nullptr != try_acount)
-	//{
-	//	logined_accounts_.erase(**try_acount);
-	//}	
-	//auto& player_session = reg.get<PlayerSession>(player);
-	//auto it = g_gs_nodes.find(player_session.gs_node_id());
-	////notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况
-	//if (it == g_gs_nodes.end() ||  player_session.gate_node_id() != request->gate_node_id())
-	//{
-	//	return;
-	//}
-	//gsservice::DisconnectRequest message;
-	//message.set_player_id(player_id);
-	//reg.get<GsStubPtr>(it->second)->CallMethod(
-	//	message,
-	//	&gsservice::GsService_Stub::Disconnect);
-	//PlayerList::GetSingleton().LeaveGame(player_id);
+	auto player = GetPlayerByConnId(request->conn_id());
+	if (entt::null == player)
+	{
+		return;
+	}
+	auto try_acount = reg.try_get<PlayerAccount>(player);
+	if (nullptr != try_acount)
+	{
+		logined_accounts_.erase(**try_acount);
+	}	
+	auto& player_session = reg.get<PlayerSession>(player);
+	auto it = g_gs_nodes.find(player_session.gs_node_id());
+	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况
+	if (it == g_gs_nodes.end() ||  player_session.gate_node_id() != request->gate_node_id())
+	{
+		return;
+	}
+	auto player_id = reg.get<Guid>(player);
+	gsservice::DisconnectRequest message;
+	message.set_player_id(player_id);
+	reg.get<GsStubPtr>(it->second)->CallMethod(
+		message,
+		&gsservice::GsService_Stub::Disconnect);
+	PlayerList::GetSingleton().LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE 
 }
 
