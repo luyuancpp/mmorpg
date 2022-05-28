@@ -30,9 +30,14 @@ public:
 		return gate->node_id();
 	}
 
-	inline void Send(::google::protobuf::Message& message)
+	inline void Send(const ::google::protobuf::Message& message)
 	{
-		Send2Player(message, reg.get<Guid>(player_));
+		GateNodePtr gate = gate_.lock();
+		if (nullptr == gate)
+		{
+			return;
+		}
+		Send2Player(message, gate, gate_conn_id_.conn_id_);
 	}
 
 	void Send2Gs(::google::protobuf::Message& message)
@@ -44,8 +49,6 @@ public:
 		}
 		//gs->.Send(message);
 	}
-
-	entt::entity player_{ entt::null};
 	GateConnId gate_conn_id_;
 	GateNodeWPtr gate_;
 	GsDataWeakPtr gs_;

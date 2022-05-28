@@ -6,6 +6,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/game_registry.h"
+#include "src/network/gate_node.h"
 
 void Send2Gs(const google::protobuf::Message& message,   uint32_t gs_node_id);
 void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player);
@@ -20,6 +21,7 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
 * 必须得replied返回给gs后再在gs返回给客户。
 */
 void Send2Player(const google::protobuf::Message& message, entt::entity player);
+void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, uint64_t conn_id);
 void Send2Player(const google::protobuf::Message& message, Guid player_id);
 void Send2Gate(const google::protobuf::Message& message, uint32_t gate_id);
 

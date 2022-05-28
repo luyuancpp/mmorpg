@@ -329,21 +329,26 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE 
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
+    auto cit = g_gate_sessions.find(request->conn_id());
+	if (cit == g_gate_sessions.end())
+	{
+		LOG_ERROR << "connection not found " << request->conn_id();
+		return;
+	}
+	auto conn = cit->second.entity();
 	auto player_id = request->player_id();
 	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
 	if (entt::null == player)
 	{
+		//把旧的connection 断掉
 		PlayerList::GetSingleton().EnterGame(player_id, EntityPtr());
+		reg.emplace<EntityPtr>(conn, PlayerList::GetSingleton().GetPlayerPtr(player_id));
+		reg.emplace<Guid>(conn, player_id);
 		player = PlayerList::GetSingleton().GetPlayer(player_id);
 		reg.emplace<Guid>(player, player_id);
-		auto cit = g_gate_sessions.find(request->conn_id());
-		if (cit != g_gate_sessions.end())
-		{
-			reg.emplace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
-		}
+		reg.emplace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
 		auto& player_session = reg.emplace<PlayerSession>(player);
 		player_session.gate_conn_id_.conn_id_ = request->conn_id();
-		player_session.player_ = player;
 		auto gate_it = g_gate_nodes.find(request->gate_node_id());
 		if (gate_it != g_gate_nodes.end())
 		{
@@ -360,7 +365,6 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		{
 			// todo default
 			LOG_INFO << "player " << player_id << " enter default secne";
-
 		}
 		auto* p_gs_data = reg.try_get<GsDataPtr>(scene);
 		if (nullptr == p_gs_data)
@@ -395,6 +399,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		//todo换场景的过程中被顶了
 		
 		//告诉账号被顶
+
 		auto& player_session = reg.get<PlayerSession>(player);
 		reg.emplace_or_replace<MsConverPlayerComp>(player);//连续顶几次
 		gwservice::KickConnRequest messag;

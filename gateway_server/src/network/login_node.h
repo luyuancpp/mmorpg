@@ -8,7 +8,7 @@
 #include "src/game_logic/game_registry.h"
 
 #include "login_service.pb.h"
-#include "common.pb.h"
+#include "component_proto/node_comp.pb.h"
 
 struct LoginNode
 {

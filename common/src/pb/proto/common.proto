@@ -52,11 +52,7 @@ message MessageBody
   uint32 msg_id = 3;
 }
 
-message NodeInfo
-{
-  uint32 node_id = 1;
-  uint32 node_type = 2;
-}
+
 
 message PlayerMessageExtern
 {
