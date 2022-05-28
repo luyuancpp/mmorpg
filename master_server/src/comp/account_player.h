@@ -38,13 +38,9 @@ private:
 };
 
 
-struct MSLoginAccount : public EntityPtr
-{
-    GuidVector playing_guids_;
-};
 struct AccountLoginNode
 {
-    uint32_t login_node_id_{ UINT32_MAX };
     uint32_t gate_node_id_{ UINT32_MAX };
+    uint64_t conn_id_{ UINT64_MAX };
 };
 

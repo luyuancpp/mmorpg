@@ -9,11 +9,10 @@
 #include "gs_service.pb.h"
 #include "gw_service.pb.h"
 ///<<< END WRITING YOUR CODE
-
 class MasterNodeServiceImpl : public msservice::MasterNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
-	using AccountMap = std::unordered_map<std::string, MSLoginAccount>;
+	using AccountMap = std::unordered_map<std::string, uint64_t>;
 
     using Ms2gsEnterGsRpcRplied = NormalClosure<gsservice::EnterGsRequest, gsservice::EnterGsRespone>;
 	void Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied);

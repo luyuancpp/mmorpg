@@ -17,6 +17,7 @@
 #include "src/master_server.h"
 #include "src/comp/player_list.h"
 #include "src/network/message_system.h"
+#include "src/network/gate_session.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene.h"
@@ -37,13 +38,19 @@ std::size_t kMaxPlayerSize = 1000;
 
 void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied)
 {
-    auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
+	auto it = g_gate_sessions.find(replied.s_rq_.conn_id());
+	if (it == g_gate_sessions.end())
+	{
+		LOG_ERROR << "conn not found " << replied.s_rq_.conn_id();
+		return;
+	}
+    /*auto player = reg.get<EntityPtr>(it->second.entity());
     if (entt::null == player)
     {
-		LOG_ERROR << "player not found " << replied.s_rq_.player_id();
+        LOG_ERROR << "player not found " << replied.s_rq_.player_id();
         return;
     }
-	g_player_common_sys.OnLogin(player);
+    g_player_common_sys.OnLogin(player);*/
 }
 
 void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
@@ -65,7 +72,6 @@ void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
     auto& message = c.s_rq_;
     message.set_conn_id(replied.s_rq_.conn_id());
     message.set_gs_node_id(player_session.gs_node_id());
-    message.set_player_id(replied.s_rq_.player_id());
     reg.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, c, this, &gwservice::GwNodeService::PlayerEnterGs);
 }
 
@@ -207,30 +213,30 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	auto player_id = request->player_id();
-	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
-	if (entt::null == player)
-	{
-		return;
-	}
-	auto try_acount = reg.try_get<PlayerAccount>(player);
-	if (nullptr != try_acount)
-	{
-		logined_accounts_.erase(**try_acount);
-	}	
-	auto& player_session = reg.get<PlayerSession>(player);
-	auto it = g_gs_nodes.find(player_session.gs_node_id());
-	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况
-	if (it == g_gs_nodes.end() ||  player_session.gate_node_id() != request->gate_node_id())
-	{
-		return;
-	}
-	gsservice::DisconnectRequest message;
-	message.set_player_id(player_id);
-	reg.get<GsStubPtr>(it->second)->CallMethod(
-		message,
-		&gsservice::GsService_Stub::Disconnect);
-	PlayerList::GetSingleton().LeaveGame(player_id);
+	//auto player_id = request->player_id();
+	//auto player = PlayerList::GetSingleton().GetPlayer(player_id);
+	//if (entt::null == player)
+	//{
+	//	return;
+	//}
+	//auto try_acount = reg.try_get<PlayerAccount>(player);
+	//if (nullptr != try_acount)
+	//{
+	//	logined_accounts_.erase(**try_acount);
+	//}	
+	//auto& player_session = reg.get<PlayerSession>(player);
+	//auto it = g_gs_nodes.find(player_session.gs_node_id());
+	////notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况
+	//if (it == g_gs_nodes.end() ||  player_session.gate_node_id() != request->gate_node_id())
+	//{
+	//	return;
+	//}
+	//gsservice::DisconnectRequest message;
+	//message.set_player_id(player_id);
+	//reg.get<GsStubPtr>(it->second)->CallMethod(
+	//	message,
+	//	&gsservice::GsService_Stub::Disconnect);
+	//PlayerList::GetSingleton().LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -241,9 +247,23 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+
+	auto cit = g_gate_sessions.find(request->conn_id());
+	if (cit == g_gate_sessions.end())
+	{
+		cit = g_gate_sessions.emplace(request->conn_id(), EntityPtr()).first;
+	}
+	if (cit == g_gate_sessions.end())
+	{
+        response->mutable_error()->set_id(kRetLoginUnkonwError);
+        return;
+	}
+	auto conn = cit->second.entity();
+    reg.emplace<PlayerAccount>(conn, std::make_shared<std::string>(request->account()));
+    reg.emplace<AccountLoginNode>(conn, AccountLoginNode{ request->gate_node_id(), request->conn_id() });
+	//todo 
 	auto lit = logined_accounts_.find(request->account());
-	if (lit == logined_accounts_.end() &&
-		(PlayerList::GetSingleton().player_size() + logined_accounts_.size()) >= kMaxPlayerSize)
+	if (PlayerList::GetSingleton().player_size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
@@ -252,9 +272,8 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 
 	if (lit != logined_accounts_.end())
 	{
-		auto& lc = lit->second;
 		//如果不是同一个登录服务器,踢掉已经登录的账号
-		if (reg.get<AccountLoginNode>(lc.entity()).login_node_id_ != request->login_node_id())
+		if (lit->second != request->conn_id())
 		{
 
 		}
@@ -265,13 +284,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 	}
 	else
 	{
-		auto result = logined_accounts_.emplace(request->account(), MSLoginAccount());
-		if (result.second)
-		{
-			auto& lc = result.first->second;
-			reg.emplace<PlayerAccount>(lc.entity(), std::make_shared<std::string>(request->account()));
-			reg.emplace<AccountLoginNode>(lc.entity(), AccountLoginNode{ request->login_node_id(), request->gate_node_id() });
-		}
+		logined_accounts_.emplace(request->account(), request->conn_id());
 	}
 ///<<< END WRITING YOUR CODE 
 }
@@ -292,8 +305,8 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		PlayerList::GetSingleton().EnterGame(player_id, EntityPtr());
 		player = PlayerList::GetSingleton().GetPlayer(player_id);
 		reg.emplace<Guid>(player, player_id);
-		auto cit = logined_accounts_.find(request->account());
-		if (cit != logined_accounts_.end())
+		auto cit = g_gate_sessions.find(request->conn_id());
+		if (cit != g_gate_sessions.end())
 		{
 			reg.emplace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
 		}
@@ -403,13 +416,13 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 
-	auto guid = request->player_id();
-	auto player = PlayerList::GetSingleton().GetPlayer(guid);
+	auto player_id = request->conn_id();
+	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
 	logined_accounts_.erase(*reg.get<PlayerAccount>(player));
-	assert(reg.get<Guid>(player) == guid);
-	PlayerList::GetSingleton().LeaveGame(guid);
-	assert(!PlayerList::GetSingleton().HasPlayer(guid));
-	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
+	assert(reg.get<Guid>(player) == player_id);
+	PlayerList::GetSingleton().LeaveGame(player_id);
+	assert(!PlayerList::GetSingleton().HasPlayer(player_id));
+	assert(PlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
 
 ///<<< END WRITING YOUR CODE 
 }
@@ -421,17 +434,19 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	logined_accounts_.erase(request->account());
-	auto guid = request->player_id();
-	auto e = PlayerList::GetSingleton().GetPlayer(guid);
-	if (entt::null == e)
+	auto cit = g_gate_sessions.find(request->conn_id());
+	if (cit == g_gate_sessions.end())
 	{
 		return;
 	}
-	assert(reg.get<Guid>(e) == guid);
-	PlayerList::GetSingleton().LeaveGame(guid);
-	assert(!PlayerList::GetSingleton().HasPlayer(guid));
-	assert(PlayerList::GetSingleton().GetPlayer(guid) == entt::null);
+	auto p_try_player = reg.try_get<EntityPtr>(cit->second.entity());
+	if (nullptr == p_try_player)
+	{
+		return;
+	}
+	auto player_id = reg.get<Guid>((*p_try_player).entity());
+	PlayerList::GetSingleton().LeaveGame(player_id);
+	g_gate_sessions.erase(cit);
 ///<<< END WRITING YOUR CODE 
 }
 

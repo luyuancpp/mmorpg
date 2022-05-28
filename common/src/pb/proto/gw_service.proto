@@ -32,7 +32,6 @@ message PlayerEnterGsRequest
 {
   uint64 conn_id = 1;
   uint32 gs_node_id = 2;
-  uint64 player_id = 3;
 }
 
 message PlayerEnterGsResponese

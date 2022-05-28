@@ -2,7 +2,6 @@
 #include "gs_service.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 class GsServiceImpl : public gsservice::GsService{
 public:
 ///<<< BEGIN WRITING YOUR CODE

@@ -58,8 +58,8 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         if (it == g_client_sessions_->end())
         {
             return;
-        }
-        auto player_id = it->second.player_id_;        
+        }   
+
         {
 			gw2l::DisconnectRequest request;
 			request.set_conn_id(conn_id);
@@ -67,14 +67,10 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         }
         // master
         {
-            if (player_id != kInvalidGuid)
-            {
-				msservice::DisconnectRequest request;
-                request.set_gate_node_id(g_gateway_server->gate_node_id());
-				request.set_player_id(player_id);
-				//注意这里可能会有问题，如果发的connid 到ms 但是player id不对应怎么办?,先重连后断了
-				g_gateway_server->gw2ms_stub().CallMethod(request, &msservice::MasterNodeService_Stub::OnGwDisconnect);
-            }           
+            msservice::DisconnectRequest request;
+            request.set_gate_node_id(g_gateway_server->gate_node_id());
+            request.set_conn_id(conn_id);
+            g_gateway_server->gw2ms_stub().CallMethod(request, &msservice::MasterNodeService_Stub::OnGwDisconnect);
         }
         g_client_sessions_->erase(conn_id);
         if (conn.use_count() == 1)//两处，一处是rpc server 返回,返回证明已经断开，而且该连接没有消息要处理了
@@ -178,7 +174,8 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const RpcClientMessagePtr& request,
     muduo::Timestamp)
 {
-	auto it = g_client_sessions_->find(tcp_conn_id(conn));
+    auto conn_id = tcp_conn_id(conn);
+	auto it = g_client_sessions_->find(conn_id);
 	if (it == g_client_sessions_->end())
 	{
 		return;
@@ -195,7 +192,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     {
 		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
         msg->s_rq_.set_request(request->request());
-        msg->s_rq_.set_player_id(it->second.player_id_);
+        msg->s_rq_.set_conn_id(conn_id);
         msg->s_rq_.set_msg_id(request->msg_id());
         msg->c_rp_.set_id(request->id());
         msg->c_rp_.set_msg_id(request->msg_id());

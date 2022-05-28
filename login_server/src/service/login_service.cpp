@@ -106,7 +106,6 @@ void LoginServiceImpl::EnterMS(Guid guid,
 	cp->s_rq_.set_player_id(guid);
 	cp->s_rq_.set_conn_id(response->conn_id());
 	cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
-	cp->s_rq_.set_account(reg.get<std::string>(it->second.entity()));
 	ms_node_stub_.CallMethodString(
 		&LoginServiceImpl::EnterMsReplied,
 		cp,
@@ -148,7 +147,6 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	auto c(std::make_shared<LoginMasterRP::element_type>(response, done));
 	auto& s_reqst = c->s_rq_;
 	s_reqst.set_account(request->account());
-	s_reqst.set_login_node_id(g_login_server->login_node_id());
 	s_reqst.set_conn_id(request->conn_id());
 	s_reqst.set_gate_node_id(request->gate_node_id());
 	auto it = connections_.emplace(request->conn_id(), EntityPtr());
@@ -262,14 +260,8 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 		LOG_ERROR << " leave game not found connection";
 		return;
 	}
-	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
-	if (nullptr == p_player)
-	{
-		return;
-	}
-	auto& player = (*p_player);
 	msservice::LsLeaveGameRequest ms_request;
-	ms_request.set_player_id(player->PlayingId());
+	ms_request.set_conn_id(request->conn_id());
 	ms_node_stub_.CallMethod(ms_request,
 		&msservice::MasterNodeService_Stub::OnLsLeaveGame);
 	connections_.erase(cit);
@@ -283,26 +275,11 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	//todo 不同的gate 相同的connect id
-	auto cit = connections_.find(request->conn_id());
-	if (cit == connections_.end())//连接并没有登录
-	{
-		return;
-	}
-	//连接已经登录过
-
+	connections_.erase(request->conn_id());
 	msservice::LsDisconnectRequest message;
-	auto conn = cit->second.entity();
-	message.set_account(reg.get<std::string>(conn));
-	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
-	if (nullptr != p_player)
-	{
-		auto& player = (*p_player);
-		message.set_player_id(player->PlayingId());
-	}
+	message.set_conn_id(request->conn_id());
 	ms_node_stub_.CallMethod(message,
-		&msservice::MasterNodeService_Stub::OnLsDisconnect);
-	connections_.erase(cit);
+		&msservice::MasterNodeService_Stub::OnLsDisconnect);	
 ///<<< END WRITING YOUR CODE 
 }
 
