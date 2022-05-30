@@ -155,6 +155,7 @@
     <ClCompile Include="src\game_logic\scene\scene.cpp" />
     <ClCompile Include="src\game_logic\scene\scene_factories.cpp" />
     <ClCompile Include="src\game_logic\scene\servernode_system.cpp" />
+    <ClCompile Include="src\network\session.cpp" />
     <ClCompile Include="src\pb\pb2sol2\common_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\item_base_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\item_comp_sol2.cpp" />
@@ -253,6 +254,7 @@
     <ClInclude Include="src\game_logic\scene\servernode_system.h" />
     <ClInclude Include="src\game_logic\tiime_unit\time_variable.h" />
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
+    <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\pb\pb2sol2\pb2sol2.h" />
     <ClInclude Include="src\pb\pbc\account_database.pb.h" />
     <ClInclude Include="src\pb\pbc\c2gw.pb.h" />

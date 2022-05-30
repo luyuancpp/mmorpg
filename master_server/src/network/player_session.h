@@ -5,6 +5,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/comp/player_comp.h"
 #include "src/network/message_system.h"
+#include "src/network/session.h"
 
 class PlayerSession
 {
@@ -22,12 +23,7 @@ public:
 
 	uint32_t gate_node_id()const
 	{
-		auto gate = gate_.lock();
-		if (nullptr == gate)
-		{
-			return kInvalidU32Id;
-		}
-		return gate->node_id();
+		return node_id(gate_conn_id_.conn_id_);
 	}
 
 	inline void Send(const ::google::protobuf::Message& message)

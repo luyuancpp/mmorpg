@@ -105,7 +105,6 @@ void LoginServiceImpl::EnterMS(Guid player_id,
 	auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
 	cp->s_rq_.set_player_id(player_id);
 	cp->s_rq_.set_conn_id(response->conn_id());
-	cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
 	ms_node_stub_.CallMethodString(
 		&LoginServiceImpl::EnterMsReplied,
 		cp,
@@ -148,12 +147,10 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	auto& s_reqst = c->s_rq_;
 	s_reqst.set_account(request->account());
 	s_reqst.set_conn_id(request->conn_id());
-	s_reqst.set_gate_node_id(request->gate_node_id());
 	auto it = connections_.emplace(request->conn_id(), EntityPtr());
 	if (it.first != connections_.end())
 	{
 		reg.emplace_or_replace<std::string>(it.first->second.entity(), request->account());
-		reg.emplace_or_replace<uint32_t>(it.first->second.entity(), request->gate_node_id());
 	}
 	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, c, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
@@ -218,26 +215,26 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	CheckReturnCloseureError(ap->EnterGame());
 
 	// long time in login processing
-	auto guid = request->player_id();
-	if (!ap->IsInPlayerList(guid))
+	auto player_id = request->player_id();
+	if (!ap->IsInPlayerList(player_id))
 	{
 		ReturnCloseureError(kRetLoginPlayerGuidError);
 	}
 	// player in redis return ok
 	player_database new_player;
-	redis_->Load(new_player, guid);
-	ap->Playing(guid);//test
+	redis_->Load(new_player, player_id);
+	ap->Playing(player_id);//test
 	response->set_conn_id(conn_id);
-	response->set_player_id(guid);//test
+	response->set_player_id(player_id);//test
 	if (new_player.player_id() > 0)
 	{
-		EnterMS(guid, conn_id, response, done);
+		EnterMS(player_id, conn_id, response, done);
 		return;
 	}
 	// database to redis 
 	auto c(std::make_shared<EnterGameDbRpcReplied::element_type>(response, done));
 	auto& srq = c->s_rq_;
-	srq.set_player_id(guid);
+	srq.set_player_id(player_id);
 	l2db_login_stub_.CallMethodString(
 		&LoginServiceImpl::EnterGameDbReplied,
 		c,

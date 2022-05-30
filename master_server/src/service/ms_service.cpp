@@ -26,6 +26,7 @@
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
 #include "src/network/server_component.h"
+#include "src/network/session.h"
 
 #include "gs_service.pb.h"
 #include "logic_proto/scene_normal.pb.h"
@@ -263,7 +264,7 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	auto& player_session = reg.get<PlayerSession>(player);
 	auto it = g_gs_nodes.find(player_session.gs_node_id());
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况
-	if (it == g_gs_nodes.end() ||  player_session.gate_node_id() != request->gate_node_id())
+	if (it == g_gs_nodes.end() ||  player_session.gate_node_id() != node_id(request->conn_id()))
 	{
 		return;
 	}
@@ -297,7 +298,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 	}
 	auto conn = cit->second.entity();
     reg.emplace<PlayerAccount>(conn, std::make_shared<std::string>(request->account()));
-    reg.emplace<AccountLoginNode>(conn, AccountLoginNode{ request->gate_node_id(), request->conn_id() });
+    reg.emplace<AccountLoginNode>(conn, AccountLoginNode{request->conn_id()});
 	//todo 
 	auto lit = logined_accounts_.find(request->account());
 	if (PlayerList::GetSingleton().player_size() >= kMaxPlayerSize)
@@ -354,7 +355,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		reg.emplace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
 		auto& player_session = reg.emplace<PlayerSession>(player);
 		player_session.gate_conn_id_.conn_id_ = request->conn_id();
-		auto gate_it = g_gate_nodes.find(request->gate_node_id());
+		auto gate_it = g_gate_nodes.find(node_id(request->conn_id()));
 		if (gate_it != g_gate_nodes.end())
 		{
 			auto gate = reg.try_get<GateNodePtr>(gate_it->second);
@@ -389,7 +390,6 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			Ms2gsEnterGsRpcRplied message;
 			message.s_rq_.set_player_id(player_id);
 			message.s_rq_.set_conn_id(request->conn_id());
-			message.s_rq_.set_gate_node_id(request->gate_node_id());
 			message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
             auto& scene_info = reg.get<SceneInfo>(scene);
 			message.s_rq_.mutable_scenes_info()->CopyFrom(scene_info);
@@ -412,8 +412,9 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		Send2Gate(messag, player_session.gate_node_id());
 
 		player_session.gate_conn_id_.conn_id_ = request->conn_id();
-		auto gate_it = g_gate_nodes.find(request->gate_node_id());
-		if (gate_it != g_gate_nodes.end() && player_session.gate_node_id() != request->gate_node_id())
+		auto gate_id = node_id(request->conn_id());
+		auto gate_it = g_gate_nodes.find(gate_id);
+		if (gate_it != g_gate_nodes.end() && player_session.gate_node_id() != gate_id)
 		{
 			auto gate = reg.try_get<GateNodePtr>(gate_it->second);
 			if (nullptr != gate)
@@ -435,7 +436,6 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
             Ms2gsEnterGsRpcRplied message;
             message.s_rq_.set_player_id(player_id);
             message.s_rq_.set_conn_id(request->conn_id());
-            message.s_rq_.set_gate_node_id(request->gate_node_id());
             message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
             auto& scene_info = reg.get<SceneInfo>(scene);
             message.s_rq_.mutable_scenes_info()->CopyFrom(scene_info);

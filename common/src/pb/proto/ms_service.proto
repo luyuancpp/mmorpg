@@ -51,7 +51,6 @@ message LoginAccountRequest
 {
   string account = 1;
   uint64 conn_id = 2;
-  uint32 gate_node_id = 3;
 }
 
 message LoginAccountResponse
@@ -63,7 +62,6 @@ message EnterGameRequest
 {
   uint64 player_id = 1;
   uint64 conn_id = 2;
-  uint32 gate_node_id = 3;
 }
 
 message EnterGameResponese

@@ -162,24 +162,31 @@
 	class ServerSequence
 	{
 	public:
-		void set_server_id(uint32_t server_id)
+        static const uint8_t kNodeBit = 32;
+
+		void set_node_id(uint32_t node_id)
 		{
-			server_id_ = server_id;
-            server_id_ = server_id_ << 32;
+			node_id_ = node_id;
+            node_id_ = node_id_ << kNodeBit;
 		}
+
+        uint32_t node_id(Guid guid)
+        {
+            return guid >> kNodeBit;
+        }
 
 		Guid Generate()
 		{
-			return server_id_ | ++seq_;
+			return node_id_ | ++seq_;
 		}
 
         //for test
         Guid LastId()
         {
-            return  server_id_ | seq_;
+            return  node_id_ | seq_;
         }
 	private:
-		uint64_t server_id_{ 0 };
+		uint64_t node_id_{ 0 };
         uint64_t seq_{ 0 };
 	};
 
