@@ -1,10 +1,12 @@
 #pragma once
 #include "gs_service.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include <unordered_map>
 ///<<< END WRITING YOUR CODE
 class GsServiceImpl : public gsservice::GsService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
+private:
 ///<<< END WRITING YOUR CODE
 public:
     void EnterGs(::google::protobuf::RpcController* controller,

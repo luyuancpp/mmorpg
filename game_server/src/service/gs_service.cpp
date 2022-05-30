@@ -19,8 +19,21 @@
 #include "c2gw.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
 #include "component_proto/player_comp.pb.h"
+#include "component_proto/player_async_comp.pb.h"
 
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
+
+void KickOldSession(Guid player_id)
+{
+    auto sit = g_player_session_map.find(player_id);
+    if (sit == g_player_session_map.end())//老连接踢掉
+    {
+        //delete old session
+		return;
+    }
+    g_gate_sessions.erase(sit->first);
+    g_player_session_map.erase(sit);
+}
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -34,10 +47,14 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	//load player 
 	{
         auto player_id = request->player_id();
-        g_player_data_redis_system->AsyncLoad(player_id);
+		KickOldSession(player_id);
+		g_player_session_map.emplace(player_id, request->session_id());
+        g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
 		EntityPtr session;
 		g_gate_sessions.emplace(request->session_id(), session);
-		reg.emplace<Guid>(session, player_id);
+		auto& enter_info = reg.emplace<EnterSceneInfo>(session);
+		enter_info.mutable_scenes_info()->CopyFrom(request->scenes_info());
+		enter_info.set_ms_node_id(request->ms_node_id());
         return;
 	}
 
@@ -193,7 +210,13 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	{
 		return;
 	}
-	auto pit = g_players.find(reg.get<Guid>(cit->second));
+	auto p_try_session_player = reg.try_get<Guid>(cit->second);
+	if (nullptr == p_try_session_player)
+	{
+		LOG_ERROR << "player not loading";
+		return;
+	}
+	auto pit = g_players.find(*p_try_session_player);
 	if (pit == g_players.end())
 	{
 		return;
@@ -201,8 +224,7 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
 	player_request->ParseFromString(request->request());
 	MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
-	entt::entity player = pit->second;
-	it->second->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
+	it->second->CallMethod(method, pit->second, get_pointer(player_request), get_pointer(player_response));
 	response->set_response(player_response->SerializeAsString());
 ///<<< END WRITING YOUR CODE 
 }
@@ -215,6 +237,7 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	//异步加载过程中断开了？
+	KickOldSession(request->player_id());
     auto it = g_players.find(request->player_id());
 	if (it == g_players.end())
 	{
