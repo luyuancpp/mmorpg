@@ -6,7 +6,7 @@ option cc_generic_services = true;
 
 message GsMessageExtern
 {
-  uint64 conn_id = 1;
+  uint64 session_id = 1;
 }
 
 message GsPlayerMessageRequest
@@ -30,7 +30,7 @@ message StopGSRequest
 
 message PlayerEnterGsRequest
 {
-  uint64 conn_id = 1;
+  uint64 session_id = 1;
   uint32 gs_node_id = 2;
 }
 
@@ -40,7 +40,7 @@ message PlayerEnterGsResponese
 
 message MessageExtern
 {
-  uint64 conn_id = 1;
+  uint64 session_id = 1;
   uint32 gs_node_id = 2;
   uint64 player_id = 3;
 }
@@ -53,7 +53,7 @@ message PlayerMessageRequest
 
 message KickConnRequest
 {
-  uint64 conn_id = 1;
+  uint64 session_id = 1;
 }
 
 service GwNodeService {

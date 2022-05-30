@@ -7,7 +7,7 @@ option cc_generic_services = true;
 message LoginRequest
 {
   string account = 1;
-  uint64 conn_id = 2;
+  uint64 session_id = 2;
 }
 
 message LoginResponse
@@ -19,7 +19,7 @@ message LoginResponse
 message CreatePlayerRequest
 {
   string account = 1;
-  uint64 conn_id = 2;
+  uint64 session_id = 2;
 }
 
 message CreatePlayerResponse

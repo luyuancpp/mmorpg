@@ -38,19 +38,19 @@ message ConnectedGameRequest
 
 message LeaveGameRequest
 {
-  uint64 conn_id = 1;
+  uint64 session_id = 1;
 }
 
 message DisconnectRequest
 {
-  uint64 conn_id = 1;
+  uint64 session_id = 1;
   uint32 gate_node_id = 2;
 }
 
 message LoginAccountRequest
 {
   string account = 1;
-  uint64 conn_id = 2;
+  uint64 session_id = 2;
 }
 
 message LoginAccountResponse
@@ -61,22 +61,22 @@ message LoginAccountResponse
 message EnterGameRequest
 {
   uint64 player_id = 1;
-  uint64 conn_id = 2;
+  uint64 session_id = 2;
 }
 
 message EnterGameResponese
 {
-  uint64 conn_id = 1;
+  uint64 session_id = 1;
 }
 
 message LsLeaveGameRequest
 {
-  uint64 conn_id = 1;
+  uint64 session_id = 1;
 }
 
 message LsDisconnectRequest
 {
-  uint64 conn_id = 1;
+  uint64 session_id = 1;
 }
 
 message PlayerMessageExtern

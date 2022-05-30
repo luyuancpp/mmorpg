@@ -117,10 +117,10 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 	{
 		return;
 	}
-	Send2Player(message, gate, player_session.gate_conn_id_.session_id_);
+	Send2Player(message, gate, player_session.gate_session_id_.session_id_);
 }
 
-void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, uint64_t conn_id)
+void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id)
 {
     auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
     if (message_it == g_msgid.end())
@@ -129,7 +129,7 @@ void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, ui
         return;
     }
     gwservice::PlayerMessageRequest msg_wrapper;
-    msg_wrapper.mutable_ex()->set_conn_id(conn_id);
+    msg_wrapper.mutable_ex()->set_session_id(session_id);
     msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
     msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
     gate->session_.Send(msg_wrapper);

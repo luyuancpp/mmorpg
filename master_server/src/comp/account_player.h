@@ -41,7 +41,7 @@ private:
 
 struct AccountLoginNode
 {
-    inline uint32_t gate_node_id() { return node_id(conn_id_); };
-    uint64_t conn_id_{ UINT64_MAX };
+    inline uint32_t gate_node_id() { return node_id(session_id_); };
+    uint64_t session_id_{ UINT64_MAX };
 };
 

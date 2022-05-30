@@ -38,7 +38,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
         {
             g_player_data_redis_system->AsyncLoad(guid);
         }
-		g_gate_sessions.emplace(request->conn_id(), EntityPtr());
+		g_gate_sessions.emplace(request->session_id(), EntityPtr());
         return;
 	}
 
@@ -62,13 +62,13 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 		is_replace_player = true;
 	}
 	auto player = it->second.entity();
-	reg.emplace_or_replace<GateSession>(player, request->conn_id());
+	reg.emplace_or_replace<GateSession>(player, request->session_id());
 	auto msit = g_ms_nodes.find(request->ms_node_id());
 	if (msit != g_ms_nodes.end())
 	{
 		reg.emplace_or_replace<MsNodeWPtr>(player, msit->second);
 	}
-	auto gate_node_id = node_id(request->conn_id());
+	auto gate_node_id = node_id(request->session_id());
 	auto gate_it = g_gate_nodes.find(gate_node_id);
 	if (gate_it == g_gate_nodes.end())
 	{
@@ -191,7 +191,7 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	{
 		return;
 	}
-	auto cit = g_gate_sessions.find(request->conn_id());
+	auto cit = g_gate_sessions.find(request->session_id());
 	if (cit == g_gate_sessions.end())
 	{
 		return;
