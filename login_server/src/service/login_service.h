@@ -32,7 +32,7 @@ public:
 		void LoginAccountDbReplied(LoginRpcReplied d);
 
 		using LoginMasterRP = std::shared_ptr<RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
-		void LoginAccountMSReplied(LoginMasterRP d);
+		void LoginAccountMsReplied(LoginMasterRP d);
 
 		using CreatePlayerRpcReplied = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
 		void CreatePlayerDbReplied(CreatePlayerRpcReplied d);
@@ -43,7 +43,7 @@ public:
 		using EnterGameMSRpcReplied = std::shared_ptr<RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
 		void EnterMsReplied(EnterGameMSRpcReplied d);
 
-		void EnterMS(Guid guid,
+		void EnterMS(Guid player_id,
 			uint64_t connection_id,
 			::gw2l::EnterGameResponse* response,
 			::google::protobuf::Closure* done);

@@ -18,7 +18,7 @@ LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 {}
 
 
-void LoginServiceImpl::LoginAccountMSReplied(LoginMasterRP d)
+void LoginServiceImpl::LoginAccountMsReplied(LoginMasterRP d)
 {
 	//只连接不登录,占用连接
 	// login process
@@ -92,7 +92,7 @@ void LoginServiceImpl::EnterMsReplied(EnterGameMSRpcReplied d)
 	connections_.erase(d->s_rq_.conn_id());
 }
 
-void LoginServiceImpl::EnterMS(Guid guid,
+void LoginServiceImpl::EnterMS(Guid player_id,
 	uint64_t conn_id,
 	::gw2l::EnterGameResponse* response,
 	::google::protobuf::Closure* done)
@@ -103,7 +103,7 @@ void LoginServiceImpl::EnterMS(Guid guid,
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
 	auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
-	cp->s_rq_.set_player_id(guid);
+	cp->s_rq_.set_player_id(player_id);
 	cp->s_rq_.set_conn_id(response->conn_id());
 	cp->s_rq_.set_gate_node_id(reg.get<uint32_t>(it->second.entity()));
 	ms_node_stub_.CallMethodString(
@@ -155,7 +155,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 		reg.emplace_or_replace<std::string>(it.first->second.entity(), request->account());
 		reg.emplace_or_replace<uint32_t>(it.first->second.entity(), request->gate_node_id());
 	}
-	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMSReplied, c, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
+	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, c, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
 
