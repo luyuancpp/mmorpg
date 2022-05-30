@@ -9,7 +9,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity& player,
+void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
     const ::EnterSeceneC2SRequest* request,
     ::EnterSeceneC2SResponse* response)
 {

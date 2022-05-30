@@ -6,7 +6,7 @@ public:
     using PlayerService::PlayerService;
 public:
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-    entt::entity& player,
+    entt::entity player,
     const ::google::protobuf::Message* request,
     ::google::protobuf::Message* response)override
     {

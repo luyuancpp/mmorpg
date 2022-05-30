@@ -5,12 +5,12 @@ class ServerPlayerTeamServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:
-    void EnterScene(entt::entity& player,
+    void EnterScene(entt::entity player,
         const ::TeamTestRequest* request,
         ::TeamTestResponse* response);
 
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-    entt::entity& player,
+    entt::entity player,
     const ::google::protobuf::Message* request,
     ::google::protobuf::Message* response)override
     {

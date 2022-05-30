@@ -35,7 +35,7 @@ void LoginServiceImpl::LoginAccountMsReplied(LoginMasterRP d)
 
 	//has data
 	{
-		auto& player = reg.emplace<PlayerPtr>(cit->second.entity(), std::make_shared<AccountPlayer>());
+		auto& player = reg.emplace<PlayerPtr>(cit->second, std::make_shared<AccountPlayer>());
 		auto ret = player->Login();
 		if (ret != kRetOK)
 		{
@@ -119,7 +119,7 @@ void LoginServiceImpl::UpdateAccount(uint64_t session_id, const ::account_databa
 	{
 		return;
 	}
-	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
+	auto* p_player = reg.try_get<PlayerPtr>(cit->second);
 	if (nullptr == p_player)
 	{
 		return;
@@ -150,7 +150,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	auto it = connections_.emplace(request->session_id(), EntityPtr());
 	if (it.first != connections_.end())
 	{
-		reg.emplace_or_replace<std::string>(it.first->second.entity(), request->account());
+		reg.emplace_or_replace<std::string>(it.first->second, request->account());
 	}
 	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, c, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
@@ -171,7 +171,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	{
 		ReturnCloseureError(kRetLoignCreatePlayerConnectionHasNotAccount);
 	}
-	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
+	auto* p_player = reg.try_get<PlayerPtr>(cit->second);
 	if (nullptr == p_player)
 	{
 		ReturnCloseureError(kRetLoginCreateConnectionAccountEmpty);
@@ -205,7 +205,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	{
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
-	auto* p_player = reg.try_get<PlayerPtr>(cit->second.entity());
+	auto* p_player = reg.try_get<PlayerPtr>(cit->second);
 	if (nullptr == p_player)
 	{
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);

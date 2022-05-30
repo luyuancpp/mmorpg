@@ -12,7 +12,7 @@ class EntityPtr
 {
 public:
 	EntityPtr();
-	inline entt::entity entity()const { return *entity_.get(); }
+	inline  operator entt::entity() { return *entity_.get(); }
 	EntityWeakPtr to_weak() { return entity_; }
 private:
 	std::shared_ptr<entt::entity> entity_;

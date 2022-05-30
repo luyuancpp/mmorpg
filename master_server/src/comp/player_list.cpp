@@ -11,7 +11,7 @@ entt::entity PlayerList::GetPlayer(Guid guid)
     {
         return entt::null;
     }
-    return it->second.entity();
+    return it->second;
 }
 
 EntityPtr PlayerList::GetPlayerPtr(Guid guid)
@@ -33,7 +33,7 @@ void PlayerList::LeaveGame(Guid guid)
         return;
     }
     LeaveSceneParam lsp;
-    lsp.leaver_ = it->second.entity();
+    lsp.leaver_ = it->second;
     ScenesSystem::GetSingleton().LeaveScene(lsp);
 	g_players.erase(it);
 }

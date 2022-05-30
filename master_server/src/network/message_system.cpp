@@ -58,9 +58,9 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	gs_session.Send(ms2gs_messag);
 }
 
-void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& entity)
+void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& player)
 {
-	Send2GsPlayer(message, entity.entity());
+	Send2GsPlayer(message, (entt::entity)player);
 }
 
 void Send2GsPlayer(const google::protobuf::Message& message, Guid player_id)
@@ -75,7 +75,7 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, Guid player_id)
 
 void Send2PlayerViaGs(const google::protobuf::Message& message, EntityPtr& player)
 {
-	Send2PlayerViaGs(message, player.entity());
+	Send2PlayerViaGs(message, (entt::entity)player);
 }
 
 void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity player)
