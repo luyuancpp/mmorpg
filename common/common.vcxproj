@@ -161,6 +161,7 @@
     <ClCompile Include="src\pb\pb2sol2\item_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\ms_player_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\node_comp_sol2.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\player_async_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\player_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\scene_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\scene_comp_sol2.cpp" />
@@ -169,6 +170,7 @@
     <ClCompile Include="src\pb\pbc\component_proto\item_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\ms_player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\node_comp.pb.cc" />
+    <ClCompile Include="src\pb\pbc\component_proto\player_async_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\scene_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\gs_service.pb.cc" />
@@ -264,6 +266,7 @@
     <ClInclude Include="src\pb\pbc\component_proto\item_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\ms_player_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\node_comp.pb.h" />
+    <ClInclude Include="src\pb\pbc\component_proto\player_async_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\player_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\scene_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\condition_config.pb.h" />

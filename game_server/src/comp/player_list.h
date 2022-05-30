@@ -7,6 +7,3 @@
 
 using PlayerList = std::unordered_map<Guid, EntityPtr>;
 extern thread_local PlayerList  g_players;
-
-using PlayerList = std::unordered_map<Guid, EntityPtr>;
-extern thread_local PlayerList  g_loading_players;
