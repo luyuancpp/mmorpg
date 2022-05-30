@@ -6,9 +6,9 @@
 
 #include "entt/src/entt/entity/entity.hpp"
 
-struct GateConnId
+struct GateSession
 {
-     uint64_t conn_id_{UINT64_MAX};
+     uint64_t session_id_{UINT64_MAX};
 };
 
 struct PlayerId 

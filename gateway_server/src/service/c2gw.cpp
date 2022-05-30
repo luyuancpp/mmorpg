@@ -48,7 +48,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     //todo 玩家没登录直接发其他消息，乱发消息
     if (!conn->connected())
     {
-        auto conn_id = tcp_conn_id(conn);
+        auto conn_id = tcp_session_id(conn);
         //断了线之后不能把消息串到别人的地方，串话
         //如果我没登录就发送其他协议到master game server 怎么办
         {
@@ -164,7 +164,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     const RpcClientMessagePtr& request,
     muduo::Timestamp)
 {
-    auto conn_id = tcp_conn_id(conn);
+    auto conn_id = tcp_session_id(conn);
 	auto it = g_client_sessions_->find(conn_id);
 	if (it == g_client_sessions_->end())
 	{

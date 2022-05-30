@@ -49,7 +49,7 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 	gwservice::GsPlayerMessageRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
-	msg_wrapper.mutable_ex()->set_conn_id(reg.get<GateConnId>(player).conn_id_);
+	msg_wrapper.mutable_ex()->set_conn_id(reg.get<GateSession>(player).session_id_);
 	gate->session_.Send(msg_wrapper);
 }
 
