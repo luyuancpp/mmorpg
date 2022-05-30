@@ -9,6 +9,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/gate_session.h"
 #include "src/network/message_system.h"
+#include "src/network/session.h"
 #include "src/comp/player_list.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/msgmap.h"
@@ -67,16 +68,17 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	{
 		reg.emplace_or_replace<MsNodeWPtr>(player, msit->second);
 	}
-	auto gate_it = g_gate_nodes.find(request->gate_node_id());
+	auto gate_node_id = node_id(request->conn_id());
+	auto gate_it = g_gate_nodes.find(gate_node_id);
 	if (gate_it == g_gate_nodes.end())
 	{
-		LOG_ERROR << " gate not found" << request->gate_node_id();
+		LOG_ERROR << " gate not found" << gate_node_id;
 		return;
 	}
 	auto p_gate = reg.try_get<GateNodePtr>(gate_it->second);
 	if (nullptr == p_gate)
 	{
-		LOG_ERROR << " gate not found" << request->gate_node_id();
+		LOG_ERROR << " gate not found" << gate_node_id;
 		return;
 	}
 	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);

@@ -37,7 +37,7 @@ void GatewayServer::Init()
 void GatewayServer::StartServer(ServerInfoRpcRC cp)
 {
     serverinfo_data_ = cp->s_rp_->info();
-    g_server_sequence_.set_server_id(gate_node_id());
+    g_server_sequence_.set_node_id(gate_node_id());
     auto& login_info = serverinfo_data_.login_info();
     ConnectLogin(login_info);
 

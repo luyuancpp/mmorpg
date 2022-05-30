@@ -76,6 +76,7 @@
     <ClCompile Include="src\pb\pb2sol2\common_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\node_comp.pb.cc" />
     <ClCompile Include="src\pb\pb2sol2\node_comp_sol2.cpp" />
+    <ClCompile Include="src\network\session.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -176,5 +177,6 @@
     <ClInclude Include="src\pb\pbc\component_proto\item_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\common_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\node_comp.pb.h" />
+    <ClInclude Include="src\network\session.h" />
   </ItemGroup>
 </Project>

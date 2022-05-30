@@ -91,7 +91,6 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     c->s_rq_.set_account(std::move(message->account()));
     c->s_rq_.set_password(std::move(message->password()));
     c->s_rq_.set_conn_id(c->conn_id());
-    c->s_rq_.set_gate_node_id(g_gateway_server->gate_node_id());
     login_stub().CallMethod(&ClientReceiver::OnServerLoginReplied,
         c, 
         this, 

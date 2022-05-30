@@ -3,6 +3,7 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/login_state/login_state_machine.h"
 #include "src/game_logic/game_registry.h"
+#include "src/network/session.h"
 
 #include "mysql_database_table.pb.h"
 
@@ -40,7 +41,7 @@ private:
 
 struct AccountLoginNode
 {
-    uint32_t gate_node_id_{ UINT32_MAX };
+    inline uint32_t gate_node_id() { return node_id(conn_id_); };
     uint64_t conn_id_{ UINT64_MAX };
 };
 
