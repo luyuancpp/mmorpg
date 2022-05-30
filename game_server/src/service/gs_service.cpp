@@ -62,7 +62,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 		is_replace_player = true;
 	}
 	auto player = it->second.entity();
-	reg.emplace_or_replace<GateConnId>(player, request->conn_id());
+	reg.emplace_or_replace<GateSession>(player, request->conn_id());
 	auto msit = g_ms_nodes.find(request->ms_node_id());
 	if (msit != g_ms_nodes.end())
 	{

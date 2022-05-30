@@ -100,7 +100,7 @@ public:
 	using GsPlayerServiceRpcRplied = std::shared_ptr<ClosureReplied<MessageBody, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
 	void OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp);
 
-    inline uint64_t tcp_conn_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<uint64_t>(conn->getContext()); }
+    inline uint64_t tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<uint64_t>(conn->getContext()); }
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;   

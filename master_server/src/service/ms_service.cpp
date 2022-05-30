@@ -354,7 +354,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		reg.emplace<Guid>(player, player_id);
 		reg.emplace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
 		auto& player_session = reg.emplace<PlayerSession>(player);
-		player_session.gate_conn_id_.conn_id_ = request->conn_id();
+		player_session.gate_conn_id_.session_id_ = request->conn_id();
 		auto gate_it = g_gate_nodes.find(node_id(request->conn_id()));
 		if (gate_it != g_gate_nodes.end())
 		{
@@ -408,10 +408,10 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		auto& player_session = reg.get<PlayerSession>(player);
 		reg.emplace_or_replace<MsConverPlayerComp>(player);//连续顶几次,所以用emplace_or_replace
 		gwservice::KickConnRequest messag;
-		messag.set_conn_id(player_session.gate_conn_id_.conn_id_);
+		messag.set_conn_id(player_session.gate_conn_id_.session_id_);
 		Send2Gate(messag, player_session.gate_node_id());
 
-		player_session.gate_conn_id_.conn_id_ = request->conn_id();
+		player_session.gate_conn_id_.session_id_ = request->conn_id();
 		auto gate_id = node_id(request->conn_id());
 		auto gate_it = g_gate_nodes.find(gate_id);
 		if (gate_it != g_gate_nodes.end() && player_session.gate_node_id() != gate_id)
