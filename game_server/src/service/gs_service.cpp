@@ -20,6 +20,7 @@
 #include "logic_proto/scene_server_player.pb.h"
 #include "component_proto/player_comp.pb.h"
 
+using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -32,13 +33,11 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE 
 	//load player 
 	{
-        auto guid = request->player_id();
-        auto it = g_players.find(request->player_id());
-        if (it == g_players.end())
-        {
-            g_player_data_redis_system->AsyncLoad(guid);
-        }
-		g_gate_sessions.emplace(request->session_id(), EntityPtr());
+        auto player_id = request->player_id();
+        g_player_data_redis_system->AsyncLoad(player_id);
+		EntityPtr session;
+		g_gate_sessions.emplace(request->session_id(), session);
+		reg.emplace<Guid>(session, player_id);
         return;
 	}
 
@@ -54,14 +53,14 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	if (it == g_players.end())
     {
         it = g_players.emplace(request->player_id(), EntityPtr()).first;
-		auto player = it->second.entity();
+		entt::entity player = it->second;
 		reg.emplace<Guid>(player, request->player_id());
 	}
 	else
 	{
 		is_replace_player = true;
 	}
-	auto player = it->second.entity();
+	entt::entity player = it->second;
 	reg.emplace_or_replace<GateSession>(player, request->session_id());
 	auto msit = g_ms_nodes.find(request->ms_node_id());
 	if (msit != g_ms_nodes.end())
@@ -140,11 +139,10 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 		//todo client error;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
+	MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
 	player_request->ParseFromString(player_msg.body());
-	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
-	auto player = it->second.entity();
-	serviceimpl->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
+	MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
+	serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
 	{
 		return;
@@ -185,8 +183,7 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 		return;
 	}
 	google::protobuf::Service* service = it->second->service();
-	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(serviceinfo.method);
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(serviceinfo.method);
 	if (nullptr == method)
 	{
 		return;
@@ -196,15 +193,15 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	{
 		return;
 	}
-	auto pit = g_players.find(reg.get<Guid>(cit->second.entity()));
+	auto pit = g_players.find(reg.get<Guid>(cit->second));
 	if (pit == g_players.end())
 	{
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
+	MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
 	player_request->ParseFromString(request->request());
-	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
-	auto player = pit->second.entity();
+	MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
+	entt::entity player = pit->second;
 	it->second->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
 	response->set_response(player_response->SerializeAsString());
 ///<<< END WRITING YOUR CODE 
@@ -224,7 +221,7 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 		return;
 	}	
     LeaveSceneParam lp;
-    lp.leaver_ = it->second.entity();
+    lp.leaver_ = it->second;
     ScenesSystem::GetSingleton().LeaveScene(lp);
  	g_players.erase(it);//todo  应该是ms 通知过来
 

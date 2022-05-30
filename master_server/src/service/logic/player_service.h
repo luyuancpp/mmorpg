@@ -18,7 +18,7 @@ public:
 	}
 
 	virtual void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-		entt::entity& player,
+		entt::entity player,
 		const ::google::protobuf::Message* request,
 		::google::protobuf::Message* response) = 0;
 

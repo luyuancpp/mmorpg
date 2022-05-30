@@ -56,7 +56,7 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 
 void Send2Player(const google::protobuf::Message& message, EntityPtr& player)
 {
-    Send2Player(message, player.entity());
+    Send2Player(message, (entt::entity)player);
 }
 
 void Send2MsPlayer(const google::protobuf::Message& message, Guid player_id)
@@ -67,8 +67,7 @@ void Send2MsPlayer(const google::protobuf::Message& message, Guid player_id)
 		LOG_INFO << "player not found " << player_id;
 		return;
 	}
-	auto player = it->second.entity();
-	Send2MsPlayer(message, player);
+	Send2MsPlayer(message, it->second);
 }
 
 void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player)
@@ -104,7 +103,7 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 
 void Send2MsPlayer(const google::protobuf::Message& message, EntityPtr& player)
 {
-	Send2MsPlayer(message, player.entity());
+	Send2MsPlayer(message, (entt::entity)player);
 }
 
 void Send2Ms(const google::protobuf::Message& messag)

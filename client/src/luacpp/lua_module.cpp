@@ -7,9 +7,9 @@
 
 struct PlayerId {
 public:
-    thread_local static uint64_t guid;
+    thread_local static uint64_t player_id;
 };
-thread_local uint64_t PlayerId::guid = 100;
+thread_local uint64_t PlayerId::player_id = 100;
 
 void pb2sol2();
 void InitServiceLua();
@@ -37,8 +37,8 @@ void InitLua()
     g_lua.set_function("LogError", LogError);
 
     g_lua.new_usertype<PlayerId>("PlayerId",
-        "guid",
-        sol::var(PlayerId::guid));
+        "player_id",
+        sol::var(PlayerId::player_id));
     InitServiceLua();
 }
 

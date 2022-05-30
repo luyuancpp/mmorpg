@@ -5,20 +5,20 @@ class ServerPlayerSceneServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:
-    void LoginMs2Gs(entt::entity& player,
+    void LoginMs2Gs(entt::entity player,
         const ::Ms2GsLoginRequest* request,
         ::google::protobuf::Empty* response);
-    void ReconnectMs2Gs(entt::entity& player,
+    void ReconnectMs2Gs(entt::entity player,
         const ::Ms2GsReconnectRequest* request,
         ::google::protobuf::Empty* response);
-    void EnterSceneGs2Ms(entt::entity& player,
+    void EnterSceneGs2Ms(entt::entity player,
         const ::Gs2MsEnterSceneRequest* request,
         ::google::protobuf::Empty* response);
-    void EnterSceneMs2Gs(entt::entity& player,
+    void EnterSceneMs2Gs(entt::entity player,
         const ::Ms2GsEnterSceneRequest* request,
         ::google::protobuf::Empty* response);
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-    entt::entity& player,
+    entt::entity player,
     const ::google::protobuf::Message* request,
     ::google::protobuf::Message* response)override
     {

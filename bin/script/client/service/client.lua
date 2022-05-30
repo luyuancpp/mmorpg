@@ -1,6 +1,6 @@
 function LoginRequest:ReadyGo() 
-	self.account = ("luhailong"..PlayerId.guid)
-	PlayerId.guid = PlayerId.guid + 1
+	self.account = ("luhailong"..PlayerId.player_id)
+	PlayerId.player_id = PlayerId.player_id + 1
 end
 
 function ReadyGo()
@@ -12,10 +12,10 @@ end
 function Example()
 	responese = TestResponse.new()
 	player = responese:add_players()
-	player.guid = 1
+	player.player_id = 1
 	for i=0,responese:players_size() - 1 do
 		p = responese:players(i)
-		print(p.guid)
+		print(p.player_id)
 	end
 	responese:mutable_error().error_no = 1
 	print(responese:error().error_no)
@@ -26,9 +26,9 @@ function CreatePlayer()
 	player:sendraw(request)
 end
 
-function EnterGame(guid)
+function EnterGame(player_id)
 	request = EnterGameRequest.new()
-	request.guid = guid
+	request.player_id = player_id
 	player:sendraw(request)
 end
 

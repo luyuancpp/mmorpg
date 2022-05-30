@@ -14,7 +14,7 @@ void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message)
         LOG_ERROR << "server emplace erro" << player_id;
         return;
     }
-    auto player = ret.first->second.entity();
+    entt::entity player = ret.first->second;
     reg.emplace<Guid>(player, player_id);
     reg.emplace<Vector3>(player, message.pos());
     // on load db complete

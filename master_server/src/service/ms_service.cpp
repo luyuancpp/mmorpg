@@ -45,7 +45,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
 		LOG_ERROR << "conn not found " << replied.s_rq_.session_id();
 		return;
 	}
-    /*auto player = reg.get<EntityPtr>(it->second.entity());
+    /*auto player = reg.get<EntityPtr>(it->second);
     if (entt::null == player)
     {
         LOG_ERROR << "player not found " << replied.s_rq_.player_id();
@@ -90,12 +90,12 @@ Guid MasterNodeServiceImpl::GetPlayerIdByConnId(uint64_t session_id)
     {
         return kInvalidGuid;
     }
-    auto p_try_player = reg.try_get<EntityPtr>(cit->second.entity());
+    auto p_try_player = reg.try_get<EntityPtr>(cit->second);
     if (nullptr == p_try_player)
     {
         return kInvalidGuid;
     }
-    auto player_id = reg.get<Guid>((*p_try_player).entity());
+    auto player_id = reg.get<Guid>(*p_try_player);
 	return kInvalidGuid;
 }
 
@@ -106,12 +106,12 @@ entt::entity MasterNodeServiceImpl::GetPlayerByConnId(uint64_t session_id)
     {
 		return entt::null;
     }
-    auto p_try_player = reg.try_get<EntityPtr>(cit->second.entity());
+    auto p_try_player = reg.try_get<EntityPtr>(cit->second);
     if (nullptr == p_try_player)
     {
         return entt::null;
     }
-    return (*p_try_player).entity();
+    return (*p_try_player);
 }
 
 void MasterNodeServiceImpl::OnConnidEnterGame(entt::entity conn, Guid player_id)
@@ -296,7 +296,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
         response->mutable_error()->set_id(kRetLoginUnkonwError);
         return;
 	}
-	auto conn = cit->second.entity();
+	auto conn = cit->second;
     reg.emplace<PlayerAccount>(conn, std::make_shared<std::string>(request->account()));
     reg.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
 	//todo 
@@ -342,7 +342,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		LOG_ERROR << "connection not found " << request->session_id();
 		return;
 	}
-	auto conn = cit->second.entity();
+	auto conn = cit->second;
 	auto player_id = request->player_id();
 	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
 	if (entt::null == player)
@@ -352,7 +352,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		OnConnidEnterGame(conn, player_id);
 		player = PlayerList::GetSingleton().GetPlayer(player_id);
 		reg.emplace<Guid>(player, player_id);
-		reg.emplace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
+		reg.emplace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second));
 		auto& player_session = reg.emplace<PlayerSession>(player);
 		player_session.gate_session_id_.session_id_ = request->session_id();
 		auto gate_it = g_gate_nodes.find(node_id(request->session_id()));
@@ -480,12 +480,12 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 	{
 		return;
 	}
-	auto p_try_player = reg.try_get<EntityPtr>(cit->second.entity());
+	auto p_try_player = reg.try_get<EntityPtr>(cit->second);
 	if (nullptr == p_try_player)
 	{
 		return;
 	}
-	auto player_id = reg.get<Guid>((*p_try_player).entity());
+	auto player_id = reg.get<Guid>(*p_try_player);
 	PlayerList::GetSingleton().LeaveGame(player_id);
 	g_gate_sessions.erase(cit);
 ///<<< END WRITING YOUR CODE 
@@ -532,7 +532,7 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
 	player_request->ParseFromString(player_msg.body());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
-	auto player = it->second.entity();
+	auto player = it->second;
 	serviceimpl->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
 	{
