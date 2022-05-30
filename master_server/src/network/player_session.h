@@ -23,7 +23,7 @@ public:
 
 	uint32_t gate_node_id()const
 	{
-		return node_id(gate_conn_id_.session_id_);
+		return node_id(gate_session_id_.session_id_);
 	}
 
 	inline void Send(const ::google::protobuf::Message& message)
@@ -33,7 +33,7 @@ public:
 		{
 			return;
 		}
-		Send2Player(message, gate, gate_conn_id_.session_id_);
+		Send2Player(message, gate, gate_session_id_.session_id_);
 	}
 
 	void Send2Gs(::google::protobuf::Message& message)
@@ -45,7 +45,7 @@ public:
 		}
 		//gs->.Send(message);
 	}
-	GateSession gate_conn_id_;
+	GateSession gate_session_id_;
 	GateNodeWPtr gate_;
 	GsDataWeakPtr gs_;
 };

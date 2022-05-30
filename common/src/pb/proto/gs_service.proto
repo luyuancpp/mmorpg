@@ -9,7 +9,7 @@ message EnterGsRequest
 {
   uint64 player_id = 1;
   SceneInfo scenes_info = 2;
-  uint64 conn_id = 3;
+  uint64 session_id = 3;
   uint64 ms_node_id = 4;
 }
 
@@ -43,7 +43,7 @@ message MsPlayerMessageRespone
 message RpcClientRequest
 {
   bytes request = 1;
-  uint64 conn_id = 2;
+  uint64 session_id = 2;
   uint32 msg_id = 3;
 }
 

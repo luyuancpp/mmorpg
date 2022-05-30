@@ -22,8 +22,8 @@ public:
 
     void OnPlayerLongin(entt::entity player);
 
-    Guid GetPlayerIdByConnId(uint64_t conn_id);
-    entt::entity GetPlayerByConnId(uint64_t conn_id);
+    Guid GetPlayerIdByConnId(uint64_t session_id);
+    entt::entity GetPlayerByConnId(uint64_t session_id);
 
     void OnConnidEnterGame(entt::entity conn, Guid player_id);
 private:

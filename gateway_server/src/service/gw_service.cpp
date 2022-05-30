@@ -74,10 +74,10 @@ void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* control
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 
-	auto it = g_client_sessions_->find(request->conn_id());
+	auto it = g_client_sessions_->find(request->session_id());
 	if (it == g_client_sessions_->end())
 	{
-		LOG_INFO << "connid not found   " << request->conn_id();
+		LOG_INFO << "connid not found   " << request->session_id();
 		return;
 	}
 	it->second.gs_node_id_ = request->gs_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
@@ -92,11 +92,11 @@ void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* control
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	auto conn_id = request->ex().conn_id();
-	auto it = g_client_sessions_->find(conn_id);
+	auto session_id = request->ex().session_id();
+	auto it = g_client_sessions_->find(session_id);
 	if (it == g_client_sessions_->end())
 	{
-		LOG_ERROR << "connid not found  player id " << request->ex().player_id() << "," << conn_id;
+		LOG_ERROR << "connid not found  player id " << request->ex().player_id() << "," << session_id;
 		return;
 	}
 	g_gateway_server->Send2Client(it->second.conn_, request->msg());
@@ -110,11 +110,11 @@ void GwNodeServiceImpl::GsPlayerService(::google::protobuf::RpcController* contr
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	auto conn_id = request->ex().conn_id();
-	auto it = g_client_sessions_->find(conn_id);
+	auto session_id = request->ex().session_id();
+	auto it = g_client_sessions_->find(session_id);
 	if (it == g_client_sessions_->end())
 	{
-		LOG_ERROR << "connid not found  conn id " << conn_id;
+		LOG_ERROR << "connid not found  conn id " << session_id;
 		return;
 	}
 	g_gateway_server->Send2Client(it->second.conn_, request->msg());
@@ -128,8 +128,8 @@ void GwNodeServiceImpl::KickConnByMs(::google::protobuf::RpcController* controll
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	g_client_sessions_->erase(request->conn_id());
-	LOG_INFO << "connid be kick " << request->conn_id();
+	g_client_sessions_->erase(request->session_id());
+	LOG_INFO << "connid be kick " << request->session_id();
 ///<<< END WRITING YOUR CODE 
 }
 
