@@ -24,6 +24,8 @@ public:
 
     Guid GetPlayerIdByConnId(uint64_t conn_id);
     entt::entity GetPlayerByConnId(uint64_t conn_id);
+
+    void OnConnidEnterGame(entt::entity conn, Guid player_id);
 private:
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE

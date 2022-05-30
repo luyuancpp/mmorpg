@@ -113,6 +113,12 @@ entt::entity MasterNodeServiceImpl::GetPlayerByConnId(uint64_t conn_id)
     return (*p_try_player).entity();
 }
 
+void MasterNodeServiceImpl::OnConnidEnterGame(entt::entity conn, Guid player_id)
+{
+    reg.emplace<EntityPtr>(conn, PlayerList::GetSingleton().GetPlayerPtr(player_id));
+    reg.emplace<Guid>(conn, player_id);
+}
+
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -342,8 +348,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	{
 		//把旧的connection 断掉
 		PlayerList::GetSingleton().EnterGame(player_id, EntityPtr());
-		reg.emplace<EntityPtr>(conn, PlayerList::GetSingleton().GetPlayerPtr(player_id));
-		reg.emplace<Guid>(conn, player_id);
+		OnConnidEnterGame(conn, player_id);
 		player = PlayerList::GetSingleton().GetPlayer(player_id);
 		reg.emplace<Guid>(player, player_id);
 		reg.emplace<PlayerAccount>(player, reg.get<PlayerAccount>(cit->second.entity()));
@@ -399,16 +404,16 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		//todo换场景的过程中被顶了
 		
 		//告诉账号被顶
-
+		OnConnidEnterGame(conn, player_id);
 		auto& player_session = reg.get<PlayerSession>(player);
-		reg.emplace_or_replace<MsConverPlayerComp>(player);//连续顶几次
+		reg.emplace_or_replace<MsConverPlayerComp>(player);//连续顶几次,所以用emplace_or_replace
 		gwservice::KickConnRequest messag;
 		messag.set_conn_id(player_session.gate_conn_id_.conn_id_);
 		Send2Gate(messag, player_session.gate_node_id());
 
 		player_session.gate_conn_id_.conn_id_ = request->conn_id();
 		auto gate_it = g_gate_nodes.find(request->gate_node_id());
-		if (gate_it != g_gate_nodes.end())
+		if (gate_it != g_gate_nodes.end() && player_session.gate_node_id() != request->gate_node_id())
 		{
 			auto gate = reg.try_get<GateNodePtr>(gate_it->second);
 			if (nullptr != gate)
