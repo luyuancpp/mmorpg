@@ -14,9 +14,6 @@ public:
 ///<<< BEGIN WRITING YOUR CODE
 	using AccountMap = std::unordered_map<std::string, uint64_t>;
 
-    using Ms2gsEnterGsRpcRplied = NormalClosure<gsservice::EnterGsRequest, gsservice::EnterGsRespone>;
-	void Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied);
-
     using Ms2GwPlayerEnterGsRpcReplied = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
     void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied);
 
@@ -80,8 +77,13 @@ public:
         msservice::PlayerMessageRespone* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnAddCrossServerScene(::google::protobuf::RpcController* controller,
+    void AddCrossServerScene(::google::protobuf::RpcController* controller,
         const msservice::AddCrossServerSceneRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
+    void EnterGsSucceed(::google::protobuf::RpcController* controller,
+        const msservice::EnterGsSucceedRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 

@@ -11,7 +11,7 @@ private:
 public:
     void EnterGs(::google::protobuf::RpcController* controller,
         const gsservice::EnterGsRequest* request,
-        gsservice::EnterGsRespone* response,
+        ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void PlayerService(::google::protobuf::RpcController* controller,

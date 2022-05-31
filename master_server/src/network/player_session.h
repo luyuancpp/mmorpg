@@ -22,10 +22,12 @@ public:
 		return gs->node_id();
 	}
 
-	uint32_t gate_node_id()const
+	inline decltype(auto) gate_node_id()const
 	{
 		return node_id(gate_session_.session_id());
 	}
+
+	inline decltype(auto) session_id()const { return gate_session_.session_id(); }
 
 	inline void Send(const ::google::protobuf::Message& message)
 	{

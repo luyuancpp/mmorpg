@@ -53,29 +53,6 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
     g_player_common_sys.OnLogin(player);*/
 }
 
-void MasterNodeServiceImpl::Ms2gsEnterGsReplied(Ms2gsEnterGsRpcRplied replied)
-{
-    auto player = PlayerList::GetSingleton().GetPlayer(replied.s_rq_.player_id());
-    if (entt::null == player)
-    {
-        return;
-    }
-    auto& player_session = registry.get<PlayerSession>(player);
-    auto gate_it = g_gate_nodes.find(player_session.gate_node_id());
-    if (gate_it == g_gate_nodes.end())
-    {
-        LOG_ERROR << "gate crsh" << player_session.gate_node_id();
-        return;
-    }
-
-    MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpcReplied c;
-    auto& message = c.s_rq_;
-    message.set_session_id(replied.s_rq_.session_id());
-    message.set_gs_node_id(player_session.gs_node_id());
-    registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, c, this, &gwservice::GwNodeService::PlayerEnterGs);
-}
-
-
 void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)
 {
 	//ms 的login先调用，通知gs去调用
@@ -391,16 +368,13 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
         ScenesSystem::GetSingleton().EnterScene(ep);//顶号的时候已经在场景里面了
 		if (it != g_gs_nodes.end())
 		{			
-			Ms2gsEnterGsRpcRplied message;
-			message.s_rq_.set_player_id(player_id);
-			message.s_rq_.set_session_id(request->session_id());
-			message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
+			gsservice::EnterGsRequest message;
+			message.set_player_id(player_id);
+			message.set_session_id(request->session_id());
+			message.set_ms_node_id(g_ms_node->master_node_id());
             auto& scene_info = registry.get<SceneInfo>(scene);
-			message.s_rq_.mutable_scenes_info()->CopyFrom(scene_info);
-			registry.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGsReplied,
-				message,
-				this,
-				&gsservice::GsService_Stub::EnterGs);
+			message.mutable_scenes_info()->CopyFrom(scene_info);
+			registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
 		}
 	}
 	else//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
@@ -438,16 +412,13 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		auto it = g_gs_nodes.find(gs_data->node_id());
 		if (it != g_gs_nodes.end())
 		{
-            Ms2gsEnterGsRpcRplied message;
-            message.s_rq_.set_player_id(player_id);
-            message.s_rq_.set_session_id(request->session_id());
-            message.s_rq_.set_ms_node_id(g_ms_node->master_node_id());
+			gsservice::EnterGsRequest message;
+            message.set_player_id(player_id);
+            message.set_session_id(request->session_id());
+            message.set_ms_node_id(g_ms_node->master_node_id());
             auto& scene_info = registry.get<SceneInfo>(scene);
-            message.s_rq_.mutable_scenes_info()->CopyFrom(scene_info);
-            registry.get<GsStubPtr>(it->second)->CallMethodByRowStub(&MasterNodeServiceImpl::Ms2gsEnterGsReplied,
-                message,
-                this,
-                &gsservice::GsService_Stub::EnterGs);
+            message.mutable_scenes_info()->CopyFrom(scene_info);
+            registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
 		}
 	}
 
@@ -549,13 +520,41 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnAddCrossServerScene(::google::protobuf::RpcController* controller,
+void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcController* controller,
     const msservice::AddCrossServerSceneRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
+}
+
+void MasterNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* controller,
+    const msservice::EnterGsSucceedRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE 
+	auto player = PlayerList::GetSingleton().GetPlayer(request->player_id());
+	if (entt::null == player)
+	{
+		return;
+	}
+	auto& player_session = registry.get<PlayerSession>(player);
+	auto gate_it = g_gate_nodes.find(player_session.gate_node_id());
+	if (gate_it == g_gate_nodes.end())
+	{
+		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
+		return;
+	}
+
+	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpcReplied c;
+	auto& message = c.s_rq_;
+	message.set_session_id(player_session.session_id());
+	message.set_gs_node_id(player_session.gs_node_id());
+	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, c, this, &gwservice::GwNodeService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 

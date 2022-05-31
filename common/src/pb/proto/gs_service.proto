@@ -13,10 +13,6 @@ message EnterGsRequest
   uint64 ms_node_id = 4;
 }
 
-message EnterGsRespone
-{
-}
-
 message MsPlayerMessageExtern
 {
   uint64 player_id = 1;
@@ -64,7 +60,7 @@ message ConnectRequest
 }
 
 service GsService {
-  rpc EnterGs (EnterGsRequest) returns (EnterGsRespone);
+  rpc EnterGs (EnterGsRequest) returns (google.protobuf.Empty);
   rpc PlayerService (MsPlayerMessageRequest) returns (MsPlayerMessageRespone);
   rpc PlayerServiceNoRespone (MsPlayerMessageRequest) returns (google.protobuf.Empty);
   rpc GwPlayerService (RpcClientRequest) returns (RpcClientResponse);
