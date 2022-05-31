@@ -18,7 +18,7 @@ TEST(MissionsComp, AcceptMission)
 {
     uint32_t mid = 1;
     MissionsComp ms;
-    reg.remove<CheckSubType>(ms.entity());
+    registry.remove<CheckSubType>(ms.entity());
     AcceptMissionP param{mid};
     auto& data = mission_config::GetSingleton().all();
     std::size_t sz = 0;
@@ -189,7 +189,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
 {
     MissionsComp ms;
     uint32_t mid = 7;
-    auto& next_mission_set =  reg.emplace<NextTimeAcceptMission>(ms.entity());
+    auto& next_mission_set =  registry.emplace<NextTimeAcceptMission>(ms.entity());
     AcceptMissionP param{ mid };
     EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
@@ -255,7 +255,7 @@ TEST(MissionsComp, MissionRewardList)
 {
     MissionsComp ms;
 
-    reg.emplace<MissionReward>(ms.entity());
+    registry.emplace<MissionReward>(ms.entity());
 
     uint32_t mid = 12;
 

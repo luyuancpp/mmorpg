@@ -35,8 +35,8 @@ void GameServer::Init()
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     RegionConfig::GetSingleton().Load("region.json");
-    global_entity() = reg.create();
-    reg.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
+    global_entity() = registry.create();
+    registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
     InitMsgService();
     loadallconfig();
     InitGlobalEntities();
@@ -116,14 +116,14 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRC cp)
 	auto& regionmaster = resp->region_masters();
 	for (int32_t i = 0; i < regionmaster.masters_size(); ++i)
 	{
-        auto e = reg.create();
+        auto e = registry.create();
 		auto& masterinfo = regionmaster.masters(i);
 		InetAddress master_addr(masterinfo.ip(), masterinfo.port());
 		auto it = g_ms_nodes.emplace(masterinfo.id(), MsNodePtr(std::make_shared<MsNode>()));
 		auto& ms = *it.first->second;
 		ms.session_ = std::make_shared<RpcClient>(loop_, master_addr);
 		ms.node_info_.set_node_id(masterinfo.id());
-		reg.emplace<MsNodeWPtr>(e, it.first->second);
+		registry.emplace<MsNodeWPtr>(e, it.first->second);
 
 		auto& ms_node = ms.session_;
 		ms_node->subscribe<RegisterStubEvent>(g2ms_stub_);
@@ -148,7 +148,7 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
     session_info->set_port(master_local_addr.port());
     node_info->set_ip(gs_info_.ip());
     node_info->set_port(gs_info_.port());
-    request.set_server_type(reg.get<GsServerType>(global_entity()).server_type_);
+    request.set_server_type(registry.get<GsServerType>(global_entity()).server_type_);
     request.set_gs_node_id(gs_info_.id());
     g2ms_stub_.CallMethod(
         &ServerReplied::StartGsMasterReplied,
@@ -167,7 +167,7 @@ void GameServer::Register2Region()
 	session_info->set_port(region_session_->local_addr().port());
 	node_info->set_ip(gs_info_.ip());
 	node_info->set_port(gs_info_.port());
-    rq.set_server_type(reg.get<GsServerType>(global_entity()).server_type_);
+    rq.set_server_type(registry.get<GsServerType>(global_entity()).server_type_);
 	rq.set_gs_node_id(gs_info_.id());
 	rg_stub_.CallMethod(
 		&ServerReplied::StartCrossGsRegionReplied,
@@ -192,7 +192,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             [this]() ->void
             {
                 ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-                if (reg.get<GsServerType>(global_entity()).server_type_ == kMainSceneServer)
+                if (registry.get<GsServerType>(global_entity()).server_type_ == kMainSceneServer)
                 {
                     cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
                 }
@@ -206,9 +206,9 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         );
     }
 
-    for (auto e : reg.view<MsNodePtr>())
+    for (auto e : registry.view<MsNodePtr>())
     {
-        auto& ms_node = reg.get<MsNodePtr>(e);
+        auto& ms_node = registry.get<MsNodePtr>(e);
         auto& master_session = ms_node->session_;
         if (conn->connected() &&
             IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
@@ -220,7 +220,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
                 IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
         {
             g_ms_nodes.erase(ms_node->node_id());
-            reg.destroy(e);
+            registry.destroy(e);
             break;
         }
     }
@@ -264,25 +264,25 @@ void GameServer::receive(const OnBeConnectedEvent& es)
     auto& conn = es.conn_;
 	if (conn->connected())
 	{
-		auto e = reg.create();
-		reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+		auto e = registry.create();
+		registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
 	}
     else
     {
 		auto& peer_addr = conn->peerAddress();
-		for (auto e : reg.view<RpcServerConnection>())
+		for (auto e : registry.view<RpcServerConnection>())
 		{
-			auto& local_addr = reg.get<RpcServerConnection>(e).conn_->peerAddress();
+			auto& local_addr = registry.get<RpcServerConnection>(e).conn_->peerAddress();
 			if (local_addr.toIpPort() != peer_addr.toIpPort())
 			{
 				continue;
 			}
-			auto gatenode = reg.try_get<GateNodePtr>(e);//如果是gate
+			auto gatenode = registry.try_get<GateNodePtr>(e);//如果是gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateWayNode)
 			{
                 g_gate_nodes.erase((*gatenode)->node_info_.node_id());
 			}
-			reg.destroy(e);
+			registry.destroy(e);
 			break;
 		}
     }

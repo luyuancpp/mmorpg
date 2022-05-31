@@ -26,8 +26,8 @@ int main(int argc, char* argv[])
         }
         EventLoop loop;
         
-        gAllFinish = reg.create();
-        reg.emplace<uint32_t>(gAllFinish, nClients);
+        gAllFinish = registry.create();
+        registry.emplace<uint32_t>(gAllFinish, nClients);
 
         auto contents = common::File2String("client.json");
         google::protobuf::StringPiece sp(contents.data(), contents.size());

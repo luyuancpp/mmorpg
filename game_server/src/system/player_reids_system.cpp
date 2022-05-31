@@ -32,12 +32,12 @@ void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message)
         return;
     }
     entt::entity player = ret.first->second;
-    reg.emplace<Guid>(player, player_id);
-    reg.emplace<Vector3>(player, message.pos());
+    registry.emplace<Guid>(player, player_id);
+    registry.emplace<Vector3>(player, message.pos());
    	
     // on load db complete
 
-    auto& enter_info = reg.get<EnterSceneInfo>(s_p_it->second);
+    auto& enter_info = registry.get<EnterSceneInfo>(s_p_it->second);
     PlayerSceneSystem::EnterScene(player, enter_info, p_s_it->second);
 }
 

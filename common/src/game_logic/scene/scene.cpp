@@ -41,11 +41,11 @@ bool ScenesSystem::HasScene(uint32_t scene_config_id)
 
 entt::entity ScenesSystem::MakeScene(const MakeSceneP& param)
 {
-    auto e = reg.create();
-    auto& si = reg.emplace<SceneInfo>(e);
+    auto e = registry.create();
+    auto& si = registry.emplace<SceneInfo>(e);
     si.set_scene_confid(param.scene_confid_);
-    reg.emplace<MainScene>(e);
-    reg.emplace<ScenePlayers>(e);
+    registry.emplace<MainScene>(e);
+    registry.emplace<ScenePlayers>(e);
     auto guid = snow_flake_.Generate();
     si.set_scene_id(guid);
     auto sit = scenes_map_.emplace(guid, e);
@@ -59,13 +59,13 @@ entt::entity ScenesSystem::MakeScene(const MakeSceneP& param)
 
 entt::entity ScenesSystem::MakeSceneByGuid(const MakeSceneWithGuidP& param)
 {
-	auto e = reg.create();
+	auto e = registry.create();
     auto guid = param.scene_id;
-	auto& si = reg.emplace<SceneInfo>(e);
+	auto& si = registry.emplace<SceneInfo>(e);
     si.set_scene_confid(param.scene_confid_);
     si.set_scene_id(guid);
-	reg.emplace<MainScene>(e);
-	reg.emplace<ScenePlayers>(e);
+	registry.emplace<MainScene>(e);
+	registry.emplace<ScenePlayers>(e);
 	auto sit = scenes_map_.emplace(guid, e);
 	if (!sit.second)
 	{
@@ -91,10 +91,10 @@ void ScenesSystem::PutScene2Gs(const PutScene2GSParam& param)
 {
     auto scene_entity = param.scene_;
     auto server_entity = param.server_;
-    auto& server_scenes = reg.get<ConfigSceneMap>(server_entity);
-    server_scenes.AddScene(reg.get<SceneInfo>(scene_entity).scene_confid(), scene_entity);
-    auto& p_server_data = reg.get<GsDataPtr>(server_entity);
-    reg.emplace<GsDataPtr>(scene_entity, p_server_data);
+    auto& server_scenes = registry.get<ConfigSceneMap>(server_entity);
+    server_scenes.AddScene(registry.get<SceneInfo>(scene_entity).scene_confid(), scene_entity);
+    auto& p_server_data = registry.get<GsDataPtr>(server_entity);
+    registry.emplace<GsDataPtr>(scene_entity, p_server_data);
 }
 
 
@@ -106,30 +106,30 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 {
     auto server_entity = param.server_;
-    auto server_scenes = reg.get<ConfigSceneMap>(server_entity).scenesids_clone();
+    auto server_scenes = registry.get<ConfigSceneMap>(server_entity).scenesids_clone();
     DestroySceneParam destroy_param;
     for (auto& it : server_scenes)
     {
         OnDestroyScene(it);
     }
-    reg.destroy(server_entity);
+    registry.destroy(server_entity);
 }
 
 void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param)
 {
     auto to_server_entity = param.to_server_;
-    auto& from_scenes_id = reg.get<ConfigSceneMap>(param.from_server_).confid_sceneslist();
-    auto& to_scenes_id = reg.get<ConfigSceneMap>(to_server_entity);
-    auto& p_to_server_data = reg.get<GsDataPtr>(to_server_entity);
+    auto& from_scenes_id = registry.get<ConfigSceneMap>(param.from_server_).confid_sceneslist();
+    auto& to_scenes_id = registry.get<ConfigSceneMap>(to_server_entity);
+    auto& p_to_server_data = registry.get<GsDataPtr>(to_server_entity);
     for (auto& it : from_scenes_id)
     {
         for (auto& ji : it.second)
         {
-            reg.emplace_or_replace<GsDataPtr>(ji, p_to_server_data);
+            registry.emplace_or_replace<GsDataPtr>(ji, p_to_server_data);
             to_scenes_id.AddScene(it.first, ji);
         }
     }
-    reg.emplace_or_replace<ConfigSceneMap>(param.from_server_);
+    registry.emplace_or_replace<ConfigSceneMap>(param.from_server_);
 }
 
 uint32_t ScenesSystem::CheckEnterSceneByGuid(const CheckEnterSceneParam& param)
@@ -139,7 +139,7 @@ uint32_t ScenesSystem::CheckEnterSceneByGuid(const CheckEnterSceneParam& param)
     {
         return kRetEnterSceneNotFound;
     }
-    if (reg.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
+    if (registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
     {
         return kRetEnterSceneNotFull;
     }
@@ -154,9 +154,9 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
         LOG_INFO << "enter error" << entt::to_integral(param.enterer_);
         return;
     }
-    reg.get<ScenePlayers>(scene_entity).emplace(param.enterer_);
-    reg.emplace<SceneEntity>(param.enterer_, scene_entity);
-    auto p_server_data = reg.try_get<GsDataPtr>(scene_entity);
+    registry.get<ScenePlayers>(scene_entity).emplace(param.enterer_);
+    registry.emplace<SceneEntity>(param.enterer_, scene_entity);
+    auto p_server_data = registry.try_get<GsDataPtr>(scene_entity);
     if (nullptr == p_server_data)
     {
         return;
@@ -167,11 +167,11 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 {
     auto leave_player = param.leaver_;
-    auto& player_scene_entity = reg.get<SceneEntity>(leave_player);
+    auto& player_scene_entity = registry.get<SceneEntity>(leave_player);
     auto scene_entity = player_scene_entity.scene_entity();
-    reg.get<ScenePlayers>(scene_entity).erase(leave_player);
-    reg.remove<SceneEntity>(leave_player);
-    auto p_server_data = reg.try_get<GsDataPtr>(scene_entity);
+    registry.get<ScenePlayers>(scene_entity).erase(leave_player);
+    registry.remove<SceneEntity>(leave_player);
+    auto p_server_data = registry.try_get<GsDataPtr>(scene_entity);
     if (nullptr == p_server_data)
     {
         return;
@@ -183,7 +183,7 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
 {
     auto new_server_entity = param.new_server_;
     auto compel_entity = param.compel_change_entity_;
-    auto& new_server_scene = reg.get<ConfigSceneMap>(new_server_entity);
+    auto& new_server_scene = registry.get<ConfigSceneMap>(new_server_entity);
     auto scene_config_id = param.scene_confid_;
     entt::entity server_scene_enitity = entt::null;
     if (!new_server_scene.HasConfig(param.scene_confid_))
@@ -220,20 +220,20 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
     move_param.from_server_ = param.cransh_server_;
     move_param.to_server_ = param.replace_server_;
     MoveServerScene2ServerScene(move_param);
-    reg.destroy(move_param.from_server_);
+    registry.destroy(move_param.from_server_);
 }
 
 void ScenesSystem::OnDestroyScene(entt::entity scene_entity)
 {
-    auto& si = reg.get<SceneInfo>(scene_entity);
+    auto& si = registry.get<SceneInfo>(scene_entity);
     confid_scenes_[si.scene_confid()].erase(scene_entity);
     scenes_map_.erase(si.scene_id());
-    auto p_server_data = reg.get<GsDataPtr>(scene_entity);
-    reg.destroy(scene_entity);
+    auto p_server_data = registry.get<GsDataPtr>(scene_entity);
+    registry.destroy(scene_entity);
     if (nullptr == p_server_data)
     {
         return;
     }
-    auto& server_scene = reg.get<ConfigSceneMap>(p_server_data->server_entity());
+    auto& server_scene = registry.get<ConfigSceneMap>(p_server_data->server_entity());
     server_scene.RemoveScene(si.scene_confid(), scene_entity);
 }

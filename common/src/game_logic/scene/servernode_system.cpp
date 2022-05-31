@@ -11,13 +11,13 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     auto scene_confid = param.scene_confid_;
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
-    for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
+    for (auto e : registry.view<ServerType, ServerStatus, ServerPressure>())
     {
-        if (!reg.get<ConfigSceneMap>(e).HasConfig(scene_confid))
+        if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))
         {
             continue;
         }
-        std::size_t server_player_size = (*reg.get<GsDataPtr>(e)).player_size();
+        std::size_t server_player_size = (*registry.get<GsDataPtr>(e)).player_size();
         if (server_player_size >= min_player_size || server_player_size >= kMaxServerPlayerSize)
         {
             continue;
@@ -30,12 +30,12 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     {
         return scene_entity;
     }
-    auto& scenes = reg.get<ConfigSceneMap>(server_entity);
+    auto& scenes = registry.get<ConfigSceneMap>(server_entity);
     std::size_t scene_min_player_size = UINT64_MAX;
     auto& server_scenes = scenes.confid_sceneslist(scene_confid);
     for (auto& ji : server_scenes)
     {
-        std::size_t scene_player_size = reg.get<ScenePlayers>(ji).size();
+        std::size_t scene_player_size = registry.get<ScenePlayers>(ji).size();
         if (scene_player_size >= scene_min_player_size || scene_player_size >= kMaxScenePlayerSize)
         {
             continue;
@@ -52,13 +52,13 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 {
 	auto scene_config_id = param.scene_confid_;
 	entt::entity server_entity{ entt::null };
-	for (auto e : reg.view<ServerType, ServerStatus, ServerPressure>())
+	for (auto e : registry.view<ServerType, ServerStatus, ServerPressure>())
 	{
-		if (!reg.get<ConfigSceneMap>(e).HasConfig(scene_config_id))
+		if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_config_id))
 		{
 			continue;
 		}
-		std::size_t server_player_size = (*reg.get<GsDataPtr>(e)).player_size();
+		std::size_t server_player_size = (*registry.get<GsDataPtr>(e)).player_size();
 		if (server_player_size >= kMaxServerPlayerSize)
 		{
 			continue;
@@ -71,11 +71,11 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 	{
 		return scene_entity;
 	}
-	auto& scenes = reg.get<ConfigSceneMap>(server_entity);
+	auto& scenes = registry.get<ConfigSceneMap>(server_entity);
 	auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
 	for (auto& ji : server_scenes)
 	{
-		std::size_t scene_player_size = reg.get<ScenePlayers>(ji).size();
+		std::size_t scene_player_size = registry.get<ScenePlayers>(ji).size();
 		if (scene_player_size >= kMaxScenePlayerSize)
 		{
 			continue;
@@ -119,25 +119,25 @@ entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 
 void ServerNodeSystem::ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
 {
-    reg.remove<NoPressure>(param.server_);
-    reg.emplace<Pressure>(param.server_);
+    registry.remove<NoPressure>(param.server_);
+    registry.emplace<Pressure>(param.server_);
 }
 
 void ServerNodeSystem::ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param)
 {
-    reg.remove<Pressure>(param.server_);
-    reg.emplace<NoPressure>(param.server_);
+    registry.remove<Pressure>(param.server_);
+    registry.emplace<NoPressure>(param.server_);
 }
 
 void ServerNodeSystem::ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
 {
-    reg.remove<GSNormal>(param.crash_entity_);
-    reg.emplace<GSCrash>(param.crash_entity_);
+    registry.remove<GSNormal>(param.crash_entity_);
+    registry.emplace<GSCrash>(param.crash_entity_);
 }
 
 void ServerNodeSystem::ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
 {
-    reg.remove<GSNormal>(param.maintain_entity_);
-    reg.emplace<GSMainTain>(param.maintain_entity_);
+    registry.remove<GSNormal>(param.maintain_entity_);
+    registry.emplace<GSMainTain>(param.maintain_entity_);
 }
 

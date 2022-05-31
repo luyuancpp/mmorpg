@@ -49,7 +49,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
             Send2Player(message, player);
             return;
         }
-        scene_id = reg.get<Guid>(scene);
+        scene_id = registry.get<Guid>(scene);
     }
     else
     {
@@ -75,8 +75,8 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         return;
     }
     
-    auto p_scene_gs = reg.try_get<GsDataPtr>(scene);
-    auto p_player_gs = reg.try_get<GsDataPtr>(player);
+    auto p_scene_gs = registry.try_get<GsDataPtr>(scene);
+    auto p_player_gs = registry.try_get<GsDataPtr>(player);
     if (nullptr == p_scene_gs || nullptr == p_player_gs)
     {
         LOG_ERROR << " scene null : " << (nullptr == p_scene_gs) << " " << (nullptr == p_player_gs);

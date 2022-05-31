@@ -21,8 +21,8 @@ void ServerPlayerSceneServiceImpl::LoginMs2Gs(entt::entity player,
     //todo进入了gate 然后才可以开始可以给客户端发送信息了,gs消息顺序问题要注意，进入a,再进入b gs到达客户端消息的顺序不一样
      //顶号，或者登录
     EnterSeceneS2C message;
-    auto scene = reg.get<SceneEntity>(player).scene_entity();
-    message.mutable_scene_info()->CopyFrom(reg.get<SceneInfo>(scene));
+    auto scene = registry.get<SceneEntity>(player).scene_entity();
+    message.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(scene));
     Send2Player(message, player);
     g_entity_scene_system.OnEnterScene(player);
 ///<<< END WRITING YOUR CODE
