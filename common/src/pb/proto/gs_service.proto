@@ -11,6 +11,7 @@ message EnterGsRequest
   SceneInfo scenes_info = 2;
   uint64 session_id = 3;
   uint64 ms_node_id = 4;
+  uint32 enter_flag = 5;
 }
 
 message MsPlayerMessageExtern
