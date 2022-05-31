@@ -3,9 +3,10 @@
 #include "gate_node.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"
-#include "src/game_logic/comp/player_comp.h"
 #include "src/network/message_system.h"
 #include "src/network/session.h"
+
+#include "component_proto/player_network_comp.pb.h"
 
 class PlayerSession
 {
@@ -23,7 +24,7 @@ public:
 
 	uint32_t gate_node_id()const
 	{
-		return node_id(gate_session_id_.session_id_);
+		return node_id(gate_session_.session_id());
 	}
 
 	inline void Send(const ::google::protobuf::Message& message)
@@ -33,7 +34,7 @@ public:
 		{
 			return;
 		}
-		Send2Player(message, gate, gate_session_id_.session_id_);
+		Send2Player(message, gate, gate_session_.session_id());
 	}
 
 	void Send2Gs(::google::protobuf::Message& message)
@@ -45,7 +46,7 @@ public:
 		}
 		//gs->.Send(message);
 	}
-	GateSession gate_session_id_;
+	GateSession gate_session_;
 	GateNodeWPtr gate_;
 	GsDataWeakPtr gs_;
 };

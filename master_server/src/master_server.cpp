@@ -10,7 +10,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/game_logic/scene/scene_factories.h"
-#include "src/game_logic/comp/player_comp.h"
+
 #include "src/game_logic/game_registry.h"
 #include "src/network/deploy_rpcclient.h"
 #include "src/service/logic/player_service.h"
@@ -19,6 +19,7 @@
 
 #include "gs_service.pb.h"
 #include "gw_service.pb.h"
+#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
 
 using namespace common;
 using namespace muduo;
