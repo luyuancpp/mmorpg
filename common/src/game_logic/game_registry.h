@@ -2,7 +2,7 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-extern thread_local entt::registry reg;
+extern thread_local entt::registry registry;
 entt::entity& error_entity();
 entt::entity& op_enitty();
 

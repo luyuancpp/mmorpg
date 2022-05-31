@@ -19,9 +19,9 @@ void PlayerCommonSys::OnLogin(entt::entity player)
     //给客户端发所有场景消息
     {
         SceneInfoS2C message;
-        for (auto e : reg.view<MainScene>())
+        for (auto e : registry.view<MainScene>())
         {
-            message.mutable_scene_info()->Add()->CopyFrom(reg.get<SceneInfo>(e));
+            message.mutable_scene_info()->Add()->CopyFrom(registry.get<SceneInfo>(e));
         }
         Send2Player(message, player);
     }    

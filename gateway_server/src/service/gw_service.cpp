@@ -22,9 +22,9 @@ void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	InetAddress gs_addr(request->ip(), request->port());
-	for (auto e : reg.view<InetAddress>())
+	for (auto e : registry.view<InetAddress>())
 	{
-		auto& c = reg.get<InetAddress>(e);
+		auto& c = registry.get<InetAddress>(e);
 		if (gs_addr.toIpPort() == c.toIpPort())// to do node id，已经连接过了
 		{
 			return;
@@ -39,7 +39,7 @@ void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 	gsi.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gateway_server);
 	gsi.gs_session_->registerService(&g_gateway_server->node_service_impl());
 	gsi.gs_session_->connect();
-	reg.emplace<InetAddress>(gsi.entity_id, gs_addr);
+	registry.emplace<InetAddress>(gsi.entity_id, gs_addr);
 	g_gs_nodes.emplace(request->gs_node_id(), std::move(gsi));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE 
@@ -52,15 +52,15 @@ void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	for (auto e : reg.view<InetAddress>())
+	for (auto e : registry.view<InetAddress>())
 	{
-		auto& c = reg.get<InetAddress>(e);
+		auto& c = registry.get<InetAddress>(e);
 		if (c.toIp() != request->ip() ||
 			c.port() != request->port())
 		{
 			continue;
 		}
-		reg.destroy(e);
+		registry.destroy(e);
 		break;
 	}
 ///<<< END WRITING YOUR CODE 

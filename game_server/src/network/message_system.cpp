@@ -24,14 +24,14 @@ void Send2Player(const google::protobuf::Message& message, Guid player_id)
 
 void Send2Player(const google::protobuf::Message& message, entt::entity player)
 {
-	if (!reg.valid(player))
+	if (!registry.valid(player))
 	{
 		return;
 	}
-	auto try_gate = reg.try_get<GateNodeWPtr>(player);
+	auto try_gate = registry.try_get<GateNodeWPtr>(player);
 	if (nullptr == try_gate)
 	{
-		LOG_DEBUG << "player gate not found " << reg.get<Guid>(player);
+		LOG_DEBUG << "player gate not found " << registry.get<Guid>(player);
 		return;
 	}
 	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
@@ -43,13 +43,13 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 	auto gate = (*try_gate).lock();
 	if (nullptr == gate)
 	{
-		LOG_DEBUG << "player gate not found " << reg.get<Guid>(player);
+		LOG_DEBUG << "player gate not found " << registry.get<Guid>(player);
 		return;
 	}
 	gwservice::GsPlayerMessageRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
-	msg_wrapper.mutable_ex()->set_session_id(reg.get<GateSession>(player).session_id());
+	msg_wrapper.mutable_ex()->set_session_id(registry.get<GateSession>(player).session_id());
 	gate->session_.Send(msg_wrapper);
 }
 
@@ -71,14 +71,14 @@ void Send2MsPlayer(const google::protobuf::Message& message, Guid player_id)
 
 void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player)
 {
-	if (!reg.valid(player))
+	if (!registry.valid(player))
 	{
 		return;
 	}
-	auto try_ms = reg.try_get<MsNodeWPtr>(player);
+	auto try_ms = registry.try_get<MsNodeWPtr>(player);
 	if (nullptr == try_ms)
 	{
-		LOG_DEBUG << "player gate not found " << reg.get<Guid>(player);
+		LOG_DEBUG << "player gate not found " << registry.get<Guid>(player);
 		return;
 	}
 	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
@@ -90,13 +90,13 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 	auto ms = (*try_ms).lock();
 	if (nullptr == ms)
 	{
-		LOG_DEBUG << "player gate not found " << reg.get<Guid>(player);
+		LOG_DEBUG << "player gate not found " << registry.get<Guid>(player);
 		return;
 	}
 	msservice::PlayerNodeServiceRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
-	msg_wrapper.mutable_ex()->set_player_id(reg.get<Guid>(player));
+	msg_wrapper.mutable_ex()->set_player_id(registry.get<Guid>(player));
 	ms->session_->Send(msg_wrapper);
 }
 

@@ -55,7 +55,7 @@ TEST(TeamManger, TeamSizeTest)
 
 TEST(TeamManger, LeaveTeam)
 {
-	reg.clear();
+	registry.clear();
 	Teams  team_list;
 	Guid m = 100;
 	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
@@ -100,7 +100,7 @@ TEST(TeamManger, LeaveTeam)
 
 TEST(TeamManger, KickTeaamMember)
 {
-	reg.clear();
+	registry.clear();
 	Teams team_list ;
 	Guid m = 100;
 	Guid leader_plaeyr_id = 100;

@@ -18,12 +18,12 @@ void PlayerSceneSystem::EnterScene(entt::entity player, const EnterSceneInfo& en
 		LOG_ERROR << "scene not found " << enter_info.scenes_info().scene_id() <<  "," << enter_info.scenes_info().scene_confid();
 		return;
 	}
-	reg.emplace<GateSession>(player).set_session_id(session_id);
+	registry.emplace<GateSession>(player).set_session_id(session_id);
 
 	auto msit = g_ms_nodes.find(enter_info.ms_node_id());
 	if (msit != g_ms_nodes.end())
 	{
-		reg.emplace_or_replace<MsNodeWPtr>(player, msit->second);
+		registry.emplace_or_replace<MsNodeWPtr>(player, msit->second);
 	}
 	auto gate_node_id = node_id(session_id);
 	auto gate_it = g_gate_nodes.find(gate_node_id);
@@ -32,13 +32,13 @@ void PlayerSceneSystem::EnterScene(entt::entity player, const EnterSceneInfo& en
 		LOG_ERROR << " gate not found" << gate_node_id;
 		return;
 	}
-	auto p_gate = reg.try_get<GateNodePtr>(gate_it->second);
+	auto p_gate = registry.try_get<GateNodePtr>(gate_it->second);
 	if (nullptr == p_gate)
 	{
 		LOG_ERROR << " gate not found" << gate_node_id;
 		return;
 	}
-	reg.emplace<GateNodeWPtr>(player, *p_gate);
+	registry.emplace<GateNodeWPtr>(player, *p_gate);
 	EnterSceneParam ep;
 	ep.enterer_ = player;
 	ep.scene_ = scene;

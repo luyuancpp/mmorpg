@@ -31,7 +31,7 @@ MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<MessageSyncRedisClient>())
 { 
-    global_entity() = reg.create();
+    global_entity() = registry.create();
 }    
 
 void MasterServer::Init()
@@ -87,18 +87,18 @@ void MasterServer::StartMsRegionReplied(StartMsReplied cp)
 
 void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
 {
-    auto& connection_info = reg.get<InetAddress>(gs);
+    auto& connection_info = registry.get<InetAddress>(gs);
     gwservice::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
-    request.set_gs_node_id(reg.get<GsDataPtr>(gs)->node_id());
-	auto& gate_session = reg.get<GateNodePtr>(gate)->session_;
+    request.set_gs_node_id(registry.get<GsDataPtr>(gs)->node_id());
+	auto& gate_session = registry.get<GateNodePtr>(gate)->session_;
 	gate_session.Send(request);
 }
 
 void MasterServer::AddGsNode(entt::entity gs)
 {
-    auto& gsnode = reg.get<GsNodePtr>(gs);
+    auto& gsnode = registry.get<GsNodePtr>(gs);
     g_gs_nodes.emplace(gsnode->node_info_.node_id(), gs);
 }
 
@@ -144,30 +144,30 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
     auto& conn = es.conn_;
     if (conn->connected())
     {
-		auto e = reg.create();
-		reg.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+		auto e = registry.create();
+		registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
     }
     else
     {
 		auto& peer_addr = conn->peerAddress();
-		for (auto e : reg.view<RpcServerConnection>())
+		for (auto e : registry.view<RpcServerConnection>())
 		{
-			auto& local_addr = reg.get<RpcServerConnection>(e).conn_->peerAddress();
+			auto& local_addr = registry.get<RpcServerConnection>(e).conn_->peerAddress();
 			if (local_addr.toIpPort() != peer_addr.toIpPort())
 			{
 				continue;
 			}
-            auto gsnode = reg.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+            auto gsnode = registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
             if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGsNode)
             {
                 g_gs_nodes.erase((*gsnode)->node_info_.node_id());
             }
-			auto gatenode = reg.try_get<GateNodePtr>(e);//如果是gate
+			auto gatenode = registry.try_get<GateNodePtr>(e);//如果是gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateWayNode)
 			{
                 g_gate_nodes.erase((*gatenode)->node_info_.node_id());
 			}
-			reg.destroy(e);
+			registry.destroy(e);
 			break;
 		}
     }

@@ -52,7 +52,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
         g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
 		EntityPtr session;
 		g_gate_sessions.emplace(request->session_id(), session);
-		auto& enter_info = reg.emplace<EnterSceneInfo>(session);
+		auto& enter_info = registry.emplace<EnterSceneInfo>(session);
 		enter_info.mutable_scenes_info()->CopyFrom(request->scenes_info());
 		enter_info.set_ms_node_id(request->ms_node_id());
         return;
@@ -160,7 +160,7 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	{
 		return;
 	}
-	auto p_try_session_player = reg.try_get<Guid>(cit->second);
+	auto p_try_session_player = registry.try_get<Guid>(cit->second);
 	if (nullptr == p_try_session_player)
 	{
 		LOG_ERROR << "player not loading";
@@ -209,14 +209,14 @@ void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-	for (auto e : reg.view<RpcServerConnection>())
+	for (auto e : registry.view<RpcServerConnection>())
 	{
-		auto& conn = reg.get<RpcServerConnection>(e).conn_;
+		auto& conn = registry.get<RpcServerConnection>(e).conn_;
 		if (conn->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
 		{
 			continue;
 		}
-		auto& gate_node = *reg.emplace<GateNodePtr>(e, std::make_shared<GateNode>(conn));
+		auto& gate_node = *registry.emplace<GateNodePtr>(e, std::make_shared<GateNode>(conn));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(kGateWayNode);
 		g_gate_nodes.emplace(request->gate_node_id(), e);

@@ -4,40 +4,40 @@
 
 #define GetTeamPtrReturnError \
 auto e = entt::to_entity(team_id);\
-if (!reg.valid(e))\
+if (!registry.valid(e))\
 {\
     return kRetTeamHasNotTeamId;\
 }\
-auto& team = reg.get<Team>(e);\
+auto& team = registry.get<Team>(e);\
 
 #define GetTeamEntityReturnError \
-if (!reg.valid(team_id))\
+if (!registry.valid(team_id))\
 {\
     return kRetTeamHasNotTeamId;\
 }\
-auto& team = reg.get<Team>(team_id);\
+auto& team = registry.get<Team>(team_id);\
 
 #define GetTeamReturn(ret) \
 auto e = entt::to_entity(team_id);\
-if (!reg.valid(e))\
+if (!registry.valid(e))\
 {\
     return ret;\
 }\
-auto& team = reg.get<Team>(e);\
+auto& team = registry.get<Team>(e);\
 
 #define GetTeamReturnVoid \
 auto e = entt::to_entity(team_id);\
-if (!reg.valid(e))\
+if (!registry.valid(e))\
 {\
     return ;\
 }\
-auto& team = reg.get<Team>(e);\
+auto& team = registry.get<Team>(e);\
 
 Teams::Teams()
     : emp_(EventManager::New())
 {
-    my_entity_id_ = reg.create();
-    reg.emplace<PlayerTeamMap>(my_entity_id_, PlayerTeamMap());
+    my_entity_id_ = registry.create();
+    registry.emplace<PlayerTeamMap>(my_entity_id_, PlayerTeamMap());
 }
 
 std::size_t Teams::member_size(Guid team_id)
@@ -60,7 +60,7 @@ std::size_t Teams::applicant_size_by_team_id(Guid team_id) const
 
 Guid Teams::GetTeamId(Guid guid)const
 {
-    auto& player_team_map_ = reg.get<PlayerTeamMap>(my_entity_id_);
+    auto& player_team_map_ = registry.get<PlayerTeamMap>(my_entity_id_);
     auto it = player_team_map_.find(guid);
     if (it == player_team_map_.end())
     {
@@ -71,7 +71,7 @@ Guid Teams::GetTeamId(Guid guid)const
 
 entt::entity Teams::GetTeamEntityId(Guid guid) const
 {
-    auto& player_team_map_ = reg.get<PlayerTeamMap>(my_entity_id_);
+    auto& player_team_map_ = registry.get<PlayerTeamMap>(my_entity_id_);
     auto it = player_team_map_.find(guid);
     if (it == player_team_map_.end())
     {
@@ -112,7 +112,7 @@ bool Teams::HasMember(Guid team_id, Guid guid)
 
 bool Teams::HasTeam(Guid guid) const
 {
-    auto& player_team_map_ = reg.get<PlayerTeamMap>(my_entity_id_);
+    auto& player_team_map_ = registry.get<PlayerTeamMap>(my_entity_id_);
     return player_team_map_.find(guid) != player_team_map_.end(); 
 }
 
@@ -133,9 +133,9 @@ uint32_t Teams::CreateTeam(const CreateTeamP& param)
         return kRetTeamMemberInTeam;
     }
     RET_CHECK_RET(CheckMemberInTeam(param.members));
-    auto e = reg.create();
-    TeamsP ts_param{e, my_entity_id_, emp_, &reg };
-    reg.emplace<Team>(e, param, ts_param);
+    auto e = registry.create();
+    TeamsP ts_param{e, my_entity_id_, emp_, &registry };
+    registry.emplace<Team>(e, param, ts_param);
     last_team_id_ = entt::to_integral(e);//for test
     return kRetOK;
 }
@@ -228,6 +228,6 @@ void Teams::ClearApplyList(Guid team_id)
 
 void Teams::EraseTeam(entt::entity team_id)
 {
-    reg.destroy(team_id);
+    registry.destroy(team_id);
 }
 
