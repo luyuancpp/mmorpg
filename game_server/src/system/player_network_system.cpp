@@ -5,15 +5,17 @@
 #include "src/network/ms_node.h"
 #include "src/network/session.h"
 
-#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
+#include "ms_service.pb.h"
 
-void PlayerNetworkSystem::EnterGs(entt::entity player,  uint64_t session_id, uint64_t ms_node)
+void PlayerNetworkSystem::EnterGs(entt::entity player,  uint64_t session_id, uint64_t ms_node_id)
 {
 	registry.emplace_or_replace<GateSession>(player).set_session_id(session_id);
-	auto msit = g_ms_nodes.find(ms_node);
-	if (msit != g_ms_nodes.end())
+	auto msit = g_ms_nodes.find(ms_node_id);
+	if (msit == g_ms_nodes.end())
 	{
-		registry.emplace_or_replace<MsNodeWPtr>(player, msit->second);
+		LOG_ERROR << " gate not found" << ms_node_id;
+		return;
 	}
 	auto gate_node_id = node_id(session_id);
 	auto gate_it = g_gate_nodes.find(gate_node_id);
@@ -30,5 +32,8 @@ void PlayerNetworkSystem::EnterGs(entt::entity player,  uint64_t session_id, uin
 	}
 	registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
+	registry.emplace_or_replace<MsNodeWPtr>(player, msit->second);
+	msservice::EnterGsSucceedRequest message;
+	msit->second->ms_stub_.CallMethod(message, &msservice::MasterNodeService_Stub::EnterGsSucceed);
 }
 

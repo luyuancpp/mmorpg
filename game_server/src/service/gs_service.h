@@ -44,4 +44,9 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
+    void EnterGsScene(::google::protobuf::RpcController* controller,
+        const gsservice::EnterGsSceneRequest* request,
+        gsservice::EnterGsSceneRespone* response,
+        ::google::protobuf::Closure* done)override;
+
 };
