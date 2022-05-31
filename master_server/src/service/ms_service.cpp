@@ -435,12 +435,12 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
 
 	auto player_id = request->session_id();
 	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
-	
-	assert(registry.get<Guid>(player) == player_id);
+	if (player == entt::null)
+	{
+		return;
+	}
 	PlayerList::GetSingleton().LeaveGame(player_id);
-	assert(!PlayerList::GetSingleton().HasPlayer(player_id));
-	assert(PlayerList::GetSingleton().GetPlayer(player_id) == entt::null);
-
+	//todo statistics
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -549,12 +549,11 @@ void MasterNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
 		return;
 	}
-
-	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpcReplied c;
-	auto& message = c.s_rq_;
+	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpcReplied rp;
+	auto& message = rp.s_rq_;
 	message.set_session_id(player_session.session_id());
 	message.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, c, this, &gwservice::GwNodeService::PlayerEnterGs);
+	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, rp, this, &gwservice::GwNodeService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 
