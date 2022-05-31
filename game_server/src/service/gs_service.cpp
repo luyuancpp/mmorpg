@@ -14,6 +14,7 @@
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic/player_service.h"
 #include "src/system/player_reids_system.h"
+#include "src/system/player_network_system.h"
 
 #include "c2gw.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
@@ -44,27 +45,23 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	//load player 
+	auto player_id = request->player_id();
+	KickOldSession(player_id);
+	g_player_session_map.emplace(player_id, request->session_id());
+	auto p_it = g_players.find(player_id);
+	if (p_it == g_players.end())
 	{
-        auto player_id = request->player_id();
-		KickOldSession(player_id);
-		g_player_session_map.emplace(player_id, request->session_id());
-        g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
+		g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
 		EntityPtr session;
 		g_gate_sessions.emplace(request->session_id(), session);
-		auto& enter_info = registry.emplace<EnterSceneInfo>(session);
+		auto& enter_info = registry.emplace<EnterGsInfo>(session);
 		enter_info.mutable_scenes_info()->CopyFrom(request->scenes_info());
 		enter_info.set_ms_node_id(request->ms_node_id());
-        return;
 	}
-
-	auto scene = ScenesSystem::GetSingleton().get_scene(request->scenes_info().scene_id());
-    if (scene == entt::null)
-    {
-        LOG_ERROR << "scene not " << request->scenes_info().scene_confid() << "," << request->scenes_info().scene_id();
-        return;
-    }
-	
+	else//在这个gs已经在线了，顶号,不能再去加载了，否则会用旧的数据覆盖内存数据
+	{
+		PlayerNetworkSystem::EnterGs(p_it->second, request->session_id(), request->ms_node_id());
+	}	
 ///<<< END WRITING YOUR CODE 
 }
 
