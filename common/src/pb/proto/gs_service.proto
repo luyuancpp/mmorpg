@@ -5,20 +5,23 @@ import "component_proto/scene_comp.proto";
 package gsservice;
 option cc_generic_services = true;
 
-enum EnterGsType
-{
-  IS_LOGIN = 0;//第一次登录
-  IS_RELOGIN = 1;//第顶号
-  IS_RECONNET = 2;//断线重连
-}
 
 message EnterGsRequest
 {
   uint64 player_id = 1;
+  uint64 session_id = 2;
+  uint64 ms_node_id = 3;
+}
+
+message EnterGsSceneRequest
+{
+  uint64 player_id = 1;
   SceneInfo scenes_info = 2;
-  uint64 session_id = 3;
-  uint64 ms_node_id = 4;
-  uint32 enter_flag = 5;
+  uint32 enter_flag = 3;
+}
+
+message EnterGsSceneRespone
+{
 }
 
 message MsPlayerMessageExtern
@@ -75,4 +78,5 @@ service GsService {
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GwConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
   rpc MsSend2PlayerViaGs (MsSend2PlayerViaGsRequest) returns (google.protobuf.Empty);
+  rpc EnterGsScene (EnterGsSceneRequest) returns (EnterGsSceneRespone);
 }

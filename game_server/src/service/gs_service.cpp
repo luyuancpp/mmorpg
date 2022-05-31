@@ -55,7 +55,6 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 		EntityPtr session;
 		g_gate_sessions.emplace(request->session_id(), session);
 		auto& enter_info = registry.emplace<EnterGsInfo>(session);
-		enter_info.mutable_scenes_info()->CopyFrom(request->scenes_info());
 		enter_info.set_ms_node_id(request->ms_node_id());
 	}
 	else//在这个gs已经在线了，顶号,不能再去加载了，否则会用旧的数据覆盖内存数据
@@ -230,6 +229,34 @@ void GsServiceImpl::MsSend2PlayerViaGs(::google::protobuf::RpcController* contro
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
+}
+
+void GsServiceImpl::EnterGsScene(::google::protobuf::RpcController* controller,
+    const gsservice::EnterGsSceneRequest* request,
+    gsservice::EnterGsSceneRespone* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE 
+    //第一次进入世界,但是gate还没进入
+    auto pit = g_players.find(request->player_id());
+    if (pit == g_players.end())
+    {
+        return;
+    }
+    auto scene = ScenesSystem::GetSingleton().get_scene(request->scenes_info().scene_id());
+    if (scene == entt::null)
+    {
+        LOG_ERROR << "scene not found " << request->scenes_info().scene_id() << "," << request->scenes_info().scene_confid();
+        return;
+    }
+    EnterSceneParam ep;
+    ep.enterer_ = pit->second;
+    ep.scene_ = scene;
+    ScenesSystem::GetSingleton().EnterScene(ep);
+
+    //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 ///<<< END WRITING YOUR CODE 
 }
 
