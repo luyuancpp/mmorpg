@@ -16,3 +16,6 @@
 [submodule "third_party/muduo-linux"]
 	path = third_party/muduo-linux
 	url = https://github.com/chenshuo/muduo.git
+[submodule "muduolinux"]
+	path = third_party/muduo-linux
+	url = https://github.com/chenshuo/muduo.git
