@@ -2,7 +2,6 @@
 #include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "src/game_logic/comp/player_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_server.h"
 #include "src/game_logic/scene/scene.h"
@@ -18,8 +17,9 @@
 
 #include "c2gw.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
-#include "component_proto/player_comp.pb.h"
-#include "component_proto/player_async_comp.pb.h"
+#include "src/pb/pbc/component_proto/player_async_comp.pb.h"
+#include "src/pb/pbc/component_proto/player_comp.pb.h"
+#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
 
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 
@@ -64,57 +64,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
         LOG_ERROR << "scene not " << request->scenes_info().scene_confid() << "," << request->scenes_info().scene_id();
         return;
     }
-	//第一次进入世界,但是gate还没进入
-	bool is_replace_player = false;//是否是顶号
-	auto it = g_players.find(request->player_id());
-	if (it == g_players.end())
-    {
-        it = g_players.emplace(request->player_id(), EntityPtr()).first;
-		entt::entity player = it->second;
-		reg.emplace<Guid>(player, request->player_id());
-	}
-	else
-	{
-		is_replace_player = true;
-	}
-	entt::entity player = it->second;
-	reg.emplace_or_replace<GateSession>(player, request->session_id());
-	auto msit = g_ms_nodes.find(request->ms_node_id());
-	if (msit != g_ms_nodes.end())
-	{
-		reg.emplace_or_replace<MsNodeWPtr>(player, msit->second);
-	}
-	auto gate_node_id = node_id(request->session_id());
-	auto gate_it = g_gate_nodes.find(gate_node_id);
-	if (gate_it == g_gate_nodes.end())
-	{
-		LOG_ERROR << " gate not found" << gate_node_id;
-		return;
-	}
-	auto p_gate = reg.try_get<GateNodePtr>(gate_it->second);
-	if (nullptr == p_gate)
-	{
-		LOG_ERROR << " gate not found" << gate_node_id;
-		return;
-	}
-	reg.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
-	if (is_replace_player)
-	{
-        reg.remove<NormalLogin>(player);
-        reg.emplace_or_replace<CoverPlayerLogin>(player);
-    }
-	else
-	{
-        reg.remove<CoverPlayerLogin>(player);
-        reg.emplace_or_replace<NormalLogin>(player);
-        EnterSceneParam ep;
-        ep.enterer_ = player;
-        ep.scene_ = scene;
-        ScenesSystem::GetSingleton().EnterScene(ep);
-	}
 	
-	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-   
 ///<<< END WRITING YOUR CODE 
 }
 

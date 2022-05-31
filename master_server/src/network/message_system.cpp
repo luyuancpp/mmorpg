@@ -117,7 +117,7 @@ void Send2Player(const google::protobuf::Message& message, entt::entity player)
 	{
 		return;
 	}
-	Send2Player(message, gate, player_session.gate_session_id_.session_id_);
+	Send2Player(message, gate, player_session.gate_session_.session_id());
 }
 
 void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id)

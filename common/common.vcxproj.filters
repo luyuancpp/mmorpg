@@ -79,6 +79,8 @@
     <ClCompile Include="src\network\session.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\player_async_comp.pb.cc" />
     <ClCompile Include="src\pb\pb2sol2\player_async_comp_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\component_proto\player_network_comp.pb.cc" />
+    <ClCompile Include="src\pb\pb2sol2\player_network_comp_sol2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -163,7 +165,6 @@
     <ClInclude Include="src\game_logic\scene\servernode_system.h" />
     <ClInclude Include="src\game_logic\scene\scene.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_rg.pb.h" />
-    <ClInclude Include="src\game_logic\comp\player_comp.h" />
     <ClInclude Include="src\game_logic\comp\player.hpp" />
     <ClInclude Include="src\game_logic\comp\player_comp.hpp" />
     <ClInclude Include="src\game_logic\comp\server_list.hpp" />
@@ -181,5 +182,6 @@
     <ClInclude Include="src\pb\pbc\component_proto\node_comp.pb.h" />
     <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\pb\pbc\component_proto\player_async_comp.pb.h" />
+    <ClInclude Include="src\pb\pbc\component_proto\player_network_comp.pb.h" />
   </ItemGroup>
 </Project>

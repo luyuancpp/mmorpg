@@ -4,13 +4,13 @@
 #include "muduo/base/Logging.h"
 
 #include "src/network/gs_node.h"
-#include "src/game_logic/comp/player_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_player_list.h"
 #include "src/gateway_server.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/rpc_closure.h"
 
+#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
