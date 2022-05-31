@@ -5,6 +5,13 @@ import "component_proto/scene_comp.proto";
 package gsservice;
 option cc_generic_services = true;
 
+enum EnterGsType
+{
+  IS_LOGIN = 0;//第一次登录
+  IS_RELOGIN = 1;//第顶号
+  IS_RECONNET = 2;//断线重连
+}
+
 message EnterGsRequest
 {
   uint64 player_id = 1;

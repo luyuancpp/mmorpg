@@ -372,6 +372,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			message.set_player_id(player_id);
 			message.set_session_id(request->session_id());
 			message.set_ms_node_id(g_ms_node->master_node_id());
+			message.set_enter_flag(gsservice::EnterGsType::IS_LOGIN);
             auto& scene_info = registry.get<SceneInfo>(scene);
 			message.mutable_scenes_info()->CopyFrom(scene_info);
 			registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
@@ -416,6 +417,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
             message.set_player_id(player_id);
             message.set_session_id(request->session_id());
             message.set_ms_node_id(g_ms_node->master_node_id());
+			message.set_enter_flag(gsservice::EnterGsType::IS_RELOGIN);
             auto& scene_info = registry.get<SceneInfo>(scene);
             message.mutable_scenes_info()->CopyFrom(scene_info);
             registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
