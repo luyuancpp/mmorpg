@@ -37,7 +37,7 @@ Teams::Teams()
     : emp_(EventManager::New())
 {
     my_entity_id_ = registry.create();
-    registry.emplace<PlayerTeamMap>(my_entity_id_, PlayerTeamMap());
+    registry.emplace<PlayerTeamMap>(my_entity_id_);
 }
 
 std::size_t Teams::member_size(Guid team_id)

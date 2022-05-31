@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "component_proto/scene_comp.proto";
 
-message EnterSceneInfo
+message EnterGsInfo
 {
   SceneInfo scenes_info = 1;
   uint64 ms_node_id = 2;

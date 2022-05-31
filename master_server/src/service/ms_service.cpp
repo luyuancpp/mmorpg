@@ -262,7 +262,7 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	}	
 	auto& player_session = registry.get<PlayerSession>(player);
 	auto it = g_gs_nodes.find(player_session.gs_node_id());
-	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况
+	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
 	if (it == g_gs_nodes.end() ||  player_session.gate_node_id() != node_id(request->session_id()))
 	{
 		return;
@@ -344,6 +344,11 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto conn = cit->second;
 	auto player_id = request->player_id();
 	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
+	auto try_acount = registry.try_get<PlayerAccount>(player);
+	if (nullptr != try_acount)
+	{
+		logined_accounts_.erase(**try_acount);
+	}
 	if (entt::null == player)
 	{
 		//把旧的connection 断掉
@@ -366,13 +371,13 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		GetSceneParam getp;
 		getp.scene_confid_ = 1;
 		auto scene = ServerNodeSystem::GetMainSceneNotFull(getp);
-		if (scene == entt::null)
+		if (scene == entt::null)//找不到上次的场景，放到默认场景里面
 		{
 			// todo default
 			LOG_INFO << "player " << player_id << " enter default secne";
 		}
 		auto* p_gs_data = registry.try_get<GsDataPtr>(scene);
-		if (nullptr == p_gs_data)
+		if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
 		{
 			// todo default
 			LOG_INFO << "player " << player_id << " enter default secne";
@@ -413,6 +418,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		player_session.gate_session_.set_session_id(request->session_id());
 		auto gate_id = node_id(request->session_id());
 		auto gate_it = g_gate_nodes.find(gate_id);
+		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		if (gate_it != g_gate_nodes.end() && player_session.gate_node_id() != gate_id)
 		{
 			auto gate = registry.try_get<GateNodePtr>(gate_it->second);
@@ -458,7 +464,7 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
 
 	auto player_id = request->session_id();
 	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
-	logined_accounts_.erase(*registry.get<PlayerAccount>(player));
+	
 	assert(registry.get<Guid>(player) == player_id);
 	PlayerList::GetSingleton().LeaveGame(player_id);
 	assert(!PlayerList::GetSingleton().HasPlayer(player_id));

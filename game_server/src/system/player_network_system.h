@@ -6,8 +6,8 @@
 
 class EnterGsInfo;
 
-class PlayerSceneSystem
+class PlayerNetworkSystem
 {
 public:
-	static void EnterScene(entt::entity player, const EnterGsInfo& enter_info, uint64_t session_id);
+	static void EnterGs(entt::entity player, uint64_t session_id, uint64_t ms_node);
 };

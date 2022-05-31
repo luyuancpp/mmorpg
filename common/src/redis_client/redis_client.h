@@ -49,7 +49,6 @@ private:
 
 using PbSyncRedisClientPtr = std::shared_ptr<MessageSyncRedisClient>;
 
-
 template<class Key, class MessageValue>
 class MessageAsyncClient
 {

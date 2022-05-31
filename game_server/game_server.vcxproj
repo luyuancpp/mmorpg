@@ -127,6 +127,7 @@
   <ItemGroup>
     <ClCompile Include="src\network\gate_session.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\system\player_network_system.cpp" />
     <ClCompile Include="src\system\player_reids_system.cpp" />
     <ClCompile Include="src\system\player_scene_system.cpp" />
     <ClCompile Include="src\system\redis_system.cpp" />
@@ -149,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\network\gate_session.h" />
+    <ClInclude Include="src\system\player_network_system.h" />
     <ClInclude Include="src\system\player_reids_system.h" />
     <ClInclude Include="src\system\player_scene_system.h" />
     <ClInclude Include="src\system\redis_system.h" />
