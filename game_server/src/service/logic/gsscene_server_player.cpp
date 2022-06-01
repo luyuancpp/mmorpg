@@ -9,10 +9,9 @@
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/network/session.h"
-#include "src/system/entity_scene_system.h"
 #include "src/system/player_common_system.h"
+#include "src/system/player_scene_system.h"
 
-#include "logic_proto/scene_client_player.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
@@ -30,13 +29,6 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto scene = ScenesSystem::GetSingleton().get_scene(request->scene_info().scene_id());
-    if (scene == entt::null)
-    {
-        LOG_FATAL << "scene not " << request->scene_info().scene_confid() << "," << request->scene_info().scene_id();
-        return;
-    }
-
     if (request->enter_gs_type() != LOGIN_NONE )
     {
 		auto gate_node_id = node_id(request->session_id());
@@ -56,15 +48,9 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
 		registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
         PlayerCommonSystem::OnPlayerLogin(player, request->enter_gs_type());
     }
-   
     //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-
-    g_entity_scene_system.LeaveScene(player);
-
-    EnterSceneParam ep;
-    ep.enterer_ = player;
-    ep.scene_ = scene;
-    g_entity_scene_system.EnterScene(ep);
+    PlayerSceneSystem::EnterScene(player, request->scene_info().scene_id());
+    
 ///<<< END WRITING YOUR CODE
 }
 

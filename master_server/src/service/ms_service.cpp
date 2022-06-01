@@ -45,13 +45,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
         return;
     }
 	g_player_common_sys.OnLogin(player);
-	PlayerSceneSystem::OnEnterScene(player);
-}
-
-void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)
-{
-	//ms 的login先调用，通知gs去调用
-	//顶号
+	PlayerSceneSystem::EnterGsScene(player);
 }
 
 Guid MasterNodeServiceImpl::GetPlayerIdByConnId(uint64_t session_id)
