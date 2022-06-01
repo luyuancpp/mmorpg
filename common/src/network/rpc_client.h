@@ -14,6 +14,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
+//todo 
 class RpcClient : noncopyable
 {
 public:
@@ -88,6 +89,7 @@ private:
             conn->setTcpNoDelay(true);
             channel_->setConnection(conn);
         }
+        //todo 这里如果把自己删除了怎么办
         emp_->emit<RegisterStubEvent>(conn, channel_);
         emp_->emit<OnConnected2ServerEvent>(conn);
     }

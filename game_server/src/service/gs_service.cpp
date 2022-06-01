@@ -192,7 +192,7 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	}	
     LeaveSceneParam lp;
     lp.leaver_ = it->second;
-    ScenesSystem::GetSingleton().LeaveScene(lp);
+    //ScenesSystem::GetSingleton().LeaveScene(lp);
  	g_players.erase(it);//todo  应该是ms 通知过来
 
 ///<<< END WRITING YOUR CODE 
