@@ -13,8 +13,7 @@
 #include "src/network/server_component.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic/player_service.h"
-#include "src/system/player_reids_system.h"
-#include "src/system/player_network_system.h"
+#include "src/system/player_common_system.h"
 
 #include "c2gw.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
@@ -54,7 +53,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	{
 		EnterGsInfo enter_info;
 		enter_info.set_ms_node_id(request->ms_node_id());
-		PlayerNetworkSystem::EnterGs(p_it->second, enter_info);
+		PlayerCommonSystem::EnterGs(p_it->second, enter_info);
 		return;
 	}
 	auto rit = g_async_player_data.emplace(player_id, EntityPtr());

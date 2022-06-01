@@ -9,5 +9,14 @@ using PlayerDataRedisSystemPtr = std::unique_ptr<MessageAsyncClient<Guid, player
 extern PlayerDataRedisSystemPtr g_player_data_redis_system;
 extern std::unordered_map<uint64_t, EntityPtr> g_async_player_data;
 
-//如果异步加载过程中玩家断开链接了？会不会造成数据覆盖
-void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message);
+class EnterGsInfo;
+
+class PlayerCommonSystem
+{
+public:
+	//如果异步加载过程中玩家断开链接了？会不会造成数据覆盖
+	static void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message);
+
+	static void EnterGs(entt::entity player, const EnterGsInfo& enter_info);
+};
+

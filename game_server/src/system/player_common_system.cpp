@@ -1,4 +1,4 @@
-#include "player_reids_system.h"
+#include "player_common_system.h"
 
 #include "src/comp/player_list.h"
 #include "src/game_logic/game_registry.h"
@@ -6,7 +6,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/ms_node.h"
 #include "src/network/session.h"
-#include "src/system/player_network_system.h"
+
 
 #include "component_proto/player_async_comp.pb.h"
 
@@ -14,7 +14,7 @@ PlayerDataRedisSystemPtr g_player_data_redis_system;
 
 std::unordered_map<uint64_t, EntityPtr> g_async_player_data;
 
-void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message)
+void PlayerCommonSystem::OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message)
 {
     auto async_it = g_async_player_data.find(player_id);
     if (async_it == g_async_player_data.end())
@@ -36,7 +36,22 @@ void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message)
     // on load db complete
 
 
-    PlayerNetworkSystem::EnterGs(player, registry.get<EnterGsInfo>(async_it->second));
+    EnterGs(player, registry.get<EnterGsInfo>(async_it->second));
     g_async_player_data.erase(async_it);
 }
+
+void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
+{
+	auto msit = g_ms_nodes.find(enter_info.ms_node_id());
+	if (msit == g_ms_nodes.end())
+	{
+		LOG_ERROR << " gate not found" << enter_info.ms_node_id();
+		return;
+	}
+	registry.emplace_or_replace<MsNodeWPtr>(player, msit->second);
+	msservice::EnterGsSucceedRequest message;
+	message.set_player_id(registry.get<Guid>(player));
+	msit->second->ms_stub_.CallMethod(message, &msservice::MasterNodeService_Stub::EnterGsSucceed);
+}
+
 
