@@ -9,5 +9,5 @@ class EnterGsInfo;
 class PlayerNetworkSystem
 {
 public:
-	static void EnterGs(entt::entity player, uint64_t session_id, const EnterGsInfo& enter_info);
+	static void EnterGs(entt::entity player,  const EnterGsInfo& enter_info);
 };

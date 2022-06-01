@@ -29,8 +29,7 @@
 
 #include "gs_service.pb.h"
 #include "logic_proto/scene_normal.pb.h"
-#include "component_proto/player_async_comp.pb.h"
-#include "component_proto/ms_player_comp.pb.h"
+#include "component_proto/player_login_comp.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
@@ -39,18 +38,19 @@ std::size_t kMaxPlayerSize = 1000;
 
 void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied)
 {
-	auto it = g_gate_sessions.find(replied.s_rq_.session_id());
-	if (it == g_gate_sessions.end())
-	{
-		LOG_ERROR << "conn not found " << replied.s_rq_.session_id();
-		return;
-	}
-	entt::entity player = registry.get<EntityPtr>(it->second);
+	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
     if (entt::null == player)
     {
         LOG_ERROR << "player not found " << registry.get<Guid>(player);
         return;
     }
+	gsservice::EnterGsSceneRequest message;
+	auto try_enter_gs = registry.try_get<EnterGsComp>(player);
+	if (nullptr != try_enter_gs)
+	{
+		message.set_enter_gs_type((*try_enter_gs).enter_gs_type());
+		registry.remove<EnterGsComp>(player);
+	}
     g_player_common_sys.OnLogin(player);
 }
 
@@ -335,6 +335,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		player = PlayerList::GetSingleton().GetPlayer(player_id);
 		registry.emplace<Guid>(player, player_id);
 		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(cit->second));
+		registry.emplace<EnterGsComp>(player).set_enter_gs_type(LOGIN_FIRST);
 		auto& player_session = registry.emplace<PlayerSession>(player);
 		player_session.gate_session_.set_session_id(request->session_id());
 		auto gate_it = g_gate_nodes.find(node_id(request->session_id()));
@@ -383,11 +384,10 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		//告诉账号被顶
 		OnConnidEnterGame(conn, player_id);
 		auto& player_session = registry.get<PlayerSession>(player);
-		registry.emplace_or_replace<MsConverPlayerComp>(player);//连续顶几次,所以用emplace_or_replace
+		registry.emplace_or_replace<EnterGsComp>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
 		gwservice::KickConnRequest message;
 		message.set_session_id(player_session.gate_session_.session_id());
 		Send2Gate(message, player_session.gate_node_id());
-
 		player_session.gate_session_.set_session_id(request->session_id());
 		auto gate_id = node_id(request->session_id());
 		auto gate_it = g_gate_nodes.find(gate_id);

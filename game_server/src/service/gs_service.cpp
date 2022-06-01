@@ -26,6 +26,7 @@ using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 
 void KickOldSession(Guid player_id)
 {
+	g_async_player_data.erase(player_id);
     auto sit = g_player_session_map.find(player_id);
     if (sit == g_player_session_map.end())//老连接踢掉
     {
@@ -51,8 +52,17 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	auto p_it = g_players.find(player_id);
 	if (p_it != g_players.end())
 	{
+		EnterGsInfo enter_info;
+		enter_info.set_ms_node_id(request->ms_node_id());
+		PlayerNetworkSystem::EnterGs(p_it->second, enter_info);
 		return;
 	}
+	auto rit = g_async_player_data.emplace(player_id, EntityPtr());
+	if (!rit.second)
+	{
+		return;
+	}
+	registry.emplace<EnterGsInfo>(rit.first->second).set_ms_node_id(request->ms_node_id());
 	g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
 ///<<< END WRITING YOUR CODE 
 }

@@ -1,15 +1,7 @@
 syntax = "proto3";
 
-enum LoginType
-{
-  IS_LOGIN = 0;//第一次登录
-  IS_RELOGIN = 1;//第顶号
-  IS_RECONNET = 2;//断线重连
-}
-
 
 message EnterGsInfo
 {
   uint64 ms_node_id = 1;
-  uint32 enter_flag = 2;
 }

@@ -58,7 +58,6 @@
     <ClCompile Include="src\game_logic\scene\scene.cpp" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_rg.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\scene_comp.pb.cc" />
-    <ClCompile Include="src\pb\pbc\component_proto\ms_player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\gs_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\ms_service.pb.cc" />
     <ClCompile Include="src\game_config\item_config.cpp" />
@@ -71,7 +70,6 @@
     <ClCompile Include="src\pb\pb2sol2\item_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\item_base_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\item_comp.pb.cc" />
-    <ClCompile Include="src\pb\pb2sol2\ms_player_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\logic_proto\common_client_player.pb.cc" />
     <ClCompile Include="src\pb\pb2sol2\common_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\node_comp.pb.cc" />
@@ -81,6 +79,8 @@
     <ClCompile Include="src\pb\pb2sol2\player_async_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\player_network_comp.pb.cc" />
     <ClCompile Include="src\pb\pb2sol2\player_network_comp_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\component_proto\player_login_comp.pb.cc" />
+    <ClCompile Include="src\pb\pb2sol2\player_login_comp_sol2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -171,7 +171,6 @@
     <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\pb\pbc\component_proto\scene_comp.pb.h" />
-    <ClInclude Include="src\pb\pbc\component_proto\ms_player_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\gs_service.pb.h" />
     <ClInclude Include="src\pb\pbc\ms_service.pb.h" />
     <ClInclude Include="src\game_config\item_config.h" />
@@ -183,5 +182,6 @@
     <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\pb\pbc\component_proto\player_async_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\player_network_comp.pb.h" />
+    <ClInclude Include="src\pb\pbc\component_proto\player_login_comp.pb.h" />
   </ItemGroup>
 </Project>
