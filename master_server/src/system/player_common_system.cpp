@@ -10,12 +10,7 @@ PlayerCommonSys g_player_common_sys;
 
 void PlayerCommonSys::OnLogin(entt::entity player)
 {
-    //通知gs发登录消息
-    {
-        Ms2GsLoginRequest message;
-        Send2GsPlayer(message, player);
-    }
-    
+
     //给客户端发所有场景消息
     {
         SceneInfoS2C message;

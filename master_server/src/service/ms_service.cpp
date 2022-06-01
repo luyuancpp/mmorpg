@@ -44,14 +44,8 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
         LOG_ERROR << "player not found " << registry.get<Guid>(player);
         return;
     }
-	gsservice::EnterGsSceneRequest message;
-	auto try_enter_gs = registry.try_get<EnterGsComp>(player);
-	if (nullptr != try_enter_gs)
-	{
-		message.set_enter_gs_type((*try_enter_gs).enter_gs_type());
-		registry.remove<EnterGsComp>(player);
-	}
-    g_player_common_sys.OnLogin(player);
+	g_player_common_sys.OnLogin(player);
+	g_player_scene_system.OnEnterScene(player);    
 }
 
 void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)
