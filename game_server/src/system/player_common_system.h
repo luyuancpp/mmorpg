@@ -18,5 +18,7 @@ public:
 	static void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message);
 
 	static void EnterGs(entt::entity player, const EnterGsInfo& enter_info);
+
+	static void OnPlayerLogin(entt::entity player, uint32_t enter_gs_type);
 };
 
