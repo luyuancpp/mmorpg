@@ -6,6 +6,7 @@ option cc_generic_services = true;
 
 message Ms2GsLoginRequest
 {
+
 }
 
 message Ms2GsReconnectRequest
@@ -19,7 +20,9 @@ message Gs2MsEnterSceneRequest
 
 message Ms2GsEnterSceneRequest
 {
-  SceneInfo scene_info = 1;
+  uint64 session_id = 1;
+  SceneInfo scene_info = 2;
+  uint32 enter_gs_type = 3;
 }
 
 message SeceneGsResponse
