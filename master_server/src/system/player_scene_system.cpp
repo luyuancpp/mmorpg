@@ -10,9 +10,6 @@
 #include "logic_proto/scene_server_player.pb.h"
 #include "gs_service.pb.h"
 
-
-PlayerSceneSystem g_player_scene_system;
-
 void PlayerSceneSystem::OnEnterScene(entt::entity player)
 {
     if (entt::null == player)
@@ -27,7 +24,6 @@ void PlayerSceneSystem::OnEnterScene(entt::entity player)
         LOG_ERROR << "player do not enter scene " << player_id;
         return;
     }
-
     Ms2GsEnterSceneRequest message;
 	auto try_enter_gs = registry.try_get<EnterGsComp>(player);
 	if (nullptr != try_enter_gs)

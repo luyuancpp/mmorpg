@@ -2,7 +2,7 @@
 
 #include "muduo/net/EventLoop.h"
 
-#include "player_reids_system.h"
+#include "player_common_system.h"
 
 RedisSystem g_redis_system;
 
@@ -15,5 +15,5 @@ void RedisSystem::Init(muduo::net::InetAddress& server_addr)
     hiredis_->connect();
  
     g_player_data_redis_system = std::make_unique<PlayerDataRedisSystemPtr::element_type>(*hiredis_);
-    g_player_data_redis_system->SetLoadCallback(OnAsyncLoadPlayerDatabase);
+    g_player_data_redis_system->SetLoadCallback(PlayerCommonSystem::OnAsyncLoadPlayerDatabase);
 }

@@ -45,7 +45,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
         return;
     }
 	g_player_common_sys.OnLogin(player);
-	g_player_scene_system.OnEnterScene(player);    
+	PlayerSceneSystem::OnEnterScene(player);
 }
 
 void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)
