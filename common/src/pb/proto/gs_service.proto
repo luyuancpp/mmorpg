@@ -16,8 +16,9 @@ message EnterGsRequest
 message EnterGsSceneRequest
 {
   uint64 player_id = 1;
-  SceneInfo scenes_info = 2;
-  uint32 enter_flag = 3;
+  uint64 session_id = 2;
+  SceneInfo scenes_info = 3;
+  uint32 enter_gs_type = 4;
 }
 
 message EnterGsSceneRespone

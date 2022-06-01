@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-//顶号组件
-message MsConverPlayerComp
-{
-	
-}

@@ -12,14 +12,22 @@
 
 PlayerDataRedisSystemPtr g_player_data_redis_system;
 
+std::unordered_map<uint64_t, EntityPtr> g_async_player_data;
+
 void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message)
 {
-    auto ret = g_players.emplace(player_id, EntityPtr());
-    if (!ret.second)
+    auto async_it = g_async_player_data.find(player_id);
+    if (async_it == g_async_player_data.end())
     {
-        LOG_ERROR << "server emplace error" << player_id;
-        return;
+		LOG_INFO << "player disconnect" << player_id;
+		return;
     }
+    auto ret = g_players.emplace(player_id, EntityPtr());
+	if (!ret.second)
+	{
+		LOG_ERROR << "server emplace error" << player_id;
+		return;
+	}
     // on loaded db
     entt::entity player = ret.first->second;
     registry.emplace<Guid>(player, player_id);
@@ -27,6 +35,8 @@ void OnAsyncLoadPlayerDatabase(Guid player_id, player_database& message)
    	
     // on load db complete
 
-   
+
+    PlayerNetworkSystem::EnterGs(player, registry.get<EnterGsInfo>(async_it->second));
+    g_async_player_data.erase(async_it);
 }
 
