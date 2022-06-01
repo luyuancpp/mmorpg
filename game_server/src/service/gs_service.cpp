@@ -230,6 +230,7 @@ void GsServiceImpl::MsSend2PlayerViaGs(::google::protobuf::RpcController* contro
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	Send2Player(request->msg(), request->ex().player_id());
 ///<<< END WRITING YOUR CODE 
 }
 

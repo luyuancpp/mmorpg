@@ -17,8 +17,6 @@ public:
     using Ms2GwPlayerEnterGsRpcReplied = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
     void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied);
 
-    void OnPlayerLongin(entt::entity player);
-
     Guid GetPlayerIdByConnId(uint64_t session_id);
     entt::entity GetPlayerByConnId(uint64_t session_id);
 

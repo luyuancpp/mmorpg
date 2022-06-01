@@ -46,7 +46,6 @@ private:
 
     void OnDestroyScene(entt::entity scene_entity);
 
-    Uint32KeyEntitySetValue confid_scenes_;
     SceneMapComp scenes_map_;
     SnowFlake snow_flake_;
 };

@@ -22,7 +22,7 @@
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\scene\scene.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\scene\scene_factories.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\scene\servernode_sys.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\scene\servernode_system.cpp" />
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc" />
     <ClCompile Include="game_server_load_balance_test.cpp" />
   </ItemGroup>
@@ -30,7 +30,7 @@
     <ClInclude Include="..\..\common\src\game_logic\entity\entity.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\scene.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\scene_factories.h" />
-    <ClInclude Include="..\..\common\src\game_logic\scene\servernode_sys.h" />
+    <ClInclude Include="..\..\common\src\game_logic\scene\servernode_system.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

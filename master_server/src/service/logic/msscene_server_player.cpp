@@ -75,7 +75,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         ep.enterer_ = player;
         ep.scene_ = scene;
         ScenesSystem::GetSingleton().EnterScene(ep);
-        PlayerSceneSystem::OnEnterScene(player);
+        PlayerSceneSystem::EnterGsScene(player);
     }
     else
     {

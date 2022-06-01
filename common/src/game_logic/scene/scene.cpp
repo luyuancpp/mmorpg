@@ -11,12 +11,17 @@ static const std::size_t kMaxMainScenePlayer = 1000;
 
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
 {
-    auto it = confid_scenes_.find(scene_config_id);
-    if (it == confid_scenes_.end())
+    std::size_t sz = 0;
+    //todo  auto 
+    for (auto& it : scenes_map_)
     {
-        return 0;
+        if (registry.get<SceneInfo>(it.second).scene_confid() != scene_config_id)
+        {
+            continue;
+        }
+        ++sz;
     }
-    return it->second.size();
+    return sz;
 }
 
 entt::entity ScenesSystem::get_scene(Guid scene_id)
@@ -31,30 +36,32 @@ entt::entity ScenesSystem::get_scene(Guid scene_id)
 
 bool ScenesSystem::HasScene(uint32_t scene_config_id)
 {
-    auto it = confid_scenes_.find(scene_config_id);
-    if (it == confid_scenes_.end())
-    {
-        return true;
-    }
-    return it->second.empty();
+	for (auto& it : scenes_map_)
+	{
+		if (registry.get<SceneInfo>(it.second).scene_confid() == scene_config_id)
+		{
+            return true;
+		}
+	}
+	return false;
 }
 
 entt::entity ScenesSystem::MakeScene(const MakeSceneP& param)
 {
-    auto e = registry.create();
-    auto& si = registry.emplace<SceneInfo>(e);
+    auto scene = registry.create();
+    auto& si = registry.emplace<SceneInfo>(scene);
     si.set_scene_confid(param.scene_confid_);
-    registry.emplace<MainScene>(e);
-    registry.emplace<ScenePlayers>(e);
+    registry.emplace<MainScene>(scene);
+    registry.emplace<ScenePlayers>(scene);
     auto guid = snow_flake_.Generate();
     si.set_scene_id(guid);
-    auto sit = scenes_map_.emplace(guid, e);
+    auto sit = scenes_map_.emplace(guid, scene);
 	if (!sit.second)
 	{
         LOG_ERROR << "already has scene" << guid;
 	}
-    confid_scenes_[si.scene_confid()].emplace(e);
-    return e;
+
+    return scene;
 }
 
 entt::entity ScenesSystem::MakeSceneByGuid(const MakeSceneWithGuidP& param)
@@ -71,7 +78,7 @@ entt::entity ScenesSystem::MakeSceneByGuid(const MakeSceneWithGuidP& param)
 	{
 		LOG_ERROR << "already has scene" << guid;
 	}
-	confid_scenes_[si.scene_confid()].emplace(e);
+
     return e;
 }
 
@@ -226,7 +233,6 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
 void ScenesSystem::OnDestroyScene(entt::entity scene_entity)
 {
     auto& si = registry.get<SceneInfo>(scene_entity);
-    confid_scenes_[si.scene_confid()].erase(scene_entity);
     scenes_map_.erase(si.scene_id());
     auto p_server_data = registry.get<GsDataPtr>(scene_entity);
     registry.destroy(scene_entity);

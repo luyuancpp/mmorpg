@@ -4,7 +4,6 @@
 #include "src/game_logic/scene/scene_factories.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/game_registry.h"
-#include "src/game_logic/scene/servernode_sys.h"
 #include "src/game_logic/scene/scene.h"
 
 #include "src/pb/pbc/component_proto/scene_comp.pb.h"
@@ -37,11 +36,11 @@ TEST(GS, MakeScene2Sever )
     MakeGSParam param1;
     param1.node_id_ = 1;
 
-    auto server_entity1 = MakeMainSceneNode(reg, param1);
+    auto server_entity1 = MakeMainSceneNode(registry, param1);
 
     MakeGSParam param2;
     param2.node_id_ = 1;
-    auto server_entity2 = MakeMainSceneNode(reg, param2);
+    auto server_entity2 = MakeMainSceneNode(registry, param2);
 
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
@@ -85,7 +84,7 @@ TEST(GS, PutScene2Sever)
     MakeSceneP cparam;
     auto scene_entity = sm.MakeScene(cparam);
 
-    auto server_entity1 = MakeMainSceneNode(reg, param1);
+    auto server_entity1 = MakeMainSceneNode(registry, param1);
         
     PutScene2GSParam put_param;
     put_param.scene_ = scene_entity;
@@ -109,7 +108,7 @@ TEST(GS, DestroyScene)
     MakeSceneP cparam;
     auto scene_entity = sm.MakeScene(cparam);
 
-    auto server_entity1 = MakeMainSceneNode(reg, param1);
+    auto server_entity1 = MakeMainSceneNode(registry, param1);
 
     PutScene2GSParam put_param;
     put_param.scene_ = scene_entity;
@@ -127,7 +126,7 @@ TEST(GS, DestroyScene)
     dparam.scene_ = scene_entity;
     sm.DestroyScene(dparam);
     EXPECT_TRUE(sm.Empty());
-    EXPECT_TRUE(sm.HasScene(cparam.scene_confid_));
+    EXPECT_FALSE(sm.HasScene(cparam.scene_confid_));
     EXPECT_TRUE(server_scenes.scenes_empty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
     EXPECT_FALSE(registry.valid(scene_entity));
@@ -140,11 +139,11 @@ TEST(GS, DestroySever)
     MakeGSParam param1;
     param1.node_id_ = 1;
 
-    auto server_entity1 = MakeMainSceneNode(reg, param1);
+    auto server_entity1 = MakeMainSceneNode(registry, param1);
 
     MakeGSParam param2;
     param2.node_id_ = 2;
-    auto server_entity2 = MakeMainSceneNode(reg, param2);
+    auto server_entity2 = MakeMainSceneNode(registry, param2);
 
     auto& server_data1 = *registry.get<GsDataPtr>(server_entity1);
     
@@ -208,11 +207,11 @@ TEST(GS, ServerScene2Sever)
     MakeGSParam cgs1;
     cgs1.node_id_ = 1;
 
-    auto server_entity1 = MakeMainSceneNode(reg, cgs1);
+    auto server_entity1 = MakeMainSceneNode(registry, cgs1);
 
     MakeGSParam cgs2;
     cgs2.node_id_ = 2;
-    auto server_entity2 = MakeMainSceneNode(reg, cgs2);
+    auto server_entity2 = MakeMainSceneNode(registry, cgs2);
 
    
     auto& server_data2 = *registry.get<GsDataPtr>(server_entity2);
@@ -270,11 +269,11 @@ TEST(GS, PlayerLeaveEnterScene)
     MakeGSParam cgs1;
     cgs1.node_id_ = 1;
 
-    auto server_entity1 = MakeMainSceneNode(reg, cgs1);
+    auto server_entity1 = MakeMainSceneNode(registry, cgs1);
 
     MakeGSParam cgs2;
     cgs2.node_id_ = 2;
-    auto server_entity2 = MakeMainSceneNode(reg, cgs2);
+    auto server_entity2 = MakeMainSceneNode(registry, cgs2);
 
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
@@ -369,7 +368,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.node_id_ = i;
-        server_entities.emplace(MakeMainSceneNode(reg, cgs1));
+        server_entities.emplace(MakeMainSceneNode(registry, cgs1));
     }
 
     MakeGSSceneP make_server_scene_param;
@@ -407,7 +406,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 
     MaintainServerParam maintain;
     maintain.maintain_entity_ = *server_entities.begin();
-    snsys.ServerMaintain(reg, maintain);
+    snsys.ServerMaintain(registry, maintain);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -427,11 +426,11 @@ TEST(GS, CompelChangeScene)
     MakeGSParam cgs1;
     cgs1.node_id_ = 1;
 
-    auto server_entity1 = MakeMainSceneNode(reg, cgs1);
+    auto server_entity1 = MakeMainSceneNode(registry, cgs1);
 
     MakeGSParam cgs2;
     cgs2.node_id_ = 2;
-    auto server_entity2 = MakeMainSceneNode(reg, cgs2);
+    auto server_entity2 = MakeMainSceneNode(registry, cgs2);
 
     MakeGSSceneP server1_param;
     MakeGSSceneP server2_param;
@@ -493,7 +492,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.node_id_ = i;
-        server_entities.emplace(MakeMainSceneNode(reg, cgs1));
+        server_entities.emplace(MakeMainSceneNode(registry, cgs1));
     }
 
     MakeGSSceneP make_server_scene_param;
@@ -531,7 +530,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 
     ServerCrashParam crash1;
     crash1.crash_entity_ = *server_entities.begin();
-    snsys.ServerCrashed(reg, crash1);
+    snsys.ServerCrashed(registry, crash1);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -561,7 +560,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.node_id_ = i;
-        server_entities.emplace(MakeMainSceneNode(reg, cgs1));
+        server_entities.emplace(MakeMainSceneNode(registry, cgs1));
     }
 
     MakeGSSceneP make_server_scene_param;
@@ -597,7 +596,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 
     ServerCrashParam crash1;
     crash1.crash_entity_ = *server_entities.begin();
-    snsys.ServerCrashed(reg, crash1);
+    snsys.ServerCrashed(registry, crash1);
 
     ReplaceCrashServerParam replace_crash;
     replace_crash.cransh_server_ = *server_entities.begin();
@@ -641,7 +640,7 @@ TEST(GS, WeightRoundRobinMainScene)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.node_id_ = i;
-        server_entities.emplace(MakeMainSceneNode(reg, cgs1));
+        server_entities.emplace(MakeMainSceneNode(registry, cgs1));
     }
 
     MakeGSSceneP make_server_scene_param;
@@ -766,7 +765,7 @@ TEST(GS, ServerEnterLeavePressure)
     for (uint32_t i = 0; i < server_size; ++i)
     {
         cgs1.node_id_ = i;
-        server_entities.emplace(MakeMainSceneNode(reg, cgs1));
+        server_entities.emplace(MakeMainSceneNode(registry, cgs1));
     }
 
     MakeGSSceneP make_server_scene_param;
@@ -782,7 +781,7 @@ TEST(GS, ServerEnterLeavePressure)
     }
     ServerPressureParam pressure1;
     pressure1.server_ = *server_entities.begin();
-    snsys.ServerEnterPressure(reg, pressure1);
+    snsys.ServerEnterPressure(registry, pressure1);
     
 
     uint32_t scene_config_id0 = 0;
@@ -812,7 +811,7 @@ TEST(GS, ServerEnterLeavePressure)
         EXPECT_TRUE(psr->server_entity() != pressure1.server_);
     }
 
-    snsys.ServerEnterNoPressure(reg, pressure1);
+    snsys.ServerEnterNoPressure(registry, pressure1);
 
     std::unordered_map<entt::entity, entt::entity> player_scene2;
     weight_round_robin_scene.scene_confid_ = scene_config_id1;
@@ -847,7 +846,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 	for (uint32_t i = 0; i < server_size; ++i)
 	{
 		cgs1.node_id_ = i;
-		server_entities.emplace(MakeMainSceneNode(reg, cgs1));
+		server_entities.emplace(MakeMainSceneNode(registry, cgs1));
 	}
 
 	MakeGSSceneP make_server_scene_param;
