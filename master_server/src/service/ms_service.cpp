@@ -310,7 +310,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto conn = cit->second;
 	auto player_id = request->player_id();
 	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
-	auto try_acount = registry.try_get<PlayerAccount>(player);
+	auto try_acount = registry.try_get<PlayerAccount>(conn);
 	if (nullptr != try_acount)
 	{
 		logined_accounts_.erase(**try_acount);
