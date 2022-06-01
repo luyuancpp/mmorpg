@@ -1,8 +1,6 @@
 syntax = "proto3";
 
-import "component_proto/scene_comp.proto";
-
-enum EnterGsType
+enum LoginType
 {
   IS_LOGIN = 0;//第一次登录
   IS_RELOGIN = 1;//第顶号

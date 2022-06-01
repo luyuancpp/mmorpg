@@ -45,13 +45,13 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
 		LOG_ERROR << "conn not found " << replied.s_rq_.session_id();
 		return;
 	}
-    /*auto player = registry.get<EntityPtr>(it->second);
+	entt::entity player = registry.get<EntityPtr>(it->second);
     if (entt::null == player)
     {
-        LOG_ERROR << "player not found " << replied.s_rq_.player_id();
+        LOG_ERROR << "player not found " << registry.get<Guid>(player);
         return;
     }
-    g_player_common_sys.OnLogin(player);*/
+    g_player_common_sys.OnLogin(player);
 }
 
 void MasterNodeServiceImpl::OnPlayerLongin(entt::entity player)
@@ -384,9 +384,9 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		OnConnidEnterGame(conn, player_id);
 		auto& player_session = registry.get<PlayerSession>(player);
 		registry.emplace_or_replace<MsConverPlayerComp>(player);//连续顶几次,所以用emplace_or_replace
-		gwservice::KickConnRequest messag;
-		messag.set_session_id(player_session.gate_session_.session_id());
-		Send2Gate(messag, player_session.gate_node_id());
+		gwservice::KickConnRequest message;
+		message.set_session_id(player_session.gate_session_.session_id());
+		Send2Gate(message, player_session.gate_node_id());
 
 		player_session.gate_session_.set_session_id(request->session_id());
 		auto gate_id = node_id(request->session_id());
