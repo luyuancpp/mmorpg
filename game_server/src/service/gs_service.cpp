@@ -49,18 +49,11 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	KickOldSession(player_id);
 	g_player_session_map.emplace(player_id, request->session_id());
 	auto p_it = g_players.find(player_id);
-	if (p_it == g_players.end())
+	if (p_it != g_players.end())
 	{
-		g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
-		EntityPtr session;
-		g_gate_sessions.emplace(request->session_id(), session);
-		auto& enter_info = registry.emplace<EnterGsInfo>(session);
-		enter_info.set_ms_node_id(request->ms_node_id());
+		return;
 	}
-	else//在这个gs已经在线了，顶号,不能再去加载了，否则会用旧的数据覆盖内存数据
-	{
-		PlayerNetworkSystem::EnterGs(p_it->second, request->session_id(), request->ms_node_id());
-	}	
+	g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -72,7 +65,6 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto& message_extern = request->ex();
-	auto& player_msg = request->msg();
 	auto it = g_players.find(message_extern.player_id());
 	if (it == g_players.end())
 	{
@@ -103,7 +95,7 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 		return;
 	}
 	MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
-	player_request->ParseFromString(player_msg.body());
+	player_request->ParseFromString(request->msg().body());
 	MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
 	serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
