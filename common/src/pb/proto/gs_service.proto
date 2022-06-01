@@ -1,7 +1,6 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
 import "common.proto";
-import "component_proto/scene_comp.proto";
 package gsservice;
 option cc_generic_services = true;
 
@@ -11,18 +10,6 @@ message EnterGsRequest
   uint64 player_id = 1;
   uint64 session_id = 2;
   uint64 ms_node_id = 3;
-}
-
-message EnterGsSceneRequest
-{
-  uint64 player_id = 1;
-  uint64 session_id = 2;
-  SceneInfo scenes_info = 3;
-  uint32 enter_gs_type = 4;
-}
-
-message EnterGsSceneRespone
-{
 }
 
 message MsPlayerMessageExtern
@@ -79,5 +66,4 @@ service GsService {
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GwConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
   rpc MsSend2PlayerViaGs (MsSend2PlayerViaGsRequest) returns (google.protobuf.Empty);
-  rpc EnterGsScene (EnterGsSceneRequest) returns (EnterGsSceneRespone);
 }

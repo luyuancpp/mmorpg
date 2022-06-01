@@ -10,8 +10,10 @@
 #include "src/network/message_system.h"
 #include "src/network/session.h"
 #include "src/system/entity_scene_system.h"
+#include "src/system/player_common_system.h"
 
 #include "logic_proto/scene_client_player.pb.h"
+#include "component_proto/player_login_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -34,28 +36,28 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
         LOG_FATAL << "scene not " << request->scene_info().scene_confid() << "," << request->scene_info().scene_id();
         return;
     }
-    auto gate_node_id = node_id(request->session_id());
-    auto gate_it = g_gate_nodes.find(gate_node_id);
-    if (gate_it != g_gate_nodes.end())
+
+    if (request->enter_gs_type() != LOGIN_NONE )
     {
-		auto p_gate = registry.try_get<GateNodePtr>(gate_it->second);
-		if (nullptr != p_gate)
+		auto gate_node_id = node_id(request->session_id());
+		auto gate_it = g_gate_nodes.find(gate_node_id);
+		if (gate_it == g_gate_nodes.end())//test
 		{
-			registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
-		}
-        else
-        {
             LOG_ERROR << " gate not found " << gate_node_id;
-        }
-    }
-    else 
-    {
-        LOG_ERROR << " gate not found " << gate_node_id;
-    }
-    
+            return;
+		}
+		auto p_gate = registry.try_get<GateNodePtr>(gate_it->second);
+		if (nullptr == p_gate)
+		{
+			LOG_ERROR << " gate not found " << gate_node_id;
+			return;
 
-
-    //todo½øÈëÁËgate È»ºó²Å¿ÉÒÔ¿ªÊ¼¿ÉÒÔ¸ø¿Í»§¶Ë·¢ËÍĞÅÏ¢ÁË, gsÏûÏ¢Ë³ĞòÎÊÌâÒª×¢Òâ£¬½øÈëa, ÔÙ½øÈëb gsµ½´ï¿Í»§¶ËÏûÏ¢µÄË³Ğò²»Ò»Ñù
+		}
+		registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
+        PlayerCommonSystem::OnPlayerLogin(player, request->enter_gs_type());
+    }
+   
+    //todoè¿›å…¥äº†gate ç„¶åæ‰å¯ä»¥å¼€å§‹å¯ä»¥ç»™å®¢æˆ·ç«¯å‘é€ä¿¡æ¯äº†, gsæ¶ˆæ¯é¡ºåºé—®é¢˜è¦æ³¨æ„ï¼Œè¿›å…¥a, å†è¿›å…¥b gsåˆ°è¾¾å®¢æˆ·ç«¯æ¶ˆæ¯çš„é¡ºåºä¸ä¸€æ ·
 
     g_entity_scene_system.LeaveScene(player);
 
