@@ -5,7 +5,5 @@
 class PlayerCommonSystem
 {
 public:
-    void OnLogin(entt::entity player);
+    static void OnLogin(entt::entity player);
 };
-
-extern PlayerCommonSystem g_player_common_sys;
