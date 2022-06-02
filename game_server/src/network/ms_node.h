@@ -22,9 +22,8 @@ struct MsNode
 	EntityPtr ms_;
 };
 using MsNodePtr = std::shared_ptr<MsNode>;
-using MsNodeWPtr = std::weak_ptr<MsNode>;
 using MsNodes = std::unordered_map<uint32_t, MsNodePtr>;
-extern MsNodes g_ms_nodes;
+extern MsNodes g_ms_nodes;//master 不会删除，因为不会和gs一样根据负载增加减少，只走底层的自动重连
 
 
 #endif//GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_

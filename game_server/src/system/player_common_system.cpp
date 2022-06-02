@@ -50,7 +50,7 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 		LOG_ERROR << " gate not found" << enter_info.ms_node_id();
 		return;
 	}
-	registry.emplace_or_replace<MsNodeWPtr>(player, msit->second);
+	registry.emplace_or_replace<MsNodePtr>(player, msit->second);//todo master 重新启动以后
 	msservice::EnterGsSucceedRequest message;
 	message.set_player_id(registry.get<Guid>(player));
 

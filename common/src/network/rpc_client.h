@@ -51,7 +51,8 @@ public:
         return client_.connection()->peerAddress(); 
     }
 
-    bool connected()const { return nullptr != client_.connection(); }
+    //bool connected()const { return nullptr != client_.connection(); }
+    inline bool connected()const { return connected_; }    
 
     template <typename E, typename Receiver>
     void subscribe(Receiver& receiver) { emp_->subscribe<E>(receiver); }
@@ -74,11 +75,19 @@ public:
         ::google::protobuf::Message* response,
         ::google::protobuf::Closure* done) 
     {
+		if (!connected_)
+		{
+			return;
+		}
         channel_->CallMethod(request, service_name, method_name, response, done);
     }
 
     void Send(const ::google::protobuf::Message& request)
     {
+        if (!connected_)
+        {
+			return;
+        }
         channel_->S2C(request);
     }
 private:
@@ -88,11 +97,18 @@ private:
         {
             conn->setTcpNoDelay(true);
             channel_->setConnection(conn);
+            connected_ = true;
+        }
+        else
+        {
+            connected_ = false;
         }
         //todo 这里如果把自己删除了怎么办
         emp_->emit<RegisterStubEvent>(conn, channel_);
         emp_->emit<OnConnected2ServerEvent>(conn);
     }
+
+    bool connected_{ false };
 
     TcpClient client_;
     RpcChannelPtr channel_;
