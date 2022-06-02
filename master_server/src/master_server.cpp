@@ -19,7 +19,7 @@
 
 #include "gs_service.pb.h"
 #include "gw_service.pb.h"
-#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 
 using namespace common;
 using namespace muduo;

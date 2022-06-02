@@ -10,7 +10,7 @@
 #include "src/game_logic/tips_id.h"
 #include "src/network/rpc_closure.h"
 
-#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin

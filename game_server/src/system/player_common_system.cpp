@@ -5,10 +5,12 @@
 #include "src/network/gate_session.h"
 #include "src/network/gate_node.h"
 #include "src/network/ms_node.h"
+#include "src/network/rpc_stub.h"
 #include "src/network/session.h"
 
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
+#include "ms_service.pb.h"
 
 PlayerDataRedisSystemPtr g_player_data_redis_system;
 
@@ -51,7 +53,9 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 	registry.emplace_or_replace<MsNodeWPtr>(player, msit->second);
 	msservice::EnterGsSucceedRequest message;
 	message.set_player_id(registry.get<Guid>(player));
-	msit->second->ms_stub_.CallMethod(message, &msservice::MasterNodeService_Stub::EnterGsSucceed);
+
+	auto& ms_stub = registry.get<RpcStub<msservice::MasterNodeService_Stub>>(msit->second->ms_);
+	ms_stub.CallMethod(message, &msservice::MasterNodeService_Stub::EnterGsSucceed);
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 }
 

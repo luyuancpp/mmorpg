@@ -5,7 +5,7 @@
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/game_registry.h"
 
-#include "src/pb/pbc/component_proto/scene_comp.pb.h"
+#include "component_proto/scene_comp.pb.h"
 
 static const std::size_t kMaxMainScenePlayer = 1000;
 

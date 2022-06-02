@@ -116,24 +116,23 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRC cp)
 	auto& regionmaster = resp->region_masters();
 	for (int32_t i = 0; i < regionmaster.masters_size(); ++i)
 	{
-        auto e = registry.create();
 		auto& masterinfo = regionmaster.masters(i);
 		InetAddress master_addr(masterinfo.ip(), masterinfo.port());
-		auto it = g_ms_nodes.emplace(masterinfo.id(), MsNodePtr(std::make_shared<MsNode>()));
+		auto it = g_ms_nodes.emplace(masterinfo.id(), std::make_shared<MsNode>());
 		auto& ms = *it.first->second;
 		ms.session_ = std::make_shared<RpcClient>(loop_, master_addr);
 		ms.node_info_.set_node_id(masterinfo.id());
-		registry.emplace<MsNodeWPtr>(e, it.first->second);
-
-		auto& ms_node = ms.session_;
-		ms_node->subscribe<RegisterStubEvent>(g2ms_stub_);
-		ms_node->registerService(&gs_service_impl_);
+		auto& ms_node_session = ms.session_;
+        auto& ms_stub = registry.emplace<RpcStub<msservice::MasterNodeService_Stub>>(ms.ms_);
+        ms_node_session->subscribe<RegisterStubEvent>(ms_stub);
+		ms_node_session->subscribe<RegisterStubEvent>(g2ms_stub_);
+		ms_node_session->registerService(&gs_service_impl_);
         for (auto& it : g_server_nomal_service)
         {
-            ms_node->registerService(it.get());
+            ms_node_session->registerService(it.get());
         }
-		ms_node->subscribe<OnConnected2ServerEvent>(*this);
-		ms_node->connect();
+		ms_node_session->subscribe<OnConnected2ServerEvent>(*this);
+		ms_node_session->connect();
 	}
 }
 
