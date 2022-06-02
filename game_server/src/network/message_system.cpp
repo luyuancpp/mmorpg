@@ -88,8 +88,8 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	auto ms = (*try_ms).lock();
-	if (nullptr == ms)
+	auto ms_node = (*try_ms).lock();
+	if (nullptr == ms_node)
 	{
 		LOG_DEBUG << "player gate not found " << registry.get<Guid>(player);
 		return;
@@ -98,7 +98,7 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_player_id(registry.get<Guid>(player));
-	ms->session_->Send(msg_wrapper);
+	ms_node->session_->Send(msg_wrapper);
 }
 
 void Send2MsPlayer(const google::protobuf::Message& message, EntityPtr& player)
@@ -106,13 +106,26 @@ void Send2MsPlayer(const google::protobuf::Message& message, EntityPtr& player)
 	Send2MsPlayer(message, (entt::entity)player);
 }
 
-void Send2Ms(const google::protobuf::Message& messag)
+void Send2Ms(const google::protobuf::Message& messag, uint32_t ms_node_id)
 {
-
+	auto ms_it = g_ms_nodes.find(ms_node_id);
+	if (ms_it == g_ms_nodes.end())
+	{
+		LOG_ERROR << " master not found" << ms_node_id;
+		return;
+	}
+	ms_it->second->session_->Send(messag);
 }
 
-void Send2Gate(const google::protobuf::Message& messag)
+void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id)
 {
-
+	auto gate_it = g_gate_nodes.find(gate_node_id);
+	if (gate_it == g_gate_nodes.end())
+	{
+		LOG_ERROR << " gate not found" << gate_node_id;
+		return;
+	}
+	auto& gate_node = registry.get<GateNodePtr>(gate_it->second);
+	gate_node->session_.Send(messag);
 }
 
