@@ -7,8 +7,6 @@
 #include "logic_proto/scene_server_player.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 
-PlayerCommonSystem g_player_common_sys;
-
 void PlayerCommonSystem::OnLogin(entt::entity player)
 {
 	auto try_enter_gs = registry.try_get<EnterGsComp>(player);
