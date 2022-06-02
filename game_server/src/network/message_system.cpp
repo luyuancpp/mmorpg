@@ -76,22 +76,21 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 	{
 		return;
 	}
-	auto try_ms = registry.try_get<MsNodeWPtr>(player);
-	if (nullptr == try_ms)
-	{
-		LOG_DEBUG << "player gate not found " << registry.get<Guid>(player);
-		return;
-	}
 	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
 	if (message_it == g_msgid.end())
 	{
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	auto ms_node = (*try_ms).lock();
+	auto ms_node = registry.get<MsNodePtr>(player);
 	if (nullptr == ms_node)
 	{
-		LOG_DEBUG << "player gate not found " << registry.get<Guid>(player);
+		LOG_DEBUG << "player master not found " << registry.get<Guid>(player);
+		return;
+	}
+	if (!ms_node->session_->connected())
+	{
+		LOG_DEBUG << "master disconnect" << registry.get<Guid>(player);
 		return;
 	}
 	msservice::PlayerNodeServiceRequest msg_wrapper;
