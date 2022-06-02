@@ -17,9 +17,9 @@
 
 #include "c2gw.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
-#include "src/pb/pbc/component_proto/player_async_comp.pb.h"
-#include "src/pb/pbc/component_proto/player_comp.pb.h"
-#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
+#include "component_proto/player_async_comp.pb.h"
+#include "component_proto/player_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 

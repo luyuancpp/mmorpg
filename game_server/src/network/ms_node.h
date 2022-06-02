@@ -9,23 +9,17 @@
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_stub.h"
 
-
 #include "component_proto/node_comp.pb.h"
-
-#include "ms_service.pb.h"
-
 
 using MasterSessionPtr = std::shared_ptr<RpcClient>;
 struct MsNode
 {
-	using MsStubNode = RpcStub<msservice::MasterNodeService_Stub>;
 	MsNode(){}
 
 	inline uint32_t node_id() const { return node_info_.node_id(); }
-
-	MsStubNode ms_stub_;
 	NodeInfo node_info_;
 	MasterSessionPtr session_;
+	EntityPtr ms_;
 };
 using MsNodePtr = std::shared_ptr<MsNode>;
 using MsNodeWPtr = std::weak_ptr<MsNode>;
