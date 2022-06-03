@@ -40,5 +40,5 @@ void PlayerSceneSystem::EnterGsScene(entt::entity player)
     message.mutable_scene_info()->CopyFrom(*p_scene_info);
     auto& player_session = registry.get<PlayerSession>(player);
     message.set_session_id(player_session.session_id());
-    Send2Gs(message, player_session.gs_node_id());
+    Send2GsPlayer(message, player);
 }

@@ -29,6 +29,6 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         {
             message.mutable_scene_info()->Add()->CopyFrom(registry.get<SceneInfo>(e));
         }
-        Send2PlayerViaGs(message, player);
+        Send2Player(message, player);
     }    
 }
