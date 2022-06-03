@@ -187,7 +187,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             return;
         }
 
-        EventLoop::getEventLoopOfCurrentThread()->runInLoop(
+        EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
                 ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
@@ -212,42 +212,17 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         if (conn->connected() &&
             IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
         {
-            EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&GameServer::Register2Master, this, master_session));
-            break;
-        }
-		else if (!conn->connected() &&
-                IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
-        {
-            g_ms_nodes.erase(ms_node->node_id());
-            registry.destroy(e);
+            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::Register2Master, this, master_session));
             break;
         }
     }
-
-	for (auto& it : g_ms_nodes)
-	{
-        auto& ms_node = it.second;
-		auto& master_session = ms_node->session_;
-		if (conn->connected() &&
-            IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
-		{
-			EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&GameServer::Register2Master, this, master_session));
-			break;
-		}
-		else if (!conn->connected() &&
-                 IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
-		{
-			g_ms_nodes.erase(ms_node->node_id());
-			break;
-		}
-	}
 
     if (nullptr != region_session_)
     {
 		if (conn->connected() && 
             IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 		{
-			EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&GameServer::Register2Region, this));
+			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::Register2Region, this));
 		}
 		else if (!conn->connected() &&
 			IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))

@@ -33,7 +33,7 @@ public:
 
 	const InetAddress& local_addr()const 
     {
-		if (!connected()) 
+		if (nullptr == client_.connection())
         {
             static InetAddress s;
             return s;
@@ -43,8 +43,8 @@ public:
 
     const InetAddress& peer_addr()const 
     { 
-		if (!connected())
-		{
+        if (nullptr == client_.connection())
+        {
 			static InetAddress s;
 			return s;
 		}
