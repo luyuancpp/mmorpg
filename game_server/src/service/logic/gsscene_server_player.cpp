@@ -13,6 +13,7 @@
 #include "src/system/player_scene_system.h"
 
 #include "component_proto/player_login_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -45,6 +46,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
 			return;
 
 		}
+        registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//登录更新gate
 		registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
         PlayerCommonSystem::OnPlayerLogin(player, request->enter_gs_type());
     }

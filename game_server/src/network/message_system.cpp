@@ -20,7 +20,7 @@ void Send2Player(const google::protobuf::Message& message, Guid player_id)
 		LOG_INFO << "player not found " << player_id;
 		return;
 	}
-	Send2Player(message, player_id);
+	Send2Player(message, it->second);
 }
 
 void Send2Player(const google::protobuf::Message& message, entt::entity player)

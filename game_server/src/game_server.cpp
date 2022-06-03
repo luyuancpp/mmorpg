@@ -205,16 +205,17 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         );
     }
 
-    for (auto e : registry.view<MsNodePtr>())
+    for (auto& it : g_ms_nodes)
     {
-        auto& ms_node = registry.get<MsNodePtr>(e);
+        auto& ms_node = it.second;
         auto& master_session = ms_node->session_;
         if (conn->connected() &&
             IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
         {
-            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::Register2Master, this, master_session));
+            EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&GameServer::Register2Master, this, master_session));
             break;
         }
+        // ms 走断线重连，不删除
     }
 
     if (nullptr != region_session_)
