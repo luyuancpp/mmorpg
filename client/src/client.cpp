@@ -12,7 +12,7 @@ void PlayerClient::onDisConenction()
     --c;
     if (c == 0)
     {
-        EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&EventLoop::quit, EventLoop::getEventLoopOfCurrentThread()));
+        EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&EventLoop::quit, EventLoop::getEventLoopOfCurrentThread()));
     }
 }
 

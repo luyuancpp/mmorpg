@@ -90,7 +90,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
 		{
 			return;
 		}
-        EventLoop::getEventLoopOfCurrentThread()->runInLoop(
+        EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
                 ServerInfoRpcRC c(std::make_shared<ServerInfoRpcClosure>());
@@ -109,7 +109,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
 		{
 			return;
 		}
-		EventLoop::getEventLoopOfCurrentThread()->runInLoop(
+		EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
 			{
 				auto& master_addr = master_session_->local_addr();
@@ -132,7 +132,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
             if (conn->connected())
             {
 				auto& gs_session = it.second;
-				EventLoop::getEventLoopOfCurrentThread()->runInLoop(
+				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
 					[this, &gs_session, &conn]() ->void
 					{
 						gsservice::ConnectRequest request;
