@@ -45,7 +45,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
         return;
     }
 	PlayerCommonSystem::OnLogin(player);
-	PlayerSceneSystem::EnterGsScene(player);		
+	PlayerSceneSystem::EnterScene(player);		
 }
 
 Guid MasterNodeServiceImpl::GetPlayerIdByConnId(uint64_t session_id)
