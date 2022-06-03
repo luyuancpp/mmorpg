@@ -5,5 +5,5 @@
 class PlayerSceneSystem
 {
 public:
-    static void EnterGsScene(entt::entity player);
+    static void EnterScene(entt::entity player);
 };

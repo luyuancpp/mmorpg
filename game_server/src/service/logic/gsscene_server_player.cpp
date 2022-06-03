@@ -9,6 +9,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/network/session.h"
+#include "src/network/gate_session.h"
 #include "src/system/player_common_system.h"
 #include "src/system/player_scene_system.h"
 
@@ -46,6 +47,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
 			return;
 
 		}
+        g_gate_sessions.emplace(request->session_id(), player);
         registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//登录更新gate
 		registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
         PlayerCommonSystem::OnPlayerLogin(player, request->enter_gs_type());
