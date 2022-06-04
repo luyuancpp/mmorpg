@@ -14,6 +14,7 @@ public:
 	EntityPtr();
 	inline  operator entt::entity() { return *entity_.get(); }
 	EntityWeakPtr to_weak() { return entity_; }
+    bool is_null()const {return nullptr == entity_; }
 private:
 	std::shared_ptr<entt::entity> entity_;
 };

@@ -20,7 +20,7 @@ public:
     EntityPtr GetPlayerPtr(Guid guid);
     bool HasPlayer(Guid guid) const { return g_players.find(guid) != g_players.end(); }
 
-    void EnterGame(Guid guid, const EntityPtr&& entity_id) { g_players.emplace(guid, entity_id); }
+    EntityPtr EnterGame(Guid guid);
     void LeaveGame(Guid guid);
 };
 

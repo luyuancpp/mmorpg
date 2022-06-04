@@ -24,6 +24,16 @@ EntityPtr PlayerList::GetPlayerPtr(Guid guid)
     return it->second;
 }
 
+EntityPtr PlayerList::EnterGame(Guid guid)
+{
+    auto ptr = GetPlayerPtr(guid);
+    if (!ptr.is_null())
+    {
+        return ptr;
+    }
+    return g_players.emplace(guid, EntityPtr()).first->second;
+}
+
 void PlayerList::LeaveGame(Guid guid)
 {
     //todo 断线不能马上下线，这里之后会改
