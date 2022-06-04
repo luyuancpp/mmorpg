@@ -10,7 +10,7 @@
 #include "logic_proto/scene_server_player.pb.h"
 #include "gs_service.pb.h"
 
-void PlayerSceneSystem::EnterGsScene(entt::entity player)
+void PlayerSceneSystem::EnterScene(entt::entity player)
 {
     if (entt::null == player)
     {

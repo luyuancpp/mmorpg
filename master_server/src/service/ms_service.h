@@ -12,16 +12,19 @@
 class MasterNodeServiceImpl : public msservice::MasterNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
+private:
 	using AccountMap = std::unordered_map<std::string, uint64_t>;
 
     using Ms2GwPlayerEnterGsRpcReplied = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
     void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied);
 
     Guid GetPlayerIdByConnId(uint64_t session_id);
-    entt::entity GetPlayerByConnId(uint64_t session_id);
+    entt::entity GetPlayerByConnId(uint64_t session_id);    
 
-    void OnConnidEnterGame(entt::entity conn, Guid player_id);
-private:
+    void OnSessionEnterGame(entt::entity conn, Guid player_id);
+
+    void InitPlayerSession(entt::entity player, uint64_t session_id);
+
 	AccountMap logined_accounts_;
 ///<<< END WRITING YOUR CODE
 public:

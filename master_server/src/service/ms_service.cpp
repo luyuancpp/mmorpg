@@ -79,10 +79,45 @@ entt::entity MasterNodeServiceImpl::GetPlayerByConnId(uint64_t session_id)
     return (*p_try_player);
 }
 
-void MasterNodeServiceImpl::OnConnidEnterGame(entt::entity conn, Guid player_id)
+void MasterNodeServiceImpl::OnSessionEnterGame(entt::entity conn, Guid player_id)
 {
     registry.emplace<EntityPtr>(conn, PlayerList::GetSingleton().GetPlayerPtr(player_id));
     registry.emplace<Guid>(conn, player_id);
+}
+
+void MasterNodeServiceImpl::InitPlayerSession(entt::entity player, uint64_t session_id)
+{
+    auto& player_session = registry.get_or_emplace<PlayerSession>(player);
+    player_session.gate_session_.set_session_id(session_id);
+    auto gate_it = g_gate_nodes.find(node_id(session_id));
+    if (gate_it == g_gate_nodes.end())
+    {
+		return;  
+    }
+    auto gate = registry.try_get<GateNodePtr>(gate_it->second);
+    if (nullptr == gate)
+    {
+		return;        
+    }
+	auto try_scene_entity = registry.try_get<SceneEntity>(player);
+	if (nullptr == try_scene_entity)
+	{
+		LOG_ERROR << "player scene empty" << registry.get<Guid>(player);
+		return;
+	}
+
+    auto* p_gs_data = registry.try_get<GsDataPtr>(try_scene_entity->scene_entity());
+    if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
+    {
+        // todo default
+		LOG_ERROR << "player " << registry.get<Guid>(player) << " enter default secne";
+    }
+	else
+	{
+		registry.get<PlayerSession>(player).gs_ = *p_gs_data;
+	}
+	
+	player_session.gate_ = *gate;
 }
 
 ///<<< END WRITING YOUR CODE
@@ -216,6 +251,8 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+
+	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	auto player = GetPlayerByConnId(request->session_id());
 	if (entt::null == player)
 	{
@@ -226,10 +263,14 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	{
 		logined_accounts_.erase(**try_acount);
 	}	
-	auto& player_session = registry.get<PlayerSession>(player);
-	auto it = g_gs_nodes.find(player_session.gs_node_id());
+	auto try_player_session = registry.try_get<PlayerSession>(player);
+	if (nullptr == try_player_session)//玩家已经断开连接了
+	{
+		return;
+	}
+	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
-	if (it == g_gs_nodes.end() ||  player_session.gate_node_id() != node_id(request->session_id()))
+	if (it == g_gs_nodes.end() ||  try_player_session->gate_node_id() != node_id(request->session_id()))
 	{
 		return;
 	}
@@ -301,16 +342,16 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE 
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
-    auto cit = g_gate_sessions.find(request->session_id());
-	if (cit == g_gate_sessions.end())
+    auto sit = g_gate_sessions.find(request->session_id());
+	if (sit == g_gate_sessions.end())
 	{
 		LOG_ERROR << "connection not found " << request->session_id();
 		return;
 	}
-	auto conn = cit->second;
+	auto session = sit->second;
 	auto player_id = request->player_id();
 	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
-	auto try_acount = registry.try_get<PlayerAccount>(conn);
+	auto try_acount = registry.try_get<PlayerAccount>(session);
 	if (nullptr != try_acount)
 	{
 		logined_accounts_.erase(**try_acount);
@@ -318,23 +359,13 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	if (entt::null == player)
 	{
 		//把旧的connection 断掉
-		PlayerList::GetSingleton().EnterGame(player_id, EntityPtr());
-		OnConnidEnterGame(conn, player_id);
-		player = PlayerList::GetSingleton().GetPlayer(player_id);
+		
+		OnSessionEnterGame(session, player_id);
+		auto player = PlayerList::GetSingleton().EnterGame(player_id);
 		registry.emplace<Guid>(player, player_id);
-		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(cit->second));
+		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(sit->second));
 		registry.emplace<EnterGsComp>(player).set_enter_gs_type(LOGIN_FIRST);
-		auto& player_session = registry.emplace<PlayerSession>(player);
-		player_session.gate_session_.set_session_id(request->session_id());
-		auto gate_it = g_gate_nodes.find(node_id(request->session_id()));
-		if (gate_it != g_gate_nodes.end())
-		{
-			auto gate = registry.try_get<GateNodePtr>(gate_it->second);
-			if (nullptr != gate)
-			{
-				player_session.gate_ = *gate;
-			}
-		}
+		
 		GetSceneParam getp;
 		getp.scene_confid_ = 1;
 		auto scene = ServerNodeSystem::GetMainSceneNotFull(getp);
@@ -342,20 +373,14 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		{
 			// todo default
 			LOG_INFO << "player " << player_id << " enter default secne";
-		}
-		auto* p_gs_data = registry.try_get<GsDataPtr>(scene);
-		if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
-		{
-			// todo default
-			LOG_INFO << "player " << player_id << " enter default secne";
-		}
-		auto& gs_data = *p_gs_data;
-		player_session.gs_ = gs_data;
-		auto it = g_gs_nodes.find(gs_data->node_id());
+		} 
+
         EnterSceneParam ep;
         ep.enterer_ = player;
         ep.scene_ = scene;
         ScenesSystem::GetSingleton().EnterScene(ep);//顶号的时候已经在场景里面了
+		InitPlayerSession(player, request->session_id());
+		auto it = g_gs_nodes.find(registry.get<PlayerSession>(player).gs_node_id());
 		if (it != g_gs_nodes.end())
 		{			
 			gsservice::EnterGsRequest message;
@@ -370,33 +395,18 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		//todo换场景的过程中被顶了
 		
 		//告诉账号被顶
-		OnConnidEnterGame(conn, player_id);
-		auto& player_session = registry.get<PlayerSession>(player);
+		OnSessionEnterGame(session, player_id);
+        //断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
+        auto player_session = registry.try_get<PlayerSession>(player);
+        if (nullptr != player_session)
+        {
+            gwservice::KickConnRequest message;
+            message.set_session_id(player_session->gate_session_.session_id());
+            Send2Gate(message, player_session->gate_node_id());
+        }
+		InitPlayerSession(player, request->session_id());
 		registry.emplace_or_replace<EnterGsComp>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
-		gwservice::KickConnRequest message;
-		message.set_session_id(player_session.gate_session_.session_id());
-		Send2Gate(message, player_session.gate_node_id());
-		player_session.gate_session_.set_session_id(request->session_id());
-		auto gate_id = node_id(request->session_id());
-		auto gate_it = g_gate_nodes.find(gate_id);
-		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
-		if (gate_it != g_gate_nodes.end() && player_session.gate_node_id() != gate_id)
-		{
-			auto gate = registry.try_get<GateNodePtr>(gate_it->second);
-			if (nullptr != gate)
-			{
-				player_session.gate_ = *gate;
-			}
-		}
-		auto scene = registry.get<SceneEntity>(player).scene_entity();
-		auto* p_gs_data = registry.try_get<GsDataPtr>(scene);
-		if (nullptr == p_gs_data)
-		{
-			// todo default
-			LOG_INFO << "player " << player_id << " enter default secne";
-		}
-		auto& gs_data = *p_gs_data;
-		auto it = g_gs_nodes.find(gs_data->node_id());
+		auto it = g_gs_nodes.find(registry.get<PlayerSession>(player).gs_node_id());
 		if (it != g_gs_nodes.end())
 		{
 			gsservice::EnterGsRequest message;

@@ -309,16 +309,16 @@ def genmsplayerservcielist(filename):
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
-        if service.find('serverplayer') < 0:
+        if service.lower().find('serverplayer') < 0:
             continue
-        newstr += 'class ' + service.split('.')[1] + 'Impl : public ' + service.replace('.', '::')  + '{};\n'
+        newstr += 'class ' + service + 'OpenImpl : public '  + service + '{};\n'
     newstr += 'void InitPlayerServcie()\n{\n'
     for service in local.playerservicearray:
-        if service.find('serverplayer') < 0:
+        if service.lower().find('serverplayer') < 0:
             continue
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
-        newstr += ', std::make_unique<' + service.split('.')[0] + '::' + service.split('.')[1] + 'Impl>(new '
-        newstr +=  service.split('.')[1] + 'Impl));\n'
+        newstr += ', std::make_unique<' + service + 'Impl>(new '
+        newstr +=  service.replace('.', '') + 'OpenImpl));\n'
     newstr += '}\n'
     with open(fullfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
