@@ -10,7 +10,7 @@ using namespace common;
 
 deploy::DeployServer* g_deploy_server = nullptr;
 
-double kScanOverSeconds = 3600;//扫描半个小时，特别注意，没有好的办法
+double kScanOverSeconds = 60;//扫描半个小时，特别注意，没有好的办法
 
 namespace deploy
 {

@@ -99,7 +99,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 
         //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了
         auto& change_gs_scene = registry.emplace<AfterChangeGsEnterScene>(player);
-        change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<Guid>(scene));
+        change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<SceneInfo>(scene).scene_id());
     }
    
  
@@ -149,6 +149,9 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
 		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
 		return;
 	}
+
+  
+
 	EnterSceneParam ep;
 	ep.enterer_ = player;
 	ep.scene_ = scene;
@@ -160,6 +163,19 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
 		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
 		return;
 
+    }
+    else
+    {
+        auto* p_gs_data = registry.try_get<GsDataPtr>(scene);
+        if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
+        {
+            // todo default
+            LOG_ERROR << "player " << registry.get<Guid>(player) << " enter default secne";
+        }
+        else
+        {
+            try_player_session->gs_ = *p_gs_data;
+        }
     }
 	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
 	if (it != g_gs_nodes.end())

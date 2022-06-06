@@ -42,8 +42,12 @@ void PlayerList::LeaveGame(Guid guid)
     {
         return;
     }
+    auto player = it->second;
+    if (nullptr == registry.try_get<SceneEntity>(player))
+    {
+    }
     LeaveSceneParam lsp;
-    lsp.leaver_ = it->second;
+    lsp.leaver_ = player;
     ScenesSystem::GetSingleton().LeaveScene(lsp);
 	g_players.erase(it);
 }
