@@ -15,8 +15,19 @@ message Ms2GsEnterSceneRequest
   uint32 enter_gs_type = 3;
 }
 
+message Gs2MsLeaveSceneRequest
+{
+}
+
+message Ms2GsLeaveSceneRequest
+{
+  bool change_gs = 1;
+}
+
 service ServerPlayerSceneService 
 {
   rpc EnterSceneGs2Ms (Gs2MsEnterSceneRequest) returns (google.protobuf.Empty);
   rpc EnterSceneMs2Gs (Ms2GsEnterSceneRequest) returns (google.protobuf.Empty);
+  rpc LeaveSceneGs2Ms (Gs2MsLeaveSceneRequest) returns (google.protobuf.Empty);
+  rpc LeaveSceneMs2Gs (Ms2GsLeaveSceneRequest) returns (google.protobuf.Empty);
 }

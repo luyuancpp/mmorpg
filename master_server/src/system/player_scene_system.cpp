@@ -38,7 +38,19 @@ void PlayerSceneSystem::EnterScene(entt::entity player)
         return;
     }
     message.mutable_scene_info()->CopyFrom(*p_scene_info);
-    auto& player_session = registry.get<PlayerSession>(player);
-    message.set_session_id(player_session.session_id());
+    auto try_player_session = registry.try_get<PlayerSession>(player);
+    if (nullptr == try_player_session)
+    {
+        LOG_ERROR << "player session not valid" << player_id;
+        return;
+    }
+    message.set_session_id(try_player_session->session_id());
+    Send2GsPlayer(message, player);
+}
+
+void PlayerSceneSystem::LeaveScene(entt::entity player, bool change_gs)
+{
+    Ms2GsLeaveSceneRequest message;
+    message.set_change_gs(change_gs);
     Send2GsPlayer(message, player);
 }

@@ -6,4 +6,5 @@ class PlayerSceneSystem
 {
 public:
     static void EnterScene(entt::entity player);
+    static void LeaveScene(entt::entity player, bool change_gs);
 };

@@ -11,6 +11,12 @@ public:
     void EnterSceneMs2Gs(entt::entity player,
         const ::Ms2GsEnterSceneRequest* request,
         ::google::protobuf::Empty* response);
+    void LeaveSceneGs2Ms(entt::entity player,
+        const ::Gs2MsLeaveSceneRequest* request,
+        ::google::protobuf::Empty* response);
+    void LeaveSceneMs2Gs(entt::entity player,
+        const ::Ms2GsLeaveSceneRequest* request,
+        ::google::protobuf::Empty* response);
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
     entt::entity player,
     const ::google::protobuf::Message* request,
@@ -25,6 +31,16 @@ public:
         case 1:
             EnterSceneMs2Gs(player,
             ::google::protobuf::internal::DownCast<const ::Ms2GsEnterSceneRequest*>( request),
+            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
+        break;
+        case 2:
+            LeaveSceneGs2Ms(player,
+            ::google::protobuf::internal::DownCast<const ::Gs2MsLeaveSceneRequest*>( request),
+            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
+        break;
+        case 3:
+            LeaveSceneMs2Gs(player,
+            ::google::protobuf::internal::DownCast<const ::Ms2GsLeaveSceneRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         default:

@@ -37,8 +37,12 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	{
 		return;
 	}
-	auto player_session = registry.get<PlayerSession>(player);
-	auto gs = player_session.gs_.lock();
+	auto try_player_session = registry.try_get<PlayerSession>(player);
+	if (nullptr == try_player_session)
+	{
+		return;
+	}
+	auto gs = try_player_session->gs_.lock();
 	if (nullptr == gs)
 	{
 		LOG_INFO << "gs not found ";
