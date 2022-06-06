@@ -22,7 +22,7 @@ void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t scene_id)
 	EnterSceneParam ep;
 	ep.enterer_ = player;
 	ep.scene_ = scene;
-	g_entity_scene_system.EnterScene(ep);
+	EntitySceneSystem::EnterScene(ep);
 
 	EnterSeceneS2C message;
 	message.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(scene));
@@ -31,6 +31,8 @@ void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t scene_id)
 
 void PlayerSceneSystem::LeaveScene(entt::entity player)
 {
-
+	LeaveSceneParam lp;
+	lp.leaver_ = player;
+	EntitySceneSystem::LeaveScene(player);
 }
 

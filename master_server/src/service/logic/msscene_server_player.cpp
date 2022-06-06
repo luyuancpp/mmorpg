@@ -10,8 +10,8 @@
 #include "src/game_logic/tips_id.h"
 #include "src/network/player_session.h"
 #include "src/system/player_scene_system.h"
+#include "src/system/player_tip_system.h"
 
-#include "src/pb/pbc/logic_proto/common_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -29,9 +29,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         scene = ServerNodeSystem::GetWeightRoundRobinMainScene(getp);
         if (entt::null == scene)
         {
-            TipsS2C message;
-            message.mutable_tips()->set_id(kRetEnterSceneSceneFull);
-            Send2Player(message, player);
+            PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
             return;
         }
         scene_id = registry.get<SceneInfo>(scene).scene_id();
@@ -41,25 +39,30 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         scene = ScenesSystem::GetSingleton().get_scene(scene_id);
         if (entt::null == scene)
         {
-            TipsS2C message;
-            message.mutable_tips()->set_id(kRetEnterSceneSceneFull);
-            Send2Player(message, player);
+            PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
             return;
         }
     }
-
     CheckEnterSceneParam csp;
     csp.scene_id_ = scene_id;
     csp.player_ = player;
     auto ret = ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp);
     if (kRetOK != ret)
     {
-        TipsS2C message;
-        message.mutable_tips()->set_id(ret);
-        Send2Player(message, player);
+        PlayerTipSystem::Tip(player, ret, {});
         return;
     }
-    
+    //检测是不是同一个场景
+    auto try_scene_entity = registry.try_get<SceneEntity>(player);
+    if (nullptr != try_scene_entity)
+    {
+        if (scene != entt::null && scene == try_scene_entity->scene_entity())
+        {
+			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
+			return;
+        }		
+    }
+
     auto try_scene_gs = registry.try_get<GsDataPtr>(scene);
     auto p_player_gs = registry.try_get<PlayerSession>(player);
     if (nullptr == try_scene_gs || nullptr == p_player_gs)
@@ -79,7 +82,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         ScenesSystem::GetSingleton().LeaveScene(lp);
         PlayerSceneSystem::LeaveScene(player, false);
         ScenesSystem::GetSingleton().EnterScene(ep);
-        PlayerSceneSystem::EnterScene(player);
+        PlayerSceneSystem::OnEnterScene(player);
     }
     else
     {
@@ -88,6 +91,9 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         //切换gs  存储完毕之后才能进入下一个场景
         ScenesSystem::GetSingleton().LeaveScene(lp);
         PlayerSceneSystem::LeaveScene(player, true);
+
+        //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了
+
     }
    
  

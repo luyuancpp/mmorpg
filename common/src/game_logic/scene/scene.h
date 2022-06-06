@@ -7,6 +7,23 @@
 #include "src/util/snow_flake.h"
 #include "src/game_logic/scene/servernode_system.h"
 
+struct EnterSceneParam
+{
+	entt::entity scene_{ entt::null };
+	entt::entity enterer_{ entt::null };
+};
+
+struct CheckEnterSceneParam
+{
+	Guid scene_id_{ kInvalidGuid };
+	entt::entity player_{ entt::null };
+};
+
+struct LeaveSceneParam
+{
+	entt::entity leaver_{ entt::null };
+};
+
 class ScenesSystem : public EntityPtr
 {
 public:
