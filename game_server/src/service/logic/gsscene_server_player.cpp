@@ -58,4 +58,20 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
+void ServerPlayerSceneServiceImpl::LeaveSceneGs2Ms(entt::entity player,
+    const ::Gs2MsLeaveSceneRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ServerPlayerSceneServiceImpl::LeaveSceneMs2Gs(entt::entity player,
+    const ::Ms2GsLeaveSceneRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
 ///<<<rpc end

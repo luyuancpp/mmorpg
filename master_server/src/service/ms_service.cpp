@@ -359,9 +359,8 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	if (entt::null == player)
 	{
 		//把旧的connection 断掉
-		
-		OnSessionEnterGame(session, player_id);
 		auto player = PlayerList::GetSingleton().EnterGame(player_id);
+		OnSessionEnterGame(session, player_id);
 		registry.emplace<Guid>(player, player_id);
 		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(sit->second));
 		registry.emplace<EnterGsComp>(player).set_enter_gs_type(LOGIN_FIRST);

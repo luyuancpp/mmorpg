@@ -26,10 +26,10 @@ EntityPtr PlayerList::GetPlayerPtr(Guid guid)
 
 EntityPtr PlayerList::EnterGame(Guid guid)
 {
-    auto ptr = GetPlayerPtr(guid);
-    if (!ptr.is_null())
+    auto it = g_players.find(guid);
+    if (it != g_players.end())
     {
-        return ptr;
+        return it->second;
     }
     return g_players.emplace(guid, EntityPtr()).first->second;
 }

@@ -71,22 +71,47 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     //同gs之间的切换
     if (p_player_gs->gs_node_id() == p_scene_gs->node_id())
     {
+        LeaveSceneParam lp;
+        lp.leaver_ = player;
         EnterSceneParam ep;
         ep.enterer_ = player;
         ep.scene_ = scene;
+        ScenesSystem::GetSingleton().LeaveScene(lp);
+        PlayerSceneSystem::LeaveScene(player, false);
         ScenesSystem::GetSingleton().EnterScene(ep);
         PlayerSceneSystem::EnterScene(player);
     }
     else
     {
-
+        LeaveSceneParam lp;
+        lp.leaver_ = player;
+        //切换gs  存储完毕之后才能进入下一个场景
+        ScenesSystem::GetSingleton().LeaveScene(lp);
+        PlayerSceneSystem::LeaveScene(player, true);
     }
-
+   
+ 
 ///<<< END WRITING YOUR CODE
 }
 
 void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
     const ::Ms2GsEnterSceneRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ServerPlayerSceneServiceImpl::LeaveSceneGs2Ms(entt::entity player,
+    const ::Gs2MsLeaveSceneRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ServerPlayerSceneServiceImpl::LeaveSceneMs2Gs(entt::entity player,
+    const ::Ms2GsLeaveSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
