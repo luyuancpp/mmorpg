@@ -44,7 +44,12 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
         LOG_ERROR << "player not found " << registry.get<Guid>(player);
         return;
     }
-	PlayerCommonSystem::OnLogin(player);
+	auto try_enter_gs = registry.try_get<EnterGsComp>(player);
+	if (nullptr != try_enter_gs && try_enter_gs->enter_gs_type() != LOGIN_NONE)
+	{
+		PlayerCommonSystem::OnLogin(player);
+	}
+	
 	PlayerSceneSystem::OnEnterScene(player);		
 }
 
@@ -130,7 +135,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	response->set_master_node_id(g_ms_node->master_node_id());
+	response->set_master_node_id(master_node_id());
 	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity gs_entity{ entt::null };
@@ -385,7 +390,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			gsservice::EnterGsRequest message;
 			message.set_player_id(player_id);
 			message.set_session_id(request->session_id());
-			message.set_ms_node_id(g_ms_node->master_node_id());
+			message.set_ms_node_id(master_node_id());
 			registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
 		}
 	}
@@ -411,7 +416,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			gsservice::EnterGsRequest message;
             message.set_player_id(player_id);
             message.set_session_id(request->session_id());
-            message.set_ms_node_id(g_ms_node->master_node_id());
+            message.set_ms_node_id(master_node_id());
             registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
 		}
 	}

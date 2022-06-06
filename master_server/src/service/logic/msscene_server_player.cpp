@@ -8,12 +8,15 @@
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/game_logic/tips_id.h"
+#include "src/network/gs_node.h"
 #include "src/network/player_session.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
 
 #include "component_proto/scene_comp.pb.h"
+#include "gs_service.pb.h"
 
+using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -143,15 +146,30 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
     //todo异步加载完场景已经不在了scene了
 	if (entt::null == scene)
 	{
-
-		LOG_ERROR << "change gs scene not found or destroy" << registry.get<Guid>(player);
+		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
 		return;
 	}
 	EnterSceneParam ep;
 	ep.enterer_ = player;
 	ep.scene_ = scene;
 	ScenesSystem::GetSingleton().EnterScene(ep);
-	PlayerSceneSystem::OnEnterScene(player);
+
+    auto try_player_session = registry.try_get<PlayerSession>(player);
+    if (nullptr == try_player_session)
+	{
+		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
+		return;
+
+    }
+	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
+	if (it != g_gs_nodes.end())
+	{
+		gsservice::EnterGsRequest message;
+		message.set_player_id(registry.get<Guid>(player));
+		message.set_session_id(try_player_session->session_id());
+		message.set_ms_node_id(master_node_id());
+		registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
+	}
 ///<<< END WRITING YOUR CODE
 }
 

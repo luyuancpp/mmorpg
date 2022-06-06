@@ -10,17 +10,18 @@
 void PlayerCommonSystem::OnLogin(entt::entity player)
 {
 	auto try_enter_gs = registry.try_get<EnterGsComp>(player);
-	if (nullptr != try_enter_gs)
+	if (nullptr == try_enter_gs)
 	{
-		if (try_enter_gs->enter_gs_type() == LOGIN_FIRST)
-		{
-		}
-		else if (try_enter_gs->enter_gs_type() == LOGIN_REPLACE)//顶号
-		{
-		}
-		else if (try_enter_gs->enter_gs_type() == LOGIN_RECONNET)//重连
-		{
-		}
+		return;
+	}
+	if (try_enter_gs->enter_gs_type() == LOGIN_FIRST)
+	{
+	}
+	else if (try_enter_gs->enter_gs_type() == LOGIN_REPLACE)//顶号
+	{
+	}
+	else if (try_enter_gs->enter_gs_type() == LOGIN_RECONNET)//重连
+	{
 	}
     //给客户端发所有场景消息
     {
