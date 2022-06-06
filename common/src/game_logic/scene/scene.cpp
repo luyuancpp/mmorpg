@@ -174,6 +174,11 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 {
     auto leave_player = param.leaver_;
+    if (nullptr == registry.try_get<SceneEntity>(leave_player))
+    {
+        LOG_ERROR << "leave scene empty";
+        return;
+    }
     auto& player_scene_entity = registry.get<SceneEntity>(leave_player);
     auto scene_entity = player_scene_entity.scene_entity();
     registry.get<ScenePlayers>(scene_entity).erase(leave_player);

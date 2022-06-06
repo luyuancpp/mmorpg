@@ -48,11 +48,14 @@ void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& me
 	//告诉ms 保存完毕，可以切换场景了
 	Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
 	Send2MsPlayer(save_complete_message, player_id);
+
+	g_players.erase(player_id);//存储完毕从gs删除玩家
 }
 
 void PlayerCommonSystem::SavePlayer(entt::entity player)
 {
-	PlayerDataRedisSystemPtr::element_type::MessageValuePtr pb;
+	using SaveMessagePtr = PlayerDataRedisSystemPtr::element_type::MessageValuePtr;
+	SaveMessagePtr pb = std::make_shared<SaveMessagePtr::element_type>();
 
 	pb->set_player_id(registry.get<Guid>(player));
 	pb->mutable_pos()->CopyFrom(registry.get<Vector3>(player));
