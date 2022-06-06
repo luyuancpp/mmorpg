@@ -12,6 +12,8 @@
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
 
+#include "component_proto/scene_comp.pb.h"
+
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -52,7 +54,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         PlayerTipSystem::Tip(player, ret, {});
         return;
     }
-    //检测是不是同一个场景
+    //您当前就在这个场景，无需切换
     auto try_scene_entity = registry.try_get<SceneEntity>(player);
     if (nullptr != try_scene_entity)
     {
@@ -93,7 +95,8 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         PlayerSceneSystem::LeaveScene(player, true);
 
         //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了
-
+        auto& change_gs_scene = registry.emplace<AfterChangeGsEnterScene>(player);
+        change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<Guid>(scene));
     }
    
  
@@ -121,6 +124,34 @@ void ServerPlayerSceneServiceImpl::LeaveSceneMs2Gs(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::entity player,
+    const ::Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+    auto try_change_gs_enter_scene = registry.try_get<AfterChangeGsEnterScene>(player);
+    if (nullptr == try_change_gs_enter_scene)
+    {
+        LOG_ERROR << "change gs scene compnent null" << registry.get<Guid>(player);
+        return;
+    }
+	auto scene = ScenesSystem::GetSingleton().get_scene(try_change_gs_enter_scene->scene_info().scene_id());
+
+    //todo异步加载完场景已经不在了scene了
+	if (entt::null == scene)
+	{
+
+		LOG_ERROR << "change gs scene not found or destroy" << registry.get<Guid>(player);
+		return;
+	}
+	EnterSceneParam ep;
+	ep.enterer_ = player;
+	ep.scene_ = scene;
+	ScenesSystem::GetSingleton().EnterScene(ep);
+	PlayerSceneSystem::OnEnterScene(player);
 ///<<< END WRITING YOUR CODE
 }
 

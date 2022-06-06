@@ -19,8 +19,6 @@ public:
 
 	static void OnAsyncSavePlayerDb(Guid player_id, player_database& message);
 
-	static void LoadPlayer(entt::entity player);
-
 	static void SavePlayer(entt::entity player);
 
 	static void EnterGs(entt::entity player, const EnterGsInfo& enter_info);

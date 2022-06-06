@@ -5,3 +5,9 @@ message SceneInfo
   uint32 scene_confid = 1;
   uint64 scene_id = 2;
 }
+
+message AfterChangeGsEnterScene
+{
+  SceneInfo scene_info = 1;
+  uint64 change_timestamp = 2;
+}

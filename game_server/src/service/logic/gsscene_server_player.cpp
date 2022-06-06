@@ -82,4 +82,12 @@ void ServerPlayerSceneServiceImpl::LeaveSceneMs2Gs(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
+void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::entity player,
+    const ::Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
 ///<<<rpc end
