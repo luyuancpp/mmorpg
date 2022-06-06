@@ -27,6 +27,11 @@ using namespace net;
 
 MasterServer* g_ms_node = nullptr;
 
+uint32_t master_node_id()
+{
+	return g_ms_node->master_node_id();
+}
+
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<MessageSyncRedisClient>())
