@@ -1,5 +1,5 @@
-#ifndef COMMON_SRC_RETURN_CODE_ERROR_CODE
-#define COMMON_SRC_RETURN_CODE_ERROR_CODE
+#ifndef COMMON_SRC_tip_code_ERROR_CODE
+#define COMMON_SRC_tip_code_ERROR_CODE
 
 #include <cstdint>
 #include <string>
@@ -39,6 +39,8 @@ enum  EnumCode : uint32_t
     kRetEnterSceneServerType = 4005,//当前服务器不可切换场景
     kRetEnterSceneParamError = 4006,//换场景参数错误
     kRetEnterSceneSceneFull = 4007,//场景已经满了不能切换
+    kRetEnterSceneSceneNotFound = 4008,//您所要切换的场景不存在
+    kRetEnterSceneYouInCurrentScene = 4009,//您当前就在这个场景，无需切换
 
     //Team
     kRetTeamNotInApplicants = 5000,
@@ -90,18 +92,18 @@ if (ret != kRetOK)\
 }\
 }
 
-#define  CheckReturnCloseureError(return_code)\
-if (return_code != kRetOK)\
+#define  CheckReturnCloseureError(tip_code)\
+if (tip_code != kRetOK)\
 {\
-    response->mutable_error()->set_id(return_code);\
+    response->mutable_error()->set_id(tip_code);\
     done->Run();\
     return;\
 }\
 
-#define CheckCondtion(condition, return_code)\
+#define CheckCondtion(condition, tip_code)\
 if (condition)\
 {\
-     return  return_code; \
+     return  tip_code; \
 }\
 
 #define  ReturnCloseureError(f)\
@@ -111,11 +113,11 @@ return;
 
 #define ReturnCloseureOK ReturnCloseureError(kRetOK);
 
-#define  ReturnAutoCloseureError(return_code)\
-if (return_code != kRetOK)\
+#define  ReturnAutoCloseureError(tip_code)\
+if (tip_code != kRetOK)\
 {\
-    response->mutable_error()->set_id(return_code);\
+    response->mutable_error()->set_id(tip_code);\
     return;\
 }\
 
-#endif // !COMMON_SRC_RETURN_CODE_ERROR_CODE
+#endif // !COMMON_SRC_tip_code_ERROR_CODE

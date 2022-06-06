@@ -7,26 +7,9 @@
 static const std::size_t kMaxServerPlayerSize = 2000;
 static const std::size_t kMaxScenePlayerSize = 1000;
 
-struct EnterSceneParam
-{
-    entt::entity scene_{ entt::null };
-    entt::entity enterer_{ entt::null };
-};
-
-struct CheckEnterSceneParam
-{
-	Guid scene_id_{kInvalidGuid };
-	entt::entity player_{ entt::null };
-};
-
-struct LeaveSceneParam
-{
-    entt::entity leaver_{ entt::null };
-};
-
 struct GetSceneParam
 {
-    uint32_t scene_confid_{0};
+	uint32_t scene_confid_{ 0 };
 };
 
 struct ServerPressureParam

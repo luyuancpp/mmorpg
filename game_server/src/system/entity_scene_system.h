@@ -7,10 +7,8 @@ struct EnterSceneParam;
 class EntitySceneSystem
 {
 public:
-    void EnterScene(const EnterSceneParam& param);
-    void OnEnterScene(entt::entity ent);
-    void LeaveScene(entt::entity ent);
-    void OnLeaveScene(entt::entity ent);
+    static void EnterScene(const EnterSceneParam& param);
+    static void OnEnterScene(entt::entity ent);
+    static void LeaveScene(entt::entity ent);
+    static void OnLeaveScene(entt::entity ent);
 };
-
-extern EntitySceneSystem g_entity_scene_system;
