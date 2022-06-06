@@ -4,12 +4,14 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_session.h"
 #include "src/network/gate_node.h"
+#include "src/network/message_system.h"
 #include "src/network/ms_node.h"
 #include "src/network/rpc_stub.h"
 #include "src/network/session.h"
 
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
+#include "logic_proto/scene_server_player.pb.h"
 #include "ms_service.pb.h"
 
 PlayerDataRedisSystemPtr g_player_data_redis_system;
@@ -44,12 +46,8 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& message)
 {
 	//告诉ms 保存完毕，可以切换场景了
-
-}
-
-void PlayerCommonSystem::LoadPlayer(entt::entity player)
-{
-	
+	Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
+	Send2MsPlayer(save_complete_message, player_id);
 }
 
 void PlayerCommonSystem::SavePlayer(entt::entity player)
@@ -61,7 +59,6 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 
 	g_player_data_redis_system->Save(pb, registry.get<Guid>(player));
 }
-
 
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
