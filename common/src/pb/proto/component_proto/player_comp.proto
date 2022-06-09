@@ -19,3 +19,7 @@ message NormalLogin
 message CoverPlayerLogin
 {
 }
+
+message Player
+{
+}
