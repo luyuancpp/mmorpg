@@ -19,3 +19,6 @@
 [submodule "muduolinux"]
 	path = third_party/muduo-linux
 	url = https://github.com/chenshuo/muduo.git
+[submodule "protobuf"]
+	path = third_party/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git	
