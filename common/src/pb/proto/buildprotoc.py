@@ -11,6 +11,10 @@ from os import system
 
 md5str = 'md5'
 
+srcdir = '../pbc/'
+if not os.path.exists(srcdir):
+    os.makedirs(srcdir)
+
 def gen_protoc(walkdir, protobufdir, dest_dir):
     for filename in os.listdir(walkdir):
         if not (filename[-6:].lower() == '.proto'):
