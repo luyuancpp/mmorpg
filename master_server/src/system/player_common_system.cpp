@@ -9,7 +9,7 @@
 
 void PlayerCommonSystem::OnLogin(entt::entity player)
 {
-	auto try_enter_gs = registry.try_get<EnterGsComp>(player);
+	auto try_enter_gs = registry.try_get<EnterGsFlag>(player);
 	if (nullptr == try_enter_gs)
 	{
 		return;

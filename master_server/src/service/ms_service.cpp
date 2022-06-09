@@ -29,6 +29,7 @@
 
 #include "gs_service.pb.h"
 #include "logic_proto/scene_normal.pb.h"
+#include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
@@ -44,7 +45,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcRepli
         LOG_ERROR << "player not found " << registry.get<Guid>(player);
         return;
     }
-	auto try_enter_gs = registry.try_get<EnterGsComp>(player);
+	auto try_enter_gs = registry.try_get<EnterGsFlag>(player);
 	if (nullptr != try_enter_gs && try_enter_gs->enter_gs_type() != LOGIN_NONE)
 	{
 		PlayerCommonSystem::OnLogin(player);
@@ -367,8 +368,9 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		auto player = PlayerList::GetSingleton().EnterGame(player_id);
 		OnSessionEnterGame(session, player_id);
 		registry.emplace<Guid>(player, player_id);
+		registry.emplace<Player>(player, player_id);
 		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(sit->second));
-		registry.emplace<EnterGsComp>(player).set_enter_gs_type(LOGIN_FIRST);
+		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 		
 		GetSceneParam getp;
 		getp.scene_confid_ = 1;
@@ -409,7 +411,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
             Send2Gate(message, player_session->gate_node_id());
         }
 		InitPlayerSession(player, request->session_id());
-		registry.emplace_or_replace<EnterGsComp>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
+		registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
 		auto it = g_gs_nodes.find(registry.get<PlayerSession>(player).gs_node_id());
 		if (it != g_gs_nodes.end())
 		{
