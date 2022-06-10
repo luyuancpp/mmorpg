@@ -134,12 +134,12 @@ def getallconfig():
                         
         s =  '#ifndef all_config_h\n'                      
         s += '#define all_config_h\n'
-        s += 'void loadallconfig();\n'
+        s += 'void LoadAllConfig();\n'
         s += '#endif// all_config_h\n'
         scpp = '#include "all_config.h"\n'  
         for item in sheetnames :
                 scpp += '#include "%s_config.h"\n' % (item)               
-        scpp += 'void loadallconfig()\n{\n'
+        scpp += 'void LoadAllConfig()\n{\n'
         for item in sheetnames :
                 scpp += '%s_config::GetSingleton().load();\n' % (item)
                 #print(item)

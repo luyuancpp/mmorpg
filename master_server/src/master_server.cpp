@@ -176,8 +176,6 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
 			break;
 		}
     }
-
-
 }
 
 void MasterServer::InitConfig()
@@ -185,7 +183,7 @@ void MasterServer::InitConfig()
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     RegionConfig::GetSingleton().Load("region.json");
-    loadallconfig();
+	LoadAllConfig();
 }
 
 void MasterServer::InitGlobalEntities()
