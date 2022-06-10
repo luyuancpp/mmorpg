@@ -34,8 +34,8 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
     if (request->enter_gs_type() != LOGIN_NONE )
     {
 		auto gate_node_id = node_id(request->session_id());
-		auto gate_it = g_gate_nodes.find(gate_node_id);
-		if (gate_it == g_gate_nodes.end())//test
+		auto gate_it = g_gate_nodes->find(gate_node_id);
+		if (gate_it == g_gate_nodes->end())//test
 		{
             LOG_ERROR << " gate not found " << gate_node_id;
             return;
