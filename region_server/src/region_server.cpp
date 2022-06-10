@@ -92,12 +92,12 @@ namespace region
 				auto gsnode = registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
 				if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGsNode)
 				{
-					g_gs_nodes.erase((*gsnode)->node_info_.node_id());
+					g_gs_nodes->erase((*gsnode)->node_info_.node_id());
 				}
 				auto msnode = registry.try_get<MsNodePtr>(e);//如果是gate
 				if (nullptr != msnode && (*msnode)->node_info_.node_type() == kMasterNode)
 				{
-                    g_ms_nodes.erase((*msnode)->node_info_.node_id());
+                    g_ms_nodes->erase((*msnode)->node_info_.node_id());
 				}
 				registry.destroy(e);
 				break;
