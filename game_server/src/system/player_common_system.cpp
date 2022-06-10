@@ -65,8 +65,8 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
-	auto msit = g_ms_nodes.find(enter_info.ms_node_id());
-	if (msit == g_ms_nodes.end())
+	auto msit = g_ms_nodes->find(enter_info.ms_node_id());
+	if (msit == g_ms_nodes->end())
 	{
 		LOG_ERROR << " gate not found" << enter_info.ms_node_id();
 		return;

@@ -118,7 +118,7 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRC cp)
 	{
 		auto& masterinfo = regionmaster.masters(i);
 		InetAddress master_addr(masterinfo.ip(), masterinfo.port());
-		auto it = g_ms_nodes.emplace(masterinfo.id(), std::make_shared<MsNode>());
+		auto it = g_ms_nodes->emplace(masterinfo.id(), std::make_shared<MsNode>());
 		auto& ms = *it.first->second;
 		ms.session_ = std::make_shared<RpcClient>(loop_, master_addr);
 		ms.node_info_.set_node_id(masterinfo.id());
@@ -205,7 +205,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         );
     }
 
-    for (auto& it : g_ms_nodes)
+    for (auto& it : *g_ms_nodes)
     {
         auto& ms_node = it.second;
         auto& master_session = ms_node->session_;
@@ -255,7 +255,7 @@ void GameServer::receive(const OnBeConnectedEvent& es)
 			auto gatenode = registry.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateWayNode)
 			{
-                g_gate_nodes.erase((*gatenode)->node_info_.node_id());
+                g_gate_nodes->erase((*gatenode)->node_info_.node_id());
 			}
 			registry.destroy(e);
 			break;

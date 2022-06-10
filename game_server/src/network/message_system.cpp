@@ -107,8 +107,8 @@ void Send2MsPlayer(const google::protobuf::Message& message, EntityPtr& player)
 
 void Send2Ms(const google::protobuf::Message& messag, uint32_t ms_node_id)
 {
-	auto ms_it = g_ms_nodes.find(ms_node_id);
-	if (ms_it == g_ms_nodes.end())
+	auto ms_it = g_ms_nodes->find(ms_node_id);
+	if (ms_it == g_ms_nodes->end())
 	{
 		LOG_ERROR << " master not found" << ms_node_id;
 		return;
@@ -118,8 +118,8 @@ void Send2Ms(const google::protobuf::Message& messag, uint32_t ms_node_id)
 
 void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id)
 {
-	auto gate_it = g_gate_nodes.find(gate_node_id);
-	if (gate_it == g_gate_nodes.end())
+	auto gate_it = g_gate_nodes->find(gate_node_id);
+	if (gate_it == g_gate_nodes->end())
 	{
 		LOG_ERROR << " gate not found" << gate_node_id;
 		return;
