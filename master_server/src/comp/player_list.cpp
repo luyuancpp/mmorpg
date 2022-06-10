@@ -4,6 +4,8 @@
 
 thread_local PlayerListMap  g_players;
 
+PlayerList* g_player_list = nullptr;
+
 entt::entity PlayerList::GetPlayer(Guid guid)
 {
     auto it = g_players.find(guid);

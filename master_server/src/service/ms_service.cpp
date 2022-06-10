@@ -87,7 +87,7 @@ entt::entity MasterNodeServiceImpl::GetPlayerByConnId(uint64_t session_id)
 
 void MasterNodeServiceImpl::OnSessionEnterGame(entt::entity conn, Guid player_id)
 {
-    registry.emplace<EntityPtr>(conn, PlayerList::GetSingleton().GetPlayerPtr(player_id));
+    registry.emplace<EntityPtr>(conn, g_player_list->GetPlayerPtr(player_id));
     registry.emplace<Guid>(conn, player_id);
 }
 
@@ -286,7 +286,7 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	registry.get<GsStubPtr>(it->second)->CallMethod(
 		message,
 		&gsservice::GsService_Stub::Disconnect);
-	PlayerList::GetSingleton().LeaveGame(player_id);
+	g_player_list->LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -313,7 +313,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
     registry.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
 	//todo 
 	auto lit = logined_accounts_.find(request->account());
-	if (PlayerList::GetSingleton().player_size() >= kMaxPlayerSize)
+	if (g_player_list->player_size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
@@ -356,7 +356,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	}
 	auto session = sit->second;
 	auto player_id = request->player_id();
-	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
+	auto player = g_player_list->GetPlayer(player_id);
 	auto try_acount = registry.try_get<PlayerAccount>(session);
 	if (nullptr != try_acount)
 	{
@@ -365,7 +365,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	if (entt::null == player)
 	{
 		//把旧的connection 断掉
-		auto player = PlayerList::GetSingleton().EnterGame(player_id);
+		auto player = g_player_list->EnterGame(player_id);
 		OnSessionEnterGame(session, player_id);
 		registry.emplace<Guid>(player, player_id);
 		//registry.emplace<Player>(player, player_id);
@@ -435,12 +435,12 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE 
 
 	auto player_id = request->session_id();
-	auto player = PlayerList::GetSingleton().GetPlayer(player_id);
+	auto player = g_player_list->GetPlayer(player_id);
 	if (player == entt::null)
 	{
 		return;
 	}
-	PlayerList::GetSingleton().LeaveGame(player_id);
+	g_player_list->LeaveGame(player_id);
 	//todo statistics
 ///<<< END WRITING YOUR CODE 
 }
@@ -463,7 +463,7 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 		return;
 	}
 	auto player_id = registry.get<Guid>(*p_try_player);
-	PlayerList::GetSingleton().LeaveGame(player_id);
+	g_player_list->LeaveGame(player_id);
 	g_gate_sessions.erase(cit);
 ///<<< END WRITING YOUR CODE 
 }
@@ -538,7 +538,7 @@ void MasterNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	auto player = PlayerList::GetSingleton().GetPlayer(request->player_id());
+	auto player = g_player_list->GetPlayer(request->player_id());
 	if (entt::null == player)
 	{
 		return;
