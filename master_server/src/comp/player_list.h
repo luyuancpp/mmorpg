@@ -8,12 +8,6 @@ extern thread_local PlayerListMap  g_players;
 class PlayerList
 {
 public:
-    static PlayerList& GetSingleton()
-    {
-        thread_local PlayerList singleton;
-        return singleton;
-    }
-
     std::size_t player_size()const { return g_players.size(); }
     bool empty()const { return g_players.empty(); }
     entt::entity GetPlayer(Guid guid);
@@ -23,4 +17,4 @@ public:
     EntityPtr EnterGame(Guid guid);
     void LeaveGame(Guid guid);
 };
-
+extern PlayerList* g_player_list;
