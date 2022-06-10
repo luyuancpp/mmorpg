@@ -2,7 +2,6 @@
 
 #include "src/comp/player_list.h"
 #include "src/game_logic/game_registry.h"
-#include "src/network/gate_session.h"
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/network/ms_node.h"
@@ -26,7 +25,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 		LOG_INFO << "player disconnect" << player_id;
 		return;
     }
-    auto ret = g_players.emplace(player_id, EntityPtr());
+    auto ret = g_players->emplace(player_id, EntityPtr());
 	if (!ret.second)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
@@ -49,7 +48,7 @@ void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& me
 	Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
 	Send2MsPlayer(save_complete_message, player_id);
 
-	g_players.erase(player_id);//存储完毕从gs删除玩家
+	g_players->erase(player_id);//存储完毕从gs删除玩家
 }
 
 void PlayerCommonSystem::SavePlayer(entt::entity player)
