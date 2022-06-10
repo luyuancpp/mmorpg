@@ -14,8 +14,8 @@
 
 void Send2Player(const google::protobuf::Message& message, Guid player_id)
 {
-	auto it = g_players.find(player_id);
-	if (it == g_players.end())
+	auto it = g_players->find(player_id);
+	if (it == g_players->end())
 	{
 		LOG_INFO << "player not found " << player_id;
 		return;
@@ -61,8 +61,8 @@ void Send2Player(const google::protobuf::Message& message, EntityPtr& player)
 
 void Send2MsPlayer(const google::protobuf::Message& message, Guid player_id)
 {
-	auto it = g_players.find(player_id);
-	if (it == g_players.end())
+	auto it = g_players->find(player_id);
+	if (it == g_players->end())
 	{
 		LOG_INFO << "player not found " << player_id;
 		return;

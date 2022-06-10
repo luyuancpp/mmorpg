@@ -6,7 +6,6 @@
 #include "src/game_server.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"
-#include "src/network/gate_session.h"
 #include "src/network/message_system.h"
 #include "src/network/session.h"
 #include "src/comp/player_list.h"
@@ -26,14 +25,14 @@ using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 void KickOldSession(Guid player_id)
 {
 	g_async_player_data.erase(player_id);
-    auto sit = g_player_session_map.find(player_id);
-    if (sit == g_player_session_map.end())//老连接踢掉
+    auto sit = g_player_session_map->find(player_id);
+    if (sit == g_player_session_map->end())//老连接踢掉
     {
         //delete old session
 		return;
     }
-    g_gate_sessions.erase(sit->first);
-    g_player_session_map.erase(sit);
+    g_gate_sessions->erase(sit->first);
+    g_player_session_map->erase(sit);
 }
 ///<<< END WRITING YOUR CODE
 
@@ -47,9 +46,9 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE 
 	auto player_id = request->player_id();
 	KickOldSession(player_id);
-	g_player_session_map.emplace(player_id, request->session_id());
-	auto p_it = g_players.find(player_id);
-	if (p_it != g_players.end())
+	g_player_session_map->emplace(player_id, request->session_id());
+	auto p_it = g_players->find(player_id);
+	if (p_it != g_players->end())
 	{
 		EnterGsInfo enter_info;
 		enter_info.set_ms_node_id(request->ms_node_id());
@@ -74,8 +73,8 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto& message_extern = request->ex();
-	auto it = g_players.find(message_extern.player_id());
-	if (it == g_players.end())
+	auto it = g_players->find(message_extern.player_id());
+	if (it == g_players->end())
 	{
 		LOG_INFO << "player not found " << message_extern.player_id();
 		return;
@@ -152,8 +151,8 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	{
 		return;
 	}
-	auto cit = g_gate_sessions.find(request->session_id());
-	if (cit == g_gate_sessions.end())
+	auto cit = g_gate_sessions->find(request->session_id());
+	if (cit == g_gate_sessions->end())
 	{
 		return;
 	}
@@ -163,8 +162,8 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 		LOG_ERROR << "player not loading";
 		return;
 	}
-	auto pit = g_players.find(*p_try_session_player);
-	if (pit == g_players.end())
+	auto pit = g_players->find(*p_try_session_player);
+	if (pit == g_players->end())
 	{
 		return;
 	}
@@ -185,15 +184,15 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE 
 	//异步加载过程中断开了？
 	KickOldSession(request->player_id());
-    auto it = g_players.find(request->player_id());
-	if (it == g_players.end())
+    auto it = g_players->find(request->player_id());
+	if (it == g_players->end())
 	{
 		return;
 	}	
     LeaveSceneParam lp;
     lp.leaver_ = it->second;
     //ScenesSystem::GetSingleton().LeaveScene(lp);
- 	g_players.erase(it);//todo  应该是ms 通知过来
+ 	g_players->erase(it);//todo  应该是ms 通知过来
 
 ///<<< END WRITING YOUR CODE 
 }

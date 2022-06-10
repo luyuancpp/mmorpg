@@ -1,5 +1,6 @@
 #include "muduo/net/EventLoop.h"
 
+#include "src/comp/player_list.h"
 #include "src/game_server.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/node_info.h"
@@ -11,11 +12,21 @@ using namespace muduo::net;
 
 int main(int argc, char* argv[])
 {
+    // global value
     MsNodes ms_node;
     g_ms_nodes = &ms_node;
 
     GateNodes gate_nodes;
     g_gate_nodes = &gate_nodes;
+
+	SessionPlayerList player_session_map;//ª·ª∞µΩplayer”≥…‰
+    g_player_session_map = &player_session_map;
+
+	GateSessionList gate_sessions;
+    g_gate_sessions = &gate_sessions;
+
+    PlayerList players;
+    g_players = &players;
 
     EventLoop loop;
     GameServer server(&loop);

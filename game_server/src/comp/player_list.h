@@ -6,4 +6,4 @@
 #include "src/game_logic/game_registry.h"
 
 using PlayerList = std::unordered_map<Guid, EntityPtr>;
-extern thread_local PlayerList  g_players;
+extern PlayerList*  g_players;

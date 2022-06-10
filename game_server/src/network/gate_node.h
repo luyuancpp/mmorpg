@@ -24,4 +24,9 @@ using GateNodeWPtr = std::weak_ptr<GateNode>;
 using GateNodes = std::unordered_map<uint32_t, entt::entity>;
 extern GateNodes* g_gate_nodes;
 
+using GateSessionList = std::unordered_map<uint64_t, entt::entity>;
+using SessionPlayerList = std::unordered_map <uint64_t, uint64_t>;
+extern SessionPlayerList* g_player_session_map;//ª·ª∞µΩplayer”≥…‰
+extern GateSessionList* g_gate_sessions;
+
 #endif//GAME_SERVER_MODULE_NETWORK_GATE_NODE_H_
