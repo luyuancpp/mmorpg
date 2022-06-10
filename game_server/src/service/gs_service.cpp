@@ -48,7 +48,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	KickOldSession(player_id);
 	g_player_session_map->emplace(player_id, request->session_id());
 	auto p_it = g_players->find(player_id);
-	if (p_it != g_players->end())
+	if (p_it != g_players->end())//已经在线，直接进入
 	{
 		EnterGsInfo enter_info;
 		enter_info.set_ms_node_id(request->ms_node_id());
@@ -58,6 +58,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	auto rit = g_async_player_data.emplace(player_id, EntityPtr());
 	if (!rit.second)
 	{
+		LOG_ERROR << "EnterGs emplace player not found " << player_id;
 		return;
 	}
 	registry.emplace<EnterGsInfo>(rit.first->second).set_ms_node_id(request->ms_node_id());
@@ -76,20 +77,21 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 	auto it = g_players->find(message_extern.player_id());
 	if (it == g_players->end())
 	{
-		LOG_INFO << "player not found " << message_extern.player_id();
+		LOG_ERROR << "PlayerService player not found " << message_extern.player_id() << ","
+			<< request->descriptor()->full_name();
 		return;
 	}
 	auto msg_id = request->msg().msg_id();
 	auto sit = g_serviceinfo.find(msg_id);
 	if (sit == g_serviceinfo.end())
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_ERROR << "PlayerService msg not found " << message_extern.player_id() << "," << msg_id;
 		return;
 	}
 	auto service_it = g_player_services.find(sit->second.service);
 	if (service_it == g_player_services.end())
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_ERROR << "PlayerService service not found " << message_extern.player_id() << "," << msg_id;
 		return;
 	}
 	auto& serviceimpl = service_it->second;
@@ -98,7 +100,7 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_ERROR << "PlayerService method not found " << msg_id;
 		//todo client error;
 		return;
 	}
@@ -136,6 +138,7 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	auto mit = g_serviceinfo.find(request->msg_id());
 	if (mit == g_serviceinfo.end())
 	{
+		LOG_ERROR << "GwPlayerService msg not found " << request->msg_id();
 		//todo client error;
 		return;
 	}
@@ -143,28 +146,32 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	auto it = g_player_services.find(serviceinfo.service);
 	if (it == g_player_services.end())
 	{
+		LOG_ERROR << "GwPlayerService service not found " << request->msg_id();
 		return;
 	}
 	google::protobuf::Service* service = it->second->service();
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(serviceinfo.method);
 	if (nullptr == method)
 	{
+		LOG_ERROR << "GwPlayerService service not found " << request->msg_id();
 		return;
 	}
 	auto cit = g_gate_sessions->find(request->session_id());
 	if (cit == g_gate_sessions->end())
 	{
+		LOG_INFO << "GwPlayerService session not found " << request->msg_id();
 		return;
 	}
-	auto p_try_session_player = registry.try_get<Guid>(cit->second);
-	if (nullptr == p_try_session_player)
+	auto try_player_id = registry.try_get<Guid>(cit->second);
+	if (nullptr == try_player_id)
 	{
-		LOG_ERROR << "player not loading";
+		LOG_ERROR << "GwPlayerService player not loading";
 		return;
 	}
-	auto pit = g_players->find(*p_try_session_player);
+	auto pit = g_players->find(*try_player_id);
 	if (pit == g_players->end())
 	{
+		LOG_ERROR << "GwPlayerService player not found" << *try_player_id;
 		return;
 	}
 	MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
@@ -216,7 +223,7 @@ void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(kGateWayNode);
 		g_gate_nodes->emplace(request->gate_node_id(), e);
-		LOG_INFO << "gate node id " << request->gate_node_id();
+		LOG_INFO << "GwConnectGs gate node id " << request->gate_node_id();
 		break;
 	}
 ///<<< END WRITING YOUR CODE 

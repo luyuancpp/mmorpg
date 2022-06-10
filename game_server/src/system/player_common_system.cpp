@@ -62,12 +62,13 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 	g_player_data_redis_system->Save(pb, registry.get<Guid>(player));
 }
 
+//todo 没load 完再次进入gs
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
 	auto msit = g_ms_nodes->find(enter_info.ms_node_id());
 	if (msit == g_ms_nodes->end())
 	{
-		LOG_ERROR << " gate not found" << enter_info.ms_node_id();
+		LOG_ERROR << "EnterGs ms not found" << enter_info.ms_node_id();
 		return;
 	}
 	registry.emplace_or_replace<MsNodePtr>(player, msit->second);//todo master 重新启动以后
