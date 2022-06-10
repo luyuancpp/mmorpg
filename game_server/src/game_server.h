@@ -29,6 +29,8 @@ public:
 
     void Init();
 
+    void InitConfig();
+
     void InitNetwork();
 
     using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
@@ -53,7 +55,6 @@ public:
     void receive(const OnBeConnectedEvent& es);
 
 private:    
-	void InitGlobalEntities();
     void Connect2Region();
 
     muduo::net::EventLoop* loop_{ nullptr };

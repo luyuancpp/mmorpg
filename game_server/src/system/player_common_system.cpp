@@ -62,7 +62,7 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 	g_player_data_redis_system->Save(pb, registry.get<Guid>(player));
 }
 
-//todo 没load 完再次进入gs
+//todo 没load 完再次进入别的gs
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
 	auto msit = g_ms_nodes->find(enter_info.ms_node_id());

@@ -23,7 +23,6 @@ using namespace common;
 
 GameServer* g_gs = nullptr;
 
-
 GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
      redis_(std::make_shared<MessageSyncRedisClient>()){}
@@ -32,17 +31,22 @@ void GameServer::Init()
 {
     g_gs = this; 
 
-    GameConfig::GetSingleton().Load("game.json");
-    DeployConfig::GetSingleton().Load("deploy.json");
-    RegionConfig::GetSingleton().Load("region.json");
+    InitConfig();
     global_entity() = registry.create();
     registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
     InitMsgService();
-    loadallconfig();
-    InitGlobalEntities();
+
     InitPlayerServcie();
     
     InitNetwork();
+}
+
+void GameServer::InitConfig()
+{
+	GameConfig::GetSingleton().Load("game.json");
+	DeployConfig::GetSingleton().Load("deploy.json");
+	RegionConfig::GetSingleton().Load("region.json");
+    LoadAllConfig();
 }
 
 void GameServer::InitNetwork()
@@ -91,7 +95,6 @@ void GameServer::ServerInfo(ServerInfoRpcRC cp)
 
 void GameServer::StartGSDeployReplied(StartGSRpcRC cp)
 {
-    //uint32_t snid = server_info_.id() - deploy_server::kGameSnowflakeIdReduceParam;//snowflake id 
     Connect2Region();
 
     auto& redisinfo = cp->s_rp_->redis_info();
@@ -261,11 +264,6 @@ void GameServer::receive(const OnBeConnectedEvent& es)
 			break;
 		}
     }
-}
-
-void GameServer::InitGlobalEntities()
-{
-
 }
 
 void GameServer::Connect2Region()
