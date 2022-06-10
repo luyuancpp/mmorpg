@@ -37,13 +37,13 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
 		auto gate_it = g_gate_nodes->find(gate_node_id);
 		if (gate_it == g_gate_nodes->end())//test
 		{
-            LOG_ERROR << " gate not found " << gate_node_id;
+            LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
             return;
 		}
 		auto p_gate = registry.try_get<GateNodePtr>(gate_it->second);
 		if (nullptr == p_gate)
 		{
-			LOG_ERROR << " gate not found " << gate_node_id;
+			LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
 			return;
 
 		}
