@@ -28,7 +28,7 @@ struct MsNode
 using MsNodePtr = std::shared_ptr<MsNode>;
 using MsNodeWPtr = std::weak_ptr<MsNode>;
 using MsNodes = std::unordered_map<uint32_t, entt::entity>;
-extern MsNodes g_ms_nodes;
+extern MsNodes* g_ms_nodes;
 
 
 #endif//GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_
