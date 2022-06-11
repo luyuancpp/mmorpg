@@ -3,9 +3,6 @@
 
 #include <random>
 
-namespace common
-{
-
 class Random
 {
 public:
@@ -38,8 +35,6 @@ public:
 private:
     std::mt19937 rand;
 };
-
-}//namespace common
 
 #endif//COMMON_SRC_RANDOM_RANDOM_H_
 

@@ -52,6 +52,11 @@ public:
     using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
     void StartServer(ServerInfoRpcRC cp);
 
+    using LoginNodeInfoClosure = NormalClosure<deploy::GroupLignRequest,
+        deploy::GruoupLoginNodeResponse>;
+    using LoginNodeInfoReplied = std::shared_ptr<LoginNodeInfoClosure>;
+    void LoginNoseInfoReplied(LoginNodeInfoReplied cp);
+
     void ConnectLogin(const login_server_db& login_addr);
 
     void receive(const OnConnected2ServerEvent& es);

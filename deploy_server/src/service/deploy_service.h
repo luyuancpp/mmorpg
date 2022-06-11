@@ -50,4 +50,9 @@ public:
         deploy::RegionInfoResponse* response,
         ::google::protobuf::Closure* done)override;
 
+    void LoginNodeInfo(::google::protobuf::RpcController* controller,
+        const deploy::GroupLignRequest* request,
+        deploy::GruoupLoginNodeResponse* response,
+        ::google::protobuf::Closure* done)override;
+
 };

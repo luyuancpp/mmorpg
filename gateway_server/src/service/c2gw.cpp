@@ -12,6 +12,7 @@
 #include "src/network/login_node.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/rpc_closure.h"
+#include "src/util/random.h"
 
 #include "login_service.pb.h"
 
@@ -39,6 +40,17 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 
 ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub()
 {
+    auto index = Random::GetSingleton().Rand<std::size_t>(0, g_login_nodes.size());
+    std::size_t i = 0;
+    for (auto& it : g_login_nodes)
+    {
+        if (i < index)
+        {
+            ++i;
+            continue;
+        }
+        return *it.second.login_stub_;
+    }
     return *g_login_nodes.begin()->second.login_stub_;
 }
 

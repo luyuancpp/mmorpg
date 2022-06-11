@@ -368,7 +368,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		auto player = g_player_list->EnterGame(player_id);
 		OnSessionEnterGame(session, player_id);
 		registry.emplace<Guid>(player, player_id);
-		//registry.emplace<Player>(player, player_id);
+		registry.emplace<Player>(player);
 		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(sit->second));
 		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 		

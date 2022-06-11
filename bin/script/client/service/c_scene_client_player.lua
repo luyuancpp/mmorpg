@@ -9,6 +9,7 @@ end
 
 function PushEnterSceneS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
+	LogInfo(response:DebugString())
 ---<<< END WRITING YOUR CODE 
 end
 
