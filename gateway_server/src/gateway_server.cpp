@@ -38,9 +38,20 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
 {
     serverinfo_data_ = cp->s_rp_->info();
     g_server_sequence_.set_node_id(gate_node_id());
-    auto& login_info = serverinfo_data_.login_info();
-    ConnectLogin(login_info);
 
+    EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+        [this]() ->void
+        {
+            LoginNodeInfoReplied rp(std::make_shared<LoginNodeInfoReplied::element_type>());
+            rp->s_rq_.set_group_id(GameConfig::GetSingleton().config_info().group_id());
+            deploy_stub_.CallMethod(
+                &GatewayServer::LoginNoseInfoReplied,
+                rp,
+                this,
+                &deploy::DeployService_Stub::LoginNodeInfo);
+        }
+    );
+    
     auto& master_info = serverinfo_data_.master_info();
     InetAddress master_addr(master_info.ip(), master_info.port());
     master_session_ = std::make_unique<RpcClient>(loop_, master_addr);
@@ -57,6 +68,19 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     server_->setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
+}
+
+void GatewayServer::LoginNoseInfoReplied(LoginNodeInfoReplied rp)
+{
+    auto& rsp = rp->s_rp_;
+    for (const auto& it : rsp->login_db().login_nodes())
+    {
+        if (it.id() != 1)
+        {
+            continue;
+        }
+        ConnectLogin(it);
+    }
 }
 
 void GatewayServer::ConnectLogin(const login_server_db& login_info)

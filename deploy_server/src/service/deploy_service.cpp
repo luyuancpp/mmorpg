@@ -96,7 +96,19 @@ void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	std::string where_case = std::to_string(request->region_id()) + " = region_id  ";
-	db_->LoadAll<::master_server_db>(*response->mutable_region_masters(), where_case);
+	db_->LoadAll<master_server_db>(*response->mutable_region_masters(), where_case);
+///<<< END WRITING YOUR CODE 
+}
+
+void DeployServiceImpl::LoginNodeInfo(::google::protobuf::RpcController* controller,
+    const deploy::GroupLignRequest* request,
+    deploy::GruoupLoginNodeResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE 
+    std::string where_case = std::to_string(request->group_id()) + " = group_id  ";
+    db_->LoadAll<login_server_db>(*response->mutable_login_db(), where_case);
 ///<<< END WRITING YOUR CODE 
 }
 

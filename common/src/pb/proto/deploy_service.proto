@@ -10,9 +10,14 @@ message ServerInfoRequest
   uint32 region_id = 2;
 }
 
-message MasterServersDb
+message MasterNodesDb
 {
   repeated master_server_db masters = 1;
+}
+
+message LoginNodesDb
+{
+  repeated login_server_db login_nodes = 1;
 }
 
 message ServerInfoResponse
@@ -46,7 +51,17 @@ message RegionServerResponse
 
 message RegionInfoResponse
 {
-  MasterServersDb region_masters = 1;
+  MasterNodesDb region_masters = 1;
+}
+
+message GroupLignRequest
+{
+  uint32 group_id = 1;
+}
+
+message GruoupLoginNodeResponse
+{
+  LoginNodesDb login_db = 1;
 }
 
 service DeployService {
@@ -55,4 +70,5 @@ service DeployService {
   rpc StartRegionServer (RegionRequest) returns (RegionServerResponse);
   rpc RegionServerInfo (RegionRequest) returns (RegionServerResponse);
   rpc RegionInfo (RegionRequest) returns (RegionInfoResponse);
+  rpc LoginNodeInfo (GroupLignRequest) returns (GruoupLoginNodeResponse);
 }

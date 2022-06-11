@@ -332,6 +332,7 @@
     <ClInclude Include="src\network\rpc_stub.h" />
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
+    <ClInclude Include="src\util\random.h" />
     <ClInclude Include="src\util\snow_flake.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
