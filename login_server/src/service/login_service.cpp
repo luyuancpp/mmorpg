@@ -24,8 +24,8 @@ void LoginServiceImpl::LoginAccountMsReplied(LoginMasterRP d)
 	// login process
 	// check account rule: empty , errno
 	// check string rule
-	auto cit = connections_.find(d->s_rq_.session_id());
-	if (cit == connections_.end())
+	auto cit = sessions_.find(d->s_rq_.session_id());
+	if (cit == sessions_.end())
 	{
 		d->c_rp_->mutable_error()->set_id(kRetLoignCreatePlayerConnectionHasNotAccount);
 		return;
@@ -76,8 +76,8 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 {
 	//db 加载过程中断线了
 	auto& srq = d->s_rq_;
-	auto cit = connections_.find(d->c_rp_->session_id());
-	if (cit == connections_.end())
+	auto cit = sessions_.find(d->c_rp_->session_id());
+	if (cit == sessions_.end())
 	{
 		return;
 	}
@@ -89,7 +89,7 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied d)
 
 void LoginServiceImpl::EnterMsReplied(EnterGameMSRpcReplied d)
 {
-	connections_.erase(d->s_rq_.session_id());
+	sessions_.erase(d->s_rq_.session_id());
 }
 
 void LoginServiceImpl::EnterMS(Guid player_id,
@@ -97,8 +97,8 @@ void LoginServiceImpl::EnterMS(Guid player_id,
 	::gw2l::EnterGameResponse* response,
 	::google::protobuf::Closure* done)
 {
-	auto it = connections_.find(session_id);
-	if (connections_.end() == it)
+	auto it = sessions_.find(session_id);
+	if (sessions_.end() == it)
 	{
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
@@ -114,8 +114,8 @@ void LoginServiceImpl::EnterMS(Guid player_id,
 
 void LoginServiceImpl::UpdateAccount(uint64_t session_id, const ::account_database& a_d)
 {
-	auto cit = connections_.find(session_id);
-	if (cit == connections_.end())//断线了
+	auto cit = sessions_.find(session_id);
+	if (cit == sessions_.end())//断线了
 	{
 		return;
 	}
@@ -147,11 +147,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	auto& s_reqst = c->s_rq_;
 	s_reqst.set_account(request->account());
 	s_reqst.set_session_id(request->session_id());
-	auto it = connections_.emplace(request->session_id(), EntityPtr());
-	if (it.first != connections_.end())
-	{
-		registry.emplace_or_replace<std::string>(it.first->second, request->account());
-	}
+	sessions_.emplace(request->session_id(), EntityPtr());
 	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, c, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
@@ -166,8 +162,8 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	d.SelfDelete();
 	// login process
 	//check name rule
-	auto cit = connections_.find(request->session_id());
-	if (cit == connections_.end())
+	auto cit = sessions_.find(request->session_id());
+	if (cit == sessions_.end())
 	{
 		ReturnCloseureError(kRetLoignCreatePlayerConnectionHasNotAccount);
 	}
@@ -200,8 +196,8 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE 
 	d.SelfDelete();
 	auto session_id = request->session_id();
-	auto cit = connections_.find(session_id);
-	if (cit == connections_.end())
+	auto cit = sessions_.find(session_id);
+	if (cit == sessions_.end())
 	{
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
@@ -251,8 +247,8 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	//连接过，登录过
-	auto cit = connections_.find(request->session_id());
-	if (cit == connections_.end())
+	auto cit = sessions_.find(request->session_id());
+	if (cit == sessions_.end())
 	{
 		LOG_ERROR << " leave game not found connection";
 		return;
@@ -261,7 +257,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	ms_request.set_session_id(request->session_id());
 	ms_node_stub_.CallMethod(ms_request,
 		&msservice::MasterNodeService_Stub::OnLsLeaveGame);
-	connections_.erase(cit);
+	sessions_.erase(cit);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -272,7 +268,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	connections_.erase(request->session_id());
+	sessions_.erase(request->session_id());
 	msservice::LsDisconnectRequest message;
 	message.set_session_id(request->session_id());
 	ms_node_stub_.CallMethod(message,
