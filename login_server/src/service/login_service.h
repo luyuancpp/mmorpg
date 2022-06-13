@@ -52,7 +52,7 @@ public:
 		void UpdateAccount(uint64_t connection_id, const ::account_database& a_d);
 
 		PbSyncRedisClientPtr redis_;
-		ConnectionEntityMap connections_;
+		ConnectionEntityMap sessions_;
 		LoginStubl2ms& ms_node_stub_;
 		LoginStubl2db& l2db_login_stub_;
 		///<<< END WRITING YOUR CODE
