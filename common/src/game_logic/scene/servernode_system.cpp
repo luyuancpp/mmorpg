@@ -14,7 +14,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     std::size_t min_player_size = UINT64_MAX;
     for (auto e : registry.view<ServerType, ServerStatus, ServerPressure>())
     {
-        if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))
+        if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))//优先判断有没有场景
         {
             continue;
         }
@@ -116,7 +116,6 @@ entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 	}
 	return GetGetMainSceneNotFullT<MainSceneServer, GSNormal, Pressure>(param);
 }
-
 
 void ServerNodeSystem::ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
 {

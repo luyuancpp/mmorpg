@@ -136,10 +136,10 @@ void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param)
 {
     auto to_server_entity = param.to_server_;
-    auto& from_scenes_id = registry.get<ConfigSceneMap>(param.from_server_).confid_sceneslist();
+    auto& from_scenes_ids = registry.get<ConfigSceneMap>(param.from_server_).confid_sceneslist();
     auto& to_scenes_id = registry.get<ConfigSceneMap>(to_server_entity);
     auto& p_to_server_data = registry.get<GsDataPtr>(to_server_entity);
-    for (auto& it : from_scenes_id)
+    for (auto& it : from_scenes_ids)
     {
         for (auto& ji : it.second)
         {
@@ -147,7 +147,7 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
             to_scenes_id.AddScene(it.first, ji);
         }
     }
-    registry.emplace_or_replace<ConfigSceneMap>(param.from_server_);
+    registry.emplace_or_replace<ConfigSceneMap>(param.from_server_);//todo 如果原来server 还有场景呢
 }
 
 uint32_t ScenesSystem::CheckEnterSceneByGuid(const CheckEnterSceneParam& param)
