@@ -126,15 +126,15 @@ class GsData
 public:
     inline void set_node_id(uint32_t node_id) { node_id_ = node_id; }
     inline uint32_t node_id()const { return node_id_; }
-    inline void set_node_entity(entt::entity server_entity) { server_ = server_entity; }
-    inline entt::entity server_entity()const { return server_; }
+    inline void set_node_entity(entt::entity node) { node_ = node; }
+    inline entt::entity server_entity()const { return node_; }
     uint32_t player_size()const { return player_size_; }
 
     inline void OnPlayerEnter() { ++player_size_; }
     inline void OnPlayerLeave() { --player_size_; }
 private:
     uint32_t node_id_{kInvalidU32Id};
-    entt::entity server_{};
+    entt::entity node_{};
     uint32_t player_size_{ 0 };
 };
 
