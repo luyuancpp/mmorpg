@@ -61,8 +61,6 @@ public:
     void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 private:
 
-    void OnDestroyScene(entt::entity scene_entity);
-
     SceneMapComp scenes_map_;
     SnowFlake snow_flake_;
 };

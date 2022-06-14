@@ -96,18 +96,28 @@ entt::entity ScenesSystem::MakeScene2Gs(const MakeGSSceneP& param)
 
 void ScenesSystem::PutScene2Gs(const PutScene2GSParam& param)
 {
-    auto scene_entity = param.scene_;
-    auto server_entity = param.server_;
-    auto& server_scenes = registry.get<ConfigSceneMap>(server_entity);
-    server_scenes.AddScene(registry.get<SceneInfo>(scene_entity).scene_confid(), scene_entity);
-    auto& p_server_data = registry.get<GsDataPtr>(server_entity);
-    registry.emplace<GsDataPtr>(scene_entity, p_server_data);
+    auto scene = param.scene_;
+    auto server = param.server_;
+    auto& server_scenes = registry.get<ConfigSceneMap>(server);
+    server_scenes.AddScene(registry.get<SceneInfo>(scene).scene_confid(), scene);
+    auto& p_server_data = registry.get<GsDataPtr>(server);
+    registry.emplace<GsDataPtr>(scene, p_server_data);
 }
 
 
 void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 {
-    OnDestroyScene(param.scene_);
+    auto scene_entity = param.scene_;
+	auto& si = registry.get<SceneInfo>(scene_entity);
+	scenes_map_.erase(si.scene_id());
+	auto p_server_data = registry.get<GsDataPtr>(scene_entity);
+	registry.destroy(scene_entity);
+	if (nullptr == p_server_data)
+	{
+		return;
+	}
+	auto& server_scene = registry.get<ConfigSceneMap>(p_server_data->server_entity());
+	server_scene.RemoveScene(si.scene_confid(), scene_entity);
 }
 
 void ScenesSystem::DestroyServer(const DestroyServerParam& param)
@@ -117,7 +127,8 @@ void ScenesSystem::DestroyServer(const DestroyServerParam& param)
     DestroySceneParam destroy_param;
     for (auto& it : server_scenes)
     {
-        OnDestroyScene(it);
+        destroy_param.scene_ = it;
+        DestroyScene(destroy_param);
     }
     registry.destroy(server_entity);
 }
@@ -235,16 +246,3 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
     registry.destroy(move_param.from_server_);
 }
 
-void ScenesSystem::OnDestroyScene(entt::entity scene_entity)
-{
-    auto& si = registry.get<SceneInfo>(scene_entity);
-    scenes_map_.erase(si.scene_id());
-    auto p_server_data = registry.get<GsDataPtr>(scene_entity);
-    registry.destroy(scene_entity);
-    if (nullptr == p_server_data)
-    {
-        return;
-    }
-    auto& server_scene = registry.get<ConfigSceneMap>(p_server_data->server_entity());
-    server_scene.RemoveScene(si.scene_confid(), scene_entity);
-}
