@@ -27,10 +27,11 @@
 #include "src/network/server_component.h"
 #include "src/network/session.h"
 
-#include "gs_service.pb.h"
-#include "logic_proto/scene_normal.pb.h"
+#include "component_proto/gs_node_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
+#include "gs_service.pb.h"
+#include "logic_proto/scene_normal.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
@@ -112,7 +113,7 @@ void MasterNodeServiceImpl::InitPlayerSession(entt::entity player, uint64_t sess
 		return;
 	}
 
-    auto* p_gs_data = registry.try_get<GsDataPtr>(try_scene_entity->scene_entity());
+    auto* p_gs_data = registry.try_get<GsNodePtr>(try_scene_entity->scene_entity());
     if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
     {
         // todo default
@@ -165,6 +166,8 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	AddMainSceneNodeCompnent(gs_entity, make_gs_p);
 	registry.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);//为了停掉gs，或者gs断线用
 	registry.emplace<GsNodePtr>(gs_entity, gs);
+	auto gs_player_info_ptr = std::make_shared<GsNodePlayerInfoPtr::element_type>();
+	registry.emplace<GsNodePlayerInfoPtr>(gs_entity, gs_player_info_ptr);
 	registry.emplace<GsStubPtr>(gs_entity, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneServer)
 	{
@@ -179,6 +182,8 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 			{
 				continue;
 			}
+			registry.emplace<GsNodePtr>(scene_entity, gs);
+			registry.emplace<GsNodePlayerInfoPtr>(scene_entity, gs_player_info_ptr);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
 		}
 	}

@@ -6,6 +6,8 @@
 
 #include "src/common_type/common_type.h"
 
+#include "component_proto/gs_node_comp.pb.h"
+
 using SceneMapComp = std::unordered_map<Guid, entt::entity>;
 using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
 using ScenePlayers = EntitySet;//弱引用，要解除玩家和场景的耦合
@@ -121,22 +123,5 @@ struct GSCrash{};//崩溃状态
 struct NoPressure {};//
 struct Pressure {};//
 
-class GsData
-{
-public:
-    inline void set_node_id(uint32_t node_id) { node_id_ = node_id; }
-    inline uint32_t node_id()const { return node_id_; }
-    inline void set_node_entity(entt::entity node) { node_ = node; }
-    inline entt::entity server_entity()const { return node_; }
-    uint32_t player_size()const { return player_size_; }
+using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
-    inline void OnPlayerEnter() { ++player_size_; }
-    inline void OnPlayerLeave() { --player_size_; }
-private:
-    uint32_t node_id_{kInvalidU32Id};
-    entt::entity node_{};
-    uint32_t player_size_{ 0 };
-};
-
-using GsDataPtr = std::shared_ptr<GsData>;
-using GsDataWeakPtr = std::weak_ptr<GsData>;

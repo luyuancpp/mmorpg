@@ -27,11 +27,7 @@ entt::entity MakeMainSceneNode(entt::registry& reg,  const MakeGSParam& param)
 
 void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param)
 {
-	GsDataPtr p_server_data = std::make_shared<GsData>();
-	p_server_data->set_node_id(param.node_id_);
-	p_server_data->set_node_entity(e);
 	registry.emplace<MainSceneServer>(e);
-	registry.emplace<GsDataPtr>(e, p_server_data);
 	registry.emplace<GSNormal>(e);
 	registry.emplace<NoPressure>(e);
 	registry.emplace<ConfigSceneMap>(e);

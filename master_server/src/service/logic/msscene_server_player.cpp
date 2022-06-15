@@ -68,7 +68,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         }		
     }
 
-    auto try_scene_gs = registry.try_get<GsDataPtr>(scene);
+    auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
     auto p_player_gs = registry.try_get<PlayerSession>(player);
     if (nullptr == try_scene_gs || nullptr == p_player_gs)
     {
@@ -150,8 +150,6 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
 		return;
 	}
 
-  
-
 	EnterSceneParam ep;
 	ep.enterer_ = player;
 	ep.scene_ = scene;
@@ -166,7 +164,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
     }
     else
     {
-        auto* p_gs_data = registry.try_get<GsDataPtr>(scene);
+        auto* p_gs_data = registry.try_get<GsNodePtr>(scene);
         if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
         {
             // todo default

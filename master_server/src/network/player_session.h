@@ -3,6 +3,7 @@
 #include "gate_node.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"
+#include "src/network/gs_node.h"
 #include "src/network/message_system.h"
 #include "src/network/session.h"
 
@@ -16,12 +17,7 @@ public:
 
 	uint32_t gs_node_id()const
 	{
-		auto gs = gs_.lock();
-		if (nullptr == gs)
-		{
-			return kInvalidU32Id;
-		}
-		return gs->node_id();
+		return gs_->node_id();
 	}
 
 	inline decltype(auto) gate_node_id()const
@@ -43,15 +39,10 @@ public:
 
 	void Send2Gs(::google::protobuf::Message& message)
 	{
-		auto gs = gs_.lock();
-		if (nullptr == gs)
-		{
-			return;
-		}
 		//gs->.Send(message);
 	}
 	GateSession gate_session_;
 	GateNodeWPtr gate_;
-	GsDataWeakPtr gs_;
+	GsNodePtr gs_;
 };
 

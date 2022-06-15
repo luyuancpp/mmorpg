@@ -15,6 +15,7 @@
 #include "src/network/ms_node.h"
 #include "src/game_logic/tips_id.h"
 
+#include "component_proto/gs_node_comp.pb.h"
 #include "gs_service.pb.h"
 #include "ms_service.pb.h"
 
@@ -62,6 +63,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	AddMainSceneNodeCompnent(gs_entity, make_gs_p);
 	registry.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);
 	registry.emplace<GsNodePtr>(gs_entity, gs);
+	registry.emplace<GsNodePlayerInfo>(gs_entity);
 	registry.emplace<GsStubPtr>(gs_entity, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneServer)
 	{
@@ -76,6 +78,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 			{
 				continue;
 			}
+			registry.emplace<GsNodePtr>(scene_entity);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
 		}
 	}
