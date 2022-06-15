@@ -100,8 +100,6 @@ void ScenesSystem::PutScene2Gs(const PutScene2GSParam& param)
     auto server = param.server_;
     auto& server_scenes = registry.get<ConfigSceneMap>(server);
     server_scenes.AddScene(registry.get<SceneInfo>(scene).scene_confid(), scene);
-    auto& p_server_data = registry.get<GsDataPtr>(server);
-    registry.emplace<GsDataPtr>(scene, p_server_data);
 }
 
 
@@ -110,13 +108,8 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
     auto scene_entity = param.scene_;
 	auto& si = registry.get<SceneInfo>(scene_entity);
 	scenes_map_.erase(si.scene_id());
-	auto p_server_data = registry.get<GsDataPtr>(scene_entity);
 	registry.destroy(scene_entity);
-	if (nullptr == p_server_data)
-	{
-		return;
-	}
-	auto& server_scene = registry.get<ConfigSceneMap>(p_server_data->server_entity());
+	auto& server_scene = registry.get<ConfigSceneMap>(param.server_);
 	server_scene.RemoveScene(si.scene_confid(), scene_entity);
 }
 
@@ -138,12 +131,12 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
     auto to_server_entity = param.to_server_;
     auto& from_scenes_ids = registry.get<ConfigSceneMap>(param.from_server_).confid_sceneslist();
     auto& to_scenes_id = registry.get<ConfigSceneMap>(to_server_entity);
-    auto& p_to_server_data = registry.get<GsDataPtr>(to_server_entity);
+    auto& p_to_server_data = registry.get<GsNodePlayerInfoPtr>(to_server_entity);
     for (auto& it : from_scenes_ids)
     {
         for (auto& ji : it.second)
         {
-            registry.emplace_or_replace<GsDataPtr>(ji, p_to_server_data);
+            registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, p_to_server_data);//todo »À ˝º∆À„¥ÌŒÛ
             to_scenes_id.AddScene(it.first, ji);
         }
     }
@@ -174,12 +167,12 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
     }
     registry.get<ScenePlayers>(scene_entity).emplace(param.enterer_);
     registry.emplace<SceneEntity>(param.enterer_, scene_entity);
-    auto p_server_data = registry.try_get<GsDataPtr>(scene_entity);
-    if (nullptr == p_server_data)
-    {
-        return;
-    }
-    (*p_server_data)->OnPlayerEnter();
+	auto p_server_data = registry.try_get<GsNodePlayerInfoPtr>(scene_entity);
+	if (nullptr == p_server_data)
+	{
+		return;
+	}
+	(*p_server_data)->set_player_size((*p_server_data)->player_size() + 1);
 }
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
@@ -194,12 +187,12 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
     auto scene_entity = player_scene_entity.scene_entity();
     registry.get<ScenePlayers>(scene_entity).erase(leave_player);
     registry.remove<SceneEntity>(leave_player);
-    auto p_server_data = registry.try_get<GsDataPtr>(scene_entity);
+    auto p_server_data = registry.try_get<GsNodePlayerInfoPtr>(scene_entity);
     if (nullptr == p_server_data)
     {
         return;
     }
-    (*p_server_data)->OnPlayerLeave();
+    (*p_server_data)->set_player_size((*p_server_data)->player_size() - 1);
 }
 
 void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)

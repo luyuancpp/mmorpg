@@ -44,6 +44,7 @@ struct MoveServerScene2ServerSceneP
 struct DestroySceneParam
 {
     entt::entity scene_{ entt::null };
+    entt::entity server_{ entt::null };
 };
 
 struct DestroyServerParam

@@ -81,6 +81,8 @@
     <ClCompile Include="src\pb\pb2sol2\player_network_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\player_login_comp.pb.cc" />
     <ClCompile Include="src\pb\pb2sol2\player_login_comp_sol2.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\gs_node_comp_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\component_proto\gs_node_comp.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -184,5 +186,6 @@
     <ClInclude Include="src\pb\pbc\component_proto\player_network_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\player_login_comp.pb.h" />
     <ClInclude Include="src\util\random.h" />
+    <ClInclude Include="src\pb\pbc\component_proto\gs_node_comp.pb.h" />
   </ItemGroup>
 </Project>
