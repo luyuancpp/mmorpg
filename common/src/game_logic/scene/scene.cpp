@@ -159,20 +159,20 @@ uint32_t ScenesSystem::CheckEnterSceneByGuid(const CheckEnterSceneParam& param)
 
 void ScenesSystem::EnterScene(const EnterSceneParam& param)
 {
-    auto scene_entity = param.scene_;
-    if (scene_entity == entt::null)
+    auto scene_ = param.scene_;
+    if (scene_ == entt::null)
     {
         LOG_INFO << "enter error" << entt::to_integral(param.enterer_);
         return;
     }
-    registry.get<ScenePlayers>(scene_entity).emplace(param.enterer_);
-    registry.emplace<SceneEntity>(param.enterer_, scene_entity);
-	auto p_server_data = registry.try_get<GsNodePlayerInfoPtr>(scene_entity);
-	if (nullptr == p_server_data)
+    registry.get<ScenePlayers>(scene_).emplace(param.enterer_);
+    registry.emplace<SceneEntity>(param.enterer_, scene_);
+	auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene_);
+	if (nullptr == p_gs_player_info)
 	{
 		return;
 	}
-	(*p_server_data)->set_player_size((*p_server_data)->player_size() + 1);
+	(*p_gs_player_info)->set_player_size((*p_gs_player_info)->player_size() + 1);
 }
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
@@ -187,12 +187,12 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
     auto scene_entity = player_scene_entity.scene_entity();
     registry.get<ScenePlayers>(scene_entity).erase(leave_player);
     registry.remove<SceneEntity>(leave_player);
-    auto p_server_data = registry.try_get<GsNodePlayerInfoPtr>(scene_entity);
-    if (nullptr == p_server_data)
+    auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene_entity);
+    if (nullptr == p_gs_player_info)
     {
         return;
     }
-    (*p_server_data)->set_player_size((*p_server_data)->player_size() - 1);
+    (*p_gs_player_info)->set_player_size((*p_gs_player_info)->player_size() - 1);
 }
 
 void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
