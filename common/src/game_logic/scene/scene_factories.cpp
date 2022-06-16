@@ -18,7 +18,7 @@ void MakeScenes()
 
 }
 
-entt::entity MakeMainSceneNode(entt::registry& reg,  const MakeGSParam& param)
+entt::entity MakeMainSceneNode(const MakeGSParam& param)
 {
     auto e = registry.create();
     AddMainSceneNodeCompnent(e, param);
