@@ -60,7 +60,6 @@ entt::entity ScenesSystem::MakeScene(const MakeSceneP& param)
 	{
         LOG_ERROR << "already has scene" << guid;
 	}
-
     return scene;
 }
 

@@ -57,6 +57,6 @@ entt::entity& scenes_entity();
 void MakeScenes();
 
 
-entt::entity MakeMainSceneNode(entt::registry& reg, const MakeGSParam& param);
+entt::entity MakeMainSceneNode(const MakeGSParam& param);
 void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param);
 
