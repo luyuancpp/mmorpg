@@ -120,6 +120,7 @@ TEST(GS, DestroyScene)
     EXPECT_EQ(1, server_scenes.scenes_size());
 
     DestroySceneParam dparam;
+    dparam.server_ = server_entity1;
     dparam.scene_ = scene_entity;
     sm.DestroyScene(dparam);
     EXPECT_TRUE(sm.Empty());
