@@ -69,30 +69,6 @@ TEST(GS, MakeScene2Sever )
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 }
 
-TEST(GS, PutScene2Sever)
-{
-    ScenesSystem sm;
-
-    MakeGSParam param1;
-    param1.node_id_ = 1;
-
-    MakeSceneP cparam;
-    auto scene_entity = sm.MakeScene(cparam);
-
-    auto server_entity1 = MakeMainSceneNode( param1);
-        
-    PutScene2GSParam put_param;
-    put_param.scene_ = scene_entity;
-    put_param.server_ = server_entity1;
-    sm.PutScene2Gs(put_param);
-
-    EXPECT_EQ(1, sm.scenes_size());
-    EXPECT_EQ(1, sm.scenes_size(cparam.scene_confid_));
-    EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
-
-    EXPECT_EQ(1, sm.scenes_size());
-}
-
 TEST(GS, DestroyScene)
 {
     ScenesSystem sm;
@@ -100,16 +76,12 @@ TEST(GS, DestroyScene)
     MakeGSParam param1;
     param1.node_id_ = 1;
 
-    MakeSceneP cparam;
-    auto scene_entity = sm.MakeScene(cparam);
-
     auto server_entity1 = MakeMainSceneNode( param1);
 
-    PutScene2GSParam put_param;
-    put_param.scene_ = scene_entity;
-    put_param.server_ = server_entity1;
-    sm.PutScene2Gs(put_param);
-
+	MakeGsSceneP cparam;
+    cparam.server_ = server_entity1;
+	auto scene_entity = sm.MakeScene2Gs(cparam);
+    
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(1, sm.scenes_size(cparam.scene_confid_));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());

@@ -27,13 +27,6 @@ struct MakeGsSceneP
     uint32_t op_{ 0 };
 };
 
-struct PutScene2GSParam
-{
-    entt::entity scene_{ entt::null };
-    entt::entity server_{ entt::null };
-    uint32_t op_{ 0 };
-};
-
 struct MoveServerScene2ServerSceneP
 {
     entt::entity from_server_{ entt::null };
