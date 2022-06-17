@@ -117,6 +117,7 @@ void ScenesSystem::DestroyServer(const DestroyServerParam& param)
     auto server_entity = param.server_;
     auto server_scenes = registry.get<ConfigSceneMap>(server_entity).scenesids_clone();
     DestroySceneParam destroy_param;
+    destroy_param.server_ = server_entity;
     for (auto& it : server_scenes)
     {
         destroy_param.scene_ = it;
