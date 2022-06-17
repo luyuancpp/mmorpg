@@ -42,8 +42,8 @@ TEST(GS, MakeScene2Sever )
     param2.node_id_ = 1;
     auto server_entity2 = MakeMainSceneNode( param2);
 
-    MakeGSSceneP server1_param;
-    MakeGSSceneP server2_param;
+    MakeGsSceneP server1_param;
+    MakeGsSceneP server2_param;
 
     server1_param.scene_confid_ = 2;
     server1_param.server_ = server_entity1;
@@ -141,8 +141,8 @@ TEST(GS, DestroySever)
     param2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneNode( param2);
 
-    MakeGSSceneP server1_param;
-    MakeGSSceneP server2_param;
+    MakeGsSceneP server1_param;
+    MakeGsSceneP server2_param;
     server1_param.scene_confid_ = 3;
     server1_param.server_ = server_entity1;
 
@@ -203,8 +203,8 @@ TEST(GS, ServerScene2Sever)
     MakeGSParam cgs2;
     cgs2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneNode( cgs2);
-    MakeGSSceneP server1_param;
-    MakeGSSceneP server2_param;
+    MakeGsSceneP server1_param;
+    MakeGsSceneP server2_param;
 
     server1_param.scene_confid_ = 3;
     server1_param.server_ = server_entity1;
@@ -255,8 +255,8 @@ TEST(GS, PlayerLeaveEnterScene)
     cgs2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneNode( cgs2);
 
-    MakeGSSceneP server1_param;
-    MakeGSSceneP server2_param;
+    MakeGsSceneP server1_param;
+    MakeGsSceneP server2_param;
 
     server1_param.scene_confid_ = 3;
     server1_param.server_ = server_entity1;
@@ -351,7 +351,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
-    MakeGSSceneP make_server_scene_param;
+    MakeGsSceneP make_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         make_server_scene_param.scene_confid_ = i;
@@ -411,8 +411,8 @@ TEST(GS, CompelChangeScene)
     cgs2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneNode( cgs2);
 
-    MakeGSSceneP server1_param;
-    MakeGSSceneP server2_param;
+    MakeGsSceneP server1_param;
+    MakeGsSceneP server2_param;
 
     server1_param.scene_confid_ = 2;
     server1_param.server_ = server_entity1;
@@ -474,7 +474,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
-    MakeGSSceneP make_server_scene_param;
+    MakeGsSceneP make_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         make_server_scene_param.scene_confid_ = i;
@@ -541,7 +541,7 @@ TEST(GS, CrashMovePlayer2NewServer)
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
-    MakeGSSceneP make_server_scene_param;
+    MakeGsSceneP make_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         make_server_scene_param.scene_confid_ = i;
@@ -607,7 +607,7 @@ TEST(GS, WeightRoundRobinMainScene)
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
-    MakeGSSceneP make_server_scene_param;
+    MakeGsSceneP make_server_scene_param;
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
@@ -732,7 +732,7 @@ TEST(GS, ServerEnterLeavePressure)
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
-    MakeGSSceneP make_server_scene_param;
+    MakeGsSceneP make_server_scene_param;
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
@@ -803,7 +803,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		server_entities.emplace(MakeMainSceneNode( cgs1));
 	}
 
-	MakeGSSceneP make_server_scene_param;
+	MakeGsSceneP make_server_scene_param;
 
 	for (uint32_t i = 0; i < per_server_scene; ++i)
 	{

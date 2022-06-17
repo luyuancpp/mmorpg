@@ -42,7 +42,7 @@ public:
 
     entt::entity MakeScene(const MakeSceneP& param);
     entt::entity MakeSceneByGuid(const MakeSceneWithGuidP& param);
-    entt::entity MakeScene2Gs(const MakeGSSceneP& param);
+    entt::entity MakeScene2Gs(const MakeGsSceneP& param);
 
     void PutScene2Gs(const PutScene2GSParam& param);
 
