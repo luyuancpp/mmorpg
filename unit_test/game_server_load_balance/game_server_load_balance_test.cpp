@@ -59,12 +59,10 @@ TEST(GS, MakeScene2Sever )
     auto& scenes_id2 = registry.get<ConfigSceneMap>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
-    EXPECT_EQ(server1_param.scene_confid_, registry.get<SceneInfo>(scenes_id1.first_scene_id()).scene_confid());
+
     EXPECT_EQ(1, sm.scenes_size(server1_param.scene_confid_));
 
     EXPECT_EQ(1, scenes_id2.scenes_size());
-    EXPECT_EQ(server2_param.scene_confid_, registry.get<SceneInfo>(scenes_id2.first_scene_id()).scene_confid());
-
 
     EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
     EXPECT_EQ(2, sm.scenes_size());
