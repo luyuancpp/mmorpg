@@ -10,10 +10,11 @@ entt::entity MakeMainSceneNode(const MakeGSParam& param)
     return e;
 }
 
-void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param)
+void AddMainSceneNodeCompnent(entt::entity server, const MakeGSParam& param)
 {
-	registry.emplace<MainSceneServer>(e);
-	registry.emplace<GSNormal>(e);
-	registry.emplace<NoPressure>(e);
-	registry.emplace<ConfigSceneMap>(e);
+	registry.emplace<MainSceneServer>(server);
+	registry.emplace<GSNormal>(server);
+	registry.emplace<NoPressure>(server);
+	registry.emplace<ConfigSceneMap>(server);
+	registry.emplace<GsNodePlayerInfoPtr>(server, std::make_shared<GsNodePlayerInfoPtr::element_type>());
 }

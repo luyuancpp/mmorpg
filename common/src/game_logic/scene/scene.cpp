@@ -85,22 +85,17 @@ entt::entity ScenesSystem::MakeScene2Gs(const MakeGsSceneP& param)
 {
     MakeSceneP make_p;
     make_p.scene_confid_ = param.scene_confid_;
-    auto e = MakeScene(make_p);
-    PutScene2GSParam put_param;
-    put_param.scene_ = e;
-    put_param.server_ = param.server_;
-    PutScene2Gs(put_param);
-    return e;
+    auto scene = MakeScene(make_p);
+	auto server = param.server_;
+    auto try_server_player_info = registry.try_get<GsNodePlayerInfoPtr>(server);
+    if (nullptr != try_server_player_info)
+    {
+        registry.emplace<GsNodePlayerInfoPtr>(scene, *try_server_player_info);
+    }
+	auto& server_scenes = registry.get<ConfigSceneMap>(server);
+	server_scenes.AddScene(registry.get<SceneInfo>(scene).scene_confid(), scene);
+    return scene;
 }
-
-void ScenesSystem::PutScene2Gs(const PutScene2GSParam& param)
-{
-    auto scene = param.scene_;
-    auto server = param.server_;
-    auto& server_scenes = registry.get<ConfigSceneMap>(server);
-    server_scenes.AddScene(registry.get<SceneInfo>(scene).scene_confid(), scene);
-}
-
 
 void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 {
