@@ -20,7 +20,7 @@ struct MakeGSParam
     uint32_t op_{ 0 };
 };
 
-struct MakeGSSceneP
+struct MakeGsSceneP
 {
     entt::entity server_{ entt::null };
     uint32_t scene_confid_{ 0 };
