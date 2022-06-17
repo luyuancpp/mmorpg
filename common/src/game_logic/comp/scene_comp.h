@@ -25,18 +25,6 @@ private:
 class ConfigSceneMap
 {
 public:
-    entt::entity first_scene_id() 
-    { 
-        for (auto& it : confid_scenelist_)
-        {
-            if (it.second.empty())
-            {
-                continue;
-            }
-            return *it.second.begin();
-        }
-        return entt::null;
-    }
     const Uint32KeyEntitySetValue& confid_sceneslist() const { return confid_scenelist_; }
     const EntitySet& confid_sceneslist(uint32_t scene_config_id) const 
     {
@@ -83,18 +71,10 @@ public:
         return s;
     }
 
-    inline bool scenes_empty() const 
-    { 
-		for (auto& it : confid_scenelist_)
-		{
-			if (it.second.empty())
-			{
-				continue;
-			}
-			return false;
-		}
-		return true;
-    }
+	inline bool scenes_empty() const
+	{
+        return scenes_size() == 0;
+	}
 
     inline bool HasConfig(uint32_t scene_config_id)const{ return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
 
