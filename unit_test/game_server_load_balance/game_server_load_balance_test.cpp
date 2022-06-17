@@ -152,13 +152,8 @@ TEST(GS, DestroySever)
     auto scene_id1 = sm.MakeScene2Gs(server1_param);
     auto scene_id2 = sm.MakeScene2Gs(server2_param);
 
-    auto& scenes_id1 = registry.get<ConfigSceneMap>(server_entity1);
-
-
-    EXPECT_EQ(1, scenes_id1.scenes_size());
- 
+    EXPECT_EQ(1, registry.get<ConfigSceneMap>(server_entity1).scenes_size());
     EXPECT_EQ(1, registry.get<ConfigSceneMap>(server_entity2).scenes_size());
-
 
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
@@ -214,11 +209,7 @@ TEST(GS, ServerScene2Sever)
 
     auto scene_id1 = sm.MakeScene2Gs(server1_param);
     auto scene_id2 = sm.MakeScene2Gs(server2_param);
-
-
-    auto& scenes_id1 = registry.get<ConfigSceneMap>(server_entity1);
-
-    EXPECT_EQ(1, scenes_id1.scenes_size());
+    EXPECT_EQ(1, registry.get<ConfigSceneMap>(server_entity1).scenes_size());
 
     EXPECT_EQ(1, registry.get<ConfigSceneMap>(server_entity2).scenes_size());
 

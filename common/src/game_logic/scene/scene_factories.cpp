@@ -3,21 +3,6 @@
 #include "src/game_logic/game_registry.h"
 #include "src/util/snow_flake.h"
 
-
-entt::entity& scenes_entity()
-{
-    thread_local entt::entity g_scenes_entity;
-    return g_scenes_entity;
-}
-
-void MakeScenes()
-{
-    scenes_entity() = registry.create();
-    registry.emplace<ConfigSceneMap>(scenes_entity());
-    registry.emplace<SnowFlake>(scenes_entity());
-
-}
-
 entt::entity MakeMainSceneNode(const MakeGSParam& param)
 {
     auto e = registry.create();

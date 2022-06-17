@@ -54,9 +54,6 @@ struct DestroyServerParam
 
 entt::entity& scenes_entity();
 
-void MakeScenes();
-
-
 entt::entity MakeMainSceneNode(const MakeGSParam& param);
 void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param);
 
