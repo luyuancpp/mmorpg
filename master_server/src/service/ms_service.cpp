@@ -169,7 +169,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
-		MakeGSSceneP create_scene_param;
+		MakeGsSceneP create_scene_param;
 		create_scene_param.server_ = gs_entity;
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
