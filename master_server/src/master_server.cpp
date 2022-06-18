@@ -188,7 +188,6 @@ void MasterServer::InitConfig()
 
 void MasterServer::InitGlobalEntities()
 {
-    MakeScenes();
 }
 
 void MasterServer::Connect2Region()
