@@ -34,7 +34,7 @@ void GatewayServer::Init()
     deploy_session_->connect();
 }
 
-void GatewayServer::StartServer(ServerInfoRpcReplied replied)
+void GatewayServer::StartServer(ServerInfoRpc replied)
 {
     serverinfo_data_ = replied->s_rp_->info();
     g_server_sequence_.set_node_id(gate_node_id());
@@ -42,11 +42,11 @@ void GatewayServer::StartServer(ServerInfoRpcReplied replied)
     EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
         [this]() ->void
         {
-            LoginNodeInfoReplied rp(std::make_shared<LoginNodeInfoReplied::element_type>());
-            rp->s_rq_.set_group_id(GameConfig::GetSingleton().config_info().group_id());
+            LoginNodeInfoRpc rpc(std::make_shared<LoginNodeInfoRpc::element_type>());
+            rpc->s_rq_.set_group_id(GameConfig::GetSingleton().config_info().group_id());
             deploy_stub_.CallMethod(
                 &GatewayServer::LoginNoseInfoReplied,
-                rp,
+                rpc,
                 this,
                 &deploy::DeployService_Stub::LoginNodeInfo);
         }
@@ -70,7 +70,7 @@ void GatewayServer::StartServer(ServerInfoRpcReplied replied)
     server_->start();
 }
 
-void GatewayServer::LoginNoseInfoReplied(LoginNodeInfoReplied replied)
+void GatewayServer::LoginNoseInfoReplied(LoginNodeInfoRpc replied)
 {
     auto& rsp = replied->s_rp_;
     for (const auto& it : rsp->login_db().login_nodes())
@@ -117,11 +117,11 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
-                ServerInfoRpcReplied replied(std::make_shared<ServerInfoRpcReplied::element_type>());
-                replied->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+                ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
+                rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
                 deploy_stub_.CallMethod(
                     &GatewayServer::StartServer,
-                    replied,
+                    rpc,
                     this,
                     &deploy::DeployService_Stub::ServerInfo);
             }
