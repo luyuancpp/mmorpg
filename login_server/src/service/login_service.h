@@ -28,11 +28,11 @@ public:
 
 		void set_redis_client(PbSyncRedisClientPtr& p) { redis_ = p; }
 
-		using LoginDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
-		void LoginAccountDbReplied(LoginDbRpc replied);
+		using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
+		void LoginAccountDbReplied(LoginAccountDbRpc replied);
 
-		using LoginMasterRpc = std::shared_ptr<RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
-		void LoginAccountMsReplied(LoginMasterRpc replied);
+		using LoginAcountMsRpc = std::shared_ptr<RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
+		void LoginAccountMsReplied(LoginAcountMsRpc replied);
 
 		using CreatePlayerRpcReplied = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
 		void CreatePlayerDbReplied(CreatePlayerRpcReplied replied);
@@ -40,8 +40,8 @@ public:
 		using EnterGameDbRpcReplied = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
 		void EnterGameDbReplied(EnterGameDbRpcReplied replied);
 
-		using EnterGameMSRpcReplied = std::shared_ptr<RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
-		void EnterGameReplied(EnterGameMSRpcReplied replied);
+		using EnterGameMsRpc = std::shared_ptr<RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
+		void EnterGameReplied(EnterGameMsRpc replied);
 
 		void EnterGame(Guid player_id,
 			uint64_t connection_id,
