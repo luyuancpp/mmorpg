@@ -286,6 +286,7 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 		return;
 	}
 	auto player_id = registry.get<Guid>(player);
+	g_gate_sessions.erase(player_id);
 	gsservice::DisconnectRequest message;
 	message.set_player_id(player_id);
 	registry.get<GsStubPtr>(it->second)->CallMethod(
