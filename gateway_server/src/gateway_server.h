@@ -47,15 +47,12 @@ public:
 
     void Init();
 
-    using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
-        deploy::ServerInfoResponse>;
-    using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
-    void StartServer(ServerInfoRpcRC cp);
+	using ServerInfoRpcReplied = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest,deploy::ServerInfoResponse>>;
+    void StartServer(ServerInfoRpcReplied cp);
 
-    using LoginNodeInfoClosure = NormalClosure<deploy::GroupLignRequest,
-        deploy::GruoupLoginNodeResponse>;
-    using LoginNodeInfoReplied = std::shared_ptr<LoginNodeInfoClosure>;
-    void LoginNoseInfoReplied(LoginNodeInfoReplied cp);
+	using LoginNodeInfoReplied = std::shared_ptr<NormalClosure<deploy::GroupLignRequest,
+		deploy::GruoupLoginNodeResponse>>;
+    void LoginNoseInfoReplied(LoginNodeInfoReplied replied);
 
     void ConnectLogin(const login_server_db& login_addr);
 

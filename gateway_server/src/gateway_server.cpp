@@ -34,9 +34,9 @@ void GatewayServer::Init()
     deploy_session_->connect();
 }
 
-void GatewayServer::StartServer(ServerInfoRpcRC cp)
+void GatewayServer::StartServer(ServerInfoRpcReplied replied)
 {
-    serverinfo_data_ = cp->s_rp_->info();
+    serverinfo_data_ = replied->s_rp_->info();
     g_server_sequence_.set_node_id(gate_node_id());
 
     EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
@@ -70,9 +70,9 @@ void GatewayServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
-void GatewayServer::LoginNoseInfoReplied(LoginNodeInfoReplied rp)
+void GatewayServer::LoginNoseInfoReplied(LoginNodeInfoReplied replied)
 {
-    auto& rsp = rp->s_rp_;
+    auto& rsp = replied->s_rp_;
     for (const auto& it : rsp->login_db().login_nodes())
     {
         if (it.id() != 1)
@@ -106,7 +106,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
     if (IsSameAddr(conn->peerAddress(), DeployConfig::GetSingleton().deploy_info()))
     {
         // started 
-        if (nullptr != server_)
+        if (nullptr != server_)//¶ÏÏßÖØÁ¬
         {
             return;
         }
@@ -117,11 +117,11 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
-                ServerInfoRpcRC c(std::make_shared<ServerInfoRpcClosure>());
-                c->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+                ServerInfoRpcReplied replied(std::make_shared<ServerInfoRpcReplied::element_type>());
+                replied->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
                 deploy_stub_.CallMethod(
                     &GatewayServer::StartServer,
-                    c,
+                    replied,
                     this,
                     &deploy::DeployService_Stub::ServerInfo);
             }
