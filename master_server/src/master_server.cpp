@@ -55,20 +55,20 @@ void MasterServer::Connect2Deploy()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
-    deploy_rpc_client_->subscribe<OnConnected2ServerEvent>(*this);
-    deploy_rpc_client_->connect();
+    deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+    deploy_session_->subscribe<RegisterStubEvent>(deploy_stub_);
+    deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
+    deploy_session_->connect();
 }
 
-void MasterServer::StartServer(ServerInfoRpcRC cp)
+void MasterServer::StartServer(ServerInfoRpcRpc replied)
 {
-    serverinfos_ = cp->s_rp_->info();
+    serverinfos_ = replied->s_rp_->info();
     auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
-    db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
-    db_rpc_client_->subscribe<RegisterStubEvent>(db_node_stub_);
-    db_rpc_client_->connect();    
+    db_session_ = std::make_unique<RpcClient>(loop_, database_addr);
+    db_session_->subscribe<RegisterStubEvent>(db_node_stub_);
+    db_session_->connect();    
 
     Connect2Region();
 	
@@ -85,7 +85,7 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
-void MasterServer::StartMsRegionReplied(StartMsReplied cp)
+void MasterServer::StartMsRegionReplied(StartMsRpc cp)
 {
 
 }
@@ -115,12 +115,12 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
 		// started 
 		if (nullptr == server_)
 		{
-			ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-			cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-			cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+			ServerInfoRpcRpc rpc(std::make_shared<ServerInfoRpcRpc::element_type>());
+			rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+			rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
 			deploy_stub_.CallMethod(
 				&MasterServer::StartServer,
-				cp,
+				rpc,
 				this,
 				&deploy::DeployService_Stub::ServerInfo);
 		}
@@ -204,8 +204,8 @@ void MasterServer::Connect2Region()
 void MasterServer::Register2Region()
 {
     auto& myinfo = serverinfos_.master_info();
-    StartMsReplied cp(std::make_shared<StartMsReplied::element_type>());
-	auto& rq = cp->s_rq_;
+    StartMsRpc rpc(std::make_shared<StartMsRpc::element_type>());
+	auto& rq = rpc->s_rq_;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();
 	session_info->set_ip(region_session_->local_addr().toIp());
@@ -215,7 +215,7 @@ void MasterServer::Register2Region()
 	rq.set_ms_node_id(myinfo.id());
 	rg_stub_.CallMethod(
 		&MasterServer::StartMsRegionReplied,
-		cp,
+		rpc,
 		this,
 		&regionservcie::RgService_Stub::StartMs);
 }

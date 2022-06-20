@@ -37,7 +37,7 @@ using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
-void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied)
+void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc replied)
 {
 	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
     if (entt::null == player)
@@ -546,11 +546,10 @@ void MasterNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
 		return;
 	}
-	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpcReplied rp;
-	auto& message = rp.s_rq_;
-	message.set_session_id(player_session.session_id());
-	message.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, rp, this, &gwservice::GwNodeService::PlayerEnterGs);
+	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpc rpc;
+	rpc.s_rq_.set_session_id(player_session.session_id());
+	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
+	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 

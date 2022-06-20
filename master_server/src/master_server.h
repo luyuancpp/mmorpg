@@ -40,14 +40,11 @@ private:
 	void InitConfig();
 	void InitGlobalEntities();
 
-	using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
-		deploy::ServerInfoResponse>;
-	using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
-	void StartServer(ServerInfoRpcRC cp);
+	using ServerInfoRpcRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest, deploy::ServerInfoResponse>>;
+	void StartServer(ServerInfoRpcRpc replied);
 
-	using StartMsClosure = NormalClosure<regionservcie::StartMsRequest, regionservcie::StartMsResponse>;
-	using StartMsReplied = std::shared_ptr<StartMsClosure>;
-	void StartMsRegionReplied(StartMsReplied cp);
+	using StartMsRpc = std::shared_ptr<NormalClosure<regionservcie::StartMsRequest, regionservcie::StartMsResponse>>;
+	void StartMsRegionReplied(StartMsRpc replied);
 
 
 	void Connect2Deploy();
@@ -58,13 +55,13 @@ private:
 	PbSyncRedisClientPtr redis_;
 	RpcServerPtr server_;
 
-	RpcClientPtr deploy_rpc_client_;
+	RpcClientPtr deploy_session_;
 	DeployStub deploy_stub_;
 
 	RpcClientPtr region_session_;
 	RgNodeStub rg_stub_;
 
-	RpcClientPtr db_rpc_client_;
+	RpcClientPtr db_session_;
 	DbNodeStub db_node_stub_;
 
 	MasterNodeServiceImpl node_service_impl_;
