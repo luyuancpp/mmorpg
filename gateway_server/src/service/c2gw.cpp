@@ -64,6 +64,8 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         //断了线之后不能把消息串到别人的地方，串话
         //如果我没登录就发送其他协议到master game server 怎么办
         {
+            //此消息一定要发，不能值通过ms 的gw disconnect去发
+            //如果我的登录还没到ms,gw的disconnect 先到，登录后到，那么ms server 永远删除不了这个sessionid了
 			gw2l::DisconnectRequest request;
 			request.set_session_id(session_id);
 			login_stub().CallMethod(request, &gw2l::LoginService_Stub::Disconnect);
