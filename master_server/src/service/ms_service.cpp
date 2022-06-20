@@ -275,9 +275,13 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	{
 		return;
 	}
-	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
-	if (it == g_gs_nodes.end() ||  try_player_session->gate_node_id() != node_id(request->session_id()))
+	if (try_player_session->session_id() != request->session_id())
+	{
+		return;
+	}
+	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
+	if (it == g_gs_nodes.end())
 	{
 		return;
 	}
