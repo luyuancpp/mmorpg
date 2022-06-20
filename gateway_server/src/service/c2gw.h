@@ -64,21 +64,21 @@ public:
         muduo::Timestamp);
 
     using LoginRpcReplied = std::shared_ptr<ClosureReplied<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>>;
-    void OnServerLoginReplied(LoginRpcReplied cp);
+    void OnServerLoginReplied(LoginRpcReplied replied);
 
     void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
         const CreatePlayerRequestPtr& message, 
         muduo::Timestamp);
 
     using CreatePlayeReplied = std::shared_ptr<ClosureReplied<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>>;
-    void OnServerCreatePlayerReplied(CreatePlayeReplied cp);
+    void OnServerCreatePlayerReplied(CreatePlayeReplied replied);
 
     void OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
 
     using EnterGameRpcRplied = std::shared_ptr<ClosureReplied<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
-    void OnServerEnterGameReplied(EnterGameRpcRplied cp);
+    void OnServerEnterGameReplied(EnterGameRpcRplied replied);
 
     void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
         const LeaveGameRequestPtr& message,

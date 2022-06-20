@@ -110,15 +110,15 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
         &gw2l::LoginService_Stub::Login);
 }
 
-void ClientReceiver::OnServerLoginReplied(LoginRpcReplied cp)
+void ClientReceiver::OnServerLoginReplied(LoginRpcReplied replied)
 {
-    auto& player_list = cp->s_rp_->account_player().simple_players().players();
+    auto& player_list = replied->s_rp_->account_player().simple_players().players();
     for (auto it : player_list)
     {
-        auto p = cp->c_rp_.add_players();
+        auto p = replied->c_rp_.add_players();
         p->set_player_id(it.player_id());
     }
-    codec_.send(cp->client_conn_, cp->c_rp_);
+    codec_.send(replied->client_conn_, replied->c_rp_);
 }
 
 void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
@@ -133,15 +133,15 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
         &gw2l::LoginService_Stub::CreatPlayer);
 }
 
-void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeReplied cp)
+void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeReplied replied)
 {
-    auto& player_list = cp->s_rp_->account_player().simple_players().players();
+    auto& player_list = replied->s_rp_->account_player().simple_players().players();
     for (auto it : player_list)
     {
-        auto p = cp->c_rp_.add_players();
+        auto p = replied->c_rp_.add_players();
         p->set_player_id(it.player_id());
     }
-    codec_.send(cp->client_conn_, cp->c_rp_);
+    codec_.send(replied->client_conn_, replied->c_rp_);
 }
 
 void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -157,11 +157,11 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         &gw2l::LoginService_Stub::EnterGame);
 }
 
-void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied cp)
+void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied replied)
 {
     //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断   
-	cp->c_rp_.mutable_error()->CopyFrom(cp->s_rp_->error());
-	codec_.send(cp->client_conn_, cp->c_rp_);
+	replied->c_rp_.mutable_error()->CopyFrom(replied->s_rp_->error());
+	codec_.send(replied->client_conn_, replied->c_rp_);
 	return;
 }
 
@@ -206,11 +206,11 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     }
 }
 
-void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp)
+void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied replied)
 {
-    auto& crp = cp->c_rp_;
-    crp.set_body(std::move(cp->s_rp_->response()));
-    codec_.send(cp->client_conn_, crp);
+    auto& crp = replied->c_rp_;
+    crp.set_body(std::move(replied->s_rp_->response()));
+    codec_.send(replied->client_conn_, crp);
 }
 
 
