@@ -38,7 +38,6 @@ public:
 private:
 
 	void InitConfig();
-	void InitGlobalEntities();
 
 	using ServerInfoRpcRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest, deploy::ServerInfoResponse>>;
 	void StartServer(ServerInfoRpcRpc replied);

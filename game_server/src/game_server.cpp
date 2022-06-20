@@ -215,7 +215,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         if (conn->connected() &&
             IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
         {
-            EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&GameServer::Register2Master, this, master_session));
+            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::Register2Master, this, master_session));
             break;
         }
         // ms 走断线重连，不删除

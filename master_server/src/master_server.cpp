@@ -44,7 +44,6 @@ void MasterServer::Init()
     g_ms_node = this;
     InitConfig();
     InitMsgService();
-    InitGlobalEntities();
     InitPlayerServcie();
 
     //connect 
@@ -129,7 +128,7 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
 		{
 			if (conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 			{
-				EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&MasterServer::Register2Region, this));
+				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&MasterServer::Register2Region, this));
 			}
 			else if(!conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 			{
@@ -165,11 +164,13 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
             auto gsnode = registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
             if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGsNode)
             {
+				//todo 
                 g_gs_nodes.erase((*gsnode)->node_info_.node_id());
             }
 			auto gatenode = registry.try_get<GateNodePtr>(e);//如果是gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateWayNode)
 			{
+				//todo
                 g_gate_nodes.erase((*gatenode)->node_info_.node_id());
 			}
 			registry.destroy(e);
@@ -184,10 +185,6 @@ void MasterServer::InitConfig()
     DeployConfig::GetSingleton().Load("deploy.json");
     RegionConfig::GetSingleton().Load("region.json");
 	LoadAllConfig();
-}
-
-void MasterServer::InitGlobalEntities()
-{
 }
 
 void MasterServer::Connect2Region()
