@@ -18,7 +18,7 @@ LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
 {}
 
 
-void LoginServiceImpl::LoginAccountMsReplied(LoginMasterRpc replied)
+void LoginServiceImpl::LoginAccountMsReplied(LoginAcountMsRpc replied)
 {
 	//只连接不登录,占用连接
 	// login process
@@ -49,13 +49,13 @@ void LoginServiceImpl::LoginAccountMsReplied(LoginMasterRpc replied)
 		}
 	}
 	// database process
-	auto rpc(std::make_shared<LoginDbRpc::element_type>(*replied));
+	auto rpc(std::make_shared<LoginAccountDbRpc::element_type>(*replied));
 	rpc->s_rq_.set_account(replied->s_rq_.account());
 	rpc->s_rq_.set_session_id(replied->s_rq_.session_id());
 	l2db_login_stub_.CallMethodString(&LoginServiceImpl::LoginAccountDbReplied, rpc, this, &dbservice::DbService_Stub::Login);
 }
 
-void LoginServiceImpl::LoginAccountDbReplied(LoginDbRpc replied)
+void LoginServiceImpl::LoginAccountDbReplied(LoginAccountDbRpc replied)
 {
 	auto& srp = replied->s_rp_;
 	replied->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
@@ -73,8 +73,8 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied replied)
 {
 	//db 加载过程中断线了
 	auto& srq = replied->s_rq_;
-	auto cit = sessions_.find(replied->c_rp_->session_id());
-	if (cit == sessions_.end())
+	auto sit = sessions_.find(replied->c_rp_->session_id());
+	if (sit == sessions_.end())
 	{
 		return;
 	}
@@ -84,9 +84,9 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpcReplied replied)
 	EnterGame(srq.player_id(), response->session_id(), response, done);
 }
 
-void LoginServiceImpl::EnterGameReplied(EnterGameMSRpcReplied d)
+void LoginServiceImpl::EnterGameReplied(EnterGameMsRpc replied)
 {
-	sessions_.erase(d->s_rq_.session_id());
+	sessions_.erase(replied->s_rq_.session_id());
 }
 
 void LoginServiceImpl::EnterGame(Guid player_id,
@@ -99,24 +99,24 @@ void LoginServiceImpl::EnterGame(Guid player_id,
 	{
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
-	auto cp(std::make_shared<EnterGameMSRpcReplied::element_type>(response, done));
-	cp->s_rq_.set_player_id(player_id);
-	cp->s_rq_.set_session_id(response->session_id());
+	auto rpc(std::make_shared<EnterGameMsRpc::element_type>(response, done));
+	rpc->s_rq_.set_player_id(player_id);
+	rpc->s_rq_.set_session_id(response->session_id());
 	ms_node_stub_.CallMethodString(
 		&LoginServiceImpl::EnterGameReplied,
-		cp,
+		rpc,
 		this,
 		&msservice::MasterNodeService_Stub::OnLsEnterGame);
 }
 
 void LoginServiceImpl::UpdateAccount(uint64_t session_id, const ::account_database& a_d)
 {
-	auto cit = sessions_.find(session_id);
-	if (cit == sessions_.end())//断线了
+	auto sit = sessions_.find(session_id);
+	if (sit == sessions_.end())//断线了
 	{
 		return;
 	}
-	auto* p_player = registry.try_get<PlayerPtr>(cit->second);
+	auto* p_player = registry.try_get<PlayerPtr>(sit->second);
 	if (nullptr == p_player)
 	{
 		return;
@@ -140,12 +140,12 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
 	//登录的时候马上断开连接换了个gate应该可以登录成功
 	//login master
-	auto c(std::make_shared<LoginMasterRpc::element_type>(response, done));
-	auto& s_reqst = c->s_rq_;
+	auto rpc(std::make_shared<LoginAcountMsRpc::element_type>(response, done));
+	auto& s_reqst = rpc->s_rq_;
 	s_reqst.set_account(request->account());
 	s_reqst.set_session_id(request->session_id());
 	sessions_.emplace(request->session_id(), EntityPtr());
-	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, c, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
+	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, rpc, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -159,12 +159,12 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	d.SelfDelete();
 	// login process
 	//check name rule
-	auto cit = sessions_.find(request->session_id());
-	if (cit == sessions_.end())
+	auto sit = sessions_.find(request->session_id());
+	if (sit == sessions_.end())
 	{
 		ReturnCloseureError(kRetLoignCreatePlayerConnectionHasNotAccount);
 	}
-	auto* p_player = registry.try_get<PlayerPtr>(cit->second);
+	auto* p_player = registry.try_get<PlayerPtr>(sit->second);
 	if (nullptr == p_player)
 	{
 		ReturnCloseureError(kRetLoginCreateConnectionAccountEmpty);
@@ -173,12 +173,12 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	CheckReturnCloseureError(ap->CreatePlayer());
 
 	// database process
-	auto c(std::make_shared<CreatePlayerRpcReplied::element_type>(response, done));
-	c->s_rq_.set_session_id(request->session_id());
-	c->s_rq_.set_account(ap->account());
+	auto rpc(std::make_shared<CreatePlayerRpcReplied::element_type>(response, done));
+	rpc->s_rq_.set_session_id(request->session_id());
+	rpc->s_rq_.set_account(ap->account());
 	l2db_login_stub_.CallMethodString(
 		&LoginServiceImpl::CreatePlayerDbReplied,
-		c,
+		rpc,
 		this,
 		&dbservice::DbService_Stub::CreatePlayer);
 ///<<< END WRITING YOUR CODE 
@@ -193,12 +193,12 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE 
 	d.SelfDelete();
 	auto session_id = request->session_id();
-	auto cit = sessions_.find(session_id);
-	if (cit == sessions_.end())
+	auto sit = sessions_.find(session_id);
+	if (sit == sessions_.end())
 	{
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
-	auto* p_player = registry.try_get<PlayerPtr>(cit->second);
+	auto* p_player = registry.try_get<PlayerPtr>(sit->second);
 	if (nullptr == p_player)
 	{
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
@@ -209,7 +209,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 
 	// long time in login processing
 	auto player_id = request->player_id();
-	if (!ap->IsInPlayerList(player_id))
+	if (!ap->HasPlayer(player_id))
 	{
 		ReturnCloseureError(kRetLoginPlayerGuidError);
 	}
@@ -244,8 +244,8 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	//连接过，登录过
-	auto cit = sessions_.find(request->session_id());
-	if (cit == sessions_.end())
+	auto sit = sessions_.find(request->session_id());
+	if (sit == sessions_.end())
 	{
 		LOG_ERROR << " leave game not found connection";
 		return;
@@ -254,7 +254,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	ms_request.set_session_id(request->session_id());
 	ms_node_stub_.CallMethod(ms_request,
 		&msservice::MasterNodeService_Stub::OnLsLeaveGame);
-	sessions_.erase(cit);
+	sessions_.erase(sit);
 ///<<< END WRITING YOUR CODE 
 }
 
