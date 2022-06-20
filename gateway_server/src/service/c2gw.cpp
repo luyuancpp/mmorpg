@@ -100,12 +100,12 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
 {
-    LoginRpc c(std::make_shared<LoginRpc::element_type>(conn));
-    c->s_rq_.set_account(std::move(message->account()));
-    c->s_rq_.set_password(std::move(message->password()));
-    c->s_rq_.set_session_id(c->session_id());
+    LoginRpc rpc(std::make_shared<LoginRpc::element_type>(conn));
+    rpc->s_rq_.set_account(std::move(message->account()));
+    rpc->s_rq_.set_password(std::move(message->password()));
+    rpc->s_rq_.set_session_id(rpc->session_id());
     login_stub().CallMethod(&ClientReceiver::OnServerLoginReplied,
-        c, 
+        rpc, 
         this, 
         &gw2l::LoginService_Stub::Login);
 }
@@ -125,10 +125,10 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     const CreatePlayerRequestPtr& message, 
                                     muduo::Timestamp)
 {
-    auto c(std::make_shared<CreatePlayeRpc::element_type>(conn));
-    c->s_rq_.set_session_id(c->session_id());
+    auto rpc(std::make_shared<CreatePlayeRpc::element_type>(conn));
+    rpc->s_rq_.set_session_id(rpc->session_id());
     login_stub().CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
-        c, 
+        rpc, 
         this, 
         &gw2l::LoginService_Stub::CreatPlayer);
 }
@@ -148,11 +148,11 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 const EnterGameRequestPtr& message, 
                                 muduo::Timestamp)
 {
-    auto c(std::make_shared<EnterGameRpc::element_type>(conn));
-    c->s_rq_.set_session_id(c->session_id());
-    c->s_rq_.set_player_id(message->player_id());
+    auto rpc(std::make_shared<EnterGameRpc::element_type>(conn));
+    rpc->s_rq_.set_session_id(rpc->session_id());
+    rpc->s_rq_.set_player_id(message->player_id());
     login_stub().CallMethod(&ClientReceiver::OnServerEnterGameReplied,
-        c,
+        rpc,
         this,
         &gw2l::LoginService_Stub::EnterGame);
 }
@@ -193,20 +193,20 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     //todo msg id error
     if (g_open_player_msgids.find(request->msg_id()) != g_open_player_msgids.end())
     {
-		auto msg(std::make_shared<GsPlayerServiceRpcRplied::element_type>(conn));
-        msg->s_rq_.set_request(request->request());
-        msg->s_rq_.set_session_id(session_id);
-        msg->s_rq_.set_msg_id(request->msg_id());
-        msg->c_rp_.set_id(request->id());
-        msg->c_rp_.set_msg_id(request->msg_id());
+		auto rpc(std::make_shared<GsPlayerServiceRpc::element_type>(conn));
+        rpc->s_rq_.set_request(request->request());
+        rpc->s_rq_.set_session_id(session_id);
+        rpc->s_rq_.set_msg_id(request->msg_id());
+        rpc->c_rp_.set_id(request->id());
+        rpc->c_rp_.set_msg_id(request->msg_id());
         gs->second.gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
-			msg,
+			rpc,
 			this,
 			&gsservice::GsService_Stub::GwPlayerService);
     }
 }
 
-void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied replied)
+void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpc replied)
 {
     auto& crp = replied->c_rp_;
     crp.set_body(std::move(replied->s_rp_->response()));

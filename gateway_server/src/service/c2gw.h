@@ -97,8 +97,8 @@ public:
         const muduo::net::TcpConnectionPtr client_connection_;
     };
 
-	using GsPlayerServiceRpcRplied = std::shared_ptr<ClosureReplied<MessageBody, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
-	void OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp);
+	using GsPlayerServiceRpc = std::shared_ptr<ClosureReplied<MessageBody, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
+	void OnGsPlayerServiceReplied(GsPlayerServiceRpc replied);
 
     inline uint64_t tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<uint64_t>(conn->getContext()); }
 private:
