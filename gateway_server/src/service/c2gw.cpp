@@ -100,7 +100,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
 {
-    LoginRpcReplied c(std::make_shared<LoginRpcReplied::element_type>(conn));
+    LoginRpc c(std::make_shared<LoginRpc::element_type>(conn));
     c->s_rq_.set_account(std::move(message->account()));
     c->s_rq_.set_password(std::move(message->password()));
     c->s_rq_.set_session_id(c->session_id());
@@ -110,7 +110,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
         &gw2l::LoginService_Stub::Login);
 }
 
-void ClientReceiver::OnServerLoginReplied(LoginRpcReplied replied)
+void ClientReceiver::OnServerLoginReplied(LoginRpc replied)
 {
     auto& player_list = replied->s_rp_->account_player().simple_players().players();
     for (auto it : player_list)
@@ -125,7 +125,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     const CreatePlayerRequestPtr& message, 
                                     muduo::Timestamp)
 {
-    auto c(std::make_shared<CreatePlayeReplied::element_type>(conn));
+    auto c(std::make_shared<CreatePlayeRpc::element_type>(conn));
     c->s_rq_.set_session_id(c->session_id());
     login_stub().CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         c, 
@@ -133,7 +133,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
         &gw2l::LoginService_Stub::CreatPlayer);
 }
 
-void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeReplied replied)
+void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeRpc replied)
 {
     auto& player_list = replied->s_rp_->account_player().simple_players().players();
     for (auto it : player_list)
@@ -148,7 +148,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 const EnterGameRequestPtr& message, 
                                 muduo::Timestamp)
 {
-    auto c(std::make_shared<EnterGameRpcRplied::element_type>(conn));
+    auto c(std::make_shared<EnterGameRpc::element_type>(conn));
     c->s_rq_.set_session_id(c->session_id());
     c->s_rq_.set_player_id(message->player_id());
     login_stub().CallMethod(&ClientReceiver::OnServerEnterGameReplied,
@@ -157,7 +157,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         &gw2l::LoginService_Stub::EnterGame);
 }
 
-void ClientReceiver::OnServerEnterGameReplied(EnterGameRpcRplied replied)
+void ClientReceiver::OnServerEnterGameReplied(EnterGameRpc replied)
 {
     //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断   
 	replied->c_rp_.mutable_error()->CopyFrom(replied->s_rp_->error());
