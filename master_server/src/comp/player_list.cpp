@@ -38,6 +38,7 @@ EntityPtr PlayerList::EnterGame(Guid guid)
 
 void PlayerList::LeaveGame(Guid guid)
 {
+    //todo 登录的时候leave
     //todo 断线不能马上下线，这里之后会改
     auto it = g_players.find(guid);
     if ( it == g_players.end())
@@ -45,12 +46,17 @@ void PlayerList::LeaveGame(Guid guid)
         return;
     }
     auto player = it->second;
+    //没进入场景，只是登录，或者切换场景过程中
     if (nullptr == registry.try_get<SceneEntity>(player))
     {
     }
-    LeaveSceneParam lsp;
-    lsp.leaver_ = player;
-    ScenesSystem::GetSingleton().LeaveScene(lsp);
+    else
+    {
+		LeaveSceneParam lsp;
+		lsp.leaver_ = player;
+		ScenesSystem::GetSingleton().LeaveScene(lsp);
+    }
+    
 	g_players.erase(it);
 }
 
