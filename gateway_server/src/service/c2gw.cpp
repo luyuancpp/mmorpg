@@ -71,7 +71,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         // master
         {
             msservice::DisconnectRequest request;
-            request.set_gate_node_id(g_gateway_server->gate_node_id());
             request.set_session_id(session_id);
             g_gateway_server->gw2ms_stub().CallMethod(request, &msservice::MasterNodeService_Stub::OnGwDisconnect);
         }

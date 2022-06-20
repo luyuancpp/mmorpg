@@ -457,19 +457,9 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	auto cit = g_gate_sessions.find(request->session_id());
-	if (cit == g_gate_sessions.end())
-	{
-		return;
-	}
-	auto p_try_player = registry.try_get<EntityPtr>(cit->second);
-	if (nullptr == p_try_player)
-	{
-		return;
-	}
-	auto player_id = registry.get<Guid>(*p_try_player);
+	auto player_id = GetPlayerIdByConnId(request->session_id());
 	g_player_list->LeaveGame(player_id);
-	g_gate_sessions.erase(cit);
+	g_gate_sessions.erase(player_id);
 ///<<< END WRITING YOUR CODE 
 }
 
