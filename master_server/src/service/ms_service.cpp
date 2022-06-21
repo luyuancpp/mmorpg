@@ -413,15 +413,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
 		
 	}
-	auto it = g_gs_nodes.find(registry.get<PlayerSession>(player).gs_node_id());
-	if (it != g_gs_nodes.end())
-	{
-		gsservice::EnterGsRequest message;
-		message.set_player_id(player_id);
-		message.set_session_id(request->session_id());
-		message.set_ms_node_id(master_node_id());
-		registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
-	}
+	PlayerSceneSystem::SendEnterGs(player);
 ///<<< END WRITING YOUR CODE 
 }
 
