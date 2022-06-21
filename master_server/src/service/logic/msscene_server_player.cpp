@@ -177,15 +177,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
             try_player_session->gs_ = *p_gs_data;
         }
     }
-	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
-	if (it != g_gs_nodes.end())
-	{
-		gsservice::EnterGsRequest message;
-		message.set_player_id(registry.get<Guid>(player));
-		message.set_session_id(try_player_session->session_id());
-		message.set_ms_node_id(master_node_id());
-		registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
-	}
+    PlayerSceneSystem::SendEnterGs(player);
 ///<<< END WRITING YOUR CODE
 }
 

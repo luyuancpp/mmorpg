@@ -10,6 +10,8 @@
 #include "logic_proto/scene_server_player.pb.h"
 #include "gs_service.pb.h"
 
+using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
+
 void PlayerSceneSystem::OnEnterScene(entt::entity player)
 {
     if (entt::null == player)
@@ -53,4 +55,23 @@ void PlayerSceneSystem::LeaveScene(entt::entity player, bool change_gs)
     Ms2GsLeaveSceneRequest message;
     message.set_change_gs(change_gs);
     Send2GsPlayer(message, player);
+}
+
+void PlayerSceneSystem::SendEnterGs(entt::entity player)
+{
+	auto try_player_session = registry.try_get<PlayerSession>(player);
+	if (nullptr == try_player_session)
+	{
+		LOG_ERROR << "send enter gs player session not found" << registry.get<Guid>(player);
+		return;
+	}
+	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
+	if (it != g_gs_nodes.end())
+	{
+		gsservice::EnterGsRequest message;
+		message.set_player_id(registry.get<Guid>(player));
+		message.set_session_id(try_player_session->session_id());
+		message.set_ms_node_id(master_node_id());
+		registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
+	}
 }
