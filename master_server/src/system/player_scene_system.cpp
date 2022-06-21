@@ -37,7 +37,7 @@ void PlayerSceneSystem::OnEnterScene(entt::entity player)
         LOG_ERROR << "scene info " << player_id;
         return;
     }
-    message.mutable_scene_info()->CopyFrom(*p_scene_info);
+    message.set_scene_id(p_scene_info->scene_id());
     auto try_player_session = registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {

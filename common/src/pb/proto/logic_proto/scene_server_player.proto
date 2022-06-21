@@ -11,7 +11,7 @@ message Gs2MsEnterSceneRequest
 message Ms2GsEnterSceneRequest
 {
   uint64 session_id = 1;
-  SceneInfo scene_info = 2;
+  uint64 scene_id = 2;
   uint32 enter_gs_type = 3;
 }
 
