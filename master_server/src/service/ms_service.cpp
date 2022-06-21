@@ -218,7 +218,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 		gate_entity = e;
 		auto& gate_node = *registry.emplace<GateNodePtr>(gate_entity, std::make_shared<GateNode>(c.conn_));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
-		gate_node.node_info_.set_node_type(kGateWayNode);
+		gate_node.node_info_.set_node_type(kGatewayNode);
 		g_gate_nodes.emplace(request->gate_node_id(), gate_entity);
         registry.emplace_or_replace<GwStub>(gate_entity, GwStub(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 		break;
@@ -268,7 +268,7 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	auto try_acount = registry.try_get<PlayerAccount>(player);
 	if (nullptr != try_acount)
 	{
-		logined_accounts_.erase(**try_acount);
+		logined_accounts_sesion_.erase(**try_acount);
 	}	
 	auto try_player_session = registry.try_get<PlayerSession>(player);
 	if (nullptr == try_player_session)//玩家已经断开连接了
@@ -318,7 +318,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
     registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
     registry.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
 	//todo 
-	auto lit = logined_accounts_.find(request->account());
+	auto lit = logined_accounts_sesion_.find(request->account());
 	if (g_player_list->player_size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
@@ -326,7 +326,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 		return;
 	}
 
-	if (lit != logined_accounts_.end())
+	if (lit != logined_accounts_sesion_.end())
 	{
 		//如果不是同一个登录服务器,踢掉已经登录的账号
 		if (lit->second != request->session_id())
@@ -340,7 +340,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 	}
 	else
 	{
-		logined_accounts_.emplace(request->account(), request->session_id());
+		logined_accounts_sesion_.emplace(request->account(), request->session_id());
 	}
 ///<<< END WRITING YOUR CODE 
 }
@@ -366,7 +366,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto try_acount = registry.try_get<PlayerAccount>(session);
 	if (nullptr != try_acount)
 	{
-		logined_accounts_.erase(**try_acount);
+		logined_accounts_sesion_.erase(**try_acount);
 	}
 	if (entt::null == player)
 	{
