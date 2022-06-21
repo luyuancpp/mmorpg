@@ -160,7 +160,7 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
                 g_gs_nodes.erase((*gsnode)->node_info_.node_id());
             }
 			auto gatenode = registry.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
-			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateWayNode)
+			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGatewayNode)
 			{
 				//todo
                 g_gate_nodes.erase((*gatenode)->node_info_.node_id());

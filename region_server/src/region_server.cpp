@@ -60,11 +60,11 @@ namespace region
         }
 		if (es.conn_->connected())
 		{
-			RegionInfoRpcRpcRpc cp(std::make_shared<RegionInfoRpcClosure>());
-			cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+			RegionInfoRpcRpcRpc rpc(std::make_shared<RegionInfoRpcRpcRpc::element_type>());
+			rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
 			deploy_stub_.CallMethod(
 				&RegionServer::StartServer,
-				cp,
+				rpc,
 				this,
 				&deploy::DeployService_Stub::StartRegionServer);
 		}

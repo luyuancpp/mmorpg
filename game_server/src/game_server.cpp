@@ -256,7 +256,7 @@ void GameServer::receive(const OnBeConnectedEvent& es)
 				continue;
 			}
 			auto gatenode = registry.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
-			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateWayNode)
+			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGatewayNode)
 			{
                 g_gate_nodes->erase((*gatenode)->node_info_.node_id());
 			}
