@@ -46,10 +46,10 @@ TEST(GS, MakeScene2Sever )
     MakeGsSceneP server2_param;
 
     server1_param.scene_confid_ = 2;
-    server1_param.server_ = server_entity1;
+    server1_param.node_ = server_entity1;
 
     server2_param.scene_confid_ = 3;
-    server2_param.server_ = server_entity2;
+    server2_param.node_ = server_entity2;
 
     sm.MakeScene2Gs(server1_param);
     sm.MakeScene2Gs(server2_param);
@@ -79,7 +79,7 @@ TEST(GS, DestroyScene)
     auto server_entity1 = MakeMainSceneNode( param1);
 
 	MakeGsSceneP cparam;
-    cparam.server_ = server_entity1;
+    cparam.node_ = server_entity1;
 	auto scene_entity = sm.MakeScene2Gs(cparam);
     
     EXPECT_EQ(1, sm.scenes_size());
@@ -116,10 +116,10 @@ TEST(GS, DestroySever)
     MakeGsSceneP server1_param;
     MakeGsSceneP server2_param;
     server1_param.scene_confid_ = 3;
-    server1_param.server_ = server_entity1;
+    server1_param.node_ = server_entity1;
 
     server2_param.scene_confid_ = 2;
-    server2_param.server_ = server_entity2;
+    server2_param.node_ = server_entity2;
 
     auto scene_id1 = sm.MakeScene2Gs(server1_param);
     auto scene_id2 = sm.MakeScene2Gs(server2_param);
@@ -174,10 +174,10 @@ TEST(GS, ServerScene2Sever)
     MakeGsSceneP server2_param;
 
     server1_param.scene_confid_ = 3;
-    server1_param.server_ = server_entity1;
+    server1_param.node_ = server_entity1;
 
     server2_param.scene_confid_ = 2;
-    server2_param.server_ = server_entity2;
+    server2_param.node_ = server_entity2;
 
     auto scene_id1 = sm.MakeScene2Gs(server1_param);
     auto scene_id2 = sm.MakeScene2Gs(server2_param);
@@ -222,10 +222,10 @@ TEST(GS, PlayerLeaveEnterScene)
     MakeGsSceneP server2_param;
 
     server1_param.scene_confid_ = 3;
-    server1_param.server_ = server_entity1;
+    server1_param.node_ = server_entity1;
 ;
     server2_param.scene_confid_ = 2;
-    server2_param.server_ = server_entity2;
+    server2_param.node_ = server_entity2;
 
     auto scene_id1 = sm.MakeScene2Gs(server1_param);
     auto scene_id2 = sm.MakeScene2Gs(server2_param);
@@ -320,7 +320,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
         make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
-            make_server_scene_param.server_ = it;
+            make_server_scene_param.node_ = it;
             auto e = sm.MakeScene2Gs(make_server_scene_param);
             if (scene_entities.empty())
             {
@@ -378,10 +378,10 @@ TEST(GS, CompelChangeScene)
     MakeGsSceneP server2_param;
 
     server1_param.scene_confid_ = 2;
-    server1_param.server_ = server_entity1;
+    server1_param.node_ = server_entity1;
 
     server2_param.scene_confid_ = 2;
-    server2_param.server_ = server_entity2;
+    server2_param.node_ = server_entity2;
 
     auto scene_id1 = sm.MakeScene2Gs(server1_param);
     auto scene_id2 = sm.MakeScene2Gs(server2_param);
@@ -443,7 +443,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
         make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
-            make_server_scene_param.server_ = it;
+            make_server_scene_param.node_ = it;
             auto e = sm.MakeScene2Gs(make_server_scene_param);
             if (scene_entities.empty())
             {
@@ -510,7 +510,7 @@ TEST(GS, CrashMovePlayer2NewServer)
         make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
-            make_server_scene_param.server_ = it;
+            make_server_scene_param.node_ = it;
             auto e = sm.MakeScene2Gs(make_server_scene_param);
             scene_entities.emplace(e);
             if (first_scene_id == entt::null)
@@ -577,7 +577,7 @@ TEST(GS, WeightRoundRobinMainScene)
         make_server_scene_param.scene_confid_ = i;
         for (auto& it :server_entities)
         {
-            make_server_scene_param.server_ = it;
+            make_server_scene_param.node_ = it;
             sm.MakeScene2Gs(make_server_scene_param);
         }        
     }
@@ -702,7 +702,7 @@ TEST(GS, ServerEnterLeavePressure)
         make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
-            make_server_scene_param.server_ = it;
+            make_server_scene_param.node_ = it;
             sm.MakeScene2Gs(make_server_scene_param);
         }
     }
@@ -773,7 +773,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		make_server_scene_param.scene_confid_ = i;
 		for (auto& it : server_entities)
 		{
-			make_server_scene_param.server_ = it;
+			make_server_scene_param.node_ = it;
 			sm.MakeScene2Gs(make_server_scene_param);
             sm.MakeScene2Gs(make_server_scene_param);
 		}
