@@ -10,10 +10,10 @@ EntitySceneSystem g_entity_scene_system;
 void EntitySceneSystem::EnterScene(const EnterSceneParam& param)
 {
     ScenesSystem::GetSingleton().EnterScene(param);
-    OnAfterEnterScene(param.enterer_);
+    OnEnterScene(param.enterer_);
 }
 
-void EntitySceneSystem::OnAfterEnterScene(entt::entity ent)
+void EntitySceneSystem::OnEnterScene(entt::entity ent)
 {
 }
 

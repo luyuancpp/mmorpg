@@ -8,7 +8,7 @@ class EntitySceneSystem
 {
 public:
     static void EnterScene(const EnterSceneParam& param);
-    static void OnAfterEnterScene(entt::entity ent);
+    static void OnEnterScene(entt::entity ent);
     static void LeaveScene(entt::entity ent);
     static void OnBeforeLeaveScene(entt::entity ent);
 };
