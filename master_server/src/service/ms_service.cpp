@@ -432,12 +432,7 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 
-	auto player_id = request->session_id();
-	auto player = g_player_list->GetPlayer(player_id);
-	if (player == entt::null)
-	{
-		return;
-	}
+	auto player_id = GetPlayerIdByConnId(request->session_id());
 	g_player_list->LeaveGame(player_id);
 	//todo statistics
 ///<<< END WRITING YOUR CODE 
@@ -464,24 +459,24 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto& message_extern = request->ex();
-	auto& player_msg = request->msg();
 	auto it = g_players.find(message_extern.player_id());
 	if (it == g_players.end())
 	{
 		LOG_INFO << "player not found " << message_extern.player_id();
 		return;
 	}
-	auto msg_id = request->msg().msg_id();
-	auto sit = g_serviceinfo.find(msg_id);
+	auto& message = request->msg();
+	auto message_id = message.msg_id();
+	auto sit = g_serviceinfo.find(message_id);
 	if (sit == g_serviceinfo.end())
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_INFO << "msg not found " << message_id;
 		return;
 	}
 	auto service_it = g_player_services.find(sit->second.service);
 	if (service_it == g_player_services.end())
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_INFO << "msg not found " << message_id;
 		return;
 	}
 	auto& serviceimpl = service_it->second;
@@ -490,22 +485,21 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_INFO << "message not found " << message_id;
 		//todo client error;
 		return;
 	}
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
-	player_request->ParseFromString(player_msg.body());
+	player_request->ParseFromString(message.body());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
-	auto player = it->second;
-	serviceimpl->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
+	serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
 	{
 		return;
 	}
 	response->mutable_ex()->set_player_id(request->ex().player_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
-	response->mutable_msg()->set_msg_id(msg_id);
+	response->mutable_msg()->set_msg_id(message_id);
 ///<<< END WRITING YOUR CODE 
 }
 
