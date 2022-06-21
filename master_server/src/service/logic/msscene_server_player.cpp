@@ -48,24 +48,26 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
             return;
         }
     }
-    CheckEnterSceneParam csp;
-    csp.scene_id_ = scene_id;
-    csp.player_ = player;
-    auto ret = ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp);
+
+	//您当前就在这个场景，无需切换
+	auto try_scene_entity = registry.try_get<SceneEntity>(player);
+	if (nullptr != try_scene_entity)
+	{
+		if (scene != entt::null && scene == try_scene_entity->scene_entity())
+		{
+			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
+			return;
+		}
+	}
+
+    CheckEnterSceneParam check_enter_scene_p;
+    check_enter_scene_p.scene_id_ = scene_id;
+    check_enter_scene_p.player_ = player;
+    auto ret = ScenesSystem::GetSingleton().CheckEnterSceneByGuid(check_enter_scene_p);
     if (kRetOK != ret)
     {
         PlayerTipSystem::Tip(player, ret, {});
         return;
-    }
-    //您当前就在这个场景，无需切换
-    auto try_scene_entity = registry.try_get<SceneEntity>(player);
-    if (nullptr != try_scene_entity)
-    {
-        if (scene != entt::null && scene == try_scene_entity->scene_entity())
-        {
-			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
-			return;
-        }		
     }
 
     auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
@@ -98,7 +100,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         PlayerSceneSystem::LeaveScene(player, true);
 
         //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了
-        auto& change_gs_scene = registry.emplace<AfterChangeGsEnterScene>(player);
+        auto& change_gs_scene = registry.emplace_or_replace<AfterChangeGsEnterScene>(player);
         change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<SceneInfo>(scene).scene_id());
     }
    
@@ -142,7 +144,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
         return;
     }
 	auto scene = ScenesSystem::GetSingleton().get_scene(try_change_gs_enter_scene->scene_info().scene_id());
-
+    registry.remove<AfterChangeGsEnterScene>(player);
     //todo异步加载完场景已经不在了scene了
 	if (entt::null == scene)
 	{
