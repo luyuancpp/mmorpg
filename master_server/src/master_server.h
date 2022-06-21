@@ -63,7 +63,7 @@ private:
 	RpcClientPtr db_session_;
 	DbNodeStub db_node_stub_;
 
-	MasterNodeServiceImpl node_service_impl_;
+	MasterNodeServiceImpl ms_service_;
 
 	servers_info_data serverinfos_;
 };
