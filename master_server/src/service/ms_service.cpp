@@ -161,8 +161,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	gs_node_ptr->node_info_.set_node_type(kGsNode);
-	MakeGSParam make_gs_p;
-	make_gs_p.node_id_ = request->gs_node_id();
+	MakeGsParam make_gs_p;
 	AddMainSceneNodeCompnent(gs, make_gs_p);
 	registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
