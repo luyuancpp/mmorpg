@@ -16,22 +16,18 @@ struct MakeSceneWithGuidP : public MakeSceneP
 
 struct MakeGSParam
 {
-    uint32_t node_id_{};
-    uint32_t op_{ 0 };
 };
 
 struct MakeGsSceneP
 {
     entt::entity node_{ entt::null };
     uint32_t scene_confid_{ 0 };
-    uint32_t op_{ 0 };
 };
 
 struct MoveServerScene2ServerSceneP
 {
     entt::entity from_server_{ entt::null };
     entt::entity to_server_{ entt::null };
-    uint32_t op_{ 0 };
 };
 
 struct DestroySceneParam

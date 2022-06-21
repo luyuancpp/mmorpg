@@ -34,12 +34,11 @@ TEST(GS, MakeScene2Sever )
     ScenesSystem sm;
 
     MakeGSParam param1;
-    param1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneNode( param1);
 
     MakeGSParam param2;
-    param2.node_id_ = 1;
+
     auto server_entity2 = MakeMainSceneNode( param2);
 
     MakeGsSceneP server1_param;
@@ -74,7 +73,6 @@ TEST(GS, DestroyScene)
     ScenesSystem sm;
 
     MakeGSParam param1;
-    param1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneNode( param1);
 
@@ -105,12 +103,10 @@ TEST(GS, DestroySever)
     ScenesSystem sm;
 
     MakeGSParam param1;
-    param1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneNode( param1);
 
     MakeGSParam param2;
-    param2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneNode( param2);
 
     MakeGsSceneP server1_param;
@@ -163,12 +159,10 @@ TEST(GS, ServerScene2Sever)
     ScenesSystem sm;
 
     MakeGSParam cgs1;
-    cgs1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneNode( cgs1);
 
     MakeGSParam cgs2;
-    cgs2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneNode( cgs2);
     MakeGsSceneP server1_param;
     MakeGsSceneP server2_param;
@@ -210,12 +204,10 @@ TEST(GS, PlayerLeaveEnterScene)
 {
     ScenesSystem sm;
     MakeGSParam cgs1;
-    cgs1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneNode( cgs1);
 
     MakeGSParam cgs2;
-    cgs2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneNode( cgs2);
 
     MakeGsSceneP server1_param;
@@ -310,7 +302,6 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
-        cgs1.node_id_ = i;
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
@@ -366,12 +357,10 @@ TEST(GS, CompelChangeScene)
 {
     ScenesSystem sm;
     MakeGSParam cgs1;
-    cgs1.node_id_ = 1;
 
     auto server_entity1 = MakeMainSceneNode( cgs1);
 
     MakeGSParam cgs2;
-    cgs2.node_id_ = 2;
     auto server_entity2 = MakeMainSceneNode( cgs2);
 
     MakeGsSceneP server1_param;
@@ -433,7 +422,6 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
-        cgs1.node_id_ = i;
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
@@ -500,7 +488,6 @@ TEST(GS, CrashMovePlayer2NewServer)
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
-        cgs1.node_id_ = i;
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
@@ -566,7 +553,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
-        cgs1.node_id_ = i;
+
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
@@ -691,7 +678,6 @@ TEST(GS, ServerEnterLeavePressure)
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
-        cgs1.node_id_ = i;
         server_entities.emplace(MakeMainSceneNode( cgs1));
     }
 
@@ -767,7 +753,6 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 
 	for (uint32_t i = 0; i < server_size; ++i)
 	{
-		cgs1.node_id_ = i;
         auto server = MakeMainSceneNode(cgs1);
 		server_entities.emplace(server);
         registry.emplace<TestNodeId>(server).node_id_ = i;
