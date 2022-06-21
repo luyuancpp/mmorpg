@@ -75,7 +75,6 @@ void MasterServer::StartServer(ServerInfoRpcRpc replied)
     InetAddress master_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
-
     server_->registerService(&ms_service_);
     for (auto& it : g_server_nomal_service)
     {
@@ -89,21 +88,14 @@ void MasterServer::StartMsRegionReplied(StartMsRpc cp)
 
 }
 
-void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
+void MasterServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
     auto& connection_info = registry.get<InetAddress>(gs);
     gwservice::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
     request.set_gs_node_id(registry.get<GsNodePtr>(gs)->node_id());
-	auto& gate_session = registry.get<GateNodePtr>(gate)->session_;
-	gate_session.Send(request);
-}
-
-void MasterServer::AddGsNode(entt::entity gs)
-{
-    auto& gsnode = registry.get<GsNodePtr>(gs);
-    g_gs_nodes.emplace(gsnode->node_info_.node_id(), gs);
+	registry.get<GateNodePtr>(gate)->session_.Send(request);
 }
 
 void MasterServer::receive(const OnConnected2ServerEvent& es)

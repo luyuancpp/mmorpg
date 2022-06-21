@@ -29,8 +29,7 @@ public:
 	inline uint32_t master_node_id()const { return serverinfos_.master_info().id(); }
 
 	void Init();
-	void DoGateConnectGs(entt::entity gs, entt::entity gate);
-	void AddGsNode(entt::entity gs);
+	void LetGateConnect2Gs(entt::entity gs, entt::entity gate);
 
 	void receive(const OnConnected2ServerEvent& es);
 	void receive(const OnBeConnectedEvent& es);
