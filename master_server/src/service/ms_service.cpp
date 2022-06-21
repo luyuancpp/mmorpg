@@ -376,7 +376,6 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		registry.emplace<Guid>(player, player_id);
 		registry.emplace<Player>(player);
 		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(sit->second));
-		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 		
 		GetSceneParam getp;
 		getp.scene_confid_ = 1;
@@ -392,15 +391,8 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
         ep.scene_ = scene;
         ScenesSystem::GetSingleton().EnterScene(ep);//顶号的时候已经在场景里面了
 		InitPlayerSession(player, request->session_id());
-		auto it = g_gs_nodes.find(registry.get<PlayerSession>(player).gs_node_id());
-		if (it != g_gs_nodes.end())
-		{			
-			gsservice::EnterGsRequest message;
-			message.set_player_id(player_id);
-			message.set_session_id(request->session_id());
-			message.set_ms_node_id(master_node_id());
-			registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
-		}
+		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
+
 	}
 	else//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 	{
@@ -418,17 +410,17 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
         }
 		InitPlayerSession(player, request->session_id());
 		registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
-		auto it = g_gs_nodes.find(registry.get<PlayerSession>(player).gs_node_id());
-		if (it != g_gs_nodes.end())
-		{
-			gsservice::EnterGsRequest message;
-            message.set_player_id(player_id);
-            message.set_session_id(request->session_id());
-            message.set_ms_node_id(master_node_id());
-            registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
-		}
+		
 	}
-
+	auto it = g_gs_nodes.find(registry.get<PlayerSession>(player).gs_node_id());
+	if (it != g_gs_nodes.end())
+	{
+		gsservice::EnterGsRequest message;
+		message.set_player_id(player_id);
+		message.set_session_id(request->session_id());
+		message.set_ms_node_id(master_node_id());
+		registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
+	}
 ///<<< END WRITING YOUR CODE 
 }
 
