@@ -57,8 +57,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	gs_node_ptr->node_info_.set_node_type(kGsNode);
-	MakeGsParam make_gs_p;
-	AddMainSceneNodeCompnent(gs, make_gs_p);
+	AddMainSceneNodeCompnent(gs);
 	registry.emplace<InetAddress>(gs, service_addr);
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
 	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
