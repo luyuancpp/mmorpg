@@ -83,7 +83,7 @@ void MasterServer::StartServer(ServerInfoRpcRpc replied)
     server_->start();
 }
 
-void MasterServer::StartMsRegionReplied(StartMsRpc cp)
+void MasterServer::StartMsRegionReplied(StartMsRpc replied)
 {
 
 }

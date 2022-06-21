@@ -84,7 +84,7 @@ void GameServer::ServerInfo(ServerInfoRpcRpc replied)
         this,
         &deploy::DeployService_Stub::StartGS);
 
-	RegionRpcClosureRC rcp(std::make_shared<RegionRpcClosureRC::element_type>());
+	RegionRpcClosureRpc rcp(std::make_shared<RegionRpcClosureRpc::element_type>());
     rcp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
 	deploy_stub_.CallMethod(
 		&GameServer::RegionInfoReplied,
@@ -112,10 +112,10 @@ void GameServer::StartGsDeployReplied(StartGsRpc replied)
     server_->start();   
 }
 
-void GameServer::RegionInfoReplied(RegionRpcClosureRC cp)
+void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
 {
     //connect master
-    auto& resp = cp->s_rp_;
+    auto& resp = replied->s_rp_;
 	auto& regionmaster = resp->region_masters();
 	for (int32_t i = 0; i < regionmaster.masters_size(); ++i)
 	{
@@ -161,7 +161,7 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
 
 void GameServer::Register2Region()
 {
-	ServerReplied::StartCrossGsReplied cp(std::make_shared< ServerReplied::StartCrossGsReplied::element_type>());
+	ServerReplied::StartCrossGsRpc cp(std::make_shared< ServerReplied::StartCrossGsRpc::element_type>());
 	auto& rq = cp->s_rq_;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();

@@ -34,7 +34,7 @@ public:
 
 	using ServerInfoRpcRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest,
 		deploy::ServerInfoResponse>>;
-    void StartServer(ServerInfoRpcRpc cp);
+    void StartServer(ServerInfoRpcRpc replied);
 
     void receive(const OnConnected2ServerEvent& es);
 
