@@ -3,14 +3,14 @@
 #include "src/game_logic/game_registry.h"
 #include "src/util/snow_flake.h"
 
-entt::entity MakeMainSceneNode(const MakeGSParam& param)
+entt::entity MakeMainSceneNode(const MakeGsParam& param)
 {
     auto e = registry.create();
     AddMainSceneNodeCompnent(e, param);
     return e;
 }
 
-void AddMainSceneNodeCompnent(entt::entity server, const MakeGSParam& param)
+void AddMainSceneNodeCompnent(entt::entity server, const MakeGsParam& param)
 {
 	registry.emplace<MainSceneServer>(server);
 	registry.emplace<GSNormal>(server);

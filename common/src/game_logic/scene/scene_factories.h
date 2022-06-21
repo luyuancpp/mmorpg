@@ -14,7 +14,7 @@ struct MakeSceneWithGuidP : public MakeSceneP
     Guid scene_id{kInvalidGuid};
 };
 
-struct MakeGSParam
+struct MakeGsParam
 {
 };
 
@@ -43,6 +43,6 @@ struct DestroyServerParam
 
 entt::entity& scenes_entity();
 
-entt::entity MakeMainSceneNode(const MakeGSParam& param);
-void AddMainSceneNodeCompnent(entt::entity e, const MakeGSParam& param);
+entt::entity MakeMainSceneNode(const MakeGsParam& param);
+void AddMainSceneNodeCompnent(entt::entity e, const MakeGsParam& param);
 
