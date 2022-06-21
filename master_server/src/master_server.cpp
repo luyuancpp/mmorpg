@@ -76,7 +76,7 @@ void MasterServer::StartServer(ServerInfoRpcRpc replied)
     server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
 
-    server_->registerService(&node_service_impl_);
+    server_->registerService(&ms_service_);
     for (auto& it : g_server_nomal_service)
     {
         server_->registerService(it.get());
@@ -193,7 +193,7 @@ void MasterServer::Connect2Region()
 	InetAddress region_addr(regioninfo.ip(), regioninfo.port());
 	region_session_ = std::make_unique<RpcClient>(loop_, region_addr);
 	region_session_->subscribe<RegisterStubEvent>(rg_stub_);
-	region_session_->registerService(&node_service_impl_);
+	region_session_->registerService(&ms_service_);
 	region_session_->subscribe<OnConnected2ServerEvent>(*this);
 	region_session_->connect();
 }
