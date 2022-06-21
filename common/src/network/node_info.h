@@ -19,7 +19,7 @@ enum EnumNodeType : uint32_t
 	kLoginNode,
 	kMasterNode,
 	kGsNode,
-	kGateWayNode,
+	kGatewayNode,
 };
 
 

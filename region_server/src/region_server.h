@@ -21,10 +21,9 @@ public:
 
     void ConnectDeploy();
 
-    using RegionInfoRpcClosure = NormalClosure<deploy::RegionRequest,
-        deploy::RegionServerResponse>;
-    using RegionInfoRpcRpcRC = std::shared_ptr<RegionInfoRpcClosure>;
-    void StartServer(RegionInfoRpcRpcRC cp);
+	using RegionInfoRpcRpcRpc = std::shared_ptr< NormalClosure<deploy::RegionRequest,
+		deploy::RegionServerResponse>>;
+    void StartServer(RegionInfoRpcRpcRpc replied);
 
     void receive(const OnConnected2ServerEvent& es);
     void receive(const OnBeConnectedEvent& es);
