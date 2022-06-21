@@ -54,7 +54,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	}
 
 	auto c = registry.get<RpcServerConnection>(gs);
-	GsNodePtr gs_node_ptr = std::make_shared<GsNode>(c.conn_);
+	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	gs_node_ptr->node_info_.set_node_type(kGsNode);
 	MakeGSParam make_gs_p;

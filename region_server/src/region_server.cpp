@@ -45,7 +45,7 @@ namespace region
     {
         auto& myinfo = cp->s_rp_->info();
         InetAddress region_addr(myinfo.ip(), myinfo.port());
-        server_ = std::make_shared<muduo::net::RpcServer>(loop_, region_addr);
+        server_ = std::make_shared<RpcServerPtr::element_type>(loop_, region_addr);
         server_->registerService(&impl_);
         server_->subscribe<OnBeConnectedEvent>(*this);
         server_->start();
