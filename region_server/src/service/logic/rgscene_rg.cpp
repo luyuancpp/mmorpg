@@ -97,32 +97,32 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
-	entt::entity ms_entity{ entt::null };
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
+	entt::entity ms{ entt::null };
 	for (auto e : registry.view<RpcServerConnection>())
 	{
-		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
+		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
-		ms_entity = e;
+		ms = e;
 		break;
 	}
-	if (ms_entity == entt::null)
+	if (ms == entt::null)
 	{
 		//todo
 		LOG_INFO << "ms id found: " << request->ms_node_id();
 		return;
 	}
 
-	auto c = registry.get<RpcServerConnection>(ms_entity);
-	MsNodePtr ms = registry.emplace<MsNodePtr>(ms_entity, std::make_shared<MsNodePtr::element_type>(c.conn_));
-	ms->node_info_.set_node_id(request->ms_node_id());
-	ms->node_info_.set_node_type(kMasterNode);
-	registry.emplace<InetAddress>(ms_entity, rpc_server_peer_addr);
-	registry.emplace<MsStubPtr>(ms_entity, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
-	g_ms_nodes->emplace(request->ms_node_id(), ms_entity);
+	auto c = registry.get<RpcServerConnection>(ms);
+	MsNodePtr ms_node = registry.emplace<MsNodePtr>(ms, std::make_shared<MsNodePtr::element_type>(c.conn_));
+	ms_node->node_info_.set_node_id(request->ms_node_id());
+	ms_node->node_info_.set_node_type(kMasterNode);
+	registry.emplace<InetAddress>(ms, service_addr);
+	registry.emplace<MsStubPtr>(ms, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+	g_ms_nodes->emplace(request->ms_node_id(), ms);
 	LOG_INFO << "ms node connected " << request->ms_node_id();
 ///<<< END WRITING YOUR CODE 
 }
