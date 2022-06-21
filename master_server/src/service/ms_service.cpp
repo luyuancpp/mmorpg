@@ -206,13 +206,13 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	entt::entity gate_entity{ entt::null };
 	for (auto e : registry.view<RpcServerConnection>())
 	{
 		auto c = registry.get<RpcServerConnection>(e);
 		auto& local_addr = c.conn_->peerAddress();
-		if (local_addr.toIpPort() != rpc_client_peer_addr.toIpPort())
+		if (local_addr.toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}

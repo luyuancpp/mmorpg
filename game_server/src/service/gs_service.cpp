@@ -211,11 +211,11 @@ void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	for (auto e : registry.view<RpcServerConnection>())
 	{
 		auto& conn = registry.get<RpcServerConnection>(e).conn_;
-		if (conn->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
+		if (conn->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
