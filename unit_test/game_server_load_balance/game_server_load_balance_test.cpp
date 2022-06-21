@@ -839,10 +839,11 @@ TEST(GS, GetNotFullMainSceneSceneFull)
             {
                 EXPECT_EQ((*ps).player_size(), kMaxServerPlayerSize);
             }
-            if (registry.get<TestNodeId>(it).node_id_ == 8)
+            else if (registry.get<TestNodeId>(it).node_id_ == 8)
             {
                 EXPECT_EQ((*ps).player_size(), remain_server_size);
             }
+            else
             {
                 EXPECT_EQ((*ps).player_size(), 0);
             }
