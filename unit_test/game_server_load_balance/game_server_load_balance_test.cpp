@@ -750,6 +750,11 @@ TEST(GS, ServerEnterLeavePressure)
     
 }
 
+struct TestNodeId
+{
+    uint32_t node_id_{ 0 };
+};
+
 TEST(GS, GetNotFullMainSceneSceneFull)
 {
 	registry.clear();
@@ -763,7 +768,9 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 	for (uint32_t i = 0; i < server_size; ++i)
 	{
 		cgs1.node_id_ = i;
-		server_entities.emplace(MakeMainSceneNode( cgs1));
+        auto server = MakeMainSceneNode(cgs1);
+		server_entities.emplace(server);
+        registry.emplace<TestNodeId>(server).node_id_ = i;
 	}
 
 	MakeGsSceneP make_server_scene_param;
@@ -774,8 +781,10 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		for (auto& it : server_entities)
 		{
 			make_server_scene_param.node_ = it;
-			sm.MakeScene2Gs(make_server_scene_param);
-            sm.MakeScene2Gs(make_server_scene_param);
+			auto s1 = sm.MakeScene2Gs(make_server_scene_param);
+            registry.emplace<TestNodeId>(s1, registry.get<TestNodeId>(it));
+            auto s2 = sm.MakeScene2Gs(make_server_scene_param);
+            registry.emplace<TestNodeId>(s2, registry.get<TestNodeId>(it));    
 		}
 	}
 
@@ -841,15 +850,14 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		for (auto& it : server_entities)
 		{
 			auto& ps = registry.get<GsNodePlayerInfoPtr>(it);
-            //todo if (ps->node_id() == 9)
+            if (registry.get<TestNodeId>(it).node_id_ == 9)
             {
                 EXPECT_EQ((*ps).player_size(), kMaxServerPlayerSize);
             }
-            //todo if else if (ps->node_id() == 8)
+            if (registry.get<TestNodeId>(it).node_id_ == 8)
             {
                 EXPECT_EQ((*ps).player_size(), remain_server_size);
             }
-            //todo if else
             {
                 EXPECT_EQ((*ps).player_size(), 0);
             }
