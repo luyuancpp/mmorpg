@@ -39,6 +39,7 @@ std::size_t kMaxPlayerSize = 1000;
 
 void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc replied)
 {
+	//todo 中间返回是断开了
 	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
     if (entt::null == player)
     {
