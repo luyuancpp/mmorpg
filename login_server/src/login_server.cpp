@@ -14,7 +14,7 @@ namespace login
 {
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-      redis_(std::make_shared<MessageSyncRedisClient>()),
+      redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()),
       impl_( l2ms_login_stub_, l2db_login_stub_)
 {
 }
@@ -45,9 +45,9 @@ void LoginServer::Start()
     server_->start();
 }
 
-void LoginServer::StartServer(ServerInfoRpcRC cp)
+void LoginServer::StartServer(ServerInfoRpcRpc replied)
 {
-    auto& info = cp->s_rp_->info();
+    auto& info = replied->s_rp_->info();
     auto& databaseinfo = info.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
@@ -66,7 +66,7 @@ void LoginServer::StartServer(ServerInfoRpcRC cp)
     auto& myinfo = info.login_info();
 
     InetAddress login_addr(myinfo.ip(), myinfo.port());
-    server_ = std::make_shared<muduo::net::RpcServer>(loop_, login_addr);
+    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, login_addr);
    
     Start();
 }
@@ -82,11 +82,11 @@ void LoginServer::receive(const OnConnected2ServerEvent& es)
     {
         return;
     }
-    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+    ServerInfoRpcRpc rpc(std::make_shared<ServerInfoRpcRpc::element_type>());
+    rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
     deploy_stub_.CallMethod(
         &LoginServer::StartServer,
-        cp,
+        rpc,
         this,
         &deploy::DeployService_Stub::ServerInfo);
 }

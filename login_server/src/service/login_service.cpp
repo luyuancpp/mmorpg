@@ -32,7 +32,7 @@ void LoginServiceImpl::LoginAccountMsReplied(LoginAcountMsRpc replied)
 	}
 	//has data
 	{
-		auto& player = registry.emplace<PlayerPtr>(sit->second, std::make_shared<AccountPlayer>());
+		auto& player = registry.emplace<PlayerPtr>(sit->second, std::make_shared<PlayerPtr::element_type>());
 		auto ret = player->Login();
 		if (ret != kRetOK)
 		{

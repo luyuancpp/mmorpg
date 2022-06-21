@@ -16,7 +16,7 @@ namespace deploy
 {
     DeployServer::DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr)
         :server_(loop, listen_addr),
-         db_(std::make_shared<MysqlDatabase>())
+         db_(std::make_shared<MysqlClientPtr::element_type>())
     {
         auto& ci = DeployConfig::GetSingleton().database_param();
         db_->Connect(ci);

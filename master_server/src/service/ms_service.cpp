@@ -315,7 +315,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
         return;
 	}
 	auto conn = cit->second;
-    registry.emplace<PlayerAccount>(conn, std::make_shared<std::string>(request->account()));
+    registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
     registry.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
 	//todo 
 	auto lit = logined_accounts_.find(request->account());

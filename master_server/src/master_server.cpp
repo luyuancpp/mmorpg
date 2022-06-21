@@ -34,7 +34,7 @@ uint32_t master_node_id()
 
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-      redis_(std::make_shared<MessageSyncRedisClient>())
+      redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 { 
     global_entity() = registry.create();
 }    
@@ -73,7 +73,7 @@ void MasterServer::StartServer(ServerInfoRpcRpc replied)
 	
     auto& myinfo = serverinfos_.master_info();
     InetAddress master_addr(myinfo.ip(), myinfo.port());
-    server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
+    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, master_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
     server_->registerService(&ms_service_);
     for (auto& it : g_server_nomal_service)

@@ -33,15 +33,13 @@ public:
 
     void InitNetwork();
 
-    using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
-        deploy::ServerInfoResponse>;
-    using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
-    void ServerInfo(ServerInfoRpcRC cp);
+	using ServerInfoRpcRpc = std::shared_ptr < NormalClosure<deploy::ServerInfoRequest,
+		deploy::ServerInfoResponse> >;
+    void ServerInfo(ServerInfoRpcRpc replied);
 
-    using StartGSInfoRpcClosure = NormalClosure<deploy::StartGSRequest,
-        deploy::StartGSResponse>;
-    using StartGSRpcRC = std::shared_ptr<StartGSInfoRpcClosure>;
-    void StartGSDeployReplied(StartGSRpcRC cp);
+	using StartGsRpc = std::shared_ptr<NormalClosure<deploy::StartGSRequest,
+		deploy::StartGSResponse>>;
+    void StartGsDeployReplied(StartGsRpc replied);
 
 	using RegionClosure = NormalClosure<deploy::RegionRequest,
 		deploy::RegionInfoResponse>;

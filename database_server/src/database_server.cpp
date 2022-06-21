@@ -10,8 +10,8 @@ using namespace common;
 
 DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-        database_(std::make_shared<MysqlDatabase>()),
-        redis_(std::make_shared<MessageSyncRedisClient>()){}
+        database_(std::make_shared<MysqlClientPtr::element_type>()),
+        redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()){}
 
 void DatabaseServer::Init()
 {
@@ -46,7 +46,7 @@ void DatabaseServer::Start()
     server_->start();
 }
 
-void DatabaseServer::StartServer(ServerInfoRpcRC cp)
+void DatabaseServer::StartServer(ServerInfoRpcRpc cp)
 {
     auto& info = cp->s_rp_->info();
     auto& redisinfo = info.redis_info();
@@ -55,7 +55,7 @@ void DatabaseServer::StartServer(ServerInfoRpcRC cp)
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
     database_->Connect(myinfo);
     //LOG_INFO << myinfo.DebugString().c_str();
-    server_ = std::make_shared<muduo::net::RpcServer>(loop_, listenAddr);
+    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, listenAddr);
     Start();
 }
 
@@ -70,11 +70,11 @@ void DatabaseServer::receive(const OnConnected2ServerEvent& es)
     {
         return;
     }
-    ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-    cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+    ServerInfoRpcRpc rpc(std::make_shared<ServerInfoRpcRpc::element_type>());
+    rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
     deploy_stub_.CallMethod(
         &DatabaseServer::StartServer,
-        cp,
+        rpc,
         this,
         &deploy::DeployService_Stub::ServerInfo);
 }
