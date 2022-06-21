@@ -137,12 +137,12 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	response->set_master_node_id(master_node_id());
-	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity gs_entity{ entt::null };
 	for (auto e : registry.view<RpcServerConnection>())
 	{
-		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
+		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
@@ -157,14 +157,14 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	}
 
 	auto c = registry.get<RpcServerConnection>(gs_entity);
-	GsNodePtr gs = std::make_shared<GsNode>(c.conn_);
-	gs->node_info_.set_node_id(request->gs_node_id());
-	gs->node_info_.set_node_type(kGsNode);
+	GsNodePtr gs_node_ptr = std::make_shared<GsNode>(c.conn_);
+	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
+	gs_node_ptr->node_info_.set_node_type(kGsNode);
 	MakeGSParam make_gs_p;
 	make_gs_p.node_id_ = request->gs_node_id();
 	AddMainSceneNodeCompnent(gs_entity, make_gs_p);
-	registry.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);//为了停掉gs，或者gs断线用
-	registry.emplace<GsNodePtr>(gs_entity, gs);
+	registry.emplace<InetAddress>(gs_entity, service_addr);//为了停掉gs，或者gs断线用
+	registry.emplace<GsNodePtr>(gs_entity, gs_node_ptr);
 	registry.emplace<GsStubPtr>(gs_entity, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneServer)
 	{
@@ -179,7 +179,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 			{
 				continue;
 			}
-			registry.emplace<GsNodePtr>(scene_entity, gs);
+			registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
 		}
 	}
@@ -191,9 +191,9 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 
 	for (auto e : registry.view<GateNodePtr>())
 	{
-		g_ms_node->DoGateConnectGs(gs_entity, e);
+		g_ms_node->LetGateConnect2Gs(gs_entity, e);
 	}
-	g_ms_node->AddGsNode(gs_entity);
+	g_gs_nodes.emplace(registry.get<GsNodePtr>(gs_entity)->node_info_.node_id(), gs_entity);
 	LOG_INFO << "game connected " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE 
 }
@@ -226,7 +226,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 
 	for (auto e : registry.view<GsNodePtr>())
 	{
-		g_ms_node->DoGateConnectGs(e, gate_entity);
+		g_ms_node->LetGateConnect2Gs(e, gate_entity);
 	}
 ///<<< END WRITING YOUR CODE 
 }
