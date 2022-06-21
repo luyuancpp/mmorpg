@@ -32,14 +32,8 @@ TEST(GS, CreateMainScene)
 TEST(GS, MakeScene2Sever )
 {
     ScenesSystem sm;
-
-    MakeGsParam param1;
-
-    auto server_entity1 = MakeMainSceneNode( param1);
-
-    MakeGsParam param2;
-
-    auto server_entity2 = MakeMainSceneNode( param2);
+    auto server_entity1 = MakeMainSceneNode();
+    auto server_entity2 = MakeMainSceneNode();
 
     MakeGsSceneP server1_param;
     MakeGsSceneP server2_param;
@@ -72,9 +66,7 @@ TEST(GS, DestroyScene)
 {
     ScenesSystem sm;
 
-    MakeGsParam param1;
-
-    auto server_entity1 = MakeMainSceneNode( param1);
+    auto server_entity1 = MakeMainSceneNode();
 
 	MakeGsSceneP cparam;
     cparam.node_ = server_entity1;
@@ -102,12 +94,8 @@ TEST(GS, DestroySever)
 {
     ScenesSystem sm;
 
-    MakeGsParam param1;
-
-    auto server_entity1 = MakeMainSceneNode( param1);
-
-    MakeGsParam param2;
-    auto server_entity2 = MakeMainSceneNode( param2);
+    auto server_entity1 = MakeMainSceneNode();
+    auto server_entity2 = MakeMainSceneNode();
 
     MakeGsSceneP server1_param;
     MakeGsSceneP server2_param;
@@ -158,12 +146,9 @@ TEST(GS, ServerScene2Sever)
 {
     ScenesSystem sm;
 
-    MakeGsParam cgs1;
+    auto server_entity1 = MakeMainSceneNode();
 
-    auto server_entity1 = MakeMainSceneNode( cgs1);
-
-    MakeGsParam cgs2;
-    auto server_entity2 = MakeMainSceneNode( cgs2);
+    auto server_entity2 = MakeMainSceneNode();
     MakeGsSceneP server1_param;
     MakeGsSceneP server2_param;
 
@@ -203,12 +188,10 @@ TEST(GS, ServerScene2Sever)
 TEST(GS, PlayerLeaveEnterScene)
 {
     ScenesSystem sm;
-    MakeGsParam cgs1;
 
-    auto server_entity1 = MakeMainSceneNode( cgs1);
+    auto server_entity1 = MakeMainSceneNode();
 
-    MakeGsParam cgs2;
-    auto server_entity2 = MakeMainSceneNode( cgs2);
+    auto server_entity2 = MakeMainSceneNode();
 
     MakeGsSceneP server1_param;
     MakeGsSceneP server2_param;
@@ -297,12 +280,11 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
-    MakeGsParam cgs1;
     EntitySet scene_entities;
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
-        server_entities.emplace(MakeMainSceneNode( cgs1));
+        server_entities.emplace(MakeMainSceneNode());
     }
 
     MakeGsSceneP make_server_scene_param;
@@ -356,12 +338,9 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 TEST(GS, CompelChangeScene)
 {
     ScenesSystem sm;
-    MakeGsParam cgs1;
 
-    auto server_entity1 = MakeMainSceneNode( cgs1);
-
-    MakeGsParam cgs2;
-    auto server_entity2 = MakeMainSceneNode( cgs2);
+    auto server_entity1 = MakeMainSceneNode();
+    auto server_entity2 = MakeMainSceneNode();
 
     MakeGsSceneP server1_param;
     MakeGsSceneP server2_param;
@@ -417,12 +396,12 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
-    MakeGsParam cgs1;
+
     EntitySet scene_entities;
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
-        server_entities.emplace(MakeMainSceneNode( cgs1));
+        server_entities.emplace(MakeMainSceneNode( ));
     }
 
     MakeGsSceneP make_server_scene_param;
@@ -482,13 +461,12 @@ TEST(GS, CrashMovePlayer2NewServer)
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
-    MakeGsParam cgs1;
     EntitySet scene_entities;
     entt::entity first_scene_id = entt::null;
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
-        server_entities.emplace(MakeMainSceneNode( cgs1));
+        server_entities.emplace(MakeMainSceneNode());
     }
 
     MakeGsSceneP make_server_scene_param;
@@ -549,12 +527,10 @@ TEST(GS, WeightRoundRobinMainScene)
     EntitySet server_entities;
     uint32_t server_size = 10;
     uint32_t per_server_scene = 10;
-    MakeGsParam cgs1;
-
     for (uint32_t i = 0; i < server_size; ++i)
     {
 
-        server_entities.emplace(MakeMainSceneNode( cgs1));
+        server_entities.emplace(MakeMainSceneNode());
     }
 
     MakeGsSceneP make_server_scene_param;
@@ -674,11 +650,10 @@ TEST(GS, ServerEnterLeavePressure)
     EntitySet server_entities;
     uint32_t server_size = 2;
     uint32_t per_server_scene = 10;
-    MakeGsParam cgs1;
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
-        server_entities.emplace(MakeMainSceneNode( cgs1));
+        server_entities.emplace(MakeMainSceneNode());
     }
 
     MakeGsSceneP make_server_scene_param;
@@ -749,11 +724,10 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 	EntitySet server_entities;
 	uint32_t server_size = 10;
 	uint32_t per_server_scene = 10;
-	MakeGsParam cgs1;
 
 	for (uint32_t i = 0; i < server_size; ++i)
 	{
-        auto server = MakeMainSceneNode(cgs1);
+        auto server = MakeMainSceneNode();
 		server_entities.emplace(server);
         registry.emplace<TestNodeId>(server).node_id_ = i;
 	}
