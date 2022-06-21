@@ -22,7 +22,7 @@ struct MakeGSParam
 
 struct MakeGsSceneP
 {
-    entt::entity server_{ entt::null };
+    entt::entity node_{ entt::null };
     uint32_t scene_confid_{ 0 };
     uint32_t op_{ 0 };
 };

@@ -86,7 +86,7 @@ entt::entity ScenesSystem::MakeScene2Gs(const MakeGsSceneP& param)
     MakeSceneP make_p;
     make_p.scene_confid_ = param.scene_confid_;
     auto scene = MakeScene(make_p);
-	auto server = param.server_;
+	auto server = param.node_;
     auto try_server_player_info = registry.try_get<GsNodePlayerInfoPtr>(server);
     if (nullptr != try_server_player_info)
     {
@@ -201,7 +201,7 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
     {
         MakeGsSceneP make_server_scene_param;
         make_server_scene_param.scene_confid_ = scene_config_id;
-        make_server_scene_param.server_ = new_server_entity;
+        make_server_scene_param.node_ = new_server_entity;
         server_scene_enitity = MakeScene2Gs(make_server_scene_param);
     }
     else
