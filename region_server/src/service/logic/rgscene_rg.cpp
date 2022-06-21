@@ -33,6 +33,12 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	//只有跨服gs能连
+	if (request->server_type() != kMainSceneCrossServer ||
+		request->server_type() != kRoomSceneCrossServer)
+	{
+		return;
+	}
 
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
