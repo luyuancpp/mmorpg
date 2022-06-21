@@ -17,9 +17,8 @@ public:
     using StartGsMasterRpcRpc = std::shared_ptr< NormalClosure<msservice::StartGsRequest, msservice::StartGsResponse>>;
     void StartGsMasterReplied(StartGsMasterRpcRpc replied);
 
-	using StartCrossMainGSClosure = NormalClosure<regionservcie::StartCrossGsRequest, regionservcie::StartCrossGsResponse>;
-	using StartCrossGsReplied = std::shared_ptr<StartCrossMainGSClosure>;
-	void StartCrossGsRegionReplied(StartCrossGsReplied replied);
+	using StartCrossGsRpc = std::shared_ptr<NormalClosure<regionservcie::StartCrossGsRequest, regionservcie::StartCrossGsResponse>>;
+	void StartCrossGsRegionReplied(StartCrossGsRpc replied);
 
 private:
 };

@@ -46,9 +46,9 @@ void DatabaseServer::Start()
     server_->start();
 }
 
-void DatabaseServer::StartServer(ServerInfoRpcRpc cp)
+void DatabaseServer::StartServer(ServerInfoRpcRpc replied)
 {
-    auto& info = cp->s_rp_->info();
+    auto& info = replied->s_rp_->info();
     auto& redisinfo = info.redis_info();
     auto& myinfo = info.database_info();
     InetAddress listenAddr(myinfo.ip(), myinfo.port());

@@ -15,11 +15,7 @@ region::RegionServer* g_region_server = nullptr;
 
 namespace region
 {
-    RegionServer::RegionServer(muduo::net::EventLoop* loop)
-        : loop_(loop)
-    {
-
-    }
+    RegionServer::RegionServer(muduo::net::EventLoop* loop): loop_(loop){}
 
     void RegionServer::Init()
     {
