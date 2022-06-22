@@ -63,48 +63,13 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     CheckEnterSceneParam check_enter_scene_p;
     check_enter_scene_p.scene_id_ = scene_id;
     check_enter_scene_p.player_ = player;
-    auto ret = ScenesSystem::GetSingleton().CheckEnterSceneByGuid(check_enter_scene_p);
+    auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(check_enter_scene_p);
     if (kRetOK != ret)
     {
         PlayerTipSystem::Tip(player, ret, {});
         return;
     }
-
-    auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
-    auto p_player_gs = registry.try_get<PlayerSession>(player);
-    if (nullptr == try_scene_gs || nullptr == p_player_gs)
-    {
-        LOG_ERROR << " scene null : " << (nullptr == try_scene_gs) << " " << (nullptr == p_player_gs);
-        return;
-    }
-    auto& p_scene_gs = *try_scene_gs;
-    //同gs之间的切换
-    if (p_player_gs->gs_node_id() == p_scene_gs->node_id())
-    {
-        LeaveSceneParam lp;
-        lp.leaver_ = player;
-        EnterSceneParam ep;
-        ep.enterer_ = player;
-        ep.scene_ = scene;
-        ScenesSystem::GetSingleton().LeaveScene(lp);
-        PlayerSceneSystem::LeaveScene(player, false);
-        ScenesSystem::GetSingleton().EnterScene(ep);
-        PlayerSceneSystem::OnEnterScene(player);
-    }
-    else
-    {
-        LeaveSceneParam lp;
-        lp.leaver_ = player;
-        //切换gs  存储完毕之后才能进入下一个场景
-        ScenesSystem::GetSingleton().LeaveScene(lp);
-        PlayerSceneSystem::LeaveScene(player, true);
-
-        //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了
-        auto& change_gs_scene = registry.emplace_or_replace<AfterChangeGsEnterScene>(player);
-        change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<SceneInfo>(scene).scene_id());
-    }
-   
- 
+    PlayerSceneSystem::ChangeScene(player, scene);
 ///<<< END WRITING YOUR CODE
 }
 

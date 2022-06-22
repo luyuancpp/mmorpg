@@ -138,7 +138,7 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
     registry.emplace_or_replace<ConfigSceneMap>(param.from_server_);//todo 如果原来server 还有场景呢
 }
 
-uint32_t ScenesSystem::CheckEnterSceneByGuid(const CheckEnterSceneParam& param)
+uint32_t ScenesSystem::CheckScenePlayerSize(const CheckEnterSceneParam& param)
 {
     auto scene = get_scene(param.scene_id_);
     if (scene == entt::null)
