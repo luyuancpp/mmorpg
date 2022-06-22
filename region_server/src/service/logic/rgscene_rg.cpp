@@ -37,9 +37,9 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	if (!(request->server_type() == kMainSceneCrossServer ||
 		request->server_type() == kRoomSceneCrossServer))
 	{
+		LOG_ERROR << "server type " << request->rpc_server().ip() << "," << request->rpc_server().port();
 		return;
 	}
-
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity gs{ entt::null };
@@ -154,7 +154,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 	CheckEnterSceneParam csp;
 	csp.scene_id_ = registry.get<Guid>(scene);
 	csp.player_ = it.first->second;
-	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp));
+	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckScenePlayerSize(csp));
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;
@@ -188,7 +188,7 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 	CheckEnterSceneParam csp;
 	csp.scene_id_ = registry.get<Guid>(scene);
 	csp.player_ = it.first->second;
-	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp));
+	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckScenePlayerSize(csp));
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;

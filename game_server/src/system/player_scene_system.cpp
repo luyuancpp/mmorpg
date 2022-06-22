@@ -29,6 +29,11 @@ void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t scene_id)
 	Send2Player(message, player);
 }
 
+void PlayerSceneSystem::OnEnterScene(entt::entity player)
+{
+	
+}
+
 void PlayerSceneSystem::LeaveScene(entt::entity player)
 {
 	LeaveSceneParam lp;

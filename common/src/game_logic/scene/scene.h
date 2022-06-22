@@ -49,7 +49,7 @@ public:
 
     void MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param);
 
-    uint32_t CheckEnterSceneByGuid(const CheckEnterSceneParam& param);
+    uint32_t CheckScenePlayerSize(const CheckEnterSceneParam& param);
     void EnterScene(const EnterSceneParam& param);
 
     void LeaveScene(const LeaveSceneParam& param);

@@ -10,21 +10,11 @@ EntitySceneSystem g_entity_scene_system;
 void EntitySceneSystem::EnterScene(const EnterSceneParam& param)
 {
     ScenesSystem::GetSingleton().EnterScene(param);
-    OnEnterScene(param.enterer_);
-}
-
-void EntitySceneSystem::OnEnterScene(entt::entity ent)
-{
 }
 
 void EntitySceneSystem::LeaveScene(entt::entity ent)
 {
-    OnBeforeLeaveScene(ent);
     LeaveSceneParam leave;
     leave.leaver_ = ent;
     ScenesSystem::GetSingleton().LeaveScene(leave);
-}
-
-void EntitySceneSystem::OnBeforeLeaveScene(entt::entity ent)
-{
 }
