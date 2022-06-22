@@ -94,7 +94,9 @@ private:
 struct MainScene {};
 
 struct MainSceneServer {};
+struct CrossMainSceneServer {};
 struct RoomSceneServer {};
+struct CrossRoomSceneServer {};
 
 struct GSNormal{};//game server 正常状态
 struct GSMainTain{};//game server 维护状态

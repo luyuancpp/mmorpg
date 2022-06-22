@@ -174,10 +174,6 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
 			auto scene_entity = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
-			if (!registry.valid(scene_entity))
-			{
-				continue;
-			}
 			registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
 		}

@@ -76,10 +76,8 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
 			auto scene = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
-			if (!registry.valid(scene))
-			{
-				continue;
-			}
+			registry.remove<MainSceneServer>(gs);
+			registry.emplace<CrossMainSceneServer>(gs);
 			registry.emplace<GsNodePtr>(scene);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene));
 		}
@@ -87,7 +85,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	else
 	{
 		registry.remove<MainSceneServer>(gs);
-		registry.emplace<RoomSceneServer>(gs);
+		registry.emplace<CrossRoomSceneServer>(gs);
 	}
 	g_gs_nodes->emplace(request->gs_node_id(), gs);
 	LOG_INFO << "game node connected " << request->gs_node_id();
