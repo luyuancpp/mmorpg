@@ -27,7 +27,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
     auto scene_id = request->scene_info().scene_id();
     entt::entity scene = entt::null;
-    if (scene_id <= 0)//用scene_config id 去换
+    if (scene_id <= 0)//用scene_config id 去换本服的ms
     {
         GetSceneParam getp;
         getp.scene_confid_ = request->scene_info().scene_confid();
@@ -47,6 +47,12 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
             return;
         }
+    }
+
+    //跨服场景，通知跨服去换
+    if (registry.any_of<CrossMainSceneServer>(scene))
+    {
+        return;
     }
 
 	//您当前就在这个场景，无需切换
