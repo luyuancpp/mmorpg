@@ -12,6 +12,7 @@
 #include "src/network/player_session.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
+#include "src/system/scene_system.h"
 
 #include "component_proto/scene_comp.pb.h"
 #include "gs_service.pb.h"
@@ -48,12 +49,15 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
             return;
         }
     }
-
     //跨服场景，通知跨服去换
-    if (registry.any_of<CrossMainSceneServer>(scene))
+    if (IsServerScene<CrossMainSceneServer>(scene))
     {
         return;
     }
+	else if (IsServerScene<CrossMainSceneServer>(scene))
+	{
+		return;
+	}
 
 	//您当前就在这个场景，无需切换
 	auto try_scene_entity = registry.try_get<SceneEntity>(player);
