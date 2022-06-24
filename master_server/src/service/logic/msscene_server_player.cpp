@@ -49,15 +49,32 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
             return;
         }
     }
-    //跨服场景，通知跨服去换
-    if (IsServerScene<CrossMainSceneServer>(scene))
+    
+	auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
+	if (nullptr == try_scene_gs)
+	{
+		LOG_ERROR << " scene gs null : " << (nullptr == try_scene_gs);
+		return ;
+	}
+	auto gs_it = g_gs_nodes.find((*try_scene_gs)->node_id());
+	if (gs_it == g_gs_nodes.end())
+	{
+		LOG_ERROR << " scene gs null : " << (*try_scene_gs)->node_id();
+		return;
+	}
+
+    //todo 跨服的时候重新上线
+    // 
+    //目标场景是跨服场景，通知跨服去换
+    if (registry.all_of<CrossMainSceneServer>(gs_it->second))
     {
         return;
     }
-	else if (IsServerScene<CrossMainSceneServer>(scene))
-	{
+    else if(registry.all_of<CrossRoomSceneServer>(gs_it->second))//如果目标场景是跨服场景，不能走这个协议
+    {
+		PlayerTipSystem::Tip(player, kRetEnterSceneEnterCrossRoomScene, {});
 		return;
-	}
+    }	
 
 	//您当前就在这个场景，无需切换
 	auto try_scene_entity = registry.try_get<SceneEntity>(player);
