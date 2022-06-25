@@ -2,7 +2,7 @@
 
 static const int32_t kMaxPlayerSize = 4;
 
-bool AccountPlayer::IsInPlayerList(Guid player_id)
+bool AccountPlayer::HasPlayer(Guid player_id)
 {
     auto s = account_data_.simple_players().players_size();
     for (int32_t i = 0; i < s; ++i)

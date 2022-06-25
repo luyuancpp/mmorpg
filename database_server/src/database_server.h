@@ -32,10 +32,9 @@ public:
 
     void Start();
 
-    using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
-        deploy::ServerInfoResponse>;
-    using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
-    void StartServer(ServerInfoRpcRC cp);
+	using ServerInfoRpcRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest,
+		deploy::ServerInfoResponse>>;
+    void StartServer(ServerInfoRpcRpc replied);
 
     void receive(const OnConnected2ServerEvent& es);
 

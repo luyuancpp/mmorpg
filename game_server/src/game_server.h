@@ -33,20 +33,17 @@ public:
 
     void InitNetwork();
 
-    using ServerInfoRpcClosure = NormalClosure<deploy::ServerInfoRequest,
-        deploy::ServerInfoResponse>;
-    using ServerInfoRpcRC = std::shared_ptr<ServerInfoRpcClosure>;
-    void ServerInfo(ServerInfoRpcRC cp);
+	using ServerInfoRpcRpc = std::shared_ptr < NormalClosure<deploy::ServerInfoRequest,
+		deploy::ServerInfoResponse> >;
+    void ServerInfo(ServerInfoRpcRpc replied);
 
-    using StartGSInfoRpcClosure = NormalClosure<deploy::StartGSRequest,
-        deploy::StartGSResponse>;
-    using StartGSRpcRC = std::shared_ptr<StartGSInfoRpcClosure>;
-    void StartGSDeployReplied(StartGSRpcRC cp);
+	using StartGsRpc = std::shared_ptr<NormalClosure<deploy::StartGSRequest,
+		deploy::StartGSResponse>>;
+    void StartGsDeployReplied(StartGsRpc replied);
 
-	using RegionClosure = NormalClosure<deploy::RegionRequest,
-		deploy::RegionInfoResponse>;
-	using RegionRpcClosureRC = std::shared_ptr<RegionClosure>;
-	void RegionInfoReplied(RegionRpcClosureRC cp);
+	using RegionRpcClosureRpc = std::shared_ptr<NormalClosure<deploy::RegionRequest,
+		deploy::RegionInfoResponse>>;
+	void RegionInfoReplied(RegionRpcClosureRpc replied);
 
     void Register2Master(MasterSessionPtr& master_rpc_client);
     void Register2Region();

@@ -12,6 +12,7 @@
 #include "src/network/player_session.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
+#include "src/system/scene_system.h"
 
 #include "component_proto/scene_comp.pb.h"
 #include "gs_service.pb.h"
@@ -27,7 +28,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
     auto scene_id = request->scene_info().scene_id();
     entt::entity scene = entt::null;
-    if (scene_id <= 0)//用scene_config id 去换
+    if (scene_id <= 0)//用scene_config id 去换本服的ms
     {
         GetSceneParam getp;
         getp.scene_confid_ = request->scene_info().scene_confid();
@@ -48,61 +49,54 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
             return;
         }
     }
-    CheckEnterSceneParam csp;
-    csp.scene_id_ = scene_id;
-    csp.player_ = player;
-    auto ret = ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp);
+    
+	auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
+	if (nullptr == try_scene_gs)
+	{
+		LOG_ERROR << " scene gs null : " << (nullptr == try_scene_gs);
+		return ;
+	}
+	auto gs_it = g_gs_nodes.find((*try_scene_gs)->node_id());
+	if (gs_it == g_gs_nodes.end())
+	{
+		LOG_ERROR << " scene gs null : " << (*try_scene_gs)->node_id();
+		return;
+	}
+
+    //todo 跨服的时候重新上线
+    // 
+    //目标场景是跨服场景，通知跨服去换
+    if (registry.all_of<CrossMainSceneServer>(gs_it->second))
+    {
+        return;
+    }
+    else if(registry.all_of<CrossRoomSceneServer>(gs_it->second))//如果目标场景是跨服场景，不能走这个协议
+    {
+		PlayerTipSystem::Tip(player, kRetEnterSceneEnterCrossRoomScene, {});
+		return;
+    }	
+
+	//您当前就在这个场景，无需切换
+	auto try_scene_entity = registry.try_get<SceneEntity>(player);
+	if (nullptr != try_scene_entity)
+	{
+		if (scene != entt::null && scene == try_scene_entity->scene_entity())
+		{
+			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
+			return;
+		}
+	}
+
+    CheckEnterSceneParam check_enter_scene_p;
+    check_enter_scene_p.scene_id_ = scene_id;
+    check_enter_scene_p.player_ = player;
+    auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(check_enter_scene_p);
     if (kRetOK != ret)
     {
         PlayerTipSystem::Tip(player, ret, {});
         return;
     }
-    //您当前就在这个场景，无需切换
-    auto try_scene_entity = registry.try_get<SceneEntity>(player);
-    if (nullptr != try_scene_entity)
-    {
-        if (scene != entt::null && scene == try_scene_entity->scene_entity())
-        {
-			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
-			return;
-        }		
-    }
-
-    auto try_scene_gs = registry.try_get<GsDataPtr>(scene);
-    auto p_player_gs = registry.try_get<PlayerSession>(player);
-    if (nullptr == try_scene_gs || nullptr == p_player_gs)
-    {
-        LOG_ERROR << " scene null : " << (nullptr == try_scene_gs) << " " << (nullptr == p_player_gs);
-        return;
-    }
-    auto& p_scene_gs = *try_scene_gs;
-    //同gs之间的切换
-    if (p_player_gs->gs_node_id() == p_scene_gs->node_id())
-    {
-        LeaveSceneParam lp;
-        lp.leaver_ = player;
-        EnterSceneParam ep;
-        ep.enterer_ = player;
-        ep.scene_ = scene;
-        ScenesSystem::GetSingleton().LeaveScene(lp);
-        PlayerSceneSystem::LeaveScene(player, false);
-        ScenesSystem::GetSingleton().EnterScene(ep);
-        PlayerSceneSystem::OnEnterScene(player);
-    }
-    else
-    {
-        LeaveSceneParam lp;
-        lp.leaver_ = player;
-        //切换gs  存储完毕之后才能进入下一个场景
-        ScenesSystem::GetSingleton().LeaveScene(lp);
-        PlayerSceneSystem::LeaveScene(player, true);
-
-        //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了
-        auto& change_gs_scene = registry.emplace<AfterChangeGsEnterScene>(player);
-        change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<SceneInfo>(scene).scene_id());
-    }
-   
- 
+    PlayerSceneSystem::ChangeScene(player, scene);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -142,15 +136,13 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
         return;
     }
 	auto scene = ScenesSystem::GetSingleton().get_scene(try_change_gs_enter_scene->scene_info().scene_id());
-
+    registry.remove<AfterChangeGsEnterScene>(player);
     //todo异步加载完场景已经不在了scene了
 	if (entt::null == scene)
 	{
 		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
 		return;
 	}
-
-  
 
 	EnterSceneParam ep;
 	ep.enterer_ = player;
@@ -166,7 +158,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
     }
     else
     {
-        auto* p_gs_data = registry.try_get<GsDataPtr>(scene);
+        auto* p_gs_data = registry.try_get<GsNodePtr>(scene);
         if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
         {
             // todo default
@@ -177,15 +169,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
             try_player_session->gs_ = *p_gs_data;
         }
     }
-	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
-	if (it != g_gs_nodes.end())
-	{
-		gsservice::EnterGsRequest message;
-		message.set_player_id(registry.get<Guid>(player));
-		message.set_session_id(try_player_session->session_id());
-		message.set_ms_node_id(master_node_id());
-		registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
-	}
+    PlayerSceneSystem::SendEnterGs(player);
 ///<<< END WRITING YOUR CODE
 }
 

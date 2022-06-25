@@ -11,7 +11,9 @@
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
+
 #include "ms_service.pb.h"
+#include "component_proto/player_comp.pb.h"
 
 PlayerDataRedisSystemPtr g_player_data_redis_system;
 
@@ -33,6 +35,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 	}
     // on loaded db
     entt::entity player = ret.first->second;
+	registry.emplace<Player>(player);
     registry.emplace<Guid>(player, player_id);
     registry.emplace<Vector3>(player, message.pos());
    	

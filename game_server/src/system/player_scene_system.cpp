@@ -23,7 +23,10 @@ void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t scene_id)
 	ep.enterer_ = player;
 	ep.scene_ = scene;
 	EntitySceneSystem::EnterScene(ep);
+}
 
+void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)
+{
 	EnterSeceneS2C message;
 	message.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(scene));
 	Send2Player(message, player);

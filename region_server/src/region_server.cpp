@@ -15,11 +15,7 @@ region::RegionServer* g_region_server = nullptr;
 
 namespace region
 {
-    RegionServer::RegionServer(muduo::net::EventLoop* loop)
-        : loop_(loop)
-    {
-
-    }
+    RegionServer::RegionServer(muduo::net::EventLoop* loop): loop_(loop){}
 
     void RegionServer::Init()
     {
@@ -41,11 +37,11 @@ namespace region
         deploy_rpc_client_->connect();
     }
 
-    void RegionServer::StartServer(RegionInfoRpcRpcRC cp)
+    void RegionServer::StartServer(RegionInfoRpcRpcRpc replied)
     {
-        auto& myinfo = cp->s_rp_->info();
+        auto& myinfo = replied->s_rp_->info();
         InetAddress region_addr(myinfo.ip(), myinfo.port());
-        server_ = std::make_shared<muduo::net::RpcServer>(loop_, region_addr);
+        server_ = std::make_shared<RpcServerPtr::element_type>(loop_, region_addr);
         server_->registerService(&impl_);
         server_->subscribe<OnBeConnectedEvent>(*this);
         server_->start();
@@ -60,11 +56,11 @@ namespace region
         }
 		if (es.conn_->connected())
 		{
-			RegionInfoRpcRpcRC cp(std::make_shared<RegionInfoRpcClosure>());
-			cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+			RegionInfoRpcRpcRpc rpc(std::make_shared<RegionInfoRpcRpcRpc::element_type>());
+			rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
 			deploy_stub_.CallMethod(
 				&RegionServer::StartServer,
-				cp,
+				rpc,
 				this,
 				&deploy::DeployService_Stub::StartRegionServer);
 		}

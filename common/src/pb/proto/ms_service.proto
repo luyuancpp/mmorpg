@@ -44,7 +44,6 @@ message LeaveGameRequest
 message DisconnectRequest
 {
   uint64 session_id = 1;
-  uint32 gate_node_id = 2;
 }
 
 message LoginAccountRequest

@@ -13,10 +13,10 @@ class MasterNodeServiceImpl : public msservice::MasterNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 private:
-	using AccountMap = std::unordered_map<std::string, uint64_t>;
+	using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 
-    using Ms2GwPlayerEnterGsRpcReplied = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
-    void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied);
+    using Ms2GwPlayerEnterGsRpc = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
+    void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc replied);
 
     Guid GetPlayerIdByConnId(uint64_t session_id);
     entt::entity GetPlayerByConnId(uint64_t session_id);    
@@ -25,7 +25,7 @@ private:
 
     void InitPlayerSession(entt::entity player, uint64_t session_id);
 
-	AccountMap logined_accounts_;
+	AccountSessionMap logined_accounts_sesion_;
 ///<<< END WRITING YOUR CODE
 public:
     void StartGs(::google::protobuf::RpcController* controller,

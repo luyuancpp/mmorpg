@@ -211,17 +211,17 @@ void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	for (auto e : registry.view<RpcServerConnection>())
 	{
 		auto& conn = registry.get<RpcServerConnection>(e).conn_;
-		if (conn->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
+		if (conn->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
-		auto& gate_node = *registry.emplace<GateNodePtr>(e, std::make_shared<GateNode>(conn));
+		auto& gate_node = *registry.emplace<GateNodePtr>(e, std::make_shared<GateNodePtr::element_type>(conn));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
-		gate_node.node_info_.set_node_type(kGateWayNode);
+		gate_node.node_info_.set_node_type(kGatewayNode);
 		g_gate_nodes->emplace(request->gate_node_id(), e);
 		LOG_INFO << "GwConnectGs gate node id " << request->gate_node_id();
 		break;

@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message GsNodePlayerInfo
+{
+  uint32 player_size = 1;
+}

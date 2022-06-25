@@ -6,6 +6,8 @@
 
 #include "src/common_type/common_type.h"
 
+#include "component_proto/gs_node_comp.pb.h"
+
 using SceneMapComp = std::unordered_map<Guid, entt::entity>;
 using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
 using ScenePlayers = EntitySet;//弱引用，要解除玩家和场景的耦合
@@ -23,18 +25,6 @@ private:
 class ConfigSceneMap
 {
 public:
-    entt::entity first_scene_id() 
-    { 
-        for (auto& it : confid_scenelist_)
-        {
-            if (it.second.empty())
-            {
-                continue;
-            }
-            return *it.second.begin();
-        }
-        return entt::null;
-    }
     const Uint32KeyEntitySetValue& confid_sceneslist() const { return confid_scenelist_; }
     const EntitySet& confid_sceneslist(uint32_t scene_config_id) const 
     {
@@ -81,18 +71,10 @@ public:
         return s;
     }
 
-    inline bool scenes_empty() const 
-    { 
-		for (auto& it : confid_scenelist_)
-		{
-			if (it.second.empty())
-			{
-				continue;
-			}
-			return false;
-		}
-		return true;
-    }
+	inline bool scenes_empty() const
+	{
+        return scenes_size() == 0;
+	}
 
     inline bool HasConfig(uint32_t scene_config_id)const{ return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
 
@@ -112,7 +94,9 @@ private:
 struct MainScene {};
 
 struct MainSceneServer {};
+struct CrossMainSceneServer {};
 struct RoomSceneServer {};
+struct CrossRoomSceneServer {};
 
 struct GSNormal{};//game server 正常状态
 struct GSMainTain{};//game server 维护状态
@@ -121,22 +105,5 @@ struct GSCrash{};//崩溃状态
 struct NoPressure {};//
 struct Pressure {};//
 
-class GsData
-{
-public:
-    inline void set_node_id(uint32_t node_id) { node_id_ = node_id; }
-    inline uint32_t node_id()const { return node_id_; }
-    inline void set_node_entity(entt::entity server_entity) { server_ = server_entity; }
-    inline entt::entity server_entity()const { return server_; }
-    uint32_t player_size()const { return player_size_; }
+using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
-    inline void OnPlayerEnter() { ++player_size_; }
-    inline void OnPlayerLeave() { --player_size_; }
-private:
-    uint32_t node_id_{kInvalidU32Id};
-    entt::entity server_{};
-    uint32_t player_size_{ 0 };
-};
-
-using GsDataPtr = std::shared_ptr<GsData>;
-using GsDataWeakPtr = std::weak_ptr<GsData>;

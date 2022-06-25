@@ -42,16 +42,14 @@ public:
 
     entt::entity MakeScene(const MakeSceneP& param);
     entt::entity MakeSceneByGuid(const MakeSceneWithGuidP& param);
-    entt::entity MakeScene2Gs(const MakeGSSceneP& param);
-
-    void PutScene2Gs(const PutScene2GSParam& param);
+    entt::entity MakeScene2Gs(const MakeGsSceneP& param);
 
     void DestroyScene(const DestroySceneParam& param);
     void DestroyServer(const DestroyServerParam& param);
 
     void MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param);
 
-    uint32_t CheckEnterSceneByGuid(const CheckEnterSceneParam& param);
+    uint32_t CheckScenePlayerSize(const CheckEnterSceneParam& param);
     void EnterScene(const EnterSceneParam& param);
 
     void LeaveScene(const LeaveSceneParam& param);
@@ -60,8 +58,6 @@ public:
 
     void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 private:
-
-    void OnDestroyScene(entt::entity scene_entity);
 
     SceneMapComp scenes_map_;
     SnowFlake snow_flake_;
