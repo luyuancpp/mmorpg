@@ -37,8 +37,7 @@ message EnterCrossMainSceneRequest
 
 message EnterCrossMainSceneResponese
 {
-  uint64 scene_id = 1;
-  uint64 player_id = 2;
+  Tips error = 1;
 }
 
 message EnterCrossRoomSceneSceneResponse

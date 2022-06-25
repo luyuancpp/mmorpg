@@ -16,13 +16,14 @@
 #include "src/system/scene_system.h"
 
 #include "component_proto/scene_comp.pb.h"
+#include "logic_proto/scene_rg.pb.h"
 #include "gs_service.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 
 
-using LoginRpc = std::shared_ptr<NormalClosure<regionservcie::EnterCrossMainSceneRequest, regionservcie::EnterCrossMainSceneResponese>>;
-void EnterRegionMainSceneReplied()
+using EnterRegionMainRpc = std::shared_ptr<NormalClosure<regionservcie::EnterCrossMainSceneRequest, regionservcie::EnterCrossMainSceneResponese>>;
+void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
 {
 
 }
@@ -76,7 +77,9 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     //目标场景是跨服场景，通知跨服去换
     if (registry.all_of<CrossMainSceneServer>(gs_it->second))
     {
-        g_ms_node->rg_stub().CallMethod();
+        EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());
+        rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(scene).scene_id());
+        g_ms_node->rg_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &regionservcie::RgService_Stub::EnterCrossMainScene);
         return;
     }
     else if(registry.all_of<CrossRoomSceneServer>(gs_it->second))//如果目标场景是跨服场景，不能走这个协议

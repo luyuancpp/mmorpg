@@ -58,6 +58,22 @@ public:
             NewCallback(object, method, method_param));
     }
 
+    template<typename MethodParam, typename StubMethod>
+    void CallMethod(void (method)(MethodParam),
+        MethodParam& method_param,
+        StubMethod stub_method)
+    {
+        if (nullptr == stub_)
+        {
+            LOG_ERROR << "Server Disconnected";
+            return;
+        }
+        ((*stub_).*stub_method)(nullptr,
+            &method_param->s_rq_,
+            method_param->s_rp_,
+            NewCallback(method, method_param));
+    }
+
 	template<typename MethodParam, typename Class, typename StubMethod>
 	void CallMethodByRowStub(void (Class::* method)(MethodParam),
 		MethodParam& method_param,
