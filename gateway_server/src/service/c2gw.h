@@ -63,22 +63,22 @@ public:
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
-    using LoginRpcReplied = std::shared_ptr<ClosureReplied<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>>;
-    void OnServerLoginReplied(LoginRpcReplied cp);
+    using LoginRpc = std::shared_ptr<ClosureReplied<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>>;
+    void OnServerLoginReplied(LoginRpc replied);
 
     void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
         const CreatePlayerRequestPtr& message, 
         muduo::Timestamp);
 
-    using CreatePlayeReplied = std::shared_ptr<ClosureReplied<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>>;
-    void OnServerCreatePlayerReplied(CreatePlayeReplied cp);
+    using CreatePlayeRpc = std::shared_ptr<ClosureReplied<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>>;
+    void OnServerCreatePlayerReplied(CreatePlayeRpc replied);
 
     void OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
 
-    using EnterGameRpcRplied = std::shared_ptr<ClosureReplied<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
-    void OnServerEnterGameReplied(EnterGameRpcRplied cp);
+    using EnterGameRpc = std::shared_ptr<ClosureReplied<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
+    void OnServerEnterGameReplied(EnterGameRpc replied);
 
     void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
         const LeaveGameRequestPtr& message,
@@ -97,8 +97,8 @@ public:
         const muduo::net::TcpConnectionPtr client_connection_;
     };
 
-	using GsPlayerServiceRpcRplied = std::shared_ptr<ClosureReplied<MessageBody, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
-	void OnGsPlayerServiceReplied(GsPlayerServiceRpcRplied cp);
+	using GsPlayerServiceRpc = std::shared_ptr<ClosureReplied<MessageBody, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
+	void OnGsPlayerServiceReplied(GsPlayerServiceRpc replied);
 
     inline uint64_t tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<uint64_t>(conn->getContext()); }
 private:

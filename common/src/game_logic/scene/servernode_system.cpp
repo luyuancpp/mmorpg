@@ -8,16 +8,17 @@
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
 {
+    //如果最少人数的服务器没有这个场景咋办
     auto scene_confid = param.scene_confid_;
     entt::entity server_entity{ entt::null };
     std::size_t min_player_size = UINT64_MAX;
     for (auto e : registry.view<ServerType, ServerStatus, ServerPressure>())
     {
-        if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))
+        if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))//优先判断有没有场景
         {
             continue;
         }
-        std::size_t server_player_size = (*registry.get<GsDataPtr>(e)).player_size();
+        std::size_t server_player_size = (*registry.get<GsNodePlayerInfoPtr>(e)).player_size();
         if (server_player_size >= min_player_size || server_player_size >= kMaxServerPlayerSize)
         {
             continue;
@@ -58,7 +59,7 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 		{
 			continue;
 		}
-		std::size_t server_player_size = (*registry.get<GsDataPtr>(e)).player_size();
+		std::size_t server_player_size = (*registry.get<GsNodePlayerInfoPtr>(e)).player_size();
 		if (server_player_size >= kMaxServerPlayerSize)
 		{
 			continue;
@@ -115,7 +116,6 @@ entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 	}
 	return GetGetMainSceneNotFullT<MainSceneServer, GSNormal, Pressure>(param);
 }
-
 
 void ServerNodeSystem::ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
 {

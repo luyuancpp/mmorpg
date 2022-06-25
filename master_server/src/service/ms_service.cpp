@@ -27,18 +27,19 @@
 #include "src/network/server_component.h"
 #include "src/network/session.h"
 
-#include "gs_service.pb.h"
-#include "logic_proto/scene_normal.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
+#include "gs_service.pb.h"
+#include "logic_proto/scene_normal.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
-void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpcReplied replied)
+void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc replied)
 {
+	//todo 中间返回是断开了
 	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
     if (entt::null == player)
     {
@@ -112,7 +113,7 @@ void MasterNodeServiceImpl::InitPlayerSession(entt::entity player, uint64_t sess
 		return;
 	}
 
-    auto* p_gs_data = registry.try_get<GsDataPtr>(try_scene_entity->scene_entity());
+    auto* p_gs_data = registry.try_get<GsNodePtr>(try_scene_entity->scene_entity());
     if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
     {
         // todo default
@@ -137,62 +138,57 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	response->set_master_node_id(master_node_id());
-	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
-	entt::entity gs_entity{ entt::null };
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
+	entt::entity gs{ entt::null };
 	for (auto e : registry.view<RpcServerConnection>())
 	{
-		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
+		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
-		gs_entity = e;
+		gs = e;
 		break;
 	}
-	if (gs_entity == entt::null)
+	if (gs == entt::null)
 	{
 		//todo
 		LOG_INFO << "game connection not found " << request->gs_node_id();
 		return;
 	}
 
-	auto c = registry.get<RpcServerConnection>(gs_entity);
-	GsNodePtr gs = std::make_shared<GsNode>(c.conn_);
-	gs->node_info_.set_node_id(request->gs_node_id());
-	gs->node_info_.set_node_type(kGsNode);
-	MakeGSParam make_gs_p;
-	make_gs_p.node_id_ = request->gs_node_id();
-	AddMainSceneNodeCompnent(gs_entity, make_gs_p);
-	registry.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);//为了停掉gs，或者gs断线用
-	registry.emplace<GsNodePtr>(gs_entity, gs);
-	registry.emplace<GsStubPtr>(gs_entity, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+	auto c = registry.get<RpcServerConnection>(gs);
+	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
+	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
+	gs_node_ptr->node_info_.set_node_type(kGsNode);
+	AddMainSceneNodeCompnent(gs);
+	registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
+	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
+	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
-		MakeGSSceneP create_scene_param;
-		create_scene_param.server_ = gs_entity;
+		MakeGsSceneP create_scene_param;
+		create_scene_param.node_ = gs;
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
 			auto scene_entity = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
-			if (!registry.valid(scene_entity))
-			{
-				continue;
-			}
+			registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
 		}
 	}
 	else
 	{
-		registry.remove<MainSceneServer>(gs_entity);
-		registry.emplace<RoomSceneServer>(gs_entity);
+		registry.remove<MainSceneServer>(gs);
+		registry.emplace<RoomSceneServer>(gs);
 	}
 
 	for (auto e : registry.view<GateNodePtr>())
 	{
-		g_ms_node->DoGateConnectGs(gs_entity, e);
+		g_ms_node->LetGateConnect2Gs(gs, e);
 	}
-	g_ms_node->AddGsNode(gs_entity);
+	g_gs_nodes.emplace(registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
 	LOG_INFO << "game connected " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE 
 }
@@ -204,20 +200,20 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	entt::entity gate_entity{ entt::null };
 	for (auto e : registry.view<RpcServerConnection>())
 	{
 		auto c = registry.get<RpcServerConnection>(e);
 		auto& local_addr = c.conn_->peerAddress();
-		if (local_addr.toIpPort() != rpc_client_peer_addr.toIpPort())
+		if (local_addr.toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
 		gate_entity = e;
 		auto& gate_node = *registry.emplace<GateNodePtr>(gate_entity, std::make_shared<GateNode>(c.conn_));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
-		gate_node.node_info_.set_node_type(kGateWayNode);
+		gate_node.node_info_.set_node_type(kGatewayNode);
 		g_gate_nodes.emplace(request->gate_node_id(), gate_entity);
         registry.emplace_or_replace<GwStub>(gate_entity, GwStub(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 		break;
@@ -225,7 +221,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 
 	for (auto e : registry.view<GsNodePtr>())
 	{
-		g_ms_node->DoGateConnectGs(e, gate_entity);
+		g_ms_node->LetGateConnect2Gs(e, gate_entity);
 	}
 ///<<< END WRITING YOUR CODE 
 }
@@ -267,20 +263,25 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 	auto try_acount = registry.try_get<PlayerAccount>(player);
 	if (nullptr != try_acount)
 	{
-		logined_accounts_.erase(**try_acount);
+		logined_accounts_sesion_.erase(**try_acount);
 	}	
 	auto try_player_session = registry.try_get<PlayerSession>(player);
 	if (nullptr == try_player_session)//玩家已经断开连接了
 	{
 		return;
 	}
-	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
-	if (it == g_gs_nodes.end() ||  try_player_session->gate_node_id() != node_id(request->session_id()))
+	if (try_player_session->session_id() != request->session_id())
+	{
+		return;
+	}
+	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
+	if (it == g_gs_nodes.end())
 	{
 		return;
 	}
 	auto player_id = registry.get<Guid>(player);
+	g_gate_sessions.erase(player_id);
 	gsservice::DisconnectRequest message;
 	message.set_player_id(player_id);
 	registry.get<GsStubPtr>(it->second)->CallMethod(
@@ -309,10 +310,10 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
         return;
 	}
 	auto conn = cit->second;
-    registry.emplace<PlayerAccount>(conn, std::make_shared<std::string>(request->account()));
+    registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
     registry.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
 	//todo 
-	auto lit = logined_accounts_.find(request->account());
+	auto lit = logined_accounts_sesion_.find(request->account());
 	if (g_player_list->player_size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
@@ -320,7 +321,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 		return;
 	}
 
-	if (lit != logined_accounts_.end())
+	if (lit != logined_accounts_sesion_.end())
 	{
 		//如果不是同一个登录服务器,踢掉已经登录的账号
 		if (lit->second != request->session_id())
@@ -334,7 +335,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 	}
 	else
 	{
-		logined_accounts_.emplace(request->account(), request->session_id());
+		logined_accounts_sesion_.emplace(request->account(), request->session_id());
 	}
 ///<<< END WRITING YOUR CODE 
 }
@@ -360,7 +361,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto try_acount = registry.try_get<PlayerAccount>(session);
 	if (nullptr != try_acount)
 	{
-		logined_accounts_.erase(**try_acount);
+		logined_accounts_sesion_.erase(**try_acount);
 	}
 	if (entt::null == player)
 	{
@@ -370,7 +371,6 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		registry.emplace<Guid>(player, player_id);
 		registry.emplace<Player>(player);
 		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(sit->second));
-		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 		
 		GetSceneParam getp;
 		getp.scene_confid_ = 1;
@@ -386,15 +386,8 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
         ep.scene_ = scene;
         ScenesSystem::GetSingleton().EnterScene(ep);//顶号的时候已经在场景里面了
 		InitPlayerSession(player, request->session_id());
-		auto it = g_gs_nodes.find(registry.get<PlayerSession>(player).gs_node_id());
-		if (it != g_gs_nodes.end())
-		{			
-			gsservice::EnterGsRequest message;
-			message.set_player_id(player_id);
-			message.set_session_id(request->session_id());
-			message.set_ms_node_id(master_node_id());
-			registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
-		}
+		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
+
 	}
 	else//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 	{
@@ -412,17 +405,9 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
         }
 		InitPlayerSession(player, request->session_id());
 		registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
-		auto it = g_gs_nodes.find(registry.get<PlayerSession>(player).gs_node_id());
-		if (it != g_gs_nodes.end())
-		{
-			gsservice::EnterGsRequest message;
-            message.set_player_id(player_id);
-            message.set_session_id(request->session_id());
-            message.set_ms_node_id(master_node_id());
-            registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
-		}
+		
 	}
-
+	PlayerSceneSystem::SendEnterGs(player);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -434,12 +419,7 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 
-	auto player_id = request->session_id();
-	auto player = g_player_list->GetPlayer(player_id);
-	if (player == entt::null)
-	{
-		return;
-	}
+	auto player_id = GetPlayerIdByConnId(request->session_id());
 	g_player_list->LeaveGame(player_id);
 	//todo statistics
 ///<<< END WRITING YOUR CODE 
@@ -452,19 +432,9 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	auto cit = g_gate_sessions.find(request->session_id());
-	if (cit == g_gate_sessions.end())
-	{
-		return;
-	}
-	auto p_try_player = registry.try_get<EntityPtr>(cit->second);
-	if (nullptr == p_try_player)
-	{
-		return;
-	}
-	auto player_id = registry.get<Guid>(*p_try_player);
+	auto player_id = GetPlayerIdByConnId(request->session_id());
 	g_player_list->LeaveGame(player_id);
-	g_gate_sessions.erase(cit);
+	g_gate_sessions.erase(player_id);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -476,24 +446,24 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto& message_extern = request->ex();
-	auto& player_msg = request->msg();
 	auto it = g_players.find(message_extern.player_id());
 	if (it == g_players.end())
 	{
 		LOG_INFO << "player not found " << message_extern.player_id();
 		return;
 	}
-	auto msg_id = request->msg().msg_id();
-	auto sit = g_serviceinfo.find(msg_id);
+	auto& message = request->msg();
+	auto message_id = message.msg_id();
+	auto sit = g_serviceinfo.find(message_id);
 	if (sit == g_serviceinfo.end())
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_INFO << "msg not found " << message_id;
 		return;
 	}
 	auto service_it = g_player_services.find(sit->second.service);
 	if (service_it == g_player_services.end())
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_INFO << "msg not found " << message_id;
 		return;
 	}
 	auto& serviceimpl = service_it->second;
@@ -502,22 +472,21 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_INFO << "message not found " << message_id;
 		//todo client error;
 		return;
 	}
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
-	player_request->ParseFromString(player_msg.body());
+	player_request->ParseFromString(message.body());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
-	auto player = it->second;
-	serviceimpl->CallMethod(method, player, get_pointer(player_request), get_pointer(player_response));
+	serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
 	{
 		return;
 	}
 	response->mutable_ex()->set_player_id(request->ex().player_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
-	response->mutable_msg()->set_msg_id(msg_id);
+	response->mutable_msg()->set_msg_id(message_id);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -550,11 +519,10 @@ void MasterNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
 		return;
 	}
-	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpcReplied rp;
-	auto& message = rp.s_rq_;
-	message.set_session_id(player_session.session_id());
-	message.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, rp, this, &gwservice::GwNodeService::PlayerEnterGs);
+	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpc rpc;
+	rpc.s_rq_.set_session_id(player_session.session_id());
+	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
+	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 

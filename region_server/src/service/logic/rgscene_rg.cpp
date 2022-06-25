@@ -33,58 +33,61 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-
-	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
-	entt::entity gs_entity{ entt::null };
+	//只有跨服gs能连
+	if (!(request->server_type() == kMainSceneCrossServer ||
+		request->server_type() == kRoomSceneCrossServer))
+	{
+		LOG_ERROR << "server type " << request->rpc_server().ip() << "," << request->rpc_server().port();
+		return;
+	}
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
+	entt::entity gs{ entt::null };
 	for (auto e : registry.view<RpcServerConnection>())
 	{
-		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
+		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
-		gs_entity = e;
+		gs = e;
 		break;
 	}
-	if (gs_entity == entt::null)
+	if (gs == entt::null)
 	{
 		//todo
 		LOG_INFO << "game connection not found " << request->gs_node_id();
 		return;
 	}
 
-	auto c = registry.get<RpcServerConnection>(gs_entity);
-	GsNodePtr gs = std::make_shared<GsNode>(c.conn_);
-	gs->node_info_.set_node_id(request->gs_node_id());
-	gs->node_info_.set_node_type(kGsNode);
-	MakeGSParam make_gs_p;
-	make_gs_p.node_id_ = request->gs_node_id();
-	AddMainSceneNodeCompnent(gs_entity, make_gs_p);
-	registry.emplace<InetAddress>(gs_entity, rpc_server_peer_addr);
-	registry.emplace<GsNodePtr>(gs_entity, gs);
-	registry.emplace<GsStubPtr>(gs_entity, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+	auto c = registry.get<RpcServerConnection>(gs);
+	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
+	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
+	gs_node_ptr->node_info_.set_node_type(kGsNode);
+	AddMainSceneNodeCompnent(gs);
+	registry.emplace<InetAddress>(gs, service_addr);
+	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
+	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
-		MakeGSSceneP create_scene_param;
-		create_scene_param.server_ = gs_entity;
+		MakeGsSceneP create_scene_param;
+		create_scene_param.node_ = gs;
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
-			auto scene_entity = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
-			if (!registry.valid(scene_entity))
-			{
-				continue;
-			}
-			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
+			auto scene = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
+			registry.remove<MainSceneServer>(gs);
+			registry.emplace<CrossMainSceneServer>(gs);
+			registry.emplace<GsNodePtr>(scene);
+			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene));
 		}
 	}
 	else
 	{
-		registry.remove<MainSceneServer>(gs_entity);
-		registry.emplace<RoomSceneServer>(gs_entity);
+		registry.remove<MainSceneServer>(gs);
+		registry.emplace<CrossRoomSceneServer>(gs);
 	}
-	g_gs_nodes->emplace(request->gs_node_id(), gs_entity);
+	g_gs_nodes->emplace(request->gs_node_id(), gs);
 	LOG_INFO << "game node connected " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE 
 }
@@ -96,32 +99,32 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	InetAddress rpc_client_peer_addr(request->rpc_client().ip(), request->rpc_client().port());
-	InetAddress rpc_server_peer_addr(request->rpc_server().ip(), request->rpc_server().port());
-	entt::entity ms_entity{ entt::null };
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
+	entt::entity ms{ entt::null };
 	for (auto e : registry.view<RpcServerConnection>())
 	{
-		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != rpc_client_peer_addr.toIpPort())
+		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
-		ms_entity = e;
+		ms = e;
 		break;
 	}
-	if (ms_entity == entt::null)
+	if (ms == entt::null)
 	{
 		//todo
 		LOG_INFO << "ms id found: " << request->ms_node_id();
 		return;
 	}
 
-	auto c = registry.get<RpcServerConnection>(ms_entity);
-	MsNodePtr ms = registry.emplace<MsNodePtr>(ms_entity, std::make_shared<MsNodePtr::element_type>(c.conn_));
-	ms->node_info_.set_node_id(request->ms_node_id());
-	ms->node_info_.set_node_type(kMasterNode);
-	registry.emplace<InetAddress>(ms_entity, rpc_server_peer_addr);
-	registry.emplace<MsStubPtr>(ms_entity, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
-	g_ms_nodes->emplace(request->ms_node_id(), ms_entity);
+	auto c = registry.get<RpcServerConnection>(ms);
+	MsNodePtr ms_node = registry.emplace<MsNodePtr>(ms, std::make_shared<MsNodePtr::element_type>(c.conn_));
+	ms_node->node_info_.set_node_id(request->ms_node_id());
+	ms_node->node_info_.set_node_type(kMasterNode);
+	registry.emplace<InetAddress>(ms, service_addr);
+	registry.emplace<MsStubPtr>(ms, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+	g_ms_nodes->emplace(request->ms_node_id(), ms);
 	LOG_INFO << "ms node connected " << request->ms_node_id();
 ///<<< END WRITING YOUR CODE 
 }
@@ -149,7 +152,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 	CheckEnterSceneParam csp;
 	csp.scene_id_ = registry.get<Guid>(scene);
 	csp.player_ = it.first->second;
-	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp));
+	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckScenePlayerSize(csp));
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;
@@ -183,7 +186,7 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 	CheckEnterSceneParam csp;
 	csp.scene_id_ = registry.get<Guid>(scene);
 	csp.player_ = it.first->second;
-	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckEnterSceneByGuid(csp));
+	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckScenePlayerSize(csp));
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;

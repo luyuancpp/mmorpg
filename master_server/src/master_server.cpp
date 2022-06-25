@@ -34,7 +34,7 @@ uint32_t master_node_id()
 
 MasterServer::MasterServer(muduo::net::EventLoop* loop)
     : loop_(loop),
-      redis_(std::make_shared<MessageSyncRedisClient>())
+      redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 { 
     global_entity() = registry.create();
 }    
@@ -44,7 +44,6 @@ void MasterServer::Init()
     g_ms_node = this;
     InitConfig();
     InitMsgService();
-    InitGlobalEntities();
     InitPlayerServcie();
 
     //connect 
@@ -55,29 +54,28 @@ void MasterServer::Connect2Deploy()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
-    deploy_rpc_client_->subscribe<OnConnected2ServerEvent>(*this);
-    deploy_rpc_client_->connect();
+    deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+    deploy_session_->subscribe<RegisterStubEvent>(deploy_stub_);
+    deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
+    deploy_session_->connect();
 }
 
-void MasterServer::StartServer(ServerInfoRpcRC cp)
+void MasterServer::StartServer(ServerInfoRpcRpc replied)
 {
-    serverinfos_ = cp->s_rp_->info();
+    serverinfos_ = replied->s_rp_->info();
     auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
-    db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
-    db_rpc_client_->subscribe<RegisterStubEvent>(db_node_stub_);
-    db_rpc_client_->connect();    
+    db_session_ = std::make_unique<RpcClient>(loop_, database_addr);
+    db_session_->subscribe<RegisterStubEvent>(db_node_stub_);
+    db_session_->connect();    
 
     Connect2Region();
 	
     auto& myinfo = serverinfos_.master_info();
     InetAddress master_addr(myinfo.ip(), myinfo.port());
-    server_ = std::make_shared<muduo::net::RpcServer>(loop_, master_addr);
+    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, master_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
-
-    server_->registerService(&node_service_impl_);
+    server_->registerService(&ms_service_);
     for (auto& it : g_server_nomal_service)
     {
         server_->registerService(it.get());
@@ -85,26 +83,19 @@ void MasterServer::StartServer(ServerInfoRpcRC cp)
     server_->start();
 }
 
-void MasterServer::StartMsRegionReplied(StartMsReplied cp)
+void MasterServer::StartMsRegionReplied(StartMsRpc replied)
 {
 
 }
 
-void MasterServer::DoGateConnectGs(entt::entity gs, entt::entity gate)
+void MasterServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
     auto& connection_info = registry.get<InetAddress>(gs);
     gwservice::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
-    request.set_gs_node_id(registry.get<GsDataPtr>(gs)->node_id());
-	auto& gate_session = registry.get<GateNodePtr>(gate)->session_;
-	gate_session.Send(request);
-}
-
-void MasterServer::AddGsNode(entt::entity gs)
-{
-    auto& gsnode = registry.get<GsNodePtr>(gs);
-    g_gs_nodes.emplace(gsnode->node_info_.node_id(), gs);
+    request.set_gs_node_id(registry.get<GsNodePtr>(gs)->node_id());
+	registry.get<GateNodePtr>(gate)->session_.Send(request);
 }
 
 void MasterServer::receive(const OnConnected2ServerEvent& es)
@@ -115,12 +106,12 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
 		// started 
 		if (nullptr == server_)
 		{
-			ServerInfoRpcRC cp(std::make_shared<ServerInfoRpcClosure>());
-			cp->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-			cp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+			ServerInfoRpcRpc rpc(std::make_shared<ServerInfoRpcRpc::element_type>());
+			rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+			rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
 			deploy_stub_.CallMethod(
 				&MasterServer::StartServer,
-				cp,
+				rpc,
 				this,
 				&deploy::DeployService_Stub::ServerInfo);
 		}
@@ -129,7 +120,7 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
 		{
 			if (conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 			{
-				EventLoop::getEventLoopOfCurrentThread()->runInLoop(std::bind(&MasterServer::Register2Region, this));
+				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&MasterServer::Register2Region, this));
 			}
 			else if(!conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 			{
@@ -165,11 +156,13 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
             auto gsnode = registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
             if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGsNode)
             {
+				//todo 
                 g_gs_nodes.erase((*gsnode)->node_info_.node_id());
             }
 			auto gatenode = registry.try_get<GateNodePtr>(e);//如果是gate
-			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateWayNode)
+			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGatewayNode)
 			{
+				//todo
                 g_gate_nodes.erase((*gatenode)->node_info_.node_id());
 			}
 			registry.destroy(e);
@@ -186,18 +179,13 @@ void MasterServer::InitConfig()
 	LoadAllConfig();
 }
 
-void MasterServer::InitGlobalEntities()
-{
-    MakeScenes();
-}
-
 void MasterServer::Connect2Region()
 {
 	auto& regioninfo = serverinfos_.regin_info();
 	InetAddress region_addr(regioninfo.ip(), regioninfo.port());
 	region_session_ = std::make_unique<RpcClient>(loop_, region_addr);
 	region_session_->subscribe<RegisterStubEvent>(rg_stub_);
-	region_session_->registerService(&node_service_impl_);
+	region_session_->registerService(&ms_service_);
 	region_session_->subscribe<OnConnected2ServerEvent>(*this);
 	region_session_->connect();
 }
@@ -205,8 +193,8 @@ void MasterServer::Connect2Region()
 void MasterServer::Register2Region()
 {
     auto& myinfo = serverinfos_.master_info();
-    StartMsReplied cp(std::make_shared<StartMsReplied::element_type>());
-	auto& rq = cp->s_rq_;
+    StartMsRpc rpc(std::make_shared<StartMsRpc::element_type>());
+	auto& rq = rpc->s_rq_;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();
 	session_info->set_ip(region_session_->local_addr().toIp());
@@ -216,7 +204,7 @@ void MasterServer::Register2Region()
 	rq.set_ms_node_id(myinfo.id());
 	rg_stub_.CallMethod(
 		&MasterServer::StartMsRegionReplied,
-		cp,
+		rpc,
 		this,
 		&regionservcie::RgService_Stub::StartMs);
 }

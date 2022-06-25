@@ -14,6 +14,9 @@ struct GsNode
 {
 	GsNode(const muduo::net::TcpConnectionPtr& conn)
 		: session_(conn){}
+	
+	decltype(auto) node_id() const { return node_info_.node_id(); }
+
 	NodeInfo node_info_;
 	RpcServerConnection session_;
 };

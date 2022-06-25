@@ -157,6 +157,7 @@
     <ClCompile Include="src\game_logic\scene\servernode_system.cpp" />
     <ClCompile Include="src\network\session.cpp" />
     <ClCompile Include="src\pb\pb2sol2\common_client_player_sol2.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\gs_node_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\item_base_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\item_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\node_comp_sol2.cpp" />
@@ -167,6 +168,7 @@
     <ClCompile Include="src\pb\pb2sol2\scene_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\scene_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\team_client_player_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\component_proto\gs_node_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\item_base_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\item_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\node_comp.pb.cc" />
@@ -263,6 +265,7 @@
     <ClInclude Include="src\pb\pbc\c2gw.pb.h" />
     <ClInclude Include="src\pb\pbc\common.pb.h" />
     <ClInclude Include="src\pb\pbc\comp.pb.h" />
+    <ClInclude Include="src\pb\pbc\component_proto\gs_node_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\item_base_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\item_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\node_comp.pb.h" />

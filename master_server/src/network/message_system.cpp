@@ -42,7 +42,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	{
 		return;
 	}
-	auto gs = try_player_session->gs_.lock();
+	auto gs = try_player_session->gs_;
 	if (nullptr == gs)
 	{
 		LOG_INFO << "gs not found ";
@@ -58,8 +58,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	ms2gs_messag.mutable_msg()->set_msg_id(message_it->second);
 	ms2gs_messag.mutable_msg()->set_body(message.SerializeAsString());
 	ms2gs_messag.mutable_ex()->set_player_id(registry.get<Guid>(player));
-	auto& gs_session = registry.get<RpcServerConnection>(gs->server_entity());
-	gs_session.Send(ms2gs_messag);
+	gs->session_.Send(ms2gs_messag);
 }
 
 void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& player)
@@ -89,7 +88,7 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
         return;
     }
     auto player_session = registry.get<PlayerSession>(player);
-    auto gs = player_session.gs_.lock();
+    auto gs = player_session.gs_;
     if (nullptr == gs)
     {
         LOG_INFO << "gs not found ";
@@ -105,8 +104,7 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
     ms2gs_messag.mutable_msg()->set_msg_id(message_it->second);
     ms2gs_messag.mutable_msg()->set_body(message.SerializeAsString());
     ms2gs_messag.mutable_ex()->set_player_id(registry.get<Guid>(player));
-    auto& gs_session = registry.get<RpcServerConnection>(gs->server_entity());
-    gs_session.Send(ms2gs_messag);
+	gs->session_.Send(ms2gs_messag);
 }
 
 void Send2Player(const google::protobuf::Message& message, entt::entity player)

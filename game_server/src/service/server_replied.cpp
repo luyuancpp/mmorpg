@@ -11,9 +11,9 @@
 #include "src/network/rpc_client.h"
 
 
-void ServerReplied::StartGsMasterReplied(StartGsMasterRpcRC cp)
+void ServerReplied::StartGsMasterReplied(StartGsMasterRpcRpc replied)
 {
-    auto rsp = cp->s_rp_;
+    auto rsp = replied->s_rp_;
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
     {
         auto& pb = rsp->scenes_info(i);
@@ -24,9 +24,9 @@ void ServerReplied::StartGsMasterReplied(StartGsMasterRpcRC cp)
     }
 }
 
-void ServerReplied::StartCrossGsRegionReplied(StartCrossGsReplied cp)
+void ServerReplied::StartCrossGsRegionReplied(StartCrossGsRpc replied)
 {
-	auto rsp = cp->s_rp_;
+	auto rsp = replied->s_rp_;
 	for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
 	{
 		auto& pb = rsp->scenes_info(i);

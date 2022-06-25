@@ -12,7 +12,7 @@ public:
     const std::string& account() const{ return account_data_.account(); }
     Guid PlayingId() const { return playing_id_; }
 
-    bool IsInPlayerList(Guid guid);
+    bool HasPlayer(Guid guid);
 
     // login state machine
     inline uint32_t Login() { return login_state_machine_.Login(); }

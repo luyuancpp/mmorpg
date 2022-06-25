@@ -28,22 +28,22 @@ public:
 
 		void set_redis_client(PbSyncRedisClientPtr& p) { redis_ = p; }
 
-		using LoginRpcReplied = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
-		void LoginAccountDbReplied(LoginRpcReplied d);
+		using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
+		void LoginAccountDbReplied(LoginAccountDbRpc replied);
 
-		using LoginMasterRP = std::shared_ptr<RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
-		void LoginAccountMsReplied(LoginMasterRP d);
+		using LoginAcountMsRpc = std::shared_ptr<RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
+		void LoginAccountMsReplied(LoginAcountMsRpc replied);
 
 		using CreatePlayerRpcReplied = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
-		void CreatePlayerDbReplied(CreatePlayerRpcReplied d);
+		void CreatePlayerDbReplied(CreatePlayerRpcReplied replied);
 
 		using EnterGameDbRpcReplied = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
-		void EnterGameDbReplied(EnterGameDbRpcReplied d);
+		void EnterGameDbReplied(EnterGameDbRpcReplied replied);
 
-		using EnterGameMSRpcReplied = std::shared_ptr<RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
-		void EnterMsReplied(EnterGameMSRpcReplied d);
+		using EnterGameMsRpc = std::shared_ptr<RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
+		void EnterGameReplied(EnterGameMsRpc replied);
 
-		void EnterMS(Guid player_id,
+		void EnterGame(Guid player_id,
 			uint64_t connection_id,
 			::gw2l::EnterGameResponse* response,
 			::google::protobuf::Closure* done);
@@ -52,7 +52,7 @@ public:
 		void UpdateAccount(uint64_t connection_id, const ::account_database& a_d);
 
 		PbSyncRedisClientPtr redis_;
-		ConnectionEntityMap connections_;
+		ConnectionEntityMap sessions_;
 		LoginStubl2ms& ms_node_stub_;
 		LoginStubl2db& l2db_login_stub_;
 		///<<< END WRITING YOUR CODE
