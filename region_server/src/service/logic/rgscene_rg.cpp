@@ -153,8 +153,13 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 	CheckEnterSceneParam csp;
 	csp.scene_id_ = registry.get<Guid>(scene);
 	csp.player_ = player;
-	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckScenePlayerSize(csp));
-
+	auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(csp);
+	if (ret != kRetOK)
+	{
+		response->mutable_error()->set_id(ret);		
+		return;
+	}
+	
 	EnterSceneParam esp;
 	esp.scene_ = scene;
 	esp.enterer_ = player;
