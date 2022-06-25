@@ -35,6 +35,12 @@ message EnterCrossMainSceneRequest
   uint64 player_id = 2;
 }
 
+message EnterCrossMainSceneResponese
+{
+  uint64 scene_id = 1;
+  uint64 player_id = 2;
+}
+
 message EnterCrossRoomSceneSceneResponse
 {
   Tips error = 1;
@@ -55,7 +61,7 @@ service RgService
 {
   rpc StartCrossGs (StartCrossGsRequest) returns (StartCrossGsResponse);
   rpc StartMs (StartMsRequest) returns (StartMsResponse);
-  rpc EnterCrossMainScene (EnterCrossMainSceneRequest) returns (EnterCrossRoomSceneSceneResponse);
+  rpc EnterCrossMainScene (EnterCrossMainSceneRequest) returns (EnterCrossMainSceneResponese);
   rpc EnterCrossMainSceneWeightRoundRobin (EnterCrossMainSceneWeightRoundRobinRequest) returns (EnterCrossRoomSceneSceneWeightRoundRobinResponse);
 }
 

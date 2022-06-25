@@ -149,14 +149,15 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
 		return;
 	}
+	auto player = it.first->second;;
 	CheckEnterSceneParam csp;
 	csp.scene_id_ = registry.get<Guid>(scene);
-	csp.player_ = it.first->second;
+	csp.player_ = player;
 	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckScenePlayerSize(csp));
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;
-	esp.enterer_ = it.first->second;
+	esp.enterer_ = player;
 	ScenesSystem::GetSingleton().EnterScene(esp);
 ///<<< END WRITING YOUR CODE 
 }
