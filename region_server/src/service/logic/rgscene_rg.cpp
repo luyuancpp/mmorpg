@@ -33,7 +33,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	//只有跨服gs能连
+	//鍙湁璺ㄦ湇gs鑳借繛
 	if (!(request->server_type() == kMainSceneCrossServer ||
 		request->server_type() == kRoomSceneCrossServer))
 	{
