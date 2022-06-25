@@ -25,7 +25,7 @@ void InitPlayerServcie()
     g_player_services.emplace("ClientPlayerTeamService", std::make_unique<ClientPlayerTeamServiceImpl>(new ClientPlayerTeamServiceOpenImpl));
     g_player_services.emplace("ServerPlayerTeamService", std::make_unique<ServerPlayerTeamServiceImpl>(new ServerPlayerTeamServiceOpenImpl));
     g_player_services.emplace("ServerPlayerSceneService", std::make_unique<ServerPlayerSceneServiceImpl>(new ServerPlayerSceneServiceOpenImpl));
-    g_open_player_services.emplace("ClientPlayerCommonService");
-    g_open_player_services.emplace("ClientPlayerSceneService");
-    g_open_player_services.emplace("ClientPlayerTeamService");
+    g_open_player_services.emplace("regionservcieClientPlayerCommonService");
+    g_open_player_services.emplace("regionservcieClientPlayerSceneService");
+    g_open_player_services.emplace("regionservcieClientPlayerTeamService");
 }

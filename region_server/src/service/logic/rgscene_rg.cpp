@@ -131,7 +131,7 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 
 void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* controller,
     const regionservcie::EnterCrossMainSceneRequest* request,
-    regionservcie::EnterCrossRoomSceneSceneResponse* response,
+    regionservcie::EnterCrossMainSceneResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
