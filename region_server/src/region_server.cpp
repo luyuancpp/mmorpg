@@ -94,11 +94,7 @@ namespace region
 				{
 					g_gs_nodes->erase((*gsnode)->node_info_.node_id());
 				}
-				auto msnode = registry.try_get<MsNodePtr>(e);//如果是gate
-				if (nullptr != msnode && (*msnode)->node_info_.node_type() == kMasterNode)
-				{
-                    g_ms_nodes->erase((*msnode)->node_info_.node_id());
-				}
+                // ms 不动态扩展，所以不删除
 				registry.destroy(e);
 				break;
 			}
