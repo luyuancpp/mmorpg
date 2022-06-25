@@ -145,6 +145,11 @@ uint32_t ScenesSystem::CheckScenePlayerSize(const CheckEnterSceneParam& param)
     {
         return kRetEnterSceneNotFound;
     }
+    return CheckScenePlayerSize(scene);
+}
+
+uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
+{
     if (registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
     {
         return kRetEnterSceneNotFull;

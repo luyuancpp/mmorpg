@@ -40,6 +40,9 @@ public:
     bool HasScene(uint32_t scene_config_id);
     inline bool Empty() const { return scenes_map_.empty(); }
 
+    uint32_t CheckScenePlayerSize(const CheckEnterSceneParam& param);
+    uint32_t CheckScenePlayerSize(entt::entity scene);
+
     entt::entity MakeScene(const MakeSceneP& param);
     entt::entity MakeSceneByGuid(const MakeSceneWithGuidP& param);
     entt::entity MakeScene2Gs(const MakeGsSceneP& param);
@@ -49,7 +52,6 @@ public:
 
     void MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param);
 
-    uint32_t CheckScenePlayerSize(const CheckEnterSceneParam& param);
     void EnterScene(const EnterSceneParam& param);
 
     void LeaveScene(const LeaveSceneParam& param);

@@ -178,6 +178,16 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
 		}
 	}
+	else if (request->server_type() == kMainSceneCrossServer)
+	{
+        registry.remove<MainSceneServer>(gs);
+        registry.emplace<CrossMainSceneServer>(gs);
+	}
+    else if (request->server_type() == kRoomSceneCrossServer)
+    {
+        registry.remove<MainSceneServer>(gs);
+        registry.emplace<CrossRoomSceneServer>(gs);
+    }
 	else
 	{
 		registry.remove<MainSceneServer>(gs);

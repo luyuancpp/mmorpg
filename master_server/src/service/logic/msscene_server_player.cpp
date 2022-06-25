@@ -10,6 +10,7 @@
 #include "src/game_logic/tips_id.h"
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"
+#include "src/master_server.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/scene_system.h"
@@ -18,6 +19,13 @@
 #include "gs_service.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
+
+
+using LoginRpc = std::shared_ptr<NormalClosure<regionservcie::EnterCrossMainSceneRequest, regionservcie::EnterCrossMainSceneResponese>>;
+void EnterRegionMainSceneReplied()
+{
+
+}
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -68,6 +76,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     //目标场景是跨服场景，通知跨服去换
     if (registry.all_of<CrossMainSceneServer>(gs_it->second))
     {
+        g_ms_node->rg_stub().CallMethod();
         return;
     }
     else if(registry.all_of<CrossRoomSceneServer>(gs_it->second))//如果目标场景是跨服场景，不能走这个协议
