@@ -5,6 +5,7 @@
 
 #include "muduo/base/Logging.h"
 
+#include "src/comp/player_list.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/game_logic/tips_id.h"
@@ -25,7 +26,19 @@ using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 using EnterRegionMainRpc = std::shared_ptr<NormalClosure<regionservcie::EnterCrossMainSceneRequest, regionservcie::EnterCrossMainSceneResponese>>;
 void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
 {
-
+    auto player = g_player_list->GetPlayer(replied->s_rq_.player_id());
+    if (entt::null == player)
+    {
+        LOG_ERROR << "player not found" << replied->s_rq_.player_id();
+        return;
+    }
+    auto scene = ScenesSystem::GetSingleton().get_scene(replied->s_rq_.scene_id());
+    if (entt::null == scene)
+    {
+        LOG_ERROR << "scene not found" << replied->s_rq_.scene_id();
+        return;
+    }
+    PlayerSceneSystem::ChangeScene(player, scene);
 }
 ///<<< END WRITING YOUR CODE
 
@@ -79,6 +92,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     {
         EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());
         rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(scene).scene_id());
+        rpc->s_rq_.set_player_id(registry.get<Guid>(player));
         g_ms_node->rg_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &regionservcie::RgService_Stub::EnterCrossMainScene);
         return;
     }
