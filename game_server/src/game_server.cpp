@@ -161,6 +161,12 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
 
 void GameServer::Register2Region()
 {
+    auto server_type = registry.get<GsServerType>(global_entity()).server_type_;
+    if (!(server_type == kMainSceneCrossServer ||
+        server_type == kRoomSceneCrossServer))
+    {
+        return;
+    }
 	ServerReplied::StartCrossGsRpc cp(std::make_shared< ServerReplied::StartCrossGsRpc::element_type>());
 	auto& rq = cp->s_rq_;
 	auto session_info = rq.mutable_rpc_client();
