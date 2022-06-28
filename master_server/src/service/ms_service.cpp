@@ -164,7 +164,8 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	AddMainSceneNodeCompnent(gs);
 	registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
-	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+	registry.emplace<GsNodePlayerInfoPtr>(gs);
+	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));	
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();

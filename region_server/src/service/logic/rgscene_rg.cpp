@@ -61,6 +61,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	AddMainSceneNodeCompnent(gs);
 	registry.emplace<InetAddress>(gs, service_addr);
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
+	registry.emplace<GsNodePlayerInfoPtr>(gs);	
 	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneServer)
 	{
@@ -73,7 +74,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 			auto scene = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
 			registry.remove<MainSceneServer>(gs);
 			registry.emplace<CrossMainSceneServer>(gs);
-			registry.emplace<GsNodePtr>(scene);
+			registry.emplace<GsNodePtr>(scene, gs_node_ptr);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene));
 		}
 	}
