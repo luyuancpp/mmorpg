@@ -121,6 +121,17 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 	registry.emplace<InetAddress>(ms, service_addr);
 	registry.emplace<MsStubPtr>(ms, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	g_ms_nodes->emplace(request->ms_node_id(), ms);
+    for (auto e : registry.view<MainScene>())
+    {
+		auto p_cross_scene_info = response->mutable_cross_scenes_info()->Add();
+		p_cross_scene_info->mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(e));
+		auto try_gs_node_ptr = registry.try_get<GsNodePtr>(e);
+		if (nullptr == try_gs_node_ptr)
+		{
+			continue;
+		}
+		p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
+    }
 	LOG_INFO << "ms node connected " << request->ms_node_id();
 ///<<< END WRITING YOUR CODE 
 }
