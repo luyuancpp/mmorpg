@@ -46,7 +46,7 @@ bool ScenesSystem::HasScene(uint32_t scene_config_id)
 	return false;
 }
 
-entt::entity ScenesSystem::MakeScene(const MakeSceneP& param)
+entt::entity ScenesSystem::CreateScene(const CreateSceneP& param)
 {
     auto scene = registry.create();
     auto& si = registry.emplace<SceneInfo>(scene);
@@ -63,7 +63,7 @@ entt::entity ScenesSystem::MakeScene(const MakeSceneP& param)
     return scene;
 }
 
-entt::entity ScenesSystem::MakeSceneByGuid(const MakeSceneWithGuidP& param)
+entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneWithGuidP& param)
 {
 	auto e = registry.create();
     auto guid = param.scene_id;
@@ -83,9 +83,9 @@ entt::entity ScenesSystem::MakeSceneByGuid(const MakeSceneWithGuidP& param)
 
 entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 {
-    MakeSceneP make_p;
-    make_p.scene_confid_ = param.scene_confid_;
-    auto scene = MakeScene(make_p);
+    CreateSceneP create_p;
+    create_p.scene_confid_ = param.scene_confid_;
+    auto scene = CreateScene(create_p);
 	auto server = param.node_;
     auto try_server_player_info = registry.try_get<GsNodePlayerInfoPtr>(server);
     if (nullptr != try_server_player_info)
@@ -204,10 +204,10 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
     entt::entity server_scene_enitity = entt::null;
     if (!new_server_scene.HasConfig(param.scene_confid_))
     {
-        CreateGsSceneP make_server_scene_param;
-        make_server_scene_param.scene_confid_ = scene_config_id;
-        make_server_scene_param.node_ = new_server_entity;
-        server_scene_enitity = CreateScene2Gs(make_server_scene_param);
+        CreateGsSceneP create_server_scene_param;
+        create_server_scene_param.scene_confid_ = scene_config_id;
+        create_server_scene_param.node_ = new_server_entity;
+        server_scene_enitity = CreateScene2Gs(create_server_scene_param);
     }
     else
     {

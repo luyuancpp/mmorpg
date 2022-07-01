@@ -3,7 +3,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/util/snow_flake.h"
 
-entt::entity MakeMainSceneNode()
+entt::entity CreateMainSceneNode()
 {
     auto e = registry.create();
     AddMainSceneNodeCompnent(e);

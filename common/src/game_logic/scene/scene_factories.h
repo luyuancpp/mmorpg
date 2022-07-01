@@ -4,12 +4,12 @@
 #include "src/game_logic/comp/scene_comp.h"
 
 
-struct MakeSceneP
+struct CreateSceneP
 {
     uint32_t scene_confid_{ 0 };
 };
 
-struct MakeSceneWithGuidP : public MakeSceneP
+struct CreateSceneWithGuidP : public CreateSceneP
 {
     Guid scene_id{kInvalidGuid};
 };
@@ -39,6 +39,6 @@ struct DestroyServerParam
 
 entt::entity& scenes_entity();
 
-entt::entity MakeMainSceneNode();
+entt::entity CreateMainSceneNode();
 void AddMainSceneNodeCompnent(entt::entity e);
 
