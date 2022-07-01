@@ -68,12 +68,12 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
-		MakeGsSceneP create_scene_param;
+		CreateGsSceneP create_scene_param;
 		create_scene_param.node_ = gs;
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
-			auto scene = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
+			auto scene = ScenesSystem::GetSingleton().CreateScene2Gs(create_scene_param);
 			registry.remove<MainSceneServer>(gs);
 			registry.emplace<CrossMainSceneServer>(gs);
 			registry.emplace<GsNodePtr>(scene, gs_node_ptr);

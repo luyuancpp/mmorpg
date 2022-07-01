@@ -169,12 +169,12 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
-		MakeGsSceneP create_scene_param;
+		CreateGsSceneP create_scene_param;
 		create_scene_param.node_ = gs;
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
-			auto scene_entity = ScenesSystem::GetSingleton().MakeScene2Gs(create_scene_param);
+			auto scene_entity = ScenesSystem::GetSingleton().CreateScene2Gs(create_scene_param);
 			registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
 		}
@@ -508,7 +508,7 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-    MakeGsSceneP create_scene_param;
+    CreateGsSceneP create_scene_param;
 	for (auto it : request->cross_scenes_info())
 	{
 		auto git = g_gs_nodes.find(it.gs_node_id());
@@ -518,6 +518,8 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
 			continue;
 		}
 		create_scene_param.node_ = git->second;
+        ScenesSystem::GetSingleton().CreateScene2Gs(create_scene_param);
+        //registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
 	}
 ///<<< END WRITING YOUR CODE 
 }

@@ -35,8 +35,8 @@ TEST(GS, MakeScene2Sever )
     auto server_entity1 = MakeMainSceneNode();
     auto server_entity2 = MakeMainSceneNode();
 
-    MakeGsSceneP server1_param;
-    MakeGsSceneP server2_param;
+    CreateGsSceneP server1_param;
+    CreateGsSceneP server2_param;
 
     server1_param.scene_confid_ = 2;
     server1_param.node_ = server_entity1;
@@ -44,8 +44,8 @@ TEST(GS, MakeScene2Sever )
     server2_param.scene_confid_ = 3;
     server2_param.node_ = server_entity2;
 
-    sm.MakeScene2Gs(server1_param);
-    sm.MakeScene2Gs(server2_param);
+    sm.CreateScene2Gs(server1_param);
+    sm.CreateScene2Gs(server2_param);
 
     auto& scenes_id1 = registry.get<ConfigSceneMap>(server_entity1);
  
@@ -68,9 +68,9 @@ TEST(GS, DestroyScene)
 
     auto server_entity1 = MakeMainSceneNode();
 
-	MakeGsSceneP cparam;
+	CreateGsSceneP cparam;
     cparam.node_ = server_entity1;
-	auto scene_entity = sm.MakeScene2Gs(cparam);
+	auto scene_entity = sm.CreateScene2Gs(cparam);
     
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(1, sm.scenes_size(cparam.scene_confid_));
@@ -97,16 +97,16 @@ TEST(GS, DestroySever)
     auto server_entity1 = MakeMainSceneNode();
     auto server_entity2 = MakeMainSceneNode();
 
-    MakeGsSceneP server1_param;
-    MakeGsSceneP server2_param;
+    CreateGsSceneP server1_param;
+    CreateGsSceneP server2_param;
     server1_param.scene_confid_ = 3;
     server1_param.node_ = server_entity1;
 
     server2_param.scene_confid_ = 2;
     server2_param.node_ = server_entity2;
 
-    auto scene_id1 = sm.MakeScene2Gs(server1_param);
-    auto scene_id2 = sm.MakeScene2Gs(server2_param);
+    auto scene_id1 = sm.CreateScene2Gs(server1_param);
+    auto scene_id2 = sm.CreateScene2Gs(server2_param);
 
     EXPECT_EQ(1, registry.get<ConfigSceneMap>(server_entity1).scenes_size());
     EXPECT_EQ(1, registry.get<ConfigSceneMap>(server_entity2).scenes_size());
@@ -149,8 +149,8 @@ TEST(GS, ServerScene2Sever)
     auto server_entity1 = MakeMainSceneNode();
 
     auto server_entity2 = MakeMainSceneNode();
-    MakeGsSceneP server1_param;
-    MakeGsSceneP server2_param;
+    CreateGsSceneP server1_param;
+    CreateGsSceneP server2_param;
 
     server1_param.scene_confid_ = 3;
     server1_param.node_ = server_entity1;
@@ -158,8 +158,8 @@ TEST(GS, ServerScene2Sever)
     server2_param.scene_confid_ = 2;
     server2_param.node_ = server_entity2;
 
-    auto scene_id1 = sm.MakeScene2Gs(server1_param);
-    auto scene_id2 = sm.MakeScene2Gs(server2_param);
+    auto scene_id1 = sm.CreateScene2Gs(server1_param);
+    auto scene_id2 = sm.CreateScene2Gs(server2_param);
     EXPECT_EQ(1, registry.get<ConfigSceneMap>(server_entity1).scenes_size());
 
     EXPECT_EQ(1, registry.get<ConfigSceneMap>(server_entity2).scenes_size());
@@ -193,8 +193,8 @@ TEST(GS, PlayerLeaveEnterScene)
 
     auto server_entity2 = MakeMainSceneNode();
 
-    MakeGsSceneP server1_param;
-    MakeGsSceneP server2_param;
+    CreateGsSceneP server1_param;
+    CreateGsSceneP server2_param;
 
     server1_param.scene_confid_ = 3;
     server1_param.node_ = server_entity1;
@@ -202,8 +202,8 @@ TEST(GS, PlayerLeaveEnterScene)
     server2_param.scene_confid_ = 2;
     server2_param.node_ = server_entity2;
 
-    auto scene_id1 = sm.MakeScene2Gs(server1_param);
-    auto scene_id2 = sm.MakeScene2Gs(server2_param);
+    auto scene_id1 = sm.CreateScene2Gs(server1_param);
+    auto scene_id2 = sm.CreateScene2Gs(server2_param);
 
     EnterSceneParam enter_param1;
     enter_param1.scene_ = scene_id1;
@@ -287,14 +287,14 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
         server_entities.emplace(MakeMainSceneNode());
     }
 
-    MakeGsSceneP make_server_scene_param;
+    CreateGsSceneP make_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
             make_server_scene_param.node_ = it;
-            auto e = sm.MakeScene2Gs(make_server_scene_param);
+            auto e = sm.CreateScene2Gs(make_server_scene_param);
             if (scene_entities.empty())
             {
                 scene_entities.emplace(e);
@@ -342,8 +342,8 @@ TEST(GS, CompelChangeScene)
     auto server_entity1 = MakeMainSceneNode();
     auto server_entity2 = MakeMainSceneNode();
 
-    MakeGsSceneP server1_param;
-    MakeGsSceneP server2_param;
+    CreateGsSceneP server1_param;
+    CreateGsSceneP server2_param;
 
     server1_param.scene_confid_ = 2;
     server1_param.node_ = server_entity1;
@@ -351,8 +351,8 @@ TEST(GS, CompelChangeScene)
     server2_param.scene_confid_ = 2;
     server2_param.node_ = server_entity2;
 
-    auto scene_id1 = sm.MakeScene2Gs(server1_param);
-    auto scene_id2 = sm.MakeScene2Gs(server2_param);
+    auto scene_id1 = sm.CreateScene2Gs(server1_param);
+    auto scene_id2 = sm.CreateScene2Gs(server2_param);
 
     EnterSceneParam enter_param1;
     enter_param1.scene_ = scene_id1;
@@ -404,14 +404,14 @@ TEST(GS, CrashWeightRoundRobinMainScene)
         server_entities.emplace(MakeMainSceneNode( ));
     }
 
-    MakeGsSceneP make_server_scene_param;
+    CreateGsSceneP make_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
             make_server_scene_param.node_ = it;
-            auto e = sm.MakeScene2Gs(make_server_scene_param);
+            auto e = sm.CreateScene2Gs(make_server_scene_param);
             if (scene_entities.empty())
             {
                 scene_entities.emplace(e);
@@ -469,14 +469,14 @@ TEST(GS, CrashMovePlayer2NewServer)
         server_entities.emplace(MakeMainSceneNode());
     }
 
-    MakeGsSceneP make_server_scene_param;
+    CreateGsSceneP make_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         make_server_scene_param.scene_confid_ = i;
         for (auto& it : server_entities)
         {
             make_server_scene_param.node_ = it;
-            auto e = sm.MakeScene2Gs(make_server_scene_param);
+            auto e = sm.CreateScene2Gs(make_server_scene_param);
             scene_entities.emplace(e);
             if (first_scene_id == entt::null)
             {
@@ -533,7 +533,7 @@ TEST(GS, WeightRoundRobinMainScene)
         server_entities.emplace(MakeMainSceneNode());
     }
 
-    MakeGsSceneP make_server_scene_param;
+    CreateGsSceneP make_server_scene_param;
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
@@ -541,7 +541,7 @@ TEST(GS, WeightRoundRobinMainScene)
         for (auto& it :server_entities)
         {
             make_server_scene_param.node_ = it;
-            sm.MakeScene2Gs(make_server_scene_param);
+            sm.CreateScene2Gs(make_server_scene_param);
         }        
     }
 
@@ -656,7 +656,7 @@ TEST(GS, ServerEnterLeavePressure)
         server_entities.emplace(MakeMainSceneNode());
     }
 
-    MakeGsSceneP make_server_scene_param;
+    CreateGsSceneP make_server_scene_param;
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
@@ -664,7 +664,7 @@ TEST(GS, ServerEnterLeavePressure)
         for (auto& it : server_entities)
         {
             make_server_scene_param.node_ = it;
-            sm.MakeScene2Gs(make_server_scene_param);
+            sm.CreateScene2Gs(make_server_scene_param);
         }
     }
     ServerPressureParam pressure1;
@@ -732,7 +732,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
         registry.emplace<TestNodeId>(server).node_id_ = i;
 	}
 
-	MakeGsSceneP make_server_scene_param;
+	CreateGsSceneP make_server_scene_param;
 
 	for (uint32_t i = 0; i < per_server_scene; ++i)
 	{
@@ -740,9 +740,9 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		for (auto& it : server_entities)
 		{
 			make_server_scene_param.node_ = it;
-			auto s1 = sm.MakeScene2Gs(make_server_scene_param);
+			auto s1 = sm.CreateScene2Gs(make_server_scene_param);
             registry.emplace<TestNodeId>(s1, registry.get<TestNodeId>(it));
-            auto s2 = sm.MakeScene2Gs(make_server_scene_param);
+            auto s2 = sm.CreateScene2Gs(make_server_scene_param);
             registry.emplace<TestNodeId>(s2, registry.get<TestNodeId>(it));    
 		}
 	}
