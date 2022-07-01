@@ -25,15 +25,9 @@ message StartMsRequest
   uint32 ms_node_id = 3;
 }
 
-message CrossSceneInfo
-{
-  SceneInfo scene_info = 1;
-  uint32 gs_node_id = 2;
-}
-
 message StartMsResponse
 {
-  repeated CrossSceneInfo cross_scenes_info = 1;
+
 }
 
 message EnterCrossMainSceneRequest

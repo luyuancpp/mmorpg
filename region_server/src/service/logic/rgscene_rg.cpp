@@ -21,6 +21,8 @@
 using namespace muduo;
 using namespace muduo::net;
 
+using namespace msservice;
+
 using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
 using MsStubPtr = std::unique_ptr <RpcStub<msservice::MasterNodeService_Stub>>;
 ///<<< END WRITING YOUR CODE
@@ -119,11 +121,17 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 	ms_node->node_info_.set_node_id(request->ms_node_id());
 	ms_node->node_info_.set_node_type(kMasterNode);
 	registry.emplace<InetAddress>(ms, service_addr);
-	registry.emplace<MsStubPtr>(ms, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	g_ms_nodes->emplace(request->ms_node_id(), ms);
+
+	auto& ms_stub = registry.emplace<MsStubPtr>(ms, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+
+	//todo next frame send after responese
+	AddCrossServerSceneRequest rpc;
+	ms_stub->CallMethod(rpc, &msservice::MasterNodeService_Stub::AddCrossServerScene);
+	
     for (auto e : registry.view<MainScene>())
     {
-		auto p_cross_scene_info = response->mutable_cross_scenes_info()->Add();
+		auto p_cross_scene_info = rpc.mutable_cross_scenes_info()->Add();
 		p_cross_scene_info->mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(e));
 		auto try_gs_node_ptr = registry.try_get<GsNodePtr>(e);
 		if (nullptr == try_gs_node_ptr)
