@@ -14,7 +14,7 @@ struct MakeSceneWithGuidP : public MakeSceneP
     Guid scene_id{kInvalidGuid};
 };
 
-struct MakeGsSceneP
+struct CreateGsSceneP
 {
     entt::entity node_{ entt::null };
     uint32_t scene_confid_{ 0 };
