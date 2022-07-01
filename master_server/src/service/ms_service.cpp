@@ -517,9 +517,16 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
 			LOG_ERROR << "gs not found ";
 			continue;
 		}
-		create_scene_param.node_ = git->second;
-        ScenesSystem::GetSingleton().CreateScene2Gs(create_scene_param);
-        //registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
+		auto gs = git->second;
+		auto try_gs_node_ptr = registry.try_get<GsNodePtr>(gs);
+		if (nullptr == try_gs_node_ptr)
+		{
+            LOG_ERROR << "gs not found ";
+            continue;
+		}
+		create_scene_param.node_ = gs;
+        auto scene = ScenesSystem::GetSingleton().CreateScene2Gs(create_scene_param);
+		registry.emplace<GsNodePtr>(scene, *try_gs_node_ptr);
 	}
 ///<<< END WRITING YOUR CODE 
 }
