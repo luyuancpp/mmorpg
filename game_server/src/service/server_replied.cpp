@@ -17,10 +17,10 @@ void ServerReplied::StartGsMasterReplied(StartGsMasterRpcRpc replied)
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
     {
         auto& pb = rsp->scenes_info(i);
-		MakeSceneWithGuidP make_scene;
+		CreateSceneWithGuidP make_scene;
 		make_scene.scene_id = pb.scene_id();
 		make_scene.scene_confid_ = pb.scene_confid();
-		ScenesSystem::GetSingleton().MakeSceneByGuid(make_scene);
+		ScenesSystem::GetSingleton().CreateSceneByGuid(make_scene);
     }
 }
 
@@ -30,10 +30,10 @@ void ServerReplied::StartCrossGsRegionReplied(StartCrossGsRpc replied)
 	for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
 	{
 		auto& pb = rsp->scenes_info(i);
-		MakeSceneWithGuidP make_scene;
+		CreateSceneWithGuidP make_scene;
 		make_scene.scene_id = pb.scene_id();
 		make_scene.scene_confid_ = pb.scene_confid();
-		ScenesSystem::GetSingleton().MakeSceneByGuid(make_scene);
+		ScenesSystem::GetSingleton().CreateSceneByGuid(make_scene);
 	}
 }
 
