@@ -36,7 +36,7 @@ void PlayerSceneSystem::OnEnterScene(entt::entity player)
 		message.set_enter_gs_type((*try_enter_gs).enter_gs_type());
 		registry.remove<EnterGsFlag>(player);
 	}
-    auto p_scene_info = registry.try_get<SceneInfo>((*p_scene).scene_entity());
+    auto p_scene_info = registry.try_get<SceneInfo>((*p_scene).scene_entity_);
     if (nullptr == p_scene_info)
     {
         LOG_ERROR << "scene info " << player_id;
