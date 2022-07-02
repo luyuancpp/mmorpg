@@ -117,7 +117,9 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         !registry.any_of<CrossMainSceneServer>(to_gs_entity))
     {
         //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
-
+        regionservcie::LeaveCrossMainSceneRequest rpc;
+        rpc.set_player_id(registry.get<Guid>(player));
+        g_ms_node->rg_stub().CallMethod(rpc, &regionservcie::RgService_Stub::LeaveCrossMainScene);
     }
     
 
