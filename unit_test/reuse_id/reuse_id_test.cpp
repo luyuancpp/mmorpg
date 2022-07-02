@@ -45,7 +45,7 @@ TEST(Reuse, UnorderSetType)
 //重启完毕以后没gameserver连接上来
 TEST(Reuse, ReuseDepolyStartNoGameserver)
 {
-    deploy::ReuseGSId rgs;
+    ReuseGsId rgs;
     uint32_t max_id = 100;
     rgs.set_size(max_id);
     rgs.OnDbLoadComplete();
@@ -60,7 +60,7 @@ TEST(Reuse, ReuseDepolyStartNoGameserver)
 //重启完毕以后没ameserver全部连接上来
 TEST(Reuse, DepolyStartGameserverReconnectScanOver)
 {
-    deploy::ReuseGSId rgs;
+    ReuseGsId rgs;
     uint32_t max_id = 100;
     rgs.set_size(max_id);
     rgs.OnDbLoadComplete();
@@ -81,7 +81,7 @@ TEST(Reuse, DepolyStartGameserverReconnectScanOver)
 //重启扫描完毕以后Gameserver部分连接上来
 TEST(Reuse, DepolyStartGameserverReconnectNoScanOver)
 {
-    deploy::ReuseGSId rgs;
+    ReuseGsId rgs;
     uint32_t max_id = 100;
     rgs.set_size(max_id);
     rgs.OnDbLoadComplete();
