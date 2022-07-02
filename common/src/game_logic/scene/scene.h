@@ -45,7 +45,7 @@ public:
     uint32_t CheckScenePlayerSize(entt::entity scene);
 
     entt::entity CreateScene(const CreateSceneP& param);
-    entt::entity CreateSceneByGuid(const CreateSceneWithGuidP& param);
+    entt::entity CreateSceneByGuid(const CreateSceneBySceneInfoP& param);
     entt::entity CreateScene2Gs(const CreateGsSceneP& param);
 
     void DestroyScene(const DestroySceneParam& param);
