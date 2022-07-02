@@ -99,7 +99,7 @@ void PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 		ep.enterer_ = player;
 		ep.scene_ = scene;
 		//todo 这段代码不清晰，不知道要干啥
-		//如果是跨服场景通知跨服离开场景
+		
 		ScenesSystem::GetSingleton().LeaveScene(lp);
 		PlayerSceneSystem::OnLeaveScene(player, false);
 		ScenesSystem::GetSingleton().EnterScene(ep);

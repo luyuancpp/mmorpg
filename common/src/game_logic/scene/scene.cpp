@@ -175,7 +175,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
         return;
     }
     auto& player_scene_entity = registry.get<SceneEntity>(leave_player);
-    auto scene_entity = player_scene_entity.scene_entity();
+    auto scene_entity = player_scene_entity.scene_entity_;
     registry.get<ScenePlayers>(scene_entity).erase(leave_player);
     registry.remove<SceneEntity>(leave_player);
     auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene_entity);
