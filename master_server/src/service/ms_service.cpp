@@ -113,7 +113,7 @@ void MasterNodeServiceImpl::InitPlayerSession(entt::entity player, uint64_t sess
 		return;
 	}
 
-    auto* p_gs_data = registry.try_get<GsNodePtr>(try_scene_entity->scene_entity());
+    auto* p_gs_data = registry.try_get<GsNodePtr>(try_scene_entity->scene_entity_);
     if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
     {
         // todo default
