@@ -13,12 +13,6 @@ struct EnterSceneParam
 	entt::entity enterer_{ entt::null };
 };
 
-struct CheckEnterSceneParam
-{
-	Guid scene_id_{ kInvalidGuid };
-	entt::entity player_{ entt::null };
-};
-
 struct LeaveSceneParam
 {
 	entt::entity leaver_{ entt::null };
@@ -41,7 +35,6 @@ public:
     bool HasScene(uint32_t scene_config_id);
     inline bool Empty() const { return scenes_map_.empty(); }
 
-    uint32_t CheckScenePlayerSize(const CheckEnterSceneParam& param);
     uint32_t CheckScenePlayerSize(entt::entity scene);
 
     entt::entity CreateScene(const CreateSceneP& param);

@@ -129,21 +129,21 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
     registry.emplace_or_replace<ConfigSceneMap>(param.from_server_);//todo 如果原来server 还有场景呢
 }
 
-uint32_t ScenesSystem::CheckScenePlayerSize(const CheckEnterSceneParam& param)
-{
-    auto scene = get_scene(param.scene_id_);
-    if (scene == entt::null)
-    {
-        return kRetEnterSceneNotFound;
-    }
-    return CheckScenePlayerSize(scene);
-}
-
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
 {
     if (registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
     {
         return kRetEnterSceneNotFull;
+    }
+    auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene);
+    if (nullptr == p_gs_player_info)
+    {
+        LOG_ERROR << " gs null";
+        return kRetEnterSceneGsInfoNull;
+    }
+    if ((*p_gs_player_info)->player_size() >= kMaxServerPlayerSize)
+    {
+        return kRetEnterSceneGsFull;
     }
     return kRetOK;
 }

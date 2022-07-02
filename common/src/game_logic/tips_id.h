@@ -42,6 +42,8 @@ enum  EnumCode : uint32_t
     kRetEnterSceneSceneNotFound = 4008,//您所要切换的场景不存在
     kRetEnterSceneYouInCurrentScene = 4009,//您当前就在这个场景，无需切换
     kRetEnterSceneEnterCrossRoomScene = 4010,//不能进入跨服副本
+    kRetEnterSceneGsInfoNull = 4011,//场景的数据不完整
+    kRetEnterSceneGsFull = 4012,//gs 已经满了不能切换
 
     //Team
     kRetTeamNotInApplicants = 5000,

@@ -113,10 +113,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 		}
 	}
 
-    CheckEnterSceneParam check_enter_scene_p;
-    check_enter_scene_p.scene_id_ = scene_id;
-    check_enter_scene_p.player_ = player;
-    auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(check_enter_scene_p);
+    auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(scene);
     if (kRetOK != ret)
     {
         PlayerTipSystem::Tip(player, ret, {});

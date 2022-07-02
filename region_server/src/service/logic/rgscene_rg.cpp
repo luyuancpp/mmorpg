@@ -165,10 +165,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 		return;
 	}
 	auto player = it.first->second;;
-	CheckEnterSceneParam csp;
-	csp.scene_id_ = registry.get<Guid>(scene);
-	csp.player_ = player;
-	auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(csp);
+	auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(scene);
 	if (ret != kRetOK)
 	{
 		response->mutable_error()->set_id(ret);		
@@ -204,10 +201,7 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
 		return;
 	}
-	CheckEnterSceneParam csp;
-	csp.scene_id_ = registry.get<Guid>(scene);
-	csp.player_ = it.first->second;
-	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckScenePlayerSize(csp));
+	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckScenePlayerSize(scene));
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;
