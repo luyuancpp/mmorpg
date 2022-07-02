@@ -55,4 +55,9 @@ public:
         deploy::GruoupLoginNodeResponse* response,
         ::google::protobuf::Closure* done)override;
 
+    void SceneSqueueNodeId(::google::protobuf::RpcController* controller,
+        const deploy::SceneSqueueRequest* request,
+        deploy::SceneSqueueResponese* response,
+        ::google::protobuf::Closure* done)override;
+
 };

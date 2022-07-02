@@ -8,12 +8,15 @@
 #include "src/deploy_variable.h"
 #include "src/game_logic/tips_id.h"
 
+ReuseId<uint32_t, std::unordered_set<uint32_t>, UINT32_MAX> g_scene_squeue_node_id;
+
 void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
 	::region_server_db* response)
 {
 	std::string where_case = std::to_string(region_id) + " = id  ";
 	db_->LoadOne(*response, where_case);
 }
+
 ///<<< END WRITING YOUR CODE
 
 	///<<<rpc begin
@@ -109,6 +112,17 @@ void DeployServiceImpl::LoginNodeInfo(::google::protobuf::RpcController* control
 ///<<< BEGIN WRITING YOUR CODE 
     std::string where_case = std::to_string(request->group_id()) + " = group_id  ";
     db_->LoadAll<login_server_db>(*response->mutable_login_db(), where_case);
+///<<< END WRITING YOUR CODE 
+}
+
+void DeployServiceImpl::SceneSqueueNodeId(::google::protobuf::RpcController* controller,
+    const deploy::SceneSqueueRequest* request,
+    deploy::SceneSqueueResponese* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE 
+	response->set_node_id(g_scene_squeue_node_id.Create());
 ///<<< END WRITING YOUR CODE 
 }
 

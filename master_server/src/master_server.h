@@ -39,12 +39,11 @@ private:
 
 	void InitConfig();
 
-	using ServerInfoRpcRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest, deploy::ServerInfoResponse>>;
-	void StartServer(ServerInfoRpcRpc replied);
+	using ServerInfoRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest, deploy::ServerInfoResponse>>;
+	void StartServer(ServerInfoRpc replied);
 
-	using StartMsRpc = std::shared_ptr<NormalClosure<regionservcie::StartMsRequest, regionservcie::StartMsResponse>>;
-	void StartMsRegionReplied(StartMsRpc replied);
-
+    using SceneNodeSequeIdRpc = std::shared_ptr<NormalClosure<deploy::SceneSqueueRequest, deploy::SceneSqueueResponese>>;
+    void SceneNodeSequeId(SceneNodeSequeIdRpc replied);
 
 	void Connect2Deploy();
 	void Connect2Region();
