@@ -48,55 +48,79 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+
+    auto try_from_scene_entity = registry.try_get<SceneEntity>(player);
+    if (nullptr == try_from_scene_entity)
+    {
+        PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});
+        return;
+    }
+    entt::entity from_scene = try_from_scene_entity->scene_entity_;
+
     auto scene_id = request->scene_info().scene_id();
-    entt::entity scene = entt::null;
+    entt::entity to_scene = entt::null;
     if (scene_id <= 0)//用scene_config id 去换本服的ms
     {
         GetSceneParam getp;
         getp.scene_confid_ = request->scene_info().scene_confid();
-        scene = ServerNodeSystem::GetWeightRoundRobinMainScene(getp);
-        if (entt::null == scene)
+        to_scene = ServerNodeSystem::GetWeightRoundRobinMainScene(getp);
+        if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
             return;
         }
-        scene_id = registry.get<SceneInfo>(scene).scene_id();
+        scene_id = registry.get<SceneInfo>(to_scene).scene_id();
     }
     else
     {
-        scene = ScenesSystem::GetSingleton().get_scene(scene_id);
-        if (entt::null == scene)
+        to_scene = ScenesSystem::GetSingleton().get_scene(scene_id);
+        if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
             return;
         }
     }
     
-	auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
-	if (nullptr == try_scene_gs)
+    auto try_from_scene_gs = registry.try_get<GsNodePtr>(from_scene);
+    if (nullptr == try_from_scene_gs)
+    {
+        LOG_ERROR << " scene gs null ";
+        return;
+    }
+
+    auto from_gs_it = g_gs_nodes.find((*try_from_scene_gs)->node_id());
+    if (from_gs_it == g_gs_nodes.end())
+    {
+        LOG_ERROR << " scene gs null : " << (*try_from_scene_gs)->node_id();
+        return;
+    }
+
+	auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
+	if (nullptr == try_to_scene_gs)
 	{
-		LOG_ERROR << " scene gs null : " << (nullptr == try_scene_gs);
+		LOG_ERROR << " scene gs null ";
 		return ;
 	}
-	auto gs_it = g_gs_nodes.find((*try_scene_gs)->node_id());
-	if (gs_it == g_gs_nodes.end())
+	auto to_gs_it = g_gs_nodes.find((*try_to_scene_gs)->node_id());
+	if (to_gs_it == g_gs_nodes.end())
 	{
-		LOG_ERROR << " scene gs null : " << (*try_scene_gs)->node_id();
+		LOG_ERROR << " scene gs null : " << (*try_to_scene_gs)->node_id();
 		return;
 	}
 
+
     //todo 跨服的时候重新上线
     //目标场景是跨服场景，通知跨服去换,跨服只做人数检测，不做其他的事情
-
-    if (registry.all_of<CrossMainSceneServer>(gs_it->second))
+    //如果是跨服场景通知跨服离开场景
+    if (registry.all_of<CrossMainSceneServer>(to_gs_it->second))
     {
         EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());
-        rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(scene).scene_id());
+        rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());
         rpc->s_rq_.set_player_id(registry.get<Guid>(player));
         g_ms_node->rg_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &regionservcie::RgService_Stub::EnterCrossMainScene);
         return;
     }
-    else if(registry.all_of<CrossRoomSceneServer>(gs_it->second))//如果目标场景是跨服场景，不能走这个协议
+    else if(registry.all_of<CrossRoomSceneServer>(to_gs_it->second))//如果目标场景是跨服场景，不能走这个协议
     {
 		PlayerTipSystem::Tip(player, kRetEnterSceneEnterCrossRoomScene, {});
 		return;
@@ -106,20 +130,20 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 	auto try_scene_entity = registry.try_get<SceneEntity>(player);
 	if (nullptr != try_scene_entity)
 	{
-		if (scene != entt::null && scene == try_scene_entity->scene_entity())
+		if (to_scene != entt::null && to_scene == try_scene_entity->scene_entity_)
 		{
 			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
 			return;
 		}
 	}
 
-    auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(scene);
+    auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(to_scene);
     if (kRetOK != ret)
     {
         PlayerTipSystem::Tip(player, ret, {});
         return;
     }
-    PlayerSceneSystem::ChangeScene(player, scene);
+    PlayerSceneSystem::ChangeScene(player, to_scene);
 ///<<< END WRITING YOUR CODE
 }
 

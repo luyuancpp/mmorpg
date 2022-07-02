@@ -12,14 +12,10 @@ using SceneMapComp = std::unordered_map<Guid, entt::entity>;
 using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
 using ScenePlayers = EntitySet;//弱引用，要解除玩家和场景的耦合
 
-class SceneEntity
+struct SceneEntity
 {
-public:
-    SceneEntity(entt::entity scene_entity) : entity_(scene_entity) {}
-    inline void set_entity(entt::entity scene_entity) { entity_ = scene_entity; }
-    inline  entt::entity scene_entity()const { return entity_; }
-private:
-    entt::entity entity_{};
+    SceneEntity(entt::entity scene_entity) : scene_entity_(scene_entity) {}
+    entt::entity scene_entity_{};
 };
 
 class ConfigSceneMap
