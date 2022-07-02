@@ -19,8 +19,6 @@
 #include "src/pb/pbc/msgmap.h"
 #include "src/system/redis_system.h"
 
-using namespace common;
-
 GameServer* g_gs = nullptr;
 
 GameServer::GameServer(muduo::net::EventLoop* loop)

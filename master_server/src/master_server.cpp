@@ -10,7 +10,6 @@
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/game_logic/scene/scene_factories.h"
-#include "src/game_logic/scene/scene.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/deploy_rpcclient.h"
 #include "src/service/logic/player_service.h"
@@ -21,11 +20,13 @@
 #include "gw_service.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 
-using namespace common;
 using namespace muduo;
 using namespace net;
 
 MasterServer* g_ms_node = nullptr;
+
+
+void set_server_squence_node_id(uint32_t node_id);
 
 uint32_t master_node_id()
 {
@@ -83,9 +84,9 @@ void MasterServer::StartServer(ServerInfoRpc replied)
     server_->start();
 }
 
-void MasterServer::SceneNodeSequeId(SceneNodeSequeIdRpc replied)
+void MasterServer::SceneSqueueNodeId(SceneNodeSequeIdRpc replied)
 {
-	ScenesSystem::GetSingleton().set_server_squence_node_id(replied->s_rp_->node_id());
+	set_server_squence_node_id(replied->s_rp_->node_id());
 }
 
 void MasterServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
@@ -120,7 +121,7 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
             {
                 SceneNodeSequeIdRpc rpc(std::make_shared<SceneNodeSequeIdRpc::element_type>());
                 deploy_stub_.CallMethod(
-                    &MasterServer::SceneNodeSequeId,
+                    &MasterServer::SceneSqueueNodeId,
                     rpc,
                     this,
                     &deploy::DeployService_Stub::SceneSqueueNodeId);

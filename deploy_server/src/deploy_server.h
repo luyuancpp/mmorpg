@@ -51,7 +51,7 @@ namespace deploy
             {
                 return;
             }
-            auto& nomoral_ip = common::DeployConfig::GetSingleton().deploy_info().ip();
+            auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
 
             uint32_t region_size = 0;
             uint32_t region_id = 0;
@@ -80,7 +80,7 @@ namespace deploy
 			{
 				return;
 			}
-			auto& nomoral_ip = common::DeployConfig::GetSingleton().deploy_info().ip();
+			auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
 
 			uint32_t region_size = 0;
 			uint32_t region_id = 0;
@@ -104,7 +104,7 @@ namespace deploy
 			{
 				return;
 			}
-			auto& nomoral_ip = common::DeployConfig::GetSingleton().deploy_info().ip();
+			auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
 
 			uint32_t region_size = 0;
 			uint32_t group_id = 0;

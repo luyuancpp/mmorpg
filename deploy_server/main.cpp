@@ -5,7 +5,6 @@
 #include "src/deploy_server.h"
 
 using namespace muduo::net;
-using namespace common;
 
 int32_t main(int argc, char* argv[])
 {

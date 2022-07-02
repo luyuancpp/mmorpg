@@ -6,8 +6,6 @@
 
 #include "mysql_database_table.pb.h"
 
-using namespace common;
-
 deploy::DeployServer* g_deploy_server = nullptr;
 
 double kScanOverSeconds = 60;//扫描半个小时，特别注意，没有好的办法

@@ -4,8 +4,8 @@
 
 #include "src/util/file2string.h"
 
-namespace common
-{
+using namespace common;
+
 void GameConfig::Load(const std::string& filename)
 {
     auto contents = File2String(filename);
@@ -19,4 +19,4 @@ void DeployConfig::Load(const std::string& filename)
     google::protobuf::StringPiece sp(contents.data(), contents.size());
     google::protobuf::util::JsonStringToMessage(sp, &connetion_param_);
 }
-}//namespace database
+

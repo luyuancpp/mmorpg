@@ -9,8 +9,6 @@
 
 #include "gs_service.pb.h"
 
-using namespace common;
-
 GatewayServer* g_gateway_server = nullptr; 
 
 extern ServerSequence32 g_server_sequence_;
