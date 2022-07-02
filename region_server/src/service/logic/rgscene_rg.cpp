@@ -203,6 +203,7 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 		response->mutable_error()->set_id(kRetEnterScenetWeightRoundRobinMainScene);
 		return;
 	}
+	//todo 离开跨服马上删除
 	auto it = players_.emplace(request->player_id(), registry.create());
 	if (!it.second)
 	{
@@ -235,6 +236,7 @@ void RgServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* contr
     LeaveSceneParam lsp;
     lsp.leaver_ = player;
     ScenesSystem::GetSingleton().LeaveScene(lsp);
+	players_.erase(it);
 ///<<< END WRITING YOUR CODE 
 }
 
