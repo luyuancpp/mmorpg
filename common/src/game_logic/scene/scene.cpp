@@ -51,34 +51,22 @@ bool ScenesSystem::HasScene(uint32_t scene_config_id)
 
 entt::entity ScenesSystem::CreateScene(const CreateSceneP& param)
 {
-    auto scene = registry.create();
-    auto& si = registry.emplace<SceneInfo>(scene);
-    si.set_scene_confid(param.scene_confid_);
-    registry.emplace<MainScene>(scene);
-    registry.emplace<ScenePlayers>(scene);
-    auto guid = server_squence_.Generate();
-    si.set_scene_id(guid);
-    auto sit = scenes_map_.emplace(guid, scene);
-	if (!sit.second)
-	{
-        LOG_ERROR << "already has scene" << guid;
-	}
-    return scene;
+    CreateSceneBySceneInfoP param_by_guid;
+    param_by_guid.scene_info_.set_scene_confid(param.scene_confid_);
+    param_by_guid.scene_info_.set_scene_id(server_squence_.Generate());
+    return CreateSceneByGuid(param_by_guid);
 }
 
-entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneWithGuidP& param)
+entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& param)
 {
 	auto e = registry.create();
-    auto guid = param.scene_id;
-	auto& si = registry.emplace<SceneInfo>(e);
-    si.set_scene_confid(param.scene_confid_);
-    si.set_scene_id(guid);
+	auto& si = registry.emplace<SceneInfo>(e, param.scene_info_);
 	registry.emplace<MainScene>(e);
 	registry.emplace<ScenePlayers>(e);
-	auto sit = scenes_map_.emplace(guid, e);
+	auto sit = scenes_map_.emplace(si.scene_id(), e);
 	if (!sit.second)
 	{
-		LOG_ERROR << "already has scene" << guid;
+		LOG_ERROR << "already has scene" << si.scene_id();
 	}
 
     return e;

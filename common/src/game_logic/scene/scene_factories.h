@@ -3,15 +3,17 @@
 
 #include "src/game_logic/comp/scene_comp.h"
 
+#include "component_proto/scene_comp.pb.h"
+
 
 struct CreateSceneP
 {
     uint32_t scene_confid_{ 0 };
 };
 
-struct CreateSceneWithGuidP : public CreateSceneP
+struct CreateSceneBySceneInfoP
 {
-    Guid scene_id{kInvalidGuid};
+    SceneInfo scene_info_;
 };
 
 struct CreateGsSceneP

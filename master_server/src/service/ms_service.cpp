@@ -508,7 +508,7 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-    CreateGsSceneP create_scene_param;
+    CreateSceneBySceneInfoP create_scene_param;
 	for (auto it : request->cross_scenes_info())
 	{
 		auto git = g_gs_nodes.find(it.gs_node_id());
@@ -524,8 +524,8 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
             LOG_ERROR << "gs not found ";
             continue;
 		}
-		create_scene_param.node_ = gs;
-        auto scene = ScenesSystem::GetSingleton().CreateScene2Gs(create_scene_param);
+		create_scene_param.scene_info_ = std::move(it.scene_info());
+        auto scene = ScenesSystem::GetSingleton().CreateSceneByGuid(create_scene_param);
 		registry.emplace<GsNodePtr>(scene, *try_gs_node_ptr);
 	}
 ///<<< END WRITING YOUR CODE 
