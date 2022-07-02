@@ -86,8 +86,8 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 	}
 
     //todo 跨服的时候重新上线
-    // 
-    //目标场景是跨服场景，通知跨服去换
+    //目标场景是跨服场景，通知跨服去换,跨服只做人数检测，不做其他的事情
+
     if (registry.all_of<CrossMainSceneServer>(gs_it->second))
     {
         EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());

@@ -88,6 +88,7 @@ void PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 		LOG_ERROR << " scene null : " << (nullptr == try_scene_gs) << " " << (nullptr == p_player_gs);
 		return;
 	}
+
 	auto& p_scene_gs = *try_scene_gs;
 	//同gs之间的切换
 	if (p_player_gs->gs_node_id() == p_scene_gs->node_id())
@@ -98,6 +99,7 @@ void PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 		ep.enterer_ = player;
 		ep.scene_ = scene;
 		//todo 这段代码不清晰，不知道要干啥
+		//如果是跨服场景通知跨服离开场景
 		ScenesSystem::GetSingleton().LeaveScene(lp);
 		PlayerSceneSystem::OnLeaveScene(player, false);
 		ScenesSystem::GetSingleton().EnterScene(ep);
