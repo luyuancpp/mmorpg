@@ -3,7 +3,7 @@
 namespace deploy
 {
 
-    void ReuseGSId::OnDbLoadComplete()
+    void ReuseGsId::OnDbLoadComplete()
     {
         for (uint32_t i = 0; i < size(); ++i)
         {
@@ -11,7 +11,7 @@ namespace deploy
         }
     }
 
-    void ReuseGSId::OnDisConnect(const std::string& ip)
+    void ReuseGsId::OnDisConnect(const std::string& ip)
     {
         auto it = gs_entities_.find(ip);
         if (it == gs_entities_.end())
@@ -22,13 +22,13 @@ namespace deploy
         gs_entities_.erase(it);
     }
 
-    void ReuseGSId::Emplace(const std::string& ip, uint32_t id)
+    void ReuseGsId::Emplace(const std::string& ip, uint32_t id)
     {
         gs_entities_.emplace(ip, id);
         RemoveFree(id);
     }
 
-    void ReuseGSId::ScanOver()
+    void ReuseGsId::ScanOver()
     {
         //等待一段时间后连接上来得先处理
         for (auto& it : gs_entities_)

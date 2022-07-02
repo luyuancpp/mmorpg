@@ -34,6 +34,7 @@ public:
     std::size_t scenes_size(uint32_t scene_config_id)const;
     std::size_t scenes_size() const { return scenes_map_.size(); }
     std::size_t scenes_map_size() const { return scenes_map_.size(); }
+    void set_server_squence_node_id(uint32_t node_id) { server_squence_.set_node_id(node_id); }
 
     entt::entity get_scene(Guid scene_id);
 
@@ -62,6 +63,6 @@ public:
 private:
 
     SceneMapComp scenes_map_;
-    SnowFlake snow_flake_;
+    ServerSequence server_squence_;
 };
 
