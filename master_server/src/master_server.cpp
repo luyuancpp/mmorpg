@@ -10,7 +10,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/game_logic/scene/scene_factories.h"
-
+#include "src/game_logic/scene/scene.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/deploy_rpcclient.h"
 #include "src/service/logic/player_service.h"
@@ -60,7 +60,7 @@ void MasterServer::Connect2Deploy()
     deploy_session_->connect();
 }
 
-void MasterServer::StartServer(ServerInfoRpcRpc replied)
+void MasterServer::StartServer(ServerInfoRpc replied)
 {
     serverinfos_ = replied->s_rp_->info();
     auto& databaseinfo = serverinfos_.database_info();
@@ -83,9 +83,9 @@ void MasterServer::StartServer(ServerInfoRpcRpc replied)
     server_->start();
 }
 
-void MasterServer::StartMsRegionReplied(StartMsRpc replied)
+void MasterServer::SceneNodeSequeId(SceneNodeSequeIdRpc replied)
 {
-
+	ScenesSystem::GetSingleton().set_server_squence_node_id(replied->s_rp_->node_id());
 }
 
 void MasterServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
@@ -106,14 +106,25 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
 		// started 
 		if (nullptr == server_)
 		{
-			ServerInfoRpcRpc rpc(std::make_shared<ServerInfoRpcRpc::element_type>());
-			rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-			rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
-			deploy_stub_.CallMethod(
-				&MasterServer::StartServer,
-				rpc,
-				this,
-				&deploy::DeployService_Stub::ServerInfo);
+			{
+                ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
+                rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
+                rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+                deploy_stub_.CallMethod(
+                    &MasterServer::StartServer,
+                    rpc,
+                    this,
+                    &deploy::DeployService_Stub::ServerInfo);
+			}
+			
+            {
+                SceneNodeSequeIdRpc rpc(std::make_shared<SceneNodeSequeIdRpc::element_type>());
+                deploy_stub_.CallMethod(
+                    &MasterServer::SceneNodeSequeId,
+                    rpc,
+                    this,
+                    &deploy::DeployService_Stub::SceneSqueueNodeId);
+            }
 		}
 		
 		if (nullptr != region_session_)
@@ -193,8 +204,7 @@ void MasterServer::Connect2Region()
 void MasterServer::Register2Region()
 {
     auto& myinfo = serverinfos_.master_info();
-    StartMsRpc rpc(std::make_shared<StartMsRpc::element_type>());
-	auto& rq = rpc->s_rq_;
+    regionservcie::StartMsRequest rq;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();
 	session_info->set_ip(region_session_->local_addr().toIp());
@@ -203,8 +213,6 @@ void MasterServer::Register2Region()
 	node_info->set_port(myinfo.port());
 	rq.set_ms_node_id(myinfo.id());
 	rg_stub_.CallMethod(
-		&MasterServer::StartMsRegionReplied,
-		rpc,
-		this,
+		rq,
 		&regionservcie::RgService_Stub::StartMs);
 }

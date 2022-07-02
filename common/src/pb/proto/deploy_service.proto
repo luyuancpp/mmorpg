@@ -64,6 +64,15 @@ message GruoupLoginNodeResponse
   LoginNodesDb login_db = 1;
 }
 
+message SceneSqueueRequest
+{
+}
+
+message SceneSqueueResponese
+{
+  uint32 node_id = 1;
+}
+
 service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
   rpc StartGS (StartGSRequest) returns (StartGSResponse);
@@ -71,4 +80,5 @@ service DeployService {
   rpc RegionServerInfo (RegionRequest) returns (RegionServerResponse);
   rpc RegionInfo (RegionRequest) returns (RegionInfoResponse);
   rpc LoginNodeInfo (GroupLignRequest) returns (GruoupLoginNodeResponse);
+  rpc SceneSqueueNodeId (SceneSqueueRequest) returns (SceneSqueueResponese);
 }
