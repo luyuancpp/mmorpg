@@ -43,7 +43,7 @@ private:
 	void StartServer(ServerInfoRpc replied);
 
     using SceneNodeSequeIdRpc = std::shared_ptr<NormalClosure<deploy::SceneSqueueRequest, deploy::SceneSqueueResponese>>;
-    void SceneNodeSequeId(SceneNodeSequeIdRpc replied);
+    void SceneSqueueNodeId(SceneNodeSequeIdRpc replied);
 
 	void Connect2Deploy();
 	void Connect2Region();

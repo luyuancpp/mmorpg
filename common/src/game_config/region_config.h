@@ -3,8 +3,6 @@
 
 #include "common.pb.h"
 
-namespace common
-{
 class RegionConfig
 {
 public:
@@ -19,5 +17,4 @@ public:
 private:
     RegionConfigInfo config_info_;
 };
-}//namespace common
 #endif // !COMMON_SRC_GAME_CONFIG_REGION_CONFIG_H_

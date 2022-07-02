@@ -8,8 +8,6 @@
 #include "src/network/rpc_server.h"
 #include "src/service/logic/rgscene_rg.h"
 
-namespace region
-{
 class RegionServer : muduo::noncopyable, public Receiver<RegionServer>
 {
 public:
@@ -21,9 +19,11 @@ public:
 
     void ConnectDeploy();
 
-	using RegionInfoRpcRpcRpc = std::shared_ptr< NormalClosure<deploy::RegionRequest,
+	using RegionInfoRpcRpc = std::shared_ptr< NormalClosure<deploy::RegionRequest,
 		deploy::RegionServerResponse>>;
-    void StartServer(RegionInfoRpcRpcRpc replied);
+    void StartServer(RegionInfoRpcRpc replied);
+    using SceneNodeSequeIdRpc = std::shared_ptr<NormalClosure<deploy::SceneSqueueRequest, deploy::SceneSqueueResponese>>;
+    void SceneSqueueNodeId(SceneNodeSequeIdRpc replied);
 
     void receive(const OnConnected2ServerEvent& es);
     void receive(const OnBeConnectedEvent& es);
@@ -36,9 +36,7 @@ private:
 
     RgServiceImpl impl_;
 };
-}
-
-extern region::RegionServer* g_region_server;
+extern RegionServer* g_region_server;
 
 
 

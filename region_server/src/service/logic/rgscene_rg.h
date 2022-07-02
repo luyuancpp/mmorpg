@@ -24,7 +24,7 @@ public:
 
     void StartMs(::google::protobuf::RpcController* controller,
         const regionservcie::StartMsRequest* request,
-        regionservcie::StartMsResponse* response,
+        ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterCrossMainScene(::google::protobuf::RpcController* controller,

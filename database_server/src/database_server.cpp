@@ -6,8 +6,6 @@
 
 #include "mysql_database_table.pb.h"
 
-using namespace common;
-
 DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
     : loop_(loop),
         database_(std::make_shared<MysqlClientPtr::element_type>()),

@@ -4,12 +4,11 @@
 
 #include "src/util/file2string.h"
 
-namespace common
-{
+using namespace common;
+
 void RegionConfig::Load(const std::string& filename)
 {
     auto contents = File2String(filename);
     google::protobuf::StringPiece sp(contents.data(), contents.size());
     google::protobuf::util::JsonStringToMessage(sp, &config_info_);
 }
-}//namespace region

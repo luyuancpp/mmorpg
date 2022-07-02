@@ -6,7 +6,6 @@
 
 using namespace muduo;
 using namespace muduo::net;
-using namespace region;
 
 int32_t main()
 {
