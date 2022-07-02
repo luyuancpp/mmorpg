@@ -52,12 +52,18 @@ message EnterCrossRoomSceneSceneWeightRoundRobinResponse
   Tips error = 1;
 }
 
+message LeaveCrossMainSceneRequest
+{
+  uint64 player_id = 1;
+}
+
 service RgService 
 {
   rpc StartCrossGs (StartCrossGsRequest) returns (StartCrossGsResponse);
   rpc StartMs (StartMsRequest) returns (google.protobuf.Empty);
   rpc EnterCrossMainScene (EnterCrossMainSceneRequest) returns (EnterCrossMainSceneResponese);
   rpc EnterCrossMainSceneWeightRoundRobin (EnterCrossMainSceneWeightRoundRobinRequest) returns (EnterCrossRoomSceneSceneWeightRoundRobinResponse);
+  rpc LeaveCrossMainScene(LeaveCrossMainSceneRequest) returns (google.protobuf.Empty)
 }
 
 
