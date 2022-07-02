@@ -231,6 +231,7 @@ void RgServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* contr
     {
         return;
     }
+    auto player = it->second;;
     LeaveSceneParam lsp;
     lsp.leaver_ = player;
     ScenesSystem::GetSingleton().LeaveScene(lsp);
