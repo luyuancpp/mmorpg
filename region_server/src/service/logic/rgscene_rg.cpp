@@ -168,13 +168,10 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 
     //原来就在跨服上面，先离开跨服场景
 	//先离开，不然人数少个判断不了
-    auto try_from_scene_entity = registry.try_get<SceneEntity>(player);
-    if (nullptr != try_from_scene_entity)
-    {
-        LeaveSceneParam lsp;
-        lsp.leaver_ = player;
-        ScenesSystem::GetSingleton().LeaveScene(lsp);
-    }
+
+    LeaveSceneParam lsp;
+    lsp.leaver_ = player;
+    ScenesSystem::GetSingleton().LeaveScene(lsp);
 
 	auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(scene);
 	if (ret != kRetOK)
@@ -219,6 +216,24 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 	esp.scene_ = scene;
 	esp.enterer_ = it.first->second;
 	ScenesSystem::GetSingleton().EnterScene(esp);
+///<<< END WRITING YOUR CODE 
+}
+
+void RgServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* controller,
+    const regionservcie::LeaveCrossMainSceneRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE 
+    auto it = players_.find(request->player_id());
+    if (it == players_.end())
+    {
+        return;
+    }
+    LeaveSceneParam lsp;
+    lsp.leaver_ = player;
+    ScenesSystem::GetSingleton().LeaveScene(lsp);
 ///<<< END WRITING YOUR CODE 
 }
 

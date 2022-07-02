@@ -63,7 +63,7 @@ service RgService
   rpc StartMs (StartMsRequest) returns (google.protobuf.Empty);
   rpc EnterCrossMainScene (EnterCrossMainSceneRequest) returns (EnterCrossMainSceneResponese);
   rpc EnterCrossMainSceneWeightRoundRobin (EnterCrossMainSceneWeightRoundRobinRequest) returns (EnterCrossRoomSceneSceneWeightRoundRobinResponse);
-  rpc LeaveCrossMainScene(LeaveCrossMainSceneRequest) returns (google.protobuf.Empty)
+  rpc LeaveCrossMainScene (LeaveCrossMainSceneRequest) returns (google.protobuf.Empty);
 }
 
 
