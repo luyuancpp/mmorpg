@@ -17,7 +17,7 @@
 #include "login_service.pb.h"
 
 std::unordered_set<Guid> g_connected_ids;
-ServerSequence g_server_sequence_;
+ServerSequence32 g_server_sequence_;
 
 extern std::unordered_set<uint32_t> g_open_player_msgids;
 

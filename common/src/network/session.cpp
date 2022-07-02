@@ -4,5 +4,5 @@
 
 uint32_t node_id(Guid guid)
 {
-    return guid >> ServerSequence::kNodeBit;
+    return guid >> ServerSequence32::kNodeBit;
 }

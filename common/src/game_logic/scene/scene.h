@@ -63,6 +63,6 @@ public:
 private:
 
     SceneMapComp scenes_map_;
-    ServerSequence server_squence_;
+    ServerSequence24 server_squence_;
 };
 

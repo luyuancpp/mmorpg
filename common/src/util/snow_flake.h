@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <mutex>
 
+
 #include "src/common_type/common_type.h"
 
 //https://dev.mysql.com/doc/refman/8.0/en/miscellaneous-functions.html#function_uuid
@@ -160,6 +161,7 @@
     };
 
     //服务器重启以后失效的
+    template <size_t kNodeBit>
 	class ServerSequence
 	{
 	public:
@@ -188,7 +190,11 @@
         }
 	private:
 		uint64_t node_id_{ 0 };
-        uint64_t seq_{ 0 };
+        uint32_t seq_{ 0 };
 	};
+
+using ServerSequence24 = ServerSequence<24>;
+using ServerSequence32 = ServerSequence<32>;
+
 
 #endif // SRC_SNOW_FLAKE_SNOW_FLAKE_H_
