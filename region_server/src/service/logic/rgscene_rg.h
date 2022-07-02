@@ -37,4 +37,9 @@ public:
         regionservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
         ::google::protobuf::Closure* done)override;
 
+    void LeaveCrossMainScene(::google::protobuf::RpcController* controller,
+        const regionservcie::LeaveCrossMainSceneRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
 };
