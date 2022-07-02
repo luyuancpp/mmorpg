@@ -93,7 +93,7 @@ namespace deploy
         db_->LoadOne(game_server_info);
         reuse_id_.set_size(game_server_info.size());
         reuse_id_.OnDbLoadComplete();
-        scan_over_timer_.RunAfter(kScanOverSeconds, std::bind(&ReuseGSId::ScanOver, &reuse_id_));
+        scan_over_timer_.RunAfter(kScanOverSeconds, std::bind(&ReuseGsId::ScanOver, &reuse_id_));
     }
 
     void DeployServer::receive(const OnBeConnectedEvent& es)

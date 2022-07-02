@@ -159,6 +159,7 @@
         uint32_t sequence_{ 0 };
     };
 
+    //服务器重启以后失效的
 	class ServerSequence
 	{
 	public:

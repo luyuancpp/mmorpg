@@ -23,7 +23,7 @@ namespace deploy
         DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr);
 
         MysqlClientPtr& player_mysql_client() { return db_; }
-        ReuseGSId& reuse_game_id() { return reuse_id_; }
+        ReuseGsId& reuse_game_id() { return reuse_id_; }
 
         void Start();
 
@@ -127,7 +127,7 @@ namespace deploy
         muduo::net::RpcServer server_;
         MysqlClientPtr db_;   
         std::string redis_ip_ = "127.0.0.1";
-        ReuseGSId reuse_id_;
+        ReuseGsId reuse_id_;
         TimerTask scan_over_timer_;
 
         DeployServiceImpl impl_;

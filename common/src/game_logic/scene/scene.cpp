@@ -53,7 +53,7 @@ entt::entity ScenesSystem::CreateScene(const CreateSceneP& param)
     si.set_scene_confid(param.scene_confid_);
     registry.emplace<MainScene>(scene);
     registry.emplace<ScenePlayers>(scene);
-    auto guid = snow_flake_.Generate();
+    auto guid = server_squence_.Generate();
     si.set_scene_id(guid);
     auto sit = scenes_map_.emplace(guid, scene);
 	if (!sit.second)
