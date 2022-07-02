@@ -108,11 +108,22 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 		return;
 	}
 
+    entt::entity from_gs_entity = from_gs_it->second;
+    entt::entity to_gs_entity = to_gs_it->second;
+    
+    //跨服间切换，通知通知跨服离开场景，已经在跨服上处理
+    //原来服务器之间换场景，不用通知跨服离开场景
+    if (registry.any_of<CrossMainSceneServer>(from_gs_entity) && 
+        !registry.any_of<CrossMainSceneServer>(to_gs_entity))
+    {
+        //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
+
+    }
+    
 
     //todo 跨服的时候重新上线
     //目标场景是跨服场景，通知跨服去换,跨服只做人数检测，不做其他的事情
-    //如果是跨服场景通知跨服离开场景
-    if (registry.all_of<CrossMainSceneServer>(to_gs_it->second))
+    if (registry.any_of<CrossMainSceneServer>(to_gs_entity))
     {
         EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());
         rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());

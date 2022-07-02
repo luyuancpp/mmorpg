@@ -165,6 +165,17 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 		return;
 	}
 	auto player = it.first->second;;
+
+    //原来就在跨服上面，先离开跨服场景
+	//先离开，不然人数少个判断不了
+    auto try_from_scene_entity = registry.try_get<SceneEntity>(player);
+    if (nullptr != try_from_scene_entity)
+    {
+        LeaveSceneParam lsp;
+        lsp.leaver_ = player;
+        ScenesSystem::GetSingleton().LeaveScene(lsp);
+    }
+
 	auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(scene);
 	if (ret != kRetOK)
 	{
@@ -172,6 +183,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 		return;
 	}
 	
+
 	EnterSceneParam esp;
 	esp.scene_ = scene;
 	esp.enterer_ = player;
