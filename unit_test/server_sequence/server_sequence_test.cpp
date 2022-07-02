@@ -12,7 +12,7 @@
 using guid_vetcor = std::vector<Guid>;
 using guid_set = std::unordered_set<Guid>;
 
-ServerSequence sf;
+ServerSequence32 sf;
 
 
 static const std::size_t kTestSize = 1000000;
