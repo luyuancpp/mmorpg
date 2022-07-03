@@ -377,7 +377,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	if (entt::null == player)
 	{
 		//把旧的connection 断掉
-		auto player = g_player_list->EnterGame(player_id);
+		player = g_player_list->EnterGame(player_id);
 		OnSessionEnterGame(session, player_id);
 		registry.emplace<Guid>(player, player_id);
 		registry.emplace<Player>(player);
@@ -416,7 +416,11 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
         }
 		InitPlayerSession(player, request->session_id());
 		registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
-		
+	}
+	if (entt::null == player)
+	{
+		LOG_ERROR << "player enter game";
+		return;
 	}
 	PlayerSceneSystem::SendEnterGs(player);
 ///<<< END WRITING YOUR CODE 

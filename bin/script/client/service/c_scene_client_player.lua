@@ -15,7 +15,7 @@ end
 
 function PushSceneInfoS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
-	--LogInfo(response:DebugString());
+	LogInfo(response:DebugString());
 	message = EnterSeceneC2SRequest.new()
 	message:mutable_scene_info().scene_confid = 2
 	player:send(message)
