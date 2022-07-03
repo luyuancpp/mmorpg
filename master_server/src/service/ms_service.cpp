@@ -164,7 +164,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	AddMainSceneNodeCompnent(gs);
 	registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
-	registry.emplace<GsNodePlayerInfoPtr>(gs);
+	registry.emplace<GsServer>(gs);
 	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));	
 	if (request->server_type() == kMainSceneServer)
 	{
@@ -212,7 +212,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-	entt::entity gate_entity{ entt::null };
+	entt::entity gate{ entt::null };
 	for (auto e : registry.view<RpcServerConnection>())
 	{
 		auto c = registry.get<RpcServerConnection>(e);
@@ -221,18 +221,18 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 		{
 			continue;
 		}
-		gate_entity = e;
-		auto& gate_node = *registry.emplace<GateNodePtr>(gate_entity, std::make_shared<GateNode>(c.conn_));
+		gate = e;
+		auto& gate_node = *registry.emplace<GateNodePtr>(gate, std::make_shared<GateNode>(c.conn_));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(kGatewayNode);
-		g_gate_nodes.emplace(request->gate_node_id(), gate_entity);
-        registry.emplace_or_replace<GwStub>(gate_entity, GwStub(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+		g_gate_nodes.emplace(request->gate_node_id(), gate);
+        registry.emplace_or_replace<GwStub>(gate, GwStub(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 		break;
 	}
-
-	for (auto e : registry.view<GsNodePtr>())
+	registry.emplace<InetAddress>(gate, session_addr);
+	for (auto e : registry.view<GsServer>())
 	{
-		g_ms_node->LetGateConnect2Gs(e, gate_entity);
+		g_ms_node->LetGateConnect2Gs(e, gate);
 	}
 ///<<< END WRITING YOUR CODE 
 }

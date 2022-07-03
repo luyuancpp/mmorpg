@@ -18,6 +18,8 @@ struct GsNode
 	RpcServerConnection session_;
 };
 
+struct GsServer {};
+
 using GsNodePtr = std::shared_ptr<GsNode>;
 using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 

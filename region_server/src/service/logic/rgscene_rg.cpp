@@ -139,8 +139,6 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
 	ms_stub->CallMethod(rpc, &msservice::MasterNodeService_Stub::AddCrossServerScene);
-	   
-	LOG_INFO << "ms node connected " << request->ms_node_id();
 ///<<< END WRITING YOUR CODE 
 }
 
