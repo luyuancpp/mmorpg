@@ -63,7 +63,6 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	AddMainSceneNodeCompnent(gs);
 	registry.emplace<InetAddress>(gs, service_addr);
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
-	registry.emplace<GsNodePlayerInfoPtr>(gs);	
 	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneServer)
 	{
@@ -86,7 +85,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 		registry.emplace<CrossRoomSceneServer>(gs);
 	}
 	g_gs_nodes->emplace(request->gs_node_id(), gs);
-	LOG_INFO << "game node connected " << request->gs_node_id();
+	LOG_INFO << "game node connected " << response->DebugString();
 ///<<< END WRITING YOUR CODE 
 }
 
