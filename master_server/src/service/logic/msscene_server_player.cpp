@@ -56,7 +56,6 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         return;
     }
     entt::entity from_scene = try_from_scene_entity->scene_entity_;
-
     auto scene_id = request->scene_info().scene_id();
     entt::entity to_scene = entt::null;
     if (scene_id <= 0)//用scene_config id 去换本服的ms
@@ -87,14 +86,12 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         LOG_ERROR << " scene gs null ";
         return;
     }
-
     auto from_gs_it = g_gs_nodes.find((*try_from_scene_gs)->node_id());
     if (from_gs_it == g_gs_nodes.end())
     {
         LOG_ERROR << " scene gs null : " << (*try_from_scene_gs)->node_id();
         return;
     }
-
 	auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
 	if (nullptr == try_to_scene_gs)
 	{
