@@ -2,8 +2,9 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_config/region_config.h"
 #include "src/game_config/deploy_json.h"
+#include "src/game_config/mainscene_config.h"
+#include "src/game_config/region_config.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
@@ -23,6 +24,8 @@ void RegionServer::Init()
 
     RegionConfig::GetSingleton().Load("region.json");
     DeployConfig::GetSingleton().Load("deploy.json");
+
+    mainscene_config::GetSingleton().load();
 
     ConnectDeploy();
 }
