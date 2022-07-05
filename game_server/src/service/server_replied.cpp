@@ -11,7 +11,7 @@
 #include "src/network/rpc_client.h"
 
 
-void ServerReplied::StartGsMasterReplied(StartGsMasterRpcRpc replied)
+void ServerReplied::StartGsMasterReplied(StartGsMasterRpc replied)
 {
     auto rsp = replied->s_rp_;
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)

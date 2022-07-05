@@ -43,7 +43,7 @@ void LoginServer::Start()
     server_->start();
 }
 
-void LoginServer::StartServer(ServerInfoRpcRpc replied)
+void LoginServer::StartServer(ServerInfoRpc replied)
 {
     auto& info = replied->s_rp_->info();
     auto& databaseinfo = info.database_info();
@@ -80,7 +80,7 @@ void LoginServer::receive(const OnConnected2ServerEvent& es)
     {
         return;
     }
-    ServerInfoRpcRpc rpc(std::make_shared<ServerInfoRpcRpc::element_type>());
+    ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
     rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
     deploy_stub_.CallMethod(
         &LoginServer::StartServer,

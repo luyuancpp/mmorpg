@@ -32,9 +32,9 @@ namespace login
 
         void Start();
 
-		using ServerInfoRpcRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest,
+		using ServerInfoRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest,
 			deploy::ServerInfoResponse>>;
-        void StartServer(ServerInfoRpcRpc replied);
+        void StartServer(ServerInfoRpc replied);
 
         void receive(const OnConnected2ServerEvent& es);
 

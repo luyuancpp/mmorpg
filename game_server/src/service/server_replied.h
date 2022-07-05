@@ -14,8 +14,8 @@ public:
 
     static ServerReplied& GetSingleton() { thread_local ServerReplied singleton; return singleton; }
 
-    using StartGsMasterRpcRpc = std::shared_ptr< NormalClosure<msservice::StartGsRequest, msservice::StartGsResponse>>;
-    void StartGsMasterReplied(StartGsMasterRpcRpc replied);
+    using StartGsMasterRpc = std::shared_ptr< NormalClosure<msservice::StartGsRequest, msservice::StartGsResponse>>;
+    void StartGsMasterReplied(StartGsMasterRpc replied);
 
 	using StartCrossGsRpc = std::shared_ptr<NormalClosure<regionservcie::StartCrossGsRequest, regionservcie::StartCrossGsResponse>>;
 	void StartCrossGsRegionReplied(StartCrossGsRpc replied);

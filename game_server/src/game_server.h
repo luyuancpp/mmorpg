@@ -33,9 +33,9 @@ public:
 
     void InitNetwork();
 
-	using ServerInfoRpcRpc = std::shared_ptr < NormalClosure<deploy::ServerInfoRequest,
+	using ServerInfoRpc = std::shared_ptr < NormalClosure<deploy::ServerInfoRequest,
 		deploy::ServerInfoResponse> >;
-    void ServerInfo(ServerInfoRpcRpc replied);
+    void ServerInfo(ServerInfoRpc replied);
 
 	using StartGsRpc = std::shared_ptr<NormalClosure<deploy::StartGSRequest,
 		deploy::StartGSResponse>>;

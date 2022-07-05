@@ -37,7 +37,7 @@ void RegionServer::ConnectDeploy()
     deploy_rpc_client_->connect();
 }
 
-void RegionServer::StartServer(RegionInfoRpcRpc replied)
+void RegionServer::StartServer(RegionInfoRpc replied)
 {
     auto& myinfo = replied->s_rp_->info();
     InetAddress region_addr(myinfo.ip(), myinfo.port());
@@ -62,7 +62,7 @@ void RegionServer::receive(const OnConnected2ServerEvent& es)
 	if (es.conn_->connected())
 	{
         {
-            RegionInfoRpcRpc rpc(std::make_shared<RegionInfoRpcRpc::element_type>());
+            RegionInfoRpc rpc(std::make_shared<RegionInfoRpc::element_type>());
             rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
             deploy_stub_.CallMethod(
                 &RegionServer::StartServer,
