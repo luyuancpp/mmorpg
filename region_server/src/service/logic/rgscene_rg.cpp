@@ -4,7 +4,6 @@
 
 #include "muduo/base/Logging.h"
 
-
 #include "src/game_config/mainscene_config.h"
 
 #include "src/game_logic/game_registry.h"
@@ -66,6 +65,9 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneCrossServer)
 	{
+        registry.remove<MainSceneServer>(gs);
+        registry.emplace<CrossMainSceneServer>(gs);
+
 		auto& config_all = mainscene_config::GetSingleton().all();
 		CreateGsSceneP create_scene_param;
 		create_scene_param.node_ = gs;
@@ -73,8 +75,6 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
 			auto scene = ScenesSystem::GetSingleton().CreateScene2Gs(create_scene_param);
-			registry.remove<MainSceneServer>(gs);
-			registry.emplace<CrossMainSceneServer>(gs);
 			registry.emplace<GsNodePtr>(scene, gs_node_ptr);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene));
 		}
