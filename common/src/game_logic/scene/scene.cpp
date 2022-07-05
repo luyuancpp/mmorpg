@@ -9,7 +9,6 @@
 
 static const std::size_t kMaxMainScenePlayer = 1000;
 
-
 void set_server_squence_node_id(uint32_t node_id) { ScenesSystem::GetSingleton().set_server_squence_node_id(node_id); }
 
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
