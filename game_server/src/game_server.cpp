@@ -198,10 +198,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             [this]() ->void
             {
                 ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
-                if (registry.get<GsServerType>(global_entity()).server_type_ == kMainSceneServer)
-                {
-                    rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-                }
+                rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
                 rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
                 deploy_stub_.CallMethod(
                     &GameServer::ServerInfo,
