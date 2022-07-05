@@ -165,19 +165,19 @@ void GameServer::Register2Region()
     {
         return;
     }
-	ServerReplied::StartCrossGsRpc cp(std::make_shared< ServerReplied::StartCrossGsRpc::element_type>());
-	auto& rq = cp->s_rq_;
+	ServerReplied::StartCrossGsRpc rpc(std::make_shared< ServerReplied::StartCrossGsRpc::element_type>());
+	auto& rq = rpc->s_rq_;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();
 	session_info->set_ip(region_session_->local_addr().toIp());
 	session_info->set_port(region_session_->local_addr().port());
 	node_info->set_ip(gs_info_.ip());
 	node_info->set_port(gs_info_.port());
-    rq.set_server_type(registry.get<GsServerType>(global_entity()).server_type_);
+    rq.set_server_type(server_type);
 	rq.set_gs_node_id(gs_info_.id());
 	rg_stub_.CallMethod(
 		&ServerReplied::StartCrossGsRegionReplied,
-		cp,
+		rpc,
 		&ServerReplied::GetSingleton(),
 		&regionservcie::RgService_Stub::StartCrossGs);
 

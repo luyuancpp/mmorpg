@@ -64,7 +64,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	registry.emplace<InetAddress>(gs, service_addr);
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
 	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
-	if (request->server_type() == kMainSceneServer)
+	if (request->server_type() == kMainSceneCrossServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
 		CreateGsSceneP create_scene_param;
