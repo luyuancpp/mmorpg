@@ -57,7 +57,7 @@ void GameServer::InitNetwork()
     deploy_session_->connect();
 }
 
-void GameServer::ServerInfo(ServerInfoRpcRpc replied)
+void GameServer::ServerInfo(ServerInfoRpc replied)
 {
     auto& resp = replied->s_rp_;
     auto& info = replied->s_rp_->info();
@@ -139,7 +139,7 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
 
 void GameServer::Register2Master(MasterSessionPtr& ms_node)
 {
-    ServerReplied::StartGsMasterRpcRpc rpc(std::make_shared<ServerReplied::StartGsMasterRpcRpc::element_type>());
+    ServerReplied::StartGsMasterRpc rpc(std::make_shared<ServerReplied::StartGsMasterRpc::element_type>());
     auto& master_local_addr = ms_node->local_addr();
     msservice::StartGsRequest& request = rpc->s_rq_;
     auto session_info = request.mutable_rpc_client();
@@ -197,7 +197,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
-                ServerInfoRpcRpc rpc(std::make_shared<ServerInfoRpcRpc::element_type>());
+                ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
                 if (registry.get<GsServerType>(global_entity()).server_type_ == kMainSceneServer)
                 {
                     rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());

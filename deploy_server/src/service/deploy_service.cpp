@@ -48,23 +48,23 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-		auto& server_deploy = *response->mutable_my_info();
-		auto& client_info = request->rpc_client();
-		muduo::net::InetAddress ip_port(client_info.ip(), client_info.port());
-		if (server_deploy.id() > 0)
-		{
-			g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), server_deploy.id());
-			return;
-		}
-		server_deploy.set_ip(request->my_info().ip());
-		uint32_t node_id = g_deploy_server->CreateGSId();
-		LOG_INFO << "new server id " << node_id;
-		server_deploy.set_id(node_id);
-		server_deploy.set_port(node_id + kGSBeginPort);
-		std::string where_case = std::to_string(request->group()) + " = id  ";
-		db_->LoadOne(*response->mutable_redis_info(), where_case);
-		g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
-		g_deploy_server->SaveGSDb();
+	auto& server_deploy = *response->mutable_my_info();
+	auto& client_info = request->rpc_client();
+	muduo::net::InetAddress ip_port(client_info.ip(), client_info.port());
+	if (server_deploy.id() > 0)
+	{
+		g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), server_deploy.id());
+		return;
+	}
+	server_deploy.set_ip(request->my_info().ip());
+	uint32_t node_id = g_deploy_server->CreateGSId();
+	LOG_INFO << "new server id " << node_id;
+	server_deploy.set_id(node_id);
+	server_deploy.set_port(node_id + kGSBeginPort);
+	std::string where_case = std::to_string(request->group()) + " = id  ";
+	db_->LoadOne(*response->mutable_redis_info(), where_case);
+	g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
+	g_deploy_server->SaveGSDb();
 		//g_deploy_server->LogReuseInfo();
 ///<<< END WRITING YOUR CODE 
 }

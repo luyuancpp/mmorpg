@@ -19,9 +19,9 @@ public:
 
     void ConnectDeploy();
 
-	using RegionInfoRpcRpc = std::shared_ptr< NormalClosure<deploy::RegionRequest,
+	using RegionInfoRpc = std::shared_ptr< NormalClosure<deploy::RegionRequest,
 		deploy::RegionServerResponse>>;
-    void StartServer(RegionInfoRpcRpc replied);
+    void StartServer(RegionInfoRpc replied);
     using SceneNodeSequeIdRpc = std::shared_ptr<NormalClosure<deploy::SceneSqueueRequest, deploy::SceneSqueueResponese>>;
     void SceneSqueueNodeId(SceneNodeSequeIdRpc replied);
 
