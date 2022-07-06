@@ -200,7 +200,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 		g_ms_node->LetGateConnect2Gs(gs, e);
 	}
 	g_gs_nodes.emplace(registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
-	LOG_INFO << "game connected " << request->gs_node_id();
+	LOG_INFO << "game connected " << request->gs_node_id() << response->DebugString();
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -518,7 +518,6 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
 		auto git = g_gs_nodes.find(it.gs_node_id());
 		if (git == g_gs_nodes.end())
 		{
-			LOG_ERROR << "gs not found ";
 			continue;
 		}
 		auto gs = git->second;
