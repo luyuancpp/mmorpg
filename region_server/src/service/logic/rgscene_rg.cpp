@@ -24,6 +24,31 @@ using namespace msservice;
 
 using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
 using MsStubPtr = std::unique_ptr <RpcStub<msservice::MasterNodeService_Stub>>;
+
+void AddCrossScene2Ms(uint32_t ms_node_id)
+{
+	auto ms_node_it = g_ms_nodes->find(ms_node_id);
+	if (ms_node_it == g_ms_nodes->end())
+	{
+		LOG_ERROR << "ms not found " << ms_node_id;
+		return;
+	}
+    AddCrossServerSceneRequest rpc;
+    for (auto e : registry.view<MainScene>())
+    {
+        auto p_cross_scene_info = rpc.mutable_cross_scenes_info()->Add();
+        p_cross_scene_info->mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(e));
+        auto try_gs_node_ptr = registry.try_get<GsNodePtr>(e);
+        if (nullptr == try_gs_node_ptr)
+        {
+            continue;
+        }
+        p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
+    }
+	registry.get<MsStubPtr>(ms_node_it->second)->CallMethod(rpc, &msservice::MasterNodeService_Stub::AddCrossServerScene);;
+}
+
+
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -85,6 +110,11 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 		registry.emplace<CrossRoomSceneServer>(gs);
 	}
 	g_gs_nodes->emplace(request->gs_node_id(), gs);
+
+	for (auto& mit : *g_ms_nodes)
+	{
+		AddCrossScene2Ms(mit.first);
+	}
 	LOG_INFO << "game node connected " << response->DebugString();
 ///<<< END WRITING YOUR CODE 
 }
@@ -125,19 +155,7 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 	auto& ms_stub = registry.emplace<MsStubPtr>(ms, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 
 	//todo next frame send after responese
-	AddCrossServerSceneRequest rpc;
-    for (auto e : registry.view<MainScene>())
-    {
-        auto p_cross_scene_info = rpc.mutable_cross_scenes_info()->Add();
-        p_cross_scene_info->mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(e));
-        auto try_gs_node_ptr = registry.try_get<GsNodePtr>(e);
-        if (nullptr == try_gs_node_ptr)
-        {
-            continue;
-        }
-        p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
-    }
-	ms_stub->CallMethod(rpc, &msservice::MasterNodeService_Stub::AddCrossServerScene);
+	AddCrossScene2Ms(request->ms_node_id());
 ///<<< END WRITING YOUR CODE 
 }
 
