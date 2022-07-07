@@ -56,8 +56,8 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
     else if (request->enter_gs_type() != LOGIN_REPLACE && request->enter_gs_type() != LOGIN_RECONNET)
     {
         //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-    //不是顶号，第一次登录，重连则调用进入场景接口
-    //todo 思考，如果进入场景的时候断线重连呢？
+        //不是顶号，第一次登录，重连则调用进入场景接口
+        //todo 思考，如果进入场景的时候断线重连呢？
 
         PlayerSceneSystem::EnterScene(player, request->scene_id());
     }
