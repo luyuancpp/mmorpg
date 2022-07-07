@@ -51,7 +51,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc repl
 	{
 		PlayerCommonSystem::OnLogin(player);
 	}
-	
+	//todo 顶号
 	PlayerSceneSystem::OnEnterScene(player);		
 }
 
