@@ -54,15 +54,15 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc repl
 		{
 			PlayerCommonSystem::OnLogin(player);
 		}
-        else
-        {
-            //非(顶号，第一次登录，重连则）调用进入场景接口
-			//todo 思考，如果进入场景的时候断线重连呢？
-            PlayerSceneSystem::OnEnterScene(player);
-        }
+		if (enter_gs_type == LOGIN_FIRST)
+		{
+			PlayerSceneSystem::OnEnterScene(player);
+		}
 	}
 	else//正常进入gs换场景
 	{
+        //非(顶号，第一次登录，重连则）调用进入场景接口
+        //todo 思考，如果进入场景的时候断线重连呢？
         //todo 顶号
         PlayerSceneSystem::OnEnterScene(player);
 	}		
