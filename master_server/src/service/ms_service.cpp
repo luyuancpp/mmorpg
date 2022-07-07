@@ -47,12 +47,25 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc repl
         return;
     }
 	auto try_enter_gs = registry.try_get<EnterGsFlag>(player);
-	if (nullptr != try_enter_gs && try_enter_gs->enter_gs_type() != LOGIN_NONE)
+	if (nullptr != try_enter_gs )
 	{
-		PlayerCommonSystem::OnLogin(player);
+		auto enter_gs_type = try_enter_gs->enter_gs_type();
+		if (enter_gs_type != LOGIN_NONE)
+		{
+			PlayerCommonSystem::OnLogin(player);
+		}
+        else
+        {
+            //非(顶号，第一次登录，重连则）调用进入场景接口
+			//todo 思考，如果进入场景的时候断线重连呢？
+            PlayerSceneSystem::OnEnterScene(player);
+        }
 	}
-	//todo 顶号
-	PlayerSceneSystem::OnEnterScene(player);		
+	else//正常进入gs换场景
+	{
+        //todo 顶号
+        PlayerSceneSystem::OnEnterScene(player);
+	}		
 }
 
 Guid MasterNodeServiceImpl::GetPlayerIdByConnId(uint64_t session_id)
