@@ -41,29 +41,25 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc repl
 {
 	//todo 中间返回是断开了
 	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
-    if (entt::null == player)
-    {
-        LOG_ERROR << "player not found " << registry.get<Guid>(player);
-        return;
-    }
+	if (entt::null == player)
+	{
+		LOG_ERROR << "player not found " << registry.get<Guid>(player);
+		return;
+	}
 	auto try_enter_gs = registry.try_get<EnterGsFlag>(player);
-	if (nullptr != try_enter_gs )
+	if (nullptr != try_enter_gs)
 	{
 		auto enter_gs_type = try_enter_gs->enter_gs_type();
 		if (enter_gs_type != LOGIN_NONE)
 		{
 			PlayerCommonSystem::OnLogin(player);
 		}
-		if (enter_gs_type == LOGIN_FIRST)
-		{
-			PlayerSceneSystem::OnEnterScene(player);
-		}
+		
 	}
-	else//正常进入gs换场景
-	{
-        //非(顶号，第一次登录，重连则）调用进入场景接口
-        //todo 思考，如果进入场景的时候断线重连呢？
-        //todo 顶号
+	//如果进入场景的时候断线重连呢？
+	if (nullptr == try_enter_gs ||//正常进入gs换场景
+		try_enter_gs->enter_gs_type() == LOGIN_FIRST)//第一次登录(非顶号，重连则）调用进入场景接口
+    {
         PlayerSceneSystem::OnEnterScene(player);
 	}		
 }
