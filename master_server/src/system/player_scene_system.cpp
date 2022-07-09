@@ -79,7 +79,7 @@ uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 {
     if (nullptr != registry.try_get<AfterChangeGsEnterScene>(player))
     {
-		LOG_ERROR << " changing scene " << registry.get<Guid>(player);
+        LOG_ERROR << " changing scene " << registry.get<Guid>(player);
         return kRetEnterSceneChangingGs;
     }
 	auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
@@ -92,12 +92,12 @@ uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
     LeaveSceneParam lp;
     lp.leaver_ = player;
     ScenesSystem::GetSingleton().LeaveScene(lp);
-    PlayerSceneSystem::OnLeaveScene(player, false);
+    
 	auto& p_scene_gs = *try_scene_gs;
 	//同gs之间的切换
 	if (p_player_gs->gs_node_id() == p_scene_gs->node_id())
 	{
-		
+		PlayerSceneSystem::OnLeaveScene(player, false);
 		EnterSceneParam ep;
 		ep.enterer_ = player;
 		ep.scene_ = scene;
@@ -106,6 +106,7 @@ uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 	}
 	else
 	{
+		PlayerSceneSystem::OnLeaveScene(player, true);
 		//正在切换
 		//切换gs  存储完毕之后才能进入下一个场景
 		//放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 

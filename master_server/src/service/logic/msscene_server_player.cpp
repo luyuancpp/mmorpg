@@ -203,8 +203,8 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
         LOG_ERROR << "change gs scene compnent null" << registry.get<Guid>(player);
         return;
     }
-    registry.remove<AfterChangeGsEnterScene>(player);
 	auto scene = ScenesSystem::GetSingleton().get_scene(try_change_gs_enter_scene->scene_info().scene_id());   
+    registry.remove<AfterChangeGsEnterScene>(player);
     //todo异步加载完场景已经不在了scene了
 	if (entt::null == scene)
 	{
