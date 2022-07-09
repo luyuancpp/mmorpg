@@ -33,8 +33,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE 
 	//连续顶号进入，还在加载中的话继续加载
 	auto player_id = request->player_id();
-	PlayerCommonSystem::PlayerSessionOffLine(player_id);
-
+	PlayerCommonSystem::RemovePlayereSession(player_id);
 	auto p_it = g_players->find(player_id);
 	if (p_it != g_players->end())//已经在线，直接进入
 	{
@@ -66,7 +65,7 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 	if (it == g_players->end())
 	{
 		LOG_ERROR << "PlayerService player not found " << message_extern.player_id() << ","
-			<< request->descriptor()->full_name();
+			<< request->descriptor()->full_name() << " msgid " << request->msg().msg_id();
 		return;
 	}
 	auto msg_id = request->msg().msg_id();
@@ -147,7 +146,7 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	auto cit = g_gate_sessions->find(request->session_id());
 	if (cit == g_gate_sessions->end())
 	{
-		LOG_INFO << "GwPlayerService session not found " << request->msg_id();
+		LOG_INFO << "GwPlayerService session not found msg id " << request->msg_id();
 		return;
 	}
 	auto try_player_id = registry.try_get<Guid>(cit->second);
@@ -178,7 +177,7 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	//异步加载过程中断开了？
-	PlayerCommonSystem::PlayerSessionOffLine(request->player_id());
+	PlayerCommonSystem::RemovePlayereSession(request->player_id());
     auto it = g_players->find(request->player_id());
 	if (it == g_players->end())
 	{

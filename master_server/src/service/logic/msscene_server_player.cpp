@@ -48,6 +48,12 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    //正在切换场景中，不能马上切换
+    if (nullptr != registry.try_get<AfterChangeGsEnterScene>(player))
+    {
+        PlayerTipSystem::Tip(player, kRetEnterSceneChangingGs, {});
+        return;
+    }
     //连续切换有问题
     auto try_from_scene_entity = registry.try_get<SceneEntity>(player);
     if (nullptr == try_from_scene_entity)
@@ -197,8 +203,8 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
         LOG_ERROR << "change gs scene compnent null" << registry.get<Guid>(player);
         return;
     }
-	auto scene = ScenesSystem::GetSingleton().get_scene(try_change_gs_enter_scene->scene_info().scene_id());
     registry.remove<AfterChangeGsEnterScene>(player);
+	auto scene = ScenesSystem::GetSingleton().get_scene(try_change_gs_enter_scene->scene_info().scene_id());   
     //todo异步加载完场景已经不在了scene了
 	if (entt::null == scene)
 	{

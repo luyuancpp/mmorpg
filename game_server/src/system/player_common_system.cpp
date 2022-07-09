@@ -104,17 +104,17 @@ void PlayerCommonSystem::OnPlayerLogin(entt::entity player, uint32_t enter_gs_ty
 }
 
 //todo 检测
-void PlayerCommonSystem::PlayerSessionOffLine(Guid player_id)
+void PlayerCommonSystem::RemovePlayereSession(Guid player_id)
 {
     auto p_it = g_players->find(player_id);
     if (p_it == g_players->end())//已经在线，直接进入
     {
         return;
     }
-	PlayerSessionOffLine(p_it->second);
+	RemovePlayereSession(p_it->second);
 }
 
-void PlayerCommonSystem::PlayerSessionOffLine(entt::entity player)
+void PlayerCommonSystem::RemovePlayereSession(entt::entity player)
 {
     auto try_get_session = registry.try_get<GateSession>(player);
     if (nullptr == try_get_session)
