@@ -69,6 +69,9 @@
     <ClCompile Include="src\system\scene_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\logic\mslogin_server_player.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\master_server.h">
@@ -123,6 +126,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\system\scene_system.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic\mslogin_server_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
