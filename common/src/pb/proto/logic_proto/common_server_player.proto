@@ -2,13 +2,18 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
+message UpdateGateSessionGsRequest
+{
+  uint64 session_id = 1;
+}
+
 message Ms2GsLoginRequest
 {
   uint32 enter_gs_type = 1;
-  uint64 session_id = 2;
 }
 
 service ServerPlayerLoginService 
 {
+  rpc UpdateGateSessionMs2Gs (UpdateGateSessionGsRequest) returns (google.protobuf.Empty);
   rpc LoginMs2Gs (Ms2GsLoginRequest) returns (google.protobuf.Empty);
 }

@@ -30,6 +30,7 @@
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "gs_service.pb.h"
+#include "logic_proto/common_server_player.pb.h"
 #include "logic_proto/scene_normal.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
@@ -45,7 +46,18 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc repl
 	{
 		LOG_ERROR << "player not found " << registry.get<Guid>(player);
 		return;
+	
 	}
+
+	UpdateGateSessionGsRequest message;
+    auto try_player_session = registry.try_get<PlayerSession>(player);
+    if (nullptr == try_player_session)
+    {
+        LOG_ERROR << "player session not valid" << registry.try_get<Guid>(player);
+        return;
+    }
+    message.set_session_id(try_player_session->session_id());
+    Send2GsPlayer(message, player);
 	auto try_enter_gs = registry.try_get<EnterGsFlag>(player);
 	if (nullptr != try_enter_gs)
 	{
@@ -54,7 +66,6 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc repl
 		{
 			PlayerCommonSystem::OnLogin(player);
 		}
-		
 	}
 	//如果进入场景的时候断线重连呢？
 	if (nullptr == try_enter_gs ||//正常进入gs换场景

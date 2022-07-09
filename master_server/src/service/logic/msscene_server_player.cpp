@@ -48,7 +48,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-
+    //连续切换有问题
     auto try_from_scene_entity = registry.try_get<SceneEntity>(player);
     if (nullptr == try_from_scene_entity)
     {
