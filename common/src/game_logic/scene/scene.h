@@ -53,6 +53,9 @@ public:
     void CompelChangeScene(const CompelChangeSceneParam& param);
 
     void ReplaceCrashServer(const ReplaceCrashServerParam& param);
+
+    void LogPlayerEnterScene(entt::entity player);
+    void LogPlayerLeaveScene(entt::entity player);
 private:
 
     SceneMapComp scenes_map_;
