@@ -4,7 +4,8 @@ option cc_generic_services = true;
 
 message Ms2GsLoginRequest
 {
-  uint32 login_type = 1;
+  uint32 enter_gs_type = 1;
+  uint64 session_id = 2;
 }
 
 service ServerPlayerLoginService 
