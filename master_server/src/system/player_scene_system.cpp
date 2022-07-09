@@ -77,6 +77,11 @@ void PlayerSceneSystem::SendEnterGs(entt::entity player)
 
 uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 {
+	//正在切换场景中，不能马上切换
+	if (nullptr != registry.try_get<AfterChangeGsEnterScene>(player))
+	{
+		return kRetEnterSceneChangingGs;
+	}
 	auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
 	auto p_player_gs = registry.try_get<PlayerSession>(player);
 	if (nullptr == try_scene_gs || nullptr == p_player_gs)
@@ -117,7 +122,7 @@ uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 		PlayerSceneSystem::OnLeaveScene(player, true);
         
 		//放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 
-		auto& change_gs_scene = registry.emplace_or_replace<AfterChangeGsEnterScene>(player);
+		auto& change_gs_scene = registry.emplace<AfterChangeGsEnterScene>(player);
 		change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<SceneInfo>(scene).scene_id());
 	}
 	return kRetOK;

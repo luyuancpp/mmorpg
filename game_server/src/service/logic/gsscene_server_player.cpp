@@ -41,16 +41,13 @@ void ServerPlayerSceneServiceImpl::LeaveSceneMs2Gs(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    PlayerSceneSystem::LeaveScene(player);
     if (request->change_gs())//存储完毕以后才能换场景，防止回档
 	{
         //离开gs 清除session
         PlayerCommonSystem::PlayerSessionOffLine(player);
         PlayerCommonSystem::SavePlayer(player);
 	}
-    else
-    {
-        PlayerSceneSystem::LeaveScene(player);
-    }
 ///<<< END WRITING YOUR CODE
 }
 

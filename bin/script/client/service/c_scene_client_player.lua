@@ -5,6 +5,7 @@ local  own_server_scene1 = 4294967298
 local  own_server_scene2 = 4294967297
 local  cross_server_scene1 = 1
 local  cross_server_scene2 = 2
+local times = 0
 
 ---<<<rpc begin
 function EnterSceneC2SProcess(request, response)
@@ -24,6 +25,7 @@ end
 function PushEnterSceneS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
 	--连续切换有问题
+	LogInfo('------------------------>')
 	ChangeGsScene(response, own_server_scene1, cross_server_scene1)
 	ChangeGsScene(response, own_server_scene1, cross_server_scene2)
 	ChangeGsScene(response, own_server_scene2, cross_server_scene1)
@@ -32,7 +34,8 @@ function PushEnterSceneS2CProcess(request, response)
 	ChangeGsScene(response, cross_server_scene1, own_server_scene2)
 	ChangeGsScene(response, cross_server_scene2, own_server_scene1)
 	ChangeGsScene(response, cross_server_scene2, own_server_scene2)
-
+	times = times + 1
+	LogInfo('<------------------------'..times)
 ---<<< END WRITING YOUR CODE 
 end
 

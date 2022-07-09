@@ -32,6 +32,7 @@ void GameServer::Init()
     InitConfig();
     global_entity() = registry.create();
     registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
+    LOG_INFO << "server type" << GameConfig::GetSingleton().config_info().server_type();
     InitMsgService();
 
     InitPlayerServcie();
