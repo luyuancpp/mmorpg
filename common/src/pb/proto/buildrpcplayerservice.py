@@ -325,7 +325,7 @@ def genmsplayerservcielist(filename):
 
 def md5copy(filename, serverstr):
         writedir = getwritedir(serverstr)
-        if filename.find('md5') >= 0 or filename.find('c_') >= 0:
+        if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
             return
         if serverstr == 'gs_player_service.cpp' or serverstr == 'ms_player_service.cpp':
             serverstr = ''

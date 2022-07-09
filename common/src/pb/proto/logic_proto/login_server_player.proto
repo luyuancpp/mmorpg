@@ -1,0 +1,13 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+option cc_generic_services = true;
+
+message Ms2GsLoginRequest
+{
+  uint32 login_type = 1;
+}
+
+service ServerPlayerLoginService 
+{
+  rpc LoginMs2Gs (Ms2GsLoginRequest) returns (google.protobuf.Empty);
+}
