@@ -26,6 +26,7 @@ using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 using EnterRegionMainRpc = std::shared_ptr<NormalClosure<regionservcie::EnterCrossMainSceneRequest, regionservcie::EnterCrossMainSceneResponese>>;
 void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
 {
+    //todo 异步跨服返回来之前又去切换场景，导致已经切换到别的场景了，再切的话可能就不对了，想想
     auto player = g_player_list->GetPlayer(replied->s_rq_.player_id());
     if (entt::null == player)
     {
