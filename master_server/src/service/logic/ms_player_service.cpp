@@ -5,8 +5,8 @@
 #include "src/service/logic/msteam_server_player.h"
 #include "logic_proto/scene_server_player.pb.h"
 #include "src/service/logic/msscene_server_player.h"
-#include "logic_proto/login_server_player.pb.h"
-#include "src/service/logic/mslogin_server_player.h"
+#include "logic_proto/common_server_player.pb.h"
+#include "src/service/logic/mscommon_server_player.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
 std::unordered_set<std::string> g_open_player_services;
 class ServerPlayerTeamServiceOpenImpl : public ServerPlayerTeamService{};

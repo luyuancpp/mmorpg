@@ -78,10 +78,10 @@
     <ClCompile Include="src\system\player_tip_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gslogin_server_player.cpp">
+    <ClCompile Include="src\service\logic\gscommon_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gscommon_client_player.cpp">
+    <ClCompile Include="src\service\logic\gscommon_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -149,10 +149,10 @@
     <ClInclude Include="src\system\player_tip_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gslogin_server_player.h">
+    <ClInclude Include="src\service\logic\gscommon_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gscommon_client_player.h">
+    <ClInclude Include="src\service\logic\gscommon_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

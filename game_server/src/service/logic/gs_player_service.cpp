@@ -11,8 +11,8 @@
 #include "src/service/logic/gsteam_server_player.h"
 #include "logic_proto/scene_server_player.pb.h"
 #include "src/service/logic/gsscene_server_player.h"
-#include "logic_proto/login_server_player.pb.h"
-#include "src/service/logic/gslogin_server_player.h"
+#include "logic_proto/common_server_player.pb.h"
+#include "src/service/logic/gscommon_server_player.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
 std::unordered_set<std::string> g_open_player_services;
 class ClientPlayerCommonServiceOpenImpl : public ClientPlayerCommonService{};
