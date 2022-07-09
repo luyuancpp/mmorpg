@@ -23,6 +23,7 @@ void ServerPlayerLoginServiceImpl::UpdateGateSessionMs2Gs(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    PlayerCommonSystem::RemovePlayereSession(registry.get<Guid>(player));
     auto gate_node_id = node_id(request->session_id());
     auto gate_it = g_gate_nodes->find(gate_node_id);
     if (gate_it == g_gate_nodes->end())//test
