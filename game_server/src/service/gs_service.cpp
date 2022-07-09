@@ -18,22 +18,9 @@
 #include "logic_proto/scene_server_player.pb.h"
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
-#include "component_proto/player_network_comp.pb.h"
 
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 
-void KickOldSession(Guid player_id)
-{
-	g_async_player_data.erase(player_id);
-    auto sit = g_player_session_map->find(player_id);
-    if (sit == g_player_session_map->end())//老连接踢掉
-    {
-        //delete old session
-		return;
-    }
-    g_gate_sessions->erase(sit->first);
-    g_player_session_map->erase(sit);
-}
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -44,9 +31,10 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	//连续顶号进入，还在加载中的话继续加载
 	auto player_id = request->player_id();
-	KickOldSession(player_id);
-	g_player_session_map->emplace(player_id, request->session_id());
+	PlayerCommonSystem::PlayerSessionOffLine(player_id);
+
 	auto p_it = g_players->find(player_id);
 	if (p_it != g_players->end())//已经在线，直接进入
 	{
@@ -190,7 +178,7 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	//异步加载过程中断开了？
-	KickOldSession(request->player_id());
+	PlayerCommonSystem::PlayerSessionOffLine(request->player_id());
     auto it = g_players->find(request->player_id());
 	if (it == g_players->end())
 	{

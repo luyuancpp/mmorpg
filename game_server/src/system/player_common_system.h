@@ -26,5 +26,8 @@ public:
 	static void LeaveGs(entt::entity player);
 
 	static void OnPlayerLogin(entt::entity player, uint32_t enter_gs_type);
+
+	static void PlayerSessionOffLine(Guid player_id);
+	static void PlayerSessionOffLine(entt::entity player);
 };
 
