@@ -157,6 +157,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
     }
     registry.get<ScenePlayers>(scene_).emplace(param.enterer_);
     registry.emplace<SceneEntity>(param.enterer_, scene_);
+    LogPlayerEnterScene(param.enterer_);
 	auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene_);
 	if (nullptr == p_gs_player_info)
 	{
@@ -175,6 +176,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
     }
     auto& player_scene_entity = registry.get<SceneEntity>(leave_player);
     auto scene_entity = player_scene_entity.scene_entity_;
+    LogPlayerLeaveScene(leave_player);
     registry.get<ScenePlayers>(scene_entity).erase(leave_player);
     registry.remove<SceneEntity>(leave_player);
     auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene_entity);
@@ -227,5 +229,27 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
     move_param.to_server_ = param.replace_server_;
     MoveServerScene2ServerScene(move_param);
     registry.destroy(move_param.from_server_);
+}
+
+void ScenesSystem::LogPlayerEnterScene(entt::entity player)
+{
+    auto try_player_id = registry.try_get<Guid>(player);
+    if (nullptr == try_player_id)
+    {
+        return;
+    }
+    LOG_INFO << "player enter scene " << *try_player_id << " "
+        << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
+}
+
+void ScenesSystem::LogPlayerLeaveScene(entt::entity player)
+{
+    auto try_player_id = registry.try_get<Guid>(player);
+    if (nullptr == try_player_id)
+    {
+        return;
+    }
+    LOG_INFO << "player leave scene " << *try_player_id << " "
+        << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
 }
 

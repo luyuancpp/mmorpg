@@ -5,6 +5,7 @@
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/scene/servernode_system.h"
+#include "src/game_logic/tips_id.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
 
@@ -74,14 +75,14 @@ void PlayerSceneSystem::SendEnterGs(entt::entity player)
 	}
 }
 
-void PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
+uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 {
 	auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
 	auto p_player_gs = registry.try_get<PlayerSession>(player);
 	if (nullptr == try_scene_gs || nullptr == p_player_gs)
 	{
 		LOG_ERROR << " scene null : " << (nullptr == try_scene_gs) << " " << (nullptr == p_player_gs);
-		return;
+		return kRetEnterSceneChangeSceneOffLine;
 	}
 
 	auto& p_scene_gs = *try_scene_gs;
@@ -102,14 +103,22 @@ void PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 	}
 	else
 	{
+		//正在切换
+        if (nullptr == registry.try_get<SceneEntity>(player))
+        {
+            LOG_ERROR << "leave scene empty";
+			return kRetEnterSceneChangingScene;
+        }
+
 		LeaveSceneParam lp;
 		lp.leaver_ = player;
 		//切换gs  存储完毕之后才能进入下一个场景
 		ScenesSystem::GetSingleton().LeaveScene(lp);
 		PlayerSceneSystem::OnLeaveScene(player, true);
-
+        
 		//放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 
 		auto& change_gs_scene = registry.emplace_or_replace<AfterChangeGsEnterScene>(player);
 		change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<SceneInfo>(scene).scene_id());
 	}
+	return kRetOK;
 }
