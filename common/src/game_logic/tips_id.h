@@ -46,7 +46,8 @@ enum  EnumCode : uint32_t
     kRetEnterSceneGsFull = 4012,//gs 已经满了不能切换
     kRetEnterSceneYourSceneIsNull = 4013,//你的场景为空
     kRetEnterSceneChangeSceneOffLine = 4014,//你已经下线
-    kRetEnterSceneChangingScene = 4015,//正在切换中
+    kRetEnterSceneChangingScene = 4015,//正在切换场景中
+    kRetEnterSceneChangingGs = 4016,//正在切换gs中
 
     //Team
     kRetTeamNotInApplicants = 5000,

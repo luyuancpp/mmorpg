@@ -172,14 +172,25 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 		response->mutable_error()->set_id(kRetEnterScenetWeightRoundRobinMainScene);
 		return;
 	}
-	auto it = players_.emplace(request->player_id(), registry.create());
-	if (!it.second)
+	auto it = players_.find(request->player_id());
+	if (it == players_.end())
 	{
-		response->mutable_error()->set_id(kRetEnterSceneCreatePlayer);
-		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
-		return;
+		auto result = players_.emplace(request->player_id(), registry.create());
+		if (!result.second)
+		{
+            response->mutable_error()->set_id(kRetEnterSceneCreatePlayer);
+            LOG_ERROR << "EnterCrossMainScene" << request->player_id();
+            return;
+		}
+		it = result.first;
+    }
+	if (it == players_.end())
+	{
+        response->mutable_error()->set_id(kRetEnterSceneCreatePlayer);
+        LOG_ERROR << "EnterCrossMainScene" << request->player_id();
+        return;
 	}
-	auto player = it.first->second;;
+    auto player = it->second;
 
     //原来就在跨服上面，先离开跨服场景
 	//先离开，不然人数少个判断不了
