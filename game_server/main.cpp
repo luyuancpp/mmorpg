@@ -19,8 +19,6 @@ int main(int argc, char* argv[])
     GateNodes gate_nodes;
     g_gate_nodes = &gate_nodes;
 
-	SessionPlayerList player_session_map;//ª·ª∞µΩplayer”≥…‰
-    g_player_session_map = &player_session_map;
 
 	GateSessionList gate_sessions;
     g_gate_sessions = &gate_sessions;

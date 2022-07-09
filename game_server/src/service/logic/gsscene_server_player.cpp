@@ -43,6 +43,8 @@ void ServerPlayerSceneServiceImpl::LeaveSceneMs2Gs(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
     if (request->change_gs())//存储完毕以后才能换场景，防止回档
 	{
+        //离开gs 清除session
+        PlayerCommonSystem::PlayerSessionOffLine(player);
         PlayerCommonSystem::SavePlayer(player);
 	}
     else

@@ -14,6 +14,7 @@
 
 #include "ms_service.pb.h"
 #include "component_proto/player_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 
 PlayerDataRedisSystemPtr g_player_data_redis_system;
 
@@ -102,3 +103,23 @@ void PlayerCommonSystem::OnPlayerLogin(entt::entity player, uint32_t enter_gs_ty
 	}
 }
 
+//todo 检测
+void PlayerCommonSystem::PlayerSessionOffLine(Guid player_id)
+{
+    auto p_it = g_players->find(player_id);
+    if (p_it == g_players->end())//已经在线，直接进入
+    {
+        return;
+    }
+	PlayerSessionOffLine(p_it->second);
+}
+
+void PlayerCommonSystem::PlayerSessionOffLine(entt::entity player)
+{
+    auto try_get_session = registry.try_get<GateSession>(player);
+    if (nullptr == try_get_session)
+    {
+        return;
+    }
+    g_gate_sessions->erase(try_get_session->session_id());
+}
