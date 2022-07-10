@@ -9,10 +9,9 @@ void ServerPlayerLoginServiceImpl::UpdateGateSessionMs2Gs(entt::entity player,
     const ::UpdateGateSessionGsRequest* request,
     ::google::protobuf::Empty* response)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-    ///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
-
 
 void ServerPlayerLoginServiceImpl::LoginMs2Gs(entt::entity player,
     const ::Ms2GsLoginRequest* request,
