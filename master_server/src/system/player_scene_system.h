@@ -8,5 +8,5 @@ public:
     static void OnEnterScene(entt::entity player);
     static void OnLeaveScene(entt::entity player, bool change_gs);
     static void SendEnterGs(entt::entity player);
-    static uint32_t ChangeScene(entt::entity player, entt::entity scene);
+    static uint32_t ChangeScene(entt::entity player, entt::entity to_scene);
 };

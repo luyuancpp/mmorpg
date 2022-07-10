@@ -168,6 +168,7 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
             auto gsnode = registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
             if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGsNode)
             {
+                //remove AfterChangeGsEnterScene
 				//todo 
                 g_gs_nodes.erase((*gsnode)->node_info_.node_id());
             }
