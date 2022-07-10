@@ -75,32 +75,32 @@ void PlayerSceneSystem::SendEnterGs(entt::entity player)
 	}
 }
 
-uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
+uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity to_scene)
 {
     if (nullptr != registry.try_get<AfterChangeGsEnterScene>(player))
     {
         LOG_ERROR << " changing scene " << registry.get<Guid>(player);
         return kRetEnterSceneChangingGs;
     }
-	auto try_scene_gs = registry.try_get<GsNodePtr>(scene);
+	auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
 	auto p_player_gs = registry.try_get<PlayerSession>(player);
-	if (nullptr == try_scene_gs || nullptr == p_player_gs)
+	if (nullptr == try_to_scene_gs || nullptr == p_player_gs)
 	{
-		LOG_ERROR << " scene null : " << (nullptr == try_scene_gs) << " " << (nullptr == p_player_gs);
+		LOG_ERROR << " scene null : " << (nullptr == try_to_scene_gs) << " " << (nullptr == p_player_gs);
 		return kRetEnterSceneChangeSceneOffLine;
 	}
     LeaveSceneParam lp;
     lp.leaver_ = player;
     ScenesSystem::GetSingleton().LeaveScene(lp);
     
-	auto& p_scene_gs = *try_scene_gs;
+	auto& p_to_scene_gs = *try_to_scene_gs;
 	//同gs之间的切换
-	if (p_player_gs->gs_node_id() == p_scene_gs->node_id())
+	if (p_player_gs->gs_node_id() == p_to_scene_gs->node_id())
 	{
 		PlayerSceneSystem::OnLeaveScene(player, false);
 		EnterSceneParam ep;
 		ep.enterer_ = player;
-		ep.scene_ = scene;
+		ep.scene_ = to_scene;
 		ScenesSystem::GetSingleton().EnterScene(ep);
 		PlayerSceneSystem::OnEnterScene(player);
 	}
@@ -111,7 +111,8 @@ uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity scene)
 		//切换gs  存储完毕之后才能进入下一个场景
 		//放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 
 		auto& change_gs_scene = registry.emplace<AfterChangeGsEnterScene>(player);
-		change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<SceneInfo>(scene).scene_id());
+		change_gs_scene.set_gs_node_id(p_to_scene_gs->node_id());
+		change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());
 	}
 	return kRetOK;
 }

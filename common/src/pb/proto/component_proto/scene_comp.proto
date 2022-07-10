@@ -9,6 +9,5 @@ message SceneInfo
 message AfterChangeGsEnterScene
 {
   SceneInfo scene_info = 1;
-  uint64 change_timestamp = 2;
-  uint32 gs_node_id = 3;
+  uint32 gs_node_id = 2;
 }
