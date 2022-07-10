@@ -26,7 +26,8 @@ using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 using EnterRegionMainRpc = std::shared_ptr<NormalClosure<regionservcie::EnterCrossMainSceneRequest, regionservcie::EnterCrossMainSceneResponese>>;
 void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
 {
-    //todo 异步跨服返回来之前又去切换场景，导致已经切换到别的场景了，再切的话可能就不对了，想想
+    //切跨到b服过程中，跨服没返回又切到c，跨服回来再到c目前就不考虑这种情况了，考虑的话写代码麻烦
+    //todo 异步跨服返回来之前又去切换场景，导致已经切换到别的场景了，再切的话可能就不对了，不考虑这种情况了，正常人不会切那么快
     auto player = g_player_list->GetPlayer(replied->s_rq_.player_id());
     if (entt::null == player)
     {
@@ -49,7 +50,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    //正在切换场景中，不能马上切换
+    //正在切换场景中，不能马上切换，gs崩溃了怎么办
     if (nullptr != registry.try_get<AfterChangeGsEnterScene>(player))
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneChangingGs, {});

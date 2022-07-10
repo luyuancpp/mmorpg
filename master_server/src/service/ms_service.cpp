@@ -48,7 +48,6 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc repl
 		return;
 	
 	}
-
 	UpdateGateSessionGsRequest message;
     auto try_player_session = registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
