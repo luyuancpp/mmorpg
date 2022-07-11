@@ -15,12 +15,6 @@ cd common/src/pb/proto && python build.py
 if test $? -ne 0; then 
    exit 
 fi
-cd ../../../..
-
-cd protopb && cmake . && make -j$cpu
-if test $? -ne 0; then 
-   exit 
-fi
 
 cd ..
 cd third_party && \cp -rf muduo-linux/* muduo/ && cmake . && make -j$cpu
