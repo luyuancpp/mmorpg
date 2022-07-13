@@ -9,21 +9,21 @@ using PosMap = std::unordered_map<uint32_t, Guid>;
 
 struct BagCapacity
 {
-	static const std::size_t kDefualtCapacity{ 10 };//±³°üÄ¬ÈÏ´óĞ¡
-	static const std::size_t kEquipmentCapacity{ 10 };//×°±¸À¸Ä¬ÈÏ´óĞ¡
+	static const std::size_t kDefualtCapacity{ 10 };//èƒŒåŒ…é»˜è®¤å¤§å°
+	static const std::size_t kEquipmentCapacity{ 10 };//è£…å¤‡æ é»˜è®¤å¤§å°
 	static const std::size_t kBagMaxCapacity{ 100 };
 	static const std::size_t kTempBagMaxCapacity{ 200 };
 	static const std::size_t kWarehouseMaxCapacity{ 200 };
-	std::size_t size_{ kDefualtCapacity };//µ±Ç°±³°üÈİÁ¿
+	std::size_t size_{ kDefualtCapacity };//å½“å‰èƒŒåŒ…å®¹é‡
 };
 
 enum EnumBagType : uint32_t
 {
-	kBag = 0,//ÆÕÍ¨±³°ü
-	kWarehouse = 1,//²Ö¿â
-	kEquipment = 2,//×°±¸
-	kTemporary = 3,//ÁÙÊ±±³°ü
-	kBagMax = 4,//Õ¼Î»
+	kBag = 0,//æ™®é€šèƒŒåŒ…
+	kWarehouse = 1,//ä»“åº“
+	kEquipment = 2,//è£…å¤‡
+	kTemporary = 3,//ä¸´æ—¶èƒŒåŒ…
+	kBagMax = 4,//å ä½
 };
 
 struct DelItemByPosParam
@@ -55,10 +55,10 @@ public:
 	
 	inline bool HasItem(Guid guid)const { return items_.find(guid) != items_.end();	}
 	inline bool IsFull()const { return items_.size() >= size(); }
-	inline bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }//×ã¹»¿Õ¸ñ×Ó
-	inline bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }//×ã¹»¿Õ¸ñ×Ó
-	uint32_t AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items);//×ã¹»¿Õ¼ä·ÅÎïÆ·
-	uint32_t AdequateItem(const UInt32UInt32UnorderedMap& adequate_items);//¼ì²âÊÇ·ñ×ã¹»ÎïÆ·
+	inline bool AdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() >= s; }//è¶³å¤Ÿç©ºæ ¼å­
+	inline bool NotAdequateSize(std::size_t s) const { sizeassert(); return size() - items_.size() < s; }//è¶³å¤Ÿç©ºæ ¼å­
+	uint32_t AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items);//è¶³å¤Ÿç©ºé—´æ”¾ç‰©å“
+	uint32_t AdequateItem(const UInt32UInt32UnorderedMap& adequate_items);//æ£€æµ‹æ˜¯å¦è¶³å¤Ÿç‰©å“
 
 	uint32_t DelItem(const UInt32UInt32UnorderedMap& try_del_items);
 	uint32_t DelItemByPos(const DelItemByPosParam& p);
