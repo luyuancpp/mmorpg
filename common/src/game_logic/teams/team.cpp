@@ -4,23 +4,17 @@
 #include "src/game_logic/teams/team_event.h"
 #include "src/game_logic/game_registry.h"
 
-Team::Team(const CreateTeamP& param,
-    const TeamsP& p)
-    : teamid_(p.teamid_),
-        teams_entity_id_(p.teams_entity_id_),
-        leader_id_(param.leader_id_),
-        emp_(p.emp_),
-        teams_registry_(p.teams_registry_)
+#include "src/game_logic/player/player_list.h"
+
+#include "component_proto/team_comp.pb.h"
+
+Team::Team(const CreateTeamP& param, entt::entity teamid)
+    : teamid_(teamid),
+      leader_id_(param.leader_id_)
 {
     for (auto& it : param.members)
     {
-        members_.emplace_back(it);
-    }
-    auto& ms = playerid_team_map();
-    for (auto& it : members_)
-    {
-        ms.emplace(it, teamid_);
-        emp_->emit<JoinTeamEvent>(teamid_, it);
+        AddMemeber(it);
     }
 }
 
@@ -33,10 +27,6 @@ Guid Team::first_applicant() const
     return *applicants_.begin();
 }
 
-uint32_t Team::CheckLimt(Guid  guid)
-{
-    return kRetOK;
-}
 
 uint32_t Team::JoinTeam(Guid  guid)
 {
@@ -49,9 +39,7 @@ uint32_t Team::JoinTeam(Guid  guid)
         return kRetTeamMembersFull;
     }
     DelApplicant(guid);
-    members_.emplace_back(guid);
-    playerid_team_map().emplace(guid, teamid_);
-    emp_->emit<JoinTeamEvent>(teamid_, guid);
+    AddMemeber(guid);
     return kRetOK;
 }
 
@@ -61,34 +49,34 @@ uint32_t Team::LeaveTeam(Guid guid)
     {
         return kRetTeamMemberNotInTeam;
     }
-    bool leader_leave = IsLeader(guid);
-    emp_->emit<BeforeLeaveTeamEvent>(teamid_, guid);
-    auto it = std::find(members_.begin(), members_.end(), guid);
-    members_.erase(it);//HasMember(guid) already check
-    if (!members_.empty() && leader_leave)
+    bool is_leader_leave = IsLeader(guid);
+    DelMemeber(guid);
+    if (!members_.empty() && is_leader_leave)
     {
         OnAppointLeader(*members_.begin());
-    }        
-    playerid_team_map().erase(guid);
-    emp_->emit<AfterLeaveTeamEvent>(teamid_, guid);     
+    }           
     return kRetOK;
 }
 
-uint32_t Team::KickMember(Guid current_leader, Guid  kick_guid)
+uint32_t Team::KickMember(Guid current_leader, Guid  be_kick_guid)
 {
     if (leader_id_ != current_leader)
     {
         return kRetTeamKickNotLeader;
     }
-    if (leader_id_ == kick_guid)
+    if (leader_id_ == be_kick_guid)
     {
         return kRetTeamKickSelf;
     }
-    if (current_leader == kick_guid)
+    if (current_leader == be_kick_guid)
     {
         return kRetTeamKickSelf;
     }
-    RET_CHECK_RET(LeaveTeam(kick_guid));
+    if (!IsMember(be_kick_guid))
+    {
+        return kRetTeamMemberNotInTeam;
+    }
+    DelMemeber(be_kick_guid);
     return kRetOK;
 }
 
@@ -112,9 +100,7 @@ uint32_t Team::AppointLeader(Guid current_leader, Guid new_leader)
 
 void Team::OnAppointLeader(Guid guid)
 {
-    auto old_guid = leader_id_;
     leader_id_ = guid;
-    emp_->emit<AppointLeaderEvent>(teamid_, old_guid, leader_id_);
 }
 
 uint32_t Team::DissMiss(Guid current_leader_id)
@@ -123,11 +109,10 @@ uint32_t Team::DissMiss(Guid current_leader_id)
     {
         return kRetTeamDismissNotLeader;
     }
-    auto& ms = playerid_team_map();
-    for (auto& it : members_)
+    auto temp_memebers = members_;
+    for (auto it : temp_memebers)
     {
-        emp_->emit<DissmisTeamEvent>(teamid_, it);
-        ms.erase(it);               
+        DelMemeber(it);
     }
     return kRetOK;
 }
@@ -147,7 +132,6 @@ uint32_t Team::ApplyToTeam(Guid guid)
 	{
 		return kRetTeamMembersFull;
 	}
-	RET_CHECK_RET(CheckLimt(guid));
 	if (applicants_.size() >= kMaxApplicantSize)
 	{
 		applicants_.erase(applicants_.begin());
@@ -167,4 +151,34 @@ uint32_t Team::DelApplicant(Guid applicant_id)
     return kRetOK;
 }
 
+bool Team::HasTeam(Guid guid) const
+{
+    auto pit = g_players->find(guid);
+    if (pit == g_players->end())
+    {
+        return false;
+    }
+    return registry.any_of<TeamId>(pit->second);
+}
 
+void Team::AddMemeber(Guid guid)
+{
+    auto pit = g_players->find(guid);
+    if (pit == g_players->end())
+    {
+        return;
+    }
+    members_.emplace_back(guid);
+    registry.emplace<TeamId>(pit->second).set_team_id(entt::to_integral(teamid_));
+}
+
+void Team::DelMemeber(Guid guid)
+{
+    members_.erase(std::find(members_.begin(), members_.end(), guid));
+    auto pit = g_players->find(guid);
+    if (pit == g_players->end())
+    {
+        return;
+    }
+    registry.remove<TeamId>(pit->second);
+}

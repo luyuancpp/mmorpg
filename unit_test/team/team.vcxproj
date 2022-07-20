@@ -21,8 +21,10 @@
   <ItemGroup>
     <ClCompile Include="..\..\common\src\event\event.cc" />
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\player\player_list.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\teams\team.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\teams\teams.cpp" />
+    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\team_comp.pb.cc" />
     <ClCompile Include="teamlist_test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +32,7 @@
     <ClInclude Include="..\..\common\src\game_logic\teams\team.h" />
     <ClInclude Include="..\..\common\src\game_logic\teams\teams.h" />
     <ClInclude Include="..\..\common\src\game_logic\teams\team_event.h" />
+    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\team_comp.pb.h" />
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h" />
   </ItemGroup>
   <ItemGroup>
@@ -133,7 +136,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;ENTT_ID_TYPE=uint64_t;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../common/;../../protopb/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../common/;../../common/src/pb/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4819;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -141,7 +144,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../bin/</AdditionalLibraryDirectories>
-      <AdditionalDependencies>gtestd.lib</AdditionalDependencies>
+      <AdditionalDependencies>gtestd.lib;libprotobufd.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
