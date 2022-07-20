@@ -30,6 +30,12 @@
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\src\game_logic\player\player_list.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\team_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h">
@@ -45,6 +51,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_ecs\entity_cast.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\team_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 
+#include "src/game_logic/player/player_list.h"
 #include "src/game_logic/teams/teams.h"
-#include "src/return_code/error_code.h"
+#include "src/game_logic/tips_id.h"
 
 TEST(TeamManger, CreateFullDismiss)
 {
@@ -55,7 +56,6 @@ TEST(TeamManger, TeamSizeTest)
 
 TEST(TeamManger, LeaveTeam)
 {
-	registry.clear();
 	Teams  team_list;
 	Guid m = 100;
 	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
@@ -100,7 +100,6 @@ TEST(TeamManger, LeaveTeam)
 
 TEST(TeamManger, KickTeaamMember)
 {
-	registry.clear();
 	Teams team_list ;
 	Guid m = 100;
 	Guid leader_plaeyr_id = 100;
@@ -534,6 +533,12 @@ TEST(TeamManger, AppointLeaderNotInTeam)
 
 int main(int argc, char **argv)
 {
+	PlayerList players;
+	for (size_t i = 0; i < 2000; ++i)
+	{
+		players.emplace(i, EntityPtr());
+	}
+	g_players = &players;
 	testing::InitGoogleTest(&argc, argv);
 
     /*while (true)
