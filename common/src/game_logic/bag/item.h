@@ -4,10 +4,10 @@
 #include "src/game_logic/game_registry.h"
 #include "src/util/snow_flake.h"
 
-#include "src/pb/pbc/component_proto/item_base.pb.h"
+#include "src/pb/pbc/component_proto/item_base_comp.pb.h"
 
 extern thread_local entt::registry item_reg;
-extern thread_local ServerSequence g_server_sequence;
+extern thread_local ServerSequence16 g_bag_server_sequence;
 
 class ItemEntity
 {
@@ -22,7 +22,7 @@ class Item
 {
 public:
 	inline decltype(auto) entity() const { return entity_.entity(); }
-	inline decltype(auto) guid()const { return itembase().guid(); }
+	inline decltype(auto) guid()const { return itembase().item_id(); }
 	inline decltype(auto) config_id()const { return itembase().config_id(); }
 	inline decltype(auto) size()const { return itembase().size(); }
 
