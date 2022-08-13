@@ -16,7 +16,7 @@
 
 #include "login_service.pb.h"
 
-std::unordered_set<Guid> g_connected_ids;
+
 ServerSequence32 g_server_sequence_;
 
 extern std::unordered_set<uint32_t> g_open_player_msgids;
@@ -77,10 +77,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             g_gateway_server->gw2ms_stub().CallMethod(request, &msservice::MasterNodeService_Stub::OnGwDisconnect);
         }
         g_client_sessions_->erase(session_id);
-        if (conn.use_count() == 1)//两处，一处是rpc server 返回,返回证明已经断开，而且该连接没有消息要处理了
-        { 
-            g_connected_ids.erase(session_id); 
-        }
     }
     else
     {
