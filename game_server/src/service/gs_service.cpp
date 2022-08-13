@@ -8,7 +8,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/network/session.h"
-#include "src/comp/player_list.h"
+#include "src/game_logic/player/player_list.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic/player_service.h"

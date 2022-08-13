@@ -1,6 +1,6 @@
 #include "muduo/net/EventLoop.h"
 
-#include "src/comp/player_list.h"
+#include "src/game_logic/player/player_list.h"
 #include "src/game_server.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/node_info.h"

@@ -5,7 +5,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/comp/player_list.h"
+#include "src/game_logic/player/player_list.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"

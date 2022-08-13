@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\game_config\item_config.cpp" />
+    <ClCompile Include="src\game_logic\player\player_list.cpp" />
     <ClCompile Include="src\game_logic\scene\scene.cpp" />
     <ClCompile Include="src\game_logic\scene\scene_factories.cpp" />
     <ClCompile Include="src\game_logic\scene\servernode_system.cpp" />
@@ -168,6 +169,7 @@
     <ClCompile Include="src\pb\pb2sol2\scene_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\scene_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\team_client_player_sol2.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\team_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\component_proto\gs_node_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\item_base_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\item_comp.pb.cc" />
@@ -177,6 +179,7 @@
     <ClCompile Include="src\pb\pbc\component_proto\player_login_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\player_network_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\scene_comp.pb.cc" />
+    <ClCompile Include="src\pb\pbc\component_proto\team_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\gs_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\item_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\common_client_player.pb.cc" />
@@ -255,6 +258,7 @@
     <ClInclude Include="src\game_logic\login_state\login_state.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_concrete.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_machine.h" />
+    <ClInclude Include="src\game_logic\player\player_list.h" />
     <ClInclude Include="src\game_logic\scene\scene.h" />
     <ClInclude Include="src\game_logic\scene\scene_factories.h" />
     <ClInclude Include="src\game_logic\scene\servernode_system.h" />
@@ -275,6 +279,7 @@
     <ClInclude Include="src\pb\pbc\component_proto\player_login_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\player_network_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\scene_comp.pb.h" />
+    <ClInclude Include="src\pb\pbc\component_proto\team_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\condition_config.pb.h" />
     <ClInclude Include="src\pb\pbc\db_base.pb.h" />
     <ClInclude Include="src\pb\pbc\db_service.pb.h" />
