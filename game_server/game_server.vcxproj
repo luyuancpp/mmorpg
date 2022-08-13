@@ -146,7 +146,6 @@
     <ClCompile Include="src\service\logic\gsteam_server_player.cpp" />
     <ClCompile Include="src\service\logic\gs_player_service.cpp" />
     <ClCompile Include="src\service\server_replied.cpp" />
-    <ClCompile Include="src\comp\player_list.cpp" />
     <ClCompile Include="src\system\entity_scene_system.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -171,7 +170,6 @@
     <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\logic\server_service.h" />
     <ClInclude Include="src\service\server_replied.h" />
-    <ClInclude Include="src\comp\player_list.h" />
     <ClInclude Include="src\system\entity_scene_system.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

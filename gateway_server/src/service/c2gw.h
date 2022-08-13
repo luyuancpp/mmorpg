@@ -30,7 +30,7 @@ struct ClosureReplied
 		: s_rp_(new ServerResponse()),
 		client_conn_(cc),
         session_id_(boost::any_cast<uint64_t>(client_conn_->getContext())) {}
-    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_client_sessions_->erase(session_id_); } }
+    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_connected_ids.erase(session_id_); } }
     inline Guid session_id()const { return session_id_; }
 	ClientResponse c_rp_;
 	ServerRequest s_rq_;

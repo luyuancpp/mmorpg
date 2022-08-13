@@ -1,6 +1,6 @@
 #include "player_tip_system.h"
 
-#include "src/comp/player_list.h"
+#include "src/game_logic/player/player_list.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/message_system.h"
 
