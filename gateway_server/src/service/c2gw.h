@@ -21,8 +21,6 @@
 using namespace muduo;
 using namespace muduo::net;
 
-extern std::unordered_set<Guid> g_connected_ids;
-
 template <typename ClientResponse, typename ServerRequest, typename ServerResponse>
 struct ClosureReplied
 {
@@ -30,7 +28,7 @@ struct ClosureReplied
 		: s_rp_(new ServerResponse()),
 		client_conn_(cc),
         session_id_(boost::any_cast<uint64_t>(client_conn_->getContext())) {}
-    ~ClosureReplied() { if (client_conn_.use_count() == 1) { g_connected_ids.erase(session_id_); } }
+    ~ClosureReplied() {}
     inline Guid session_id()const { return session_id_; }
 	ClientResponse c_rp_;
 	ServerRequest s_rq_;
