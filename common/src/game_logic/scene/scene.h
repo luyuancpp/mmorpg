@@ -50,7 +50,7 @@ public:
 
     void LeaveScene(const LeaveSceneParam& param);
 
-    void CompelChangeScene(const CompelChangeSceneParam& param);
+    void CompelToChangeScene(const CompelChangeSceneParam& param);
 
     void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 

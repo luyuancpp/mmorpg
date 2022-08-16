@@ -188,18 +188,18 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
     (*p_gs_player_info)->set_player_size((*p_gs_player_info)->player_size() - 1);
 }
 
-void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
+void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 {
-    auto new_server_entity = param.new_server_;
-    auto compel_entity = param.compel_change_player_;
-    auto& new_server_scene = registry.get<ConfigSceneMap>(new_server_entity);
+    auto new_server = param.new_server_;
+    auto player = param.player_;
+    auto& new_server_scene = registry.get<ConfigSceneMap>(new_server);
     auto scene_config_id = param.scene_confid_;
     entt::entity server_scene_enitity = entt::null;
     if (!new_server_scene.HasConfig(param.scene_confid_))
     {
         CreateGsSceneP create_gs_scene_param;
         create_gs_scene_param.scene_confid_ = scene_config_id;
-        create_gs_scene_param.node_ = new_server_entity;
+        create_gs_scene_param.node_ = new_server;
         server_scene_enitity = CreateScene2Gs(create_gs_scene_param);
     }
     else
@@ -214,11 +214,11 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
     }
 
     LeaveSceneParam leave_param;
-    leave_param.leaver_ = compel_entity;
+    leave_param.leaver_ = player;
     LeaveScene(leave_param);
 
     EnterSceneParam enter_param;
-    enter_param.enterer_ = compel_entity;
+    enter_param.enterer_ = player;
     enter_param.scene_ = server_scene_enitity;
     EnterScene(enter_param);
 }
