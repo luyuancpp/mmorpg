@@ -77,7 +77,7 @@ namespace deploy
     void DeployServer::LogReuseInfo()
     {
         std::string s;
-        for (auto it : reuse_id_.free_list())
+        for (auto& it : reuse_id_.free_list())
         {
             s += std::to_string(it.first);
             s += " ";

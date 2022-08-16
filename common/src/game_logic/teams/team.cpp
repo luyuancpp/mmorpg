@@ -110,7 +110,7 @@ uint32_t Team::DissMiss(Guid current_leader_id)
         return kRetTeamDismissNotLeader;
     }
     auto temp_memebers = members_;
-    for (auto it : temp_memebers)
+    for (auto& it : temp_memebers)
     {
         DelMemeber(it);
     }

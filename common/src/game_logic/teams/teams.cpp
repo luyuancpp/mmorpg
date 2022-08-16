@@ -64,7 +64,7 @@ Teams::Teams()
 
 Teams::~Teams()
 {
-    for (auto it : *g_players)
+    for (auto& it : *g_players)
     {
         LeaveTeam(it.first);
     }

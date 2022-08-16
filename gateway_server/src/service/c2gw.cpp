@@ -109,7 +109,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
 void ClientReceiver::OnServerLoginReplied(LoginRpc replied)
 {
     auto& player_list = replied->s_rp_->account_player().simple_players().players();
-    for (auto it : player_list)
+    for (auto& it : player_list)
     {
         auto p = replied->c_rp_.add_players();
         p->set_player_id(it.player_id());
@@ -132,7 +132,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeRpc replied)
 {
     auto& player_list = replied->s_rp_->account_player().simple_players().players();
-    for (auto it : player_list)
+    for (auto& it : player_list)
     {
         auto p = replied->c_rp_.add_players();
         p->set_player_id(it.player_id());
