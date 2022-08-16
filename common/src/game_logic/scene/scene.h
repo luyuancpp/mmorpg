@@ -24,16 +24,16 @@ public:
 
     static ScenesSystem& GetSingleton() { thread_local ScenesSystem singleton; return singleton; }
 
-    SceneMapComp copy_scenes_id() { return scenes_map_; }
+    SceneComp copy_scenes_id() { return scenes_; }
     std::size_t scenes_size(uint32_t scene_config_id)const;
-    std::size_t scenes_size() const { return scenes_map_.size(); }
-    std::size_t scenes_map_size() const { return scenes_map_.size(); }
+    std::size_t scenes_size() const { return scenes_.size(); }
+    std::size_t scenes_map_size() const { return scenes_.size(); }
     void set_server_squence_node_id(uint32_t node_id) { server_squence_.set_node_id(node_id); }
 
     entt::entity get_scene(Guid scene_id);
 
     bool HasScene(uint32_t scene_config_id);
-    inline bool Empty() const { return scenes_map_.empty(); }
+    inline bool Empty() const { return scenes_.empty(); }
 
     uint32_t CheckScenePlayerSize(entt::entity scene);
 
@@ -58,7 +58,7 @@ public:
     void LogPlayerLeaveScene(entt::entity player);
 private:
 
-    SceneMapComp scenes_map_;
+    SceneComp scenes_;
     ServerSequence24 server_squence_;
 };
 
