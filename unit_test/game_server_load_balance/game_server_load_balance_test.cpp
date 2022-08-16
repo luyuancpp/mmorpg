@@ -321,7 +321,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     }
 
     MaintainServerParam maintain;
-    maintain.maintain_entity_ = *server_entities.begin();
+    maintain.maintain_server_ = *server_entities.begin();
     snsys.ServerMaintain(registry, maintain);
 
     uint32_t scene_config_id0 = 0;
@@ -376,7 +376,7 @@ TEST(GS, CompelChangeScene)
     compel_change_param1.scene_confid_ = server2_param.scene_confid_;
     for (auto& it : player_entities_set1)
     {
-        compel_change_param1.compel_change_entity_ = it;
+        compel_change_param1.compel_change_player_ = it;
         sm.CompelChangeScene(compel_change_param1);
         EXPECT_TRUE(registry.try_get<SceneEntity>(it)->scene_entity_ == scene_id2);
     }
@@ -438,7 +438,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     }
 
     ServerCrashParam crash1;
-    crash1.crash_entity_ = *server_entities.begin();
+    crash1.crash_server_ = *server_entities.begin();
     snsys.ServerCrashed(registry, crash1);
 
     uint32_t scene_config_id0 = 0;
@@ -501,7 +501,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     }
 
     ServerCrashParam crash1;
-    crash1.crash_entity_ = *server_entities.begin();
+    crash1.crash_server_ = *server_entities.begin();
     snsys.ServerCrashed(registry, crash1);
 
     ReplaceCrashServerParam replace_crash;

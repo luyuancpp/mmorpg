@@ -131,13 +131,13 @@ void ServerNodeSystem::ServerEnterNoPressure(entt::registry& reg, const ServerPr
 
 void ServerNodeSystem::ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
 {
-    registry.remove<GSNormal>(param.crash_entity_);
-    registry.emplace<GSCrash>(param.crash_entity_);
+    registry.remove<GSNormal>(param.crash_server_);
+    registry.emplace<GSCrash>(param.crash_server_);
 }
 
 void ServerNodeSystem::ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
 {
-    registry.remove<GSNormal>(param.maintain_entity_);
-    registry.emplace<GSMainTain>(param.maintain_entity_);
+    registry.remove<GSNormal>(param.maintain_server_);
+    registry.emplace<GSMainTain>(param.maintain_server_);
 }
 
