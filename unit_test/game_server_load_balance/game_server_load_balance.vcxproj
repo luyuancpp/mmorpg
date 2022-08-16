@@ -28,6 +28,7 @@
     <ClCompile Include="game_server_load_balance_test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\common\src\game_logic\comp\scene_comp.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\scene.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\scene_factories.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\servernode_system.h" />

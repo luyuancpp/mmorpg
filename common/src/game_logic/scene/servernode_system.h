@@ -19,7 +19,7 @@ struct ServerPressureParam
 
 struct ServerCrashParam
 {
-    entt::entity crash_entity_{ entt::null };
+    entt::entity crash_server_{ entt::null };
 };
 
 struct ReplaceCrashServerParam
@@ -30,12 +30,12 @@ struct ReplaceCrashServerParam
 
 struct MaintainServerParam
 {
-    entt::entity maintain_entity_{ entt::null };
+    entt::entity maintain_server_{ entt::null };
 };
 
 struct CompelChangeSceneParam
 {
-    entt::entity compel_change_entity_{ entt::null };
+    entt::entity compel_change_player_{ entt::null };
     entt::entity new_server_{ entt::null };
     uint32_t scene_confid_{0};
 };

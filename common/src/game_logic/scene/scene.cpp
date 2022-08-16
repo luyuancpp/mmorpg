@@ -190,7 +190,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
 {
     auto new_server_entity = param.new_server_;
-    auto compel_entity = param.compel_change_entity_;
+    auto compel_entity = param.compel_change_player_;
     auto& new_server_scene = registry.get<ConfigSceneMap>(new_server_entity);
     auto scene_config_id = param.scene_confid_;
     entt::entity server_scene_enitity = entt::null;

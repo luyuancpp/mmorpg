@@ -53,5 +53,8 @@
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\comp\scene_comp.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
