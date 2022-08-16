@@ -8,10 +8,10 @@
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
 {
-    //如果最少人数的服务器没有这个场景咋办
+    //todo如果最少人数的服务器没有这个场景咋办
     auto scene_confid = param.scene_confid_;
-    entt::entity server_entity{ entt::null };
-    std::size_t min_player_size = UINT64_MAX;
+    entt::entity server{ entt::null };
+    std::size_t min_server_player_size = UINT64_MAX;
     for (auto e : registry.view<ServerType, ServerStatus, ServerPressure>())
     {
         if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))//优先判断有没有场景
@@ -19,32 +19,32 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
             continue;
         }
         std::size_t server_player_size = (*registry.get<GsNodePlayerInfoPtr>(e)).player_size();
-        if (server_player_size >= min_player_size || server_player_size >= kMaxServerPlayerSize)
+        if (server_player_size >= min_server_player_size || server_player_size >= kMaxServerPlayerSize)
         {
             continue;
         }
-        server_entity = e;
-        min_player_size = server_player_size;   
+        server = e;
+        min_server_player_size = server_player_size;   
     }
-    entt::entity scene_entity{ entt::null };
-    if (entt::null == server_entity)
+    entt::entity scene{ entt::null };
+    if (entt::null == server)
     {
-        return scene_entity;
+        return scene;
     }
-    auto& scenes = registry.get<ConfigSceneMap>(server_entity);
-    std::size_t scene_min_player_size = UINT64_MAX;
+    auto& scenes = registry.get<ConfigSceneMap>(server);
+    std::size_t min_scene_player_size = UINT64_MAX;
     auto& server_scenes = scenes.confid_sceneslist(scene_confid);
     for (auto& ji : server_scenes)
     {
         std::size_t scene_player_size = registry.get<ScenePlayers>(ji).size();
-        if (scene_player_size >= scene_min_player_size || scene_player_size >= kMaxScenePlayerSize)
+        if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
         {
             continue;
         }
-        scene_min_player_size = scene_player_size;
-        scene_entity = ji;
+        min_scene_player_size = scene_player_size;
+        scene = ji;
     }
-    return scene_entity;
+    return scene;
 }
 
 //选择不满人得服务器场景
@@ -89,10 +89,10 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 
 entt::entity ServerNodeSystem::GetWeightRoundRobinMainScene(const GetSceneParam& param)
 {
-    auto scene_entity = GetWeightRoundRobinSceneT<MainSceneServer, GSNormal, NoPressure>( param);
-    if (entt::null != scene_entity)
+    auto scene = GetWeightRoundRobinSceneT<MainSceneServer, GSNormal, NoPressure>( param);
+    if (entt::null != scene)
     {
-        return scene_entity;
+        return scene;
     }
     return GetWeightRoundRobinSceneT<MainSceneServer, GSNormal, Pressure>( param);
 }
