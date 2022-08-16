@@ -72,9 +72,9 @@ entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& para
 
 entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 {
-    CreateSceneP create_p;
-    create_p.scene_confid_ = param.scene_confid_;
-    auto scene = CreateScene(create_p);
+    CreateSceneP cp;
+    cp.scene_confid_ = param.scene_confid_;
+    auto scene = CreateScene(cp);
 	auto server = param.node_;
     auto try_server_player_info = registry.try_get<GsNodePlayerInfoPtr>(server);
     if (nullptr != try_server_player_info)
@@ -88,6 +88,7 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 
 void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 {
+    // todo 人得换场景
     auto scene_entity = param.scene_;
 	auto& si = registry.get<SceneInfo>(scene_entity);
 	scenes_.erase(si.scene_id());
@@ -98,6 +99,7 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 
 void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 {
+    // todo 人得换场景
     auto server_entity = param.server_;
     auto server_scenes = registry.get<ConfigSceneMap>(server_entity).scenesids_clone();
     DestroySceneParam destroy_param;
@@ -157,12 +159,12 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
     registry.get<ScenePlayers>(scene_).emplace(param.enterer_);
     registry.emplace<SceneEntity>(param.enterer_, scene_);
     LogPlayerEnterScene(param.enterer_);
-	auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene_);
-	if (nullptr == p_gs_player_info)
+	auto try_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene_);
+	if (nullptr == try_gs_player_info)
 	{
 		return;
 	}
-	(*p_gs_player_info)->set_player_size((*p_gs_player_info)->player_size() + 1);
+	(*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() + 1);
 }
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
@@ -173,12 +175,12 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
         LOG_ERROR << "leave scene empty";
         return;
     }
-    auto& player_scene_entity = registry.get<SceneEntity>(leave_player);
-    auto scene_entity = player_scene_entity.scene_entity_;
+    auto& player_scene = registry.get<SceneEntity>(leave_player);
+    auto scene = player_scene.scene_entity_;
     LogPlayerLeaveScene(leave_player);
-    registry.get<ScenePlayers>(scene_entity).erase(leave_player);
+    registry.get<ScenePlayers>(scene).erase(leave_player);
     registry.remove<SceneEntity>(leave_player);
-    auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene_entity);
+    auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene);
     if (nullptr == p_gs_player_info)
     {
         return;
