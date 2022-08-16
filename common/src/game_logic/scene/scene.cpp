@@ -15,7 +15,7 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
 {
     std::size_t sz = 0;
     //todo  auto 
-    for (auto& it : scenes_map_)
+    for (auto& it : scenes_)
     {
         if (registry.get<SceneInfo>(it.second).scene_confid() != scene_config_id)
         {
@@ -28,8 +28,8 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
 
 entt::entity ScenesSystem::get_scene(Guid scene_id)
 {
-	auto it = scenes_map_.find(scene_id);
-	if (it == scenes_map_.end())
+	auto it = scenes_.find(scene_id);
+	if (it == scenes_.end())
 	{
 		return entt::null;
 	}
@@ -38,7 +38,7 @@ entt::entity ScenesSystem::get_scene(Guid scene_id)
 
 bool ScenesSystem::HasScene(uint32_t scene_config_id)
 {
-	for (auto& it : scenes_map_)
+	for (auto& it : scenes_)
 	{
 		if (registry.get<SceneInfo>(it.second).scene_confid() == scene_config_id)
 		{
@@ -62,12 +62,11 @@ entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& para
 	auto& si = registry.emplace<SceneInfo>(e, param.scene_info_);
 	registry.emplace<MainScene>(e);
 	registry.emplace<ScenePlayers>(e);
-	auto sit = scenes_map_.emplace(si.scene_id(), e);
+	auto sit = scenes_.emplace(si.scene_id(), e);
 	if (!sit.second)
 	{
 		LOG_ERROR << "already has scene" << si.scene_id();
 	}
-
     return e;
 }
 
@@ -91,7 +90,7 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 {
     auto scene_entity = param.scene_;
 	auto& si = registry.get<SceneInfo>(scene_entity);
-	scenes_map_.erase(si.scene_id());
+	scenes_.erase(si.scene_id());
 	registry.destroy(scene_entity);
 	auto& server_scene = registry.get<ConfigSceneMap>(param.server_);
 	server_scene.RemoveScene(si.scene_confid(), scene_entity);
