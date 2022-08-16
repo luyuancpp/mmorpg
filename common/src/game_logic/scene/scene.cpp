@@ -28,12 +28,12 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
 
 entt::entity ScenesSystem::get_scene(Guid scene_id)
 {
-    auto it = scenes_map_.find(scene_id);
-    if (it == scenes_map_.end())
-    {
-        return entt::null;
-    }
-    return it->second;
+	auto it = scenes_map_.find(scene_id);
+	if (it == scenes_map_.end())
+	{
+		return entt::null;
+	}
+	return it->second;
 }
 
 bool ScenesSystem::HasScene(uint32_t scene_config_id)
@@ -50,10 +50,10 @@ bool ScenesSystem::HasScene(uint32_t scene_config_id)
 
 entt::entity ScenesSystem::CreateScene(const CreateSceneP& param)
 {
-    CreateSceneBySceneInfoP param_by_guid;
-    param_by_guid.scene_info_.set_scene_confid(param.scene_confid_);
-    param_by_guid.scene_info_.set_scene_id(server_squence_.Generate());
-    return CreateSceneByGuid(param_by_guid);
+    CreateSceneBySceneInfoP create_by_guid_param;
+    create_by_guid_param.scene_info_.set_scene_confid(param.scene_confid_);
+    create_by_guid_param.scene_info_.set_scene_id(server_squence_.Generate());
+    return CreateSceneByGuid(create_by_guid_param);
 }
 
 entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& param)
