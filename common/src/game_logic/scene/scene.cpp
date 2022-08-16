@@ -196,10 +196,10 @@ void ScenesSystem::CompelChangeScene(const CompelChangeSceneParam& param)
     entt::entity server_scene_enitity = entt::null;
     if (!new_server_scene.HasConfig(param.scene_confid_))
     {
-        CreateGsSceneP create_server_scene_param;
-        create_server_scene_param.scene_confid_ = scene_config_id;
-        create_server_scene_param.node_ = new_server_entity;
-        server_scene_enitity = CreateScene2Gs(create_server_scene_param);
+        CreateGsSceneP create_gs_scene_param;
+        create_gs_scene_param.scene_confid_ = scene_config_id;
+        create_gs_scene_param.node_ = new_server_entity;
+        server_scene_enitity = CreateScene2Gs(create_gs_scene_param);
     }
     else
     {

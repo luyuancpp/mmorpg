@@ -49,10 +49,10 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
 
 //选择不满人得服务器场景
 template<typename ServerType, typename ServerStatus, typename ServerPressure>
-entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
+entt::entity GetMainSceneNotFullT(const GetSceneParam& param)
 {
 	auto scene_config_id = param.scene_confid_;
-	entt::entity server_entity{ entt::null };
+	entt::entity server{ entt::null };
 	for (auto e : registry.view<ServerType, ServerStatus, ServerPressure>())
 	{
 		if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_config_id))
@@ -64,15 +64,15 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 		{
 			continue;
 		}
-		server_entity = e;
+		server = e;
         break;
 	}
-	entt::entity scene_entity{ entt::null };
-	if (entt::null == server_entity)
+	entt::entity scene{ entt::null };
+	if (entt::null == server)
 	{
-		return scene_entity;
+		return scene;
 	}
-	auto& scenes = registry.get<ConfigSceneMap>(server_entity);
+	auto& scenes = registry.get<ConfigSceneMap>(server);
 	auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
 	for (auto& ji : server_scenes)
 	{
@@ -81,10 +81,10 @@ entt::entity GetGetMainSceneNotFullT(const GetSceneParam& param)
 		{
 			continue;
 		}
-		scene_entity = ji;
+		scene = ji;
         break;
 	}
-	return scene_entity;
+	return scene;
 }
 
 entt::entity ServerNodeSystem::GetWeightRoundRobinMainScene(const GetSceneParam& param)
@@ -109,12 +109,12 @@ entt::entity ServerNodeSystem::GetWeightRoundRobinRoomScene(const GetSceneParam&
 
 entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 {
-	auto scene_entity = GetGetMainSceneNotFullT<MainSceneServer, GSNormal, NoPressure>(param);
+	auto scene_entity = GetMainSceneNotFullT<MainSceneServer, GSNormal, NoPressure>(param);
 	if (entt::null != scene_entity)
 	{
 		return scene_entity;
 	}
-	return GetGetMainSceneNotFullT<MainSceneServer, GSNormal, Pressure>(param);
+	return GetMainSceneNotFullT<MainSceneServer, GSNormal, Pressure>(param);
 }
 
 void ServerNodeSystem::ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
