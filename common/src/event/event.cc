@@ -5,7 +5,7 @@ Family BaseEvent::family_counter_ = 0;
 
 BaseReceiver::~BaseReceiver()
 {
-    for (auto m : managers_) {
+    for (auto& m : managers_) {
         auto manager_ptr = m.second.first.lock();
         if (nullptr == manager_ptr)
         {

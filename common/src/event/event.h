@@ -98,7 +98,7 @@ class BaseReceiver {
   // Return number of signals connected to this receiver.
   std::size_t connected_signals() const {
     std::size_t size = 0;
-    for (auto m : managers_) {
+    for (auto& m : managers_) {
        size += m.second.second.size();
     }
     return size;

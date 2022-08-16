@@ -532,7 +532,7 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
     CreateSceneBySceneInfoP create_scene_param;
-	for (auto it : request->cross_scenes_info())
+	for (auto& it : request->cross_scenes_info())
 	{
 		auto git = g_gs_nodes.find(it.gs_node_id());
 		if (git == g_gs_nodes.end())
