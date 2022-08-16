@@ -35,7 +35,7 @@ struct MaintainServerParam
 
 struct CompelChangeSceneParam
 {
-    entt::entity compel_change_player_{ entt::null };
+    entt::entity player_{ entt::null };
     entt::entity new_server_{ entt::null };
     uint32_t scene_confid_{0};
 };

@@ -335,7 +335,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     }
 }
 
-TEST(GS, CompelChangeScene)
+TEST(GS, CompelToChangeScene)
 {
     ScenesSystem sm;
 
@@ -376,8 +376,8 @@ TEST(GS, CompelChangeScene)
     compel_change_param1.scene_confid_ = server2_param.scene_confid_;
     for (auto& it : player_entities_set1)
     {
-        compel_change_param1.compel_change_player_ = it;
-        sm.CompelChangeScene(compel_change_param1);
+        compel_change_param1.player_ = it;
+        sm.CompelToChangeScene(compel_change_param1);
         EXPECT_TRUE(registry.try_get<SceneEntity>(it)->scene_entity_ == scene_id2);
     }
     EXPECT_EQ(registry.get<GsNodePlayerInfoPtr>(server_entity1)->player_size(), 0);
