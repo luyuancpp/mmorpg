@@ -546,7 +546,7 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
             LOG_ERROR << "gs not found ";
             continue;
 		}
-		create_scene_param.scene_info_ = std::move(it.scene_info());
+		create_scene_param.scene_info_ = it.scene_info();
         auto scene = ScenesSystem::GetSingleton().CreateSceneByGuid(create_scene_param);
 		registry.emplace<GsNodePtr>(scene, *try_gs_node_ptr);
 	}
