@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message TeamMissionEvent
+{
+  uint64 player = 1;
+}
