@@ -159,7 +159,7 @@ void MissionsComp::receive(const ConditionEvent& c)
             continue;
         }
         auto& mission = mit->second;
-        if (!UpdateWhenMatchCondition(c, mission))
+        if (!UpdateMissionByCompareCondition(c, mission))
         {
             continue;
         }
@@ -204,14 +204,13 @@ void MissionsComp::DelClassify(uint32_t mission_id)
     type_filter_.erase(p);
 }
 
-bool MissionsComp::UpdateWhenMatchCondition(const ConditionEvent& ev, Mission& mission)
+bool MissionsComp::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mission& mission)
 {
     if (ev.condtion_ids_.empty())
     {
         return false;
     }
-    //compare condition
-    bool mission_change = false;
+    bool mission_updated = false;
     //如果我删除了某个条件，老玩家数据会不会错?正常任务是不能删除的，但是可以考虑删除条件
     auto& mission_conditions = mission_config_->condition_id(mission.id());
     for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i)
@@ -233,19 +232,19 @@ bool MissionsComp::UpdateWhenMatchCondition(const ConditionEvent& ev, Mission& m
         //表检测至少有一个condition
         std::size_t config_condition_size = 0;
         std::size_t equal_condition_size = 0;
-        auto calc_equal_condition_size = [&equal_condition_size, &ev, &config_condition_size](auto condition_index, const auto& config_conditions)
+        auto calc_equal_condition_size = [&equal_condition_size, &ev, &config_condition_size](auto index, const auto& config_conditions)
         {
 			if (config_conditions.size() > 0)
 			{
 				++config_condition_size;
 			}
-            if (ev.condtion_ids_.size() <= condition_index)
+            if (ev.condtion_ids_.size() <= index)
             {
                 return;
             }           
 			for (int32_t ci = 0; ci < config_conditions.size(); ++ci)
 			{
-				if (ev.condtion_ids_[condition_index] != config_conditions.Get(ci))
+				if (ev.condtion_ids_[index] != config_conditions.Get(ci))
 				{
 					continue;
 				}
@@ -261,7 +260,7 @@ bool MissionsComp::UpdateWhenMatchCondition(const ConditionEvent& ev, Mission& m
         {
             continue;
         }
-        mission_change = true;
+        mission_updated = true;
         mission.set_progress(i , ev.ammount_ + old_progress);
         auto new_progress = mission.progress(i);
         if (!IsConditionCompleted(condition_row->id(), new_progress))
@@ -272,7 +271,7 @@ bool MissionsComp::UpdateWhenMatchCondition(const ConditionEvent& ev, Mission& m
         mission.set_progress(i, std::min(new_progress, condition_row->amount()));
         // to client
     }
-    return mission_change;
+    return mission_updated;
 }
 
 void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete)

@@ -62,7 +62,7 @@ public:
 private:
     void DelClassify(uint32_t mission_id);
        
-    bool UpdateWhenMatchCondition(const ConditionEvent& c, Mission& mission);
+    bool UpdateMissionByCompareCondition(const ConditionEvent& c, Mission& mission);
         
     void OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete);
         
