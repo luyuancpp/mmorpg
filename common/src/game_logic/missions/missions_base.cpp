@@ -35,7 +35,7 @@ MissionsComp::MissionsComp(IMissionConfig* config)
     }
 }
 
-bool MissionsComp::IsConditionComplete(uint32_t condition_id, uint32_t progress_value)
+bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
 {
 	auto p = condition_config::GetSingleton().get(condition_id);
 	if (nullptr == p)
@@ -168,7 +168,7 @@ void MissionsComp::receive(const ConditionEvent& c)
         bool all_complete = true;
         for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i)
         {
-            if (IsConditionComplete(conditions[i], mission.progress(i)))
+            if (IsConditionCompleted(conditions[i], mission.progress(i)))
             {
                 continue;
             }
@@ -211,53 +211,66 @@ bool MissionsComp::UpdateWhenMatchCondition(const ConditionEvent& c, Mission& mi
     {
         return false;
     }
-    if (nullptr == config_)
-    {
-        return false;
-    }
-    auto& row_condtion1 = c.condtion_ids_[E_CONDITION_1];//to do condition 2
     //compare condition
     bool mission_change = false;
+    //如果我删除了某个条件，老玩家数据会不会错?正常任务是不能删除的，但是可以考虑删除条件
     auto& condtionids = config_->condition_id(mission.id());
     for (int32_t i = 0; i < mission.progress_size() && i < condtionids.size(); ++i)
     {
-        auto old_progress = mission.progress(i);
-        auto p = condition_config::GetSingleton().get(condtionids.at(i));
-        if (nullptr == p)
+        auto condition_row = condition_config::GetSingleton().get(condtionids.at(i));
+        if (nullptr == condition_row)
         {
             continue;
         }
-		if (IsConditionComplete(p->id(), old_progress))
+        auto old_progress = mission.progress(i);
+		if (IsConditionCompleted(condition_row->id(), old_progress))
 		{
 			continue;
 		}
-        if (c.type_ != p->condition_type())
+        if (c.type_ != condition_row->condition_type())
         {
             continue;
         }
-        bool equal = false;
-        for (int32_t ci = 0; ci < p->condition1_size(); ++ci)
+        //表检测至少有一个condition
+        std::size_t config_condition_size = 0;
+        std::size_t equal_condition_size = 0;
+        auto calc_equal_condition = [&equal_condition_size, &c, &config_condition_size](auto condition_index, const auto& config_conditions)
         {
-            if (row_condtion1 != p->condition1(ci))
+			if (config_conditions.size() > 0)
+			{
+				++config_condition_size;
+			}
+            if (c.condtion_ids_.size() <= condition_index)
             {
-                continue;
-            }
-            equal = true;
-            break;
-        }
-        if (!equal)
+                return;
+            }           
+			for (int32_t ci = 0; ci < config_conditions.size(); ++ci)
+			{
+				if (c.condtion_ids_[condition_index] != config_conditions.Get(ci))
+				{
+					continue;
+				}
+				++equal_condition_size;
+				break;
+			}
+        };
+        calc_equal_condition(0, condition_row->condition1());
+        calc_equal_condition(1, condition_row->condition2());
+        calc_equal_condition(2, condition_row->condition3());
+        calc_equal_condition(3, condition_row->condition4());
+        if (config_condition_size == 0 || equal_condition_size != config_condition_size)
         {
             continue;
         }
         mission_change = true;
         mission.set_progress(i , c.ammount_ + old_progress);
         auto new_progress = mission.progress(i);
-        if (!IsConditionComplete(p->id(), new_progress))
+        if (!IsConditionCompleted(condition_row->id(), new_progress))
         {
             continue;
         }
         // to client
-        mission.set_progress(i, std::min(new_progress, p->amount()));
+        mission.set_progress(i, std::min(new_progress, condition_row->amount()));
         // to client
     }
     return mission_change;
