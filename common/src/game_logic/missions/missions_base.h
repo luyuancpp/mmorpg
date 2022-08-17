@@ -20,7 +20,7 @@ public:
 struct ConditionEvent
 {
     uint32_t type_{ 0 };
-    UInt32Vector match_condtion_ids_{};
+    UInt32Vector condtion_ids_{};
     uint32_t ammount_{ 1 };
 };
 
