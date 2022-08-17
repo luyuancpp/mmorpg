@@ -124,7 +124,7 @@ uint32_t MissionsComp::Abandon(uint32_t mission_id)
     {
         begin_times->mutable_mission_begin_time()->erase(mission_id);
     }
-    DelClassify(mission_id);
+    DelMissionClassify(mission_id);
     return kRetOK;
 }
 
@@ -164,17 +164,17 @@ void MissionsComp::receive(const ConditionEvent& c)
             continue;
         }
         const auto& conditions = mission_config_->condition_id(mission.id());
-        bool all_complete = true;
+        bool is_all_condition_complete = true;
         for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i)
         {
             if (IsConditionCompleted(conditions[i], mission.progress(i)))
             {
                 continue;
             }
-            all_complete = false;
+            is_all_condition_complete = false;
             break;
         }
-        if (!all_complete)
+        if (!is_all_condition_complete)
         {
             break;
         }
@@ -182,23 +182,22 @@ void MissionsComp::receive(const ConditionEvent& c)
         mission.clear_progress();
         temp_complete.emplace(mission.id());
         missions->erase(mit);
-        // can not use mission and mit 
     }
 
     OnMissionComplete(c, temp_complete);
 }
 
-void MissionsComp::DelClassify(uint32_t mission_id)
+void MissionsComp::DelMissionClassify(uint32_t mission_id)
 {
-    auto& cs = mission_config_->condition_id(mission_id);
-    for (int32_t i = 0; i < cs.size(); ++i)
+    auto& config_conditions = mission_config_->condition_id(mission_id);
+    for (int32_t i = 0; i < config_conditions.size(); ++i)
     {
-        auto cp = condition_config::GetSingleton().get(cs.Get(i));
-        if (nullptr == cp)
+        auto condition_row = condition_config::GetSingleton().get(config_conditions.Get(i));
+        if (nullptr == condition_row)
         {
             continue;
         }
-            event_missions_classify_[cp->condition_type()].erase(mission_id);
+        event_missions_classify_[condition_row->condition_type()].erase(mission_id);
     }
     TypeSubTypeSet::value_type p(mission_config_->mission_type(mission_id), mission_config_->mission_sub_type(mission_id));
     type_filter_.erase(p);
@@ -288,7 +287,8 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempComplete
         {
             complete_ids_.mutable_can_reward_mission_id()->insert({ mission_id, false });
         }
-        DelClassify(mission_id);
+        DelMissionClassify(mission_id);
+        // todo event 
         auto& next_missions = mission_config_->next_mission_id(mission_id);
         auto next_time_accpet = registry.try_get<NextTimeAcceptMission>(*this);
         if (nullptr == next_time_accpet)
@@ -308,7 +308,7 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempComplete
             }
         }
     }
-
+    
     ConditionEvent ce{ E_CONDITION_COMPLELTE_MISSION, {}, 1 };
     for (auto& it : temp_complete)
     {
