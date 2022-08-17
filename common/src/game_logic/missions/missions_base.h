@@ -60,7 +60,7 @@ public:
     void receive(const ConditionEvent& c);
        
 private:
-    void DelClassify(uint32_t mission_id);
+    void DelMissionClassify(uint32_t mission_id);
        
     bool UpdateMissionByCompareCondition(const ConditionEvent& c, Mission& mission);
         
