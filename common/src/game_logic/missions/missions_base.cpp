@@ -140,7 +140,7 @@ void MissionsComp::CompleteAllMission()
 
 void MissionsComp::receive(const ConditionEvent& c)
 {
-    if (c.match_condtion_ids_.empty())
+    if (c.condtion_ids_.empty())
     {
         return;
     }
@@ -208,7 +208,7 @@ void MissionsComp::DelClassify(uint32_t mission_id)
 
 bool MissionsComp::UpdateWhenMatchCondition(const ConditionEvent& c, Mission& mission)
 {
-    if (c.match_condtion_ids_.empty())
+    if (c.condtion_ids_.empty())
     {
         return false;
     }
@@ -216,7 +216,7 @@ bool MissionsComp::UpdateWhenMatchCondition(const ConditionEvent& c, Mission& mi
     {
         return false;
     }
-    auto& row_condtion1 = c.match_condtion_ids_[E_CONDITION_1];//to do condition 2
+    auto& row_condtion1 = c.condtion_ids_[E_CONDITION_1];//to do condition 2
     //compare condition
     bool mission_change = false;
     auto& condtionids = config_->condition_id(mission.id());
@@ -303,7 +303,7 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempComplete
     ConditionEvent ce{ E_CONDITION_COMPLELTE_MISSION, {}, 1 };
     for (auto& it : temp_complete)
     {
-        ce.match_condtion_ids_ = { it };
+        ce.condtion_ids_ = { it };
         receive(ce);
     }
 }

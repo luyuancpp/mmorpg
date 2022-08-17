@@ -67,17 +67,17 @@ TEST(MissionsComp, TriggerCondition)
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.match_condtion_ids_ = { 2 };
+    ce.condtion_ids_ = { 2 };
     ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.match_condtion_ids_ = { 3 };
+    ce.condtion_ids_ = { 3 };
     ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-    ce.match_condtion_ids_ = { 4 };
+    ce.condtion_ids_ = { 4 };
     ms.receive(ce);
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(1, ms.complete_size());
@@ -103,7 +103,7 @@ TEST(MissionsComp, TypeSize)
     EXPECT_EQ(0, ms.complete_size());
 
     ce.type_ = E_CONDITION_TALK_WITH_NPC;
-    ce.match_condtion_ids_ = { 1 };
+    ce.condtion_ids_ = { 1 };
     ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
@@ -119,13 +119,13 @@ TEST(MissionsComp, TypeSize)
     EXPECT_EQ(0, ms.complete_size());
 
     ce.type_ = E_CONDITION_LEVEUP;
-    ce.match_condtion_ids_ = { 10 };
+    ce.condtion_ids_ = { 10 };
     ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
     ce.type_ = E_CONDITION_INTERATION;
-    ce.match_condtion_ids_ = { 1};
+    ce.condtion_ids_ = { 1};
     ms.receive(ce);
     
     EXPECT_EQ(0, ms.mission_size());
@@ -172,7 +172,7 @@ TEST(MissionsComp, OnCompleteMission)
     EXPECT_FALSE(ms.IsComplete(mid));
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_INTERATION; ++i)
     {
-        ce.match_condtion_ids_ = { i };
+        ce.condtion_ids_ = { i };
         ms.receive(ce);
         EXPECT_FALSE(ms.IsAccepted(mid));
         EXPECT_TRUE(ms.IsComplete(mid));
