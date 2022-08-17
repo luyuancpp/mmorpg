@@ -179,7 +179,6 @@ void MissionsComp::receive(const ConditionEvent& c)
             break;
         }
         mission.set_status(Mission::E_MISSION_COMPLETE);
-        mission.clear_progress();
         temp_complete.emplace(mission.id());
         missions->erase(mit);
     }
