@@ -144,13 +144,12 @@ void MissionsComp::receive(const ConditionEvent& c)
     {
         return;
     }
-    auto mm = missions_.mutable_missions();
     auto it =  event_missions_classify_.find(c.type_);
     if (it ==  event_missions_classify_.end())
     {
         return;
     }
-
+    auto mm = missions_.mutable_missions();
     TempCompleteList temp_complete;
     auto& mission_list = it->second;
     for (auto lit : mission_list)
@@ -236,18 +235,17 @@ bool MissionsComp::UpdateWhenMatchCondition(const ConditionEvent& c, Mission& mi
         {
             continue;
         }
-        bool conform = false;
+        bool equal = false;
         for (int32_t ci = 0; ci < p->condition1_size(); ++ci)
         {
             if (row_condtion1 != p->condition1(ci))
             {
                 continue;
             }
-            conform = true;
+            equal = true;
             break;
         }
-
-        if (!conform)
+        if (!equal)
         {
             continue;
         }
