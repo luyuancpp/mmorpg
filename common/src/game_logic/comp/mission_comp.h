@@ -48,7 +48,6 @@ using MissionAutoRewardCallback = std::function<bool(uint32_t)>;
 using TempCompleteList = UInt32Set;
 using TypeSubTypeSet = UInt32PairSet;
 
-struct NextTimeAcceptMission { UInt32Set next_time_accept_mission_id_; };
 struct CheckSubType {};
 struct MissionReward {};
 
