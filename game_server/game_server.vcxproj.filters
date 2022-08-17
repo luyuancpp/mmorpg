@@ -60,9 +60,6 @@
     <ClCompile Include="src\service\logic\gsserver_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\comp\player_list.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\system\entity_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -129,9 +126,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic\server_service.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\comp\player_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\entity_scene_system.h">
