@@ -288,13 +288,24 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempComplete
         }
         DelMissionClassify(mission_id);
         // todo event 
-        auto& next_missionids = mission_config_->next_mission_id(mission_id);
-		for (int32_t i = 0; i < next_missionids.size(); ++i)
-		{
-			auto next_mission_id = next_missionids.Get(i);
-			AcceptMissionP param{ next_mission_id };
-			Accept(param);
-		}
+        auto& next_missions = mission_config_->next_mission_id(mission_id);
+        auto next_time_accpet = registry.try_get<NextTimeAcceptMission>(*this);
+        if (nullptr == next_time_accpet)
+        {
+            for (int32_t i = 0; i < next_missions.size(); ++i)
+            {
+                auto next_mission = next_missions.Get(i);
+                AcceptMissionP param{ next_mission};
+                Accept(param);
+            }
+        }
+        else
+        {
+            for (int32_t i = 0; i < next_missions.size(); ++i)
+            {
+                next_time_accpet->next_time_accept_mission_id_.emplace(next_missions.Get(i));
+            }
+        }
     }
     
     ConditionEvent ce{ E_CONDITION_COMPLELTE_MISSION, {}, 1 };
