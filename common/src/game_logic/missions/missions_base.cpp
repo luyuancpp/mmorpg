@@ -27,11 +27,11 @@ MissionsComp::MissionsComp(IMissionConfig* config)
 {
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
     {
-            event_missions_classify_.emplace(i, UInt32Set{});
+         event_missions_classify_.emplace(i, UInt32Set{});
     }
     if (config_->HasMainSubTypeCheck())
     {
-        reg.emplace<CheckSubType>(entity());
+        registry.emplace<CheckSubType>(*this);
     }
 }
 
@@ -80,7 +80,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionP& param)
     }
     auto mission_sub_type = config_->mission_sub_type(mission_id);
     auto mission_type = config_->mission_type(mission_id);
-    bool check_type_filter = config_->HasMainSubTypeCheck() &&  mission_sub_type > 0 && reg.any_of<CheckSubType>(entity());
+    bool check_type_filter = config_->HasMainSubTypeCheck() &&  mission_sub_type > 0 && registry.any_of<CheckSubType>(*this);
     if (check_type_filter)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
@@ -120,7 +120,7 @@ uint32_t MissionsComp::Abandon(uint32_t mission_id)
     missions_.mutable_missions()->erase(mission_id);
     complete_ids_.mutable_missions()->erase(mission_id);
     complete_ids_.mutable_can_reward_mission_id()->erase(mission_id);
-    auto begin_times = reg.try_get<MissionBeginTime>(entity());
+    auto begin_times = registry.try_get<MissionBeginTime>(*this);
     if (nullptr != begin_times)
     {
         begin_times->mutable_mission_begin_time()->erase(mission_id);
@@ -271,7 +271,7 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempComplete
     {
         return;
     }
-    bool reward = reg.any_of<MissionReward>(entity());
+    bool reward = registry.any_of<MissionReward>(*this);
     for (auto& mission_id : temp_complete)
     {
         complete_ids_.mutable_missions()->insert({ mission_id, true });
@@ -281,7 +281,7 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempComplete
         }
         DelClassify(mission_id);
         auto& next_missions = config_->next_mission_id(mission_id);
-        auto next_time_accpet = reg.try_get<NextTimeAcceptMission>(entity());
+        auto next_time_accpet = registry.try_get<NextTimeAcceptMission>(*this);
         if (nullptr == next_time_accpet)
         {
             for (int32_t i = 0; i < next_missions.size(); ++i)

@@ -157,7 +157,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\game_config\mission_config.h" />
-    <ClInclude Include="..\..\common\src\game_logic\entity_class\entity_class.h" />
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_base.h" />
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h" />
     <ClInclude Include="..\..\common\src\game_logic\missions\player_mission.h" />
