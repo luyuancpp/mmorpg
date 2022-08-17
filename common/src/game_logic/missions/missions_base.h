@@ -66,7 +66,7 @@ private:
         
     void OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete);
         
-    IMissionConfig* config_{ nullptr };
+    IMissionConfig* mission_config_{ nullptr };
     MissionMap missions_;
     CompleteMissionsId complete_ids_;  
     event_mission_classify_type  event_missions_classify_;//key : classify mision by event type  , value :  misison list
