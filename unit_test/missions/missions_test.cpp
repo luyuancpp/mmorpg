@@ -114,6 +114,7 @@ TEST(MissionsComp, TypeSize)
     EXPECT_EQ(0, ms.complete_size());
 
     ce.type_ = E_CONDITION_USE_ITEM;
+    ce.condtion_ids_ = { 1, 2 };
     ms.receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
