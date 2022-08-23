@@ -29,7 +29,7 @@ class MissionsComp : public EntityPtr
 public:
     using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
     MissionsComp();
-    MissionsComp(IMissionConfig* config);
+	MissionsComp(IMissionConfig* config);
 
     const event_mission_classify_type& classify_for_unittest() const { return   event_missions_classify_; }
     const MissionMap& missions() { return missions_; }
