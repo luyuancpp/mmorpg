@@ -71,6 +71,7 @@ enum  EnumCode : uint32_t
     kRetMisionTypeRepeated = 6001,
     kRetMissionComplete = 6002,
     kRetMissionGetRewardNoMissionId = 6003,
+    kRetMissionPlayerMissionCompNotFound = 6004,
 
     //bag 
     kRetBagDeleteItemHasnotGuid = 7000,
