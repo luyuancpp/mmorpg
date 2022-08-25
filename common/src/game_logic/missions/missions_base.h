@@ -59,7 +59,7 @@ public:
 
     void receive(const ConditionEvent& c);
        
-private:
+public:
     void DelMissionClassify(uint32_t mission_id);
        
     bool UpdateMissionByCompareCondition(const ConditionEvent& c, Mission& mission);
@@ -72,6 +72,7 @@ private:
     event_mission_classify_type  event_missions_classify_;//key : classify mision by event type  , value :  misison list
     UInt32PairSet type_filter_;
 };
+
 
 
 

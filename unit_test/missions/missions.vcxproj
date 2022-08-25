@@ -148,6 +148,7 @@
     <ClCompile Include="..\..\common\src\game_config\mission_config.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\missions\missions_base.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\missions\mission_system.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\missions\player_mission.cpp" />
     <ClCompile Include="..\..\common\src\pb\pbc\comp.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\condition_config.pb.cc" />
@@ -159,6 +160,7 @@
     <ClInclude Include="..\..\common\src\game_config\mission_config.h" />
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_base.h" />
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h" />
+    <ClInclude Include="..\..\common\src\game_logic\missions\mission_system.h" />
     <ClInclude Include="..\..\common\src\game_logic\missions\player_mission.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\comp.pb.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\condition_config.pb.h" />
