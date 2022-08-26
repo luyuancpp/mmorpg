@@ -37,7 +37,7 @@ public:
     std::size_t mission_size()const { return missions_.missions().size(); }
     std::size_t complete_size()const { return complete_ids_.missions().size(); }
     std::size_t type_set_size()const { return type_filter_.size(); }
-    std::size_t can_reward_size()const { return complete_ids_.can_reward_mission_id().size(); }
+    std::size_t can_reward_size();
 
     bool IsAccepted(uint32_t mission_id)const
     {

@@ -28,5 +28,9 @@ message MissionBeginTime
 message CompleteMissionsId
 {
 	map<uint32, bool> missions = 1;
+}
+
+message MissionReward
+{
 	map<uint32, bool> can_reward_mission_id = 2;
 }

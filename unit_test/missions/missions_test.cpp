@@ -285,8 +285,7 @@ TEST(MissionsComp, RemoveMission)
     auto& type_missions = ms.classify_for_unittest();
 
     EXPECT_EQ(1, type_missions.find(E_CONDITION_KILL_MONSTER)->second.size());
-    auto& cm = ms.complete_ids();
-    ((CompleteMissionsId&)cm).mutable_can_reward_mission_id()->insert({ mid, true });
+    registry.emplace_or_replace<MissionReward>(ms).mutable_can_reward_mission_id()->insert({ mid, true });
     ms.Abandon(mid);
 
     EXPECT_EQ(0, ms.mission_size());
@@ -310,28 +309,12 @@ class C
     uint32_t id = 1;
 };
 
-class M
-{
-public:
-
-	uint32_t id = 1;
-	uint32_t status = 2;
-    std::array<C, 5> cs;
-};
-
-using ms = std::array<C, 10000>;
-std::array<ms, 10000> ps; //计算10000个玩家占用多少任务内存
-
-
 int main(int argc, char** argv)
 {
     Random::GetSingleton();
     condition_config::GetSingleton().load();
     mission_config::GetSingleton().load();
     testing::InitGoogleTest(&argc, argv);
-    std::cout << sizeof(ps) << std::endl;
-    std::cout << sizeof(Mission) << std::endl;
-    std::cout << sizeof(M) << std::endl;
     return RUN_ALL_TESTS();
 }
 
