@@ -7,36 +7,6 @@ message Vector3
 	double z = 3;
 }
 
-message Mission
-{
-	enum eMissionStatus
-	{
-	    E_MISSION_NORMAL = 0;
-	    E_MISSION_ACHIEVEMENT = 1;
-	    E_MISSION_COMPLETE = 2;
-	    E_MISSION_TIME_OUT = 3;
-	    E_MISSION_FAILD = 4;
-	};
-	uint32 id = 1;
-	uint32 status = 2;
-	repeated uint32 progress = 3;
-}
-
-message MissionMap
-{
-	map<uint32, Mission> missions = 1;
-}
-
-message MissionBeginTime
-{
-	map<uint32, uint64> mission_begin_time = 1;
-}
-
-message CompleteMissionsId
-{
-	map<uint32, bool> missions = 1;
-	map<uint32, bool> can_reward_mission_id = 2;
-}
 
 message PlayerInt32Array
 {
