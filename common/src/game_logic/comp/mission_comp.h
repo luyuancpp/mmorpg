@@ -6,7 +6,6 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/game_registry.h"
 
-
 enum eCondtionType : uint32_t
 {
     E_CONDITION_KILL_MONSTER = 1,
@@ -26,24 +25,6 @@ enum eConditionIndex
     E_CONDITION_2
 };
 
-//enum eConditionStatus
-//{
-//    E_CONDITION_NORMAL,
-//    E_CONDITION_COMPLETE,
-//};
-
-//enum eMissionStatus
-//{
-//    E_MISSION_NORMAL,
-//    E_MISSION_ACHIEVEMENT,
-//    E_MISSION_COMPLETE,
-//    E_MISSION_TIME_OUT,
-//    E_MISSION_FAILD,
-//    E_MISSION_MAX,
-//};
-
-using EntityV = std::vector<entt::entity>;
-using TypeMissionIdMap = std::unordered_map<uint32_t, UInt32Set>;
 using MissionAutoRewardCallback = std::function<bool(uint32_t)>;
 using TempCompleteList = UInt32Set;
 using TypeSubTypeSet = UInt32PairSet;
