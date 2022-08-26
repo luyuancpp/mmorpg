@@ -152,7 +152,7 @@ void MissionsComp::CompleteAllMission()
     missions_comp_pb_.mutable_missions()->clear();
 }
 
-void MissionsComp::receive(const ConditionEvent& c)
+void MissionsComp::Receive(const ConditionEvent& c)
 {
     if (c.condtion_ids_.empty())
     {
@@ -333,6 +333,6 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const UInt32Set& t
     for (auto& it : temp_complete)
     {
         ce.condtion_ids_ = { it };
-        receive(ce);
+        Receive(ce);
     }
 }

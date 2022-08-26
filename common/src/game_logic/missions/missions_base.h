@@ -54,7 +54,7 @@ public:
     uint32_t Abandon(uint32_t mission_id);
     void CompleteAllMission();
 
-    void receive(const ConditionEvent& c);
+    void Receive(const ConditionEvent& c);
        
 private:
     void DelMissionClassify(uint32_t mission_id);

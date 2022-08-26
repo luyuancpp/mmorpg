@@ -63,22 +63,22 @@ TEST(MissionsComp, TriggerCondition)
     EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{ E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
     ce.condtion_ids_ = { 2 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
     ce.condtion_ids_ = { 3 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
     ce.condtion_ids_ = { 4 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(1, ms.complete_size());
     EXPECT_EQ(0, ms.type_set_size());
@@ -98,36 +98,36 @@ TEST(MissionsComp, TypeSize)
         EXPECT_EQ(1, ms.classify_for_unittest().find(i)->second.size());
     }    
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
     ce.type_ = E_CONDITION_TALK_WITH_NPC;
     ce.condtion_ids_ = { 1 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
     ce.type_ = E_CONDITION_COMPLELETE_CONDITION;
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
     ce.type_ = E_CONDITION_USE_ITEM;
     ce.condtion_ids_ = { 1, 2 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
     ce.type_ = E_CONDITION_LEVEUP;
     ce.condtion_ids_ = { 10 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
     ce.type_ = E_CONDITION_INTERATION;
     ce.condtion_ids_ = { 1, 2};
-    ms.receive(ce);
+    ms.Receive(ce);
     
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(1, ms.complete_size());
@@ -149,7 +149,7 @@ TEST(MissionsComp, CompleteAcceptMission)
     EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
     EXPECT_EQ(kRetMissionComplete, ms.Accept(param));
@@ -164,7 +164,7 @@ TEST(MissionsComp, OnCompleteMission)
     EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
 
@@ -174,7 +174,7 @@ TEST(MissionsComp, OnCompleteMission)
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_INTERATION; ++i)
     {
         ce.condtion_ids_ = { i };
-        ms.receive(ce);
+        ms.Receive(ce);
         EXPECT_FALSE(ms.IsAccepted(mid));
         EXPECT_TRUE(ms.IsComplete(mid));
 
@@ -193,7 +193,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
     EXPECT_EQ(kRetOK, ms.Accept(param));
     EXPECT_EQ(1, ms.type_set_size());
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
 
@@ -221,7 +221,7 @@ TEST(MissionsComp, MissionCondition)
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
     EXPECT_FALSE(ms.IsAccepted(mid1));
@@ -242,10 +242,10 @@ TEST(MissionsComp, ConditionAmount)
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
 }
@@ -264,7 +264,7 @@ TEST(MissionsComp, MissionRewardList)
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
     ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.receive(ce);
+    ms.Receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
     EXPECT_EQ(kRetOK, ms.GetReward(mid));
