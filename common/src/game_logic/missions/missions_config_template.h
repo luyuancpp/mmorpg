@@ -21,7 +21,7 @@ struct IMissionConfig
         s.Clear();
         return s;
     }
-    virtual bool HasMainSubTypeCheck() { return false; }
+    virtual bool CheckTypeRepeated() { return false; }
     virtual bool HasKey(uint32_t id) { return false; }
 };
 
@@ -93,6 +93,6 @@ struct MissionConfig : public IMissionConfig
         return p->next_mission_id();
     }
 
-    virtual bool HasMainSubTypeCheck() override { return true;   }
+    virtual bool CheckTypeRepeated() override { return true;   }
     virtual bool HasKey(uint32_t id)override { return nullptr !=  mission_config::GetSingleton().get(id); }
 };

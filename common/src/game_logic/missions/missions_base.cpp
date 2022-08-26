@@ -29,7 +29,7 @@ MissionsBase::MissionsBase(IMissionConfig* config)
     {
          event_missions_classify_.emplace(i, UInt32Set{});
     }
-    if (mission_config_->HasMainSubTypeCheck())
+    if (mission_config_->CheckTypeRepeated())
     {
         registry.emplace<CheckSubType>(*this);
     }
@@ -80,11 +80,11 @@ uint32_t MissionsBase::GetReward(uint32_t missin_id)
 uint32_t MissionsBase::Accept(const AcceptMissionP& param)
 {
     auto mission_id = param.mission_id_;
-    if (missions_.missions().count(mission_id) > 0)
+    if (missions_.missions().count(mission_id) > 0)//已经接受过
     {
         return kRetMissionIdRepeated;
     }
-    if (missions_.complete_missions().count(mission_id) > 0)
+    if (missions_.complete_missions().count(mission_id) > 0)//已经完成
     {
         return kRetMissionComplete;
     }
@@ -94,8 +94,8 @@ uint32_t MissionsBase::Accept(const AcceptMissionP& param)
     }
     auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
     auto mission_type = mission_config_->mission_type(mission_id);
-    bool check_type_filter = mission_config_->HasMainSubTypeCheck() &&  mission_sub_type > 0 && registry.any_of<CheckSubType>(*this);
-    if (check_type_filter)
+    bool check_type_repeated =  mission_sub_type > 0 && registry.any_of<CheckSubType>(*this);
+    if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
         CheckCondtion(type_filter_.find(p) != type_filter_.end(), kRetMisionTypeRepeated);
@@ -116,7 +116,7 @@ uint32_t MissionsBase::Accept(const AcceptMissionP& param)
         event_missions_classify_[p->condition_type()].emplace(mission_id);
     }
     missions_.mutable_missions()->insert({ mission_id, std::move(m) });
-    if (check_type_filter)
+    if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
         type_filter_.emplace(p);
