@@ -45,9 +45,6 @@
     <ClCompile Include="..\..\common\src\util\file2string.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\missions\mission_system.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\game_config\mission_config.h">
@@ -69,9 +66,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\pb\pbc\condition_config.pb.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\missions\mission_system.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
