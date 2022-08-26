@@ -194,6 +194,7 @@ void MissionsBase::receive(const ConditionEvent& c)
             break;
         }
         mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
+        // to client
         temp_complete.emplace(mission.id());
         missions->erase(mit);
     }
@@ -213,8 +214,13 @@ void MissionsBase::DelMissionClassify(uint32_t mission_id)
         }
         event_missions_classify_[condition_row->condition_type()].erase(mission_id);
     }
-    UInt32PairSet::value_type p(mission_config_->mission_type(mission_id), mission_config_->mission_sub_type(mission_id));
-    type_filter_.erase(p);
+    auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
+    bool check_type_repeated = mission_sub_type > 0 && registry.any_of<CheckTypeRepeatd>(*this);
+    if (check_type_repeated)
+    {
+		UInt32PairSet::value_type p(mission_config_->mission_type(mission_id), mission_sub_type);
+		type_filter_.erase(p);
+    }
 }
 
 bool MissionsBase::UpdateMissionByCompareCondition(const ConditionEvent& ev, MissionPbComp& mission)
