@@ -15,7 +15,7 @@ message Mission
 	repeated uint32 progress = 3;
 }
 
-message MissionMap
+message Missions
 {
 	map<uint32, Mission> missions = 1;
 	map<uint32, bool> complete_missions = 2;
