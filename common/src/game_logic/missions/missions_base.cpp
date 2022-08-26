@@ -308,6 +308,8 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const UInt32Set& t
             try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });
         }
         DelMissionClassify(mission_id);
+
+        //如果是活动不用走
         // todo event 
         auto& next_missions = mission_config_->next_mission_id(mission_id);
         auto next_time_accpet = registry.try_get<NextTimeAcceptMission>(*this);
