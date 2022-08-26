@@ -254,7 +254,7 @@ TEST(MissionsBase, MissionRewardList)
 {
     MissionsBase ms;
 
-    registry.emplace<MissionReward>(ms);
+    registry.emplace<MissionRewardPbComp>(ms);
 
     uint32_t mid = 12;
 
@@ -285,7 +285,7 @@ TEST(MissionsBase, RemoveMission)
     auto& type_missions = ms.classify_for_unittest();
 
     EXPECT_EQ(1, type_missions.find(E_CONDITION_KILL_MONSTER)->second.size());
-    registry.emplace_or_replace<MissionReward>(ms).mutable_can_reward_mission_id()->insert({ mid, true });
+    registry.emplace_or_replace<MissionRewardPbComp>(ms).mutable_can_reward_mission_id()->insert({ mid, true });
     ms.Abandon(mid);
 
     EXPECT_EQ(0, ms.mission_size());

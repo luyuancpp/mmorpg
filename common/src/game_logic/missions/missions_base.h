@@ -32,7 +32,7 @@ public:
 	MissionsBase(IMissionConfig* config);
 
     const event_mission_classify_type& classify_for_unittest() const { return   event_missions_classify_; }
-    const Missions& missions() { return missions_; }
+    const MissionsPbComp& missions() { return missions_; }
     std::size_t mission_size()const { return missions_.missions().size(); }
     std::size_t complete_size()const { return missions_.complete_missions_size(); }
     std::size_t type_set_size()const { return type_filter_.size(); }
@@ -65,7 +65,7 @@ private:
     void OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete);
         
     IMissionConfig* mission_config_{ nullptr };
-    Missions missions_;
+    MissionsPbComp missions_;
     event_mission_classify_type  event_missions_classify_;//key : classify mision by event type  , value :  misison list
     UInt32PairSet type_filter_;
 };

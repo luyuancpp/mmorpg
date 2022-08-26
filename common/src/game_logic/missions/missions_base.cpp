@@ -37,7 +37,7 @@ MissionsBase::MissionsBase(IMissionConfig* config)
 
 std::size_t MissionsBase::can_reward_size()
 {
-    auto try_mission_reward = registry.try_get<MissionReward>(*this);
+    auto try_mission_reward = registry.try_get<MissionRewardPbComp>(*this);
     if (nullptr == try_mission_reward)
     {
         return 0;
@@ -62,7 +62,7 @@ bool MissionsBase::IsConditionCompleted(uint32_t condition_id, uint32_t progress
 
 uint32_t MissionsBase::GetReward(uint32_t missin_id)
 {
-	auto try_mission_reward = registry.try_get<MissionReward>(*this);
+	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(*this);
 	if (nullptr == try_mission_reward)
 	{
 		return kRetMissionPlayerMissionCompNotFound;
@@ -131,7 +131,7 @@ uint32_t MissionsBase::AcceptCheck(const AcceptMissionP& param)
 
 uint32_t MissionsBase::Abandon(uint32_t mission_id)
 {
-	auto try_mission_reward = registry.try_get<MissionReward>(*this);
+	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(*this);
 	if (nullptr != try_mission_reward)
 	{
         try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
@@ -293,7 +293,7 @@ void MissionsBase::OnMissionComplete(const ConditionEvent& c, const TempComplete
     {
         return;
     }
-    auto try_mission_reward = registry.try_get<MissionReward>(*this);
+    auto try_mission_reward = registry.try_get<MissionRewardPbComp>(*this);
     for (auto& mission_id : temp_complete)
     {
         missions_.mutable_complete_missions()->insert({ mission_id, true });
