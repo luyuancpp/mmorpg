@@ -31,6 +31,5 @@ using TypeSubTypeSet = UInt32PairSet;
 
 struct NextTimeAcceptMission { UInt32Set next_time_accept_mission_id_; };
 struct CheckSubType {};
-struct MissionReward {};
 
 

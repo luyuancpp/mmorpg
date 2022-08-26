@@ -35,6 +35,16 @@ MissionsComp::MissionsComp(IMissionConfig* config)
     }
 }
 
+std::size_t MissionsComp::can_reward_size()
+{
+    auto try_mission_reward = registry.try_get<MissionReward>(*this);
+    if (nullptr == try_mission_reward)
+    {
+        return 0;
+    }
+    return try_mission_reward->can_reward_mission_id_size();
+}
+
 bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
 {
 	auto p = condition_config::GetSingleton().get(condition_id);
@@ -52,8 +62,13 @@ bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress
 
 uint32_t MissionsComp::GetReward(uint32_t missin_id)
 {
-    auto rmid = complete_ids_.mutable_can_reward_mission_id();
-    auto it = complete_ids_.mutable_can_reward_mission_id()->find(missin_id);
+	auto try_mission_reward = registry.try_get<MissionReward>(*this);
+	if (nullptr == try_mission_reward)
+	{
+		return kRetMissionPlayerMissionCompNotFound;
+	}
+    auto rmid = try_mission_reward->mutable_can_reward_mission_id();
+    auto it = try_mission_reward->mutable_can_reward_mission_id()->find(missin_id);
     if (it == rmid->end())
     {
         return kRetMissionGetRewardNoMissionId;
@@ -116,9 +131,14 @@ uint32_t MissionsComp::AcceptCheck(const AcceptMissionP& param)
 
 uint32_t MissionsComp::Abandon(uint32_t mission_id)
 {
+	auto try_mission_reward = registry.try_get<MissionReward>(*this);
+	if (nullptr == try_mission_reward)
+	{
+		return kRetMissionPlayerMissionCompNotFound;
+	}
     missions_.mutable_missions()->erase(mission_id);
     complete_ids_.mutable_missions()->erase(mission_id);
-    complete_ids_.mutable_can_reward_mission_id()->erase(mission_id);
+    try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
     auto begin_times = registry.try_get<MissionBeginTime>(*this);
     if (nullptr != begin_times)
     {
@@ -278,13 +298,13 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempComplete
     {
         return;
     }
-    bool reward = registry.any_of<MissionReward>(*this);
+    auto try_mission_reward = registry.try_get<MissionReward>(*this);
     for (auto& mission_id : temp_complete)
     {
         complete_ids_.mutable_missions()->insert({ mission_id, true });
-        if (reward && mission_config_->reward_id(mission_id) > 0)
+        if (nullptr != try_mission_reward && mission_config_->reward_id(mission_id) > 0)
         {
-            complete_ids_.mutable_can_reward_mission_id()->insert({ mission_id, false });
+            try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });
         }
         DelMissionClassify(mission_id);
         // todo event 
