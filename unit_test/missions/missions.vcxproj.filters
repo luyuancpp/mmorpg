@@ -24,9 +24,6 @@
     <ClCompile Include="..\..\common\src\game_logic\missions\missions_base.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\missions\player_mission.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -54,9 +51,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_base.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\missions\player_mission.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\pb\pbc\mission_config.pb.h">
