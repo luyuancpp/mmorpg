@@ -84,7 +84,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionP& param)
     {
         return kRetMissionIdRepeated;
     }
-    if (complete_ids_.missions().count(mission_id) > 0)
+    if (missions_.complete_missions().count(mission_id) > 0)
     {
         return kRetMissionComplete;
     }
@@ -132,18 +132,13 @@ uint32_t MissionsComp::AcceptCheck(const AcceptMissionP& param)
 uint32_t MissionsComp::Abandon(uint32_t mission_id)
 {
 	auto try_mission_reward = registry.try_get<MissionReward>(*this);
-	if (nullptr == try_mission_reward)
+	if (nullptr != try_mission_reward)
 	{
-		return kRetMissionPlayerMissionCompNotFound;
+        try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
 	}
     missions_.mutable_missions()->erase(mission_id);
-    complete_ids_.mutable_missions()->erase(mission_id);
-    try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
-    auto begin_times = registry.try_get<MissionBeginTime>(*this);
-    if (nullptr != begin_times)
-    {
-        begin_times->mutable_mission_begin_time()->erase(mission_id);
-    }
+    missions_.mutable_complete_missions()->erase(mission_id);
+    missions_.mutable_mission_begin_time()->erase(mission_id);
     DelMissionClassify(mission_id);
     return kRetOK;
 }
@@ -152,7 +147,7 @@ void MissionsComp::CompleteAllMission()
 {
     for (auto& meit : missions_.missions())
     {
-        complete_ids_.mutable_missions()->insert({ meit.first, false });
+        missions_.mutable_complete_missions()->insert({ meit.first, false });
     }
     missions_.mutable_missions()->clear();
 }
@@ -301,7 +296,7 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempComplete
     auto try_mission_reward = registry.try_get<MissionReward>(*this);
     for (auto& mission_id : temp_complete)
     {
-        complete_ids_.mutable_missions()->insert({ mission_id, true });
+        missions_.mutable_complete_missions()->insert({ mission_id, true });
         if (nullptr != try_mission_reward && mission_config_->reward_id(mission_id) > 0)
         {
             try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });

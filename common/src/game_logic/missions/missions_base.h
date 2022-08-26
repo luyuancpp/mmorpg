@@ -33,9 +33,8 @@ public:
 
     const event_mission_classify_type& classify_for_unittest() const { return   event_missions_classify_; }
     const MissionMap& missions() { return missions_; }
-    const CompleteMissionsId& complete_ids() { return complete_ids_; }
     std::size_t mission_size()const { return missions_.missions().size(); }
-    std::size_t complete_size()const { return complete_ids_.missions().size(); }
+    std::size_t complete_size()const { return missions_.complete_missions_size(); }
     std::size_t type_set_size()const { return type_filter_.size(); }
     std::size_t can_reward_size();
 
@@ -46,8 +45,7 @@ public:
     }
     bool IsComplete(uint32_t mission_id)const
     {
-        auto& complete_ids = complete_ids_.missions();
-        return complete_ids.find(mission_id) != complete_ids.end();
+        return missions_.complete_missions().find(mission_id) != missions_.complete_missions().end();
     }
     bool IsConditionCompleted(uint32_t condition_id, uint32_t progress_value);
 
@@ -68,7 +66,6 @@ private:
         
     IMissionConfig* mission_config_{ nullptr };
     MissionMap missions_;
-    CompleteMissionsId complete_ids_;  
     event_mission_classify_type  event_missions_classify_;//key : classify mision by event type  , value :  misison list
     UInt32PairSet type_filter_;
 };
