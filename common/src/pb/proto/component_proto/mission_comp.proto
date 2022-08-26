@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-message Mission
+message MissionPbComp
 {
 	enum eMissionStatus
 	{
@@ -15,14 +15,14 @@ message Mission
 	repeated uint32 progress = 3;
 }
 
-message Missions
+message MissionsPbComp
 {
-	map<uint32, Mission> missions = 1;
+	map<uint32, MissionPbComp> missions = 1;
 	map<uint32, bool> complete_missions = 2;
 	map<uint32, uint64> mission_begin_time = 3;
 }
 
-message MissionReward
+message MissionRewardPbComp
 {
 	map<uint32, bool> can_reward_mission_id = 2;
 }
