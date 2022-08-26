@@ -5,7 +5,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/missions/missions_config_template.h"
 
-#include "comp.pb.h"
+#include "component_proto/mission_comp.pb.h"
 
 
 class AcceptMissionP
