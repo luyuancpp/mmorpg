@@ -40,8 +40,7 @@ public:
 
     bool IsAccepted(uint32_t mission_id)const
     {
-        auto& mission = missions_comp_pb_.missions();
-        return mission.find(mission_id) != mission.end();
+        return missions_comp_pb_.missions().find(mission_id) != missions_comp_pb_.missions().end();
     }
     bool IsComplete(uint32_t mission_id)const
     {
