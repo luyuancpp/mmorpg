@@ -59,7 +59,7 @@ public:
 
     void receive(const ConditionEvent& c);
        
-public:
+private:
     void DelMissionClassify(uint32_t mission_id);
        
     bool UpdateMissionByCompareCondition(const ConditionEvent& c, Mission& mission);
