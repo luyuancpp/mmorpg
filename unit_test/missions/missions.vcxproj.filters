@@ -68,5 +68,8 @@
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\mission_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\constants\mission_constants.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -2,7 +2,7 @@
 
 #include "src/game_config/condition_config.h"
 #include "src/game_config/mission_config.h"
-#include "src/game_logic/comp/mission_comp.h"
+#include "src/game_logic/constants/mission_constants.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/op_code.h"
 #include "src/game_logic/missions/missions_base.h"
