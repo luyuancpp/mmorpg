@@ -31,7 +31,7 @@ MissionsBase::MissionsBase(IMissionConfig* config)
     }
     if (mission_config_->CheckTypeRepeated())
     {
-        registry.emplace<CheckSubType>(*this);
+        registry.emplace<CheckTypeRepeatd>(*this);
     }
 }
 
@@ -94,7 +94,7 @@ uint32_t MissionsBase::Accept(const AcceptMissionP& param)
     }
     auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
     auto mission_type = mission_config_->mission_type(mission_id);
-    bool check_type_repeated =  mission_sub_type > 0 && registry.any_of<CheckSubType>(*this);
+    bool check_type_repeated =  mission_sub_type > 0 && registry.any_of<CheckTypeRepeatd>(*this);
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
@@ -164,7 +164,7 @@ void MissionsBase::receive(const ConditionEvent& c)
         return;
     }
     auto missions = missions_.mutable_missions();
-    TempCompleteList temp_complete;
+    UInt32Set temp_complete;
     auto& classify_missions = it->second;//根据事件触发类型分类的任务
     for (auto lit : classify_missions)
     {
@@ -213,7 +213,7 @@ void MissionsBase::DelMissionClassify(uint32_t mission_id)
         }
         event_missions_classify_[condition_row->condition_type()].erase(mission_id);
     }
-    TypeSubTypeSet::value_type p(mission_config_->mission_type(mission_id), mission_config_->mission_sub_type(mission_id));
+    UInt32PairSet::value_type p(mission_config_->mission_type(mission_id), mission_config_->mission_sub_type(mission_id));
     type_filter_.erase(p);
 }
 
@@ -287,7 +287,7 @@ bool MissionsBase::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mis
     return mission_updated;
 }
 
-void MissionsBase::OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete)
+void MissionsBase::OnMissionComplete(const ConditionEvent& c, const UInt32Set& temp_complete)
 {
     if (temp_complete.empty())
     {

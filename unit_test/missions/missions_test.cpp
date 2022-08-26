@@ -16,7 +16,7 @@ TEST(MissionsBase, AcceptMission)
 {
     uint32_t mid = 1;
     MissionsBase ms;
-    registry.remove<CheckSubType>(ms);
+    registry.remove<CheckTypeRepeatd>(ms);
     AcceptMissionP param{mid};
     auto& data = mission_config::GetSingleton().all();
     std::size_t sz = 0;
