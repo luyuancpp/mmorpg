@@ -19,9 +19,10 @@ message MissionsPbComp
 {
 	enum eMissionType
 	{
-		E_MISSION_PLAYER_NORMAL = 0;//普通任务
-		E_MISSION_PLAYER_ACHIEVMENTS = 1;//成就
-		E_MISSION_PLAYER_DAYLI_ACTIVITIES = 2;//每日活动
+		kPlayerMission = 0;//普通任务
+		kPlayerAchievment = 1;//成就
+		kPlayerDailyActivity = 2;//每日活动
+		kPlayerMisisonSize = 3;//最大值
 	}
 	map<uint32, MissionPbComp> missions = 1;
 	map<uint32, bool> complete_missions = 2;

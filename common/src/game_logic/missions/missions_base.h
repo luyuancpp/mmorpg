@@ -1,12 +1,15 @@
 #pragma once
 
+#include <array>
+
 #include "src/common_type/common_type.h"
-#include "src/game_logic/comp/mission_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/missions/missions_config_template.h"
 
 #include "component_proto/mission_comp.pb.h"
 
+struct NextTimeAcceptMission { UInt32Set next_time_accept_mission_id_; };
+struct CheckTypeRepeatd {};
 
 class AcceptMissionP
 {
@@ -68,6 +71,8 @@ private:
     event_mission_classify_type  event_missions_classify_;//key : classify mision by event type  , value :  misison list
     UInt32PairSet type_filter_;
 };
+
+using PlayerMissionList = std::array<MissionsComp, MissionsPbComp::kPlayerMisisonSize>;
 
 
 
