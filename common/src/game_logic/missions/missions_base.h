@@ -24,12 +24,12 @@ struct ConditionEvent
     uint32_t ammount_{ 1 };
 };
 
-class MissionsComp : public EntityPtr
+class MissionsBase : public EntityPtr
 {
 public:
     using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
-    MissionsComp();
-	MissionsComp(IMissionConfig* config);
+    MissionsBase();
+	MissionsBase(IMissionConfig* config);
 
     const event_mission_classify_type& classify_for_unittest() const { return   event_missions_classify_; }
     const Missions& missions() { return missions_; }
