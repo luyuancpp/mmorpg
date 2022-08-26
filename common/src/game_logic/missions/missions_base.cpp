@@ -100,7 +100,7 @@ uint32_t MissionsBase::Accept(const AcceptMissionP& param)
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
         CheckCondtion(type_filter_.find(p) != type_filter_.end(), kRetMisionTypeRepeated);
     }
-    Mission m;
+    MissionPbComp m;
     m.set_id(mission_id);
     const auto& conditionids = mission_config_->condition_id(mission_id);
     for (int32_t i = 0; i < conditionids.size(); ++i)
@@ -193,7 +193,7 @@ void MissionsBase::receive(const ConditionEvent& c)
         {
             break;
         }
-        mission.set_status(Mission::E_MISSION_COMPLETE);
+        mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
         temp_complete.emplace(mission.id());
         missions->erase(mit);
     }
@@ -217,7 +217,7 @@ void MissionsBase::DelMissionClassify(uint32_t mission_id)
     type_filter_.erase(p);
 }
 
-bool MissionsBase::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mission& mission)
+bool MissionsBase::UpdateMissionByCompareCondition(const ConditionEvent& ev, MissionPbComp& mission)
 {
     if (ev.condtion_ids_.empty())
     {
