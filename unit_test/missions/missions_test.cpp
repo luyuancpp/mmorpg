@@ -12,10 +12,10 @@
 
 #include "comp.pb.h"
 
-TEST(MissionsBase, AcceptMission)
+TEST(MissionsComp, AcceptMission)
 {
     uint32_t mid = 1;
-    MissionsBase ms;
+    MissionsComp ms;
     registry.remove<CheckTypeRepeatd>(ms);
     AcceptMissionP param{mid};
     auto& data = mission_config::GetSingleton().all();
@@ -36,9 +36,9 @@ TEST(MissionsBase, AcceptMission)
        
 }
 
-TEST(MissionsBase, RepeatedMission)
+TEST(MissionsComp, RepeatedMission)
 {
-    MissionsBase ms;
+    MissionsComp ms;
     {
         uint32_t mid = 1;
         AcceptMissionP param{mid};
@@ -54,9 +54,9 @@ TEST(MissionsBase, RepeatedMission)
     }
 }
 
-TEST(MissionsBase, TriggerCondition)
+TEST(MissionsComp, TriggerCondition)
 {
-    MissionsBase ms;
+    MissionsComp ms;
     uint32_t mid = 1;
     //auto mrow = mission_config::GetSingleton().get(mid);
     AcceptMissionP param{mid};
@@ -84,9 +84,9 @@ TEST(MissionsBase, TriggerCondition)
     EXPECT_EQ(0, ms.type_set_size());
 }
 
-TEST(MissionsBase, TypeSize)
+TEST(MissionsComp, TypeSize)
 {
-    MissionsBase ms;
+    MissionsComp ms;
     uint32_t mid = 6;
     //auto mrow = mission_config::GetSingleton().get(mid);
     AcceptMissionP param{ mid };
@@ -140,9 +140,9 @@ TEST(MissionsBase, TypeSize)
     }
 }
 
-TEST(MissionsBase, CompleteAcceptMission)
+TEST(MissionsComp, CompleteAcceptMission)
 {
-    MissionsBase ms;
+    MissionsComp ms;
     uint32_t mid = 4;
     //auto mrow = mission_config::GetSingleton().get(mid);
     AcceptMissionP param{ mid };
@@ -155,9 +155,9 @@ TEST(MissionsBase, CompleteAcceptMission)
     EXPECT_EQ(kRetMissionComplete, ms.Accept(param));
 }
 
-TEST(MissionsBase, OnCompleteMission)
+TEST(MissionsComp, OnCompleteMission)
 {
-    MissionsBase ms;
+    MissionsComp ms;
     uint32_t mid = 7;
 
     AcceptMissionP param{ mid };
@@ -184,9 +184,9 @@ TEST(MissionsBase, OnCompleteMission)
     }
 }
 
-TEST(MissionsBase, AcceptNextMirroMission)
+TEST(MissionsComp, AcceptNextMirroMission)
 {
-    MissionsBase ms;
+    MissionsComp ms;
     uint32_t mid = 7;
     auto& next_mission_set =  registry.emplace<NextTimeAcceptMission>(ms);
     AcceptMissionP param{ mid };
@@ -204,9 +204,9 @@ TEST(MissionsBase, AcceptNextMirroMission)
         != next_mission_set.next_time_accept_mission_id_.end());
 }
 
-TEST(MissionsBase, MissionCondition)
+TEST(MissionsComp, MissionCondition)
 {
-    MissionsBase ms;
+    MissionsComp ms;
 
     uint32_t mid = 14;
     uint32_t mid1 = 15;
@@ -230,9 +230,9 @@ TEST(MissionsBase, MissionCondition)
     EXPECT_TRUE(ms.IsComplete(mid2));
 }
 
-TEST(MissionsBase, ConditionAmount)
+TEST(MissionsComp, ConditionAmount)
 {
-    MissionsBase ms;
+    MissionsComp ms;
 
     uint32_t mid = 13;
 
@@ -250,9 +250,9 @@ TEST(MissionsBase, ConditionAmount)
     EXPECT_TRUE(ms.IsComplete(mid));
 }
 
-TEST(MissionsBase, MissionRewardList)
+TEST(MissionsComp, MissionRewardList)
 {
-    MissionsBase ms;
+    MissionsComp ms;
 
     registry.emplace<MissionRewardPbComp>(ms);
 
@@ -272,9 +272,9 @@ TEST(MissionsBase, MissionRewardList)
     EXPECT_EQ(0, ms.can_reward_size());
 }
 
-TEST(MissionsBase, RemoveMission)
+TEST(MissionsComp, RemoveMission)
 {
-    MissionsBase ms;
+    MissionsComp ms;
     uint32_t mid = 12;
     AcceptMissionP param{ mid };
     EXPECT_EQ(kRetOK, ms.Accept(param));
@@ -294,11 +294,11 @@ TEST(MissionsBase, RemoveMission)
     EXPECT_EQ(0, type_missions.find(E_CONDITION_KILL_MONSTER)->second.size());
 }
 
-TEST(MissionsBase, MissionAutoReward)
+TEST(MissionsComp, MissionAutoReward)
 {
 }
 
-TEST(MissionsBase, MissionTimeOut)
+TEST(MissionsComp, MissionTimeOut)
 {
 
 }

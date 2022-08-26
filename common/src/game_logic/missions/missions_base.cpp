@@ -19,10 +19,10 @@ static std::vector<std::function<bool(int32_t, int32_t)>> f_c{
 	{[](int32_t a, int32_t b) {return a == b; }},
 };
 
-MissionsBase::MissionsBase()
-    : MissionsBase(&MissionConfig::GetSingleton()){}
+MissionsComp::MissionsComp()
+    : MissionsComp(&MissionConfig::GetSingleton()){}
 
-MissionsBase::MissionsBase(IMissionConfig* config)
+MissionsComp::MissionsComp(IMissionConfig* config)
     : mission_config_(config)
 {
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
@@ -35,7 +35,7 @@ MissionsBase::MissionsBase(IMissionConfig* config)
     }
 }
 
-std::size_t MissionsBase::can_reward_size()
+std::size_t MissionsComp::can_reward_size()
 {
     auto try_mission_reward = registry.try_get<MissionRewardPbComp>(*this);
     if (nullptr == try_mission_reward)
@@ -45,7 +45,7 @@ std::size_t MissionsBase::can_reward_size()
     return try_mission_reward->can_reward_mission_id_size();
 }
 
-bool MissionsBase::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
+bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
 {
 	auto p = condition_config::GetSingleton().get(condition_id);
 	if (nullptr == p)
@@ -60,7 +60,7 @@ bool MissionsBase::IsConditionCompleted(uint32_t condition_id, uint32_t progress
     return f_c[operator_id](progress_value, p->amount());
 }
 
-uint32_t MissionsBase::GetReward(uint32_t missin_id)
+uint32_t MissionsComp::GetReward(uint32_t missin_id)
 {
 	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(*this);
 	if (nullptr == try_mission_reward)
@@ -77,14 +77,14 @@ uint32_t MissionsBase::GetReward(uint32_t missin_id)
     return kRetOK;
 }
 
-uint32_t MissionsBase::Accept(const AcceptMissionP& param)
+uint32_t MissionsComp::Accept(const AcceptMissionP& param)
 {
     auto mission_id = param.mission_id_;
-    if (missions_.missions().count(mission_id) > 0)//已经接受过
+    if (missions_comp_pb_.missions().count(mission_id) > 0)//已经接受过
     {
         return kRetMissionIdRepeated;
     }
-    if (missions_.complete_missions().count(mission_id) > 0)//已经完成
+    if (missions_comp_pb_.complete_missions().count(mission_id) > 0)//已经完成
     {
         return kRetMissionComplete;
     }
@@ -115,7 +115,7 @@ uint32_t MissionsBase::Accept(const AcceptMissionP& param)
         m.add_progress(0);
         event_missions_classify_[p->condition_type()].emplace(mission_id);
     }
-    missions_.mutable_missions()->insert({ mission_id, std::move(m) });
+    missions_comp_pb_.mutable_missions()->insert({ mission_id, std::move(m) });
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
@@ -124,35 +124,35 @@ uint32_t MissionsBase::Accept(const AcceptMissionP& param)
     return kRetOK;
 }
 
-uint32_t MissionsBase::AcceptCheck(const AcceptMissionP& param)
+uint32_t MissionsComp::AcceptCheck(const AcceptMissionP& param)
 {
     return kRetOK;
 }
 
-uint32_t MissionsBase::Abandon(uint32_t mission_id)
+uint32_t MissionsComp::Abandon(uint32_t mission_id)
 {
 	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(*this);
 	if (nullptr != try_mission_reward)
 	{
         try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
 	}
-    missions_.mutable_missions()->erase(mission_id);
-    missions_.mutable_complete_missions()->erase(mission_id);
-    missions_.mutable_mission_begin_time()->erase(mission_id);
+    missions_comp_pb_.mutable_missions()->erase(mission_id);
+    missions_comp_pb_.mutable_complete_missions()->erase(mission_id);
+    missions_comp_pb_.mutable_mission_begin_time()->erase(mission_id);
     DelMissionClassify(mission_id);
     return kRetOK;
 }
 
-void MissionsBase::CompleteAllMission()
+void MissionsComp::CompleteAllMission()
 {
-    for (auto& meit : missions_.missions())
+    for (auto& meit : missions_comp_pb_.missions())
     {
-        missions_.mutable_complete_missions()->insert({ meit.first, false });
+        missions_comp_pb_.mutable_complete_missions()->insert({ meit.first, false });
     }
-    missions_.mutable_missions()->clear();
+    missions_comp_pb_.mutable_missions()->clear();
 }
 
-void MissionsBase::receive(const ConditionEvent& c)
+void MissionsComp::receive(const ConditionEvent& c)
 {
     if (c.condtion_ids_.empty())
     {
@@ -163,7 +163,7 @@ void MissionsBase::receive(const ConditionEvent& c)
     {
         return;
     }
-    auto missions = missions_.mutable_missions();
+    auto missions = missions_comp_pb_.mutable_missions();
     UInt32Set temp_complete;
     auto& classify_missions = it->second;//根据事件触发类型分类的任务
     for (auto lit : classify_missions)
@@ -202,7 +202,7 @@ void MissionsBase::receive(const ConditionEvent& c)
     OnMissionComplete(c, temp_complete);
 }
 
-void MissionsBase::DelMissionClassify(uint32_t mission_id)
+void MissionsComp::DelMissionClassify(uint32_t mission_id)
 {
     auto& config_conditions = mission_config_->condition_id(mission_id);
     for (int32_t i = 0; i < config_conditions.size(); ++i)
@@ -223,7 +223,7 @@ void MissionsBase::DelMissionClassify(uint32_t mission_id)
     }
 }
 
-bool MissionsBase::UpdateMissionByCompareCondition(const ConditionEvent& ev, MissionPbComp& mission)
+bool MissionsComp::UpdateMissionByCompareCondition(const ConditionEvent& ev, MissionPbComp& mission)
 {
     if (ev.condtion_ids_.empty())
     {
@@ -293,7 +293,7 @@ bool MissionsBase::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mis
     return mission_updated;
 }
 
-void MissionsBase::OnMissionComplete(const ConditionEvent& c, const UInt32Set& temp_complete)
+void MissionsComp::OnMissionComplete(const ConditionEvent& c, const UInt32Set& temp_complete)
 {
     if (temp_complete.empty())
     {
@@ -302,7 +302,7 @@ void MissionsBase::OnMissionComplete(const ConditionEvent& c, const UInt32Set& t
     auto try_mission_reward = registry.try_get<MissionRewardPbComp>(*this);
     for (auto& mission_id : temp_complete)
     {
-        missions_.mutable_complete_missions()->insert({ mission_id, true });
+        missions_comp_pb_.mutable_complete_missions()->insert({ mission_id, true });
         if (nullptr != try_mission_reward && mission_config_->reward_id(mission_id) > 0)
         {
             try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });
