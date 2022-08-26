@@ -19,10 +19,10 @@ static std::vector<std::function<bool(int32_t, int32_t)>> f_c{
 	{[](int32_t a, int32_t b) {return a == b; }},
 };
 
-MissionsComp::MissionsComp()
-    : MissionsComp(&MissionConfig::GetSingleton()){}
+MissionsBase::MissionsBase()
+    : MissionsBase(&MissionConfig::GetSingleton()){}
 
-MissionsComp::MissionsComp(IMissionConfig* config)
+MissionsBase::MissionsBase(IMissionConfig* config)
     : mission_config_(config)
 {
     for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
@@ -35,7 +35,7 @@ MissionsComp::MissionsComp(IMissionConfig* config)
     }
 }
 
-std::size_t MissionsComp::can_reward_size()
+std::size_t MissionsBase::can_reward_size()
 {
     auto try_mission_reward = registry.try_get<MissionReward>(*this);
     if (nullptr == try_mission_reward)
@@ -45,7 +45,7 @@ std::size_t MissionsComp::can_reward_size()
     return try_mission_reward->can_reward_mission_id_size();
 }
 
-bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
+bool MissionsBase::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
 {
 	auto p = condition_config::GetSingleton().get(condition_id);
 	if (nullptr == p)
@@ -60,7 +60,7 @@ bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress
     return f_c[operator_id](progress_value, p->amount());
 }
 
-uint32_t MissionsComp::GetReward(uint32_t missin_id)
+uint32_t MissionsBase::GetReward(uint32_t missin_id)
 {
 	auto try_mission_reward = registry.try_get<MissionReward>(*this);
 	if (nullptr == try_mission_reward)
@@ -77,7 +77,7 @@ uint32_t MissionsComp::GetReward(uint32_t missin_id)
     return kRetOK;
 }
 
-uint32_t MissionsComp::Accept(const AcceptMissionP& param)
+uint32_t MissionsBase::Accept(const AcceptMissionP& param)
 {
     auto mission_id = param.mission_id_;
     if (missions_.missions().count(mission_id) > 0)
@@ -124,12 +124,12 @@ uint32_t MissionsComp::Accept(const AcceptMissionP& param)
     return kRetOK;
 }
 
-uint32_t MissionsComp::AcceptCheck(const AcceptMissionP& param)
+uint32_t MissionsBase::AcceptCheck(const AcceptMissionP& param)
 {
     return kRetOK;
 }
 
-uint32_t MissionsComp::Abandon(uint32_t mission_id)
+uint32_t MissionsBase::Abandon(uint32_t mission_id)
 {
 	auto try_mission_reward = registry.try_get<MissionReward>(*this);
 	if (nullptr != try_mission_reward)
@@ -143,7 +143,7 @@ uint32_t MissionsComp::Abandon(uint32_t mission_id)
     return kRetOK;
 }
 
-void MissionsComp::CompleteAllMission()
+void MissionsBase::CompleteAllMission()
 {
     for (auto& meit : missions_.missions())
     {
@@ -152,7 +152,7 @@ void MissionsComp::CompleteAllMission()
     missions_.mutable_missions()->clear();
 }
 
-void MissionsComp::receive(const ConditionEvent& c)
+void MissionsBase::receive(const ConditionEvent& c)
 {
     if (c.condtion_ids_.empty())
     {
@@ -201,7 +201,7 @@ void MissionsComp::receive(const ConditionEvent& c)
     OnMissionComplete(c, temp_complete);
 }
 
-void MissionsComp::DelMissionClassify(uint32_t mission_id)
+void MissionsBase::DelMissionClassify(uint32_t mission_id)
 {
     auto& config_conditions = mission_config_->condition_id(mission_id);
     for (int32_t i = 0; i < config_conditions.size(); ++i)
@@ -217,7 +217,7 @@ void MissionsComp::DelMissionClassify(uint32_t mission_id)
     type_filter_.erase(p);
 }
 
-bool MissionsComp::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mission& mission)
+bool MissionsBase::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mission& mission)
 {
     if (ev.condtion_ids_.empty())
     {
@@ -287,7 +287,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mis
     return mission_updated;
 }
 
-void MissionsComp::OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete)
+void MissionsBase::OnMissionComplete(const ConditionEvent& c, const TempCompleteList& temp_complete)
 {
     if (temp_complete.empty())
     {
