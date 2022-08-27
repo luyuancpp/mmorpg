@@ -8,18 +8,10 @@
 
 #include "component_proto/mission_comp.pb.h"
 
-struct NextTimeAcceptMission { UInt32Set next_time_accept_mission_id_; };
 struct CheckTypeRepeatd {};
 
-class AcceptMissionP
-{
-public:
-    AcceptMissionP(uint32_t mid) 
-        : mission_id_(mid){}
-public:
-    uint32_t mission_id_{ 0 };
-};
-    
+class AcceptMissionEvent;
+
 struct ConditionEvent
 {
     uint32_t type_{ 0 };
@@ -31,15 +23,16 @@ class MissionsComp : public EventOwner
 {
 public:
     using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
-    MissionsComp(entt::entity event_owner);
-	MissionsComp(entt::entity event_owner, IMissionConfig* config);
-
+    MissionsComp();
+   
     const event_mission_classify_type& classify_for_unittest() const { return   event_missions_classify_; }
     const MissionsPbComp& missions() { return missions_comp_pb_; }
     std::size_t mission_size()const { return missions_comp_pb_.missions().size(); }
     std::size_t complete_size()const { return missions_comp_pb_.complete_missions_size(); }
     std::size_t type_set_size()const { return type_filter_.size(); }
     std::size_t can_reward_size();
+
+	void Init();
 
     bool IsAccepted(uint32_t mission_id)const
     {
@@ -52,13 +45,12 @@ public:
     bool IsConditionCompleted(uint32_t condition_id, uint32_t progress_value);
 
     uint32_t GetReward(uint32_t mission_id);
-    uint32_t Accept(const AcceptMissionP& param);
-    uint32_t AcceptCheck(const AcceptMissionP& param);
+    uint32_t Accept(const AcceptMissionEvent& param);
     uint32_t Abandon(uint32_t mission_id);
     void CompleteAllMission();
 
     void Receive(const ConditionEvent& c);
-       
+
 private:
     void DelMissionClassify(uint32_t mission_id);
        

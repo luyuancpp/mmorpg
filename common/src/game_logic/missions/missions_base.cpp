@@ -6,9 +6,11 @@
 #include "src/game_config/condition_config.h"
 #include "src/game_logic/constants/mission_constants.h"
 #include "src/game_logic/game_registry.h"
-
-#include "src/util/random.h"
+#include "src/game_logic/missions/mission_system.h"
 #include "src/game_logic/tips_id.h"
+#include "src/util/random.h"
+
+#include "event_proto/mission_event.pb.h"
 
 
 static std::vector<std::function<bool(int32_t, int32_t)>> f_c{
@@ -19,31 +21,37 @@ static std::vector<std::function<bool(int32_t, int32_t)>> f_c{
 	{[](int32_t a, int32_t b) {return a == b; }},
 };
 
-MissionsComp::MissionsComp(entt::entity event_owner)
-    : MissionsComp(event_owner, &MissionConfig::GetSingleton()){}
-
-MissionsComp::MissionsComp(entt::entity event_owner, IMissionConfig* config)
-    : EventOwner(event_owner),
-      mission_config_(config)
+MissionsComp::MissionsComp()
+    : mission_config_(&MissionConfig::GetSingleton())
 {
-    for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
-    {
-         event_missions_classify_.emplace(i, UInt32Set{});
-    }
-    if (mission_config_->CheckTypeRepeated())
-    {
-        registry.emplace<CheckTypeRepeatd>(event_owner_);
-    }
+	
 }
 
 std::size_t MissionsComp::can_reward_size()
 {
-    auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner_);
+    auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
     if (nullptr == try_mission_reward)
     {
         return 0;
     }
     return try_mission_reward->can_reward_mission_id_size();
+}
+
+void MissionsComp::Init()
+{
+	for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
+	{
+		event_missions_classify_.emplace(i, UInt32Set{});
+	}
+	if (mission_config_->CheckTypeRepeated())
+	{
+		registry.emplace<CheckTypeRepeatd>(event_owner());
+	}
+    auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
+    if (nullptr != try_dispatcher)
+    {
+        try_dispatcher->sink<AcceptMissionEvent>().connect<&MissionSystem::Receive1>();
+    }
 }
 
 bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
@@ -63,7 +71,7 @@ bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress
 
 uint32_t MissionsComp::GetReward(uint32_t missin_id)
 {
-	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner_);
+	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr == try_mission_reward)
 	{
 		return kRetMissionPlayerMissionCompNotFound;
@@ -78,32 +86,31 @@ uint32_t MissionsComp::GetReward(uint32_t missin_id)
     return kRetOK;
 }
 
-uint32_t MissionsComp::Accept(const AcceptMissionP& param)
+uint32_t MissionsComp::Accept(const AcceptMissionEvent& param)
 {
-    auto mission_id = param.mission_id_;
-    if (missions_comp_pb_.missions().count(mission_id) > 0)//已经接受过
+    if (missions_comp_pb_.missions().count(param.mission_id()) > 0)//已经接受过
     {
         return kRetMissionIdRepeated;
     }
-    if (missions_comp_pb_.complete_missions().count(mission_id) > 0)//已经完成
+    if (missions_comp_pb_.complete_missions().count(param.mission_id()) > 0)//已经完成
     {
         return kRetMissionComplete;
     }
-    if (!mission_config_->HasKey(mission_id))
+    if (!mission_config_->HasKey(param.mission_id()))
     {
         return kRetTableId;
     }
-    auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
-    auto mission_type = mission_config_->mission_type(mission_id);
-    bool check_type_repeated =  mission_sub_type > 0 && registry.any_of<CheckTypeRepeatd>(event_owner_);
+    auto mission_sub_type = mission_config_->mission_sub_type(param.mission_id());
+    auto mission_type = mission_config_->mission_type(param.mission_id());
+    bool check_type_repeated =  mission_sub_type > 0 && registry.any_of<CheckTypeRepeatd>(event_owner());
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
         CheckCondtion(type_filter_.find(p) != type_filter_.end(), kRetMisionTypeRepeated);
     }
     MissionPbComp m;
-    m.set_id(mission_id);
-    const auto& conditionids = mission_config_->condition_id(mission_id);
+    m.set_id(param.mission_id());
+    const auto& conditionids = mission_config_->condition_id(param.mission_id());
     for (int32_t i = 0; i < conditionids.size(); ++i)
     {
         auto cid = conditionids[i];
@@ -114,9 +121,9 @@ uint32_t MissionsComp::Accept(const AcceptMissionP& param)
             continue;
         }
         m.add_progress(0);
-        event_missions_classify_[p->condition_type()].emplace(mission_id);
+        event_missions_classify_[p->condition_type()].emplace(param.mission_id());
     }
-    missions_comp_pb_.mutable_missions()->insert({ mission_id, std::move(m) });
+    missions_comp_pb_.mutable_missions()->insert({ param.mission_id(), std::move(m) });
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
@@ -125,14 +132,9 @@ uint32_t MissionsComp::Accept(const AcceptMissionP& param)
     return kRetOK;
 }
 
-uint32_t MissionsComp::AcceptCheck(const AcceptMissionP& param)
-{
-    return kRetOK;
-}
-
 uint32_t MissionsComp::Abandon(uint32_t mission_id)
 {
-	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner_);
+	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr != try_mission_reward)
 	{
         try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
@@ -153,13 +155,13 @@ void MissionsComp::CompleteAllMission()
     missions_comp_pb_.mutable_missions()->clear();
 }
 
-void MissionsComp::Receive(const ConditionEvent& c)
+void MissionsComp::Receive(const ConditionEvent& condition_event)
 {
-    if (c.condtion_ids_.empty())
+    if (condition_event.condtion_ids_.empty())
     {
         return;
     }
-    auto it =  event_missions_classify_.find(c.type_);
+    auto it =  event_missions_classify_.find(condition_event.type_);
     if (it ==  event_missions_classify_.end())
     {
         return;
@@ -175,7 +177,7 @@ void MissionsComp::Receive(const ConditionEvent& c)
             continue;
         }
         auto& mission = mit->second;
-        if (!UpdateMissionByCompareCondition(c, mission))
+        if (!UpdateMissionByCompareCondition(condition_event, mission))
         {
             continue;
         }
@@ -200,7 +202,7 @@ void MissionsComp::Receive(const ConditionEvent& c)
         missions->erase(mit);
     }
 
-    OnMissionComplete(c, temp_complete);
+    OnMissionComplete(condition_event, temp_complete);
 }
 
 void MissionsComp::DelMissionClassify(uint32_t mission_id)
@@ -216,7 +218,7 @@ void MissionsComp::DelMissionClassify(uint32_t mission_id)
         event_missions_classify_[condition_row->condition_type()].erase(mission_id);
     }
     auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
-    bool check_type_repeated = mission_sub_type > 0 && registry.any_of<CheckTypeRepeatd>(event_owner_);
+    bool check_type_repeated = mission_sub_type > 0 && registry.any_of<CheckTypeRepeatd>(event_owner());
     if (check_type_repeated)
     {
 		UInt32PairSet::value_type p(mission_config_->mission_type(mission_id), mission_sub_type);
@@ -300,7 +302,8 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const UInt32Set& t
     {
         return;
     }
-    auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner_);
+    auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
+    auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
     for (auto& mission_id : temp_complete)
     {
         missions_comp_pb_.mutable_complete_missions()->insert({ mission_id, true });
@@ -310,31 +313,28 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const UInt32Set& t
         }
         DelMissionClassify(mission_id);
 
+       
         //如果是活动不用走
         // todo event 
         auto& next_missions = mission_config_->next_mission_id(mission_id);
-        auto next_time_accpet = registry.try_get<NextTimeAcceptMission>(event_owner_);
-        if (nullptr == next_time_accpet)
+        for (int32_t i = 0; i < next_missions.size(); ++i)
         {
-            for (int32_t i = 0; i < next_missions.size(); ++i)
-            {
-                auto next_mission = next_missions.Get(i);
-                AcceptMissionP param{ next_mission};
-                Accept(param);
-            }
-        }
-        else
-        {
-            for (int32_t i = 0; i < next_missions.size(); ++i)
-            {
-                next_time_accpet->next_time_accept_mission_id_.emplace(next_missions.Get(i));
-            }
+			if (nullptr == try_dispatcher)
+			{
+                continue;
+			}
+			AcceptMissionEvent accept_mission_event;
+			accept_mission_event.set_entity(entt::to_integral(event_owner()));
+			accept_mission_event.set_mission_id(next_missions.Get(i));
+			try_dispatcher->enqueue<AcceptMissionEvent>();
         }
     }
     
+    MissionConditionEvent mission_condition_event;
     ConditionEvent ce{ E_CONDITION_COMPLELTE_MISSION, {}, 1 };
     for (auto& it : temp_complete)
     {
+        mission_condition_event.mutable_condtion_ids()->Add(it);
         ce.condtion_ids_ = { it };
         Receive(ce);
     }
