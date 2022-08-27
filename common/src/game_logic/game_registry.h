@@ -1,6 +1,7 @@
 #pragma once
 
 #include "entt/src/entt/entity/registry.hpp"
+#include "entt/src/entt/signal/dispatcher.hpp"
 
 extern thread_local entt::registry registry;
 entt::entity& error_entity();
@@ -22,10 +23,12 @@ private:
 class EventOwner
 {
 public:
-	EventOwner(entt::entity event_owner) : event_owner_(event_owner) {}
 	inline  operator entt::entity() { return event_owner_; }
-protected:
-	const entt::entity event_owner_{ entt::null };
+	inline operator entt::id_type() { return entt::to_integral(event_owner_); }
+	void set_event_owner(entt::entity event_owner) { event_owner_ = event_owner; }
+	inline entt::entity event_owner() const { return event_owner_; };
+private:
+	entt::entity event_owner_{ entt::null };
 };
 
 namespace entt
