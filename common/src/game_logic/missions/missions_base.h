@@ -27,12 +27,12 @@ struct ConditionEvent
     uint32_t ammount_{ 1 };
 };
 
-class MissionsComp : public EntityPtr
+class MissionsComp : public EventOwner
 {
 public:
     using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
-    MissionsComp();
-	MissionsComp(IMissionConfig* config);
+    MissionsComp(entt::entity event_owner);
+	MissionsComp(entt::entity event_owner, IMissionConfig* config);
 
     const event_mission_classify_type& classify_for_unittest() const { return   event_missions_classify_; }
     const MissionsPbComp& missions() { return missions_comp_pb_; }
@@ -65,11 +65,12 @@ private:
     bool UpdateMissionByCompareCondition(const ConditionEvent& c, MissionPbComp& mission);
         
     void OnMissionComplete(const ConditionEvent& c, const UInt32Set& temp_complete);
-        
+
     IMissionConfig* mission_config_{ nullptr };
     MissionsPbComp missions_comp_pb_;
     event_mission_classify_type  event_missions_classify_;//key : classify mision by event type  , value :  misison list
     UInt32PairSet type_filter_;
+    
 };
 
 using PlayerMissionList = std::array<MissionsComp, MissionsPbComp::kPlayerMisisonSize>;
