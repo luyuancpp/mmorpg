@@ -19,6 +19,15 @@ private:
 	std::shared_ptr<entt::entity> entity_;
 };
 
+class EventOwner
+{
+public:
+	EventOwner(entt::entity event_owner) : event_owner_(event_owner) {}
+	inline  operator entt::entity() { return event_owner_; }
+protected:
+	const entt::entity event_owner_{ entt::null };
+};
+
 namespace entt
 {
 	[[nodiscard]] static constexpr entt::entity to_entity(uint64_t value) ENTT_NOEXCEPT {
