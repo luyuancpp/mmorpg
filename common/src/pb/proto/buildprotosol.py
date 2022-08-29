@@ -25,6 +25,10 @@ def tocppinttype(typestring):
         typestring = typestring + '_t'
         return typestring,True
     return typestring,False
+def iscpptype(typestring):
+    if typestring == 'uint32' or typestring == 'int32' or typestring == 'uint64' or typestring == 'int64' or typestring == 'bool':
+       return True
+    return False
 
 def genluasol(filename, srcdir, protodir):
     global funsname
@@ -76,6 +80,8 @@ def genluasol(filename, srcdir, protodir):
                 repeatedfiled = True
                 keytype = ''
                 valuetype = ''
+                keyinttype = False
+                valueinttype = False
                 if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
                     templatename = ''
                     repeatedfiled = False
@@ -88,9 +94,12 @@ def genluasol(filename, srcdir, protodir):
                 elif typename.find(maptype) >= 0:  
                     typename = maptype
                     keytype = s[0].strip('\tmap<').split(',')[0]
-                    keytype , inttype = tocppinttype(keytype)
-                    valuetype = s[1].strip('\t').strip(' ').split('>')[0]
-                    valuetype, inttype = tocppinttype(valuetype)
+                    keytype , keyinttype = tocppinttype(keytype)
+                    vt = s[1].strip('\t').strip(' ').split('>')[0]
+                    valuetype = vt
+                    valuetype, valueinttype = tocppinttype(valuetype)
+                    if iscpptype(vt) == False:
+                        valuetype = valuetype + '&'
                     fildename = s[2]
                 else:
                     newstr += '"' + fildename + '",\n'
@@ -120,9 +129,11 @@ def genluasol(filename, srcdir, protodir):
                         newstr += '"count_' + fildename + '",\n'
                         newstr += '[](' + classname + '& pb, ' + keytype + ' key) ->decltype(auto){ return pb.' + fildename +'().count(key);},\n'
                         newstr += '"insert_' + fildename + '",\n'
-                        newstr += '[](' + classname + '& pb, ' + keytype + ' key, ' + valuetype + '& value) ->decltype(auto){ return pb.mutable_' + fildename +'()->emplace(key, value);},\n'
+                        
+                        newstr += '[](' + classname + '& pb, ' + keytype + ' key, ' + valuetype + ' value) ->decltype(auto){ return pb.mutable_' + fildename +'()->emplace(key, value).second;},\n'
 
-                       
+                        newstr += '"' + fildename + '",\n'
+                        newstr += '[](' + classname + '& pb, ' + keytype + ' key) ->decltype(auto){ return pb.mutable_' + fildename +'()->find(key)->second;},\n'
 
                     else:
                         typename, inttype = tocppinttype(typename)
