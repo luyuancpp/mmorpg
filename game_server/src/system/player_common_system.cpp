@@ -37,7 +37,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
     // on loaded db
     entt::entity player = ret.first->second;
 	registry.emplace<Player>(player);
-    registry.emplace<PlayerId>(player).set_player_id(player_id);
+    registry.emplace<Guid>(player, player_id);
     registry.emplace<Vector3>(player, message.pos());
    	
     // on load db complete
