@@ -202,7 +202,7 @@ void MissionsComp::Receive(const ConditionEvent& condition_event)
         missions->erase(mit);
     }
 
-    OnMissionComplete(condition_event, temp_complete);
+    OnMissionComplete(temp_complete);
 }
 
 void MissionsComp::DelMissionClassify(uint32_t mission_id)
@@ -296,7 +296,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mis
     return mission_updated;
 }
 
-void MissionsComp::OnMissionComplete(const ConditionEvent& c, const UInt32Set& temp_complete)
+void MissionsComp::OnMissionComplete(const UInt32Set& temp_complete)
 {
     if (temp_complete.empty())
     {
@@ -326,7 +326,7 @@ void MissionsComp::OnMissionComplete(const ConditionEvent& c, const UInt32Set& t
 			AcceptMissionEvent accept_mission_event;
 			accept_mission_event.set_entity(entt::to_integral(event_owner()));
 			accept_mission_event.set_mission_id(next_missions.Get(i));
-			try_dispatcher->enqueue<AcceptMissionEvent>();
+			try_dispatcher->enqueue(accept_mission_event);
         }
     }
     
