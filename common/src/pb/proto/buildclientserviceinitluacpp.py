@@ -8,7 +8,7 @@ clientservicedir = '../../../../client/src/service/logic/'
 includedir = 'script/client/service/'
 md5dir = './md5/'
 cppfilename = 'service_lua.cpp'
-writedfilename = md5dir + cppfilename
+md5dirfilename = md5dir + cppfilename
 tabstr = '	'
 genfile = []
 
@@ -45,22 +45,22 @@ def gencpp():
 		newstr += tabstr + tabstr +	'}\n'
 		newstr += tabstr + '}\n'
 	newstr += '\n}\n'
-	with open(writedfilename, 'w', encoding='utf-8')as file:
+	with open(md5dirfilename, 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
 def md5copy(fullfilename):
-    filenamemd5 = writedfilename + '.md5'
+    filenamemd5 = md5dirfilename + '.md5'
     error = None
     emptymd5 = False
     if  not os.path.exists(filenamemd5):
         emptymd5 = True
     else:
-        error = md5tool.check_against_md5_file(writedfilename, filenamemd5) 
+        error = md5tool.check_against_md5_file(md5dirfilename, filenamemd5) 
     if error == None and os.path.exists(fullfilename) and emptymd5 == False:
         return
-    print("copy %s ---> %s" % (writedfilename, fullfilename))
-    md5tool.generate_md5_file_for(writedfilename, filenamemd5)
-    shutil.copy(writedfilename, fullfilename)
+    print("copy %s ---> %s" % (md5dirfilename, fullfilename))
+    md5tool.generate_md5_file_for(md5dirfilename, filenamemd5)
+    shutil.copy(md5dirfilename, fullfilename)
 
 inputfile()
 gencpp()
