@@ -17,3 +17,7 @@ void MissionSystem::Receive2(const MissionConditionEvent& event_obj)
 	registry.get<MissionsComp>(entity).Receive(event_obj);
 }
 
+void MissionSystem::Receive3(const OnAcceptedMissionEvent& event_obj)
+{
+
+}

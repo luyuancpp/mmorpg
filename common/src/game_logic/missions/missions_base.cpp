@@ -51,6 +51,7 @@ void MissionsComp::Init()
     {
         try_dispatcher->sink<AcceptMissionEvent>().connect<&MissionSystem::Receive1>();
         try_dispatcher->sink<MissionConditionEvent>().connect<&MissionSystem::Receive2>();
+        try_dispatcher->sink<OnAcceptedMissionEvent>().connect<&MissionSystem::Receive3>();
     }
 }
 
@@ -140,6 +141,16 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
         type_filter_.emplace(p);
+    }
+
+    //todo 
+    auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
+    if (nullptr != try_dispatcher)
+    {
+        OnAcceptedMissionEvent on_accepted_mission_event;
+        on_accepted_mission_event.set_entity(entt::to_integral(event_owner()));
+        on_accepted_mission_event.set_mission_id(accept_event.mission_id());
+		try_dispatcher->enqueue(on_accepted_mission_event);
     }
     return kRetOK;
 }
@@ -309,15 +320,15 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
     return mission_updated;
 }
 
-void MissionsComp::OnMissionComplete(const UInt32Set& temp_complete)
+void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_time)
 {
-    if (temp_complete.empty())
+    if (completed_missions_this_time.empty())
     {
         return;
     }
     auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
     auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
-    for (auto& mission_id : temp_complete)
+    for (auto& mission_id : completed_missions_this_time)
     {
         missions_comp_pb_.mutable_complete_missions()->insert({ mission_id, true });
         if (nullptr != try_mission_reward && mission_config_->reward_id(mission_id) > 0)
@@ -341,15 +352,24 @@ void MissionsComp::OnMissionComplete(const UInt32Set& temp_complete)
 			try_dispatcher->enqueue(accept_mission_event);
         }
     }
-    
-    MissionConditionEvent mission_condition_event;
-    mission_condition_event.set_entity(entt::to_integral(event_owner()));
-    mission_condition_event.set_type(E_CONDITION_COMPLELTE_MISSION);
-    mission_condition_event.set_amount(1);
-    for (auto& it : temp_complete)
-    {
-        mission_condition_event.clear_condtion_ids();
-        mission_condition_event.mutable_condtion_ids()->Add(it);
-        try_dispatcher->enqueue(mission_condition_event);
-    }
+    TriggerMissionCompleteCondition(completed_missions_this_time);
+}
+
+void MissionsComp::TriggerMissionCompleteCondition(const UInt32Set& temp_complete)
+{
+    auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
+	if (nullptr == try_dispatcher)
+	{
+        return; 	
+	}
+	MissionConditionEvent mission_condition_event;
+	mission_condition_event.set_entity(entt::to_integral(event_owner()));
+	mission_condition_event.set_type(E_CONDITION_COMPLELTE_MISSION);
+	mission_condition_event.set_amount(1);
+	for (auto& it : temp_complete)
+	{
+		mission_condition_event.clear_condtion_ids();
+		mission_condition_event.mutable_condtion_ids()->Add(it);
+		try_dispatcher->enqueue(mission_condition_event);
+	}
 }
