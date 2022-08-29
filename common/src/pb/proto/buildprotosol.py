@@ -81,7 +81,6 @@ def genluasol(filename, srcdir, protodir):
                 keytype = ''
                 valuetype = ''
                 keyinttype = False
-                valueinttype = False
                 if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
                     templatename = ''
                     repeatedfiled = False
@@ -95,11 +94,8 @@ def genluasol(filename, srcdir, protodir):
                     typename = maptype
                     keytype = s[0].strip('\tmap<').split(',')[0]
                     keytype , keyinttype = tocppinttype(keytype)
-                    vt = s[1].strip('\t').strip(' ').split('>')[0]
-                    valuetype = vt
-                    valuetype, valueinttype = tocppinttype(valuetype)
-                    if iscpptype(vt) == False:
-                        valuetype = valuetype + '&'
+                    valuetype = s[1].strip('\t').strip(' ').split('>')[0]
+                   
                     fildename = s[2]
                 else:
                     newstr += '"' + fildename + '",\n'
@@ -129,11 +125,23 @@ def genluasol(filename, srcdir, protodir):
                         newstr += '"count_' + fildename + '",\n'
                         newstr += '[](' + classname + '& pb, ' + keytype + ' key) ->decltype(auto){ return pb.' + fildename +'().count(key);},\n'
                         newstr += '"insert_' + fildename + '",\n'
-                        
-                        newstr += '[](' + classname + '& pb, ' + keytype + ' key, ' + valuetype + ' value) ->decltype(auto){ return pb.mutable_' + fildename +'()->emplace(key, value).second;},\n'
+                        valuetyperef = valuetype
+                        iscpptypev = iscpptype(valuetype)
+                        if  iscpptypev == False:
+                            valuetyperef = valuetype + '&'
+                        else:
+                            valuetyperef, valueinttype = tocppinttype(valuetype)
+                        newstr += '[](' + classname + '& pb, ' + keytype + ' key, ' + valuetyperef + ' value) ->decltype(auto){ return pb.mutable_' + fildename +'()->emplace(key, value).second;},\n'
 
                         newstr += '"' + fildename + '",\n'
-                        newstr += '[](' + classname + '& pb, ' + keytype + ' key) ->decltype(auto){ return pb.mutable_' + fildename +'()->find(key)->second;},\n'
+                        newstr += '[](' + classname + '& pb, ' + keytype + ' key) ->decltype(auto){\n'
+                        newstr += ' auto it =  pb.mutable_' + fildename +'()->find(key);\n'
+                        if  iscpptypev == False:
+                            newstr += ' if (it == pb.mutable_' + fildename +'()->end()){ static ' + valuetype + ' instance; return instance; }\n'
+                        else:
+                            vt,_ = tocppinttype(valuetype)
+                            newstr += ' if (it == pb.mutable_' + fildename +'()->end()){ return ' + vt + '(); }\n'
+                        newstr += ' return it->second;},\n'
 
                     else:
                         typename, inttype = tocppinttype(typename)
