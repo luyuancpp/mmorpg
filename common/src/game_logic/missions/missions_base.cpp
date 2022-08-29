@@ -106,6 +106,7 @@ uint32_t MissionsComp::GetReward(uint32_t missin_id)
 
 uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 {
+    //check 
     RET_CHECK_RET(IsDoNotAccepted(accept_event.mission_id()));//已经接受过
     RET_CHECK_RET(IsDoNotCompleted(accept_event.mission_id()));//已经完成
     CheckCondtion(!mission_config_->HasKey(accept_event.mission_id()), kRetTableId);
@@ -145,6 +146,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 
 uint32_t MissionsComp::Abandon(uint32_t mission_id)
 {
+    RET_CHECK_RET(IsDoNotCompleted(mission_id));//已经完成
 	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr != try_mission_reward)
 	{
