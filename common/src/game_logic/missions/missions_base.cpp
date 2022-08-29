@@ -13,7 +13,7 @@
 #include "event_proto/mission_event.pb.h"
 
 
-static std::vector<std::function<bool(int32_t, int32_t)>> f_c{
+static std::vector<std::function<bool(int32_t, int32_t)>> function_compare{
 	{[](int32_t a, int32_t b) {return a >= b; }},
 	{[](int32_t a, int32_t b) {return a > b; }},
 	{[](int32_t a, int32_t b) {return a <= b; }},
@@ -24,7 +24,6 @@ static std::vector<std::function<bool(int32_t, int32_t)>> f_c{
 MissionsComp::MissionsComp()
     : mission_config_(&MissionConfig::GetSingleton())
 {
-	
 }
 
 std::size_t MissionsComp::can_reward_size()
@@ -63,11 +62,29 @@ bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress
         return false;
 	}
 	std::size_t operator_id = std::size_t(p->operation());
-	if (!(operator_id >= 0 && operator_id < f_c.size()))
+	if (!(operator_id >= 0 && operator_id < function_compare.size()))
 	{
 		operator_id = 0;
 	}
-    return f_c[operator_id](progress_value, p->amount());
+    return function_compare[operator_id](progress_value, p->amount());
+}
+
+uint32_t MissionsComp::IsDoNotAccepted(uint32_t mission_id)const
+{
+	if (missions_comp_pb_.missions().count(mission_id) > 0)//已经接受过
+	{
+		return kRetMissionIdRepeated;
+	}
+    return kRetOK;
+}
+
+uint32_t MissionsComp::IsDoNotCompleted(uint32_t mission_id)const
+{
+	if (missions_comp_pb_.complete_missions().count(mission_id) > 0)//已经完成
+	{
+		return kRetMissionComplete;
+	}
+    return kRetOK;
 }
 
 uint32_t MissionsComp::GetReward(uint32_t missin_id)
@@ -87,31 +104,23 @@ uint32_t MissionsComp::GetReward(uint32_t missin_id)
     return kRetOK;
 }
 
-uint32_t MissionsComp::Accept(const AcceptMissionEvent& param)
+uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 {
-    if (missions_comp_pb_.missions().count(param.mission_id()) > 0)//已经接受过
-    {
-        return kRetMissionIdRepeated;
-    }
-    if (missions_comp_pb_.complete_missions().count(param.mission_id()) > 0)//已经完成
-    {
-        return kRetMissionComplete;
-    }
-    if (!mission_config_->HasKey(param.mission_id()))
-    {
-        return kRetTableId;
-    }
-    auto mission_sub_type = mission_config_->mission_sub_type(param.mission_id());
-    auto mission_type = mission_config_->mission_type(param.mission_id());
+    RET_CHECK_RET(IsDoNotAccepted(accept_event.mission_id()));//已经接受过
+    RET_CHECK_RET(IsDoNotCompleted(accept_event.mission_id()));//已经完成
+    CheckCondtion(!mission_config_->HasKey(accept_event.mission_id()), kRetTableId);
+
+    auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
+    auto mission_type = mission_config_->mission_type(accept_event.mission_id());
     bool check_type_repeated =  mission_sub_type > 0 && registry.any_of<CheckTypeRepeatd>(event_owner());
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
         CheckCondtion(type_filter_.find(p) != type_filter_.end(), kRetMisionTypeRepeated);
     }
-    MissionPbComp m;
-    m.set_id(param.mission_id());
-    const auto& conditionids = mission_config_->condition_id(param.mission_id());
+    MissionPbComp misison;
+    misison.set_id(accept_event.mission_id());
+    const auto& conditionids = mission_config_->condition_id(accept_event.mission_id());
     for (int32_t i = 0; i < conditionids.size(); ++i)
     {
         auto cid = conditionids[i];
@@ -121,10 +130,10 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& param)
             LOG_ERROR << "has not condtion" << cid;
             continue;
         }
-        m.add_progress(0);
-        event_missions_classify_[p->condition_type()].emplace(param.mission_id());
+        misison.add_progress(0);
+        event_missions_classify_[p->condition_type()].emplace(accept_event.mission_id());
     }
-    missions_comp_pb_.mutable_missions()->insert({ param.mission_id(), std::move(m) });
+    missions_comp_pb_.mutable_missions()->insert({ accept_event.mission_id(), std::move(misison) });
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);

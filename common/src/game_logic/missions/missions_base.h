@@ -37,6 +37,8 @@ public:
         return missions_comp_pb_.complete_missions().find(mission_id) != missions_comp_pb_.complete_missions().end();
     }
     bool IsConditionCompleted(uint32_t condition_id, uint32_t progress_value);
+    uint32_t IsDoNotAccepted(uint32_t mission_id)const;
+    uint32_t IsDoNotCompleted(uint32_t mission_id)const;
 
     uint32_t GetReward(uint32_t mission_id);
     uint32_t Accept(const AcceptMissionEvent& param);
@@ -52,7 +54,7 @@ private:
         
     void OnMissionComplete(const UInt32Set& temp_complete);
 
-    IMissionConfig* mission_config_{ nullptr };
+    const IMissionConfig* mission_config_{ nullptr };
     MissionsPbComp missions_comp_pb_;
     event_mission_classify_type  event_missions_classify_;//key : classify mision by event type  , value :  misison list
     UInt32PairSet type_filter_;
