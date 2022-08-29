@@ -8,23 +8,8 @@ import protofilearray
 from multiprocessing import cpu_count
 
 local = threading.local()
-
-local.rpcarry = []
-local.hfilename = ''
-
-threads = []
-local.pkg = ''
-cpkg = 'package'
-yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
-yourcodeend = '///<<< END WRITING YOUR CODE'
-rpcbegin = '///<<<rpc begin'
-rpcend = '///<<<rpc end'
 tabstr = '    '
-cpprpcpart = 2
-cppmaxpart = 4
-controller = '(EntityPtr& entity'
 servicedir = './md5/'
-protodir = 'logic_proto/'
 playerservicedir = '../../../../gateway_server/src/service'
 
 if not os.path.exists(servicedir):
