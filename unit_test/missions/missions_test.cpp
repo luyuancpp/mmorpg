@@ -106,6 +106,8 @@ TEST(MissionsComp, TriggerCondition)
 TEST(MissionsComp, TypeSize)
 {
     auto& ms = *CreateMission();
+	auto& dispatcher = registry.get<entt::dispatcher>(ms);
+	dispatcher.update<AcceptMissionEvent>();
     uint32_t mid = 6;
     //auto mrow = mission_config::GetSingleton().get(mid);
 	AcceptMissionEvent accept_mission_event;
@@ -155,7 +157,7 @@ TEST(MissionsComp, TypeSize)
 	ce.add_condtion_ids(1);
     ce.add_condtion_ids(2);
     ms.Receive(ce);
-    
+    dispatcher.update<MissionConditionEvent>();
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(1, ms.complete_size());
     EXPECT_FALSE(ms.IsAccepted(mid));
@@ -247,6 +249,8 @@ TEST(MissionsComp, AcceptNextMirroMission)
 TEST(MissionsComp, MissionCondition)
 {
     auto& ms = *CreateMission();
+	auto& dispatcher = registry.get<entt::dispatcher>(ms);
+	
     uint32_t mid = 14;
     uint32_t mid1 = 15;
     uint32_t mid2 = 16;
@@ -268,6 +272,8 @@ TEST(MissionsComp, MissionCondition)
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
     ms.Receive(ce);
+    dispatcher.update<AcceptMissionEvent>();
+    dispatcher.update<MissionConditionEvent>();
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
     EXPECT_FALSE(ms.IsAccepted(mid1));

@@ -11,7 +11,6 @@
 struct CheckTypeRepeatd {};
 
 class AcceptMissionEvent;
-
 class MissionConditionEvent;
 
 class MissionsComp : public EventOwner

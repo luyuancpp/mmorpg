@@ -51,6 +51,7 @@ void MissionsComp::Init()
     if (nullptr != try_dispatcher)
     {
         try_dispatcher->sink<AcceptMissionEvent>().connect<&MissionSystem::Receive1>();
+        try_dispatcher->sink<MissionConditionEvent>().connect<&MissionSystem::Receive2>();
     }
 }
 
@@ -313,9 +314,7 @@ void MissionsComp::OnMissionComplete(const UInt32Set& temp_complete)
         }
         DelMissionClassify(mission_id);
 
-       
         //如果是活动不用走
-        // todo event 
 		AcceptMissionEvent accept_mission_event;
 		accept_mission_event.set_entity(entt::to_integral(event_owner()));
         auto& next_missions = mission_config_->next_mission_id(mission_id);
@@ -338,6 +337,6 @@ void MissionsComp::OnMissionComplete(const UInt32Set& temp_complete)
     {
         mission_condition_event.clear_condtion_ids();
         mission_condition_event.mutable_condtion_ids()->Add(it);
-        Receive(mission_condition_event);
+        try_dispatcher->enqueue(mission_condition_event);
     }
 }

@@ -5,15 +5,15 @@
 
 #include "event_proto/mission_event.pb.h"
 
-void MissionSystem::Receive1(const AcceptMissionEvent& ev)
+void MissionSystem::Receive1(const AcceptMissionEvent& event_obj)
 {
-	auto entity = entt::to_entity(ev.entity());
-	registry.get<MissionsComp>(entity).Accept(ev);
+	auto entity = entt::to_entity(event_obj.entity());
+	registry.get<MissionsComp>(entity).Accept(event_obj);
 }
 
-void MissionSystem::Receive2(const MissionConditionEvent& ev)
+void MissionSystem::Receive2(const MissionConditionEvent& event_obj)
 {
-	//auto entity = entt::to_entity(ev.entity());
-	//registry.get<MissionsComp>(entity).Receive(ev);
+	auto entity = entt::to_entity(event_obj.entity());
+	registry.get<MissionsComp>(entity).Receive(event_obj);
 }
 
