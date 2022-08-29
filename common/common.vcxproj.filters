@@ -87,6 +87,7 @@
     <ClCompile Include="src\pb\pbc\component_proto\team_comp.pb.cc" />
     <ClCompile Include="src\pb\pb2sol2\team_comp_sol2.cpp" />
     <ClCompile Include="src\game_logic\player\player_list.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\mission_comp_sol2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_config\all_config.h" />
@@ -99,7 +100,6 @@
     <ClInclude Include="src\game_config\scene_config.h" />
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
     <ClInclude Include="src\game_logic\comp\scene_comp.h" />
-    <ClInclude Include="src\game_logic\comp\mission_comp.h" />
     <ClInclude Include="src\game_logic\login_state\login_state.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_concrete.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_machine.h" />
@@ -171,9 +171,6 @@
     <ClInclude Include="src\game_logic\scene\servernode_system.h" />
     <ClInclude Include="src\game_logic\scene\scene.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_rg.pb.h" />
-    <ClInclude Include="src\game_logic\comp\player.hpp" />
-    <ClInclude Include="src\game_logic\comp\player_comp.hpp" />
-    <ClInclude Include="src\game_logic\comp\server_list.hpp" />
     <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\pb\pbc\component_proto\scene_comp.pb.h" />

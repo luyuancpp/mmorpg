@@ -161,6 +161,7 @@
     <ClCompile Include="src\pb\pb2sol2\gs_node_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\item_base_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\item_comp_sol2.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\mission_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\node_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\player_async_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\player_comp_sol2.cpp" />
