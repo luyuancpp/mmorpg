@@ -13,11 +13,18 @@ setname = '::set_'
 mutablename = '::mutable_'
 genprotodir = ['./logic_proto/', './component_proto/']
 enum = {}
+maptype = 'map'
 
 if not os.path.exists(srcdir):
     os.makedirs(srcdir)
 if not os.path.exists(destdir):
     os.makedirs(destdir)    
+
+def tocppinttype(typestring):
+    if typestring == 'uint32' or typestring == 'int32' or typestring == 'uint64' or typestring == 'int64' :
+        typestring = typestring + '_t'
+        return typestring,True
+    return typestring,False
 
 def genluasol(filename, srcdir, protodir):
     global funsname
@@ -67,6 +74,8 @@ def genluasol(filename, srcdir, protodir):
                 templatename = ''
                 sn = setname
                 repeatedfiled = True
+                keytype = ''
+                valuetype = ''
                 if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
                     templatename = ''
                     repeatedfiled = False
@@ -75,6 +84,13 @@ def genluasol(filename, srcdir, protodir):
                     repeatedfiled = False
                 elif typename == 'repeated':  
                     typename = s[1]
+                    fildename = s[2]
+                elif typename.find(maptype) >= 0:  
+                    typename = maptype
+                    keytype = s[0].strip('\tmap<').split(',')[0]
+                    keytype , inttype = tocppinttype(keytype)
+                    valuetype = s[1].strip('\t').strip(' ').split('>')[0]
+                    valuetype, inttype = tocppinttype(valuetype)
                     fildename = s[2]
                 else:
                     newstr += '"' + fildename + '",\n'
@@ -100,11 +116,17 @@ def genluasol(filename, srcdir, protodir):
                         #set string by index
                         newstr += '"set_' + fildename + '",\n'
                         newstr += '[](' + classname + '& pb, int index, const std::string& value) ->decltype(auto){ return pb.set_' + fildename +'(index, value);},\n'
+                    elif typename == maptype: 
+                        newstr += '"count_' + fildename + '",\n'
+                        newstr += '[](' + classname + '& pb, ' + keytype + ' key) ->decltype(auto){ return pb.' + fildename +'().count(key);},\n'
+                        newstr += '"insert_' + fildename + '",\n'
+                        newstr += '[](' + classname + '& pb, ' + keytype + ' key, ' + valuetype + '& value) ->decltype(auto){ return pb.mutable_' + fildename +'()->emplace(key, value);},\n'
 
-                        
+                       
+
                     else:
-                        if typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
-                            typename = typename + '_t'
+                        typename, inttype = tocppinttype(typename)
+                        if inttype == True :
                             newstr += '"add_' + fildename + '",\n'
                             newstr += '&' + classname + '::add_' + fildename + ',\n'
 
