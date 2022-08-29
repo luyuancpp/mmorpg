@@ -10,13 +10,7 @@ from multiprocessing import cpu_count
 local = threading.local()
 
 local.rpcarry = []
-local.servicenames = []
-local.playerservice = ''
-local.service = ''
 local.hfilename = ''
-local.playerservice = ''
-local.playerservicearray = []
-local.fileservice = []
 
 threads = []
 local.pkg = ''
