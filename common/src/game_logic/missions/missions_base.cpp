@@ -130,6 +130,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
             LOG_ERROR << "has not condtion" << cid;
             continue;
         }
+        //表的条件怎么改都无所谓,只有条件和表对应上就加进度
         misison.add_progress(0);
         event_missions_classify_[p->condition_type()].emplace(accept_event.mission_id());
     }
