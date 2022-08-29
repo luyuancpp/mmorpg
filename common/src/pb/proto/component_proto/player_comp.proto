@@ -5,11 +5,6 @@ message PlayerSceneInfoComp
 	uint64 scene_id = 1;
 }
 
-message PlayerId 
-{
-    uint64 player_id = 1;
-};
-
 //普通登录
 message NormalLogin
 {
