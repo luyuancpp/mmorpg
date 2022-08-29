@@ -43,10 +43,9 @@ public:
 
 private:
     void DelMissionClassify(uint32_t mission_id);
-       
     bool UpdateMissionByCompareCondition(const MissionConditionEvent& c, MissionPbComp& mission);
-        
-    void OnMissionComplete(const UInt32Set& temp_complete);
+    void OnMissionComplete(const UInt32Set& completed_missions);
+    void TriggerMissionCompleteCondition(const UInt32Set& temp_complete);
 
     const IMissionConfig* mission_config_{ nullptr };
     MissionsPbComp missions_comp_pb_;
