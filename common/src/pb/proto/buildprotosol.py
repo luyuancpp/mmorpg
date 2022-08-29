@@ -22,10 +22,11 @@ if not os.path.exists(destdir):
 def genluasol(filename, srcdir, protodir):
     global funsname
     msgcode = 0
-    pbnamespace = filename.replace('.proto', '')
+    enumcode = 0
+    pbheadname = filename.replace('.proto', '')
     funcname = 'void Pb2sol2' + filename.replace('.proto', '').replace('.', '_').replace('/', '_') + '()'
     funsname.append(funcname)
-    newstr = '#include "' + pbnamespace + '.pb.h"\n'
+    newstr = '#include "' + pbheadname + '.pb.h"\n'
     newstr += '#include <sol/sol.hpp>\n'
 
     newstr += 'extern thread_local sol::state g_lua;\n'
@@ -35,7 +36,13 @@ def genluasol(filename, srcdir, protodir):
         filedbegin = 0
         for fileline in file:
             if fileline.find('enum') >= 0 :
-                enum[fileline.replace('\n', '').split(' ')[1]] = 1             
+                enumcode = 1     
+                continue 
+            if fileline.find(end) >= 0 and enumcode == 1:      
+                enumcode = 0 
+                continue
+            elif enumcode == 1 :
+                continue
             if fileline.find(msg) >= 0 :
                 msgcode = 1
                 classname = fileline.split(' ')[1].strip('\n')
@@ -60,7 +67,7 @@ def genluasol(filename, srcdir, protodir):
                 templatename = ''
                 sn = setname
                 repeatedfiled = True
-                if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' or typename in enum:
+                if typename == 'bool' or typename == 'uint32' or typename == 'int32' or typename == 'uint64' or typename == 'int64' :
                     templatename = ''
                     repeatedfiled = False
                 elif typename == 'string' :
