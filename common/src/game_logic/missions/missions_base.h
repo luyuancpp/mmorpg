@@ -56,7 +56,7 @@ private:
        
     bool UpdateMissionByCompareCondition(const ConditionEvent& c, MissionPbComp& mission);
         
-    void OnMissionComplete(const ConditionEvent& c, const UInt32Set& temp_complete);
+    void OnMissionComplete(const UInt32Set& temp_complete);
 
     IMissionConfig* mission_config_{ nullptr };
     MissionsPbComp missions_comp_pb_;
