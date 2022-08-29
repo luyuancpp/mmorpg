@@ -12,12 +12,7 @@ struct CheckTypeRepeatd {};
 
 class AcceptMissionEvent;
 
-struct ConditionEvent
-{
-    uint32_t type_{ 0 };
-    UInt32Vector condtion_ids_{};
-    uint32_t ammount_{ 1 };
-};
+class MissionConditionEvent;
 
 class MissionsComp : public EventOwner
 {
@@ -49,12 +44,12 @@ public:
     uint32_t Abandon(uint32_t mission_id);
     void CompleteAllMission();
 
-    void Receive(const ConditionEvent& c);
+    void Receive(const MissionConditionEvent& c);
 
 private:
     void DelMissionClassify(uint32_t mission_id);
        
-    bool UpdateMissionByCompareCondition(const ConditionEvent& c, MissionPbComp& mission);
+    bool UpdateMissionByCompareCondition(const MissionConditionEvent& c, MissionPbComp& mission);
         
     void OnMissionComplete(const UInt32Set& temp_complete);
 

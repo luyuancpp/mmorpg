@@ -155,13 +155,13 @@ void MissionsComp::CompleteAllMission()
     missions_comp_pb_.mutable_missions()->clear();
 }
 
-void MissionsComp::Receive(const ConditionEvent& condition_event)
+void MissionsComp::Receive(const MissionConditionEvent& condition_event)
 {
-    if (condition_event.condtion_ids_.empty())
+    if (condition_event.condtion_ids().empty())
     {
         return;
     }
-    auto it =  event_missions_classify_.find(condition_event.type_);
+    auto it =  event_missions_classify_.find(condition_event.type());
     if (it ==  event_missions_classify_.end())
     {
         return;
@@ -226,9 +226,9 @@ void MissionsComp::DelMissionClassify(uint32_t mission_id)
     }
 }
 
-bool MissionsComp::UpdateMissionByCompareCondition(const ConditionEvent& ev, MissionPbComp& mission)
+bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& condition_event, MissionPbComp& mission)
 {
-    if (ev.condtion_ids_.empty())
+    if (condition_event.condtion_ids().empty())
     {
         return false;
     }
@@ -247,26 +247,26 @@ bool MissionsComp::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mis
 		{
 			continue;
 		}
-        if (ev.type_ != condition_row->condition_type())
+        if (condition_event.type() != condition_row->condition_type())
         {
             continue;
         }
         //表检测至少有一个condition
         std::size_t config_condition_size = 0;
         std::size_t equal_condition_size = 0;
-        auto calc_equal_condition_size = [&equal_condition_size, &ev, &config_condition_size](auto index, const auto& config_conditions)
+        auto calc_equal_condition_size = [&equal_condition_size, &condition_event, &config_condition_size](auto index, const auto& config_conditions)
         {
 			if (config_conditions.size() > 0)
 			{
 				++config_condition_size;
 			}
-            if (ev.condtion_ids_.size() <= index)
+            if (condition_event.condtion_ids().size() <= index)
             {
                 return;
             }           
 			for (int32_t ci = 0; ci < config_conditions.size(); ++ci)
 			{
-				if (ev.condtion_ids_[index] != config_conditions.Get(ci))
+				if (condition_event.condtion_ids(index) != config_conditions.Get(ci))
 				{
 					continue;
 				}
@@ -283,7 +283,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const ConditionEvent& ev, Mis
             continue;
         }
         mission_updated = true;
-        mission.set_progress(i , ev.ammount_ + old_progress);
+        mission.set_progress(i , condition_event.amount() + old_progress);
         auto new_progress = mission.progress(i);
         if (!IsConditionCompleted(condition_row->id(), new_progress))
         {
@@ -316,26 +316,28 @@ void MissionsComp::OnMissionComplete(const UInt32Set& temp_complete)
        
         //如果是活动不用走
         // todo event 
+		AcceptMissionEvent accept_mission_event;
+		accept_mission_event.set_entity(entt::to_integral(event_owner()));
         auto& next_missions = mission_config_->next_mission_id(mission_id);
         for (int32_t i = 0; i < next_missions.size(); ++i)
         {
 			if (nullptr == try_dispatcher)
 			{
                 continue;
-			}
-			AcceptMissionEvent accept_mission_event;
-			accept_mission_event.set_entity(entt::to_integral(event_owner()));
+			}			
 			accept_mission_event.set_mission_id(next_missions.Get(i));
 			try_dispatcher->enqueue(accept_mission_event);
         }
     }
     
     MissionConditionEvent mission_condition_event;
-    ConditionEvent ce{ E_CONDITION_COMPLELTE_MISSION, {}, 1 };
+    mission_condition_event.set_entity(entt::to_integral(event_owner()));
+    mission_condition_event.set_type(E_CONDITION_COMPLELTE_MISSION);
+    mission_condition_event.set_amount(1);
     for (auto& it : temp_complete)
     {
+        mission_condition_event.clear_condtion_ids();
         mission_condition_event.mutable_condtion_ids()->Add(it);
-        ce.condtion_ids_ = { it };
-        Receive(ce);
+        Receive(mission_condition_event);
     }
 }
