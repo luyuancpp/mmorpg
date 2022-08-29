@@ -2,15 +2,11 @@ import os
 from os import system
 import md5tool
 import shutil
-import threading
-import _thread
-import protofilearray
-from multiprocessing import cpu_count
 
-local = threading.local()
 tabstr = '    '
 servicedir = './md5/'
 playerservicedir = '../../../../gateway_server/src/service'
+openfilename = 'open_service.cpp'
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
@@ -48,10 +44,6 @@ def md5copy(filename, writedir):
     print("copy %s ---> %s" % (gennewfilename, fullfilename))
     md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
     shutil.copy(gennewfilename, fullfilename)
-def md5copydir():
-    for (dirpath, dirnames, filenames) in os.walk(servicedir):
-        for filename in filenames:        
-            md5copy(filename, '../../../../gateway_server/src/service')
 
-gen('msgmap.cpp', 'open_service.cpp')
-md5copydir()
+gen('msgmap.cpp', openfilename)
+md5copy(openfilename, '../../../../gateway_server/src/service')
