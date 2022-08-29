@@ -324,6 +324,7 @@ void MissionsComp::OnMissionComplete(const UInt32Set& temp_complete)
         {
             try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });
         }
+        // auto reward
         DelMissionClassify(mission_id);
 
         //如果是活动不用走
