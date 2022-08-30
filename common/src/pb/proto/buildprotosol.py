@@ -206,13 +206,11 @@ def gentotalfile(destdir, srcdir):
     
     with open(srcheadfilename, 'w', encoding='utf-8')as file:
         definestr = 'COMMON_SRC_PB_PB2SOL2_H_'
-        headstr = '#ifndef ' + definestr + '\n'
-        headstr += '#define ' + definestr + '\n'
+        headstr = '#pragma once\n'
         headstr += '#include <google/protobuf/message.h>\n'
         headstr += '#include <sol/sol.hpp>\n'
         headstr += totalfuncitonname + ';\n'
         headstr += 'extern thread_local sol::state g_lua;\n'
-        headstr += '#endif//' + definestr + '\n' 
         file.write(headstr)            
     with open(cppfilename, 'w', encoding='utf-8')as file:
         cppnewstr = '#include "' + headfilename + '"\n'

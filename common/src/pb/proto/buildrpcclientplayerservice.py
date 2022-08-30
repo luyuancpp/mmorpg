@@ -10,10 +10,8 @@ from multiprocessing import cpu_count
 local = threading.local()
 
 local.rpcarry = []
-local.servicenames = []
 local.playerservice = ''
 local.service = ''
-local.playerservice = ''
 local.playerservicearray = []
 local.openplayerservicearray = []
 local.fileservice = []
@@ -22,8 +20,6 @@ threads = []
 local.pkg = ''
 cpkg = 'package'
 tabstr = '    '
-cpprpcpart = 1
-cppmaxpart = 4
 servicedir = './md5/'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
@@ -70,7 +66,6 @@ def classbegin():
 
 def genheadrpcfun():
     servicestr = 'public:\n'
-    local.servicenames = []
     servicestr += tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
     servicestr += tabstr + 'const ::google::protobuf::Message* request,\n'
     servicestr += tabstr + '::google::protobuf::Message* response)override\n'
@@ -100,7 +95,6 @@ def genheadrpcfun():
     return servicestr
 
 def genheadfile(filename):
-    local.servicenames = []
     headfun = [classbegin, genheadrpcfun]
     fullfilename = serverstr + filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = servicedir + serverstr + filename.replace('.proto', '.h').replace(protodir, '')
