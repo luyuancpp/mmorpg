@@ -39,7 +39,7 @@ client_player = 'client_player'
 server_player = 'server_player'
 rg = 'rg'
 
-filesrcdestpath = {}
+filedirdestpath = {}
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
@@ -69,10 +69,10 @@ def parsefile(filename):
                 local.playerservice = local.service
 
 def inputfiledestdir(filename):
-    global filesrcdestpath
+    global filedirdestpath
     local.pkg = ''
     if filename.find(client_player) >= 0:
-        filesrcdestpath[filename] = gsplayerservicedir
+        filedirdestpath[filename] = gsplayerservicedir
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find(cpkg) >= 0:
@@ -369,9 +369,9 @@ def get_file_list(file_path):
         return dir_list
 
 def inputfile():
-    global filesrcdestpath
-    filesrcdestpath['player_service.cpp'] = gsplayerservicedir
-    filesrcdestpath['player_service.h'] = gsplayerservicedir
+    global filedirdestpath
+    filedirdestpath['player_service.cpp'] = gsplayerservicedir
+    filedirdestpath['player_service.h'] = gsplayerservicedir
     dir_list  = get_file_list(protodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
