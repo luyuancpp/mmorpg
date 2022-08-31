@@ -123,7 +123,7 @@ def genheadfile(fullfilename, writedir):
     try:
         with open(hfullfilename,'r+', encoding='utf-8') as file:
             part = 0
-            owncode = 1 
+            isyourcode = 1 
             skipheadline = 0 
             partend = 0
             for fileline in file:
@@ -131,15 +131,15 @@ def genheadfile(fullfilename, writedir):
                     skipheadline += 1
                     continue
                 if fileline.find(yourcodebegin) >= 0:
-                    owncode = 1
+                    isyourcode = 1
                     newstr += fileline
                     continue
                 elif fileline.find(yourcodeend) >= 0:
-                    owncode = 0
+                    isyourcode = 0
                     partend = 1
                     newstr += fileline
                     continue
-                if owncode == 1 :
+                if isyourcode == 1 :
                     newstr += fileline
                     continue
                 if  part < len(headfun) and partend == 1:
@@ -170,18 +170,18 @@ def gencppfile(fullfilename, writedir):
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
-            owncode = 1 
+            isyourcode = 1 
             skipheadline = 0 
             for fileline in file:
                 if skipheadline < 2 :
                     skipheadline += 1
                     continue
                 if part != cpprpcservicepart and fileline.find(yourcodebegin) >= 0:
-                    owncode = 1
+                    isyourcode = 1
                     newstr += fileline
                     continue
                 elif part != cpprpcservicepart and fileline.find(yourcodeend) >= 0:
-                    owncode = 0
+                    isyourcode = 0
                     newstr += fileline + '\n'
                     part += 1
                     continue     
@@ -190,21 +190,21 @@ def gencppfile(fullfilename, writedir):
                         newstr += fileline
                         continue
                     elif serviceidx < len(local.rpcarry) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
-                        owncode = 0
+                        isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
                     elif fileline.find(yourcodebegin) >= 0 :
                         newstr += yourcodebegin + ' ' +  '\n'
-                        owncode = 1
+                        isyourcode = 1
                         continue
                     elif fileline.find(yourcodeend) >= 0 :
                         newstr += yourcodeend + ' ' +  '\n}\n\n'
-                        owncode = 0
+                        isyourcode = 0
                         serviceidx += 1  
                         continue
                     elif fileline.find(rpcend) >= 0:
                         break
-                if owncode == 1:
+                if isyourcode == 1:
                     newstr += fileline
                     continue                
     except FileNotFoundError:
