@@ -34,8 +34,6 @@ server_player = 'server_player'
 serverstr = 'c_'
 process_fun_name = 'Process(request, response)\n'
 
-filesrcdestpath = {}
-
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
