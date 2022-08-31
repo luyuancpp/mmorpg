@@ -4,7 +4,7 @@ class AcceptMissionEvent;
 class MissionConditionEvent;
 class OnAcceptedMissionEvent;
 
-class MissionSystem
+class MissionEventReceiver
 {
 public:
 	static void Receive1(const AcceptMissionEvent& event_obj);
