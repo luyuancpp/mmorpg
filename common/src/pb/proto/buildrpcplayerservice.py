@@ -143,7 +143,7 @@ def gencpprpcfunbegin(rpcindex):
         servicestr +=  tabstr + local.pkg + '::' + rsp + '* response)\n{\n'
     return servicestr
 
-def yourcode():
+def genyourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 def classbegin():
     return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
@@ -230,7 +230,7 @@ def gencppfile(filename, serverstr):
                     newstr += fileline
                     continue                
     except FileNotFoundError:
-        newstr += yourcode() + '\n'
+        newstr += genyourcode() + '\n'
         newstr += rpcbegin + '\n'
     while serviceidx < len(local.rpcarry) :
         if isserverpushrpc(local.rpcarry[serviceidx]) == True :
