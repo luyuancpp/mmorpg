@@ -15,6 +15,7 @@ tabstr = '    '
 filelist = []
 threads = []
 local.eventprotoarray = []
+headdestfilesuffix = '_receiver.h'
 
 yourcodebegin = '---<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '---<<< END WRITING YOUR CODE'
@@ -31,10 +32,19 @@ def parsefile(filename):
 				continue
 			local.eventprotoarray.append(fileline.split(' ')[1].strip('\n'))
 
+def getmd5filenamehead(filename):
+	return filename.replace(eventprotodir, md5dir).replace('.proto', '') + headdestfilesuffix
+def getfilenamenoprefixsuffix(filename):
+	return filename.replace(eventprotodir, '').replace('.proto', '')
+def getmd5fullfilename(filename):
+	return md5dir + getfilenamenoprefixsuffix(filename)
+def getdestfullfilename(filename):
+	return destdirpath + getfilenamenoprefixsuffix(filename)
+
 def generatehead(filename):
 	newstr = '#pragma once\n'
 	newstr += '#include "src/game_logic/game_registry.h"\n\n'
-	newcppfilename = filename.replace(eventprotodir, md5dir).replace('.proto', '') + '_receiver.h'
+	newheadfilename = getmd5filenamehead(filename)
 	filenamenoprefixsuffix = filename.replace(eventprotodir, '').replace('.proto', '')
 	letterarray = filenamenoprefixsuffix.split('_')
 	for i in range(0, len(local.eventprotoarray)): 
@@ -49,11 +59,27 @@ def generatehead(filename):
 	for i in range(0, len(local.eventprotoarray)): 
 		newstr += tabstr + 'void static void Receive1(const ' + local.eventprotoarray[i] + '& event_obj);\n'
 	newstr += '};\n'
-	with open(newcppfilename, 'w', encoding='utf-8')as file:
+	with open(newheadfilename, 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
 def generatecpp(filename):
 	eventcount = 0
+
+def md5copy(filename, destfilesuffix):
+    gennewfilename = getmd5fullfilename(filename) + destfilesuffix
+    filenamemd5 = gennewfilename + '.md5'
+    error = None
+    need_copy = False
+    fullfilename = getdestfullfilename(filename) + destfilesuffix
+    if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(fullfilename):
+        need_copy = True
+    else:
+        error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
+    if error == None and os.path.exists(fullfilename) and need_copy == False:
+        return
+    print("copy %s ---> %s" % (gennewfilename, fullfilename))
+    shutil.copy(gennewfilename, fullfilename)
+    md5tool.generate_md5_file_for(fullfilename, filenamemd5)
 
 def generate(filename):
 	generatehead(filename)
@@ -81,6 +107,7 @@ class myThread (threading.Thread):
     def run(self):
         parsefile(self.filename)
         generate(self.filename)
+        md5copy(self.filename, headdestfilesuffix)
 
 def main():
     filelen = len(filelist)
