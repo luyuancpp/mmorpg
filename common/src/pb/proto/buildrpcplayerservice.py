@@ -259,6 +259,7 @@ def generate(filename):
 def parseplayerservcie(filename):
     if filename.find('normal') >= 0  or filename.find(rg) >= 0:
         return
+    local.pkg = ''
     local.fileservice.append(filename.replace('.proto', ''))
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
