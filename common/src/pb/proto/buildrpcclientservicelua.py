@@ -9,6 +9,7 @@ from multiprocessing import cpu_count
 
 local = threading.local()
 
+
 local.playerservice = ''
 local.service = ''
 local.playerservice = ''
@@ -33,6 +34,7 @@ if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
 def parsefile(filename):
+    local.rpcarry = []
     local.pkg = ''
     local.playerservice = ''
     local.service = ''
@@ -62,7 +64,7 @@ def gencpprpcfunbegin(rpcindex):
     servicestr = 'function ' +  s[1] + process_fun_name
     return servicestr
 
-def yourcode():
+def genyourcodepair():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 
 def gencppfile(filename):
@@ -76,14 +78,14 @@ def gencppfile(filename):
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             part = 0
-            owncode = 1 
+            yourcode = 1 
             for fileline in file:
                 if part != cpprpcpart and fileline.find(yourcodebegin) >= 0:
-                    owncode = 1
+                    yourcode = 1
                     newstr += fileline
                     continue
                 elif part != cpprpcpart and fileline.find(yourcodeend) >= 0:
-                    owncode = 0
+                    yourcode = 0
                     newstr += fileline + '\n'
                     part += 1
                     continue     
@@ -92,26 +94,26 @@ def gencppfile(filename):
                         newstr += fileline
                         continue
                     elif serviceidx < len(local.rpcarry) and fileline.find(process_fun_name) >= 0 :
-                        owncode = 0
+                        yourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
                     elif fileline.find(yourcodebegin) >= 0 :
                         newstr += yourcodebegin + ' '  + '\n'
-                        owncode = 1
+                        yourcode = 1
                         continue
                     elif fileline.find(yourcodeend) >= 0 :
                         newstr += yourcodeend + ' '  + '\nend\n\n'
-                        owncode = 0
+                        yourcode = 0
                         serviceidx += 1  
                         continue
                     elif fileline.find(rpcend) >= 0:
                        break
-                if owncode == 1:
+                if yourcode == 1:
                     newstr += fileline
                     continue                
 
     except FileNotFoundError:
-            newstr += yourcode() + '\n'
+            newstr += genyourcodepair() + '\n'
             newstr += rpcbegin + '\n'
     while serviceidx < len(local.rpcarry) :
         newstr += gencpprpcfunbegin(serviceidx)
