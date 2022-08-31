@@ -49,9 +49,9 @@ void MissionsComp::Init()
     auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
     if (nullptr != try_dispatcher)
     {
-        try_dispatcher->sink<AcceptMissionEvent>().connect<&MissionSystem::Receive1>();
-        try_dispatcher->sink<MissionConditionEvent>().connect<&MissionSystem::Receive2>();
-        try_dispatcher->sink<OnAcceptedMissionEvent>().connect<&MissionSystem::Receive3>();
+        try_dispatcher->sink<AcceptMissionEvent>().connect<&MissionEventReceiver::Receive1>();
+        try_dispatcher->sink<MissionConditionEvent>().connect<&MissionEventReceiver::Receive2>();
+        try_dispatcher->sink<OnAcceptedMissionEvent>().connect<&MissionEventReceiver::Receive3>();
     }
 }
 
