@@ -9,13 +9,9 @@ from multiprocessing import cpu_count
 
 local = threading.local()
 
-local.rpcarry = []
 local.playerservice = ''
 local.service = ''
 local.playerservice = ''
-local.playerservicearray = []
-local.openplayerservicearray = []
-local.fileservice = []
 
 threads = []
 local.pkg = ''
@@ -30,15 +26,13 @@ servicedir = './md5/'
 protodir = 'logic_proto/'
 writedir = '../../../../bin/script/client/service/'
 client_player = 'client_player'
-server_player = 'server_player'
-serverstr = 'c_'
+fileprev = 'c_'
 process_fun_name = 'Process(request, response)\n'
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
 def parsefile(filename):
-    local.rpcarry = []
     local.pkg = ''
     local.playerservice = ''
     local.service = ''
@@ -72,8 +66,8 @@ def yourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 
 def gencppfile(filename):
-    cppfilename = writedir  + serverstr + filename.replace('.proto', '.lua').replace(protodir, '')
-    newcppfilename = servicedir + serverstr + filename.replace('.proto', '.lua').replace(protodir, '')
+    cppfilename = writedir  + fileprev + filename.replace('.proto', '.lua').replace(protodir, '')
+    newcppfilename = servicedir + fileprev + filename.replace('.proto', '.lua').replace(protodir, '')
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
         shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
         return
