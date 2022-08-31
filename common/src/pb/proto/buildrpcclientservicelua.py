@@ -22,7 +22,7 @@ yourcodeend = '---<<< END WRITING YOUR CODE'
 rpcbegin = '---<<<rpc begin'
 rpcend = '---<<<rpc end'
 tabstr = '    '
-cpprpcpart = 1
+cpprpcservicepart = 1
 servicedir = './md5/'
 protodir = 'logic_proto/'
 writedir = '../../../../bin/script/client/service/'
@@ -80,16 +80,16 @@ def gencppfile(filename):
             part = 0
             yourcode = 1 
             for fileline in file:
-                if part != cpprpcpart and fileline.find(yourcodebegin) >= 0:
+                if part != cpprpcservicepart and fileline.find(yourcodebegin) >= 0:
                     yourcode = 1
                     newstr += fileline
                     continue
-                elif part != cpprpcpart and fileline.find(yourcodeend) >= 0:
+                elif part != cpprpcservicepart and fileline.find(yourcodeend) >= 0:
                     yourcode = 0
                     newstr += fileline + '\n'
                     part += 1
                     continue     
-                elif part == cpprpcpart:
+                elif part == cpprpcservicepart:
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
