@@ -24,7 +24,7 @@ servicedir = './md5/'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
 clientservicedir = '../../../../client/src/service/logic/'
-serverstr = 'c_'
+fileprev = 'c_'
 client_player = 'client_player'
 rg = 'rg'
 
@@ -91,8 +91,8 @@ def genheadrpcfun():
 
 def genheadfile(filename):
     headfun = [classbegin, genheadrpcfun]
-    fullfilename = serverstr + filename.replace('.proto', '.h').replace(protodir, '')
-    newheadfilename = servicedir + serverstr + filename.replace('.proto', '.h').replace(protodir, '')
+    fullfilename = fileprev + filename.replace('.proto', '.h').replace(protodir, '')
+    newheadfilename = servicedir + fileprev + filename.replace('.proto', '.h').replace(protodir, '')
     if not os.path.exists(newheadfilename)  and os.path.exists(fullfilename):
         shutil.copy(fullfilename, newheadfilename)
         return
@@ -109,13 +109,13 @@ def genheadfile(filename):
         file.write(newstr)
 
 def genplayerservcielist(filename):
-    fullfilename = servicedir + serverstr + filename
+    fullfilename = servicedir + fileprev + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + serverstr + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir + fileprev + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     for service in local.playerservicearray:
         newstr += 'class ' + service + 'Impl : public '  + service + '{};\n'
@@ -167,9 +167,9 @@ def md5copy(filename):
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
         for filename in filenames:    
-            if filename.find(client_player) >= 0 and filename.find(serverstr) >= 0:
+            if filename.find(client_player) >= 0 and filename.find(fileprev) >= 0:
                 md5copy(filename)
-            if filename.find('player_service') >= 0 and filename.find(serverstr) >= 0:
+            if filename.find('player_service') >= 0 and filename.find(fileprev) >= 0:
                 md5copy(filename)
 
 genfile = []
