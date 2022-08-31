@@ -28,8 +28,6 @@ serverstr = 'c_'
 client_player = 'client_player'
 rg = 'rg'
 
-filesrcdestpath = {}
-
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
@@ -51,10 +49,7 @@ def parsefile(filename):
                 local.playerservice = local.service
 
 def inputfiledestdir(filename):
-    global filesrcdestpath
     local.pkg = ''
-    if filename.find(client_player) >= 0:
-        filesrcdestpath[filename] = clientservicedir
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find(cpkg) >= 0:
