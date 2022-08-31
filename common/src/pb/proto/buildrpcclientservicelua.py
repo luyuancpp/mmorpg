@@ -111,7 +111,6 @@ def gencppfile(filename):
                 if yourcode == 1:
                     newstr += fileline
                     continue                
-
     except FileNotFoundError:
             newstr += genyourcodepair() + '\n'
             newstr += rpcbegin + '\n'

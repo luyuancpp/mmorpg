@@ -16,12 +16,17 @@ filelist = []
 threads = []
 local.eventprotoarray = []
 headdestfilesuffix = '_receiver.h'
+cppdestfilesuffix = '_receiver.cpp'
+cpprpceventpart = 1
 
 yourcodebegin = '---<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '---<<< END WRITING YOUR CODE'
 
 if not os.path.exists(md5dir):
     os.makedirs(md5dir)
+
+def genyourcodepair():
+    return yourcodebegin + '\n' + yourcodeend + '\n'
 
 ##输入pb事件
 def parsefile(filename):
@@ -32,38 +37,67 @@ def parsefile(filename):
 				continue
 			local.eventprotoarray.append(fileline.split(' ')[1].strip('\n'))
 
-def getmd5filenamehead(filename):
-	return filename.replace(eventprotodir, md5dir).replace('.proto', '') + headdestfilesuffix
 def getfilenamenoprefixsuffix(filename):
 	return filename.replace(eventprotodir, '').replace('.proto', '')
 def getmd5fullfilename(filename):
 	return md5dir + getfilenamenoprefixsuffix(filename)
 def getdestfullfilename(filename):
 	return destdirpath + getfilenamenoprefixsuffix(filename)
+def getfileclassname(filename):
+	letterarray = getfilenamenoprefixsuffix(filename).split('_')
+	classname = ''
+	for i in range(0, len(letterarray)): 
+		classname += letterarray[i].capitalize()	
+	return classname
 
 def generatehead(filename):
 	newstr = '#pragma once\n'
 	newstr += '#include "src/game_logic/game_registry.h"\n\n'
-	newheadfilename = getmd5filenamehead(filename)
-	filenamenoprefixsuffix = filename.replace(eventprotodir, '').replace('.proto', '')
-	letterarray = filenamenoprefixsuffix.split('_')
+	md5headfilename = filename.replace(eventprotodir, md5dir).replace('.proto', '') + headdestfilesuffix
+	classname = getfileclassname(filename)
 	for i in range(0, len(local.eventprotoarray)): 
 		newstr += 'class ' + local.eventprotoarray[i] + ';\n'
-	classname = ''
-	for i in range(0, len(letterarray)): 
-		classname += letterarray[i].capitalize()
-	
 	newstr += '\nclass ' + classname + '\n{\npublic:\n'
 	newstr += tabstr + 'void static void Register(entt::dispatcher& dispatcher);\n'
 	newstr += tabstr + 'void static void UnRegister(entt::dispatcher& dispatcher);\n\n'
 	for i in range(0, len(local.eventprotoarray)): 
 		newstr += tabstr + 'void static void Receive1(const ' + local.eventprotoarray[i] + '& event_obj);\n'
 	newstr += '};\n'
-	with open(newheadfilename, 'w', encoding='utf-8')as file:
+	with open(md5headfilename, 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
 def generatecpp(filename):
-	eventcount = 0
+	md5cppfilename = filename.replace(eventprotodir, md5dir).replace('.proto', '') + cppdestfilesuffix
+	destcppfullfilename = getdestfullfilename(filename) + cppdestfilesuffix
+	classname = getfileclassname(filename)
+	newstr = '#include "' + getfilenamenoprefixsuffix(filename) + headdestfilesuffix + '"\n'
+	eventindex = 0
+	try:
+		with open(destcppfullfilename,'r+', encoding='utf-8') as file:
+			yourcode = 1 
+			part = 0
+			for fileline in file:
+				if part != cpprpceventpart and fileline.find(yourcodebegin) >= 0:
+				    yourcode = 1
+				    newstr += fileline
+				    continue
+				elif part != cpprpceventpart and fileline.find(yourcodeend) >= 0:
+				    yourcode = 0
+				    newstr += fileline + '\n'
+				    part += 1
+				    continue 
+				    newstr += str(eventindex)
+				    eventindex += 1
+	except FileNotFoundError:
+		newstr += genyourcodepair() + '\n'
+	while eventindex < len(local.eventprotoarray) :
+		newstr += 'void static void '+ classname + '::Receive' + str(eventindex)
+		newstr += '(const ' + local.eventprotoarray[eventindex] + '& event_obj)\n{\n'
+		newstr += genyourcodepair()
+		newstr += '}\n'
+		eventindex += 1
+	with open(md5cppfilename, 'w', encoding='utf-8')as file:
+		file.write(newstr)  
 
 def md5copy(filename, destfilesuffix):
     gennewfilename = getmd5fullfilename(filename) + destfilesuffix
