@@ -58,10 +58,10 @@ def generatehead(filename):
 	for i in range(0, len(local.eventprotoarray)): 
 		newstr += 'class ' + local.eventprotoarray[i] + ';\n'
 	newstr += '\nclass ' + classname + '\n{\npublic:\n'
-	newstr += tabstr + 'void static void Register(entt::dispatcher& dispatcher);\n'
-	newstr += tabstr + 'void static void UnRegister(entt::dispatcher& dispatcher);\n\n'
+	newstr += tabstr + 'static void Register(entt::dispatcher& dispatcher);\n'
+	newstr += tabstr + 'static void UnRegister(entt::dispatcher& dispatcher);\n\n'
 	for i in range(0, len(local.eventprotoarray)): 
-		newstr += tabstr + 'void static void Receive1(const ' + local.eventprotoarray[i] + '& event_obj);\n'
+		newstr += tabstr + 'static void Receive1(const ' + local.eventprotoarray[i] + '& event_obj);\n'
 	newstr += '};\n'
 	with open(md5headfilename, 'w', encoding='utf-8')as file:
 		file.write(newstr)
@@ -91,7 +91,7 @@ def generatecpp(filename):
 	except FileNotFoundError:
 		newstr += genyourcodepair() + '\n'
 	while eventindex < len(local.eventprotoarray) :
-		newstr += 'void static void '+ classname + '::Receive' + str(eventindex)
+		newstr += 'void '+ classname + '::Receive' + str(eventindex)
 		newstr += '(const ' + local.eventprotoarray[eventindex] + '& event_obj)\n{\n'
 		newstr += genyourcodepair()
 		newstr += '}\n'
@@ -142,6 +142,7 @@ class myThread (threading.Thread):
         parsefile(self.filename)
         generate(self.filename)
         md5copy(self.filename, headdestfilesuffix)
+        md5copy(self.filename, cppdestfilesuffix)
 
 def main():
     filelen = len(filelist)
