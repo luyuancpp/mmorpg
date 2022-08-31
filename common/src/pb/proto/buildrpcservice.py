@@ -12,7 +12,6 @@ local = threading.local()
 local.rpcarry = []
 local.servicenames = []
 local.service = ''
-local.hfilename = ''
 
 threads = []
 local.pkg = ''
@@ -26,7 +25,7 @@ rgservicedir = '../../../../region_server/src/service/logic/'
 msservicedir = '../../../../master_server/src/service/logic/'
 logicprotodir = './logic_proto/'
 tabstr = '    '
-cpprpcpart = 1
+cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/'
 
@@ -90,7 +89,7 @@ def gencpprpcfunbegin(rpcindex):
     servicestr +=  tabstr + 'AutoRecycleClosure d(done);\n'
     return servicestr
 
-def yourcode():
+def genyourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 
 def classbegin():
@@ -177,16 +176,16 @@ def gencppfile(fullfilename, writedir):
                 if skipheadline < 2 :
                     skipheadline += 1
                     continue
-                if part != cpprpcpart and fileline.find(yourcodebegin) >= 0:
+                if part != cpprpcservicepart and fileline.find(yourcodebegin) >= 0:
                     owncode = 1
                     newstr += fileline
                     continue
-                elif part != cpprpcpart and fileline.find(yourcodeend) >= 0:
+                elif part != cpprpcservicepart and fileline.find(yourcodeend) >= 0:
                     owncode = 0
                     newstr += fileline + '\n'
                     part += 1
                     continue     
-                elif part == cpprpcpart:
+                elif part == cpprpcservicepart:
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
@@ -209,7 +208,7 @@ def gencppfile(fullfilename, writedir):
                     newstr += fileline
                     continue                
     except FileNotFoundError:
-        newstr += yourcode() + '\n'
+        newstr += genyourcode() + '\n'
         newstr += rpcbegin + '\n'
     while serviceidx < len(local.rpcarry) :
         newstr += gencpprpcfunbegin(serviceidx)
