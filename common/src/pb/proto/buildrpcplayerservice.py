@@ -13,7 +13,6 @@ local.rpcarry = []
 local.servicenames = []
 local.playerservice = ''
 local.service = ''
-local.playerservice = ''
 local.playerservicearray = []
 local.openplayerservicearray = []
 local.fileservice = []
@@ -26,7 +25,7 @@ yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
 tabstr = '    '
-cpprpcpart = 1
+cpprpcservicepart = 1
 controller = '(entt::entity player'
 servicedir = './md5/'
 protodir = 'logic_proto/'
@@ -199,16 +198,16 @@ def gencppfile(filename, serverstr):
                 if skipheadline < 3 :
                     skipheadline += 1
                     continue
-                if part != cpprpcpart and fileline.find(yourcodebegin) >= 0:
+                if part != cpprpcservicepart and fileline.find(yourcodebegin) >= 0:
                     owncode = 1
                     newstr += fileline
                     continue
-                elif part != cpprpcpart and fileline.find(yourcodeend) >= 0:
+                elif part != cpprpcservicepart and fileline.find(yourcodeend) >= 0:
                     owncode = 0
                     newstr += fileline + '\n'
                     part += 1
                     continue     
-                elif part == cpprpcpart:
+                elif part == cpprpcservicepart:
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
