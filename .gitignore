@@ -27,6 +27,7 @@ bin/config/xlwt/
 bin/config/xlrd/
 bin/config/proto
 bin/config/cpp/
+bin/zlib*
 common/src/game_config/
 bin/config/
 common/src/pb/proto/md5/
