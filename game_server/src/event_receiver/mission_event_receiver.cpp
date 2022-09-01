@@ -14,13 +14,14 @@ dispatcher.sink<OnAcceptedMissionEvent>().connect<&MissionEventReceiver::Mission
 dispatcher.sink<OnMissionAwardEvent>().connect<&MissionEventReceiver::MissionEventReceiver::Receive3>();
 }
 
-static void UnRegister(entt::dispatcher& dispatcher){
-
+void MissionEventReceiver::UnRegister(entt::dispatcher& dispatcher)
+{
 dispatcher.sink<AcceptMissionEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive0>();
 dispatcher.sink<MissionConditionEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive1>();
 dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive2>();
 dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive3>();
 }
+
 void MissionEventReceiver::Receive0(const AcceptMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
