@@ -18,6 +18,8 @@ local.eventprotoarray = []
 headdestfilesuffix = '_receiver.h'
 cppdestfilesuffix = '_receiver.cpp'
 cpprpceventpart = 1
+geneventreceiverfilename = 'event_receiver'
+eventreceiverclassname = 'EventReceiverEvent'
 
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'
@@ -142,6 +144,37 @@ def generatecpp(filename):
 	with open(md5cppfilename, 'w', encoding='utf-8')as file:
 		file.write(newstr)  
 
+def geneventreceiverhead():
+	md5headfilename = md5dir + geneventreceiverfilename + '.h'
+
+	newstr = '#pragma once\n'
+	newstr += '#include "src/game_logic/game_registry.h"\n'	
+	newstr += '\nclass ' + eventreceiverclassname + '\n{\npublic:\n'
+	newstr += tabstr + 'static void Register(entt::dispatcher& dispatcher);\n'
+	newstr += tabstr + 'static void UnRegister(entt::dispatcher& dispatcher);\n'
+	newstr += '};\n'
+	with open(md5headfilename, 'w', encoding='utf-8')as file:
+		file.write(newstr)
+
+def geneventreceivercpp():
+	md5headfilename = md5dir + geneventreceiverfilename + '.cpp'
+	newstr = '#pragma once\n'
+	for i in range(0, len(filelist)): 
+		newstr +=  '#include "' + getfilenamenoprefixsuffix(filelist[0]) + headdestfilesuffix + '"\n'	
+	newstr += '\n'
+	newstr += 'void ' + eventreceiverclassname + '::Register(entt::dispatcher& dispatcher)\n{\n'
+	for i in range(0, len(filelist)): 
+		classname = getfileclassname(filelist[0])
+		newstr += tabstr +  classname + '::Register(dispatcher);\n'
+	newstr += '}\n\n'
+	newstr += 'void ' + eventreceiverclassname + '::UnRegister(entt::dispatcher& dispatcher)\n{\n'
+	for i in range(0, len(filelist)): 
+		classname = getfileclassname(filelist[0])
+		newstr += tabstr +  classname + '::UnRegister(dispatcher);\n'
+	newstr += '}\n'
+	with open(md5headfilename, 'w', encoding='utf-8')as file:
+		file.write(newstr)
+
 def md5copy(filename, destfilesuffix):
     gennewfilename = getmd5fullfilename(filename) + destfilesuffix
     filenamemd5 = gennewfilename + '.md5'
@@ -211,4 +244,8 @@ def md5copydir():
 
 inputfile()
 main()
+geneventreceiverhead()
+md5copy(geneventreceiverfilename, '.h')
+geneventreceivercpp()
+md5copy(geneventreceiverfilename, '.cpp')
 md5copydir()
