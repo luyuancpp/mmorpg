@@ -229,23 +229,25 @@ TEST(MissionsComp, OnCompleteMission)
 
 TEST(MissionsComp, AcceptNextMirroMission)
 {
-   /* MissionsComp ms(registry.create());
-    registry.emplace<entt::dispatcher>(ms);
-    uint32_t mid = 7;
-    auto& next_mission_set =  registry.emplace<NextTimeAcceptMission>(ms);
-    AcceptMissionP param{ mid };
-    EXPECT_EQ(kRetOK, ms.Accept(param));
-    EXPECT_EQ(1, ms.type_set_size());
-    ConditionEvent ce{  E_CONDITION_KILL_MONSTER, {1}, 1 };
-    ms.Receive(ce);
-    EXPECT_FALSE(ms.IsAccepted(mid));
-    EXPECT_TRUE(ms.IsComplete(mid));
-
-    auto next_mission_id = ++mid;
-    EXPECT_FALSE(ms.IsAccepted(next_mission_id));
-    EXPECT_FALSE(ms.IsComplete(next_mission_id));
-    EXPECT_TRUE(next_mission_set.next_time_accept_mission_id_.find(next_mission_id)
-        != next_mission_set.next_time_accept_mission_id_.end());*/
+    auto& ms = *CreateMission();
+    auto& dispatcher = registry.get<entt::dispatcher>(ms);
+	uint32_t mid = 7;
+	AcceptMissionEvent accept_mission_event;
+	accept_mission_event.set_mission_id(mid);
+	EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	EXPECT_EQ(1, ms.type_set_size());
+	MissionConditionEvent ce;
+	ce.set_entity(ms);
+	ce.set_type(E_CONDITION_KILL_MONSTER);
+	ce.add_condtion_ids(1);
+	ce.set_amount(1);
+	ms.Receive(ce);
+	EXPECT_FALSE(ms.IsAccepted(mid));
+	EXPECT_TRUE(ms.IsComplete(mid));
+	auto next_mission_id = ++mid;
+    dispatcher.update<AcceptMissionEvent>();
+	EXPECT_TRUE(ms.IsAccepted(next_mission_id));
+	EXPECT_FALSE(ms.IsComplete(next_mission_id));
 }
 
 TEST(MissionsComp, MissionCondition)
