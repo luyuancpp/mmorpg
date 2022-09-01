@@ -6,7 +6,7 @@
 #include "event_proto/mission_event.pb.h"
 ///<<< END WRITING YOUR CODE
 
-void MissionEvent::Receive0(const AcceptMissionEvent& event_obj)
+void MissionEventReceiver::Receive0(const AcceptMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
 	auto entity = entt::to_entity(event_obj.entity());
@@ -14,7 +14,7 @@ void MissionEvent::Receive0(const AcceptMissionEvent& event_obj)
 ///<<< END WRITING YOUR CODE 
 }
 
-void MissionEvent::Receive1(const MissionConditionEvent& event_obj)
+void MissionEventReceiver::Receive1(const MissionConditionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
 	auto entity = entt::to_entity(event_obj.entity());
@@ -22,7 +22,7 @@ void MissionEvent::Receive1(const MissionConditionEvent& event_obj)
 ///<<< END WRITING YOUR CODE 
 }
 
-void MissionEvent::Receive2(const OnAcceptedMissionEvent& event_obj)
+void MissionEventReceiver::Receive2(const OnAcceptedMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE 
