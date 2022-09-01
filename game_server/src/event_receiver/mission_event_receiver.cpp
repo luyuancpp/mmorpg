@@ -6,6 +6,19 @@
 #include "event_proto/mission_event.pb.h"
 ///<<< END WRITING YOUR CODE
 
+void MissionEventReceiver::Register(entt::dispatcher& dispatcher)
+{
+dispatcher.sink<AcceptMissionEvent>().connect<&MissionEventReceiver::MissionEventReceiver::Receive0>();
+dispatcher.sink<MissionConditionEvent>().connect<&MissionEventReceiver::MissionEventReceiver::Receive1>();
+dispatcher.sink<OnAcceptedMissionEvent>().connect<&MissionEventReceiver::MissionEventReceiver::Receive2>();
+}
+
+static void UnRegister(entt::dispatcher& dispatcher){
+
+dispatcher.sink<AcceptMissionEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive0>();
+dispatcher.sink<MissionConditionEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive1>();
+dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive2>();
+}
 void MissionEventReceiver::Receive0(const AcceptMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
