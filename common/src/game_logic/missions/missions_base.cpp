@@ -37,7 +37,7 @@ std::size_t MissionsComp::can_reward_size()
 
 void MissionsComp::Init()
 {
-	for (uint32_t i = E_CONDITION_KILL_MONSTER; i < E_CONDITION_MAX; ++i)
+	for (uint32_t i = kConditionKillMonster; i < kConditionTypeMax; ++i)
 	{
 		event_missions_classify_.emplace(i, UInt32Set{});
 	}
@@ -332,7 +332,7 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
 	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());    
 	MissionConditionEvent mission_condition_event;
 	mission_condition_event.set_entity(entt::to_integral(event_owner()));
-	mission_condition_event.set_type(E_CONDITION_COMPLELTE_MISSION);
+	mission_condition_event.set_type(kConditionCompleteMission);
 	mission_condition_event.set_amount(1);
 	for (auto& mission_id : completed_missions_this_time)
 	{
