@@ -4,6 +4,7 @@
 class AcceptMissionEvent;
 class MissionConditionEvent;
 class OnAcceptedMissionEvent;
+class OnMissionAwardEvent;
 
 class MissionEventReceiver
 {
@@ -14,4 +15,5 @@ public:
     static void Receive0(const AcceptMissionEvent& event_obj);
     static void Receive1(const MissionConditionEvent& event_obj);
     static void Receive2(const OnAcceptedMissionEvent& event_obj);
+    static void Receive3(const OnMissionAwardEvent& event_obj);
 };

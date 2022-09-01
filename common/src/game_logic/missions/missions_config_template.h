@@ -8,7 +8,7 @@ struct IMissionConfig
     virtual uint32_t mission_type(uint32_t id) const  { return 0; }
     virtual uint32_t mission_sub_type(uint32_t id) const { return 0; }
     virtual uint32_t reward_id(uint32_t id)const  { return 0; }
-    virtual bool auto_reward(uint32_t mission_id) const  { return 0; }
+    virtual bool auto_reward(uint32_t mission_id) const  { return false; }
     virtual const ::google::protobuf::RepeatedField<uint32_t>& condition_id(uint32_t mission_id) const
     {
         thread_local ::google::protobuf::RepeatedField<uint32_t> s;

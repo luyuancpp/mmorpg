@@ -19,3 +19,9 @@ message OnAcceptedMissionEvent
   uint64 entity = 1;
   uint32 mission_id = 2;
 }
+
+message OnMissionAwardEvent
+{
+  uint64 entity = 1;
+  uint32 mission_id = 2;
+}
