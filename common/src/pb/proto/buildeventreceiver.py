@@ -70,13 +70,17 @@ def generatecpp(filename):
 	md5cppfilename = filename.replace(eventprotodir, md5dir).replace('.proto', '') + cppdestfilesuffix
 	destcppfullfilename = getdestfullfilename(filename) + cppdestfilesuffix
 	classname = getfileclassname(filename)
-	newstr = '#include "' + getfilenamenoprefixsuffix(filename) + headdestfilesuffix + '"\n'
+	headerinclude = '#include "' + getfilenamenoprefixsuffix(filename) + headdestfilesuffix + '"\n'
+	newstr = headerinclude
 	eventindex = 0
+	cppfunctionname = 'void '+ classname + '::Receive'
 	try:
 		with open(destcppfullfilename,'r+', encoding='utf-8') as file:
 			yourcode = 1 
 			part = 0
 			for fileline in file:
+				if part != cpprpceventpart and fileline == headerinclude:
+					continue
 				if part != cpprpceventpart and fileline.find(yourcodebegin) >= 0:
 				    yourcode = 1
 				    newstr += fileline
@@ -86,12 +90,28 @@ def generatecpp(filename):
 				    newstr += fileline + '\n'
 				    part += 1
 				    continue 
-				    newstr += str(eventindex)
-				    eventindex += 1
+				elif part == cpprpceventpart:
+					if eventindex < len(local.eventprotoarray) and fileline.find(cppfunctionname) >= 0 :
+						yourcode = 0
+						newstr += cppfunctionname + str(eventindex)
+						newstr += '(const ' + local.eventprotoarray[eventindex] + '& event_obj)\n{\n'
+						continue
+					elif fileline.find(yourcodebegin) >= 0 :
+						newstr += yourcodebegin + ' '  + '\n'
+						yourcode = 1
+						continue
+					elif fileline.find(yourcodeend) >= 0 :
+						newstr += yourcodeend + ' '  + '\n}\n\n'
+						yourcode = 0
+						eventindex += 1  
+						continue
+				if yourcode == 1:
+					newstr += fileline
+						     
 	except FileNotFoundError:
 		newstr += genyourcodepair() + '\n'
 	while eventindex < len(local.eventprotoarray) :
-		newstr += 'void '+ classname + '::Receive' + str(eventindex)
+		newstr += cppfunctionname + str(eventindex)
 		newstr += '(const ' + local.eventprotoarray[eventindex] + '& event_obj)\n{\n'
 		newstr += genyourcodepair()
 		newstr += '}\n'
