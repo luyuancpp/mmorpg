@@ -5,7 +5,7 @@ import shutil
 
 servicearray = []
 servicefilenamearray = []
-md5dir = './md5/'
+md5dir = './md5/logic_proto/'
 logicprotodir = './logic_proto/'
 if not os.path.exists(md5dir):
     os.makedirs(md5dir)
