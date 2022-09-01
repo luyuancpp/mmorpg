@@ -66,6 +66,25 @@ def generatehead(filename):
 	with open(md5headfilename, 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
+def generatecppregisterunregisterfunction(filename):
+	classname = getfileclassname(filename)
+	cppfunctionname = classname + '::Receive'
+	newstr = 'void ' + classname + '::Register(entt::dispatcher& dispatcher)\n{\n'
+	eventindex = 0
+	while eventindex < len(local.eventprotoarray) :
+		newstr += 'dispatcher.sink<' + local.eventprotoarray[eventindex] + '>().connect<&'
+		newstr += classname + '::' + cppfunctionname + str(eventindex) + '>();\n'
+		eventindex += 1
+	newstr += '}\n\n'
+	newstr += 'static void UnRegister(entt::dispatcher& dispatcher){\n\n'
+	eventindex = 0
+	while eventindex < len(local.eventprotoarray) :
+		newstr += 'dispatcher.sink<' + local.eventprotoarray[eventindex] + '>().disconnect<&'
+		newstr += classname + '::' + cppfunctionname + str(eventindex) + '>();\n'
+		eventindex += 1
+	newstr += '}\n'
+	return newstr
+
 def generatecpp(filename):
 	md5cppfilename = filename.replace(eventprotodir, md5dir).replace('.proto', '') + cppdestfilesuffix
 	destcppfullfilename = getdestfullfilename(filename) + cppdestfilesuffix
@@ -78,6 +97,7 @@ def generatecpp(filename):
 		with open(destcppfullfilename,'r+', encoding='utf-8') as file:
 			yourcode = 1 
 			part = 0
+			connectfunctiondone = 0
 			for fileline in file:
 				if part != cpprpceventpart and fileline == headerinclude:
 					continue
@@ -91,6 +111,9 @@ def generatecpp(filename):
 				    part += 1
 				    continue 
 				elif part == cpprpceventpart:
+					if eventindex == 0 and connectfunctiondone == 0: 
+						newstr += generatecppregisterunregisterfunction(filename)
+						connectfunctiondone = 1
 					if eventindex < len(local.eventprotoarray) and fileline.find(cppfunctionname) >= 0 :
 						yourcode = 0
 						newstr += cppfunctionname + str(eventindex)
@@ -109,6 +132,7 @@ def generatecpp(filename):
 					newstr += fileline				     
 	except FileNotFoundError:
 		newstr += genyourcodepair() + '\n'
+		newstr += generatecppregisterunregisterfunction(filename)
 	while eventindex < len(local.eventprotoarray) :
 		newstr += cppfunctionname + str(eventindex)
 		newstr += '(const ' + local.eventprotoarray[eventindex] + '& event_obj)\n{\n'

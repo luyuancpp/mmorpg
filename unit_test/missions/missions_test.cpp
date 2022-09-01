@@ -20,13 +20,7 @@ decltype(auto) CreateMission()
     ms.set_event_owner(player);
     registry.emplace<entt::dispatcher>(player);
     ms.Init();	
-	auto try_dispatcher = registry.try_get<entt::dispatcher>(ms);
-	if (nullptr != try_dispatcher)
-	{
-		try_dispatcher->sink<AcceptMissionEvent>().connect<&MissionEventReceiver::Receive0>();
-		try_dispatcher->sink<MissionConditionEvent>().connect<&MissionEventReceiver::Receive1>();
-		try_dispatcher->sink<OnAcceptedMissionEvent>().connect<&MissionEventReceiver::Receive2>();
-	}
+    MissionEventReceiver::Register(registry.get<entt::dispatcher>(ms));
     return &ms;
 }
 
