@@ -48,7 +48,7 @@ def getfileclassname(filename):
 	classname = ''
 	for i in range(0, len(letterarray)): 
 		classname += letterarray[i].capitalize()	
-	return classname
+	return classname + 'Receiver'
 
 def generatehead(filename):
 	newstr = '#pragma once\n'
@@ -106,8 +106,7 @@ def generatecpp(filename):
 						eventindex += 1  
 						continue
 				if yourcode == 1:
-					newstr += fileline
-						     
+					newstr += fileline				     
 	except FileNotFoundError:
 		newstr += genyourcodepair() + '\n'
 	while eventindex < len(local.eventprotoarray) :

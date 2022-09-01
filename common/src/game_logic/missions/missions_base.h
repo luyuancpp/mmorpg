@@ -54,7 +54,7 @@ private:
     
 };
 
-using PlayerMissionList = std::array<MissionsComp, MissionsPbComp::kPlayerMisisonSize>;
+using PlayerMissionList = std::array<MissionsComp, MissionsPbComp::kPlayerMissionSize>;
 
 
 

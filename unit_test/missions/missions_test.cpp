@@ -6,6 +6,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/op_code.h"
 #include "src/game_logic/missions/missions_base.h"
+#include "src/event_receiver/mission_event_receiver.h"
 #include "src/util/random.h"
 #include "src/game_logic/tips_id.h"
 
@@ -19,6 +20,13 @@ decltype(auto) CreateMission()
     ms.set_event_owner(player);
     registry.emplace<entt::dispatcher>(player);
     ms.Init();	
+	auto try_dispatcher = registry.try_get<entt::dispatcher>(ms);
+	if (nullptr != try_dispatcher)
+	{
+		try_dispatcher->sink<AcceptMissionEvent>().connect<&MissionEventReceiver::Receive0>();
+		try_dispatcher->sink<MissionConditionEvent>().connect<&MissionEventReceiver::Receive1>();
+		try_dispatcher->sink<OnAcceptedMissionEvent>().connect<&MissionEventReceiver::Receive2>();
+	}
     return &ms;
 }
 

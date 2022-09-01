@@ -45,7 +45,7 @@
     <ClCompile Include="..\..\common\src\pb\pbc\event_proto\mission_event.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\missions\mission_system.cpp">
+    <ClCompile Include="..\..\game_server\src\event_receiver\mission_event_receiver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -74,7 +74,7 @@
     <ClInclude Include="..\..\common\src\pb\pbc\event_proto\mission_event.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\missions\mission_system.h">
+    <ClInclude Include="..\..\game_server\src\event_receiver\mission_event_receiver.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

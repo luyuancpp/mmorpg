@@ -6,7 +6,6 @@
 #include "src/game_config/condition_config.h"
 #include "src/game_logic/constants/mission_constants.h"
 #include "src/game_logic/game_registry.h"
-#include "src/game_logic/missions/mission_system.h"
 #include "src/game_logic/tips_id.h"
 #include "src/util/random.h"
 
@@ -46,13 +45,7 @@ void MissionsComp::Init()
 	{
 		registry.emplace<CheckTypeRepeatd>(event_owner());
 	}
-    auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
-    if (nullptr != try_dispatcher)
-    {
-        try_dispatcher->sink<AcceptMissionEvent>().connect<&MissionEventReceiver::Receive1>();
-        try_dispatcher->sink<MissionConditionEvent>().connect<&MissionEventReceiver::Receive2>();
-        try_dispatcher->sink<OnAcceptedMissionEvent>().connect<&MissionEventReceiver::Receive3>();
-    }
+    
 }
 
 bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
