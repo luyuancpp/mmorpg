@@ -319,50 +319,49 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
     {
         return;
     }
-    auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
-    auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
     for (auto& mission_id : completed_missions_this_time)
     {
-        missions_comp_pb_.mutable_complete_missions()->insert({ mission_id, true });
-        if (nullptr != try_mission_reward && mission_config_->reward_id(mission_id) > 0)
-        {
-            try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });
-        }
-        // auto reward
-        DelMissionClassify(mission_id);
-
-        //如果是活动不用走
-		AcceptMissionEvent accept_mission_event;
-		accept_mission_event.set_entity(entt::to_integral(event_owner()));
-        auto& next_missions = mission_config_->next_mission_id(mission_id);
-        for (int32_t i = 0; i < next_missions.size(); ++i)
-        {
-			if (nullptr == try_dispatcher)
-			{
-                continue;
-			}			
-			accept_mission_event.set_mission_id(next_missions.Get(i));
-			try_dispatcher->enqueue(accept_mission_event);
-        }
+        DelMissionClassify(mission_id);        
     }
-    TriggerMissionCompleteCondition(completed_missions_this_time);
-}
-
-void MissionsComp::TriggerMissionCompleteCondition(const UInt32Set& temp_complete)
-{
+    //处理异步的
     auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
 	if (nullptr == try_dispatcher)
 	{
-        return; 	
+		return;
 	}
+	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());    
 	MissionConditionEvent mission_condition_event;
 	mission_condition_event.set_entity(entt::to_integral(event_owner()));
 	mission_condition_event.set_type(E_CONDITION_COMPLELTE_MISSION);
 	mission_condition_event.set_amount(1);
-	for (auto& it : temp_complete)
+	for (auto& mission_id : completed_missions_this_time)
 	{
+		missions_comp_pb_.mutable_complete_missions()->insert({ mission_id, true });
+		//自动领奖,给经验，为什么发事件？因为给经验升级了会马上接任务，或者触发一些任务的东西,
+		//但是我需要不影响当前任务逻辑流程,也可以马上触发，看情况而定
+		if (mission_config_->reward_id(mission_id) > 0 && mission_config_->auto_reward(mission_id))
+		{
+			OnMissionAwardEvent mission_award_event;
+            mission_award_event.set_entity(entt::to_integral(event_owner()));
+            mission_award_event.set_mission_id(mission_id);
+			try_dispatcher->enqueue(mission_award_event);
+		}
+		else if (nullptr != try_mission_reward && mission_config_->reward_id(mission_id) > 0)
+		{
+			try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });//手动领奖
+		}
+
+		//如果是活动不用走
+		AcceptMissionEvent accept_mission_event;
+		accept_mission_event.set_entity(entt::to_integral(event_owner()));
+		auto& next_missions = mission_config_->next_mission_id(mission_id);
+		for (int32_t i = 0; i < next_missions.size(); ++i)
+		{
+			accept_mission_event.set_mission_id(next_missions.Get(i));
+			try_dispatcher->enqueue(accept_mission_event);
+		}
 		mission_condition_event.clear_condtion_ids();
-		mission_condition_event.mutable_condtion_ids()->Add(it);
+		mission_condition_event.mutable_condtion_ids()->Add(mission_id);
 		try_dispatcher->enqueue(mission_condition_event);
 	}
 }
