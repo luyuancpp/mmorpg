@@ -78,13 +78,13 @@ def generatecppregisterunregisterfunction(filename):
 		newstr += classname + '::' + cppfunctionname + str(eventindex) + '>();\n'
 		eventindex += 1
 	newstr += '}\n\n'
-	newstr += 'static void UnRegister(entt::dispatcher& dispatcher){\n\n'
+	newstr += 'void ' + classname + '::UnRegister(entt::dispatcher& dispatcher)\n{\n'
 	eventindex = 0
 	while eventindex < len(local.eventprotoarray) :
 		newstr += 'dispatcher.sink<' + local.eventprotoarray[eventindex] + '>().disconnect<&'
 		newstr += classname + '::' + cppfunctionname + str(eventindex) + '>();\n'
 		eventindex += 1
-	newstr += '}\n'
+	newstr += '}\n\n'
 	return newstr
 
 def generatecpp(filename):
@@ -146,7 +146,6 @@ def generatecpp(filename):
 
 def geneventreceiverhead():
 	md5headfilename = md5dir + geneventreceiverfilename + '.h'
-
 	newstr = '#pragma once\n'
 	newstr += '#include "src/game_logic/game_registry.h"\n'	
 	newstr += '\nclass ' + eventreceiverclassname + '\n{\npublic:\n'
@@ -159,6 +158,7 @@ def geneventreceiverhead():
 def geneventreceivercpp():
 	md5headfilename = md5dir + geneventreceiverfilename + '.cpp'
 	newstr = '#pragma once\n'
+	newstr += '#include "' + geneventreceiverfilename + '.h"\n'
 	for i in range(0, len(filelist)): 
 		newstr +=  '#include "' + getfilenamenoprefixsuffix(filelist[0]) + headdestfilesuffix + '"\n'	
 	newstr += '\n'
