@@ -19,8 +19,8 @@ headdestfilesuffix = '_receiver.h'
 cppdestfilesuffix = '_receiver.cpp'
 cpprpceventpart = 1
 
-yourcodebegin = '---<<< BEGIN WRITING YOUR CODE'
-yourcodeend = '---<<< END WRITING YOUR CODE'
+yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
+yourcodeend = '///<<< END WRITING YOUR CODE'
 
 if not os.path.exists(md5dir):
     os.makedirs(md5dir)
@@ -61,7 +61,7 @@ def generatehead(filename):
 	newstr += tabstr + 'static void Register(entt::dispatcher& dispatcher);\n'
 	newstr += tabstr + 'static void UnRegister(entt::dispatcher& dispatcher);\n\n'
 	for i in range(0, len(local.eventprotoarray)): 
-		newstr += tabstr + 'static void Receive1(const ' + local.eventprotoarray[i] + '& event_obj);\n'
+		newstr += tabstr + 'static void Receive' + str(i) + '(const ' + local.eventprotoarray[i] + '& event_obj);\n'
 	newstr += '};\n'
 	with open(md5headfilename, 'w', encoding='utf-8')as file:
 		file.write(newstr)

@@ -11,7 +11,7 @@ public:
     static void Register(entt::dispatcher& dispatcher);
     static void UnRegister(entt::dispatcher& dispatcher);
 
-    static void Receive1(const AcceptMissionEvent& event_obj);
+    static void Receive0(const AcceptMissionEvent& event_obj);
     static void Receive1(const MissionConditionEvent& event_obj);
-    static void Receive1(const OnAcceptedMissionEvent& event_obj);
+    static void Receive2(const OnAcceptedMissionEvent& event_obj);
 };
