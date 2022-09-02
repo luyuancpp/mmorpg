@@ -60,11 +60,11 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	auto& message_extern = request->ex();
-	auto it = g_players->find(message_extern.player_id());
+	auto& message_ex = request->ex();
+	auto it = g_players->find(message_ex.player_id());
 	if (it == g_players->end())
 	{
-		LOG_ERROR << "PlayerService player not found " << message_extern.player_id() << ","
+		LOG_ERROR << "PlayerService player not found " << message_ex.player_id() << ","
 			<< request->descriptor()->full_name() << " msgid " << request->msg().msg_id();
 		return;
 	}
@@ -72,13 +72,13 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 	auto sit = g_serviceinfo.find(msg_id);
 	if (sit == g_serviceinfo.end())
 	{
-		LOG_ERROR << "PlayerService msg not found " << message_extern.player_id() << "," << msg_id;
+		LOG_ERROR << "PlayerService msg not found " << message_ex.player_id() << "," << msg_id;
 		return;
 	}
 	auto service_it = g_player_services.find(sit->second.service);
 	if (service_it == g_player_services.end())
 	{
-		LOG_ERROR << "PlayerService service not found " << message_extern.player_id() << "," << msg_id;
+		LOG_ERROR << "PlayerService service not found " << message_ex.player_id() << "," << msg_id;
 		return;
 	}
 	auto& serviceimpl = service_it->second;
