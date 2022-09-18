@@ -132,6 +132,45 @@
     <ClCompile Include="muduo\contrib\hiredis\Hiredis.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="recastnavigation\Detour\Source\DetourAlloc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\Detour\Source\DetourAssert.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\Detour\Source\DetourCommon.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMesh.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMeshQuery.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\Detour\Source\DetourNode.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourCrowd.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourLocalBoundary.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourObstacleAvoidance.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourPathCorridor.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourPathQueue.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourProximityGrid.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="muduo\muduo\base\AsyncLogging.h">
@@ -297,6 +336,51 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="muduo\contrib\hiredis\Hiredis.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\Detour\Include\DetourAlloc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\Detour\Include\DetourAssert.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\Detour\Include\DetourCommon.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\Detour\Include\DetourMath.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMesh.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMeshBuilder.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMeshQuery.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\Detour\Include\DetourNode.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\Detour\Include\DetourStatus.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourCrowd.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourLocalBoundary.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourObstacleAvoidance.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourPathCorridor.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourPathQueue.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourProximityGrid.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

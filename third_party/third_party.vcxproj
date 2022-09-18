@@ -58,6 +58,19 @@
     <ClCompile Include="muduo\muduo\net\TcpServer.cc" />
     <ClCompile Include="muduo\muduo\net\Timer.cc" />
     <ClCompile Include="muduo\muduo\net\TimerQueue.cc" />
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourCrowd.cpp" />
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourLocalBoundary.cpp" />
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourObstacleAvoidance.cpp" />
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourPathCorridor.cpp" />
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourPathQueue.cpp" />
+    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourProximityGrid.cpp" />
+    <ClCompile Include="recastnavigation\Detour\Source\DetourAlloc.cpp" />
+    <ClCompile Include="recastnavigation\Detour\Source\DetourAssert.cpp" />
+    <ClCompile Include="recastnavigation\Detour\Source\DetourCommon.cpp" />
+    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMesh.cpp" />
+    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp" />
+    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMeshQuery.cpp" />
+    <ClCompile Include="recastnavigation\Detour\Source\DetourNode.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="muduo\contrib\hiredis\Hiredis.h" />
@@ -115,6 +128,21 @@
     <ClInclude Include="muduo\muduo\net\TimerId.h" />
     <ClInclude Include="muduo\muduo\net\TimerQueue.h" />
     <ClInclude Include="muduo\muduo\net\ZlibStream.h" />
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourCrowd.h" />
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourLocalBoundary.h" />
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourObstacleAvoidance.h" />
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourPathCorridor.h" />
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourPathQueue.h" />
+    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourProximityGrid.h" />
+    <ClInclude Include="recastnavigation\Detour\Include\DetourAlloc.h" />
+    <ClInclude Include="recastnavigation\Detour\Include\DetourAssert.h" />
+    <ClInclude Include="recastnavigation\Detour\Include\DetourCommon.h" />
+    <ClInclude Include="recastnavigation\Detour\Include\DetourMath.h" />
+    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMesh.h" />
+    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMeshBuilder.h" />
+    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMeshQuery.h" />
+    <ClInclude Include="recastnavigation\Detour\Include\DetourNode.h" />
+    <ClInclude Include="recastnavigation\Detour\Include\DetourStatus.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -222,7 +250,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./boost/;./;./protobuf/src/;../third_party/;../third_party/zlib/;../third_party/muduo/;../third_party/googletest/googletest/include/;../third_party/muduo/contrib/windows/include;../third_party/redis;../third_party/redis/deps/;../third_party/muduo/contrib/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./boost/;./;./protobuf/src/;../third_party/;../third_party/zlib/;../third_party/muduo/;../third_party/googletest/googletest/include/;../third_party/muduo/contrib/windows/include;../third_party/redis;../third_party/redis/deps/;../third_party/muduo/contrib/;../third_party/recastnavigation/;../third_party/recastnavigation/Detour/Include;../third_party/recastnavigation/DetourCrowd/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
