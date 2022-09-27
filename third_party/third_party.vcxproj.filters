@@ -132,43 +132,55 @@
     <ClCompile Include="muduo\contrib\hiredis\Hiredis.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\Detour\Source\DetourAlloc.cpp">
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourAlloc.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\Detour\Source\DetourAssert.cpp">
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourCommon.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\Detour\Source\DetourCommon.cpp">
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourNavMesh.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMesh.cpp">
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourNavMeshBuilder.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp">
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourNavMeshQuery.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMeshQuery.cpp">
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourNode.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\Detour\Source\DetourNode.cpp">
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourCrowd.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourCrowd.cpp">
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourLocalBoundary.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourLocalBoundary.cpp">
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourObstacleAvoidance.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourObstacleAvoidance.cpp">
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourPathCorridor.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourPathCorridor.cpp">
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourPathQueue.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourPathQueue.cpp">
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourProximityGrid.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourProximityGrid.cpp">
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourSharedBoundary.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ue5navmesh\Private\DetourTileCache\DetourTileCache.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ue5navmesh\Private\DetourTileCache\DetourTileCacheBuilder.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ue5navmesh\Private\DetourTileCache\DetourTileCacheDetail.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ue5navmesh\Private\DetourTileCache\DetourTileCacheRegion.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -338,49 +350,61 @@
     <ClInclude Include="muduo\contrib\hiredis\Hiredis.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\Detour\Include\DetourAlloc.h">
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourAlloc.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\Detour\Include\DetourAssert.h">
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourAssert.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\Detour\Include\DetourCommon.h">
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourCommon.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\Detour\Include\DetourMath.h">
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourLargeWorldCoordinates.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMesh.h">
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourNavMesh.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMeshBuilder.h">
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourNavMeshBuilder.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMeshQuery.h">
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourNavMeshQuery.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\Detour\Include\DetourNode.h">
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourNode.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\Detour\Include\DetourStatus.h">
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourStatus.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourCrowd.h">
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourCrowd.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourLocalBoundary.h">
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourLocalBoundary.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourObstacleAvoidance.h">
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourObstacleAvoidance.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourPathCorridor.h">
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourPathCorridor.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourPathQueue.h">
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourPathQueue.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourProximityGrid.h">
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourProximityGrid.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourSharedBoundary.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ue5navmesh\Public\DetourTileCache\DetourTileCache.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ue5navmesh\Public\DetourTileCache\DetourTileCacheBuilder.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ue5navmesh\Public\CoreMinimal.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

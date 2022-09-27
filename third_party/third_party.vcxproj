@@ -58,19 +58,23 @@
     <ClCompile Include="muduo\muduo\net\TcpServer.cc" />
     <ClCompile Include="muduo\muduo\net\Timer.cc" />
     <ClCompile Include="muduo\muduo\net\TimerQueue.cc" />
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourCrowd.cpp" />
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourLocalBoundary.cpp" />
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourObstacleAvoidance.cpp" />
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourPathCorridor.cpp" />
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourPathQueue.cpp" />
-    <ClCompile Include="recastnavigation\DetourCrowd\Source\DetourProximityGrid.cpp" />
-    <ClCompile Include="recastnavigation\Detour\Source\DetourAlloc.cpp" />
-    <ClCompile Include="recastnavigation\Detour\Source\DetourAssert.cpp" />
-    <ClCompile Include="recastnavigation\Detour\Source\DetourCommon.cpp" />
-    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMesh.cpp" />
-    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMeshBuilder.cpp" />
-    <ClCompile Include="recastnavigation\Detour\Source\DetourNavMeshQuery.cpp" />
-    <ClCompile Include="recastnavigation\Detour\Source\DetourNode.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourCrowd.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourLocalBoundary.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourObstacleAvoidance.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourPathCorridor.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourPathQueue.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourProximityGrid.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourCrowd\DetourSharedBoundary.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourTileCache\DetourTileCache.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourTileCache\DetourTileCacheBuilder.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourTileCache\DetourTileCacheDetail.cpp" />
+    <ClCompile Include="ue5navmesh\Private\DetourTileCache\DetourTileCacheRegion.cpp" />
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourAlloc.cpp" />
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourCommon.cpp" />
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourNavMesh.cpp" />
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourNavMeshBuilder.cpp" />
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourNavMeshQuery.cpp" />
+    <ClCompile Include="ue5navmesh\Private\Detour\DetourNode.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="muduo\contrib\hiredis\Hiredis.h" />
@@ -128,21 +132,25 @@
     <ClInclude Include="muduo\muduo\net\TimerId.h" />
     <ClInclude Include="muduo\muduo\net\TimerQueue.h" />
     <ClInclude Include="muduo\muduo\net\ZlibStream.h" />
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourCrowd.h" />
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourLocalBoundary.h" />
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourObstacleAvoidance.h" />
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourPathCorridor.h" />
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourPathQueue.h" />
-    <ClInclude Include="recastnavigation\DetourCrowd\Include\DetourProximityGrid.h" />
-    <ClInclude Include="recastnavigation\Detour\Include\DetourAlloc.h" />
-    <ClInclude Include="recastnavigation\Detour\Include\DetourAssert.h" />
-    <ClInclude Include="recastnavigation\Detour\Include\DetourCommon.h" />
-    <ClInclude Include="recastnavigation\Detour\Include\DetourMath.h" />
-    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMesh.h" />
-    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMeshBuilder.h" />
-    <ClInclude Include="recastnavigation\Detour\Include\DetourNavMeshQuery.h" />
-    <ClInclude Include="recastnavigation\Detour\Include\DetourNode.h" />
-    <ClInclude Include="recastnavigation\Detour\Include\DetourStatus.h" />
+    <ClInclude Include="ue5navmesh\Public\CoreMinimal.h" />
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourCrowd.h" />
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourLocalBoundary.h" />
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourObstacleAvoidance.h" />
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourPathCorridor.h" />
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourPathQueue.h" />
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourProximityGrid.h" />
+    <ClInclude Include="ue5navmesh\Public\DetourCrowd\DetourSharedBoundary.h" />
+    <ClInclude Include="ue5navmesh\Public\DetourTileCache\DetourTileCache.h" />
+    <ClInclude Include="ue5navmesh\Public\DetourTileCache\DetourTileCacheBuilder.h" />
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourAlloc.h" />
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourAssert.h" />
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourCommon.h" />
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourLargeWorldCoordinates.h" />
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourNavMesh.h" />
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourNavMeshBuilder.h" />
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourNavMeshQuery.h" />
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourNode.h" />
+    <ClInclude Include="ue5navmesh\Public\Detour\DetourStatus.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -250,7 +258,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./boost/;./;./protobuf/src/;../third_party/;../third_party/zlib/;../third_party/muduo/;../third_party/googletest/googletest/include/;../third_party/muduo/contrib/windows/include;../third_party/redis;../third_party/redis/deps/;../third_party/muduo/contrib/;../third_party/recastnavigation/;../third_party/recastnavigation/Detour/Include;../third_party/recastnavigation/DetourCrowd/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./boost/;./;./protobuf/src/;../third_party/;../third_party/zlib/;../third_party/muduo/;../third_party/googletest/googletest/include/;../third_party/muduo/contrib/windows/include;../third_party/redis;../third_party/redis/deps/;../third_party/muduo/contrib/;../third_party/ue5navmesh/Public/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp17</LanguageStandard>
