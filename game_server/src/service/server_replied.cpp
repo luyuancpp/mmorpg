@@ -9,6 +9,7 @@
 #include "src/game_logic/scene/scene.h"
 #include "src/network/ms_node.h"
 #include "src/network/rpc_client.h"
+#include "src/system/entity_scene_system.h"
 
 
 void ServerReplied::StartGsMasterReplied(StartGsMasterRpc replied)
@@ -16,9 +17,9 @@ void ServerReplied::StartGsMasterReplied(StartGsMasterRpc replied)
     auto rsp = replied->s_rp_;
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
     {
-        CreateSceneBySceneInfoP make_scene;
-        make_scene.scene_info_ = std::move(rsp->scenes_info(i));
-		ScenesSystem::GetSingleton().CreateSceneByGuid(make_scene);
+        CreateSceneBySceneInfoP param;
+        param.scene_info_ = rsp->scenes_info(i);
+        GsSceneSystem::CreateSceneByGuid(param);
     }
 }
 
@@ -27,9 +28,9 @@ void ServerReplied::StartCrossGsRegionReplied(StartCrossGsRpc replied)
 	auto rsp = replied->s_rp_;
 	for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
 	{
-        CreateSceneBySceneInfoP make_scene;
-        make_scene.scene_info_ = std::move(rsp->scenes_info(i));
-        ScenesSystem::GetSingleton().CreateSceneByGuid(make_scene);
+		CreateSceneBySceneInfoP param;
+		param.scene_info_ = rsp->scenes_info(i);
+		GsSceneSystem::CreateSceneByGuid(param);
 	}
 }
 
