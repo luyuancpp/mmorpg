@@ -22,3 +22,6 @@
 [submodule "third_party/recastnavigation"]
 	path = third_party/recastnavigation
 	url = https://github.com/recastnavigation/recastnavigation.git
+[submodule "third_party/ue5navmesh"]
+	path = third_party/ue5navmesh
+	url = https://github.com/luyuancpp/ue5navmesh.git
