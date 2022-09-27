@@ -22,7 +22,7 @@ void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t scene_id)
 	EnterSceneParam ep;
 	ep.enterer_ = player;
 	ep.scene_ = scene;
-	EntitySceneSystem::EnterScene(ep);
+	GsSceneSystem::EnterScene(ep);
 }
 
 void PlayerSceneSystem::OnEnterScene(entt::entity player, entt::entity scene)
@@ -36,6 +36,6 @@ void PlayerSceneSystem::LeaveScene(entt::entity player)
 {
 	LeaveSceneParam lp;
 	lp.leaver_ = player;
-	EntitySceneSystem::LeaveScene(player);
+	GsSceneSystem::LeaveScene(player);
 }
 
