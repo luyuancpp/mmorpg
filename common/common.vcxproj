@@ -156,7 +156,6 @@
     <ClCompile Include="src\game_config\deploy_json.cpp" />
     <ClCompile Include="src\game_config\global_variable_config.cpp" />
     <ClCompile Include="src\game_config\item_config.cpp" />
-    <ClCompile Include="src\game_config\mainscene_config.cpp" />
     <ClCompile Include="src\game_config\mission_config.cpp" />
     <ClCompile Include="src\game_config\region_config.cpp" />
     <ClCompile Include="src\game_config\scene_config.cpp" />
@@ -251,7 +250,6 @@
     <ClInclude Include="src\game_config\global_variable_config.h" />
     <ClInclude Include="src\game_config\global_variable_config_id.h" />
     <ClInclude Include="src\game_config\item_config.h" />
-    <ClInclude Include="src\game_config\mainscene_config.h" />
     <ClInclude Include="src\game_config\mission_config.h" />
     <ClInclude Include="src\game_config\region_config.h" />
     <ClInclude Include="src\game_config\scene_config.h" />
