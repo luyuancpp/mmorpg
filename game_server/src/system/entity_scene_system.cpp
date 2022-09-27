@@ -2,6 +2,8 @@
 
 #include "muduo/base/Logging.h"
 
+#include "ue5navmesh/Public/Detour/DetourNavMesh.h"
+
 #include "src/game_config/scene_config.h"
 
 #include "src/game_logic/scene/servernode_system.h"
@@ -10,13 +12,16 @@
 
 #include "component_proto/player_comp.pb.h"
 
-GsSceneSystem g_entity_scene_system;
-
 void GsSceneSystem::CreateSceneByGuid(CreateSceneBySceneInfoP& param)
 {
     auto scene = ScenesSystem::GetSingleton().CreateSceneByGuid(param);
     //init scene 
-
+    auto p_scene_row = get_scene_conf(param.scene_info_.scene_confid());
+    if (nullptr == p_scene_row)
+    {
+        LOG_ERROR << "scene config null" << param.scene_info_.scene_confid();
+        return;
+    }
 }
 
 void GsSceneSystem::EnterScene(const EnterSceneParam& param)
