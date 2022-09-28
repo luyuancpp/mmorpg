@@ -134,10 +134,17 @@ def getallconfig():
                         
         s =  '#pragma once\n'                      
         s += 'void LoadAllConfig();\n'
+        s += 'void LoadAllConfigAsync();\n'
         scpp = '#include "all_config.h"\n'  
         for item in sheetnames :
                 scpp += '#include "%s_config.h"\n' % (item)               
         scpp += 'void LoadAllConfig()\n{\n'
+        for item in sheetnames :
+                scpp += '%s_config::GetSingleton().load();\n' % (item)
+                #print(item)
+        scpp += '}\n'
+        scpp += '\n'
+        scpp += 'void LoadAllConfigAsync()\n{\n'
         for item in sheetnames :
                 scpp += '%s_config::GetSingleton().load();\n' % (item)
                 #print(item)
