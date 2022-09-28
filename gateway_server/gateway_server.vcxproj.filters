@@ -56,5 +56,8 @@
     <ClInclude Include="src\network\login_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\network\gs_node.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

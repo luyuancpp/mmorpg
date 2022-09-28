@@ -61,7 +61,6 @@ message ConnectRequest
 service GsService {
   rpc EnterGs (EnterGsRequest) returns (google.protobuf.Empty);
   rpc PlayerService (MsPlayerMessageRequest) returns (MsPlayerMessageRespone);
-  rpc PlayerServiceNoRespone (MsPlayerMessageRequest) returns (google.protobuf.Empty);
   rpc GwPlayerService (RpcClientRequest) returns (RpcClientResponse);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GwConnectGs (ConnectRequest) returns (google.protobuf.Empty); 

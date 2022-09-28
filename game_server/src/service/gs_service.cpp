@@ -35,7 +35,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	auto player_id = request->player_id();
 	PlayerCommonSystem::RemovePlayereSession(player_id);
 	auto p_it = g_players->find(player_id);
-	if (p_it != g_players->end())//已经在线，直接进入
+	if (p_it != g_players->end())//已经在线，直接进入,判断是需要发送哪些信息
 	{
 		EnterGsInfo enter_info;
 		enter_info.set_ms_node_id(request->ms_node_id());
@@ -102,16 +102,6 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 	response->mutable_ex()->set_player_id(request->ex().player_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
 	response->mutable_msg()->set_msg_id(msg_id);
-///<<< END WRITING YOUR CODE 
-}
-
-void GsServiceImpl::PlayerServiceNoRespone(::google::protobuf::RpcController* controller,
-    const gsservice::MsPlayerMessageRequest* request,
-    ::google::protobuf::Empty* response,
-    ::google::protobuf::Closure* done)
-{
-    AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE 
 }
 
