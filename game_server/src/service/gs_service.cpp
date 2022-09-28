@@ -122,6 +122,7 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	// todo player service move to gate check
 	auto mit = g_serviceinfo.find(request->msg_id());
 	if (mit == g_serviceinfo.end())
 	{

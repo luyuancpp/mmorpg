@@ -9,12 +9,6 @@ message GsMessageExtern
   uint64 session_id = 1;
 }
 
-message GsPlayerMessageRequest
-{
-  MessageBody msg = 1;
-  GsMessageExtern ex = 2;
-}
-
 message StartGSRequest
 {
   string ip = 1;
@@ -61,6 +55,5 @@ service GwNodeService {
   rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
   rpc PlayerEnterGs (PlayerEnterGsRequest) returns (PlayerEnterGsResponese);
   rpc PlayerMessage (PlayerMessageRequest) returns (google.protobuf.Empty);
-  rpc GsPlayerService (GsPlayerMessageRequest) returns (google.protobuf.Empty);
   rpc KickConnByMs (KickConnRequest) returns (google.protobuf.Empty);
 }

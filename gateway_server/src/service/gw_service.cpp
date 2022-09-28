@@ -103,24 +103,6 @@ void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* control
 ///<<< END WRITING YOUR CODE 
 }
 
-void GwNodeServiceImpl::GsPlayerService(::google::protobuf::RpcController* controller,
-    const gwservice::GsPlayerMessageRequest* request,
-    ::google::protobuf::Empty* response,
-    ::google::protobuf::Closure* done)
-{
-    AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE 
-	auto session_id = request->ex().session_id();
-	auto it = g_client_sessions_->find(session_id);
-	if (it == g_client_sessions_->end())
-	{
-		LOG_ERROR << "connid not found  conn id " << session_id;
-		return;
-	}
-	g_gateway_server->Send2Client(it->second.conn_, request->msg());
-///<<< END WRITING YOUR CODE 
-}
-
 void GwNodeServiceImpl::KickConnByMs(::google::protobuf::RpcController* controller,
     const gwservice::KickConnRequest* request,
     ::google::protobuf::Empty* response,
