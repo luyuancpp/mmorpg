@@ -18,6 +18,7 @@
 #include "src/network/node_info.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/system/redis_system.h"
+#include "src/system/logic/config_system.h"
 
 GameServer* g_gs = nullptr;
 
@@ -28,15 +29,12 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 void GameServer::Init()
 {
     g_gs = this; 
-
     InitConfig();
     global_entity() = registry.create();
     registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
     LOG_INFO << "server type" << GameConfig::GetSingleton().config_info().server_type();
     InitMsgService();
-
     InitPlayerServcie();
-    
     InitNetwork();
 }
 
@@ -46,6 +44,7 @@ void GameServer::InitConfig()
 	DeployConfig::GetSingleton().Load("deploy.json");
 	RegionConfig::GetSingleton().Load("region.json");
     LoadAllConfig();
+    ConfigSystem::OnConfigLoadSuccessful();
 }
 
 void GameServer::InitNetwork()

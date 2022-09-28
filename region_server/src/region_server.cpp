@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/game_config/deploy_json.h"
-#include "src/game_config/mainscene_config.h"
+#include "src/game_config/scene_config.h"
 #include "src/game_config/region_config.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/server_component.h"
@@ -15,7 +15,6 @@ RegionServer* g_region_server = nullptr;
 
 void set_server_squence_node_id(uint32_t node_id);
 
-
 RegionServer::RegionServer(muduo::net::EventLoop* loop): loop_(loop){}
 
 void RegionServer::Init()
@@ -25,7 +24,7 @@ void RegionServer::Init()
     RegionConfig::GetSingleton().Load("region.json");
     DeployConfig::GetSingleton().Load("deploy.json");
 
-    mainscene_config::GetSingleton().load();
+    scene_config::GetSingleton().load();
 
     ConnectDeploy();
 }
