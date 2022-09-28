@@ -145,6 +145,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
     }
     else
     {
+        //todo ¶ÏÏßÖØÁ¬
         for (auto& it : g_gs_nodes)
         {
             if (!IsSameAddr(it.second.gs_session_->peer_addr(), conn->peerAddress()))

@@ -16,7 +16,6 @@
 
 #include "login_service.pb.h"
 
-
 ServerSequence32 g_server_sequence_;
 
 extern std::unordered_set<uint32_t> g_open_player_msgids;
@@ -96,9 +95,10 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     const LoginRequestPtr& message,
     muduo::Timestamp)
 {
+    //todo login 崩溃了
     LoginRpc rpc(std::make_shared<LoginRpc::element_type>(conn));
-    rpc->s_rq_.set_account(std::move(message->account()));
-    rpc->s_rq_.set_password(std::move(message->password()));
+    rpc->s_rq_.set_account(message->account());
+    rpc->s_rq_.set_password(message->password());
     rpc->s_rq_.set_session_id(rpc->session_id());
     login_stub().CallMethod(&ClientReceiver::OnServerLoginReplied,
         rpc, 
@@ -204,9 +204,8 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 
 void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpc replied)
 {
-    auto& crp = replied->c_rp_;
-    crp.set_body(std::move(replied->s_rp_->response()));
-    codec_.send(replied->client_conn_, crp);
+    replied->c_rp_.set_body(replied->s_rp_->response());
+    codec_.send(replied->client_conn_, replied->c_rp_);
 }
 
 
