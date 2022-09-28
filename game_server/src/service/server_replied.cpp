@@ -9,8 +9,7 @@
 #include "src/game_logic/scene/scene.h"
 #include "src/network/ms_node.h"
 #include "src/network/rpc_client.h"
-#include "src/system/entity_scene_system.h"
-
+#include "src/system/gs_scene_system.h"
 
 void ServerReplied::StartGsMasterReplied(StartGsMasterRpc replied)
 {
