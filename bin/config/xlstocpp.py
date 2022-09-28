@@ -8,6 +8,7 @@ import os.path
 import md5tool
 from os import listdir
 from os.path import isfile, join
+from multiprocessing import cpu_count
 
 keyrowidx = 4
 cppdir = "cpp/"
@@ -124,7 +125,9 @@ def getcpp(datastring, sheetname):
 
 def getallconfig():
         sheetnames = []
-        for filename in listdir(xlsdir):
+        dirfiles = listdir(xlsdir)
+        files = sorted(dirfiles, key = lambda file : os.path.getsize(xlsdir + file), reverse=True )
+        for filename in files:
                 filename = xlsdir + filename
                 if filename.endswith('.xlsx') or filename.endswith('.xls'):
                         workbook = xlrd.open_workbook(filename)
@@ -134,8 +137,11 @@ def getallconfig():
                         
         s =  '#pragma once\n'                      
         s += 'void LoadAllConfig();\n'
-        s += 'void LoadAllConfigAsync();\n'
-        scpp = '#include "all_config.h"\n'  
+        s += 'void LoadAllConfigAsyncWhenServerLaunch();\n'
+        scpp = '#include "all_config.h"\n\n' 
+        scpp = '#include <thread>\n' 
+        scpp += '#include "muduo/base/CountDownLatch.h"\n\n' 
+        
         for item in sheetnames :
                 scpp += '#include "%s_config.h"\n' % (item)               
         scpp += 'void LoadAllConfig()\n{\n'
@@ -144,10 +150,33 @@ def getallconfig():
                 #print(item)
         scpp += '}\n'
         scpp += '\n'
-        scpp += 'void LoadAllConfigAsync()\n{\n'
+        cpucount = cpu_count()
+        scpp += 'void LoadAllConfigAsyncWhenServerLaunch()\n{\n'
+        
+        cpustr = []
+        for i in range(cpucount):
+                cpustr.append([])
+        count = 0
+        realthreadcount = 0
         for item in sheetnames :
-                scpp += '%s_config::GetSingleton().load();\n' % (item)
-                #print(item)
+                loadstr = '%s_config::GetSingleton().load();\n' % (item)
+                if count >= cpucount:
+                        count = 0
+                cpustr[count].append(loadstr)
+                count += 1
+                if realthreadcount < count:
+                        realthreadcount = count
+        
+        scpp += 'static muduo::CountDownLatch latch_(' +  str(realthreadcount) + ');\n'
+
+        for group in cpustr:
+                if len(group) <= 0:
+                        continue
+                scpp += '\n{\n std::thread t([](){\n\n'
+                for blockstr in group:
+                         scpp += blockstr
+                scpp += '\nlatch_.countDown();\n});\n}\n'
+        scpp += 'latch_.wait();\n'
         scpp += '}\n'
         return s, scpp
 
