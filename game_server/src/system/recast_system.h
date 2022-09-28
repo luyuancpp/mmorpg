@@ -7,5 +7,5 @@
 class RecstSystem
 {
 public:
-	static dtNavMesh* LoadNavMesh(const char* path);
+	static dtNavMesh* LoadNavMesh(const char* path, dtNavMesh* mesh);
 };

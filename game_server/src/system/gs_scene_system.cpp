@@ -10,6 +10,7 @@
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/system/player_scene_system.h"
+#include "src/system/recast_system.h"
 
 #include "component_proto/player_comp.pb.h"
 
@@ -23,6 +24,7 @@ void GsSceneSystem::LoadAllMainSceneNavBin()
         auto scene_nav_ptr = std::make_shared<SceneNavPtr::element_type>();
         scene_nav_ptr->p_nav_  = std::make_unique<SceneNav::DtNavMeshPtr::element_type>();
         scene_nav_ptr->p_nav_query_ = std::make_unique<SceneNav::DtNavMeshQueryPtr::element_type>();
+        RecstSystem::LoadNavMesh(config_all.data(i).nav_bin_file().c_str(), scene_nav_ptr->p_nav_.get());
     }    
 }
 
