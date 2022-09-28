@@ -20,6 +20,9 @@ void GsSceneSystem::LoadAllMainSceneNavBin()
     auto& config_all = mainscene_config::GetSingleton().all();
 	for (int32_t i = 0; i < config_all.data_size(); ++i)
 	{
+        auto scene_nav_ptr = std::make_shared<SceneNavPtr::element_type>();
+        scene_nav_ptr->p_nav_  = std::make_unique<SceneNav::DtNavMeshPtr::element_type>();
+        scene_nav_ptr->p_nav_query_ = std::make_unique<SceneNav::DtNavMeshQueryPtr::element_type>();
     }    
 }
 
