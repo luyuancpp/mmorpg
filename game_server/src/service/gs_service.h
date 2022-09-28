@@ -19,11 +19,6 @@ public:
         gsservice::MsPlayerMessageRespone* response,
         ::google::protobuf::Closure* done)override;
 
-    void PlayerServiceNoRespone(::google::protobuf::RpcController* controller,
-        const gsservice::MsPlayerMessageRequest* request,
-        ::google::protobuf::Empty* response,
-        ::google::protobuf::Closure* done)override;
-
     void GwPlayerService(::google::protobuf::RpcController* controller,
         const gsservice::RpcClientRequest* request,
         gsservice::RpcClientResponse* response,
