@@ -92,6 +92,7 @@
     <ClCompile Include="src\pb\pbc\game_config\mission_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\game_config\scene_config.pb.cc" />
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
+    <ClCompile Include="src\game_config\mainscene_config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -201,5 +202,6 @@
     <ClInclude Include="src\pb\pbc\game_config\mission_config.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\scene_config.pb.h" />
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
+    <ClInclude Include="src\game_config\mainscene_config.h" />
   </ItemGroup>
 </Project>
