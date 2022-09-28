@@ -33,7 +33,7 @@ private:
 
 namespace entt
 {
-	[[nodiscard]] static constexpr entt::entity to_entity(uint64_t value) ENTT_NOEXCEPT {
+	[[nodiscard]] static constexpr entt::entity to_entity(uint64_t value)  {
 		return static_cast<entt::entity>(value);
 	}
 }//namespace entt
