@@ -21,14 +21,16 @@ struct NavMeshTileHeader
 static const int NAVMESHSET_MAGIC = 'M' << 24 | 'S' << 16 | 'E' << 8 | 'T'; //'MSET';
 static const int NAVMESHSET_VERSION = 1;
 
-void FilePtrDeleter(std::FILE* fp)
-{
-	std::fclose(fp);
-}
+class StdFilePtrDeleter {
+public:
+	void operator()(std::FILE* fp) { std::fclose(fp); }
+};
+
+using StdFilePtr = std::unique_ptr<std::FILE, StdFilePtrDeleter>;
 
 dtNavMesh* RecstSystem::LoadNavMesh(const char* path)
 {
-	std::shared_ptr<std::FILE> fp(std::fopen(path, "rb"), &std::fclose);
+	StdFilePtr fp(std::fopen(path, "rb"));
 	if (nullptr == fp)
 	{
 		LOG_ERROR << "load nav bin header " << path;

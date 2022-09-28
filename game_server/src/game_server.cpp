@@ -43,7 +43,7 @@ void GameServer::InitConfig()
 	GameConfig::GetSingleton().Load("game.json");
 	DeployConfig::GetSingleton().Load("deploy.json");
 	RegionConfig::GetSingleton().Load("region.json");
-    LoadAllConfig();
+    LoadAllConfigAsyncWhenServerLaunch();
     ConfigSystem::OnConfigLoadSuccessful();
 }
 

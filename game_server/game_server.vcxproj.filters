@@ -173,5 +173,8 @@
     <ClInclude Include="src\system\logic\config_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\comp\gs_scene_comp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -4,6 +4,7 @@
 
 #include "ue5navmesh/Public/Detour/DetourNavMesh.h"
 
+#include "src/game_config/mainscene_config.h"
 #include "src/game_config/scene_config.h"
 
 #include "src/game_logic/scene/servernode_system.h"
@@ -11,6 +12,16 @@
 #include "src/system/player_scene_system.h"
 
 #include "component_proto/player_comp.pb.h"
+
+SceneNavs g_scene_nav;
+
+void GsSceneSystem::LoadAllMainSceneNavBin()
+{
+    auto& config_all = mainscene_config::GetSingleton().all();
+	for (int32_t i = 0; i < config_all.data_size(); ++i)
+	{
+    }    
+}
 
 void GsSceneSystem::CreateSceneByGuid(CreateSceneBySceneInfoP& param)
 {

@@ -113,7 +113,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../common/src/pb/pbc/;../third_party/redis/;../third_party/muduo/;../third_party/muduo/contrib/windows/include;../third_party/redis/deps/;../third_party/ue5navmesh/Public/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_TCHAR_DEFINED</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -153,6 +153,7 @@
     <ClCompile Include="src\system\gs_scene_system.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\comp\gs_scene_comp.h" />
     <ClInclude Include="src\event_receiver\event_receiver.h" />
     <ClInclude Include="src\event_receiver\mission_event_receiver.h" />
     <ClInclude Include="src\service\logic\gscommon_client_player.h" />
