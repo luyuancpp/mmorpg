@@ -132,10 +132,8 @@ def getallconfig():
                         for sheetname in workbookdata :
                                 sheetnames.append(sheetname)
                         
-        s =  '#ifndef all_config_h\n'                      
-        s += '#define all_config_h\n'
+        s =  '#pragma once\n'                      
         s += 'void LoadAllConfig();\n'
-        s += '#endif// all_config_h\n'
         scpp = '#include "all_config.h"\n'  
         for item in sheetnames :
                 scpp += '#include "%s_config.h"\n' % (item)               
