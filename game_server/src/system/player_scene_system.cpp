@@ -5,7 +5,7 @@
 #include "src/game_logic/player/player_list.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"
-#include "src/system/entity_scene_system.h"
+#include "src/system/gs_scene_system.h"
 
 #include "logic_proto/scene_client_player.pb.h"
 

@@ -21,6 +21,7 @@ void EnityPtrDeleter(entt::entity* p)
 	registry.destroy(*p);
 	delete p;
 }
+
 EntityPtr::EntityPtr()
 	: entity_(new entt::entity(registry.create()), EnityPtrDeleter)
 {
