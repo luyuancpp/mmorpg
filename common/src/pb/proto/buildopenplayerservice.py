@@ -45,5 +45,5 @@ def md5copy(filename, writedir):
     md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
     shutil.copy(gennewfilename, fullfilename)
 
-gen('msgmap.cpp', openfilename)
+gen('logic_proto/msgmap.cpp', openfilename)
 md5copy(openfilename, '../../../../gateway_server/src/service')
