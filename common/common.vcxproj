@@ -158,6 +158,7 @@
     <ClCompile Include="src\game_config\item_config.cpp" />
     <ClCompile Include="src\game_config\mainscene_config.cpp" />
     <ClCompile Include="src\game_config\mission_config.cpp" />
+    <ClCompile Include="src\game_config\monster_base_config.cpp" />
     <ClCompile Include="src\game_config\region_config.cpp" />
     <ClCompile Include="src\game_config\scene_config.cpp" />
     <ClCompile Include="src\game_logic\bag\bag.cpp" />
@@ -210,6 +211,7 @@
     <ClCompile Include="src\pb\pbc\game_config\item_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\game_config\mainscene_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\game_config\mission_config.pb.cc" />
+    <ClCompile Include="src\pb\pbc\game_config\monster_base_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\game_config\scene_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\gs_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\gw_service.pb.cc" />
@@ -253,6 +255,7 @@
     <ClInclude Include="src\game_config\item_config.h" />
     <ClInclude Include="src\game_config\mainscene_config.h" />
     <ClInclude Include="src\game_config\mission_config.h" />
+    <ClInclude Include="src\game_config\monster_base_config.h" />
     <ClInclude Include="src\game_config\region_config.h" />
     <ClInclude Include="src\game_config\scene_config.h" />
     <ClInclude Include="src\game_logic\bag\bag.h" />
@@ -298,6 +301,7 @@
     <ClInclude Include="src\pb\pbc\game_config\item_config.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\mainscene_config.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\mission_config.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_config\monster_base_config.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\scene_config.pb.h" />
     <ClInclude Include="src\pb\pbc\gs_service.pb.h" />
     <ClInclude Include="src\pb\pbc\gw_service.pb.h" />
