@@ -28,13 +28,13 @@ public:
 
 using StdFilePtr = std::unique_ptr<std::FILE, StdFilePtrDeleter>;
 
-dtNavMesh* RecstSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
+void RecstSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 {
 	StdFilePtr fp(std::fopen(path, "rb"));
 	if (nullptr == fp)
 	{
 		LOG_ERROR << "load nav bin header " << path;
-		return nullptr;
+		return;
 	}
 
 	// Read header.
@@ -44,24 +44,24 @@ dtNavMesh* RecstSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 	if (readLen != 1)
 	{
 		LOG_ERROR << "load nav bin header " << path;
-		return 0;
+		return;
 	}
 	if (header.magic != NAVMESHSET_MAGIC)
 	{
 		LOG_ERROR << "load nav bin header magic" << path;
-		return 0;
+		return;
 	}
 	if (header.version != NAVMESHSET_VERSION)
 	{
 		LOG_ERROR << "load nav bin header version " << path;
-		return 0;
+		return;
 	}
 
 	dtStatus status = mesh->init(&header.params);
 	if (dtStatusFailed(status))
 	{
 		LOG_ERROR << "load nav init nav mesh " << path;
-		return 0;
+		return;
 	}
 
 	// Read tiles.
@@ -72,7 +72,7 @@ dtNavMesh* RecstSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 		if (readLen != 1)
 		{
 			LOG_ERROR << "load nav read tile header " << path;
-			return 0;
+			return;
 		}
 
 		if (!tileHeader.tileRef || !tileHeader.dataSize)
@@ -86,10 +86,10 @@ dtNavMesh* RecstSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 		{
 			dtFree(data, DT_ALLOC_TEMP);
 			LOG_ERROR << "load nav read navdata " << path;
-			return 0;
+			return;
 		}
 		mesh->addTile(data, tileHeader.dataSize, DT_TILE_FREE_DATA, tileHeader.tileRef, 0);
 	}
-	return mesh;
+	return;
 }
 
