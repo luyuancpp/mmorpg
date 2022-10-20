@@ -5,7 +5,6 @@
 
 #include "src/network/ms_node.h"
 #include "src/service/gs_service.h"
-#include "src/network/deploy_rpcclient.h"
 #include "src/network/rpc_server.h"
 #include "src/network/rpc_stub.h"
 #include "src/redis_client/redis_client.h"
@@ -61,7 +60,7 @@ private:
     RpcServerPtr server_;
 
     RpcClientPtr deploy_session_;
-    DeployStub deploy_stub_;
+    RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
     StubMsNode g2ms_stub_;
 

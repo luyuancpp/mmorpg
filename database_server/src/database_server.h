@@ -6,7 +6,6 @@
 #include "src/mysql_wrapper/mysql_database.h"
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_server.h"
-#include "src/network/deploy_rpcclient.h"
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_closure.h"
 
@@ -45,7 +44,7 @@ private:
     RpcServerPtr server_;
 
     RpcClientPtr deploy_rpc_client_;
-    DeployStub deploy_stub_;
+    RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
     DbServiceImpl impl_;
 };

@@ -3,7 +3,6 @@
 #include "src/event/event.h"
 #include "src/network/rpc_server.h"
 #include "src/service/login_service.h"
-#include "src/network/deploy_rpcclient.h"
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
@@ -45,7 +44,7 @@ namespace login
         RpcServerPtr server_;
 
         RpcClientPtr deploy_rpc_client_;
-        DeployStub deploy_stub_;
+        RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
         RpcClientPtr master_rpc_client_;
         LoginStubl2ms l2ms_login_stub_;
