@@ -128,6 +128,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\event_receiver\event_receiver.cpp" />
     <ClCompile Include="src\event_receiver\mission_event_receiver.cpp" />
+    <ClCompile Include="src\service\logic\gscommon_client_player.cpp" />
     <ClCompile Include="src\service\logic\gscommon_server_player.cpp" />
     <ClCompile Include="src\system\logic\config_system.cpp" />
     <ClCompile Include="src\system\player_common_system.cpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="src\comp\gs_scene_comp.h" />
     <ClInclude Include="src\event_receiver\event_receiver.h" />
     <ClInclude Include="src\event_receiver\mission_event_receiver.h" />
+    <ClInclude Include="src\service\logic\gscommon_client_player.h" />
     <ClInclude Include="src\service\logic\gscommon_server_player.h" />
     <ClInclude Include="src\system\logic\config_system.h" />
     <ClInclude Include="src\system\player_common_system.h" />

@@ -10,9 +10,9 @@
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_closure.h"
 
+#include "deploy_service.pb.h"
 #include "ms_service.pb.h"
 #include "logic_proto/scene_rg.pb.h"
-
 
 class GameServer : muduo::noncopyable, public Receiver<GameServer>
 {
