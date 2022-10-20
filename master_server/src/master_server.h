@@ -8,6 +8,7 @@
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_connection_event.h"
 #include "src/network/rpc_server.h"
+#include "src/network/rpc_stub.h"
 #include "src/network/server_component.h"
 
 #include "deploy_service.pb.h"

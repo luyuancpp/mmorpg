@@ -5,7 +5,10 @@
 #include "src/event/event.h"
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_server.h"
+#include "src/network/rpc_stub.h"
 #include "src/service/logic/rgscene_rg.h"
+
+#include "deploy_service.pb.h"
 
 class RegionServer : muduo::noncopyable, public Receiver<RegionServer>
 {
