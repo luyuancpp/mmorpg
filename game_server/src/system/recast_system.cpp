@@ -28,7 +28,7 @@ public:
 
 using StdFilePtr = std::unique_ptr<std::FILE, StdFilePtrDeleter>;
 
-dtNavMesh* RecstSystem::LoadNavMesh(const char* path)
+dtNavMesh* RecstSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 {
 	StdFilePtr fp(std::fopen(path, "rb"));
 	if (nullptr == fp)
@@ -57,12 +57,6 @@ dtNavMesh* RecstSystem::LoadNavMesh(const char* path)
 		return 0;
 	}
 
-	dtNavMesh* mesh = dtAllocNavMesh();
-	if (!mesh)
-	{
-		LOG_ERROR << "load nav bin alloc nav mesh " << path;
-		return 0;
-	}
 	dtStatus status = mesh->init(&header.params);
 	if (dtStatusFailed(status))
 	{
