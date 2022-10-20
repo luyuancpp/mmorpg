@@ -198,6 +198,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    //异步切换考虑消息队列
     auto try_change_gs_enter_scene = registry.try_get<AfterChangeGsEnterScene>(player);
     if (nullptr == try_change_gs_enter_scene)
     {
