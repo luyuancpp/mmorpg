@@ -66,9 +66,6 @@
     <ClCompile Include="src\system\player_tip_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\system\scene_system.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\service\logic\mscommon_server_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -123,9 +120,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\system\player_tip_system.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\system\scene_system.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic\mscommon_server_player.h">
