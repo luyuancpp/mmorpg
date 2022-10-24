@@ -14,7 +14,6 @@
 #include "src/master_server.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
-#include "src/system/scene_system.h"
 
 #include "component_proto/scene_comp.pb.h"
 #include "logic_proto/scene_rg.pb.h"
