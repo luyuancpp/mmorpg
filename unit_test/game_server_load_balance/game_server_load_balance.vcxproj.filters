@@ -24,9 +24,6 @@
     <ClCompile Include="..\..\common\src\game_logic\scene\scene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\scene\scene_factories.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -39,9 +36,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\game_logic\scene\scene.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\scene\scene_factories.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h">
