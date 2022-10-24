@@ -9,10 +9,11 @@
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
 
-
 #include "component_proto/player_login_comp.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
 #include "gs_service.pb.h"
+
+using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 
 void PlayerSceneSystem::OnEnterScene(entt::entity player)
 {

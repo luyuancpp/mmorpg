@@ -50,6 +50,8 @@ enum  EnumCode : uint32_t
     kRetEnterSceneChangingGs = 4016,//正在切换gs中
     kRetChangeScenePlayerQueueCompnentNull = 4017,//玩家切换场景队列组件未找到
     kRetChangeScenePlayerQueueCompnentFull = 4018,//玩家切换场景队列组件已满
+    kRetChangeScenePlayerQueueCompnentGsNull = 4019,//找不到玩家的gs
+    kRetChangeScenePlayerQueueCompnentEmpty = 4020,//玩家切换场景队列为空
 
     //Team
     kRetTeamNotInApplicants = 5000,
