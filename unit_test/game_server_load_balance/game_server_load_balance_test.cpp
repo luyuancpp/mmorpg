@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/scene/scene_factories.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/scene/scene.h"
