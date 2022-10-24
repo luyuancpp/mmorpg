@@ -14,8 +14,6 @@
 #include "logic_proto/scene_server_player.pb.h"
 #include "gs_service.pb.h"
 
-using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
-
 void PlayerSceneSystem::OnEnterScene(entt::entity player)
 {
     if (entt::null == player)

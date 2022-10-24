@@ -48,6 +48,8 @@ enum  EnumCode : uint32_t
     kRetEnterSceneChangeSceneOffLine = 4014,//你已经下线
     kRetEnterSceneChangingScene = 4015,//正在切换场景中
     kRetEnterSceneChangingGs = 4016,//正在切换gs中
+    kRetChangeScenePlayerQueueCompnentNull = 4017,//玩家切换场景队列组件未找到
+    kRetChangeScenePlayerQueueCompnentFull = 4018,//玩家切换场景队列组件已满
 
     //Team
     kRetTeamNotInApplicants = 5000,
@@ -127,5 +129,12 @@ if (tip_code != kRetOK)\
     response->mutable_error()->set_id(tip_code);\
     return;\
 }\
+
+#define  GetPlayerCompnentReturnError(return_name, compnent, tip_code)\
+auto return_name = registry.try_get<compnent>(player);\
+if (nullptr == return_name)\
+{\
+	return tip_code;\
+}
 
 #endif // !COMMON_SRC_tip_code_ERROR_CODE
