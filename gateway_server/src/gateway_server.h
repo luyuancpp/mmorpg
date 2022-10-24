@@ -13,10 +13,10 @@
 #include "src/network/codec/codec.h"
 #include "src/network/codec/dispatcher.h"
 #include "src/service/gw_service.h"
-#include "src/network/deploy_rpcclient.h"
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_connection_event.h"
 
+#include "deploy_service.pb.h"
 #include "ms_service.pb.h"
 
 using namespace muduo;
@@ -83,7 +83,7 @@ private:
     servers_info_data serverinfo_data_;
 
     RpcClientPtr deploy_session_;
-    DeployStub deploy_stub_;
+    RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
     RpcClientPtr master_session_;
     RpcStubMsNode gw2ms_stub_;
