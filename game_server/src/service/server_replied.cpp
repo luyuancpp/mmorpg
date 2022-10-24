@@ -5,7 +5,6 @@
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/game_registry.h"
-#include "src/game_logic/scene/scene_factories.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/ms_node.h"
 #include "src/network/rpc_client.h"

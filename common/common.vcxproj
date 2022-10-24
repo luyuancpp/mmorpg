@@ -166,7 +166,6 @@
     <ClCompile Include="src\game_logic\missions\missions_base.cpp" />
     <ClCompile Include="src\game_logic\player\player_list.cpp" />
     <ClCompile Include="src\game_logic\scene\scene.cpp" />
-    <ClCompile Include="src\game_logic\scene\scene_factories.cpp" />
     <ClCompile Include="src\game_logic\scene\servernode_system.cpp" />
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
     <ClCompile Include="src\network\session.cpp" />

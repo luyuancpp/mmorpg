@@ -9,7 +9,6 @@
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"
-#include "src/game_logic/scene/scene_factories.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/scene/servernode_system.h"
