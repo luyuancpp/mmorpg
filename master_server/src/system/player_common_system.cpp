@@ -8,6 +8,11 @@
 #include "logic_proto/common_server_player.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 
+void PlayerCommonSystem::InitPlayerCompnent(entt::entity player)
+{
+        
+}
+
 void PlayerCommonSystem::OnLogin(entt::entity player)
 {
 	auto try_enter_gs = registry.try_get<EnterGsFlag>(player);

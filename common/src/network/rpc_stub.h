@@ -19,7 +19,7 @@ public:
     using StubPtr = std::unique_ptr<StubClass>;
 
     RpcStub() {}
-    RpcStub(muduo::net::RpcChannelPtr&& channel)
+    RpcStub(const muduo::net::RpcChannelPtr& channel)
         :stub_(std::make_unique<StubClass>(get_pointer(channel))){}
 
 	StubClass* stub() {return stub_.get();}

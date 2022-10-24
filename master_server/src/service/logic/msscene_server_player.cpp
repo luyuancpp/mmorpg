@@ -14,7 +14,6 @@
 #include "src/master_server.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
-#include "src/system/scene_system.h"
 
 #include "component_proto/scene_comp.pb.h"
 #include "logic_proto/scene_rg.pb.h"
@@ -126,7 +125,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         g_ms_node->rg_stub().CallMethod(rpc, &regionservcie::RgService_Stub::LeaveCrossMainScene);
     }
     
-
+    //todo 如果是进出镜像，一定保持在原来的gs切换,主世界分线和镜像没关系，这样就节省了玩家切换流程，效率也提高了
     //todo 跨服的时候重新上线
     //目标场景是跨服场景，通知跨服去换,跨服只做人数检测，不做其他的事情
     if (registry.any_of<CrossMainSceneServer>(to_gs_entity))
@@ -198,6 +197,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    //异步切换考虑消息队列
     auto try_change_gs_enter_scene = registry.try_get<AfterChangeGsEnterScene>(player);
     if (nullptr == try_change_gs_enter_scene)
     {

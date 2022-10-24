@@ -11,7 +11,7 @@
 #include "src/network/gs_node.h"
 #include "src/game_logic/scene/scene_factories.h"
 #include "src/game_logic/game_registry.h"
-#include "src/network/deploy_rpcclient.h"
+
 #include "src/service/logic/player_service.h"
 #include "src/service/logic/server_service.h"
 #include "src/pb/pbc/msgmap.h"

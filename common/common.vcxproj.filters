@@ -113,7 +113,6 @@
     <ClInclude Include="src\network\codec\dispatcher_lite.h" />
     <ClInclude Include="src\common_type\common_type.h" />
     <ClInclude Include="src\game_logic\config_expression\config_expression.h" />
-    <ClInclude Include="src\network\deploy_rpcclient.h" />
     <ClInclude Include="src\event\event.h" />
     <ClInclude Include="src\game_logic\exprtk\exprtk.hpp" />
     <ClInclude Include="src\util\file2string.h" />
