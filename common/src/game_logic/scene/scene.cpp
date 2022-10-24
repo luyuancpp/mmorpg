@@ -156,6 +156,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
         LOG_INFO << "enter error" << entt::to_integral(param.enterer_);
         return;
     }
+    //todo gs 只要人数更改
     registry.get<ScenePlayers>(scene_).emplace(param.enterer_);
     registry.emplace<SceneEntity>(param.enterer_, scene_);
     LogPlayerEnterScene(param.enterer_);
