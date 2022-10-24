@@ -7,7 +7,6 @@
 #include "src/game_config/mainscene_config.h"
 
 #include "src/game_logic/game_registry.h"
-#include "src/game_logic/scene/scene_factories.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
