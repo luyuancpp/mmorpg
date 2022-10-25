@@ -10,6 +10,13 @@
 uint32_t confid_scenelist_size = 50;
 uint32_t per_scene_config_size = 2;
 
+entt::entity CreateMainSceneNode()
+{
+	auto e = registry.create();
+	AddMainSceneNodeCompnent(e);
+	return e;
+}
+
 TEST(GS, CreateMainScene)
 {
     ScenesSystem sm;
