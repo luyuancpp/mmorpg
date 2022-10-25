@@ -7,7 +7,7 @@
 
 static const std::size_t kMaxMainScenePlayer = 1000;
 
-SceneComp ScenesSystem::scenes_;
+SceneList ScenesSystem::scenes_;
 ServerSequence24 ScenesSystem::server_squence_;
 ScenesSystem::scene_entity_cb ScenesSystem::before_enter_scene_cb_;
 ScenesSystem::scene_entity_cb ScenesSystem::on_enter_scene_cb_;
