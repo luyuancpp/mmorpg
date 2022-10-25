@@ -33,7 +33,7 @@ void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
         LOG_ERROR << "player not found" << replied->s_rq_.player_id();
         return;
     }
-    auto scene = ScenesSystem::GetSingleton().get_scene(replied->s_rq_.scene_id());
+    auto scene = ScenesSystem::get_scene(replied->s_rq_.scene_id());
     if (entt::null == scene)
     {
         LOG_ERROR << "scene not found" << replied->s_rq_.scene_id();
@@ -78,7 +78,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     }
     else
     {
-        to_scene = ScenesSystem::GetSingleton().get_scene(scene_id);
+        to_scene = ScenesSystem::get_scene(scene_id);
         if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
@@ -153,7 +153,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 		}
 	}
 
-    auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(to_scene);
+    auto ret = ScenesSystem::CheckScenePlayerSize(to_scene);
     if (kRetOK != ret)
     {
         PlayerTipSystem::Tip(player, ret, {});
@@ -204,7 +204,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
         LOG_ERROR << "change gs scene compnent null" << registry.get<Guid>(player);
         return;
     }
-	auto scene = ScenesSystem::GetSingleton().get_scene(try_change_gs_enter_scene->scene_info().scene_id());   
+	auto scene = ScenesSystem::get_scene(try_change_gs_enter_scene->scene_info().scene_id());   
     registry.remove<AfterChangeGsEnterScene>(player);
     //todo异步加载完场景已经不在了scene了
 	if (entt::null == scene)
@@ -216,7 +216,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
 	EnterSceneParam ep;
 	ep.enterer_ = player;
 	ep.scene_ = scene;
-	ScenesSystem::GetSingleton().EnterScene(ep);
+	ScenesSystem::EnterScene(ep);
 
     auto try_player_session = registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)

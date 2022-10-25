@@ -98,7 +98,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
-			auto scene = ScenesSystem::GetSingleton().CreateScene2Gs(create_scene_param);
+			auto scene = ScenesSystem::CreateScene2Gs(create_scene_param);
 			registry.emplace<GsNodePtr>(scene, gs_node_ptr);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene));
 		}
@@ -165,7 +165,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	auto scene = ScenesSystem::GetSingleton().get_scene(request->scene_id());
+	auto scene = ScenesSystem::get_scene(request->scene_id());
 	if (entt::null == scene)
 	{
 		response->mutable_error()->set_id(kRetEnterScenetWeightRoundRobinMainScene);
@@ -196,9 +196,9 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 
     LeaveSceneParam lsp;
     lsp.leaver_ = player;
-    ScenesSystem::GetSingleton().LeaveScene(lsp);
+    ScenesSystem::LeaveScene(lsp);
 
-	auto ret = ScenesSystem::GetSingleton().CheckScenePlayerSize(scene);
+	auto ret = ScenesSystem::CheckScenePlayerSize(scene);
 	if (ret != kRetOK)
 	{
 		response->mutable_error()->set_id(ret);		
@@ -209,7 +209,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 	EnterSceneParam esp;
 	esp.scene_ = scene;
 	esp.enterer_ = player;
-	ScenesSystem::GetSingleton().EnterScene(esp);
+	ScenesSystem::EnterScene(esp);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -236,12 +236,12 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
 		return;
 	}
-	ReturnAutoCloseureError(ScenesSystem::GetSingleton().CheckScenePlayerSize(scene));
+	ReturnAutoCloseureError(ScenesSystem::CheckScenePlayerSize(scene));
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;
 	esp.enterer_ = it.first->second;
-	ScenesSystem::GetSingleton().EnterScene(esp);
+	ScenesSystem::EnterScene(esp);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -260,7 +260,7 @@ void RgServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* contr
     auto player = it->second;;
     LeaveSceneParam lsp;
     lsp.leaver_ = player;
-    ScenesSystem::GetSingleton().LeaveScene(lsp);
+    ScenesSystem::LeaveScene(lsp);
 	players_.erase(it);
 ///<<< END WRITING YOUR CODE 
 }

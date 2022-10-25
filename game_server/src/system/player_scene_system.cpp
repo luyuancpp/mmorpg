@@ -13,7 +13,7 @@
 
 void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t scene_id)
 {
-	auto scene = ScenesSystem::GetSingleton().get_scene(scene_id);
+	auto scene = ScenesSystem::get_scene(scene_id);
 	if (scene == entt::null)
 	{
 		LOG_ERROR << "scene not found " << scene_id;

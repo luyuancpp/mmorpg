@@ -90,7 +90,7 @@ uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity to_sce
 	}
     LeaveSceneParam lp;
     lp.leaver_ = player;
-    ScenesSystem::GetSingleton().LeaveScene(lp);
+    ScenesSystem::LeaveScene(lp);
     
 	auto& p_to_scene_gs = *try_to_scene_gs;
 	//同gs之间的切换
@@ -100,7 +100,7 @@ uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity to_sce
 		EnterSceneParam ep;
 		ep.enterer_ = player;
 		ep.scene_ = to_scene;
-		ScenesSystem::GetSingleton().EnterScene(ep);
+		ScenesSystem::EnterScene(ep);
 		PlayerSceneSystem::OnEnterScene(player);
 	}
 	else
