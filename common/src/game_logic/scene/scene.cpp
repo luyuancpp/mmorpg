@@ -9,6 +9,10 @@ static const std::size_t kMaxMainScenePlayer = 1000;
 
 SceneComp ScenesSystem::scenes_;
 ServerSequence24 ScenesSystem::server_squence_;
+ScenesSystem::scene_entity_cb ScenesSystem::before_enter_scene_cb_;
+ScenesSystem::scene_entity_cb ScenesSystem::on_enter_scene_cb_;
+ScenesSystem::scene_entity_cb ScenesSystem::before_leave_scene_cb_;
+ScenesSystem::scene_entity_cb ScenesSystem::on_leave_scene_cb_;
 
 void set_server_squence_node_id(uint32_t node_id) { ScenesSystem::set_server_squence_node_id(node_id); }
 
@@ -165,43 +169,56 @@ uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
 
 void ScenesSystem::EnterScene(const EnterSceneParam& param)
 {
-    auto scene_ = param.scene_;
-    if (scene_ == entt::null)
+    if (param.scene_ == entt::null)
     {
         LOG_INFO << "enter error" << entt::to_integral(param.enterer_);
         return;
     }
+    if (before_enter_scene_cb_)
+    {
+        before_enter_scene_cb_(param.enterer_);
+    }
     //todo gs 只要人数更改
-    registry.get<ScenePlayers>(scene_).emplace(param.enterer_);
-    registry.emplace<SceneEntity>(param.enterer_, scene_);
-    LogPlayerEnterScene(param.enterer_);
-	auto try_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene_);
-	if (nullptr == try_gs_player_info)
+    registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
+    registry.emplace<SceneEntity>(param.enterer_, param.scene_);
+    //LogPlayerEnterScene(param.enterer_);
+	auto try_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(param.scene_);
+	if (nullptr != try_gs_player_info)
 	{
-		return;
+        (*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() + 1);
+	}	
+	if (on_enter_scene_cb_)
+	{
+        on_enter_scene_cb_(param.enterer_);
 	}
-	(*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() + 1);
 }
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 {
-    auto leave_player = param.leaver_;
-    if (nullptr == registry.try_get<SceneEntity>(leave_player))
+    auto leaver = param.leaver_;
+    if (nullptr == registry.try_get<SceneEntity>(leaver))
     {
         LOG_ERROR << "leave scene empty";
         return;
     }
-    auto& player_scene = registry.get<SceneEntity>(leave_player);
+    auto& player_scene = registry.get<SceneEntity>(leaver);
     auto scene = player_scene.scene_entity_;
-    LogPlayerLeaveScene(leave_player);
-    registry.get<ScenePlayers>(scene).erase(leave_player);
-    registry.remove<SceneEntity>(leave_player);
+	if (before_leave_scene_cb_)
+	{
+        before_leave_scene_cb_(leaver);
+	}
+    //LogPlayerLeaveScene(leaver);
+    registry.get<ScenePlayers>(scene).erase(leaver);
+    registry.remove<SceneEntity>(leaver);
     auto p_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(scene);
-    if (nullptr == p_gs_player_info)
+    if (nullptr != p_gs_player_info)
     {
-        return;
+        (*p_gs_player_info)->set_player_size((*p_gs_player_info)->player_size() - 1);
     }
-    (*p_gs_player_info)->set_player_size((*p_gs_player_info)->player_size() - 1);
+	if (on_leave_scene_cb_)
+	{
+        on_leave_scene_cb_(leaver);
+	}
 }
 
 void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)

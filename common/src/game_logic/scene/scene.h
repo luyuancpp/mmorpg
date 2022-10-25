@@ -59,6 +59,8 @@ void AddMainSceneNodeCompnent(entt::entity e);
 class ScenesSystem 
 {
 public:
+    using scene_entity_cb = std::function<void (entt::entity)>;
+
     ~ScenesSystem();//just for test clear 
 
     static SceneComp copy_scenes_id() { return scenes_; }
@@ -96,5 +98,9 @@ public:
 private:
 	static SceneComp scenes_;
 	static ServerSequence24 server_squence_;
+    static scene_entity_cb before_enter_scene_cb_;
+    static scene_entity_cb on_enter_scene_cb_;
+    static scene_entity_cb before_leave_scene_cb_;
+    static scene_entity_cb on_leave_scene_cb_;
 };
 
