@@ -7,14 +7,10 @@
 
 static const std::size_t kMaxMainScenePlayer = 1000;
 
-void set_server_squence_node_id(uint32_t node_id) { ScenesSystem::GetSingleton().set_server_squence_node_id(node_id); }
+SceneComp ScenesSystem::scenes_;
+ServerSequence24 ScenesSystem::server_squence_;
 
-entt::entity CreateMainSceneNode()
-{
-    auto e = registry.create();
-    AddMainSceneNodeCompnent(e);
-    return e;
-}
+void set_server_squence_node_id(uint32_t node_id) { ScenesSystem::set_server_squence_node_id(node_id); }
 
 void AddMainSceneNodeCompnent(entt::entity server)
 {
@@ -25,7 +21,12 @@ void AddMainSceneNodeCompnent(entt::entity server)
     registry.emplace<GsNodePlayerInfoPtr>(server, std::make_shared<GsNodePlayerInfoPtr::element_type>());
 }
 
-std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)const
+ScenesSystem::~ScenesSystem()
+{
+	scenes_.clear();
+}
+
+std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 {
     std::size_t sz = 0;
     //todo  auto 
