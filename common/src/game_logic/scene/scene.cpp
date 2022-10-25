@@ -7,7 +7,7 @@
 
 static const std::size_t kMaxMainScenePlayer = 1000;
 
-SceneList ScenesSystem::scenes_;
+SceneList ScenesSystem::scene_list_;
 ServerSequence24 ScenesSystem::server_squence_;
 ScenesSystem::scene_entity_cb ScenesSystem::before_enter_scene_cb_;
 ScenesSystem::scene_entity_cb ScenesSystem::on_enter_scene_cb_;
@@ -27,14 +27,14 @@ void AddMainSceneNodeCompnent(entt::entity server)
 
 ScenesSystem::~ScenesSystem()
 {
-	scenes_.clear();
+	scene_list_.clear();
 }
 
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 {
     std::size_t sz = 0;
     //todo  auto 
-    for (auto& it : scenes_)
+    for (auto& it : scene_list_)
     {
         if (registry.get<SceneInfo>(it.second).scene_confid() != scene_config_id)
         {
@@ -47,8 +47,8 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 
 entt::entity ScenesSystem::get_scene(Guid scene_id)
 {
-	auto it = scenes_.find(scene_id);
-	if (it == scenes_.end())
+	auto it = scene_list_.find(scene_id);
+	if (it == scene_list_.end())
 	{
 		return entt::null;
 	}
@@ -57,7 +57,7 @@ entt::entity ScenesSystem::get_scene(Guid scene_id)
 
 bool ScenesSystem::HasScene(uint32_t scene_config_id)
 {
-	for (auto& it : scenes_)
+	for (auto& it : scene_list_)
 	{
 		if (registry.get<SceneInfo>(it.second).scene_confid() == scene_config_id)
 		{
@@ -81,7 +81,7 @@ entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& para
 	auto& si = registry.emplace<SceneInfo>(e, param.scene_info_);
 	registry.emplace<MainScene>(e);
 	registry.emplace<ScenePlayers>(e);
-	auto sit = scenes_.emplace(si.scene_id(), e);
+	auto sit = scene_list_.emplace(si.scene_id(), e);
 	if (!sit.second)
 	{
 		LOG_ERROR << "already has scene" << si.scene_id();
@@ -110,7 +110,7 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
     // todo ÈËµÃ»»³¡¾°
     auto scene_entity = param.scene_;
 	auto& si = registry.get<SceneInfo>(scene_entity);
-	scenes_.erase(si.scene_id());
+	scene_list_.erase(si.scene_id());
 	registry.destroy(scene_entity);
 	auto& server_scene = registry.get<ConfigSceneMap>(param.server_);
 	server_scene.RemoveScene(si.scene_confid(), scene_entity);
