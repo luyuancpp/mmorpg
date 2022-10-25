@@ -120,7 +120,14 @@ void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 {
     // todo »Àµ√ªª≥°æ∞
     auto server_entity = param.server_;
-    auto server_scenes = registry.get<ConfigSceneMap>(server_entity).scenesids_clone();
+	EntitySet server_scenes;
+	for (auto& it : registry.get<ConfigSceneMap>(server_entity).confid_sceneslist())
+	{
+		for (auto& ji : it.second)
+		{
+            server_scenes.emplace(ji);
+		}
+	}
     DestroySceneParam destroy_param;
     destroy_param.server_ = server_entity;
     for (auto& it : server_scenes)
