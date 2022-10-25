@@ -63,7 +63,6 @@ public:
 
     ~ScenesSystem();//just for test clear 
 
-    static SceneComp copy_scenes_id() { return scenes_; }
     static std::size_t scenes_size(uint32_t scene_config_id);
     static inline std::size_t scenes_size()  { return scenes_.size(); }
     static inline std::size_t scenes_map_size()  { return scenes_.size(); }
@@ -96,7 +95,7 @@ public:
     static void LogPlayerEnterScene(entt::entity player);
     static void LogPlayerLeaveScene(entt::entity player);
 private:
-	static SceneComp scenes_;
+	static SceneList scenes_;
 	static ServerSequence24 server_squence_;
     static scene_entity_cb before_enter_scene_cb_;
     static scene_entity_cb on_enter_scene_cb_;
