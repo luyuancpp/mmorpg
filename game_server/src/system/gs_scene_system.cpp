@@ -30,7 +30,7 @@ void GsSceneSystem::LoadAllMainSceneNavBin()
 
 void GsSceneSystem::CreateSceneByGuid(CreateSceneBySceneInfoP& param)
 {
-    auto scene = ScenesSystem::GetSingleton().CreateSceneByGuid(param);
+    auto scene = ScenesSystem::CreateSceneByGuid(param);
     //init scene 
     auto p_scene_row = get_scene_conf(param.scene_info_.scene_confid());
     if (nullptr == p_scene_row)
@@ -43,7 +43,7 @@ void GsSceneSystem::CreateSceneByGuid(CreateSceneBySceneInfoP& param)
 void GsSceneSystem::EnterScene(const EnterSceneParam& param)
 {
     auto enterer = param.enterer_;
-    ScenesSystem::GetSingleton().EnterScene(param);
+    ScenesSystem::EnterScene(param);
 
     if (registry.any_of<Player>(enterer))
     {
@@ -59,5 +59,5 @@ void GsSceneSystem::LeaveScene(entt::entity ent)
 {
     LeaveSceneParam leave;
     leave.leaver_ = ent;
-    ScenesSystem::GetSingleton().LeaveScene(leave);
+    ScenesSystem::LeaveScene(leave);
 }

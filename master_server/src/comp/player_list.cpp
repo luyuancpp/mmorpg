@@ -54,7 +54,7 @@ void PlayerList::LeaveGame(Guid guid)
     {
 		LeaveSceneParam lsp;
 		lsp.leaver_ = player;
-		ScenesSystem::GetSingleton().LeaveScene(lsp);
+		ScenesSystem::LeaveScene(lsp);
     }
     
 	g_players.erase(it);

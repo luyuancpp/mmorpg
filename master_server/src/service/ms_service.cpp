@@ -192,7 +192,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
-			auto scene_entity = ScenesSystem::GetSingleton().CreateScene2Gs(create_scene_param);
+			auto scene_entity = ScenesSystem::CreateScene2Gs(create_scene_param);
 			registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
 			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
 		}
@@ -413,7 +413,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
         EnterSceneParam ep;
         ep.enterer_ = player;
         ep.scene_ = scene;
-        ScenesSystem::GetSingleton().EnterScene(ep);//顶号的时候已经在场景里面了
+        ScenesSystem::EnterScene(ep);//顶号的时候已经在场景里面了
 		InitPlayerSession(player, request->session_id());
 		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 
@@ -546,7 +546,7 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
             continue;
 		}
 		create_scene_param.scene_info_ = it.scene_info();
-        auto scene = ScenesSystem::GetSingleton().CreateSceneByGuid(create_scene_param);
+        auto scene = ScenesSystem::CreateSceneByGuid(create_scene_param);
 		registry.emplace<GsNodePtr>(scene, *try_gs_node_ptr);
 	}
 ///<<< END WRITING YOUR CODE 
