@@ -32,18 +32,6 @@ public:
         }
         return it->second;
     }
-    EntitySet scenesids_clone() 
-    { 
-        EntitySet s;
-		for (auto& it : confid_scenelist_)
-		{
-			for (auto& ji : it.second)
-			{
-                s.emplace(ji);
-			}
-		}
-		return s;
-    }
     entt::entity scenelist(uint32_t scene_config_id)const
     {
         auto it = confid_scenelist_.find(scene_config_id);
