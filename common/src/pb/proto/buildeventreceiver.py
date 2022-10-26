@@ -27,7 +27,7 @@ yourcodeend = '///<<< END WRITING YOUR CODE'
 if not os.path.exists(md5dir):
     os.makedirs(md5dir)
 
-def genyourcodepair():
+def beginendstring():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 
 ##输入pb事件
@@ -70,38 +70,47 @@ def generatehead(filename):
 
 def generatecppregisterunregisterfunction(filename):
 	classname = getfileclassname(filename)
-	cppfunctionname = classname + '::Receive'
+	cppreceiverfunctionname = classname + '::Receive'
 	newstr = 'void ' + classname + '::Register(entt::dispatcher& dispatcher)\n{\n'
 	eventindex = 0
 	while eventindex < len(local.eventprotoarray) :
 		newstr += 'dispatcher.sink<' + local.eventprotoarray[eventindex] + '>().connect<&'
-		newstr += classname + '::' + cppfunctionname + str(eventindex) + '>();\n'
+		newstr += classname + '::' + cppreceiverfunctionname + str(eventindex) + '>();\n'
 		eventindex += 1
 	newstr += '}\n\n'
 	newstr += 'void ' + classname + '::UnRegister(entt::dispatcher& dispatcher)\n{\n'
 	eventindex = 0
 	while eventindex < len(local.eventprotoarray) :
 		newstr += 'dispatcher.sink<' + local.eventprotoarray[eventindex] + '>().disconnect<&'
-		newstr += classname + '::' + cppfunctionname + str(eventindex) + '>();\n'
+		newstr += classname + '::' + cppreceiverfunctionname + str(eventindex) + '>();\n'
 		eventindex += 1
 	newstr += '}\n\n'
 	return newstr
 
 def generatecpp(filename):
 	md5cppfilename = filename.replace(eventprotodir, md5dir).replace('.proto', '') + cppdestfilesuffix
-	destcppfullfilename = getdestfullfilename(filename) + cppdestfilesuffix
+	destcppfilename = getdestfullfilename(filename) + cppdestfilesuffix
 	classname = getfileclassname(filename)
 	headerinclude = '#include "' + getfilenamenoprefixsuffix(filename) + headdestfilesuffix + '"\n'
-	newstr = headerinclude
+	pbinclude = '#include "event_proto/' + getfilenamenoprefixsuffix(filename) + '.pb.h"\n'
+	newstr = headerinclude + pbinclude
 	eventindex = 0
-	cppfunctionname = 'void '+ classname + '::Receive'
+	cppreceiverfunctionname = 'void '+ classname + '::Receive'
 	try:
-		with open(destcppfullfilename,'r+', encoding='utf-8') as file:
-			yourcode = 1 
+		with open(destcppfilename,'r+', encoding='utf-8') as file:
+			yourcode = 0 
 			part = 0
 			connectfunctiondone = 0
+			head_line_count = 0
 			for fileline in file:
-				if part != cpprpceventpart and fileline == headerinclude:
+				if head_line_count < 2:
+					head_line_count += 1
+					continue
+				if part == 0:
+					newstr += fileline
+					if fileline.find(yourcodeend) >= 0:
+						newstr += generatecppregisterunregisterfunction(filename)
+						part += 1
 					continue
 				if part != cpprpceventpart and fileline.find(yourcodebegin) >= 0:
 				    yourcode = 1
@@ -113,12 +122,9 @@ def generatecpp(filename):
 				    part += 1
 				    continue 
 				elif part == cpprpceventpart:
-					if eventindex == 0 and connectfunctiondone == 0: 
-						newstr += generatecppregisterunregisterfunction(filename)
-						connectfunctiondone = 1
-					if eventindex < len(local.eventprotoarray) and fileline.find(cppfunctionname) >= 0 :
+					if eventindex < len(local.eventprotoarray) and fileline.find(cppreceiverfunctionname) >= 0 :
 						yourcode = 0
-						newstr += cppfunctionname + str(eventindex)
+						newstr += cppreceiverfunctionname + str(eventindex)
 						newstr += '(const ' + local.eventprotoarray[eventindex] + '& event_obj)\n{\n'
 						continue
 					elif fileline.find(yourcodebegin) >= 0 :
@@ -133,12 +139,12 @@ def generatecpp(filename):
 				if yourcode == 1:
 					newstr += fileline				     
 	except FileNotFoundError:
-		newstr += genyourcodepair() + '\n'
+		newstr += beginendstring() + '\n'
 		newstr += generatecppregisterunregisterfunction(filename)
 	while eventindex < len(local.eventprotoarray) :
-		newstr += cppfunctionname + str(eventindex)
+		newstr += cppreceiverfunctionname + str(eventindex)
 		newstr += '(const ' + local.eventprotoarray[eventindex] + '& event_obj)\n{\n'
-		newstr += genyourcodepair()
+		newstr += beginendstring()
 		newstr += '}\n'
 		eventindex += 1
 	with open(md5cppfilename, 'w', encoding='utf-8')as file:
