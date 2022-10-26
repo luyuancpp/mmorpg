@@ -32,6 +32,7 @@ public:
         }
         return it->second;
     }
+
     entt::entity scenelist(uint32_t scene_config_id)const
     {
         auto it = confid_scenelist_.find(scene_config_id);
@@ -57,7 +58,7 @@ public:
 
 	inline bool scenes_empty() const
 	{
-        return scenes_size() == 0;
+		return scenes_size() == 0;
 	}
 
     inline bool HasConfig(uint32_t scene_config_id)const{ return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
