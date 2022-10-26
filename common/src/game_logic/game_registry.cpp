@@ -2,6 +2,7 @@
 
 
 thread_local entt::registry registry;
+thread_local entt::dispatcher dispatcher;
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");
 
 entt::entity& error_entity()
