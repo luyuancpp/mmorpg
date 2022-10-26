@@ -10,7 +10,7 @@ local = threading.local()
 
 md5dir = './md5/event_proto/'
 destdirpath = '../../../../game_server/src/event_receiver/'
-eventprotodir = './gs_event_proto/'
+eventprotodir = './event_proto/'
 tabstr = '    '
 filelist = []
 threads = []
@@ -164,12 +164,12 @@ def geneventreceivercpp():
 	newstr += '\n'
 	newstr += 'void ' + eventreceiverclassname + '::Register(entt::dispatcher& dispatcher)\n{\n'
 	for i in range(0, len(filelist)): 
-		classname = getfileclassname(filelist[0])
+		classname = getfileclassname(filelist[i])
 		newstr += tabstr +  classname + '::Register(dispatcher);\n'
 	newstr += '}\n\n'
 	newstr += 'void ' + eventreceiverclassname + '::UnRegister(entt::dispatcher& dispatcher)\n{\n'
 	for i in range(0, len(filelist)): 
-		classname = getfileclassname(filelist[0])
+		classname = getfileclassname(filelist[i])
 		newstr += tabstr +  classname + '::UnRegister(dispatcher);\n'
 	newstr += '}\n'
 	with open(md5headfilename, 'w', encoding='utf-8')as file:
