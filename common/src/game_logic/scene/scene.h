@@ -91,8 +91,6 @@ public:
 
     static void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 
-    static void LogPlayerEnterScene(entt::entity player);
-    static void LogPlayerLeaveScene(entt::entity player);
 private:
 	static SceneList scene_list_;
 	static ServerSequence24 server_squence_;

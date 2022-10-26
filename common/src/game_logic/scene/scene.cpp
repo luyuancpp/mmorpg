@@ -1,7 +1,6 @@
 #include "src/game_logic/scene/scene.h"
 
 #include "muduo/base/Logging.h"
-
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/game_registry.h"
 
@@ -188,7 +187,6 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
     //todo gs 只要人数更改
     registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
     registry.emplace<SceneEntity>(param.enterer_, param.scene_);
-    //LogPlayerEnterScene(param.enterer_);
 	auto try_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(param.scene_);
 	if (nullptr != try_gs_player_info)
 	{
@@ -273,27 +271,5 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
     move_param.to_server_ = param.replace_server_;
     MoveServerScene2ServerScene(move_param);
     registry.destroy(move_param.from_server_);
-}
-
-void ScenesSystem::LogPlayerEnterScene(entt::entity player)
-{
-    auto try_player_id = registry.try_get<Guid>(player);
-    if (nullptr == try_player_id)
-    {
-        return;
-    }
-    LOG_INFO << "player enter scene " << *try_player_id << " "
-        << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
-}
-
-void ScenesSystem::LogPlayerLeaveScene(entt::entity player)
-{
-    auto try_player_id = registry.try_get<Guid>(player);
-    if (nullptr == try_player_id)
-    {
-        return;
-    }
-    LOG_INFO << "player leave scene " << *try_player_id << " "
-        << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
 }
 
