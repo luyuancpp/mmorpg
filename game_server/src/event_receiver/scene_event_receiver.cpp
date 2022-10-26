@@ -1,5 +1,6 @@
 #include "scene_event_receiver.h"
 #include "event_proto/scene_event.pb.h"
+///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE
 void SceneEventReceiver::Register(entt::dispatcher& dispatcher)
 {
@@ -20,18 +21,21 @@ dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventReceiver::SceneEventReceiv
 void SceneEventReceiver::Receive0(const BeforeEnterScene& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
+ 
 ///<<< END WRITING YOUR CODE 
 }
 
 void SceneEventReceiver::Receive1(const OnEnterScene& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
+
 ///<<< END WRITING YOUR CODE 
 }
 
 void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
+   
 ///<<< END WRITING YOUR CODE 
 }
 
