@@ -1,7 +1,6 @@
 #include "scene_event_receiver.h"
-///<<< BEGIN WRITING YOUR CODE
+#include "event_proto/scene_event.pb.h"
 ///<<< END WRITING YOUR CODE
-
 void SceneEventReceiver::Register(entt::dispatcher& dispatcher)
 {
 dispatcher.sink<BeforeEnterScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive0>();
