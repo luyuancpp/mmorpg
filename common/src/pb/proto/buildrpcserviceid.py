@@ -61,7 +61,7 @@ def parsefile(filename):
     if index != local.playerserviceid and playerproto == True:
         local.playerserviceid  += local.perserviceidcount
 
-def genmsgidcpp(fullfilename):
+def genmsgidcpp(filename):
     newstr = '#include "msgmap.h"\n'
     newstr += 'std::unordered_map<std::string, uint32_t> g_msgid{\n'
     #msg 2 id
@@ -84,10 +84,10 @@ def genmsgidcpp(fullfilename):
         newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].request = "' + pkgstr + kv[0][1] +'";\n'
         newstr += tabstr + 'g_serviceinfo[' + str(kv[1]) + '].response = "' + pkgstr + kv[0][2] +'";\n\n'
     newstr += '}\n'
-    with open(fullfilename, 'w', encoding='utf-8')as file:
+    with open(filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def genmsgidhead(fullfilename):
+def genmsgidhead(filename):
     HEAD_FILE = 'COMMON_SRC_PB_PBC_' + local.cppfilename.replace('.', '_').upper()
     newstr = '#ifndef  ' + HEAD_FILE + '\n'
     newstr += '#define  ' + HEAD_FILE + '\n'
@@ -104,7 +104,7 @@ def genmsgidhead(fullfilename):
     newstr += 'extern std::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
     newstr += 'void InitMsgService();\n'
     newstr += '#endif//  ' + HEAD_FILE + '\n'
-    with open(fullfilename, 'w', encoding='utf-8')as file:
+    with open(filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def md5copy(destfilename, filename):    
