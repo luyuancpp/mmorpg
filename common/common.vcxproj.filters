@@ -17,7 +17,6 @@
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\rpc_channel.cc" />
     <ClCompile Include="src\network\rpc_server.cc" />
-    <ClCompile Include="src\game_logic\scene\scene_factories.cpp" />
     <ClCompile Include="src\game_logic\scene\servernode_system.cpp" />
     <ClCompile Include="src\game_logic\scene\scene.cpp" />
     <ClCompile Include="src\network\session.cpp" />
@@ -95,6 +94,7 @@
     <ClCompile Include="src\game_config\mainscene_config.cpp" />
     <ClCompile Include="src\game_config\monster_base_config.cpp" />
     <ClCompile Include="src\pb\pbc\game_config\monster_base_config.pb.cc" />
+    <ClCompile Include="src\pb\pbc\event_proto\scene_event.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -206,5 +206,6 @@
     <ClInclude Include="src\game_config\mainscene_config.h" />
     <ClInclude Include="src\game_config\monster_base_config.h" />
     <ClInclude Include="src\pb\pbc\game_config\monster_base_config.pb.h" />
+    <ClInclude Include="src\pb\pbc\event_proto\scene_event.pb.h" />
   </ItemGroup>
 </Project>

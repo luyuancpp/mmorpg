@@ -166,7 +166,7 @@ def geneventreceivercpp():
 	newstr = '#pragma once\n'
 	newstr += '#include "' + geneventreceiverfilename + '.h"\n'
 	for i in range(0, len(filelist)): 
-		newstr +=  '#include "' + getfilenamenoprefixsuffix(filelist[0]) + headdestfilesuffix + '"\n'	
+		newstr +=  '#include "' + getfilenamenoprefixsuffix(filelist[i]) + headdestfilesuffix + '"\n'	
 	newstr += '\n'
 	newstr += 'void ' + eventreceiverclassname + '::Register(entt::dispatcher& dispatcher)\n{\n'
 	for i in range(0, len(filelist)): 
