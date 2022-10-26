@@ -4,6 +4,7 @@
 #include "entt/src/entt/signal/dispatcher.hpp"
 
 extern thread_local entt::registry registry;
+extern thread_local entt::dispatcher dispatcher;
 entt::entity& error_entity();
 entt::entity& op_enitty();
 
