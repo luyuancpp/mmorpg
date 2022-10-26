@@ -205,6 +205,7 @@
     <ClCompile Include="src\pb\pbc\db_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\deploy_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\event_proto\mission_event.pb.cc" />
+    <ClCompile Include="src\pb\pbc\event_proto\scene_event.pb.cc" />
     <ClCompile Include="src\pb\pbc\game_config\condition_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\game_config\global_variable_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\game_config\item_config.pb.cc" />
@@ -295,6 +296,7 @@
     <ClInclude Include="src\pb\pbc\db_service.pb.h" />
     <ClInclude Include="src\pb\pbc\deploy_service.pb.h" />
     <ClInclude Include="src\pb\pbc\event_proto\mission_event.pb.h" />
+    <ClInclude Include="src\pb\pbc\event_proto\scene_event.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\condition_config.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\global_variable_config.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\item_config.pb.h" />
