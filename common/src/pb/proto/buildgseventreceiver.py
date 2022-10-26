@@ -10,7 +10,7 @@ local = threading.local()
 
 md5dir = './md5/event_proto/'
 destdirpath = '../../../../game_server/src/event_receiver/'
-eventprotodir = './event_proto/'
+eventprotodir = './gs_event_proto/'
 tabstr = '    '
 filelist = []
 threads = []
