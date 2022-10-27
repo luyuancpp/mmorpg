@@ -6,6 +6,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/scene_comp.h"
+#include "src/system/player_scene_system.h"
 
 #include "component_proto/scene_comp.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -40,6 +41,7 @@ void SceneEventReceiver::Receive1(const OnEnterScene& event_obj)
     {
         return;
     }
+    PlayerSceneSystem::Send2GsEnterScene(player);
     LOG_INFO << "player enter scene " << *try_player_id << " "
         << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
     ///<<< END WRITING YOUR CODE 

@@ -15,7 +15,7 @@
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 
-void PlayerSceneSystem::OnEnterScene(entt::entity player)
+void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 {
     if (entt::null == player)
     {
@@ -29,7 +29,7 @@ void PlayerSceneSystem::OnEnterScene(entt::entity player)
         LOG_ERROR << "player do not enter scene " << player_id;
         return;
     }
-    Ms2GsEnterSceneRequest message;
+    Ms2GsEnterSceneRequest enter_scene_message;
 
     auto p_scene_info = registry.try_get<SceneInfo>((*p_scene).scene_entity_);
     if (nullptr == p_scene_info)
@@ -37,23 +37,17 @@ void PlayerSceneSystem::OnEnterScene(entt::entity player)
         LOG_ERROR << "scene info " << player_id;
         return;
     }
-    message.set_scene_id(p_scene_info->scene_id());
+    enter_scene_message.set_scene_id(p_scene_info->scene_id());
     auto try_player_session = registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
         LOG_ERROR << "player session not valid" << player_id;
         return;
     }
-    message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(message, player);
+    enter_scene_message.set_session_id(try_player_session->session_id());
+    Send2GsPlayer(enter_scene_message, player);
 }
 
-void PlayerSceneSystem::OnLeaveScene(entt::entity player, bool change_gs)
-{
-    Ms2GsLeaveSceneRequest message;
-    message.set_change_gs(change_gs);
-    Send2GsPlayer(message, player);
-}
 
 void PlayerSceneSystem::SendEnterGs(entt::entity player)
 {
@@ -94,18 +88,20 @@ uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity to_sce
     
 	auto& p_to_scene_gs = *try_to_scene_gs;
 	//同gs之间的切换
+	Ms2GsLeaveSceneRequest leave_scene_message;
 	if (p_player_gs->gs_node_id() == p_to_scene_gs->node_id())
 	{
-		PlayerSceneSystem::OnLeaveScene(player, false);
+        leave_scene_message.set_change_gs(false);
 		EnterSceneParam ep;
 		ep.enterer_ = player;
 		ep.scene_ = to_scene;
 		ScenesSystem::EnterScene(ep);
-		PlayerSceneSystem::OnEnterScene(player);
+		
 	}
 	else
 	{
-		PlayerSceneSystem::OnLeaveScene(player, true);
+        leave_scene_message.set_change_gs(true);
+
 		//正在切换
 		//切换gs  存储完毕之后才能进入下一个场景
 		//放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 
@@ -113,5 +109,6 @@ uint32_t PlayerSceneSystem::ChangeScene(entt::entity player, entt::entity to_sce
 		change_gs_scene.set_gs_node_id(p_to_scene_gs->node_id());
 		change_gs_scene.mutable_scene_info()->set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());
 	}
+	Send2GsPlayer(leave_scene_message, player);
 	return kRetOK;
 }
