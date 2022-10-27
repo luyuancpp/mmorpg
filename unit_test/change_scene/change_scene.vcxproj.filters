@@ -15,22 +15,28 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cross_server_change_scene_test.cpp">
+    <ClCompile Include="..\..\master_server\src\system\player_change_scene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
+    <ClCompile Include="change_scene_test.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\src\game_logic\scene\scene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\scene\scene_factories.cpp">
+    <ClCompile Include="..\..\common\src\game_logic\scene\servernode_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\scene\servernode_system.cpp">
+    <ClCompile Include="..\..\common\src\pb\pbc\event_proto\scene_event.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\player_network_comp.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.cc">
@@ -38,22 +44,28 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\master_server\src\system\player_change_scene.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\scene\scene.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\scene\scene_factories.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\scene\servernode_system.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.h">
+    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\comp\scene_comp.h">
+    <ClInclude Include="..\..\common\src\pb\pbc\event_proto\scene_event.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\player_network_comp.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\game_registry.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

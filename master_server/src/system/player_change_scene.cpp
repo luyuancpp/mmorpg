@@ -26,7 +26,7 @@ uint32_t PlayerChangeSceneSystem::ChangeSameGsScene(entt::entity player)
 	auto p_player_gs = registry.try_get<PlayerSession>(player);
 	if ( nullptr == p_player_gs)
 	{
-		LOG_ERROR << "gs session null" << registry.get<Guid>(player);
+		LOG_ERROR << "gs player session null" << registry.get<Guid>(player);
 		return kRetChangeScenePlayerQueueCompnentGsNull;
 	}
 
@@ -37,8 +37,7 @@ uint32_t PlayerChangeSceneSystem::ChangeSameGsScene(entt::entity player)
 		return kRetChangeScenePlayerQueueCompnentEmpty;
 	}
 	auto& front_change = change_scene_queue.front();
-
-	auto to_scene = ScenesSystem::GetSingleton().get_scene(front_change.scene_info().scene_id());
+	auto to_scene = ScenesSystem::get_scene(front_change.scene_info().scene_id());
 	if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
 	{
 		change_scene_queue.pop_front();
@@ -46,17 +45,13 @@ uint32_t PlayerChangeSceneSystem::ChangeSameGsScene(entt::entity player)
 	}
 	LeaveSceneParam lp;
 	lp.leaver_ = player;
-	ScenesSystem::GetSingleton().LeaveScene(lp);
+	ScenesSystem::LeaveScene(lp);
 
-	PlayerSceneSystem::OnLeaveScene(player, false);
 	EnterSceneParam ep;
 	ep.enterer_ = player;
 	ep.scene_ = to_scene;
-	ScenesSystem::GetSingleton().EnterScene(ep);
-	PlayerSceneSystem::OnEnterScene(player);
-
+	ScenesSystem::EnterScene(ep);
 	change_scene_queue.pop_front();//切换成功消息删除
-
 	return kRetOK;
 }
 
