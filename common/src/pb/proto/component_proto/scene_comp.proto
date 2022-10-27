@@ -20,4 +20,6 @@ message MsChangeSceneInfo
   uint64 gs_sequence = 4;//防止gs重启的时候gs_node_id一样
   bool old_gs_saved = 5;//老gs已经存储完毕,同gs间切换直接设置成ture
   uint64 change_time = 6;//设置超时，超时代表服务器崩溃了
+  bool ignore_full = 7;//忽略人数满了
+  bool is_leader_call = 8;//是否是队长叫换场景
 }
