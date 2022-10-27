@@ -21,7 +21,7 @@ uint32_t PlayerChangeSceneSystem::ChangeScene(entt::entity player, const MsChang
 	return kRetOK;
 }
 
-uint32_t PlayerChangeSceneSystem::ChangeSameGsScene(entt::entity player)
+uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 {
 	auto p_player_gs = registry.try_get<PlayerSession>(player);
 	if ( nullptr == p_player_gs)
