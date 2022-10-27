@@ -23,6 +23,7 @@ uint32_t PlayerChangeSceneSystem::ChangeScene(entt::entity player, const MsChang
 
 uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 {
+	//就算同gs,队列有消息也不能直接切换，
 	auto p_player_gs = registry.try_get<PlayerSession>(player);
 	if ( nullptr == p_player_gs)
 	{
