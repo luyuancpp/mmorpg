@@ -145,7 +145,7 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
     {
         for (auto& ji : it.second)
         {
-            registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, p_to_server_data);//todo 人数计算错误
+            registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, p_to_server_data);//todo 人数计算错误,没有加上原来场景的人数
             to_scenes_id.AddScene(it.first, ji);
         }
     }
@@ -187,7 +187,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
     //todo gs 只要人数更改
     registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
     registry.emplace<SceneEntity>(param.enterer_, param.scene_);
-	auto try_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(param.scene_);
+	auto try_gs_player_info = registry.try_get<GsNodePlayerInfoPtr>(param.scene_);// todo weak_ptr ?
 	if (nullptr != try_gs_player_info)
 	{
         (*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() + 1);

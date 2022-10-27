@@ -69,7 +69,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc repl
 	if (nullptr == try_enter_gs ||//正常进入gs换场景
 		try_enter_gs->enter_gs_type() == LOGIN_FIRST)//第一次登录(非顶号，重连则）调用进入场景接口
     {
-        PlayerSceneSystem::OnEnterScene(player);
+        PlayerSceneSystem::Send2GsEnterScene(player);//change_to msg_queue
 	}		
 }
 
