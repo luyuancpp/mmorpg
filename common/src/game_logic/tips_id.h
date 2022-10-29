@@ -11,6 +11,7 @@ enum  EnumCode : uint32_t
     kRetOK = 0,
     kRetTableId = 2,
     kRetCofnigData = 3,
+    kRetEnttNull = 4,
 
     //login server 
     kRetLoginCantFindAccount = 1000,//找不到
@@ -52,6 +53,7 @@ enum  EnumCode : uint32_t
     kRetChangeScenePlayerQueueCompnentFull = 4018,//玩家切换场景队列组件已满
     kRetChangeScenePlayerQueueCompnentGsNull = 4019,//找不到玩家的gs
     kRetChangeScenePlayerQueueCompnentEmpty = 4020,//玩家切换场景队列为空
+    kRetChangeSceneEnQueueNotSameGs = 4021,//不是同一个场景切换
 
     //Team
     kRetTeamNotInApplicants = 5000,
@@ -132,11 +134,27 @@ if (tip_code != kRetOK)\
     return;\
 }\
 
-#define  GetPlayerCompnentReturnError(return_name, compnent, tip_code)\
-auto return_name = registry.try_get<compnent>(player);\
-if (nullptr == return_name)\
+#define  GetPlayerCompnentReturnError(copm_name, compnent, tip_code)\
+auto copm_name = registry.try_get<compnent>(player);\
+if (nullptr == copm_name)\
 {\
 	return tip_code;\
 }
+
+#define  GetPlayerCompnentMemberReturnError(menber_name, compnent, tip_code)\
+auto comp_name = registry.try_get<compnent>(player);\
+if (nullptr == comp_name)\
+{\
+	return tip_code;\
+}\
+auto& menber_name = comp_name->menber_name##_;
+
+#define  GetPlayerCompnentMemberReturnVoid(menber_name, compnent)\
+auto comp_name = registry.try_get<compnent>(player);\
+if (nullptr == comp_name)\
+{\
+	return;\
+}\
+auto& menber_name = comp_name->menber_name##_;
 
 #endif // !COMMON_SRC_tip_code_ERROR_CODE
