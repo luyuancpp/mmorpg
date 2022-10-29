@@ -25,6 +25,7 @@ using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 using EnterRegionMainRpc = std::shared_ptr<NormalClosure<regionservcie::EnterCrossMainSceneRequest, regionservcie::EnterCrossMainSceneResponese>>;
 void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
 {
+    // todo 跨服切换不行，return error
     //切跨到b服过程中，跨服没返回又切到c，跨服回来再到c目前就不考虑这种情况了，考虑的话写代码麻烦
     //todo 异步跨服返回来之前又去切换场景，导致已经切换到别的场景了，再切的话可能就不对了，不考虑这种情况了，正常人不会切那么快
     auto player = g_player_list->GetPlayer(replied->s_rq_.player_id());
@@ -39,7 +40,6 @@ void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
         LOG_ERROR << "scene not found" << replied->s_rq_.scene_id();
         return;
     }
-    PlayerSceneSystem::ChangeScene(player, scene);
 }
 ///<<< END WRITING YOUR CODE
 
@@ -114,6 +114,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     entt::entity from_gs_entity = from_gs_it->second;
     entt::entity to_gs_entity = to_gs_it->second;
     
+    //跨服间切换,如果另一个跨服满了就不应该进去了
     //跨服间切换，通知通知跨服离开场景，已经在跨服上处理
     //原来服务器之间换场景，不用通知跨服离开场景
     if (registry.any_of<CrossMainSceneServer>(from_gs_entity) && 

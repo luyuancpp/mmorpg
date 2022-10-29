@@ -56,6 +56,8 @@ struct DestroyServerParam
 
 void AddMainSceneNodeCompnent(entt::entity e);
 
+
+//todo 1线镜像和一线应该是同一个gs,这样就不会有切换服务器的开销
 class ScenesSystem 
 {
 public:

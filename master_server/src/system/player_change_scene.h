@@ -6,8 +6,9 @@ class PlayerChangeSceneSystem
 {
 public:
 	static void InitChangeSceneQueue(entt::entity player);
-	static uint32_t ChangeScene(entt::entity player, const MsChangeSceneInfo&& change_info);
+	static uint32_t ChangeScene(entt::entity player, MsChangeSceneInfo&& change_info);
 	static uint32_t TryChangeSameGsScene(entt::entity player);
-	static uint32_t ChangeDiffrentGsScene(entt::entity player);
-	static void OnEnterGsSuccess();
+	static uint32_t Gs1SceneToGs2SceneInMyServer(entt::entity player);//自己的服务器改变gs
+	static uint32_t TryPopFrontMsg(entt::entity player);	
+	static void TryProcessChangeSceneQueue(entt::entity player);
 };

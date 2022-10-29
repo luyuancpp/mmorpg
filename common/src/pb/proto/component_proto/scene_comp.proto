@@ -14,15 +14,41 @@ message AfterChangeGsEnterScene
 
 message MsChangeSceneInfo
 {
+  enum eChangeGsStatus
+  {
+      eLeaveGsScene = 0;//等待老gs保存完毕
+      eLeaveGsSceneSucceed = 1;//
+      eEnterGsScene = 3;//
+      eEnterGsSceneSucceed = 4;//
+  };
+  enum eGateChangeGsStatus
+  {
+      eGateChangingGs = 0;//切换gs中
+      eGateChangeGsSucceed = 1;//切换gs成功
+  };
+  enum eCrossServerChangeGsStatus
+  {
+      eCrossServerChangingGs = 0;//切换CrossServer中
+      eCrossServerChangeGsSucceed = 1;//切换CrossServer成功
+  };
+  enum eChangeGsType
+  {
+      eSameGs = 0;//同服务器间切换
+      eDifferentGs = 1;//不同服务器间切换
+  };
+  enum eChangeCrossServerType
+  {
+      eDotnotCrossServer = 0;//不跨服
+      eDifferentCrossServer = 1;//跨服
+  };
   SceneInfo scene_info = 1;
-  uint32 gs_node_id = 2;
-  uint32 change_sequence = 3;
-  bool change_gs_succeed = 4;//防止gs重启的时候gs_node_id一样
-  bool change_gate_succeed = 5;//gate 切换完毕
-  bool rg_change_succeed = 6;//gate 切换完毕
-  uint64 change_time = 8;//设置超时，超时代表服务器崩溃了
+  uint32 change_sequence = 2;
+  uint32 change_gs_type = 3;
+  uint32 change_gs_status = 4;//eChangeGsStatus
+  uint32 change_gate_status = 5;//eGateChangeGsStatus
+  uint32 cross_server_type = 6;//eChangeCrossServerType
+  uint32 change_cross_server_status = 7;//eCrossServerChangeGsStatus
+  uint64 change_time = 8;//设置超时，超时代表服务器崩溃了,或者网络延时
   bool ignore_full = 9;//忽略人数满了
   bool is_leader_call = 10;//是否是队长叫换场景
-  uint32 change_gs_type = 11;//0同服务器间切换,1不同服务器间切换
-  uint32 cross_type = 12;//0不跨服,1跨服
 }

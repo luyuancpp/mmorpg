@@ -194,10 +194,6 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
     //原来就在跨服上面，先离开跨服场景
 	//先离开，不然人数少个判断不了
 
-    LeaveSceneParam lsp;
-    lsp.leaver_ = player;
-    ScenesSystem::LeaveScene(lsp);
-
 	auto ret = ScenesSystem::CheckScenePlayerSize(scene);
 	if (ret != kRetOK)
 	{
