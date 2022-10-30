@@ -21,75 +21,6 @@ uint32_t PlayerChangeSceneSystem::ChangeScene(entt::entity player, const MsChang
 	return kRetOK;
 }
 
-//当前服务器去计算当前的消息是不是同一个gs
-
-uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
-{
-	GetPlayerCompnentReturnError(try_change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
-	auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
-	if (change_scene_queue.empty())
-	{
-		return kRetChangeScenePlayerQueueCompnentEmpty;
-	}
-	auto& change_info = change_scene_queue.front();
-	auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
-	if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
-	{
-		change_scene_queue.pop_front();//todo
-		return kRetEnterSceneSceneNotFound;
-	}
-	LeaveSceneParam lp;
-	lp.leaver_ = player;
-	ScenesSystem::LeaveScene(lp);
-
-	EnterSceneParam ep;
-	ep.enterer_ = player;
-	ep.scene_ = to_scene;
-	ScenesSystem::EnterScene(ep);
-	change_scene_queue.pop_front();//切换成功消息删除
-	return kRetOK;
-}
-
-uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
-{
-    GetPlayerCompnentReturnError(try_change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
-    auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
-    if (change_scene_queue.empty())
-    {
-        return kRetChangeScenePlayerQueueCompnentEmpty;
-    }
-	auto& change_info = change_scene_queue.front();
-	if (change_info.change_gs_status() == MsChangeSceneInfo::eLeaveGsScene)
-	{
-        //正在切换
-        //切换gs  存储完毕之后才能进入下一个场景
-        //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 
-        LeaveSceneParam lp;
-        lp.leaver_ = player;
-        ScenesSystem::LeaveScene(lp);
-	}
-	else if (change_info.change_gs_status() == MsChangeSceneInfo::eLeaveGsSceneSucceed)
-	{
-        auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
-        if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
-        {
-            change_scene_queue.pop_front();//todo
-            return kRetEnterSceneSceneNotFound;
-        }
-        EnterSceneParam ep;
-        ep.enterer_ = player;
-        ep.scene_ = to_scene;
-        ScenesSystem::EnterScene(ep);
-		change_info.set_change_gs_status(MsChangeSceneInfo::eEnterGsScene);
-	}
-	else if (change_info.change_gs_status() == MsChangeSceneInfo::eGateEnterGsSceneSucceed)
-	{
-		change_scene_queue.pop_front();//todo
-	}
-	return kRetOK;
-}
-
-
 void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
 {
 	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
@@ -100,6 +31,16 @@ void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
 	auto& change_info = change_scene_queue.front();
     TryProcessZoneServerChangeScene(player, change_info);
     TryProcessViaCrossServerChangeScene(player, change_info);
+}
+
+void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)
+{
+    GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+    if (change_scene_queue.empty())
+    {
+        return;
+    }
+    change_scene_queue.pop_front();
 }
 
 void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity player, MsChangeSceneInfo& change_info)
@@ -148,3 +89,70 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
     }    
 }
 
+//当前服务器去计算当前的消息是不是同一个gs
+
+uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
+{
+    GetPlayerCompnentReturnError(try_change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
+    auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
+    if (change_scene_queue.empty())
+    {
+        return kRetChangeScenePlayerQueueCompnentEmpty;
+    }
+    auto& change_info = change_scene_queue.front();
+    auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
+    if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
+    {
+        change_scene_queue.pop_front();//todo
+        return kRetEnterSceneSceneNotFound;
+    }
+    LeaveSceneParam lp;
+    lp.leaver_ = player;
+    ScenesSystem::LeaveScene(lp);
+
+    EnterSceneParam ep;
+    ep.enterer_ = player;
+    ep.scene_ = to_scene;
+    ScenesSystem::EnterScene(ep);
+    change_scene_queue.pop_front();//切换成功消息删除
+    return kRetOK;
+}
+
+uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
+{
+    GetPlayerCompnentReturnError(try_change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
+    auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
+    if (change_scene_queue.empty())
+    {
+        return kRetChangeScenePlayerQueueCompnentEmpty;
+    }
+    auto& change_info = change_scene_queue.front();
+    if (change_info.change_gs_status() == MsChangeSceneInfo::eLeaveGsScene)
+    {
+        //正在切换
+        //切换gs  存储完毕之后才能进入下一个场景
+        //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 
+        LeaveSceneParam lp;
+        lp.leaver_ = player;
+        ScenesSystem::LeaveScene(lp);
+    }
+    else if (change_info.change_gs_status() == MsChangeSceneInfo::eLeaveGsSceneSucceed)
+    {
+        auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
+        if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
+        {
+            change_scene_queue.pop_front();//todo
+            return kRetEnterSceneSceneNotFound;
+        }
+        EnterSceneParam ep;
+        ep.enterer_ = player;
+        ep.scene_ = to_scene;
+        ScenesSystem::EnterScene(ep);
+        change_info.set_change_gs_status(MsChangeSceneInfo::eEnterGsScene);
+    }
+    else if (change_info.change_gs_status() == MsChangeSceneInfo::eGateEnterGsSceneSucceed)
+    {
+        change_scene_queue.pop_front();//todo
+    }
+    return kRetOK;
+}
