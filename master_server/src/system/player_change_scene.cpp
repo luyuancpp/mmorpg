@@ -131,7 +131,7 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
         return;
     }
     //cross server 处理完了
-    if (change_info.change_gs_status() != MsChangeSceneInfo::eEnterCrossServerSceneSucceed)
+    if (change_info.change_cross_server_status() != MsChangeSceneInfo::eEnterCrossServerSceneSucceed)
     {
         return;
     }
