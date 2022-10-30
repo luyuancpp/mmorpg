@@ -20,16 +20,10 @@ message MsChangeSceneInfo
       eLeaveGsSceneSucceed = 1;//
       eEnterGsScene = 3;//
       eEnterGsSceneSucceed = 4;//
-  };
-  enum eGateChangeGsStatus
-  {
-      eGateChangingGs = 0;//切换gs中
-      eGateChangeGsSucceed = 1;//切换gs成功
-  };
-  enum eCrossServerChangeGsStatus
-  {
-      eCrossServerChangingGs = 0;//切换CrossServer中
-      eCrossServerChangeGsSucceed = 1;//切换CrossServer成功
+      eGateEnterGsScene = 5;
+      eGateEnterGsSceneSucceed = 6;//换的时候gate断线了
+      eEnterCrossServerScene = 7;//
+      eEnterCrossServerSceneSucceed = 8;//
   };
   enum eChangeGsType
   {
@@ -39,15 +33,13 @@ message MsChangeSceneInfo
   enum eChangeCrossServerType
   {
       eDotnotCrossServer = 0;//不跨服
-      eDifferentCrossServer = 1;//跨服
+      eCrossServer = 1;//跨服
   };
   SceneInfo scene_info = 1;
   uint32 change_sequence = 2;
   uint32 change_gs_type = 3;
   uint32 change_gs_status = 4;//eChangeGsStatus
-  uint32 change_gate_status = 5;//eGateChangeGsStatus
-  uint32 cross_server_type = 6;//eChangeCrossServerType
-  uint32 change_cross_server_status = 7;//eCrossServerChangeGsStatus
+  uint32 change_cross_server_type = 6;//eChangeCrossServerType
   uint64 change_time = 8;//设置超时，超时代表服务器崩溃了,或者网络延时
   bool ignore_full = 9;//忽略人数满了
   bool is_leader_call = 10;//是否是队长叫换场景
