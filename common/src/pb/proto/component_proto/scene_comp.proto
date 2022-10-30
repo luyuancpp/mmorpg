@@ -19,7 +19,7 @@ message MsChangeSceneInfo
       eLeaveGsScene = 0;//等待老gs保存完毕
       eLeaveGsSceneSucceed = 1;//
       eEnterGsScene = 3;//
-      eEnterGsSceneSucceed = 4;//
+      eEnterGsSceneSucceed = 4;//不同服务器要走完这步
       eGateEnterGsScene = 5;
       eGateEnterGsSceneSucceed = 6;//换的时候gate断线了
       
