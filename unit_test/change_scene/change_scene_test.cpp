@@ -119,9 +119,9 @@ TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
     change_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::ChangeScene(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
     GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(MsChangeSceneInfo::eDifferentGs);
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
     EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
     GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eGateEnterGsSceneSucceed);
