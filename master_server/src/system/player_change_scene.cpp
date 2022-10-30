@@ -120,6 +120,7 @@ void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity playe
         //切换gs  存储完毕之后才能进入下一个场景
         //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 
         ChangeDiffGsScene(player);
+        return;
     }
 }
 
@@ -143,7 +144,7 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
     else if (change_info.change_gs_type() == MsChangeSceneInfo::eDifferentGs)
     {
         ChangeDiffGsScene(player);
+        return;
     }    
-    return;
 }
 

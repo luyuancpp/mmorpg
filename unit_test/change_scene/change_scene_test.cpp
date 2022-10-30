@@ -54,8 +54,6 @@ TEST(PlayerChangeScene, QueueFull)
 TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 {
     auto player = CreatePlayer();
-    auto from_gs = registry.create();
-    auto to_gs = registry.create();
     auto scene_id = registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
     EnterSceneParam ep;
     ep.enterer_ = player;
@@ -73,8 +71,6 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 {
     auto player = CreatePlayer();
-    auto from_gs = registry.create();
-    auto to_gs = registry.create();
     auto scene_id = registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
     EnterSceneParam ep;
     ep.enterer_ = player;
@@ -105,8 +101,6 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
 {
     auto player = CreatePlayer();
-    auto from_gs = registry.create();
-    auto to_gs = registry.create();
     auto scene_id = registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
     EnterSceneParam ep;
     ep.enterer_ = player;
@@ -133,8 +127,6 @@ TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
 TEST(PlayerChangeScene, CrossServerSameGs)
 {
     auto player = CreatePlayer();
-    auto from_gs = registry.create();
-    auto to_gs = registry.create();
     auto scene_id = registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
     EnterSceneParam ep;
     ep.enterer_ = player;
@@ -144,8 +136,64 @@ TEST(PlayerChangeScene, CrossServerSameGs)
 
     MsChangeSceneInfo change_info;
     change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
+    change_info.set_change_gs_type(MsChangeSceneInfo::eSameGs);//todo scene logic
+    EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::ChangeScene(player, change_info));    
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+}
+
+TEST(PlayerChangeScene, CrossServerDiffGs)
+{
+    auto player = CreatePlayer();
+    auto scene_id = registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
+    EnterSceneParam ep;
+    ep.enterer_ = player;
+    auto from_scene = ScenesSystem::get_scene(scene_id);
+    ep.scene_ = from_scene;
+    ScenesSystem::EnterScene(ep);
+
+    MsChangeSceneInfo change_info;
+    change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
     change_info.set_change_gs_type(MsChangeSceneInfo::eDifferentGs);//todo scene logic
-    change_info.set_change_gs_status(MsChangeSceneInfo::eLeaveGsScene);
+    EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::ChangeScene(player, change_info));
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eGateEnterGsSceneSucceed);
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+}
+
+TEST(PlayerChangeScene, CrossServerGs2NormalServerGs)
+{
+    auto player = CreatePlayer();
+    auto scene_id = registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
+    EnterSceneParam ep;
+    ep.enterer_ = player;
+    auto from_scene = ScenesSystem::get_scene(scene_id);
+    ep.scene_ = from_scene;
+    ScenesSystem::EnterScene(ep);
+
+    MsChangeSceneInfo change_info;
+    change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
+    EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::ChangeScene(player, change_info));
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(MsChangeSceneInfo::eDifferentGs);
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eGateEnterGsSceneSucceed);
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
 }
 
 
