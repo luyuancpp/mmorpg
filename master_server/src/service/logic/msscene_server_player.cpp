@@ -35,12 +35,21 @@ void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
         LOG_ERROR << "player not found" << replied->s_rq_.player_id();
         return;
     }
-    auto scene = ScenesSystem::get_scene(replied->s_rq_.scene_id());
-    if (entt::null == scene)
-    {
-        LOG_ERROR << "scene not found" << replied->s_rq_.scene_id();
-        return;
-    }
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	if (change_scene_queue.empty())
+	{
+		return;
+	}
+	auto scene = ScenesSystem::get_scene(replied->s_rq_.scene_id());
+	if (entt::null == scene)
+	{
+		LOG_ERROR << "scene not found" << replied->s_rq_.scene_id();
+		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+		return;
+	}
+	auto& change_scene_info = change_scene_queue.front();
+	change_scene_info.set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 }
 
 //前一个队列完成的时候才应该调用到这里去判断当前队列
