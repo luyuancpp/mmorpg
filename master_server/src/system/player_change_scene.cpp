@@ -23,8 +23,14 @@ uint32_t PlayerChangeSceneSystem::ChangeScene(entt::entity player, const MsChang
 
 bool PlayerChangeSceneSystem::IsChangeQueueFull(entt::entity player )
 {
-    GetPlayerCompnentMemberReturnError(change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
+    GetPlayerCompnentMemberNullReturnTrue(change_scene_queue, PlayerMsChangeSceneQueue);
     return change_scene_queue.full();
+}
+
+bool PlayerChangeSceneSystem::IsChangeQueueEmpty(entt::entity player)
+{
+    GetPlayerCompnentMemberNullReturnFalse(change_scene_queue, PlayerMsChangeSceneQueue);
+	return change_scene_queue.empty();
 }
 
 void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
