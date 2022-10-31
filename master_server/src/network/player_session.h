@@ -17,6 +17,10 @@ public:
 
 	uint32_t gs_node_id()const
 	{
+		if (nullptr == gs_)
+		{
+			return 0;
+		}
 		return gs_->node_id();
 	}
 
