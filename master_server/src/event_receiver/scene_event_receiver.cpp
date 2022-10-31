@@ -6,8 +6,12 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/scene_comp.h"
+#include "src/game_logic/tips_id.h"
+#include "src/game_logic/scene/scene.h"
 #include "src/system/player_scene_system.h"
+#include "src/system/player_change_scene.h"
 #include "src/network/message_system.h"
+#include "src/network/player_session.h"
 
 #include "component_proto/scene_comp.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
@@ -58,10 +62,24 @@ void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
     {
         return;
     }
-    LOG_INFO << "player leave scene " << *try_player_id << " "
-        << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
+    //LOG_INFO << "player leave scene " << *try_player_id << " " << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	if (change_scene_queue.empty())
+	{
+		return;
+	}
+	auto& change_scene_info = change_scene_queue.front();
+	auto to_scene = ScenesSystem::get_scene(change_scene_info.scene_info().scene_id());
     Ms2GsLeaveSceneRequest leave_scene_message;
-    leave_scene_message.set_change_gs(false);//error
+	auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
+	auto p_player_gs = registry.try_get<PlayerSession>(player);
+	if (nullptr == try_to_scene_gs || nullptr == p_player_gs)
+	{
+		LOG_ERROR << " scene null : " << (nullptr == try_to_scene_gs) << " " << (nullptr == p_player_gs);
+        PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+		return ;
+	}
+    leave_scene_message.set_change_gs(p_player_gs->gs_node_id() != (*try_to_scene_gs)->node_id());
     Send2GsPlayer(leave_scene_message, player);
     ///<<< END WRITING YOUR CODE 
 }

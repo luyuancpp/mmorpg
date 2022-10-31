@@ -87,9 +87,6 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
     GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eLeaveGsSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
     EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eEnterGsScene);
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
     GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eEnterGsSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
     EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());

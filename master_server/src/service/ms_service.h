@@ -16,7 +16,7 @@ private:
 	using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 
     using Ms2GwPlayerEnterGsRpc = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
-    void Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc replied);
+    void Ms2GwPlayerUpdateGsNodeIdReplied(Ms2GwPlayerEnterGsRpc replied);
 
     Guid GetPlayerIdByConnId(uint64_t session_id);
     entt::entity GetPlayerByConnId(uint64_t session_id);    

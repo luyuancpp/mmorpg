@@ -94,7 +94,7 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 	auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
 	if (nullptr == try_from_scene_gs || nullptr == try_to_scene_gs)
 	{
-		LOG_ERROR << "  gs scene null ";
+		LOG_ERROR << " scene null : " << (nullptr == try_from_scene_gs) << " " << (nullptr == try_to_scene_gs);
 		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return;
 	}
@@ -102,18 +102,11 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 	auto to_gs_it = g_gs_nodes.find((*try_to_scene_gs)->node_id());
 	if (from_gs_it == g_gs_nodes.end() || to_gs_it == g_gs_nodes.end())
 	{
-		if (from_gs_it == g_gs_nodes.end())
-		{
-			LOG_ERROR << " gs not found  : " << (*try_from_scene_gs)->node_id();
-			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-			return;
-		}
-		if (to_gs_it == g_gs_nodes.end())
-		{
-			LOG_ERROR << " gs not found : " << (*try_to_scene_gs)->node_id();
-			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-			return;
-		}
+		LOG_ERROR << " gs not found  : " <<
+			(*try_from_scene_gs)->node_id() <<
+			" " << (*try_to_scene_gs)->node_id();
+		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+		return;
 	}
 	entt::entity from_gs = from_gs_it->second;
 	entt::entity to_gs = to_gs_it->second;
@@ -188,6 +181,11 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 		change_scene_info.set_change_cross_server_type(MsChangeSceneInfo::eDotnotCrossServer);
 	}
 
+	if (MsChangeSceneInfo::eDotnotCrossServer == change_scene_info.change_cross_server_status() )
+	{
+		PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);//不跨服就开始处理同一个gs 或者不同gs
+		return;
+	}	
 	
 }
 ///<<< END WRITING YOUR CODE
@@ -241,36 +239,35 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
 {
 ///<<< BEGIN WRITING YOUR CODE
     //异步切换考虑消息队列
-    auto try_change_gs_enter_scene = registry.try_get<AfterChangeGsEnterScene>(player);
-    if (nullptr == try_change_gs_enter_scene)
-    {
-        LOG_ERROR << "change gs scene compnent null" << registry.get<Guid>(player);
-        return;
-    }
-	auto scene = ScenesSystem::get_scene(try_change_gs_enter_scene->scene_info().scene_id());   
-    registry.remove<AfterChangeGsEnterScene>(player);
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	if (change_scene_queue.empty())
+	{
+		return;
+	}
+	auto& change_scene_info = change_scene_queue.front();
+	LOG_DEBUG << "Gs2MsLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
+	auto to_scene = ScenesSystem::get_scene(change_scene_info.scene_info().scene_id());
     //todo异步加载完场景已经不在了scene了
-	if (entt::null == scene)
+
+	if (entt::null == to_scene)//todo 场景崩溃了要去新的场景
 	{
 		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
 		return;
 	}
-
-	EnterSceneParam ep;
-	ep.enterer_ = player;
-	ep.scene_ = scene;
-	ScenesSystem::EnterScene(ep);
+	PlayerChangeSceneSystem::SetChangeGsStatus(player, MsChangeSceneInfo::eLeaveGsSceneSucceed);
 
     auto try_player_session = registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
 	{
 		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
+		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return;
 
     }
     else
     {
-        auto* p_gs_data = registry.try_get<GsNodePtr>(scene);
+		//todo gs崩溃
+        auto* p_gs_data = registry.try_get<GsNodePtr>(to_scene);
         if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
         {
             // todo default
@@ -281,7 +278,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
             try_player_session->gs_ = *p_gs_data;
         }
     }
-    PlayerSceneSystem::SendEnterGs(player);
+    PlayerSceneSystem::CallPlayerEnterGs(player);
 ///<<< END WRITING YOUR CODE
 }
 

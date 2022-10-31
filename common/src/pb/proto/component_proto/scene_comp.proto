@@ -6,22 +6,14 @@ message SceneInfo
   uint64 scene_id = 2;
 }
 
-message AfterChangeGsEnterScene
-{
-  SceneInfo scene_info = 1;
-  uint32 gs_node_id = 2;
-}
-
 message MsChangeSceneInfo
 {
   enum eChangeGsStatus
   {
       eLeaveGsScene = 0;//等待老gs保存完毕
       eLeaveGsSceneSucceed = 1;//
-      eEnterGsScene = 3;//
-      eEnterGsSceneSucceed = 4;//不同服务器要走完这步
-      eGateEnterGsScene = 5;
-      eGateEnterGsSceneSucceed = 6;//换的时候gate断线了
+      eEnterGsSceneSucceed = 2;//不同服务器要走完这步
+      eGateEnterGsSceneSucceed = 3;//换的时候gate断线了
       
   };
   enum eChangeGsType

@@ -12,6 +12,7 @@ public:
 	static bool IsChangeQueueEmpty(entt::entity player);
 	static void TryProcessChangeSceneQueue(entt::entity player);
 	static void PopFrontChangeSceneQueue(entt::entity player);
+	static void SetChangeGsStatus(entt::entity player, MsChangeSceneInfo::eChangeGsStatus s);
 private:
 	static void TryProcessZoneServerChangeScene(entt::entity player, MsChangeSceneInfo& change_info);//处理本服务器的切换,不跨服
 	static void TryProcessViaCrossServerChangeScene(entt::entity player, MsChangeSceneInfo& change_info);//处理通过跨服消息的换场景
