@@ -1,7 +1,7 @@
 #include "ms_service.h"
 #include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
-/// #include "muduo/base/Logging.h"
+
 #include "muduo/net/InetAddress.h"
 
 #include "src/game_config/mainscene_config.h"
@@ -220,7 +220,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 		g_ms_node->LetGateConnect2Gs(gs, e);
 	}
 	g_gs_nodes.emplace(registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
-	LOG_INFO << "game connected " << request->gs_node_id() << response->DebugString();
+	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -398,9 +398,10 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	{
 		//把旧的connection 断掉
 		player = g_player_list->EnterGame(player_id);
+		PlayerCommonSystem::InitPlayerCompnent(player);
 		OnSessionEnterGame(session, player_id);
 		registry.emplace<Guid>(player, player_id);
-		registry.emplace<Player>(player);
+		
 		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(sit->second));
 		
 		GetSceneParam getp;
@@ -411,17 +412,21 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 			// todo default
 			LOG_INFO << "player " << player_id << " enter default secne";
 		} 
+		
+		MsChangeSceneInfo change_scene_info;
+		change_scene_info.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(scene));
+		change_scene_info.set_change_gs_type(MsChangeSceneInfo::eDifferentGs);
+		change_scene_info.set_change_gs_status(MsChangeSceneInfo::eLeaveGsSceneSucceed);
+		PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
+		PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 
-        EnterSceneParam ep;
-        ep.enterer_ = player;
-        ep.scene_ = scene;
-        ScenesSystem::EnterScene(ep);//顶号的时候已经在场景里面了
 		InitPlayerSession(player, request->session_id());
 		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 
 	}
 	else//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 	{
+		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
 		
 		//告诉账号被顶

@@ -8,10 +8,12 @@
 #include "logic_proto/scene_client_player.pb.h"
 #include "logic_proto/common_server_player.pb.h"
 #include "component_proto/player_login_comp.pb.h"
+#include "component_proto/player_comp.pb.h"
 
 void PlayerCommonSystem::InitPlayerCompnent(entt::entity player)
 {
     PlayerChangeSceneSystem::InitChangeSceneQueue(player);
+    registry.emplace<Player>(player);
 }
 
 void PlayerCommonSystem::OnLogin(entt::entity player)
