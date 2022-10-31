@@ -7,7 +7,7 @@ class PlayerChangeSceneSystem
 {
 public:
 	static void InitChangeSceneQueue(entt::entity player);
-	static uint32_t ChangeScene(entt::entity player, const MsChangeSceneInfo& change_info);
+	static uint32_t PushChangeSceneInfo(entt::entity player, const MsChangeSceneInfo& change_info);
 	static bool IsChangeQueueFull(entt::entity player);
 	static bool IsChangeQueueEmpty(entt::entity player);
 	static void TryProcessChangeSceneQueue(entt::entity player);
