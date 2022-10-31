@@ -32,6 +32,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 	if (!ret.second)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
+		g_async_player_data.erase(async_it);
 		return;
 	}
     // on loaded db
@@ -66,7 +67,7 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 	g_player_data_redis_system->Save(pb, registry.get<Guid>(player));
 }
 
-//todo 没load 完再次进入别的gs
+//考虑: 没load 完再次进入别的gs
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
 	auto msit = g_ms_nodes->find(enter_info.ms_node_id());
@@ -78,7 +79,6 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 	registry.emplace_or_replace<MsNodePtr>(player, msit->second);//todo master 重新启动以后
 	msservice::EnterGsSucceedRequest message;
 	message.set_player_id(registry.get<Guid>(player));
-
 	auto& ms_stub = registry.get<RpcStub<msservice::MasterNodeService_Stub>>(msit->second->ms_);
 	ms_stub.CallMethod(message, &msservice::MasterNodeService_Stub::EnterGsSucceed);
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样

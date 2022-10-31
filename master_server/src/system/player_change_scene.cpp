@@ -55,6 +55,16 @@ void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)
     change_scene_queue.pop_front();
 }
 
+void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, MsChangeSceneInfo::eChangeGsStatus s)
+{
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	if (change_scene_queue.empty())
+	{
+		return;
+	}
+    change_scene_queue.front().set_change_gs_status(s);
+}
+
 void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity player, MsChangeSceneInfo& change_info)
 {
     //不走跨服，只在区服务器

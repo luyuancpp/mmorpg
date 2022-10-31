@@ -23,6 +23,7 @@
 #include "src/service/logic/player_service.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
+#include "src/system/player_change_scene.h"
 #include "src/network/server_component.h"
 #include "src/network/session.h"
 
@@ -37,7 +38,7 @@ using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
-void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc replied)
+void MasterNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied(Ms2GwPlayerEnterGsRpc replied)
 {
 	//todo 中间返回是断开了
 	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
@@ -45,8 +46,9 @@ void MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied(Ms2GwPlayerEnterGsRpc repl
 	{
 		LOG_ERROR << "player not found " << registry.get<Guid>(player);
 		return;
-	
 	}
+	PlayerChangeSceneSystem::SetChangeGsStatus(player, MsChangeSceneInfo::eGateEnterGsSceneSucceed);
+	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 	UpdateGateSessionGsRequest message;
     auto try_player_session = registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
@@ -440,7 +442,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		LOG_ERROR << "player enter game";
 		return;
 	}
-	PlayerSceneSystem::SendEnterGs(player);
+	PlayerSceneSystem::CallPlayerEnterGs(player);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -574,7 +576,7 @@ void MasterNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpc rpc;
 	rpc.s_rq_.set_session_id(player_session.session_id());
 	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerEnterGsReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
+	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 

@@ -49,7 +49,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 }
 
 
-void PlayerSceneSystem::SendEnterGs(entt::entity player)
+void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player)
 {
 	auto try_player_session = registry.try_get<PlayerSession>(player);
 	if (nullptr == try_player_session)
