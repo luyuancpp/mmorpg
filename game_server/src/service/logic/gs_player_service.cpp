@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include "player_service.h"
 #include "logic_proto/common_client_player.pb.h"
-#include "src/service/logic/gscommon_client_player.h"
+#include "src/service/logic/gscommon_cgp.h"
 #include "logic_proto/common_server_player.pb.h"
 #include "src/service/logic/gscommon_server_player.h"
 #include "logic_proto/scene_client_player.pb.h"
