@@ -21,6 +21,12 @@ uint32_t PlayerChangeSceneSystem::ChangeScene(entt::entity player, const MsChang
 	return kRetOK;
 }
 
+bool PlayerChangeSceneSystem::IsChangeQueueFull(entt::entity player )
+{
+    GetPlayerCompnentMemberReturnError(change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
+    return change_scene_queue.full();
+}
+
 void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
 {
 	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
