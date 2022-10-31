@@ -116,25 +116,25 @@ entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 	return GetMainSceneNotFullT<MainSceneServer, GSNormal, Pressure>(param);
 }
 
-void ServerNodeSystem::ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param)
+void ServerNodeSystem::ServerEnterPressure(const ServerPressureParam& param)
 {
     registry.remove<NoPressure>(param.server_);
     registry.emplace<Pressure>(param.server_);
 }
 
-void ServerNodeSystem::ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param)
+void ServerNodeSystem::ServerEnterNoPressure( const ServerPressureParam& param)
 {
     registry.remove<Pressure>(param.server_);
     registry.emplace<NoPressure>(param.server_);
 }
 
-void ServerNodeSystem::ServerCrashed(entt::registry& reg, const ServerCrashParam& param)
+void ServerNodeSystem::ServerCrashed( const ServerCrashParam& param)
 {
     registry.remove<GSNormal>(param.crash_server_);
     registry.emplace<GSCrash>(param.crash_server_);
 }
 
-void ServerNodeSystem::ServerMaintain(entt::registry& reg, const MaintainServerParam& param)
+void ServerNodeSystem::ServerMaintain(const MaintainServerParam& param)
 {
     registry.remove<GSNormal>(param.maintain_server_);
     registry.emplace<GSMainTain>(param.maintain_server_);

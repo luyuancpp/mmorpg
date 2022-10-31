@@ -52,12 +52,12 @@ public:
 
     static  entt::entity GetMainSceneNotFull(const GetSceneParam& param);
 
-    static  void ServerEnterPressure(entt::registry& reg, const ServerPressureParam& param);
+    static  void ServerEnterPressure(const ServerPressureParam& param);
 
-    static  void ServerEnterNoPressure(entt::registry& reg, const ServerPressureParam& param);
+    static  void ServerEnterNoPressure( const ServerPressureParam& param);
 
-    static  void ServerCrashed(entt::registry& reg, const ServerCrashParam& param);
+    static  void ServerCrashed(const ServerCrashParam& param);
 
-    static  void ServerMaintain(entt::registry& reg, const MaintainServerParam& param);
+    static  void ServerMaintain(const MaintainServerParam& param);
 };
 

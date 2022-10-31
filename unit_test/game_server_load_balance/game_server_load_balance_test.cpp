@@ -328,7 +328,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
 
     MaintainServerParam maintain;
     maintain.maintain_server_ = *server_entities.begin();
-    snsys.ServerMaintain(registry, maintain);
+    snsys.ServerMaintain(maintain);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -445,7 +445,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
 
     ServerCrashParam crash1;
     crash1.crash_server_ = *server_entities.begin();
-    snsys.ServerCrashed(registry, crash1);
+    snsys.ServerCrashed(crash1);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -508,7 +508,7 @@ TEST(GS, CrashMovePlayer2NewServer)
 
     ServerCrashParam crash1;
     crash1.crash_server_ = *server_entities.begin();
-    snsys.ServerCrashed(registry, crash1);
+    snsys.ServerCrashed(crash1);
 
     ReplaceCrashServerParam replace_crash;
     replace_crash.cransh_server_ = *server_entities.begin();
@@ -675,7 +675,7 @@ TEST(GS, ServerEnterLeavePressure)
     }
     ServerPressureParam pressure1;
     pressure1.server_ = *server_entities.begin();
-    snsys.ServerEnterPressure(registry, pressure1);
+    snsys.ServerEnterPressure( pressure1);
     
 
     uint32_t scene_config_id0 = 0;
@@ -700,7 +700,7 @@ TEST(GS, ServerEnterLeavePressure)
 
     uint32_t player_scene_id = 0;
 
-    snsys.ServerEnterNoPressure(registry, pressure1);
+    snsys.ServerEnterNoPressure( pressure1);
 
     std::unordered_map<entt::entity, entt::entity> player_scene2;
     weight_round_robin_scene.scene_confid_ = scene_config_id1;
