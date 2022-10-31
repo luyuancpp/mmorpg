@@ -113,17 +113,6 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 	bool is_from_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(from_gs);
 	bool is_to_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(to_gs);
 
-	//您当前就在这个场景，无需切换
-	auto try_to_scene = registry.try_get<SceneEntity>(player);
-	if (nullptr != try_to_scene)
-	{
-		if (to_scene != entt::null && to_scene == try_to_scene->scene_entity_)
-		{
-			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
-			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-			return;
-		}
-	}
 	//不是跨服才在本地判断,跨服有自己的判断
 	if (!change_scene_info.ignore_full() && !is_to_gs_is_cross_server)
 	{
@@ -197,11 +186,6 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
     //正在切换场景中，不能马上切换，gs崩溃了怎么办
-    if (PlayerChangeSceneSystem::IsChangeQueueFull(player))
-    {
-        PlayerTipSystem::Tip(player, kRetEnterSceneChangingGs, {});
-        return;
-    }
     MsChangeSceneInfo change_scene_info;
     change_scene_info.mutable_scene_info()->CopyFrom(request->scene_info());
 	auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);

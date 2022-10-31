@@ -7,6 +7,7 @@ class PlayerChangeSceneSystem
 {
 public:
 	static void InitChangeSceneQueue(entt::entity player);
+	//队长拉人也得等待，不然太复杂了,队长拉进副本得等玩家继续切换次数切完了
 	static uint32_t PushChangeSceneInfo(entt::entity player, const MsChangeSceneInfo& change_info);
 	static bool IsChangeQueueEmpty(entt::entity player);
 	static void TryProcessChangeSceneQueue(entt::entity player);
