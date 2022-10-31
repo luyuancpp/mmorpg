@@ -47,7 +47,7 @@ TEST(PlayerChangeScene, QueueFull)
         EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, info));
     }
     MsChangeSceneInfo info;
-    EXPECT_EQ(kRetChangeScenePlayerQueueCompnentFull, PlayerChangeSceneSystem::PushChangeSceneInfo(player, info));
+    EXPECT_EQ(kRetEnterSceneChangingGs, PlayerChangeSceneSystem::PushChangeSceneInfo(player, info));
 }
 
 //1:同一个gs直接切，队列直接成功

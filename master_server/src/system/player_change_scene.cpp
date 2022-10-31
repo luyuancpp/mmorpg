@@ -15,16 +15,10 @@ void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
 uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const MsChangeSceneInfo& change_info)
 {
 	GetPlayerCompnentMemberReturnError(change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
-	CheckCondtion(change_scene_queue.full(), kRetChangeScenePlayerQueueCompnentFull);
+	CheckCondtion(change_scene_queue.full(), kRetEnterSceneChangingGs);
 	change_scene_queue.push_back(change_info);
     change_scene_queue.front().set_change_time(muduo::Timestamp::now().secondsSinceEpoch());//todo
 	return kRetOK;
-}
-
-bool PlayerChangeSceneSystem::IsChangeQueueFull(entt::entity player )
-{
-    GetPlayerCompnentMemberNullReturnTrue(change_scene_queue, PlayerMsChangeSceneQueue);
-    return change_scene_queue.full();
 }
 
 bool PlayerChangeSceneSystem::IsChangeQueueEmpty(entt::entity player)
@@ -170,7 +164,6 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
         ep.enterer_ = player;
         ep.scene_ = to_scene;
         ScenesSystem::EnterScene(ep);
-        change_info.set_change_gs_status(MsChangeSceneInfo::eEnterGsScene);
     }
     else if (change_info.change_gs_status() == MsChangeSceneInfo::eGateEnterGsSceneSucceed)
     {
