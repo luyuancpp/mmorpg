@@ -43,7 +43,8 @@ void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
     }
 }
 
-void UpdateFrontChangeSceneInfo(entt::entity player)
+//前一个队列完成的时候才应该调用到这里去判断当前队列
+void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 {
 	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
 	if (change_scene_queue.empty())
@@ -57,6 +58,11 @@ void UpdateFrontChangeSceneInfo(entt::entity player)
 		return;
 	}
 	auto& change_scene_info = change_scene_queue.front();
+	if (change_scene_info.processing())
+	{
+		return;
+	}
+	change_scene_info.set_processing(true);
 	auto& scene_info = change_scene_info.scene_info();
 	auto scene_id = scene_info.scene_id();
 	entt::entity to_scene = entt::null;
@@ -68,6 +74,7 @@ void UpdateFrontChangeSceneInfo(entt::entity player)
 		if (entt::null == to_scene)
 		{
 			PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 			return;
 		}
 		scene_id = registry.get<SceneInfo>(to_scene).scene_id();
@@ -78,6 +85,7 @@ void UpdateFrontChangeSceneInfo(entt::entity player)
 		if (entt::null == to_scene)
 		{
 			PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 			return;
 		}
 	}
@@ -87,6 +95,7 @@ void UpdateFrontChangeSceneInfo(entt::entity player)
 	if (nullptr == try_from_scene_gs || nullptr == try_to_scene_gs)
 	{
 		LOG_ERROR << "  gs scene null ";
+		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return;
 	}
 	auto from_gs_it = g_gs_nodes.find((*try_from_scene_gs)->node_id());
@@ -96,20 +105,54 @@ void UpdateFrontChangeSceneInfo(entt::entity player)
 		if (from_gs_it == g_gs_nodes.end())
 		{
 			LOG_ERROR << " gs not found  : " << (*try_from_scene_gs)->node_id();
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 			return;
 		}
 		if (to_gs_it == g_gs_nodes.end())
 		{
 			LOG_ERROR << " gs not found : " << (*try_to_scene_gs)->node_id();
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 			return;
 		}
 	}
 	entt::entity from_gs = from_gs_it->second;
 	entt::entity to_gs = to_gs_it->second;
+	bool is_from_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(from_gs);
+	bool is_to_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(to_gs);
 
-	if (entt::null != from_gs && from_gs == to_gs)
+	//您当前就在这个场景，无需切换
+	auto try_to_scene = registry.try_get<SceneEntity>(player);
+	if (nullptr != try_to_scene)
 	{
-		change_scene_info.set_change_gs_type(MsChangeSceneInfo::eSameGs);//同一个服务器切换
+		if (to_scene != entt::null && to_scene == try_to_scene->scene_entity_)
+		{
+			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+			return;
+		}
+	}
+	//不是跨服才在本地判断,跨服有自己的判断
+	if (!change_scene_info.ignore_full() && !is_to_gs_is_cross_server)
+	{
+		auto ret = ScenesSystem::CheckScenePlayerSize(to_scene);
+		if (kRetOK != ret)
+		{
+			PlayerTipSystem::Tip(player, ret, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+			return;
+		}
+	}
+
+	if (entt::null != from_gs)
+	{
+		if (from_gs == to_gs)
+		{
+			change_scene_info.set_change_gs_type(MsChangeSceneInfo::eSameGs);
+		}
+		else if (from_gs != to_gs)
+		{
+			change_scene_info.set_change_gs_type(MsChangeSceneInfo::eDifferentGs);
+		}		
 	}
 
 	//跨服间切换,如果另一个跨服满了就不应该进去了
@@ -118,8 +161,7 @@ void UpdateFrontChangeSceneInfo(entt::entity player)
 	//todo 如果是进出镜像，一定保持在原来的gs切换,主世界分线和镜像没关系，这样就节省了玩家切换流程，效率也提高了
 	//todo 跨服的时候重新上线
 	//目标场景是跨服场景，通知跨服去换,跨服只做人数检测，不做其他的事情
-	bool is_from_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(from_gs);
-	bool is_to_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(to_gs);
+
 	if (is_from_gs_is_cross_server || is_to_gs_is_cross_server)
 	{
 		change_scene_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
@@ -141,28 +183,12 @@ void UpdateFrontChangeSceneInfo(entt::entity player)
 			return;
 		}
 	}
+	else
+	{
+		change_scene_info.set_change_cross_server_type(MsChangeSceneInfo::eDotnotCrossServer);
+	}
 
-	//您当前就在这个场景，无需切换
-	auto try_to_scene = registry.try_get<SceneEntity>(player);
-	if (nullptr != try_to_scene)
-	{
-		if (to_scene != entt::null && to_scene == try_to_scene->scene_entity_)
-		{
-			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
-			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-			return;
-		}
-	}
-	if (!change_scene_info.ignore_full())
-	{
-		auto ret = ScenesSystem::CheckScenePlayerSize(to_scene);
-		if (kRetOK != ret)
-		{
-			PlayerTipSystem::Tip(player, ret, {});
-			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-			return;
-		}
-	}
+	
 }
 ///<<< END WRITING YOUR CODE
 
@@ -178,10 +204,10 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         PlayerTipSystem::Tip(player, kRetEnterSceneChangingGs, {});
         return;
     }
-   
     MsChangeSceneInfo change_scene_info;
     change_scene_info.mutable_scene_info()->CopyFrom(request->scene_info());
 	PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
+	UpdateFrontChangeSceneInfoInitState(player);
 ///<<< END WRITING YOUR CODE
 }
 
