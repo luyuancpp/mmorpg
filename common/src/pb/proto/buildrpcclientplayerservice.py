@@ -25,7 +25,7 @@ protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
 clientservicedir = '../../../../client/src/service/logic/'
 fileprev = 'c_'
-client_player = 'client_player'
+client_player = 'c2gp'
 rg = 'rg'
 
 if not os.path.exists(servicedir):
