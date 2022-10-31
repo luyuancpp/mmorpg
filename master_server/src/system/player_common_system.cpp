@@ -3,6 +3,7 @@
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
+#include "src/system/player_change_scene.h"
 
 #include "logic_proto/scene_client_player.pb.h"
 #include "logic_proto/common_server_player.pb.h"
@@ -10,7 +11,7 @@
 
 void PlayerCommonSystem::InitPlayerCompnent(entt::entity player)
 {
-        
+    PlayerChangeSceneSystem::InitChangeSceneQueue(player);
 }
 
 void PlayerCommonSystem::OnLogin(entt::entity player)
