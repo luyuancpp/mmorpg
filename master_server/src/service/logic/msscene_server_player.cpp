@@ -204,7 +204,12 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     }
     MsChangeSceneInfo change_scene_info;
     change_scene_info.mutable_scene_info()->CopyFrom(request->scene_info());
-	PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
+	auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
+	if (ret != kRetOK)
+	{
+		PlayerTipSystem::Tip(player, ret, {});
+		return;
+	}
 	UpdateFrontChangeSceneInfoInitState(player);
 ///<<< END WRITING YOUR CODE
 }
