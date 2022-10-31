@@ -145,10 +145,10 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
     }	
 
 	//您当前就在这个场景，无需切换
-	auto try_scene_entity = registry.try_get<SceneEntity>(player);
-	if (nullptr != try_scene_entity)
+	auto try_to_scene = registry.try_get<SceneEntity>(player);
+	if (nullptr != try_to_scene)
 	{
-		if (to_scene != entt::null && to_scene == try_scene_entity->scene_entity_)
+		if (to_scene != entt::null && to_scene == try_to_scene->scene_entity_)
 		{
 			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
 			return;

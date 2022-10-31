@@ -149,6 +149,22 @@ if (nullptr == comp_name)\
 }\
 auto& menber_name = comp_name->menber_name##_;
 
+#define  GetPlayerCompnentMemberNullReturnFalse(menber_name, compnent)\
+auto comp_name = registry.try_get<compnent>(player);\
+if (nullptr == comp_name)\
+{\
+	return false;\
+}\
+auto& menber_name = comp_name->menber_name##_;
+
+#define  GetPlayerCompnentMemberNullReturnTrue(menber_name, compnent)\
+auto comp_name = registry.try_get<compnent>(player);\
+if (nullptr == comp_name)\
+{\
+	return true;\
+}\
+auto& menber_name = comp_name->menber_name##_;
+
 #define  GetPlayerCompnentMemberReturnVoid(menber_name, compnent)\
 auto comp_name = registry.try_get<compnent>(player);\
 if (nullptr == comp_name)\
