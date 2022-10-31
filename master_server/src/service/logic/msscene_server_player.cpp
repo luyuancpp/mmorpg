@@ -160,7 +160,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         PlayerTipSystem::Tip(player, ret, {});
         return;
     }
-    ret = PlayerSceneSystem::ChangeScene(player, to_scene);
+    //ret = PlayerSceneSystem::ChangeScene(player, to_scene);
     if (kRetOK != ret)
     {
         PlayerTipSystem::Tip(player, ret, {});
