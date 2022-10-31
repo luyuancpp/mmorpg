@@ -42,6 +42,128 @@ void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
         return;
     }
 }
+
+void UpdateFrontChangeSceneInfo(entt::entity player)
+{
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	if (change_scene_queue.empty())
+	{
+		return;
+	}
+	auto try_from_scene = registry.try_get<SceneEntity>(player);
+	if (nullptr == try_from_scene)
+	{
+		PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});// todo 
+		return;
+	}
+	auto& change_scene_info = change_scene_queue.front();
+	auto& scene_info = change_scene_info.scene_info();
+	auto scene_id = scene_info.scene_id();
+	entt::entity to_scene = entt::null;
+	if (scene_id <= 0)//用scene_config id 去换本服的ms
+	{
+		GetSceneParam getp;
+		getp.scene_confid_ = scene_info.scene_confid();
+		to_scene = ServerNodeSystem::GetWeightRoundRobinMainScene(getp);
+		if (entt::null == to_scene)
+		{
+			PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
+			return;
+		}
+		scene_id = registry.get<SceneInfo>(to_scene).scene_id();
+	}
+	else
+	{
+		to_scene = ScenesSystem::get_scene(scene_id);
+		if (entt::null == to_scene)
+		{
+			PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
+			return;
+		}
+	}
+
+	auto try_from_scene_gs = registry.try_get<GsNodePtr>(try_from_scene->scene_entity_);
+	auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
+	if (nullptr == try_from_scene_gs || nullptr == try_to_scene_gs)
+	{
+		LOG_ERROR << "  gs scene null ";
+		return;
+	}
+	auto from_gs_it = g_gs_nodes.find((*try_from_scene_gs)->node_id());
+	auto to_gs_it = g_gs_nodes.find((*try_to_scene_gs)->node_id());
+	if (from_gs_it == g_gs_nodes.end() || to_gs_it == g_gs_nodes.end())
+	{
+		if (from_gs_it == g_gs_nodes.end())
+		{
+			LOG_ERROR << " gs not found  : " << (*try_from_scene_gs)->node_id();
+			return;
+		}
+		if (to_gs_it == g_gs_nodes.end())
+		{
+			LOG_ERROR << " gs not found : " << (*try_to_scene_gs)->node_id();
+			return;
+		}
+	}
+	entt::entity from_gs = from_gs_it->second;
+	entt::entity to_gs = to_gs_it->second;
+
+	if (entt::null != from_gs && from_gs == to_gs)
+	{
+		change_scene_info.set_change_gs_type(MsChangeSceneInfo::eSameGs);//同一个服务器切换
+	}
+
+	//跨服间切换,如果另一个跨服满了就不应该进去了
+	//如果是跨服，就应该先跨服去处理
+	//原来服务器之间换场景，不用通知跨服离开场景
+	//todo 如果是进出镜像，一定保持在原来的gs切换,主世界分线和镜像没关系，这样就节省了玩家切换流程，效率也提高了
+	//todo 跨服的时候重新上线
+	//目标场景是跨服场景，通知跨服去换,跨服只做人数检测，不做其他的事情
+	bool is_from_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(from_gs);
+	bool is_to_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(to_gs);
+	if (is_from_gs_is_cross_server || is_to_gs_is_cross_server)
+	{
+		change_scene_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
+		change_scene_info.set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerScene);
+		if (is_from_gs_is_cross_server)
+		{
+			//跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
+			regionservcie::LeaveCrossMainSceneRequest rpc;
+			rpc.set_player_id(registry.get<Guid>(player));
+			g_ms_node->rg_stub().CallMethod(rpc, &regionservcie::RgService_Stub::LeaveCrossMainScene);
+		}
+		if (is_to_gs_is_cross_server)
+		{
+			//注意虽然一个逻辑，但是不一定是在leave后面处理
+			EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());
+			rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());
+			rpc->s_rq_.set_player_id(registry.get<Guid>(player));
+			g_ms_node->rg_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &regionservcie::RgService_Stub::EnterCrossMainScene);
+			return;
+		}
+	}
+
+	//您当前就在这个场景，无需切换
+	auto try_to_scene = registry.try_get<SceneEntity>(player);
+	if (nullptr != try_to_scene)
+	{
+		if (to_scene != entt::null && to_scene == try_to_scene->scene_entity_)
+		{
+			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+			return;
+		}
+	}
+	if (!change_scene_info.ignore_full())
+	{
+		auto ret = ScenesSystem::CheckScenePlayerSize(to_scene);
+		if (kRetOK != ret)
+		{
+			PlayerTipSystem::Tip(player, ret, {});
+			PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
+			return;
+		}
+	}
+}
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -56,117 +178,10 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
         PlayerTipSystem::Tip(player, kRetEnterSceneChangingGs, {});
         return;
     }
-    auto try_from_scene = registry.try_get<SceneEntity>(player);
-    if (nullptr == try_from_scene)
-    {
-        PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});
-        return;
-    }
-    entt::entity from_scene = try_from_scene->scene_entity_;
-    auto scene_id = request->scene_info().scene_id();
-    entt::entity to_scene = entt::null;
-    if (scene_id <= 0)//用scene_config id 去换本服的ms
-    {
-        GetSceneParam getp;
-        getp.scene_confid_ = request->scene_info().scene_confid();
-        to_scene = ServerNodeSystem::GetWeightRoundRobinMainScene(getp);
-        if (entt::null == to_scene)
-        {
-            PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
-            return;
-        }
-        scene_id = registry.get<SceneInfo>(to_scene).scene_id();
-    }
-    else
-    {
-        to_scene = ScenesSystem::get_scene(scene_id);
-        if (entt::null == to_scene)
-        {
-            PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
-            return;
-        }
-    }
-    
-    auto try_from_scene_gs = registry.try_get<GsNodePtr>(from_scene);
-    if (nullptr == try_from_scene_gs)
-    {
-        LOG_ERROR << " scene gs null ";
-        return;
-    }
-    auto from_gs_it = g_gs_nodes.find((*try_from_scene_gs)->node_id());
-    if (from_gs_it == g_gs_nodes.end())
-    {
-        LOG_ERROR << " scene gs null : " << (*try_from_scene_gs)->node_id();
-        return;
-    }
-	auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
-	if (nullptr == try_to_scene_gs)
-	{
-		LOG_ERROR << " scene gs null ";
-		return ;
-	}
-	auto to_gs_it = g_gs_nodes.find((*try_to_scene_gs)->node_id());
-	if (to_gs_it == g_gs_nodes.end())
-	{
-		LOG_ERROR << " scene gs null : " << (*try_to_scene_gs)->node_id();
-		return;
-	}
-
-    entt::entity from_gs_entity = from_gs_it->second;
-    entt::entity to_gs_entity = to_gs_it->second;
-    
-    //跨服间切换,如果另一个跨服满了就不应该进去了
-    //跨服间切换，通知通知跨服离开场景，已经在跨服上处理
-    //原来服务器之间换场景，不用通知跨服离开场景
-    if (registry.any_of<CrossMainSceneServer>(from_gs_entity) && 
-        !registry.any_of<CrossMainSceneServer>(to_gs_entity))
-    {
-        //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
-        regionservcie::LeaveCrossMainSceneRequest rpc;
-        rpc.set_player_id(registry.get<Guid>(player));
-        g_ms_node->rg_stub().CallMethod(rpc, &regionservcie::RgService_Stub::LeaveCrossMainScene);
-    }
-    
-    //todo 如果是进出镜像，一定保持在原来的gs切换,主世界分线和镜像没关系，这样就节省了玩家切换流程，效率也提高了
-    //todo 跨服的时候重新上线
-    //目标场景是跨服场景，通知跨服去换,跨服只做人数检测，不做其他的事情
-    if (registry.any_of<CrossMainSceneServer>(to_gs_entity))
-    {
-        EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());
-        rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());
-        rpc->s_rq_.set_player_id(registry.get<Guid>(player));
-        g_ms_node->rg_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &regionservcie::RgService_Stub::EnterCrossMainScene);
-        return;
-    }
-    else if(registry.all_of<CrossRoomSceneServer>(to_gs_it->second))//如果目标场景是跨服场景，不能走这个协议
-    {
-		PlayerTipSystem::Tip(player, kRetEnterSceneEnterCrossRoomScene, {});
-		return;
-    }	
-
-	//您当前就在这个场景，无需切换
-	auto try_to_scene = registry.try_get<SceneEntity>(player);
-	if (nullptr != try_to_scene)
-	{
-		if (to_scene != entt::null && to_scene == try_to_scene->scene_entity_)
-		{
-			PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
-			return;
-		}
-	}
-
-    auto ret = ScenesSystem::CheckScenePlayerSize(to_scene);
-    if (kRetOK != ret)
-    {
-        PlayerTipSystem::Tip(player, ret, {});
-        return;
-    }
-    //ret = PlayerSceneSystem::ChangeScene(player, to_scene);
-    if (kRetOK != ret)
-    {
-        PlayerTipSystem::Tip(player, ret, {});
-        return;
-    }
+   
+    MsChangeSceneInfo change_scene_info;
+    change_scene_info.mutable_scene_info()->CopyFrom(request->scene_info());
+	PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
 ///<<< END WRITING YOUR CODE
 }
 

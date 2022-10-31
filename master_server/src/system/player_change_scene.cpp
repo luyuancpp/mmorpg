@@ -12,7 +12,7 @@ void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
 	registry.emplace<PlayerMsChangeSceneQueue>(player);
 }
 
-uint32_t PlayerChangeSceneSystem::ChangeScene(entt::entity player, const MsChangeSceneInfo& change_info)
+uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const MsChangeSceneInfo& change_info)
 {
 	GetPlayerCompnentMemberReturnError(change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
 	CheckCondtion(change_scene_queue.full(), kRetChangeScenePlayerQueueCompnentFull);

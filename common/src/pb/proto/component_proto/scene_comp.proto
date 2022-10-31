@@ -47,5 +47,4 @@ message MsChangeSceneInfo
   uint32 change_cross_server_status = 6;//eChangeCrossServerStatus
   uint64 change_time = 8;//设置超时，超时代表服务器崩溃了,或者网络延时
   bool ignore_full = 9;//忽略人数满了
-  bool is_leader_call = 10;//是否是队长叫换场景
 }
