@@ -14,6 +14,7 @@
 #include "src/master_server.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
+#include "src/system/player_change_scene.h"
 
 #include "component_proto/scene_comp.pb.h"
 #include "logic_proto/scene_rg.pb.h"
@@ -50,18 +51,18 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
     //正在切换场景中，不能马上切换，gs崩溃了怎么办
-    if (nullptr != registry.try_get<AfterChangeGsEnterScene>(player))
+    if (PlayerChangeSceneSystem::IsChangeQueueFull(player))
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneChangingGs, {});
         return;
     }
-    auto try_from_scene_entity = registry.try_get<SceneEntity>(player);
-    if (nullptr == try_from_scene_entity)
+    auto try_from_scene = registry.try_get<SceneEntity>(player);
+    if (nullptr == try_from_scene)
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});
         return;
     }
-    entt::entity from_scene = try_from_scene_entity->scene_entity_;
+    entt::entity from_scene = try_from_scene->scene_entity_;
     auto scene_id = request->scene_info().scene_id();
     entt::entity to_scene = entt::null;
     if (scene_id <= 0)//用scene_config id 去换本服的ms
