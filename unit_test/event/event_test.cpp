@@ -7,10 +7,6 @@
 
 #include "src/event/event.h"
 
-using common::EventManager;
-using common::Receiver;
-using common::EventManagerPtr;
-
 using namespace std;
 
 struct Explosion {

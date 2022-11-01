@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;ENTT_ID_TYPE=uint64_t;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../common/;../../protopb/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../master_server/;../../common/src/pb/pbc/;../../third_party/muduo/contrib/windows/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../common/;../../protopb/pbc;../../third_party/protobuf/src/;../../third_party/muduo/;../../third_party/boost/;../../third_party/googletest/googletest/include/;../../third_party/redis/;../../third_party/;../../controller_server/;../../common/src/pb/pbc/;../../third_party/muduo/contrib/windows/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableSpecificWarnings>4819</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -140,7 +140,7 @@
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\player_network_comp.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\event_proto\scene_event.pb.cc" />
-    <ClCompile Include="..\..\master_server\src\system\player_change_scene.cpp" />
+    <ClCompile Include="..\..\controller_server\src\system\player_change_scene.cpp" />
     <ClCompile Include="change_scene_test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -151,7 +151,7 @@
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\player_network_comp.pb.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\event_proto\scene_event.pb.h" />
-    <ClInclude Include="..\..\master_server\src\system\player_change_scene.h" />
+    <ClInclude Include="..\..\controller_server\src\system\player_change_scene.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -4,7 +4,7 @@
 #include "src/game_config/mission_config.h"
 #include "src/game_logic/constants/mission_constants.h"
 #include "src/game_logic/game_registry.h"
-#include "src/game_logic/op_code.h"
+#include "src/game_logic/tips_id.h"
 #include "src/game_logic/missions/missions_base.h"
 #include "src/event_receiver/mission_event_receiver.h"
 #include "src/util/random.h"
