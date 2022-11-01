@@ -38,7 +38,7 @@ using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
-void MasterNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied(Ms2GwPlayerEnterGsRpc replied)
+void ControllerNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied(Ms2GwPlayerEnterGsRpc replied)
 {
 	//todo 中间返回是断开了
 	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
@@ -75,7 +75,7 @@ void MasterNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied(Ms2GwPlayerEnterGsR
 	}		
 }
 
-Guid MasterNodeServiceImpl::GetPlayerIdByConnId(uint64_t session_id)
+Guid ControllerNodeServiceImpl::GetPlayerIdByConnId(uint64_t session_id)
 {
     auto cit = g_gate_sessions.find(session_id);
     if (cit == g_gate_sessions.end())
@@ -91,7 +91,7 @@ Guid MasterNodeServiceImpl::GetPlayerIdByConnId(uint64_t session_id)
 	return kInvalidGuid;
 }
 
-entt::entity MasterNodeServiceImpl::GetPlayerByConnId(uint64_t session_id)
+entt::entity ControllerNodeServiceImpl::GetPlayerByConnId(uint64_t session_id)
 {
     auto cit = g_gate_sessions.find(session_id);
     if (cit == g_gate_sessions.end())
@@ -106,13 +106,13 @@ entt::entity MasterNodeServiceImpl::GetPlayerByConnId(uint64_t session_id)
     return (*p_try_player);
 }
 
-void MasterNodeServiceImpl::OnSessionEnterGame(entt::entity conn, Guid player_id)
+void ControllerNodeServiceImpl::OnSessionEnterGame(entt::entity conn, Guid player_id)
 {
     registry.emplace<EntityPtr>(conn, g_player_list->GetPlayerPtr(player_id));
     registry.emplace<Guid>(conn, player_id);
 }
 
-void MasterNodeServiceImpl::InitPlayerSession(entt::entity player, uint64_t session_id)
+void ControllerNodeServiceImpl::InitPlayerSession(entt::entity player, uint64_t session_id)
 {
     auto& player_session = registry.get_or_emplace<PlayerSession>(player);
     player_session.gate_session_.set_session_id(session_id);
@@ -150,14 +150,14 @@ void MasterNodeServiceImpl::InitPlayerSession(entt::entity player, uint64_t sess
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::StartGs(::google::protobuf::RpcController* controller,
     const controllerservice::StartGsRequest* request,
     controllerservice::StartGsResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	response->set_master_node_id(controller_node_id());
+	response->set_controller_node_id(controller_node_id());
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity gs{ entt::null };
@@ -224,7 +224,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* controller,
     const controllerservice::ConnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -257,7 +257,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* controller,
     const controllerservice::LeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -267,7 +267,7 @@ void MasterNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnGwPlayerService(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnGwPlayerService(::google::protobuf::RpcController* controller,
     const controllerservice::ClientMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -277,7 +277,7 @@ void MasterNodeServiceImpl::OnGwPlayerService(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* controller,
     const controllerservice::DisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -322,7 +322,7 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* controller,
     const controllerservice::LoginAccountRequest* request,
     controllerservice::LoginAccountResponse* response,
     ::google::protobuf::Closure* done)
@@ -371,7 +371,7 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* controller,
     const controllerservice::EnterGameRequest* request,
     controllerservice::EnterGameResponese* response,
     ::google::protobuf::Closure* done)
@@ -451,7 +451,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* controller,
     const controllerservice::LsLeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -465,7 +465,7 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* controller,
     const controllerservice::LsDisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -478,7 +478,7 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController* controller,
     const controllerservice::PlayerNodeServiceRequest* request,
     controllerservice::PlayerMessageRespone* response,
     ::google::protobuf::Closure* done)
@@ -530,7 +530,7 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcController* controller,
     const controllerservice::AddCrossServerSceneRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -559,7 +559,7 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
 ///<<< END WRITING YOUR CODE 
 }
 
-void MasterNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* controller,
     const controllerservice::EnterGsSucceedRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -578,10 +578,10 @@ void MasterNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
 		return;
 	}
-	MasterNodeServiceImpl::Ms2GwPlayerEnterGsRpc rpc;
+	ControllerNodeServiceImpl::Ms2GwPlayerEnterGsRpc rpc;
 	rpc.s_rq_.set_session_id(player_session.session_id());
 	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GwStub>(gate_it->second).CallMethodByObj(&MasterNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
+	registry.get<GwStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 

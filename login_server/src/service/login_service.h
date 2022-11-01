@@ -11,7 +11,7 @@
 
 #include "login_service.pb.h"
 #include "db_service.pb.h"
-#include "ms_service.pb.h"
+#include "controller_service.pb.h"
 
 ///<<< END WRITING YOUR CODE
 class LoginServiceImpl : public gw2l::LoginService{
@@ -20,7 +20,7 @@ public:
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
 		using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
 		using ConnectionEntityMap = std::unordered_map<Guid, EntityPtr>;
-		using LoginStubl2ms = RpcStub<controllerservice::MasterNodeService_Stub>;
+		using LoginStubl2ms = RpcStub<controllerservice::ControllerNodeService_Stub>;
 		using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 
 		LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,

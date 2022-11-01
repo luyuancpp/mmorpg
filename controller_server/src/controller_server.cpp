@@ -74,7 +74,7 @@ void ControllerServer::StartServer(ServerInfoRpc replied)
     InetAddress controller_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
-    server_->registerService(&ms_service_);
+    server_->registerService(&contoller_service_);
     for (auto& it : g_server_nomal_service)
     {
         server_->registerService(it.get());
@@ -196,7 +196,7 @@ void ControllerServer::Connect2Region()
 	InetAddress region_addr(regioninfo.ip(), regioninfo.port());
 	region_session_ = std::make_unique<RpcClient>(loop_, region_addr);
 	region_session_->subscribe<RegisterStubEvent>(rg_stub_);
-	region_session_->registerService(&ms_service_);
+	region_session_->registerService(&contoller_service_);
 	region_session_->subscribe<OnConnected2ServerEvent>(*this);
 	region_session_->connect();
 }

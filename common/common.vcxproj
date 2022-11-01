@@ -201,6 +201,7 @@
     <ClCompile Include="src\pb\pbc\component_proto\player_network_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\scene_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\team_comp.pb.cc" />
+    <ClCompile Include="src\pb\pbc\controller_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\db_base.pb.cc" />
     <ClCompile Include="src\pb\pbc\db_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\deploy_service.pb.cc" />
@@ -226,7 +227,6 @@
     <ClCompile Include="src\pb\pbc\logic_proto\team_server_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\login_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\msgmap.cpp" />
-    <ClCompile Include="src\pb\pbc\ms_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_table.pb.cc" />
     <ClCompile Include="src\pb\pbc\mysql_database_test.pb.cc" />
     <ClCompile Include="src\util\file2string.cpp" />
@@ -292,6 +292,7 @@
     <ClInclude Include="src\pb\pbc\component_proto\player_network_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\scene_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\team_comp.pb.h" />
+    <ClInclude Include="src\pb\pbc\controller_service.pb.h" />
     <ClInclude Include="src\pb\pbc\db_base.pb.h" />
     <ClInclude Include="src\pb\pbc\db_service.pb.h" />
     <ClInclude Include="src\pb\pbc\deploy_service.pb.h" />
@@ -321,7 +322,6 @@
     <ClInclude Include="src\pb\pbc\login_service.pb.h" />
     <ClInclude Include="src\pb\pbc\ms2db.pb.h" />
     <ClInclude Include="src\pb\pbc\msgmap.h" />
-    <ClInclude Include="src\pb\pbc\ms_service.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_table.pb.h" />
     <ClInclude Include="src\pb\pbc\mysql_database_test.pb.h" />
     <ClInclude Include="src\pb\pbc\pb3.pb.h" />

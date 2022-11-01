@@ -17,7 +17,7 @@
 #include "src/network/rpc_connection_event.h"
 
 #include "deploy_service.pb.h"
-#include "ms_service.pb.h"
+#include "controller_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -27,7 +27,7 @@ class GatewayServer : noncopyable, public Receiver<GatewayServer>
 {
 public:
     using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
-    using RpcStubMsNode = RpcStub<controllerservice::MasterNodeService_Stub>;
+    using RpcStubMsNode = RpcStub<controllerservice::ControllerNodeService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GatewayServer(EventLoop* loop)
