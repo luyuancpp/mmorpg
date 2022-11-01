@@ -33,12 +33,12 @@ protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
 gsplayerservicedir = '../../../../game_server/src/service/logic/'
 rgplayerservicedir = '../../../../region_server/src/service/logic/'
-msplayerservicedir = '../../../../controller_server/src/service/logic/'
+controllerplayerservicedir = '../../../../controller_server/src/service/logic/'
 client_player = 'client_player'
 server_player = 'server_player'
 rg = 'rg'
 gs_file_prefix = 'gs_'
-ms_file_prefix = 'ms_'
+controller_file_prefix = 'controller_'
 
 filedirdestpath = {}
 
@@ -155,8 +155,8 @@ def getwritedir(serverstr):
     writedir = ''
     if serverstr == gs_file_prefix:
         writedir = gsplayerservicedir
-    elif serverstr == ms_file_prefix:
-        writedir = msplayerservicedir
+    elif serverstr == controller_file_prefix:
+        writedir = controllerplayerservicedir
     elif serverstr == 'rg':
         writedir = rgplayerservicedir
     return writedir
@@ -254,8 +254,8 @@ def generate(filename):
         parsefile(filename)
         genheadfile(filename, gs_file_prefix)
         gencppfile(filename, gs_file_prefix)
-        genheadfile(filename, ms_file_prefix)
-        gencppfile(filename, ms_file_prefix)
+        genheadfile(filename, controller_file_prefix)
+        gencppfile(filename, controller_file_prefix)
     elif filename.find(rg) >= 0:
         pass
 
@@ -297,7 +297,7 @@ def gengsplayerservcielist(filename):
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def genmsplayerservcielist(filename):
+def gencontrollerplayerservcielist(filename):
     destfilename = servicedir + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
@@ -306,7 +306,7 @@ def genmsplayerservcielist(filename):
         if f.find(server_player) < 0:
             continue
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + ms_file_prefix + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir + controller_file_prefix + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
@@ -328,7 +328,7 @@ def md5copy(filename, serverstr):
         writedir = getwritedir(serverstr)
         if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
             return
-        if serverstr == 'gs_player_service.cpp' or serverstr == 'ms_player_service.cpp':
+        if serverstr == 'gs_player_service.cpp' or serverstr == 'controller_player_service.cpp':
             serverstr = ''
         gennewfilename = servicedir  + filename
         filenamemd5 = gennewfilename + '.md5'
@@ -351,14 +351,14 @@ def md5copydir():
                 md5copy(filename, gs_file_prefix)
             elif filename.find(server_player) >= 0 and filename.find(gs_file_prefix) >= 0:
                 md5copy(filename, gs_file_prefix)
-            elif filename.find(server_player) >= 0 and filename.find(ms_file_prefix) >= 0:
-                md5copy(filename, ms_file_prefix)
+            elif filename.find(server_player) >= 0 and filename.find(controller_file_prefix) >= 0:
+                md5copy(filename, controller_file_prefix)
             elif filename.find(rg) >= 0 and filename.find('rg') >= 0 and filename.find('rg_node') < 0: 
                 pass
             elif filename == 'gs_player_service.cpp':
                 md5copy(filename, gs_file_prefix)
-            elif filename == 'ms_player_service.cpp':
-                md5copy(filename, ms_file_prefix)
+            elif filename == 'controller_player_service.cpp':
+                md5copy(filename, controller_file_prefix)
 
 genfile = []
 
@@ -408,7 +408,7 @@ def main():
     for file in genfile:
         parseplayerservcie(file)
     gengsplayerservcielist('gs_player_service.cpp')
-    genmsplayerservcielist('ms_player_service.cpp')
+    gencontrollerplayerservcielist('controller_player_service.cpp')
 
 inputfile() 
 main()
