@@ -11,14 +11,14 @@
 
 #include "component_proto/node_comp.pb.h"
 
-using MasterSessionPtr = std::shared_ptr<RpcClient>;
+using ControllerSessionPtr = std::shared_ptr<RpcClient>;
 struct MsNode
 {
 	MsNode(){}
 
 	inline uint32_t node_id() const { return node_info_.node_id(); }
 	NodeInfo node_info_;
-	MasterSessionPtr session_;
+	ControllerSessionPtr session_;
 	EntityPtr ms_;
 };
 using MsNodePtr = std::shared_ptr<MsNode>;
