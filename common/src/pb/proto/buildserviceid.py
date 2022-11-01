@@ -35,7 +35,7 @@ def parsefile(filename):
     rpcbegin = 0 
     index = 0
     playerproto = False
-    if not (filename.find('client_player') >= 0 or filename.find('server_player') >= 0 or filename.find('normal') >= 0) :
+    if not filename.find(protodir) >= 0 :
         index = local.baseserviceid
         local.baseserviceid += 1
         playerproto = False
