@@ -155,7 +155,7 @@ void GameServer::Register2Master(ControllerSessionPtr& controller_node)
         rpc,
         &ServerReplied::GetSingleton(),
         &controllerservice::ControllerNodeService_Stub::StartGs);
-    LOG_INFO << "conncet to controller" << node_info->DebugString();
+    LOG_DEBUG << "conncet to controller" ;
 }
 
 void GameServer::Register2Region()
