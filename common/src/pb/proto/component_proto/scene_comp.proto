@@ -6,7 +6,7 @@ message SceneInfo
   uint64 scene_id = 2;
 }
 
-message MsChangeSceneInfo
+message ControllerChangeSceneInfo
 {
   enum eChangeGsStatus
   {
