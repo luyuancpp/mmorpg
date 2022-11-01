@@ -9,8 +9,6 @@ servicefilenamearray = []
 md5dir = './md5/logic_proto/'
 logicprotodir = './logic_proto/'
 
-controller_file_prefix = 'controller_'
-
 if not os.path.exists(md5dir):
     os.makedirs(md5dir)
 
@@ -67,7 +65,7 @@ def md5copy(writedfilename, destfilename):
 
 scanservice()
 genheadfile('./md5/server_service.h')
-gencppfile('./md5/ms_server_service.cpp', controller_file_prefix)
+gencppfile('./md5/ms_server_service.cpp', buildpublic.controller_file_prefix)
 gencppfile('./md5/gs_server_service.cpp', buildpublic.gs_file_prefix)
 md5copy('./md5/ms_server_service.cpp', '../../../../controller_server/src/service/logic/controller_server_service.cpp')
 md5copy('./md5/gs_server_service.cpp', '../../../../game_server/src/service/logic/gs_server_service.cpp')
