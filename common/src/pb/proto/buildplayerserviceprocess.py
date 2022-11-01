@@ -5,7 +5,7 @@ import shutil
 import threading
 import _thread
 import protofilearray
-import buildprotocommonutil
+import buildpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
@@ -155,7 +155,7 @@ def getwritedir(serverstr):
     writedir = ''
     if serverstr == gs_file_prefix:
         writedir = gsplayerservicedir
-    elif serverstr == buildprotocommonutil.controller_file_prefix:
+    elif serverstr == buildpublic.controller_file_prefix:
         writedir = controllerplayerservicedir
     elif serverstr == 'rg':
         writedir = rgplayerservicedir
@@ -254,13 +254,13 @@ def generate(filename):
         parsefile(filename)
         genheadfile(filename, gs_file_prefix)
         gencppfile(filename, gs_file_prefix)
-        genheadfile(filename, buildprotocommonutil.controller_file_prefix)
-        gencppfile(filename, buildprotocommonutil.controller_file_prefix)
+        genheadfile(filename, buildpublic.controller_file_prefix)
+        gencppfile(filename, buildpublic.controller_file_prefix)
     elif filename.find(rg) >= 0:
         pass
 
 def parseplayerservcie(filename):
-    if buildprotocommonutil.is_server_proto(filename) == True :
+    if buildpublic.is_server_proto(filename) == True :
         return
     local.pkg = ''
     local.fileservice.append(filename.replace('.proto', ''))
@@ -306,7 +306,7 @@ def gencontrollerplayerservcielist(filename):
         if f.find(server_player) < 0:
             continue
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + buildprotocommonutil.controller_file_prefix + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir + buildpublic.controller_file_prefix + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
@@ -351,14 +351,14 @@ def md5copydir():
                 md5copy(filename, gs_file_prefix)
             elif filename.find(server_player) >= 0 and filename.find(gs_file_prefix) >= 0:
                 md5copy(filename, gs_file_prefix)
-            elif filename.find(server_player) >= 0 and filename.find(buildprotocommonutil.controller_file_prefix) >= 0:
-                md5copy(filename, buildprotocommonutil.controller_file_prefix)
+            elif filename.find(server_player) >= 0 and filename.find(buildpublic.controller_file_prefix) >= 0:
+                md5copy(filename, buildpublic.controller_file_prefix)
             elif filename.find(rg) >= 0 and filename.find('rg') >= 0 and filename.find('rg_node') < 0: 
                 pass
             elif filename == 'gs_player_service.cpp':
                 md5copy(filename, gs_file_prefix)
             elif filename == 'controller_player_service.cpp':
-                md5copy(filename, buildprotocommonutil.controller_file_prefix)
+                md5copy(filename, buildpublic.controller_file_prefix)
 
 genfile = []
 
