@@ -5,6 +5,7 @@ import shutil
 import threading
 import _thread
 import protofilearray
+import buildpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
@@ -107,7 +108,7 @@ def getprevfilename(filename, writedir):
         if writedir == gsservicedir:
             return buildpublic.gs_file_prefix
         if writedir == controllerservicedir:
-            return ms_file_prefix
+            return buildpublic.controller_file_prefix
         if writedir == rgservicedir:
             return rg_file_prefix
     return ''
@@ -230,7 +231,7 @@ def getmd5prevfilename(filename, writedir):
         if writedir == gsservicedir:
             return buildpublic.gs_file_prefix
         if writedir == controllerservicedir:
-            return ms_file_prefix
+            return buildpublic.controller_file_prefix
         if writedir == rgservicedir:
             return rg_file_prefix
     return ''
@@ -303,10 +304,11 @@ def inputfile():
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
-        if filename.find('normal') >= 0:
+        if buildpublic.is_gs_and_controller_server_proto(filename) == True :
             genfile.append([logicprotodir + filename, getwritedir(buildpublic.controller_file_prefix)])
             genfile.append([logicprotodir + filename, getwritedir(buildpublic.gs_file_prefix)])
         elif filename.find(rg_file_prefix) >= 0:
             genfile.append([logicprotodir +  filename, getwritedir(rg_file_prefix)])
+            
 inputfile()
 main()
