@@ -19,6 +19,7 @@ void ServerReplied::StartGsMasterReplied(StartGsMasterRpc replied)
         param.scene_info_ = rsp->scenes_info(i);
         GsSceneSystem::CreateSceneByGuid(param);
     }
+    LOG_DEBUG << rsp->DebugString();
 }
 
 void ServerReplied::StartCrossGsRegionReplied(StartCrossGsRpc replied)
@@ -30,5 +31,6 @@ void ServerReplied::StartCrossGsRegionReplied(StartCrossGsRpc replied)
 		param.scene_info_ = rsp->scenes_info(i);
 		GsSceneSystem::CreateSceneByGuid(param);
 	}
+    LOG_DEBUG << rsp->DebugString();
 }
 
