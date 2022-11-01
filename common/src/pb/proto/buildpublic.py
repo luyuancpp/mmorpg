@@ -1,5 +1,6 @@
-gs_file_prefix = 'gs_'
+
 controller_file_prefix = 'controller_'
+gs_file_prefix = 'gs_'
 rg_file_prefix = 'rg_'
 
 def is_server_proto(filename):
