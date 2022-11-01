@@ -28,13 +28,12 @@ tabstr = '    '
 cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/logic_proto/'
-gs_file_prefix = 'gs_'
 controller_file_prefix = 'controller_'
 rg_file_prefix = 'rg_'
 
 def getwritedir(serverstr):
     writedir = ''
-    if serverstr == gs_file_prefix:
+    if serverstr == buildpublic.gs_file_prefix:
         writedir = gsservicedir
     elif serverstr == controller_file_prefix:
         writedir = controllerservicedir
@@ -107,7 +106,7 @@ def emptyfun():
 def getprevfilename(filename, writedir):
     if filename.find(logicprotodir) >= 0:
         if writedir == gsservicedir:
-            return gs_file_prefix
+            return buildpublic.gs_file_prefix
         if writedir == controllerservicedir:
             return ms_file_prefix
         if writedir == rgservicedir:
@@ -230,7 +229,7 @@ def gencppfile(destfilename, writedir):
 def getmd5prevfilename(filename, writedir):
     if is_server_proto(filename) == True :
         if writedir == gsservicedir:
-            return gs_file_prefix
+            return buildpublic.gs_file_prefix
         if writedir == controllerservicedir:
             return ms_file_prefix
         if writedir == rgservicedir:
@@ -307,7 +306,7 @@ def inputfile():
             continue
         if filename.find('normal') >= 0:
             genfile.append([logicprotodir + filename, getwritedir(controller_file_prefix)])
-            genfile.append([logicprotodir + filename, getwritedir(gs_file_prefix)])
+            genfile.append([logicprotodir + filename, getwritedir(buildpublic.gs_file_prefix)])
         elif filename.find(rg_file_prefix) >= 0:
             genfile.append([logicprotodir +  filename, getwritedir(rg_file_prefix)])
 inputfile()

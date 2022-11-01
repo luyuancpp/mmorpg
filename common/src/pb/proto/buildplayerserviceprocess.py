@@ -37,9 +37,6 @@ controllerplayerservicedir = '../../../../controller_server/src/service/logic/'
 client_player = 'client_player'
 server_player = 'server_player'
 rg = 'rg'
-gs_file_prefix = 'gs_'
-controller_file_prefix = 'controller_'
-
 filedirdestpath = {}
 
 if not os.path.exists(servicedir):
@@ -153,7 +150,7 @@ def emptyfun():
 
 def getwritedir(serverstr):
     writedir = ''
-    if serverstr == gs_file_prefix:
+    if serverstr == buildpublic.gs_file_prefix:
         writedir = gsplayerservicedir
     elif serverstr == buildpublic.controller_file_prefix:
         writedir = controllerplayerservicedir
@@ -248,12 +245,12 @@ def gencppfile(filename, serverstr):
 def generate(filename):
     if filename.find(client_player) >= 0:
         parsefile(filename)
-        genheadfile(filename, gs_file_prefix)
-        gencppfile(filename, gs_file_prefix)
+        genheadfile(filename, buildpublic.gs_file_prefix)
+        gencppfile(filename, buildpublic.gs_file_prefix)
     elif filename.find(server_player) >= 0:
         parsefile(filename)
-        genheadfile(filename, gs_file_prefix)
-        gencppfile(filename, gs_file_prefix)
+        genheadfile(filename, buildpublic.gs_file_prefix)
+        gencppfile(filename, buildpublic.gs_file_prefix)
         genheadfile(filename, buildpublic.controller_file_prefix)
         gencppfile(filename, buildpublic.controller_file_prefix)
     elif filename.find(rg) >= 0:
@@ -281,7 +278,7 @@ def gengsplayerservcielist(filename):
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + gs_file_prefix + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir + buildpublic.gs_file_prefix + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
@@ -348,15 +345,15 @@ def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
         for filename in filenames:    
             if filename.find(client_player) >= 0:
-                md5copy(filename, gs_file_prefix)
-            elif filename.find(server_player) >= 0 and filename.find(gs_file_prefix) >= 0:
-                md5copy(filename, gs_file_prefix)
+                md5copy(filename, buildpublic.gs_file_prefix)
+            elif filename.find(server_player) >= 0 and filename.find(buildpublic.gs_file_prefix) >= 0:
+                md5copy(filename, buildpublic.gs_file_prefix)
             elif filename.find(server_player) >= 0 and filename.find(buildpublic.controller_file_prefix) >= 0:
                 md5copy(filename, buildpublic.controller_file_prefix)
             elif filename.find(rg) >= 0 and filename.find('rg') >= 0 and filename.find('rg_node') < 0: 
                 pass
             elif filename == 'gs_player_service.cpp':
-                md5copy(filename, gs_file_prefix)
+                md5copy(filename, buildpublic.gs_file_prefix)
             elif filename == 'controller_player_service.cpp':
                 md5copy(filename, buildpublic.controller_file_prefix)
 
