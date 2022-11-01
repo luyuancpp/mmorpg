@@ -48,7 +48,7 @@ void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
 		return;
 	}
 	auto& change_scene_info = change_scene_queue.front();
-	change_scene_info.set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+	change_scene_info.set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 }
 
@@ -138,11 +138,11 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 	{
 		if (from_gs == to_gs)
 		{
-			change_scene_info.set_change_gs_type(MsChangeSceneInfo::eSameGs);
+			change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eSameGs);
 		}
 		else if (from_gs != to_gs)
 		{
-			change_scene_info.set_change_gs_type(MsChangeSceneInfo::eDifferentGs);
+			change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
 		}		
 	}
 
@@ -155,8 +155,8 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 
 	if (is_from_gs_is_cross_server || is_to_gs_is_cross_server)
 	{
-		change_scene_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
-		change_scene_info.set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerScene);
+		change_scene_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
+		change_scene_info.set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerScene);
 		if (is_from_gs_is_cross_server)
 		{
 			//跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
@@ -176,10 +176,10 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 	}
 	else
 	{
-		change_scene_info.set_change_cross_server_type(MsChangeSceneInfo::eDotnotCrossServer);
+		change_scene_info.set_change_cross_server_type(ControllerChangeSceneInfo::eDotnotCrossServer);
 	}
 
-	if (MsChangeSceneInfo::eDotnotCrossServer == change_scene_info.change_cross_server_status() )
+	if (ControllerChangeSceneInfo::eDotnotCrossServer == change_scene_info.change_cross_server_status() )
 	{
 		PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);//不跨服就开始处理同一个gs 或者不同gs
 		return;
@@ -195,7 +195,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
     //正在切换场景中，不能马上切换，gs崩溃了怎么办
-    MsChangeSceneInfo change_scene_info;
+    ControllerChangeSceneInfo change_scene_info;
     change_scene_info.mutable_scene_info()->CopyFrom(request->scene_info());
 	auto ret = PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
 	if (ret != kRetOK)
@@ -252,7 +252,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
 		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
 		return;
 	}
-	PlayerChangeSceneSystem::SetChangeGsStatus(player, MsChangeSceneInfo::eLeaveGsSceneSucceed);
+	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eLeaveGsSceneSucceed);
 
     auto try_player_session = registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)

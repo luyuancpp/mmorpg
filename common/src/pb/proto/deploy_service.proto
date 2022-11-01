@@ -12,7 +12,7 @@ message ServerInfoRequest
 
 message ControllerNodesDb
 {
-  repeated controller_server_db masters = 1;
+  repeated controller_server_db controllers = 1;
 }
 
 message LoginNodesDb
@@ -51,7 +51,7 @@ message RegionServerResponse
 
 message RegionInfoResponse
 {
-  MasterNodesDb region_controller = 1;
+  ControllerNodesDb region_controllers = 1;
 }
 
 message GroupLignRequest

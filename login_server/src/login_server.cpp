@@ -52,7 +52,7 @@ void LoginServer::StartServer(ServerInfoRpc replied)
     db_rpc_client_->connect();
     db_rpc_client_->subscribe<RegisterStubEvent>(l2db_login_stub_);
 
-    auto& masterinfo = info.master_info();
+    auto& masterinfo = info.controller_info();
     InetAddress master_addr(masterinfo.ip(), masterinfo.port());
     master_rpc_client_ = std::make_unique<RpcClient>(loop_, master_addr);
     master_rpc_client_->connect();

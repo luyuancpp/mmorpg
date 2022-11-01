@@ -38,7 +38,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	if (p_it != g_players->end())//已经在线，直接进入,判断是需要发送哪些信息
 	{
 		EnterGsInfo enter_info;
-		enter_info.set_ms_node_id(request->ms_node_id());
+		enter_info.set_controller_node_id(request->controller_node_id());
 		PlayerCommonSystem::EnterGs(p_it->second, enter_info);
 		return;
 	}
@@ -48,7 +48,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 		LOG_ERROR << "EnterGs emplace player not found " << player_id;
 		return;
 	}
-	registry.emplace<EnterGsInfo>(rit.first->second).set_ms_node_id(request->ms_node_id());
+	registry.emplace<EnterGsInfo>(rit.first->second).set_controller_node_id(request->controller_node_id());
 	g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
 ///<<< END WRITING YOUR CODE 
 }

@@ -33,7 +33,7 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
 	std::string where_case = std::to_string(group_id) + " = id  ";
 	db_->LoadOne(*servers_deploy.mutable_database_info(), where_case);
 	db_->LoadOne(*servers_deploy.mutable_login_info(), where_case);
-	db_->LoadOne(*servers_deploy.mutable_master_info(), where_case);
+	db_->LoadOne(*servers_deploy.mutable_controller_info(), where_case);
 	db_->LoadOne(*servers_deploy.mutable_gateway_info(), where_case);
 	db_->LoadOne(*servers_deploy.mutable_redis_info(), where_case);
 
@@ -99,7 +99,7 @@ void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	std::string where_case = std::to_string(request->region_id()) + " = region_id  ";
-	db_->LoadAll<master_server_db>(*response->mutable_region_masters(), where_case);
+	db_->LoadAll<controller_server_db>(*response->mutable_region_controllers(), where_case);
 ///<<< END WRITING YOUR CODE 
 }
 
