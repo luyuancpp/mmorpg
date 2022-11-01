@@ -80,9 +80,6 @@
     <ClInclude Include="src\controller_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\master_registry\master_registry.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\network\message_system.h">
       <Filter>头文件</Filter>
     </ClInclude>
