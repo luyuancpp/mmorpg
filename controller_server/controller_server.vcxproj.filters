@@ -27,7 +27,7 @@
     <ClCompile Include="src\comp\player_list.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\ms_service.cpp">
+    <ClCompile Include="src\service\controller_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\network\gate_node.cpp">
@@ -92,7 +92,7 @@
     <ClInclude Include="src\network\player_session.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\ms_service.h">
+    <ClInclude Include="src\service\controller_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic\ms_scene.h">
