@@ -20,7 +20,7 @@ public:
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
 		using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
 		using ConnectionEntityMap = std::unordered_map<Guid, EntityPtr>;
-		using LoginStubl2ms = RpcStub<msservice::MasterNodeService_Stub>;
+		using LoginStubl2ms = RpcStub<controllerservice::MasterNodeService_Stub>;
 		using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 
 		LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
@@ -31,7 +31,7 @@ public:
 		using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
 		void LoginAccountDbReplied(LoginAccountDbRpc replied);
 
-		using LoginAcountMsRpc = std::shared_ptr<RpcString<msservice::LoginAccountRequest, msservice::LoginAccountResponse, gw2l::LoginResponse>>;
+		using LoginAcountMsRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, gw2l::LoginResponse>>;
 		void LoginAccountMsReplied(LoginAcountMsRpc replied);
 
 		using CreatePlayerRpcReplied = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
@@ -40,7 +40,7 @@ public:
 		using EnterGameDbRpcReplied = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
 		void EnterGameDbReplied(EnterGameDbRpcReplied replied);
 
-		using EnterGameMsRpc = std::shared_ptr<RpcString<msservice::EnterGameRequest, msservice::EnterGameResponese, gw2l::EnterGameResponse>>;
+		using EnterGameMsRpc = std::shared_ptr<RpcString<controllerservice::EnterGameRequest, controllerservice::EnterGameResponese, gw2l::EnterGameResponse>>;
 		void EnterGameReplied(EnterGameMsRpc replied);
 
 		void EnterGame(Guid player_id,

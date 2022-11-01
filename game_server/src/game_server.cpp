@@ -124,7 +124,7 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
 		ms.session_ = std::make_shared<MasterSessionPtr::element_type>(loop_, master_addr);
 		ms.node_info_.set_node_id(masterinfo.id());
 		auto& ms_node_session = ms.session_;
-        auto& ms_stub = registry.emplace<RpcStub<msservice::MasterNodeService_Stub>>(ms.ms_);
+        auto& ms_stub = registry.emplace<RpcStub<controllerservice::MasterNodeService_Stub>>(ms.ms_);
         ms_node_session->subscribe<RegisterStubEvent>(ms_stub);
 		ms_node_session->subscribe<RegisterStubEvent>(g2ms_stub_);
 		ms_node_session->registerService(&gs_service_impl_);
@@ -141,7 +141,7 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
 {
     ServerReplied::StartGsMasterRpc rpc(std::make_shared<ServerReplied::StartGsMasterRpc::element_type>());
     auto& master_local_addr = ms_node->local_addr();
-    msservice::StartGsRequest& request = rpc->s_rq_;
+    controllerservice::StartGsRequest& request = rpc->s_rq_;
     auto session_info = request.mutable_rpc_client();
     auto node_info = request.mutable_rpc_server();
     session_info->set_ip(master_local_addr.toIp());
@@ -154,7 +154,7 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
         &ServerReplied::StartGsMasterReplied,
         rpc,
         &ServerReplied::GetSingleton(),
-        &msservice::MasterNodeService_Stub::StartGs);
+        &controllerservice::MasterNodeService_Stub::StartGs);
 }
 
 void GameServer::Register2Region()

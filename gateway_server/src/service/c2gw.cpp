@@ -70,9 +70,9 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         }
         // master
         {
-            msservice::DisconnectRequest request;
+            controllerservice::DisconnectRequest request;
             request.set_session_id(session_id);
-            g_gateway_server->gw2ms_stub().CallMethod(request, &msservice::MasterNodeService_Stub::OnGwDisconnect);
+            g_gateway_server->gw2ms_stub().CallMethod(request, &controllerservice::MasterNodeService_Stub::OnGwDisconnect);
         }
         g_client_sessions_->erase(session_id);
     }

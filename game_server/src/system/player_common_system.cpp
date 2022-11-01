@@ -77,10 +77,10 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 		return;
 	}
 	registry.emplace_or_replace<MsNodePtr>(player, msit->second);//todo master 重新启动以后
-	msservice::EnterGsSucceedRequest message;
+	controllerservice::EnterGsSucceedRequest message;
 	message.set_player_id(registry.get<Guid>(player));
-	auto& ms_stub = registry.get<RpcStub<msservice::MasterNodeService_Stub>>(msit->second->ms_);
-	ms_stub.CallMethod(message, &msservice::MasterNodeService_Stub::EnterGsSucceed);
+	auto& ms_stub = registry.get<RpcStub<controllerservice::MasterNodeService_Stub>>(msit->second->ms_);
+	ms_stub.CallMethod(message, &controllerservice::MasterNodeService_Stub::EnterGsSucceed);
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 }
 

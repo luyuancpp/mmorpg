@@ -17,7 +17,7 @@ namespace login
     {
     public:
         using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-        using LoginStubl2ms = RpcStub<msservice::MasterNodeService_Stub>;
+        using LoginStubl2ms = RpcStub<controllerservice::MasterNodeService_Stub>;
         using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 
         LoginServer(muduo::net::EventLoop* loop);

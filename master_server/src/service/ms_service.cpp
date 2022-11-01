@@ -151,8 +151,8 @@ void MasterNodeServiceImpl::InitPlayerSession(entt::entity player, uint64_t sess
 
 ///<<<rpc begin
 void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controller,
-    const msservice::StartGsRequest* request,
-    msservice::StartGsResponse* response,
+    const controllerservice::StartGsRequest* request,
+    controllerservice::StartGsResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -225,7 +225,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 }
 
 void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* controller,
-    const msservice::ConnectRequest* request,
+    const controllerservice::ConnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -258,7 +258,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 }
 
 void MasterNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* controller,
-    const msservice::LeaveGameRequest* request,
+    const controllerservice::LeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -268,7 +268,7 @@ void MasterNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* con
 }
 
 void MasterNodeServiceImpl::OnGwPlayerService(::google::protobuf::RpcController* controller,
-    const msservice::ClientMessageRequest* request,
+    const controllerservice::ClientMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -278,7 +278,7 @@ void MasterNodeServiceImpl::OnGwPlayerService(::google::protobuf::RpcController*
 }
 
 void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* controller,
-    const msservice::DisconnectRequest* request,
+    const controllerservice::DisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -323,8 +323,8 @@ void MasterNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* co
 }
 
 void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* controller,
-    const msservice::LoginAccountRequest* request,
-    msservice::LoginAccountResponse* response,
+    const controllerservice::LoginAccountRequest* request,
+    controllerservice::LoginAccountResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -372,8 +372,8 @@ void MasterNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 }
 
 void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* controller,
-    const msservice::EnterGameRequest* request,
-    msservice::EnterGameResponese* response,
+    const controllerservice::EnterGameRequest* request,
+    controllerservice::EnterGameResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -452,7 +452,7 @@ void MasterNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 }
 
 void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* controller,
-    const msservice::LsLeaveGameRequest* request,
+    const controllerservice::LsLeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -466,7 +466,7 @@ void MasterNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
 }
 
 void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* controller,
-    const msservice::LsDisconnectRequest* request,
+    const controllerservice::LsDisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -479,8 +479,8 @@ void MasterNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 }
 
 void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController* controller,
-    const msservice::PlayerNodeServiceRequest* request,
-    msservice::PlayerMessageRespone* response,
+    const controllerservice::PlayerNodeServiceRequest* request,
+    controllerservice::PlayerMessageRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -531,7 +531,7 @@ void MasterNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 }
 
 void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcController* controller,
-    const msservice::AddCrossServerSceneRequest* request,
+    const controllerservice::AddCrossServerSceneRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -560,7 +560,7 @@ void MasterNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
 }
 
 void MasterNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* controller,
-    const msservice::EnterGsSucceedRequest* request,
+    const controllerservice::EnterGsSucceedRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

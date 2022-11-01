@@ -106,7 +106,7 @@ void LoginServiceImpl::EnterGame(Guid player_id,
 		&LoginServiceImpl::EnterGameReplied,
 		rpc,
 		this,
-		&msservice::MasterNodeService_Stub::OnLsEnterGame);
+		&controllerservice::MasterNodeService_Stub::OnLsEnterGame);
 }
 
 void LoginServiceImpl::UpdateAccount(uint64_t session_id, const ::account_database& a_d)
@@ -145,7 +145,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	s_reqst.set_account(request->account());
 	s_reqst.set_session_id(request->session_id());
 	sessions_.emplace(request->session_id(), EntityPtr());
-	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, rpc, this, &msservice::MasterNodeService_Stub::OnLsLoginAccount);
+	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, rpc, this, &controllerservice::MasterNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -250,10 +250,10 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 		LOG_ERROR << " leave game not found connection";
 		return;
 	}
-	msservice::LsLeaveGameRequest ms_request;
+	controllerservice::LsLeaveGameRequest ms_request;
 	ms_request.set_session_id(request->session_id());
 	ms_node_stub_.CallMethod(ms_request,
-		&msservice::MasterNodeService_Stub::OnLsLeaveGame);
+		&controllerservice::MasterNodeService_Stub::OnLsLeaveGame);
 	sessions_.erase(sit);
 ///<<< END WRITING YOUR CODE 
 }
@@ -266,10 +266,10 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	sessions_.erase(request->session_id());
-	msservice::LsDisconnectRequest message;
+	controllerservice::LsDisconnectRequest message;
 	message.set_session_id(request->session_id());
 	ms_node_stub_.CallMethod(message,
-		&msservice::MasterNodeService_Stub::OnLsDisconnect);	
+		&controllerservice::MasterNodeService_Stub::OnLsDisconnect);	
 ///<<< END WRITING YOUR CODE 
 }
 

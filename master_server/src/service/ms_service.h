@@ -9,7 +9,7 @@
 #include "gs_service.pb.h"
 #include "gw_service.pb.h"
 ///<<< END WRITING YOUR CODE
-class MasterNodeServiceImpl : public msservice::MasterNodeService{
+class MasterNodeServiceImpl : public controllerservice::MasterNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 private:
@@ -29,62 +29,62 @@ private:
 ///<<< END WRITING YOUR CODE
 public:
     void StartGs(::google::protobuf::RpcController* controller,
-        const msservice::StartGsRequest* request,
-        msservice::StartGsResponse* response,
+        const controllerservice::StartGsRequest* request,
+        controllerservice::StartGsResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGwConnect(::google::protobuf::RpcController* controller,
-        const msservice::ConnectRequest* request,
+        const controllerservice::ConnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGwLeaveGame(::google::protobuf::RpcController* controller,
-        const msservice::LeaveGameRequest* request,
+        const controllerservice::LeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGwPlayerService(::google::protobuf::RpcController* controller,
-        const msservice::ClientMessageRequest* request,
+        const controllerservice::ClientMessageRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGwDisconnect(::google::protobuf::RpcController* controller,
-        const msservice::DisconnectRequest* request,
+        const controllerservice::DisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnLsLoginAccount(::google::protobuf::RpcController* controller,
-        const msservice::LoginAccountRequest* request,
-        msservice::LoginAccountResponse* response,
+        const controllerservice::LoginAccountRequest* request,
+        controllerservice::LoginAccountResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void OnLsEnterGame(::google::protobuf::RpcController* controller,
-        const msservice::EnterGameRequest* request,
-        msservice::EnterGameResponese* response,
+        const controllerservice::EnterGameRequest* request,
+        controllerservice::EnterGameResponese* response,
         ::google::protobuf::Closure* done)override;
 
     void OnLsLeaveGame(::google::protobuf::RpcController* controller,
-        const msservice::LsLeaveGameRequest* request,
+        const controllerservice::LsLeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnLsDisconnect(::google::protobuf::RpcController* controller,
-        const msservice::LsDisconnectRequest* request,
+        const controllerservice::LsDisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGsPlayerService(::google::protobuf::RpcController* controller,
-        const msservice::PlayerNodeServiceRequest* request,
-        msservice::PlayerMessageRespone* response,
+        const controllerservice::PlayerNodeServiceRequest* request,
+        controllerservice::PlayerMessageRespone* response,
         ::google::protobuf::Closure* done)override;
 
     void AddCrossServerScene(::google::protobuf::RpcController* controller,
-        const msservice::AddCrossServerSceneRequest* request,
+        const controllerservice::AddCrossServerSceneRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterGsSucceed(::google::protobuf::RpcController* controller,
-        const msservice::EnterGsSucceedRequest* request,
+        const controllerservice::EnterGsSucceedRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 

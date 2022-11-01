@@ -27,7 +27,7 @@ class GatewayServer : noncopyable, public Receiver<GatewayServer>
 {
 public:
     using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
-    using RpcStubMsNode = RpcStub<msservice::MasterNodeService_Stub>;
+    using RpcStubMsNode = RpcStub<controllerservice::MasterNodeService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GatewayServer(EventLoop* loop)
