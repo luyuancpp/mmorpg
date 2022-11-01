@@ -143,11 +143,11 @@
     <ClCompile Include="src\network\ms_node.cpp" />
     <ClCompile Include="src\service\gs_service.cpp" />
     <ClCompile Include="src\service\logic\gs_scene_client_player.cpp" />
-    <ClCompile Include="src\service\logic\gs_scene_normal.cpp" />
+    <ClCompile Include="src\service\logic\gs_scene.cpp" />
     <ClCompile Include="src\service\logic\gs_scene_server_player.cpp" />
     <ClCompile Include="src\service\logic\gs_server_service.cpp" />
     <ClCompile Include="src\service\logic\gs_team_client_player.cpp" />
-    <ClCompile Include="src\service\logic\gs_team_normal.cpp" />
+    <ClCompile Include="src\service\logic\gs_team.cpp" />
     <ClCompile Include="src\service\logic\gs_team_server_player.cpp" />
     <ClCompile Include="src\service\logic\gs_player_service.cpp" />
     <ClCompile Include="src\service\server_replied.cpp" />
@@ -173,10 +173,10 @@
     <ClInclude Include="src\network\ms_node.h" />
     <ClInclude Include="src\service\gs_service.h" />
     <ClInclude Include="src\service\logic\gs_scene_client_player.h" />
-    <ClInclude Include="src\service\logic\gs_scene_normal.h" />
+    <ClInclude Include="src\service\logic\gs_scene.h" />
     <ClInclude Include="src\service\logic\gs_scene_server_player.h" />
     <ClInclude Include="src\service\logic\gs_team_client_player.h" />
-    <ClInclude Include="src\service\logic\gs_team_normal.h" />
+    <ClInclude Include="src\service\logic\gs_team.h" />
     <ClInclude Include="src\service\logic\gs_team_server_player.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\logic\server_service.h" />
