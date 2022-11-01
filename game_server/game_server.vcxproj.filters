@@ -51,10 +51,10 @@
     <ClCompile Include="src\network\ms_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gs_scene_normal.cpp">
+    <ClCompile Include="src\service\logic\gs_scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gs_team_normal.cpp">
+    <ClCompile Include="src\service\logic\gs_team.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\service\logic\gs_server_service.cpp">
@@ -134,10 +134,10 @@
     <ClInclude Include="src\network\ms_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gs_scene_normal.h">
+    <ClInclude Include="src\service\logic\gs_scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gs_team_normal.h">
+    <ClInclude Include="src\service\logic\gs_team.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic\server_service.h">
