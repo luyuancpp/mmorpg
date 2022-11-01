@@ -165,10 +165,10 @@ def genheadfile(filename, serverstr):
     local.servicenames = []
     writedir = getwritedir(serverstr)
     headfun = [classbegin, genheadrpcfun]
-    fullfilename = writedir +  serverstr + filename.replace('.proto', '.h').replace(protodir, '')
+    destfilename = writedir +  serverstr + filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = servicedir + serverstr + filename.replace('.proto', '.h').replace(protodir, '')
-    if not os.path.exists(newheadfilename)  and os.path.exists(fullfilename):
-        shutil.copy(fullfilename, newheadfilename)
+    if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
+        shutil.copy(destfilename, newheadfilename)
         return
     newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
@@ -275,7 +275,7 @@ def parseplayerservcie(filename):
                     local.openplayerservicearray.append(local.pkg + '.' + local.service)
                 
 def gengsplayerservcielist(filename):
-    fullfilename = servicedir + filename
+    destfilename = servicedir + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -294,11 +294,11 @@ def gengsplayerservcielist(filename):
     for service in local.openplayerservicearray:
         newstr += tabstr + 'g_open_player_services.emplace("' + service.replace('.', '') + '");\n'
     newstr += '}\n'
-    with open(fullfilename, 'w', encoding='utf-8')as file:
+    with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def genmsplayerservcielist(filename):
-    fullfilename = servicedir + filename
+    destfilename = servicedir + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -321,7 +321,7 @@ def genmsplayerservcielist(filename):
         newstr += ', std::make_unique<' + service + 'Impl>(new '
         newstr +=  service.replace('.', '') + 'OpenImpl));\n'
     newstr += '}\n'
-    with open(fullfilename, 'w', encoding='utf-8')as file:
+    with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def md5copy(filename, serverstr):
@@ -334,16 +334,16 @@ def md5copy(filename, serverstr):
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
-        fullfilename = writedir  + filename
-        if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(fullfilename):
+        destfilename = writedir  + filename
+        if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
             emptymd5 = True
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        if error == None and os.path.exists(fullfilename) and emptymd5 == False:
+        if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
-        print("copy %s ---> %s" % (gennewfilename, fullfilename))
-        shutil.copy(gennewfilename, fullfilename)
-        md5tool.generate_md5_file_for(fullfilename, filenamemd5)
+        print("copy %s ---> %s" % (gennewfilename, destfilename))
+        shutil.copy(gennewfilename, destfilename)
+        md5tool.generate_md5_file_for(destfilename, filenamemd5)
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
         for filename in filenames:    

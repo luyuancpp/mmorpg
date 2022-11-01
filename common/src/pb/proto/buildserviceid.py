@@ -127,7 +127,7 @@ def inputfile():
     for filename in os.listdir(protodir):
         if not (filename[-6:].lower() == '.proto'):
             continue
-        genfile.append(protodir + '/' + filename)
+        genfile.append(protodir + filename)
 
 def main():
     for file in genfile:
