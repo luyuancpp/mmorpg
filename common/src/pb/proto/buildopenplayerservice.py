@@ -29,20 +29,20 @@ def gen(readfilename, filename):
 def md5copy(filename, destdir):
     if not filename.endswith("open_service.cpp"):
         return
-    gennewfilename = md5dir + filename
-    filenamemd5 = gennewfilename + '.md5'
+    srcmd5filename = md5dir + filename
+    md5suffixfilename = srcmd5filename + '.md5'
     error = None
     emptymd5 = False
-    if  not os.path.exists(filenamemd5):
+    if  not os.path.exists(md5suffixfilename):
         emptymd5 = True
     else:
-        error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
+        error = md5tool.check_against_md5_file(srcmd5filename, md5suffixfilename)              
     destfilename = destdir + '/' + filename
     if error == None and os.path.exists(destfilename) and emptymd5 == False:
         return
-    print("copy %s ---> %s" % (gennewfilename, destfilename))
-    md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-    shutil.copy(gennewfilename, destfilename)
+    print("copy %s ---> %s" % (srcmd5filename, destfilename))
+    md5tool.generate_md5_file_for(srcmd5filename, md5suffixfilename)
+    shutil.copy(srcmd5filename, destfilename)
 
 gen('logic_proto/msgmap.cpp', openfilename)
 md5copy(openfilename, '../../../../gateway_server/src/service')
