@@ -28,14 +28,17 @@ tabstr = '    '
 cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/logic_proto/'
+gs_file_prefix = 'gs_'
+ms_file_prefix = 'ms_'
+rg_file_prefix = 'rg_'
 
 def getwritedir(serverstr):
     writedir = ''
-    if serverstr == 'gs':
+    if serverstr == gs_file_prefix:
         writedir = gsservicedir
-    elif serverstr == 'ms':
+    elif serverstr == ms_file_prefix:
         writedir = msservicedir
-    elif serverstr == 'rg':
+    elif serverstr == rg_file_prefix:
         writedir = rgservicedir
     return writedir
 
@@ -100,11 +103,11 @@ def emptyfun():
 def getprevfilename(filename, writedir):
     if filename.find(logicprotodir) >= 0:
         if writedir == gsservicedir:
-            return 'gs'
+            return gs_file_prefix
         if writedir == msservicedir:
-            return 'ms'
+            return ms_file_prefix
         if writedir == rgservicedir:
-            return 'rg'
+            return rg_file_prefix
     return ''
 
 def getpbdir(filename, writedir):
@@ -223,11 +226,11 @@ def gencppfile(fullfilename, writedir):
 def getmd5prevfilename(filename, writedir):
     if filename.find('normal') >= 0 or filename.find('rg.proto') >= 0:
         if writedir == gsservicedir:
-            return 'gs'
+            return gs_file_prefix
         if writedir == msservicedir:
-            return 'ms'
+            return ms_file_prefix
         if writedir == rgservicedir:
-            return 'rg'
+            return rg_file_prefix
     return ''
 
 def md5copy(filename, writedir, fileextend):
@@ -299,9 +302,9 @@ def inputfile():
         if not (filename[-6:].lower() == '.proto'):
             continue
         if filename.find('normal') >= 0:
-            genfile.append([logicprotodir + filename, getwritedir('ms')])
-            genfile.append([logicprotodir + filename, getwritedir('gs')])
-        elif filename.find('rg') >= 0:
-            genfile.append([logicprotodir +  filename, getwritedir('rg')])
+            genfile.append([logicprotodir + filename, getwritedir(ms_file_prefix)])
+            genfile.append([logicprotodir + filename, getwritedir(gs_file_prefix)])
+        elif filename.find(rg_file_prefix) >= 0:
+            genfile.append([logicprotodir +  filename, getwritedir(rg_file_prefix)])
 inputfile()
 main()
