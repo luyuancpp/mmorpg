@@ -22,7 +22,7 @@ rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
 gsservicedir = '../../../../game_server/src/service/logic/'
 rgservicedir = '../../../../region_server/src/service/logic/'
-msservicedir = '../../../../master_server/src/service/logic/'
+controllerservicedir = '../../../../master_server/src/service/logic/'
 logicprotodir = './logic_proto/'
 tabstr = '    '
 cpprpcservicepart = 1
@@ -37,7 +37,7 @@ def getwritedir(serverstr):
     if serverstr == gs_file_prefix:
         writedir = gsservicedir
     elif serverstr == ms_file_prefix:
-        writedir = msservicedir
+        writedir = controllerservicedir
     elif serverstr == rg_file_prefix:
         writedir = rgservicedir
     return writedir
@@ -108,7 +108,7 @@ def getprevfilename(filename, writedir):
     if filename.find(logicprotodir) >= 0:
         if writedir == gsservicedir:
             return gs_file_prefix
-        if writedir == msservicedir:
+        if writedir == controllerservicedir:
             return ms_file_prefix
         if writedir == rgservicedir:
             return rg_file_prefix
@@ -231,7 +231,7 @@ def getmd5prevfilename(filename, writedir):
     if is_server_proto(filename) == True :
         if writedir == gsservicedir:
             return gs_file_prefix
-        if writedir == msservicedir:
+        if writedir == controllerservicedir:
             return ms_file_prefix
         if writedir == rgservicedir:
             return rg_file_prefix
