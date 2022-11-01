@@ -30,16 +30,16 @@
     <ClCompile Include="src\service\logic\gs_player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gsscene_client_player.cpp">
+    <ClCompile Include="src\service\logic\gs_scene_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gsscene_server_player.cpp">
+    <ClCompile Include="src\service\logic\gs_scene_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gsteam_client_player.cpp">
+    <ClCompile Include="src\service\logic\gs_team_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gsteam_server_player.cpp">
+    <ClCompile Include="src\service\logic\gs_team_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\gate_node.cpp">
@@ -75,7 +75,7 @@
     <ClCompile Include="src\system\player_tip_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gscommon_server_player.cpp">
+    <ClCompile Include="src\service\logic\gs_common_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\event_receiver\event_receiver.cpp">
@@ -90,7 +90,7 @@
     <ClCompile Include="src\system\logic\config_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gscommon_client_player.cpp">
+    <ClCompile Include="src\service\logic\gs_common_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp">
@@ -113,16 +113,16 @@
     <ClInclude Include="src\service\gs_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gsteam_server_player.h">
+    <ClInclude Include="src\service\logic\gs_team_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gsscene_client_player.h">
+    <ClInclude Include="src\service\logic\gs_scene_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gsscene_server_player.h">
+    <ClInclude Include="src\service\logic\gs_scene_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gsteam_client_player.h">
+    <ClInclude Include="src\service\logic\gs_team_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gate_node.h">
@@ -158,7 +158,7 @@
     <ClInclude Include="src\system\player_tip_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gscommon_server_player.h">
+    <ClInclude Include="src\service\logic\gs_common_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\event_receiver\event_receiver.h">
@@ -176,7 +176,7 @@
     <ClInclude Include="src\comp\gs_scene_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\gscommon_client_player.h">
+    <ClInclude Include="src\service\logic\gs_common_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\event_receiver\scene_event_receiver.h">
