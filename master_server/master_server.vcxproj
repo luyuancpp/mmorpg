@@ -160,7 +160,7 @@
     <ClCompile Include="src\system\player_change_scene.cpp" />
     <ClCompile Include="src\system\player_common_system.cpp" />
     <ClCompile Include="src\comp\player_list.cpp" />
-    <ClCompile Include="src\master_server.cpp" />
+    <ClCompile Include="src\controller_server.cpp" />
     <ClCompile Include="src\network\gate_node.cpp" />
     <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\network\message_system.cpp" />
@@ -184,7 +184,7 @@
     <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\network\player_session.h" />
     <ClInclude Include="src\comp\player_list.h" />
-    <ClInclude Include="src\master_server.h" />
+    <ClInclude Include="src\controller_server.h" />
     <ClInclude Include="src\master_registry\master_registry.h" />
     <ClInclude Include="src\network\message_system.h" />
     <ClInclude Include="src\service\logic\ms_scene.h" />

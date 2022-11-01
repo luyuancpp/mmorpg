@@ -11,7 +11,7 @@
 #include "src/game_logic/tips_id.h"
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"
-#include "src/master_server.h"
+#include "src/controller_server.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
@@ -162,7 +162,7 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 			//跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
 			regionservcie::LeaveCrossMainSceneRequest rpc;
 			rpc.set_player_id(registry.get<Guid>(player));
-			g_ms_node->rg_stub().CallMethod(rpc, &regionservcie::RgService_Stub::LeaveCrossMainScene);
+			g_controller_node->rg_stub().CallMethod(rpc, &regionservcie::RgService_Stub::LeaveCrossMainScene);
 		}
 		if (is_to_gs_is_cross_server)
 		{
@@ -170,7 +170,7 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 			EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());
 			rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());
 			rpc->s_rq_.set_player_id(registry.get<Guid>(player));
-			g_ms_node->rg_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &regionservcie::RgService_Stub::EnterCrossMainScene);
+			g_controller_node->rg_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &regionservcie::RgService_Stub::EnterCrossMainScene);
 			return;
 		}
 	}

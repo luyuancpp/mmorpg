@@ -1,4 +1,4 @@
-#include "master_server.h"
+#include "controller_server.h"
 
 #include "muduo/base/Logging.h"
 #include "muduo//net/EventLoop.h"
@@ -21,26 +21,26 @@
 using namespace muduo;
 using namespace net;
 
-MasterServer* g_ms_node = nullptr;
+ControllerServer* g_controller_node = nullptr;
 
 
 void set_server_squence_node_id(uint32_t node_id);
 
-uint32_t master_node_id()
+uint32_t controller_node_id()
 {
-	return g_ms_node->master_node_id();
+	return g_controller_node->master_node_id();
 }
 
-MasterServer::MasterServer(muduo::net::EventLoop* loop)
+ControllerServer::ControllerServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 { 
     global_entity() = registry.create();
 }    
 
-void MasterServer::Init()
+void ControllerServer::Init()
 {
-    g_ms_node = this;
+    g_controller_node = this;
     InitConfig();
     InitMsgService();
     InitPlayerServcie();
@@ -49,7 +49,7 @@ void MasterServer::Init()
     Connect2Deploy();
 }
 
-void MasterServer::Connect2Deploy()
+void ControllerServer::Connect2Deploy()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
@@ -59,7 +59,7 @@ void MasterServer::Connect2Deploy()
     deploy_session_->connect();
 }
 
-void MasterServer::StartServer(ServerInfoRpc replied)
+void ControllerServer::StartServer(ServerInfoRpc replied)
 {
     serverinfos_ = replied->s_rp_->info();
     auto& databaseinfo = serverinfos_.database_info();
@@ -71,8 +71,8 @@ void MasterServer::StartServer(ServerInfoRpc replied)
     Connect2Region();
 	
     auto& myinfo = serverinfos_.master_info();
-    InetAddress master_addr(myinfo.ip(), myinfo.port());
-    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, master_addr);
+    InetAddress controller_addr(myinfo.ip(), myinfo.port());
+    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
     server_->registerService(&ms_service_);
     for (auto& it : g_server_nomal_service)
@@ -82,12 +82,12 @@ void MasterServer::StartServer(ServerInfoRpc replied)
     server_->start();
 }
 
-void MasterServer::SceneSqueueNodeId(SceneNodeSequeIdRpc replied)
+void ControllerServer::SceneSqueueNodeId(SceneNodeSequeIdRpc replied)
 {
 	set_server_squence_node_id(replied->s_rp_->node_id());
 }
 
-void MasterServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
+void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
     auto& connection_info = registry.get<InetAddress>(gs);
     gwservice::StartGSRequest request;
@@ -97,7 +97,7 @@ void MasterServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 	registry.get<GateNodePtr>(gate)->session_.Send(request);
 }
 
-void MasterServer::receive(const OnConnected2ServerEvent& es)
+void ControllerServer::receive(const OnConnected2ServerEvent& es)
 {
 	auto& conn = es.conn_;
     if (conn->connected())
@@ -110,7 +110,7 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
                 rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
                 rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
                 deploy_stub_.CallMethod(
-                    &MasterServer::StartServer,
+                    &ControllerServer::StartServer,
                     rpc,
                     this,
                     &deploy::DeployService_Stub::ServerInfo);
@@ -119,7 +119,7 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
             {
                 SceneNodeSequeIdRpc rpc(std::make_shared<SceneNodeSequeIdRpc::element_type>());
                 deploy_stub_.CallMethod(
-                    &MasterServer::SceneSqueueNodeId,
+                    &ControllerServer::SceneSqueueNodeId,
                     rpc,
                     this,
                     &deploy::DeployService_Stub::SceneSqueueNodeId);
@@ -130,7 +130,7 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
 		{
 			if (conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 			{
-				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&MasterServer::Register2Region, this));
+				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&ControllerServer::Register2Region, this));
 			}
 			else if(!conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
 			{
@@ -145,7 +145,7 @@ void MasterServer::receive(const OnConnected2ServerEvent& es)
 	
 }
 
-void MasterServer::receive(const OnBeConnectedEvent& es)
+void ControllerServer::receive(const OnBeConnectedEvent& es)
 {
     auto& conn = es.conn_;
     if (conn->connected())
@@ -182,7 +182,7 @@ void MasterServer::receive(const OnBeConnectedEvent& es)
     }
 }
 
-void MasterServer::InitConfig()
+void ControllerServer::InitConfig()
 {
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
@@ -190,7 +190,7 @@ void MasterServer::InitConfig()
     LoadAllConfigAsyncWhenServerLaunch();
 }
 
-void MasterServer::Connect2Region()
+void ControllerServer::Connect2Region()
 {
 	auto& regioninfo = serverinfos_.regin_info();
 	InetAddress region_addr(regioninfo.ip(), regioninfo.port());
@@ -201,7 +201,7 @@ void MasterServer::Connect2Region()
 	region_session_->connect();
 }
 
-void MasterServer::Register2Region()
+void ControllerServer::Register2Region()
 {
     auto& myinfo = serverinfos_.master_info();
     regionservcie::StartMsRequest rq;

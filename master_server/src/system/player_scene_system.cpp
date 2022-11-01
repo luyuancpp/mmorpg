@@ -63,7 +63,7 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player)
 		gsservice::EnterGsRequest message;
 		message.set_player_id(registry.get<Guid>(player));
 		message.set_session_id(try_player_session->session_id());
-		message.set_ms_node_id(master_node_id());
+		message.set_ms_node_id(controller_node_id());
 		registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
 	}
 }
