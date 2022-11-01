@@ -41,9 +41,9 @@ def parsefile(filename):
 
 def getfilenamenoprefixsuffix(filename):
 	return filename.replace(eventprotodir, '').replace('.proto', '')
-def getmd5fullfilename(filename):
+def getmd5destfilename(filename):
 	return md5dir + getfilenamenoprefixsuffix(filename)
-def getdestfullfilename(filename):
+def getdestdestfilename(filename):
 	return destdirpath + getfilenamenoprefixsuffix(filename)
 def getfileclassname(filename):
 	letterarray = getfilenamenoprefixsuffix(filename).split('_')
@@ -89,7 +89,7 @@ def generatecppregisterunregisterfunction(filename):
 
 def generatecpp(filename):
 	md5cppfilename = filename.replace(eventprotodir, md5dir).replace('.proto', '') + cppdestfilesuffix
-	destcppfilename = getdestfullfilename(filename) + cppdestfilesuffix
+	destcppfilename = getdestdestfilename(filename) + cppdestfilesuffix
 	classname = getfileclassname(filename)
 	headerinclude = '#include "' + getfilenamenoprefixsuffix(filename) + headdestfilesuffix + '"\n'
 	pbinclude = '#include "event_proto/' + getfilenamenoprefixsuffix(filename) + '.pb.h"\n'
@@ -182,20 +182,20 @@ def geneventreceivercpp():
 		file.write(newstr)
 
 def md5copy(filename, destfilesuffix):
-    gennewfilename = getmd5fullfilename(filename) + destfilesuffix
+    gennewfilename = getmd5destfilename(filename) + destfilesuffix
     filenamemd5 = gennewfilename + '.md5'
     error = None
     need_copy = False
-    fullfilename = getdestfullfilename(filename) + destfilesuffix
-    if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(fullfilename):
+    destfilename = getdestdestfilename(filename) + destfilesuffix
+    if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
         need_copy = True
     else:
         error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-    if error == None and os.path.exists(fullfilename) and need_copy == False:
+    if error == None and os.path.exists(destfilename) and need_copy == False:
         return
-    print("copy %s ---> %s" % (gennewfilename, fullfilename))
-    shutil.copy(gennewfilename, fullfilename)
-    md5tool.generate_md5_file_for(fullfilename, filenamemd5)
+    print("copy %s ---> %s" % (gennewfilename, destfilename))
+    shutil.copy(gennewfilename, destfilename)
+    md5tool.generate_md5_file_for(destfilename, filenamemd5)
 
 def generate(filename):
 	generatehead(filename)
