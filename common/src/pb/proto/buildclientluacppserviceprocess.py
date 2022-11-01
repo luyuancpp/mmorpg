@@ -48,7 +48,7 @@ def gencpp():
 	with open(md5dirfilename, 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
-def md5copy(fullfilename):
+def md5copy(destfilename):
     filenamemd5 = md5dirfilename + '.md5'
     error = None
     emptymd5 = False
@@ -56,11 +56,11 @@ def md5copy(fullfilename):
         emptymd5 = True
     else:
         error = md5tool.check_against_md5_file(md5dirfilename, filenamemd5) 
-    if error == None and os.path.exists(fullfilename) and emptymd5 == False:
+    if error == None and os.path.exists(destfilename) and emptymd5 == False:
         return
-    print("copy %s ---> %s" % (md5dirfilename, fullfilename))
+    print("copy %s ---> %s" % (md5dirfilename, destfilename))
     md5tool.generate_md5_file_for(md5dirfilename, filenamemd5)
-    shutil.copy(md5dirfilename, fullfilename)
+    shutil.copy(md5dirfilename, destfilename)
 
 inputfile()
 gencpp()
