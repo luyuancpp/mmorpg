@@ -7,6 +7,10 @@ servicearray = []
 servicefilenamearray = []
 md5dir = './md5/logic_proto/'
 logicprotodir = './logic_proto/'
+
+gs_file_prefix = 'gs_'
+ms_file_prefix = 'ms_'
+
 if not os.path.exists(md5dir):
     os.makedirs(md5dir)
 
@@ -47,7 +51,7 @@ def gencppfile(writedfilename, includeprefix):
     with open(writedfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(writedfilename, fullfilename):
+def md5copy(writedfilename, destfilename):
     filenamemd5 = writedfilename + '.md5'
     error = None
     emptymd5 = False
@@ -55,16 +59,16 @@ def md5copy(writedfilename, fullfilename):
         emptymd5 = True
     else:
         error = md5tool.check_against_md5_file(writedfilename, filenamemd5) 
-    if error == None and os.path.exists(fullfilename) and emptymd5 == False:
+    if error == None and os.path.exists(destfilename) and emptymd5 == False:
         return
-    print("copy %s ---> %s" % (writedfilename, fullfilename))
+    print("copy %s ---> %s" % (writedfilename, destfilename))
     md5tool.generate_md5_file_for(writedfilename, filenamemd5)
-    shutil.copy(writedfilename, fullfilename)
+    shutil.copy(writedfilename, destfilename)
 
 scanservice()
 genheadfile('./md5/server_service.h')
-gencppfile('./md5/ms_server_service.cpp', 'ms')
-gencppfile('./md5/gs_server_service.cpp', 'gs')
+gencppfile('./md5/ms_server_service.cpp', ms_file_prefix)
+gencppfile('./md5/gs_server_service.cpp', gs_file_prefix)
 md5copy('./md5/ms_server_service.cpp', '../../../../master_server/src/service/logic/ms_server_service.cpp')
 md5copy('./md5/gs_server_service.cpp', '../../../../game_server/src/service/logic/gs_server_service.cpp')
 md5copy('./md5/server_service.h', '../../../../master_server/src/service/logic/server_service.h')
