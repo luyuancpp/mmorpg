@@ -93,7 +93,7 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 		LOG_ERROR << "Send2MsPlayer master disconnect" << registry.get<Guid>(player);
 		return;
 	}
-	msservice::PlayerNodeServiceRequest msg_wrapper;
+	controllerservice::PlayerNodeServiceRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_player_id(registry.get<Guid>(player));

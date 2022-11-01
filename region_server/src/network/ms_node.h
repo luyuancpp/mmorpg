@@ -15,7 +15,7 @@
 
 struct MsNode
 {
-	using MsStubNode = RpcStub<msservice::MasterNodeService_Stub>;
+	using MsStubNode = RpcStub<controllerservice::MasterNodeService_Stub>;
 	MsNode(const muduo::net::TcpConnectionPtr& conn)
 		: session_(conn) {}
 
