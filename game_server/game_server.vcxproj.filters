@@ -57,7 +57,7 @@
     <ClCompile Include="src\service\logic\gsteam_normal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gsserver_service.cpp">
+    <ClCompile Include="src\service\logic\gs_server_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\gs_scene_system.cpp">

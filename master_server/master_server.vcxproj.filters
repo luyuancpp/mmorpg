@@ -51,7 +51,7 @@
     <ClCompile Include="src\service\logic\msteam_server_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\msserver_service.cpp">
+    <ClCompile Include="src\service\logic\ms_server_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\system\player_scene_system.cpp">

@@ -165,7 +165,7 @@
     <ClCompile Include="src\network\message_system.cpp" />
     <ClCompile Include="src\service\logic\msscene_normal.cpp" />
     <ClCompile Include="src\service\logic\msscene_server_player.cpp" />
-    <ClCompile Include="src\service\logic\msserver_service.cpp" />
+    <ClCompile Include="src\service\logic\ms_server_service.cpp" />
     <ClCompile Include="src\service\logic\msteam_normal.cpp" />
     <ClCompile Include="src\service\logic\msteam_server_player.cpp" />
     <ClCompile Include="src\service\logic\ms_player_service.cpp" />
