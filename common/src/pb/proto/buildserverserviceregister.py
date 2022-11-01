@@ -2,7 +2,7 @@ import os
 from os import system
 import md5tool
 import shutil
-import buildprotocommonutil
+import buildpublic
 
 servicearray = []
 servicefilenamearray = []

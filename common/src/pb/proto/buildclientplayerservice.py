@@ -5,7 +5,7 @@ import shutil
 import threading
 import _thread
 import protofilearray
-import buildprotocommonutil
+import buildpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
@@ -135,7 +135,7 @@ def generate(filename):
         genheadfile(filename)
 
 def parseplayerservcie(filename):
-    if buildprotocommonutil.is_not_client_proto(filename) == True :
+    if buildpublic.is_not_client_proto(filename) == True :
         return
     local.fileservice.append(filename.replace('.proto', ''))
     with open(filename,'r', encoding='utf-8') as file:
