@@ -42,6 +42,10 @@ def getwritedir(serverstr):
         writedir = rgservicedir
     return writedir
 
+def is_server_proto(filename):
+    return filename.find('client_player') <= 0 or  filename.find(rg_file_prefix) >= 0
+
+
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
@@ -224,7 +228,7 @@ def gencppfile(fullfilename, writedir):
 
 
 def getmd5prevfilename(filename, writedir):
-    if filename.find('normal') >= 0 or filename.find('rg.proto') >= 0:
+    if is_server_proto(filename) == True :
         if writedir == gsservicedir:
             return gs_file_prefix
         if writedir == msservicedir:
