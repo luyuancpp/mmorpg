@@ -43,7 +43,7 @@ def getwritedir(serverstr):
     return writedir
 
 def is_server_proto(filename):
-    return filename.find('client_player') <= 0 or  filename.find(rg_file_prefix) >= 0
+    return (filename.find('client_player') <= 0 and filename.find('server_player') <= 0) or  filename.find(rg_file_prefix) >= 0
 
 
 if not os.path.exists(servicedir):
