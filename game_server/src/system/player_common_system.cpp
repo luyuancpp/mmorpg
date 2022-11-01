@@ -70,10 +70,10 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 //考虑: 没load 完再次进入别的gs
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
-	auto msit = g_ms_nodes->find(enter_info.ms_node_id());
+	auto msit = g_ms_nodes->find(enter_info.controller_node_id());
 	if (msit == g_ms_nodes->end())
 	{
-		LOG_ERROR << "EnterGs ms not found" << enter_info.ms_node_id();
+		LOG_ERROR << "EnterGs ms not found" << enter_info.controller_node_id();
 		return;
 	}
 	registry.emplace_or_replace<MsNodePtr>(player, msit->second);//todo master 重新启动以后

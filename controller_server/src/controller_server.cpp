@@ -70,7 +70,7 @@ void ControllerServer::StartServer(ServerInfoRpc replied)
 
     Connect2Region();
 	
-    auto& myinfo = serverinfos_.master_info();
+    auto& myinfo = serverinfos_.controller_info();
     InetAddress controller_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
@@ -203,7 +203,7 @@ void ControllerServer::Connect2Region()
 
 void ControllerServer::Register2Region()
 {
-    auto& myinfo = serverinfos_.master_info();
+    auto& myinfo = serverinfos_.controller_info();
     regionservcie::StartMsRequest rq;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();

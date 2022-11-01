@@ -26,7 +26,7 @@ public:
 	ControllerServer(muduo::net::EventLoop* loop);
 
 	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
-	inline uint32_t controller_node_id()const { return serverinfos_.master_info().id(); }
+	inline uint32_t controller_node_id()const { return serverinfos_.controller_info().id(); }
 	inline RgNodeStub& rg_stub() { return rg_stub_; }
 
 	void Init();

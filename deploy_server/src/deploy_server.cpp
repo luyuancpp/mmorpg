@@ -30,7 +30,7 @@ namespace deploy
         db_->AddTable(database_server_db::default_instance());
         db_->AddTable(redis_server_db::default_instance());
         db_->AddTable(login_server_db::default_instance());
-        db_->AddTable(master_server_db::default_instance());
+        db_->AddTable(controller_server_db::default_instance());
         db_->AddTable(game_server_db::default_instance());
         db_->AddTable(gateway_server_db::default_instance());
         db_->AddTable(reuse_game_server_db::default_instance());
@@ -42,7 +42,7 @@ namespace deploy
         InitRegionServer<region_server_db>(kRSBeginPort, kGroup);
         InitGroupDb<redis_server_db>(kRedisPort, kGroup);
         InitGroupDb<login_server_db>(kLSBeginPort, kGroup);
-        InitRegionDb<master_server_db>(kMSBeginPort, kGroup);
+        InitRegionDb<controller_server_db>(kMSBeginPort, kGroup);
         InitRegionDb<game_server_db>(kGSBeginPort, kGroup * 2);
         InitRegionDb<gateway_server_db>(kGateSBeginPort, kGroup);
 

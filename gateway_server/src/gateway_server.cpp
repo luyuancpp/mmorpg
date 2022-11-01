@@ -49,7 +49,7 @@ void GatewayServer::StartServer(ServerInfoRpc replied)
         }
     );
     
-    auto& master_info = serverinfo_data_.master_info();
+    auto& master_info = serverinfo_data_.controller_info();
     InetAddress master_addr(master_info.ip(), master_info.port());
     master_session_ = std::make_unique<RpcClient>(loop_, master_addr);
     master_session_->registerService(&node_service_impl_);
@@ -124,7 +124,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
             }
         );
     }
-    else if (IsSameAddr(conn->peerAddress(), serverinfo_data_.master_info()))
+    else if (IsSameAddr(conn->peerAddress(), serverinfo_data_.controller_info()))
     {
 		if (!conn->connected())
 		{

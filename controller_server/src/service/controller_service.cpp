@@ -47,7 +47,7 @@ void ControllerNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied(Ms2GwPlayerEnte
 		LOG_ERROR << "player not found " << registry.get<Guid>(player);
 		return;
 	}
-	PlayerChangeSceneSystem::SetChangeGsStatus(player, MsChangeSceneInfo::eGateEnterGsSceneSucceed);
+	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 	UpdateGateSessionGsRequest message;
     auto try_player_session = registry.try_get<PlayerSession>(player);
@@ -413,10 +413,10 @@ void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController*
 			LOG_INFO << "player " << player_id << " enter default secne";
 		} 
 		
-		MsChangeSceneInfo change_scene_info;
+		ControllerChangeSceneInfo change_scene_info;
 		change_scene_info.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(scene));
-		change_scene_info.set_change_gs_type(MsChangeSceneInfo::eDifferentGs);
-		change_scene_info.set_change_gs_status(MsChangeSceneInfo::eLeaveGsSceneSucceed);
+		change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
+		change_scene_info.set_change_gs_status(ControllerChangeSceneInfo::eLeaveGsSceneSucceed);
 		PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
 		PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 

@@ -114,10 +114,10 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
 {
     //connect master
     auto& resp = replied->s_rp_;
-	auto& regionmaster = resp->region_masters();
-	for (int32_t i = 0; i < regionmaster.masters_size(); ++i)
+	auto& regionmaster = resp->region_controllers();
+	for (int32_t i = 0; i < regionmaster.controllers_size(); ++i)
 	{
-		auto& masterinfo = regionmaster.masters(i);
+		auto& masterinfo = regionmaster.controllers(i);
 		InetAddress master_addr(masterinfo.ip(), masterinfo.port());
 		auto it = g_ms_nodes->emplace(masterinfo.id(), std::make_shared<MsNode>());
 		auto& ms = *it.first->second;
