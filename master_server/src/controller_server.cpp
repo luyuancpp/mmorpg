@@ -28,7 +28,7 @@ void set_server_squence_node_id(uint32_t node_id);
 
 uint32_t controller_node_id()
 {
-	return g_controller_node->master_node_id();
+	return g_controller_node->controller_node_id();
 }
 
 ControllerServer::ControllerServer(muduo::net::EventLoop* loop)
