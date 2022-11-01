@@ -245,7 +245,7 @@ def md5copy(filename, writedir, fileextend):
             emptymd5 = True
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        hfullfilename = writedir + '/' + getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
+        hfullfilename = writedir +  getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
         #print("copy %s ---> %s  %s" % (filename, writedir, gennewfilename))
         if error == None and os.path.exists(hfullfilename) and emptymd5 == False:
             return
