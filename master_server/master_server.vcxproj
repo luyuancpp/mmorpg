@@ -155,7 +155,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
     <ClCompile Include="src\network\gate_session.cpp" />
-    <ClCompile Include="src\service\logic\mscommon_server_player.cpp" />
+    <ClCompile Include="src\service\logic\ms_common_server_player.cpp" />
     <ClCompile Include="src\system\player_change_scene.cpp" />
     <ClCompile Include="src\system\player_common_system.cpp" />
     <ClCompile Include="src\comp\player_list.cpp" />
@@ -164,10 +164,10 @@
     <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\network\message_system.cpp" />
     <ClCompile Include="src\service\logic\msscene_normal.cpp" />
-    <ClCompile Include="src\service\logic\msscene_server_player.cpp" />
+    <ClCompile Include="src\service\logic\ms_scene_server_player.cpp" />
     <ClCompile Include="src\service\logic\ms_server_service.cpp" />
     <ClCompile Include="src\service\logic\msteam_normal.cpp" />
-    <ClCompile Include="src\service\logic\msteam_server_player.cpp" />
+    <ClCompile Include="src\service\logic\ms_team_server_player.cpp" />
     <ClCompile Include="src\service\logic\ms_player_service.cpp" />
     <ClCompile Include="src\service\ms_service.cpp" />
     <ClCompile Include="src\system\player_scene_system.cpp" />
@@ -177,7 +177,7 @@
     <ClInclude Include="src\event_receiver\scene_event_receiver.h" />
     <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\gs_node.h" />
-    <ClInclude Include="src\service\logic\mscommon_server_player.h" />
+    <ClInclude Include="src\service\logic\ms_common_server_player.h" />
     <ClInclude Include="src\system\player_change_scene.h" />
     <ClInclude Include="src\system\player_common_system.h" />
     <ClInclude Include="src\network\gate_node.h" />
@@ -187,9 +187,9 @@
     <ClInclude Include="src\master_registry\master_registry.h" />
     <ClInclude Include="src\network\message_system.h" />
     <ClInclude Include="src\service\logic\msscene_normal.h" />
-    <ClInclude Include="src\service\logic\msscene_server_player.h" />
+    <ClInclude Include="src\service\logic\ms_scene_server_player.h" />
     <ClInclude Include="src\service\logic\msteam_normal.h" />
-    <ClInclude Include="src\service\logic\msteam_server_player.h" />
+    <ClInclude Include="src\service\logic\ms_team_server_player.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\logic\server_service.h" />
     <ClInclude Include="src\service\ms_service.h" />

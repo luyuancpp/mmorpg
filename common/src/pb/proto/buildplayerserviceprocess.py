@@ -36,8 +36,8 @@ msplayerservicedir = '../../../../master_server/src/service/logic/'
 client_player = 'client_player'
 server_player = 'server_player'
 rg = 'rg'
-gs_file_prefix = 'gs'
-ms_file_prefix = 'ms'
+gs_file_prefix = 'gs_'
+ms_file_prefix = 'ms_'
 
 filedirdestpath = {}
 

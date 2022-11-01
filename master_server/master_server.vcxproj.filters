@@ -42,13 +42,13 @@
     <ClCompile Include="src\service\logic\msscene_normal.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\msscene_server_player.cpp">
+    <ClCompile Include="src\service\logic\ms_scene_server_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\logic\msteam_normal.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\msteam_server_player.cpp">
+    <ClCompile Include="src\service\logic\ms_team_server_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\logic\ms_server_service.cpp">
@@ -66,7 +66,7 @@
     <ClCompile Include="src\system\player_tip_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\mscommon_server_player.cpp">
+    <ClCompile Include="src\service\logic\ms_common_server_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp">
@@ -101,13 +101,13 @@
     <ClInclude Include="src\service\logic\msscene_normal.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\msscene_server_player.h">
+    <ClInclude Include="src\service\logic\ms_scene_server_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic\msteam_normal.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\msteam_server_player.h">
+    <ClInclude Include="src\service\logic\ms_team_server_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic\player_service.h">
@@ -128,7 +128,7 @@
     <ClInclude Include="src\system\player_tip_system.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\mscommon_server_player.h">
+    <ClInclude Include="src\service\logic\ms_common_server_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gs_node.h">
