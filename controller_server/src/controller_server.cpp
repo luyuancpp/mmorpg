@@ -80,6 +80,7 @@ void ControllerServer::StartServer(ServerInfoRpc replied)
         server_->registerService(it.get());
     }
     server_->start();
+    LOG_INFO << "controller start " << myinfo.DebugString();
 }
 
 void ControllerServer::SceneSqueueNodeId(SceneNodeSequeIdRpc replied)

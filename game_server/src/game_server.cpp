@@ -121,7 +121,7 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
 		InetAddress master_addr(masterinfo.ip(), masterinfo.port());
 		auto it = g_ms_nodes->emplace(masterinfo.id(), std::make_shared<MsNode>());
 		auto& ms = *it.first->second;
-		ms.session_ = std::make_shared<MasterSessionPtr::element_type>(loop_, master_addr);
+		ms.session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, master_addr);
 		ms.node_info_.set_node_id(masterinfo.id());
 		auto& ms_node_session = ms.session_;
         auto& ms_stub = registry.emplace<RpcStub<controllerservice::ControllerNodeService_Stub>>(ms.ms_);
@@ -137,15 +137,15 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
 	}
 }
 
-void GameServer::Register2Master(MasterSessionPtr& ms_node)
+void GameServer::Register2Master(ControllerSessionPtr& controller_node)
 {
     ServerReplied::StartGsMasterRpc rpc(std::make_shared<ServerReplied::StartGsMasterRpc::element_type>());
-    auto& master_local_addr = ms_node->local_addr();
+    auto& controller_local_addr = controller_node->local_addr();
     controllerservice::StartGsRequest& request = rpc->s_rq_;
     auto session_info = request.mutable_rpc_client();
     auto node_info = request.mutable_rpc_server();
-    session_info->set_ip(master_local_addr.toIp());
-    session_info->set_port(master_local_addr.port());
+    session_info->set_ip(controller_local_addr.toIp());
+    session_info->set_port(controller_local_addr.port());
     node_info->set_ip(gs_info_.ip());
     node_info->set_port(gs_info_.port());
     request.set_server_type(registry.get<GsServerType>(global_entity()).server_type_);
@@ -155,6 +155,7 @@ void GameServer::Register2Master(MasterSessionPtr& ms_node)
         rpc,
         &ServerReplied::GetSingleton(),
         &controllerservice::ControllerNodeService_Stub::StartGs);
+    LOG_INFO << "conncet to controller" << node_info->DebugString();
 }
 
 void GameServer::Register2Region()

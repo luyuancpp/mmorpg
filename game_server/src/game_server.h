@@ -44,7 +44,7 @@ public:
 		deploy::RegionInfoResponse>>;
 	void RegionInfoReplied(RegionRpcClosureRpc replied);
 
-    void Register2Master(MasterSessionPtr& master_rpc_client);
+    void Register2Master(ControllerSessionPtr& master_rpc_client);
     void Register2Region();
 
     void receive(const OnConnected2ServerEvent& es);
