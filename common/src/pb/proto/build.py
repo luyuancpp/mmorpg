@@ -3,7 +3,7 @@
 import os
 from os import system
 system("python buildprotoc.py")
-system("python buildrpcservice.py")
+system("python buildserviceprocess.py")
 system("python buildrpcserviceid.py")
 system("python buildprotosol.py")
 system("python buildplayerserviceprocess.py")
