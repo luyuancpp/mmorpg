@@ -60,7 +60,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     if (!conn->connected())
     {
         auto session_id = tcp_session_id(conn);
-        //断了线之后不能把消息串到别人的地方，串话
         //如果我没登录就发送其他协议到master game server 怎么办
         {
             //此消息一定要发，不能值通过ms 的gw disconnect去发
