@@ -15,7 +15,7 @@
 #include "db_service.pb.h"
 #include "logic_proto/scene_rg.pb.h"
 
-class MasterServer : muduo::noncopyable, public Receiver<MasterServer>
+class ControllerServer : muduo::noncopyable, public Receiver<ControllerServer>
 {
 public:
 	using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
@@ -23,7 +23,7 @@ public:
 	using DbNodeStub = RpcStub<dbservice::DbService_Stub>;
 	using RgNodeStub = RpcStub<regionservcie::RgService_Stub>;
 
-	MasterServer(muduo::net::EventLoop* loop);
+	ControllerServer(muduo::net::EventLoop* loop);
 
 	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
 	inline uint32_t master_node_id()const { return serverinfos_.master_info().id(); }
@@ -67,6 +67,6 @@ private:
 	servers_info_data serverinfos_;
 };
 
-extern MasterServer* g_ms_node;
+extern ControllerServer* g_controller_node;
 
 

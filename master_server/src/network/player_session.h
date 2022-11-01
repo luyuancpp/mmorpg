@@ -9,7 +9,7 @@
 
 #include "component_proto/player_network_comp.pb.h"
 
-uint32_t master_node_id();
+uint32_t controller_node_id();
 
 class PlayerSession
 {

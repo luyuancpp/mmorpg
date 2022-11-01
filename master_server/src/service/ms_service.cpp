@@ -12,7 +12,7 @@
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/scene/servernode_system.h"
-#include "src/master_server.h"
+#include "src/controller_server.h"
 #include "src/comp/player_list.h"
 #include "src/network/message_system.h"
 #include "src/network/gate_session.h"
@@ -157,7 +157,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	response->set_master_node_id(master_node_id());
+	response->set_master_node_id(controller_node_id());
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity gs{ entt::null };
@@ -217,7 +217,7 @@ void MasterNodeServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 
 	for (auto e : registry.view<GateNodePtr>())
 	{
-		g_ms_node->LetGateConnect2Gs(gs, e);
+		g_controller_node->LetGateConnect2Gs(gs, e);
 	}
 	g_gs_nodes.emplace(registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
@@ -252,7 +252,7 @@ void MasterNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* contr
 	registry.emplace<InetAddress>(gate, session_addr);
 	for (auto e : registry.view<GsServer>())
 	{
-		g_ms_node->LetGateConnect2Gs(e, gate);
+		g_controller_node->LetGateConnect2Gs(e, gate);
 	}
 ///<<< END WRITING YOUR CODE 
 }
