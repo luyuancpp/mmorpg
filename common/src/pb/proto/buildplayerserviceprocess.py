@@ -37,6 +37,7 @@ client_player = 'client_player'
 server_player = 'server_player'
 rg = 'rg'
 gs_file_prefix = 'gs'
+ms_file_prefix = 'ms'
 
 filedirdestpath = {}
 
@@ -153,7 +154,7 @@ def getwritedir(serverstr):
     writedir = ''
     if serverstr == gs_file_prefix:
         writedir = gsplayerservicedir
-    elif serverstr == 'ms':
+    elif serverstr == ms_file_prefix:
         writedir = msplayerservicedir
     elif serverstr == 'rg':
         writedir = rgplayerservicedir
@@ -252,8 +253,8 @@ def generate(filename):
         parsefile(filename)
         genheadfile(filename, gs_file_prefix)
         gencppfile(filename, gs_file_prefix)
-        genheadfile(filename, 'ms')
-        gencppfile(filename, 'ms')
+        genheadfile(filename, ms_file_prefix)
+        gencppfile(filename, ms_file_prefix)
     elif filename.find(rg) >= 0:
         pass
 
@@ -304,7 +305,7 @@ def genmsplayerservcielist(filename):
         if f.find(server_player) < 0:
             continue
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + 'ms' + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir + ms_file_prefix + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
@@ -349,14 +350,14 @@ def md5copydir():
                 md5copy(filename, gs_file_prefix)
             elif filename.find(server_player) >= 0 and filename.find(gs_file_prefix) >= 0:
                 md5copy(filename, gs_file_prefix)
-            elif filename.find(server_player) >= 0 and filename.find('ms') >= 0:
-                md5copy(filename, 'ms')
+            elif filename.find(server_player) >= 0 and filename.find(ms_file_prefix) >= 0:
+                md5copy(filename, ms_file_prefix)
             elif filename.find(rg) >= 0 and filename.find('rg') >= 0 and filename.find('rg_node') < 0: 
                 pass
             elif filename == 'gs_player_service.cpp':
                 md5copy(filename, gs_file_prefix)
             elif filename == 'ms_player_service.cpp':
-                md5copy(filename, 'ms')
+                md5copy(filename, ms_file_prefix)
 
 genfile = []
 
