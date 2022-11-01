@@ -1,13 +1,12 @@
-#include "gsscene_normal.h"
+#include "gs_team_normal.h"
 #include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
-
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerSceneServiceImpl::UpdateCrossMainSceneInfo(::google::protobuf::RpcController* controller,
-    const ::UpdateCrossMainSceneInfoRequest* request,
-    ::UpdateCrossMainSceneInfoResponse* response,
+void NormalS2STeamServiceImpl::EnterScene(::google::protobuf::RpcController* controller,
+    const ::TeamTestS2SRequest* request,
+    ::TeamTestS2SRespone* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
