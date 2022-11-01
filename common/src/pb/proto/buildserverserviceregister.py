@@ -63,9 +63,9 @@ def md5copy(writedfilename, fullfilename):
 
 scanservice()
 genheadfile('./md5/server_service.h')
-gencppfile('./md5/msserver_service.cpp', 'ms')
-gencppfile('./md5/gsserver_service.cpp', 'gs')
-md5copy('./md5/msserver_service.cpp', '../../../../master_server/src/service/logic/msserver_service.cpp')
-md5copy('./md5/gsserver_service.cpp', '../../../../game_server/src/service/logic/gsserver_service.cpp')
+gencppfile('./md5/ms_server_service.cpp', 'ms')
+gencppfile('./md5/gs_server_service.cpp', 'gs')
+md5copy('./md5/ms_server_service.cpp', '../../../../master_server/src/service/logic/ms_server_service.cpp')
+md5copy('./md5/gs_server_service.cpp', '../../../../game_server/src/service/logic/gs_server_service.cpp')
 md5copy('./md5/server_service.h', '../../../../master_server/src/service/logic/server_service.h')
 md5copy('./md5/server_service.h', '../../../../game_server/src/service/logic/server_service.h')
