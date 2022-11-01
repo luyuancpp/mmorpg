@@ -106,7 +106,7 @@ void LoginServiceImpl::EnterGame(Guid player_id,
 		&LoginServiceImpl::EnterGameReplied,
 		rpc,
 		this,
-		&controllerservice::MasterNodeService_Stub::OnLsEnterGame);
+		&controllerservice::ControllerNodeService_Stub::OnLsEnterGame);
 }
 
 void LoginServiceImpl::UpdateAccount(uint64_t session_id, const ::account_database& a_d)
@@ -145,7 +145,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	s_reqst.set_account(request->account());
 	s_reqst.set_session_id(request->session_id());
 	sessions_.emplace(request->session_id(), EntityPtr());
-	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, rpc, this, &controllerservice::MasterNodeService_Stub::OnLsLoginAccount);
+	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountMsReplied, rpc, this, &controllerservice::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -253,7 +253,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	controllerservice::LsLeaveGameRequest ms_request;
 	ms_request.set_session_id(request->session_id());
 	ms_node_stub_.CallMethod(ms_request,
-		&controllerservice::MasterNodeService_Stub::OnLsLeaveGame);
+		&controllerservice::ControllerNodeService_Stub::OnLsLeaveGame);
 	sessions_.erase(sit);
 ///<<< END WRITING YOUR CODE 
 }
@@ -269,7 +269,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	controllerservice::LsDisconnectRequest message;
 	message.set_session_id(request->session_id());
 	ms_node_stub_.CallMethod(message,
-		&controllerservice::MasterNodeService_Stub::OnLsDisconnect);	
+		&controllerservice::ControllerNodeService_Stub::OnLsDisconnect);	
 ///<<< END WRITING YOUR CODE 
 }
 

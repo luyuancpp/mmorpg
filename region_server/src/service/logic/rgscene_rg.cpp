@@ -14,7 +14,7 @@
 #include "src/game_logic/tips_id.h"
 
 #include "gs_service.pb.h"
-#include "ms_service.pb.h"
+#include "controller_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -22,7 +22,7 @@ using namespace muduo::net;
 using namespace controllerservice;
 
 using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
-using MsStubPtr = std::unique_ptr <RpcStub<controllerservice::MasterNodeService_Stub>>;
+using MsStubPtr = std::unique_ptr <RpcStub<controllerservice::ControllerNodeService_Stub>>;
 
 void AddCrossScene2Ms(uint32_t ms_node_id)
 {
@@ -44,7 +44,7 @@ void AddCrossScene2Ms(uint32_t ms_node_id)
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	registry.get<MsStubPtr>(ms_node_it->second)->CallMethod(rpc, &controllerservice::MasterNodeService_Stub::AddCrossServerScene);;
+	registry.get<MsStubPtr>(ms_node_it->second)->CallMethod(rpc, &controllerservice::ControllerNodeService_Stub::AddCrossServerScene);;
 }
 
 

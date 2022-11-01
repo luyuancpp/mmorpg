@@ -15,7 +15,7 @@ message StartGsRequest
 
 message StartGsResponse
 {
-  uint32 master_node_id = 1;
+  uint32 controller_node_id = 1;
   repeated SceneInfo scenes_info = 2;
   uint32 gate_node_id = 3;
 }
@@ -111,7 +111,7 @@ message EnterGsSucceedRequest
   uint64 player_id = 1;
 }
 
-service MasterNodeService {
+service ControllerNodeService {
   rpc StartGs (StartGsRequest) returns (StartGsResponse);
   rpc OnGwConnect (ConnectRequest) returns (google.protobuf.Empty);
   rpc OnGwLeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);

@@ -9,7 +9,7 @@
 #include "gs_service.pb.h"
 #include "gw_service.pb.h"
 ///<<< END WRITING YOUR CODE
-class MasterNodeServiceImpl : public controllerservice::MasterNodeService{
+class ControllerNodeServiceImpl : public controllerservice::ControllerNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 private:

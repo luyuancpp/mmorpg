@@ -15,7 +15,7 @@
 
 #include "c2gw.pb.h"
 #include "login_service.pb.h"
-#include "ms_service.pb.h"
+#include "controller_service.pb.h"
 #include "gs_service.pb.h"
 
 using namespace muduo;

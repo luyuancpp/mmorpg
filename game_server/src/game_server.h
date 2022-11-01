@@ -11,7 +11,7 @@
 #include "src/network/rpc_closure.h"
 
 #include "deploy_service.pb.h"
-#include "ms_service.pb.h"
+#include "controller_service.pb.h"
 #include "logic_proto/scene_rg.pb.h"
 
 class GameServer : muduo::noncopyable, public Receiver<GameServer>
@@ -19,7 +19,7 @@ class GameServer : muduo::noncopyable, public Receiver<GameServer>
 public:
     using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-    using StubMsNode = RpcStub<controllerservice::MasterNodeService_Stub>;
+    using StubMsNode = RpcStub<controllerservice::ControllerNodeService_Stub>;
     using RgNodeStub = RpcStub<regionservcie::RgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);

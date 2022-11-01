@@ -10,12 +10,12 @@
 #include "src/network/rpc_stub.h"
 
 #include "component_proto/node_comp.pb.h"
-#include "ms_service.pb.h"
+#include "controller_service.pb.h"
 
 
 struct MsNode
 {
-	using MsStubNode = RpcStub<controllerservice::MasterNodeService_Stub>;
+	using MsStubNode = RpcStub<controllerservice::ControllerNodeService_Stub>;
 	MsNode(const muduo::net::TcpConnectionPtr& conn)
 		: session_(conn) {}
 
