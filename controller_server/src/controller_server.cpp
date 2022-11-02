@@ -217,5 +217,5 @@ void ControllerServer::Register2Region()
 	rq.set_controller_node_id(myinfo.id());
 	rg_stub_.CallMethod(
 		rq,
-		&lobbyservcie::RgService_Stub::StartControllerNode);
+		&lobbyservcie::LobbyService_Stub::StartControllerNode);
 }

@@ -51,7 +51,7 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
+void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
     const lobbyservcie::StartCrossGsRequest* request,
     lobbyservcie::StartCrossGsResponse* response,
     ::google::protobuf::Closure* done)
@@ -118,7 +118,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
-void RgServiceImpl::StartControllerNode(::google::protobuf::RpcController* controller,
+void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* controller,
     const lobbyservcie::StartControllerRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -158,7 +158,7 @@ void RgServiceImpl::StartControllerNode(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE 
 }
 
-void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* controller,
+void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* controller,
     const lobbyservcie::EnterCrossMainSceneRequest* request,
     lobbyservcie::EnterCrossMainSceneResponese* response,
     ::google::protobuf::Closure* done)
@@ -210,7 +210,7 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE 
 }
 
-void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
+void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
     const lobbyservcie::EnterCrossMainSceneWeightRoundRobinRequest* request,
     lobbyservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
     ::google::protobuf::Closure* done)
@@ -242,7 +242,7 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 ///<<< END WRITING YOUR CODE 
 }
 
-void RgServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* controller,
+void LobbyServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* controller,
     const lobbyservcie::LeaveCrossMainSceneRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)

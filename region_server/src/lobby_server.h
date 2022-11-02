@@ -36,7 +36,7 @@ private:
     RpcClientPtr deploy_rpc_client_;
     DeployStub deploy_stub_;
 
-    RgServiceImpl impl_;
+    LobbyServiceImpl impl_;
 };
 extern LobbyServer* g_region_server;
 

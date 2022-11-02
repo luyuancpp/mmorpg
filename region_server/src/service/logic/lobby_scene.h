@@ -9,7 +9,7 @@
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class RgServiceImpl : public lobbyservcie::RgService{
+class LobbyServiceImpl : public lobbyservcie::LobbyService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using PlayerListMap = std::unordered_map<Guid, entt::entity>;
