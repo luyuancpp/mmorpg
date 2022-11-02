@@ -12,7 +12,7 @@
 
 #include "deploy_service.pb.h"
 #include "controller_service.pb.h"
-#include "logic_proto/rg_scene.pb.h"
+#include "logic_proto/lobby_scene.pb.h"
 
 class GameServer : muduo::noncopyable, public Receiver<GameServer>
 {
