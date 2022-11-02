@@ -7,7 +7,7 @@
 #include "src/network/rpc_closure.h"
 
 #include "gs_service.pb.h"
-#include "gw_service.pb.h"
+#include "gate_service.pb.h"
 ///<<< END WRITING YOUR CODE
 class ControllerNodeServiceImpl : public controllerservice::ControllerNodeService{
 public:

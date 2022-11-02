@@ -16,7 +16,7 @@
 #include "src/pb/pbc/msgmap.h"
 
 #include "gs_service.pb.h"
-#include "gw_service.pb.h"
+#include "gate_service.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 
 using namespace muduo;
