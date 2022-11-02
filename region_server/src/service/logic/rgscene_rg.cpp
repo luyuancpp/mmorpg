@@ -200,7 +200,8 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 		response->mutable_error()->set_id(ret);		
 		return;
 	}
-	
+	//disconnect scene 
+	//todo region not has scene 
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;
