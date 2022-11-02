@@ -60,7 +60,7 @@ message LeaveCrossMainSceneRequest
 service RgService 
 {
   rpc StartCrossGs (StartCrossGsRequest) returns (StartCrossGsResponse);
-  rpc StartMs (StartControllerRequest) returns (google.protobuf.Empty);
+  rpc StartControllerNode (StartControllerRequest) returns (google.protobuf.Empty);
   rpc EnterCrossMainScene (EnterCrossMainSceneRequest) returns (EnterCrossMainSceneResponese);
   rpc EnterCrossMainSceneWeightRoundRobin (EnterCrossMainSceneWeightRoundRobinRequest) returns (EnterCrossRoomSceneSceneWeightRoundRobinResponse);
   rpc LeaveCrossMainScene (LeaveCrossMainSceneRequest) returns (google.protobuf.Empty);

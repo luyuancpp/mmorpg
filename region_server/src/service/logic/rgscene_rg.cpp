@@ -118,8 +118,8 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
-void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
-    const regionservcie::StartMsRequest* request,
+void RgServiceImpl::StartControllerNode(::google::protobuf::RpcController* controller,
+    const regionservcie::StartControllerRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
