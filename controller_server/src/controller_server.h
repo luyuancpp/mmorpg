@@ -21,13 +21,13 @@ public:
 	using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
 	using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 	using DbNodeStub = RpcStub<dbservice::DbService_Stub>;
-	using RgNodeStub = RpcStub<lobbyservcie::RgService_Stub>;
+	using LobbyNodeStub = RpcStub<lobbyservcie::LobbyService_Stub>;
 
 	ControllerServer(muduo::net::EventLoop* loop);
 
 	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
 	inline uint32_t controller_node_id()const { return serverinfos_.controller_info().id(); }
-	inline RgNodeStub& rg_stub() { return rg_stub_; }
+	inline LobbyNodeStub& lobby_stub() { return rg_stub_; }
 
 	void Init();
 	void LetGateConnect2Gs(entt::entity gs, entt::entity gate);
@@ -57,7 +57,7 @@ private:
 	RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
 	RpcClientPtr region_session_;
-	RgNodeStub rg_stub_;
+	LobbyNodeStub rg_stub_;
 
 	RpcClientPtr db_session_;
 	DbNodeStub db_node_stub_;

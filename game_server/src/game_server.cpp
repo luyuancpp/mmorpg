@@ -67,7 +67,7 @@ void GameServer::ServerInfo(ServerInfoRpc replied)
     auto& regioninfo = info.regin_info();
     InetAddress region_addr(regioninfo.ip(), regioninfo.port());
    
-    region_session_ = std::make_unique<RpcClient>(loop_, region_addr);
+    lobby_session_ = std::make_unique<RpcClient>(loop_, region_addr);
     
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
     g_redis_system.Init(serverAddr);
@@ -172,17 +172,17 @@ void GameServer::Register2Region()
 	auto& rq = rpc->s_rq_;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();
-	session_info->set_ip(region_session_->local_addr().toIp());
-	session_info->set_port(region_session_->local_addr().port());
+	session_info->set_ip(lobby_session_->local_addr().toIp());
+	session_info->set_port(lobby_session_->local_addr().port());
 	node_info->set_ip(gs_info_.ip());
 	node_info->set_port(gs_info_.port());
     rq.set_server_type(server_type);
 	rq.set_gs_node_id(gs_info_.id());
-	rg_stub_.CallMethod(
+	lobby_stub_.CallMethod(
 		&ServerReplied::StartCrossGsRegionReplied,
 		rpc,
 		&ServerReplied::GetSingleton(),
-		&lobbyservcie::RgService_Stub::StartCrossGs);
+		&lobbyservcie::LobbyService_Stub::StartCrossGs);
 
 }
 
@@ -225,15 +225,15 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         // ms 走断线重连，不删除
     }
 
-    if (nullptr != region_session_)
+    if (nullptr != lobby_session_)
     {
 		if (conn->connected() && 
-            IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
+            IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 		{
 			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::Register2Region, this));
 		}
 		else if (!conn->connected() &&
-			IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
+			IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 		{
 
 		}
@@ -272,8 +272,8 @@ void GameServer::receive(const OnBeConnectedEvent& es)
 
 void GameServer::Connect2Region()
 {
-    region_session_->subscribe<RegisterStubEvent>(rg_stub_);
-    region_session_->registerService(&gs_service_impl_);
-    region_session_->subscribe<OnConnected2ServerEvent>(*this);
-    region_session_->connect();
+    lobby_session_->subscribe<RegisterStubEvent>(lobby_stub_);
+    lobby_session_->registerService(&gs_service_impl_);
+    lobby_session_->subscribe<OnConnected2ServerEvent>(*this);
+    lobby_session_->connect();
 }

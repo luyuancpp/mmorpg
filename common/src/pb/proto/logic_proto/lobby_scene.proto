@@ -57,7 +57,7 @@ message LeaveCrossMainSceneRequest
   uint64 player_id = 1;
 }
 
-service RgService 
+service LobbyService 
 {
   rpc StartCrossGs (StartCrossGsRequest) returns (StartCrossGsResponse);
   rpc StartControllerNode (StartControllerRequest) returns (google.protobuf.Empty);
