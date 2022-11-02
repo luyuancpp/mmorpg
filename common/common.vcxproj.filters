@@ -103,10 +103,8 @@
     <ClInclude Include="src\game_logic\login_state\login_state_concrete.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_machine.h" />
     <ClInclude Include="src\game_logic\constants\time_variable.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\ms2gs_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\player_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\player_team.pb.h" />
-    <ClInclude Include="src\pb\pbc\ms2db.pb.h" />
     <ClInclude Include="src\pb\pbc\pb3.pb.h" />
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
