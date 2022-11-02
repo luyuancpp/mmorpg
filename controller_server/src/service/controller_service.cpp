@@ -39,7 +39,7 @@ using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 std::size_t kMaxPlayerSize = 1000;
 
 //gate 更新完gs，相应的gs可以往那个gate上发送消息了
-void ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied(Ms2GwPlayerEnterGsRpc replied)
+void ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied(GwPlayerEnterGsRpc replied)
 {
 	//todo 中间返回是断开了
 	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
@@ -573,7 +573,7 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
 		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
 		return;
 	}
-	ControllerNodeServiceImpl::Ms2GwPlayerEnterGsRpc rpc;
+	ControllerNodeServiceImpl::GwPlayerEnterGsRpc rpc;
 	rpc.s_rq_.set_session_id(player_session.session_id());
 	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
 	registry.get<GwStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
