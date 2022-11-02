@@ -2,7 +2,7 @@
 
 #include "src/region_server.h"
 #include "src/network/gs_node.h"
-#include "src/network/ms_node.h"
+#include "src/network/controller_node.h"
 
 using namespace muduo;
 using namespace muduo::net;

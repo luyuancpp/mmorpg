@@ -4,7 +4,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
-#include "src/network/ms_node.h"
+#include "src/network/controller_node.h"
 #include "src/network/rpc_stub.h"
 #include "src/network/session.h"
 
