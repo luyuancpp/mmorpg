@@ -207,7 +207,7 @@ void ControllerServer::Connect2Region()
 void ControllerServer::Register2Region()
 {
     auto& myinfo = serverinfos_.controller_info();
-    regionservcie::StartMsRequest rq;
+    regionservcie::StartControllerRequest rq;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();
 	session_info->set_ip(region_session_->local_addr().toIp());
@@ -217,5 +217,5 @@ void ControllerServer::Register2Region()
 	rq.set_controller_node_id(myinfo.id());
 	rg_stub_.CallMethod(
 		rq,
-		&regionservcie::RgService_Stub::StartMs);
+		&regionservcie::RgService_Stub::StartControllerNode);
 }
