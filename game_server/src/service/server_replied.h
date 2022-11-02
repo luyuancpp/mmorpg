@@ -1,5 +1,4 @@
-#ifndef GAME_SERVER_SRC_MASTER_REPLIED_MS2G_H_
-#define GAME_SERVER_SRC_MASTER_REPLIED_MS2G_H_
+#pragma once
 
 #include "src/network/rpc_closure.h"
 
@@ -21,6 +20,3 @@ public:
 
 private:
 };
-
-
-#endif//GAME_SERVER_SRC_MASTER_REPLIED_MS2G_H_

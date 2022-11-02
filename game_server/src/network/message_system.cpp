@@ -85,12 +85,12 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 	auto ms_node = registry.get<ControllerNodePtr>(player);
 	if (nullptr == ms_node)
 	{
-		LOG_ERROR << "Send2MsPlayer player master not found " << registry.get<Guid>(player);
+		LOG_ERROR << "Send2MsPlayer player controller not found " << registry.get<Guid>(player);
 		return;
 	}
 	if (!ms_node->session_->connected())
 	{
-		LOG_ERROR << "Send2MsPlayer master disconnect" << registry.get<Guid>(player);
+		LOG_ERROR << "Send2MsPlayer controller disconnect" << registry.get<Guid>(player);
 		return;
 	}
 	controllerservice::PlayerNodeServiceRequest msg_wrapper;
@@ -110,7 +110,7 @@ void Send2Ms(const google::protobuf::Message& messag, uint32_t ms_node_id)
 	auto ms_it = g_controller_nodes->find(ms_node_id);
 	if (ms_it == g_controller_nodes->end())
 	{
-		LOG_ERROR << "Send2MsPlayer master not found" << ms_node_id;
+		LOG_ERROR << "Send2MsPlayer controller not found" << ms_node_id;
 		return;
 	}
 	ms_it->second->session_->Send(messag);

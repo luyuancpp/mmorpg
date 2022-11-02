@@ -46,7 +46,7 @@ namespace login
         RpcClientPtr deploy_rpc_client_;
         RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
-        RpcClientPtr master_rpc_client_;
+        RpcClientPtr controller_client_;
         LoginStubl2ms l2ms_login_stub_;
 
         RpcClientPtr db_rpc_client_;

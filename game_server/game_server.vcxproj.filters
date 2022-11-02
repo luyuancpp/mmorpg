@@ -101,9 +101,7 @@
     <ClInclude Include="src\game_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\module\master.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+
     <ClInclude Include="src\service\server_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -76,7 +76,7 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 		LOG_ERROR << "EnterGs ms not found" << enter_info.controller_node_id();
 		return;
 	}
-	registry.emplace_or_replace<ControllerNodePtr>(player, controller_it->second);//todo master 重新启动以后
+	registry.emplace_or_replace<ControllerNodePtr>(player, controller_it->second);//todo controller 重新启动以后
 	controllerservice::EnterGsSucceedRequest message;
 	message.set_player_id(registry.get<Guid>(player));
 	auto& controller_stub = registry.get<RpcStub<controllerservice::ControllerNodeService_Stub>>(controller_it->second->controller_);

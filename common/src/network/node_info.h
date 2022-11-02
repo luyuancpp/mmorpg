@@ -17,7 +17,7 @@ struct GsServerType
 enum EnumNodeType : uint32_t
 {
 	kLoginNode,
-	kMasterNode,
+	kControllerNode,
 	kGsNode,
 	kGatewayNode,
 };

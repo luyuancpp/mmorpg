@@ -52,11 +52,11 @@ void LoginServer::StartServer(ServerInfoRpc replied)
     db_rpc_client_->connect();
     db_rpc_client_->subscribe<RegisterStubEvent>(l2db_login_stub_);
 
-    auto& masterinfo = info.controller_info();
-    InetAddress master_addr(masterinfo.ip(), masterinfo.port());
-    master_rpc_client_ = std::make_unique<RpcClient>(loop_, master_addr);
-    master_rpc_client_->connect();
-    master_rpc_client_->subscribe<RegisterStubEvent>(l2ms_login_stub_);
+    auto& controller_node_info = info.controller_info();
+    InetAddress controller_node_addr(controller_node_info.ip(), controller_node_info.port());
+    controller_client_ = std::make_unique<RpcClient>(loop_, controller_node_addr);
+    controller_client_->connect();
+    controller_client_->subscribe<RegisterStubEvent>(l2ms_login_stub_);
     
     auto& redisinfo = info.redis_info();
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);

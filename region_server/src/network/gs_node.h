@@ -1,5 +1,4 @@
-#ifndef MASTER_SERVER_GAME_GAME_CLIENT_H_
-#define MASTER_SERVER_GAME_GAME_CLIENT_H_
+#pragma once
 
 #include "muduo/net/TcpConnection.h"
 
@@ -27,5 +26,3 @@ using GsNodePtr = std::shared_ptr<GsNode>;
 
 using GsNodes = std::unordered_map<uint32_t, entt::entity>;
 extern GsNodes* g_gs_nodes;
-
-#endif//MASTER_SERVER_GAME_GAME_CLIENT_H_
