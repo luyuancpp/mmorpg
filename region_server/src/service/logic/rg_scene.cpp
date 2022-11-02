@@ -22,9 +22,9 @@ using namespace muduo::net;
 using namespace controllerservice;
 
 using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
-using MsStubPtr = std::unique_ptr <RpcStub<controllerservice::ControllerNodeService_Stub>>;
+using ControllerStubPtr = std::unique_ptr <RpcStub<controllerservice::ControllerNodeService_Stub>>;
 
-void AddCrossScene2Ms(uint32_t ms_node_id)
+void AddCrossScene2Controller(uint32_t ms_node_id)
 {
 	auto ms_node_it = g_controller_nodes->find(ms_node_id);
 	if (ms_node_it == g_controller_nodes->end())
@@ -44,7 +44,7 @@ void AddCrossScene2Ms(uint32_t ms_node_id)
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	registry.get<MsStubPtr>(ms_node_it->second)->CallMethod(rpc, &controllerservice::ControllerNodeService_Stub::AddCrossServerScene);;
+	registry.get<ControllerStubPtr>(ms_node_it->second)->CallMethod(rpc, &controllerservice::ControllerNodeService_Stub::AddCrossServerScene);;
 }
 
 
@@ -112,7 +112,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 
 	for (auto& mit : *g_controller_nodes)
 	{
-		AddCrossScene2Ms(mit.first);
+		AddCrossScene2Controller(mit.first);
 	}
 	LOG_INFO << "game node connected " << response->DebugString();
 ///<<< END WRITING YOUR CODE 
@@ -151,10 +151,10 @@ void RgServiceImpl::StartControllerNode(::google::protobuf::RpcController* contr
 	registry.emplace<InetAddress>(controller_node, service_addr);
 	g_controller_nodes->emplace(request->controller_node_id(), controller_node);
 
-	auto& ms_stub = registry.emplace<MsStubPtr>(controller_node, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+	auto& ms_stub = registry.emplace<ControllerStubPtr>(controller_node, std::make_unique<ControllerStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 
 	//todo next frame send after responese
-	AddCrossScene2Ms(request->controller_node_id());
+	AddCrossScene2Controller(request->controller_node_id());
 ///<<< END WRITING YOUR CODE 
 }
 

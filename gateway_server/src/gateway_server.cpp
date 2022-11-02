@@ -53,7 +53,7 @@ void GatewayServer::StartServer(ServerInfoRpc replied)
     InetAddress master_addr(controller_node_info.ip(), controller_node_info.port());
     controller_node_session_ = std::make_unique<RpcClient>(loop_, master_addr);
     controller_node_session_->registerService(&node_service_impl_);
-    controller_node_session_->subscribe<RegisterStubEvent>(gw2ms_stub_);
+    controller_node_session_->subscribe<RegisterStubEvent>(controller_stub_);
     controller_node_session_->subscribe<OnConnected2ServerEvent>(*this);
     controller_node_session_->connect();        
 
@@ -138,7 +138,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
 				request.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
 				request.mutable_rpc_client()->set_port(controller_node_addr.port());
 				request.set_gate_node_id(gate_node_id());
-				gw2ms_stub_.CallMethod(request, &controllerservice::ControllerNodeService_Stub::OnGwConnect);
+				controller_stub_.CallMethod(request, &controllerservice::ControllerNodeService_Stub::OnGwConnect);
 			}
         );
     }

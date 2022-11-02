@@ -31,17 +31,17 @@ public:
 		using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
 		void LoginAccountDbReplied(LoginAccountDbRpc replied);
 
-		using LoginAcountMsRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, gw2l::LoginResponse>>;
-		void LoginAccountMsReplied(LoginAcountMsRpc replied);
+		using LoginAcountControllerRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, gw2l::LoginResponse>>;
+		void LoginAccountControllerReplied(LoginAcountControllerRpc replied);
 
-		using CreatePlayerRpcReplied = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
-		void CreatePlayerDbReplied(CreatePlayerRpcReplied replied);
+		using CreatePlayerRpc = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
+		void CreatePlayerDbReplied(CreatePlayerRpc replied);
 
-		using EnterGameDbRpcReplied = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
-		void EnterGameDbReplied(EnterGameDbRpcReplied replied);
+		using EnterGameDbRpc = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
+		void EnterGameDbReplied(EnterGameDbRpc replied);
 
-		using EnterGameMsRpc = std::shared_ptr<RpcString<controllerservice::EnterGameRequest, controllerservice::EnterGameResponese, gw2l::EnterGameResponse>>;
-		void EnterGameReplied(EnterGameMsRpc replied);
+		using EnterGameControllerRpc = std::shared_ptr<RpcString<controllerservice::EnterGameRequest, controllerservice::EnterGameResponese, gw2l::EnterGameResponse>>;
+		void EnterGameReplied(EnterGameControllerRpc replied);
 
 		void EnterGame(Guid player_id,
 			uint64_t connection_id,

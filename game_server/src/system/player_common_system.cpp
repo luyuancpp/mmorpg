@@ -50,8 +50,8 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& message)
 {
 	//告诉controller 保存完毕，可以切换场景了
-	Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
-	Send2MsPlayer(save_complete_message, player_id);
+	LeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
+	Send2ControllerPlayer(save_complete_message, player_id);
 
 	g_players->erase(player_id);//存储完毕从gs删除玩家
 }

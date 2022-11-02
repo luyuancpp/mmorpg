@@ -232,7 +232,7 @@ void ServerPlayerSceneServiceImpl::LeaveSceneMs2Gs(entt::entity player,
 }
 
 void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::entity player,
-    const ::Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest* request,
+    const ::LeaveSceneAsyncSavePlayerCompleteRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
