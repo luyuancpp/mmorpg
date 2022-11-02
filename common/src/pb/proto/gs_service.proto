@@ -12,27 +12,27 @@ message EnterGsRequest
   uint64 controller_node_id = 3;
 }
 
-message MsPlayerMessageExtern
+message ControllerPlayerMessageExtern
 {
   uint64 player_id = 1;
 }
 
-message MsPlayerMessageRequest
+message ControllerPlayerMessageRequest
 {
   MessageBody msg = 1;
-  MsPlayerMessageExtern ex = 2;
+  ControllerPlayerMessageExtern ex = 2;
 }
 
-message MsSend2PlayerViaGsRequest
+message ControllerSend2PlayerViaGsRequest
 {
   MessageBody msg = 1;
-  MsPlayerMessageExtern ex = 2;
+  ControllerPlayerMessageExtern ex = 2;
 }
 
-message MsPlayerMessageRespone
+message ControllerPlayerMessageRespone
 {
   MessageBody msg = 1;
-  MsPlayerMessageExtern ex = 2;
+  ControllerPlayerMessageExtern ex = 2;
 }
 
 message RpcClientRequest
@@ -60,9 +60,9 @@ message ConnectRequest
 
 service GsService {
   rpc EnterGs (EnterGsRequest) returns (google.protobuf.Empty);
-  rpc PlayerService (MsPlayerMessageRequest) returns (MsPlayerMessageRespone);
+  rpc PlayerService (ControllerPlayerMessageRequest) returns (ControllerPlayerMessageRespone);
   rpc GwPlayerService (RpcClientRequest) returns (RpcClientResponse);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GwConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
-  rpc MsSend2PlayerViaGs (MsSend2PlayerViaGsRequest) returns (google.protobuf.Empty);
+  rpc ControllerSend2PlayerViaGs (ControllerSend2PlayerViaGsRequest) returns (google.protobuf.Empty);
 }

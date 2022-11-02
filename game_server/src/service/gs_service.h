@@ -15,8 +15,8 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void PlayerService(::google::protobuf::RpcController* controller,
-        const gsservice::MsPlayerMessageRequest* request,
-        gsservice::MsPlayerMessageRespone* response,
+        const gsservice::ControllerPlayerMessageRequest* request,
+        gsservice::ControllerPlayerMessageRespone* response,
         ::google::protobuf::Closure* done)override;
 
     void GwPlayerService(::google::protobuf::RpcController* controller,
@@ -34,8 +34,8 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void MsSend2PlayerViaGs(::google::protobuf::RpcController* controller,
-        const gsservice::MsSend2PlayerViaGsRequest* request,
+    void ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
+        const gsservice::ControllerSend2PlayerViaGsRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 

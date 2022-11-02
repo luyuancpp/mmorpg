@@ -63,7 +63,7 @@ void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
         return;
     }
     //LOG_INFO << "player leave scene " << *try_player_id << " " << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
-	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
 	if (change_scene_queue.empty())
 	{
 		return;

@@ -35,7 +35,7 @@ void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
         LOG_ERROR << "player not found" << replied->s_rq_.player_id();
         return;
     }
-	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
 	if (change_scene_queue.empty())
 	{
 		return;
@@ -55,7 +55,7 @@ void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
 //前一个队列完成的时候才应该调用到这里去判断当前队列
 void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 {
-	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
 	if (change_scene_queue.empty())
 	{
 		return;
@@ -237,7 +237,7 @@ void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::
 {
 ///<<< BEGIN WRITING YOUR CODE
     //异步切换考虑消息队列
-	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
 	if (change_scene_queue.empty())
 	{
 		return;

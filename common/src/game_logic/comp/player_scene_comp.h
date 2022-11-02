@@ -6,7 +6,7 @@
 
 #include "src/pb/pbc/component_proto/scene_comp.pb.h"
 
-struct PlayerMsChangeSceneQueue
+struct PlayerControllerChangeSceneQueue
 {
 	static const uint8_t  kMaxChangeSceneQueue = 10;
 	boost::circular_buffer<ControllerChangeSceneInfo> change_scene_queue_{ kMaxChangeSceneQueue };

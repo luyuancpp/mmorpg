@@ -9,12 +9,12 @@
 //todo 各种服务器崩溃
 void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
 {
-	registry.emplace<PlayerMsChangeSceneQueue>(player);
+	registry.emplace<PlayerControllerChangeSceneQueue>(player);
 }
 
 uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const ControllerChangeSceneInfo& change_info)
 {
-	GetPlayerCompnentMemberReturnError(change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
+	GetPlayerCompnentMemberReturnError(change_scene_queue, PlayerControllerChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
 	CheckCondtion(change_scene_queue.full(), kRetEnterSceneChangingGs);
 	change_scene_queue.push_back(change_info);
     change_scene_queue.front().set_change_time(muduo::Timestamp::now().secondsSinceEpoch());//todo
@@ -23,13 +23,13 @@ uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const
 
 bool PlayerChangeSceneSystem::IsChangeQueueEmpty(entt::entity player)
 {
-    GetPlayerCompnentMemberNullReturnFalse(change_scene_queue, PlayerMsChangeSceneQueue);
+    GetPlayerCompnentMemberNullReturnFalse(change_scene_queue, PlayerControllerChangeSceneQueue);
 	return change_scene_queue.empty();
 }
 
 void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
 {
-	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
     if (change_scene_queue.empty())
     {
         return;
@@ -41,7 +41,7 @@ void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
 
 void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)
 {
-    GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+    GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
     if (change_scene_queue.empty())
     {
         return;
@@ -51,7 +51,7 @@ void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)
 
 void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, ControllerChangeSceneInfo::eChangeGsStatus s)
 {
-	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerMsChangeSceneQueue);
+	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
 	if (change_scene_queue.empty())
 	{
 		return;
@@ -109,7 +109,7 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
 
 uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 {
-    GetPlayerCompnentReturnError(try_change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
+    GetPlayerCompnentReturnError(try_change_scene_queue, PlayerControllerChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
     auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
     if (change_scene_queue.empty())
     {
@@ -136,7 +136,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 
 uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
 {
-    GetPlayerCompnentReturnError(try_change_scene_queue, PlayerMsChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
+    GetPlayerCompnentReturnError(try_change_scene_queue, PlayerControllerChangeSceneQueue, kRetChangeScenePlayerQueueCompnentNull);
     auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
     if (change_scene_queue.empty())
     {
