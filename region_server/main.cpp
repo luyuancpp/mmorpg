@@ -1,6 +1,6 @@
 #include "muduo/net/EventLoop.h"
 
-#include "src/region_server.h"
+#include "src/lobby_server.h"
 #include "src/network/gs_node.h"
 #include "src/network/controller_node.h"
 
@@ -17,7 +17,7 @@ int32_t main()
     g_gs_nodes = &gs_node;
 
     EventLoop loop;
-    RegionServer server(&loop);
+    LobbyServer server(&loop);
     server.Init();
     loop.loop();
 }

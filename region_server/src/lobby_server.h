@@ -10,12 +10,12 @@
 
 #include "deploy_service.pb.h"
 
-class RegionServer : muduo::noncopyable, public Receiver<RegionServer>
+class LobbyServer : muduo::noncopyable, public Receiver<LobbyServer>
 {
 public:
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     using DeployStub = RpcStub<deploy::DeployService_Stub>;
-    RegionServer(muduo::net::EventLoop* loop);
+    LobbyServer(muduo::net::EventLoop* loop);
 
     void Init();
 
@@ -38,7 +38,7 @@ private:
 
     RgServiceImpl impl_;
 };
-extern RegionServer* g_region_server;
+extern LobbyServer* g_region_server;
 
 
 
