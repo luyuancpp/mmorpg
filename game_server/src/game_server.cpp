@@ -7,6 +7,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/region_config.h"
 
+#include "src/event_receiver/event_receiver.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/game_registry.h"
@@ -29,6 +30,7 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 void GameServer::Init()
 {
     g_gs = this; 
+    EventReceiverEvent::Register(dispatcher);
     InitConfig();
     global_entity() = registry.create();
     registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });

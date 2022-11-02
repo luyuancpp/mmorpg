@@ -154,6 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="src\event_receiver\event_receiver.cpp" />
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
     <ClCompile Include="src\network\gate_session.cpp" />
     <ClCompile Include="src\service\logic\controller_common_server_player.cpp" />
@@ -175,6 +176,7 @@
     <ClCompile Include="src\system\player_tip_system.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\event_receiver\event_receiver.h" />
     <ClInclude Include="src\event_receiver\scene_event_receiver.h" />
     <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\gs_node.h" />

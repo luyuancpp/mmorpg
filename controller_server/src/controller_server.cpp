@@ -7,6 +7,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/region_config.h"
 
+#include "src/event_receiver/event_receiver.h"
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/game_logic/game_registry.h"
@@ -41,6 +42,7 @@ ControllerServer::ControllerServer(muduo::net::EventLoop* loop)
 void ControllerServer::Init()
 {
     g_controller_node = this;
+    EventReceiverEvent::Register(dispatcher);
     InitConfig();
     InitMsgService();
     InitPlayerServcie();
