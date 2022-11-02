@@ -14,7 +14,7 @@ void Send2Player(const google::protobuf::Message& message, EntityPtr& player);
 void Send2ControllerPlayer(const google::protobuf::Message& message, Guid player_id);
 void Send2ControllerPlayer(const google::protobuf::Message& message, entt::entity player);
 void Send2ControllerPlayer(const google::protobuf::Message& message, EntityPtr& player);
-void Send2Controller(const google::protobuf::Message& messag, uint32_t ms_node_id);
+void Send2Controller(const google::protobuf::Message& messag, uint32_t controller_node_id);
 void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id);
 
 #endif // !GAME_SERVER_MODULE_NETWORK_MESSAGE_SYS_H_

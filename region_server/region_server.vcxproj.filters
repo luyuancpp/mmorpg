@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\region_server.cpp">
+    <ClCompile Include="src\lobby_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -39,6 +39,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic\rg_scene.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\region_server.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\lobby_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

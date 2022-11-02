@@ -189,7 +189,7 @@ void ControllerServer::InitConfig()
 {
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
-    RegionConfig::GetSingleton().Load("region.json");
+    RegionConfig::GetSingleton().Load("lobby.json");
     LoadAllConfigAsyncWhenServerLaunch();
 }
 
