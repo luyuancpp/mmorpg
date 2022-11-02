@@ -1,5 +1,5 @@
 #pragma once
-#include "src/pb/pbc/logic_proto/scene_rg.pb.h"
+#include "src/pb/pbc/logic_proto/rg_scene.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include <unordered_map>
 
