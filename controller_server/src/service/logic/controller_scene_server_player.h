@@ -5,17 +5,17 @@ class ServerPlayerSceneServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:
-    void EnterSceneGs2Ms(entt::entity player,
-        const ::Gs2MsEnterSceneRequest* request,
+    void EnterSceneGs2Controller(entt::entity player,
+        const ::Gs2ControllerEnterSceneRequest* request,
         ::google::protobuf::Empty* response);
-    void EnterSceneMs2Gs(entt::entity player,
-        const ::Ms2GsEnterSceneRequest* request,
+    void EnterSceneController2Gs(entt::entity player,
+        const ::Controller2GsEnterSceneRequest* request,
         ::google::protobuf::Empty* response);
-    void LeaveSceneGs2Ms(entt::entity player,
-        const ::Gs2MsLeaveSceneRequest* request,
+    void LeaveSceneGs2Controller(entt::entity player,
+        const ::Gs2ControllerLeaveSceneRequest* request,
         ::google::protobuf::Empty* response);
-    void LeaveSceneMs2Gs(entt::entity player,
-        const ::Ms2GsLeaveSceneRequest* request,
+    void LeaveSceneController2Gs(entt::entity player,
+        const ::Controller2GsLeaveSceneRequest* request,
         ::google::protobuf::Empty* response);
     void Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
         const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
@@ -27,23 +27,23 @@ public:
     {
         switch(method->index()) {
         case 0:
-            EnterSceneGs2Ms(player,
-            ::google::protobuf::internal::DownCast<const ::Gs2MsEnterSceneRequest*>( request),
+            EnterSceneGs2Controller(player,
+            ::google::protobuf::internal::DownCast<const ::Gs2ControllerEnterSceneRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 1:
-            EnterSceneMs2Gs(player,
-            ::google::protobuf::internal::DownCast<const ::Ms2GsEnterSceneRequest*>( request),
+            EnterSceneController2Gs(player,
+            ::google::protobuf::internal::DownCast<const ::Controller2GsEnterSceneRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 2:
-            LeaveSceneGs2Ms(player,
-            ::google::protobuf::internal::DownCast<const ::Gs2MsLeaveSceneRequest*>( request),
+            LeaveSceneGs2Controller(player,
+            ::google::protobuf::internal::DownCast<const ::Gs2ControllerLeaveSceneRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 3:
-            LeaveSceneMs2Gs(player,
-            ::google::protobuf::internal::DownCast<const ::Ms2GsLeaveSceneRequest*>( request),
+            LeaveSceneController2Gs(player,
+            ::google::protobuf::internal::DownCast<const ::Controller2GsLeaveSceneRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 4:

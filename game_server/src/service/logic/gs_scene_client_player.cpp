@@ -42,7 +42,7 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
 			return;
 		}
 	}
-    Gs2MsEnterSceneRequest message;
+    Gs2ControllerEnterSceneRequest message;
     message.mutable_scene_info()->CopyFrom(request->scene_info());
     Send2ControllerPlayer(message, player);
 ///<<< END WRITING YOUR CODE

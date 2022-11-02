@@ -7,16 +7,16 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerPlayerSceneServiceImpl::EnterSceneGs2Ms(entt::entity player,
-    const ::Gs2MsEnterSceneRequest* request,
+void ServerPlayerSceneServiceImpl::EnterSceneGs2Controller(entt::entity player,
+    const ::Gs2ControllerEnterSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
-    const ::Ms2GsEnterSceneRequest* request,
+void ServerPlayerSceneServiceImpl::EnterSceneController2Gs(entt::entity player,
+    const ::Controller2GsEnterSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -28,16 +28,16 @@ void ServerPlayerSceneServiceImpl::EnterSceneMs2Gs(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::LeaveSceneGs2Ms(entt::entity player,
-    const ::Gs2MsLeaveSceneRequest* request,
+void ServerPlayerSceneServiceImpl::LeaveSceneGs2Controller(entt::entity player,
+    const ::Gs2ControllerLeaveSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::LeaveSceneMs2Gs(entt::entity player,
-    const ::Ms2GsLeaveSceneRequest* request,
+void ServerPlayerSceneServiceImpl::LeaveSceneController2Gs(entt::entity player,
+    const ::Controller2GsLeaveSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

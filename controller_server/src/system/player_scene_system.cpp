@@ -29,7 +29,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         LOG_ERROR << "player do not enter scene " << player_id;
         return;
     }
-    Ms2GsEnterSceneRequest enter_scene_message;
+    Controller2GsEnterSceneRequest enter_scene_message;
 
     auto p_scene_info = registry.try_get<SceneInfo>((*p_scene).scene_entity_);
     if (nullptr == p_scene_info)
