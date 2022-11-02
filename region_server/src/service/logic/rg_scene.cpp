@@ -24,12 +24,12 @@ using namespace controllerservice;
 using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
 using ControllerStubPtr = std::unique_ptr <RpcStub<controllerservice::ControllerNodeService_Stub>>;
 
-void AddCrossScene2Controller(uint32_t ms_node_id)
+void AddCrossScene2Controller(uint32_t controller_node_id)
 {
-	auto ms_node_it = g_controller_nodes->find(ms_node_id);
-	if (ms_node_it == g_controller_nodes->end())
+	auto controller_node_it = g_controller_nodes->find(controller_node_id);
+	if (controller_node_it == g_controller_nodes->end())
 	{
-		LOG_ERROR << "ms not found " << ms_node_id;
+		LOG_ERROR << "controller not found " << controller_node_id;
 		return;
 	}
     AddCrossServerSceneRequest rpc;
@@ -44,7 +44,7 @@ void AddCrossScene2Controller(uint32_t ms_node_id)
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	registry.get<ControllerStubPtr>(ms_node_it->second)->CallMethod(rpc, &controllerservice::ControllerNodeService_Stub::AddCrossServerScene);;
+	registry.get<ControllerStubPtr>(controller_node_it->second)->CallMethod(rpc, &controllerservice::ControllerNodeService_Stub::AddCrossServerScene);;
 }
 
 
@@ -145,13 +145,13 @@ void RgServiceImpl::StartControllerNode(::google::protobuf::RpcController* contr
 	}
 
 	auto c = registry.get<RpcServerConnection>(controller_node);
-	ControllerNodePtr ms_node = registry.emplace<ControllerNodePtr>(controller_node, std::make_shared<ControllerNodePtr::element_type>(c.conn_));
-	ms_node->node_info_.set_node_id(request->controller_node_id());
-	ms_node->node_info_.set_node_type(kControllerNode);
+	ControllerNodePtr controller_node_ptr = registry.emplace<ControllerNodePtr>(controller_node, std::make_shared<ControllerNodePtr::element_type>(c.conn_));
+	controller_node_ptr->node_info_.set_node_id(request->controller_node_id());
+	controller_node_ptr->node_info_.set_node_type(kControllerNode);
 	registry.emplace<InetAddress>(controller_node, service_addr);
 	g_controller_nodes->emplace(request->controller_node_id(), controller_node);
 
-	auto& ms_stub = registry.emplace<ControllerStubPtr>(controller_node, std::make_unique<ControllerStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+	auto& controller_stub = registry.emplace<ControllerStubPtr>(controller_node, std::make_unique<ControllerStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 
 	//todo next frame send after responese
 	AddCrossScene2Controller(request->controller_node_id());
