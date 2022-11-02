@@ -55,5 +55,5 @@ service GwNodeService {
   rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
   rpc PlayerEnterGs (PlayerEnterGsRequest) returns (PlayerEnterGsResponese);
   rpc PlayerMessage (PlayerMessageRequest) returns (google.protobuf.Empty);
-  rpc KickConnByMs (KickConnRequest) returns (google.protobuf.Empty);
+  rpc KickConnByController (KickConnRequest) returns (google.protobuf.Empty);
 }

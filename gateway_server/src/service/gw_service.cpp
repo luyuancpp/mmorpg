@@ -103,7 +103,7 @@ void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* control
 ///<<< END WRITING YOUR CODE 
 }
 
-void GwNodeServiceImpl::KickConnByMs(::google::protobuf::RpcController* controller,
+void GwNodeServiceImpl::KickConnByController(::google::protobuf::RpcController* controller,
     const gwservice::KickConnRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
