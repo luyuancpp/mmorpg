@@ -126,7 +126,7 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
 		controller_node.session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, controller_addr);
 		controller_node.node_info_.set_node_id(controller_node_info.id());
 		auto& controller_node_session = controller_node.session_;
-        auto& controller_stub = registry.emplace<RpcStub<controllerservice::ControllerNodeService_Stub>>(controller_node.ms_);
+        auto& controller_stub = registry.emplace<RpcStub<controllerservice::ControllerNodeService_Stub>>(controller_node.controller_);
         controller_node_session->subscribe<RegisterStubEvent>(controller_stub);
 		controller_node_session->subscribe<RegisterStubEvent>(g2controller_stub_);
 		controller_node_session->registerService(&gs_service_impl_);
@@ -214,12 +214,12 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
 
     for (auto& it : *g_controller_nodes)
     {
-        auto& ms_node = it.second;
-        auto& master_session = ms_node->session_;
+        auto& controller_node = it.second;
+        auto& controller_session = controller_node->session_;
         if (conn->connected() &&
-            IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
+            IsSameAddr(controller_session->peer_addr(), conn->peerAddress()))
         {
-            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::CallControllerStartGs, this, master_session));
+            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::CallControllerStartGs, this, controller_session));
             break;
         }
         // ms 走断线重连，不删除
