@@ -9,7 +9,7 @@
 #include "src/network/codec/dispatcher.h"
 #include "src/pb/pb2sol2/pb2sol2.h"
 
-#include "c2gw.pb.h"
+#include "c2gate.pb.h"
 #include "logic_proto/scene_client_player.pb.h"
 
 using namespace muduo;

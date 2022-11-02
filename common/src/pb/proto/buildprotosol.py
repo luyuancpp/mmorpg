@@ -225,7 +225,7 @@ def gentotalfile(destdir, srcdir):
         file.write(cppnewstr)    
 
 genluasol('common.proto', srcdir, '')
-genluasol('c2gw.proto', srcdir, '')
+genluasol('c2gate.proto', srcdir, '')
 
 def get_file_list(file_path):
     dir_list = os.listdir(file_path)

@@ -15,7 +15,7 @@
 #include "src/network/codec/codec.h"
 #include "src/service/service.h"
 
-#include "c2gw.pb.h"
+#include "c2gate.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

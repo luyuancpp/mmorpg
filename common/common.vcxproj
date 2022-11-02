@@ -169,7 +169,7 @@
     <ClCompile Include="src\game_logic\scene\servernode_system.cpp" />
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
     <ClCompile Include="src\network\session.cpp" />
-    <ClCompile Include="src\pb\pb2sol2\c2gw_sol2.cpp" />
+    <ClCompile Include="src\pb\pb2sol2\c2gate_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\common_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\common_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\gs_node_comp_sol2.cpp" />
@@ -187,7 +187,7 @@
     <ClCompile Include="src\pb\pb2sol2\team_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\team_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\account_database.pb.cc" />
-    <ClCompile Include="src\pb\pbc\c2gw.pb.cc" />
+    <ClCompile Include="src\pb\pbc\c2gate.pb.cc" />
     <ClCompile Include="src\pb\pbc\common.pb.cc" />
     <ClCompile Include="src\pb\pbc\comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\gs_node_comp.pb.cc" />
@@ -278,7 +278,7 @@
     <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\pb\pb2sol2\pb2sol2.h" />
     <ClInclude Include="src\pb\pbc\account_database.pb.h" />
-    <ClInclude Include="src\pb\pbc\c2gw.pb.h" />
+    <ClInclude Include="src\pb\pbc\c2gate.pb.h" />
     <ClInclude Include="src\pb\pbc\common.pb.h" />
     <ClInclude Include="src\pb\pbc\comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\gs_node_comp.pb.h" />
