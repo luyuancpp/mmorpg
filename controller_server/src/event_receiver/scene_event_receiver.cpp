@@ -70,7 +70,7 @@ void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
 	}
 	auto& change_scene_info = change_scene_queue.front();
 	auto to_scene = ScenesSystem::get_scene(change_scene_info.scene_info().scene_id());
-    Ms2GsLeaveSceneRequest leave_scene_message;
+    Controller2GsLeaveSceneRequest leave_scene_message;
 	auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
 	auto p_player_gs = registry.try_get<PlayerSession>(player);
 	if (nullptr == try_to_scene_gs || nullptr == p_player_gs)

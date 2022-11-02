@@ -3,22 +3,22 @@ import "google/protobuf/empty.proto";
 import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
 
-message Gs2MsEnterSceneRequest
+message Gs2ControllerEnterSceneRequest
 {
   SceneInfo scene_info = 1;
 }
 
-message Ms2GsEnterSceneRequest
+message Controller2GsEnterSceneRequest
 {
   uint64 session_id = 1;
   uint64 scene_id = 2;
 }
 
-message Gs2MsLeaveSceneRequest
+message Gs2ControllerLeaveSceneRequest
 {
 }
 
-message Ms2GsLeaveSceneRequest
+message Controller2GsLeaveSceneRequest
 {
   bool change_gs = 1;
 }
@@ -29,9 +29,9 @@ message Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest
 
 service ServerPlayerSceneService 
 {
-  rpc EnterSceneGs2Ms (Gs2MsEnterSceneRequest) returns (google.protobuf.Empty);
-  rpc EnterSceneMs2Gs (Ms2GsEnterSceneRequest) returns (google.protobuf.Empty);
-  rpc LeaveSceneGs2Ms (Gs2MsLeaveSceneRequest) returns (google.protobuf.Empty);
-  rpc LeaveSceneMs2Gs (Ms2GsLeaveSceneRequest) returns (google.protobuf.Empty);
+  rpc EnterSceneGs2Controller (Gs2ControllerEnterSceneRequest) returns (google.protobuf.Empty);
+  rpc EnterSceneController2Gs (Controller2GsEnterSceneRequest) returns (google.protobuf.Empty);
+  rpc LeaveSceneGs2Controller (Gs2ControllerLeaveSceneRequest) returns (google.protobuf.Empty);
+  rpc LeaveSceneController2Gs (Controller2GsLeaveSceneRequest) returns (google.protobuf.Empty);
   rpc Gs2ControllerLeaveSceneAsyncSavePlayerComplete (Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest) returns (google.protobuf.Empty);
 }
