@@ -64,7 +64,7 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, Guid player
 	auto it = g_players->find(player_id);
 	if (it == g_players->end())
 	{
-		LOG_DEBUG << " Send2MsPlayer player not found " << player_id;
+		LOG_DEBUG << " Send2ControllerPlayer player not found " << player_id;
 		return;
 	}
 	Send2ControllerPlayer(message, it->second);
@@ -90,7 +90,7 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, entt::entit
 	}
 	if (!ms_node->session_->connected())
 	{
-		LOG_ERROR << "Send2MsPlayer controller disconnect" << registry.get<Guid>(player);
+		LOG_ERROR << "Send2ControllerPlayer controller disconnect" << registry.get<Guid>(player);
 		return;
 	}
 	controllerservice::PlayerNodeServiceRequest msg_wrapper;
