@@ -18,7 +18,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerPlayerLoginServiceImpl::UpdateGateSessionMs2Gs(entt::entity player,
+void ServerPlayerLoginServiceImpl::UpdateGateSessionGs(entt::entity player,
     const ::UpdateGateSessionGsRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -43,8 +43,8 @@ void ServerPlayerLoginServiceImpl::UpdateGateSessionMs2Gs(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerLoginServiceImpl::LoginMs2Gs(entt::entity player,
-    const ::Ms2GsLoginRequest* request,
+void ServerPlayerLoginServiceImpl::GsLogin(entt::entity player,
+    const ::GsLoginRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

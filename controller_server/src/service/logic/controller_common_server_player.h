@@ -5,11 +5,11 @@ class ServerPlayerLoginServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:
-    void UpdateGateSessionMs2Gs(entt::entity player,
+    void UpdateGateSessionGs(entt::entity player,
         const ::UpdateGateSessionGsRequest* request,
         ::google::protobuf::Empty* response);
-    void LoginMs2Gs(entt::entity player,
-        const ::Ms2GsLoginRequest* request,
+    void GsLogin(entt::entity player,
+        const ::GsLoginRequest* request,
         ::google::protobuf::Empty* response);
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
     entt::entity player,
@@ -18,13 +18,13 @@ public:
     {
         switch(method->index()) {
         case 0:
-            UpdateGateSessionMs2Gs(player,
+            UpdateGateSessionGs(player,
             ::google::protobuf::internal::DownCast<const ::UpdateGateSessionGsRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 1:
-            LoginMs2Gs(player,
-            ::google::protobuf::internal::DownCast<const ::Ms2GsLoginRequest*>( request),
+            GsLogin(player,
+            ::google::protobuf::internal::DownCast<const ::GsLoginRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         default:
