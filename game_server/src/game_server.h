@@ -20,7 +20,7 @@ public:
     using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     using ControllerStub = RpcStub<controllerservice::ControllerNodeService_Stub>;
-    using RgNodeStub = RpcStub<regionservcie::RgService_Stub>;
+    using RgNodeStub = RpcStub<lobbyservcie::RgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
 
