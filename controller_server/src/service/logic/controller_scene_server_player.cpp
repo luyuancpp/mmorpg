@@ -17,7 +17,7 @@
 #include "src/system/player_change_scene.h"
 
 #include "component_proto/scene_comp.pb.h"
-#include "logic_proto/rg_scene.pb.h"
+#include "logic_proto/lobby_scene.pb.h"
 #include "gs_service.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;

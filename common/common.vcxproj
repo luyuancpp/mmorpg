@@ -218,7 +218,7 @@
     <ClCompile Include="src\pb\pbc\gs_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\common_client_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\common_server_player.pb.cc" />
-    <ClCompile Include="src\pb\pbc\logic_proto\rg_scene.pb.cc" />
+    <ClCompile Include="src\pb\pbc\logic_proto\lobby_scene.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_client_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_normal.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\scene_server_player.pb.cc" />
@@ -309,9 +309,9 @@
     <ClInclude Include="src\pb\pbc\gs_service.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\common_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\common_server_player.pb.h" />
+    <ClInclude Include="src\pb\pbc\logic_proto\lobby_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\player_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\player_team.pb.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\rg_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_normal.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\scene_server_player.pb.h" />
