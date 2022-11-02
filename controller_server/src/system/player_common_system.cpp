@@ -34,7 +34,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
 	}
 
     {
-        GsLoginRequest message;
+        Controller2GsLoginRequest message;
         message.set_enter_gs_type((*try_enter_gs).enter_gs_type());
         registry.remove<EnterGsFlag>(player);
         Send2GsPlayer(message, player);

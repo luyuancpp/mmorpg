@@ -5,11 +5,11 @@ class ServerPlayerLoginServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:
-    void UpdateGateSessionGs(entt::entity player,
-        const ::UpdateGateSessionGsRequest* request,
+    void UpdateSessionController2Gs(entt::entity player,
+        const ::UpdateSessionController2GsRequest* request,
         ::google::protobuf::Empty* response);
-    void GsLogin(entt::entity player,
-        const ::GsLoginRequest* request,
+    void Controller2GsLogin(entt::entity player,
+        const ::Controller2GsLoginRequest* request,
         ::google::protobuf::Empty* response);
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
     entt::entity player,
@@ -18,13 +18,13 @@ public:
     {
         switch(method->index()) {
         case 0:
-            UpdateGateSessionGs(player,
-            ::google::protobuf::internal::DownCast<const ::UpdateGateSessionGsRequest*>( request),
+            UpdateSessionController2Gs(player,
+            ::google::protobuf::internal::DownCast<const ::UpdateSessionController2GsRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 1:
-            GsLogin(player,
-            ::google::protobuf::internal::DownCast<const ::GsLoginRequest*>( request),
+            Controller2GsLogin(player,
+            ::google::protobuf::internal::DownCast<const ::Controller2GsLoginRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         default:
