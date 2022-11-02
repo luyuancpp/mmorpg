@@ -1,25 +1,10 @@
 ---<<< BEGIN WRITING YOUR CODE
 ---<<< END WRITING YOUR CODE
 
-local own_server_scene1 = 4294967298
-local own_server_scene2 = 4294967297
-local cross_server_scene1 = 1
-local cross_server_scene2 = 2
-local times = 0
-
 ---<<<rpc begin
 function EnterSceneC2SProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
 ---<<< END WRITING YOUR CODE 
-end
-
-function ChangeGsScene(response, form_scene, to_scene)
-	if (response:scene_info().scene_id == form_scene) then	
-		LogInfo(response:DebugString())
-		message = EnterSeceneC2SRequest.new()
-		message:mutable_scene_info().scene_id = to_scene
-		player:send(message)
-	end
 end
 
 function PushEnterSceneS2CProcess(request, response)

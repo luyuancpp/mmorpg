@@ -12,18 +12,18 @@
 #include "component_proto/node_comp.pb.h"
 
 using ControllerSessionPtr = std::shared_ptr<RpcClient>;
-struct MsNode
+struct ControllerNode
 {
-	MsNode(){}
+	ControllerNode(){}
 
 	inline uint32_t node_id() const { return node_info_.node_id(); }
 	NodeInfo node_info_;
 	ControllerSessionPtr session_;
 	EntityPtr ms_;
 };
-using MsNodePtr = std::shared_ptr<MsNode>;
-using MsNodes = std::unordered_map<uint32_t, MsNodePtr>;
-extern MsNodes* g_ms_nodes;//master 不会删除，因为不会和gs一样根据负载增加减少，只走底层的自动重连
+using ControllerNodePtr = std::shared_ptr<ControllerNode>;
+using ControllerNodes = std::unordered_map<uint32_t, ControllerNodePtr>;
+extern ControllerNodes* g_controller_nodes;//master 不会删除，因为不会和gs一样根据负载增加减少，只走底层的自动重连
 
 
 #endif//GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_

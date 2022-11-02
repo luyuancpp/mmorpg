@@ -26,8 +26,8 @@ using MsStubPtr = std::unique_ptr <RpcStub<controllerservice::ControllerNodeServ
 
 void AddCrossScene2Ms(uint32_t ms_node_id)
 {
-	auto ms_node_it = g_ms_nodes->find(ms_node_id);
-	if (ms_node_it == g_ms_nodes->end())
+	auto ms_node_it = g_controller_nodes->find(ms_node_id);
+	if (ms_node_it == g_controller_nodes->end())
 	{
 		LOG_ERROR << "ms not found " << ms_node_id;
 		return;
@@ -110,7 +110,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 	}
 	g_gs_nodes->emplace(request->gs_node_id(), gs);
 
-	for (auto& mit : *g_ms_nodes)
+	for (auto& mit : *g_controller_nodes)
 	{
 		AddCrossScene2Ms(mit.first);
 	}
@@ -145,11 +145,11 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 	}
 
 	auto c = registry.get<RpcServerConnection>(ms);
-	MsNodePtr ms_node = registry.emplace<MsNodePtr>(ms, std::make_shared<MsNodePtr::element_type>(c.conn_));
+	ControllerNodePtr ms_node = registry.emplace<ControllerNodePtr>(ms, std::make_shared<ControllerNodePtr::element_type>(c.conn_));
 	ms_node->node_info_.set_node_id(request->ms_node_id());
 	ms_node->node_info_.set_node_type(kMasterNode);
 	registry.emplace<InetAddress>(ms, service_addr);
-	g_ms_nodes->emplace(request->ms_node_id(), ms);
+	g_controller_nodes->emplace(request->ms_node_id(), ms);
 
 	auto& ms_stub = registry.emplace<MsStubPtr>(ms, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 

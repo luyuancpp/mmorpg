@@ -1,3 +1,3 @@
 #include "ms_node.h"
 
-MsNodes* g_ms_nodes = nullptr;
+ControllerNodes* g_controller_nodes = nullptr;

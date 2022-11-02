@@ -121,7 +121,7 @@ void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
 	{
 		auto& masterinfo = regionmaster.controllers(i);
 		InetAddress master_addr(masterinfo.ip(), masterinfo.port());
-		auto it = g_ms_nodes->emplace(masterinfo.id(), std::make_shared<MsNode>());
+		auto it = g_controller_nodes->emplace(masterinfo.id(), std::make_shared<ControllerNode>());
 		auto& ms = *it.first->second;
 		ms.session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, master_addr);
 		ms.node_info_.set_node_id(masterinfo.id());
@@ -212,7 +212,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         );
     }
 
-    for (auto& it : *g_ms_nodes)
+    for (auto& it : *g_controller_nodes)
     {
         auto& ms_node = it.second;
         auto& master_session = ms_node->session_;

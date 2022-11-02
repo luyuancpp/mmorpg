@@ -12,23 +12,22 @@
 #include "component_proto/node_comp.pb.h"
 #include "controller_service.pb.h"
 
-
-struct MsNode
+struct ControllerNode
 {
-	using MsStubNode = RpcStub<controllerservice::ControllerNodeService_Stub>;
-	MsNode(const muduo::net::TcpConnectionPtr& conn)
+	using ControllerStub = RpcStub<controllerservice::ControllerNodeService_Stub>;
+	ControllerNode(const muduo::net::TcpConnectionPtr& conn)
 		: session_(conn) {}
 
 	inline uint32_t node_id() const { return node_info_.node_id(); }
 
-	MsStubNode ms_stub_;
+	ControllerStub controller_stub_;
 	NodeInfo node_info_;
 	RpcServerConnection session_;
 };
-using MsNodePtr = std::shared_ptr<MsNode>;
-using MsNodeWPtr = std::weak_ptr<MsNode>;
-using MsNodes = std::unordered_map<uint32_t, entt::entity>;
-extern MsNodes* g_ms_nodes;
+using ControllerNodePtr = std::shared_ptr<ControllerNode>;
+using ControllerNodeWPtr = std::weak_ptr<ControllerNode>;
+using ControllerNodes = std::unordered_map<uint32_t, entt::entity>;
+extern ControllerNodes* g_controller_nodes;
 
 
 #endif//GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_
