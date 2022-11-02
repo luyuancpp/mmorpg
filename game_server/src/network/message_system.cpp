@@ -105,15 +105,15 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, EntityPtr& 
 	Send2ControllerPlayer(message, (entt::entity)player);
 }
 
-void Send2Controller(const google::protobuf::Message& messag, uint32_t ms_node_id)
+void Send2Controller(const google::protobuf::Message& messag, uint32_t controller_node_id)
 {
-	auto ms_it = g_controller_nodes->find(ms_node_id);
-	if (ms_it == g_controller_nodes->end())
+	auto controller_it = g_controller_nodes->find(controller_node_id);
+	if (controller_it == g_controller_nodes->end())
 	{
-		LOG_ERROR << "Send2ControllerPlayer controller not found" << ms_node_id;
+		LOG_ERROR << "Send2ControllerPlayer controller not found" << controller_node_id;
 		return;
 	}
-	ms_it->second->session_->Send(messag);
+	controller_it->second->session_->Send(messag);
 }
 
 void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id)

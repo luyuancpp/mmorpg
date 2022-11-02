@@ -10,8 +10,8 @@ using namespace muduo::net;
 int32_t main()
 {
     //other global value
-    ControllerNodes ms_nodes;
-    g_controller_nodes = &ms_nodes;
+    ControllerNodes controller_nodes;
+    g_controller_nodes = &controller_nodes;
 
     GsNodes gs_node;
     g_gs_nodes = &gs_node;

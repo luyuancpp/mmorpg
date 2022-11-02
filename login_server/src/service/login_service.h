@@ -20,10 +20,10 @@ public:
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
 		using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
 		using ConnectionEntityMap = std::unordered_map<Guid, EntityPtr>;
-		using LoginStubl2ms = RpcStub<controllerservice::ControllerNodeService_Stub>;
+		using LoginStubl2controller = RpcStub<controllerservice::ControllerNodeService_Stub>;
 		using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 
-		LoginServiceImpl(LoginStubl2ms& l2controller_login_stub,
+		LoginServiceImpl(LoginStubl2controller& l2controller_login_stub,
 			LoginStubl2db& l2db_login_stub);
 
 		void set_redis_client(PbSyncRedisClientPtr& p) { redis_ = p; }
@@ -53,7 +53,7 @@ public:
 
 		PbSyncRedisClientPtr redis_;
 		ConnectionEntityMap sessions_;
-		LoginStubl2ms& ms_node_stub_;
+		LoginStubl2controller& controller_node_stub_;
 		LoginStubl2db& l2db_login_stub_;
 		///<<< END WRITING YOUR CODE
 public:

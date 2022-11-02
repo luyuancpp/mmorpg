@@ -11,9 +11,9 @@
 using namespace muduo;
 using namespace muduo::net;
 
-LoginServiceImpl::LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
+LoginServiceImpl::LoginServiceImpl(LoginStubl2controller& controller_login_stub,
 	LoginStubl2db& l2db_login_stub)
-	: ms_node_stub_(l2ms_login_stub),
+	: controller_node_stub_(controller_login_stub),
 	l2db_login_stub_(l2db_login_stub)
 {}
 
@@ -102,7 +102,7 @@ void LoginServiceImpl::EnterGame(Guid player_id,
 	auto rpc(std::make_shared<EnterGameControllerRpc::element_type>(response, done));
 	rpc->s_rq_.set_player_id(player_id);
 	rpc->s_rq_.set_session_id(response->session_id());
-	ms_node_stub_.CallMethodString(
+	controller_node_stub_.CallMethodString(
 		&LoginServiceImpl::EnterGameReplied,
 		rpc,
 		this,
@@ -145,7 +145,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	s_reqst.set_account(request->account());
 	s_reqst.set_session_id(request->session_id());
 	sessions_.emplace(request->session_id(), EntityPtr());
-	ms_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountControllerReplied, rpc, this, &controllerservice::ControllerNodeService_Stub::OnLsLoginAccount);
+	controller_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountControllerReplied, rpc, this, &controllerservice::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -250,9 +250,9 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 		LOG_ERROR << " leave game not found connection";
 		return;
 	}
-	controllerservice::LsLeaveGameRequest ms_request;
-	ms_request.set_session_id(request->session_id());
-	ms_node_stub_.CallMethod(ms_request,
+	controllerservice::LsLeaveGameRequest leavegame_request;
+	leavegame_request.set_session_id(request->session_id());
+	controller_node_stub_.CallMethod(leavegame_request,
 		&controllerservice::ControllerNodeService_Stub::OnLsLeaveGame);
 	sessions_.erase(sit);
 ///<<< END WRITING YOUR CODE 
@@ -266,9 +266,9 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	sessions_.erase(request->session_id());
-	controllerservice::LsDisconnectRequest message;
-	message.set_session_id(request->session_id());
-	ms_node_stub_.CallMethod(message,
+	controllerservice::LsDisconnectRequest msg;
+	msg.set_session_id(request->session_id());
+	controller_node_stub_.CallMethod(msg,
 		&controllerservice::ControllerNodeService_Stub::OnLsDisconnect);	
 ///<<< END WRITING YOUR CODE 
 }

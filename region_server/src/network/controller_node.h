@@ -1,5 +1,4 @@
-#ifndef GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_
-#define GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_
+#pragma once
 
 #include "muduo/net/TcpConnection.h"
 
@@ -30,4 +29,3 @@ using ControllerNodes = std::unordered_map<uint32_t, entt::entity>;
 extern ControllerNodes* g_controller_nodes;
 
 
-#endif//GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_
