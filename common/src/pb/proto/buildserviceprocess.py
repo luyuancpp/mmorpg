@@ -29,7 +29,7 @@ tabstr = '    '
 cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/logic_proto/'
-rg_file_prefix = 'rg_'
+
 
 def getwritedir(serverstr):
     writedir = ''
@@ -37,12 +37,12 @@ def getwritedir(serverstr):
         writedir = gsservicedir
     elif serverstr == buildpublic.controller_file_prefix:
         writedir = controllerservicedir
-    elif serverstr == rg_file_prefix:
+    elif serverstr == buildpublic.rg_file_prefix:
         writedir = rgservicedir
     return writedir
 
 def is_server_proto(filename):
-    return (filename.find('client_player') <= 0 and filename.find('server_player') <= 0) or  filename.find(rg_file_prefix) >= 0
+    return (filename.find('client_player') <= 0 and filename.find('server_player') <= 0) or  filename.find(buildpublic.rg_file_prefix) >= 0
 
 
 if not os.path.exists(servicedir):
@@ -110,7 +110,7 @@ def getprevfilename(filename, writedir):
         if writedir == controllerservicedir:
             return buildpublic.controller_file_prefix
         if writedir == rgservicedir:
-            return rg_file_prefix
+            return buildpublic.rg_file_prefix
     return ''
 
 def getpbdir(filename, writedir):
@@ -233,7 +233,7 @@ def getmd5prevfilename(filename, writedir):
         if writedir == controllerservicedir:
             return buildpublic.controller_file_prefix
         if writedir == rgservicedir:
-            return rg_file_prefix
+            return buildpublic.rg_file_prefix
     return ''
 
 def md5copy(filename, writedir, fileextend):
@@ -307,8 +307,8 @@ def inputfile():
         if buildpublic.is_gs_and_controller_server_proto(filename) == True :
             genfile.append([logicprotodir + filename, getwritedir(buildpublic.controller_file_prefix)])
             genfile.append([logicprotodir + filename, getwritedir(buildpublic.gs_file_prefix)])
-        elif filename.find(rg_file_prefix) >= 0:
-            genfile.append([logicprotodir +  filename, getwritedir(rg_file_prefix)])
+        elif filename.find(buildpublic.rg_file_prefix) >= 0:
+            genfile.append([logicprotodir +  filename, getwritedir(buildpublic.rg_file_prefix)])
             
 inputfile()
 main()
