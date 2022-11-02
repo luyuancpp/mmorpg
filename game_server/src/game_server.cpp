@@ -182,7 +182,7 @@ void GameServer::Register2Region()
 		&ServerReplied::StartCrossGsRegionReplied,
 		rpc,
 		&ServerReplied::GetSingleton(),
-		&regionservcie::RgService_Stub::StartCrossGs);
+		&lobbyservcie::RgService_Stub::StartCrossGs);
 
 }
 

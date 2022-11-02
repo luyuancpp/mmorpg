@@ -9,7 +9,7 @@
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class RgServiceImpl : public regionservcie::RgService{
+class RgServiceImpl : public lobbyservcie::RgService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 	using PlayerListMap = std::unordered_map<Guid, entt::entity>;
@@ -18,27 +18,27 @@ private:
 ///<<< END WRITING YOUR CODE
 public:
     void StartCrossGs(::google::protobuf::RpcController* controller,
-        const regionservcie::StartCrossGsRequest* request,
-        regionservcie::StartCrossGsResponse* response,
+        const lobbyservcie::StartCrossGsRequest* request,
+        lobbyservcie::StartCrossGsResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void StartControllerNode(::google::protobuf::RpcController* controller,
-        const regionservcie::StartControllerRequest* request,
+        const lobbyservcie::StartControllerRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterCrossMainScene(::google::protobuf::RpcController* controller,
-        const regionservcie::EnterCrossMainSceneRequest* request,
-        regionservcie::EnterCrossMainSceneResponese* response,
+        const lobbyservcie::EnterCrossMainSceneRequest* request,
+        lobbyservcie::EnterCrossMainSceneResponese* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
-        const regionservcie::EnterCrossMainSceneWeightRoundRobinRequest* request,
-        regionservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
+        const lobbyservcie::EnterCrossMainSceneWeightRoundRobinRequest* request,
+        lobbyservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void LeaveCrossMainScene(::google::protobuf::RpcController* controller,
-        const regionservcie::LeaveCrossMainSceneRequest* request,
+        const lobbyservcie::LeaveCrossMainSceneRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 

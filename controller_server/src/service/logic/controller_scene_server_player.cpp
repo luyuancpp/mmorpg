@@ -23,7 +23,7 @@
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 
 
-using EnterRegionMainRpc = std::shared_ptr<NormalClosure<regionservcie::EnterCrossMainSceneRequest, regionservcie::EnterCrossMainSceneResponese>>;
+using EnterRegionMainRpc = std::shared_ptr<NormalClosure<lobbyservcie::EnterCrossMainSceneRequest, lobbyservcie::EnterCrossMainSceneResponese>>;
 void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
 {
     // todo 跨服切换不行，return error
@@ -160,9 +160,9 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 		if (is_from_gs_is_cross_server)
 		{
 			//跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
-			regionservcie::LeaveCrossMainSceneRequest rpc;
+			lobbyservcie::LeaveCrossMainSceneRequest rpc;
 			rpc.set_player_id(registry.get<Guid>(player));
-			g_controller_node->rg_stub().CallMethod(rpc, &regionservcie::RgService_Stub::LeaveCrossMainScene);
+			g_controller_node->rg_stub().CallMethod(rpc, &lobbyservcie::RgService_Stub::LeaveCrossMainScene);
 		}
 		if (is_to_gs_is_cross_server)
 		{
@@ -170,7 +170,7 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 			EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());
 			rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());
 			rpc->s_rq_.set_player_id(registry.get<Guid>(player));
-			g_controller_node->rg_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &regionservcie::RgService_Stub::EnterCrossMainScene);
+			g_controller_node->rg_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &lobbyservcie::RgService_Stub::EnterCrossMainScene);
 			return;
 		}
 	}

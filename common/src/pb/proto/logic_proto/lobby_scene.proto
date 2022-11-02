@@ -2,7 +2,7 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 import "common.proto";
 import "component_proto/scene_comp.proto";
-package regionservcie;
+package lobbyservcie;
 option cc_generic_services = true;
 
 message StartCrossGsRequest

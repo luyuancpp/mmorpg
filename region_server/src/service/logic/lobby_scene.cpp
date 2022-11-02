@@ -52,8 +52,8 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
 
 ///<<<rpc begin
 void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
-    const regionservcie::StartCrossGsRequest* request,
-    regionservcie::StartCrossGsResponse* response,
+    const lobbyservcie::StartCrossGsRequest* request,
+    lobbyservcie::StartCrossGsResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -119,7 +119,7 @@ void RgServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
 }
 
 void RgServiceImpl::StartControllerNode(::google::protobuf::RpcController* controller,
-    const regionservcie::StartControllerRequest* request,
+    const lobbyservcie::StartControllerRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -159,8 +159,8 @@ void RgServiceImpl::StartControllerNode(::google::protobuf::RpcController* contr
 }
 
 void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* controller,
-    const regionservcie::EnterCrossMainSceneRequest* request,
-    regionservcie::EnterCrossMainSceneResponese* response,
+    const lobbyservcie::EnterCrossMainSceneRequest* request,
+    lobbyservcie::EnterCrossMainSceneResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -211,8 +211,8 @@ void RgServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* contr
 }
 
 void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
-    const regionservcie::EnterCrossMainSceneWeightRoundRobinRequest* request,
-    regionservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
+    const lobbyservcie::EnterCrossMainSceneWeightRoundRobinRequest* request,
+    lobbyservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -243,7 +243,7 @@ void RgServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcC
 }
 
 void RgServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* controller,
-    const regionservcie::LeaveCrossMainSceneRequest* request,
+    const lobbyservcie::LeaveCrossMainSceneRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
