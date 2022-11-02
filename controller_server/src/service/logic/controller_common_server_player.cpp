@@ -5,7 +5,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerPlayerLoginServiceImpl::UpdateGateSessionMs2Gs(entt::entity player,
+void ServerPlayerLoginServiceImpl::UpdateGateSessionGs(entt::entity player,
     const ::UpdateGateSessionGsRequest* request,
     ::google::protobuf::Empty* response)
 {
