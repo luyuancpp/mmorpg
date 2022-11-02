@@ -18,11 +18,11 @@ message StartCrossGsResponse
   repeated SceneInfo scenes_info = 1;
 }
 
-message StartMsRequest
+message StartControllerRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
-  uint32 ms_node_id = 3;
+  uint32 controller_node_id = 3;
 }
 
 message EnterCrossMainSceneRequest
@@ -60,7 +60,7 @@ message LeaveCrossMainSceneRequest
 service RgService 
 {
   rpc StartCrossGs (StartCrossGsRequest) returns (StartCrossGsResponse);
-  rpc StartMs (StartMsRequest) returns (google.protobuf.Empty);
+  rpc StartMs (StartControllerRequest) returns (google.protobuf.Empty);
   rpc EnterCrossMainScene (EnterCrossMainSceneRequest) returns (EnterCrossMainSceneResponese);
   rpc EnterCrossMainSceneWeightRoundRobin (EnterCrossMainSceneWeightRoundRobinRequest) returns (EnterCrossRoomSceneSceneWeightRoundRobinResponse);
   rpc LeaveCrossMainScene (LeaveCrossMainSceneRequest) returns (google.protobuf.Empty);
