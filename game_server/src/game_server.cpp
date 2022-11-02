@@ -114,34 +114,34 @@ void GameServer::StartGsDeployReplied(StartGsRpc replied)
 
 void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
 {
-    //connect master
+    //connect controller
     auto& resp = replied->s_rp_;
-	auto& regionmaster = resp->region_controllers();
-	for (int32_t i = 0; i < regionmaster.controllers_size(); ++i)
+	auto& lobby_controllers = resp->region_controllers();
+	for (int32_t i = 0; i < lobby_controllers.controllers_size(); ++i)
 	{
-		auto& masterinfo = regionmaster.controllers(i);
-		InetAddress master_addr(masterinfo.ip(), masterinfo.port());
-		auto it = g_controller_nodes->emplace(masterinfo.id(), std::make_shared<ControllerNode>());
-		auto& ms = *it.first->second;
-		ms.session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, master_addr);
-		ms.node_info_.set_node_id(masterinfo.id());
-		auto& ms_node_session = ms.session_;
-        auto& ms_stub = registry.emplace<RpcStub<controllerservice::ControllerNodeService_Stub>>(ms.ms_);
-        ms_node_session->subscribe<RegisterStubEvent>(ms_stub);
-		ms_node_session->subscribe<RegisterStubEvent>(g2ms_stub_);
-		ms_node_session->registerService(&gs_service_impl_);
+		auto& controller_node_info = lobby_controllers.controllers(i);
+		InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
+		auto it = g_controller_nodes->emplace(controller_node_info.id(), std::make_shared<ControllerNode>());
+		auto& controller_node = *it.first->second;
+		controller_node.session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, controller_addr);
+		controller_node.node_info_.set_node_id(controller_node_info.id());
+		auto& controller_node_session = controller_node.session_;
+        auto& controller_stub = registry.emplace<RpcStub<controllerservice::ControllerNodeService_Stub>>(controller_node.ms_);
+        controller_node_session->subscribe<RegisterStubEvent>(controller_stub);
+		controller_node_session->subscribe<RegisterStubEvent>(g2controller_stub_);
+		controller_node_session->registerService(&gs_service_impl_);
         for (auto& it : g_server_nomal_service)
         {
-            ms_node_session->registerService(it.get());
+            controller_node_session->registerService(it.get());
         }
-		ms_node_session->subscribe<OnConnected2ServerEvent>(*this);
-		ms_node_session->connect();
+		controller_node_session->subscribe<OnConnected2ServerEvent>(*this);
+		controller_node_session->connect();
 	}
 }
 
-void GameServer::Register2Master(ControllerSessionPtr& controller_node)
+void GameServer::CallControllerStartGs(ControllerSessionPtr& controller_node)
 {
-    ServerReplied::StartGsMasterRpc rpc(std::make_shared<ServerReplied::StartGsMasterRpc::element_type>());
+    ServerReplied::StartGsControllerRpc rpc(std::make_shared<ServerReplied::StartGsControllerRpc::element_type>());
     auto& controller_local_addr = controller_node->local_addr();
     controllerservice::StartGsRequest& request = rpc->s_rq_;
     auto session_info = request.mutable_rpc_client();
@@ -152,8 +152,8 @@ void GameServer::Register2Master(ControllerSessionPtr& controller_node)
     node_info->set_port(gs_info_.port());
     request.set_server_type(registry.get<GsServerType>(global_entity()).server_type_);
     request.set_gs_node_id(gs_info_.id());
-    g2ms_stub_.CallMethod(
-        &ServerReplied::StartGsMasterReplied,
+    g2controller_stub_.CallMethod(
+        &ServerReplied::StartGsControllerReplied,
         rpc,
         &ServerReplied::GetSingleton(),
         &controllerservice::ControllerNodeService_Stub::StartGs);
@@ -219,7 +219,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         if (conn->connected() &&
             IsSameAddr(master_session->peer_addr(), conn->peerAddress()))
         {
-            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::Register2Master, this, master_session));
+            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::CallControllerStartGs, this, master_session));
             break;
         }
         // ms 走断线重连，不删除

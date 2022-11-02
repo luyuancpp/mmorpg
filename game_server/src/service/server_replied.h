@@ -5,8 +5,7 @@
 
 #include "controller_service.pb.h"
 
-#include "logic_proto/scene_rg.pb.h"
-
+#include "logic_proto/rg_scene.pb.h"
 
 class ServerReplied
 {
@@ -14,8 +13,8 @@ public:
 
     static ServerReplied& GetSingleton() { thread_local ServerReplied singleton; return singleton; }
 
-    using StartGsMasterRpc = std::shared_ptr< NormalClosure<controllerservice::StartGsRequest, controllerservice::StartGsResponse>>;
-    void StartGsMasterReplied(StartGsMasterRpc replied);
+    using StartGsControllerRpc = std::shared_ptr< NormalClosure<controllerservice::StartGsRequest, controllerservice::StartGsResponse>>;
+    void StartGsControllerReplied(StartGsControllerRpc replied);
 
 	using StartCrossGsRpc = std::shared_ptr<NormalClosure<regionservcie::StartCrossGsRequest, regionservcie::StartCrossGsResponse>>;
 	void StartCrossGsRegionReplied(StartCrossGsRpc replied);

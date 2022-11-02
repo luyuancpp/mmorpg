@@ -10,7 +10,7 @@
 #include "src/network/rpc_client.h"
 #include "src/system/gs_scene_system.h"
 
-void ServerReplied::StartGsMasterReplied(StartGsMasterRpc replied)
+void ServerReplied::StartGsControllerReplied(StartGsControllerRpc replied)
 {
     auto rsp = replied->s_rp_;
     for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)
