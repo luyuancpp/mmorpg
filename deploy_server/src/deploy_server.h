@@ -42,7 +42,7 @@ namespace deploy
         void InitGroupDb();
 
         template<typename DbRow>
-        void InitRegionDb(uint32_t begin_port, uint32_t server_size )
+        void InitLobbyDb(uint32_t begin_port, uint32_t server_size )
         {
             DbRow sd;
             std::string sql = "select * from " + sd.GetTypeName() + " LIMIT 1";
@@ -53,17 +53,17 @@ namespace deploy
             }
             auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
 
-            uint32_t region_size = 0;
-            uint32_t region_id = 0;
+            uint32_t lobby_size = 0;
+            uint32_t lobby_id = 0;
    
             sd.set_ip(nomoral_ip);
-            sd.set_region_id(region_id);
+            sd.set_region_id(lobby_id);
 
             for (uint32_t i = 0; i < server_size; ++i)
             {
-                if (region_size++ % 10 == 0)
+                if (lobby_size++ % 10 == 0)
                 {
-                    sd.set_region_id(++region_id);
+                    sd.set_region_id(++lobby_id);
                 }
                 sd.set_port(i + begin_port);
                 db_->SaveOne(sd);

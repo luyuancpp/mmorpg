@@ -27,7 +27,7 @@
     <ClCompile Include="src\game_config\global_variable_config.cpp" />
     <ClCompile Include="src\game_config\item_config.cpp" />
     <ClCompile Include="src\game_config\mission_config.cpp" />
-    <ClCompile Include="src\game_config\region_config.cpp" />
+    <ClCompile Include="src\game_config\lobby_config.cpp" />
     <ClCompile Include="src\game_config\scene_config.cpp" />
     <ClCompile Include="src\game_logic\missions\missions_base.cpp" />
     <ClCompile Include="src\game_logic\bag\bag.cpp" />
@@ -150,7 +150,7 @@
     <ClInclude Include="src\game_config\global_variable_config_id.h" />
     <ClInclude Include="src\game_config\item_config.h" />
     <ClInclude Include="src\game_config\mission_config.h" />
-    <ClInclude Include="src\game_config\region_config.h" />
+    <ClInclude Include="src\game_config\lobby_config.h" />
     <ClInclude Include="src\game_config\scene_config.h" />
     <ClInclude Include="src\game_logic\comp\player_comp.h" />
     <ClInclude Include="src\game_logic\missions\missions_base.h" />

@@ -5,7 +5,7 @@
 
 #include "src/game_config/all_config.h"
 #include "src/game_config/deploy_json.h"
-#include "src/game_config/region_config.h"
+#include "src/game_config/lobby_config.h"
 
 #include "src/event_receiver/event_receiver.h"
 #include "src/network/gate_node.h"
@@ -70,7 +70,7 @@ void ControllerServer::StartServer(ServerInfoRpc replied)
     db_session_->subscribe<RegisterStubEvent>(db_node_stub_);
     db_session_->connect();    
 
-    Connect2Region();
+    Connect2Lobby();
 	
     auto& myinfo = serverinfos_.controller_info();
     InetAddress controller_addr(myinfo.ip(), myinfo.port());
@@ -111,7 +111,7 @@ void ControllerServer::receive(const OnConnected2ServerEvent& es)
 			{
                 ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
                 rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-                rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+                rpc->s_rq_.set_region_id(LobbyConfig::GetSingleton().config_info().region_id());
                 deploy_stub_.CallMethod(
                     &ControllerServer::StartServer,
                     rpc,
@@ -129,13 +129,13 @@ void ControllerServer::receive(const OnConnected2ServerEvent& es)
             }
 		}
 		
-		if (nullptr != region_session_)
+		if (nullptr != lobby_session_)
 		{
-			if (conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
+			if (conn->connected() && IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 			{
-				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&ControllerServer::Register2Region, this));
+				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&ControllerServer::Register2Lobby, this));
 			}
-			else if(!conn->connected() && IsSameAddr(region_session_->peer_addr(), conn->peerAddress()))
+			else if(!conn->connected() && IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 			{
 
 			}
@@ -189,29 +189,29 @@ void ControllerServer::InitConfig()
 {
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
-    RegionConfig::GetSingleton().Load("lobby.json");
+    LobbyConfig::GetSingleton().Load("lobby.json");
     LoadAllConfigAsyncWhenServerLaunch();
 }
 
-void ControllerServer::Connect2Region()
+void ControllerServer::Connect2Lobby()
 {
-	auto& regioninfo = serverinfos_.regin_info();
-	InetAddress region_addr(regioninfo.ip(), regioninfo.port());
-	region_session_ = std::make_unique<RpcClient>(loop_, region_addr);
-	region_session_->subscribe<RegisterStubEvent>(rg_stub_);
-	region_session_->registerService(&contoller_service_);
-	region_session_->subscribe<OnConnected2ServerEvent>(*this);
-	region_session_->connect();
+	auto& lobby_info = serverinfos_.regin_info();
+	InetAddress region_addr(lobby_info.ip(), lobby_info.port());
+	lobby_session_ = std::make_unique<RpcClient>(loop_, region_addr);
+	lobby_session_->subscribe<RegisterStubEvent>(rg_stub_);
+	lobby_session_->registerService(&contoller_service_);
+	lobby_session_->subscribe<OnConnected2ServerEvent>(*this);
+	lobby_session_->connect();
 }
 
-void ControllerServer::Register2Region()
+void ControllerServer::Register2Lobby()
 {
     auto& myinfo = serverinfos_.controller_info();
     lobbyservcie::StartControllerRequest rq;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();
-	session_info->set_ip(region_session_->local_addr().toIp());
-	session_info->set_port(region_session_->local_addr().port());
+	session_info->set_ip(lobby_session_->local_addr().toIp());
+	session_info->set_port(lobby_session_->local_addr().port());
 	node_info->set_ip(myinfo.ip());
 	node_info->set_port(myinfo.port());
 	rq.set_controller_node_id(myinfo.id());

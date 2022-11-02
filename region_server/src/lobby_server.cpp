@@ -4,14 +4,14 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/mainscene_config.h"
-#include "src/game_config/region_config.h"
+#include "src/game_config/lobby_config.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
 #include "src/network/controller_node.h"
 
 
-LobbyServer* g_region_server = nullptr;
+LobbyServer* g_lobby_server = nullptr;
 
 void set_server_squence_node_id(uint32_t node_id);
 
@@ -19,9 +19,9 @@ LobbyServer::LobbyServer(muduo::net::EventLoop* loop): loop_(loop){}
 
 void LobbyServer::Init()
 {
-    g_region_server = this;
+    g_lobby_server = this;
 
-    RegionConfig::GetSingleton().Load("lobby.json");
+    LobbyConfig::GetSingleton().Load("lobby.json");
     DeployConfig::GetSingleton().Load("deploy.json");
 
     mainscene_config::GetSingleton().load();
@@ -39,11 +39,11 @@ void LobbyServer::ConnectDeploy()
     deploy_rpc_client_->connect();
 }
 
-void LobbyServer::StartServer(RegionInfoRpc replied)
+void LobbyServer::StartServer(LobbyInfoRpc replied)
 {
     auto& myinfo = replied->s_rp_->info();
-    InetAddress region_addr(myinfo.ip(), myinfo.port());
-    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, region_addr);
+    InetAddress lobby_addr(myinfo.ip(), myinfo.port());
+    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, lobby_addr);
     server_->registerService(&impl_);
     server_->subscribe<OnBeConnectedEvent>(*this);
     server_->start();
@@ -64,8 +64,8 @@ void LobbyServer::receive(const OnConnected2ServerEvent& es)
 	if (es.conn_->connected())
 	{
         {
-            RegionInfoRpc rpc(std::make_shared<RegionInfoRpc::element_type>());
-            rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+            LobbyInfoRpc rpc(std::make_shared<LobbyInfoRpc::element_type>());
+            rpc->s_rq_.set_region_id(LobbyConfig::GetSingleton().config_info().region_id());
             deploy_stub_.CallMethod(
                 &LobbyServer::StartServer,
                 rpc,

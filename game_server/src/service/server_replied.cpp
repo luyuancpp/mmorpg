@@ -22,7 +22,7 @@ void ServerReplied::StartGsControllerReplied(StartGsControllerRpc replied)
     LOG_DEBUG << rsp->DebugString();
 }
 
-void ServerReplied::StartCrossGsRegionReplied(StartCrossGsRpc replied)
+void ServerReplied::StartCrossGsReplied(StartCrossGsRpc replied)
 {
 	auto rsp = replied->s_rp_;
 	for (int32_t i = 0; i < rsp->scenes_info_size(); ++i)

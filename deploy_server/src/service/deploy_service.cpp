@@ -10,10 +10,10 @@
 
 ReuseId<uint32_t, std::unordered_set<uint32_t>, UINT32_MAX> g_scene_squeue_node_id;
 
-void DeployServiceImpl::LoadRegionDeploy(uint32_t region_id,
+void DeployServiceImpl::LoadLobbyDeploy(uint32_t lobby_id,
 	::region_server_db* response)
 {
-	std::string where_case = std::to_string(region_id) + " = id  ";
+	std::string where_case = std::to_string(lobby_id) + " = id  ";
 	db_->LoadOne(*response, where_case);
 }
 
@@ -37,7 +37,7 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
 	db_->LoadOne(*servers_deploy.mutable_gateway_info(), where_case);
 	db_->LoadOne(*servers_deploy.mutable_redis_info(), where_case);
 
-	LoadRegionDeploy(request->region_id(), servers_deploy.mutable_regin_info());
+	LoadLobbyDeploy(request->region_id(), servers_deploy.mutable_regin_info());
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -76,7 +76,7 @@ void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* con
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	LoadRegionDeploy(request->region_id(), response->mutable_info());
+	LoadLobbyDeploy(request->region_id(), response->mutable_info());
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -87,7 +87,7 @@ void DeployServiceImpl::RegionServerInfo(::google::protobuf::RpcController* cont
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	LoadRegionDeploy(request->region_id(), response->mutable_info());
+	LoadLobbyDeploy(request->region_id(), response->mutable_info());
 ///<<< END WRITING YOUR CODE 
 }
 

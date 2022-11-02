@@ -23,8 +23,8 @@
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 
 
-using EnterRegionMainRpc = std::shared_ptr<NormalClosure<lobbyservcie::EnterCrossMainSceneRequest, lobbyservcie::EnterCrossMainSceneResponese>>;
-void EnterRegionMainSceneReplied(EnterRegionMainRpc replied)
+using EnterLobbyMainSceneRpc = std::shared_ptr<NormalClosure<lobbyservcie::EnterCrossMainSceneRequest, lobbyservcie::EnterCrossMainSceneResponese>>;
+void EnterLobbyMainSceneReplied(EnterLobbyMainSceneRpc replied)
 {
     // todo 跨服切换不行，return error
     //切跨到b服过程中，跨服没返回又切到c，跨服回来再到c目前就不考虑这种情况了，考虑的话写代码麻烦
@@ -167,10 +167,10 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 		if (is_to_gs_is_cross_server)
 		{
 			//注意虽然一个逻辑，但是不一定是在leave后面处理
-			EnterRegionMainRpc rpc(std::make_shared<EnterRegionMainRpc::element_type>());
+			EnterLobbyMainSceneRpc rpc(std::make_shared<EnterLobbyMainSceneRpc::element_type>());
 			rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());
 			rpc->s_rq_.set_player_id(registry.get<Guid>(player));
-			g_controller_node->lobby_stub().CallMethod(EnterRegionMainSceneReplied, rpc, &lobbyservcie::LobbyService_Stub::EnterCrossMainScene);
+			g_controller_node->lobby_stub().CallMethod(EnterLobbyMainSceneReplied, rpc, &lobbyservcie::LobbyService_Stub::EnterCrossMainScene);
 			return;
 		}
 	}

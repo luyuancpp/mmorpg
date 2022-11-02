@@ -16,7 +16,7 @@ public:
     void StartGsControllerReplied(StartGsControllerRpc replied);
 
 	using StartCrossGsRpc = std::shared_ptr<NormalClosure<lobbyservcie::StartCrossGsRequest, lobbyservcie::StartCrossGsResponse>>;
-	void StartCrossGsRegionReplied(StartCrossGsRpc replied);
+	void StartCrossGsReplied(StartCrossGsRpc replied);
 
 private:
 };
