@@ -49,13 +49,13 @@ void GatewayServer::StartServer(ServerInfoRpc replied)
         }
     );
     
-    auto& master_info = serverinfo_data_.controller_info();
-    InetAddress master_addr(master_info.ip(), master_info.port());
-    master_session_ = std::make_unique<RpcClient>(loop_, master_addr);
-    master_session_->registerService(&node_service_impl_);
-    master_session_->subscribe<RegisterStubEvent>(gw2ms_stub_);
-    master_session_->subscribe<OnConnected2ServerEvent>(*this);
-    master_session_->connect();        
+    auto& controller_node_info = serverinfo_data_.controller_info();
+    InetAddress master_addr(controller_node_info.ip(), controller_node_info.port());
+    controller_node_session_ = std::make_unique<RpcClient>(loop_, master_addr);
+    controller_node_session_->registerService(&node_service_impl_);
+    controller_node_session_->subscribe<RegisterStubEvent>(gw2ms_stub_);
+    controller_node_session_->subscribe<OnConnected2ServerEvent>(*this);
+    controller_node_session_->connect();        
 
     auto& myinfo = serverinfo_data_.gateway_info();
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());
@@ -133,10 +133,10 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
 		EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
 			{
-				auto& master_addr = master_session_->local_addr();
+				auto& controller_node_addr = controller_node_session_->local_addr();
 				controllerservice::ConnectRequest request;
-				request.mutable_rpc_client()->set_ip(master_addr.toIp());
-				request.mutable_rpc_client()->set_port(master_addr.port());
+				request.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
+				request.mutable_rpc_client()->set_port(controller_node_addr.port());
 				request.set_gate_node_id(gate_node_id());
 				gw2ms_stub_.CallMethod(request, &controllerservice::ControllerNodeService_Stub::OnGwConnect);
 			}

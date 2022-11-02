@@ -13,7 +13,7 @@
 
 #include "deploy_service.pb.h"
 #include "db_service.pb.h"
-#include "logic_proto/scene_rg.pb.h"
+#include "logic_proto/rg_scene.pb.h"
 
 class ControllerServer : muduo::noncopyable, public Receiver<ControllerServer>
 {

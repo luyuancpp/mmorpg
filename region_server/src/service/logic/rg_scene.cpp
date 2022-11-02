@@ -147,7 +147,7 @@ void RgServiceImpl::StartControllerNode(::google::protobuf::RpcController* contr
 	auto c = registry.get<RpcServerConnection>(controller_node);
 	ControllerNodePtr ms_node = registry.emplace<ControllerNodePtr>(controller_node, std::make_shared<ControllerNodePtr::element_type>(c.conn_));
 	ms_node->node_info_.set_node_id(request->controller_node_id());
-	ms_node->node_info_.set_node_type(kMasterNode);
+	ms_node->node_info_.set_node_type(kControllerNode);
 	registry.emplace<InetAddress>(controller_node, service_addr);
 	g_controller_nodes->emplace(request->controller_node_id(), controller_node);
 

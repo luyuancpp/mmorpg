@@ -40,7 +40,7 @@ struct RpcString
 	ServerRequest s_rq_;
 	ServerResponse* s_rp_{ nullptr };
 
-	//just for enter master , un safe
+	//just for enter controller , un safe
 	void Move(ClientResponse*& c_rp,
 		::google::protobuf::Closure*& cc)
 	{

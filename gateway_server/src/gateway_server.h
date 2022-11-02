@@ -85,7 +85,7 @@ private:
     RpcClientPtr deploy_session_;
     RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
-    RpcClientPtr master_session_;
+    RpcClientPtr controller_node_session_;
     RpcStubMsNode gw2ms_stub_;
 
     GwNodeServiceImpl node_service_impl_;

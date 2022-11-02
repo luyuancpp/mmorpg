@@ -44,7 +44,7 @@ public:
 		deploy::RegionInfoResponse>>;
 	void RegionInfoReplied(RegionRpcClosureRpc replied);
 
-    void CallControllerStartGs(ControllerSessionPtr& master_rpc_client);
+    void CallControllerStartGs(ControllerSessionPtr& controller_session);
     void Register2Region();
 
     void receive(const OnConnected2ServerEvent& es);

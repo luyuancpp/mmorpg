@@ -139,7 +139,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	//测试用例连接不登录马上断线，
 	//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
 	//登录的时候马上断开连接换了个gate应该可以登录成功
-	//login master
+	//login controller
 	auto rpc(std::make_shared<LoginAcountMsRpc::element_type>(response, done));
 	auto& s_reqst = rpc->s_rq_;
 	s_reqst.set_account(request->account());
