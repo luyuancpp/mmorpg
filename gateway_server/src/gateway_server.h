@@ -12,7 +12,7 @@
 #include "src/service/c2gate.h"
 #include "src/network/codec/codec.h"
 #include "src/network/codec/dispatcher.h"
-#include "src/service/gw_service.h"
+#include "src/service/gate_service.h"
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_connection_event.h"
 
