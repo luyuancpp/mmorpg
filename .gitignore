@@ -17,6 +17,7 @@ compile_commands.json
 *.json
 *.exp
 *.pyc
+*.dll
 *CMakeLists.txt
 common/src/pb/pbc/
 output/
