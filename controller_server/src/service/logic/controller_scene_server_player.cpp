@@ -75,7 +75,7 @@ void UpdateFrontChangeSceneInfoInitState(entt::entity player)
 	auto& scene_info = change_scene_info.scene_info();
 	auto scene_id = scene_info.scene_id();
 	entt::entity to_scene = entt::null;
-	if (scene_id <= 0)//用scene_config id 去换本服的ms
+	if (scene_id <= 0)//用scene_config id 去换本服的controller
 	{
 		GetSceneParam getp;
 		getp.scene_confid_ = scene_info.scene_confid();
