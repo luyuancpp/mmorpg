@@ -49,7 +49,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 
 void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& message)
 {
-	//告诉ms 保存完毕，可以切换场景了
+	//告诉controller 保存完毕，可以切换场景了
 	Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
 	Send2MsPlayer(save_complete_message, player_id);
 
@@ -70,17 +70,17 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 //考虑: 没load 完再次进入别的gs
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
-	auto msit = g_controller_nodes->find(enter_info.controller_node_id());
-	if (msit == g_controller_nodes->end())
+	auto controller_it = g_controller_nodes->find(enter_info.controller_node_id());
+	if (controller_it == g_controller_nodes->end())
 	{
 		LOG_ERROR << "EnterGs ms not found" << enter_info.controller_node_id();
 		return;
 	}
-	registry.emplace_or_replace<ControllerNodePtr>(player, msit->second);//todo master 重新启动以后
+	registry.emplace_or_replace<ControllerNodePtr>(player, controller_it->second);//todo master 重新启动以后
 	controllerservice::EnterGsSucceedRequest message;
 	message.set_player_id(registry.get<Guid>(player));
-	auto& ms_stub = registry.get<RpcStub<controllerservice::ControllerNodeService_Stub>>(msit->second->ms_);
-	ms_stub.CallMethod(message, &controllerservice::ControllerNodeService_Stub::EnterGsSucceed);
+	auto& controller_stub = registry.get<RpcStub<controllerservice::ControllerNodeService_Stub>>(controller_it->second->controller_);
+	controller_stub.CallMethod(message, &controllerservice::ControllerNodeService_Stub::EnterGsSucceed);
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 }
 
