@@ -46,8 +46,8 @@ private:
     void SceneSqueueNodeId(SceneNodeSequeIdRpc replied);
 
 	void Connect2Deploy();
-	void Connect2Region();
-	void Register2Region();
+	void Connect2Lobby();
+	void Register2Lobby();
 
 	muduo::net::EventLoop* loop_{ nullptr };
 	PbSyncRedisClientPtr redis_;
@@ -56,7 +56,7 @@ private:
 	RpcClientPtr deploy_session_;
 	RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
-	RpcClientPtr region_session_;
+	RpcClientPtr lobby_session_;
 	LobbyNodeStub rg_stub_;
 
 	RpcClientPtr db_session_;

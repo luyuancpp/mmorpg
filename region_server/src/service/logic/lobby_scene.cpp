@@ -201,7 +201,7 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
 		return;
 	}
 	//disconnect scene 
-	//todo region not has scene 
+	//todo lobby not has scene 
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;

@@ -5,7 +5,7 @@
 
 #include "src/game_config/all_config.h"
 #include "src/game_config/deploy_json.h"
-#include "src/game_config/region_config.h"
+#include "src/game_config/lobby_config.h"
 
 #include "src/event_receiver/event_receiver.h"
 #include "src/game_logic/comp/scene_comp.h"
@@ -44,7 +44,7 @@ void GameServer::InitConfig()
 {
 	GameConfig::GetSingleton().Load("game.json");
 	DeployConfig::GetSingleton().Load("deploy.json");
-	RegionConfig::GetSingleton().Load("lobby.json");
+	LobbyConfig::GetSingleton().Load("lobby.json");
     LoadAllConfigAsyncWhenServerLaunch();
     ConfigSystem::OnConfigLoadSuccessful();
 }
@@ -64,10 +64,10 @@ void GameServer::ServerInfo(ServerInfoRpc replied)
     auto& resp = replied->s_rp_;
     auto& info = replied->s_rp_->info();
    
-    auto& regioninfo = info.regin_info();
-    InetAddress region_addr(regioninfo.ip(), regioninfo.port());
+    auto& lobby_info = info.regin_info();
+    InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
    
-    lobby_session_ = std::make_unique<RpcClient>(loop_, region_addr);
+    lobby_session_ = std::make_unique<RpcClient>(loop_, lobby_addr);
     
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
     g_redis_system.Init(serverAddr);
@@ -84,10 +84,10 @@ void GameServer::ServerInfo(ServerInfoRpc replied)
         this,
         &deploy::DeployService_Stub::StartGS);
 
-	RegionRpcClosureRpc rcp(std::make_shared<RegionRpcClosureRpc::element_type>());
-    rcp->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+	LobbyInfoRpc rcp(std::make_shared<LobbyInfoRpc::element_type>());
+    rcp->s_rq_.set_region_id(LobbyConfig::GetSingleton().config_info().region_id());
 	deploy_stub_.CallMethod(
-		&GameServer::RegionInfoReplied,
+		&GameServer::LobbyInfoReplied,
         rcp,
 		this,
 		&deploy::DeployService_Stub::RegionInfo);
@@ -95,7 +95,7 @@ void GameServer::ServerInfo(ServerInfoRpc replied)
 
 void GameServer::StartGsDeployReplied(StartGsRpc replied)
 {
-    Connect2Region();
+    Connect2Lobby();
 
     auto& redisinfo = replied->s_rp_->redis_info();
 	redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
@@ -112,7 +112,7 @@ void GameServer::StartGsDeployReplied(StartGsRpc replied)
     server_->start();   
 }
 
-void GameServer::RegionInfoReplied(RegionRpcClosureRpc replied)
+void GameServer::LobbyInfoReplied(LobbyInfoRpc replied)
 {
     //connect controller
     auto& resp = replied->s_rp_;
@@ -160,7 +160,7 @@ void GameServer::CallControllerStartGs(ControllerSessionPtr& controller_node)
     LOG_DEBUG << "conncet to controller" ;
 }
 
-void GameServer::Register2Region()
+void GameServer::Register2Lobby()
 {
     auto server_type = registry.get<GsServerType>(global_entity()).server_type_;
     if (!(server_type == kMainSceneCrossServer ||
@@ -179,7 +179,7 @@ void GameServer::Register2Region()
     rq.set_server_type(server_type);
 	rq.set_gs_node_id(gs_info_.id());
 	lobby_stub_.CallMethod(
-		&ServerReplied::StartCrossGsRegionReplied,
+		&ServerReplied::StartCrossGsReplied,
 		rpc,
 		&ServerReplied::GetSingleton(),
 		&lobbyservcie::LobbyService_Stub::StartCrossGs);
@@ -202,7 +202,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             {
                 ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
                 rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-                rpc->s_rq_.set_region_id(RegionConfig::GetSingleton().config_info().region_id());
+                rpc->s_rq_.set_region_id(LobbyConfig::GetSingleton().config_info().region_id());
                 deploy_stub_.CallMethod(
                     &GameServer::ServerInfo,
                     rpc,
@@ -230,7 +230,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
 		if (conn->connected() && 
             IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 		{
-			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::Register2Region, this));
+			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::Register2Lobby, this));
 		}
 		else if (!conn->connected() &&
 			IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
@@ -270,7 +270,7 @@ void GameServer::receive(const OnBeConnectedEvent& es)
     }
 }
 
-void GameServer::Connect2Region()
+void GameServer::Connect2Lobby()
 {
     lobby_session_->subscribe<RegisterStubEvent>(lobby_stub_);
     lobby_session_->registerService(&gs_service_impl_);

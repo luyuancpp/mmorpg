@@ -40,18 +40,18 @@ public:
 		deploy::StartGSResponse>>;
     void StartGsDeployReplied(StartGsRpc replied);
 
-	using RegionRpcClosureRpc = std::shared_ptr<NormalClosure<deploy::RegionRequest,
+	using LobbyInfoRpc = std::shared_ptr<NormalClosure<deploy::RegionRequest,
 		deploy::RegionInfoResponse>>;
-	void RegionInfoReplied(RegionRpcClosureRpc replied);
+	void LobbyInfoReplied(LobbyInfoRpc replied);
 
     void CallControllerStartGs(ControllerSessionPtr& controller_session);
-    void Register2Region();
+    void Register2Lobby();
 
     void receive(const OnConnected2ServerEvent& es);
     void receive(const OnBeConnectedEvent& es);
 
 private:    
-    void Connect2Region();
+    void Connect2Lobby();
 
     muduo::net::EventLoop* loop_{ nullptr };
 

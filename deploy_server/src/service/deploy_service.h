@@ -19,7 +19,7 @@ public:
 		}
 
 	private:
-		void LoadRegionDeploy(uint32_t region_id, ::region_server_db* response);
+		void LoadLobbyDeploy(uint32_t region_id, ::region_server_db* response);
 
 		MysqlClientPtr db_;
 		GSMap logic_server_map_;
