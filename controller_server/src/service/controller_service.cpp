@@ -50,7 +50,7 @@ void ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied(Ms2GwPlayerEnterGsRp
 	}
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-	UpdateGateSessionGsRequest message;
+	UpdateSessionController2GsRequest message;
     auto try_player_session = registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
