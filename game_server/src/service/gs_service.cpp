@@ -14,7 +14,7 @@
 #include "src/service/logic/player_service.h"
 #include "src/system/player_common_system.h"
 
-#include "c2gw.pb.h"
+#include "c2gate.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"

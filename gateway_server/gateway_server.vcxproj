@@ -24,7 +24,7 @@
     <ClCompile Include="src\gateway_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\network\gs_node.cpp" />
-    <ClCompile Include="src\service\c2gw.cpp" />
+    <ClCompile Include="src\service\c2gate.cpp" />
     <ClCompile Include="src\service\gw_service.cpp" />
     <ClCompile Include="src\service\open_service.cpp" />
   </ItemGroup>
@@ -33,7 +33,7 @@
     <ClInclude Include="src\network\login_node.h" />
     <ClInclude Include="src\network\gate_player_list.h" />
     <ClInclude Include="src\gateway_server.h" />
-    <ClInclude Include="src\service\c2gw.h" />
+    <ClInclude Include="src\service\c2gate.h" />
     <ClInclude Include="src\service\gw_service.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

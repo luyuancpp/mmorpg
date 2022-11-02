@@ -9,7 +9,7 @@
 #include "muduo/net/TcpServer.h"
 
 #include "src/event/event.h"
-#include "src/service/c2gw.h"
+#include "src/service/c2gate.h"
 #include "src/network/codec/codec.h"
 #include "src/network/codec/dispatcher.h"
 #include "src/service/gw_service.h"

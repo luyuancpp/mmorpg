@@ -33,7 +33,6 @@
     <ClCompile Include="src\game_logic\bag\bag.cpp" />
     <ClCompile Include="src\game_logic\bag\item.cpp" />
     <ClCompile Include="src\pb\pbc\event_proto\mission_event.pb.cc" />
-    <ClCompile Include="src\pb\pb2sol2\c2gw_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\common_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\common_sol2.cpp" />
     <ClCompile Include="src\pb\pb2sol2\gs_node_comp_sol2.cpp" />
@@ -70,7 +69,6 @@
     <ClCompile Include="src\pb\pbc\logic_proto\team_normal.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\team_server_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\account_database.pb.cc" />
-    <ClCompile Include="src\pb\pbc\c2gw.pb.cc" />
     <ClCompile Include="src\pb\pbc\common.pb.cc" />
     <ClCompile Include="src\pb\pbc\comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\db_base.pb.cc" />
@@ -95,6 +93,8 @@
     <ClCompile Include="src\pb\pbc\event_proto\scene_event.pb.cc" />
     <ClCompile Include="src\pb\pbc\controller_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\rg_scene.pb.cc" />
+    <ClCompile Include="src\pb\pbc\c2gate.pb.cc" />
+    <ClCompile Include="src\pb\pb2sol2\c2gate_sol2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -179,7 +179,6 @@
     <ClInclude Include="src\pb\pbc\logic_proto\team_normal.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\team_server_player.pb.h" />
     <ClInclude Include="src\pb\pbc\account_database.pb.h" />
-    <ClInclude Include="src\pb\pbc\c2gw.pb.h" />
     <ClInclude Include="src\pb\pbc\common.pb.h" />
     <ClInclude Include="src\pb\pbc\comp.pb.h" />
     <ClInclude Include="src\pb\pbc\db_base.pb.h" />
@@ -204,5 +203,6 @@
     <ClInclude Include="src\pb\pbc\event_proto\scene_event.pb.h" />
     <ClInclude Include="src\pb\pbc\controller_service.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\rg_scene.pb.h" />
+    <ClInclude Include="src\pb\pbc\c2gate.pb.h" />
   </ItemGroup>
 </Project>

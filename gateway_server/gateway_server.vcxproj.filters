@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\service\c2gw.cpp">
+    <ClCompile Include="src\service\c2gate.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -41,7 +41,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\service\c2gw.h">
+    <ClInclude Include="src\service\c2gate.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\gateway_server.h">
