@@ -51,8 +51,8 @@ void ServerPlayerSceneServiceImpl::LeaveSceneMs2Gs(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::entity player,
-    const ::LeaveSceneAsyncSavePlayerCompleteRequest* request,
+void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
+    const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
