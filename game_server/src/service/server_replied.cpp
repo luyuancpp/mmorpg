@@ -6,7 +6,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/scene/scene.h"
-#include "src/network/ms_node.h"
+#include "src/network/controller_node.h"
 #include "src/network/rpc_client.h"
 #include "src/system/gs_scene_system.h"
 

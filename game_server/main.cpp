@@ -5,7 +5,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/node_info.h"
 #include "src/network/gate_node.h"
-#include "src/network/ms_node.h"
+#include "src/network/controller_node.h"
 
 using namespace muduo;
 using namespace muduo::net;

@@ -8,7 +8,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
-#include "src/network/ms_node.h"
+#include "src/network/controller_node.h"
 
 
 RegionServer* g_region_server = nullptr;

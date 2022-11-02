@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\ms_node.cpp">
+    <ClCompile Include="src\network\controller_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\network\gs_node.cpp">
@@ -32,7 +32,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\network\ms_node.h">
+    <ClInclude Include="src\network\controller_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gs_node.h">

@@ -10,7 +10,7 @@
 #include "src/game_logic/scene/scene.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
-#include "src/network/ms_node.h"
+#include "src/network/controller_node.h"
 #include "src/game_logic/tips_id.h"
 
 #include "gs_service.pb.h"
