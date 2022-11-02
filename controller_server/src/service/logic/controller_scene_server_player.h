@@ -17,8 +17,8 @@ public:
     void LeaveSceneMs2Gs(entt::entity player,
         const ::Ms2GsLeaveSceneRequest* request,
         ::google::protobuf::Empty* response);
-    void Gs2MsLeaveSceneAsyncSavePlayerComplete(entt::entity player,
-        const ::LeaveSceneAsyncSavePlayerCompleteRequest* request,
+    void Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
+        const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
         ::google::protobuf::Empty* response);
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
     entt::entity player,
@@ -47,8 +47,8 @@ public:
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         case 4:
-            Gs2MsLeaveSceneAsyncSavePlayerComplete(player,
-            ::google::protobuf::internal::DownCast<const ::LeaveSceneAsyncSavePlayerCompleteRequest*>( request),
+            Gs2ControllerLeaveSceneAsyncSavePlayerComplete(player,
+            ::google::protobuf::internal::DownCast<const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         default:
