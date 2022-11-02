@@ -12,7 +12,7 @@
 
 #include "deploy_service.pb.h"
 #include "controller_service.pb.h"
-#include "logic_proto/scene_rg.pb.h"
+#include "logic_proto/rg_scene.pb.h"
 
 class GameServer : muduo::noncopyable, public Receiver<GameServer>
 {
@@ -24,7 +24,7 @@ public:
 
     GameServer(muduo::net::EventLoop* loop);
 
-	StubMsNode& ms_stub() { return g2ms_stub_;	}
+	StubMsNode& controller_stub() { return g2controller_stub_;	}
 
     void Init();
 
@@ -44,7 +44,7 @@ public:
 		deploy::RegionInfoResponse>>;
 	void RegionInfoReplied(RegionRpcClosureRpc replied);
 
-    void Register2Master(ControllerSessionPtr& master_rpc_client);
+    void CallControllerStartGs(ControllerSessionPtr& master_rpc_client);
     void Register2Region();
 
     void receive(const OnConnected2ServerEvent& es);
@@ -62,7 +62,7 @@ private:
     RpcClientPtr deploy_session_;
     RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
-    StubMsNode g2ms_stub_;
+    StubMsNode g2controller_stub_;
 
     RpcClientPtr region_session_;
     RgNodeStub rg_stub_;
