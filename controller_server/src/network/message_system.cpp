@@ -48,17 +48,17 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 		LOG_INFO << "gs not found ";
 		return;
 	}
-	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
-	if (message_it == g_msgid.end())
+	auto msg_it = g_msgid.find(message.GetDescriptor()->full_name());
+	if (msg_it == g_msgid.end())
 	{
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	gsservice::ControllerPlayerMessageRequest ms2gs_messag;
-	ms2gs_messag.mutable_msg()->set_msg_id(message_it->second);
-	ms2gs_messag.mutable_msg()->set_body(message.SerializeAsString());
-	ms2gs_messag.mutable_ex()->set_player_id(registry.get<Guid>(player));
-	gs->session_.Send(ms2gs_messag);
+	gsservice::ControllerPlayerMessageRequest msg;
+	msg.mutable_msg()->set_msg_id(msg_it->second);
+	msg.mutable_msg()->set_body(message.SerializeAsString());
+	msg.mutable_ex()->set_player_id(registry.get<Guid>(player));
+	gs->session_.Send(msg);
 }
 
 void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& player)
@@ -94,17 +94,17 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
         LOG_INFO << "gs not found ";
         return;
     }
-    auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
-    if (message_it == g_msgid.end())
+    auto msg_it = g_msgid.find(message.GetDescriptor()->full_name());
+    if (msg_it == g_msgid.end())
     {
         LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
         return;
     }
-    gsservice::ControllerSend2PlayerViaGsRequest ms2gs_messag;
-    ms2gs_messag.mutable_msg()->set_msg_id(message_it->second);
-    ms2gs_messag.mutable_msg()->set_body(message.SerializeAsString());
-    ms2gs_messag.mutable_ex()->set_player_id(registry.get<Guid>(player));
-	gs->session_.Send(ms2gs_messag);
+    gsservice::ControllerSend2PlayerViaGsRequest msg;
+    msg.mutable_msg()->set_msg_id(msg_it->second);
+    msg.mutable_msg()->set_body(message.SerializeAsString());
+    msg.mutable_ex()->set_player_id(registry.get<Guid>(player));
+	gs->session_.Send(msg);
 }
 
 void Send2Player(const google::protobuf::Message& message, entt::entity player)

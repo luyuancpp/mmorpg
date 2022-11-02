@@ -73,7 +73,7 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 	auto controller_it = g_controller_nodes->find(enter_info.controller_node_id());
 	if (controller_it == g_controller_nodes->end())
 	{
-		LOG_ERROR << "EnterGs ms not found" << enter_info.controller_node_id();
+		LOG_ERROR << "EnterGs controller not found" << enter_info.controller_node_id();
 		return;
 	}
 	registry.emplace_or_replace<ControllerNodePtr>(player, controller_it->second);//todo controller 重新启动以后

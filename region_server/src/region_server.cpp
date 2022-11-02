@@ -109,7 +109,7 @@ void RegionServer::receive(const OnBeConnectedEvent& es)
 			{
 				g_gs_nodes->erase((*gsnode)->node_info_.node_id());
 			}
-            // ms 不动态扩展，所以不删除
+            // controller 不动态扩展，所以不删除
 			registry.destroy(e);
 			break;
 		}

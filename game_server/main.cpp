@@ -14,8 +14,8 @@ int main(int argc, char* argv[])
 {
     muduo::Logger::setLogLevel(muduo::Logger::DEBUG);
     // global value
-    ControllerNodes ms_node;
-    g_controller_nodes = &ms_node;
+    ControllerNodes controller_node;
+    g_controller_nodes = &controller_node;
 
     GateNodes gate_nodes;
     g_gate_nodes = &gate_nodes;

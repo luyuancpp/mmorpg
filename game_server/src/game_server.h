@@ -19,12 +19,12 @@ class GameServer : muduo::noncopyable, public Receiver<GameServer>
 public:
     using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-    using StubMsNode = RpcStub<controllerservice::ControllerNodeService_Stub>;
+    using ControllerStub = RpcStub<controllerservice::ControllerNodeService_Stub>;
     using RgNodeStub = RpcStub<regionservcie::RgService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
 
-	StubMsNode& controller_stub() { return g2controller_stub_;	}
+	ControllerStub& controller_stub() { return g2controller_stub_;	}
 
     void Init();
 
@@ -62,7 +62,7 @@ private:
     RpcClientPtr deploy_session_;
     RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
-    StubMsNode g2controller_stub_;
+    ControllerStub g2controller_stub_;
 
     RpcClientPtr region_session_;
     RgNodeStub rg_stub_;

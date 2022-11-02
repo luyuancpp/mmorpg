@@ -1,6 +1,4 @@
-#ifndef GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_
-#define GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_
-
+#pragma once
 #include "muduo/net/TcpConnection.h"
 
 #include "src/game_logic/game_registry.h"
@@ -26,4 +24,3 @@ using ControllerNodes = std::unordered_map<uint32_t, ControllerNodePtr>;
 extern ControllerNodes* g_controller_nodes;//controller 不会删除，因为不会和gs一样根据负载增加减少，只走底层的自动重连
 
 
-#endif//GAME_SERVER_MODULE_NETWORK_MS_NODE_NODE_H_
