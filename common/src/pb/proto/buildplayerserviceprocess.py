@@ -36,7 +36,6 @@ rgplayerservicedir = '../../../../region_server/src/service/logic/'
 controllerplayerservicedir = '../../../../controller_server/src/service/logic/'
 client_player = 'client_player'
 server_player = 'server_player'
-rg = 'rg'
 filedirdestpath = {}
 
 if not os.path.exists(servicedir):
@@ -154,7 +153,7 @@ def getwritedir(serverstr):
         writedir = gsplayerservicedir
     elif serverstr == buildpublic.controller_file_prefix:
         writedir = controllerplayerservicedir
-    elif serverstr == 'rg':
+    elif serverstr == buildpublic.rg_file_prefix:
         writedir = rgplayerservicedir
     return writedir
 
@@ -253,7 +252,7 @@ def generate(filename):
         gencppfile(filename, buildpublic.gs_file_prefix)
         genheadfile(filename, buildpublic.controller_file_prefix)
         gencppfile(filename, buildpublic.controller_file_prefix)
-    elif filename.find(rg) >= 0:
+    elif filename.find(buildpublic.rg_file_prefix) >= 0:
         pass
 
 def parseplayerservcie(filename):
@@ -350,7 +349,7 @@ def md5copydir():
                 md5copy(filename, buildpublic.gs_file_prefix)
             elif filename.find(server_player) >= 0 and filename.find(buildpublic.controller_file_prefix) >= 0:
                 md5copy(filename, buildpublic.controller_file_prefix)
-            elif filename.find(rg) >= 0 and filename.find('rg') >= 0 and filename.find('rg_node') < 0: 
+            elif filename.find(buildpublic.rg_file_prefix) >= 0: 
                 pass
             elif filename == 'gs_player_service.cpp':
                 md5copy(filename, buildpublic.gs_file_prefix)
