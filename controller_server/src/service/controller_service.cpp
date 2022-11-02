@@ -38,7 +38,8 @@ using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
-void ControllerNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied(Ms2GwPlayerEnterGsRpc replied)
+//gate 更新完gs，相应的gs可以往那个gate上发送消息了
+void ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied(Ms2GwPlayerEnterGsRpc replied)
 {
 	//todo 中间返回是断开了
 	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
@@ -66,13 +67,7 @@ void ControllerNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied(Ms2GwPlayerEnte
 		{
 			PlayerCommonSystem::OnLogin(player);
 		}
-	}
-	//如果进入场景的时候断线重连呢？
-	if (nullptr == try_enter_gs ||//正常进入gs换场景
-		try_enter_gs->enter_gs_type() == LOGIN_FIRST)//第一次登录(非顶号，重连则）调用进入场景接口
-    {
-        PlayerSceneSystem::Send2GsEnterScene(player);//change_to msg_queue
-	}		
+	}	
 }
 
 Guid ControllerNodeServiceImpl::GetPlayerIdByConnId(uint64_t session_id)
@@ -581,7 +576,7 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
 	ControllerNodeServiceImpl::Ms2GwPlayerEnterGsRpc rpc;
 	rpc.s_rq_.set_session_id(player_session.session_id());
 	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GwStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::Ms2GwPlayerUpdateGsNodeIdReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
+	registry.get<GwStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 
