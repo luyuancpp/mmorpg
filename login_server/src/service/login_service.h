@@ -23,7 +23,7 @@ public:
 		using LoginStubl2ms = RpcStub<controllerservice::ControllerNodeService_Stub>;
 		using LoginStubl2db = RpcStub<dbservice::DbService_Stub>;
 
-		LoginServiceImpl(LoginStubl2ms& l2ms_login_stub,
+		LoginServiceImpl(LoginStubl2ms& l2controller_login_stub,
 			LoginStubl2db& l2db_login_stub);
 
 		void set_redis_client(PbSyncRedisClientPtr& p) { redis_ = p; }

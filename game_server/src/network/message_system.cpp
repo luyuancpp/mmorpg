@@ -82,7 +82,7 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 		LOG_ERROR << " Send2MsPlayer message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	auto ms_node = registry.get<MsNodePtr>(player);
+	auto ms_node = registry.get<ControllerNodePtr>(player);
 	if (nullptr == ms_node)
 	{
 		LOG_ERROR << "Send2MsPlayer player master not found " << registry.get<Guid>(player);
@@ -107,8 +107,8 @@ void Send2MsPlayer(const google::protobuf::Message& message, EntityPtr& player)
 
 void Send2Ms(const google::protobuf::Message& messag, uint32_t ms_node_id)
 {
-	auto ms_it = g_ms_nodes->find(ms_node_id);
-	if (ms_it == g_ms_nodes->end())
+	auto ms_it = g_controller_nodes->find(ms_node_id);
+	if (ms_it == g_controller_nodes->end())
 	{
 		LOG_ERROR << "Send2MsPlayer master not found" << ms_node_id;
 		return;
