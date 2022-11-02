@@ -214,7 +214,7 @@ void ControllerServer::Register2Region()
 	session_info->set_port(region_session_->local_addr().port());
 	node_info->set_ip(myinfo.ip());
 	node_info->set_port(myinfo.port());
-	rq.set_ms_node_id(myinfo.id());
+	rq.set_controller_node_id(myinfo.id());
 	rg_stub_.CallMethod(
 		rq,
 		&regionservcie::RgService_Stub::StartMs);

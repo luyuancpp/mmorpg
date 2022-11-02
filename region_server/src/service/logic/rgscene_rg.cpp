@@ -127,34 +127,34 @@ void RgServiceImpl::StartMs(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE 
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
-	entt::entity ms{ entt::null };
+	entt::entity controller_node{ entt::null };
 	for (auto e : registry.view<RpcServerConnection>())
 	{
 		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
-		ms = e;
+		controller_node = e;
 		break;
 	}
-	if (ms == entt::null)
+	if (controller_node == entt::null)
 	{
 		//todo
-		LOG_INFO << "ms id found: " << request->ms_node_id();
+		LOG_INFO << "ms id found: " << request->controller_node_id();
 		return;
 	}
 
-	auto c = registry.get<RpcServerConnection>(ms);
-	ControllerNodePtr ms_node = registry.emplace<ControllerNodePtr>(ms, std::make_shared<ControllerNodePtr::element_type>(c.conn_));
-	ms_node->node_info_.set_node_id(request->ms_node_id());
+	auto c = registry.get<RpcServerConnection>(controller_node);
+	ControllerNodePtr ms_node = registry.emplace<ControllerNodePtr>(controller_node, std::make_shared<ControllerNodePtr::element_type>(c.conn_));
+	ms_node->node_info_.set_node_id(request->controller_node_id());
 	ms_node->node_info_.set_node_type(kMasterNode);
-	registry.emplace<InetAddress>(ms, service_addr);
-	g_controller_nodes->emplace(request->ms_node_id(), ms);
+	registry.emplace<InetAddress>(controller_node, service_addr);
+	g_controller_nodes->emplace(request->controller_node_id(), controller_node);
 
-	auto& ms_stub = registry.emplace<MsStubPtr>(ms, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+	auto& ms_stub = registry.emplace<MsStubPtr>(controller_node, std::make_unique<MsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 
 	//todo next frame send after responese
-	AddCrossScene2Ms(request->ms_node_id());
+	AddCrossScene2Ms(request->controller_node_id());
 ///<<< END WRITING YOUR CODE 
 }
 
