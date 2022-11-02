@@ -59,7 +59,7 @@ void Send2Player(const google::protobuf::Message& message, EntityPtr& player)
     Send2Player(message, (entt::entity)player);
 }
 
-void Send2MsPlayer(const google::protobuf::Message& message, Guid player_id)
+void Send2ControllerPlayer(const google::protobuf::Message& message, Guid player_id)
 {
 	auto it = g_players->find(player_id);
 	if (it == g_players->end())
@@ -67,10 +67,10 @@ void Send2MsPlayer(const google::protobuf::Message& message, Guid player_id)
 		LOG_DEBUG << " Send2MsPlayer player not found " << player_id;
 		return;
 	}
-	Send2MsPlayer(message, it->second);
+	Send2ControllerPlayer(message, it->second);
 }
 
-void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player)
+void Send2ControllerPlayer(const google::protobuf::Message& message, entt::entity player)
 {
 	if (!registry.valid(player))
 	{
@@ -79,13 +79,13 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
 	if (message_it == g_msgid.end())
 	{
-		LOG_ERROR << " Send2MsPlayer message id not found " << message.GetDescriptor()->full_name();
+		LOG_ERROR << " Send2ControllerPlayer message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
 	auto ms_node = registry.get<ControllerNodePtr>(player);
 	if (nullptr == ms_node)
 	{
-		LOG_ERROR << "Send2MsPlayer player controller not found " << registry.get<Guid>(player);
+		LOG_ERROR << "Send2ControllerPlayer player controller not found " << registry.get<Guid>(player);
 		return;
 	}
 	if (!ms_node->session_->connected())
@@ -100,17 +100,17 @@ void Send2MsPlayer(const google::protobuf::Message& message, entt::entity player
 	ms_node->session_->Send(msg_wrapper);
 }
 
-void Send2MsPlayer(const google::protobuf::Message& message, EntityPtr& player)
+void Send2ControllerPlayer(const google::protobuf::Message& message, EntityPtr& player)
 {
-	Send2MsPlayer(message, (entt::entity)player);
+	Send2ControllerPlayer(message, (entt::entity)player);
 }
 
-void Send2Ms(const google::protobuf::Message& messag, uint32_t ms_node_id)
+void Send2Controller(const google::protobuf::Message& messag, uint32_t ms_node_id)
 {
 	auto ms_it = g_controller_nodes->find(ms_node_id);
 	if (ms_it == g_controller_nodes->end())
 	{
-		LOG_ERROR << "Send2MsPlayer controller not found" << ms_node_id;
+		LOG_ERROR << "Send2ControllerPlayer controller not found" << ms_node_id;
 		return;
 	}
 	ms_it->second->session_->Send(messag);

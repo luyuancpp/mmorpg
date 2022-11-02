@@ -23,7 +23,7 @@ message Ms2GsLeaveSceneRequest
   bool change_gs = 1;
 }
 
-message Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest
+message LeaveSceneAsyncSavePlayerCompleteRequest
 {
 }
 
@@ -33,5 +33,5 @@ service ServerPlayerSceneService
   rpc EnterSceneMs2Gs (Ms2GsEnterSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveSceneGs2Ms (Gs2MsLeaveSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveSceneMs2Gs (Ms2GsLeaveSceneRequest) returns (google.protobuf.Empty);
-  rpc Gs2MsLeaveSceneAsyncSavePlayerComplete (Gs2MsLeaveSceneAsyncSavePlayerCompleteRequest) returns (google.protobuf.Empty);
+  rpc Gs2MsLeaveSceneAsyncSavePlayerComplete (LeaveSceneAsyncSavePlayerCompleteRequest) returns (google.protobuf.Empty);
 }
