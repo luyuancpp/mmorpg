@@ -110,7 +110,7 @@ def getprevfilename(filename, writedir):
         if writedir == controllerservicedir:
             return buildpublic.controller_file_prefix
         if writedir == rgservicedir:
-            return buildpublic.rg_file_prefix
+            return ''
     return ''
 
 def getpbdir(filename, writedir):
@@ -233,7 +233,7 @@ def getmd5prevfilename(filename, writedir):
         if writedir == controllerservicedir:
             return buildpublic.controller_file_prefix
         if writedir == rgservicedir:
-            return buildpublic.rg_file_prefix
+            return ''
     return ''
 
 def md5copy(filename, writedir, fileextend):
