@@ -15,11 +15,13 @@ tabstr = '    '
 filelist = []
 threads = []
 local.eventprotoarray = []
-syncheadfilesuffix = '_sync_receiver.h'
-synccppfilesuffix = '_sync_receiver.cpp'
 cpprpceventpart = 1
-synceventreceiverfilename = 'sync_event_receiver'
-synceventreceiverclassname = 'SyncEventReceiverEvent'
+syncfilename = 'sync_event_receiver'
+syncclassfilename = 'SyncEventReceiverEvent'
+asyncfilename = 'async_event_receiver'
+asyncclassfilename = 'AsyncEventReceiverEvent'
+currentfilename = syncfilename
+currentclassname = syncclassfilename
 
 
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
@@ -41,7 +43,7 @@ def parsefile(filename):
 			local.eventprotoarray.append(fileline.split(' ')[1].strip('\n'))
 
 def getfilenamenoprefixsuffix(filename):
-	return filename.replace(eventprotodir, '').replace('.proto', '').replace('event', synceventreceiverfilename)
+	return filename.replace(eventprotodir, '').replace('.proto', '').replace('event', currentfilename)
 def getmd5destfilename(filename):
 	return md5dir + getfilenamenoprefixsuffix(filename)
 def getdestdestfilename(filename):
@@ -56,7 +58,7 @@ def getprotofilenamenoprefixsuffix(filename):
 	return filename.replace(eventprotodir, '').replace('.proto', '')
 
 def getrealsuffix(filename):
-	filename.replace('event', synceventreceiverfilename)
+	filename.replace('event', currentfilename)
 
 def generatehead(filename):
 	newstr = '#pragma once\n'
@@ -157,10 +159,10 @@ def generatecpp(filename):
 		file.write(newstr)  
 
 def geneventreceiverhead():
-	md5headfilename = md5dir + synceventreceiverfilename + '.h'
+	md5headfilename = md5dir + currentfilename + '.h'
 	newstr = '#pragma once\n'
 	newstr += '#include "src/game_logic/game_registry.h"\n'	
-	newstr += '\nclass ' + synceventreceiverclassname + '\n{\npublic:\n'
+	newstr += '\nclass ' + currentclassname + '\n{\npublic:\n'
 	newstr += tabstr + 'static void Register(entt::dispatcher& dispatcher);\n'
 	newstr += tabstr + 'static void UnRegister(entt::dispatcher& dispatcher);\n'
 	newstr += '};\n'
@@ -168,18 +170,18 @@ def geneventreceiverhead():
 		file.write(newstr)
 
 def geneventreceivercpp():
-	md5headfilename = md5dir + synceventreceiverfilename + '.cpp'
+	md5headfilename = md5dir + currentfilename + '.cpp'
 	newstr = '#pragma once\n'
-	newstr += '#include "' + synceventreceiverfilename + '.h"\n'
+	newstr += '#include "' + currentfilename + '.h"\n'
 	for i in range(0, len(filelist)): 
 		newstr +=  '#include "' + getfilenamenoprefixsuffix(filelist[i]) +  '.h"\n'	
 	newstr += '\n'
-	newstr += 'void ' + synceventreceiverclassname + '::Register(entt::dispatcher& dispatcher)\n{\n'
+	newstr += 'void ' + currentclassname + '::Register(entt::dispatcher& dispatcher)\n{\n'
 	for i in range(0, len(filelist)): 
 		classname = getfileclassname(filelist[i])
 		newstr += tabstr +  classname + '::Register(dispatcher);\n'
 	newstr += '}\n\n'
-	newstr += 'void ' + synceventreceiverclassname + '::UnRegister(entt::dispatcher& dispatcher)\n{\n'
+	newstr += 'void ' + currentclassname + '::UnRegister(entt::dispatcher& dispatcher)\n{\n'
 	for i in range(0, len(filelist)): 
 		classname = getfileclassname(filelist[i])
 		newstr += tabstr +  classname + '::UnRegister(dispatcher);\n'
@@ -251,13 +253,20 @@ def main():
         t.join()
     
 
-def md5copydir():
-	pass
 
+
+#sync
 inputfile()
 main()
 geneventreceiverhead()
 md5copy('event', '.h')
 geneventreceivercpp()
 md5copy('event', '.cpp')
-md5copydir()
+
+currentfilename = asyncfilename
+currentclassname = asyncclassfilename
+main()
+geneventreceiverhead()
+md5copy('event', '.h')
+geneventreceivercpp()
+md5copy('event', '.cpp')
