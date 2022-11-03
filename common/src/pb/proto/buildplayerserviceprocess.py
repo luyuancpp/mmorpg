@@ -153,7 +153,7 @@ def getwritedir(serverstr):
         writedir = gsplayerservicedir
     elif serverstr == buildpublic.controller_file_prefix:
         writedir = controllerplayerservicedir
-    elif serverstr == buildpublic.rg_file_prefix:
+    elif serverstr == buildpublic.lobby_file_prefix:
         writedir = rgplayerservicedir
     return writedir
 
@@ -252,7 +252,7 @@ def generate(filename):
         gencppfile(filename, buildpublic.gs_file_prefix)
         genheadfile(filename, buildpublic.controller_file_prefix)
         gencppfile(filename, buildpublic.controller_file_prefix)
-    elif filename.find(buildpublic.rg_file_prefix) >= 0:
+    elif filename.find(buildpublic.lobby_file_prefix) >= 0:
         pass
 
 def parseplayerservcie(filename):
@@ -349,7 +349,7 @@ def md5copydir():
                 md5copy(filename, buildpublic.gs_file_prefix)
             elif filename.find(server_player) >= 0 and filename.find(buildpublic.controller_file_prefix) >= 0:
                 md5copy(filename, buildpublic.controller_file_prefix)
-            elif filename.find(buildpublic.rg_file_prefix) >= 0: 
+            elif filename.find(buildpublic.lobby_file_prefix) >= 0: 
                 pass
             elif filename == 'gs_player_service.cpp':
                 md5copy(filename, buildpublic.gs_file_prefix)

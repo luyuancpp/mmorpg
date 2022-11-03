@@ -37,7 +37,7 @@ def getwritedir(serverstr):
         writedir = gsservicedir
     elif serverstr == buildpublic.controller_file_prefix:
         writedir = controllerservicedir
-    elif serverstr == buildpublic.rg_file_prefix:
+    elif serverstr == buildpublic.lobby_file_prefix:
         writedir = rgservicedir
     return writedir
 
@@ -304,8 +304,8 @@ def inputfile():
         if buildpublic.is_gs_and_controller_server_proto(filename) == True :
             genfile.append([logicprotodir + filename, getwritedir(buildpublic.controller_file_prefix)])
             genfile.append([logicprotodir + filename, getwritedir(buildpublic.gs_file_prefix)])
-        elif filename.find(buildpublic.rg_file_prefix) >= 0:
-            genfile.append([logicprotodir +  filename, getwritedir(buildpublic.rg_file_prefix)])
+        elif filename.find(buildpublic.lobby_file_prefix) >= 0:
+            genfile.append([logicprotodir +  filename, getwritedir(buildpublic.lobby_file_prefix)])
             
 inputfile()
 main()
