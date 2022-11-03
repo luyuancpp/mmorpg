@@ -5,7 +5,7 @@
 class LobbyConfig
 {
 public:
-	const RegionConfigInfo& config_info() const { return config_info_; }
+	const LobbyConfigInfo& config_info() const { return config_info_; }
 
 	static LobbyConfig& GetSingleton() {
 		thread_local LobbyConfig singleton;
@@ -14,6 +14,6 @@ public:
 
 	void Load(const std::string& filename);
 private:
-	RegionConfigInfo config_info_;
+	LobbyConfigInfo config_info_;
 };
 

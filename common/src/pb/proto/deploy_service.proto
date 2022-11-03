@@ -39,17 +39,17 @@ message StartGSResponse
   redis_server_db redis_info = 5;
 }
 
-message RegionRequest
+message LobbyServerRequest
 {
   uint32 lobby_id = 1;
 }
 
-message RegionServerResponse
+message LobbyServerResponse
 {
   lobby_server_db info = 1;
 }
 
-message RegionInfoResponse
+message LobbyInfoResponse
 {
   ControllerNodesDb lobby_controllers = 1;
 }
@@ -76,9 +76,9 @@ message SceneSqueueResponese
 service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
   rpc StartGS (StartGSRequest) returns (StartGSResponse);
-  rpc StartRegionServer (RegionRequest) returns (RegionServerResponse);
-  rpc RegionServerInfo (RegionRequest) returns (RegionServerResponse);
-  rpc RegionInfo (RegionRequest) returns (RegionInfoResponse);
+  rpc StartRegionServer (LobbyServerRequest) returns (LobbyServerResponse);
+  rpc RegionServerInfo (LobbyServerRequest) returns (LobbyServerResponse);
+  rpc RegionInfo (LobbyServerRequest) returns (LobbyInfoResponse);
   rpc LoginNodeInfo (GroupLignRequest) returns (GruoupLoginNodeResponse);
   rpc SceneSqueueNodeId (SceneSqueueRequest) returns (SceneSqueueResponese);
 }
