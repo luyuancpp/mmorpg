@@ -39,7 +39,7 @@ void MissionSyncEventReceiverReceiver::Receive1(const MissionConditionEvent& eve
 void MissionSyncEventReceiverReceiver::Receive2(const OnAcceptedMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
- //´¥·¢½ÓÈÎÎñ×Ô¶¯Æ¥Åäµ±Ç°µÄÈÎÎñ½ø¶È,½ÓÊÜµÄÊ±ºòÒÑ¾­ÓµÓÐ½ð±Ò
+ //è§¦å‘æŽ¥ä»»åŠ¡è‡ªåŠ¨åŒ¹é…å½“å‰çš„ä»»åŠ¡è¿›åº¦,æŽ¥å—çš„æ—¶å€™å·²ç»æ‹¥æœ‰é‡‘å¸
 ///<<< END WRITING YOUR CODE 
 }
 
