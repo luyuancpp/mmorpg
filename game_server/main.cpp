@@ -12,7 +12,6 @@ using namespace muduo::net;
 
 int main(int argc, char* argv[])
 {
-    muduo::Logger::setLogLevel(muduo::Logger::DEBUG);
     // global value
     ControllerNodes controller_node;
     g_controller_nodes = &controller_node;

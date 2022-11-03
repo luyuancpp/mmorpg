@@ -34,6 +34,7 @@ void GameServer::Init()
     SyncEventReceiverEvent::Register(dispatcher);
     AsyncEventReceiverEvent::Register(dispatcher);
     InitConfig();
+    muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
     global_entity() = registry.create();
     registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
     LOG_INFO << "server type" << GameConfig::GetSingleton().config_info().server_type();
