@@ -81,7 +81,7 @@
     <ClCompile Include="src\event_receiver\sync_event_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\mission_event_sync_event.cpp">
+    <ClCompile Include="src\event_receiver\mission_event_sync_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\recast_system.cpp">
@@ -93,7 +93,7 @@
     <ClCompile Include="src\service\logic\gs_common_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\scene_event_sync_event.cpp">
+    <ClCompile Include="src\event_receiver\scene_event_sync_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -161,7 +161,7 @@
     <ClInclude Include="src\event_receiver\sync_event_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\mission_event_sync_event.h">
+    <ClInclude Include="src\event_receiver\mission_event_sync_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\recast_system.h">
@@ -176,7 +176,7 @@
     <ClInclude Include="src\service\logic\gs_common_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\scene_event_sync_event.h">
+    <ClInclude Include="src\event_receiver\scene_event_sync_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\module\master.hpp">
