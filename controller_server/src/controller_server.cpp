@@ -198,7 +198,7 @@ void ControllerServer::Connect2Lobby()
 	auto& lobby_info = serverinfos_.regin_info();
 	InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
 	lobby_session_ = std::make_unique<RpcClient>(loop_, lobby_addr);
-	lobby_session_->subscribe<RegisterStubEvent>(rg_stub_);
+	lobby_session_->subscribe<RegisterStubEvent>(lobby_stub_);
 	lobby_session_->registerService(&contoller_service_);
 	lobby_session_->subscribe<OnConnected2ServerEvent>(*this);
 	lobby_session_->connect();
@@ -215,7 +215,7 @@ void ControllerServer::Register2Lobby()
 	node_info->set_ip(myinfo.ip());
 	node_info->set_port(myinfo.port());
 	rq.set_controller_node_id(myinfo.id());
-	rg_stub_.CallMethod(
+	lobby_stub_.CallMethod(
 		rq,
 		&lobbyservcie::LobbyService_Stub::StartControllerNode);
 }
