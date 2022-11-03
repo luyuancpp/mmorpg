@@ -1,7 +1,7 @@
 #pragma once
 #include "sync_event_receiver.h"
-#include "mission_event_sync_event_receiver.h"
-#include "scene_event_sync_event_receiver.h"
+#include "mission_event_sync_receiver.h"
+#include "scene_event_sync_receiver.h"
 
 void SyncEventReceiverEvent::Register(entt::dispatcher& dispatcher)
 {
