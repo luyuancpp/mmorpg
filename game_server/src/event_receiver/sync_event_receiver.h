@@ -1,7 +1,7 @@
 #pragma once
 #include "src/game_logic/game_registry.h"
 
-class EventReceiverEvent
+class SyncEventReceiverEvent
 {
 public:
     static void Register(entt::dispatcher& dispatcher);

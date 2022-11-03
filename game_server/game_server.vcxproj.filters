@@ -78,10 +78,10 @@
     <ClCompile Include="src\service\logic\gs_common_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\event_receiver.cpp">
+    <ClCompile Include="src\event_receiver\sync_event_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\mission_event_receiver.cpp">
+    <ClCompile Include="src\event_receiver\mission_event_sync_event.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\recast_system.cpp">
@@ -93,7 +93,7 @@
     <ClCompile Include="src\service\logic\gs_common_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\scene_event_receiver.cpp">
+    <ClCompile Include="src\event_receiver\scene_event_sync_event.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -101,7 +101,6 @@
     <ClInclude Include="src\game_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-
     <ClInclude Include="src\service\server_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -159,10 +158,10 @@
     <ClInclude Include="src\service\logic\gs_common_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\event_receiver.h">
+    <ClInclude Include="src\event_receiver\sync_event_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\mission_event_receiver.h">
+    <ClInclude Include="src\event_receiver\mission_event_sync_event.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\recast_system.h">
@@ -177,7 +176,10 @@
     <ClInclude Include="src\service\logic\gs_common_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\scene_event_receiver.h">
+    <ClInclude Include="src\event_receiver\scene_event_sync_event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\module\master.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

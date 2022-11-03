@@ -15,11 +15,11 @@ tabstr = '    '
 filelist = []
 threads = []
 local.eventprotoarray = []
-headdestfilesuffix = '_receiver.h'
-cppdestfilesuffix = '_receiver.cpp'
+headdestfilesuffix = '_sync_event_receiver.h'
+cppdestfilesuffix = '_sync_event_receiver.cpp'
 cpprpceventpart = 1
-geneventreceiverfilename = 'event_receiver'
-eventreceiverclassname = 'EventReceiverEvent'
+geneventreceiverfilename = 'sync_event_receiver'
+eventreceiverclassname = 'SyncEventReceiverEvent'
 
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'

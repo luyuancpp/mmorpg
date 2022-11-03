@@ -1,4 +1,4 @@
-#include "mission_event_receiver.h"
+#include "mission_event_sync_event.h"
 #include "event_proto/mission_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/game_logic/game_registry.h"
