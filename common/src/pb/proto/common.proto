@@ -38,6 +38,7 @@ message GameConfigInfo
 message LobbyConfigInfo
 {
   uint32 lobby_id = 1;
+  uint32 loglevel = 3;
 }
 
 message IpPort
