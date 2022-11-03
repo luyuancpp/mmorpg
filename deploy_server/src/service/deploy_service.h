@@ -36,18 +36,18 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void StartRegionServer(::google::protobuf::RpcController* controller,
-        const deploy::RegionRequest* request,
-        deploy::RegionServerResponse* response,
+        const deploy::LobbyServerRequest* request,
+        deploy::LobbyServerResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void RegionServerInfo(::google::protobuf::RpcController* controller,
-        const deploy::RegionRequest* request,
-        deploy::RegionServerResponse* response,
+        const deploy::LobbyServerRequest* request,
+        deploy::LobbyServerResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void RegionInfo(::google::protobuf::RpcController* controller,
-        const deploy::RegionRequest* request,
-        deploy::RegionInfoResponse* response,
+        const deploy::LobbyServerRequest* request,
+        deploy::LobbyInfoResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void LoginNodeInfo(::google::protobuf::RpcController* controller,

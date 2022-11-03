@@ -70,8 +70,8 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 }
 
 void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* controller,
-    const deploy::RegionRequest* request,
-    deploy::RegionServerResponse* response,
+    const deploy::LobbyServerRequest* request,
+    deploy::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -81,8 +81,8 @@ void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* con
 }
 
 void DeployServiceImpl::RegionServerInfo(::google::protobuf::RpcController* controller,
-    const deploy::RegionRequest* request,
-    deploy::RegionServerResponse* response,
+    const deploy::LobbyServerRequest* request,
+    deploy::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -92,8 +92,8 @@ void DeployServiceImpl::RegionServerInfo(::google::protobuf::RpcController* cont
 }
 
 void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller,
-    const deploy::RegionRequest* request,
-    deploy::RegionInfoResponse* response,
+    const deploy::LobbyServerRequest* request,
+    deploy::LobbyInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);

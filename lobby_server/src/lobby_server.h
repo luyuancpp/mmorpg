@@ -21,8 +21,8 @@ public:
 
     void ConnectDeploy();
 
-	using LobbyInfoRpc = std::shared_ptr< NormalClosure<deploy::RegionRequest,
-		deploy::RegionServerResponse>>;
+	using LobbyInfoRpc = std::shared_ptr< NormalClosure<deploy::LobbyServerRequest,
+		deploy::LobbyServerResponse>>;
     void StartServer(LobbyInfoRpc replied);
     using SceneNodeSequeIdRpc = std::shared_ptr<NormalClosure<deploy::SceneSqueueRequest, deploy::SceneSqueueResponese>>;
     void SceneSqueueNodeId(SceneNodeSequeIdRpc replied);

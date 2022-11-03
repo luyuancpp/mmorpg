@@ -40,8 +40,8 @@ public:
 		deploy::StartGSResponse>>;
     void StartGsDeployReplied(StartGsRpc replied);
 
-	using LobbyInfoRpc = std::shared_ptr<NormalClosure<deploy::RegionRequest,
-		deploy::RegionInfoResponse>>;
+	using LobbyInfoRpc = std::shared_ptr<NormalClosure<deploy::LobbyServerRequest,
+		deploy::LobbyInfoResponse>>;
 	void LobbyInfoReplied(LobbyInfoRpc replied);
 
     void CallControllerStartGs(ControllerSessionPtr& controller_session);

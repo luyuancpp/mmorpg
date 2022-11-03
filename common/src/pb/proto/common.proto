@@ -34,7 +34,7 @@ message GameConfigInfo
   uint32 server_type = 3;
 }
 
-message RegionConfigInfo
+message LobbyConfigInfo
 {
   uint32 lobby_id = 1;
 }
