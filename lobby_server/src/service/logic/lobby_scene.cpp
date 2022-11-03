@@ -44,7 +44,8 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	registry.get<ControllerStubPtr>(controller_node_it->second)->CallMethod(rpc, &controllerservice::ControllerNodeService_Stub::AddCrossServerScene);;
+	registry.get<ControllerStubPtr>(controller_node_it->second)->CallMethod(rpc, &controllerservice::ControllerNodeService_Stub::AddCrossServerScene);
+	LOG_DEBUG << rpc.DebugString();
 }
 
 
