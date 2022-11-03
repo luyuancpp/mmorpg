@@ -186,6 +186,7 @@ void MissionsComp::Receive(const MissionConditionEvent& condition_event)
     auto missions = missions_comp_pb_.mutable_missions();
     UInt32Set temp_complete;
     auto& classify_missions = it->second;//根据事件触发类型分类的任务
+    //todo 同步异步事件
     for (auto lit : classify_missions)
     {
         auto mit = missions->find(lit);
