@@ -7,7 +7,7 @@ option cc_generic_services = true;
 message ServerInfoRequest
 {
   uint32 group = 1;
-  uint32 region_id = 2;
+  uint32 lobby_id = 2;
 }
 
 message ControllerNodesDb
@@ -41,17 +41,17 @@ message StartGSResponse
 
 message RegionRequest
 {
-  uint32 region_id = 1;
+  uint32 lobby_id = 1;
 }
 
 message RegionServerResponse
 {
-  region_server_db info = 1;
+  lobby_server_db info = 1;
 }
 
 message RegionInfoResponse
 {
-  ControllerNodesDb region_controllers = 1;
+  ControllerNodesDb lobby_controllers = 1;
 }
 
 message GroupLignRequest

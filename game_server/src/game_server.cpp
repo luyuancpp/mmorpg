@@ -85,7 +85,7 @@ void GameServer::ServerInfo(ServerInfoRpc replied)
         &deploy::DeployService_Stub::StartGS);
 
 	LobbyInfoRpc rcp(std::make_shared<LobbyInfoRpc::element_type>());
-    rcp->s_rq_.set_region_id(LobbyConfig::GetSingleton().config_info().region_id());
+    rcp->s_rq_.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
 	deploy_stub_.CallMethod(
 		&GameServer::LobbyInfoReplied,
         rcp,
@@ -116,7 +116,7 @@ void GameServer::LobbyInfoReplied(LobbyInfoRpc replied)
 {
     //connect controller
     auto& resp = replied->s_rp_;
-	auto& lobby_controllers = resp->region_controllers();
+	auto& lobby_controllers = resp->lobby_controllers();
 	for (int32_t i = 0; i < lobby_controllers.controllers_size(); ++i)
 	{
 		auto& controller_node_info = lobby_controllers.controllers(i);
@@ -202,7 +202,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             {
                 ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
                 rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-                rpc->s_rq_.set_region_id(LobbyConfig::GetSingleton().config_info().region_id());
+                rpc->s_rq_.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
                 deploy_stub_.CallMethod(
                     &GameServer::ServerInfo,
                     rpc,
