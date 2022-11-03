@@ -22,12 +22,12 @@ message controller_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 region_id = 4;
+  uint32 lobby_id = 4;
 }
 
-message region_server_db
+message lobby_server_db
 {
-  option(OptionTableName)  = "region_server_db";
+  option(OptionTableName)  = "lobby_server_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
@@ -54,7 +54,7 @@ message game_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 region_id = 4;
+  uint32 lobby_id = 4;
 }
 
 message gateway_server_db
@@ -65,7 +65,7 @@ message gateway_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 region_id = 4;
+  uint32 lobby_id = 4;
 }
 
 
@@ -82,7 +82,7 @@ message database_server_db
   string db_password = 6;
   uint32 db_port = 7;
   string db_dbname = 8;
-  uint32 region_id = 9;
+  uint32 lobby_id = 9;
 }
 
 message game_freeids
@@ -105,7 +105,7 @@ message servers_info_data
   controller_server_db controller_info = 3;
   gateway_server_db gateway_info = 4;
   redis_server_db redis_info = 5;
-  region_server_db regin_info = 6;
+  lobby_server_db regin_info = 6;
 }
 
 

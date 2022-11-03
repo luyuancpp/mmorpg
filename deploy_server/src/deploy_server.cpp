@@ -26,7 +26,7 @@ namespace deploy
 		RegisterService(&impl_);
 
         g_deploy_server = this;
-        db_->AddTable(region_server_db::default_instance());
+        db_->AddTable(lobby_server_db::default_instance());
         db_->AddTable(database_server_db::default_instance());
         db_->AddTable(redis_server_db::default_instance());
         db_->AddTable(login_server_db::default_instance());
@@ -39,7 +39,7 @@ namespace deploy
 
         InitGroupDb();
 
-        InitRegionServer<region_server_db>(kRSBeginPort, kGroup);
+        InitRegionServer<lobby_server_db>(kRSBeginPort, kGroup);
         InitGroupDb<redis_server_db>(kRedisPort, kGroup);
         InitGroupDb<login_server_db>(kLSBeginPort, kGroup);
         InitLobbyDb<controller_server_db>(kMSBeginPort, kGroup);
@@ -113,8 +113,8 @@ namespace deploy
         auto& connection_info = DeployConfig::GetSingleton().database_param();
         auto& node_ip = DeployConfig::GetSingleton().deploy_info().ip();
 
-        uint32_t region_size = 0;
-        uint32_t region_id = 0;
+        uint32_t lobby_size = 0;
+        uint32_t lobby_id = 0;
 
         database_server_db db_row;
         db_row.set_ip(node_ip);
@@ -123,13 +123,13 @@ namespace deploy
         db_row.set_db_password(connection_info.db_password());
         db_row.set_db_port(3306);
         db_row.set_db_dbname("game");
-        db_row.set_region_id(region_id);
+        db_row.set_lobby_id(lobby_id);
 
         for (uint32_t i = 0; i < kGroup; ++i)
         {
-            if (region_size++ % 10 == 0)
+            if (lobby_size++ % 10 == 0)
             {
-                db_row.set_region_id(++region_id);
+                db_row.set_lobby_id(++lobby_id);
             }
             db_row.set_port(i + kDSBeginPort);
             db_->SaveOne(db_row);

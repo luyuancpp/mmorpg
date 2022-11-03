@@ -111,7 +111,7 @@ void ControllerServer::receive(const OnConnected2ServerEvent& es)
 			{
                 ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
                 rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-                rpc->s_rq_.set_region_id(LobbyConfig::GetSingleton().config_info().region_id());
+                rpc->s_rq_.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
                 deploy_stub_.CallMethod(
                     &ControllerServer::StartServer,
                     rpc,
@@ -196,8 +196,8 @@ void ControllerServer::InitConfig()
 void ControllerServer::Connect2Lobby()
 {
 	auto& lobby_info = serverinfos_.regin_info();
-	InetAddress region_addr(lobby_info.ip(), lobby_info.port());
-	lobby_session_ = std::make_unique<RpcClient>(loop_, region_addr);
+	InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
+	lobby_session_ = std::make_unique<RpcClient>(loop_, lobby_addr);
 	lobby_session_->subscribe<RegisterStubEvent>(rg_stub_);
 	lobby_session_->registerService(&contoller_service_);
 	lobby_session_->subscribe<OnConnected2ServerEvent>(*this);
