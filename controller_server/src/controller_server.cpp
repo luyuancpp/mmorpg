@@ -44,6 +44,7 @@ void ControllerServer::Init()
     g_controller_node = this;
     EventReceiverEvent::Register(dispatcher);
     InitConfig();
+    muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
     InitMsgService();
     InitPlayerServcie();
 

@@ -23,7 +23,7 @@ void LobbyServer::Init()
 
     LobbyConfig::GetSingleton().Load("lobby.json");
     DeployConfig::GetSingleton().Load("deploy.json");
-
+    muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
     mainscene_config::GetSingleton().load();
 
     ConnectDeploy();
