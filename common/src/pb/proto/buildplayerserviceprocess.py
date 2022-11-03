@@ -32,7 +32,7 @@ servicedir = './md5/logic_proto/'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
 gsplayerservicedir = '../../../../game_server/src/service/logic/'
-rgplayerservicedir = '../../../../lobby_server/src/service/logic/'
+lobbyplayerservicedir = '../../../../lobby_server/src/service/logic/'
 controllerplayerservicedir = '../../../../controller_server/src/service/logic/'
 client_player = 'client_player'
 server_player = 'server_player'
@@ -154,7 +154,7 @@ def getwritedir(serverstr):
     elif serverstr == buildpublic.controller_file_prefix:
         writedir = controllerplayerservicedir
     elif serverstr == buildpublic.lobby_file_prefix:
-        writedir = rgplayerservicedir
+        writedir = lobbyplayerservicedir
     return writedir
 
 def genheadfile(filename, serverstr):

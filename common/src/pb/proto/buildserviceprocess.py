@@ -22,7 +22,7 @@ yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
 gsservicedir = '../../../../game_server/src/service/logic/'
-rgservicedir = '../../../../lobby_server/src/service/logic/'
+lobbyservicedir = '../../../../lobby_server/src/service/logic/'
 controllerservicedir = '../../../../controller_server/src/service/logic/'
 logicprotodir = './logic_proto/'
 tabstr = '    '
@@ -38,7 +38,7 @@ def getwritedir(serverstr):
     elif serverstr == buildpublic.controller_file_prefix:
         writedir = controllerservicedir
     elif serverstr == buildpublic.lobby_file_prefix:
-        writedir = rgservicedir
+        writedir = lobbyservicedir
     return writedir
 
 
@@ -106,7 +106,7 @@ def getprevfilename(filename, writedir):
             return buildpublic.gs_file_prefix
         if writedir == controllerservicedir:
             return buildpublic.controller_file_prefix
-        if writedir == rgservicedir:
+        if writedir == lobbyservicedir:
             return ''
     return ''
 
@@ -229,7 +229,7 @@ def getmd5prevfilename(filename, writedir):
             return buildpublic.gs_file_prefix
         if writedir == controllerservicedir:
             return buildpublic.controller_file_prefix
-        if writedir == rgservicedir:
+        if writedir == lobbyservicedir:
             return ''
     return ''
 
