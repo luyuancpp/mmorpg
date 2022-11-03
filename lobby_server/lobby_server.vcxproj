@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{fddc52cb-40a8-4cc2-9e6c-dc848001c298}</ProjectGuid>
-    <RootNamespace>region_server</RootNamespace>
+    <RootNamespace>lobby_server</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>lobby_server</ProjectName>
   </PropertyGroup>
@@ -157,7 +157,6 @@
     <ClInclude Include="src\lobby_server.h" />
     <ClInclude Include="src\network\gs_node.h" />
     <ClInclude Include="src\network\controller_node.h" />
-    <ClInclude Include="src\region_server.h" />
     <ClInclude Include="src\service\logic\lobby_scene.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -41,9 +41,6 @@
     <ClInclude Include="src\service\logic\lobby_scene.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\region_server.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\lobby_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
