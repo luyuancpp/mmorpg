@@ -19,7 +19,7 @@ public:
         gsservice::ControllerPlayerMessageRespone* response,
         ::google::protobuf::Closure* done)override;
 
-    void GwPlayerService(::google::protobuf::RpcController* controller,
+    void GatePlayerService(::google::protobuf::RpcController* controller,
         const gsservice::RpcClientRequest* request,
         gsservice::RpcClientResponse* response,
         ::google::protobuf::Closure* done)override;
@@ -29,7 +29,7 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void GwConnectGs(::google::protobuf::RpcController* controller,
+    void GateConnectGs(::google::protobuf::RpcController* controller,
         const gsservice::ConnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;

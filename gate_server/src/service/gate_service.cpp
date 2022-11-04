@@ -14,7 +14,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
+void GateServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     const gwservice::StartGSRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -45,7 +45,7 @@ void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
-void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
+void GateServiceImpl::StopGS(::google::protobuf::RpcController* controller,
     const gwservice::StopGSRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -66,7 +66,7 @@ void GwNodeServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
-void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controller,
+void GateServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controller,
     const gwservice::PlayerEnterGsRequest* request,
     gwservice::PlayerEnterGsResponese* response,
     ::google::protobuf::Closure* done)
@@ -85,7 +85,7 @@ void GwNodeServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* control
 ///<<< END WRITING YOUR CODE 
 }
 
-void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* controller,
+void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controller,
     const gwservice::PlayerMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -103,7 +103,7 @@ void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* control
 ///<<< END WRITING YOUR CODE 
 }
 
-void GwNodeServiceImpl::KickConnByController(::google::protobuf::RpcController* controller,
+void GateServiceImpl::KickConnByController(::google::protobuf::RpcController* controller,
     const gwservice::KickConnRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)

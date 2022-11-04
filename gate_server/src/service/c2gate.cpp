@@ -104,7 +104,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             controllerservice::DisconnectRequest request;
             request.set_session_id(session_id);
-            g_gate_server->controller_stub().CallMethod(request, &controllerservice::ControllerNodeService_Stub::OnGwDisconnect);
+            g_gate_server->controller_stub().CallMethod(request, &controllerservice::ControllerNodeService_Stub::OnGateDisconnect);
         }
         g_client_sessions_->erase(session_id);
     }
