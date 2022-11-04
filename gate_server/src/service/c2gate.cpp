@@ -96,9 +96,9 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             //此消息一定要发，不能值通过ms 的gw disconnect去发
             //如果我的登录还没到controller,gw的disconnect 先到，登录后到，那么ms server 永远删除不了这个sessionid了
-			gw2l::DisconnectRequest request;
+			loginservice::DisconnectRequest request;
 			request.set_session_id(session_id);
-			login_stub().CallMethod(request, &gw2l::LoginService_Stub::Disconnect);
+			login_stub().CallMethod(request, &loginservice::LoginService_Stub::Disconnect);
         }
         // controller
         {
@@ -134,7 +134,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     login_stub().CallMethod(&ClientReceiver::OnServerLoginReplied,
         rpc, 
         this, 
-        &gw2l::LoginService_Stub::Login);
+        &loginservice::LoginService_Stub::Login);
 }
 
 void ClientReceiver::OnServerLoginReplied(LoginRpc replied)
@@ -157,7 +157,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
     login_stub().CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         rpc, 
         this, 
-        &gw2l::LoginService_Stub::CreatPlayer);
+        &loginservice::LoginService_Stub::CreatPlayer);
 }
 
 void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeRpc replied)
@@ -181,7 +181,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
     login_stub().CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         rpc,
         this,
-        &gw2l::LoginService_Stub::EnterGame);
+        &loginservice::LoginService_Stub::EnterGame);
 }
 
 void ClientReceiver::OnServerEnterGameReplied(EnterGameRpc replied)

@@ -14,7 +14,7 @@
 #include "controller_service.pb.h"
 
 ///<<< END WRITING YOUR CODE
-class LoginServiceImpl : public gw2l::LoginService{
+class LoginServiceImpl : public loginservice::LoginService{
 public:
 		///<<< BEGIN WRITING YOUR CODE
 		using PlayerPtr = std::shared_ptr<AccountPlayer>;
@@ -28,24 +28,24 @@ public:
 
 		void set_redis_client(PbSyncRedisClientPtr& p) { redis_ = p; }
 
-		using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, gw2l::LoginResponse>>;
+		using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, loginservice::LoginResponse>>;
 		void LoginAccountDbReplied(LoginAccountDbRpc replied);
 
-		using LoginAcountControllerRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, gw2l::LoginResponse>>;
+		using LoginAcountControllerRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, loginservice::LoginResponse>>;
 		void LoginAccountControllerReplied(LoginAcountControllerRpc replied);
 
-		using CreatePlayerRpc = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, gw2l::CreatePlayerResponse>>;
+		using CreatePlayerRpc = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, loginservice::CreatePlayerResponse>>;
 		void CreatePlayerDbReplied(CreatePlayerRpc replied);
 
-		using EnterGameDbRpc = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, gw2l::EnterGameResponse>>;
+		using EnterGameDbRpc = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, loginservice::EnterGameResponse>>;
 		void EnterGameDbReplied(EnterGameDbRpc replied);
 
-		using EnterGameControllerRpc = std::shared_ptr<RpcString<controllerservice::EnterGameRequest, controllerservice::EnterGameResponese, gw2l::EnterGameResponse>>;
+		using EnterGameControllerRpc = std::shared_ptr<RpcString<controllerservice::EnterGameRequest, controllerservice::EnterGameResponese, loginservice::EnterGameResponse>>;
 		void EnterGameReplied(EnterGameControllerRpc replied);
 
 		void EnterGame(Guid player_id,
 			uint64_t connection_id,
-			::gw2l::EnterGameResponse* response,
+			::loginservice::EnterGameResponse* response,
 			::google::protobuf::Closure* done);
 
 	private:
@@ -58,27 +58,27 @@ public:
 		///<<< END WRITING YOUR CODE
 public:
     void Login(::google::protobuf::RpcController* controller,
-        const gw2l::LoginRequest* request,
-        gw2l::LoginResponse* response,
+        const loginservice::LoginRequest* request,
+        loginservice::LoginResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void CreatPlayer(::google::protobuf::RpcController* controller,
-        const gw2l::CreatePlayerRequest* request,
-        gw2l::CreatePlayerResponse* response,
+        const loginservice::CreatePlayerRequest* request,
+        loginservice::CreatePlayerResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterGame(::google::protobuf::RpcController* controller,
-        const gw2l::EnterGameRequest* request,
-        gw2l::EnterGameResponse* response,
+        const loginservice::EnterGameRequest* request,
+        loginservice::EnterGameResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void LeaveGame(::google::protobuf::RpcController* controller,
-        const gw2l::LeaveGameRequest* request,
+        const loginservice::LeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void Disconnect(::google::protobuf::RpcController* controller,
-        const gw2l::DisconnectRequest* request,
+        const loginservice::DisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
