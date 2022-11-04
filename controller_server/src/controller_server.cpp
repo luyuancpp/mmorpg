@@ -196,7 +196,7 @@ void ControllerServer::InitConfig()
 
 void ControllerServer::Connect2Lobby()
 {
-	auto& lobby_info = serverinfos_.regin_info();
+	auto& lobby_info = serverinfos_.lobby_info();
 	InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
 	lobby_session_ = std::make_unique<RpcClient>(loop_, lobby_addr);
 	lobby_session_->subscribe<RegisterStubEvent>(lobby_stub_);

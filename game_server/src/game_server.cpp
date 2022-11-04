@@ -65,7 +65,7 @@ void GameServer::ServerInfo(ServerInfoRpc replied)
     auto& resp = replied->s_rp_;
     auto& info = replied->s_rp_->info();
    
-    auto& lobby_info = info.regin_info();
+    auto& lobby_info = info.lobby_info();
     InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
    
     lobby_session_ = std::make_unique<RpcClient>(loop_, lobby_addr);
@@ -91,7 +91,7 @@ void GameServer::ServerInfo(ServerInfoRpc replied)
 		&GameServer::LobbyInfoReplied,
         rcp,
 		this,
-		&deploy::DeployService_Stub::RegionInfo);
+		&deploy::DeployService_Stub::AcquireLobbyInfo);//获取大厅服下所有服务器信息
 }
 
 void GameServer::StartGsDeployReplied(StartGsRpc replied)

@@ -70,7 +70,7 @@ void LobbyServer::receive(const OnConnected2ServerEvent& es)
                 &LobbyServer::StartServer,
                 rpc,
                 this,
-                &deploy::DeployService_Stub::StartRegionServer);
+                &deploy::DeployService_Stub::StartLobbyServer);
         }
 			
 
