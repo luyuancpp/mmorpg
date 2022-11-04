@@ -1,5 +1,4 @@
-#ifndef GATEWAY_SERVER_GS_SESSION_H_
-#define GATEWAY_SERVER_GS_SESSION_H_
+#pragma once
 
 #include "entt/src/entt/entity/registry.hpp"
 
@@ -23,5 +22,3 @@ struct GsNode
 using GsNodes = std::unordered_map<uint32_t, GsNode>;
 extern thread_local GsNodes g_gs_nodes;
 
-
-#endif//GATEWAY_SERVER_GS_SESSION_H_

@@ -1,5 +1,4 @@
-#ifndef GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_
-#define GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_
+#pragma once
 
 #include "src/network/codec/codec.h"
 
@@ -57,7 +56,7 @@ public:
 
     void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { codec_.send(conn, messag); }
 
-    //client to gateway 
+    //client to gate 
     void OnLogin(const muduo::net::TcpConnectionPtr& conn,
         const LoginRequestPtr& message,
         muduo::Timestamp);
@@ -104,6 +103,3 @@ private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;   
 };
-
-
-#endif // GATEWAY_SERVER_SRC_CLENT_SERVICE_SERVICE_H_
