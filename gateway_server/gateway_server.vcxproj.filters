@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\gateway_server.cpp">
+    <ClCompile Include="src\gate_server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\network\gate_player_list.cpp">
@@ -44,7 +44,7 @@
     <ClInclude Include="src\service\c2gate.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\gateway_server.h">
+    <ClInclude Include="src\gate_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gate_player_list.h">

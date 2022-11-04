@@ -6,7 +6,7 @@
 #include "muduo/base/Logging.h"
 #include "muduo/net/TcpConnection.h"
 
-#include "src/gateway_server.h"
+#include "src/gate_server.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
