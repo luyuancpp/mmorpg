@@ -31,7 +31,7 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "gs_service.pb.h"
 #include "logic_proto/common_server_player.pb.h"
-#include "logic_proto/scene_normal.pb.h"
+#include "logic_proto/scene.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
