@@ -45,7 +45,7 @@ using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 class ClientReceiver : muduo::noncopyable
 {
 public:
-    using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
+    using RpcStubgw2l = RpcStub<loginservice::LoginService_Stub>;
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
@@ -61,21 +61,21 @@ public:
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
-    using LoginRpc = std::shared_ptr<ClosureReplied<LoginResponse, gw2l::LoginRequest, gw2l::LoginResponse>>;
+    using LoginRpc = std::shared_ptr<ClosureReplied<LoginResponse, loginservice::LoginRequest, loginservice::LoginResponse>>;
     void OnServerLoginReplied(LoginRpc replied);
 
     void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
         const CreatePlayerRequestPtr& message, 
         muduo::Timestamp);
 
-    using CreatePlayeRpc = std::shared_ptr<ClosureReplied<CreatePlayerResponse, gw2l::CreatePlayerRequest, gw2l::CreatePlayerResponse>>;
+    using CreatePlayeRpc = std::shared_ptr<ClosureReplied<CreatePlayerResponse, loginservice::CreatePlayerRequest, loginservice::CreatePlayerResponse>>;
     void OnServerCreatePlayerReplied(CreatePlayeRpc replied);
 
     void OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
 
-    using EnterGameRpc = std::shared_ptr<ClosureReplied<EnterGameResponse, gw2l::EnterGameRequest, gw2l::EnterGameResponse>>;
+    using EnterGameRpc = std::shared_ptr<ClosureReplied<EnterGameResponse, loginservice::EnterGameRequest, loginservice::EnterGameResponse>>;
     void OnServerEnterGameReplied(EnterGameRpc replied);
 
     void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,

@@ -1,5 +1,5 @@
 syntax = "proto3";
-package gw2l;
+package loginservice;
 import "common.proto";
 import "mysql_database_table.proto";
 import "google/protobuf/empty.proto";

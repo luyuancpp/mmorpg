@@ -78,7 +78,7 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpc replied)
 	{
 		return;
 	}
-	::gw2l::EnterGameResponse* response = nullptr;
+	::loginservice::EnterGameResponse* response = nullptr;
 	::google::protobuf::Closure* done = nullptr;
 	replied->Move(response, done);
 	EnterGame(srq.player_id(), response->session_id(), response, done);
@@ -91,7 +91,7 @@ void LoginServiceImpl::EnterGameReplied(EnterGameControllerRpc replied)
 
 void LoginServiceImpl::EnterGame(Guid player_id,
 	uint64_t session_id,
-	::gw2l::EnterGameResponse* response,
+	::loginservice::EnterGameResponse* response,
 	::google::protobuf::Closure* done)
 {
 	auto it = sessions_.find(session_id);
@@ -129,8 +129,8 @@ void LoginServiceImpl::UpdateAccount(uint64_t session_id, const ::account_databa
 
 ///<<<rpc begin
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
-    const gw2l::LoginRequest* request,
-    gw2l::LoginResponse* response,
+    const loginservice::LoginRequest* request,
+    loginservice::LoginResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -150,8 +150,8 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
-    const gw2l::CreatePlayerRequest* request,
-    gw2l::CreatePlayerResponse* response,
+    const loginservice::CreatePlayerRequest* request,
+    loginservice::CreatePlayerResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -185,8 +185,8 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-    const gw2l::EnterGameRequest* request,
-    gw2l::EnterGameResponse* response,
+    const loginservice::EnterGameRequest* request,
+    loginservice::EnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -237,7 +237,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
-    const gw2l::LeaveGameRequest* request,
+    const loginservice::LeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -259,7 +259,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
-    const gw2l::DisconnectRequest* request,
+    const loginservice::DisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

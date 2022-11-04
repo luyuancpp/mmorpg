@@ -25,7 +25,7 @@ using namespace muduo::net;
 class GateServer : noncopyable, public Receiver<GateServer>
 {
 public:
-    using LoginStub = RpcStub<gw2l::LoginService_Stub>;
+    using LoginStub = RpcStub<loginservice::LoginService_Stub>;
     using ControllerStub = RpcStub<controllerservice::ControllerNodeService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
