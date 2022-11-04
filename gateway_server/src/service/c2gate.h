@@ -51,6 +51,7 @@ public:
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
     RpcStubgw2l& login_stub();
+    RpcStubgw2l& login_stub(uint64_t session_id);
 
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
 
