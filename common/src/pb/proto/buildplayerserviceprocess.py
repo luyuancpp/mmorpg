@@ -147,21 +147,20 @@ def classbegin():
 def emptyfun():
     return ''
 
-def getwritedir(serverstr):
-    writedir = ''
+def getdestdir(serverstr):
+    destdir = ''
     if serverstr == buildpublic.gs_file_prefix:
-        writedir = gsplayerservicedir
+        destdir = gsplayerservicedir
     elif serverstr == buildpublic.controller_file_prefix:
-        writedir = controllerplayerservicedir
+        destdir = controllerplayerservicedir
     elif serverstr == buildpublic.lobby_file_prefix:
-        writedir = lobbyplayerservicedir
-    return writedir
+        destdir = lobbyplayerservicedir
+    return destdir
 
 def genheadfile(filename, serverstr):
-    local.servicenames = []
-    writedir = getwritedir(serverstr)
-    headfun = [classbegin, genheadrpcfun]
-    destfilename = writedir +  serverstr + filename.replace('.proto', '.h').replace(protodir, '')
+    destdir = getdestdir(serverstr)
+    headfunbodyarry = [classbegin, genheadrpcfun]
+    destfilename = destdir +  serverstr + filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = servicedir + serverstr + filename.replace('.proto', '.h').replace(protodir, '')
     if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
         shutil.copy(destfilename, newheadfilename)
@@ -169,15 +168,15 @@ def genheadfile(filename, serverstr):
     newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
     newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
-    for i in range(0, len(headfun)) :             
-        newstr += headfun[i]()
+    for i in range(0, len(headfunbodyarry)) :             
+        newstr += headfunbodyarry[i]()
     newstr += '};\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def gencppfile(filename, serverstr):
-    writedir = getwritedir(serverstr)
-    cppfilename = writedir  + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
+    destdir = getdestdir(serverstr)
+    cppfilename = destdir  + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = servicedir + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
         shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
@@ -321,7 +320,7 @@ def gencontrollerplayerservcielist(filename):
         file.write(newstr)
 
 def md5copy(filename, serverstr):
-        writedir = getwritedir(serverstr)
+        destdir = getdestdir(serverstr)
         if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
             return
         if serverstr == 'gs_player_service.cpp' or serverstr == 'controller_player_service.cpp':
@@ -330,7 +329,7 @@ def md5copy(filename, serverstr):
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
-        destfilename = writedir  + filename
+        destfilename = destdir  + filename
         if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
             emptymd5 = True
         else:
