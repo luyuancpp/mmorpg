@@ -17,6 +17,7 @@ local.service = ''
 local.playerservicearray = []
 local.openplayerservicearray = []
 local.fileservice = []
+local.md5protodir = []
 
 threads = []
 local.pkg = ''
@@ -184,7 +185,7 @@ def genheadfile(filename, serverstr):
 def gencppfile(filename, serverstr):
     destdir = getdestdir(serverstr)
     cppfilename = destdir  + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
-    newcppfilename = servicedir + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
+    newcppfilename = getsrcpathmd5dir(serverstr) + filename.replace('.proto', '.cpp').replace(protodir, '')
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
         shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
         return
@@ -283,7 +284,7 @@ def gengsplayerservcielist(filename):
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + buildpublic.gs_file_prefix + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir  + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
@@ -332,7 +333,7 @@ def md5copy(filename, serverstr):
             return
         if serverstr == 'gs_player_service.cpp' or serverstr == 'controller_player_service.cpp':
             serverstr = ''
-        gennewfilename = servicedir  + filename
+        gennewfilename = getsrcpathmd5dir(serverstr)  + filename
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
@@ -347,20 +348,21 @@ def md5copy(filename, serverstr):
         shutil.copy(gennewfilename, destfilename)
         md5tool.generate_md5_file_for(destfilename, filenamemd5)
 def md5copydir():
-    for (dirpath, dirnames, filenames) in os.walk(servicedir):
-        for filename in filenames:    
-            if filename.find(client_player) >= 0:
-                md5copy(filename, buildpublic.gs_file_prefix)
-            elif filename.find(server_player) >= 0 and filename.find(buildpublic.gs_file_prefix) >= 0:
-                md5copy(filename, buildpublic.gs_file_prefix)
-            elif filename.find(server_player) >= 0 and filename.find(buildpublic.controller_file_prefix) >= 0:
-                md5copy(filename, buildpublic.controller_file_prefix)
-            elif filename.find(buildpublic.lobby_file_prefix) >= 0: 
-                pass
-            elif filename == 'gs_player_service.cpp':
-                md5copy(filename, buildpublic.gs_file_prefix)
-            elif filename == 'controller_player_service.cpp':
-                md5copy(filename, buildpublic.controller_file_prefix)
+    for d in local.md5protodir:
+        for (dirpath, dirnames, filenames) in os.walk(d):
+            for filename in filenames:    
+                if filename.find(client_player) >= 0:
+                    md5copy(filename, buildpublic.gs_file_prefix)
+                elif filename.find(server_player) >= 0 and filename.find(buildpublic.gs_file_prefix) >= 0:
+                    md5copy(filename, buildpublic.gs_file_prefix)
+                elif filename.find(server_player) >= 0 and filename.find(buildpublic.controller_file_prefix) >= 0:
+                    md5copy(filename, buildpublic.controller_file_prefix)
+                elif filename.find(buildpublic.lobby_file_prefix) >= 0: 
+                    pass
+                elif filename == 'gs_player_service.cpp':
+                    md5copy(filename, buildpublic.gs_file_prefix)
+                elif filename == 'controller_player_service.cpp':
+                    md5copy(filename, buildpublic.controller_file_prefix)
 
 genfile = []
 
@@ -405,7 +407,7 @@ def main():
     gencontrollerplayerservcielist('controller_player_service.cpp')
 
 buildpublic.makedirs()
-buildpublic.makedirsbypath(protodir)
+local.md5protodir = buildpublic.makedirsbypath(protodir)
 inputfile() 
 main()
 md5copydir()

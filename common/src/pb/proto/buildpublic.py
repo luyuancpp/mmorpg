@@ -34,6 +34,10 @@ def makedirs():
             os.makedirs(d)
 
 def makedirsbypath(dirname):
+    dirlist = []
     for d in servermd5dirs :
-        if not os.path.exists(d + dirname):
-            os.makedirs(d + dirname)
+        fulldir = d + dirname
+        dirlist.append(fulldir)
+        if not os.path.exists(fulldir):            
+            os.makedirs(fulldir)
+    return dirlist
