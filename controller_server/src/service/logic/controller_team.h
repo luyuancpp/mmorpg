@@ -2,7 +2,7 @@
 #include "src/pb/pbc/logic_proto/team.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class NormalS2STeamServiceImpl : public ::NormalS2STeamService{
+class S2STeamServiceImpl : public ::S2STeamService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
