@@ -165,11 +165,11 @@ def getsrcpathmd5dir(dirpath):
         srcdir = buildpublic.servermd5dirs[buildpublic.lobbymd5dirindex]
     return srcdir + protodir
 
-def genheadfile(filename, serverstr):
-    destdir = getdestdir1(serverstr)
+def genheadfile(filename, dirpath):
+    destdir = getdestdir1(dirpath)
     headfunbodyarry = [classbegin, genheadrpcfun]
     destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
-    newheadfilename = getsrcpathmd5dir(serverstr) + filename.replace('.proto', '.h').replace(protodir, '')
+    newheadfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.h').replace(protodir, '')
     if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
         shutil.copy(destfilename, newheadfilename)
         return
@@ -182,10 +182,10 @@ def genheadfile(filename, serverstr):
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(filename, serverstr):
-    destdir = getdestdir1(serverstr)
+def gencppfile(filename, dirpath):
+    destdir = getdestdir1(dirpath)
     cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
-    newcppfilename = getsrcpathmd5dir(serverstr) + filename.replace('.proto', '.cpp').replace(protodir, '')
+    newcppfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.cpp').replace(protodir, '')
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
         shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
         return
