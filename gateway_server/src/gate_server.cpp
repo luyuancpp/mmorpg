@@ -57,7 +57,7 @@ void GateServer::StartServer(ServerInfoRpc replied)
     controller_node_session_->subscribe<OnConnected2ServerEvent>(*this);
     controller_node_session_->connect();        
 
-    auto& myinfo = serverinfo_data_.gateway_info();
+    auto& myinfo = serverinfo_data_.gate_info();
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_unique<TcpServer>(loop_, gateway_addr, "gateway");
     server_->setConnectionCallback(

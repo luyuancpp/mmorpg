@@ -32,7 +32,7 @@ namespace deploy
         db_->AddTable(login_server_db::default_instance());
         db_->AddTable(controller_server_db::default_instance());
         db_->AddTable(game_server_db::default_instance());
-        db_->AddTable(gateway_server_db::default_instance());
+        db_->AddTable(gate_server_db::default_instance());
         db_->AddTable(reuse_game_server_db::default_instance());
 
         db_->Init();
@@ -44,7 +44,7 @@ namespace deploy
         InitGroupDb<login_server_db>(kLSBeginPort, kGroup);
         InitLobbyDb<controller_server_db>(kMSBeginPort, kGroup);
         InitLobbyDb<game_server_db>(kGSBeginPort, kGroup * 2);
-        InitLobbyDb<gateway_server_db>(kGateSBeginPort, kGroup);
+        InitLobbyDb<gate_server_db>(kGateSBeginPort, kGroup);
 
         LoadGSDb();
         server_.subscribe<OnBeConnectedEvent>(*this);
