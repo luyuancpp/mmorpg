@@ -14,10 +14,11 @@ cppdir = "cpp/"
 xlsdir = "xlsx/"
 genfilelist = ["global_variable"]
 
+#todo 自己选择要生成id 的列
 def genIdStr(sheet):
         nRows = sheet.nrows
         name = sheet.name
-        s = "#pragma once\n"
+        filestr = "#pragma once\n"
         filestr += "enum e_%s_configid : uint32_t\n{\n" % (name)
         counter = 1
         for idx in range(1, nRows):
