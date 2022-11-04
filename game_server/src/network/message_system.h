@@ -1,5 +1,4 @@
-#ifndef GAME_SERVER_MODULE_NETWORK_MESSAGE_SYS_H_
-#define GAME_SERVER_MODULE_NETWORK_MESSAGE_SYS_H_
+#pragma once
 
 #include "google/protobuf/message.h"
 
@@ -16,5 +15,3 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, entt::entit
 void Send2ControllerPlayer(const google::protobuf::Message& message, EntityPtr& player);
 void Send2Controller(const google::protobuf::Message& messag, uint32_t controller_node_id);
 void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id);
-
-#endif // !GAME_SERVER_MODULE_NETWORK_MESSAGE_SYS_H_

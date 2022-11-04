@@ -1,5 +1,4 @@
-#ifndef COMMON_SRC_RANDOM_RANDOM_H_
-#define COMMON_SRC_RANDOM_RANDOM_H_
+#pragma once
 
 #include <random>
 
@@ -36,5 +35,4 @@ private:
     std::mt19937 rand;
 };
 
-#endif//COMMON_SRC_RANDOM_RANDOM_H_
 

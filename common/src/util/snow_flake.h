@@ -1,6 +1,4 @@
-#ifndef SRC_SNOW_FLAKE_SNOW_FLAKE_H_
-#define SRC_SNOW_FLAKE_SNOW_FLAKE_H_
-
+#pragma once
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -198,5 +196,3 @@ using ServerSequence16 = ServerSequence<16>;
 using ServerSequence24 = ServerSequence<24>;
 using ServerSequence32 = ServerSequence<32>;
 
-
-#endif // SRC_SNOW_FLAKE_SNOW_FLAKE_H_

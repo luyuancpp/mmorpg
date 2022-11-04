@@ -1,5 +1,4 @@
-#ifndef COMMON_SRC_GAME_deploy_json_H_
-#define COMMON_SRC_GAME_deploy_json_H_
+#pragma once
 
 #include "common.pb.h"
 
@@ -42,4 +41,3 @@ private:
 };
 
 
-#endif//DATABASE_SERVER_SRC_CONFIG_DATABASE_CONFIG_H_

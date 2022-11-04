@@ -1,5 +1,4 @@
-#ifndef GAME_SERVER_SRC_SERVICE_PLAYER_SERVICE_H_
-#define GAME_SERVER_SRC_SERVICE_PLAYER_SERVICE_H_
+#pragma once
 #include <memory>
 #include <unordered_map>
 
@@ -31,4 +30,3 @@ extern std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_
 extern std::unordered_set<std::string> g_open_player_services;//开放给玩家的服务
 
 
-#endif // !GAME_SERVER_SRC_SERVICE_PLAYER_SERVICE_H_
