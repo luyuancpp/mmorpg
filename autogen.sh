@@ -35,7 +35,7 @@ if test $? -ne 0; then
 fi
 
 cd ..
-cd region_server && cmake . && make -j$cpu
+cd lobby_server && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
 fi
@@ -53,13 +53,13 @@ if test $? -ne 0; then
 fi
 
 cd ..
-cd master_server && cmake . && make -j$cpu
+cd controller_server && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
 fi
 
 cd ..
-cd gateway_server && cmake . && make -j$cpu
+cd gate_server && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
 fi
