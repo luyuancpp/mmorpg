@@ -17,11 +17,13 @@ threads = []
 local.eventprotoarray = []
 cpprpceventpart = 1
 syncfilename = 'sync_event_receiver'
-syncclassfilename = 'SyncEventReceiverEvent'
+syncclassfilename = 'SyncEventReceiver'
 asyncfilename = 'async_event_receiver'
-asyncclassfilename = 'AsyncEventReceiverEvent'
-currentfilename = syncfilename
-currentclassname = syncclassfilename
+asyncclassfilename = 'AsyncEventReceiver'
+normalcfilename = 'event_receiver'
+normalcclassfilename = 'EventReceiver'
+currentfilename = normalcfilename
+currentclassname = normalcclassfilename
 
 
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
@@ -263,10 +265,10 @@ md5copy('event', '.h')
 geneventreceivercpp()
 md5copy('event', '.cpp')
 
-currentfilename = asyncfilename
-currentclassname = asyncclassfilename
-main()
-geneventreceiverhead()
-md5copy('event', '.h')
-geneventreceivercpp()
-md5copy('event', '.cpp')
+#currentfilename = asyncfilename
+#currentclassname = asyncclassfilename
+#main()
+#geneventreceiverhead()
+#md5copy('event', '.h')
+#geneventreceivercpp()
+#md5copy('event', '.cpp')

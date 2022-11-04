@@ -126,12 +126,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\event_receiver\async_event_receiver.cpp" />
-    <ClCompile Include="src\event_receiver\mission_async_event_receiver.cpp" />
-    <ClCompile Include="src\event_receiver\mission_sync_event_receiver.cpp" />
-    <ClCompile Include="src\event_receiver\scene_async_event_receiver.cpp" />
-    <ClCompile Include="src\event_receiver\scene_sync_event_receiver.cpp" />
-    <ClCompile Include="src\event_receiver\sync_event_receiver.cpp" />
+    <ClCompile Include="src\event_receiver\event_receiver.cpp" />
+    <ClCompile Include="src\event_receiver\mission_event_receiver.cpp" />
+    <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
     <ClCompile Include="src\service\logic\gs_common_client_player.cpp" />
     <ClCompile Include="src\service\logic\gs_common_server_player.cpp" />
     <ClCompile Include="src\system\logic\config_system.cpp" />
@@ -158,12 +155,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\gs_scene_comp.h" />
-    <ClInclude Include="src\event_receiver\async_event_receiver.h" />
-    <ClInclude Include="src\event_receiver\mission_async_event_receiver.h" />
-    <ClInclude Include="src\event_receiver\mission_sync_event_receiver.h" />
-    <ClInclude Include="src\event_receiver\scene_async_event_receiver.h" />
-    <ClInclude Include="src\event_receiver\scene_sync_event_receiver.h" />
-    <ClInclude Include="src\event_receiver\sync_event_receiver.h" />
+    <ClInclude Include="src\event_receiver\event_receiver.h" />
+    <ClInclude Include="src\event_receiver\mission_event_receiver.h" />
+    <ClInclude Include="src\event_receiver\scene_event_receiver.h" />
     <ClInclude Include="src\service\logic\gs_common_client_player.h" />
     <ClInclude Include="src\service\logic\gs_common_server_player.h" />
     <ClInclude Include="src\system\logic\config_system.h" />
