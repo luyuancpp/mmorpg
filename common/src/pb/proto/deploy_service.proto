@@ -76,9 +76,9 @@ message SceneSqueueResponese
 service DeployService {
   rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
   rpc StartGS (StartGSRequest) returns (StartGSResponse);
-  rpc StartRegionServer (LobbyServerRequest) returns (LobbyServerResponse);
-  rpc RegionServerInfo (LobbyServerRequest) returns (LobbyServerResponse);
-  rpc RegionInfo (LobbyServerRequest) returns (LobbyInfoResponse);
+  rpc StartLobbyServer (LobbyServerRequest) returns (LobbyServerResponse);
+  rpc AcquireLobbyServerInfo (LobbyServerRequest) returns (LobbyServerResponse);
+  rpc AcquireLobbyNodeInfo (LobbyServerRequest) returns (LobbyInfoResponse);
   rpc LoginNodeInfo (GroupLignRequest) returns (GruoupLoginNodeResponse);
   rpc SceneSqueueNodeId (SceneSqueueRequest) returns (SceneSqueueResponese);
 }
