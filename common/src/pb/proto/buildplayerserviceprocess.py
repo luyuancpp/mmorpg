@@ -189,7 +189,7 @@ def gencppfile(filename, serverstr):
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
         shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
         return
-    newstr = '#include "' +  serverstr + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
+    newstr = '#include "'  + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
     newstr += '#include "src/game_logic/game_registry.h"\n'
     newstr += '#include "src/network/message_system.h"\n'
     serviceidx = 0
@@ -327,13 +327,13 @@ def gencontrollerplayerservcielist(filename):
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(filename, serverstr):
+def md5copy(filename, serverstr, md5path):
         destdir = getdestdir(serverstr)
         if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
             return
         if serverstr == 'gs_player_service.cpp' or serverstr == 'controller_player_service.cpp':
             serverstr = ''
-        gennewfilename = getsrcpathmd5dir(serverstr)  + filename
+        gennewfilename = md5path  + filename
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
@@ -352,17 +352,15 @@ def md5copydir():
         for (dirpath, dirnames, filenames) in os.walk(d):
             for filename in filenames:    
                 if filename.find(client_player) >= 0:
-                    md5copy(filename, buildpublic.gs_file_prefix)
-                elif filename.find(server_player) >= 0 and filename.find(buildpublic.gs_file_prefix) >= 0:
-                    md5copy(filename, buildpublic.gs_file_prefix)
-                elif filename.find(server_player) >= 0 and filename.find(buildpublic.controller_file_prefix) >= 0:
-                    md5copy(filename, buildpublic.controller_file_prefix)
-                elif filename.find(buildpublic.lobby_file_prefix) >= 0: 
-                    pass
-                elif filename == 'gs_player_service.cpp':
-                    md5copy(filename, buildpublic.gs_file_prefix)
-                elif filename == 'controller_player_service.cpp':
-                    md5copy(filename, buildpublic.controller_file_prefix)
+                    md5copy(filename, buildpublic.gs_file_prefix, dirpath)
+                elif filename.find(server_player) >= 0 and dirpath.find(buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]) >= 0:
+                    md5copy(filename, buildpublic.gs_file_prefix, dirpath)
+                elif filename.find(server_player) >= 0 and filename.find(buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]) >= 0:
+                    md5copy(filename, buildpublic.controller_file_prefix, dirpath)
+                #elif filename == 'gs_player_service.cpp':
+                    #md5copy(filename, buildpublic.gs_file_prefix)
+                #elif filename == 'controller_player_service.cpp':
+                  #  md5copy(filename, buildpublic.controller_file_prefix)
 
 genfile = []
 
