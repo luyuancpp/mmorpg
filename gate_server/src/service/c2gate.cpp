@@ -63,25 +63,31 @@ ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub(uint64_t session_id)
     }
     if (!session_it->second.ValidLogin())
     {
-        auto index = session_id % g_login_nodes.size();
-        std::size_t i = 0;
-        for (auto& it : g_login_nodes)
-        {
-            if (i < index)
-            {
-                ++i;
-                continue;
-            }
-            session_it->second.login_node_id_ = it.first;
-            break;
-        }
+        session_it->second.login_node_id_ = find_valid_login_node_id(session_id);
     }
     auto login_node_it = g_login_nodes.find(session_it->second.login_node_id_);
     if (g_login_nodes.end() == login_node_it)
     {
+        LOG_ERROR << "player login server not found : " << session_it->second.login_node_id_;
         return static_login_stub;
     }
     return *login_node_it->second.login_stub_;
+}
+
+uint32_t ClientReceiver::find_valid_login_node_id(uint64_t session_id)
+{
+	auto index = session_id % g_login_nodes.size();
+	std::size_t i = 0;
+	for (auto& it : g_login_nodes)
+	{
+		if (i < index)
+		{
+			++i;
+			continue;
+		}
+		return it.first;
+	}
+    return GateClient::kInvalidNodeId;
 }
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
@@ -97,7 +103,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             //如果我的登录还没到controller,gw的disconnect 先到，登录后到，那么ms server 永远删除不了这个sessionid了
 			loginservice::DisconnectRequest request;
 			request.set_session_id(session_id);
-			login_stub().CallMethod(request, &loginservice::LoginService_Stub::Disconnect);
+			login_stub(session_id).CallMethod(request, &loginservice::LoginService_Stub::Disconnect);
         }
         // controller
         {
@@ -130,7 +136,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     rpc->s_rq_.set_account(message->account());
     rpc->s_rq_.set_password(message->password());
     rpc->s_rq_.set_session_id(rpc->session_id());
-    login_stub().CallMethod(&ClientReceiver::OnServerLoginReplied,
+    login_stub(tcp_session_id(conn)).CallMethod(&ClientReceiver::OnServerLoginReplied,
         rpc, 
         this, 
         &loginservice::LoginService_Stub::Login);
@@ -153,7 +159,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 {
     auto rpc(std::make_shared<CreatePlayeRpc::element_type>(conn));
     rpc->s_rq_.set_session_id(rpc->session_id());
-    login_stub().CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
+    login_stub(tcp_session_id(conn)).CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
         rpc, 
         this, 
         &loginservice::LoginService_Stub::CreatPlayer);
@@ -177,7 +183,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
     auto rpc(std::make_shared<EnterGameRpc::element_type>(conn));
     rpc->s_rq_.set_session_id(rpc->session_id());
     rpc->s_rq_.set_player_id(message->player_id());
-    login_stub().CallMethod(&ClientReceiver::OnServerEnterGameReplied,
+    login_stub(tcp_session_id(conn)).CallMethod(&ClientReceiver::OnServerEnterGameReplied,
         rpc,
         this,
         &loginservice::LoginService_Stub::EnterGame);
