@@ -7,8 +7,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/lobby_config.h"
 
-#include "src/event_receiver/sync_event_receiver.h"
-#include "src/event_receiver/async_event_receiver.h"
+#include "src/event_receiver/event_receiver.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/game_registry.h"
@@ -31,8 +30,7 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 void GameServer::Init()
 {
     g_gs = this; 
-    SyncEventReceiverEvent::Register(dispatcher);
-    AsyncEventReceiverEvent::Register(dispatcher);
+    EventReceiver::Register(dispatcher);
     InitConfig();
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
     global_entity() = registry.create();
