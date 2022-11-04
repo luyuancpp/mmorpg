@@ -58,8 +58,8 @@ void GateServer::StartServer(ServerInfoRpc replied)
     controller_node_session_->connect();        
 
     auto& myinfo = serverinfo_data_.gate_info();
-    InetAddress gate_addr(myinfo.ip(), myinfo.port());
-    server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gateway");
+	InetAddress gate_addr(myinfo.ip(), myinfo.port());
+	server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
         std::bind(&GateServer::OnConnection, this, _1));
     server_->setMessageCallback(

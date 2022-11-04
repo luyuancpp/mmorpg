@@ -25,8 +25,8 @@ using namespace muduo::net;
 class GateServer : noncopyable, public Receiver<GateServer>
 {
 public:
-    using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
-    using RpcStubControllerNode = RpcStub<controllerservice::ControllerNodeService_Stub>;
+    using LoginStub = RpcStub<gw2l::LoginService_Stub>;
+    using ControllerStub = RpcStub<controllerservice::ControllerNodeService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GateServer(EventLoop* loop)
@@ -36,7 +36,7 @@ public:
         client_receiver_(codec_, dispatcher_)
     { }
 
-    RpcStubControllerNode& controller_stub() { return controller_stub_; }
+    ControllerStub& controller_stub() { return controller_stub_; }
     GwNodeServiceImpl& node_service_impl() { return node_service_impl_; }
     inline uint32_t gate_node_id()const { return serverinfo_data_.gate_info().id(); }
 
@@ -85,7 +85,7 @@ private:
     RpcStub<deploy::DeployService_Stub> deploy_stub_;
 
     RpcClientPtr controller_node_session_;
-    RpcStubControllerNode controller_stub_;
+    ControllerStub controller_stub_;
 
     GwNodeServiceImpl node_service_impl_;
 };
