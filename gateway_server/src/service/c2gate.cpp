@@ -53,6 +53,14 @@ ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub()
     return *g_login_nodes.begin()->second.login_stub_;
 }
 
+ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub(uint64_t session_id)
+{
+    //std::hash<uint64_t>(session_id);
+
+    static RpcStubgw2l static_login_stub;
+    return static_login_stub;
+}
+
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     //改包把消息发给其他玩家怎么办

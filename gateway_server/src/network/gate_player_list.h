@@ -8,6 +8,7 @@
 struct GateClient
 {
 	uint32_t gs_node_id_{ UINT32_MAX };
+	uint64_t login_node_id_{ UINT64_MAX };
 	muduo::net::TcpConnectionPtr conn_;
 };
 
