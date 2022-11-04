@@ -34,7 +34,7 @@
 #include "logic_proto/scene.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
-using GateStub = RpcStub<gwservice::GwNodeService_Stub>;
+using GateStub = RpcStub<gwservice::GateService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
@@ -576,7 +576,7 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
 	ControllerNodeServiceImpl::GatePlayerEnterGsRpc rpc;
 	rpc.s_rq_.set_session_id(player_session.session_id());
 	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GateStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
+	registry.get<GateStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied, rpc, this, &gwservice::GateService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 

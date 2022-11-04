@@ -161,7 +161,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
 						request.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
 						request.mutable_rpc_client()->set_port(conn->localAddress().port());
 						request.set_gate_node_id(gate_node_id());
-						gs_session.gs_stub_->CallMethod(request, &gsservice::GsService_Stub::GwConnectGs);
+						gs_session.gs_stub_->CallMethod(request, &gsservice::GsService_Stub::GateConnectGs);
 					}
 				);
             }
