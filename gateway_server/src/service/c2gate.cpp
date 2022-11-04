@@ -55,10 +55,34 @@ ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub()
 
 ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub(uint64_t session_id)
 {
-    //std::hash<uint64_t>(session_id);
-
     static RpcStubgw2l static_login_stub;
-    return static_login_stub;
+    auto session_it = g_client_sessions_->find(session_id);
+    if (g_client_sessions_->end() == session_it)
+    {
+        return static_login_stub;
+    }
+    if (!session_it->second.ValidLogin())
+    {
+        auto index = std::hash<uint64_t>{}(session_id) % g_login_nodes.size();
+        std::size_t i = 0;
+        for (auto& it : g_login_nodes)
+        {
+            if (i < index)
+            {
+                ++i;
+                continue;
+            }
+            session_it->second.login_node_id_ = it.first;
+            break;
+        }
+    }
+    auto login_node_it = g_login_nodes.find(session_it->second.login_node_id_);
+    if (g_login_nodes.end() == login_node_it)
+    {
+        return static_login_stub;
+    }
+    
+    return *login_node_it->second.login_stub_;
 }
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
