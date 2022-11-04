@@ -105,7 +105,7 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
-void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controller,
+void GsServiceImpl::GatePlayerService(::google::protobuf::RpcController* controller,
     const gsservice::RpcClientRequest* request,
     gsservice::RpcClientResponse* response,
     ::google::protobuf::Closure* done)
@@ -116,7 +116,7 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	auto mit = g_serviceinfo.find(request->msg_id());
 	if (mit == g_serviceinfo.end())
 	{
-		LOG_ERROR << "GwPlayerService msg not found " << request->msg_id();
+		LOG_ERROR << "GatePlayerService msg not found " << request->msg_id();
 		//todo client error;
 		return;
 	}
@@ -124,32 +124,32 @@ void GsServiceImpl::GwPlayerService(::google::protobuf::RpcController* controlle
 	auto it = g_player_services.find(serviceinfo.service);
 	if (it == g_player_services.end())
 	{
-		LOG_ERROR << "GwPlayerService service not found " << request->msg_id();
+		LOG_ERROR << "GatePlayerService service not found " << request->msg_id();
 		return;
 	}
 	google::protobuf::Service* service = it->second->service();
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(serviceinfo.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "GwPlayerService service not found " << request->msg_id();
+		LOG_ERROR << "GatePlayerService service not found " << request->msg_id();
 		return;
 	}
 	auto cit = g_gate_sessions->find(request->session_id());
 	if (cit == g_gate_sessions->end())
 	{
-		LOG_INFO << "GwPlayerService session not found msg id " << request->msg_id();
+		LOG_INFO << "GatePlayerService session not found msg id " << request->msg_id();
 		return;
 	}
 	auto try_player_id = registry.try_get<Guid>(cit->second);
 	if (nullptr == try_player_id)
 	{
-		LOG_ERROR << "GwPlayerService player not loading";
+		LOG_ERROR << "GatePlayerService player not loading";
 		return;
 	}
 	auto pit = g_players->find(*try_player_id);
 	if (pit == g_players->end())
 	{
-		LOG_ERROR << "GwPlayerService player not found" << *try_player_id;
+		LOG_ERROR << "GatePlayerService player not found" << *try_player_id;
 		return;
 	}
 	MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
@@ -182,7 +182,7 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
-void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
+void GsServiceImpl::GateConnectGs(::google::protobuf::RpcController* controller,
     const gsservice::ConnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -201,7 +201,7 @@ void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(kGateNode);
 		g_gate_nodes->emplace(request->gate_node_id(), e);
-		LOG_INFO << "GwConnectGs gate node id " << request->gate_node_id();
+		LOG_INFO << "GateConnectGs gate node id " << request->gate_node_id();
 		break;
 	}
 ///<<< END WRITING YOUR CODE 

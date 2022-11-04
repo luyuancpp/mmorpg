@@ -4,7 +4,7 @@
 ///<<< END WRITING YOUR CODE
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-class GwNodeServiceImpl : public gwservice::GwNodeService{
+class GateServiceImpl : public gwservice::GateService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

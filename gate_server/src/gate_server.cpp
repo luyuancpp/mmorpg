@@ -138,7 +138,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
 				request.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
 				request.mutable_rpc_client()->set_port(controller_node_addr.port());
 				request.set_gate_node_id(gate_node_id());
-				controller_stub_.CallMethod(request, &controllerservice::ControllerNodeService_Stub::OnGwConnect);
+				controller_stub_.CallMethod(request, &controllerservice::ControllerNodeService_Stub::OnGateConnect);
 			}
         );
     }

@@ -37,7 +37,7 @@ public:
     { }
 
     ControllerStub& controller_stub() { return controller_stub_; }
-    GwNodeServiceImpl& node_service_impl() { return node_service_impl_; }
+    GateServiceImpl& node_service_impl() { return node_service_impl_; }
     inline uint32_t gate_node_id()const { return serverinfo_data_.gate_info().id(); }
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
@@ -87,7 +87,7 @@ private:
     RpcClientPtr controller_node_session_;
     ControllerStub controller_stub_;
 
-    GwNodeServiceImpl node_service_impl_;
+    GateServiceImpl node_service_impl_;
 };
 
 extern GateServer* g_gate_server;

@@ -50,7 +50,7 @@ message KickConnRequest
   uint64 session_id = 1;
 }
 
-service GwNodeService {
+service GateService {
   rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
   rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
   rpc PlayerEnterGs (PlayerEnterGsRequest) returns (PlayerEnterGsResponese);
