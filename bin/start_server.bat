@@ -10,4 +10,4 @@ start login_server.exe
 ping /n 1 127.1 >nul
 start game_server.exe
 ping /n 1 127.1 >nul
-start gateway_server.exe
+start gate_server.exe
