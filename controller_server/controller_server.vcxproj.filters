@@ -36,9 +36,6 @@
     <ClCompile Include="src\network\gs_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\controller_player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\service\logic\controller_scene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -76,6 +73,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\logic\common_server_player.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\logic\player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

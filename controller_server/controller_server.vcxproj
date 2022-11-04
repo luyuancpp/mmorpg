@@ -158,6 +158,7 @@
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
     <ClCompile Include="src\network\gate_session.cpp" />
     <ClCompile Include="src\service\logic\common_server_player.cpp" />
+    <ClCompile Include="src\service\logic\player_service.cpp" />
     <ClCompile Include="src\service\logic\scene_server_player.cpp" />
     <ClCompile Include="src\service\logic\team_server_player.cpp" />
     <ClCompile Include="src\system\player_change_scene.cpp" />
@@ -170,7 +171,6 @@
     <ClCompile Include="src\service\logic\controller_scene.cpp" />
     <ClCompile Include="src\service\logic\controller_server_service.cpp" />
     <ClCompile Include="src\service\logic\controller_team.cpp" />
-    <ClCompile Include="src\service\logic\controller_player_service.cpp" />
     <ClCompile Include="src\service\controller_service.cpp" />
     <ClCompile Include="src\system\player_scene_system.cpp" />
     <ClCompile Include="src\system\player_tip_system.cpp" />

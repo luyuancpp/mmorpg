@@ -278,7 +278,7 @@ def parseplayerservcie(filename):
                     local.openplayerservicearray.append(local.pkg + '.' + local.service)
                 
 def gengsplayerservcielist(filename):
-    destfilename = servicedir + filename
+    destfilename = buildpublic.servermd5dirs[buildpublic.gamemd5dirindex] + protodir  + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -301,7 +301,7 @@ def gengsplayerservcielist(filename):
         file.write(newstr)
 
 def gencontrollerplayerservcielist(filename):
-    destfilename = servicedir + filename
+    destfilename = buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex] + protodir + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -309,7 +309,7 @@ def gencontrollerplayerservcielist(filename):
         if f.find(server_player) < 0:
             continue
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + buildpublic.controller_file_prefix + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
@@ -353,14 +353,12 @@ def md5copydir():
             for filename in filenames:    
                 if filename.find(client_player) >= 0:
                     md5copy(filename, buildpublic.gs_file_prefix, dirpath)
-                elif filename.find(server_player) >= 0 and dirpath.find(buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]) >= 0:
+                elif filename.find(server_player) >= 0 and dirpath.find(buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]) >= 0 or\
+                    (filename == 'player_service.cpp' and dirpath.find(buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]) >= 0):    
                     md5copy(filename, buildpublic.gs_file_prefix, dirpath)
-                elif filename.find(server_player) >= 0 and dirpath.find(buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]) >= 0:
+                elif (filename.find(server_player) >= 0 and dirpath.find(buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]) >= 0) or\
+                     (filename == 'player_service.cpp' and dirpath.find(buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]) >= 0):                      
                     md5copy(filename, buildpublic.controller_file_prefix, dirpath)
-                #elif filename == 'gs_player_service.cpp':
-                    #md5copy(filename, buildpublic.gs_file_prefix)
-                #elif filename == 'controller_player_service.cpp':
-                  #  md5copy(filename, buildpublic.controller_file_prefix)
 
 genfile = []
 
@@ -401,8 +399,8 @@ def main():
         t.join()
     for file in genfile:
         parseplayerservcie(file)
-    gengsplayerservcielist('gs_player_service.cpp')
-    gencontrollerplayerservcielist('controller_player_service.cpp')
+    gengsplayerservcielist('player_service.cpp')
+    gencontrollerplayerservcielist('player_service.cpp')
 
 buildpublic.makedirs()
 local.md5protodir = buildpublic.makedirsbypath(protodir)
