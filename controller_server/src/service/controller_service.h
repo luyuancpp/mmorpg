@@ -15,8 +15,8 @@ public:
 private:
 	using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 
-    using GwPlayerEnterGsRpc = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
-    void OnGateUpdatePlayerGsReplied(GwPlayerEnterGsRpc replied);
+    using GatePlayerEnterGsRpc = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
+    void OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc replied);
 
     Guid GetPlayerIdByConnId(uint64_t session_id);
     entt::entity GetPlayerByConnId(uint64_t session_id);    
@@ -33,22 +33,22 @@ public:
         controllerservice::StartGsResponse* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGwConnect(::google::protobuf::RpcController* controller,
+    void OnGateConnect(::google::protobuf::RpcController* controller,
         const controllerservice::ConnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGwLeaveGame(::google::protobuf::RpcController* controller,
+    void OnGateLeaveGame(::google::protobuf::RpcController* controller,
         const controllerservice::LeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGwPlayerService(::google::protobuf::RpcController* controller,
+    void OnGatePlayerService(::google::protobuf::RpcController* controller,
         const controllerservice::ClientMessageRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGwDisconnect(::google::protobuf::RpcController* controller,
+    void OnGateDisconnect(::google::protobuf::RpcController* controller,
         const controllerservice::DisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;

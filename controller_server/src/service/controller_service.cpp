@@ -34,12 +34,12 @@
 #include "logic_proto/scene.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
-using GwStub = RpcStub<gwservice::GwNodeService_Stub>;
+using GateStub = RpcStub<gwservice::GwNodeService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
 //gate 更新完gs，相应的gs可以往那个gate上发送消息了
-void ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied(GwPlayerEnterGsRpc replied)
+void ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc replied)
 {
 	//todo 中间返回是断开了
 	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
@@ -219,7 +219,7 @@ void ControllerNodeServiceImpl::StartGs(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnGateConnect(::google::protobuf::RpcController* controller,
     const controllerservice::ConnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -241,7 +241,7 @@ void ControllerNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* c
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(kGateNode);
 		g_gate_nodes.emplace(request->gate_node_id(), gate);
-        registry.emplace_or_replace<GwStub>(gate, GwStub(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
+        registry.emplace_or_replace<GateStub>(gate, GateStub(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 		break;
 	}
 	registry.emplace<InetAddress>(gate, session_addr);
@@ -252,7 +252,7 @@ void ControllerNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* c
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnGateLeaveGame(::google::protobuf::RpcController* controller,
     const controllerservice::LeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -262,7 +262,7 @@ void ControllerNodeServiceImpl::OnGwLeaveGame(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnGwPlayerService(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnGatePlayerService(::google::protobuf::RpcController* controller,
     const controllerservice::ClientMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -272,7 +272,7 @@ void ControllerNodeServiceImpl::OnGwPlayerService(::google::protobuf::RpcControl
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnGwDisconnect(::google::protobuf::RpcController* controller,
+void ControllerNodeServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* controller,
     const controllerservice::DisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -573,10 +573,10 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
 		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
 		return;
 	}
-	ControllerNodeServiceImpl::GwPlayerEnterGsRpc rpc;
+	ControllerNodeServiceImpl::GatePlayerEnterGsRpc rpc;
 	rpc.s_rq_.set_session_id(player_session.session_id());
 	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GwStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
+	registry.get<GateStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied, rpc, this, &gwservice::GwNodeService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 
