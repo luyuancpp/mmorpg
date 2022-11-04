@@ -63,7 +63,7 @@ ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub(uint64_t session_id)
     }
     if (!session_it->second.ValidLogin())
     {
-        auto index = std::hash<uint64_t>{}(session_id) % g_login_nodes.size();
+        auto index = session_id % g_login_nodes.size();
         std::size_t i = 0;
         for (auto& it : g_login_nodes)
         {
