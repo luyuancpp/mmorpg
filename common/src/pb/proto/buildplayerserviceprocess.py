@@ -38,9 +38,6 @@ client_player = 'client_player'
 server_player = 'server_player'
 filedirdestpath = {}
 
-if not os.path.exists(servicedir):
-    os.makedirs(servicedir)
-
 def isserverpushrpc(service):
     if service.find('S2C') >= 0 or service.find('Push')  >= 0 :
         return True
@@ -157,11 +154,21 @@ def getdestdir(serverstr):
         destdir = lobbyplayerservicedir
     return destdir
 
+def getsrcpathmd5dir(serverstr):
+    srcdir = ''
+    if serverstr == buildpublic.gs_file_prefix:
+        srcdir = buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]
+    elif serverstr == buildpublic.controller_file_prefix:
+        srcdir = buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]
+    elif serverstr == buildpublic.lobby_file_prefix:
+        srcdir = buildpublic.servermd5dirs[buildpublic.lobbymd5dirindex]
+    return srcdir + protodir
+
 def genheadfile(filename, serverstr):
     destdir = getdestdir(serverstr)
     headfunbodyarry = [classbegin, genheadrpcfun]
     destfilename = destdir +  serverstr + filename.replace('.proto', '.h').replace(protodir, '')
-    newheadfilename = servicedir + serverstr + filename.replace('.proto', '.h').replace(protodir, '')
+    newheadfilename = getsrcpathmd5dir(serverstr) + filename.replace('.proto', '.h').replace(protodir, '')
     if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
         shutil.copy(destfilename, newheadfilename)
         return
@@ -397,6 +404,8 @@ def main():
     gengsplayerservcielist('gs_player_service.cpp')
     gencontrollerplayerservcielist('controller_player_service.cpp')
 
+buildpublic.makedirs()
+buildpublic.makedirsbypath(protodir)
 inputfile() 
 main()
 md5copydir()
