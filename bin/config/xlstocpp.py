@@ -52,8 +52,7 @@ def getWorkBookData(workbook):
         return workbookdata
 
 def getcpph(datastring, sheetname):
-        s = "#ifndef %s_config_h_\n"% (sheetname)
-        s += "#define %s_config_h_\n"% (sheetname)
+        s = "#pragma once\n"
         s += "#include <memory>\n"
         s += "#include <unordered_map>\n"
         s += '#include "game_config/%s_config.pb.h" \n' % (sheetname)
@@ -76,7 +75,6 @@ def getcpph(datastring, sheetname):
         s += pd
         s += '};\n'
         s +=  ' const %s_config::row_type get_%s_conf(uint32_t keyid);\n' % (sheetname, sheetname)
-        s += "#endif// %s_config_h_\n" % (sheetname)
         return s;
 
 def getcpp(datastring, sheetname):

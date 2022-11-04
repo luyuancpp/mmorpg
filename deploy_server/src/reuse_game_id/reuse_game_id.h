@@ -1,6 +1,4 @@
-#ifndef DEPLOY_SERVER_SRC_REUSE_GAME_ID_REUSE_GAME_ID_H_
-#define DEPLOY_SERVER_SRC_REUSE_GAME_ID_REUSE_GAME_ID_H_
-
+#pragma once
 #include "src/game_logic/reuse_id/reuse_id.h"
 
 
@@ -44,4 +42,3 @@ private:
     ScanGameId scan_node_ids_;
 };
 
-#endif//DEPLOY_SERVER_SRC_REUSE_GAME_ID_REUSE_GAME_ID_H_

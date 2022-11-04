@@ -1,5 +1,4 @@
-#ifndef COMMON_SRC_SERVER_COMMON_DEPLOY_VARIABLE_H_
-#define COMMON_SRC_SERVER_COMMON_DEPLOY_VARIABLE_H_
+#pragma once
 
 #include <string>
 
@@ -11,5 +10,3 @@ static const uint32_t kMSBeginPort = 14000;
 static const uint32_t kGateSBeginPort = 16000;
 static const uint32_t kGSBeginPort = 18000;
 static const uint32_t kGroup = 500;
-
-#endif//COMMON_SRC_SERVER_COMMON_DEPLOY_VARIABLE_H_

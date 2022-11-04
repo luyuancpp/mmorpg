@@ -1,5 +1,4 @@
-#ifndef GAME_SERVER_MODULE_NETWORK_GATE_NODE_H_
-#define GAME_SERVER_MODULE_NETWORK_GATE_NODE_H_
+#pragma once
 
 #include "muduo/net/TcpConnection.h"
 
@@ -29,4 +28,3 @@ using GateSessionList = std::unordered_map<uint64_t, entt::entity>;
 using SessionPlayerList = std::unordered_map <uint64_t, uint64_t>;
 extern GateSessionList* g_gate_sessions;
 
-#endif//GAME_SERVER_MODULE_NETWORK_GATE_NODE_H_
