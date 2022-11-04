@@ -1,5 +1,4 @@
-#ifndef GATEWAY_SERVER_SRC_GATEWAY_PLAYER_GATEWAY_PLAYER_LIST_H_
-#define GATEWAY_SERVER_SRC_GATEWAY_PLAYER_GATEWAY_PLAYER_LIST_H_
+#pragma once
 
 #include "muduo/net/TcpConnection.h"
 
@@ -17,5 +16,3 @@ using ClientSessions = std::unordered_map<uint64_t, GateClient>;
 
 extern ClientSessions* g_client_sessions_;
 
-
-#endif//GATEWAY_SERVER_SRC_GATEWAY_PLAYER_GATEWAY_PLAYER_LIST_H_

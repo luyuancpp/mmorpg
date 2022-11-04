@@ -36,8 +36,8 @@ void GwNodeServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 	gsi.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
 	gsi.gs_stub_ = std::make_unique<RpcStub<gsservice::GsService_Stub>>();
 	gsi.gs_session_->subscribe<RegisterStubEvent>(*(gsi.gs_stub_.get()));
-	gsi.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gateway_server);
-	gsi.gs_session_->registerService(&g_gateway_server->node_service_impl());
+	gsi.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gate_server);
+	gsi.gs_session_->registerService(&g_gate_server->node_service_impl());
 	gsi.gs_session_->connect();
 	registry.emplace<InetAddress>(gsi.entity_id, gs_addr);
 	g_gs_nodes.emplace(request->gs_node_id(), std::move(gsi));
@@ -99,7 +99,7 @@ void GwNodeServiceImpl::PlayerMessage(::google::protobuf::RpcController* control
 		LOG_ERROR << "connid not found  player id " << request->ex().player_id() << "," << session_id;
 		return;
 	}
-	g_gateway_server->Send2Client(it->second.conn_, request->msg());
+	g_gate_server->Send2Client(it->second.conn_, request->msg());
 ///<<< END WRITING YOUR CODE 
 }
 
