@@ -69,7 +69,7 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
-void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* controller,
+void DeployServiceImpl::StartLobbyServer(::google::protobuf::RpcController* controller,
     const deploy::LobbyServerRequest* request,
     deploy::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
@@ -80,7 +80,7 @@ void DeployServiceImpl::StartRegionServer(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE 
 }
 
-void DeployServiceImpl::RegionServerInfo(::google::protobuf::RpcController* controller,
+void DeployServiceImpl::AcquireLobbyServerInfo(::google::protobuf::RpcController* controller,
     const deploy::LobbyServerRequest* request,
     deploy::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
@@ -91,7 +91,7 @@ void DeployServiceImpl::RegionServerInfo(::google::protobuf::RpcController* cont
 ///<<< END WRITING YOUR CODE 
 }
 
-void DeployServiceImpl::RegionInfo(::google::protobuf::RpcController* controller,
+void DeployServiceImpl::AcquireLobbyNodeInfo(::google::protobuf::RpcController* controller,
     const deploy::LobbyServerRequest* request,
     deploy::LobbyInfoResponse* response,
     ::google::protobuf::Closure* done)
