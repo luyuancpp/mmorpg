@@ -4,7 +4,6 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/missions/missions_base.h"
 ///<<< END WRITING YOUR CODE
-
 void MissionEventReceiverReceiver::Register(entt::dispatcher& dispatcher)
 {
 dispatcher.sink<AcceptMissionEvent>().connect<&MissionEventReceiverReceiver::MissionEventReceiverReceiver::Receive0>();
@@ -23,26 +22,30 @@ dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventReceiverReceiver:
 
 void MissionEventReceiverReceiver::Receive0(const AcceptMissionEvent& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
 	auto entity = entt::to_entity(event_obj.entity());
 	registry.get<MissionsComp>(entity).Accept(event_obj);
-///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE 
 }
+
 void MissionEventReceiverReceiver::Receive1(const MissionConditionEvent& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
 	auto entity = entt::to_entity(event_obj.entity());
 	registry.get<MissionsComp>(entity).Receive(event_obj);
-///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE 
 }
+
 void MissionEventReceiverReceiver::Receive2(const OnAcceptedMissionEvent& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE
-	 //´¥·¢½ÓÈÎÎñ×Ô¶¯Æ¥Åäµ±Ç°µÄÈÎÎñ½ø¶È,½ÓÊÜµÄÊ±ºòÒÑ¾­ÓµÓÐ½ð±Ò
-///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+	 //è§¦å‘æŽ¥ä»»åŠ¡è‡ªåŠ¨åŒ¹é…å½“å‰çš„ä»»åŠ¡è¿›åº¦,æŽ¥å—çš„æ—¶å€™å·²ç»æ‹¥æœ‰é‡‘å¸
+///<<< END WRITING YOUR CODE 
 }
+
 void MissionEventReceiverReceiver::Receive3(const OnMissionAwardEvent& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
+
