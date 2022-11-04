@@ -154,6 +154,7 @@ def getdestdir(serverstr):
     elif serverstr == buildpublic.lobby_file_prefix:
         destdir = lobbyplayerservicedir
     return destdir
+ 
 
 def getsrcpathmd5dir(serverstr):
     srcdir = ''
@@ -353,11 +354,11 @@ def md5copydir():
             for filename in filenames:    
                 if filename.find(client_player) >= 0:
                     md5copy(filename, buildpublic.gs_file_prefix, dirpath)
-                elif filename.find(server_player) >= 0 and dirpath.find(buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]) >= 0 or\
-                    (filename == 'player_service.cpp' and dirpath.find(buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]) >= 0):    
+                elif (filename.find(server_player) >= 0 and buildpublic.isgamedir(dirpath)) or\
+                    (filename == 'player_service.cpp' and buildpublic.isgamedir(dirpath)):    
                     md5copy(filename, buildpublic.gs_file_prefix, dirpath)
-                elif (filename.find(server_player) >= 0 and dirpath.find(buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]) >= 0) or\
-                     (filename == 'player_service.cpp' and dirpath.find(buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]) >= 0):                      
+                elif (filename.find(server_player) >= 0 and buildpublic.iscontrollerdir(dirpath)) or\
+                     (filename == 'player_service.cpp' and buildpublic.iscontrollerdir(dirpath)):                      
                     md5copy(filename, buildpublic.controller_file_prefix, dirpath)
 
 genfile = []
