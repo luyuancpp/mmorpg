@@ -239,7 +239,7 @@ void ControllerNodeServiceImpl::OnGwConnect(::google::protobuf::RpcController* c
 		gate = e;
 		auto& gate_node = *registry.emplace<GateNodePtr>(gate, std::make_shared<GateNode>(c.conn_));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
-		gate_node.node_info_.set_node_type(kGatewayNode);
+		gate_node.node_info_.set_node_type(kGateNode);
 		g_gate_nodes.emplace(request->gate_node_id(), gate);
         registry.emplace_or_replace<GwStub>(gate, GwStub(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 		break;
