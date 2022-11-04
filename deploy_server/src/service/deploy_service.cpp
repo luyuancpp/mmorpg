@@ -34,7 +34,7 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
 	db_->LoadOne(*servers_deploy.mutable_database_info(), where_case);
 	db_->LoadOne(*servers_deploy.mutable_login_info(), where_case);
 	db_->LoadOne(*servers_deploy.mutable_controller_info(), where_case);
-	db_->LoadOne(*servers_deploy.mutable_gateway_info(), where_case);
+	db_->LoadOne(*servers_deploy.mutable_gate_info(), where_case);
 	db_->LoadOne(*servers_deploy.mutable_redis_info(), where_case);
 
 	LoadLobbyDeploy(request->lobby_id(), servers_deploy.mutable_regin_info());
