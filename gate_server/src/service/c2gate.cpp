@@ -81,7 +81,6 @@ ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub(uint64_t session_id)
     {
         return static_login_stub;
     }
-    
     return *login_node_it->second.login_stub_;
 }
 
