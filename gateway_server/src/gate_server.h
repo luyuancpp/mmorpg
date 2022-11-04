@@ -1,5 +1,4 @@
-#ifndef GATEWAY_GATEWAY_SERVER_H_
-#define GATEWAY_GATEWAY_SERVER_H_
+#pragma once
 
 #include <stdio.h>
 
@@ -91,8 +90,7 @@ private:
     GwNodeServiceImpl node_service_impl_;
 };
 
-extern GateServer* g_gateway_server;
+extern GateServer* g_gate_server;
 
-#endif // !GATEWAY_GATEWAY_SERVER_H_
 
 

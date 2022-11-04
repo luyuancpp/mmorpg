@@ -8,7 +8,7 @@
 
 #include "gs_service.pb.h"
 
-GateServer* g_gateway_server = nullptr; 
+GateServer* g_gate_server = nullptr; 
 
 extern ServerSequence32 g_server_sequence_;
 
@@ -20,7 +20,7 @@ void GateServer::LoadConfig()
 
 void GateServer::Init()
 {
-    g_gateway_server = this;
+    g_gate_server = this;
     LoadConfig();
     InitMsgService();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
@@ -58,8 +58,8 @@ void GateServer::StartServer(ServerInfoRpc replied)
     controller_node_session_->connect();        
 
     auto& myinfo = serverinfo_data_.gate_info();
-    InetAddress gateway_addr(myinfo.ip(), myinfo.port());
-    server_ = std::make_unique<TcpServer>(loop_, gateway_addr, "gateway");
+    InetAddress gate_addr(myinfo.ip(), myinfo.port());
+    server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gateway");
     server_->setConnectionCallback(
         std::bind(&GateServer::OnConnection, this, _1));
     server_->setMessageCallback(
