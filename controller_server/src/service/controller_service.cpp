@@ -34,7 +34,7 @@
 #include "logic_proto/scene.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
-using GateStub = RpcStub<gwservice::GateService_Stub>;
+using GateStub = RpcStub<gateservice::GateService_Stub>;
 
 std::size_t kMaxPlayerSize = 1000;
 
@@ -430,7 +430,7 @@ void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController*
         auto player_session = registry.try_get<PlayerSession>(player);
         if (nullptr != player_session)
         {
-            gwservice::KickConnRequest message;
+            gateservice::KickConnRequest message;
             message.set_session_id(player_session->gate_session_.session_id());
             Send2Gate(message, player_session->gate_node_id());
         }
@@ -576,7 +576,7 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
 	ControllerNodeServiceImpl::GatePlayerEnterGsRpc rpc;
 	rpc.s_rq_.set_session_id(player_session.session_id());
 	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GateStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied, rpc, this, &gwservice::GateService::PlayerEnterGs);
+	registry.get<GateStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied, rpc, this, &gateservice::GateService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 
