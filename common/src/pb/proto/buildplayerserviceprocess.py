@@ -332,8 +332,6 @@ def md5copy(filename, serverstr, md5path):
         destdir = getdestdir(serverstr)
         if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
             return
-        if serverstr == 'gs_player_service.cpp' or serverstr == 'controller_player_service.cpp':
-            serverstr = ''
         gennewfilename = md5path  + filename
         filenamemd5 = gennewfilename + '.md5'
         error = None
