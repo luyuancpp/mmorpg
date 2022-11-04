@@ -12,7 +12,7 @@ message TeamTestS2SRespone
 }
 
 
-service NormalS2STeamService
+service S2STeamService
 {
   rpc EnterScene (TeamTestS2SRequest) returns (TeamTestS2SRespone);
 }

@@ -2,7 +2,6 @@
 #include "event_proto/scene_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
 void SceneEventReceiverReceiver::Register(entt::dispatcher& dispatcher)
 {
 dispatcher.sink<BeforeEnterScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive0>();
@@ -21,21 +20,25 @@ dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventReceiverReceiver::SceneEve
 
 void SceneEventReceiverReceiver::Receive0(const BeforeEnterScene& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
+
 void SceneEventReceiverReceiver::Receive1(const OnEnterScene& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
+
 void SceneEventReceiverReceiver::Receive2(const BeforeLeaveScene& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
+
 void SceneEventReceiverReceiver::Receive3(const OnLeaveScene& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
+
