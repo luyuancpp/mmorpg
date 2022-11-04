@@ -355,7 +355,7 @@ def md5copydir():
                     md5copy(filename, buildpublic.gs_file_prefix, dirpath)
                 elif filename.find(server_player) >= 0 and dirpath.find(buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]) >= 0:
                     md5copy(filename, buildpublic.gs_file_prefix, dirpath)
-                elif filename.find(server_player) >= 0 and filename.find(buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]) >= 0:
+                elif filename.find(server_player) >= 0 and dirpath.find(buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]) >= 0:
                     md5copy(filename, buildpublic.controller_file_prefix, dirpath)
                 #elif filename == 'gs_player_service.cpp':
                     #md5copy(filename, buildpublic.gs_file_prefix)
