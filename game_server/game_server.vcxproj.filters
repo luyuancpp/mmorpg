@@ -27,9 +27,6 @@
     <ClCompile Include="src\service\gs_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gs_player_service.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\network\gate_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -94,6 +91,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\service\logic\team_server_player.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\logic\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

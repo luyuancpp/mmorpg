@@ -131,6 +131,7 @@
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
     <ClCompile Include="src\service\logic\common_client_player.cpp" />
     <ClCompile Include="src\service\logic\common_server_player.cpp" />
+    <ClCompile Include="src\service\logic\player_service.cpp" />
     <ClCompile Include="src\service\logic\scene_client_player.cpp" />
     <ClCompile Include="src\service\logic\scene_server_player.cpp" />
     <ClCompile Include="src\service\logic\team_client_player.cpp" />
@@ -149,7 +150,6 @@
     <ClCompile Include="src\service\logic\gs_scene.cpp" />
     <ClCompile Include="src\service\logic\gs_server_service.cpp" />
     <ClCompile Include="src\service\logic\gs_team.cpp" />
-    <ClCompile Include="src\service\logic\gs_player_service.cpp" />
     <ClCompile Include="src\service\server_replied.cpp" />
     <ClCompile Include="src\system\gs_scene_system.cpp" />
   </ItemGroup>
