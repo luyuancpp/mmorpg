@@ -155,6 +155,15 @@ def getdestdir(serverstr):
         destdir = lobbyplayerservicedir
     return destdir
  
+def getdestdir1(dirpath):
+    destdir = ''
+    if buildpublic.isgamedir(dirpath):
+        destdir = gsplayerservicedir
+    elif buildpublic.iscontrollerdir(dirpath):
+        destdir = controllerplayerservicedir
+    elif buildpublic.islobbydir(dirpath):
+        destdir = lobbyplayerservicedir
+    return destdir
 
 def getsrcpathmd5dir(serverstr):
     srcdir = ''
@@ -185,7 +194,7 @@ def genheadfile(filename, serverstr):
 
 def gencppfile(filename, serverstr):
     destdir = getdestdir(serverstr)
-    cppfilename = destdir  + serverstr + filename.replace('.proto', '.cpp').replace(protodir, '')
+    cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = getsrcpathmd5dir(serverstr) + filename.replace('.proto', '.cpp').replace(protodir, '')
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
         shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
@@ -328,8 +337,8 @@ def gencontrollerplayerservcielist(filename):
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(filename, serverstr, md5path):
-        destdir = getdestdir(serverstr)
+def md5copy(filename, md5path):
+        destdir = getdestdir1(md5path)
         if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
             return
         gennewfilename = md5path  + filename
@@ -351,13 +360,13 @@ def md5copydir():
         for (dirpath, dirnames, filenames) in os.walk(d):
             for filename in filenames:    
                 if filename.find(client_player) >= 0:
-                    md5copy(filename, buildpublic.gs_file_prefix, dirpath)
+                    md5copy(filename,  dirpath)
                 elif (filename.find(server_player) >= 0 and buildpublic.isgamedir(dirpath)) or\
                     (filename == 'player_service.cpp' and buildpublic.isgamedir(dirpath)):    
-                    md5copy(filename, buildpublic.gs_file_prefix, dirpath)
+                    md5copy(filename, dirpath)
                 elif (filename.find(server_player) >= 0 and buildpublic.iscontrollerdir(dirpath)) or\
                      (filename == 'player_service.cpp' and buildpublic.iscontrollerdir(dirpath)):                      
-                    md5copy(filename, buildpublic.controller_file_prefix, dirpath)
+                    md5copy(filename,  dirpath)
 
 genfile = []
 
