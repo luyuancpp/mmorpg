@@ -88,7 +88,7 @@ def genmsgidcpp(filename):
         file.write(newstr)
 
 def genmsgidhead(filename):
-    newstr += '#pragma once\n'
+    newstr = '#pragma once\n'
     newstr += '#include <string>\n'
     newstr += '#include <unordered_map>\n\n'
     newstr += 'struct RpcService\n'

@@ -358,19 +358,11 @@ def md5copydir():
 
 genfile = []
 
-def get_file_list(file_path):
-    dir_list = os.listdir(file_path)
-    if not dir_list:
-        return
-    else:
-        dir_list = sorted(dir_list,key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
-        return dir_list
-
 def inputfile():
     global filedirdestpath
     filedirdestpath['player_service.cpp'] = gsplayerservicedir
     filedirdestpath['player_service.h'] = gsplayerservicedir
-    dir_list  = get_file_list(protodir)
+    dir_list  = dir_list = os.listdir(protodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
