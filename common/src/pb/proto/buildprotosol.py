@@ -226,17 +226,9 @@ def gentotalfile(destdir, srcdir):
 genluasol('common.proto', srcdir, '')
 genluasol('c2gate.proto', srcdir, '')
 
-def get_file_list(file_path):
-    dir_list = os.listdir(file_path)
-    if not dir_list:
-        return
-    else:
-        dir_list = sorted(dir_list,key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
-        return dir_list
-
 def inputfile():
     for protodir in genprotodir:
-        dir_list  = get_file_list(protodir)
+        dir_list  = os.listdir(protodir)
         for filename in dir_list:
             if not (filename.find('client_player.proto') >= 0 or filename.find('comp.proto') >= 0):
                 continue
