@@ -87,22 +87,13 @@
     <ClCompile Include="src\service\logic\gs_common_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\mission_sync_event_receiver.cpp">
+    <ClCompile Include="src\event_receiver\event_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\scene_sync_event_receiver.cpp">
+    <ClCompile Include="src\event_receiver\mission_event_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\sync_event_receiver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\event_receiver\async_event_receiver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\event_receiver\mission_async_event_receiver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\event_receiver\scene_async_event_receiver.cpp">
+    <ClCompile Include="src\event_receiver\scene_event_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -182,22 +173,13 @@
     <ClInclude Include="src\module\master.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\mission_sync_event_receiver.h">
+    <ClInclude Include="src\event_receiver\event_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\scene_sync_event_receiver.h">
+    <ClInclude Include="src\event_receiver\mission_event_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\sync_event_receiver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\event_receiver\async_event_receiver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\event_receiver\mission_async_event_receiver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\event_receiver\scene_async_event_receiver.h">
+    <ClInclude Include="src\event_receiver\scene_event_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

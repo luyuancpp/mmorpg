@@ -6,7 +6,7 @@ class MissionConditionEvent;
 class OnAcceptedMissionEvent;
 class OnMissionAwardEvent;
 
-class MissionAsyncEventReceiverReceiver
+class MissionEventReceiverReceiver
 {
 public:
     static void Register(entt::dispatcher& dispatcher);

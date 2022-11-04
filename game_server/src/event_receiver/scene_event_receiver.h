@@ -6,7 +6,7 @@ class OnEnterScene;
 class BeforeLeaveScene;
 class OnLeaveScene;
 
-class SceneAsyncEventReceiverReceiver
+class SceneEventReceiverReceiver
 {
 public:
     static void Register(entt::dispatcher& dispatcher);
