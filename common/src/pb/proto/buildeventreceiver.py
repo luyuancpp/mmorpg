@@ -211,16 +211,8 @@ def generate(filename):
 	generatehead(filename)
 	generatecpp(filename)
 
-def get_file_list(file_path):
-    dir_list = os.listdir(file_path)
-    if not dir_list:
-        return
-    else:
-        dir_list = sorted(dir_list,key=lambda x: os.path.getmtime(os.path.join(file_path, x)))
-        return dir_list
-
 def inputfile():
-    dir_list = get_file_list(eventprotodir)
+    dir_list = os.listdir(eventprotodir)
     for filename in dir_list:
     	if not (filename[-6:].lower() == '.proto'):
             continue
