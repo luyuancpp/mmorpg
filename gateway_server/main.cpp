@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
     g_client_sessions_ = &gate_clients;
 
     EventLoop loop;
-    GatewayServer server(&loop);
+    GateServer server(&loop);
     server.Init();
     loop.loop();
     return 0;

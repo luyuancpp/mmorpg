@@ -199,7 +199,7 @@ void GsServiceImpl::GwConnectGs(::google::protobuf::RpcController* controller,
 		}
 		auto& gate_node = *registry.emplace<GateNodePtr>(e, std::make_shared<GateNodePtr::element_type>(conn));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
-		gate_node.node_info_.set_node_type(kGatewayNode);
+		gate_node.node_info_.set_node_type(kGateNode);
 		g_gate_nodes->emplace(request->gate_node_id(), e);
 		LOG_INFO << "GwConnectGs gate node id " << request->gate_node_id();
 		break;

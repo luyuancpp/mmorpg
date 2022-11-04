@@ -8,17 +8,17 @@
 
 #include "gs_service.pb.h"
 
-GatewayServer* g_gateway_server = nullptr; 
+GateServer* g_gateway_server = nullptr; 
 
 extern ServerSequence32 g_server_sequence_;
 
-void GatewayServer::LoadConfig()
+void GateServer::LoadConfig()
 {
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-void GatewayServer::Init()
+void GateServer::Init()
 {
     g_gateway_server = this;
     LoadConfig();
@@ -31,7 +31,7 @@ void GatewayServer::Init()
     deploy_session_->connect();
 }
 
-void GatewayServer::StartServer(ServerInfoRpc replied)
+void GateServer::StartServer(ServerInfoRpc replied)
 {
     serverinfo_data_ = replied->s_rp_->info();
     g_server_sequence_.set_node_id(gate_node_id());
@@ -42,7 +42,7 @@ void GatewayServer::StartServer(ServerInfoRpc replied)
             LoginNodeInfoRpc rpc(std::make_shared<LoginNodeInfoRpc::element_type>());
             rpc->s_rq_.set_group_id(GameConfig::GetSingleton().config_info().group_id());
             deploy_stub_.CallMethod(
-                &GatewayServer::LoginNoseInfoReplied,
+                &GateServer::LoginNoseInfoReplied,
                 rpc,
                 this,
                 &deploy::DeployService_Stub::LoginNodeInfo);
@@ -61,13 +61,13 @@ void GatewayServer::StartServer(ServerInfoRpc replied)
     InetAddress gateway_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_unique<TcpServer>(loop_, gateway_addr, "gateway");
     server_->setConnectionCallback(
-        std::bind(&GatewayServer::OnConnection, this, _1));
+        std::bind(&GateServer::OnConnection, this, _1));
     server_->setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
 }
 
-void GatewayServer::LoginNoseInfoReplied(LoginNodeInfoRpc replied)
+void GateServer::LoginNoseInfoReplied(LoginNodeInfoRpc replied)
 {
     auto& rsp = replied->s_rp_;
     for (const auto& it : rsp->login_db().login_nodes())
@@ -80,7 +80,7 @@ void GatewayServer::LoginNoseInfoReplied(LoginNodeInfoRpc replied)
     }
 }
 
-void GatewayServer::ConnectLogin(const login_server_db& login_info)
+void GateServer::ConnectLogin(const login_server_db& login_info)
 {
     auto it = g_login_nodes.emplace(login_info.id(), LoginNode());
     if (!it.second)
@@ -96,7 +96,7 @@ void GatewayServer::ConnectLogin(const login_server_db& login_info)
     login_node.login_session_->connect();
 }
 
-void GatewayServer::receive(const OnConnected2ServerEvent& es)
+void GateServer::receive(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
    
@@ -117,7 +117,7 @@ void GatewayServer::receive(const OnConnected2ServerEvent& es)
                 ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
                 rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
                 deploy_stub_.CallMethod(
-                    &GatewayServer::StartServer,
+                    &GateServer::StartServer,
                     rpc,
                     this,
                     &deploy::DeployService_Stub::ServerInfo);

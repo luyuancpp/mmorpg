@@ -23,16 +23,16 @@ using namespace muduo;
 using namespace muduo::net;
 
 
-class GatewayServer : noncopyable, public Receiver<GatewayServer>
+class GateServer : noncopyable, public Receiver<GateServer>
 {
 public:
     using RpcStubgw2l = RpcStub<gw2l::LoginService_Stub>;
     using RpcStubControllerNode = RpcStub<controllerservice::ControllerNodeService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
-    GatewayServer(EventLoop* loop)
+    GateServer(EventLoop* loop)
         : loop_(loop),
-        dispatcher_(std::bind(&GatewayServer::OnUnknownMessage, this, _1, _2, _3)),
+        dispatcher_(std::bind(&GateServer::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         client_receiver_(codec_, dispatcher_)
     { }
@@ -91,7 +91,7 @@ private:
     GwNodeServiceImpl node_service_impl_;
 };
 
-extern GatewayServer* g_gateway_server;
+extern GateServer* g_gateway_server;
 
 #endif // !GATEWAY_GATEWAY_SERVER_H_
 
