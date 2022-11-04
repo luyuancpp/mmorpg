@@ -205,7 +205,6 @@ def gentotalfile(destdir, srcdir):
     totalfuncitonname = 'void pb2sol2()'
     
     with open(srcheadfilename, 'w', encoding='utf-8')as file:
-        definestr = 'COMMON_SRC_PB_PB2SOL2_H_'
         headstr = '#pragma once\n'
         headstr += '#include <google/protobuf/message.h>\n'
         headstr += '#include <sol/sol.hpp>\n'

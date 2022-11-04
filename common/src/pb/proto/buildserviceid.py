@@ -88,9 +88,7 @@ def genmsgidcpp(filename):
         file.write(newstr)
 
 def genmsgidhead(filename):
-    HEAD_FILE = 'COMMON_SRC_PB_PBC_' + local.cppfilename.replace('.', '_').upper()
-    newstr = '#ifndef  ' + HEAD_FILE + '\n'
-    newstr += '#define  ' + HEAD_FILE + '\n'
+    newstr += '#pragma once\n'
     newstr += '#include <string>\n'
     newstr += '#include <unordered_map>\n\n'
     newstr += 'struct RpcService\n'
@@ -103,7 +101,6 @@ def genmsgidhead(filename):
     newstr += 'extern std::unordered_map<std::string, uint32_t> g_msgid;\n'
     newstr += 'extern std::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
     newstr += 'void InitMsgService();\n'
-    newstr += '#endif//  ' + HEAD_FILE + '\n'
     with open(filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
