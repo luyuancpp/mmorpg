@@ -1,4 +1,4 @@
-#include "gateway_server.h"
+#include "gate_server.h"
 
 #include "src/game_config/deploy_json.h"
 #include "src/network/gs_node.h"

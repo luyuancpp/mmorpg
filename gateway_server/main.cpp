@@ -1,4 +1,4 @@
-#include "src/gateway_server.h"
+#include "src/gate_server.h"
 #include "src/network/gate_player_list.h"
 
 int main(int argc, char* argv[])
