@@ -37,7 +37,7 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
 	db_->LoadOne(*servers_deploy.mutable_gate_info(), where_case);
 	db_->LoadOne(*servers_deploy.mutable_redis_info(), where_case);
 
-	LoadLobbyDeploy(request->lobby_id(), servers_deploy.mutable_regin_info());
+	LoadLobbyDeploy(request->lobby_id(), servers_deploy.mutable_lobby_info());
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -91,13 +91,14 @@ void DeployServiceImpl::AcquireLobbyServerInfo(::google::protobuf::RpcController
 ///<<< END WRITING YOUR CODE 
 }
 
-void DeployServiceImpl::AcquireLobbyNodeInfo(::google::protobuf::RpcController* controller,
+void DeployServiceImpl::AcquireLobbyInfo(::google::protobuf::RpcController* controller,
     const deploy::LobbyServerRequest* request,
     deploy::LobbyInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	//获取大厅管理的controller节点
 	std::string where_case = std::to_string(request->lobby_id()) + " = lobby_id  ";
 	db_->LoadAll<controller_server_db>(*response->mutable_lobby_controllers(), where_case);
 ///<<< END WRITING YOUR CODE 

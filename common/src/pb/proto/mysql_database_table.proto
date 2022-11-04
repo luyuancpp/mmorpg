@@ -105,7 +105,7 @@ message servers_info_data
   controller_server_db controller_info = 3;
   gate_server_db gate_info = 4;
   redis_server_db redis_info = 5;
-  lobby_server_db regin_info = 6;
+  lobby_server_db lobby_info = 6;
 }
 
 

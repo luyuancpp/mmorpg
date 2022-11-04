@@ -45,7 +45,7 @@ public:
         deploy::LobbyServerResponse* response,
         ::google::protobuf::Closure* done)override;
 
-    void AcquireLobbyNodeInfo(::google::protobuf::RpcController* controller,
+    void AcquireLobbyInfo(::google::protobuf::RpcController* controller,
         const deploy::LobbyServerRequest* request,
         deploy::LobbyInfoResponse* response,
         ::google::protobuf::Closure* done)override;
