@@ -144,16 +144,6 @@ def classbegin():
     return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
 def emptyfun():
     return ''
-
-def getdestdir(serverstr):
-    destdir = ''
-    if serverstr == buildpublic.gs_file_prefix:
-        destdir = gsplayerservicedir
-    elif serverstr == buildpublic.controller_file_prefix:
-        destdir = controllerplayerservicedir
-    elif serverstr == buildpublic.lobby_file_prefix:
-        destdir = lobbyplayerservicedir
-    return destdir
  
 def getdestdir1(dirpath):
     destdir = ''
@@ -165,18 +155,18 @@ def getdestdir1(dirpath):
         destdir = lobbyplayerservicedir
     return destdir
 
-def getsrcpathmd5dir(serverstr):
+def getsrcpathmd5dir(dirpath):
     srcdir = ''
-    if serverstr == buildpublic.gs_file_prefix:
+    if buildpublic.isgamedir(dirpath):
         srcdir = buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]
-    elif serverstr == buildpublic.controller_file_prefix:
+    elif buildpublic.iscontrollerdir(dirpath):
         srcdir = buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]
-    elif serverstr == buildpublic.lobby_file_prefix:
+    elif buildpublic.islobbydir(dirpath):
         srcdir = buildpublic.servermd5dirs[buildpublic.lobbymd5dirindex]
     return srcdir + protodir
 
 def genheadfile(filename, serverstr):
-    destdir = getdestdir(serverstr)
+    destdir = getdestdir1(serverstr)
     headfunbodyarry = [classbegin, genheadrpcfun]
     destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = getsrcpathmd5dir(serverstr) + filename.replace('.proto', '.h').replace(protodir, '')
@@ -193,7 +183,7 @@ def genheadfile(filename, serverstr):
         file.write(newstr)
 
 def gencppfile(filename, serverstr):
-    destdir = getdestdir(serverstr)
+    destdir = getdestdir1(serverstr)
     cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = getsrcpathmd5dir(serverstr) + filename.replace('.proto', '.cpp').replace(protodir, '')
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
@@ -261,14 +251,14 @@ def gencppfile(filename, serverstr):
 def generate(filename):
     if filename.find(client_player) >= 0:
         parsefile(filename)
-        genheadfile(filename, buildpublic.gs_file_prefix)
-        gencppfile(filename, buildpublic.gs_file_prefix)
+        genheadfile(filename, buildpublic.gamemd5dir())
+        gencppfile(filename, buildpublic.gamemd5dir())
     elif filename.find(server_player) >= 0:
         parsefile(filename)
-        genheadfile(filename, buildpublic.gs_file_prefix)
-        gencppfile(filename, buildpublic.gs_file_prefix)
-        genheadfile(filename, buildpublic.controller_file_prefix)
-        gencppfile(filename, buildpublic.controller_file_prefix)
+        genheadfile(filename, buildpublic.gamemd5dir())
+        gencppfile(filename, buildpublic.gamemd5dir())
+        genheadfile(filename, buildpublic.controllermd5dir())
+        gencppfile(filename, buildpublic.controllermd5dir())
     elif filename.find(buildpublic.lobby_file_prefix) >= 0:
         pass
 

@@ -41,12 +41,21 @@ def makedirsbypath(dirname):
         if not os.path.exists(fulldir):            
             os.makedirs(fulldir)
     return dirlist
-    
+ 
+def controllermd5dir():
+    return servermd5dirs[conrollermd5dirindex]  
+ 
 def iscontrollerdir(dirpath):
-    return dirpath.find(servermd5dirs[conrollermd5dirindex]) >= 0
+    return dirpath.find(controllermd5dir()) >= 0
+    
+def gamemd5dir():
+    return servermd5dirs[gamemd5dirindex]  
     
 def isgamedir(dirpath):
-    return dirpath.find(servermd5dirs[gamemd5dirindex]) >= 0
+    return dirpath.find(gamemd5dir()) >= 0
+
+def lobbymd5dir():
+    return servermd5dirs[lobbymd5dirindex]  
 
 def islobbydir(dirpath):
-    return dirpath.find(servermd5dirs[lobbymd5dirindex]) >= 0
+    return dirpath.find(lobbymd5dir()) >= 0
