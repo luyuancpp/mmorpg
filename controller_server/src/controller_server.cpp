@@ -94,7 +94,7 @@ void ControllerServer::SceneSqueueNodeId(SceneNodeSequeIdRpc replied)
 void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
     auto& connection_info = registry.get<InetAddress>(gs);
-    gwservice::StartGSRequest request;
+    gateservice::StartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
     request.set_gs_node_id(registry.get<GsNodePtr>(gs)->node_id());

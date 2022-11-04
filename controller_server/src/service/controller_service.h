@@ -15,7 +15,7 @@ public:
 private:
 	using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 
-    using GatePlayerEnterGsRpc = NormalClosure<gwservice::PlayerEnterGsRequest, gwservice::PlayerEnterGsResponese>;
+    using GatePlayerEnterGsRpc = NormalClosure<gateservice::PlayerEnterGsRequest, gateservice::PlayerEnterGsResponese>;
     void OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc replied);
 
     Guid GetPlayerIdByConnId(uint64_t session_id);

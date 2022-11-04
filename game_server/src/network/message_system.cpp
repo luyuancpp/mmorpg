@@ -47,7 +47,7 @@ void Send2Player(const google::protobuf::Message& msg, entt::entity player)
 		LOG_INFO << "Send2Player player gate not found " << registry.get<Guid>(player);
 		return;
 	}
-	gwservice::PlayerMessageRequest msg_wrapper;
+	gateservice::PlayerMessageRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_msg_id(msg_it->second);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_session_id(registry.get<GateSession>(player).session_id());
