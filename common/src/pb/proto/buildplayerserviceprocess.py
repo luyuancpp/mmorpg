@@ -178,7 +178,7 @@ def getsrcpathmd5dir(serverstr):
 def genheadfile(filename, serverstr):
     destdir = getdestdir(serverstr)
     headfunbodyarry = [classbegin, genheadrpcfun]
-    destfilename = destdir +  serverstr + filename.replace('.proto', '.h').replace(protodir, '')
+    destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = getsrcpathmd5dir(serverstr) + filename.replace('.proto', '.h').replace(protodir, '')
     if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
         shutil.copy(destfilename, newheadfilename)
