@@ -53,6 +53,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lobby_server", "lobby_serve
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gate_server", "gate_server\gate_server.vcxproj", "{30D7288B-8317-4FB0-80B5-2FCCAD2AE1FA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7DFF59B9-6450-4359-962E-922BD5487C32} = {7DFF59B9-6450-4359-962E-922BD5487C32}
+		{FC29015B-FD9B-4AC9-832D-F660D2D7169D} = {FC29015B-FD9B-4AC9-832D-F660D2D7169D}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
