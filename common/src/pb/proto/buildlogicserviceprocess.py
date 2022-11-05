@@ -251,11 +251,11 @@ def md5copy(filename, writedir, fileextend):
             emptymd5 = True
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        destfilename = writedir +  getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
+        destfilename =  buildpublic.getdestdir(writedir) + filename.replace('.proto', fileextend)
         if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
-        print("copy %s ---> %s" % (gennewfilename, destfilename))
-        md5tool.generate_md5_file_for(gennewfilename, destfilename)
+        #print("copy %s ---> %s" % (gennewfilename, destfilename))
+        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, destfilename)
 
 def generate(filename, writedir):
