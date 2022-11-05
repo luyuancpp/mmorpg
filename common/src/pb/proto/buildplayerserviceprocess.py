@@ -29,7 +29,6 @@ rpcend = '///<<<rpc end'
 tabstr = '    '
 cpprpcservicepart = 1
 controller = '(entt::entity player'
-servicedir = './md5/logic_proto/'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic/'
 gsplayerservicedir = '../../../../game_server/src/service/logic/'
