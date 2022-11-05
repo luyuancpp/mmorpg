@@ -255,7 +255,7 @@ def md5copy(filename, writedir, fileextend):
         if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
         print("copy %s ---> %s" % (gennewfilename, destfilename))
-        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+        md5tool.generate_md5_file_for(gennewfilename, destfilename)
         shutil.copy(gennewfilename, destfilename)
 
 def generate(filename, writedir):
