@@ -120,19 +120,16 @@ def getfilenamewithnopath(filename, writedir):
     servertypedir = buildpublic.getservertype(writedir) + '/'
     return filename.replace(logicprotodir, '').replace('common_proto/', '').replace(servertypedir,'')
 
-def genheadfile(filenamearg, writedir):
-    local.servicenames = []
-    filename = getfilenamewithnopath(filenamearg, writedir).replace('.proto', '.h') 
+def genheadfile(filename, writedir):
+    filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.h') 
     headfun = [classbegin, genheadrpcfun]
     destdir =  buildpublic.getdestdir(buildpublic.getservertype(writedir))
-    hdestfilename = writedir + filename
+    destfilename = destdir + filename
     md5filename = buildpublic.getsrcpathmd5dir(writedir, logicprotodir) +  filename
-    print(writedir, ' ', destdir,)
-    return
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(filename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
     try:
-        with open(hdestfilename,'r+', encoding='utf-8') as file:
+        with open(destfilename,'r+', encoding='utf-8') as file:
             part = 0
             isyourcode = 1 
             skipheadline = 0 
@@ -171,16 +168,16 @@ def genheadfile(filenamearg, writedir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(destfilename, writedir):
-    return 
-    filename = destfilename.replace(logicprotodir, '').replace('.proto', '.cpp')
-    cppfilename = writedir  + getprevfilename(destfilename, writedir) + filename
-    newcppfilename = servicedir + getprevfilename(destfilename, writedir) + filename
-    newstr = '#include "' + getprevfilename(destfilename, writedir) + filename.replace('.cpp', '.h') + '"\n'
+def gencppfile(filename, writedir):
+    filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.cpp') 
+    destdir =  buildpublic.getdestdir(buildpublic.getservertype(writedir))
+    destfilename = destdir + filename
+    md5filename = buildpublic.getsrcpathmd5dir(writedir, logicprotodir) +  filename
+    newstr = '#include "' + getprevfilename(filename, writedir) + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     serviceidx = 0
     try:
-        with open(cppfilename,'r+', encoding='utf-8') as file:
+        with open(destfilename,'r+', encoding='utf-8') as file:
             part = 0
             isyourcode = 1 
             skipheadline = 0 
@@ -228,7 +225,7 @@ def gencppfile(destfilename, writedir):
         newstr += yourcodeend +  '\n}\n\n'
         serviceidx += 1 
     newstr += rpcend + '\n'
-    with open(newcppfilename, 'w', encoding='utf-8')as file:
+    with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 
@@ -246,7 +243,7 @@ def md5copy(filename, writedir, fileextend):
         if filename.find('/') >= 0 :
             s = filename.split('/')
             filename = s[len(s) - 1]
-        gennewfilename = servicedir + getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
+        gennewfilename = buildpublic.getsrcpathmd5dir(writedir, logicprotodir) + filename.replace('.proto', fileextend)
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
@@ -254,20 +251,19 @@ def md5copy(filename, writedir, fileextend):
             emptymd5 = True
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        hdestfilename = writedir +  getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
-        #print("copy %s ---> %s  %s" % (filename, writedir, gennewfilename))
-        if error == None and os.path.exists(hdestfilename) and emptymd5 == False:
+        destfilename = writedir +  getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
+        if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
-        print("copy %s ---> %s" % (gennewfilename, hdestfilename))
+        print("copy %s ---> %s" % (gennewfilename, destfilename))
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-        shutil.copy(gennewfilename, hdestfilename)
+        shutil.copy(gennewfilename, destfilename)
 
 def generate(filename, writedir):
     parsefile(filename)
     genheadfile(filename, writedir)
-    #gencppfile(filename, writedir)
-    #md5copy(filename, writedir, '.h')
-    #md5copy(filename, writedir, '.cpp')
+    gencppfile(filename, writedir)
+    md5copy(filename, writedir, '.h')
+    md5copy(filename, writedir, '.cpp')
 
 class myThread (threading.Thread):
     def __init__(self, filename, writedir):
