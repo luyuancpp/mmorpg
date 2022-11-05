@@ -1,0 +1,127 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+import "common.proto";
+import "component_proto/scene_comp.proto";
+package controllerservice;
+option cc_generic_services = true;
+
+message StartGsRequest
+{
+  IpPort rpc_client = 1;
+  IpPort rpc_server = 2;
+  uint32 gs_node_id = 3;
+  uint32 server_type = 4;
+}
+
+message StartGsResponse
+{
+  uint32 controller_node_id = 1;
+  repeated SceneInfo scenes_info = 2;
+  uint32 gate_node_id = 3;
+}
+
+message ClientMessageRequest
+{
+  IpPort rpc_client = 1;
+}
+
+message ConnectRequest
+{
+  IpPort rpc_client = 1;
+  uint32 gate_node_id = 2;
+}
+
+message ConnectedGameRequest
+{
+  IpPort rpc_client = 1;
+}
+
+message LeaveGameRequest
+{
+  uint64 session_id = 1;
+}
+
+message DisconnectRequest
+{
+  uint64 session_id = 1;
+}
+
+message LoginAccountRequest
+{
+  string account = 1;
+  uint64 session_id = 2;
+}
+
+message LoginAccountResponse
+{ 
+  Tips error = 1;
+}
+
+message EnterGameRequest
+{
+  uint64 player_id = 1;
+  uint64 session_id = 2;
+}
+
+message EnterGameResponese
+{
+  uint64 session_id = 1;
+}
+
+message LsLeaveGameRequest
+{
+  uint64 session_id = 1;
+}
+
+message LsDisconnectRequest
+{
+  uint64 session_id = 1;
+}
+
+message PlayerMessageExtern
+{
+  uint64 player_id = 1;
+}
+
+message PlayerNodeServiceRequest
+{
+  MessageBody msg = 1;
+  PlayerMessageExtern ex = 2;
+}
+
+message PlayerMessageRespone
+{
+  MessageBody msg = 1;
+  PlayerMessageExtern ex = 2;
+}
+
+message CrossSceneInfo
+{
+  SceneInfo scene_info = 1;
+  uint32 gs_node_id = 2;
+}
+
+message AddCrossServerSceneRequest
+{
+  repeated CrossSceneInfo cross_scenes_info = 1;
+}
+
+message EnterGsSucceedRequest
+{
+  uint64 player_id = 1;
+}
+
+service ControllerNodeService {
+  rpc StartGs (StartGsRequest) returns (StartGsResponse);
+  rpc OnGateConnect (ConnectRequest) returns (google.protobuf.Empty);
+  rpc OnGateLeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
+  rpc OnGatePlayerService (ClientMessageRequest) returns (google.protobuf.Empty);
+  rpc OnGateDisconnect (DisconnectRequest) returns (google.protobuf.Empty); 
+  rpc OnLsLoginAccount (LoginAccountRequest) returns (LoginAccountResponse);
+  rpc OnLsEnterGame (EnterGameRequest) returns (EnterGameResponese);
+  rpc OnLsLeaveGame (LsLeaveGameRequest) returns (google.protobuf.Empty);
+  rpc OnLsDisconnect (LsDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc OnGsPlayerService (PlayerNodeServiceRequest) returns (PlayerMessageRespone);
+  rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (google.protobuf.Empty);
+  rpc EnterGsSucceed (EnterGsSucceedRequest) returns (google.protobuf.Empty);
+}
