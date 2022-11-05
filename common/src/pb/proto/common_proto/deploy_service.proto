@@ -1,0 +1,84 @@
+syntax = "proto3";
+package deploy;
+import "common.proto";
+import "mysql_database_table.proto";
+option cc_generic_services = true;
+
+message ServerInfoRequest
+{
+  uint32 group = 1;
+  uint32 lobby_id = 2;
+}
+
+message ControllerNodesDb
+{
+  repeated controller_server_db controllers = 1;
+}
+
+message LoginNodesDb
+{
+  repeated login_server_db login_nodes = 1;
+}
+
+message ServerInfoResponse
+{
+  servers_info_data info = 1;
+}
+
+message StartGSRequest
+{
+  uint32 group = 1;
+  game_server_db my_info = 2;
+  IpPort rpc_client = 3; 
+}
+
+message StartGSResponse
+{
+  game_server_db my_info = 1;
+  uint32 error_no = 2;
+  redis_server_db redis_info = 5;
+}
+
+message LobbyServerRequest
+{
+  uint32 lobby_id = 1;
+}
+
+message LobbyServerResponse
+{
+  lobby_server_db info = 1;
+}
+
+message LobbyInfoResponse
+{
+  ControllerNodesDb lobby_controllers = 1;
+}
+
+message GroupLignRequest
+{
+  uint32 group_id = 1;
+}
+
+message GruoupLoginNodeResponse
+{
+  LoginNodesDb login_db = 1;
+}
+
+message SceneSqueueRequest
+{
+}
+
+message SceneSqueueResponese
+{
+  uint32 node_id = 1;
+}
+
+service DeployService {
+  rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
+  rpc StartGS (StartGSRequest) returns (StartGSResponse);
+  rpc StartLobbyServer (LobbyServerRequest) returns (LobbyServerResponse);
+  rpc AcquireLobbyServerInfo (LobbyServerRequest) returns (LobbyServerResponse);
+  rpc AcquireLobbyInfo (LobbyServerRequest) returns (LobbyInfoResponse);
+  rpc LoginNodeInfo (GroupLignRequest) returns (GruoupLoginNodeResponse);
+  rpc SceneSqueueNodeId (SceneSqueueRequest) returns (SceneSqueueResponese);
+}
