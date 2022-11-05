@@ -9,7 +9,7 @@
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_server.h"
 #include "src/network/rpc_stub.h"
-#include "src/service/db_service.h"
+#include "src/service/common_proto/db_service.h"
 
 #include "deploy_service.pb.h"
 

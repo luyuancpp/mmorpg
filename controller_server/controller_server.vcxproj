@@ -171,7 +171,7 @@
     <ClCompile Include="src\service\logic\controller_scene.cpp" />
     <ClCompile Include="src\service\logic\controller_server_service.cpp" />
     <ClCompile Include="src\service\logic\controller_team.cpp" />
-    <ClCompile Include="src\service\controller_service.cpp" />
+    <ClCompile Include="src\service\common_proto\controller_service.cpp" />
     <ClCompile Include="src\system\player_scene_system.cpp" />
     <ClCompile Include="src\system\player_tip_system.cpp" />
   </ItemGroup>
@@ -194,7 +194,7 @@
     <ClInclude Include="src\service\logic\controller_team.h" />
     <ClInclude Include="src\service\logic\player_service.h" />
     <ClInclude Include="src\service\logic\server_service.h" />
-    <ClInclude Include="src\service\controller_service.h" />
+    <ClInclude Include="src\service\common_proto\controller_service.h" />
     <ClInclude Include="src\system\player_scene_system.h" />
     <ClInclude Include="src\system\player_tip_system.h" />
   </ItemGroup>
