@@ -6,13 +6,12 @@ gs_file_prefix = 'gs_'
 lobby_file_prefix = 'lobby_'
 md5dir = 'md5/'
 
-gsplayerservicedir = '../../../../game_server/src/service/logic/'
-lobbyplayerservicedir = '../../../../lobby_server/src/service/logic/'
-controllerplayerservicedir = '../../../../controller_server/src/service/logic/'
-gateservicedir = '../../../../gate_server/src/service/logic/'
-contollerservicedir = '../../../../contoller/src/service/common_proto/'
+gsplayerservicedir = '../../../../game_server/src/service/logic_proto/'
+lobbyplayerservicedir = '../../../../lobby_server/src/service/logic_proto/'
+controllerplayerservicedir = '../../../../controller_server/src/service/logic_proto/'
+gateservicedir = '../../../../gate_server/src/service/logic_proto/'
 
-servermd5dirs = [md5dir + 'contoller_server/', 
+servermd5dirs = [md5dir + 'controller_server/', 
 md5dir + 'game_server/', 
 md5dir + 'gate_server/',
 md5dir + 'login_server/',
@@ -160,3 +159,20 @@ def getsrcpathmd5dir(dirpath, subdir):
         srcdir = servermd5dirs[deploymd5dirindex]   
     return srcdir + subdir
     
+def getdestdir(dirpath):
+    srcdir = ''
+    if isgamedir(dirpath):
+        srcdir = gsplayerservicedir
+    elif iscontrollerdir(dirpath):
+        srcdir = controllerplayerservicedir
+    elif islobbydir(dirpath):
+        srcdir = lobbyplayerservicedir
+    elif isgatedir(dirpath):
+        srcdir = gateservicedir
+    elif islogindir(dirpath):
+        srcdir = servermd5dirs[loginmd5dirindex]  
+    elif isdatabasedir(dirpath):
+        srcdir = servermd5dirs[databasemd5dirindex]    
+    elif isdeploydir(dirpath):
+        srcdir = servermd5dirs[deploymd5dirindex]   
+    return srcdir 

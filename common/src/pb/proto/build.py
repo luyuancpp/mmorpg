@@ -4,6 +4,7 @@ import os
 from os import system
 system("python buildprotoc.py")
 system("python buildserviceprocess.py")
+system("python buildlogicserviceprocess.py")
 system("python buildserviceid.py")
 system("python buildprotosol.py")
 system("python buildplayerserviceprocess.py")

@@ -124,11 +124,10 @@ def genheadfile(filenamearg, writedir):
     local.servicenames = []
     filename = getfilenamewithnopath(filenamearg, writedir).replace('.proto', '.h') 
     headfun = [classbegin, genheadrpcfun]
-    destdir =  buildpublic.getdestdir1(buildpublic.getservertype(writedir))
-    protodir = buildpublic.tranlatedir(filenamearg, logicprotodir)
+    destdir =  buildpublic.getdestdir(buildpublic.getservertype(writedir))
     hdestfilename = writedir + filename
-    md5filename = buildpublic.getsrcpathmd5dir(writedir, protodir) +  filename
-    print(hdestfilename, ' ', md5filename,)
+    md5filename = buildpublic.getsrcpathmd5dir(writedir, logicprotodir) +  filename
+    print(writedir, ' ', destdir,)
     return
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(filename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
@@ -302,13 +301,10 @@ def inputfile():
         if not (filename[-6:].lower() == '.proto'):
             continue
         if buildpublic.is_gs_and_controller_server_proto(filename) == True :
-            genfile.append([logicprotodir + filename, buildpublic.getsrcpathmd5dir1(buildpublic.game(), logicprotodir)])
-            genfile.append([logicprotodir + filename, buildpublic.getsrcpathmd5dir1(buildpublic.controller(), logicprotodir)])
+            genfile.append([logicprotodir + filename, buildpublic.getsrcpathmd5dir(buildpublic.game(), logicprotodir)])
+            genfile.append([logicprotodir + filename, buildpublic.getsrcpathmd5dir(buildpublic.controller(), logicprotodir)])
         elif filename.find(buildpublic.lobby_file_prefix) >= 0:
-            genfile.append([logicprotodir +  filename,  buildpublic.getsrcpathmd5dir1(buildpublic.lobby(), logicprotodir)])
-
-genfile = protofilearray.genfile
+            genfile.append([logicprotodir +  filename,  buildpublic.getsrcpathmd5dir(buildpublic.lobby(), logicprotodir)])
 
 inputfile()
-print(genfile)
 main()
