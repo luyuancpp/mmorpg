@@ -11,7 +11,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/game_logic/game_registry.h"
-#include "src/service/logic/player_service.h"
+#include "src/service/logic_proto/player_service.h"
 #include "src/service/logic/server_service.h"
 #include "src/pb/pbc/msgmap.h"
 

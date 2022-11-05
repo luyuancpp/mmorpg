@@ -20,7 +20,7 @@
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/node_info.h"
-#include "src/service/logic/player_service.h"
+#include "src/service/logic_proto/player_service.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"
