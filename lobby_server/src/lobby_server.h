@@ -6,7 +6,7 @@
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_server.h"
 #include "src/network/rpc_stub.h"
-#include "src/service/logic/lobby_scene.h"
+#include "src/service/logic_proto/lobby_scene.h"
 
 #include "deploy_service.pb.h"
 
