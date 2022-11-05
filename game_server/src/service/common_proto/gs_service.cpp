@@ -50,6 +50,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 	}
 	registry.emplace<EnterGsInfo>(rit.first->second).set_controller_node_id(request->controller_node_id());
 	g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
+
 ///<<< END WRITING YOUR CODE 
 }
 

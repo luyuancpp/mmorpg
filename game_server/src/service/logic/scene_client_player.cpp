@@ -14,8 +14,8 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
     const ::EnterSeceneC2SRequest* request,
     ::EnterSeceneC2SResponse* response)
 {
-    ///<<< BEGIN WRITING YOUR CODE
-        //Èç¹ûÊÇ¿ç·ş¸±±¾·ş²»ÄÜ»»³¡¾°
+///<<< BEGIN WRITING YOUR CODE
+        //å¦‚æœæ˜¯è·¨æœå‰¯æœ¬æœä¸èƒ½æ¢åœºæ™¯
     auto server_type = registry.get<GsServerType>(global_entity());
     if (kRoomServer == server_type.server_type_ ||
         kRoomSceneCrossServer == server_type.server_type_)
@@ -29,7 +29,7 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
         response->mutable_error()->set_id(kRetEnterSceneParamError);
         return;
     }
-    //Äúµ±Ç°¾ÍÔÚÕâ¸ö³¡¾°£¬ÎŞĞèÇĞ»»
+    //æ‚¨å½“å‰å°±åœ¨è¿™ä¸ªåœºæ™¯ï¼Œæ— éœ€åˆ‡æ¢
     auto my_scene = registry.try_get<SceneEntity>(player);
     if (nullptr != my_scene)
     {
@@ -45,7 +45,7 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
     Gs2ControllerEnterSceneRequest message;
     message.mutable_scene_info()->CopyFrom(request->scene_info());
     Send2ControllerPlayer(message, player);
-    ///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end
