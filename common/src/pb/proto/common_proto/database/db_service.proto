@@ -1,0 +1,47 @@
+syntax = "proto3";
+package dbservice;
+import "common.proto";
+import "mysql_database_table.proto";
+option cc_generic_services = true;
+
+message LoginRequest
+{
+  string account = 1;
+  uint64 session_id = 2;
+}
+
+message LoginResponse
+{
+	Tips error = 1;
+  account_database account_player = 2;
+}
+
+message CreatePlayerRequest
+{
+  string account = 1;
+  uint64 session_id = 2;
+}
+
+message CreatePlayerResponse
+{
+  Tips error = 1;
+  account_database account_player = 2;
+  uint64 player_id = 3;
+}
+
+message EnterGameRequest
+{
+  uint64 player_id = 1;
+}
+
+message EnterGameResponse
+{
+  Tips error = 1;
+  uint64 player_id = 2;
+}
+
+service DbService {
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc CreatePlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
+  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
+}
