@@ -169,9 +169,6 @@ def gencppfile(filename, writedir):
     filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.cpp') 
     destfilename = writedir + filename
     md5filename = buildpublic.getsrcpathmd5dir(writedir, buildpublic.commonproto()) +  filename
-    
-    print(destfilename, ' ',   md5filename)
-    return 
     newstr = '#include "' + getprevfilename(destfilename, writedir) + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     serviceidx = 0
