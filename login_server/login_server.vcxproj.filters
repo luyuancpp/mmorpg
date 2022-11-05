@@ -24,7 +24,7 @@
     <ClCompile Include="src\comp\account_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\login_service.cpp">
+    <ClCompile Include="src\service\common_proto\login_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,7 +35,7 @@
     <ClInclude Include="src\comp\account_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\login_service.h">
+    <ClInclude Include="src\service\common_proto\login_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
