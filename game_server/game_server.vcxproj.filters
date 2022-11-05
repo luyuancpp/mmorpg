@@ -36,15 +36,6 @@
     <ClCompile Include="src\network\controller_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\gs_scene.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\logic\gs_team.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\logic\gs_server_service.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\system\gs_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -75,25 +66,34 @@
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\scene_client_player.cpp">
+    <ClCompile Include="src\service\logic_proto\common_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\team_client_player.cpp">
+    <ClCompile Include="src\service\logic_proto\common_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\common_client_player.cpp">
+    <ClCompile Include="src\service\logic_proto\scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\common_server_player.cpp">
+    <ClCompile Include="src\service\logic_proto\gs_server_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\scene_server_player.cpp">
+    <ClCompile Include="src\service\logic_proto\team.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\team_server_player.cpp">
+    <ClCompile Include="src\service\logic_proto\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\player_service.cpp">
+    <ClCompile Include="src\service\logic_proto\scene_client_player.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\logic_proto\scene_server_player.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\logic_proto\team_client_player.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\logic_proto\team_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -102,9 +102,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\server_replied.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\common_proto\gs_service.h">
@@ -117,15 +114,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\controller_node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic\gs_scene.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic\gs_team.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic\server_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\gs_scene_system.h">
@@ -164,22 +152,34 @@
     <ClInclude Include="src\event_receiver\scene_event_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\scene_client_player.h">
+    <ClInclude Include="src\service\logic_proto\common_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\team_client_player.h">
+    <ClInclude Include="src\service\logic_proto\common_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\common_client_player.h">
+    <ClInclude Include="src\service\logic_proto\scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\common_server_player.h">
+    <ClInclude Include="src\service\logic_proto\team.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\scene_server_player.h">
+    <ClInclude Include="src\service\logic_proto\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\team_server_player.h">
+    <ClInclude Include="src\service\logic_proto\scene_client_player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic_proto\scene_server_player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic_proto\server_service.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic_proto\team_client_player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic_proto\team_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
