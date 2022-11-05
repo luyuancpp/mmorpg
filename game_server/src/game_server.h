@@ -4,7 +4,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/network/controller_node.h"
-#include "src/service/gs_service.h"
+#include "src/service/common_proto/gs_service.h"
 #include "src/network/rpc_server.h"
 #include "src/network/rpc_stub.h"
 #include "src/redis_client/redis_client.h"

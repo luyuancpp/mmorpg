@@ -1,0 +1,68 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+import "common.proto";
+package gsservice;
+option cc_generic_services = true;
+
+
+message EnterGsRequest
+{
+  uint64 player_id = 1;
+  uint64 session_id = 2;
+  uint64 controller_node_id = 3;
+}
+
+message ControllerPlayerMessageExtern
+{
+  uint64 player_id = 1;
+}
+
+message ControllerPlayerMessageRequest
+{
+  MessageBody msg = 1;
+  ControllerPlayerMessageExtern ex = 2;
+}
+
+message ControllerSend2PlayerViaGsRequest
+{
+  MessageBody msg = 1;
+  ControllerPlayerMessageExtern ex = 2;
+}
+
+message ControllerPlayerMessageRespone
+{
+  MessageBody msg = 1;
+  ControllerPlayerMessageExtern ex = 2;
+}
+
+message RpcClientRequest
+{
+  bytes request = 1;
+  uint64 session_id = 2;
+  uint32 msg_id = 3;
+}
+
+message RpcClientResponse
+{
+  bytes response = 1;
+}
+
+message DisconnectRequest
+{
+  uint64 player_id = 1;
+}
+
+message ConnectRequest
+{
+  IpPort rpc_client = 1;
+  uint32 gate_node_id = 2;
+}
+
+service GsService {
+  rpc EnterGs (EnterGsRequest) returns (google.protobuf.Empty);
+  rpc PlayerService (ControllerPlayerMessageRequest) returns (ControllerPlayerMessageRespone);
+  rpc GatePlayerService (RpcClientRequest) returns (RpcClientResponse);
+  rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
+  rpc GateConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
+  rpc ControllerSend2PlayerViaGs (ControllerSend2PlayerViaGsRequest) returns (google.protobuf.Empty);
+}
