@@ -27,7 +27,7 @@
     <ClCompile Include="src\network\gs_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic\lobby_scene.cpp">
+    <ClCompile Include="src\service\logic_proto\lobby_scene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,7 +38,7 @@
     <ClInclude Include="src\network\gs_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic\lobby_scene.h">
+    <ClInclude Include="src\service\logic_proto\lobby_scene.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\lobby_server.h">
