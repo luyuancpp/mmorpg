@@ -32,15 +32,6 @@ servicedir = './md5/logic_proto/'
 
 genfile = []
 
-def getwritedir(serverstr):
-    writedir = ''
-    if serverstr == buildpublic.gs_file_prefix:
-        writedir = gsservicedir
-    elif serverstr == buildpublic.controller_file_prefix:
-        writedir = controllerservicedir
-    elif serverstr == buildpublic.lobby_file_prefix:
-        writedir = lobbyservicedir
-    return writedir
 
 def parsefile(filename):
     local.rpcarry = []
@@ -239,7 +230,7 @@ def md5copy(filename, writedir, fileextend):
         if filename.find('/') >= 0 :
             s = filename.split('/')
             filename = s[len(s) - 1]
-        gennewfilename = servicedir + getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
+        gennewfilename = buildpublic.getsrcpathmd5dir(writedir, buildpublic.commonproto()) + filename.replace('.proto', fileextend)
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
@@ -259,8 +250,8 @@ def generate(filename, writedir):
     parsefile(filename)
     genheadfile(filename, writedir)
     gencppfile(filename, writedir)
-    #md5copy(filename, writedir, '.h')
-    #md5copy(filename, writedir, '.cpp')
+    md5copy(filename, writedir, '.h')
+    md5copy(filename, writedir, '.cpp')
 
 class myThread (threading.Thread):
     def __init__(self, filename, writedir):

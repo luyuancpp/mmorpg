@@ -157,12 +157,12 @@
     <ClCompile Include="src\login_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\comp\account_player.cpp" />
-    <ClCompile Include="src\service\login_service.cpp" />
+    <ClCompile Include="src\service\common_proto\login_service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\login_server.h" />
     <ClInclude Include="src\comp\account_player.h" />
-    <ClInclude Include="src\service\login_service.h" />
+    <ClInclude Include="src\service\common_proto\login_service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
