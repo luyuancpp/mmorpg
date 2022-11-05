@@ -1,0 +1,59 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+import "common.proto";
+package gateservice;
+option cc_generic_services = true;
+
+message GsMessageExtern
+{
+  uint64 session_id = 1;
+}
+
+message StartGSRequest
+{
+  string ip = 1;
+  uint32 port = 2;
+  uint32 gs_node_id = 3;
+}
+
+message StopGSRequest
+{
+  string ip = 1;
+  uint32 port = 2;
+}
+
+message PlayerEnterGsRequest
+{
+  uint64 session_id = 1;
+  uint32 gs_node_id = 2;
+}
+
+message PlayerEnterGsResponese
+{
+}
+
+message MessageExtern
+{
+  uint64 session_id = 1;
+  uint32 gs_node_id = 2;
+  uint64 player_id = 3;
+}
+
+message PlayerMessageRequest
+{
+  MessageBody msg = 1;
+  MessageExtern ex = 2;
+}
+
+message KickConnRequest
+{
+  uint64 session_id = 1;
+}
+
+service GateService {
+  rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
+  rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
+  rpc PlayerEnterGs (PlayerEnterGsRequest) returns (PlayerEnterGsResponese);
+  rpc PlayerMessage (PlayerMessageRequest) returns (google.protobuf.Empty);
+  rpc KickConnByController (KickConnRequest) returns (google.protobuf.Empty);
+}

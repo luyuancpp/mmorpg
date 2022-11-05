@@ -1,0 +1,140 @@
+syntax = "proto3";
+import "db_base.proto";
+import "account_database.proto";
+import "comp.proto";
+
+message login_server_db
+{
+  option(OptionTableName)  = "login_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 group_id = 4;
+}
+
+message controller_server_db
+{
+  option(OptionTableName)  = "controller_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 lobby_id = 4;
+}
+
+message lobby_server_db
+{
+  option(OptionTableName)  = "lobby_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+}
+
+message redis_server_db
+{
+  option(OptionTableName)  = "redis_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 group_id = 4;
+}
+
+message game_server_db
+{
+  option(OptionTableName)  = "game_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 lobby_id = 4;
+}
+
+message gate_server_db
+{
+  option(OptionTableName)  = "gate_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 lobby_id = 4;
+}
+
+
+message database_server_db
+{
+  option(OptionTableName)  = "database_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  string db_host = 4;
+  string db_user = 5;
+  string db_password = 6;
+  uint32 db_port = 7;
+  string db_dbname = 8;
+  uint32 lobby_id = 9;
+}
+
+message game_freeids
+{
+  map<uint32, bool> free_list = 1;
+}
+
+message reuse_game_server_db
+{
+  option(OptionTableName)  = "reuse_game_server_db";
+  option(OptionPrimaryKey) = "id";
+  uint32 id = 1;
+  uint32 size = 2;
+}
+
+message servers_info_data
+{
+  database_server_db database_info = 1;
+  login_server_db login_info = 2;
+  controller_server_db controller_info = 3;
+  gate_server_db gate_info = 4;
+  redis_server_db redis_info = 5;
+  lobby_server_db lobby_info = 6;
+}
+
+
+/////////////         game
+message account_database
+{
+  option(OptionTableName)  = "account";
+  option(OptionPrimaryKey) = "account";
+  string account = 1;
+  string password = 2;
+  account_simple_players simple_players = 3;
+}
+
+//玩家数据库表1,重要数据放这里，不重要数据放另外一个表，(重要:比如金钱，跟收入有关)，登录马上加载
+message player_database
+{
+  option(OptionTableName)  = "player";
+  option(OptionPrimaryKey) = "player_id";
+  option(OptionAutoIncrementKey) = "player_id";
+  uint64 player_id = 1;
+  Vector3 pos = 2;
+  int64 register_time = 3;
+}
+
+//玩家数据库表2,不重要数据放这里，不会马上加载
+message player_database1
+{
+  option(OptionTableName)  = "player1";
+  option(OptionPrimaryKey) = "player_id";
+  option(OptionAutoIncrementKey) = "player_id";
+  uint64 player_id = 1;
+}

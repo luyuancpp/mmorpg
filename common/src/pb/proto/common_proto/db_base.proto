@@ -1,0 +1,54 @@
+syntax = "proto3";
+option optimize_for = SPEED;				
+
+import "google/protobuf/descriptor.proto";
+
+//option id  要从50000开始 50000以内pb内部使用
+
+extend google.protobuf.MessageOptions {
+	optional uint32 OptionTableId			= 50000 ;	//表ID
+    optional string OptionTableName			= 50001 ;	//表名
+    optional string OptionPrimaryKey		= 50002 ;	//主键
+    optional string OptionForeignKey		= 50003 ;	//外键
+    optional string OptionForeignReferences	= 50005 ;	//外键的关联表
+	optional string OptionAutoIncrementKey	= 50006 ;	//自增长的Key
+	optional string	OptionBackupTableName	= 50007	;	//备份表的名称
+	optional bool	OptionLoadOnly			= 50008	;	//只用于数据加载
+	optional string	OptionProcedureName		= 50009	;	//存储过程名称
+	optional string	OptionProcedureResult	= 50010	;	//存储过程返回结果的PB结构Name
+	optional string	OptionIndex				= 50011	;	//建立索引
+	optional string OptionUniqueKey			= 50012	;   //
+}
+
+// 描述字段的option
+extend google.protobuf.FieldOptions {
+    optional uint32 OptionRepeatLimit	= 60000 ;	// repeat 字段限制的个数
+    optional string OptionDBFieldExtra	= 60001 ;	// 创建数据库要用到得额外信息，如果没有该属性表示非数据库字段
+	optional bool   OptionDBReadOnly	= 60002 ;	// 该字段对DB是否只读
+	optional string	OptionDBNamePrefix	= 60003 ;	// 数据库名称前缀
+	optional string	OptionDBLoadSql		= 60004 ;	// 数据加载SQL语句
+	optional bool	OptionDBNeedEscape	= 60005 ;	// 字段是否需要转义存储
+	optional bool	OptionDBProcParam	= 60006 ;	// 是否存储过程参数
+	optional string OptionOldName		= 60007 ;   //用来自动修改字段名
+	optional string OptionTable			= 60008 ;	// 建表名称
+	optional string OptionBackUpTabel	= 60009 ;	//备份表
+}
+
+// flag 的值, 表示本条数据的操作状态
+enum OPERATE_TYPE {
+	OPERATE_NONE   = 0;     //sql none
+	OPERATE_INSERT = 1;     //sql insert
+	OPERATE_UPDATE = 2;     //sql update
+	OPERATE_DELETE = 3;     //sql delete
+	OPERATE_LOAD   = 4;     //sql load
+	OPERATE_DELETE_CACHE = 5;     //cache need delete
+	OPERATE_REPLACE = 6;
+	OPERATE_CALL_PROC = 7;		// call procedure
+	OPERATE_DELETE_BACKUP =8;	//backup it
+}
+
+enum BS_RESULT_TYPE{
+	BS_RESULT_NONE		= 0;     //
+	BS_RESULT_SUCCESS	= 1;
+	BS_RESULT_FAILED	= 2;	
+};
