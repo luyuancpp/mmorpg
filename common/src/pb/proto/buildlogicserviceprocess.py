@@ -60,6 +60,7 @@ def parsefile(filename):
             elif fileline.find('service ') >= 0:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
+    
 def genheadrpcfun():
     servicestr = 'public:\n'
     global controller
@@ -111,8 +112,8 @@ def getprevfilename(filename, writedir):
             return ''
     return ''
 
-def getpbdir(filename, writedir):
-    if filename.find(logicprotodir) >= 0:
+def getpbdir(writedir):
+    if writedir.find(logicprotodir) >= 0:
         return 'src/pb/pbc/logic_proto/'
     return ''
 
@@ -121,49 +122,18 @@ def getfilenamewithnopath(filename, writedir):
     return filename.replace(logicprotodir, '').replace('common_proto/', '').replace(servertypedir,'')
 
 def genheadfile(filename, writedir):
+    local.servicenames = []
     filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.h') 
     headfun = [classbegin, genheadrpcfun]
     destdir =  buildpublic.getdestdir(buildpublic.getservertype(writedir))
     destfilename = destdir + filename
     md5filename = buildpublic.getsrcpathmd5dir(writedir, logicprotodir) +  filename
     newstr = '#pragma once\n'
-    newstr += '#include "' + getpbdir(filename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
-    try:
-        with open(destfilename,'r+', encoding='utf-8') as file:
-            part = 0
-            isyourcode = 1 
-            skipheadline = 0 
-            partend = 0
-            for fileline in file:
-                if skipheadline < 2 :
-                    skipheadline += 1
-                    continue
-                if fileline.find(yourcodebegin) >= 0:
-                    isyourcode = 1
-                    newstr += fileline
-                    continue
-                elif fileline.find(yourcodeend) >= 0:
-                    isyourcode = 0
-                    partend = 1
-                    newstr += fileline
-                    continue
-                if isyourcode == 1 :
-                    newstr += fileline
-                    continue
-                if  part < len(headfun) and partend == 1:
-                    newstr += headfun[part]()
-                    part += 1
-                    partend = 0
-                    continue
-                elif part >= len(headfun):
-                    break
-
-    except FileNotFoundError:
-        for i in range(0, 2) :
-            if i > 0:
-                newstr += genyourcode()
-            newstr += headfun[i]()
-
+    newstr += '#include "' + getpbdir( writedir) + filename.replace('.h', '') + '.pb.h"\n'
+    for i in range(0, 2) :
+        if i > 0:
+            newstr += genyourcode()
+        newstr += headfun[i]()
     newstr += '};'
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -252,9 +222,10 @@ def md5copy(filename, writedir, fileextend):
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
         destfilename =  buildpublic.getdestdir(writedir) + filename.replace('.proto', fileextend)
+        print(gennewfilename, '=>', destfilename)
         if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
-        #print("copy %s ---> %s" % (gennewfilename, destfilename))
+        print("copy %s ---> %s" % (gennewfilename, destfilename))
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, destfilename)
 

@@ -151,13 +151,13 @@
     <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\network\controller_node.cpp" />
     <ClCompile Include="src\lobby_server.cpp" />
-    <ClCompile Include="src\service\logic\lobby_scene.cpp" />
+    <ClCompile Include="src\service\logic_proto\lobby_scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lobby_server.h" />
     <ClInclude Include="src\network\gs_node.h" />
     <ClInclude Include="src\network\controller_node.h" />
-    <ClInclude Include="src\service\logic\lobby_scene.h" />
+    <ClInclude Include="src\service\logic_proto\lobby_scene.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -11,6 +11,12 @@
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
 #include "src/network/controller_node.h"
+
+#include <unordered_map>
+
+#include "entt/src/entt/entity/registry.hpp"
+
+#include "src/common_type/common_type.h"
 #include "src/game_logic/tips_id.h"
 
 #include "gs_service.pb.h"
@@ -20,6 +26,9 @@ using namespace muduo;
 using namespace muduo::net;
 
 using namespace controllerservice;
+
+using PlayerListMap = std::unordered_map<Guid, entt::entity>;
+PlayerListMap  players_;
 
 using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
 using ControllerStubPtr = std::unique_ptr <RpcStub<controllerservice::ControllerNodeService_Stub>>;
