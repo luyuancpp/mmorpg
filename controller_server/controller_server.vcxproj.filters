@@ -57,27 +57,6 @@
     <ClCompile Include="src\event_receiver\event_receiver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\common_server_player.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\logic_proto\scene.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\logic_proto\controller_server_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\logic_proto\team.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\logic_proto\player_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\logic_proto\scene_server_player.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\service\logic_proto\team_server_player.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\controller_server.h">
@@ -120,27 +99,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\event_receiver\event_receiver.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic_proto\common_server_player.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic_proto\scene.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic_proto\team.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic_proto\player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic_proto\scene_server_player.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic_proto\server_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic_proto\team_server_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

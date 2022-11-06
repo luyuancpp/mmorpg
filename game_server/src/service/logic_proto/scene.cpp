@@ -1,7 +1,6 @@
 #include "scene.h"
 #include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
-
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
