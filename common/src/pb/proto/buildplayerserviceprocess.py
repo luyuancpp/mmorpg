@@ -30,10 +30,10 @@ tabstr = '    '
 cpprpcservicepart = 1
 controller = '(entt::entity player'
 protodir = 'logic_proto/'
-includedir = 'src/service/logic/'
-gsplayerservicedir = '../../../../game_server/src/service/logic/'
-lobbyplayerservicedir = '../../../../lobby_server/src/service/logic/'
-controllerplayerservicedir = '../../../../controller_server/src/service/logic/'
+includedir = 'src/service/logic_proto/'
+gsplayerservicedir = '../../../../game_server/src/service/logic_proto/'
+lobbyplayerservicedir = '../../../../lobby_server/src/service/logic_proto/'
+controllerplayerservicedir = '../../../../controller_server/src/service/logic_proto/'
 client_player = 'client_player'
 server_player = 'server_player'
 filedirdestpath = {}
@@ -155,6 +155,7 @@ def getsrcpathmd5dir(dirpath):
     return srcdir + protodir
 
 def genheadfile(filename, dirpath):
+    local.servicenames = []
     destdir = buildpublic.getdestdir(dirpath)
     headfunbodyarry = [classbegin, genheadrpcfun]
     destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
