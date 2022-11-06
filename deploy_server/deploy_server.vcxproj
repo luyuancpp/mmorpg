@@ -118,7 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32_LEAN_AND_MEAN;ENTT_ID_TYPE=uint64_t;_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING;NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../common/;../common/src/pb/pbc/;../third_party/protobuf/src/;../third_party/muduo/;../third_party/boost/;../third_party/redis/;../third_party/;../third_party/mysql/include/;./;../third_party/muduo/contrib/windows/include;../third_party/redis/deps/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../common/;../common/src/pb/pbc/;../third_party/protobuf/src/;../third_party/muduo/;../third_party/boost/;../third_party/redis/;../third_party/;../third_party/mysql/include/;./;../third_party/muduo/contrib/windows/include;../third_party/redis/deps/;../common/src/pb/pbc/common_proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4200;26821;4819</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
