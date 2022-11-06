@@ -118,7 +118,9 @@ def md5copy(destfilename, filename):
     md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
     shutil.copy(gennewfilename, destfilename)
 
-genfile = ['gs_service.proto', 'controller_service.proto', 'gate_service.proto']
+genfile = ['common_proto/game/gs_service.proto', 
+'common_proto/controller/controller_service.proto', 
+'common_proto/gate/gate_service.proto']
 
 def inputfile():
     for filename in os.listdir(protodir):

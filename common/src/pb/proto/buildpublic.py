@@ -5,6 +5,7 @@ controller_file_prefix = 'controller_'
 gs_file_prefix = 'gs_'
 lobby_file_prefix = 'lobby_'
 md5dir = 'md5/'
+pbcdir = '../pbc/'
 
 gsplayerservicedir = '../../../../game_server/src/service/logic_proto/'
 lobbyplayerservicedir = '../../../../lobby_server/src/service/logic_proto/'
@@ -39,6 +40,8 @@ def is_not_client_proto(filename):
     return is_client_proto(filename)  == False
     
 def makedirs():
+    if not os.path.exists(pbcdir):
+        os.makedirs(pbcdir)
     if not os.path.exists(md5dir):
         os.makedirs(md5dir)
     for d in servermd5dirs :
@@ -116,12 +119,7 @@ def commonproto():
     
 def iscommonproto(dirpath):
     return dirpath.find(commonproto()) >= 0
-    
-def tranlatedir(dirpath, protodir):
-    if iscommonproto(dirpath):
-        return commonproto()
-    return protodir
-   
+       
 def getservertype(dirpath):
     if isgamedir(dirpath):  
         return 'game'

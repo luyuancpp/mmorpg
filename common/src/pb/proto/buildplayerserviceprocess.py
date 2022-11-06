@@ -144,16 +144,6 @@ def classbegin():
 def emptyfun():
     return ''
  
-def getdestdir1(dirpath):
-    destdir = ''
-    if buildpublic.isgamedir(dirpath):
-        destdir = gsplayerservicedir
-    elif buildpublic.iscontrollerdir(dirpath):
-        destdir = controllerplayerservicedir
-    elif buildpublic.islobbydir(dirpath):
-        destdir = lobbyplayerservicedir
-    return destdir
-
 def getsrcpathmd5dir(dirpath):
     srcdir = ''
     if buildpublic.isgamedir(dirpath):
@@ -165,7 +155,7 @@ def getsrcpathmd5dir(dirpath):
     return srcdir + protodir
 
 def genheadfile(filename, dirpath):
-    destdir = getdestdir1(dirpath)
+    destdir = buildpublic.getdestdir(dirpath)
     headfunbodyarry = [classbegin, genheadrpcfun]
     destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.h').replace(protodir, '')
@@ -182,7 +172,7 @@ def genheadfile(filename, dirpath):
         file.write(newstr)
 
 def gencppfile(filename, dirpath):
-    destdir = getdestdir1(dirpath)
+    destdir = buildpublic.getdestdir(dirpath)
     cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.cpp').replace(protodir, '')
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
@@ -327,7 +317,7 @@ def gencontrollerplayerservcielist(filename):
         file.write(newstr)
 
 def md5copy(filename, md5path):
-        destdir = getdestdir1(md5path)
+        destdir = buildpublic.getdestdir(md5path)
         if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
             return
         gennewfilename = md5path  + filename

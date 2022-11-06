@@ -2,16 +2,17 @@ import os
 
 import md5tool
 import shutil
+import buildpublic
 
 funsname = []
 msg = 'message'
 begin = '{'
 end = '}'
-srcdir = './md5/'
-destdir = '../pb2sol2/'
+srcdir = './md5/sol2/'
+destdir = '../pbc/pb2sol2/'
 setname = '::set_'
 mutablename = '::mutable_'
-genprotodir = ['./logic_proto/', './component_proto/']
+genprotodir = ['./logic_proto/', './component_proto/', ]
 enum = {}
 maptype = 'map'
 
@@ -30,7 +31,7 @@ def iscpptype(typestring):
        return True
     return False
 
-def genluasol(filename, srcdir, protodir):
+def genluasol(filename, srcdir):
     global funsname
     msgcode = 0
     enumcode = 0
@@ -42,7 +43,7 @@ def genluasol(filename, srcdir, protodir):
 
     newstr += 'extern thread_local sol::state g_lua;\n'
     newstr +=  funcname + '\n{\n'    
-    newfilename = srcdir + filename.replace('.proto', '_sol2.cpp').replace(protodir, '')
+    newfilename = srcdir + filename.replace('.proto', '_sol2.cpp').replace(os.path.dirname(filename), '')
     with open(filename,'r', encoding='utf-8') as file:
         filedbegin = 0
         for fileline in file:
@@ -223,8 +224,8 @@ def gentotalfile(destdir, srcdir):
         cppnewstr += '}\n'
         file.write(cppnewstr)    
 
-genluasol('common.proto', srcdir, '')
-genluasol('c2gate.proto', srcdir, '')
+genluasol('./common_proto/common.proto', srcdir)
+genluasol('./common_proto/gate/c2gate.proto', srcdir)
 
 def inputfile():
     for protodir in genprotodir:
@@ -232,7 +233,9 @@ def inputfile():
         for filename in dir_list:
             if not (filename.find('client_player.proto') >= 0 or filename.find('comp.proto') >= 0):
                 continue
-            genluasol(protodir + filename, srcdir, protodir)
+            genluasol(protodir + filename, srcdir)
+
+buildpublic.makedirs()
 
 inputfile()
 gentotalfile(destdir, srcdir)
