@@ -1,5 +1,5 @@
 syntax = "proto3";
-import "common.proto";
+import "common_proto/common.proto";
 option cc_generic_services = true;
 
 message TeamTestS2SRequest

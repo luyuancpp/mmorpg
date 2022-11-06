@@ -1,5 +1,5 @@
 syntax = "proto3";
-import "common.proto";
+import "common_proto/common.proto";
 import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
 
