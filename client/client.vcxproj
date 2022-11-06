@@ -156,17 +156,17 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\client.cpp" />
     <ClCompile Include="src\luacpp\lua_module.cpp" />
-    <ClCompile Include="src\service\logic\c_player_service.cpp" />
-    <ClCompile Include="src\service\logic\service_lua.cpp" />
+    <ClCompile Include="src\service\logic_proto\c_player_service.cpp" />
+    <ClCompile Include="src\service\logic_proto\service_lua.cpp" />
     <ClCompile Include="src\service\service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client.h" />
     <ClInclude Include="src\luacpp\lua_module.h" />
-    <ClInclude Include="src\service\logic\c_common_client_player.h" />
-    <ClInclude Include="src\service\logic\c_scene_client_player.h" />
-    <ClInclude Include="src\service\logic\c_team_client_player.h" />
-    <ClInclude Include="src\service\logic\player_service.h" />
+    <ClInclude Include="src\service\logic_proto\c_common_client_player.h" />
+    <ClInclude Include="src\service\logic_proto\c_scene_client_player.h" />
+    <ClInclude Include="src\service\logic_proto\c_team_client_player.h" />
+    <ClInclude Include="src\service\logic_proto\player_service.h" />
     <ClInclude Include="src\service\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
