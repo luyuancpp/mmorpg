@@ -72,16 +72,23 @@ def inputfiledestdir(filename):
             if fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
                 break
-def genheadrpcfun():
-    global controller
-    servicestr = 'public:\n'
+
+def initservicenames():
     local.servicenames = []
     for service in local.rpcarry:
         if isserverpushrpc(service) == True :
             continue
         s = service.strip(' ').split(' ')
-        line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
+
+def genheadrpcfun():
+    global controller
+    servicestr = 'public:\n'
+    for service in local.rpcarry:
+        if isserverpushrpc(service) == True :
+            continue
+        s = service.strip(' ').split(' ')
+        line = tabstr + 'void ' + s[1] + controller + ',\n'
         line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
@@ -155,7 +162,6 @@ def getsrcpathmd5dir(dirpath):
     return srcdir + protodir
 
 def genheadfile(filename, dirpath):
-    local.servicenames = []
     destdir = buildpublic.getdestdir(dirpath)
     headfunbodyarry = [classbegin, genheadrpcfun]
     destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
@@ -239,12 +245,12 @@ def gencppfile(filename, dirpath):
         file.write(newstr)
 
 def generate(filename):
+    parsefile(filename)
+    initservicenames()
     if filename.find(client_player) >= 0:
-        parsefile(filename)
         genheadfile(filename, buildpublic.gamemd5dir())
         gencppfile(filename, buildpublic.gamemd5dir())
     elif filename.find(server_player) >= 0:
-        parsefile(filename)
         genheadfile(filename, buildpublic.gamemd5dir())
         gencppfile(filename, buildpublic.gamemd5dir())
         genheadfile(filename, buildpublic.controllermd5dir())
