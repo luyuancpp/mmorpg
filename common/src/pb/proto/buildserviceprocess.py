@@ -116,41 +116,11 @@ def genheadfile(filename, writedir):
     md5filename = md5dir +  filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(filename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
-    try:
-        with open(destfilename,'r+', encoding='utf-8') as file:
-            part = 0
-            isyourcode = 1 
-            skipheadline = 0 
-            partend = 0
-            for fileline in file:
-                if skipheadline < 2 :
-                    skipheadline += 1
-                    continue
-                if fileline.find(yourcodebegin) >= 0:
-                    isyourcode = 1
-                    newstr += fileline
-                    continue
-                elif fileline.find(yourcodeend) >= 0:
-                    isyourcode = 0
-                    partend = 1
-                    newstr += fileline
-                    continue
-                if isyourcode == 1 :
-                    newstr += fileline
-                    continue
-                if  part < len(headfun) and partend == 1:
-                    newstr += headfun[part]()
-                    part += 1
-                    partend = 0
-                    continue
-                elif part >= len(headfun):
-                    break
-
-    except FileNotFoundError:
-        for i in range(0, 2) :
-            if i > 0:
-                newstr += genyourcode()
-            newstr += headfun[i]()
+    
+    for i in range(0, 2) :
+        if i > 0:
+            newstr += genyourcode()
+        newstr += headfun[i]()
 
     newstr += '};'
     with open(md5filename, 'w', encoding='utf-8')as file:
