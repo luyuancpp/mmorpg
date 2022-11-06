@@ -6,7 +6,7 @@
 #include "src/game_logic/comp/account_comp.h"
 #include "src/network/rpc_closure.h"
 
-#include "gs_service.pb.h"
+#include "game_service.pb.h"
 #include "gate_service.pb.h"
 ///<<< END WRITING YOUR CODE
 class ControllerNodeServiceImpl : public controllerservice::ControllerNodeService{
