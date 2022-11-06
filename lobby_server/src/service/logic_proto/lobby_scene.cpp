@@ -19,7 +19,7 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/tips_id.h"
 
-#include "gs_service.pb.h"
+#include "game_service.pb.h"
 #include "controller_service.pb.h"
 
 using namespace muduo;

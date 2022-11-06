@@ -6,7 +6,7 @@
 #include "src/network/server_component.h"
 #include "src/pb/pbc/msgmap.h"
 
-#include "gs_service.pb.h"
+#include "game_service.pb.h"
 
 GateServer* g_gate_server = nullptr; 
 
