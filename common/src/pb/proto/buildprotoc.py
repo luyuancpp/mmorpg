@@ -7,23 +7,26 @@ import os.path
 import sys
 import shutil
 import md5tool
+import buildpublic
 from os import system
 
-md5str = 'md5'
+md5str = 'md5/'
 protobufdir = '../../../../third_party/protobuf/src/'
+
+commoncppout = 'md5/common_proto/'
 
 srcdir = '../pbc/'
 if not os.path.exists(srcdir):
     os.makedirs(srcdir)
 
-def gen_protoc(walkdir, protobufdir, dest_dir):
+def gen_protoc(walkdir, dest_dir):
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
     for filename in os.listdir(walkdir):
         if not (filename[-6:].lower() == '.proto'):
             continue
         proto_destfilename = walkdir +  filename
-        proto_md5_destfilename = md5str + '/' + filename + '.md5'
+        proto_md5_destfilename = md5str + filename + '.md5'
         error = None
         first = False
         if not os.path.exists(proto_md5_destfilename):
@@ -41,31 +44,65 @@ def gen_protoc(walkdir, protobufdir, dest_dir):
         commond = 'protoc  -I=./ -I=./logic_proto/ -I=./component_proto/ -I=./common_proto/ -I=%s --cpp_out=%s %s' % (protobufdir, dest_dir, proto_destfilename)
         system(commond)
 
-if not os.path.exists(md5str):
-    os.makedirs(md5str)
+def gen_common_protoc(walkdir,  dest_dir):
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
+    for filename in os.listdir(walkdir):
+        if not (filename[-6:].lower() == '.proto'):
+            continue
+        proto_destfilename = walkdir +  filename
+        proto_md5_destfilename = md5str + filename + '.md5'
+        error = None
+        first = False
+        if not os.path.exists(proto_md5_destfilename):
+            first = True
+        else:
+            error = md5tool.check_against_md5_file(proto_destfilename, proto_md5_destfilename)
+        
+        headmd5_destfilename = dest_dir + filename.replace('.proto', '') + '.pb.h'
+        cppmd5_destfilename = dest_dir + filename.replace('.proto', '') + '.pb.cc'
+        
+        if error == None and os.path.exists(headmd5_destfilename) and os.path.exists(cppmd5_destfilename) :
+            continue
+        
+        if not os.path.exists(proto_md5_destfilename):
+            md5tool.generate_md5_file_for(proto_destfilename, proto_md5_destfilename)
+        commond = 'protoc  -I=./ -I=./logic_proto/ -I=./component_proto/ -I=./common_proto/ -I=%s --cpp_out=%s %s' % (protobufdir, commoncppout, proto_destfilename)
+        system(commond)
+        
+        md5name = (commoncppout + proto_destfilename.replace('./', '')).replace('.proto', '')
+        headmd5pbh = md5name + '.pb.h'
+        cppmd5pbh = md5name + '.pb.cc'
+        shutil.copy(headmd5pbh, headmd5_destfilename)
+        shutil.copy(cppmd5pbh, cppmd5_destfilename)
+        print('copy %s %s' % (cppmd5pbh , cppmd5_destfilename))
+
+buildpublic.makedirs()
 
 def genmd5(walkdir):
     for filename in os.listdir(walkdir):
         if not (filename[-6:].lower() == '.proto'):
             continue            
-        md5tool.generate_md5_file_for(walkdir + filename, md5str + '/' + filename + '.md5')
+        md5tool.generate_md5_file_for(walkdir + filename, md5str + filename + '.md5')
 
-gen_protoc('./logic_proto/', '../../../../third_party/protobuf/src/', '../pbc/')
-gen_protoc('./component_proto/', '../../../../third_party/protobuf/src/', '../pbc/')
-gen_protoc('./event_proto/', '../../../../third_party/protobuf/src/', '../pbc/')
+gen_protoc('./logic_proto/', '../pbc/')
+gen_protoc('./component_proto/',  '../pbc/')
+gen_protoc('./event_proto/',  '../pbc/')
 genmd5('./component_proto/')
 genmd5('./logic_proto/')
 genmd5('./event_proto/')
 
+if not os.path.exists(commoncppout):
+        os.makedirs(commoncppout)
 #common proto
-gen_protoc('./common_proto/controller/', '../../../../third_party/protobuf/src/', '../pbc/controller/')
-gen_protoc('./common_proto/database/', '../../../../third_party/protobuf/src/', '../pbc/database/')
-gen_protoc('./common_proto/deploy/', '../../../../third_party/protobuf/src/', '../pbc/deploy/')
-gen_protoc('./common_proto/game/', '../../../../third_party/protobuf/src/', '../pbc/game/')
-gen_protoc('./common_proto/gate/', '../../../../third_party/protobuf/src/', '../pbc/gate/')
-gen_protoc('./common_proto/lobby/', '../../../../third_party/protobuf/src/', '../pbc/lobby/')
-gen_protoc('./common_proto/login/', '../../../../third_party/protobuf/src/', '../pbc/login/')
-gen_protoc('./common_proto/', '../../../../third_party/protobuf/src/', '../pbc/')
+gen_common_protoc('./common_proto/controller/', '../pbc/controller/common_proto/')
+gen_common_protoc('./common_proto/database/','../pbc/database/common_proto/')
+gen_common_protoc('./common_proto/deploy/',  '../pbc/deploy/common_proto/')
+gen_common_protoc('./common_proto/game/', '../pbc/game/common_proto/')
+gen_common_protoc('./common_proto/gate/', '../pbc/gate/common_proto/')
+gen_common_protoc('./common_proto/lobby/',  '../pbc/lobby/common_proto/')
+gen_common_protoc('./common_proto/login/',  '../pbc/login/common_proto/')
+gen_common_protoc('./common_proto/', '../pbc/common_proto/')
 genmd5('./common_proto/controller/')
 genmd5('./common_proto/database/')
 genmd5('./common_proto/deploy/')
