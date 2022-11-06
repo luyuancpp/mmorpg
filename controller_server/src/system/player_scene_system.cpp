@@ -11,7 +11,7 @@
 
 #include "component_proto/player_login_comp.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
-#include "gs_service.pb.h"
+#include "game_service.pb.h"
 
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 

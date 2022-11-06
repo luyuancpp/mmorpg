@@ -29,7 +29,7 @@
 
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
-#include "gs_service.pb.h"
+#include "game_service.pb.h"
 #include "logic_proto/common_server_player.pb.h"
 #include "logic_proto/scene.pb.h"
 

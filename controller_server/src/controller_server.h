@@ -12,7 +12,7 @@
 #include "src/network/server_component.h"
 
 #include "deploy_service.pb.h"
-#include "db_service.pb.h"
+#include "database_service.pb.h"
 #include "logic_proto/lobby_scene.pb.h"
 
 class ControllerServer : muduo::noncopyable, public Receiver<ControllerServer>

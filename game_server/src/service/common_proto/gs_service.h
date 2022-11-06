@@ -1,5 +1,5 @@
 #pragma once
-#include "gs_service.pb.h"
+#include "game_service.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include <unordered_map>
 ///<<< END WRITING YOUR CODE

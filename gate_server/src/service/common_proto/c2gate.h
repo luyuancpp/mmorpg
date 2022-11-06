@@ -15,7 +15,7 @@
 #include "c2gate.pb.h"
 #include "login_service.pb.h"
 #include "controller_service.pb.h"
-#include "gs_service.pb.h"
+#include "game_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

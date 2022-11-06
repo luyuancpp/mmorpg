@@ -194,6 +194,13 @@
     <ClCompile Include="src\pb\pbc\component_proto\team_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\event_proto\mission_event.pb.cc" />
     <ClCompile Include="src\pb\pbc\event_proto\scene_event.pb.cc" />
+    <ClCompile Include="src\pb\pbc\game_config\condition_config.pb.cc" />
+    <ClCompile Include="src\pb\pbc\game_config\global_variable_config.pb.cc" />
+    <ClCompile Include="src\pb\pbc\game_config\item_config.pb.cc" />
+    <ClCompile Include="src\pb\pbc\game_config\mainscene_config.pb.cc" />
+    <ClCompile Include="src\pb\pbc\game_config\mission_config.pb.cc" />
+    <ClCompile Include="src\pb\pbc\game_config\monster_base_config.pb.cc" />
+    <ClCompile Include="src\pb\pbc\game_config\scene_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\common_client_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\common_server_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\lobby_scene.pb.cc" />
@@ -293,6 +300,13 @@
     <ClInclude Include="src\pb\pbc\component_proto\team_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\event_proto\mission_event.pb.h" />
     <ClInclude Include="src\pb\pbc\event_proto\scene_event.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_config\condition_config.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_config\global_variable_config.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_config\item_config.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_config\mainscene_config.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_config\mission_config.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_config\monster_base_config.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_config\scene_config.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\common_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\common_server_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\lobby_scene.pb.h" />
