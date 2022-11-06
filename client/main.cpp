@@ -6,7 +6,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/luacpp/lua_module.h"
 #include "src/pb/pbc/msgmap.h"
-#include "src/service/logic/player_service.h"
+#include "src/service/logic_proto/player_service.h"
 
 int main(int argc, char* argv[])
 {

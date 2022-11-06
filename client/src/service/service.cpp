@@ -5,7 +5,7 @@
 
 #include "src/luacpp/lua_module.h"
 #include "src/pb/pbc/msgmap.h"
-#include "src/service/logic/player_service.h"
+#include "src/service/logic_proto/player_service.h"
 
 ClientService::ClientService(ProtobufDispatcher& dispatcher,
                              ProtobufCodec& codec, 
