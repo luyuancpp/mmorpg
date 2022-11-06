@@ -225,7 +225,7 @@ def gentotalfile(destdir, srcdir):
         file.write(cppnewstr)    
 
 genluasol('./common_proto/common.proto', srcdir)
-genluasol('./common_proto/gate/c2gate.proto', srcdir)
+genluasol('./common_proto/c2gate.proto', srcdir)
 
 def inputfile():
     for protodir in genprotodir:
