@@ -1,5 +1,5 @@
 syntax = "proto3";
-import "common.proto";
+import "common_proto/common.proto";
 
 message LoginRequest
 {

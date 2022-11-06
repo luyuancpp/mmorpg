@@ -1,6 +1,6 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
-import "common.proto";
+import "common_proto/common.proto";
 import "component_proto/scene_comp.proto";
 package controllerservice;
 option cc_generic_services = true;

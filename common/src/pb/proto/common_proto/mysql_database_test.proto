@@ -1,5 +1,5 @@
 syntax = "proto3";
-import "db_base.proto";
+import "common_proto/db_base.proto";
 
 message account_database_one_test
 {

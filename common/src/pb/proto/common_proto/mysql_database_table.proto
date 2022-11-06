@@ -1,7 +1,7 @@
 syntax = "proto3";
-import "db_base.proto";
-import "account_database.proto";
-import "comp.proto";
+import "common_proto/db_base.proto";
+import "common_proto/account_database.proto";
+import "common_proto/comp.proto";
 
 message login_server_db
 {
