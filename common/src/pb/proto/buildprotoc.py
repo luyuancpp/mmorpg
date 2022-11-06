@@ -10,6 +10,7 @@ import md5tool
 from os import system
 
 md5str = 'md5'
+protobufdir = '../../../../third_party/protobuf/src/'
 
 srcdir = '../pbc/'
 if not os.path.exists(srcdir):
@@ -33,10 +34,10 @@ def gen_protoc(walkdir, protobufdir, dest_dir):
         head_destfilename = pbcdir + filename.replace('.proto', '') + '.pb.h'
         cpp_destfilename = pbcdir + filename.replace('.proto', '') + '.pb.cc'
         if error == None and os.path.exists(head_destfilename) and os.path.exists(cpp_destfilename) :
-                continue
+            continue
         print('copy %s %s' % (head_destfilename, cpp_destfilename))
         if not os.path.exists(proto_md5_destfilename):
-                md5tool.generate_md5_file_for(proto_destfilename, proto_md5_destfilename)
+            md5tool.generate_md5_file_for(proto_destfilename, proto_md5_destfilename)
         commond = 'protoc  -I=./ -I=./logic_proto/ -I=./component_proto/ -I=./common_proto/ -I=%s --cpp_out=%s %s' % (protobufdir, dest_dir, proto_destfilename)
         system(commond)
 
@@ -57,8 +58,8 @@ genmd5('./logic_proto/')
 genmd5('./event_proto/')
 
 #common proto
-gen_protoc('./common_proto/controller/', '../../../../third_party/protobuf/src/', '../pbc/common_proto/controller/')
-gen_protoc('./common_proto/database/', '../../../../third_party/protobuf/src/', '../pbc/common_proto/database/')
+gen_protoc('./common_proto/controller/', '../../../../third_party/protobuf/src/', '../pbc/controller/')
+gen_protoc('./common_proto/database/', '../../../../third_party/protobuf/src/', '../pbc/database/')
 gen_protoc('./common_proto/deploy/', '../../../../third_party/protobuf/src/', '../pbc/deploy/')
 gen_protoc('./common_proto/game/', '../../../../third_party/protobuf/src/', '../pbc/game/')
 gen_protoc('./common_proto/gate/', '../../../../third_party/protobuf/src/', '../pbc/gate/')
