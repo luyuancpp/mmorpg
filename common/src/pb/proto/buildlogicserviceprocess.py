@@ -222,7 +222,7 @@ def md5copy(filename, writedir, fileextend):
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
         destfilename =  buildpublic.getdestdir(writedir) + filename.replace('.proto', fileextend)
-        print(gennewfilename, '=>', destfilename)
+        
         if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
         print("copy %s ---> %s" % (gennewfilename, destfilename))

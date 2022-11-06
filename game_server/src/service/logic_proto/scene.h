@@ -1,7 +1,5 @@
 #pragma once
 #include "src/pb/pbc/logic_proto/scene.pb.h"
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 class ServerSceneServiceImpl : public ::ServerSceneService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
