@@ -62,9 +62,7 @@ void GameServer::InitNetwork()
 
 void GameServer::ServerInfo(ServerInfoRpc replied)
 {
-    auto& resp = replied->s_rp_;
     auto& info = replied->s_rp_->info();
-   
     auto& lobby_info = info.lobby_info();
     InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
    
@@ -106,7 +104,7 @@ void GameServer::StartGsDeployReplied(StartGsRpc replied)
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, node_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
     server_->registerService(&gs_service_impl_);
-    for (auto& it : g_server_nomal_service)
+    for (auto& it : g_server_service)
     {
         server_->registerService(it.get());
     }
@@ -131,7 +129,7 @@ void GameServer::LobbyInfoReplied(LobbyInfoRpc replied)
         controller_node_session->subscribe<RegisterStubEvent>(controller_stub);
 		controller_node_session->subscribe<RegisterStubEvent>(g2controller_stub_);
 		controller_node_session->registerService(&gs_service_impl_);
-        for (auto& it : g_server_nomal_service)
+        for (auto& it : g_server_service)
         {
             controller_node_session->registerService(it.get());
         }
