@@ -54,7 +54,7 @@ class Thread : noncopyable
 class Thread : noncopyable
 {
 public:
-    typedef std::function<void()> ThreadFunc;
+    using ThreadFunc = std::function<void()>;
 
     explicit Thread(ThreadFunc func, const string& name = string())
         : func_(func),
