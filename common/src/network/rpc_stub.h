@@ -41,23 +41,6 @@ public:
             NewCallback(object, method, method_param));
     }
 
-    template<typename MethodParam, typename Class, typename StubMethod>
-    void CallMethodByObj(void (Class::* method)(MethodParam),
-        MethodParam& method_param,
-        Class* object,
-        StubMethod stub_method)
-    {
-        if (nullptr == stub_)
-        {
-            LOG_ERROR << "Server Disconnected";
-            return;
-        }
-        ((*stub_).*stub_method)(nullptr,
-            &method_param.s_rq_,
-            method_param.s_rp_,
-            NewCallback(object, method, method_param));
-    }
-
     template<typename MethodParam, typename StubMethod>
     void CallMethod(void (method)(MethodParam),
         MethodParam& method_param,
@@ -74,21 +57,20 @@ public:
             NewCallback(method, method_param));
     }
 
-	template<typename MethodParam, typename Class, typename StubMethod>
-	void CallMethodByRowStub(void (Class::* method)(MethodParam),
-		MethodParam& method_param,
-		Class* object,
-		StubMethod stub_method)
+	// no responese
+	template<typename Request, typename StubMethod>
+	void CallMethod(const Request& request, StubMethod stub_method)
 	{
 		if (nullptr == stub_)
 		{
 			LOG_ERROR << "Server Disconnected";
 			return;
 		}
+		google::protobuf::Empty* presponse = new google::protobuf::Empty;
 		((*stub_).*stub_method)(nullptr,
-			&method_param.s_rq_,
-			method_param.s_rp_,
-			NewCallback(object, method, method_param));
+			&request,
+			presponse,
+			google::protobuf::NewCallback(&DoNothing));
 	}
 
     template<typename Class, typename MethodParam, typename StubMethod>
@@ -126,21 +108,7 @@ public:
 			NewCallback(method, method_param));
 	}
 
-    // no responese
-    template<typename Request, typename StubMethod>
-    void CallMethod( const Request& request, StubMethod stub_method)
-    {
-		if (nullptr == stub_)
-		{
-			LOG_ERROR << "Server Disconnected";
-			return;
-		}
-        google::protobuf::Empty* presponse = new google::protobuf::Empty;
-        ((*stub_).*stub_method)(nullptr,
-            &request,
-            presponse,
-            google::protobuf::NewCallback(&DoNothing));
-    }
+    
 
     static void DoNothing() {}
 
