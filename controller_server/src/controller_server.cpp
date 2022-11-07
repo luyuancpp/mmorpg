@@ -78,7 +78,7 @@ void ControllerServer::StartServer(ServerInfoRpc replied)
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
     server_->registerService(&contoller_service_);
-    for (auto& it : g_server_nomal_service)
+    for (auto& it : g_server_service)
     {
         server_->registerService(it.get());
     }
