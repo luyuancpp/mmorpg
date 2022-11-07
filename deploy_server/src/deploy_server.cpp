@@ -10,6 +10,8 @@ deploy::DeployServer* g_deploy_server = nullptr;
 
 double kScanOverSeconds = 60;//扫描半个小时，特别注意，没有好的办法
 
+void set_player_mysql_client(MysqlClientPtr& ptr);
+
 namespace deploy
 {
     DeployServer::DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr)
@@ -22,7 +24,7 @@ namespace deploy
 
     void DeployServer::Start()
     {
-		impl_.set_player_mysql_client(player_mysql_client());
+		set_player_mysql_client(player_mysql_client());
 		RegisterService(&impl_);
 
         g_deploy_server = this;

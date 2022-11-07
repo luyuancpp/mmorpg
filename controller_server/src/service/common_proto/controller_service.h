@@ -1,31 +1,8 @@
 #pragma once
 #include "controller_service.pb.h"
-///<<< BEGIN WRITING YOUR CODE
-#include "src/common_type/common_type.h"
-#include "src/comp/account_player.h"
-#include "src/game_logic/comp/account_comp.h"
-#include "src/network/rpc_closure.h"
-
-#include "game_service.pb.h"
-#include "gate_service.pb.h"
-///<<< END WRITING YOUR CODE
 class ControllerNodeServiceImpl : public controllerservice::ControllerNodeService{
 public:
 ///<<< BEGIN WRITING YOUR CODE
-private:
-	using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
-
-    using GatePlayerEnterGsRpc = NormalClosure<gateservice::PlayerEnterGsRequest, gateservice::PlayerEnterGsResponese>;
-    void OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc replied);
-
-    Guid GetPlayerIdByConnId(uint64_t session_id);
-    entt::entity GetPlayerByConnId(uint64_t session_id);    
-
-    void OnSessionEnterGame(entt::entity conn, Guid player_id);
-
-    void InitPlayerSession(entt::entity player, uint64_t session_id);
-
-	AccountSessionMap logined_accounts_sesion_;
 ///<<< END WRITING YOUR CODE
 public:
     void StartGs(::google::protobuf::RpcController* controller,

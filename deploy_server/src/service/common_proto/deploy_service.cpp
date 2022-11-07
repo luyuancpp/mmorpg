@@ -9,14 +9,23 @@
 #include "src/game_logic/tips_id.h"
 
 ReuseId<uint32_t, std::unordered_set<uint32_t>, UINT32_MAX> g_scene_squeue_node_id;
+using ServerId = uint32_t;
 
-void DeployServiceImpl::LoadLobbyDeploy(uint32_t lobby_id,
+using GSMap = std::unordered_map<uint32_t, ::game_server_db>;
+static MysqlClientPtr db_;
+static GSMap logic_server_map_;
+
+void LoadLobbyDeploy(uint32_t lobby_id,
 	::lobby_server_db* response)
 {
 	std::string where_case = std::to_string(lobby_id) + " = id  ";
 	db_->LoadOne(*response, where_case);
 }
 
+void set_player_mysql_client(MysqlClientPtr& ptr)
+{
+	db_ = ptr;
+}
 ///<<< END WRITING YOUR CODE
 
 	///<<<rpc begin

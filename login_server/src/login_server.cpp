@@ -6,20 +6,18 @@
 
 #include "common.pb.h"
 
-login::LoginServer* g_login_server = nullptr;
+LoginServer* g_login_node = nullptr;
 
-namespace login
-{
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()),
-      impl_( controller_login_stub_, l2db_login_stub_)
+      impl_()
 {
 }
 
 void LoginServer::Init()
 {
-    g_login_server = this;
+    g_login_node = this;
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
 
@@ -39,7 +37,6 @@ void LoginServer::ConnectDeploy()
 void LoginServer::Start()
 {
     server_->registerService(&impl_);
-    impl_.set_redis_client(redis_client());
     server_->start();
 }
 
@@ -56,7 +53,7 @@ void LoginServer::StartServer(ServerInfoRpc replied)
     InetAddress controller_node_addr(controller_node_info.ip(), controller_node_info.port());
     controller_client_ = std::make_unique<RpcClient>(loop_, controller_node_addr);
     controller_client_->connect();
-    controller_client_->subscribe<RegisterStubEvent>(controller_login_stub_);
+    controller_client_->subscribe<RegisterStubEvent>(controller_node_stub_);
     
     auto& redisinfo = info.redis_info();
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
@@ -88,7 +85,3 @@ void LoginServer::receive(const OnConnected2ServerEvent& es)
         this,
         &deploy::DeployService_Stub::ServerInfo);
 }
-
-}
-
-

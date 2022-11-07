@@ -109,6 +109,23 @@ public:
             NewCallback(object, method, method_param));
     }
 
+	template<typename MethodParam, typename StubMethod>
+	void CallMethodString1(
+		void (method)(MethodParam),
+		MethodParam& method_param,
+		StubMethod stub_method)
+	{
+		if (nullptr == stub_)
+		{
+			LOG_ERROR << "Server Disconnected";
+			return;
+		}
+		((*stub_).*stub_method)(nullptr,
+			&method_param->s_rq_,
+			method_param->s_rp_,
+			NewCallback(method, method_param));
+	}
+
     // no responese
     template<typename Request, typename StubMethod>
     void CallMethod( const Request& request, StubMethod stub_method)

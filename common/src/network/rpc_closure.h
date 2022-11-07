@@ -13,6 +13,9 @@ struct NormalClosure
 	NormalClosure()
 		: s_rp_(new Response())//delete from rpc_chanel respone
 	{}
+	NormalClosure(const NormalClosure&) = delete;
+	NormalClosure& operator = (const NormalClosure&) = delete;
+
 	Request s_rq_;
 	Response* s_rp_{ nullptr };
 };
