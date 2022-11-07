@@ -25,6 +25,7 @@ public:
     GameServer(muduo::net::EventLoop* loop);
 
 	ControllerStub& controller_stub() { return g2controller_stub_;	}
+    inline LobbyNodeStub& lobby_stub() { return lobby_stub_; }
 
     void Init();
 
@@ -45,7 +46,7 @@ public:
 	void LobbyInfoReplied(LobbyInfoRpc replied);
 
     void CallControllerStartGs(ControllerSessionPtr& controller_session);
-    void Register2Lobby();
+    void CallLobbyStartGs();
 
     void receive(const OnConnected2ServerEvent& es);
     void receive(const OnBeConnectedEvent& es);
