@@ -35,13 +35,13 @@ def genheadfile(writedfilename):
     with open(writedfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(writedfilename, includeprefix):
+def gencppfile(writedfilename):
     global servicearray
     newstr = '#include <array>\n'
     newstr += '#include <memory>\n'
     newstr += '#include <google/protobuf/message.h>\n\n'
     for filename in servicefilenamearray:
-        newstr += '#include "' + includeprefix + filename + '"\n'
+        newstr += '#include "'  + filename + '"\n'
     newstr += 'std::array<std::unique_ptr<::google::protobuf::Service>, ' + str(len(servicearray)) + '> g_server_nomal_service{\n'
     for service in servicearray:
         newstr += 'std::unique_ptr<::google::protobuf::Service>(new ' +  service.replace('\n', '') + 'Impl),\n'
@@ -65,8 +65,8 @@ def md5copy(writedfilename, destfilename):
 
 scanservice()
 genheadfile('./md5/server_service.h')
-gencppfile('./md5/controller_server/server_service.cpp', buildpublic.controller_file_prefix)
-gencppfile('./md5/game_server/server_service.cpp', buildpublic.gs_file_prefix)
+gencppfile('./md5/controller_server/server_service.cpp')
+gencppfile('./md5/game_server/server_service.cpp')
 md5copy('./md5/controller_server/server_service.cpp', '../../../../controller_server/src/service/logic_proto/server_service.cpp')
 md5copy('./md5/game_server/server_service.cpp', '../../../../game_server/src/service/logic_proto/server_service.cpp')
 md5copy('./md5/server_service.h', '../../../../controller_server/src/service/logic_proto/server_service.h')
