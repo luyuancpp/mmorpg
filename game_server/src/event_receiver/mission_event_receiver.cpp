@@ -39,7 +39,7 @@ void MissionEventReceiverReceiver::Receive1(const MissionConditionEvent& event_o
 void MissionEventReceiverReceiver::Receive2(const OnAcceptedMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
-	 //触发接任务自动匹配当前的任务进度,接受的时候已经拥有金币
+	//触发接任务自动匹配当前的任务进度,接受的时候已经拥有金币
 ///<<< END WRITING YOUR CODE 
 }
 

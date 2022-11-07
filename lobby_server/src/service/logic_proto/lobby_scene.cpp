@@ -120,10 +120,6 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 	}
 	g_gs_nodes->emplace(request->gs_node_id(), gs);
 
-	for (auto& mit : *g_controller_nodes)
-	{
-		AddCrossScene2Controller(mit.first);
-	}
 	LOG_INFO << "game node connected " << response->DebugString();
 ///<<< END WRITING YOUR CODE 
 }
@@ -270,6 +266,20 @@ void LobbyServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* co
     ScenesSystem::LeaveScene(lsp);
 	players_.erase(it);
 ///<<< END WRITING YOUR CODE 
+}
+
+void LobbyServiceImpl::GameConnectToController(::google::protobuf::RpcController* controller,
+    const lobbyservcie::GameConnectToControllerRequest* request,
+    ::google::protobuf::Empty* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE
+    for (auto& mit : *g_controller_nodes)
+    {
+        AddCrossScene2Controller(mit.first);
+    }
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end

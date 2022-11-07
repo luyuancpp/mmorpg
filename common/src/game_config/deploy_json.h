@@ -6,7 +6,8 @@
 class GameConfig
 {
 public:
-    const GameConfigInfo& config_info() const { return config_info_; }
+    inline const GameConfigInfo& config_info() const { return config_info_; }
+    inline decltype(auto) server_type() const {  return config_info_.server_type();  }
 
     static GameConfig& GetSingleton() {
         thread_local GameConfig singleton;

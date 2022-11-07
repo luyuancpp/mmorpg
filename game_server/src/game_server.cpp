@@ -159,7 +159,7 @@ void GameServer::CallControllerStartGs(ControllerSessionPtr& controller_node)
     LOG_DEBUG << "conncet to controller" ;
 }
 
-void GameServer::Register2Lobby()
+void GameServer::CallLobbyStartGs()
 {
     auto server_type = registry.get<GsServerType>(global_entity()).server_type_;
     if (!(server_type == kMainSceneCrossServer ||
@@ -182,7 +182,6 @@ void GameServer::Register2Lobby()
 		rpc,
 		&ServerReplied::GetSingleton(),
 		&lobbyservcie::LobbyService_Stub::StartCrossGs);
-
 }
 
 void GameServer::receive(const OnConnected2ServerEvent& es)
@@ -229,7 +228,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
 		if (conn->connected() && 
             IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 		{
-			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::Register2Lobby, this));
+			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::CallLobbyStartGs, this));
 		}
 		else if (!conn->connected() &&
 			IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))

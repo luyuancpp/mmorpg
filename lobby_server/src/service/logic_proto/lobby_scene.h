@@ -30,4 +30,9 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
+    void GameConnectToController(::google::protobuf::RpcController* controller,
+        const lobbyservcie::GameConnectToControllerRequest* request,
+        ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
 };

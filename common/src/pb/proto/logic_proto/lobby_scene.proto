@@ -57,6 +57,10 @@ message LeaveCrossMainSceneRequest
   uint64 player_id = 1;
 }
 
+message GameConnectToControllerRequest
+{
+}
+
 service LobbyService 
 {
   rpc StartCrossGs (StartCrossGsRequest) returns (StartCrossGsResponse);
@@ -64,6 +68,7 @@ service LobbyService
   rpc EnterCrossMainScene (EnterCrossMainSceneRequest) returns (EnterCrossMainSceneResponese);
   rpc EnterCrossMainSceneWeightRoundRobin (EnterCrossMainSceneWeightRoundRobinRequest) returns (EnterCrossRoomSceneSceneWeightRoundRobinResponse);
   rpc LeaveCrossMainScene (LeaveCrossMainSceneRequest) returns (google.protobuf.Empty);
+  rpc GameConnectToController (GameConnectToControllerRequest) returns (google.protobuf.Empty);
 }
 
 
