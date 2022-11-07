@@ -6,17 +6,21 @@
 
 #include "src/game_config/mainscene_config.h"
 
-#include "src/network/gate_node.h"
-#include "src/network/gs_node.h"
-#include "src/network/player_session.h"
+#include "src/common_type/common_type.h"
+#include "src/comp/account_player.h"
+#include "src/controller_server.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/scene/servernode_system.h"
-#include "src/controller_server.h"
 #include "src/comp/player_list.h"
 #include "src/network/message_system.h"
 #include "src/network/gate_session.h"
+#include "src/network/session.h"
+#include "src/network/gate_node.h"
+#include "src/network/gs_node.h"
+#include "src/network/player_session.h"
 #include "src/pb/pbc/msgmap.h"
+#include "src/game_logic/comp/account_comp.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/node_info.h"
@@ -25,24 +29,59 @@
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"
 #include "src/network/server_component.h"
-#include "src/network/session.h"
 
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "game_service.pb.h"
+#include "gate_service.pb.h"
 #include "logic_proto/common_server_player.pb.h"
 #include "logic_proto/scene.pb.h"
 
+
 using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 using GateStub = RpcStub<gateservice::GateService_Stub>;
+using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
+AccountSessionMap logined_accounts_sesion_;
 
 std::size_t kMaxPlayerSize = 1000;
 
+Guid GetPlayerIdByConnId(uint64_t session_id)
+{
+	auto cit = g_gate_sessions.find(session_id);
+	if (cit == g_gate_sessions.end())
+	{
+		return kInvalidGuid;
+	}
+	auto p_try_player = registry.try_get<EntityPtr>(cit->second);
+	if (nullptr == p_try_player)
+	{
+		return kInvalidGuid;
+	}
+	auto player_id = registry.get<Guid>(*p_try_player);
+	return kInvalidGuid;
+}
+
+entt::entity GetPlayerByConnId(uint64_t session_id)
+{
+	auto cit = g_gate_sessions.find(session_id);
+	if (cit == g_gate_sessions.end())
+	{
+		return entt::null;
+	}
+	auto p_try_player = registry.try_get<EntityPtr>(cit->second);
+	if (nullptr == p_try_player)
+	{
+		return entt::null;
+	}
+	return (*p_try_player);
+}
+
 //gate 更新完gs，相应的gs可以往那个gate上发送消息了
-void ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc replied)
+using GatePlayerEnterGsRpc = std::shared_ptr<NormalClosure<gateservice::PlayerEnterGsRequest, gateservice::PlayerEnterGsResponese>>;
+void OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc replied)
 {
 	//todo 中间返回是断开了
-	entt::entity player = GetPlayerByConnId(replied.s_rq_.session_id());
+	entt::entity player = GetPlayerByConnId(replied->s_rq_.session_id());
 	if (entt::null == player)
 	{
 		LOG_ERROR << "player not found " << registry.get<Guid>(player);
@@ -70,44 +109,14 @@ void ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc
 	}	
 }
 
-Guid ControllerNodeServiceImpl::GetPlayerIdByConnId(uint64_t session_id)
-{
-    auto cit = g_gate_sessions.find(session_id);
-    if (cit == g_gate_sessions.end())
-    {
-        return kInvalidGuid;
-    }
-    auto p_try_player = registry.try_get<EntityPtr>(cit->second);
-    if (nullptr == p_try_player)
-    {
-        return kInvalidGuid;
-    }
-    auto player_id = registry.get<Guid>(*p_try_player);
-	return kInvalidGuid;
-}
 
-entt::entity ControllerNodeServiceImpl::GetPlayerByConnId(uint64_t session_id)
-{
-    auto cit = g_gate_sessions.find(session_id);
-    if (cit == g_gate_sessions.end())
-    {
-		return entt::null;
-    }
-    auto p_try_player = registry.try_get<EntityPtr>(cit->second);
-    if (nullptr == p_try_player)
-    {
-        return entt::null;
-    }
-    return (*p_try_player);
-}
-
-void ControllerNodeServiceImpl::OnSessionEnterGame(entt::entity conn, Guid player_id)
+void OnSessionEnterGame(entt::entity conn, Guid player_id)
 {
     registry.emplace<EntityPtr>(conn, g_player_list->GetPlayerPtr(player_id));
     registry.emplace<Guid>(conn, player_id);
 }
 
-void ControllerNodeServiceImpl::InitPlayerSession(entt::entity player, uint64_t session_id)
+void InitPlayerSession(entt::entity player, uint64_t session_id)
 {
     auto& player_session = registry.get_or_emplace<PlayerSession>(player);
     player_session.gate_session_.set_session_id(session_id);
@@ -570,13 +579,13 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
 	auto gate_it = g_gate_nodes.find(player_session.gate_node_id());
 	if (gate_it == g_gate_nodes.end())
 	{
-		LOG_ERROR << "gate crsh" << player_session.gate_node_id();
+		LOG_ERROR << "gate crash" << player_session.gate_node_id();
 		return;
 	}
-	ControllerNodeServiceImpl::GatePlayerEnterGsRpc rpc;
-	rpc.s_rq_.set_session_id(player_session.session_id());
-	rpc.s_rq_.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GateStub>(gate_it->second).CallMethodByObj(&ControllerNodeServiceImpl::OnGateUpdatePlayerGsReplied, rpc, this, &gateservice::GateService::PlayerEnterGs);
+	GatePlayerEnterGsRpc rpc(std::make_shared<GatePlayerEnterGsRpc::element_type>());;
+	rpc->s_rq_.set_session_id(player_session.session_id());
+	rpc->s_rq_.set_gs_node_id(player_session.gs_node_id());
+	registry.get<GateStub>(gate_it->second).CallMethod(OnGateUpdatePlayerGsReplied, rpc,  &gateservice::GateService::PlayerEnterGs);
 ///<<< END WRITING YOUR CODE 
 }
 

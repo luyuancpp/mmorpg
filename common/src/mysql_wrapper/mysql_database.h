@@ -78,4 +78,4 @@ private:
     Pb2DbTables pb2db_;
 };
 
-using DatabasePtr = std::unique_ptr<MysqlDatabase>;
+using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;

@@ -7,18 +7,77 @@
 #include "src/network/rpc_server.h"
 #include "src/game_logic/tips_id.h"
 #include "src/login_server.h"
+#include "src/comp/account_player.h"
+#include "src/network/rpc_closure.h"
+#include "src/network/rpc_stub.h"
+#include "src/network/rpc_client.h"
+#include "src/redis_client/redis_client.h"
+
+#include "login_service.pb.h"
+#include "database_service.pb.h"
+#include "controller_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
 
-LoginServiceImpl::LoginServiceImpl(LoginStubl2controller& controller_login_stub,
-	LoginStubl2db& l2db_login_stub)
-	: controller_node_stub_(controller_login_stub),
-	l2db_login_stub_(l2db_login_stub)
-{}
+using PlayerPtr = std::shared_ptr<AccountPlayer>;
+using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
+using ConnectionEntityMap = std::unordered_map<Guid, EntityPtr>;
 
+ConnectionEntityMap sessions_;
 
-void LoginServiceImpl::LoginAccountControllerReplied(LoginAcountControllerRpc replied)
+using EnterGameControllerRpc = std::shared_ptr<RpcString<controllerservice::EnterGameRequest, controllerservice::EnterGameResponese, loginservice::EnterGameResponse>>;
+void EnterGameReplied(EnterGameControllerRpc replied)
+{
+	sessions_.erase(replied->s_rq_.session_id());
+}
+
+void EnterGame(Guid player_id,
+	uint64_t session_id,
+	::loginservice::EnterGameResponse* response,
+	::google::protobuf::Closure* done)
+{
+	auto it = sessions_.find(session_id);
+	if (sessions_.end() == it)
+	{
+		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
+	}
+	auto rpc(std::make_shared<EnterGameControllerRpc::element_type>(response, done));
+	rpc->s_rq_.set_player_id(player_id);
+	rpc->s_rq_.set_session_id(response->session_id());
+	g_login_node->controller_node_stub().CallMethodString1(
+		EnterGameReplied,
+		rpc,
+		&controllerservice::ControllerNodeService_Stub::OnLsEnterGame);
+}
+
+void UpdateAccount(uint64_t session_id, const ::account_database& a_d)
+{
+	auto sit = sessions_.find(session_id);
+	if (sit == sessions_.end())//断线了
+	{
+		return;
+	}
+	auto* p_player = registry.try_get<PlayerPtr>(sit->second);
+	if (nullptr == p_player)
+	{
+		return;
+	}
+	auto& ap = *p_player;
+	ap->set_account_data(a_d);
+	ap->OnDbLoaded();
+}
+
+using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, loginservice::LoginResponse>>;
+void LoginAccountDbReplied(LoginAccountDbRpc replied)
+{
+	auto& srp = replied->s_rp_;
+	replied->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
+	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
+}
+
+using LoginAcountControllerRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, loginservice::LoginResponse>>;
+void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 {
 	//只连接不登录,占用连接
 	// login process
@@ -40,7 +99,7 @@ void LoginServiceImpl::LoginAccountControllerReplied(LoginAcountControllerRpc re
 			return;
 		}
 		auto& account_data = player->account_data();
-		redis_->Load(account_data, replied->s_rq_.account());
+		g_login_node->redis_client()->Load(account_data, replied->s_rq_.account());
 		if (!account_data.password().empty())
 		{
 			replied->c_rp_->mutable_account_player()->CopyFrom(account_data);
@@ -52,24 +111,19 @@ void LoginServiceImpl::LoginAccountControllerReplied(LoginAcountControllerRpc re
 	auto rpc(std::make_shared<LoginAccountDbRpc::element_type>(*replied));
 	rpc->s_rq_.set_account(replied->s_rq_.account());
 	rpc->s_rq_.set_session_id(replied->s_rq_.session_id());
-	l2db_login_stub_.CallMethodString(&LoginServiceImpl::LoginAccountDbReplied, rpc, this, &dbservice::DbService_Stub::Login);
+	g_login_node->l2db_login_stub().CallMethodString1(LoginAccountDbReplied, rpc, &dbservice::DbService_Stub::Login);
 }
 
-void LoginServiceImpl::LoginAccountDbReplied(LoginAccountDbRpc replied)
+using CreatePlayerRpc = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, loginservice::CreatePlayerResponse>>;
+void CreatePlayerDbReplied(CreatePlayerRpc replied)
 {
 	auto& srp = replied->s_rp_;
 	replied->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
 	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
 }
 
-void LoginServiceImpl::CreatePlayerDbReplied(CreatePlayerRpc replied)
-{
-	auto& srp = replied->s_rp_;
-	replied->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
-	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
-}
-
-void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpc replied)
+using EnterGameDbRpc = std::shared_ptr<RpcString<dbservice::EnterGameRequest, dbservice::EnterGameResponse, loginservice::EnterGameResponse>>;
+void EnterGameDbReplied(EnterGameDbRpc replied)
 {
 	//db 加载过程中断线了
 	auto& srq = replied->s_rq_;
@@ -84,47 +138,8 @@ void LoginServiceImpl::EnterGameDbReplied(EnterGameDbRpc replied)
 	EnterGame(srq.player_id(), response->session_id(), response, done);
 }
 
-void LoginServiceImpl::EnterGameReplied(EnterGameControllerRpc replied)
-{
-	sessions_.erase(replied->s_rq_.session_id());
-}
 
-void LoginServiceImpl::EnterGame(Guid player_id,
-	uint64_t session_id,
-	::loginservice::EnterGameResponse* response,
-	::google::protobuf::Closure* done)
-{
-	auto it = sessions_.find(session_id);
-	if (sessions_.end() == it)
-	{
-		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
-	}
-	auto rpc(std::make_shared<EnterGameControllerRpc::element_type>(response, done));
-	rpc->s_rq_.set_player_id(player_id);
-	rpc->s_rq_.set_session_id(response->session_id());
-	controller_node_stub_.CallMethodString(
-		&LoginServiceImpl::EnterGameReplied,
-		rpc,
-		this,
-		&controllerservice::ControllerNodeService_Stub::OnLsEnterGame);
-}
 
-void LoginServiceImpl::UpdateAccount(uint64_t session_id, const ::account_database& a_d)
-{
-	auto sit = sessions_.find(session_id);
-	if (sit == sessions_.end())//断线了
-	{
-		return;
-	}
-	auto* p_player = registry.try_get<PlayerPtr>(sit->second);
-	if (nullptr == p_player)
-	{
-		return;
-	}
-	auto& ap = *p_player;
-	ap->set_account_data(a_d);
-	ap->OnDbLoaded();
-}
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -145,7 +160,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	s_reqst.set_account(request->account());
 	s_reqst.set_session_id(request->session_id());
 	sessions_.emplace(request->session_id(), EntityPtr());
-	controller_node_stub_.CallMethodString( &LoginServiceImpl::LoginAccountControllerReplied, rpc, this, &controllerservice::ControllerNodeService_Stub::OnLsLoginAccount);
+	g_login_node->controller_node_stub().CallMethodString1( LoginAccountControllerReplied, rpc, &controllerservice::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -176,10 +191,9 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	auto rpc(std::make_shared<CreatePlayerRpc::element_type>(response, done));
 	rpc->s_rq_.set_session_id(request->session_id());
 	rpc->s_rq_.set_account(ap->account());
-	l2db_login_stub_.CallMethodString(
-		&LoginServiceImpl::CreatePlayerDbReplied,
+	g_login_node->l2db_login_stub().CallMethodString1(
+		CreatePlayerDbReplied,
 		rpc,
-		this,
 		&dbservice::DbService_Stub::CreatePlayer);
 ///<<< END WRITING YOUR CODE 
 }
@@ -215,23 +229,22 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	}
 	// player in redis return ok
 	player_database new_player;
-	redis_->Load(new_player, player_id);
+	g_login_node->redis_client()->Load(new_player, player_id);
 	ap->Playing(player_id);//test
 	response->set_session_id(session_id);
 	response->set_player_id(player_id);//test
 	if (new_player.player_id() > 0)
 	{
-		EnterGame(player_id, session_id, response, done);
+		::EnterGame(player_id, session_id, response, done);
 		return;
 	}
 	// database to redis 
 	auto c(std::make_shared<EnterGameDbRpc::element_type>(response, done));
 	auto& srq = c->s_rq_;
 	srq.set_player_id(player_id);
-	l2db_login_stub_.CallMethodString(
-		&LoginServiceImpl::EnterGameDbReplied,
+	g_login_node->l2db_login_stub().CallMethodString1(
+		EnterGameDbReplied,
 		c,
-		this,
 		&dbservice::DbService_Stub::EnterGame);
 ///<<< END WRITING YOUR CODE 
 }
@@ -252,7 +265,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	}
 	controllerservice::LsLeaveGameRequest leavegame_request;
 	leavegame_request.set_session_id(request->session_id());
-	controller_node_stub_.CallMethod(leavegame_request,
+	g_login_node->controller_node_stub().CallMethod(leavegame_request,
 		&controllerservice::ControllerNodeService_Stub::OnLsLeaveGame);
 	sessions_.erase(sit);
 ///<<< END WRITING YOUR CODE 
@@ -268,7 +281,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	sessions_.erase(request->session_id());
 	controllerservice::LsDisconnectRequest msg;
 	msg.set_session_id(request->session_id());
-	controller_node_stub_.CallMethod(msg,
+	g_login_node->controller_node_stub().CallMethod(msg,
 		&controllerservice::ControllerNodeService_Stub::OnLsDisconnect);	
 ///<<< END WRITING YOUR CODE 
 }
