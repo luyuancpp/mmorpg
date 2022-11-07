@@ -20,7 +20,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneController2Gs(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-		//todo½øÈëÁËgate È»ºó²Å¿ÉÒÔ¿ªÊ¼¿ÉÒÔ¸ø¿Í»§¶Ë·¢ËÍĞÅÏ¢ÁË, gsÏûÏ¢Ë³ĞòÎÊÌâÒª×¢Òâ£¬½øÈëa, ÔÙ½øÈëb gsµ½´ï¿Í»§¶ËÏûÏ¢µÄË³Ğò²»Ò»Ñù
+		//todoè¿›å…¥äº†gate ç„¶åæ‰å¯ä»¥å¼€å§‹å¯ä»¥ç»™å®¢æˆ·ç«¯å‘é€ä¿¡æ¯äº†, gsæ¶ˆæ¯é¡ºåºé—®é¢˜è¦æ³¨æ„ï¼Œè¿›å…¥a, å†è¿›å…¥b gsåˆ°è¾¾å®¢æˆ·ç«¯æ¶ˆæ¯çš„é¡ºåºä¸ä¸€æ ·
 	PlayerSceneSystem::EnterScene(player, request->scene_id());
 ///<<< END WRITING YOUR CODE
 }
@@ -39,9 +39,9 @@ void ServerPlayerSceneServiceImpl::LeaveSceneController2Gs(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerSceneSystem::LeaveScene(player);
-	if (request->change_gs())//´æ´¢Íê±ÏÒÔºó²ÅÄÜ»»³¡¾°£¬·ÀÖ¹»Øµµ
+	if (request->change_gs())//å­˜å‚¨å®Œæ¯•ä»¥åæ‰èƒ½æ¢åœºæ™¯ï¼Œé˜²æ­¢å›æ¡£
 	{
-		//Àë¿ªgs Çå³ısession
+		//ç¦»å¼€gs æ¸…é™¤session
 		PlayerCommonSystem::RemovePlayereSession(player);
 		PlayerCommonSystem::SavePlayer(player);
 	}
