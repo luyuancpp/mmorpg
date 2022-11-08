@@ -31,6 +31,9 @@ struct RpcString
 		cc_(client_closure)
 	{}
 
+	RpcString(const RpcString&) = delete;
+	RpcString& operator = (const RpcString&) = delete;
+
 	template <typename MoveRpcString>
 	RpcString(MoveRpcString& rpcstring)
 		: s_rp_(new ServerResponse())// delete for rpcchanel
