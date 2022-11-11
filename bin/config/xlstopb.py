@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-import buildcommon
+import gencommon
 import xlrd
 import xlwt
 import json
@@ -85,6 +85,6 @@ def main():
                         workbookdata = getWorkBookData(workbook)
                         for sheetname in workbookdata :
                                 datastring =getProtoData(workbookdata[sheetname], sheetname)
-                                buildcommon.mywrite(datastring, protodir + sheetname + "_config.proto")
+                                gencommon.mywrite(datastring, protodir + sheetname + "_config.proto")
                        
 main()

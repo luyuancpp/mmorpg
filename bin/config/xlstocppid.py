@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-import buildcommon
+import gencommon
 import xlrd
 import xlwt
 import json
@@ -9,7 +9,7 @@ import os.path
 from os import listdir
 from os.path import isfile, join
 
-beginrowidx = buildcommon.beginrowidx
+beginrowidx = gencommon.beginrowidx
 cppdir = "cpp/"
 xlsdir = "xlsx/"
 genfilelist = ["global_variable"]
@@ -49,6 +49,6 @@ def main():
                         workbook = xlrd.open_workbook(filename)
                         workbookdata = genIdCpp(workbook)
                         for sheetname in workbookdata :
-                                buildcommon.mywrite(workbookdata[sheetname], cppdir + sheetname + "_config_id.h")
+                                gencommon.mywrite(workbookdata[sheetname], cppdir + sheetname + "_config_id.h")
                        
 main()

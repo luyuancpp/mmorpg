@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-import buildcommon
+import gencommon
 import xlrd
 import xlwt
 import json
@@ -84,6 +84,6 @@ def main():
                                 datastring = '{"data":' + json.dumps(workbookdata[sheetname] , sort_keys=True, indent=4,  separators=(',', ": ")) + '}'
                                 datastring = datastring.replace('"[','[');
                                 datastring = datastring.replace("]\"","]");
-                                buildcommon.mywrite(datastring, jsondir + sheetname  + ".json")
+                                gencommon.mywrite(datastring, jsondir + sheetname  + ".json")
                      
 main()
