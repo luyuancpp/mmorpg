@@ -196,14 +196,15 @@ def main():
     if cpu_count() > filelen:
         for i in range(0, filelen):
             t = myThread(genfile[i])
-            t.start()
             threads.append(t)
+            t.start()
     else :
         for i in range(0, cpu_count()):
             for j in range(i, i * step) :
                 t = myThread(genfile[j][0], genfile[j][1])
-                t.start()
                 threads.append(t)
+                t.start()
+                
     for t in threads :
         t.join()
     for file in genfile:
