@@ -45,4 +45,4 @@ def md5copy(filename, destdir):
     shutil.copy(srcmd5filename, destfilename)
 
 gen('logic_proto/msgmap.cpp', openfilename)
-md5copy(openfilename, '../../../../gate_server/src/service')
+md5copy(openfilename, '../gate_server/src/service')

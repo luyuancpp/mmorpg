@@ -7,10 +7,10 @@ lobby_file_prefix = 'lobby_'
 md5dir = 'md5/'
 pbcdir = '../pbc/'
 
-gsplayerservicedir = '../../../../game_server/src/service/logic_proto/'
-lobbyplayerservicedir = '../../../../lobby_server/src/service/logic_proto/'
-controllerplayerservicedir = '../../../../controller_server/src/service/logic_proto/'
-gateservicedir = '../../../../gate_server/src/service/logic_proto/'
+gsplayerservicedir = '../game_server/src/service/logic_proto/'
+lobbyplayerservicedir = '../lobby_server/src/service/logic_proto/'
+controllerplayerservicedir = '../controller_server/src/service/logic_proto/'
+gateservicedir = '../gate_server/src/service/logic_proto/'
 
 servermd5dirs = [md5dir + 'controller_server/', 
 md5dir + 'game_server/', 
