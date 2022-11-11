@@ -5,7 +5,7 @@ import shutil
 import threading
 import _thread
 import protofilearray
-import buildpublic
+import genpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
@@ -91,9 +91,9 @@ def emptyfun():
 def getprevfilename(filename, writedir):
     if filename.find(logicprotodir) >= 0:
         if writedir == gsservicedir:
-            return buildpublic.gs_file_prefix
+            return genpublic.gs_file_prefix
         if writedir == controllerservicedir:
-            return buildpublic.controller_file_prefix
+            return genpublic.controller_file_prefix
         if writedir == lobbyservicedir:
             return ''
     return ''
@@ -104,7 +104,7 @@ def getpbdir(filename, writedir):
     return ''
 
 def getfilenamewithnopath(filename, writedir):
-    servertypedir = buildpublic.getservertype(writedir) + '/'
+    servertypedir = genpublic.getservertype(writedir) + '/'
     return filename.replace(logicprotodir, '').replace('common_proto/', '').replace(servertypedir,'')
 
 def genheadfile(filename, writedir):
@@ -112,7 +112,7 @@ def genheadfile(filename, writedir):
     filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.h') 
     headfun = [classbegin, genheadrpcfun]
     destfilename = writedir + filename
-    md5dir = buildpublic.getsrcpathmd5dir(writedir, buildpublic.commonproto())
+    md5dir = genpublic.getsrcpathmd5dir(writedir, genpublic.commonproto())
     md5filename = md5dir +  filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(filename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
@@ -129,7 +129,7 @@ def genheadfile(filename, writedir):
 def gencppfile(filename, writedir):
     filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.cpp') 
     destfilename = writedir + filename
-    md5filename = buildpublic.getsrcpathmd5dir(writedir, buildpublic.commonproto()) +  filename
+    md5filename = genpublic.getsrcpathmd5dir(writedir, genpublic.commonproto()) +  filename
     newstr = '#include "' + getprevfilename(destfilename, writedir) + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     serviceidx = 0
@@ -187,11 +187,11 @@ def gencppfile(filename, writedir):
 
 
 def getmd5prevfilename(filename, writedir):
-    if buildpublic.is_server_proto(filename) == True :
+    if genpublic.is_server_proto(filename) == True :
         if writedir == gsservicedir:
-            return buildpublic.gs_file_prefix
+            return genpublic.gs_file_prefix
         if writedir == controllerservicedir:
-            return buildpublic.controller_file_prefix
+            return genpublic.controller_file_prefix
         if writedir == lobbyservicedir:
             return ''
     return ''
@@ -200,7 +200,7 @@ def md5copy(filename, writedir, fileextend):
         if filename.find('/') >= 0 :
             s = filename.split('/')
             filename = s[len(s) - 1]
-        gennewfilename = buildpublic.getsrcpathmd5dir(writedir, buildpublic.commonproto()) + filename.replace('.proto', fileextend)
+        gennewfilename = genpublic.getsrcpathmd5dir(writedir, genpublic.commonproto()) + filename.replace('.proto', fileextend)
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
@@ -250,5 +250,5 @@ def main():
         t.join()
 
 genfile = protofilearray.genfile
-buildpublic.makedirs()
+genpublic.makedirs()
 main()

@@ -2,7 +2,7 @@ import os
 
 import md5tool
 import shutil
-import buildpublic
+import genpublic
 
 funsname = []
 msg = 'message'
@@ -235,7 +235,7 @@ def inputfile():
                 continue
             genluasol(protodir + filename, srcdir)
 
-buildpublic.makedirs()
+genpublic.makedirs()
 
 inputfile()
 gentotalfile(destdir, srcdir)

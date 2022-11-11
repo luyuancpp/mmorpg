@@ -5,7 +5,7 @@ import shutil
 import threading
 import _thread
 import protofilearray
-import buildpublic
+import genpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
@@ -153,16 +153,16 @@ def emptyfun():
  
 def getsrcpathmd5dir(dirpath):
     srcdir = ''
-    if buildpublic.isgamedir(dirpath):
-        srcdir = buildpublic.servermd5dirs[buildpublic.gamemd5dirindex]
-    elif buildpublic.iscontrollerdir(dirpath):
-        srcdir = buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex]
-    elif buildpublic.islobbydir(dirpath):
-        srcdir = buildpublic.servermd5dirs[buildpublic.lobbymd5dirindex]
+    if genpublic.isgamedir(dirpath):
+        srcdir = genpublic.servermd5dirs[genpublic.gamemd5dirindex]
+    elif genpublic.iscontrollerdir(dirpath):
+        srcdir = genpublic.servermd5dirs[genpublic.conrollermd5dirindex]
+    elif genpublic.islobbydir(dirpath):
+        srcdir = genpublic.servermd5dirs[genpublic.lobbymd5dirindex]
     return srcdir + protodir
 
 def genheadfile(filename, dirpath):
-    destdir = buildpublic.getdestdir(dirpath)
+    destdir = genpublic.getdestdir(dirpath)
     headfunbodyarry = [classbegin, genheadrpcfun]
     destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.h').replace(protodir, '')
@@ -179,7 +179,7 @@ def genheadfile(filename, dirpath):
         file.write(newstr)
 
 def gencppfile(filename, dirpath):
-    destdir = buildpublic.getdestdir(dirpath)
+    destdir = genpublic.getdestdir(dirpath)
     cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.cpp').replace(protodir, '')
     if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
@@ -248,18 +248,18 @@ def generate(filename):
     parsefile(filename)
     initservicenames()
     if filename.find(client_player) >= 0:
-        genheadfile(filename, buildpublic.gamemd5dir())
-        gencppfile(filename, buildpublic.gamemd5dir())
+        genheadfile(filename, genpublic.gamemd5dir())
+        gencppfile(filename, genpublic.gamemd5dir())
     elif filename.find(server_player) >= 0:
-        genheadfile(filename, buildpublic.gamemd5dir())
-        gencppfile(filename, buildpublic.gamemd5dir())
-        genheadfile(filename, buildpublic.controllermd5dir())
-        gencppfile(filename, buildpublic.controllermd5dir())
-    elif filename.find(buildpublic.lobby_file_prefix) >= 0:
+        genheadfile(filename, genpublic.gamemd5dir())
+        gencppfile(filename, genpublic.gamemd5dir())
+        genheadfile(filename, genpublic.controllermd5dir())
+        gencppfile(filename, genpublic.controllermd5dir())
+    elif filename.find(genpublic.lobby_file_prefix) >= 0:
         pass
 
 def parseplayerservcie(filename):
-    if buildpublic.is_server_proto(filename) == True :
+    if genpublic.is_server_proto(filename) == True :
         return
     local.pkg = ''
     local.fileservice.append(filename.replace('.proto', ''))
@@ -274,7 +274,7 @@ def parseplayerservcie(filename):
                     local.openplayerservicearray.append(local.pkg + '.' + local.service)
                 
 def gengsplayerservcielist(filename):
-    destfilename = buildpublic.servermd5dirs[buildpublic.gamemd5dirindex] + protodir  + filename
+    destfilename = genpublic.servermd5dirs[genpublic.gamemd5dirindex] + protodir  + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -297,7 +297,7 @@ def gengsplayerservcielist(filename):
         file.write(newstr)
 
 def gencontrollerplayerservcielist(filename):
-    destfilename = buildpublic.servermd5dirs[buildpublic.conrollermd5dirindex] + protodir + filename
+    destfilename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + protodir + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -324,7 +324,7 @@ def gencontrollerplayerservcielist(filename):
         file.write(newstr)
 
 def md5copy(filename, md5path):
-        destdir = buildpublic.getdestdir(md5path)
+        destdir = genpublic.getdestdir(md5path)
         if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
             return
         gennewfilename = md5path  + filename
@@ -347,11 +347,11 @@ def md5copydir():
             for filename in filenames:    
                 if filename.find(client_player) >= 0:
                     md5copy(filename,  dirpath)
-                elif (filename.find(server_player) >= 0 and buildpublic.isgamedir(dirpath)) or\
-                    (filename == 'player_service.cpp' and buildpublic.isgamedir(dirpath)):    
+                elif (filename.find(server_player) >= 0 and genpublic.isgamedir(dirpath)) or\
+                    (filename == 'player_service.cpp' and genpublic.isgamedir(dirpath)):    
                     md5copy(filename, dirpath)
-                elif (filename.find(server_player) >= 0 and buildpublic.iscontrollerdir(dirpath)) or\
-                     (filename == 'player_service.cpp' and buildpublic.iscontrollerdir(dirpath)):                      
+                elif (filename.find(server_player) >= 0 and genpublic.iscontrollerdir(dirpath)) or\
+                     (filename == 'player_service.cpp' and genpublic.iscontrollerdir(dirpath)):                      
                     md5copy(filename,  dirpath)
 
 genfile = []
@@ -396,8 +396,8 @@ def main():
     gengsplayerservcielist('player_service.cpp')
     gencontrollerplayerservcielist('player_service.cpp')
 
-buildpublic.makedirs()
-local.md5protodir = buildpublic.makedirsbypath(protodir)
+genpublic.makedirs()
+local.md5protodir = genpublic.makedirsbypath(protodir)
 inputfile() 
 main()
 md5copydir()
