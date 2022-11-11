@@ -241,8 +241,8 @@ def main():
         for i in range(0, cpu_count()):
             for j in range(i, i * step) :
                 t = myThread(filelist[j][0], filelist[j][1])
-                t.start()
                 threads.append(t)
+                t.start()
     for t in threads :
         t.join()
     
