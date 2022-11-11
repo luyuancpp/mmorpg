@@ -8,12 +8,18 @@ import sys
 import shutil
 import md5tool
 import genpublic
+import threading
+from multiprocessing import cpu_count
 from os import system
 
 md5str = 'md5/'
 protobufdir = '../third_party/protobuf/src/'
 
+local = threading.local()
+
 commoncppout = 'md5/common_proto/'
+
+threads = []
 
 dest_dir = '../common/src/pb/pbc/'
 if not os.path.exists(dest_dir):
@@ -41,11 +47,37 @@ def gen(walkdir, filename):
     commond = 'protoc  -I=./ -I=./logic_proto/ -I=./component_proto/ -I=./common_proto/ -I=%s --cpp_out=%s %s' % (protobufdir, dest_dir, proto_destfilename)
     system(commond)
 
+
+class myThread (threading.Thread):
+    def __init__(self, walkdir, filename):
+        threading.Thread.__init__(self)
+        self.filename = str(filename)
+        self.walkdir = str(walkdir)
+    def run(self):
+        gen(self.walkdir, self.filename)
+
 def gen_protoc(walkdir):
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
-    for filename in os.listdir(walkdir):
-        gen(walkdir, filename)
+    filelist = os.listdir(walkdir)
+    
+    filelen = len(filelist)
+    global threads
+    step = int(filelen / cpu_count() + 1)
+    if cpu_count() > filelen:
+        for i in range(0, filelen):
+            t = myThread(walkdir, filelist[i])
+            threads.append(t)
+            t.start()
+    else :
+        for i in range(0, cpu_count()):
+            for j in range(i, i * step) :
+                t = myThread(walkdir, filelist[i])
+                threads.append(t)
+                t.start()
+    for t in threads :
+        t.join()
+  
 
 def genmd5(walkdir):
     for filename in os.listdir(walkdir):
