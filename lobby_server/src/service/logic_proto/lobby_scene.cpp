@@ -274,12 +274,12 @@ void LobbyServiceImpl::GameConnectToController(::google::protobuf::RpcController
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
     for (auto& mit : *g_controller_nodes)
     {
         AddCrossScene2Controller(mit.first);
     }
-///<<< END WRITING YOUR CODE
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end

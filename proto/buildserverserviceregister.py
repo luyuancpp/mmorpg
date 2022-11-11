@@ -31,7 +31,7 @@ def genheadfile(writedfilename):
     newstr += '#include <array>\n'
     newstr += '#include <memory>\n'
     newstr += '#include <google/protobuf/message.h>\n\n'
-    newstr += 'extern std::array<std::unique_ptr<::google::protobuf::Service>, ' + str(len(servicearray)) + '> g_server_nomal_service;\n'
+    newstr += 'extern std::array<std::unique_ptr<::google::protobuf::Service>, ' + str(len(servicearray)) + '> g_server_service;\n'
     with open(writedfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -42,7 +42,7 @@ def gencppfile(writedfilename):
     newstr += '#include <google/protobuf/message.h>\n\n'
     for filename in servicefilenamearray:
         newstr += '#include "'  + filename + '"\n'
-    newstr += 'std::array<std::unique_ptr<::google::protobuf::Service>, ' + str(len(servicearray)) + '> g_server_nomal_service{\n'
+    newstr += 'std::array<std::unique_ptr<::google::protobuf::Service>, ' + str(len(servicearray)) + '> g_server_service{\n'
     for service in servicearray:
         newstr += 'std::unique_ptr<::google::protobuf::Service>(new ' +  service.replace('\n', '') + 'Impl),\n'
     newstr = newstr.strip(',\n') + '};\n'

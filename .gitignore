@@ -31,7 +31,7 @@ bin/config/cpp/
 bin/zlib*
 common/src/game_config/
 bin/config/
-common/src/pb/proto/md5/
+proto/md5/
 common/src/pb/pb2sol2/
 third_party/boost/
 third_party/mysql/
