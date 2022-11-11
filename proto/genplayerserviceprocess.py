@@ -377,7 +377,7 @@ class myThread (threading.Thread):
 def main():
     filelen = len(genfile)
     global threads
-    step = filelen / cpu_count() + 1
+    step = int(filelen / cpu_count() + 1)
     if cpu_count() > filelen:
         for i in range(0, filelen):
             t = myThread(genfile[i])
