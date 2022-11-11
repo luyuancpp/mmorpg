@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding=utf-8
-import buildcommon
+import gencommon
 import xlrd
 import xlwt
 import json
@@ -190,11 +190,11 @@ def main():
                                 hwfilename = sheetname + "_config.h"
                                 cwfilename = sheetname + "_config.cpp"
                                 s =getcpph(workbookdata[sheetname], sheetname)
-                                buildcommon.mywrite(s, cppdir + hwfilename)
+                                gencommon.mywrite(s, cppdir + hwfilename)
                                 s =getcpp(workbookdata[sheetname], sheetname)
-                                buildcommon.mywrite(s, cppdir + cwfilename)
+                                gencommon.mywrite(s, cppdir + cwfilename)
         hs, cpps = getallconfig()
-        buildcommon.mywrite(hs, cppdir + "all_config.h")
-        buildcommon.mywrite(cpps, cppdir + "all_config.cpp")
+        gencommon.mywrite(hs, cppdir + "all_config.h")
+        gencommon.mywrite(cpps, cppdir + "all_config.cpp")
                        
 main()
