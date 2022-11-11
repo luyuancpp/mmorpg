@@ -5,7 +5,7 @@ controller_file_prefix = 'controller_'
 gs_file_prefix = 'gs_'
 lobby_file_prefix = 'lobby_'
 md5dir = 'md5/'
-pbcdir = '../pbc/'
+pbcdir = '../common/src/pb/pbc/'
 
 gsplayerservicedir = '../game_server/src/service/logic_proto/'
 lobbyplayerservicedir = '../lobby_server/src/service/logic_proto/'
