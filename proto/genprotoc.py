@@ -15,11 +15,11 @@ protobufdir = '../third_party/protobuf/src/'
 
 commoncppout = 'md5/common_proto/'
 
-srcdir = '../common/src/pb/pbc/'
-if not os.path.exists(srcdir):
-    os.makedirs(srcdir)
+dest_dir = '../common/src/pb/pbc/'
+if not os.path.exists(dest_dir):
+    os.makedirs(dest_dir)
 
-def gen(walkdir, dest_dir, filename):
+def gen(walkdir, filename):
     if not (filename[-6:].lower() == '.proto'):
         return
     proto_destfilename = walkdir +  filename
@@ -41,11 +41,11 @@ def gen(walkdir, dest_dir, filename):
     commond = 'protoc  -I=./ -I=./logic_proto/ -I=./component_proto/ -I=./common_proto/ -I=%s --cpp_out=%s %s' % (protobufdir, dest_dir, proto_destfilename)
     system(commond)
 
-def gen_protoc(walkdir, dest_dir):
+def gen_protoc(walkdir):
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
     for filename in os.listdir(walkdir):
-        gen(walkdir, dest_dir, filename)
+        gen(walkdir, filename)
 
 def genmd5(walkdir):
     for filename in os.listdir(walkdir):
@@ -55,10 +55,10 @@ def genmd5(walkdir):
 
         
 genpublic.makedirs()
-gen_protoc('./logic_proto/', '../common/src/pb/pbc/')
-gen_protoc('./component_proto/',  '../common/src/pb/pbc/')
-gen_protoc('./event_proto/',  '../common/src/pb/pbc/')
-gen_protoc('./common_proto/',  '../common/src/pb/pbc/')
+gen_protoc('./logic_proto/')
+gen_protoc('./component_proto/')
+gen_protoc('./event_proto/')
+gen_protoc('./common_proto/')
 genmd5('./component_proto/')
 genmd5('./logic_proto/')
 genmd5('./event_proto/')
