@@ -3,8 +3,8 @@ from os import system
 import md5tool
 import shutil
 
-luadir = '../../../../bin/script/client/service/'
-clientservicedir = '../../../../client/src/service/logic_proto/'
+luadir = '../bin/script/client/service/'
+clientservicedir = '../client/src/service/logic_proto/'
 includedir = 'script/client/service/'
 md5dir = './md5/'
 cppfilename = 'service_lua.cpp'

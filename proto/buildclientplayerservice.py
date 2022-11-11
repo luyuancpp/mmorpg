@@ -24,7 +24,7 @@ tabstr = '    '
 servicedir = './md5/'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic_proto/'
-clientservicedir = '../../../../client/src/service/logic_proto/'
+clientservicedir = '../client/src/service/logic_proto/'
 fileprev = 'c_'
 client_player = 'client_player'
 

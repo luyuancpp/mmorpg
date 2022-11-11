@@ -11,11 +11,11 @@ import buildpublic
 from os import system
 
 md5str = 'md5/'
-protobufdir = '../../../../third_party/protobuf/src/'
+protobufdir = '../third_party/protobuf/src/'
 
 commoncppout = 'md5/common_proto/'
 
-srcdir = '../pbc/'
+srcdir = '../common/src/pb/pbc/'
 if not os.path.exists(srcdir):
     os.makedirs(srcdir)
 
@@ -52,10 +52,10 @@ def genmd5(walkdir):
             continue            
         md5tool.generate_md5_file_for(walkdir + filename, md5str + filename + '.md5')
 
-gen_protoc('./logic_proto/', '../pbc/')
-gen_protoc('./component_proto/',  '../pbc/')
-gen_protoc('./event_proto/',  '../pbc/')
-gen_protoc('./common_proto/',  '../pbc/')
+gen_protoc('./logic_proto/', '../common/src/pb/pbc/')
+gen_protoc('./component_proto/',  '../common/src/pb/pbc/')
+gen_protoc('./event_proto/',  '../common/src/pb/pbc/')
+gen_protoc('./common_proto/',  '../common/src/pb/pbc/')
 genmd5('./component_proto/')
 genmd5('./logic_proto/')
 genmd5('./event_proto/')

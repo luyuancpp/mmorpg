@@ -9,7 +9,7 @@ from multiprocessing import cpu_count
 local = threading.local()
 
 md5dir = './md5/event_proto/'
-destdirpath = '../../../../game_server/src/event_receiver/'
+destdirpath = '../game_server/src/event_receiver/'
 eventprotodir = './event_proto/'
 tabstr = '    '
 filelist = []
