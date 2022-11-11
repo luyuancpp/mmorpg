@@ -2,7 +2,7 @@ import os
 from os import system
 import md5tool
 import shutil
-import buildpublic
+import genpublic
 
 servicearray = []
 servicefilenamearray = []
@@ -15,7 +15,7 @@ if not os.path.exists(md5dir):
 def scanservice():
     for (dirpath, dirnames, filenames) in os.walk(logicprotodir):
         for filename in filenames:  
-            if filename.find('client_player') >= 0 or filename.find('server_player') >= 0 or filename.find(buildpublic.lobby_file_prefix) >= 0 or filename.find(buildpublic.lobby_file_prefix) > 0:
+            if filename.find('client_player') >= 0 or filename.find('server_player') >= 0 or filename.find(genpublic.lobby_file_prefix) >= 0 or filename.find(genpublic.lobby_file_prefix) > 0:
                 continue  
             with open(dirpath + filename,'r', encoding='utf-8') as file:
                 for fileline in file:

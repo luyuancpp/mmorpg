@@ -7,7 +7,7 @@ import os.path
 import sys
 import shutil
 import md5tool
-import buildpublic
+import genpublic
 from os import system
 
 md5str = 'md5/'
@@ -44,7 +44,7 @@ def gen_protoc(walkdir, dest_dir):
         commond = 'protoc  -I=./ -I=./logic_proto/ -I=./component_proto/ -I=./common_proto/ -I=%s --cpp_out=%s %s' % (protobufdir, dest_dir, proto_destfilename)
         system(commond)
 
-buildpublic.makedirs()
+genpublic.makedirs()
 
 def genmd5(walkdir):
     for filename in os.listdir(walkdir):
