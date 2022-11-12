@@ -20,9 +20,9 @@ entt::entity CreatePlayer()
     return player;
 }
 
-MsChangeSceneInfo& GetPlayerFrontChangeSceneInfo(entt::entity player)
+ControllerChangeSceneInfo& GetPlayerFrontChangeSceneInfo(entt::entity player)
 {
-    return registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.front();
+    return registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.front();
 }
 
 TEST(PlayerChangeScene, CreateMainScene)
@@ -41,12 +41,12 @@ TEST(PlayerChangeScene, CreateMainScene)
 TEST(PlayerChangeScene, QueueFull)
 {
     auto player = CreatePlayer();
-    for (uint8_t i = 0; i < PlayerMsChangeSceneQueue::kMaxChangeSceneQueue; ++i)
+    for (uint8_t i = 0; i < PlayerControllerChangeSceneQueue::kMaxChangeSceneQueue; ++i)
     {
-        MsChangeSceneInfo info;
+        ControllerChangeSceneInfo info;
         EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, info));
     }
-    MsChangeSceneInfo info;
+    ControllerChangeSceneInfo info;
     EXPECT_EQ(kRetEnterSceneChangingGs, PlayerChangeSceneSystem::PushChangeSceneInfo(player, info));
 }
 
@@ -60,12 +60,12 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
     auto from_scene = ScenesSystem::get_scene(scene_id);
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
-    MsChangeSceneInfo change_info;
+    ControllerChangeSceneInfo change_info;
     change_info.mutable_scene_info()->set_scene_id(scene_id);
-    change_info.set_change_gs_type(MsChangeSceneInfo::eSameGs);//todo scene logic
+    change_info.set_change_gs_type(ControllerChangeSceneInfo::eSameGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));    
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    EXPECT_TRUE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
 }
 
 TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
@@ -77,22 +77,19 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
     auto from_scene = ScenesSystem::get_scene(scene_id);
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
-    MsChangeSceneInfo change_info;
+    ControllerChangeSceneInfo change_info;
     change_info.mutable_scene_info()->set_scene_id(scene_id);
-    change_info.set_change_gs_type(MsChangeSceneInfo::eDifferentGs);//todo scene logic
-    change_info.set_change_gs_status(MsChangeSceneInfo::eLeaveGsScene);
+    change_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);//todo scene logic
+    change_info.set_change_gs_status(ControllerChangeSceneInfo::eLeaveGsScene);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eLeaveGsSceneSucceed);
+    EXPECT_TRUE(!registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(ControllerChangeSceneInfo::eEnterGsSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eEnterGsSceneSucceed);
+    EXPECT_TRUE(!registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eGateEnterGsSceneSucceed);
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    EXPECT_TRUE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
 }
 
 TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
@@ -105,19 +102,19 @@ TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
-    MsChangeSceneInfo change_info;
+    ControllerChangeSceneInfo change_info;
     change_info.mutable_scene_info()->set_scene_id(scene_id);
-    change_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
+    change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(MsChangeSceneInfo::eDifferentGs);
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    EXPECT_TRUE(!registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(!registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eGateEnterGsSceneSucceed);
+    EXPECT_TRUE(!registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    EXPECT_TRUE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
 }
 
 
@@ -131,16 +128,16 @@ TEST(PlayerChangeScene, CrossServerSameGs)
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
-    MsChangeSceneInfo change_info;
+    ControllerChangeSceneInfo change_info;
     change_info.mutable_scene_info()->set_scene_id(scene_id);
-    change_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
-    change_info.set_change_gs_type(MsChangeSceneInfo::eSameGs);//todo scene logic
+    change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
+    change_info.set_change_gs_type(ControllerChangeSceneInfo::eSameGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));    
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    EXPECT_FALSE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    EXPECT_TRUE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
 }
 
 TEST(PlayerChangeScene, CrossServerDiffGs)
@@ -153,19 +150,19 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
-    MsChangeSceneInfo change_info;
+    ControllerChangeSceneInfo change_info;
     change_info.mutable_scene_info()->set_scene_id(scene_id);
-    change_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
-    change_info.set_change_gs_type(MsChangeSceneInfo::eDifferentGs);//todo scene logic
+    change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
+    change_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    EXPECT_FALSE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eGateEnterGsSceneSucceed);
+    EXPECT_FALSE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    EXPECT_TRUE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
 }
 
 TEST(PlayerChangeScene, CrossServerGs2NormalServerGs)
@@ -178,19 +175,19 @@ TEST(PlayerChangeScene, CrossServerGs2NormalServerGs)
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
-    MsChangeSceneInfo change_info;
+    ControllerChangeSceneInfo change_info;
     change_info.mutable_scene_info()->set_scene_id(scene_id);
-    change_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
+    change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(MsChangeSceneInfo::eDifferentGs);
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    EXPECT_FALSE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eGateEnterGsSceneSucceed);
+    EXPECT_FALSE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    EXPECT_TRUE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
 }
 
 
@@ -205,32 +202,32 @@ TEST(PlayerChangeScene, ServerCrush)
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
-    MsChangeSceneInfo change_info;
+    ControllerChangeSceneInfo change_info;
     change_info.mutable_scene_info()->set_scene_id(scene_id);
-    change_info.set_change_cross_server_type(MsChangeSceneInfo::eCrossServer);
-    change_info.set_change_gs_type(MsChangeSceneInfo::eDifferentGs);//todo scene logic
+    change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
+    change_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    EXPECT_FALSE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eLeaveGsScene);
+    EXPECT_FALSE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(ControllerChangeSceneInfo::eLeaveGsScene);
     PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);//crash
-    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    EXPECT_TRUE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
 
     ScenesSystem::EnterScene(ep);
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eLeaveGsScene);
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(ControllerChangeSceneInfo::eLeaveGsScene);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(MsChangeSceneInfo::eDifferentGs);
-    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(MsChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    EXPECT_FALSE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
+    GetPlayerFrontChangeSceneInfo(player).set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_FALSE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
-    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(MsChangeSceneInfo::eGateEnterGsSceneSucceed);
+    EXPECT_FALSE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
+    GetPlayerFrontChangeSceneInfo(player).set_change_gs_status(ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-    EXPECT_TRUE(registry.get<PlayerMsChangeSceneQueue>(player).change_scene_queue_.empty());
+    EXPECT_TRUE(registry.get<PlayerControllerChangeSceneQueue>(player).change_scene_queue_.empty());
 }
 
 int32_t main(int argc, char** argv)

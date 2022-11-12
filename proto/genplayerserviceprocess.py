@@ -52,8 +52,6 @@ def parsefile(filename):
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
-                if isserverpushrpc(fileline) == True :
-                    continue
                 local.rpcarry.append(fileline)
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
@@ -76,8 +74,6 @@ def inputfiledestdir(filename):
 def initservicenames():
     local.servicenames = []
     for service in local.rpcarry:
-        if isserverpushrpc(service) == True :
-            continue
         s = service.strip(' ').split(' ')
         local.servicenames.append(s[1])
 
@@ -85,8 +81,7 @@ def genheadrpcfun():
     global controller
     servicestr = 'public:\n'
     for service in local.rpcarry:
-        if isserverpushrpc(service) == True :
-            continue
+
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
@@ -132,8 +127,6 @@ def genheadrpcfun():
 def gencpprpcfunbegin(rpcindex):
     servicestr = ''
     s = local.rpcarry[rpcindex]
-    if isserverpushrpc(s) == True :
-        return servicestr
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.playerservice + 'Impl::' + s[1] + controller + ',\n'
     servicestr +=  tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
@@ -166,9 +159,6 @@ def genheadfile(filename, dirpath):
     headfunbodyarry = [classbegin, genheadrpcfun]
     destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.h').replace(protodir, '')
-    if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
-        shutil.copy(destfilename, newheadfilename)
-        return
     newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
     newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
@@ -177,7 +167,7 @@ def genheadfile(filename, dirpath):
     newstr += '};\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
-
+        
 def gencppfile(filename, dirpath):
     destdir = genpublic.getdestdir(dirpath)
     cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
@@ -233,9 +223,6 @@ def gencppfile(filename, dirpath):
         newstr += genyourcode() + '\n'
         newstr += rpcbegin + '\n'
     while serviceidx < len(local.rpcarry) :
-        if isserverpushrpc(local.rpcarry[serviceidx]) == True :
-            serviceidx += 1 
-        else:
             newstr += gencpprpcfunbegin(serviceidx)
             newstr += yourcodebegin +  '\n'
             newstr += yourcodeend + '\n}\n\n'

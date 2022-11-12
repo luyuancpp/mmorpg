@@ -11,10 +11,8 @@ message ControllerChangeSceneInfo
   enum eChangeGsStatus
   {
       eLeaveGsScene = 0;//等待老gs保存完毕
-      eLeaveGsSceneSucceed = 1;//
-      eEnterGsSceneSucceed = 2;//不同服务器要走完这步
-      eGateEnterGsSceneSucceed = 3;//换的时候gate断线了
-      
+      eEnterGsSceneSucceed = 1;//不同服务器要走完这步
+      eGateEnterGsSceneSucceed = 2;//todo换的时候gate断线了
   };
   enum eChangeGsType
   {

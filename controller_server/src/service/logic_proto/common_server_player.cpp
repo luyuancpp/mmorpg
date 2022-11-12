@@ -22,4 +22,12 @@ void ServerPlayerLoginServiceImpl::Controller2GsLogin(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
+void ServerPlayerLoginServiceImpl::Controller2GsEnterGateSucceed(entt::entity player,
+    const ::Controller2GsEnterGateSucceedRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
 ///<<<rpc end

@@ -5,6 +5,7 @@ class BeforeEnterScene;
 class OnEnterScene;
 class BeforeLeaveScene;
 class OnLeaveScene;
+class S2CEnterScene;
 
 class SceneEventReceiver
 {
@@ -16,4 +17,5 @@ public:
     static void Receive1(const OnEnterScene& event_obj);
     static void Receive2(const BeforeLeaveScene& event_obj);
     static void Receive3(const OnLeaveScene& event_obj);
+    static void Receive4(const S2CEnterScene& event_obj);
 };

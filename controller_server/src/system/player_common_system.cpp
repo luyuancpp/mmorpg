@@ -16,6 +16,29 @@ void PlayerCommonSystem::InitPlayerCompnent(entt::entity player)
     registry.emplace<Player>(player);
 }
 
+void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
+{
+    UpdateSessionController2GsRequest message;
+    auto try_player_session = registry.try_get<PlayerSession>(player);
+    if (nullptr == try_player_session)
+    {
+        LOG_ERROR << "player session not valid" << registry.try_get<Guid>(player);
+        return;
+    }
+    message.set_session_id(try_player_session->session_id());
+    Send2GsPlayer(message, player);
+
+    auto try_enter_gs = registry.try_get<EnterGsFlag>(player);
+    if (nullptr != try_enter_gs)
+    {
+        auto enter_gs_type = try_enter_gs->enter_gs_type();
+        if (enter_gs_type != LOGIN_NONE)
+        {
+            PlayerCommonSystem::OnLogin(player);
+        }
+    }
+}
+
 void PlayerCommonSystem::OnLogin(entt::entity player)
 {
 	auto try_enter_gs = registry.try_get<EnterGsFlag>(player);

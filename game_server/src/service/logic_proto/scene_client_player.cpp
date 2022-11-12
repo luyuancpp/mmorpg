@@ -48,4 +48,20 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
+void ClientPlayerSceneServiceImpl::PushEnterSceneS2C(entt::entity player,
+    const ::EnterSeceneS2C* request,
+    ::EnterSeceneS2C* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ClientPlayerSceneServiceImpl::PushSceneInfoS2C(entt::entity player,
+    const ::SceneInfoS2C* request,
+    ::SceneInfoS2C* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
 ///<<<rpc end

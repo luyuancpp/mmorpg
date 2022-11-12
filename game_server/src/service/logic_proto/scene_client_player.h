@@ -9,6 +9,14 @@ public:
         const ::EnterSeceneC2SRequest* request,
         ::EnterSeceneC2SResponse* response);
 
+    void PushEnterSceneS2C(entt::entity player,
+        const ::EnterSeceneS2C* request,
+        ::EnterSeceneS2C* response);
+
+    void PushSceneInfoS2C(entt::entity player,
+        const ::SceneInfoS2C* request,
+        ::SceneInfoS2C* response);
+
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
     entt::entity player,
     const ::google::protobuf::Message* request,

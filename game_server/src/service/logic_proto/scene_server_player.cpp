@@ -60,9 +60,9 @@ void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplet
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::Send2ClientEnterScene(entt::entity player,
-    const ::Send2ClientEnterSceneRequest* request,
-    ::google::protobuf::Empty* response)
+void ServerPlayerSceneServiceImpl::Controller2GsEnterSceneS2C(entt::entity player,
+    const ::EnterSceneS2CRequest* request,
+    ::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto try_scene = registry.try_get<SceneEntity>(player);

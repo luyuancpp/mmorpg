@@ -5,6 +5,10 @@ class ClientPlayerTeamServiceImpl : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:
+    void TeamInfoNotify(entt::entity player,
+        const ::TeamInfoS2CRequest* request,
+        ::TeamInfoS2CResponse* response);
+
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
     entt::entity player,
     const ::google::protobuf::Message* request,

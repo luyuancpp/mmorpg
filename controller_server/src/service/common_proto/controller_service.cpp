@@ -87,26 +87,12 @@ void OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc replied)
 		LOG_ERROR << "player not found " << registry.get<Guid>(player);
 		return;
 	}
-	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
-	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-	UpdateSessionController2GsRequest message;
-    auto try_player_session = registry.try_get<PlayerSession>(player);
-    if (nullptr == try_player_session)
-    {
-        LOG_ERROR << "player session not valid" << registry.try_get<Guid>(player);
-        return;
-    }
-    message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(message, player);
-	auto try_enter_gs = registry.try_get<EnterGsFlag>(player);
-	if (nullptr != try_enter_gs)
-	{
-		auto enter_gs_type = try_enter_gs->enter_gs_type();
-		if (enter_gs_type != LOGIN_NONE)
-		{
-			PlayerCommonSystem::OnLogin(player);
-		}
-	}	
+
+	PlayerCommonSystem::OnEnterGateSucceed(player);
+
+    PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
+
 }
 
 void OnSessionEnterGame(entt::entity conn, Guid player_id)
@@ -415,11 +401,8 @@ void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController*
         ControllerChangeSceneInfo change_scene_info;
         change_scene_info.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(scene));
         change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
-        change_scene_info.set_change_gs_status(ControllerChangeSceneInfo::eLeaveGsSceneSucceed);
-
-        PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
-        PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-
+        change_scene_info.set_change_gs_status(ControllerChangeSceneInfo::eEnterGsSceneSucceed);
+        PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);        
 	}
 	else//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
 	{
@@ -579,6 +562,8 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
 	rpc->s_rq_.set_session_id(player_session.session_id());
 	rpc->s_rq_.set_gs_node_id(player_session.gs_node_id());
 	registry.get<GateStub>(gate_it->second).CallMethod(OnGateUpdatePlayerGsReplied, rpc,  &gateservice::GateService::PlayerEnterGs);
+	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
+	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE 
 }
 
