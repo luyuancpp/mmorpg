@@ -103,6 +103,11 @@ void PlayerCommonSystem::OnPlayerLogin(entt::entity player, uint32_t enter_gs_ty
 	}
 }
 
+void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
+{
+
+}
+
 //todo 检测
 void PlayerCommonSystem::RemovePlayereSession(Guid player_id)
 {

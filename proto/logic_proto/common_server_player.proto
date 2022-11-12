@@ -12,8 +12,13 @@ message Controller2GsLoginRequest
   uint32 enter_gs_type = 1;
 }
 
+message Controller2GsEnterGateSucceedRequest
+{
+}
+
 service ServerPlayerLoginService 
 {
   rpc UpdateSessionController2Gs (UpdateSessionController2GsRequest) returns (google.protobuf.Empty);
   rpc Controller2GsLogin (Controller2GsLoginRequest) returns (google.protobuf.Empty);
+  rpc Controller2GsEnterGateSucceed (Controller2GsEnterGateSucceedRequest) returns (google.protobuf.Empty);
 }

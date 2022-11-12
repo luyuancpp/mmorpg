@@ -4,6 +4,9 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/system/player_common_system.h"
 #include "src/system/player_scene_system.h"
+#include "src/game_logic/comp/scene_comp.h"
+
+#include "logic_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -30,6 +33,7 @@ void ServerPlayerSceneServiceImpl::LeaveSceneGs2Controller(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+
 ///<<< END WRITING YOUR CODE
 }
 
@@ -53,6 +57,23 @@ void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplet
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void ServerPlayerSceneServiceImpl::Send2ClientEnterScene(entt::entity player,
+    const ::Send2ClientEnterSceneRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+    auto try_scene = registry.try_get<SceneEntity>(player);
+    if (nullptr == try_scene)
+    {
+        LOG_ERROR << " player not enter scene ";
+        return;
+    }
+    EnterSeceneS2C message;
+    message.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(try_scene->scene_entity_));
+    Send2Player(message, player);
 ///<<< END WRITING YOUR CODE
 }
 

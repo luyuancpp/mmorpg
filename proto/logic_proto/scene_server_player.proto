@@ -27,6 +27,10 @@ message Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest
 {
 }
 
+message Send2ClientEnterSceneRequest
+{
+}
+
 service ServerPlayerSceneService 
 {
   rpc EnterSceneGs2Controller (Gs2ControllerEnterSceneRequest) returns (google.protobuf.Empty);
@@ -34,4 +38,5 @@ service ServerPlayerSceneService
   rpc LeaveSceneGs2Controller (Gs2ControllerLeaveSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveSceneController2Gs (Controller2GsLeaveSceneRequest) returns (google.protobuf.Empty);
   rpc Gs2ControllerLeaveSceneAsyncSavePlayerComplete (Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest) returns (google.protobuf.Empty);
+  rpc Send2ClientEnterScene (Send2ClientEnterSceneRequest) returns (google.protobuf.Empty);
 }
