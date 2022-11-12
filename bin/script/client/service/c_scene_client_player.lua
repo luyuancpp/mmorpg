@@ -16,7 +16,7 @@ function PushEnterSceneS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
 	--连续切换有问题
 	LogInfo('------------------------>')
-	ChangeGsScene(response, own_server_scene1, own_server_scene1)
+	ChangeGsScene(response, cross_server_scene1, cross_server_scene1)
 	times = times + 1
 	LogInfo('<------------------------'..times)
 ---<<< END WRITING YOUR CODE 
