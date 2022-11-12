@@ -209,6 +209,11 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
 	//disconnect scene 
 	//todo lobby not has scene 
 
+    //todo error
+    LeaveSceneParam lsp;
+    lsp.leaver_ = player;
+    ScenesSystem::LeaveScene(lsp);
+
 	EnterSceneParam esp;
 	esp.scene_ = scene;
 	esp.enterer_ = player;
@@ -240,10 +245,16 @@ void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::R
 		return;
 	}
 	ReturnAutoCloseureError(ScenesSystem::CheckScenePlayerSize(scene));
+	auto player = it.first->second;
+
+	//todo error
+    LeaveSceneParam lsp;
+    lsp.leaver_ = player;
+    ScenesSystem::LeaveScene(lsp);
 
 	EnterSceneParam esp;
 	esp.scene_ = scene;
-	esp.enterer_ = it.first->second;
+	esp.enterer_ = player;
 	ScenesSystem::EnterScene(esp);
 ///<<< END WRITING YOUR CODE 
 }

@@ -55,9 +55,9 @@ void GsSceneSystem::EnterScene(const EnterSceneParam& param)
     }
 }
 
-void GsSceneSystem::LeaveScene(entt::entity ent)
+void GsSceneSystem::LeaveScene(entt::entity leaver)
 {
     LeaveSceneParam leave;
-    leave.leaver_ = ent;
+    leave.leaver_ = leaver;
     ScenesSystem::LeaveScene(leave);
 }

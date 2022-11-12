@@ -11,6 +11,8 @@
 #include "entt/src/entt/entity/registry.hpp"
 
 using Guid = uint64_t;
+using NodeId = uint32_t;
+using SessionId = uint64_t;
 using GuidVector = std::vector<Guid>;
 using StringVector = std::vector<std::string>;
 using Int16Vector = std::vector<int16_t>;

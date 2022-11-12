@@ -109,14 +109,14 @@ void OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc replied)
 	}	
 }
 
-
 void OnSessionEnterGame(entt::entity conn, Guid player_id)
 {
     registry.emplace<EntityPtr>(conn, g_player_list->GetPlayerPtr(player_id));
     registry.emplace<Guid>(conn, player_id);
 }
 
-void InitPlayerSession(entt::entity player, uint64_t session_id)
+
+void InitPlayerGate(entt::entity player, uint64_t session_id)
 {
     auto& player_session = registry.get_or_emplace<PlayerSession>(player);
     player_session.gate_session_.set_session_id(session_id);
@@ -130,24 +130,6 @@ void InitPlayerSession(entt::entity player, uint64_t session_id)
     {
 		return;        
     }
-	auto try_scene_entity = registry.try_get<SceneEntity>(player);
-	if (nullptr == try_scene_entity)
-	{
-		LOG_ERROR << "player scene empty" << registry.get<Guid>(player);
-		return;
-	}
-
-    auto* p_gs_data = registry.try_get<GsNodePtr>(try_scene_entity->scene_entity_);
-    if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
-    {
-        // todo default
-		LOG_ERROR << "player " << registry.get<Guid>(player) << " enter default secne";
-    }
-	else
-	{
-		registry.get<PlayerSession>(player).gs_ = *p_gs_data;
-	}
-	
 	player_session.gate_ = *gate;
 }
 
@@ -417,15 +399,26 @@ void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController*
 			LOG_INFO << "player " << player_id << " enter default secne";
 		} 
 		
-		ControllerChangeSceneInfo change_scene_info;
-		change_scene_info.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(scene));
-		change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
-		change_scene_info.set_change_gs_status(ControllerChangeSceneInfo::eLeaveGsSceneSucceed);
-		PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
-		PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-
-		InitPlayerSession(player, request->session_id());
+	
+		InitPlayerGate(player, request->session_id());
 		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
+
+        auto try_player_session = registry.try_get<PlayerSession>(player);
+        if (nullptr == try_player_session)
+        {
+            LOG_ERROR << "enter scene not found or destroy" << registry.get<Guid>(player);
+			// to do 让人下线
+            return;
+
+        }
+		PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(scene), try_player_session->session_id());
+        ControllerChangeSceneInfo change_scene_info;
+        change_scene_info.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(scene));
+        change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
+        change_scene_info.set_change_gs_status(ControllerChangeSceneInfo::eLeaveGsSceneSucceed);
+
+        PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);
+        PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 
 	}
 	else//顶号,断线重连 记得gate 删除 踢掉老gate,但是是同一个gate就不用了
@@ -443,7 +436,7 @@ void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController*
             message.set_session_id(player_session->gate_session_.session_id());
             Send2Gate(message, player_session->gate_node_id());
         }
-		InitPlayerSession(player, request->session_id());
+		InitPlayerGate(player, request->session_id());
 		registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
 	}
 	if (entt::null == player)
@@ -451,7 +444,7 @@ void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController*
 		LOG_ERROR << "player enter game";
 		return;
 	}
-	PlayerSceneSystem::CallPlayerEnterGs(player);
+	
 ///<<< END WRITING YOUR CODE 
 }
 

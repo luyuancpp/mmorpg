@@ -49,21 +49,28 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 }
 
 
-void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player)
+NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
 {
-	auto try_player_session = registry.try_get<PlayerSession>(player);
-	if (nullptr == try_player_session)
+    auto* p_gs_data = registry.try_get<GsNodePtr>(scene);
+    if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
+    {
+        return kInvalidU32Id;
+    }
+    return (*p_gs_data)->node_id();
+}
+
+
+void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, SessionId session_id)
+{
+    //todo gs崩溃
+	auto it = g_gs_nodes.find(node_id);
+	if (it == g_gs_nodes.end())
 	{
-		LOG_ERROR << "send enter gs player session not found" << registry.get<Guid>(player);
-		return;
-	}
-	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
-	if (it != g_gs_nodes.end())
-	{
-		gsservice::EnterGsRequest message;
-		message.set_player_id(registry.get<Guid>(player));
-		message.set_session_id(try_player_session->session_id());
-		message.set_controller_node_id(controller_node_id());
-		registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
-	}
+        return;
+    }
+    gsservice::EnterGsRequest message;
+    message.set_player_id(registry.get<Guid>(player));
+    message.set_session_id(session_id);
+    message.set_controller_node_id(controller_node_id());
+    registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
 }

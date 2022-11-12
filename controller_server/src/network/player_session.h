@@ -19,7 +19,7 @@ public:
 	{
 		if (nullptr == gs_)
 		{
-			return 0;
+			return kInvalidU32Id;
 		}
 		return gs_->node_id();
 	}
@@ -30,6 +30,8 @@ public:
 	}
 
 	inline decltype(auto) session_id()const { return gate_session_.session_id(); }
+	inline void set_gs(GsNodePtr& gs) { gs_ = gs; }
+	inline GsNodePtr& gs(){ return gs_; }
 
 	inline void Send(const ::google::protobuf::Message& message)
 	{
@@ -47,6 +49,7 @@ public:
 	}
 	GateSession gate_session_;
 	GateNodeWPtr gate_;
+private:
 	GsNodePtr gs_;
 };
 

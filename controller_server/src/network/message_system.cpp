@@ -42,7 +42,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	{
 		return;
 	}
-	auto gs = try_player_session->gs_;
+	auto gs = try_player_session->gs();
 	if (nullptr == gs)
 	{
 		LOG_INFO << "gs not found ";
@@ -88,7 +88,7 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
         return;
     }
     auto player_session = registry.get<PlayerSession>(player);
-    auto gs = player_session.gs_;
+    auto gs = player_session.gs();
     if (nullptr == gs)
     {
         LOG_INFO << "gs not found ";
