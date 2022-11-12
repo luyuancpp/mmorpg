@@ -38,7 +38,7 @@ void ServerPlayerLoginServiceImpl::UpdateSessionController2Gs(entt::entity playe
         return;
     }
     g_gate_sessions->emplace(request->session_id(), player);
-    registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//µÇÂ¼¸üÐÂgate
+    registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//ç™»å½•æ›´æ–°gate
     registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 ///<<< END WRITING YOUR CODE
 }
@@ -48,11 +48,20 @@ void ServerPlayerLoginServiceImpl::Controller2GsLogin(entt::entity player,
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    if (request->enter_gs_type() == LOGIN_NONE)//µÇÂ¼£¬²»ÊÇÆÕÍ¨ÇÐ»»³¡¾°
+    if (request->enter_gs_type() == LOGIN_NONE)//ç™»å½•ï¼Œä¸æ˜¯æ™®é€šåˆ‡æ¢åœºæ™¯
     {
         return;
     }
     PlayerCommonSystem::OnPlayerLogin(player, request->enter_gs_type());
+///<<< END WRITING YOUR CODE
+}
+
+void ServerPlayerLoginServiceImpl::Controller2GsEnterGateSucceed(entt::entity player,
+    const ::Controller2GsEnterGateSucceedRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+    PlayerCommonSystem::OnEnterGateSucceed(player);
 ///<<< END WRITING YOUR CODE
 }
 

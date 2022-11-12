@@ -270,4 +270,12 @@ void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplet
 ///<<< END WRITING YOUR CODE
 }
 
+void ServerPlayerSceneServiceImpl::Send2ClientEnterScene(entt::entity player,
+    const ::Send2ClientEnterSceneRequest* request,
+    ::google::protobuf::Empty* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
 ///<<<rpc end
