@@ -49,6 +49,12 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 }
 
 
+void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
+{
+    EnterSceneS2CRequest msg;
+    Send2GsPlayer(msg, player);
+}
+
 NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
 {
     auto* p_gs_data = registry.try_get<GsNodePtr>(scene);

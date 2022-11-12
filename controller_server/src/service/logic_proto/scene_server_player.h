@@ -20,9 +20,10 @@ public:
     void Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
         const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
         ::google::protobuf::Empty* response);
-    void Send2ClientEnterScene(entt::entity player,
-        const ::Send2ClientEnterSceneRequest* request,
-        ::google::protobuf::Empty* response);
+    void Controller2GsEnterSceneS2C(entt::entity player,
+        const ::EnterSceneS2CRequest* request,
+        ::EnterScenerS2CResponse* response);
+
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
     entt::entity player,
     const ::google::protobuf::Message* request,
@@ -52,11 +53,6 @@ public:
         case 4:
             Gs2ControllerLeaveSceneAsyncSavePlayerComplete(player,
             ::google::protobuf::internal::DownCast<const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest*>( request),
-            ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
-        break;
-        case 5:
-            Send2ClientEnterScene(player,
-            ::google::protobuf::internal::DownCast<const ::Send2ClientEnterSceneRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
         default:

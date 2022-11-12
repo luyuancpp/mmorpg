@@ -19,3 +19,8 @@ message OnLeaveScene
 {
   uint64 entity = 1;
 }
+
+message S2CEnterScene
+{
+  uint64 entity = 1;
+}

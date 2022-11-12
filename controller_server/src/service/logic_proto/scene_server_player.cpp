@@ -264,15 +264,12 @@ void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplet
 	GsNodePtr null_gs;
 	try_player_session->set_gs(null_gs);
     PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(to_scene), try_player_session->session_id());
-
-    PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eLeaveGsSceneSucceed);
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::Send2ClientEnterScene(entt::entity player,
-    const ::Send2ClientEnterSceneRequest* request,
-    ::google::protobuf::Empty* response)
+void ServerPlayerSceneServiceImpl::Controller2GsEnterSceneS2C(entt::entity player,
+    const ::EnterSceneS2CRequest* request,
+    ::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

@@ -8,6 +8,7 @@ dispatcher.sink<BeforeEnterScene>().connect<&SceneEventReceiverReceiver::SceneEv
 dispatcher.sink<OnEnterScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive1>();
 dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive2>();
 dispatcher.sink<OnLeaveScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive3>();
+dispatcher.sink<S2CEnterScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive4>();
 }
 
 void SceneEventReceiverReceiver::UnRegister(entt::dispatcher& dispatcher)
@@ -16,6 +17,7 @@ dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventReceiverReceiver::Scen
 dispatcher.sink<OnEnterScene>().disconnect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive1>();
 dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive2>();
 dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive3>();
+dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive4>();
 }
 
 void SceneEventReceiverReceiver::Receive0(const BeforeEnterScene& event_obj)
@@ -37,6 +39,12 @@ void SceneEventReceiverReceiver::Receive2(const BeforeLeaveScene& event_obj)
 }
 
 void SceneEventReceiverReceiver::Receive3(const OnLeaveScene& event_obj)
+{
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
+}
+
+void SceneEventReceiverReceiver::Receive4(const S2CEnterScene& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE 

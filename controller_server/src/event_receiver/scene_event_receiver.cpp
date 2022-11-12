@@ -22,6 +22,7 @@ void SceneEventReceiver::Register(entt::dispatcher& dispatcher)
     dispatcher.sink<OnEnterScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive1>();
     dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive2>();
     dispatcher.sink<OnLeaveScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive3>();
+    dispatcher.sink<S2CEnterScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive4>();
 }
 
 void SceneEventReceiver::UnRegister(entt::dispatcher& dispatcher)
@@ -30,6 +31,7 @@ void SceneEventReceiver::UnRegister(entt::dispatcher& dispatcher)
     dispatcher.sink<OnEnterScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive1>();
     dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive2>();
     dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive3>();
+    dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive4>();
 }
 
 void SceneEventReceiver::Receive0(const BeforeEnterScene& event_obj)
@@ -87,6 +89,19 @@ void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
 void SceneEventReceiver::Receive3(const OnLeaveScene& event_obj)
 {
     ///<<< BEGIN WRITING YOUR CODE 
+    ///<<< END WRITING YOUR CODE 
+}
+
+void SceneEventReceiver::Receive4(const S2CEnterScene& event_obj)
+{
+    ///<<< BEGIN WRITING YOUR CODE 
+    entt::entity player = entt::to_entity(event_obj.entity());
+    auto try_player_id = registry.try_get<Guid>(player);
+    if (nullptr == try_player_id)
+    {
+        return;
+    }
+    PlayerSceneSystem::EnterSceneS2C(player);
     ///<<< END WRITING YOUR CODE 
 }
 

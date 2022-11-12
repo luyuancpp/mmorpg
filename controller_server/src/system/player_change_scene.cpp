@@ -6,6 +6,8 @@
 #include "src/network/player_session.h"
 #include "src/system/player_scene_system.h"
 
+#include "event_proto/scene_event.pb.h"
+
 //todo 各种服务器崩溃
 void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
 {
@@ -131,6 +133,8 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
     ep.scene_ = to_scene;
     ScenesSystem::EnterScene(ep);
     change_scene_queue.pop_front();//切换成功消息删除
+
+    OnEnterSceneSucced(player);
     return kRetOK;
 }
 
@@ -152,7 +156,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
         lp.leaver_ = player;
         ScenesSystem::LeaveScene(lp);
     }
-    else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eLeaveGsSceneSucceed)
+    else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eEnterGsSceneSucceed)
     {
         auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
         if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
@@ -167,7 +171,15 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
     }
     else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eGateEnterGsSceneSucceed)
     {
-        change_scene_queue.pop_front();//todo
+        change_scene_queue.pop_front();
+        OnEnterSceneSucced(player);
     }
     return kRetOK;
+}
+
+void PlayerChangeSceneSystem::OnEnterSceneSucced(entt::entity player)
+{
+    S2CEnterScene s2c_enter_scene_event;
+    s2c_enter_scene_event.set_entity(entt::to_integral(player));
+    dispatcher.trigger(s2c_enter_scene_event);
 }

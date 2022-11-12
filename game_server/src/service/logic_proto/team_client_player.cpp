@@ -5,4 +5,12 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
+void ClientPlayerTeamServiceImpl::TeamInfoNotify(entt::entity player,
+    const ::TeamInfoS2CRequest* request,
+    ::TeamInfoS2CResponse* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
 ///<<<rpc end

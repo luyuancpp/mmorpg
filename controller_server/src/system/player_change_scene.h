@@ -18,4 +18,5 @@ private:
 	static void TryProcessViaCrossServerChangeScene(entt::entity player, ControllerChangeSceneInfo& change_info);//处理通过跨服消息的换场景
 	static uint32_t TryChangeSameGsScene(entt::entity player);
 	static uint32_t ChangeDiffGsScene(entt::entity player);//自己的服务器改变gs gs1的场景到gs2的场景
+	static void OnEnterSceneSucced(entt::entity player);
 };
