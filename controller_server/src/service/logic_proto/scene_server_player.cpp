@@ -252,8 +252,6 @@ void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplet
 		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
 		return;
 	}
-	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eLeaveGsSceneSucceed);
-
     auto try_player_session = registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
 	{
@@ -262,21 +260,13 @@ void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplet
 		return;
 
     }
-    else
-    {
-		//todo gs崩溃
-        auto* p_gs_data = registry.try_get<GsNodePtr>(to_scene);
-        if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
-        {
-            // todo default
-            LOG_ERROR << "player " << registry.get<Guid>(player) << " enter default secne";
-        }
-        else
-        {
-            try_player_session->gs_ = *p_gs_data;
-        }
-    }
-    PlayerSceneSystem::CallPlayerEnterGs(player);
+    
+	GsNodePtr null_gs;
+	try_player_session->set_gs(null_gs);
+    PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(to_scene), try_player_session->session_id());
+
+    PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eLeaveGsSceneSucceed);
+    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 }
 
