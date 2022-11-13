@@ -21,6 +21,11 @@
 #include "src/system/redis_system.h"
 #include "src/system/logic/config_system.h"
 
+NodeId node_id()
+{
+    return g_gs->gs_info().id();
+}
+
 GameServer* g_gs = nullptr;
 
 GameServer::GameServer(muduo::net::EventLoop* loop)

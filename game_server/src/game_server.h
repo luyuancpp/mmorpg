@@ -26,6 +26,7 @@ public:
 
 	ControllerStub& controller_stub() { return g2controller_stub_;	}
     inline LobbyNodeStub& lobby_stub() { return lobby_stub_; }
+    const ::game_server_db& gs_info() const { return gs_info_; }
 
     void Init();
 
@@ -33,6 +34,7 @@ public:
 
     void InitNetwork();
 
+   
 	using ServerInfoRpc = std::shared_ptr < NormalClosure<deploy::ServerInfoRequest,
 		deploy::ServerInfoResponse> >;
     void ServerInfo(ServerInfoRpc replied);

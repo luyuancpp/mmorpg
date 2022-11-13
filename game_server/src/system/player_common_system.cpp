@@ -79,6 +79,7 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 	registry.emplace_or_replace<ControllerNodePtr>(player, controller_it->second);//todo controller 重新启动以后
 	controllerservice::EnterGsSucceedRequest message;
 	message.set_player_id(registry.get<Guid>(player));
+	message.set_game_node_id(node_id());
 	auto& controller_stub = registry.get<RpcStub<controllerservice::ControllerNodeService_Stub>>(controller_it->second->controller_);
 	controller_stub.CallMethod(message, &controllerservice::ControllerNodeService_Stub::EnterGsSucceed);
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
