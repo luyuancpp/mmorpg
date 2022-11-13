@@ -15,8 +15,8 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void PlayerService(::google::protobuf::RpcController* controller,
-        const gsservice::ControllerPlayerMessageRequest* request,
-        gsservice::ControllerPlayerMessageRespone* response,
+        const gsservice::NodeServiceMessageRequest* request,
+        gsservice::NodeServiceMessageResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void GatePlayerService(::google::protobuf::RpcController* controller,

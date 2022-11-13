@@ -54,7 +54,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
-	gsservice::ControllerPlayerMessageRequest msg;
+	gsservice::NodeServiceMessageRequest msg;
 	msg.mutable_msg()->set_msg_id(msg_it->second);
 	msg.mutable_msg()->set_body(message.SerializeAsString());
 	msg.mutable_ex()->set_player_id(registry.get<Guid>(player));

@@ -12,11 +12,7 @@ message EnterGsRequest
   uint64 controller_node_id = 3;
 }
 
-message ControllerPlayerMessageRequest
-{
-  MessageBody msg = 1;
-  NodeMessageBody ex = 2;
-}
+
 
 message ControllerSend2PlayerViaGsRequest
 {
@@ -24,11 +20,6 @@ message ControllerSend2PlayerViaGsRequest
   NodeMessageBody ex = 2;
 }
 
-message ControllerPlayerMessageRespone
-{
-  MessageBody msg = 1;
-  NodeMessageBody ex = 2;
-}
 
 message RpcClientRequest
 {
@@ -55,7 +46,7 @@ message ConnectRequest
 
 service GsService {
   rpc EnterGs (EnterGsRequest) returns (google.protobuf.Empty);
-  rpc PlayerService (ControllerPlayerMessageRequest) returns (ControllerPlayerMessageRespone);
+  rpc PlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
   rpc GatePlayerService (RpcClientRequest) returns (RpcClientResponse);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GateConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
