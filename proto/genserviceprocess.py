@@ -232,8 +232,11 @@ def md5copy(filename, writedir, fileextend):
         if  not os.path.exists(filenamemd5):
             emptymd5 = True
         else:
-            error = md5tool.check_against_md5_file(destfilename, filenamemd5)              
-        
+            if not os.path.exists(destfilename):
+                error = True
+            else:
+                error = md5tool.check_against_md5_file(destfilename, filenamemd5)   
+          
         #print("copy %s ---> %s  %s" % (filename, writedir, gennewfilename))
         if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
