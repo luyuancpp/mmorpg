@@ -31,10 +31,11 @@ controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/logic_proto/'
 
 genfile = []
-
+local.packagemessage = set()
 
 def parsefile(filename):
     local.rpcarry = []
+    local.packagemessage = set()
     local.pkg = ''
     local.service = ''
     rpcbegin = 0 
@@ -47,6 +48,8 @@ def parsefile(filename):
             elif fileline.find('service ') >= 0:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
+            elif fileline.find('message ') >= 0:
+                local.packagemessage.add(fileline.replace('message ', '').replace('\r', '').replace('\n', ''))
 def genheadrpcfun():
     servicestr = 'public:\n'
     global controller
@@ -55,12 +58,22 @@ def genheadrpcfun():
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
-        line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
+        rq =  s[2].replace('(', '').replace(')', '')
+        pkg = local.pkg
+        if rq in local.packagemessage:
+            pass
+        else:
+            pkg = ''
+        line += tabstr + tabstr + 'const ' + pkg + '::' + rq + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+        if rsp in local.packagemessage:
+            pass
+        else:
+            pkg = ''
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
         else :
-            line += tabstr + tabstr + local.pkg + '::' + rsp + '* response,\n'
+            line += tabstr + tabstr + pkg + '::' + rsp + '* response,\n'
         line += tabstr + tabstr + '::google::protobuf::Closure* done)override;\n\n'
         servicestr += line
     return servicestr
@@ -70,12 +83,23 @@ def gencpprpcfunbegin(rpcindex):
     s = local.rpcarry[rpcindex]
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
-    servicestr +=  tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
+    rq =  s[2].replace('(', '').replace(')', '')
+    pkg = local.pkg
+    if rq in local.packagemessage:
+        pass
+    else:
+        pkg = ''
+    servicestr +=  tabstr + 'const ' + pkg + '::' + rq + '* request,\n'
+   
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+    if rsp in local.packagemessage:
+        pass
+    else:
+        pkg = ''
     if rsp == 'google.protobuf.Empty' :
         servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
     else :
-        servicestr +=  tabstr + local.pkg + '::' + rsp + '* response,\n'
+        servicestr +=  tabstr + pkg + '::' + rsp + '* response,\n'
     servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
     servicestr +=  tabstr + 'AutoRecycleClosure d(done);\n'
     return servicestr
@@ -201,14 +225,15 @@ def md5copy(filename, writedir, fileextend):
             s = filename.split('/')
             filename = s[len(s) - 1]
         gennewfilename = genpublic.getsrcpathmd5dir(writedir, genpublic.commonproto()) + filename.replace('.proto', fileextend)
+        destfilename = writedir +  getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
         if  not os.path.exists(filenamemd5):
             emptymd5 = True
         else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        destfilename = writedir +  getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
+            error = md5tool.check_against_md5_file(destfilename, filenamemd5)              
+        
         #print("copy %s ---> %s  %s" % (filename, writedir, gennewfilename))
         if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return

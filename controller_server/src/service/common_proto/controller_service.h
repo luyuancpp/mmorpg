@@ -51,8 +51,8 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void OnGsPlayerService(::google::protobuf::RpcController* controller,
-        const controllerservice::NodeServiceMessageRequest* request,
-        controllerservice::NodeServiceMessageResponse* response,
+        const ::NodeServiceMessageRequest* request,
+        ::NodeServiceMessageResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void AddCrossServerScene(::google::protobuf::RpcController* controller,

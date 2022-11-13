@@ -13,6 +13,7 @@ local = threading.local()
 local.rpcarry = []
 local.servicenames = []
 local.service = ''
+local.packagemessage = set()
 
 threads = []
 local.pkg = ''
@@ -48,6 +49,7 @@ if not os.path.exists(servicedir):
 
 def parsefile(filename):
     local.rpcarry = []
+    local.packagemessage = set()
     local.pkg = ''
     local.service = ''
     rpcbegin = 0 
@@ -60,6 +62,8 @@ def parsefile(filename):
             elif fileline.find('service ') >= 0:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
+            elif fileline.find('message ') >= 0:
+                local.packagemessage.add(fileline.replace('message ', '').replace('\r', '').replace('\n', ''))
     
 def genheadrpcfun():
     servicestr = 'public:\n'
