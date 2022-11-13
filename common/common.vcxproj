@@ -330,6 +330,12 @@
     <ClInclude Include="src\game_logic\config_expression\config_expression.h" />
     <ClInclude Include="src\event\event.h" />
     <ClInclude Include="src\game_logic\exprtk\exprtk.hpp" />
+    <ClInclude Include="src\pb\pbc\service_method\controller_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\database_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\deploy_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\game_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\gate_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\login_servicemethod.h" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\game_ecs\game_registry.h" />
     <ClInclude Include="src\game_logic\teams\team.h" />

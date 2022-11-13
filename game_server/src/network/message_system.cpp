@@ -7,6 +7,8 @@
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
 #include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc//service_method/controller_servicemethod.h"
+#include "src/pb/pbc//service_method/gate_servicemethod.h"
 
 #include "gate_service.pb.h"
 #include "controller_service.pb.h"
@@ -51,7 +53,7 @@ void Send2Player(const google::protobuf::Message& msg, entt::entity player)
 	msg_wrapper.mutable_msg()->set_msg_id(msg_it->second);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_session_id(registry.get<GateSession>(player).session_id());
-	gate->session_.Send(msg_wrapper);
+	gate->session_.Send(gateservicePlayerMessageMethoddesc, msg_wrapper);
 }
 
 void Send2Player(const google::protobuf::Message& message, EntityPtr& player)
@@ -97,7 +99,7 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, entt::entit
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_player_id(registry.get<Guid>(player));
-	controller_node->session_->Send(msg_wrapper);
+	controller_node->session_->Send(controllerserviceOnGsPlayerServiceMethoddesc, msg_wrapper);
 }
 
 void Send2ControllerPlayer(const google::protobuf::Message& message, EntityPtr& player)
@@ -105,7 +107,7 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, EntityPtr& 
 	Send2ControllerPlayer(message, (entt::entity)player);
 }
 
-void Send2Controller(const google::protobuf::Message& messag, uint32_t controller_node_id)
+void Send2Controller(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& messag, uint32_t controller_node_id)
 {
 	auto controller_it = g_controller_nodes->find(controller_node_id);
 	if (controller_it == g_controller_nodes->end())
@@ -113,7 +115,7 @@ void Send2Controller(const google::protobuf::Message& messag, uint32_t controlle
 		LOG_ERROR << "Send2ControllerPlayer controller not found" << controller_node_id;
 		return;
 	}
-	controller_it->second->session_->Send(messag);
+	controller_it->second->session_->Send(method, messag);
 }
 
 void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id)
@@ -125,6 +127,6 @@ void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id)
 		return;
 	}
 	auto& gate_node = registry.get<GateNodePtr>(gate_it->second);
-	gate_node->session_.Send(messag);
+	gate_node->session_.Send(gateservicePlayerMessageMethoddesc, messag);
 }
 

@@ -101,20 +101,13 @@ void RpcChannel::CallMethod(const ::google::protobuf::Message& request,
 	codec_.send(conn_, message);
 }
 
-void RpcChannel::S2C(const ::google::protobuf::Message& request)
+void RpcChannel::S2C(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request)
 {
-    auto& name = request.GetDescriptor()->full_name();
-    auto it = g_msgid.find(name);
-    if (it == g_msgid.end())
-    {
-        return;
-    }
-    auto& serviceinfo = g_serviceinfo[it->second];
     RpcMessage message;    
     message.set_type(S2C_REQUEST);
     message.set_request(request.SerializeAsString()); // FIXME: error check
-    message.set_service(serviceinfo.service);
-    message.set_method(serviceinfo.method);
+    message.set_service(method->service()->full_name());
+    message.set_method(method->name());
     codec_.send(conn_, message);
 }
 

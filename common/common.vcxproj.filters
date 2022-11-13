@@ -204,5 +204,11 @@
     <ClInclude Include="src\pb\pbc\game_config\monster_base_config.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\scene_config.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\account_database.pb.h" />
+    <ClInclude Include="src\pb\pbc\service_method\controller_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\database_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\deploy_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\game_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\gate_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\login_servicemethod.h" />
   </ItemGroup>
 </Project>

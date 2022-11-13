@@ -11,6 +11,8 @@ gsplayerservicedir = '../game_server/src/service/logic_proto/'
 lobbyplayerservicedir = '../lobby_server/src/service/logic_proto/'
 controllerplayerservicedir = '../controller_server/src/service/logic_proto/'
 gateservicedir = '../gate_server/src/service/logic_proto/'
+servicemethoddir = '../common/src/pb/pbc/service_method/'
+servicemethodmd5dir = md5dir + 'service_method/'
 
 servermd5dirs = [md5dir + 'controller_server/', 
 md5dir + 'game_server/', 
@@ -44,6 +46,10 @@ def makedirs():
         os.makedirs(pbcdir)
     if not os.path.exists(md5dir):
         os.makedirs(md5dir)
+    if not os.path.exists(servicemethoddir):
+        os.makedirs(servicemethoddir)
+    if not os.path.exists(servicemethodmd5dir):
+        os.makedirs(servicemethodmd5dir)
     for d in servermd5dirs :
         if not os.path.exists(d):
             os.makedirs(d)
@@ -53,7 +59,7 @@ def makedirs():
         common_proto_dir = d + '/common_proto/' 
         if not os.path.exists(common_proto_dir):
             os.makedirs(common_proto_dir)
-
+    
 def makedirsbypath(dirname):
     dirlist = []
     for d in servermd5dirs :

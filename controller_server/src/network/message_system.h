@@ -8,7 +8,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_node.h"
 
-void Send2Gs(const google::protobuf::Message& message,   uint32_t gs_node_id);
+void Send2Gs(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& message,   uint32_t gs_node_id);
 void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player);
 void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& entity);
 void Send2GsPlayer(const google::protobuf::Message& message, Guid player_id);
@@ -23,5 +23,5 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
 void Send2Player(const google::protobuf::Message& message, entt::entity player);
 void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id);
 void Send2Player(const google::protobuf::Message& message, Guid player_id);
-void Send2Gate(const google::protobuf::Message& message, uint32_t gate_id);
+void Send2Gate(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& message, uint32_t gate_id);
 
