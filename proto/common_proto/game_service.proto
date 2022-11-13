@@ -12,27 +12,22 @@ message EnterGsRequest
   uint64 controller_node_id = 3;
 }
 
-message ControllerPlayerMessageExtern
-{
-  uint64 player_id = 1;
-}
-
 message ControllerPlayerMessageRequest
 {
   MessageBody msg = 1;
-  ControllerPlayerMessageExtern ex = 2;
+  NodeMessageBody ex = 2;
 }
 
 message ControllerSend2PlayerViaGsRequest
 {
   MessageBody msg = 1;
-  ControllerPlayerMessageExtern ex = 2;
+  NodeMessageBody ex = 2;
 }
 
 message ControllerPlayerMessageRespone
 {
   MessageBody msg = 1;
-  ControllerPlayerMessageExtern ex = 2;
+  NodeMessageBody ex = 2;
 }
 
 message RpcClientRequest
