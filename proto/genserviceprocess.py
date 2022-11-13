@@ -142,8 +142,6 @@ def genheadfile(filename, writedir):
     newstr += '#include "' + getpbdir(filename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
     
     for i in range(0, 2) :
-        if i > 0:
-            newstr += genyourcode()
         newstr += headfun[i]()
 
     newstr += '};'
@@ -198,7 +196,6 @@ def gencppfile(filename, writedir):
                     newstr += fileline
                     continue                
     except FileNotFoundError:
-        newstr += genyourcode() + '\n'
         newstr += rpcbegin + '\n'
     while serviceidx < len(local.rpcarry) :
         newstr += gencpprpcfunbegin(serviceidx)

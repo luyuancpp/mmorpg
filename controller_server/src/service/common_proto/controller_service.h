@@ -2,8 +2,6 @@
 #include "controller_service.pb.h"
 class ControllerNodeServiceImpl : public controllerservice::ControllerNodeService{
 public:
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 public:
     void StartGs(::google::protobuf::RpcController* controller,
         const controllerservice::StartGsRequest* request,

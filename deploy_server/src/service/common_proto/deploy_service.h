@@ -2,8 +2,6 @@
 #include "deploy_service.pb.h"
 class DeployServiceImpl : public deploy::DeployService{
 public:
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 public:
     void ServerInfo(::google::protobuf::RpcController* controller,
         const deploy::ServerInfoRequest* request,
