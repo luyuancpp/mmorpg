@@ -2,8 +2,6 @@
 #include "gate_service.pb.h"
 class GateServiceImpl : public gateservice::GateService{
 public:
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 public:
     void StartGS(::google::protobuf::RpcController* controller,
         const gateservice::StartGSRequest* request,

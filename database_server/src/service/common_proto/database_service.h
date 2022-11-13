@@ -2,8 +2,6 @@
 #include "database_service.pb.h"
 class DbServiceImpl : public dbservice::DbService{
 public:
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 public:
     void Login(::google::protobuf::RpcController* controller,
         const dbservice::LoginRequest* request,

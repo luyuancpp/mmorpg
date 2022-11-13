@@ -2,8 +2,6 @@
 #include "game_service.pb.h"
 class GsServiceImpl : public gsservice::GsService{
 public:
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 public:
     void EnterGs(::google::protobuf::RpcController* controller,
         const gsservice::EnterGsRequest* request,

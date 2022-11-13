@@ -2,8 +2,6 @@
 #include "login_service.pb.h"
 class LoginServiceImpl : public loginservice::LoginService{
 public:
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 public:
     void Login(::google::protobuf::RpcController* controller,
         const loginservice::LoginRequest* request,
