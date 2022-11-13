@@ -61,6 +61,18 @@ message NodeMessageBody
   uint64 player_id = 3;
 }
 
+message NodeServiceMessageRequest
+{
+  MessageBody msg = 1;
+  NodeMessageBody ex = 2;
+}
+
+message NodeServiceMessageResponse
+{
+  MessageBody msg = 1;
+  NodeMessageBody ex = 2;
+}
+
 message RouteNodeMessageBody
 {
 	uint32 node_id = 1;

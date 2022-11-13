@@ -78,27 +78,22 @@ message LsDisconnectRequest
   uint64 session_id = 1;
 }
 
-message NodeMessageBody
-{
-  uint64 player_id = 1;
-}
-
-message PlayerNodeServiceRequest
-{
-  MessageBody msg = 1;
-  NodeMessageBody ex = 2;
-}
-
-message PlayerMessageRespone
-{
-  MessageBody msg = 1;
-  NodeMessageBody ex = 2;
-}
-
 message CrossSceneInfo
 {
   SceneInfo scene_info = 1;
   uint32 gs_node_id = 2;
+}
+
+message NodeServiceMessageRequest
+{
+  MessageBody msg = 1;
+  NodeMessageBody ex = 2;
+}
+
+message NodeServiceMessageResponse
+{
+  MessageBody msg = 1;
+  NodeMessageBody ex = 2;
 }
 
 message AddCrossServerSceneRequest
@@ -121,7 +116,7 @@ service ControllerNodeService {
   rpc OnLsEnterGame (EnterGameRequest) returns (EnterGameResponese);
   rpc OnLsLeaveGame (LsLeaveGameRequest) returns (google.protobuf.Empty);
   rpc OnLsDisconnect (LsDisconnectRequest) returns (google.protobuf.Empty); 
-  rpc OnGsPlayerService (PlayerNodeServiceRequest) returns (PlayerMessageRespone);
+  rpc OnGsPlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
   rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (google.protobuf.Empty);
   rpc EnterGsSucceed (EnterGsSucceedRequest) returns (google.protobuf.Empty);
 }
