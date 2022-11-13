@@ -178,6 +178,7 @@
   <ItemGroup>
     <ClInclude Include="src\event_receiver\event_receiver.h" />
     <ClInclude Include="src\event_receiver\scene_event_receiver.h" />
+    <ClInclude Include="src\network\controller_rpc.h" />
     <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\gs_node.h" />
     <ClInclude Include="src\service\logic_proto\common_server_player.h" />

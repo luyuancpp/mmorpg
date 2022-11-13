@@ -54,6 +54,15 @@ message MessageBody
   uint32 msg_id = 3;
 }
 
+message NodeMessageBody
+{
+  uint32 node_id = 1;
+}
+
+message RouteNodeMessageBody
+{
+	uint32 node_id = 1;
+}
 
 
 message PlayerMessageExtern
