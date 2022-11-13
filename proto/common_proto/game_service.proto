@@ -12,15 +12,6 @@ message EnterGsRequest
   uint64 controller_node_id = 3;
 }
 
-
-
-message ControllerSend2PlayerViaGsRequest
-{
-  MessageBody msg = 1;
-  NodeMessageBody ex = 2;
-}
-
-
 message RpcClientRequest
 {
   bytes request = 1;
@@ -50,5 +41,5 @@ service GsService {
   rpc GatePlayerService (RpcClientRequest) returns (RpcClientResponse);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GateConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
-  rpc ControllerSend2PlayerViaGs (ControllerSend2PlayerViaGsRequest) returns (google.protobuf.Empty);
+  rpc ControllerSend2PlayerViaGs (NodeServiceMessageRequest) returns (google.protobuf.Empty);
 }

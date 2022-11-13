@@ -86,7 +86,7 @@ void GateServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controlle
 }
 
 void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controller,
-    const gateservice::PlayerMessageRequest* request,
+    const ::NodeServiceMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

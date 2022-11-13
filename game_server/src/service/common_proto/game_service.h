@@ -29,7 +29,7 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
-        const gsservice::ControllerSend2PlayerViaGsRequest* request,
+        const ::NodeServiceMessageRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 

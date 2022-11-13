@@ -32,11 +32,6 @@ message PlayerEnterGsResponese
 {
 }
 
-message PlayerMessageRequest
-{
-  MessageBody msg = 1;
-  NodeMessageBody ex = 2;
-}
 
 message KickConnRequest
 {
@@ -47,6 +42,6 @@ service GateService {
   rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
   rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
   rpc PlayerEnterGs (PlayerEnterGsRequest) returns (PlayerEnterGsResponese);
-  rpc PlayerMessage (PlayerMessageRequest) returns (google.protobuf.Empty);
+  rpc PlayerMessage (NodeServiceMessageRequest) returns (google.protobuf.Empty);
   rpc KickConnByController (KickConnRequest) returns (google.protobuf.Empty);
 }
