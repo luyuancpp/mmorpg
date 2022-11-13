@@ -78,7 +78,7 @@ message LsDisconnectRequest
   uint64 session_id = 1;
 }
 
-message PlayerMessageExtern
+message NodeMessageBody
 {
   uint64 player_id = 1;
 }
@@ -86,13 +86,13 @@ message PlayerMessageExtern
 message PlayerNodeServiceRequest
 {
   MessageBody msg = 1;
-  PlayerMessageExtern ex = 2;
+  NodeMessageBody ex = 2;
 }
 
 message PlayerMessageRespone
 {
   MessageBody msg = 1;
-  PlayerMessageExtern ex = 2;
+  NodeMessageBody ex = 2;
 }
 
 message CrossSceneInfo
