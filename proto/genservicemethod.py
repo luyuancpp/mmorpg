@@ -62,9 +62,9 @@ def genheadrpcfun():
         methodname = local.pkg +  method + 'Method'
         methodindexname = methodname + 'Index'
         line = 'const uint32_t ' + methodindexname + ' = ' + str(index) + ';\n'
-        line += 'const ::google::protobuf::MethodDescriptor* ' + methodname + 'desc = ' \
+        line += '#define ' + methodname + 'desc ' \
         + local.pkg + '::' + local.service + '_Stub'\
-        + '::descriptor()->method(' + methodindexname + ');\n\n'
+        + '::descriptor()->method(' + methodindexname + ')\n\n'
         index += 1
         servicestr += line
     return servicestr
