@@ -57,6 +57,8 @@ message MessageBody
 message NodeMessageBody
 {
   uint32 node_id = 1;
+  uint64 session_id = 2;
+  uint64 player_id = 3;
 }
 
 message RouteNodeMessageBody
