@@ -13,8 +13,6 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/empty.pb.h>
 
-#include "msgmap.h"
-
 #include "game_rpc.pb.h"
 
 using namespace muduo;
