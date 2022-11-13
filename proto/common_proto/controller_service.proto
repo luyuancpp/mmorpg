@@ -84,18 +84,6 @@ message CrossSceneInfo
   uint32 gs_node_id = 2;
 }
 
-message NodeServiceMessageRequest
-{
-  MessageBody msg = 1;
-  NodeMessageBody ex = 2;
-}
-
-message NodeServiceMessageResponse
-{
-  MessageBody msg = 1;
-  NodeMessageBody ex = 2;
-}
-
 message AddCrossServerSceneRequest
 {
   repeated CrossSceneInfo cross_scenes_info = 1;

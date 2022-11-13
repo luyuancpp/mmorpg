@@ -459,8 +459,8 @@ void ControllerNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController
 }
 
 void ControllerNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController* controller,
-    const controllerservice::NodeServiceMessageRequest* request,
-    controllerservice::NodeServiceMessageResponse* response,
+    const ::NodeServiceMessageRequest* request,
+    ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
