@@ -143,5 +143,8 @@
     <ClInclude Include="src\service\logic_proto\team.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\network\controller_rpc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

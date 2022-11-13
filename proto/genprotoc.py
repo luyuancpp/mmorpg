@@ -39,11 +39,10 @@ def gen(walkdir, filename):
     pbcdir = dest_dir + walkdir.replace('./', '')
     head_destfilename = pbcdir + filename.replace('.proto', '') + '.pb.h'
     cpp_destfilename = pbcdir + filename.replace('.proto', '') + '.pb.cc'
-    if error == None and os.path.exists(head_destfilename) and os.path.exists(cpp_destfilename) :
+    if error == None and first == False:
         return
     print('copy %s %s' % (head_destfilename, cpp_destfilename))
-    if not os.path.exists(proto_md5_destfilename):
-        md5tool.generate_md5_file_for(proto_destfilename, proto_md5_destfilename)
+    md5tool.generate_md5_file_for(proto_destfilename, proto_md5_destfilename)
     commond = 'protoc  -I=./ -I=./logic_proto/ -I=./component_proto/ -I=./common_proto/ -I=%s --cpp_out=%s %s' % (protobufdir, dest_dir, proto_destfilename)
     system(commond)
 
