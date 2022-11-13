@@ -32,17 +32,10 @@ message PlayerEnterGsResponese
 {
 }
 
-message MessageExtern
-{
-  uint64 session_id = 1;
-  uint32 gs_node_id = 2;
-  uint64 player_id = 3;
-}
-
 message PlayerMessageRequest
 {
   MessageBody msg = 1;
-  MessageExtern ex = 2;
+  NodeMessageBody ex = 2;
 }
 
 message KickConnRequest
