@@ -129,6 +129,7 @@
     <ClCompile Include="src\event_receiver\event_receiver.cpp" />
     <ClCompile Include="src\event_receiver\mission_event_receiver.cpp" />
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
+    <ClCompile Include="src\service\common_proto\game_service.cpp" />
     <ClCompile Include="src\service\logic_proto\common_client_player.cpp" />
     <ClCompile Include="src\service\logic_proto\common_server_player.cpp" />
     <ClCompile Include="src\service\logic_proto\player_service.cpp" />
@@ -149,7 +150,6 @@
     <ClCompile Include="src\network\gate_node.cpp" />
     <ClCompile Include="src\network\message_system.cpp" />
     <ClCompile Include="src\network\controller_node.cpp" />
-    <ClCompile Include="src\service\common_proto\gs_service.cpp" />
     <ClCompile Include="src\service\server_replied.cpp" />
     <ClCompile Include="src\system\gs_scene_system.cpp" />
   </ItemGroup>
@@ -158,6 +158,7 @@
     <ClInclude Include="src\event_receiver\event_receiver.h" />
     <ClInclude Include="src\event_receiver\mission_event_receiver.h" />
     <ClInclude Include="src\event_receiver\scene_event_receiver.h" />
+    <ClInclude Include="src\service\common_proto\game_service.h" />
     <ClInclude Include="src\service\logic_proto\common_client_player.h" />
     <ClInclude Include="src\service\logic_proto\common_server_player.h" />
     <ClInclude Include="src\service\logic_proto\player_service.h" />
@@ -179,7 +180,6 @@
     <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\network\message_system.h" />
     <ClInclude Include="src\network\controller_node.h" />
-    <ClInclude Include="src\service\common_proto\gs_service.h" />
     <ClInclude Include="src\service\server_replied.h" />
     <ClInclude Include="src\system\gs_scene_system.h" />
   </ItemGroup>

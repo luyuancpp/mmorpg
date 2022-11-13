@@ -1,4 +1,4 @@
-#include "gs_service.h"
+#include "game_service.h"
 #include "src/network/rpc_closure.h"
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -30,12 +30,12 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-    ///<<< BEGIN WRITING YOUR CODE 
-        //Á¬Ğø¶¥ºÅ½øÈë£¬»¹ÔÚ¼ÓÔØÖĞµÄ»°¼ÌĞø¼ÓÔØ
+///<<< BEGIN WRITING YOUR CODE 
+        //è¿ç»­é¡¶å·è¿›å…¥ï¼Œè¿˜åœ¨åŠ è½½ä¸­çš„è¯ç»§ç»­åŠ è½½
     auto player_id = request->player_id();
     PlayerCommonSystem::RemovePlayereSession(player_id);
     auto p_it = g_players->find(player_id);
-    if (p_it != g_players->end())//ÒÑ¾­ÔÚÏß£¬Ö±½Ó½øÈë,ÅĞ¶ÏÊÇĞèÒª·¢ËÍÄÄĞ©ĞÅÏ¢
+    if (p_it != g_players->end())//å·²ç»åœ¨çº¿ï¼Œç›´æ¥è¿›å…¥,åˆ¤æ–­æ˜¯éœ€è¦å‘é€å“ªäº›ä¿¡æ¯
     {
         EnterGsInfo enter_info;
         enter_info.set_controller_node_id(request->controller_node_id());
@@ -49,18 +49,18 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
         return;
     }
     registry.emplace<EnterGsInfo>(rit.first->second).set_controller_node_id(request->controller_node_id());
-    g_player_data_redis_system->AsyncLoad(player_id);//Òì²½¼ÓÔØ¹ı³ÌÖĞ¶Ï¿ªÁË£¬ÔõÃ´´¦Àí£¿
+    g_player_data_redis_system->AsyncLoad(player_id);//å¼‚æ­¥åŠ è½½è¿‡ç¨‹ä¸­æ–­å¼€äº†ï¼Œæ€ä¹ˆå¤„ç†ï¼Ÿ
 
-    ///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
-    const gsservice::NodeServiceMessageRequest* request,
-    gsservice::NodeServiceMessageResponse* response,
+    const ::NodeServiceMessageRequest* request,
+    ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-    ///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE 
     auto& message_ex = request->ex();
     auto it = g_players->find(message_ex.player_id());
     if (it == g_players->end())
@@ -96,14 +96,14 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
     player_request->ParseFromString(request->msg().body());
     MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
     serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
-    if (nullptr == response)//²»ĞèÒª»Ø¸´
+    if (nullptr == response)//ä¸éœ€è¦å›å¤
     {
         return;
     }
     response->mutable_ex()->set_player_id(request->ex().player_id());
     response->mutable_msg()->set_body(player_response->SerializeAsString());
     response->mutable_msg()->set_msg_id(msg_id);
-    ///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void GsServiceImpl::GatePlayerService(::google::protobuf::RpcController* controller,
@@ -112,7 +112,7 @@ void GsServiceImpl::GatePlayerService(::google::protobuf::RpcController* control
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-    ///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE 
         // todo player service move to gate check
     auto mit = g_serviceinfo.find(request->msg_id());
     if (mit == g_serviceinfo.end())
@@ -158,7 +158,7 @@ void GsServiceImpl::GatePlayerService(::google::protobuf::RpcController* control
     MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
     it->second->CallMethod(method, pit->second, get_pointer(player_request), get_pointer(player_response));
     response->set_response(player_response->SerializeAsString());
-    ///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
@@ -167,8 +167,8 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-    ///<<< BEGIN WRITING YOUR CODE 
-        //Òì²½¼ÓÔØ¹ı³ÌÖĞ¶Ï¿ªÁË£¿
+///<<< BEGIN WRITING YOUR CODE 
+        //å¼‚æ­¥åŠ è½½è¿‡ç¨‹ä¸­æ–­å¼€äº†ï¼Ÿ
     PlayerCommonSystem::RemovePlayereSession(request->player_id());
     auto it = g_players->find(request->player_id());
     if (it == g_players->end())
@@ -178,9 +178,9 @@ void GsServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     LeaveSceneParam lp;
     lp.leaver_ = it->second;
     //ScenesSystem::LeaveScene(lp);
-    g_players->erase(it);//todo  Ó¦¸ÃÊÇcontroller Í¨Öª¹ıÀ´
+    g_players->erase(it);//todo  åº”è¯¥æ˜¯controller é€šçŸ¥è¿‡æ¥
 
-    ///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void GsServiceImpl::GateConnectGs(::google::protobuf::RpcController* controller,
@@ -189,7 +189,7 @@ void GsServiceImpl::GateConnectGs(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-    ///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE 
     InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
     for (auto e : registry.view<RpcServerConnection>())
     {
@@ -205,7 +205,7 @@ void GsServiceImpl::GateConnectGs(::google::protobuf::RpcController* controller,
         LOG_INFO << "GateConnectGs gate node id " << request->gate_node_id();
         break;
     }
-    ///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void GsServiceImpl::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
@@ -214,9 +214,9 @@ void GsServiceImpl::ControllerSend2PlayerViaGs(::google::protobuf::RpcController
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-    ///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE 
     Send2Player(request->msg(), request->ex().player_id());
-    ///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end
