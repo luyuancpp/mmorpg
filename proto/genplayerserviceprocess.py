@@ -141,8 +141,7 @@ def genyourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 def classbegin():
     return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
-def emptyfun():
-    return ''
+
  
 def getsrcpathmd5dir(dirpath):
     srcdir = ''

@@ -82,13 +82,13 @@ public:
         channel_->CallMethod(request, service_name, method_name, response, done);
     }
 
-    void Send(const ::google::protobuf::Message& request)
+    void Send(const ::google::protobuf::MethodDescriptor* method,  const ::google::protobuf::Message& request)
     {
         if (!connected_)
         {
 			return;
         }
-        channel_->S2C(request);
+        channel_->S2C(method, request);
     }
 private:
     void onConnection(const TcpConnectionPtr& conn)

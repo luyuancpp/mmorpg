@@ -103,8 +103,7 @@ def genyourcode():
 
 def classbegin():
     return 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
-def emptyfun():
-    return ''
+
 
 def getprevfilename(filename, writedir):
     if filename.find(logicprotodir) >= 0:

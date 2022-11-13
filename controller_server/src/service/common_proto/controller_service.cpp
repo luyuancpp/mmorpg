@@ -13,22 +13,24 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/comp/player_list.h"
+#include "src/game_logic/comp/account_comp.h"
+#include "src/game_logic/tips_id.h"
+#include "src/game_logic/scene/scene.h"
 #include "src/network/message_system.h"
 #include "src/network/gate_session.h"
 #include "src/network/session.h"
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"
-#include "src/pb/pbc/msgmap.h"
-#include "src/game_logic/comp/account_comp.h"
-#include "src/game_logic/tips_id.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/network/server_component.h"
 #include "src/network/node_info.h"
+#include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/service_method/gate_servicemethod.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"
-#include "src/network/server_component.h"
+
 
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
@@ -417,7 +419,7 @@ void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController*
         {
             gateservice::KickConnRequest message;
             message.set_session_id(player_session->gate_session_.session_id());
-            Send2Gate(message, player_session->gate_node_id());
+            Send2Gate(gateserviceKickConnByControllerMethoddesc, message, player_session->gate_node_id());
         }
 		InitPlayerGate(player, request->session_id());
 		registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace

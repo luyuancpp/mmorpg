@@ -109,8 +109,7 @@ def genyourcode():
 
 def classbegin():
     return 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
-def emptyfun():
-    return ''
+
 
 def getprevfilename(filename, writedir):
     if filename.find(logicprotodir) >= 0:
@@ -232,14 +231,14 @@ def md5copy(filename, writedir, fileextend):
             if not os.path.exists(destfilename):
                 error = True
             else:
-                error = md5tool.check_against_md5_file(destfilename, filenamemd5)   
+                error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)   
           
         #print("copy %s ---> %s  %s" % (filename, writedir, gennewfilename))
-        if error == None and os.path.exists(destfilename) and emptymd5 == False:
+        if error == None and emptymd5 == False:
             return
         print("copy %s ---> %s" % (gennewfilename, destfilename))
-        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, destfilename)
+        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
 
 def generate(filename, writedir):
     parsefile(filename)

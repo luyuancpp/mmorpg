@@ -14,6 +14,7 @@
 #include "src/service/logic_proto/player_service.h"
 #include "src/service/logic_proto/server_service.h"
 #include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/service_method/gate_servicemethod.h"
 
 #include "game_service.pb.h"
 #include "gate_service.pb.h"
@@ -98,7 +99,7 @@ void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
     request.set_gs_node_id(registry.get<GsNodePtr>(gs)->node_id());
-	registry.get<GateNodePtr>(gate)->session_.Send(request);
+	registry.get<GateNodePtr>(gate)->session_.Send(gateserviceStartGSMethoddesc, request);
 }
 
 void ControllerServer::receive(const OnConnected2ServerEvent& es)

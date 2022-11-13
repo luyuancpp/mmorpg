@@ -13,9 +13,9 @@ struct RpcServerConnection
 
     bool Connected() const { return conn_->connected(); }
 
-    void Send(const ::google::protobuf::Message& request)
+    void Send(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request)
     {
-        channel_->S2C(request);
+        channel_->S2C(method, request);
     }
 
     muduo::net::TcpConnectionPtr conn_;
