@@ -100,7 +100,7 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
         LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
         return;
     }
-    gsservice::ControllerSend2PlayerViaGsRequest msg;
+    NodeServiceMessageRequest msg;
     msg.mutable_msg()->set_msg_id(msg_it->second);
     msg.mutable_msg()->set_body(message.SerializeAsString());
     msg.mutable_ex()->set_player_id(registry.get<Guid>(player));
@@ -130,7 +130,7 @@ void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, ui
         LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
         return;
     }
-    gateservice::PlayerMessageRequest msg_wrapper;
+    NodeServiceMessageRequest msg_wrapper;
     msg_wrapper.mutable_ex()->set_session_id(session_id);
     msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
     msg_wrapper.mutable_msg()->set_msg_id(message_it->second);

@@ -209,7 +209,7 @@ void GsServiceImpl::GateConnectGs(::google::protobuf::RpcController* controller,
 }
 
 void GsServiceImpl::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
-    const gsservice::ControllerSend2PlayerViaGsRequest* request,
+    const ::NodeServiceMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
