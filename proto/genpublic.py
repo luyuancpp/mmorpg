@@ -2,7 +2,7 @@ import os
 from os import system
 
 controller_file_prefix = 'controller_'
-gs_file_prefix = 'gs_'
+gs_file_prefix = 'game_'
 lobby_file_prefix = 'lobby_'
 md5dir = 'md5/'
 pbcdir = '../common/src/pb/pbc/'
