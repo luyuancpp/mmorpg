@@ -561,6 +561,20 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
 	GatePlayerEnterGsRpc rpc(std::make_shared<GatePlayerEnterGsRpc::element_type>());;
 	rpc->s_rq_.set_session_id(player_session.session_id());
 	rpc->s_rq_.set_gs_node_id(player_session.gs_node_id());
+
+	auto game_it = g_gs_nodes.find(request->game_node_id());
+	if (game_it == g_gs_nodes.end())
+	{
+        LOG_ERROR << "game crash" << request->game_node_id();
+        return;
+	}
+	auto try_gs = registry.try_get<GsNodePtr>(game_it->second);
+	if (nullptr == try_gs)
+	{
+		LOG_ERROR << "game crash" << request->game_node_id();
+        return;
+	}
+	player_session.set_gs(*try_gs);
 	registry.get<GateStub>(gate_it->second).CallMethod(OnGateUpdatePlayerGsReplied, rpc,  &gateservice::GateService::PlayerEnterGs);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);

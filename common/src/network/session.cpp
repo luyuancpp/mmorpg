@@ -2,7 +2,7 @@
 
 #include "src/util/snow_flake.h"
 
-uint32_t node_id(Guid guid)
+NodeId node_id(Guid sesion_id)
 {
-    return guid >> ServerSequence32::kNodeBit;
+    return sesion_id >> ServerSequence32::kNodeBit;
 }
