@@ -15,51 +15,42 @@ local.cppfilename = 'msgmap.cpp'
 local.hfilename = 'msgmap.h'
 
 threads = []
-local.pkg = ''
 tabstr = '    '
-cpkg = 'package'
 servicedir = './md5/logic_proto/'
 writedir = '../common/src/pb/pbc/'
 protodir = './logic_proto/'
-local.baseserviceid = 0
-local.basemsgidcount = 200
-local.playerserviceid = local.basemsgidcount + 1
+local.playerserviceid = 1
 local.perserviceidcount = 150
+clientmsgdict = set()
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
 def parsefile(filename):
-    local.pkg = ''
     local.service = ''
     rpcbegin = 0 
-    index = 0
+    index = local.playerserviceid
+    local.msgdict = dict()
     playerproto = False
+    global clientmsgdict
     if not filename.find(protodir) >= 0 :
-        index = local.baseserviceid
-        local.baseserviceid += 1
-        playerproto = False
-    else:
-        index = local.playerserviceid
-        playerproto = True
+        return
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 s = fileline.strip(' ').split(' ')
-                idstr = local.pkg.upper() + '_' + s[1].upper()  + '_ID'
                 rq = s[2].replace('(', '').replace(')', '')
                 rp = s[4].replace('(', '').replace(')', '').replace(';', '').replace('\n', '')
-                pbfullname = local.pkg + '.' + s[2].replace('(', '').replace(')', '')
-                local.rpcmsgnameid.append([[s[1], rq, rp, local.pkg, local.service],index])
+                local.rpcmsgnameid.append([[s[1], rq, rp, '', local.service],index])
+                if rq in clientmsgdict:
+                    print('error : msg_id repeated:', rq, rp, local.service, ' filename:', filename)
+                    continue
+                clientmsgdict.add(rq)
                 index += 1
-            elif fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif fileline.find('service ') >= 0:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-    local.baseserviceid = index
-    if index != local.playerserviceid and playerproto == True:
-        local.playerserviceid  += local.perserviceidcount
+    local.playerserviceid  += local.perserviceidcount
 
 def genmsgidcpp(filename):
     newstr = '#include "msgmap.h"\n'
