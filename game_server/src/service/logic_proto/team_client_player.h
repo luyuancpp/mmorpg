@@ -15,6 +15,11 @@ public:
     ::google::protobuf::Message* response)override
     {
         switch(method->index()) {
+        case 0:
+            TeamInfoNotify(player,
+            ::google::protobuf::internal::DownCast<const ::TeamInfoS2CRequest*>( request),
+            ::google::protobuf::internal::DownCast<::TeamInfoS2CResponse*>(response));
+        break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
         break;

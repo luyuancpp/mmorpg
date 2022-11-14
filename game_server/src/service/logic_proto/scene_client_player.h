@@ -28,6 +28,16 @@ public:
             ::google::protobuf::internal::DownCast<const ::EnterSeceneC2SRequest*>( request),
             ::google::protobuf::internal::DownCast<::EnterSeceneC2SResponse*>(response));
         break;
+        case 1:
+            PushEnterSceneS2C(player,
+            ::google::protobuf::internal::DownCast<const ::EnterSeceneS2C*>( request),
+            ::google::protobuf::internal::DownCast<::EnterSeceneS2C*>(response));
+        break;
+        case 2:
+            PushSceneInfoS2C(player,
+            ::google::protobuf::internal::DownCast<const ::SceneInfoS2C*>( request),
+            ::google::protobuf::internal::DownCast<::SceneInfoS2C*>(response));
+        break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
         break;
