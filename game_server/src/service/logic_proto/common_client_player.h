@@ -15,6 +15,11 @@ public:
     ::google::protobuf::Message* response)override
     {
         switch(method->index()) {
+        case 0:
+            PushTipsS2C(player,
+            ::google::protobuf::internal::DownCast<const ::TipsS2C*>( request),
+            ::google::protobuf::internal::DownCast<::TipsS2C*>(response));
+        break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
         break;

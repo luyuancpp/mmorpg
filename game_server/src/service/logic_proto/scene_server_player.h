@@ -55,6 +55,11 @@ public:
             ::google::protobuf::internal::DownCast<const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest*>( request),
             ::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
         break;
+        case 5:
+            Controller2GsEnterSceneS2C(player,
+            ::google::protobuf::internal::DownCast<const ::EnterSceneS2CRequest*>( request),
+            ::google::protobuf::internal::DownCast<::EnterScenerS2CResponse*>(response));
+        break;
         default:
             GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
         break;

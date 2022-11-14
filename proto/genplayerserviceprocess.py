@@ -38,11 +38,6 @@ client_player = 'client_player'
 server_player = 'server_player'
 filedirdestpath = {}
 
-def isserverpushrpc(service):
-    if service.find('S2C') >= 0 or service.find('Push')  >= 0 :
-        return True
-    return False
-
 def parsefile(filename):
     local.rpcarry = []
     local.pkg = ''
@@ -100,9 +95,6 @@ def genheadrpcfun():
     servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
     index = 0
     for service in local.rpcarry:
-        if isserverpushrpc(service) == True :
-            index += 1
-            continue
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
         servicestr += tabstr + tabstr + tabstr + s[1] + '(player,\n'
