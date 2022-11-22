@@ -92,15 +92,6 @@ def genyourcode():
 def classbegin():
     return 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
 
-
-def getprevfilename(filename, writedir):
-    if filename.find(logicprotodir) >= 0:
-        if writedir == genpublic.gslogicervicedir:
-            return genpublic.gs_file_prefix
-        if writedir == genpublic.controllerlogicservicedir:
-            return genpublic.controller_file_prefix
-    return ''
-
 def getpbdir(writedir):
     if writedir.find(logicprotodir) >= 0:
         return 'src/pb/pbc/logic_proto/'
@@ -110,7 +101,7 @@ def genheadfile(filename, writedir):
     local.servicenames = []
     filename = filename.replace(logicprotodir, '').replace('.proto', '.h') 
     destfilename = genpublic.controllerlogicservicedir + filename
-    md5filename = genpublic.getsrcpathmd5dir(writedir, logicprotodir) +  filename
+    md5filename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] +  logicprotodir +  filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir( writedir) + filename.replace('.h', '') + '.pb.h"\n'
     newstr += genheadrpcfun()
@@ -121,7 +112,7 @@ def gencppfile(filename, writedir):
     filename = filename.replace(logicprotodir, '').replace('.proto', '.cpp') 
     destfilename =  genpublic.controllerlogicservicedir + filename
     md5filename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] +  logicprotodir +  filename
-    newstr = '#include "' + getprevfilename(filename, writedir) + filename.replace('.cpp', '.h') + '"\n'
+    newstr = '#include "' + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     serviceidx = 0
     try:
