@@ -178,10 +178,11 @@ def md5copy(filename, md5dir, destdir, fileextend):
         if  not os.path.exists(filenamemd5):
             emptymd5 = True
         else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
+            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
         destfilename =  destdir + filename.replace('.proto', fileextend)
         if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
+        
         print("copy %s ---> %s" % (gennewfilename, destfilename))
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, destfilename)
