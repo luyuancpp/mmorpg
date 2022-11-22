@@ -28,7 +28,7 @@ cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/logic_proto/'
 
-genfile = [] #[proto, md5dir, destdir]
+genfile = [] #[proto, destdir, md5dir]
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
@@ -108,7 +108,7 @@ def genheadfile(filename, md5dir,  destdir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(filename, md5dir, destdir):
+def gencppfile(filename, destdir, md5dir):
     filename = filename.replace(logicprotodir, '').replace('.proto', '.cpp') 
     destfilename =  destdir + filename
     md5filename = md5dir +   filename
@@ -167,7 +167,7 @@ def gencppfile(filename, md5dir, destdir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(filename, md5dir, destdir, fileextend):
+def md5copy(filename, destdir, md5dir, fileextend):
         if filename.find('/') >= 0 :
             s = filename.split('/')
             filename = s[len(s) - 1]
@@ -187,21 +187,21 @@ def md5copy(filename, md5dir, destdir, fileextend):
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, destfilename)
 
-def generate(filename, md5dir,destdir):
+def generate(filename, destdir, md5dir):
     parsefile(filename)
-    genheadfile(filename, md5dir, destdir)
-    gencppfile(filename, md5dir, destdir)
-    md5copy(filename, md5dir, destdir, '.h')
-    md5copy(filename, md5dir, destdir, '.cpp')
+    genheadfile(filename, destdir, md5dir)
+    gencppfile(filename, destdir, md5dir)
+    md5copy(filename, destdir, md5dir, '.h')
+    md5copy(filename, destdir, md5dir, '.cpp')
 
 class myThread (threading.Thread):
-    def __init__(self, filename, md5dir, destdir):
+    def __init__(self, filename, destdir, md5dir):
         threading.Thread.__init__(self)
         self.filename = str(filename)
         self.md5dir = str(md5dir)
         self.destdir = str(destdir)
     def run(self):
-        generate(self.filename, self.md5dir, self.destdir)
+        generate(self.filename, self.destdir, self.md5dir)
 
 def main():
     filelen = len(genfile)
@@ -227,9 +227,9 @@ def inputfile():
         if not (filename[-6:].lower() == '.proto'):
             continue
         if genpublic.is_gs_and_controller_server_proto(filename) == True :
-            genfile.append([logicprotodir + filename, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + logicprotodir, genpublic.controllerlogicservicedir])
-            genfile.append([logicprotodir + filename, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + logicprotodir, genpublic.gslogicervicedir])
+            genfile.append([logicprotodir + filename, genpublic.controllerlogicservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + logicprotodir ])
+            genfile.append([logicprotodir + filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + logicprotodir])
         elif filename.find(genpublic.lobby_file_prefix) >= 0:
-            genfile.append([logicprotodir + filename, genpublic.servermd5dirs[genpublic.lobbymd5dirindex] + logicprotodir, genpublic.lobbylogicservicedir])
+            genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir, genpublic.servermd5dirs[genpublic.lobbymd5dirindex] + logicprotodir])
 inputfile()
 main()

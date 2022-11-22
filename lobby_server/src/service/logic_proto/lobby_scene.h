@@ -2,8 +2,6 @@
 #include "src/pb/pbc/logic_proto/lobby_scene.pb.h"
 class LobbyServiceImpl : public lobbyservcie::LobbyService{
 public:
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 public:
     void StartCrossGs(::google::protobuf::RpcController* controller,
         const lobbyservcie::StartCrossGsRequest* request,
