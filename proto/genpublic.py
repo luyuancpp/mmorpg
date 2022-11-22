@@ -9,9 +9,11 @@ pbcdir = '../common/src/pb/pbc/'
 logicprotodir = 'logic_proto/'
 
 gslogicervicedir = '../game_server/src/service/logic_proto/'
+gslogicrepliedservicedir = '../game_server/src/service/logic_proto_replied/'
 lobbylogicservicedir = '../lobby_server/src/service/logic_proto/'
 controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
-gateservicedir = '../gate_server/src/service/logic_proto/'
+controllerlogicrepliedservicedir = '../controller_server/src/service/logic_proto_replied/'
+gatelogicservicedir = '../gate_server/src/service/logic_proto/'
 servicemethoddir = '../common/src/pb/pbc/service_method/'
 servicemethodmd5dir = md5dir + 'service_method/'
 
@@ -57,7 +59,7 @@ def makedirs():
         logic_proto_dir = d + '/logic_proto/' 
         if not os.path.exists(logic_proto_dir):
             os.makedirs(logic_proto_dir)
-        logic_proto_replied_dir = logic_proto_dir + 'replied/'
+        logic_proto_replied_dir = logic_proto_dir.replace('/logic_proto/', '/logic_proto_replied/')
         if not os.path.exists(logic_proto_replied_dir):
             os.makedirs(logic_proto_replied_dir)
         common_proto_dir = d + '/common_proto/' 
@@ -177,7 +179,7 @@ def getdestdir(dirpath):
     elif islobbydir(dirpath):
         srcdir = lobbylogicservicedir
     elif isgatedir(dirpath):
-        srcdir = gateservicedir
+        srcdir = gatelogicservicedir
     elif islogindir(dirpath):
         srcdir = servermd5dirs[loginmd5dirindex]  
     elif isdatabasedir(dirpath):
