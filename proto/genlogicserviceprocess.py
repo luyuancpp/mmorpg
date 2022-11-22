@@ -96,7 +96,7 @@ def classbegin():
 
 def getprevfilename(filename, writedir):
     if filename.find(logicprotodir) >= 0:
-        if writedir == gsservicedir:
+        if writedir == genpublic.gslogicervicedir:
             return genpublic.gs_file_prefix
         if writedir == controllerservicedir:
             return genpublic.controller_file_prefix
@@ -190,16 +190,6 @@ def gencppfile(filename, writedir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-
-def getmd5prevfilename(filename, writedir):
-    if genpublic.is_server_proto(filename) == True :
-        if writedir == gsservicedir:
-            return genpublic.gs_file_prefix
-        if writedir == controllerservicedir:
-            return genpublic.controller_file_prefix
-        if writedir == lobbyservicedir:
-            return ''
-    return ''
 
 def md5copy(filename, writedir, fileextend):
         if filename.find('/') >= 0 :
