@@ -56,9 +56,9 @@ void Send2Player(const google::protobuf::Message& msg, entt::entity player)
 	gate->session_.Send(gateservicePlayerMessageMethoddesc, msg_wrapper);
 }
 
-void Send2Player(const google::protobuf::Message& message, EntityPtr& player)
+void Send2Player(const google::protobuf::Message& msg, EntityPtr& player)
 {
-    Send2Player(message, (entt::entity)player);
+    Send2Player(msg, (entt::entity)player);
 }
 
 void Send2ControllerPlayer(const google::protobuf::Message& message, Guid player_id)
@@ -72,16 +72,16 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, Guid player
 	Send2ControllerPlayer(message, it->second);
 }
 
-void Send2ControllerPlayer(const google::protobuf::Message& message, entt::entity player)
+void Send2ControllerPlayer(const google::protobuf::Message& msg, entt::entity player)
 {
 	if (!registry.valid(player))
 	{
 		return;
 	}
-	auto message_it = g_msgid.find(message.GetDescriptor()->full_name());
+	auto message_it = g_msgid.find(msg.GetDescriptor()->full_name());
 	if (message_it == g_msgid.end())
 	{
-		LOG_ERROR << " Send2ControllerPlayer message id not found " << message.GetDescriptor()->full_name();
+		LOG_ERROR << " Send2ControllerPlayer message id not found " << msg.GetDescriptor()->full_name();
 		return;
 	}
 	auto controller_node = registry.get<ControllerNodePtr>(player);
@@ -97,7 +97,7 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, entt::entit
 	}
 	NodeServiceMessageRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
-	msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
+	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_player_id(registry.get<Guid>(player));
 	controller_node->session_->Send(controllerserviceOnGsPlayerServiceMethoddesc, msg_wrapper);
 }
