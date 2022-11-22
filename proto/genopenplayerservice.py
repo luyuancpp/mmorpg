@@ -17,8 +17,8 @@ def gen(readfilename, filename):
     with open(md5dir + readfilename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('};') >= 0:
-                msgid = fileline.split(',')[1].replace('}', '').replace(';', '')
-                newstr += tabstr  + msgid + '};\n'
+                newstr = newstr.strip(',\n')
+                newstr +=  '\n};\n'
                 break
             elif fileline.find('C2SRequest') >= 0:
                 msgid = fileline.split(',')[1].replace('}', '').replace('"', '')
