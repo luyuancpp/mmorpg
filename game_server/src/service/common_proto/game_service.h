@@ -33,4 +33,9 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
+    void CallPlayer(::google::protobuf::RpcController* controller,
+        const ::NodeServiceMessageRequest* request,
+        ::NodeServiceMessageResponse* response,
+        ::google::protobuf::Closure* done)override;
+
 };

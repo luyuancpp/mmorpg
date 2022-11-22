@@ -212,4 +212,14 @@ void GsServiceImpl::ControllerSend2PlayerViaGs(::google::protobuf::RpcController
 ///<<< END WRITING YOUR CODE 
 }
 
+void GsServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
+    const ::NodeServiceMessageRequest* request,
+    ::NodeServiceMessageResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
 ///<<<rpc end
