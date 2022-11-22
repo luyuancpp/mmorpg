@@ -98,6 +98,7 @@ void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplet
     
 	GsNodePtr null_gs;
 	try_player_session->set_gs(null_gs);
+
     PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(to_scene), try_player_session->session_id());
 ///<<< END WRITING YOUR CODE
 }

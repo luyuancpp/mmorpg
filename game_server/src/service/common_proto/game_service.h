@@ -8,7 +8,7 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void PlayerService(::google::protobuf::RpcController* controller,
+    void Send2PlayerService(::google::protobuf::RpcController* controller,
         const ::NodeServiceMessageRequest* request,
         ::NodeServiceMessageResponse* response,
         ::google::protobuf::Closure* done)override;
