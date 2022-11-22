@@ -74,7 +74,8 @@ def initservicenames():
 
 def genheadrpcfun():
     global controller
-    servicestr = 'public:\n'
+    servicestr = 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
+    servicestr += 'public:\n'
     for service in local.rpcarry:
 
         s = service.strip(' ').split(' ')
@@ -114,6 +115,7 @@ def genheadrpcfun():
     servicestr += tabstr + tabstr + 'break;\n'
     servicestr += tabstr + tabstr + '}\n'
     servicestr += tabstr + '}\n'
+    servicestr += '};\n'
     return servicestr
 
 def gencpprpcfunbegin(rpcindex):
@@ -132,7 +134,7 @@ def gencpprpcfunbegin(rpcindex):
 def genyourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 def classbegin():
-    return 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
+    return 
 
  
 def getsrcpathmd5dir(dirpath):
@@ -145,17 +147,14 @@ def getsrcpathmd5dir(dirpath):
         srcdir = genpublic.servermd5dirs[genpublic.lobbymd5dirindex]
     return srcdir + protodir
 
-def genheadfile(filename, dirpath):
-    destdir = genpublic.getdestdir(dirpath)
-    headfunbodyarry = [classbegin, genheadrpcfun]
+def genheadfile(filename, destdir):
+    destdir = genpublic.getdestdir(destdir)
     destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
-    newheadfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.h').replace(protodir, '')
+    newheadfilename = getsrcpathmd5dir(destdir) + filename.replace('.proto', '.h').replace(protodir, '')
     newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
-    newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
-    for i in range(0, len(headfunbodyarry)) :             
-        newstr += headfunbodyarry[i]()
-    newstr += '};\n'
+    newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'           
+    newstr += genheadrpcfun()
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
         
@@ -163,9 +162,6 @@ def gencppfile(filename, dirpath):
     destdir = genpublic.getdestdir(dirpath)
     cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.cpp').replace(protodir, '')
-    if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
-        shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
-        return
     newstr = '#include "'  + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
     newstr += '#include "src/game_logic/game_registry.h"\n'
     newstr += '#include "src/network/message_system.h"\n'

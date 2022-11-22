@@ -218,8 +218,8 @@ void GsServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end

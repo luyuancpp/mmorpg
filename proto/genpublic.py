@@ -6,6 +6,7 @@ gs_file_prefix = 'game_'
 lobby_file_prefix = 'lobby_'
 md5dir = 'md5/'
 pbcdir = '../common/src/pb/pbc/'
+logicprotodir = 'logic_proto/'
 
 gslogicervicedir = '../game_server/src/service/logic_proto/'
 lobbylogicservicedir = '../lobby_server/src/service/logic_proto/'
@@ -56,9 +57,13 @@ def makedirs():
         logic_proto_dir = d + '/logic_proto/' 
         if not os.path.exists(logic_proto_dir):
             os.makedirs(logic_proto_dir)
+        logic_proto_replied_dir = logic_proto_dir + 'replied/'
+        if not os.path.exists(logic_proto_replied_dir):
+            os.makedirs(logic_proto_replied_dir)
         common_proto_dir = d + '/common_proto/' 
         if not os.path.exists(common_proto_dir):
             os.makedirs(common_proto_dir)
+
     
 def makedirsbypath(dirname):
     dirlist = []
