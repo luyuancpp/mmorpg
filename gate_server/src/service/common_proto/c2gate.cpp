@@ -234,7 +234,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         gs->second.gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
 			rpc,
 			this,
-			&gsservice::GsService_Stub::GatePlayerService);
+			&gsservice::GsService_Stub::ClientSend2Player);
     }
 }
 

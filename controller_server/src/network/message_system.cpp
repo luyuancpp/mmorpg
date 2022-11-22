@@ -60,7 +60,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	msg.mutable_msg()->set_msg_id(msg_it->second);
 	msg.mutable_msg()->set_body(message.SerializeAsString());
 	msg.mutable_ex()->set_player_id(registry.get<Guid>(player));
-	gs->session_.Send(gsservicePlayerServiceMethoddesc, msg);
+	gs->session_.Send(gsserviceSend2PlayerMethoddesc, msg);
 }
 
 void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& player)

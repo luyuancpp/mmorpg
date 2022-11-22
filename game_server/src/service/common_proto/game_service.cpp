@@ -54,7 +54,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
-void GsServiceImpl::Send2PlayerService(::google::protobuf::RpcController* controller,
+void GsServiceImpl::Send2Player(::google::protobuf::RpcController* controller,
     const ::NodeServiceMessageRequest* request,
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
@@ -99,7 +99,7 @@ void GsServiceImpl::Send2PlayerService(::google::protobuf::RpcController* contro
 ///<<< END WRITING YOUR CODE 
 }
 
-void GsServiceImpl::GatePlayerService(::google::protobuf::RpcController* controller,
+void GsServiceImpl::ClientSend2Player(::google::protobuf::RpcController* controller,
     const gsservice::RpcClientRequest* request,
     gsservice::RpcClientResponse* response,
     ::google::protobuf::Closure* done)
@@ -208,7 +208,7 @@ void GsServiceImpl::ControllerSend2PlayerViaGs(::google::protobuf::RpcController
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-    Send2Player(request->msg(), request->ex().player_id());
+    ::Send2Player(request->msg(), request->ex().player_id());
 ///<<< END WRITING YOUR CODE 
 }
 
