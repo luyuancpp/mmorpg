@@ -162,6 +162,7 @@
     <ClInclude Include="src\service\logic_proto\common_client_player.h" />
     <ClInclude Include="src\service\logic_proto\common_server_player.h" />
     <ClInclude Include="src\service\logic_proto\player_service.h" />
+    <ClInclude Include="src\service\logic_proto\player_service_replied.h" />
     <ClInclude Include="src\service\logic_proto\scene.h" />
     <ClInclude Include="src\service\logic_proto\scene_client_player.h" />
     <ClInclude Include="src\service\logic_proto\scene_server_player.h" />

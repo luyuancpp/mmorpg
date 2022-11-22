@@ -182,5 +182,8 @@
     <ClInclude Include="src\service\common_proto\game_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\service\logic_proto\player_service_replied.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
