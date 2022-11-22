@@ -88,7 +88,7 @@ public:
         {
 			return;
         }
-        channel_->S2C(method, request);
+        channel_->Send(method, request);
     }
 private:
     void onConnection(const TcpConnectionPtr& conn)
