@@ -22,9 +22,6 @@ yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
-gsservicedir = '../game_server/src/service/logic_proto/'
-lobbyservicedir = '../lobby_server/src/service/logic_proto/'
-controllerservicedir = '../controller_server/src/service/logic_proto/'
 logicprotodir = 'logic_proto/'
 tabstr = '    '
 cpprpcservicepart = 1
@@ -98,10 +95,8 @@ def getprevfilename(filename, writedir):
     if filename.find(logicprotodir) >= 0:
         if writedir == genpublic.gslogicervicedir:
             return genpublic.gs_file_prefix
-        if writedir == controllerservicedir:
+        if writedir == genpublic.controllerlogicservicedir:
             return genpublic.controller_file_prefix
-        if writedir == lobbyservicedir:
-            return ''
     return ''
 
 def getpbdir(writedir):
@@ -189,7 +184,6 @@ def gencppfile(filename, writedir):
     newstr += rpcend + '\n'
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
-
 
 def md5copy(filename, writedir, fileextend):
         if filename.find('/') >= 0 :

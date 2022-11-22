@@ -8,8 +8,8 @@ md5dir = 'md5/'
 pbcdir = '../common/src/pb/pbc/'
 
 gslogicervicedir = '../game_server/src/service/logic_proto/'
-lobbyplayerservicedir = '../lobby_server/src/service/logic_proto/'
-controllerplayerservicedir = '../controller_server/src/service/logic_proto/'
+lobbylogicservicedir = '../lobby_server/src/service/logic_proto/'
+controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
 gateservicedir = '../gate_server/src/service/logic_proto/'
 servicemethoddir = '../common/src/pb/pbc/service_method/'
 servicemethodmd5dir = md5dir + 'service_method/'
@@ -168,9 +168,9 @@ def getdestdir(dirpath):
     if isgamedir(dirpath):
         srcdir = gslogicervicedir
     elif iscontrollerdir(dirpath):
-        srcdir = controllerplayerservicedir
+        srcdir = controllerlogicservicedir
     elif islobbydir(dirpath):
-        srcdir = lobbyplayerservicedir
+        srcdir = lobbylogicservicedir
     elif isgatedir(dirpath):
         srcdir = gateservicedir
     elif islogindir(dirpath):
