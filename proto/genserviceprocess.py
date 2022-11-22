@@ -111,34 +111,34 @@ def classbegin():
     return 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
 
 
-def getprevfilename(filename, writedir):
+def getprevfilename(filename, destdir):
     if filename.find(logicprotodir) >= 0:
-        if writedir == gsservicedir:
+        if destdir == gsservicedir:
             return genpublic.gs_file_prefix
-        if writedir == controllerservicedir:
+        if destdir == controllerservicedir:
             return genpublic.controller_file_prefix
-        if writedir == lobbyservicedir:
+        if destdir == lobbyservicedir:
             return ''
     return ''
 
-def getpbdir(filename, writedir):
+def getpbdir(filename, destdir):
     if filename.find(logicprotodir) >= 0:
         return 'src/pb/pbc/logic_proto/'
     return ''
 
-def getfilenamewithnopath(filename, writedir):
-    servertypedir = genpublic.getservertype(writedir) + '/'
+def getfilenamewithnopath(filename, destdir):
+    servertypedir = genpublic.getservertype(destdir) + '/'
     return filename.replace(logicprotodir, '').replace('common_proto/', '').replace(servertypedir,'')
 
-def genheadfile(filename, writedir):
+def genheadfile(filename, destdir):
     local.servicenames = []
-    filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.h') 
+    filename = getfilenamewithnopath(filename, destdir).replace('.proto', '.h') 
     headfun = [classbegin, genheadrpcfun]
-    destfilename = writedir + filename
-    md5dir = genpublic.getsrcpathmd5dir(writedir, genpublic.commonproto())
+    destfilename = destdir + filename
+    md5dir = genpublic.getsrcpathmd5dir(destdir, genpublic.commonproto())
     md5filename = md5dir +  filename
     newstr = '#pragma once\n'
-    newstr += '#include "' + getpbdir(filename, writedir) + filename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "' + getpbdir(filename, destdir) + filename.replace('.h', '') + '.pb.h"\n'
     
     for i in range(0, 2) :
         newstr += headfun[i]()
@@ -147,11 +147,11 @@ def genheadfile(filename, writedir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(filename, writedir):
-    filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.cpp') 
-    destfilename = writedir + filename
-    md5filename = genpublic.getsrcpathmd5dir(writedir, genpublic.commonproto()) +  filename
-    newstr = '#include "' + getprevfilename(destfilename, writedir) + filename.replace('.cpp', '.h') + '"\n'
+def gencppfile(filename, destdir):
+    filename = getfilenamewithnopath(filename, destdir).replace('.proto', '.cpp') 
+    destfilename = destdir + filename
+    md5filename = genpublic.getsrcpathmd5dir(destdir, genpublic.commonproto()) +  filename
+    newstr = '#include "' + getprevfilename(destfilename, destdir) + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     serviceidx = 0
     try:
@@ -206,22 +206,22 @@ def gencppfile(filename, writedir):
         file.write(newstr)
 
 
-def getmd5prevfilename(filename, writedir):
+def getmd5prevfilename(filename, destdir):
     if genpublic.is_server_proto(filename) == True :
-        if writedir == gsservicedir:
+        if destdir == gsservicedir:
             return genpublic.gs_file_prefix
-        if writedir == controllerservicedir:
+        if destdir == controllerservicedir:
             return genpublic.controller_file_prefix
-        if writedir == lobbyservicedir:
+        if destdir == lobbyservicedir:
             return ''
     return ''
 
-def md5copy(filename, writedir, fileextend):
+def md5copy(filename, destdir, fileextend):
         if filename.find('/') >= 0 :
             s = filename.split('/')
             filename = s[len(s) - 1]
-        gennewfilename = genpublic.getsrcpathmd5dir(writedir, genpublic.commonproto()) + filename.replace('.proto', fileextend)
-        destfilename = writedir +  getmd5prevfilename(filename, writedir) + filename.replace('.proto', fileextend)
+        gennewfilename = genpublic.getsrcpathmd5dir(destdir, genpublic.commonproto()) + filename.replace('.proto', fileextend)
+        destfilename = destdir +  getmd5prevfilename(filename, destdir) + filename.replace('.proto', fileextend)
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
@@ -233,27 +233,27 @@ def md5copy(filename, writedir, fileextend):
             else:
                 error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)   
           
-        #print("copy %s ---> %s  %s" % (filename, writedir, gennewfilename))
+        #print("copy %s ---> %s  %s" % (filename, destdir, gennewfilename))
         if error == None and emptymd5 == False:
             return
         print("copy %s ---> %s" % (gennewfilename, destfilename))
         shutil.copy(gennewfilename, destfilename)
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
 
-def generate(filename, writedir):
+def generate(filename, destdir):
     parsefile(filename)
-    genheadfile(filename, writedir)
-    gencppfile(filename, writedir)
-    md5copy(filename, writedir, '.h')
-    md5copy(filename, writedir, '.cpp')
+    genheadfile(filename, destdir)
+    gencppfile(filename, destdir)
+    md5copy(filename, destdir, '.h')
+    md5copy(filename, destdir, '.cpp')
 
 class myThread (threading.Thread):
-    def __init__(self, filename, writedir):
+    def __init__(self, filename, destdir):
         threading.Thread.__init__(self)
         self.filename = str(filename)
-        self.writedir = str(writedir)
+        self.destdir = str(destdir)
     def run(self):
-        generate(self.filename, self.writedir)
+        generate(self.filename, self.destdir)
 
 def main():
     filelen = len(genfile)
