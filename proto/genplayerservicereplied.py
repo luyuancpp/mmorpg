@@ -54,7 +54,13 @@ def parsefile(filename):
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = local.service
-
+                
+def initservicenames():
+    local.servicenames = []
+    for service in local.rpcarry:
+        s = service.strip(' ').split(' ')
+        local.servicenames.append(s[1])
+        
 def genheadrpcfun():
     global controller
     servicestr = 'class ' + local.playerservice + 'RepliedImpl : public PlayerServiceReplied {\npublic:\n    using PlayerService::PlayerService;\n'  
@@ -215,16 +221,18 @@ def md5copy(filename, destdir, md5dir, fileextend):
 
 
 def generate(filename):
+    if filename.find(server_player) < 0:
+        return
     parsefile(filename)
-    if filename.find(server_player) >= 0:
-        genheadfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-        gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-        md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
-        md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
-        genheadfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
-        gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
-        md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
-        md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
+    initservicenames()
+    genheadfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+    gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+    md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
+    md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
+    genheadfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+    gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+    md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
+    md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
         
         
 genfile = []
