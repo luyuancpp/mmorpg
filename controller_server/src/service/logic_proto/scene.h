@@ -2,8 +2,6 @@
 #include "src/pb/pbc/logic_proto/scene.pb.h"
 class ServerSceneServiceImpl : public ::ServerSceneService{
 public:
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
 public:
     void UpdateCrossMainSceneInfo(::google::protobuf::RpcController* controller,
         const ::UpdateCrossMainSceneInfoRequest* request,
