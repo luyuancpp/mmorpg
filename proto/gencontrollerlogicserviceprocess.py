@@ -52,7 +52,8 @@ def parsefile(filename):
                 local.packagemessage.add(fileline.replace('message ', '').replace('\r', '').replace('\n', ''))
     
 def genheadrpcfun():
-    servicestr = 'public:\n'
+    servicestr = 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'
+    servicestr += 'public:\n'
     global controller
     local.servicenames = []
     for service in local.rpcarry:
@@ -67,6 +68,7 @@ def genheadrpcfun():
             line += tabstr + tabstr + local.pkg + '::' + rsp + '* response,\n'
         line += tabstr + tabstr + '::google::protobuf::Closure* done)override;\n\n'
         servicestr += line
+    servicestr += '};'
     return servicestr
 
 def gencpprpcfunbegin(rpcindex):
@@ -104,32 +106,21 @@ def getpbdir(writedir):
         return 'src/pb/pbc/logic_proto/'
     return ''
 
-def getfilenamewithnopath(filename, writedir):
-    servertypedir = genpublic.getservertype(writedir) + '/'
-    return filename.replace(logicprotodir, '').replace('common_proto/', '').replace(servertypedir,'')
-
 def genheadfile(filename, writedir):
     local.servicenames = []
-    filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.h') 
-    headfun = [classbegin, genheadrpcfun]
-    destdir =  genpublic.getdestdir(genpublic.getservertype(writedir))
-    destfilename = destdir + filename
+    filename = filename.replace(logicprotodir, '').replace('.proto', '.h') 
+    destfilename = genpublic.controllerlogicservicedir + filename
     md5filename = genpublic.getsrcpathmd5dir(writedir, logicprotodir) +  filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir( writedir) + filename.replace('.h', '') + '.pb.h"\n'
-    for i in range(0, 2) :
-        if i > 0:
-            newstr += genyourcode()
-        newstr += headfun[i]()
-    newstr += '};'
+    newstr += genheadrpcfun()
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def gencppfile(filename, writedir):
-    filename = getfilenamewithnopath(filename, writedir).replace('.proto', '.cpp') 
-    destdir =  genpublic.getdestdir(genpublic.getservertype(writedir))
-    destfilename = destdir + filename
-    md5filename = genpublic.getsrcpathmd5dir(writedir, logicprotodir) +  filename
+    filename = filename.replace(logicprotodir, '').replace('.proto', '.cpp') 
+    destfilename =  genpublic.controllerlogicservicedir + filename
+    md5filename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] +  logicprotodir +  filename
     newstr = '#include "' + getprevfilename(filename, writedir) + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     serviceidx = 0
@@ -244,10 +235,7 @@ def inputfile():
         if not (filename[-6:].lower() == '.proto'):
             continue
         if genpublic.is_gs_and_controller_server_proto(filename) == True :
-            genfile.append([logicprotodir + filename, genpublic.getsrcpathmd5dir(genpublic.game(), logicprotodir)])
-            genfile.append([logicprotodir + filename, genpublic.getsrcpathmd5dir(genpublic.controller(), logicprotodir)])
-        elif filename.find(genpublic.lobby_file_prefix) >= 0:
-            genfile.append([logicprotodir +  filename,  genpublic.getsrcpathmd5dir(genpublic.lobby(), logicprotodir)])
+            genfile.append([logicprotodir + filename, genpublic.getsrcpathmd5dir(genpublic.servermd5dirs[genpublic.conrollermd5dirindex], logicprotodir)])
 
 inputfile()
 main()
