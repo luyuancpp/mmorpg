@@ -7,7 +7,7 @@ lobby_file_prefix = 'lobby_'
 md5dir = 'md5/'
 pbcdir = '../common/src/pb/pbc/'
 
-gsplayerservicedir = '../game_server/src/service/logic_proto/'
+gslogicervicedir = '../game_server/src/service/logic_proto/'
 lobbyplayerservicedir = '../lobby_server/src/service/logic_proto/'
 controllerplayerservicedir = '../controller_server/src/service/logic_proto/'
 gateservicedir = '../gate_server/src/service/logic_proto/'
@@ -166,7 +166,7 @@ def getsrcpathmd5dir(dirpath, subdir):
 def getdestdir(dirpath):
     srcdir = ''
     if isgamedir(dirpath):
-        srcdir = gsplayerservicedir
+        srcdir = gslogicervicedir
     elif iscontrollerdir(dirpath):
         srcdir = controllerplayerservicedir
     elif islobbydir(dirpath):
