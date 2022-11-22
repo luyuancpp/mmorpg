@@ -54,7 +54,7 @@ void GsServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
-void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
+void GsServiceImpl::Send2PlayerService(::google::protobuf::RpcController* controller,
     const ::NodeServiceMessageRequest* request,
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
@@ -95,13 +95,7 @@ void GsServiceImpl::PlayerService(::google::protobuf::RpcController* controller,
     player_request->ParseFromString(request->msg().body());
     MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
     serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
-    if (nullptr == response)//不需要回复
-    {
-        return;
-    }
-    response->mutable_ex()->set_player_id(request->ex().player_id());
-    response->mutable_msg()->set_body(player_response->SerializeAsString());
-    response->mutable_msg()->set_msg_id(msg_id);
+
 ///<<< END WRITING YOUR CODE 
 }
 
