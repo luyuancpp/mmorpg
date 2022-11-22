@@ -97,7 +97,7 @@ def getpbdir(writedir):
         return 'src/pb/pbc/logic_proto/'
     return ''
 
-def genheadfile(filename, md5dir,  destdir):
+def genheadfile(filename,  destdir,  md5dir):
     local.servicenames = []
     filename = filename.replace(logicprotodir, '').replace('.proto', '.h') 
     destfilename = destdir + filename
