@@ -162,6 +162,7 @@
     <ClCompile Include="src\service\logic_proto\scene.cpp" />
     <ClCompile Include="src\service\logic_proto\scene_server_player.cpp" />
     <ClCompile Include="src\service\logic_proto\server_service.cpp" />
+    <ClCompile Include="src\service\logic_proto\service_replied.cpp" />
     <ClCompile Include="src\service\logic_proto\team.cpp" />
     <ClCompile Include="src\service\logic_proto\team_server_player.cpp" />
     <ClCompile Include="src\system\player_change_scene.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="src\service\logic_proto\scene.h" />
     <ClInclude Include="src\service\logic_proto\scene_server_player.h" />
     <ClInclude Include="src\service\logic_proto\server_service.h" />
+    <ClInclude Include="src\service\logic_proto\service_replied.h" />
     <ClInclude Include="src\service\logic_proto\team.h" />
     <ClInclude Include="src\service\logic_proto\team_server_player.h" />
     <ClInclude Include="src\system\player_change_scene.h" />

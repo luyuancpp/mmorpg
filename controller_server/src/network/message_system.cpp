@@ -12,9 +12,12 @@
 #include "src/pb/pbc/msgmap.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
+#include "src/service/logic_proto/service_replied.h"
 
 #include "gate_service.pb.h"
 #include "game_service.pb.h"
+
+using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 
 void Send2Gs(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& message, uint32_t node_id)
 {
@@ -154,4 +157,39 @@ void Send2Gate(const ::google::protobuf::MethodDescriptor* method, const google:
 	}
 	auto gate = registry.try_get<GateNodePtr>(gate_it->second);
 	(*gate)->session_.Send(method, message);
+}
+
+void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity player)
+{
+    if (!registry.valid(player))
+    {
+        return;
+    }
+    auto try_player_session = registry.try_get<PlayerSession>(player);
+    if (nullptr == try_player_session)
+    {
+        return;
+    }
+    auto gs = try_player_session->gs();
+    if (nullptr == gs)
+    {
+        LOG_INFO << "gs not found ";
+        return;
+    }
+    auto msg_it = g_msgid.find(msg.GetDescriptor()->full_name());
+    if (msg_it == g_msgid.end())
+    {
+        LOG_ERROR << "message id not found " << msg.GetDescriptor()->full_name();
+        return;
+    }
+    auto gs_it = g_gs_nodes.find(try_player_session->gs_node_id());
+    if (gs_it == g_gs_nodes.end())
+    {
+        return;
+    }
+    GsCallPlayerRpc rpc;
+    rpc->s_rq_.mutable_msg()->set_msg_id(msg_it->second);
+    rpc->s_rq_.mutable_msg()->set_body(msg.SerializeAsString());
+    rpc->s_rq_.mutable_ex()->set_player_id(registry.get<Guid>(player));
+    registry.get<GsStubPtr>(gs_it->second)->CallMethod(CallPlayerGsReplied, rpc, &gsservice::GsService_Stub::CallPlayer);
 }

@@ -42,4 +42,5 @@ service GsService {
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GateConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
   rpc ControllerSend2PlayerViaGs (NodeServiceMessageRequest) returns (google.protobuf.Empty);
+  rpc CallPlayer (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
 }
