@@ -63,7 +63,7 @@ def initservicenames():
         
 def genheadrpcfun():
     global controller
-    servicestr = 'class ' + local.playerservice + 'RepliedImpl : public PlayerServiceReplied {\npublic:\n    using PlayerService::PlayerService;\n'  
+    servicestr = 'class ' + local.playerservice + 'RepliedImpl : public PlayerServiceReplied {\npublic:\n    using PlayerServiceReplied::PlayerServiceReplied;\n'  
     servicestr += 'public:\n'
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
@@ -77,7 +77,6 @@ def genheadrpcfun():
 
     servicestr += tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
     servicestr += tabstr + controller.replace('(', '') + ',\n'
-    servicestr += tabstr + 'const ::google::protobuf::Message* request,\n'
     servicestr += tabstr + '::google::protobuf::Message* response)override\n'
     servicestr += tabstr + '{\n'
     servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
@@ -91,7 +90,6 @@ def genheadrpcfun():
             respone = '::google::protobuf::Empty*>(response'
         else :
             respone = local.pkg + '::' + rsp + '*>(response'
-        servicestr += local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '*>( request),\n'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<' 
         servicestr += respone + '));\n'
         servicestr += tabstr + tabstr +'break;\n'
