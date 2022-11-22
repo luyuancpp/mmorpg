@@ -97,21 +97,21 @@ def getpbdir(writedir):
         return 'src/pb/pbc/logic_proto/'
     return ''
 
-def genheadfile(filename, writedir):
+def genheadfile(filename, md5dir,  destdir):
     local.servicenames = []
     filename = filename.replace(logicprotodir, '').replace('.proto', '.h') 
-    destfilename = genpublic.controllerlogicservicedir + filename
-    md5filename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] +  logicprotodir +  filename
+    destfilename = destdir + filename
+    md5filename = md5dir +   filename
     newstr = '#pragma once\n'
-    newstr += '#include "' + getpbdir( writedir) + filename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "' + getpbdir( destdir) + filename.replace('.h', '') + '.pb.h"\n'
     newstr += genheadrpcfun()
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(filename, writedir):
+def gencppfile(filename, md5dir, destdir):
     filename = filename.replace(logicprotodir, '').replace('.proto', '.cpp') 
-    destfilename =  genpublic.controllerlogicservicedir + filename
-    md5filename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] +  logicprotodir +  filename
+    destfilename =  destdir + filename
+    md5filename = md5dir +   filename
     newstr = '#include "' + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     serviceidx = 0
@@ -189,8 +189,8 @@ def md5copy(filename, writedir, fileextend):
 
 def generate(filename, md5dir,destdir):
     parsefile(filename)
-    genheadfile(filename, destdir)
-    gencppfile(filename, destdir)
+    genheadfile(filename, md5dir, destdir)
+    gencppfile(filename, md5dir, destdir)
     md5copy(filename, destdir, '.h')
     md5copy(filename, destdir, '.cpp')
 
