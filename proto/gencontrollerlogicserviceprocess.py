@@ -28,7 +28,7 @@ cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/logic_proto/'
 
-genfile = []
+genfile = [] #[proto, md5dir, destdir]
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
@@ -187,20 +187,21 @@ def md5copy(filename, writedir, fileextend):
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, destfilename)
 
-def generate(filename, writedir):
+def generate(filename, md5dir,destdir):
     parsefile(filename)
-    genheadfile(filename, writedir)
-    gencppfile(filename, writedir)
-    md5copy(filename, writedir, '.h')
-    md5copy(filename, writedir, '.cpp')
+    genheadfile(filename, destdir)
+    gencppfile(filename, destdir)
+    md5copy(filename, destdir, '.h')
+    md5copy(filename, destdir, '.cpp')
 
 class myThread (threading.Thread):
-    def __init__(self, filename, writedir):
+    def __init__(self, filename, md5dir, destdir):
         threading.Thread.__init__(self)
         self.filename = str(filename)
-        self.writedir = str(writedir)
+        self.md5dir = str(md5dir)
+        self.destdir = str(destdir)
     def run(self):
-        generate(self.filename, self.writedir)
+        generate(self.filename, self.md5dir, self.destdir)
 
 def main():
     filelen = len(genfile)
@@ -208,13 +209,13 @@ def main():
     step = int(filelen / cpu_count() + 1)
     if cpu_count() > filelen:
         for i in range(0, filelen):
-            t = myThread( genfile[i][0], genfile[i][1])
+            t = myThread( genfile[i][0], genfile[i][1], genfile[i][2])
             threads.append(t)
             t.start()
     else :
         for i in range(0, cpu_count()):
             for j in range(i, i * step) :
-                t = myThread(genfile[j][0], genfile[j][1])
+                t = myThread(genfile[j][0], genfile[j][1], genfile[i][2])
                 threads.append(t)
                 t.start()
     for t in threads :
@@ -226,7 +227,7 @@ def inputfile():
         if not (filename[-6:].lower() == '.proto'):
             continue
         if genpublic.is_gs_and_controller_server_proto(filename) == True :
-            genfile.append([logicprotodir + filename, genpublic.getsrcpathmd5dir(genpublic.servermd5dirs[genpublic.conrollermd5dirindex], logicprotodir)])
+            genfile.append([logicprotodir + filename, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + logicprotodir, genpublic.controllerlogicservicedir])
 
 inputfile()
 main()
