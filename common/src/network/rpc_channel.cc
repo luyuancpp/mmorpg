@@ -99,7 +99,7 @@ void RpcChannel::CallMethod(const ::google::protobuf::Message& request,
 	codec_.send(conn_, message);
 }
 
-void RpcChannel::S2C(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request)
+void RpcChannel::Send(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request)
 {
     RpcMessage message;    
     message.set_type(S2C_REQUEST);

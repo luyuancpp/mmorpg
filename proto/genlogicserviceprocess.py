@@ -33,17 +33,6 @@ servicedir = './md5/logic_proto/'
 
 genfile = []
 
-def getwritedir(serverstr):
-    writedir = ''
-    if serverstr == genpublic.gs_file_prefix:
-        writedir = gsservicedir
-    elif serverstr == genpublic.controller_file_prefix:
-        writedir = controllerservicedir
-    elif serverstr == genpublic.lobby_file_prefix:
-        writedir = lobbyservicedir
-    return writedir
-
-
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 

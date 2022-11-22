@@ -127,7 +127,7 @@ class RpcChannel : public ::google::protobuf::RpcChannel
 	  ::google::protobuf::Message* response,
 	  ::google::protobuf::Closure* done);
 
-  void S2C(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request);
+  void Send(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request);
 
   void onMessage(const TcpConnectionPtr& conn,
                  Buffer* buf,

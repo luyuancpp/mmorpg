@@ -15,7 +15,7 @@ struct RpcServerConnection
 
     void Send(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request)
     {
-        channel_->S2C(method, request);
+        channel_->Send(method, request);
     }
 
     muduo::net::TcpConnectionPtr conn_;
