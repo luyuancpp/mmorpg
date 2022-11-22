@@ -325,7 +325,7 @@ def md5copydir():
                     (filename == 'player_service.cpp' and genpublic.isgamedir(dirpath)):    
                     md5copy(filename, dirpath)
                 elif (filename.find(server_player) >= 0 and genpublic.iscontrollerdir(dirpath)) or\
-                     (filename == 'player_service.cpp' and genpublic.iscontrollerdir(dirpath)):                      
+                     (filename == 'player_service.cpp' and genpublic.iscontrollerdir(dirpath)):                   
                     md5copy(filename,  dirpath)
 
 genfile = []

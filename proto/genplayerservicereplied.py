@@ -34,7 +34,7 @@ gslogicervicedir = '../game_server/src/service/logic_proto/'
 lobbylogicservicedir = '../lobby_server/src/service/logic_proto/'
 controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
 server_player = 'server_player'
-repliedmd5dir = genpublic.logicprotodir + 'replied/'
+repliedmd5dir = genpublic.logicprotodir.replace('logic_proto', 'logic_proto_replied')
 
 def parsefile(filename):
     if filename.find(server_player) < 0:
@@ -193,13 +193,39 @@ def gencppfile(filename, destdir, md5dir):
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
+def md5copy(filename, destdir, md5dir, fileextend):
+        if filename.find('/') >= 0 :
+            s = filename.split('/')
+            filename = s[len(s) - 1]
+        gennewfilename = md5dir + filename.replace('.proto', fileextend)
+        filenamemd5 = gennewfilename + '.md5'
+        error = None
+        emptymd5 = False
+        if  not os.path.exists(filenamemd5):
+            emptymd5 = True
+        else:
+            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
+        destfilename =  destdir + filename.replace('.proto', fileextend)
+        if error == None and os.path.exists(destfilename) and emptymd5 == False:
+            return
+        
+        print("copy %s ---> %s" % (gennewfilename, destfilename))
+        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+        shutil.copy(gennewfilename, destfilename)
+
+
 def generate(filename):
     parsefile(filename)
     if filename.find(server_player) >= 0:
-        genheadfile(filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-        gencppfile(filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-        genheadfile(filename, genpublic.controllerlogicservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
-        gencppfile(filename, genpublic.controllerlogicservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+        genheadfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+        gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+        md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
+        md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
+        genheadfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+        gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+        md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
+        md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
+        
         
 genfile = []
 
