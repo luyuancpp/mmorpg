@@ -31,7 +31,7 @@ cpprpcservicepart = 1
 controller = '(entt::entity player'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic_proto/'
-gsplayerservicedir = '../game_server/src/service/logic_proto/'
+gslogicervicedir = '../game_server/src/service/logic_proto/'
 lobbyplayerservicedir = '../lobby_server/src/service/logic_proto/'
 controllerplayerservicedir = '../controller_server/src/service/logic_proto/'
 client_player = 'client_player'
@@ -59,7 +59,7 @@ def inputfiledestdir(filename):
     global filedirdestpath
     local.pkg = ''
     if filename.find(client_player) >= 0:
-        filedirdestpath[filename] = gsplayerservicedir
+        filedirdestpath[filename] = gslogicervicedir
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find(cpkg) >= 0:
@@ -336,8 +336,8 @@ genfile = []
 
 def inputfile():
     global filedirdestpath
-    filedirdestpath['player_service.cpp'] = gsplayerservicedir
-    filedirdestpath['player_service.h'] = gsplayerservicedir
+    filedirdestpath['player_service.cpp'] = gslogicervicedir
+    filedirdestpath['player_service.h'] = gslogicervicedir
     dir_list  = dir_list = os.listdir(protodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
