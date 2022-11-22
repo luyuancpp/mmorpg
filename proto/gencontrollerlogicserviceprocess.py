@@ -167,11 +167,11 @@ def gencppfile(filename, md5dir, destdir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(filename, writedir, fileextend):
+def md5copy(filename, md5dir, destdir, fileextend):
         if filename.find('/') >= 0 :
             s = filename.split('/')
             filename = s[len(s) - 1]
-        gennewfilename = genpublic.getsrcpathmd5dir(writedir, logicprotodir) + filename.replace('.proto', fileextend)
+        gennewfilename = md5dir + filename.replace('.proto', fileextend)
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
@@ -179,8 +179,7 @@ def md5copy(filename, writedir, fileextend):
             emptymd5 = True
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        destfilename =  genpublic.getdestdir(writedir) + filename.replace('.proto', fileextend)
-        
+        destfilename =  destdir + filename.replace('.proto', fileextend)
         if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
         print("copy %s ---> %s" % (gennewfilename, destfilename))
@@ -191,8 +190,8 @@ def generate(filename, md5dir,destdir):
     parsefile(filename)
     genheadfile(filename, md5dir, destdir)
     gencppfile(filename, md5dir, destdir)
-    md5copy(filename, destdir, '.h')
-    md5copy(filename, destdir, '.cpp')
+    md5copy(filename, md5dir, destdir, '.h')
+    md5copy(filename, md5dir, destdir, '.cpp')
 
 class myThread (threading.Thread):
     def __init__(self, filename, md5dir, destdir):
