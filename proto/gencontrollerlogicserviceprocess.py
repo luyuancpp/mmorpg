@@ -228,6 +228,8 @@ def inputfile():
             continue
         if genpublic.is_gs_and_controller_server_proto(filename) == True :
             genfile.append([logicprotodir + filename, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + logicprotodir, genpublic.controllerlogicservicedir])
-
+            genfile.append([logicprotodir + filename, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + logicprotodir, genpublic.gslogicervicedir])
+        elif filename.find(genpublic.lobby_file_prefix) >= 0:
+            genfile.append([logicprotodir + filename, genpublic.servermd5dirs[genpublic.lobbymd5dirindex] + logicprotodir, genpublic.lobbylogicservicedir])
 inputfile()
 main()
