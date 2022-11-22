@@ -51,7 +51,8 @@ def parsefile(filename):
             elif fileline.find('message ') >= 0:
                 local.packagemessage.add(fileline.replace('message ', '').replace('\r', '').replace('\n', ''))
 def genheadrpcfun():
-    servicestr = 'public:\n'
+    servicestr = 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
+    servicestr += 'public:\n'
     global controller
     local.servicenames = []
     for service in local.rpcarry:
@@ -76,6 +77,7 @@ def genheadrpcfun():
             line += tabstr + tabstr + pkg + '::' + rsp + '* response,\n'
         line += tabstr + tabstr + '::google::protobuf::Closure* done)override;\n\n'
         servicestr += line
+    servicestr += '};'
     return servicestr
 
 def gencpprpcfunbegin(rpcindex):
@@ -108,7 +110,7 @@ def genyourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 
 def classbegin():
-    return 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
+    return 
 
 
 def getprevfilename(filename, destdir):
@@ -127,30 +129,23 @@ def getpbdir(filename, destdir):
     return ''
 
 def getfilenamewithnopath(filename, destdir):
-    servertypedir = genpublic.getservertype(destdir) + '/'
-    return filename.replace(logicprotodir, '').replace('common_proto/', '').replace(servertypedir,'')
+    return filename.replace('common_proto/', '')
 
-def genheadfile(filename, destdir):
+def genheadfile(filename,  destdir,  md5dir):
     local.servicenames = []
     filename = getfilenamewithnopath(filename, destdir).replace('.proto', '.h') 
-    headfun = [classbegin, genheadrpcfun]
     destfilename = destdir + filename
-    md5dir = genpublic.getsrcpathmd5dir(destdir, genpublic.commonproto())
     md5filename = md5dir +  filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(filename, destdir) + filename.replace('.h', '') + '.pb.h"\n'
-    
-    for i in range(0, 2) :
-        newstr += headfun[i]()
-
-    newstr += '};'
+    newstr += genheadrpcfun()
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(filename, destdir):
+def gencppfile(filename, destdir, md5dir):
     filename = getfilenamewithnopath(filename, destdir).replace('.proto', '.cpp') 
     destfilename = destdir + filename
-    md5filename = genpublic.getsrcpathmd5dir(destdir, genpublic.commonproto()) +  filename
+    md5filename = md5dir +  filename
     newstr = '#include "' + getprevfilename(destfilename, destdir) + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_closure.h"\n'
     serviceidx = 0
@@ -206,54 +201,41 @@ def gencppfile(filename, destdir):
         file.write(newstr)
 
 
-def getmd5prevfilename(filename, destdir):
-    if genpublic.is_server_proto(filename) == True :
-        if destdir == gsservicedir:
-            return genpublic.gs_file_prefix
-        if destdir == controllerservicedir:
-            return genpublic.controller_file_prefix
-        if destdir == lobbyservicedir:
-            return ''
-    return ''
-
-def md5copy(filename, destdir, fileextend):
+def md5copy(filename, destdir, md5dir, fileextend):
         if filename.find('/') >= 0 :
             s = filename.split('/')
             filename = s[len(s) - 1]
-        gennewfilename = genpublic.getsrcpathmd5dir(destdir, genpublic.commonproto()) + filename.replace('.proto', fileextend)
-        destfilename = destdir +  getmd5prevfilename(filename, destdir) + filename.replace('.proto', fileextend)
+        gennewfilename = md5dir + filename.replace('.proto', fileextend)
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
         if  not os.path.exists(filenamemd5):
             emptymd5 = True
         else:
-            if not os.path.exists(destfilename):
-                error = True
-            else:
-                error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)   
-          
-        #print("copy %s ---> %s  %s" % (filename, destdir, gennewfilename))
-        if error == None and emptymd5 == False:
+            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
+        destfilename =  destdir + filename.replace('.proto', fileextend)
+        if error == None and os.path.exists(destfilename) and emptymd5 == False:
             return
+        
         print("copy %s ---> %s" % (gennewfilename, destfilename))
-        shutil.copy(gennewfilename, destfilename)
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+        shutil.copy(gennewfilename, destfilename)
 
-def generate(filename, destdir):
+def generate(filename, destdir, md5dir):
     parsefile(filename)
-    genheadfile(filename, destdir)
-    gencppfile(filename, destdir)
-    md5copy(filename, destdir, '.h')
-    md5copy(filename, destdir, '.cpp')
+    genheadfile(filename, destdir, md5dir)
+    gencppfile(filename, destdir, md5dir)
+    md5copy(filename, destdir, md5dir, '.h')
+    md5copy(filename, destdir, md5dir, '.cpp')
 
 class myThread (threading.Thread):
-    def __init__(self, filename, destdir):
+    def __init__(self, filename, destdir, md5dir):
         threading.Thread.__init__(self)
         self.filename = str(filename)
+        self.md5dir = str(md5dir)
         self.destdir = str(destdir)
     def run(self):
-        generate(self.filename, self.destdir)
+        generate(self.filename, self.destdir, self.md5dir)
 
 def main():
     filelen = len(genfile)
@@ -261,13 +243,13 @@ def main():
     step = int(filelen / cpu_count() + 1)
     if cpu_count() > filelen:
         for i in range(0, filelen):
-            t = myThread( genfile[i][0], genfile[i][1])
+            t = myThread( genfile[i][0], genfile[i][1], genfile[i][2])
             threads.append(t)
             t.start()
     else :
         for i in range(0, cpu_count()):
             for j in range(i, i * step) :
-                t = myThread(genfile[j][0], genfile[j][1])
+                t = myThread(genfile[j][0], genfile[j][1], genfile[i][2])
                 threads.append(t)
                 t.start()
     for t in threads :
