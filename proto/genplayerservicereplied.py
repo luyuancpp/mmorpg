@@ -17,7 +17,6 @@ local.service = ''
 local.playerservicearray = []
 local.openplayerservicearray = []
 local.fileservice = []
-local.md5protodir = []
 
 threads = []
 local.pkg = ''
@@ -34,15 +33,16 @@ includedir = 'src/service/logic_proto/'
 gslogicervicedir = '../game_server/src/service/logic_proto/'
 lobbylogicservicedir = '../lobby_server/src/service/logic_proto/'
 controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
-client_player = 'client_player'
 server_player = 'server_player'
-filedirdestpath = {}
+repliedmd5dir = genpublic.logicprotodir + 'replied/'
 
 def parsefile(filename):
+    if filename.find(server_player) < 0:
+        return
     local.rpcarry = []
     local.pkg = ''
-    local.playerservice = ''
     local.service = ''
+    local.playerservice = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
@@ -55,33 +55,14 @@ def parsefile(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = local.service
 
-def inputfiledestdir(filename):
-    global filedirdestpath
-    local.pkg = ''
-    if filename.find(client_player) >= 0:
-        filedirdestpath[filename] = gslogicervicedir
-    with open(filename,'r', encoding='utf-8') as file:
-        for fileline in file:
-            if fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-                break
-
-def initservicenames():
-    local.servicenames = []
-    for service in local.rpcarry:
-        s = service.strip(' ').split(' ')
-        local.servicenames.append(s[1])
-
 def genheadrpcfun():
     global controller
-    servicestr = 'class ' + local.playerservice + 'Impl : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
+    servicestr = 'class ' + local.playerservice + 'RepliedImpl : public PlayerServiceReplied {\npublic:\n    using PlayerService::PlayerService;\n'  
     servicestr += 'public:\n'
     for service in local.rpcarry:
-
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
-        line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response);\n'
         else :
@@ -99,7 +80,6 @@ def genheadrpcfun():
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
         servicestr += tabstr + tabstr + tabstr + s[1] + '(player,\n'
-        servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
             respone = '::google::protobuf::Empty*>(response'
@@ -122,8 +102,7 @@ def gencpprpcfunbegin(rpcindex):
     servicestr = ''
     s = local.rpcarry[rpcindex]
     s = s.strip(' ').split(' ')
-    servicestr = 'void ' + local.playerservice + 'Impl::' + s[1] + controller + ',\n'
-    servicestr +=  tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
+    servicestr = 'void ' + local.playerservice + 'RepliedImpl::' + s[1] + controller + ',\n'
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
     if rsp == 'google.protobuf.Empty' :
         servicestr +=  tabstr + '::google::protobuf::Empty* response)\n{\n'
@@ -133,9 +112,6 @@ def gencpprpcfunbegin(rpcindex):
 
 def genyourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
-def classbegin():
-    return 
-
  
 def getsrcpathmd5dir(dirpath):
     srcdir = ''
@@ -147,22 +123,21 @@ def getsrcpathmd5dir(dirpath):
         srcdir = genpublic.servermd5dirs[genpublic.lobbymd5dirindex]
     return srcdir + protodir
 
-def genheadfile(filename, destdir):
-    destdir = genpublic.getdestdir(destdir)
-    destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
-    newheadfilename = getsrcpathmd5dir(destdir) + filename.replace('.proto', '.h').replace(protodir, '')
+def genheadfile(filename, dirpath, md5dir):
+    destdir = genpublic.getdestdir(dirpath)
+    destfilename = destdir +   filename.replace('.proto', '_replied.h').replace(protodir, '')
+    newheadfilename = md5dir + filename.replace('.proto', '_replied.h').replace(protodir, '')
     newstr = '#pragma once\n'
-    newstr += '#include "player_service.h"\n'
+    newstr += '#include "player_service_replied.h"\n'
     newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'           
     newstr += genheadrpcfun()
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
         
-def gencppfile(filename, dirpath):
-    destdir = genpublic.getdestdir(dirpath)
-    cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
-    newcppfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.cpp').replace(protodir, '')
-    newstr = '#include "'  + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
+def gencppfile(filename, destdir, md5dir):
+    cppfilename = destdir  + filename.replace('.proto', '_replied.cpp').replace(protodir, '')
+    newcppfilename = md5dir + filename.replace('.proto', '_replied.cpp').replace(protodir, '')
+    newstr = '#include "'  + filename.replace('.proto', '_replied.h').replace(protodir, '') + '"\n'
     newstr += '#include "src/game_logic/game_registry.h"\n'
     newstr += '#include "src/network/message_system.h"\n'
     serviceidx = 0
@@ -220,125 +195,19 @@ def gencppfile(filename, dirpath):
 
 def generate(filename):
     parsefile(filename)
-    initservicenames()
-    if filename.find(client_player) >= 0:
-        genheadfile(filename, genpublic.gamemd5dir())
-        gencppfile(filename, genpublic.gamemd5dir())
-    elif filename.find(server_player) >= 0:
-        genheadfile(filename, genpublic.gamemd5dir())
-        gencppfile(filename, genpublic.gamemd5dir())
-        genheadfile(filename, genpublic.controllermd5dir())
-        gencppfile(filename, genpublic.controllermd5dir())
-    elif filename.find(genpublic.lobby_file_prefix) >= 0:
-        pass
-
-def parseplayerservcie(filename):
-    if genpublic.is_server_proto(filename) == True :
-        return
-    local.pkg = ''
-    local.fileservice.append(filename.replace('.proto', ''))
-    with open(filename,'r', encoding='utf-8') as file:
-        for fileline in file:
-            if fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-            elif fileline.find('service ') >= 0:
-                local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-                local.playerservicearray.append(local.service)
-                if filename.find(client_player) >= 0:
-                    local.openplayerservicearray.append(local.pkg + '.' + local.service)
-                
-def gengsplayerservcielist(filename):
-    destfilename = genpublic.servermd5dirs[genpublic.gamemd5dirindex] + protodir  + filename
-    newstr =  '#include <memory>\n'
-    newstr +=  '#include <unordered_map>\n'
-    newstr += '#include "player_service.h"\n'
-    for f in local.fileservice:
-        newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir  + f.replace(protodir, '') + '.h"\n'
-    newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
-    newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
-    for service in local.playerservicearray:
-        newstr += 'class ' + service + 'OpenImpl : public '  + service + '{};\n'
-    newstr += 'void InitPlayerServcie()\n{\n'
-    for service in local.playerservicearray:
-        newstr += tabstr + 'g_player_services.emplace("' + service + '"'
-        newstr += ', std::make_unique<' + service + 'Impl>(new '
-        newstr +=  service.replace('.', '') + 'OpenImpl));\n'
-    for service in local.openplayerservicearray:
-        newstr += tabstr + 'g_open_player_services.emplace("' + service.replace('.', '') + '");\n'
-    newstr += '}\n'
-    with open(destfilename, 'w', encoding='utf-8')as file:
-        file.write(newstr)
-
-def gencontrollerplayerservcielist(filename):
-    destfilename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + protodir + filename
-    newstr =  '#include <memory>\n'
-    newstr +=  '#include <unordered_map>\n'
-    newstr += '#include "player_service.h"\n'
-    for f in local.fileservice:
-        if f.find(server_player) < 0:
-            continue
-        newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + f.replace(protodir, '') + '.h"\n'
-    newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
-    newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
-    for service in local.playerservicearray:
-        if service.lower().find('serverplayer') < 0:
-            continue
-        newstr += 'class ' + service + 'OpenImpl : public '  + service + '{};\n'
-    newstr += 'void InitPlayerServcie()\n{\n'
-    for service in local.playerservicearray:
-        if service.lower().find('serverplayer') < 0:
-            continue
-        newstr += tabstr + 'g_player_services.emplace("' + service + '"'
-        newstr += ', std::make_unique<' + service + 'Impl>(new '
-        newstr +=  service.replace('.', '') + 'OpenImpl));\n'
-    newstr += '}\n'
-    with open(destfilename, 'w', encoding='utf-8')as file:
-        file.write(newstr)
-
-def md5copy(filename, md5path):
-        destdir = genpublic.getdestdir(md5path)
-        if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
-            return
-        gennewfilename = md5path  + filename
-        filenamemd5 = gennewfilename + '.md5'
-        error = None
-        emptymd5 = False
-        destfilename = destdir  + filename
-        if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
-            emptymd5 = True
-        else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        if error == None and os.path.exists(destfilename) and emptymd5 == False:
-            return
-        print("copy %s ---> %s" % (gennewfilename, destfilename))
-        shutil.copy(gennewfilename, destfilename)
-        md5tool.generate_md5_file_for(destfilename, filenamemd5)
-def md5copydir():
-    for d in local.md5protodir:
-        for (dirpath, dirnames, filenames) in os.walk(d):
-            for filename in filenames:    
-                if filename.find(client_player) >= 0:
-                    md5copy(filename,  dirpath)
-                elif (filename.find(server_player) >= 0 and genpublic.isgamedir(dirpath)) or\
-                    (filename == 'player_service.cpp' and genpublic.isgamedir(dirpath)):    
-                    md5copy(filename, dirpath)
-                elif (filename.find(server_player) >= 0 and genpublic.iscontrollerdir(dirpath)) or\
-                     (filename == 'player_service.cpp' and genpublic.iscontrollerdir(dirpath)):                      
-                    md5copy(filename,  dirpath)
-
+    if filename.find(server_player) >= 0:
+        genheadfile(filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+        gencppfile(filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+        genheadfile(filename, genpublic.controllerlogicservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+        gencppfile(filename, genpublic.controllerlogicservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+        
 genfile = []
 
 def inputfile():
-    global filedirdestpath
-    filedirdestpath['player_service.cpp'] = gslogicervicedir
-    filedirdestpath['player_service.h'] = gslogicervicedir
     dir_list  = dir_list = os.listdir(protodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
-        inputfiledestdir(protodir + filename)
         genfile.append(protodir  + filename)
 
 class myThread (threading.Thread):
@@ -365,14 +234,9 @@ def main():
                 t.start()
     for t in threads :
         t.join()
-    for file in genfile:
-        parseplayerservcie(file)
-    gengsplayerservcielist('player_service.cpp')
-    gencontrollerplayerservcielist('player_service.cpp')
 
 genpublic.makedirs()
-local.md5protodir = genpublic.makedirsbypath(protodir)
+genpublic.makedirsbypath(protodir)
 inputfile() 
 main()
-md5copydir()
 

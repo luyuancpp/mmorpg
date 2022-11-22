@@ -15,5 +15,5 @@ system("python genclientserviceluaprocess.py")
 system("python genclientluacppserviceprocess.py")
 system("python geneventreceiver.py")
 system("python genservicemethod.py")
-
+system("python genplayerservicereplied.py")
 print('注意重要事件存储db,事件优先级考虑清除!!')
