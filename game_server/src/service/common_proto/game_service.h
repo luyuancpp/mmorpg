@@ -8,12 +8,12 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void Send2PlayerService(::google::protobuf::RpcController* controller,
+    void Send2Player(::google::protobuf::RpcController* controller,
         const ::NodeServiceMessageRequest* request,
         ::NodeServiceMessageResponse* response,
         ::google::protobuf::Closure* done)override;
 
-    void GatePlayerService(::google::protobuf::RpcController* controller,
+    void ClientSend2Player(::google::protobuf::RpcController* controller,
         const gsservice::RpcClientRequest* request,
         gsservice::RpcClientResponse* response,
         ::google::protobuf::Closure* done)override;

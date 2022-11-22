@@ -37,8 +37,8 @@ message ConnectRequest
 
 service GsService {
   rpc EnterGs (EnterGsRequest) returns (google.protobuf.Empty);
-  rpc Send2PlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
-  rpc GatePlayerService (RpcClientRequest) returns (RpcClientResponse);
+  rpc Send2Player (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
+  rpc ClientSend2Player (RpcClientRequest) returns (RpcClientResponse);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
   rpc GateConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
   rpc ControllerSend2PlayerViaGs (NodeServiceMessageRequest) returns (google.protobuf.Empty);
