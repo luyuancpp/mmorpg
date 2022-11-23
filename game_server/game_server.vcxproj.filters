@@ -105,6 +105,9 @@
     <ClCompile Include="src\service\logic_proto_replied\common_server_player_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\logic_proto_replied\player_service_replied.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_server.h">

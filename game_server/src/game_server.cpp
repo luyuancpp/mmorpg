@@ -13,6 +13,7 @@
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_node.h"
 #include "src/service/logic_proto/player_service.h"
+#include "src/service/logic_proto_replied/player_service_replied.h"
 #include "src/service/logic_proto/server_service.h"
 #include "src/service/server_replied.h"
 
@@ -43,6 +44,7 @@ void GameServer::Init()
     LOG_INFO << "server type" << GameConfig::GetSingleton().config_info().server_type();
     InitMsgService();
     InitPlayerServcie();
+    InitPlayerServcieReplied();
     InitNetwork();
 }
 

@@ -166,6 +166,7 @@
     <ClCompile Include="src\service\logic_proto\team.cpp" />
     <ClCompile Include="src\service\logic_proto\team_server_player.cpp" />
     <ClCompile Include="src\service\logic_proto_replied\common_server_player_replied.cpp" />
+    <ClCompile Include="src\service\logic_proto_replied\player_service_replied.cpp" />
     <ClCompile Include="src\service\logic_proto_replied\scene_server_player_replied.cpp" />
     <ClCompile Include="src\service\logic_proto_replied\team_server_player_replied.cpp" />
     <ClCompile Include="src\system\player_change_scene.cpp" />
