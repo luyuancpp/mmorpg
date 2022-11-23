@@ -14,7 +14,6 @@
 #include "logic_proto/team_server_player.pb.h"
 #include "src/service/logic_proto/team_server_player.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
-std::unordered_set<std::string> g_open_player_services;
 class ClientPlayerCommonServiceOpenImpl : public ClientPlayerCommonService{};
 class ServerPlayerLoginServiceOpenImpl : public ServerPlayerLoginService{};
 class ClientPlayerSceneServiceOpenImpl : public ClientPlayerSceneService{};
@@ -29,7 +28,4 @@ void InitPlayerServcie()
     g_player_services.emplace("ServerPlayerSceneService", std::make_unique<ServerPlayerSceneServiceImpl>(new ServerPlayerSceneServiceOpenImpl));
     g_player_services.emplace("ClientPlayerTeamService", std::make_unique<ClientPlayerTeamServiceImpl>(new ClientPlayerTeamServiceOpenImpl));
     g_player_services.emplace("ServerPlayerTeamService", std::make_unique<ServerPlayerTeamServiceImpl>(new ServerPlayerTeamServiceOpenImpl));
-    g_open_player_services.emplace("ClientPlayerCommonService");
-    g_open_player_services.emplace("ClientPlayerSceneService");
-    g_open_player_services.emplace("ClientPlayerTeamService");
 }
