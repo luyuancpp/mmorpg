@@ -38,14 +38,17 @@ def is_server_proto(filename):
 def is_gs_and_controller_server_proto(filename):
     return filename.find('client_player') < 0 and filename.find('server_player') < 0 and  filename.find(lobby_file_prefix) < 0  
 
-def is_client_proto(filename):
+def is_client_player_proto(filename):
     return filename.find('client_player') >= 0 
 
 def is_server_player_proto(filename):
     return filename.find('server_player') >= 0 
 
+def is_player_proto(filename):
+    return is_client_player_proto(filename) or is_server_player_proto(filename)
+
 def is_not_client_proto(filename):
-    return is_client_proto(filename)  == False
+    return is_client_player_proto(filename)  == False
     
 def makedirs():
     if not os.path.exists(pbcdir):
