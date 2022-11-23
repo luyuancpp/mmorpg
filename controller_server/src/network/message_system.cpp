@@ -12,7 +12,7 @@
 #include "src/pb/pbc/msgmap.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
-#include "src/service/logic_proto_replied/service_replied.h"
+#include "src/service/common_proto_replied/service_replied.h"
 
 #include "gate_service.pb.h"
 #include "game_service.pb.h"
