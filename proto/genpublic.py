@@ -41,6 +41,9 @@ def is_gs_and_controller_server_proto(filename):
 def is_client_proto(filename):
     return filename.find('client_player') >= 0 
 
+def is_server_player_proto(filename):
+    return filename.find('server_player') >= 0 
+
 def is_not_client_proto(filename):
     return is_client_proto(filename)  == False
     

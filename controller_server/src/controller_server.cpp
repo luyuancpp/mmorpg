@@ -12,6 +12,7 @@
 #include "src/network/gs_node.h"
 #include "src/game_logic/game_registry.h"
 #include "src/service/logic_proto/player_service.h"
+#include "src/service/logic_proto_replied/player_service_replied.h"
 #include "src/service/logic_proto/server_service.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
@@ -48,7 +49,7 @@ void ControllerServer::Init()
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
     InitMsgService();
     InitPlayerServcie();
-
+    InitPlayerServcieReplied();
     //connect 
     Connect2Deploy();
 }

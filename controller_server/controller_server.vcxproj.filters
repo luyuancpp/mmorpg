@@ -90,6 +90,9 @@
     <ClCompile Include="src\service\logic_proto_replied\team_server_player_replied.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\logic_proto_replied\player_service_replied.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\controller_server.h">

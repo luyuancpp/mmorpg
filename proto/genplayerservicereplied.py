@@ -197,6 +197,39 @@ def gencppfile(filename, destdir, md5dir):
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
+def parseplayerservcie(filename):
+    if genpublic.is_server_player_proto(filename) == False :
+        return
+    local.pkg = ''
+    local.fileservice.append(filename.replace('.proto', ''))
+    with open(filename,'r', encoding='utf-8') as file:
+        for fileline in file:
+            if fileline.find(cpkg) >= 0:
+                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
+            elif fileline.find('service ') >= 0:
+                local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
+                local.playerservicearray.append(local.service)
+
+def genplayerservcierepliedlist(filename, destdir, md5dir):
+    md5filename = md5dir   + filename
+    newstr =  '#include <memory>\n'
+    newstr +=  '#include <unordered_map>\n'
+    newstr += '#include "player_service_replied.h"\n'
+    for f in local.fileservice:
+        newstr += '#include "' + f + '.pb.h"\n'
+        newstr += '#include "' + includedir.replace('logic_proto', 'logic_proto_replied')  + f.replace(protodir, '') + '_replied.h"\n'
+    newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replieds;\n'
+    for service in local.playerservicearray:
+        newstr += 'class ' + service + 'RepliedRegisterImpl : public '  + service + '{};\n'
+    newstr += 'void InitPlayerServcieReplied()\n{\n'
+    for service in local.playerservicearray:
+        newstr += tabstr + 'g_player_service_replieds.emplace("' + service + '"'
+        newstr += ', std::make_unique<' + service + 'RepliedImpl>(new '
+        newstr +=  service.replace('.', '') + 'RepliedRegisterImpl));\n'
+    newstr += '}\n'
+    with open(md5filename, 'w', encoding='utf-8')as file:
+        file.write(newstr)
+
 def md5copy(filename, destdir, md5dir, fileextend):
         if filename.find('/') >= 0 :
             s = filename.split('/')
@@ -266,6 +299,12 @@ def main():
                 t.start()
     for t in threads :
         t.join()
+    for file in genfile:
+        parseplayerservcie(file)
+    genplayerservcierepliedlist('player_service_replied.cpp', genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+    md5copy('player_service_replied.cpp', genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '')
+    genplayerservcierepliedlist('player_service_replied.cpp', genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)    
+    md5copy('player_service_replied.cpp', genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '')
 
 genpublic.makedirs()
 genpublic.makedirsbypath(protodir)
