@@ -70,8 +70,8 @@ public:
     }
 
     void CallMethod(const ::google::protobuf::Message& request,
-        const std::string service_name,
-        std::string method_name,
+        const std::string& service_name,
+        std::string& method_name,
         ::google::protobuf::Message* response,
         ::google::protobuf::Closure* done) 
     {
