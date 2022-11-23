@@ -78,7 +78,7 @@
     <ClCompile Include="src\service\logic_proto\team_server_player.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\service_replied.cpp">
+    <ClCompile Include="src\service\logic_proto_replied\service_replied.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\logic_proto_replied\common_server_player_replied.cpp">
@@ -161,7 +161,7 @@
     <ClInclude Include="src\network\controller_rpc.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\service_replied.h">
+    <ClInclude Include="src\service\logic_proto_replied\service_replied.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic_proto_replied\common_server_player_replied.h">
