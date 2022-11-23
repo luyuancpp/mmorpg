@@ -8,6 +8,7 @@ entt::registry::entity_type gAllFinish;
 
 void PlayerClient::onDisConenction()
 {
+    client_.stop();
     auto& c = registry.get<uint32_t>(gAllFinish);
     --c;
     if (c == 0)
