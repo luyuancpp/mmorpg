@@ -219,6 +219,47 @@ void GsServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+    auto it = g_players->find(request->ex().player_id());
+    if (it == g_players->end())
+    {
+        LOG_ERROR << "PlayerService player not found " << request->ex().player_id() << ","
+            << request->descriptor()->full_name() << " msgid " << request->msg().msg_id();
+        return;
+    }
+    auto msg_id = request->msg().msg_id();
+    auto sit = g_serviceinfo.find(msg_id);
+    if (sit == g_serviceinfo.end())
+    {
+        LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << msg_id;
+        return;
+    }
+    auto service_it = g_player_services.find(sit->second.service);
+    if (service_it == g_player_services.end())
+    {
+        LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << msg_id;
+        return;
+    }
+    auto& serviceimpl = service_it->second;
+    google::protobuf::Service* service = serviceimpl->service();
+    const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+    const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
+    if (nullptr == method)
+    {
+        LOG_ERROR << "PlayerService method not found " << msg_id;
+        //todo client error;
+        return;
+    }
+    MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
+    player_request->ParseFromString(request->msg().body());
+    MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
+    serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
+    if (nullptr == response)
+    {
+        return;
+    }
+    response->mutable_msg()->set_body(player_response->SerializeAsString());
+    response->mutable_ex()->set_player_id(request->ex().player_id());
+    response->mutable_msg()->set_msg_id(msg_id);
 ///<<< END WRITING YOUR CODE 
 }
 
