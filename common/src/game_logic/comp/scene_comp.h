@@ -14,8 +14,7 @@ using ScenePlayers = EntitySet;//弱引用，要解除玩家和场景的耦合
 
 struct SceneEntity
 {
-    SceneEntity(entt::entity scene_entity) : scene_entity_(scene_entity) {}
-    entt::entity scene_entity_{};
+    entt::entity scene_entity_{entt::null};
 };
 
 class ConfigSceneMap

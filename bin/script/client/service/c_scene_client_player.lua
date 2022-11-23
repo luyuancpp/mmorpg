@@ -31,7 +31,6 @@ end
 
 function PushSceneInfoS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
-	LogInfo(response:DebugString());
 	message = EnterSeceneC2SRequest.new()
 	message:mutable_scene_info().scene_id = cross_server_scene1
 	player:send(message)
