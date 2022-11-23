@@ -256,7 +256,6 @@ def gengsplayerservcielist(filename):
         newstr += '#include "' + f + '.pb.h"\n'
         newstr += '#include "' + includedir  + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
-    newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
         newstr += 'class ' + service + 'OpenImpl : public '  + service + '{};\n'
     newstr += 'void InitPlayerServcie()\n{\n'
@@ -264,8 +263,6 @@ def gengsplayerservcielist(filename):
         newstr += tabstr + 'g_player_services.emplace("' + service + '"'
         newstr += ', std::make_unique<' + service + 'Impl>(new '
         newstr +=  service.replace('.', '') + 'OpenImpl));\n'
-    for service in local.openplayerservicearray:
-        newstr += tabstr + 'g_open_player_services.emplace("' + service.replace('.', '') + '");\n'
     newstr += '}\n'
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -281,7 +278,6 @@ def gencontrollerplayerservcielist(filename):
         newstr += '#include "' + f + '.pb.h"\n'
         newstr += '#include "' + includedir + f.replace(protodir, '') + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
-    newstr += 'std::unordered_set<std::string> g_open_player_services;\n'
     for service in local.playerservicearray:
         if service.lower().find('serverplayer') < 0:
             continue
