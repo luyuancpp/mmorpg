@@ -137,9 +137,9 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     }
     change_scene_info.set_processing(true);
     auto& scene_info = change_scene_info.scene_info();
-    auto scene_id = scene_info.scene_id();
+    auto to_scene_id = scene_info.scene_id();
     entt::entity to_scene = entt::null;
-    if (scene_id <= 0)//用scene_config id 去换本服的controller
+    if (to_scene_id <= 0)//用scene_config id 去换本服的controller
     {
         GetSceneParam getp;
         getp.scene_confid_ = scene_info.scene_confid();
@@ -150,11 +150,11 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
             return;
         }
-        scene_id = registry.get<SceneInfo>(to_scene).scene_id();
+        to_scene_id = registry.get<SceneInfo>(to_scene).scene_id();
     }
     else
     {
-        to_scene = ScenesSystem::get_scene(scene_id);
+        to_scene = ScenesSystem::get_scene(to_scene_id);
         if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
@@ -167,10 +167,18 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
     if (nullptr == try_from_scene_gs || nullptr == try_to_scene_gs)
     {
-        LOG_ERROR << " scene null : " << (nullptr == try_from_scene_gs) << " " << (nullptr == try_to_scene_gs);
+        LOG_ERROR << " gs compnent null : " << (nullptr == try_from_scene_gs) << " " << (nullptr == try_to_scene_gs);
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }
+
+    auto from_scene_id = registry.get<SceneInfo>(try_from_scene->scene_entity_).scene_id();
+    if (to_scene_id == from_scene_id)
+    {
+        PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
+        return;
+    }
+
     auto from_gs_it = g_gs_nodes.find((*try_from_scene_gs)->node_id());
     auto to_gs_it = g_gs_nodes.find((*try_to_scene_gs)->node_id());
     if (from_gs_it == g_gs_nodes.end() || to_gs_it == g_gs_nodes.end())
@@ -232,7 +240,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         {
             //注意虽然一个逻辑，但是不一定是在leave后面处理
             EnterLobbyMainSceneRpc rpc(std::make_shared<EnterLobbyMainSceneRpc::element_type>());
-            rpc->s_rq_.set_scene_id(registry.get<SceneInfo>(to_scene).scene_id());
+            rpc->s_rq_.set_scene_id(to_scene_id);
             rpc->s_rq_.set_player_id(registry.get<Guid>(player));
             g_controller_node->lobby_stub().CallMethod(EnterLobbyMainSceneReplied, rpc, &lobbyservcie::LobbyService_Stub::EnterCrossMainScene);
             return;
