@@ -102,7 +102,6 @@ void SceneEventReceiver::Receive4(const S2CEnterScene& event_obj)
         return;
     }
     PlayerSceneSystem::EnterSceneS2C(player);
-    PlayerSceneSystem::TryEnterNextScene(player);
     ///<<< END WRITING YOUR CODE 
 }
 
