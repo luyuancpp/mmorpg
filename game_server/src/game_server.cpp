@@ -15,7 +15,7 @@
 #include "src/service/logic_proto/player_service.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"
 #include "src/service/logic_proto/server_service.h"
-#include "src/service/server_replied.h"
+#include "src/service/common_proto_replied/server_replied.h"
 
 #include "src/network/node_info.h"
 #include "src/pb/pbc/msgmap.h"

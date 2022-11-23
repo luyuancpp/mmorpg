@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\server_replied.cpp">
+    <ClCompile Include="src\service\common_proto_replied\server_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\gate_node.cpp">
@@ -113,7 +113,7 @@
     <ClInclude Include="src\game_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\server_replied.h">
+    <ClInclude Include="src\service\common_proto_replied\server_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gate_node.h">
