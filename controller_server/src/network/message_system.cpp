@@ -187,7 +187,7 @@ void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity playe
     {
         return;
     }
-    GsCallPlayerRpc rpc;
+    GsCallPlayerRpc rpc(std::make_shared<GsCallPlayerRpc::element_type>());
     rpc->s_rq_.mutable_msg()->set_msg_id(msg_it->second);
     rpc->s_rq_.mutable_msg()->set_body(msg.SerializeAsString());
     rpc->s_rq_.mutable_ex()->set_player_id(registry.get<Guid>(player));
