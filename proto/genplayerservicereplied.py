@@ -37,7 +37,7 @@ controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
 repliedmd5dir = genpublic.logicprotodir.replace('logic_proto', 'logic_proto_replied')
 
 def parsefile(filename):
-    if not genpublic.is_player_proto(filename):
+    if not genpublic.is_server_player_proto(filename):
         return
     local.rpcarry = []
     local.pkg = ''
@@ -198,7 +198,7 @@ def gencppfile(filename, destdir, md5dir):
         file.write(newstr)
 
 def parseplayerservcie(filename):
-    if not genpublic.is_player_proto(filename):
+    if not genpublic.is_server_player_proto(filename):
         return
     local.pkg = ''
     local.fileservice.append(filename.replace('.proto', ''))
@@ -252,7 +252,7 @@ def md5copy(filename, destdir, md5dir, fileextend):
 
 
 def generate(filename):
-    if not genpublic.is_player_proto(filename):
+    if not genpublic.is_server_player_proto(filename):
         return
     parsefile(filename)
     initservicenames()
