@@ -69,42 +69,24 @@ def genheadrpcfun():
         servicestr += line
     return servicestr
 
-def getpbdir(filename, destdir):
-    if filename.find(logicprotodir) >= 0:
-        return 'src/pb/pbc/logic_proto/'
-    return ''
-
 def getfilenamewithnopath(filename, destdir):
     servertypedir = genpublic.getservertype(destdir) + '/'
     return filename.replace(logicprotodir, '').replace('common_proto/', '').replace(servertypedir,'')
 
-def genheadfile(filename, destdir):
+def genheadfile(filename):
     local.servicenames = []
-    filename = getfilenamewithnopath(filename, destdir).replace('.proto', methodsufix) 
-    destfilename = destdir + filename
+    filename = filename.replace('.proto', methodsufix) 
     md5filename = genpublic.servicemethodmd5dir +  filename
     newstr = '#pragma once\n'
-    newstr += '#include "' + getpbdir(filename, destdir) + filename.replace(methodsufix, '') + '.pb.h"\n'
+    newstr += '#include <cstdint>\n\n'
+    newstr += '#include "'  + filename.replace(methodsufix, '') + '.pb.h"\n'
     newstr += genheadrpcfun()
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
-        
-def getmd5prevfilename(filename, destdir):
-    if genpublic.is_server_proto(filename) == True :
-        if destdir == gsservicedir:
-            return genpublic.gs_file_prefix
-        if destdir == controllerservicedir:
-            return genpublic.controller_file_prefix
-        if destdir == lobbyservicedir:
-            return ''
-    return ''
 
-def md5copy(filename, destdir, fileextend):
-    if filename.find('/') >= 0 :
-        s = filename.split('/')
-        filename = s[len(s) - 1]
+def md5copy(filename,   fileextend):
     gennewfilename = genpublic.servicemethodmd5dir + filename.replace('.proto', fileextend)
-    destfilename = destdir +  getmd5prevfilename(filename, destdir) + filename.replace('.proto', fileextend)
+    destfilename = genpublic.servicemethoddir  + filename.replace('.proto', fileextend)
     filenamemd5 = gennewfilename + '.md5'
     error = None
     emptymd5 = False
@@ -116,45 +98,47 @@ def md5copy(filename, destdir, fileextend):
         else:
             error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)   
       
-    #print("copy %s ---> %s  %s" % (filename, destdir, gennewfilename))
     if error == None and emptymd5 == False:
         return
     print("copy %s ---> %s" % (gennewfilename, destfilename))
     shutil.copy(gennewfilename, destfilename)
     md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
 
-def generate(filename, destdir, md5dir):
-    parsefile(filename)
-    genheadfile(filename, destdir)
-    md5copy(filename, destdir, 'method.h')
 
 class myThread (threading.Thread):
-    def __init__(self, filename, destdir, md5dir):
+    def __init__(self, filename, filepath):
         threading.Thread.__init__(self)
         self.filename = str(filename)
-        self.md5dir = str(md5dir)
-        self.destdir = genpublic.servicemethoddir
+        self.filepath = str(filepath)
     def run(self):
-        generate(self.filename, self.destdir, self.md5dir)
+        parsefile(self.filepath)
+        if local.service == '':
+            return
+        genheadfile(self.filename)
+        md5copy(self.filename,  'method.h')
 
+def scanfile():
+    dir_list  =  os.listdir(genpublic.logicprotodir)
+    for filename in dir_list:
+        if not (filename[-6:].lower() == '.proto'):
+            continue
+        genfile.append([filename, genpublic.logicprotodir + filename])
+    dir_list  =  os.listdir(genpublic.commonportodir)
+    for filename in dir_list:
+        if not (filename[-6:].lower() == '.proto'):
+            continue
+        genfile.append([filename, genpublic.commonportodir + filename])
+        
 def main():
     filelen = len(genfile)
     global threads
-    step = int(filelen / cpu_count() + 1)
-    if cpu_count() > filelen:
-        for i in range(0, filelen):
-            t = myThread( genfile[i][0], genfile[i][1], genfile[i][2])
-            threads.append(t)
-            t.start()
-    else :
-        for i in range(0, cpu_count()):
-            for j in range(i, i * step) :
-                t = myThread(genfile[j][0], genfile[j][1], genfile[i][2])
-                threads.append(t)
-                t.start()
+    for i in range(0, filelen):
+        t = myThread( genfile[i][0], genfile[i][1])
+        threads.append(t)
+        t.start()
     for t in threads :
         t.join()
 
-genfile = protofilearray.genfile
 genpublic.makedirs()
+scanfile() 
 main()

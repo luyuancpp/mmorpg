@@ -50,12 +50,12 @@ def gen(filename, destpath, md5dir):
         file.write(newstr)
         
 def inputfile():
-    dir_list  = dir_list = os.listdir(genpublic.logicprotodir)
+    dir_list  =  os.listdir(genpublic.logicprotodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
         parsefile(genpublic.logicprotodir + filename, 'src/pb/pbc/logic_proto/')
-    dir_list  = dir_list = os.listdir(genpublic.commonportodir)
+    dir_list  =  os.listdir(genpublic.commonportodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue

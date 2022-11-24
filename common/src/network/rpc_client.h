@@ -69,18 +69,6 @@ public:
         client_.connect();
     }
 
-    void CallMethod(const ::google::protobuf::Message& request,
-        const std::string& service_name,
-        std::string& method_name,
-        ::google::protobuf::Message* response,
-        ::google::protobuf::Closure* done) 
-    {
-		if (!connected_)
-		{
-			return;
-		}
-        channel_->CallMethod(request, service_name, method_name, response, done);
-    }
 
     void Send(const ::google::protobuf::MethodDescriptor* method,  const ::google::protobuf::Message& request)
     {
