@@ -3,38 +3,38 @@ option optimize_for = SPEED;
 
 import "google/protobuf/descriptor.proto";
 
-//option id  Òª´Ó50000¿ªÊ¼ 50000ÒÔÄÚpbÄÚ²¿Ê¹ÓÃ
+//option id  è¦ä»50000å¼€å§‹ 50000ä»¥å†…pbå†…éƒ¨ä½¿ç”¨
 
 extend google.protobuf.MessageOptions {
-	optional uint32 OptionTableId			= 50000 ;	//±íID
-    optional string OptionTableName			= 50001 ;	//±íÃû
-    optional string OptionPrimaryKey		= 50002 ;	//Ö÷¼ü
-    optional string OptionForeignKey		= 50003 ;	//Íâ¼ü
-    optional string OptionForeignReferences	= 50005 ;	//Íâ¼üµÄ¹ØÁª±í
-	optional string OptionAutoIncrementKey	= 50006 ;	//×ÔÔö³¤µÄKey
-	optional string	OptionBackupTableName	= 50007	;	//±¸·İ±íµÄÃû³Æ
-	optional bool	OptionLoadOnly			= 50008	;	//Ö»ÓÃÓÚÊı¾İ¼ÓÔØ
-	optional string	OptionProcedureName		= 50009	;	//´æ´¢¹ı³ÌÃû³Æ
-	optional string	OptionProcedureResult	= 50010	;	//´æ´¢¹ı³Ì·µ»Ø½á¹ûµÄPB½á¹¹Name
-	optional string	OptionIndex				= 50011	;	//½¨Á¢Ë÷Òı
+	optional uint32 OptionTableId			= 50000 ;	//è¡¨ID
+    optional string OptionTableName			= 50001 ;	//è¡¨å
+    optional string OptionPrimaryKey		= 50002 ;	//ä¸»é”®
+    optional string OptionForeignKey		= 50003 ;	//å¤–é”®
+    optional string OptionForeignReferences	= 50005 ;	//å¤–é”®çš„å…³è”è¡¨
+	optional string OptionAutoIncrementKey	= 50006 ;	//è‡ªå¢é•¿çš„Key
+	optional string	OptionBackupTableName	= 50007	;	//å¤‡ä»½è¡¨çš„åç§°
+	optional bool	OptionLoadOnly			= 50008	;	//åªç”¨äºæ•°æ®åŠ è½½
+	optional string	OptionProcedureName		= 50009	;	//å­˜å‚¨è¿‡ç¨‹åç§°
+	optional string	OptionProcedureResult	= 50010	;	//å­˜å‚¨è¿‡ç¨‹è¿”å›ç»“æœçš„PBç»“æ„Name
+	optional string	OptionIndex				= 50011	;	//å»ºç«‹ç´¢å¼•
 	optional string OptionUniqueKey			= 50012	;   //
 }
 
-// ÃèÊö×Ö¶ÎµÄoption
+// æè¿°å­—æ®µçš„option
 extend google.protobuf.FieldOptions {
-    optional uint32 OptionRepeatLimit	= 60000 ;	// repeat ×Ö¶ÎÏŞÖÆµÄ¸öÊı
-    optional string OptionDBFieldExtra	= 60001 ;	// ´´½¨Êı¾İ¿âÒªÓÃµ½µÃ¶îÍâĞÅÏ¢£¬Èç¹ûÃ»ÓĞ¸ÃÊôĞÔ±íÊ¾·ÇÊı¾İ¿â×Ö¶Î
-	optional bool   OptionDBReadOnly	= 60002 ;	// ¸Ã×Ö¶Î¶ÔDBÊÇ·ñÖ»¶Á
-	optional string	OptionDBNamePrefix	= 60003 ;	// Êı¾İ¿âÃû³ÆÇ°×º
-	optional string	OptionDBLoadSql		= 60004 ;	// Êı¾İ¼ÓÔØSQLÓï¾ä
-	optional bool	OptionDBNeedEscape	= 60005 ;	// ×Ö¶ÎÊÇ·ñĞèÒª×ªÒå´æ´¢
-	optional bool	OptionDBProcParam	= 60006 ;	// ÊÇ·ñ´æ´¢¹ı³Ì²ÎÊı
-	optional string OptionOldName		= 60007 ;   //ÓÃÀ´×Ô¶¯ĞŞ¸Ä×Ö¶ÎÃû
-	optional string OptionTable			= 60008 ;	// ½¨±íÃû³Æ
-	optional string OptionBackUpTabel	= 60009 ;	//±¸·İ±í
+    optional uint32 OptionRepeatLimit	= 60000 ;	// repeat å­—æ®µé™åˆ¶çš„ä¸ªæ•°
+    optional string OptionDBFieldExtra	= 60001 ;	// åˆ›å»ºæ•°æ®åº“è¦ç”¨åˆ°å¾—é¢å¤–ä¿¡æ¯ï¼Œå¦‚æœæ²¡æœ‰è¯¥å±æ€§è¡¨ç¤ºéæ•°æ®åº“å­—æ®µ
+	optional bool   OptionDBReadOnly	= 60002 ;	// è¯¥å­—æ®µå¯¹DBæ˜¯å¦åªè¯»
+	optional string	OptionDBNamePrefix	= 60003 ;	// æ•°æ®åº“åç§°å‰ç¼€
+	optional string	OptionDBLoadSql		= 60004 ;	// æ•°æ®åŠ è½½SQLè¯­å¥
+	optional bool	OptionDBNeedEscape	= 60005 ;	// å­—æ®µæ˜¯å¦éœ€è¦è½¬ä¹‰å­˜å‚¨
+	optional bool	OptionDBProcParam	= 60006 ;	// æ˜¯å¦å­˜å‚¨è¿‡ç¨‹å‚æ•°
+	optional string OptionOldName		= 60007 ;   //ç”¨æ¥è‡ªåŠ¨ä¿®æ”¹å­—æ®µå
+	optional string OptionTable			= 60008 ;	// å»ºè¡¨åç§°
+	optional string OptionBackUpTabel	= 60009 ;	//å¤‡ä»½è¡¨
 }
 
-// flag µÄÖµ, ±íÊ¾±¾ÌõÊı¾İµÄ²Ù×÷×´Ì¬
+// flag çš„å€¼, è¡¨ç¤ºæœ¬æ¡æ•°æ®çš„æ“ä½œçŠ¶æ€
 enum OPERATE_TYPE {
 	OPERATE_NONE   = 0;     //sql none
 	OPERATE_INSERT = 1;     //sql insert

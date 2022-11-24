@@ -6,7 +6,10 @@ gs_file_prefix = 'game_'
 lobby_file_prefix = 'lobby_'
 md5dir = 'md5/'
 pbcdir = '../common/src/pb/pbc/'
+pbcserviceinstancedir = '../common/src/pb/pbc/prototypeserviceinstance/'
+pbcserviceinstancemd5dir = md5dir + 'rototypeserviceinstance/'
 logicprotodir = 'logic_proto/'
+commonportodir = 'common_proto/'
 
 gslogicervicedir = '../game_server/src/service/logic_proto/'
 gslogicrepliedservicedir = '../game_server/src/service/logic_proto_replied/'
@@ -32,6 +35,9 @@ lobbymd5dirindex = 4
 databasemd5dirindex = 5
 deploymd5dirindex = 6 
 
+cpkg = 'package'
+tabstr = '    '
+
 def is_server_proto(filename):
     return (filename.find('client_player') < 0 and filename.find('server_player') < 0) or  filename.find(lobby_file_prefix) >= 0 
 
@@ -53,12 +59,16 @@ def is_not_client_proto(filename):
 def makedirs():
     if not os.path.exists(pbcdir):
         os.makedirs(pbcdir)
+    if not os.path.exists(pbcserviceinstancedir):
+        os.makedirs(pbcserviceinstancedir)
     if not os.path.exists(md5dir):
         os.makedirs(md5dir)
     if not os.path.exists(servicemethoddir):
         os.makedirs(servicemethoddir)
     if not os.path.exists(servicemethodmd5dir):
         os.makedirs(servicemethodmd5dir)
+    if not os.path.exists(pbcserviceinstancemd5dir):
+        os.makedirs(pbcserviceinstancemd5dir)
     for d in servermd5dirs :
         if not os.path.exists(d):
             os.makedirs(d)
@@ -134,7 +144,7 @@ def isdeploydir(dirpath):
     return dirpath.find('deploy_server') >= 0 or dirpath.find('deploy') >= 0 
   
 def commonproto():
-    return 'common_proto/'
+    return commonportodir
     
 def iscommonproto(dirpath):
     return dirpath.find(commonproto()) >= 0
