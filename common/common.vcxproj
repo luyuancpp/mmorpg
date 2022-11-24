@@ -122,7 +122,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING;NOMINMAX</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;src/pb/pbc/;../third_party/muduo/;../third_party/mysql/include/;../third_party/redis/;../third_party/muduo/contrib/windows/include;../third_party/sol2/include/;../third_party/lua/src/;../third_party/redis/deps/;src/pb/pbc/common_proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;src/pb/pbc/;../third_party/muduo/;../third_party/mysql/include/;../third_party/redis/;../third_party/muduo/contrib/windows/include;../third_party/sol2/include/;../third_party/lua/src/;../third_party/redis/deps/;src/pb/pbc/common_proto/;src/pb/pbc/logic_proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -331,12 +331,21 @@
     <ClInclude Include="src\game_logic\config_expression\config_expression.h" />
     <ClInclude Include="src\event\event.h" />
     <ClInclude Include="src\game_logic\exprtk\exprtk.hpp" />
+    <ClInclude Include="src\pb\pbc\service_method\common_client_playermethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\common_server_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\controller_servicemethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\database_servicemethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\deploy_servicemethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\game_servicemethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\gate_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\lobby_scenemethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\login_servicemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\scenemethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\scene_client_playermethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\scene_server_playermethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\teammethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\team_client_playermethod.h" />
+    <ClInclude Include="src\pb\pbc\service_method\team_server_playermethod.h" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\game_ecs\game_registry.h" />
     <ClInclude Include="src\game_logic\teams\team.h" />
