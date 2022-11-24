@@ -40,7 +40,10 @@ def gen(filename, destpath, md5dir):
         newstr += 'class ' + local.service[i] + 'MethodServiceImpl : public '  + local.servicewithpkg[i] + '{};\n'
     newstr += '\nvoid InitFakeProtoServiceList()\n{\n'
     for i in range(0, len(local.service)):
-        newstr += genpublic.tabstr + 'g_prototype_services.emplace("' + local.service[i]  + '"'
+        if local.servicewithpkg[i][0] == ':':
+            newstr += genpublic.tabstr + 'g_prototype_services.emplace("' + local.service[i]  + '"'
+        else:
+            newstr += genpublic.tabstr + 'g_prototype_services.emplace("' + local.servicewithpkg[i].replace('::', '.')  + '"'
         newstr += ', std::make_unique<' + local.service[i]  + 'MethodServiceImpl>());\n'
     newstr += '}\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
