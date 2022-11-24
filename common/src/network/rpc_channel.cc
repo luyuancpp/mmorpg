@@ -18,6 +18,8 @@
 using namespace muduo;
 using namespace muduo::net;
 
+extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_prototype_services;
+
 RpcChannel::RpcChannel()
   : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
     services_(NULL),

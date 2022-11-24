@@ -229,6 +229,7 @@
     <ClCompile Include="src\pb\pbc\pb2sol2\scene_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\pb2sol2\team_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\pb2sol2\team_comp_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\prototypeserviceinstance\rpc_prototype_service.cpp" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\game_logic\login_state\login_state.cpp" />
     <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp" />

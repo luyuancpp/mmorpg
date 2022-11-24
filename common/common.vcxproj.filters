@@ -95,6 +95,7 @@
     <ClCompile Include="src\pb\pbc\game_config\monster_base_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\game_config\scene_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\account_database.pb.cc" />
+    <ClCompile Include="src\pb\pbc\prototypeserviceinstance\rpc_prototype_service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
