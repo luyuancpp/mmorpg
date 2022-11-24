@@ -29,21 +29,19 @@ def parsefile(filename, includedir):
 
 
 def gen(filename, destpath, md5dir):
-    destfilename = destpath + filename
     newheadfilename = md5dir + filename
-    newstr = ''
-    newstr += '#include "src/network/rpc_prototype_service.h"\n'
-    
+    newstr = '#include <unordered_map>\n\n'
     for i in range(0, len(local.servicefile)):
-        newstr += '#include "' + local.fileincludedir[i]  + local.servicefile[i].replace('.proto', '.pb.h\n')            
-    newstr += 'std::unordered_map<std::string, std::unique_ptr<Service>> g_prototype_services;\n'
+        pbcfile = local.servicefile[i].replace(genpublic.logicprotodir, '').replace(genpublic.commonportodir, '').replace('.proto', '.pb.h"\n') 
+        newstr += '#include "' + local.fileincludedir[i]  +    pbcfile        
+    newstr += '\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_prototype_services;\n\n'
    
     for i in range(0, len(local.service)):
         newstr += 'class ' + local.service[i] + 'MethodServiceImpl : public '  + local.servicewithpkg[i] + '{};\n'
-    newstr += 'void InitFakeProtoServiceList()\n{\n'
+    newstr += '\nvoid InitFakeProtoServiceList()\n{\n'
     for i in range(0, len(local.service)):
         newstr += genpublic.tabstr + 'g_prototype_services.emplace("' + local.service[i]  + '"'
-        newstr += ', std::make_unique<' + local.service[i]  + 'MethodServiceImpl>();\n'
+        newstr += ', std::make_unique<' + local.service[i]  + 'MethodServiceImpl>());\n'
     newstr += '}\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -53,15 +51,37 @@ def inputfile():
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
-        parsefile(genpublic.logicprotodir + filename, 'src/pb/pbc/common_proto/')
+        parsefile(genpublic.logicprotodir + filename, 'src/pb/pbc/logic_proto/')
     dir_list  = dir_list = os.listdir(genpublic.commonportodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
-        parsefile(genpublic.commonportodir + filename, 'src/pb/pbc/logic_proto/')
+        parsefile(genpublic.commonportodir + filename, 'src/pb/pbc/common_proto/')
         
+
+def md5copy(filename, destdir, md5dir):
+        if filename.find('/') >= 0 :
+            s = filename.split('/')
+            filename = s[len(s) - 1]
+        gennewfilename = md5dir + filename
+        filenamemd5 = gennewfilename + '.md5'
+        error = None
+        emptymd5 = False
+        if  not os.path.exists(filenamemd5):
+            emptymd5 = True
+        else:
+            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
+        destfilename =  destdir + filename
+        if error == None and os.path.exists(destfilename) and emptymd5 == False:
+            return
+        
+        print("copy %s ---> %s" % (gennewfilename, destfilename))
+        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+        shutil.copy(gennewfilename, destfilename)
+    
 genpublic.makedirs()
 
 inputfile()
 
 gen('rpc_prototype_service.cpp', genpublic.pbcserviceinstancedir, genpublic.pbcserviceinstancemd5dir)
+md5copy('rpc_prototype_service.cpp', genpublic.pbcserviceinstancedir, genpublic.pbcserviceinstancemd5dir)
