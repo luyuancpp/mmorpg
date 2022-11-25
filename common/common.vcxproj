@@ -365,7 +365,6 @@
     <ClInclude Include="src\network\rpc_connection_event.h" />
     <ClInclude Include="src\network\rpc_server.h" />
     <ClInclude Include="src\network\server_component.h" />
-    <ClInclude Include="src\network\rpc_stub.h" />
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\util\random.h" />

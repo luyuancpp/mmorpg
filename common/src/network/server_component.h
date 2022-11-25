@@ -18,6 +18,17 @@ struct RpcServerConnection
         channel_->Send(method, request);
     }
 
+    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+        const ::google::protobuf::Message* request)
+    {
+        if (!conn_->connected())
+        {
+            return;
+        }
+        channel_->CallMethod(method, nullptr, request, nullptr, nullptr);
+    }
+
+
     muduo::net::TcpConnectionPtr conn_;
 private:
     muduo::net::RpcChannelPtr channel_;

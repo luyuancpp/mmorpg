@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -26,6 +26,11 @@
     <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\service\common_proto\c2gate.cpp" />
     <ClCompile Include="src\service\common_proto\gate_service.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\controller_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\game_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\login_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp" />
     <ClCompile Include="src\service\open_service.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -35,6 +40,11 @@
     <ClInclude Include="src\gate_server.h" />
     <ClInclude Include="src\service\common_proto\c2gate.h" />
     <ClInclude Include="src\service\common_proto\gate_service.h" />
+    <ClInclude Include="src\service\common_proto_replied\controller_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\game_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\login_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -6,6 +6,7 @@
 
 #include "logic_proto/lobby_scene.pb.h"
 
+
 class ServerReplied
 {
 public:
@@ -17,6 +18,7 @@ public:
 
 	using StartCrossGsRpc = std::shared_ptr<NormalClosure<lobbyservcie::StartCrossGsRequest, lobbyservcie::StartCrossGsResponse>>;
 	void StartCrossGsReplied(StartCrossGsRpc replied);
+
 
 private:
 };

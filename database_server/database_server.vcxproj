@@ -154,10 +154,14 @@
     <ClCompile Include="src\database_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\service\common_proto\db_service.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\database_server.h" />
     <ClInclude Include="src\service\common_proto\db_service.h" />
+    <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

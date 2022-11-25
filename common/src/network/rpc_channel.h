@@ -121,12 +121,6 @@ class RpcChannel : public ::google::protobuf::RpcChannel
                   ::google::protobuf::Message* response,
                   ::google::protobuf::Closure* done) override;
 
-  void CallMethod(const ::google::protobuf::Message& request,
-	  const std::string& service_name,
-      const std::string& method_name,
-	  ::google::protobuf::Message* response,
-	  ::google::protobuf::Closure* done);
-
   void Send(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request);
 
   void onMessage(const TcpConnectionPtr& conn,
@@ -147,8 +141,9 @@ class RpcChannel : public ::google::protobuf::RpcChannel
 
   struct OutstandingCall
   {
-    ::google::protobuf::Message* response;
-    ::google::protobuf::Closure* done;
+    const ::google::protobuf::MethodDescriptor* method{ nullptr };
+    ::google::protobuf::Service* service{nullptr};
+    ::google::protobuf::Closure* done{nullptr};
   };
 
   RpcCodec codec_;

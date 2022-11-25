@@ -13,6 +13,9 @@
 #include "src/game_logic/tips_id.h"
 #include "src/network/rpc_closure.h"
 #include "src/util/random.h"
+#include "src/pb/pbc/service_method/controller_servicemethod.h"
+#include "src/pb/pbc/service_method/game_servicemethod.h"
+#include "src/pb/pbc/service_method/login_servicemethod.h"
 
 #include "login_service.pb.h"
 
@@ -37,7 +40,7 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 		std::bind(&ClientReceiver::OnRpcClientMessage, this, _1, _2, _3));
 }
 
-ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub()
+RpcClientPtr& ClientReceiver::get_login_node()
 {
     auto index = Random::GetSingleton().Rand<std::size_t>(0, g_login_nodes.size());
     std::size_t i = 0;
@@ -48,18 +51,18 @@ ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub()
             ++i;
             continue;
         }
-        return *it.second.login_stub_;
+        return it.second.login_session_;
     }
-    return *g_login_nodes.begin()->second.login_stub_;
+    return g_login_nodes.begin()->second.login_session_;
 }
 
-ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub(uint64_t session_id)
+RpcClientPtr& ClientReceiver::get_login_node(uint64_t session_id)
 {
-    static RpcStubgw2l static_login_stub;
+    static RpcClientPtr empty_session;
     auto session_it = g_client_sessions_->find(session_id);
     if (g_client_sessions_->end() == session_it)
     {
-        return static_login_stub;
+        return empty_session;
     }
     if (!session_it->second.ValidLogin())
     {
@@ -69,9 +72,9 @@ ClientReceiver::RpcStubgw2l& ClientReceiver::login_stub(uint64_t session_id)
     if (g_login_nodes.end() == login_node_it)
     {
         LOG_ERROR << "player login server not found : " << session_it->second.login_node_id_;
-        return static_login_stub;
+        return empty_session;
     }
-    return *login_node_it->second.login_stub_;
+    return login_node_it->second.login_session_;
 }
 
 uint32_t ClientReceiver::find_valid_login_node_id(uint64_t session_id)
@@ -101,15 +104,15 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             //此消息一定要发，不能值通过ms 的gw disconnect去发
             //如果我的登录还没到controller,gw的disconnect 先到，登录后到，那么ms server 永远删除不了这个sessionid了
-			loginservice::DisconnectRequest request;
-			request.set_session_id(session_id);
-			login_stub(session_id).CallMethod(request, &loginservice::LoginService_Stub::Disconnect);
+			loginservice::DisconnectRequest rq;
+			rq.set_session_id(session_id);
+			get_login_node(session_id)->CallMethod(loginserviceDisconnectMethoddesc, &rq);
         }
         // controller
         {
-            controllerservice::DisconnectRequest request;
-            request.set_session_id(session_id);
-            g_gate_server->controller_stub().CallMethod(request, &controllerservice::ControllerNodeService_Stub::OnGateDisconnect);
+            controllerservice::DisconnectRequest rq;
+            rq.set_session_id(session_id);
+            g_gate_server->controller_node_session()->CallMethod(controllerserviceOnGateDisconnectMethoddesc, &rq);
         }
         g_client_sessions_->erase(session_id);
     }
@@ -132,69 +135,30 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     //todo login 崩溃了
-    LoginRpc rpc(std::make_shared<LoginRpc::element_type>(conn));
-    rpc->s_rq_.set_account(message->account());
-    rpc->s_rq_.set_password(message->password());
-    rpc->s_rq_.set_session_id(rpc->session_id());
-    login_stub(tcp_session_id(conn)).CallMethod(&ClientReceiver::OnServerLoginReplied,
-        rpc, 
-        this, 
-        &loginservice::LoginService_Stub::Login);
-}
-
-void ClientReceiver::OnServerLoginReplied(LoginRpc replied)
-{
-    auto& player_list = replied->s_rp_->account_player().simple_players().players();
-    for (auto& it : player_list)
-    {
-        auto p = replied->c_rp_.add_players();
-        p->set_player_id(it.player_id());
-    }
-    codec_.send(replied->client_conn_, replied->c_rp_);
+    ::loginservice::LoginRequest rq;
+    rq.set_account(message->account());
+    rq.set_password(message->password());
+    rq.set_session_id(tcp_session_id(conn));
+    get_login_node(tcp_session_id(conn))->CallMethod(loginserviceLoginMethoddesc, &rq);
 }
 
 void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
                                     const CreatePlayerRequestPtr& message, 
                                     muduo::Timestamp)
 {
-    auto rpc(std::make_shared<CreatePlayeRpc::element_type>(conn));
-    rpc->s_rq_.set_session_id(rpc->session_id());
-    login_stub(tcp_session_id(conn)).CallMethod(&ClientReceiver::OnServerCreatePlayerReplied,
-        rpc, 
-        this, 
-        &loginservice::LoginService_Stub::CreatPlayer);
-}
-
-void ClientReceiver::OnServerCreatePlayerReplied(CreatePlayeRpc replied)
-{
-    auto& player_list = replied->s_rp_->account_player().simple_players().players();
-    for (auto& it : player_list)
-    {
-        auto p = replied->c_rp_.add_players();
-        p->set_player_id(it.player_id());
-    }
-    codec_.send(replied->client_conn_, replied->c_rp_);
+    loginservice::CreatePlayerRequest rq;
+    rq.set_session_id(tcp_session_id(conn));
+    get_login_node(tcp_session_id(conn))->CallMethod(loginserviceCreatPlayerMethoddesc, &rq);
 }
 
 void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
                                 const EnterGameRequestPtr& message, 
                                 muduo::Timestamp)
 {
-    auto rpc(std::make_shared<EnterGameRpc::element_type>(conn));
-    rpc->s_rq_.set_session_id(rpc->session_id());
-    rpc->s_rq_.set_player_id(message->player_id());
-    login_stub(tcp_session_id(conn)).CallMethod(&ClientReceiver::OnServerEnterGameReplied,
-        rpc,
-        this,
-        &loginservice::LoginService_Stub::EnterGame);
-}
-
-void ClientReceiver::OnServerEnterGameReplied(EnterGameRpc replied)
-{
-    //这里设置player id 还是会有串话问题，断线以后重新上来一个新的玩家，同一个connection，到时候可以再加个token判断   
-	replied->c_rp_.mutable_error()->CopyFrom(replied->s_rp_->error());
-	codec_.send(replied->client_conn_, replied->c_rp_);
-	return;
+    ::loginservice::EnterGameRequest rq;
+    rq.set_session_id(tcp_session_id(conn));
+    rq.set_player_id(message->player_id());
+    get_login_node(tcp_session_id(conn))->CallMethod(loginserviceEnterGameMethoddesc, &rq);
 }
 
 void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -225,23 +189,17 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     //todo msg id error
     if (g_open_player_msgids.find(request->msg_id()) != g_open_player_msgids.end())
     {
-		auto rpc(std::make_shared<GsPlayerServiceRpc::element_type>(conn));
-        rpc->s_rq_.set_request(request->request());
-        rpc->s_rq_.set_session_id(session_id);
-        rpc->s_rq_.set_msg_id(request->msg_id());
-        rpc->c_rp_.set_id(request->id());
-        rpc->c_rp_.set_msg_id(request->msg_id());
-        gs->second.gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
-			rpc,
-			this,
-			&gsservice::GsService_Stub::ClientSend2Player);
+        gsservice::RpcClientRequest rq;
+        rq.set_request(request->request());
+        rq.set_session_id(session_id);
+        rq.set_msg_id(request->msg_id());
+        /* gs->second.gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
+             rpc,
+             this,
+             &gsservice::GsService_Stub::ClientSend2Player);*/
+        gs->second.gs_session_->CallMethod(gsserviceClientSend2PlayerMethoddesc, &rq);
     }
 }
 
-void ClientReceiver::OnGsPlayerServiceReplied(GsPlayerServiceRpc replied)
-{
-    replied->c_rp_.set_body(replied->s_rp_->response());
-    codec_.send(replied->client_conn_, replied->c_rp_);
-}
 
 

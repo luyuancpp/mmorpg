@@ -9,9 +9,9 @@
 #include "src/login_server.h"
 #include "src/comp/account_player.h"
 #include "src/network/rpc_closure.h"
-#include "src/network/rpc_stub.h"
 #include "src/network/rpc_client.h"
 #include "src/redis_client/redis_client.h"
+#include "src/pb/pbc/service_method/controller_servicemethod.h"
 
 #include "login_service.pb.h"
 #include "database_service.pb.h"
@@ -44,11 +44,11 @@ void EnterGame(Guid player_id,
 	}
 	auto rpc(std::make_shared<EnterGameControllerRpc::element_type>(response, done));
 	rpc->s_rq_.set_player_id(player_id);
-	rpc->s_rq_.set_session_id(response->session_id());
-	g_login_node->controller_node_stub().CallMethodString1(
+	rpc->s_rq_.set_session_id(response->session_id());/*
+	g_login_node->controller_node().CallMethodString1(
 		EnterGameReplied,
 		rpc,
-		&controllerservice::ControllerNodeService_Stub::OnLsEnterGame);
+		&controllerservice::ControllerNodeService_Stub::OnLsEnterGame);*/
 }
 
 void UpdateAccount(uint64_t session_id, const ::account_database& a_d)
@@ -111,7 +111,7 @@ void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 	auto rpc(std::make_shared<LoginAccountDbRpc::element_type>(*replied));
 	rpc->s_rq_.set_account(replied->s_rq_.account());
 	rpc->s_rq_.set_session_id(replied->s_rq_.session_id());
-	g_login_node->l2db_login_stub().CallMethodString1(LoginAccountDbReplied, rpc, &dbservice::DbService_Stub::Login);
+	//g_login_node->db_node().CallMethodString1(LoginAccountDbReplied, rpc, &dbservice::DbService_Stub::Login);
 }
 
 using CreatePlayerRpc = std::shared_ptr<RpcString<dbservice::CreatePlayerRequest, dbservice::CreatePlayerResponse, loginservice::CreatePlayerResponse>>;
@@ -160,7 +160,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	s_reqst.set_account(request->account());
 	s_reqst.set_session_id(request->session_id());
 	sessions_.emplace(request->session_id(), EntityPtr());
-	g_login_node->controller_node_stub().CallMethodString1( LoginAccountControllerReplied, rpc, &controllerservice::ControllerNodeService_Stub::OnLsLoginAccount);
+	//g_login_node->controller_node().CallMethodString1( LoginAccountControllerReplied, rpc, &controllerservice::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -191,10 +191,10 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	auto rpc(std::make_shared<CreatePlayerRpc::element_type>(response, done));
 	rpc->s_rq_.set_session_id(request->session_id());
 	rpc->s_rq_.set_account(ap->account());
-	g_login_node->l2db_login_stub().CallMethodString1(
+	/*g_login_node->db_node().CallMethodString1(
 		CreatePlayerDbReplied,
 		rpc,
-		&dbservice::DbService_Stub::CreatePlayer);
+		&dbservice::DbService_Stub::CreatePlayer);*/
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -242,10 +242,10 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	auto c(std::make_shared<EnterGameDbRpc::element_type>(response, done));
 	auto& srq = c->s_rq_;
 	srq.set_player_id(player_id);
-	g_login_node->l2db_login_stub().CallMethodString1(
+	/*g_login_node->db_node().CallMethodString1(
 		EnterGameDbReplied,
 		c,
-		&dbservice::DbService_Stub::EnterGame);
+		&dbservice::DbService_Stub::EnterGame);*/
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -263,10 +263,9 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 		LOG_ERROR << " leave game not found connection";
 		return;
 	}
-	controllerservice::LsLeaveGameRequest leavegame_request;
-	leavegame_request.set_session_id(request->session_id());
-	g_login_node->controller_node_stub().CallMethod(leavegame_request,
-		&controllerservice::ControllerNodeService_Stub::OnLsLeaveGame);
+	controllerservice::LsLeaveGameRequest rq;
+	rq.set_session_id(request->session_id());
+	g_login_node->controller_node()->CallMethod(controllerserviceOnLsLeaveGameMethoddesc, &rq);
 	sessions_.erase(sit);
 ///<<< END WRITING YOUR CODE 
 }
@@ -279,10 +278,9 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	sessions_.erase(request->session_id());
-	controllerservice::LsDisconnectRequest msg;
-	msg.set_session_id(request->session_id());
-	g_login_node->controller_node_stub().CallMethod(msg,
-		&controllerservice::ControllerNodeService_Stub::OnLsDisconnect);	
+	controllerservice::LsDisconnectRequest rq;
+	rq.set_session_id(request->session_id());
+	g_login_node->controller_node()->CallMethod(controllerserviceOnLsDisconnectMethoddesc, &rq);
 ///<<< END WRITING YOUR CODE 
 }
 

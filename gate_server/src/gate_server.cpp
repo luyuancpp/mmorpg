@@ -5,12 +5,16 @@
 #include "src/network/login_node.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/service_method/controller_servicemethod.h"
+#include "src/pb/pbc/service_method/deploy_servicemethod.h"
+#include "src/pb/pbc/service_method/game_servicemethod.h"
+#include "src/service/common_proto_replied/replied_dispathcer.h"
 
 #include "game_service.pb.h"
 
 GateServer* g_gate_server = nullptr; 
 
-extern ServerSequence32 g_server_sequence_;
+
 
 void GateServer::LoadConfig()
 {
@@ -23,43 +27,21 @@ void GateServer::Init()
     g_gate_server = this;
     LoadConfig();
     InitMsgService();
+    InitRepliedCallback();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_session_->subscribe<RegisterStubEvent>(deploy_stub_);
     deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
     deploy_session_->connect();
 }
 
-void GateServer::StartServer(ServerInfoRpc replied)
-{
-    serverinfo_data_ = replied->s_rp_->info();
-    g_server_sequence_.set_node_id(gate_node_id());
 
-    EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-        [this]() ->void
-        {
-            LoginNodeInfoRpc rpc(std::make_shared<LoginNodeInfoRpc::element_type>());
-            rpc->s_rq_.set_group_id(GameConfig::GetSingleton().config_info().group_id());
-            deploy_stub_.CallMethod(
-                &GateServer::LoginNoseInfoReplied,
-                rpc,
-                this,
-                &deploy::DeployService_Stub::LoginNodeInfo);
-        }
-    );
-    
-    auto& controller_node_info = serverinfo_data_.controller_info();
-    InetAddress master_addr(controller_node_info.ip(), controller_node_info.port());
-    controller_node_session_ = std::make_unique<RpcClient>(loop_, master_addr);
-    controller_node_session_->registerService(&node_service_impl_);
-    controller_node_session_->subscribe<RegisterStubEvent>(controller_stub_);
-    controller_node_session_->subscribe<OnConnected2ServerEvent>(*this);
-    controller_node_session_->connect();        
+void GateServer::StartServer()
+{
 
     auto& myinfo = serverinfo_data_.gate_info();
-	InetAddress gate_addr(myinfo.ip(), myinfo.port());
-	server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
+    InetAddress gate_addr(myinfo.ip(), myinfo.port());
+    server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
         std::bind(&GateServer::OnConnection, this, _1));
     server_->setMessageCallback(
@@ -67,34 +49,6 @@ void GateServer::StartServer(ServerInfoRpc replied)
     server_->start();
 }
 
-void GateServer::LoginNoseInfoReplied(LoginNodeInfoRpc replied)
-{
-    auto& rsp = replied->s_rp_;
-    for (const auto& it : rsp->login_db().login_nodes())
-    {
-        if (it.id() != 1)
-        {
-            continue;
-        }
-        ConnectLogin(it);
-    }
-}
-
-void GateServer::ConnectLogin(const login_server_db& login_info)
-{
-    auto it = g_login_nodes.emplace(login_info.id(), LoginNode());
-    if (!it.second)
-    {
-        LOG_ERROR << "login server connected" << login_info.DebugString();
-        return;
-    }
-    InetAddress login_addr(login_info.ip(), login_info.port());
-	auto& login_node = it.first->second;
-	login_node.login_session_ = std::make_unique<RpcClientPtr::element_type>(loop_, login_addr);
-	login_node.login_stub_ = std::make_unique<LoginNode::LoginStubPtr::element_type>();
-	login_node.login_session_->subscribe<RegisterStubEvent>(*login_node.login_stub_);
-    login_node.login_session_->connect();
-}
 
 void GateServer::receive(const OnConnected2ServerEvent& es)
 {
@@ -114,13 +68,9 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
-                ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
-                rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-                deploy_stub_.CallMethod(
-                    &GateServer::StartServer,
-                    rpc,
-                    this,
-                    &deploy::DeployService_Stub::ServerInfo);
+                deploy::ServerInfoRequest rq;
+                rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+                deploy_session()->CallMethod(deployServerInfoMethoddesc, &rq);
             }
         );
     }
@@ -133,12 +83,12 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
 		EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
 			{
-				auto& controller_node_addr = controller_node_session_->local_addr();
-				controllerservice::ConnectRequest request;
-				request.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
-				request.mutable_rpc_client()->set_port(controller_node_addr.port());
-				request.set_gate_node_id(gate_node_id());
-				controller_stub_.CallMethod(request, &controllerservice::ControllerNodeService_Stub::OnGateConnect);
+				auto& controller_node_addr = controller_node_->local_addr();
+				controllerservice::ConnectRequest rq;
+				rq.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
+				rq.mutable_rpc_client()->set_port(controller_node_addr.port());
+				rq.set_gate_node_id(gate_node_id());
+				controller_node_session()->CallMethod(controllerserviceOnGateConnectMethoddesc, &rq);
 			}
         );
     }
@@ -153,15 +103,15 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             }
             if (conn->connected())
             {
-				auto& gs_session = it.second;
+				auto& gs_node = it.second;
 				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-					[this, &gs_session, &conn]() ->void
+					[this, &gs_node, &conn]() ->void
 					{
-						gsservice::ConnectRequest request;
-						request.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
-						request.mutable_rpc_client()->set_port(conn->localAddress().port());
-						request.set_gate_node_id(gate_node_id());
-						gs_session.gs_stub_->CallMethod(request, &gsservice::GsService_Stub::GateConnectGs);
+						gsservice::ConnectRequest rq;
+						rq.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
+						rq.mutable_rpc_client()->set_port(conn->localAddress().port());
+						rq.set_gate_node_id(gate_node_id());
+						gs_node.gs_session_->CallMethod(gsserviceGateConnectGsMethoddesc, &rq);
 					}
 				);
             }
@@ -191,3 +141,12 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
     }
 }
 
+void GateServer::Connect2Controller()
+{
+    auto& controller_node_info = serverinfo_data_.controller_info();
+    InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
+    controller_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
+    controller_node_->registerService(&gate_service_);
+    controller_node_->subscribe<OnConnected2ServerEvent>(*this);
+    controller_node_->connect();
+}

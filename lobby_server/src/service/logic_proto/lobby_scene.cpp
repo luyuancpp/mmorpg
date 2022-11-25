@@ -18,6 +18,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/tips_id.h"
+#include "src/pb/pbc/service_method/controller_servicemethod.h"
 
 #include "game_service.pb.h"
 #include "controller_service.pb.h"
@@ -30,9 +31,6 @@ using namespace controllerservice;
 using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 PlayerListMap  players_;
 
-using GsStubPtr = std::unique_ptr <RpcStub<gsservice::GsService_Stub>>;
-using ControllerStubPtr = std::unique_ptr <RpcStub<controllerservice::ControllerNodeService_Stub>>;
-
 void AddCrossScene2Controller(uint32_t controller_node_id)
 {
 	auto controller_node_it = g_controller_nodes->find(controller_node_id);
@@ -41,10 +39,10 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
 		LOG_ERROR << "controller not found " << controller_node_id;
 		return;
 	}
-    AddCrossServerSceneRequest rpc;
+    AddCrossServerSceneRequest rq;
     for (auto e : registry.view<MainScene>())
     {
-        auto p_cross_scene_info = rpc.mutable_cross_scenes_info()->Add();
+        auto p_cross_scene_info = rq.mutable_cross_scenes_info()->Add();
         p_cross_scene_info->mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(e));
         auto try_gs_node_ptr = registry.try_get<GsNodePtr>(e);
         if (nullptr == try_gs_node_ptr)
@@ -53,8 +51,8 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	registry.get<ControllerStubPtr>(controller_node_it->second)->CallMethod(rpc, &controllerservice::ControllerNodeService_Stub::AddCrossServerScene);
-	LOG_DEBUG << rpc.DebugString();
+	registry.get<ControllerNodePtr>(controller_node_it->second)->session_.CallMethod(controllerserviceAddCrossServerSceneMethoddesc, &rq);
+	LOG_DEBUG << rq.DebugString();
 }
 
 
@@ -96,7 +94,6 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 	AddMainSceneNodeCompnent(gs);
 	registry.emplace<InetAddress>(gs, service_addr);
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
-	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 	if (request->server_type() == kMainSceneCrossServer)
 	{
         registry.remove<MainSceneServer>(gs);
@@ -156,8 +153,6 @@ void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* co
 	controller_node_ptr->node_info_.set_node_type(kControllerNode);
 	registry.emplace<InetAddress>(controller_node, service_addr);
 	g_controller_nodes->emplace(request->controller_node_id(), controller_node);
-
-	auto& controller_stub = registry.emplace<ControllerStubPtr>(controller_node, std::make_unique<ControllerStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 
 	//todo next frame send after responese
 	AddCrossScene2Controller(request->controller_node_id());

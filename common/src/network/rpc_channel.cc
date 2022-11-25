@@ -20,6 +20,14 @@ using namespace muduo::net;
 
 extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_prototype_services;
 
+void OnUnknownMessage(const TcpConnectionPtr&,
+    const MessagePtr& message,
+    Timestamp)
+{
+
+}
+ProtobufDispatcher g_response_dispatcher(std::bind(&OnUnknownMessage,  _1, _2, _3));
+
 RpcChannel::RpcChannel()
   : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
     services_(NULL),
@@ -43,7 +51,7 @@ RpcChannel::~RpcChannel()
   for (const auto& outstanding : outstandings_)
   {
     OutstandingCall out = outstanding.second;
-    delete out.response;
+    //delete out.response;
     delete out.done;
   }
 }
@@ -67,7 +75,12 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   message.set_method(method->name());
   message.set_request(request->SerializeAsString()); // FIXME: error check
 
-  OutstandingCall out = { response, done };
+  auto service_it = g_prototype_services.find(method->service()->full_name());
+  if (service_it == g_prototype_services.end())
+  {
+      return;
+  }
+  OutstandingCall out = { method, service_it->second.get() , done };
   {
 #ifdef MUDUO_RPC_LOCK
 	 MutexLockGuard lock(mutex_);
@@ -75,30 +88,6 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   outstandings_[id] = out;
   }
   codec_.send(conn_, message);
-}
-
-void RpcChannel::CallMethod(const ::google::protobuf::Message& request, 
-                            const std::string& service_name, 
-                            const std::string& method_name,
-	                        ::google::protobuf::Message* response,
-	                        ::google::protobuf::Closure* done)  
-{
-	RpcMessage message;
-	message.set_type(REQUEST);
-	int64_t id = id_.incrementAndGet();
-	message.set_id(id);
-	message.set_service(service_name);
-	message.set_method(method_name);
-	message.set_request(request.SerializeAsString()); // FIXME: error check
-
-	OutstandingCall out = { response, done };
-	{
-#ifdef MUDUO_RPC_LOCK
-		MutexLockGuard lock(mutex_);
-#endif // MUDUO_RPC_LOCK
-		outstandings_[id] = out;
-	}
-	codec_.send(conn_, message);
 }
 
 void RpcChannel::Send(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request)
@@ -148,17 +137,18 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       }
     }
 
-    if (out.response)
+    if (out.method && out.service)
     {
-      std::unique_ptr<google::protobuf::Message> d(out.response);
+      MessagePtr response(out.service->GetRequestPrototype(out.method).New());
       if (!message.response().empty())
       {
-        out.response->ParseFromString(message.response());
+          response->ParseFromString(message.response());
       }
-      if (out.done)
-      {
-        out.done->Run();
-      }
+      g_response_dispatcher.onProtobufMessage(conn, response, receiveTime);
+      /* if (out.done)
+       {
+         out.done->Run();
+       }*/
     }
   }
   else if (message.type() == REQUEST)

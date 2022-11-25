@@ -151,6 +151,9 @@ void GsServiceImpl::ClientSend2Player(::google::protobuf::RpcController* control
     MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
     it->second->CallMethod(method, pit->second, get_pointer(player_request), get_pointer(player_response));
     response->set_response(player_response->SerializeAsString());
+    response->set_msg_id(request->msg_id());
+    response->set_id(request->id());
+    response->set_session_id(request->session_id());
 ///<<< END WRITING YOUR CODE 
 }
 
