@@ -1,8 +1,9 @@
 #include "login_server.h"
 
 #include "src/game_config/deploy_json.h"
-
 #include "src/network/rpc_connection_event.h"
+#include "src/pb/pbc/service_method/deploy_servicemethod.h"
+#include "src/service/common_proto_replied/replied_dispathcer.h"
 
 #include "common.pb.h"
 
@@ -28,10 +29,9 @@ void LoginServer::ConnectDeploy()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
-    deploy_rpc_client_->subscribe<OnConnected2ServerEvent>(*this);
-    deploy_rpc_client_->connect();
+    deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+    deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
+    deploy_session_->connect();
 }
 
 void LoginServer::Start()
@@ -40,20 +40,17 @@ void LoginServer::Start()
     server_->start();
 }
 
-void LoginServer::StartServer(ServerInfoRpc replied)
+void LoginServer::StartServer(const ::servers_info_data& info)
 {
-    auto& info = replied->s_rp_->info();
     auto& databaseinfo = info.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
-    db_rpc_client_ = std::make_unique<RpcClient>(loop_, database_addr);
-    db_rpc_client_->connect();
-    db_rpc_client_->subscribe<RegisterStubEvent>(l2db_login_stub_);
+    db_session_ = std::make_unique<RpcClient>(loop_, database_addr);
+    db_session_->connect();
 
     auto& controller_node_info = info.controller_info();
     InetAddress controller_node_addr(controller_node_info.ip(), controller_node_info.port());
-    controller_client_ = std::make_unique<RpcClient>(loop_, controller_node_addr);
-    controller_client_->connect();
-    controller_client_->subscribe<RegisterStubEvent>(controller_node_stub_);
+    controller_session_ = std::make_unique<RpcClient>(loop_, controller_node_addr);
+    controller_session_->connect();
     
     auto& redisinfo = info.redis_info();
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
@@ -77,11 +74,7 @@ void LoginServer::receive(const OnConnected2ServerEvent& es)
     {
         return;
     }
-    ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
-    rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-    deploy_stub_.CallMethod(
-        &LoginServer::StartServer,
-        rpc,
-        this,
-        &deploy::DeployService_Stub::ServerInfo);
+    deploy::ServerInfoRequest rq;
+    rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+    deploy_session_->CallMethod(deployServerInfoMethoddesc, &rq);
 }

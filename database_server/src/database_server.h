@@ -8,7 +8,6 @@
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_server.h"
-#include "src/network/rpc_stub.h"
 #include "src/service/common_proto/db_service.h"
 
 #include "deploy_service.pb.h"
@@ -31,9 +30,7 @@ public:
 
     void Start();
 
-	using ServerInfoRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest,
-		deploy::ServerInfoResponse>>;
-    void StartServer(ServerInfoRpc replied);
+    void StartServer(const ::servers_info_data& info);
 
     void receive(const OnConnected2ServerEvent& es);
 
@@ -43,9 +40,9 @@ private:
     PbSyncRedisClientPtr redis_;
     RpcServerPtr server_;
 
-    RpcClientPtr deploy_rpc_client_;
-    RpcStub<deploy::DeployService_Stub> deploy_stub_;
+    RpcClientPtr deploy_session_;
 
     DbServiceImpl impl_;
 };
 
+extern DatabaseServer* g_db_server;

@@ -4,18 +4,6 @@
 
 #include "src/network/rpc_channel.h"
 
-struct RegisterStubEvent
-{
-    RegisterStubEvent(const muduo::net::TcpConnectionPtr& conn, muduo::net::RpcChannelPtr& channel)
-        : conn_(conn),
-            channel_(channel)
-    {
-    }
-
-    const muduo::net::TcpConnectionPtr& conn_;
-    muduo::net::RpcChannelPtr& channel_;
-
-};
 
 struct OnConnected2ServerEvent
 {

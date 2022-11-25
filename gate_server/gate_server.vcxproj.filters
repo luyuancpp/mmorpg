@@ -39,6 +39,21 @@
     <ClCompile Include="src\network\login_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\common_proto_replied\game_service_replied.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\common_proto_replied\controller_service_replied.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\common_proto_replied\login_service_replied.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\service\common_proto\c2gate.h">
@@ -57,6 +72,21 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gs_node.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\common_proto_replied\game_service_replied.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\common_proto_replied\controller_service_replied.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\common_proto_replied\login_service_replied.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

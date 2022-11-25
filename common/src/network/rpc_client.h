@@ -69,6 +69,15 @@ public:
         client_.connect();
     }
 
+    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+        const ::google::protobuf::Message* request)
+    {
+        if (!connected_)
+        {
+            return;
+        }
+        channel_->CallMethod(method, nullptr, request, nullptr, nullptr);
+    }
 
     void Send(const ::google::protobuf::MethodDescriptor* method,  const ::google::protobuf::Message& request)
     {
@@ -92,7 +101,6 @@ private:
             connected_ = false;
         }
         //todo 这里如果把自己删除了怎么办
-        emp_->emit<RegisterStubEvent>(conn, channel_);
         emp_->emit<OnConnected2ServerEvent>(conn);
     }
 

@@ -22,6 +22,9 @@ message RpcClientRequest
 message RpcClientResponse
 {
   bytes response = 1;
+  uint64 session_id = 2;
+  uint32 msg_id = 3;
+  uint64 id = 4;
 }
 
 message DisconnectRequest

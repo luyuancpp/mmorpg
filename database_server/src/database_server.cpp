@@ -2,8 +2,12 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/network/rpc_connection_event.h"
+#include "src/pb/pbc/service_method/deploy_servicemethod.h"
+#include "src/service/common_proto_replied/replied_dispathcer.h"
 
 #include "mysql_database_table.pb.h"
+
+DatabaseServer* g_db_server{nullptr};
 
 DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
     : loop_(loop),
@@ -15,6 +19,7 @@ void DatabaseServer::Init()
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
 
+    InitRepliedCallback();
     ConnectDeploy();
 }
 
@@ -22,10 +27,9 @@ void DatabaseServer::ConnectDeploy()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_rpc_client_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_rpc_client_->subscribe<RegisterStubEvent>(deploy_stub_);
-    deploy_rpc_client_->subscribe<OnConnected2ServerEvent>(*this); 
-    deploy_rpc_client_->connect();
+    deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+    deploy_session_->subscribe<OnConnected2ServerEvent>(*this); 
+    deploy_session_->connect();
 }
 
 void DatabaseServer::Start()
@@ -43,15 +47,13 @@ void DatabaseServer::Start()
     server_->start();
 }
 
-void DatabaseServer::StartServer(ServerInfoRpc replied)
+void DatabaseServer::StartServer(const ::servers_info_data& info)
 {
-    auto& info = replied->s_rp_->info();
     auto& redisinfo = info.redis_info();
     auto& myinfo = info.database_info();
     InetAddress listenAddr(myinfo.ip(), myinfo.port());
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
     database_->Connect(myinfo);
-    //LOG_INFO << myinfo.DebugString().c_str();
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, listenAddr);
     Start();
 }
@@ -67,13 +69,9 @@ void DatabaseServer::receive(const OnConnected2ServerEvent& es)
     {
         return;
     }
-    ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
-    rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-    deploy_stub_.CallMethod(
-        &DatabaseServer::StartServer,
-        rpc,
-        this,
-        &deploy::DeployService_Stub::ServerInfo);
+    deploy::ServerInfoRequest rq;
+    rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+    deploy_session_->CallMethod(deployServerInfoMethoddesc, &rq);
 }
 
 

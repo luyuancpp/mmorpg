@@ -25,8 +25,6 @@ using namespace muduo::net;
 class GateServer : noncopyable, public Receiver<GateServer>
 {
 public:
-    using LoginStub = RpcStub<loginservice::LoginService_Stub>;
-    using ControllerStub = RpcStub<controllerservice::ControllerNodeService_Stub>;
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
     GateServer(EventLoop* loop)
@@ -36,24 +34,24 @@ public:
         client_receiver_(codec_, dispatcher_)
     { }
 
-    ControllerStub& controller_stub() { return controller_stub_; }
-    GateServiceImpl& node_service_impl() { return node_service_impl_; }
+    inline EventLoop* loop() { return loop_; }
+    inline ProtobufCodec& codec() { return codec_; };
+    inline GateServiceImpl& node_service_impl() { return gate_service_; }
     inline uint32_t gate_node_id()const { return serverinfo_data_.gate_info().id(); }
+    inline RpcClientPtr& deploy_session() { return deploy_session_; }
+    inline RpcClientPtr& controller_node_session() { return controller_node_; }
+
+    inline void set_servers_info_data(const servers_info_data& serverinfo_data) { serverinfo_data_ = serverinfo_data; }
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
 
     void LoadConfig();
 
     void Init();
+    
+    void StartServer();
 
-	using ServerInfoRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest,deploy::ServerInfoResponse>>;
-    void StartServer(ServerInfoRpc replied);
 
-	using LoginNodeInfoRpc = std::shared_ptr<NormalClosure<deploy::GroupLignRequest,
-		deploy::GruoupLoginNodeResponse>>;
-    void LoginNoseInfoReplied(LoginNodeInfoRpc replied);
-
-    void ConnectLogin(const login_server_db& login_addr);
 
     void receive(const OnConnected2ServerEvent& es);
 
@@ -71,6 +69,8 @@ private:
         conn->shutdown();
     }
 
+    void Connect2Controller();
+
     muduo::net::EventLoop* loop_{ nullptr };
 
     ProtobufDispatcher dispatcher_;
@@ -82,12 +82,9 @@ private:
     servers_info_data serverinfo_data_;
 
     RpcClientPtr deploy_session_;
-    RpcStub<deploy::DeployService_Stub> deploy_stub_;
+    RpcClientPtr controller_node_;
 
-    RpcClientPtr controller_node_session_;
-    ControllerStub controller_stub_;
-
-    GateServiceImpl node_service_impl_;
+    GateServiceImpl gate_service_;
 };
 
 extern GateServer* g_gate_server;

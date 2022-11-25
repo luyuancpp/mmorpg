@@ -63,9 +63,6 @@ private:
     RpcServerPtr server_;
 
     RpcClientPtr deploy_session_;
-    RpcStub<deploy::DeployService_Stub> deploy_stub_;
-
-    ControllerStub g2controller_stub_;
 
     RpcClientPtr lobby_session_;
     LobbyNodeStub lobby_stub_;

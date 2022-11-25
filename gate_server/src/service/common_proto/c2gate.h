@@ -7,7 +7,6 @@
 
 #include "src/network/codec/dispatcher.h"
 #include "src/network/rpc_closure.h"
-#include "src/network/rpc_stub.h"
 #include "src/network/rpc_client.h"
 #include "src/network/gate_player_list.h"
 #include "src/util/snow_flake.h"
@@ -45,13 +44,13 @@ using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 class ClientReceiver : muduo::noncopyable
 {
 public:
-    using RpcStubgw2l = RpcStub<loginservice::LoginService_Stub>;
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
-    RpcStubgw2l& login_stub();
-    RpcStubgw2l& login_stub(uint64_t session_id);
+    RpcClientPtr& get_login_node();
+    RpcClientPtr& get_login_node(uint64_t session_id);
     uint32_t find_valid_login_node_id(uint64_t session_id);
+    ProtobufCodec& codec() { return codec_; };
 
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
 
@@ -62,22 +61,13 @@ public:
         const LoginRequestPtr& message,
         muduo::Timestamp);
 
-    using LoginRpc = std::shared_ptr<ClosureReplied<LoginResponse, loginservice::LoginRequest, loginservice::LoginResponse>>;
-    void OnServerLoginReplied(LoginRpc replied);
-
     void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
         const CreatePlayerRequestPtr& message, 
         muduo::Timestamp);
 
-    using CreatePlayeRpc = std::shared_ptr<ClosureReplied<CreatePlayerResponse, loginservice::CreatePlayerRequest, loginservice::CreatePlayerResponse>>;
-    void OnServerCreatePlayerReplied(CreatePlayeRpc replied);
-
     void OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
         const EnterGameRequestPtr& message,
         muduo::Timestamp);
-
-    using EnterGameRpc = std::shared_ptr<ClosureReplied<EnterGameResponse, loginservice::EnterGameRequest, loginservice::EnterGameResponse>>;
-    void OnServerEnterGameReplied(EnterGameRpc replied);
 
     void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
         const LeaveGameRequestPtr& message,
@@ -86,18 +76,6 @@ public:
 	void OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
 		const RpcClientMessagePtr& message,
 		muduo::Timestamp);
-
-    
-    struct ClientGsRpcClosure
-    {
-        ClientGsRpcClosure(const muduo::net::TcpConnectionPtr& cc)
-			: client_connection_(cc){}
-        google::protobuf::Message* c_rp_{nullptr};
-        const muduo::net::TcpConnectionPtr client_connection_;
-    };
-
-	using GsPlayerServiceRpc = std::shared_ptr<ClosureReplied<MessageBody, gsservice::RpcClientRequest, gsservice::RpcClientResponse>>;
-	void OnGsPlayerServiceReplied(GsPlayerServiceRpc replied);
 
     inline uint64_t tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<uint64_t>(conn->getContext()); }
 private:
