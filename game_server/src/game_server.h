@@ -6,7 +6,7 @@
 #include "src/network/controller_node.h"
 #include "src/service/common_proto/game_service.h"
 #include "src/network/rpc_server.h"
-#include "src/network/rpc_stub.h"
+
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_closure.h"
 
@@ -19,13 +19,10 @@ class GameServer : muduo::noncopyable, public Receiver<GameServer>
 public:
     using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-    using ControllerStub = RpcStub<controllerservice::ControllerNodeService_Stub>;
-    using LobbyNodeStub = RpcStub<lobbyservcie::LobbyService_Stub>;
 
     GameServer(muduo::net::EventLoop* loop);
 
-	ControllerStub& controller_stub() { return g2controller_stub_;	}
-    inline LobbyNodeStub& lobby_stub() { return lobby_stub_; }
+    inline RpcClientPtr& lobby_node() { return lobby_node_; }
     const ::game_server_db& gs_info() const { return gs_info_; }
 
     void Init();
@@ -34,20 +31,13 @@ public:
 
     void InitNetwork();
 
-   
-	using ServerInfoRpc = std::shared_ptr < NormalClosure<deploy::ServerInfoRequest,
-		deploy::ServerInfoResponse> >;
-    void ServerInfo(ServerInfoRpc replied);
+    void ServerInfo(const ::servers_info_data& info);
 
-	using StartGsRpc = std::shared_ptr<NormalClosure<deploy::StartGSRequest,
-		deploy::StartGSResponse>>;
-    void StartGsDeployReplied(StartGsRpc replied);
+    void StartGsDeployReplied(const deploy::StartGSResponse& replied);
 
-	using LobbyInfoRpc = std::shared_ptr<NormalClosure<deploy::LobbyServerRequest,
-		deploy::LobbyInfoResponse>>;
-	void LobbyInfoReplied(LobbyInfoRpc replied);
+	void OnAcquireLobbyInfoReplied(deploy::LobbyInfoResponse& replied);
 
-    void CallControllerStartGs(ControllerSessionPtr& controller_session);
+    void CallControllerStartGs(ControllerSessionPtr controller_session);
     void CallLobbyStartGs();
 
     void receive(const OnConnected2ServerEvent& es);
@@ -62,10 +52,9 @@ private:
 
     RpcServerPtr server_;
 
-    RpcClientPtr deploy_session_;
+    RpcClientPtr deploy_node_;
 
-    RpcClientPtr lobby_session_;
-    LobbyNodeStub lobby_stub_;
+    RpcClientPtr lobby_node_;
 
     ::game_server_db gs_info_;
 

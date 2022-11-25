@@ -108,6 +108,18 @@
     <ClCompile Include="src\service\logic_proto_replied\player_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\common_proto_replied\controller_service_replied.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\common_proto_replied\lobby_service_replied.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_server.h">
@@ -204,6 +216,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic_proto_replied\common_server_player_replied.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\common_proto_replied\lobby_service_replied.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\common_proto_replied\controller_service_replied.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

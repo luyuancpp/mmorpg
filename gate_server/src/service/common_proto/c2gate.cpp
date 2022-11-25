@@ -193,10 +193,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_request(request->request());
         rq.set_session_id(session_id);
         rq.set_msg_id(request->msg_id());
-        /* gs->second.gs_stub_->CallMethod(&ClientReceiver::OnGsPlayerServiceReplied,
-             rpc,
-             this,
-             &gsservice::GsService_Stub::ClientSend2Player);*/
+        rq.set_id(request->id());
         gs->second.gs_session_->CallMethod(gsserviceClientSend2PlayerMethoddesc, &rq);
     }
 }

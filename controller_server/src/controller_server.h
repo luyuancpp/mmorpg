@@ -8,7 +8,6 @@
 #include "src/network/rpc_closure.h"
 #include "src/network/rpc_connection_event.h"
 #include "src/network/rpc_server.h"
-#include "src/network/rpc_stub.h"
 #include "src/network/server_component.h"
 
 #include "deploy_service.pb.h"
@@ -20,8 +19,7 @@ class ControllerServer : muduo::noncopyable, public Receiver<ControllerServer>
 public:
 	using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
 	using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-	using DbNodeStub = RpcStub<dbservice::DbService_Stub>;
-	using LobbyNodeStub = RpcStub<lobbyservcie::LobbyService_Stub>;
+
 
 	ControllerServer(muduo::net::EventLoop* loop);
 
@@ -40,7 +38,7 @@ private:
 	void InitConfig();
 
 	using ServerInfoRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest, deploy::ServerInfoResponse>>;
-	void StartServer(ServerInfoRpc replied);
+	void StartServer(const ::servers_info_data& info);
 
     using SceneNodeSequeIdRpc = std::shared_ptr<NormalClosure<deploy::SceneSqueueRequest, deploy::SceneSqueueResponese>>;
     void SceneSqueueNodeId(SceneNodeSequeIdRpc replied);
@@ -54,13 +52,8 @@ private:
 	RpcServerPtr server_;
 
 	RpcClientPtr deploy_session_;
-	RpcStub<deploy::DeployService_Stub> deploy_stub_;
-
 	RpcClientPtr lobby_session_;
-	LobbyNodeStub lobby_stub_;
-
 	RpcClientPtr db_session_;
-	DbNodeStub db_node_stub_;
 
 	ControllerNodeServiceImpl contoller_service_;
 

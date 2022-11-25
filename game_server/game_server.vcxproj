@@ -112,8 +112,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../common/src/pb/pbc/;../third_party/redis/;../third_party/muduo/;../third_party/muduo/contrib/windows/include;../third_party/redis/deps/;../third_party/ue5navmesh/Public/;../common/src/pb/pbc/common_proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_TCHAR_DEFINED</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../common/src/pb/pbc/;../third_party/redis/;../third_party/muduo/;../third_party/muduo/contrib/windows/include;../third_party/redis/deps/;../third_party/ue5navmesh/Public/;../common/src/pb/pbc/common_proto/;../common/src/pb/pbc/logic_proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;_TCHAR_DEFINED;UNICODE</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -130,6 +130,10 @@
     <ClCompile Include="src\event_receiver\mission_event_receiver.cpp" />
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
     <ClCompile Include="src\service\common_proto\game_service.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\controller_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\lobby_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp" />
     <ClCompile Include="src\service\logic_proto\common_client_player.cpp" />
     <ClCompile Include="src\service\logic_proto\common_server_player.cpp" />
     <ClCompile Include="src\service\logic_proto\player_service.cpp" />
@@ -163,6 +167,10 @@
     <ClInclude Include="src\event_receiver\mission_event_receiver.h" />
     <ClInclude Include="src\event_receiver\scene_event_receiver.h" />
     <ClInclude Include="src\service\common_proto\game_service.h" />
+    <ClInclude Include="src\service\common_proto_replied\controller_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\lobby_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h" />
     <ClInclude Include="src\service\logic_proto\common_client_player.h" />
     <ClInclude Include="src\service\logic_proto\common_server_player.h" />
     <ClInclude Include="src\service\logic_proto\player_service.h" />
