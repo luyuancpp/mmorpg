@@ -10,6 +10,7 @@
 #include "src/event_receiver/event_receiver.h"
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
+#include "src/network/rpc_client.h"
 #include "src/game_logic/game_registry.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"
@@ -59,18 +60,16 @@ void ControllerServer::Connect2Deploy()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_session_->subscribe<RegisterStubEvent>(deploy_stub_);
     deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
     deploy_session_->connect();
 }
 
-void ControllerServer::StartServer(ServerInfoRpc replied)
+void ControllerServer::StartServer(const ::servers_info_data& info)
 {
-    serverinfos_ = replied->s_rp_->info();
+    serverinfos_ = info;
     auto& databaseinfo = serverinfos_.database_info();
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_session_ = std::make_unique<RpcClient>(loop_, database_addr);
-    db_session_->subscribe<RegisterStubEvent>(db_node_stub_);
     db_session_->connect();    
 
     Connect2Lobby();

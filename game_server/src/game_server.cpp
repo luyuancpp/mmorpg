@@ -12,10 +12,15 @@
 #include "src/game_logic/game_registry.h"
 #include "src/game_logic/game_registry.h"
 #include "src/network/gate_node.h"
+#include "src/network/rpc_connection_event.h"
+#include "src/pb/pbc/service_method/controller_servicemethod.h"
+#include "src/pb/pbc/service_method/deploy_servicemethod.h"
+#include "src/pb/pbc/service_method/lobby_scenemethod.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"
 #include "src/service/logic_proto/server_service.h"
 #include "src/service/common_proto_replied/server_replied.h"
+#include "src/service/common_proto_replied/replied_dispathcer.h"
 
 #include "src/network/node_info.h"
 #include "src/pb/pbc/msgmap.h"
@@ -45,6 +50,7 @@ void GameServer::Init()
     InitMsgService();
     InitPlayerServcie();
     InitPlayerServcieReplied();
+    InitRepliedCallback();
     InitNetwork();
 }
 
@@ -61,52 +67,47 @@ void GameServer::InitNetwork()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_session_->subscribe<RegisterStubEvent>(deploy_stub_);
-    deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
-    deploy_session_->connect();
+    deploy_node_ = std::make_unique<RpcClient>(loop_, deploy_addr);
+    deploy_node_->subscribe<OnConnected2ServerEvent>(*this);
+    deploy_node_->connect();
 }
 
-void GameServer::ServerInfo(ServerInfoRpc replied)
+void GameServer::ServerInfo(const ::servers_info_data& info)
 {
-    auto& info = replied->s_rp_->info();
     auto& lobby_info = info.lobby_info();
     InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
    
-    lobby_session_ = std::make_unique<RpcClient>(loop_, lobby_addr);
+    lobby_node_ = std::make_unique<RpcClient>(loop_, lobby_addr);
     
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
     g_redis_system.Init(serverAddr);
 
-    StartGsRpc rpc(std::make_shared<StartGsRpc::element_type>());
-    rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-    rpc->s_rq_.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
-    rpc->s_rq_.mutable_my_info()->set_id(gs_info_.id());
-    rpc->s_rq_.mutable_rpc_client()->set_ip(deploy_session_->local_addr().toIp());
-    rpc->s_rq_.mutable_rpc_client()->set_port(deploy_session_->local_addr().port());
-    deploy_stub_.CallMethod(
-        &GameServer::StartGsDeployReplied,
-        rpc,
-        this,
-        &deploy::DeployService_Stub::StartGS);
-
-	LobbyInfoRpc rcp(std::make_shared<LobbyInfoRpc::element_type>());
-    rcp->s_rq_.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-	deploy_stub_.CallMethod(
-		&GameServer::LobbyInfoReplied,
-        rcp,
-		this,
-		&deploy::DeployService_Stub::AcquireLobbyInfo);//获取大厅服下所有服务器信息
+    {
+        deploy::StartGSRequest rq;
+        rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+        rq.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
+        rq.mutable_my_info()->set_id(gs_info_.id());
+        rq.mutable_rpc_client()->set_ip(deploy_node_->local_addr().toIp());
+        rq.mutable_rpc_client()->set_port(deploy_node_->local_addr().port());
+        deploy_node_->CallMethod(deployStartGSMethoddesc, &rq);
+    }
+   
+    {
+        deploy::LobbyServerRequest rq;
+        rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
+        deploy_node_->CallMethod(deployAcquireLobbyInfoMethoddesc, &rq);//获取大厅服下所有服务器信息
+    }
+	
 }
 
-void GameServer::StartGsDeployReplied(StartGsRpc replied)
+void GameServer::StartGsDeployReplied(const deploy::StartGSResponse& replied)
 {
     Connect2Lobby();
 
-    auto& redisinfo = replied->s_rp_->redis_info();
+    auto& redisinfo = replied.redis_info();
 	redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
 
-    gs_info_ = replied->s_rp_->my_info();
+    gs_info_ = replied.my_info();
     InetAddress node_addr(gs_info_.ip(), gs_info_.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, node_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
@@ -118,11 +119,10 @@ void GameServer::StartGsDeployReplied(StartGsRpc replied)
     server_->start();   
 }
 
-void GameServer::LobbyInfoReplied(LobbyInfoRpc replied)
+void GameServer::OnAcquireLobbyInfoReplied(deploy::LobbyInfoResponse& replied)
 {
     //connect controller
-    auto& resp = replied->s_rp_;
-	auto& lobby_controllers = resp->lobby_controllers();
+	auto& lobby_controllers = replied.lobby_controllers();
 	for (int32_t i = 0; i < lobby_controllers.controllers_size(); ++i)
 	{
 		auto& controller_node_info = lobby_controllers.controllers(i);
@@ -132,9 +132,6 @@ void GameServer::LobbyInfoReplied(LobbyInfoRpc replied)
 		controller_node.session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, controller_addr);
 		controller_node.node_info_.set_node_id(controller_node_info.id());
 		auto& controller_node_session = controller_node.session_;
-        auto& controller_stub = registry.emplace<RpcStub<controllerservice::ControllerNodeService_Stub>>(controller_node.controller_);
-        controller_node_session->subscribe<RegisterStubEvent>(controller_stub);
-		controller_node_session->subscribe<RegisterStubEvent>(g2controller_stub_);
 		controller_node_session->registerService(&gs_service_impl_);
         for (auto& it : g_server_service)
         {
@@ -145,11 +142,10 @@ void GameServer::LobbyInfoReplied(LobbyInfoRpc replied)
 	}
 }
 
-void GameServer::CallControllerStartGs(ControllerSessionPtr& controller_node)
+void GameServer::CallControllerStartGs(ControllerSessionPtr controller_node)
 {
-    ServerReplied::StartGsControllerRpc rpc(std::make_shared<ServerReplied::StartGsControllerRpc::element_type>());
     auto& controller_local_addr = controller_node->local_addr();
-    controllerservice::StartGsRequest& request = rpc->s_rq_;
+    controllerservice::StartGsRequest request;
     auto session_info = request.mutable_rpc_client();
     auto node_info = request.mutable_rpc_server();
     session_info->set_ip(controller_local_addr.toIp());
@@ -158,11 +154,7 @@ void GameServer::CallControllerStartGs(ControllerSessionPtr& controller_node)
     node_info->set_port(gs_info_.port());
     request.set_server_type(registry.get<GsServerType>(global_entity()).server_type_);
     request.set_gs_node_id(gs_info_.id());
-    g2controller_stub_.CallMethod(
-        &ServerReplied::StartGsControllerReplied,
-        rpc,
-        &ServerReplied::GetSingleton(),
-        &controllerservice::ControllerNodeService_Stub::StartGs);
+    controller_node->CallMethod(controllerserviceStartGsMethoddesc,&request);
     LOG_DEBUG << "conncet to controller" ;
 }
 
@@ -174,27 +166,22 @@ void GameServer::CallLobbyStartGs()
     {
         return;
     }
-	ServerReplied::StartCrossGsRpc rpc(std::make_shared< ServerReplied::StartCrossGsRpc::element_type>());
-	auto& rq = rpc->s_rq_;
+    lobbyservcie::StartCrossGsRequest rq;
 	auto session_info = rq.mutable_rpc_client();
 	auto node_info = rq.mutable_rpc_server();
-	session_info->set_ip(lobby_session_->local_addr().toIp());
-	session_info->set_port(lobby_session_->local_addr().port());
+	session_info->set_ip(lobby_node_->local_addr().toIp());
+	session_info->set_port(lobby_node_->local_addr().port());
 	node_info->set_ip(gs_info_.ip());
 	node_info->set_port(gs_info_.port());
     rq.set_server_type(server_type);
 	rq.set_gs_node_id(gs_info_.id());
-	lobby_stub_.CallMethod(
-		&ServerReplied::StartCrossGsReplied,
-		rpc,
-		&ServerReplied::GetSingleton(),
-		&lobbyservcie::LobbyService_Stub::StartCrossGs);
+    lobby_node_->CallMethod(lobbyservcieStartCrossGsMethoddesc, &rq);
 }
 
 void GameServer::receive(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
-    if (deploy_session_->peer_addr().toIpPort() == conn->peerAddress().toIpPort())
+    if (deploy_node_->peer_addr().toIpPort() == conn->peerAddress().toIpPort())
     {
         // started 
         if (nullptr != server_)
@@ -205,14 +192,10 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
-                ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
-                rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-                rpc->s_rq_.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-                deploy_stub_.CallMethod(
-                    &GameServer::ServerInfo,
-                    rpc,
-                    this,
-                    &deploy::DeployService_Stub::ServerInfo);
+                deploy::ServerInfoRequest rq;
+                rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+                rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
+                deploy_node_->CallMethod(deployServerInfoMethoddesc, &rq);
             }
         );
     }
@@ -230,15 +213,15 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         // ms 走断线重连，不删除
     }
 
-    if (nullptr != lobby_session_)
+    if (nullptr != lobby_node_)
     {
 		if (conn->connected() && 
-            IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
+            IsSameAddr(lobby_node_->peer_addr(), conn->peerAddress()))
 		{
 			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::CallLobbyStartGs, this));
 		}
 		else if (!conn->connected() &&
-			IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
+			IsSameAddr(lobby_node_->peer_addr(), conn->peerAddress()))
 		{
 
 		}
@@ -277,8 +260,7 @@ void GameServer::receive(const OnBeConnectedEvent& es)
 
 void GameServer::Connect2Lobby()
 {
-    lobby_session_->subscribe<RegisterStubEvent>(lobby_stub_);
-    lobby_session_->registerService(&gs_service_impl_);
-    lobby_session_->subscribe<OnConnected2ServerEvent>(*this);
-    lobby_session_->connect();
+    lobby_node_->registerService(&gs_service_impl_);
+    lobby_node_->subscribe<OnConnected2ServerEvent>(*this);
+    lobby_node_->connect();
 }
