@@ -123,7 +123,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../common/src/pb/pbc/;../third_party/redis/;../third_party/muduo/;../third_party/muduo/contrib/windows/include/;../third_party/redis/deps/;../common/src/pb/pbc/common_proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../common/;../common/src/pb/pbc/;../third_party/redis/;../third_party/muduo/;../third_party/muduo/contrib/windows/include/;../third_party/redis/deps/;../common/src/pb/pbc/common_proto/;../common/src/pb/pbc/logic_proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -157,12 +157,16 @@
     <ClCompile Include="src\event_receiver\event_receiver.cpp" />
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
     <ClCompile Include="src\network\gate_session.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\gate_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\lobby_service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp" />
     <ClCompile Include="src\service\logic_proto\common_server_player.cpp" />
     <ClCompile Include="src\service\logic_proto\player_service.cpp" />
     <ClCompile Include="src\service\logic_proto\scene.cpp" />
     <ClCompile Include="src\service\logic_proto\scene_server_player.cpp" />
     <ClCompile Include="src\service\logic_proto\server_service.cpp" />
-    <ClCompile Include="src\service\common_proto_replied\service_replied.cpp" />
+    <ClCompile Include="src\service\common_proto_replied\game_service_replied.cpp" />
     <ClCompile Include="src\service\logic_proto\team.cpp" />
     <ClCompile Include="src\service\logic_proto\team_server_player.cpp" />
     <ClCompile Include="src\service\logic_proto_replied\common_server_player_replied.cpp" />
@@ -186,12 +190,16 @@
     <ClInclude Include="src\network\controller_rpc.h" />
     <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\gs_node.h" />
+    <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\gate_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\lobby_service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h" />
     <ClInclude Include="src\service\logic_proto\common_server_player.h" />
     <ClInclude Include="src\service\logic_proto\player_service.h" />
     <ClInclude Include="src\service\logic_proto\scene.h" />
     <ClInclude Include="src\service\logic_proto\scene_server_player.h" />
     <ClInclude Include="src\service\logic_proto\server_service.h" />
-    <ClInclude Include="src\service\common_proto_replied\service_replied.h" />
+    <ClInclude Include="src\service\common_proto_replied\game_service_replied.h" />
     <ClInclude Include="src\service\logic_proto\team.h" />
     <ClInclude Include="src\service\logic_proto\team_server_player.h" />
     <ClInclude Include="src\service\logic_proto_replied\common_server_player_replied.h" />

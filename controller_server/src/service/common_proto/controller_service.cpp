@@ -26,6 +26,7 @@
 #include "src/network/node_info.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
+#include "src/pb/pbc/service_method/game_servicemethod.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
@@ -39,9 +40,6 @@
 #include "logic_proto/common_server_player.pb.h"
 #include "logic_proto/scene.pb.h"
 
-
-using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
-using GateStub = RpcStub<gateservice::GateService_Stub>;
 using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 AccountSessionMap logined_accounts_sesion_;
 
@@ -78,31 +76,11 @@ entt::entity GetPlayerByConnId(uint64_t session_id)
 	return (*p_try_player);
 }
 
-//gate 更新完gs，相应的gs可以往那个gate上发送消息了
-using GatePlayerEnterGsRpc = std::shared_ptr<NormalClosure<gateservice::PlayerEnterGsRequest, gateservice::PlayerEnterGsResponese>>;
-void OnGateUpdatePlayerGsReplied(GatePlayerEnterGsRpc replied)
-{
-	//todo 中间返回是断开了
-	entt::entity player = GetPlayerByConnId(replied->s_rq_.session_id());
-	if (entt::null == player)
-	{
-		LOG_ERROR << "player not found " << registry.get<Guid>(player);
-		return;
-	}
-
-	PlayerCommonSystem::OnEnterGateSucceed(player);
-
-    PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-
-}
-
 void OnSessionEnterGame(entt::entity conn, Guid player_id)
 {
     registry.emplace<EntityPtr>(conn, g_player_list->GetPlayerPtr(player_id));
     registry.emplace<Guid>(conn, player_id);
 }
-
 
 void InitPlayerGate(entt::entity player, uint64_t session_id)
 {
@@ -159,7 +137,6 @@ void ControllerNodeServiceImpl::StartGs(::google::protobuf::RpcController* contr
 	registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
 	registry.emplace<GsServer>(gs);
-	registry.emplace<GsStubPtr>(gs, std::make_unique<GsStubPtr::element_type>(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));	
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
@@ -220,7 +197,6 @@ void ControllerNodeServiceImpl::OnGateConnect(::google::protobuf::RpcController*
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(kGateNode);
 		g_gate_nodes.emplace(request->gate_node_id(), gate);
-        registry.emplace_or_replace<GateStub>(gate, GateStub(boost::any_cast<muduo::net::RpcChannelPtr>(c.conn_->getContext())));
 		break;
 	}
 	registry.emplace<InetAddress>(gate, session_addr);
@@ -287,11 +263,9 @@ void ControllerNodeServiceImpl::OnGateDisconnect(::google::protobuf::RpcControll
 	}
 	auto player_id = registry.get<Guid>(player);
 	g_gate_sessions.erase(player_id);
-	gsservice::DisconnectRequest message;
-	message.set_player_id(player_id);
-	registry.get<GsStubPtr>(it->second)->CallMethod(
-		message,
-		&gsservice::GsService_Stub::Disconnect);
+	gsservice::DisconnectRequest rq;
+	rq.set_player_id(player_id);
+	registry.get<GsNodePtr>(it->second)->session_.CallMethod(gsserviceDisconnectMethoddesc, &rq);
 	g_player_list->LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE 
 }
@@ -574,10 +548,10 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
         return;
 	}
 	player_session.set_gs(*try_gs);
-    GatePlayerEnterGsRpc rpc(std::make_shared<GatePlayerEnterGsRpc::element_type>());;
-    rpc->s_rq_.set_session_id(player_session.session_id());
-    rpc->s_rq_.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GateStub>(gate_it->second).CallMethod(OnGateUpdatePlayerGsReplied, rpc,  &gateservice::GateService::PlayerEnterGs);
+	gateservice::PlayerEnterGsRequest rq;
+	rq.set_session_id(player_session.session_id());
+	rq.set_gs_node_id(player_session.gs_node_id());
+	registry.get<GateNodePtr>(gate_it->second)->session_.CallMethod(gateservicePlayerEnterGsMethoddesc, &rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE 

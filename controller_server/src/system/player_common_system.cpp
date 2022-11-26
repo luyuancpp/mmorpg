@@ -1,5 +1,7 @@
 #include "player_common_system.h"
 
+#include "muduo/base/Logging.h"
+
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"

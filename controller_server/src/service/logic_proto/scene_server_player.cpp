@@ -18,9 +18,6 @@
 
 #include "game_service.pb.h"
 
-using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
-
-
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
