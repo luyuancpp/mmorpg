@@ -1,4 +1,4 @@
-#include "service_replied.h"
+#include "game_service_replied.h"
 
 #include <boost/get_pointer.hpp>
 #include <muduo/base/Logging.h>
@@ -9,26 +9,26 @@
 
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 
-void CallPlayerGsReplied(GsCallPlayerRpc rpc)
+void OnGsCallPlayerReplied(const TcpConnectionPtr& conn, const NodeServiceMessageResponsePtr& replied, Timestamp timestamp)
 {
-    auto it = g_players.find(rpc->s_rp_->ex().player_id());
+    auto it = g_players.find(replied->ex().player_id());
     if (it == g_players.end())
     {
-        LOG_ERROR << "PlayerService player not found " << rpc->s_rp_->ex().player_id() << ","
-            << rpc->s_rp_->descriptor()->full_name() << " msgid " << rpc->s_rp_->msg().msg_id();
+        LOG_ERROR << "PlayerService player not found " << replied->ex().player_id() << ","
+            << replied->descriptor()->full_name() << " msgid " << replied->msg().msg_id();
         return;
     }
-    auto msg_id = rpc->s_rp_->msg().msg_id();
+    auto msg_id = replied->msg().msg_id();
     auto sit = g_serviceinfo.find(msg_id);
     if (sit == g_serviceinfo.end())
     {
-        LOG_ERROR << "PlayerService msg not found " << rpc->s_rp_->ex().player_id() << "," << msg_id;
+        LOG_ERROR << "PlayerService msg not found " << replied->ex().player_id() << "," << msg_id;
         return;
     }
     auto service_it = g_player_service_replieds.find(sit->second.service);
     if (service_it == g_player_service_replieds.end())
     {
-        LOG_ERROR << "PlayerService service not found " << rpc->s_rp_->ex().player_id() << "," << msg_id;
+        LOG_ERROR << "PlayerService service not found " << replied->ex().player_id() << "," << msg_id;
         return;
     }
     auto& serviceimpl = service_it->second;
@@ -42,7 +42,7 @@ void CallPlayerGsReplied(GsCallPlayerRpc rpc)
         return;
     }
     MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
-    player_response->ParseFromString(rpc->s_rp_->msg().body());
+    player_response->ParseFromString(replied->msg().body());
     serviceimpl->CallMethod(method, it->second,  boost::get_pointer(player_response));
 }
 

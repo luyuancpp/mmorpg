@@ -12,13 +12,12 @@
 #include "src/network/player_session.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
+#include "src/pb/pbc/service_method/lobby_scenemethod.h"
+#include "src/pb/pbc/service_method/game_servicemethod.h"
 
 #include "component_proto/player_login_comp.pb.h"
-#include "logic_proto/lobby_scene.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
 #include "game_service.pb.h"
-
-using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 
 void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 {
@@ -79,42 +78,13 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
 	{
         return;
     }
-    gsservice::EnterGsRequest message;
-    message.set_player_id(registry.get<Guid>(player));
-    message.set_session_id(session_id);
-    message.set_controller_node_id(controller_node_id());
-    registry.get<GsStubPtr>(it->second)->CallMethod(message, &gsservice::GsService_Stub::EnterGs);
+    gsservice::EnterGsRequest rq;
+    rq.set_player_id(registry.get<Guid>(player));
+    rq.set_session_id(session_id);
+    rq.set_controller_node_id(controller_node_id());
+    registry.get<GsNodePtr>(it->second)->session_.CallMethod(gsserviceEnterGsMethoddesc, &rq);
 }
 
-
-using EnterLobbyMainSceneRpc = std::shared_ptr<NormalClosure<lobbyservcie::EnterCrossMainSceneRequest, lobbyservcie::EnterCrossMainSceneResponese>>;
-void EnterLobbyMainSceneReplied(EnterLobbyMainSceneRpc replied)
-{
-    // todo 跨服切换不行，return error
-    //切跨到b服过程中，跨服没返回又切到c，跨服回来再到c目前就不考虑这种情况了，考虑的话写代码麻烦
-    //todo 异步跨服返回来之前又去切换场景，导致已经切换到别的场景了，再切的话可能就不对了，不考虑这种情况了，正常人不会切那么快
-    auto player = g_player_list->GetPlayer(replied->s_rq_.player_id());
-    if (entt::null == player)
-    {
-        LOG_ERROR << "player not found" << replied->s_rq_.player_id();
-        return;
-    }
-    GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
-    if (change_scene_queue.empty())
-    {
-        return;
-    }
-    auto scene = ScenesSystem::get_scene(replied->s_rq_.scene_id());
-    if (entt::null == scene)
-    {
-        LOG_ERROR << "scene not found" << replied->s_rq_.scene_id();
-        PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
-        return;
-    }
-    auto& change_scene_info = change_scene_queue.front();
-    change_scene_info.set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
-    PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-}
 
 //前一个队列完成的时候才应该调用到这里去判断当前队列
 void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
@@ -232,17 +202,17 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         if (is_from_gs_is_cross_server)
         {
             //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
-            lobbyservcie::LeaveCrossMainSceneRequest rpc;
-            rpc.set_player_id(registry.get<Guid>(player));
-            g_controller_node->lobby_stub().CallMethod(rpc, &lobbyservcie::LobbyService_Stub::LeaveCrossMainScene);
+            lobbyservcie::LeaveCrossMainSceneRequest rq;
+            rq.set_player_id(registry.get<Guid>(player));
+            g_controller_node->lobby_node()->CallMethod(lobbyservcieLeaveCrossMainSceneMethoddesc, &rq);
         }
         if (is_to_gs_is_cross_server)
         {
             //注意虽然一个逻辑，但是不一定是在leave后面处理
-            EnterLobbyMainSceneRpc rpc(std::make_shared<EnterLobbyMainSceneRpc::element_type>());
-            rpc->s_rq_.set_scene_id(to_scene_id);
-            rpc->s_rq_.set_player_id(registry.get<Guid>(player));
-            g_controller_node->lobby_stub().CallMethod(EnterLobbyMainSceneReplied, rpc, &lobbyservcie::LobbyService_Stub::EnterCrossMainScene);
+            lobbyservcie::EnterCrossMainSceneRequest rq;
+            rq.set_scene_id(to_scene_id);
+            rq.set_player_id(registry.get<Guid>(player));
+            g_controller_node->lobby_node()->CallMethod(lobbyservcieEnterCrossMainSceneMethoddesc, &rq);
             return;
         }
     }

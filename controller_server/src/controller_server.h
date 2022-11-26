@@ -5,7 +5,7 @@
 #include "src/event/event.h"
 #include "src/service/common_proto/controller_service.h"
 #include "src/redis_client/redis_client.h"
-#include "src/network/rpc_closure.h"
+#include "src/network/rpc_client.h"
 #include "src/network/rpc_connection_event.h"
 #include "src/network/rpc_server.h"
 #include "src/network/server_component.h"
@@ -25,10 +25,12 @@ public:
 
 	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
 	inline uint32_t controller_node_id()const { return serverinfos_.controller_info().id(); }
-	inline LobbyNodeStub& lobby_stub() { return lobby_stub_; }
+	inline RpcClientPtr& lobby_node() { return lobby_session_; }
 
 	void Init();
 	void LetGateConnect2Gs(entt::entity gs, entt::entity gate);
+
+    void StartServer(const ::servers_info_data& info);
 
 	void receive(const OnConnected2ServerEvent& es);
 	void receive(const OnBeConnectedEvent& es);
@@ -36,12 +38,6 @@ public:
 private:
 
 	void InitConfig();
-
-	using ServerInfoRpc = std::shared_ptr<NormalClosure<deploy::ServerInfoRequest, deploy::ServerInfoResponse>>;
-	void StartServer(const ::servers_info_data& info);
-
-    using SceneNodeSequeIdRpc = std::shared_ptr<NormalClosure<deploy::SceneSqueueRequest, deploy::SceneSqueueResponese>>;
-    void SceneSqueueNodeId(SceneNodeSequeIdRpc replied);
 
 	void Connect2Deploy();
 	void Connect2Lobby();

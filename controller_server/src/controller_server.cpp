@@ -12,11 +12,14 @@
 #include "src/network/gs_node.h"
 #include "src/network/rpc_client.h"
 #include "src/game_logic/game_registry.h"
+#include "src/service/common_proto_replied/replied_dispathcer.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"
 #include "src/service/logic_proto/server_service.h"
 #include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
+#include "src/pb/pbc/service_method/lobby_scenemethod.h"
 
 #include "game_service.pb.h"
 #include "gate_service.pb.h"
@@ -51,6 +54,7 @@ void ControllerServer::Init()
     InitMsgService();
     InitPlayerServcie();
     InitPlayerServcieReplied();
+    InitRepliedCallback();
     //connect 
     Connect2Deploy();
 }
@@ -87,10 +91,6 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
     LOG_INFO << "controller start " << myinfo.DebugString();
 }
 
-void ControllerServer::SceneSqueueNodeId(SceneNodeSequeIdRpc replied)
-{
-	set_server_squence_node_id(replied->s_rp_->node_id());
-}
 
 void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
@@ -111,23 +111,15 @@ void ControllerServer::receive(const OnConnected2ServerEvent& es)
 		if (nullptr == server_)
 		{
 			{
-                ServerInfoRpc rpc(std::make_shared<ServerInfoRpc::element_type>());
-                rpc->s_rq_.set_group(GameConfig::GetSingleton().config_info().group_id());
-                rpc->s_rq_.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-                deploy_stub_.CallMethod(
-                    &ControllerServer::StartServer,
-                    rpc,
-                    this,
-                    &deploy::DeployService_Stub::ServerInfo);
+                deploy::ServerInfoRequest rq;
+                rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+                rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
+                deploy_session_->CallMethod(deployServerInfoMethoddesc, &rq);
 			}
 			
             {
-                SceneNodeSequeIdRpc rpc(std::make_shared<SceneNodeSequeIdRpc::element_type>());
-                deploy_stub_.CallMethod(
-                    &ControllerServer::SceneSqueueNodeId,
-                    rpc,
-                    this,
-                    &deploy::DeployService_Stub::SceneSqueueNodeId);
+                deploy::SceneSqueueRequest rq;
+                deploy_session_->CallMethod(deploySceneSqueueNodeIdMethoddesc, &rq);
             }
 		}
 		
@@ -200,7 +192,6 @@ void ControllerServer::Connect2Lobby()
 	auto& lobby_info = serverinfos_.lobby_info();
 	InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
 	lobby_session_ = std::make_unique<RpcClient>(loop_, lobby_addr);
-	lobby_session_->subscribe<RegisterStubEvent>(lobby_stub_);
 	lobby_session_->registerService(&contoller_service_);
 	lobby_session_->subscribe<OnConnected2ServerEvent>(*this);
 	lobby_session_->connect();
@@ -217,7 +208,5 @@ void ControllerServer::Register2Lobby()
 	node_info->set_ip(myinfo.ip());
 	node_info->set_port(myinfo.port());
 	rq.set_controller_node_id(myinfo.id());
-	lobby_stub_.CallMethod(
-		rq,
-		&lobbyservcie::LobbyService_Stub::StartControllerNode);
+    lobby_session_->CallMethod(lobbyservcieStartControllerNodeMethoddesc, &rq);
 }

@@ -12,12 +12,11 @@
 #include "src/pb/pbc/msgmap.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
-#include "src/service/common_proto_replied/service_replied.h"
+#include "src/service/common_proto_replied/game_service_replied.h"
 
 #include "gate_service.pb.h"
 #include "game_service.pb.h"
 
-using GsStubPtr = std::unique_ptr<RpcStub<gsservice::GsService_Stub>>;
 
 void Send2Gs(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& message, uint32_t node_id)
 {
@@ -187,9 +186,9 @@ void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity playe
     {
         return;
     }
-    GsCallPlayerRpc rpc(std::make_shared<GsCallPlayerRpc::element_type>());
-    rpc->s_rq_.mutable_msg()->set_msg_id(msg_it->second);
-    rpc->s_rq_.mutable_msg()->set_body(msg.SerializeAsString());
-    rpc->s_rq_.mutable_ex()->set_player_id(registry.get<Guid>(player));
-    registry.get<GsStubPtr>(gs_it->second)->CallMethod(CallPlayerGsReplied, rpc, &gsservice::GsService_Stub::CallPlayer);
+    NodeServiceMessageRequest rq;
+    rq.mutable_msg()->set_msg_id(msg_it->second);
+    rq.mutable_msg()->set_body(msg.SerializeAsString());
+    rq.mutable_ex()->set_player_id(registry.get<Guid>(player));
+    registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(gsserviceCallPlayerMethoddesc, &rq);
 }

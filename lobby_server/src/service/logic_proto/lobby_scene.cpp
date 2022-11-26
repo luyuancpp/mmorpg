@@ -213,6 +213,9 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
 	esp.scene_ = scene;
 	esp.enterer_ = player;
 	ScenesSystem::EnterScene(esp);
+
+	response->set_player_id(request->player_id());
+	response->set_scene_id(request->scene_id());
 ///<<< END WRITING YOUR CODE 
 }
 
