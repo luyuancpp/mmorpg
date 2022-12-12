@@ -148,10 +148,9 @@ class RpcChannel : public ::google::protobuf::RpcChannel
 
   RpcCodec codec_;
   TcpConnectionPtr conn_;
-  AtomicInt64 id_;
+  uint64_t id_;
 
-  MutexLock mutex_;   
-  std::map<int64_t, OutstandingCall> outstandings_ GUARDED_BY(mutex_);
+  std::map<int64_t, OutstandingCall> outstandings_;
 
   const std::map<std::string, ::google::protobuf::Service*>* services_;
   ProtobufDispatcher dispatcher_;
