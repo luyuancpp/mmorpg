@@ -6,7 +6,7 @@
 #include "src/network/server_component.h"
 #include "src/network/rpc_client.h"
 
-#include "component_proto/node_comp.pb.h"
+#include "common.pb.h"
 
 using ControllerSessionPtr = std::shared_ptr<RpcClient>;
 struct ControllerNode

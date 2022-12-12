@@ -6,7 +6,7 @@
 #include "src/network/rpc_client.h"
 #include "src/game_logic/game_registry.h"
 
-#include "component_proto/node_comp.pb.h"
+#include "common.pb.h"
 
 struct LoginNode
 {

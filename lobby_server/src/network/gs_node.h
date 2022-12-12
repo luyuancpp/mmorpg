@@ -6,7 +6,7 @@
 #include "src/network/node_info.h"
 #include "src/network/server_component.h"
 
-#include "component_proto/node_comp.pb.h"
+#include "common.pb.h"
 
 struct GsNode
 {
