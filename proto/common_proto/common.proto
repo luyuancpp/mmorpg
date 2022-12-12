@@ -11,6 +11,13 @@ message Tips
   repeated string param = 2;
 }
 
+message NodeInfo
+{
+  uint32 node_id = 1;
+  uint32 node_type = 2;
+  uint64 launch_time = 3;
+}
+
 message ConnetionParam
 {
   string ip = 1;
@@ -94,4 +101,32 @@ message PlayerMessageRespone
 {
   MessageBody msg = 1;
   PlayerMessageExtern ex = 2;
+}
+
+message PlayerRouteMessageExtern
+{
+  uint64 player_id = 1;
+}
+
+message RouteMessageExtern
+{
+}
+
+message RouteMessageBody
+{
+   uint64 id = 1;
+   bytes body = 2;
+   NodeInfo src_node_info = 3;
+   PlayerRouteMessageExtern player_ex = 4;
+   RouteMessageExtern route_ex = 5;
+}
+
+message RouteMsgStringRequest
+{
+  repeated RouteMessageBody msg_string = 1;
+}
+
+message RouteMsgStringResponse
+{
+  repeated RouteMessageBody msg_string = 1;
 }
