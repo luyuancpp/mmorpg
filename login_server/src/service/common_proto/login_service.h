@@ -4,8 +4,8 @@ class LoginServiceImpl : public loginservice::LoginService{
 public:
 public:
     void Login(::google::protobuf::RpcController* controller,
-        const loginservice::LoginRequest* request,
-        loginservice::LoginResponse* response,
+        const loginservice::LoginNodeLoginRequest* request,
+        loginservice::LoginNodeLoginResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void CreatPlayer(::google::protobuf::RpcController* controller,
@@ -26,6 +26,16 @@ public:
     void Disconnect(::google::protobuf::RpcController* controller,
         const loginservice::DisconnectRequest* request,
         ::google::protobuf::Empty* response,
+        ::google::protobuf::Closure* done)override;
+
+    void RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+        const ::RouteMsgStringRequest* request,
+        ::RouteMsgStringResponse* response,
+        ::google::protobuf::Closure* done)override;
+
+    void RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+        const ::RoutePlayerMsgStringRequest* request,
+        ::RoutePlayerMsgStringResponse* response,
         ::google::protobuf::Closure* done)override;
 
 };

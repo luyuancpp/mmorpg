@@ -13,5 +13,5 @@ void OnServerCreatePlayerReplied(const TcpConnectionPtr& conn, const CreatePlaye
 using EnterGameResponsePtr = std::shared_ptr<loginservice::EnterGameResponse>;
 void OnEnterGameReplied(const TcpConnectionPtr& conn, const EnterGameResponsePtr& replied, Timestamp timestamp);
 
-using LoginLoginResponsePtr = std::shared_ptr<loginservice::LoginResponse>;
+using LoginLoginResponsePtr = std::shared_ptr<loginservice::LoginNodeLoginResponse>;
 void OnServerLoginReplied(const TcpConnectionPtr& conn, const LoginLoginResponsePtr& replied, Timestamp timestamp);
