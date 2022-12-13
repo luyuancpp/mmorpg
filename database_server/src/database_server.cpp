@@ -41,8 +41,6 @@ void DatabaseServer::Start()
         GameConfig::GetSingleton().config_info().group_id() * begin_guid);
     database_->Init();
 
-    impl_.set_player_mysql_client(player_mysql_client());
-    impl_.set_redis_client(redis_client());
     server_->registerService(&impl_);
     server_->start();
 }

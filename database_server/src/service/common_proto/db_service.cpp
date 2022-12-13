@@ -11,7 +11,7 @@
 
 ///<<<rpc begin
 void DbServiceImpl::Login(::google::protobuf::RpcController* controller,
-    const dbservice::LoginRequest* request,
+    const dbservice::DbNodeLoginRequest* request,
     dbservice::LoginResponse* response,
     ::google::protobuf::Closure* done)
 {
