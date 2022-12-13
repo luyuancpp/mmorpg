@@ -11,6 +11,7 @@
 #include "src/network/gate_player_list.h"
 #include "src/util/snow_flake.h"
 
+#include "database_service.pb.h"
 #include "c2gate.pb.h"
 #include "login_service.pb.h"
 #include "controller_service.pb.h"
@@ -35,7 +36,7 @@ struct ClosureReplied
     Guid session_id_{ kInvalidGuid };
 };
 
-using LoginRequestPtr = std::shared_ptr<DbNodeLoginRequest> ;
+using LoginRequestPtr = std::shared_ptr<DatabaseNodeLoginRequest> ;
 using CreatePlayerRequestPtr = std::shared_ptr<CreatePlayerRequest>;
 using EnterGameRequestPtr = std::shared_ptr<EnterGameRequest>;
 using LeaveGameRequestPtr = std::shared_ptr<LeaveGameRequest>;
