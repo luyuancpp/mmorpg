@@ -7,5 +7,5 @@
 using namespace muduo;
 using namespace muduo::net;
 
-using RpcClientResponsePtr = std::shared_ptr<gsservice::RpcClientResponse>;
+using RpcClientResponsePtr = std::shared_ptr<GameNodeRpcClientResponse>;
 void OnGsPlayerServiceReplied(const TcpConnectionPtr& conn, const RpcClientResponsePtr& replied, Timestamp timestamp);

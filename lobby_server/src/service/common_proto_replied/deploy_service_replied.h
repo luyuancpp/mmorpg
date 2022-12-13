@@ -7,8 +7,8 @@
 using namespace muduo;
 using namespace muduo::net;
 
-using LobbyServerResponsePtr = std::shared_ptr<deploy::LobbyServerResponse>;
+using LobbyServerResponsePtr = std::shared_ptr<LobbyServerResponse>;
 void OnLobbyServerReplied(const TcpConnectionPtr& conn, const LobbyServerResponsePtr& replied, Timestamp timestamp);
 
-using SceneSqueueResponesePtr = std::shared_ptr<deploy::SceneSqueueResponese>;
+using SceneSqueueResponesePtr = std::shared_ptr<SceneSqueueResponese>;
 void SceneSqueueNodeIdReplied(const TcpConnectionPtr& conn, const SceneSqueueResponesePtr& replied, Timestamp timestamp);

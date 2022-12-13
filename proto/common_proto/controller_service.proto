@@ -2,10 +2,9 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 import "common_proto/common.proto";
 import "component_proto/scene_comp.proto";
-package controllerservice;
 option cc_generic_services = true;
 
-message StartGsRequest
+message ControllerNodeStartGsRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
@@ -13,67 +12,67 @@ message StartGsRequest
   uint32 server_type = 4;
 }
 
-message StartGsResponse
+message ControllerNodeStartGsResponse
 {
   uint32 controller_node_id = 1;
   repeated SceneInfo scenes_info = 2;
   uint32 gate_node_id = 3;
 }
 
-message ClientMessageRequest
+message ControllerNodeClientMessageRequest
 {
   IpPort rpc_client = 1;
 }
 
-message ConnectRequest
+message ControllerNodeConnectRequest
 {
   IpPort rpc_client = 1;
   uint32 gate_node_id = 2;
 }
 
-message ConnectedGameRequest
+message ControllerNodeConnectedGameRequest
 {
   IpPort rpc_client = 1;
 }
 
-message LeaveGameRequest
+message ControllerNodeLeaveGameRequest
 {
   uint64 session_id = 1;
 }
 
-message DisconnectRequest
+message ControllerNodeDisconnectRequest
 {
   uint64 session_id = 1;
 }
 
-message LoginAccountRequest
+message ControllerNodeLoginAccountRequest
 {
   string account = 1;
   uint64 session_id = 2;
 }
 
-message LoginAccountResponse
+message ControllerNodeLoginAccountResponse
 { 
   Tips error = 1;
 }
 
-message EnterGameRequest
+message ControllerNodeEnterGameRequest
 {
   uint64 player_id = 1;
   uint64 session_id = 2;
 }
 
-message EnterGameResponese
+message ControllerNodeEnterGameResponese
 {
   uint64 session_id = 1;
 }
 
-message LsLeaveGameRequest
+message ControllerNodeLsLeaveGameRequest
 {
   uint64 session_id = 1;
 }
 
-message LsDisconnectRequest
+message ControllerNodeLsDisconnectRequest
 {
   uint64 session_id = 1;
 }
@@ -95,16 +94,16 @@ message EnterGsSucceedRequest
   uint32 game_node_id = 2;
 }
 
-service ControllerNodeService {
-  rpc StartGs (StartGsRequest) returns (StartGsResponse);
-  rpc OnGateConnect (ConnectRequest) returns (google.protobuf.Empty);
-  rpc OnGateLeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
-  rpc OnGatePlayerService (ClientMessageRequest) returns (google.protobuf.Empty);
-  rpc OnGateDisconnect (DisconnectRequest) returns (google.protobuf.Empty); 
-  rpc OnLsLoginAccount (LoginAccountRequest) returns (LoginAccountResponse);
-  rpc OnLsEnterGame (EnterGameRequest) returns (EnterGameResponese);
-  rpc OnLsLeaveGame (LsLeaveGameRequest) returns (google.protobuf.Empty);
-  rpc OnLsDisconnect (LsDisconnectRequest) returns (google.protobuf.Empty); 
+service ControllerService {
+  rpc StartGs (ControllerNodeStartGsRequest) returns (ControllerNodeStartGsResponse);
+  rpc OnGateConnect (ControllerNodeConnectRequest) returns (google.protobuf.Empty);
+  rpc OnGateLeaveGame (ControllerNodeLeaveGameRequest) returns (google.protobuf.Empty);
+  rpc OnGatePlayerService (ControllerNodeClientMessageRequest) returns (google.protobuf.Empty);
+  rpc OnGateDisconnect (ControllerNodeDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc OnLsLoginAccount (ControllerNodeLoginAccountRequest) returns (ControllerNodeLoginAccountResponse);
+  rpc OnLsEnterGame (ControllerNodeEnterGameRequest) returns (ControllerNodeEnterGameResponese);
+  rpc OnLsLeaveGame (ControllerNodeLsLeaveGameRequest) returns (google.protobuf.Empty);
+  rpc OnLsDisconnect (ControllerNodeLsDisconnectRequest) returns (google.protobuf.Empty); 
   rpc OnGsPlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
   rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (google.protobuf.Empty);
   rpc EnterGsSucceed (EnterGsSucceedRequest) returns (google.protobuf.Empty);

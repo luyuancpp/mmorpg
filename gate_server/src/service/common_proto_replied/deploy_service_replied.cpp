@@ -40,9 +40,9 @@ void OnServerInfoReplied(const TcpConnectionPtr& conn, const ServerInfoResponseP
     EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
         []() ->void
         {
-            deploy::GroupLignRequest rq;
+            GroupLignRequest rq;
             rq.set_group_id(GameConfig::GetSingleton().config_info().group_id());
-            g_gate_server->deploy_session()->CallMethod(deployLoginNodeInfoMethoddesc, &rq);
+            g_gate_server->deploy_session()->CallMethod(DeployServiceLoginNodeInfoMethodDesc, &rq);
         }
     );
     g_gate_server->StartServer();   

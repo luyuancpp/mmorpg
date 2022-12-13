@@ -68,9 +68,9 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
-                deploy::ServerInfoRequest rq;
+                ServerInfoRequest rq;
                 rq.set_group(GameConfig::GetSingleton().config_info().group_id());
-                deploy_session()->CallMethod(deployServerInfoMethoddesc, &rq);
+                deploy_session()->CallMethod(DeployServiceServerInfoMethodDesc, &rq);
             }
         );
     }
@@ -84,11 +84,11 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             [this]() ->void
 			{
 				auto& controller_node_addr = controller_node_->local_addr();
-				controllerservice::ConnectRequest rq;
+				ControllerNodeConnectRequest rq;
 				rq.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
 				rq.mutable_rpc_client()->set_port(controller_node_addr.port());
 				rq.set_gate_node_id(gate_node_id());
-				controller_node_session()->CallMethod(controllerserviceOnGateConnectMethoddesc, &rq);
+				controller_node_session()->CallMethod(ControllerServiceOnGateConnectMethodDesc, &rq);
 			}
         );
     }
@@ -107,11 +107,11 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
 				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
 					[this, &gs_node, &conn]() ->void
 					{
-						gsservice::ConnectRequest rq;
+						GameNodeConnectRequest rq;
 						rq.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
 						rq.mutable_rpc_client()->set_port(conn->localAddress().port());
 						rq.set_gate_node_id(gate_node_id());
-						gs_node.gs_session_->CallMethod(gsserviceGateConnectGsMethoddesc, &rq);
+						gs_node.gs_session_->CallMethod(GameServiceGateConnectGsMethodDesc, &rq);
 					}
 				);
             }

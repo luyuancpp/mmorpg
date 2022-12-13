@@ -27,8 +27,8 @@
 //    }
 //    else if (GameConfig::GetSingleton().server_type() == kMainSceneCrossServer)
 //    {
-//        lobbyservcie::GameConnectToControllerRequest rpc;
-//        g_gs->lobby_stub().CallMethod(rpc, &lobbyservcie::LobbyService_Stub::GameConnectToController);
+//        GameConnectToControllerRequest rpc;
+//        g_gs->lobby_stub().CallMethod(rpc, &LobbyService_Stub::GameConnectToController);
 //    }
 //}
 //

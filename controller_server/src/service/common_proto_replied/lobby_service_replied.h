@@ -9,5 +9,5 @@
 using namespace muduo;
 using namespace muduo::net;
 
-using EnterCrossMainSceneResponesePtr = std::shared_ptr<lobbyservcie::EnterCrossMainSceneResponese>;
+using EnterCrossMainSceneResponesePtr = std::shared_ptr<EnterCrossMainSceneResponese>;
 void OnEnterLobbyMainSceneReplied(const TcpConnectionPtr& conn, const EnterCrossMainSceneResponesePtr& replied, Timestamp timestamp);

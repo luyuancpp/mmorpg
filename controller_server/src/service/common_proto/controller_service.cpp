@@ -102,9 +102,9 @@ void InitPlayerGate(entt::entity player, uint64_t session_id)
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ControllerNodeServiceImpl::StartGs(::google::protobuf::RpcController* controller,
-    const controllerservice::StartGsRequest* request,
-    controllerservice::StartGsResponse* response,
+void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controller,
+    const ::ControllerNodeStartGsRequest* request,
+    ::ControllerNodeStartGsResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -175,8 +175,8 @@ void ControllerNodeServiceImpl::StartGs(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnGateConnect(::google::protobuf::RpcController* controller,
-    const controllerservice::ConnectRequest* request,
+void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* controller,
+    const ::ControllerNodeConnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -207,8 +207,8 @@ void ControllerNodeServiceImpl::OnGateConnect(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnGateLeaveGame(::google::protobuf::RpcController* controller,
-    const controllerservice::LeaveGameRequest* request,
+void ControllerServiceImpl::OnGateLeaveGame(::google::protobuf::RpcController* controller,
+    const ::ControllerNodeLeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -217,8 +217,8 @@ void ControllerNodeServiceImpl::OnGateLeaveGame(::google::protobuf::RpcControlle
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnGatePlayerService(::google::protobuf::RpcController* controller,
-    const controllerservice::ClientMessageRequest* request,
+void ControllerServiceImpl::OnGatePlayerService(::google::protobuf::RpcController* controller,
+    const ::ControllerNodeClientMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -227,8 +227,8 @@ void ControllerNodeServiceImpl::OnGatePlayerService(::google::protobuf::RpcContr
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* controller,
-    const controllerservice::DisconnectRequest* request,
+void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* controller,
+    const ::ControllerNodeDisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -263,16 +263,16 @@ void ControllerNodeServiceImpl::OnGateDisconnect(::google::protobuf::RpcControll
 	}
 	auto player_id = registry.get<Guid>(player);
 	g_gate_sessions.erase(player_id);
-	gsservice::DisconnectRequest rq;
+	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
-	registry.get<GsNodePtr>(it->second)->session_.CallMethod(gsserviceDisconnectMethoddesc, &rq);
+	registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMethodDesc, &rq);
 	g_player_list->LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* controller,
-    const controllerservice::LoginAccountRequest* request,
-    controllerservice::LoginAccountResponse* response,
+void ControllerServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* controller,
+    const ::ControllerNodeLoginAccountRequest* request,
+    ::ControllerNodeLoginAccountResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -319,9 +319,9 @@ void ControllerNodeServiceImpl::OnLsLoginAccount(::google::protobuf::RpcControll
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* controller,
-    const controllerservice::EnterGameRequest* request,
-    controllerservice::EnterGameResponese* response,
+void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* controller,
+    const ::ControllerNodeEnterGameRequest* request,
+    ::ControllerNodeEnterGameResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -391,9 +391,9 @@ void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController*
         auto player_session = registry.try_get<PlayerSession>(player);
         if (nullptr != player_session)
         {
-            gateservice::KickConnRequest message;
+			GateNodeKickConnRequest message;
             message.set_session_id(player_session->gate_session_.session_id());
-            Send2Gate(gateserviceKickConnByControllerMethoddesc, message, player_session->gate_node_id());
+            Send2Gate(GateServiceKickConnByControllerMethodDesc, message, player_session->gate_node_id());
         }
 		InitPlayerGate(player, request->session_id());
 		registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
@@ -407,8 +407,8 @@ void ControllerNodeServiceImpl::OnLsEnterGame(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* controller,
-    const controllerservice::LsLeaveGameRequest* request,
+void ControllerServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* controller,
+    const ::ControllerNodeLsLeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -421,8 +421,8 @@ void ControllerNodeServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* controller,
-    const controllerservice::LsDisconnectRequest* request,
+void ControllerServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* controller,
+    const ::ControllerNodeLsDisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -434,7 +434,7 @@ void ControllerNodeServiceImpl::OnLsDisconnect(::google::protobuf::RpcController
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::OnGsPlayerService(::google::protobuf::RpcController* controller,
     const ::NodeServiceMessageRequest* request,
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
@@ -486,8 +486,8 @@ void ControllerNodeServiceImpl::OnGsPlayerService(::google::protobuf::RpcControl
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcController* controller,
-    const controllerservice::AddCrossServerSceneRequest* request,
+void ControllerServiceImpl::AddCrossServerScene(::google::protobuf::RpcController* controller,
+    const ::AddCrossServerSceneRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -515,8 +515,8 @@ void ControllerNodeServiceImpl::AddCrossServerScene(::google::protobuf::RpcContr
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* controller,
-    const controllerservice::EnterGsSucceedRequest* request,
+void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* controller,
+    const ::EnterGsSucceedRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -548,10 +548,10 @@ void ControllerNodeServiceImpl::EnterGsSucceed(::google::protobuf::RpcController
         return;
 	}
 	player_session.set_gs(*try_gs);
-	gateservice::PlayerEnterGsRequest rq;
+	GateNodePlayerEnterGsRequest rq;
 	rq.set_session_id(player_session.session_id());
 	rq.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GateNodePtr>(gate_it->second)->session_.CallMethod(gateservicePlayerEnterGsMethoddesc, &rq);
+	registry.get<GateNodePtr>(gate_it->second)->session_.CallMethod(GateServicePlayerEnterGsMethodDesc, &rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE 

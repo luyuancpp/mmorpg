@@ -26,8 +26,6 @@
 using namespace muduo;
 using namespace muduo::net;
 
-using namespace controllerservice;
-
 using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 PlayerListMap  players_;
 
@@ -51,7 +49,7 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	registry.get<ControllerNodePtr>(controller_node_it->second)->session_.CallMethod(controllerserviceAddCrossServerSceneMethoddesc, &rq);
+	registry.get<ControllerNodePtr>(controller_node_it->second)->session_.CallMethod(ControllerServiceAddCrossServerSceneMethodDesc, &rq);
 	LOG_DEBUG << rq.DebugString();
 }
 
@@ -60,8 +58,8 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
 
 ///<<<rpc begin
 void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controller,
-    const lobbyservcie::StartCrossGsRequest* request,
-    lobbyservcie::StartCrossGsResponse* response,
+    const ::StartCrossGsRequest* request,
+    ::StartCrossGsResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -122,7 +120,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 }
 
 void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* controller,
-    const lobbyservcie::StartControllerRequest* request,
+    const ::StartControllerRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -160,8 +158,8 @@ void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* co
 }
 
 void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* controller,
-    const lobbyservcie::EnterCrossMainSceneRequest* request,
-    lobbyservcie::EnterCrossMainSceneResponese* response,
+    const ::EnterCrossMainSceneRequest* request,
+    ::EnterCrossMainSceneResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -220,8 +218,8 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
 }
 
 void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
-    const lobbyservcie::EnterCrossMainSceneWeightRoundRobinRequest* request,
-    lobbyservcie::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
+    const ::EnterCrossMainSceneWeightRoundRobinRequest* request,
+    ::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -258,7 +256,7 @@ void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::R
 }
 
 void LobbyServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* controller,
-    const lobbyservcie::LeaveCrossMainSceneRequest* request,
+    const ::LeaveCrossMainSceneRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -278,7 +276,7 @@ void LobbyServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* co
 }
 
 void LobbyServiceImpl::GameConnectToController(::google::protobuf::RpcController* controller,
-    const lobbyservcie::GameConnectToControllerRequest* request,
+    const ::GameConnectToControllerRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

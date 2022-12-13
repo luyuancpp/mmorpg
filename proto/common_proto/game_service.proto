@@ -1,18 +1,17 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
 import "common_proto/common.proto";
-package gsservice;
 option cc_generic_services = true;
 
 
-message EnterGsRequest
+message GameNodeEnterGsRequest
 {
   uint64 player_id = 1;
   uint64 session_id = 2;
   uint64 controller_node_id = 3;
 }
 
-message RpcClientRequest
+message GameNodeRpcClientRequest
 {
   bytes request = 1;
   uint64 session_id = 2;
@@ -20,7 +19,7 @@ message RpcClientRequest
   uint64 id = 4;
 }
 
-message RpcClientResponse
+message GameNodeRpcClientResponse
 {
   bytes response = 1;
   uint64 session_id = 2;
@@ -28,23 +27,23 @@ message RpcClientResponse
   uint64 id = 4;
 }
 
-message DisconnectRequest
+message GameNodeDisconnectRequest
 {
   uint64 player_id = 1;
 }
 
-message ConnectRequest
+message GameNodeConnectRequest
 {
   IpPort rpc_client = 1;
   uint32 gate_node_id = 2;
 }
 
-service GsService {
-  rpc EnterGs (EnterGsRequest) returns (google.protobuf.Empty);
+service GameService {
+  rpc EnterGs (GameNodeEnterGsRequest) returns (google.protobuf.Empty);
   rpc Send2Player (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
-  rpc ClientSend2Player (RpcClientRequest) returns (RpcClientResponse);
-  rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty); 
-  rpc GateConnectGs (ConnectRequest) returns (google.protobuf.Empty); 
+  rpc ClientSend2Player (GameNodeRpcClientRequest) returns (GameNodeRpcClientResponse);
+  rpc Disconnect (GameNodeDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc GateConnectGs (GameNodeConnectRequest) returns (google.protobuf.Empty); 
   rpc ControllerSend2PlayerViaGs (NodeServiceMessageRequest) returns (google.protobuf.Empty);
   rpc CallPlayer (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
 }

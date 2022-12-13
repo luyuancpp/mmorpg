@@ -1,21 +1,21 @@
 #pragma once
 #include "gate_service.pb.h"
-class GateServiceImpl : public gateservice::GateService{
+class GateServiceImpl : public ::GateService{
 public:
 public:
     void StartGS(::google::protobuf::RpcController* controller,
-        const gateservice::StartGSRequest* request,
+        const ::GateNodeStartGSRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void StopGS(::google::protobuf::RpcController* controller,
-        const gateservice::StopGSRequest* request,
+        const ::GateNodeStopGSRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void PlayerEnterGs(::google::protobuf::RpcController* controller,
-        const gateservice::PlayerEnterGsRequest* request,
-        gateservice::PlayerEnterGsResponese* response,
+        const ::GateNodePlayerEnterGsRequest* request,
+        ::GateNodePlayerEnterGsResponese* response,
         ::google::protobuf::Closure* done)override;
 
     void PlayerMessage(::google::protobuf::RpcController* controller,
@@ -24,7 +24,7 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void KickConnByController(::google::protobuf::RpcController* controller,
-        const gateservice::KickConnRequest* request,
+        const ::GateNodeKickConnRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 

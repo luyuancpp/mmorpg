@@ -11,14 +11,14 @@ extern ProtobufDispatcher g_response_dispatcher;
 
 void InitRepliedCallback()
 {
-   g_response_dispatcher.registerMessageCallback<deploy::ServerInfoResponse>(std::bind(&OnServerInfoReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-   g_response_dispatcher.registerMessageCallback<deploy::SceneSqueueResponese>(std::bind(&SceneSqueueNodeIdReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+   g_response_dispatcher.registerMessageCallback<ServerInfoResponse>(std::bind(&OnServerInfoReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+   g_response_dispatcher.registerMessageCallback<SceneSqueueResponese>(std::bind(&SceneSqueueNodeIdReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
    g_response_dispatcher.registerMessageCallback<NodeServiceMessageResponse>(std::bind(&OnGsCallPlayerReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     
-   g_response_dispatcher.registerMessageCallback<lobbyservcie::EnterCrossMainSceneResponese>(std::bind(&OnEnterLobbyMainSceneReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+   g_response_dispatcher.registerMessageCallback<EnterCrossMainSceneResponese>(std::bind(&OnEnterLobbyMainSceneReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
    
-   g_response_dispatcher.registerMessageCallback<gateservice::PlayerEnterGsResponese>(std::bind(&OnGateUpdatePlayerGsReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+   g_response_dispatcher.registerMessageCallback<GateNodePlayerEnterGsResponese>(std::bind(&OnGateUpdatePlayerGsReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
    
 }
 

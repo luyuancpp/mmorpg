@@ -106,13 +106,13 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             //如果我的登录还没到controller,gw的disconnect 先到，登录后到，那么ms server 永远删除不了这个sessionid了
 			LoginNodeDisconnectRequest rq;
 			rq.set_session_id(session_id);
-			get_login_node(session_id)->CallMethod(DisconnectMethoddesc, &rq);
+			get_login_node(session_id)->CallMethod(LoginServiceDisconnectMethodDesc, &rq);
         }
         // controller
         {
-            controllerservice::DisconnectRequest rq;
+            ControllerNodeDisconnectRequest rq;
             rq.set_session_id(session_id);
-            g_gate_server->controller_node_session()->CallMethod(controllerserviceOnGateDisconnectMethoddesc, &rq);
+            g_gate_server->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnectMethodDesc, &rq);
         }
         g_client_sessions_->erase(session_id);
     }
@@ -138,7 +138,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     LoginNodeLoginRequest rq;
     rq.set_account(message->account());
     rq.set_session_id(tcp_session_id(conn));
-    get_login_node(tcp_session_id(conn))->CallMethod(LoginMethoddesc, &rq);
+    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceLoginMethodDesc, &rq);
 }
 
 void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
@@ -147,7 +147,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 {
     LoginNodeCreatePlayerRequest rq;
     rq.set_session_id(tcp_session_id(conn));
-    get_login_node(tcp_session_id(conn))->CallMethod(CreatPlayerMethoddesc, &rq);
+    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceCreatPlayerMethodDesc, &rq);
 }
 
 void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -157,7 +157,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
     LoginNodeEnterGameRequest rq;
     rq.set_session_id(tcp_session_id(conn));
     rq.set_player_id(message->player_id());
-    get_login_node(tcp_session_id(conn))->CallMethod(EnterGameMethoddesc, &rq);
+    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceEnterGameMethodDesc, &rq);
 }
 
 void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -188,12 +188,12 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     //todo msg id error
     if (g_open_player_msgids.find(request->msg_id()) != g_open_player_msgids.end())
     {
-        gsservice::RpcClientRequest rq;
+        GameNodeRpcClientRequest rq;
         rq.set_request(request->request());
         rq.set_session_id(session_id);
         rq.set_msg_id(request->msg_id());
         rq.set_id(request->id());
-        gs->second.gs_session_->CallMethod(gsserviceClientSend2PlayerMethoddesc, &rq);
+        gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMethodDesc, &rq);
     }
 }
 

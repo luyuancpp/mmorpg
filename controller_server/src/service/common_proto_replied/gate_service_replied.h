@@ -9,6 +9,6 @@
 using namespace muduo;
 using namespace muduo::net;
 
-using PlayerEnterGsResponesePtr = std::shared_ptr<gateservice::PlayerEnterGsResponese>;
+using PlayerEnterGsResponesePtr = std::shared_ptr<GateNodePlayerEnterGsResponese>;
 void OnGateUpdatePlayerGsReplied(const TcpConnectionPtr& conn, const PlayerEnterGsResponesePtr& replied, Timestamp timestamp);
 
