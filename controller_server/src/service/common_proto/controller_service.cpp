@@ -132,7 +132,7 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	auto c = registry.get<RpcServerConnection>(gs);
 	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
-	gs_node_ptr->node_info_.set_node_type(kGsNode);
+	gs_node_ptr->node_info_.set_node_type(kGameNode);
 	AddMainSceneNodeCompnent(gs);
 	registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
@@ -170,7 +170,7 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	{
 		g_controller_node->LetGateConnect2Gs(gs, e);
 	}
-	g_gs_nodes.emplace(registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
+	g_game_node.emplace(registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE 
 }
@@ -256,8 +256,8 @@ void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* 
 	{
 		return;
 	}
-	auto it = g_gs_nodes.find(try_player_session->gs_node_id());
-	if (it == g_gs_nodes.end())
+	auto it = g_game_node.find(try_player_session->gs_node_id());
+	if (it == g_game_node.end())
 	{
 		return;
 	}
@@ -496,8 +496,8 @@ void ControllerServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
     CreateSceneBySceneInfoP create_scene_param;
 	for (auto& it : request->cross_scenes_info())
 	{
-		auto git = g_gs_nodes.find(it.gs_node_id());
-		if (git == g_gs_nodes.end())
+		auto git = g_game_node.find(it.gs_node_id());
+		if (git == g_game_node.end())
 		{
 			continue;
 		}
@@ -535,8 +535,8 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 		return;
 	}
 	
-	auto game_it = g_gs_nodes.find(request->game_node_id());
-	if (game_it == g_gs_nodes.end())
+	auto game_it = g_game_node.find(request->game_node_id());
+	if (game_it == g_game_node.end())
 	{
         LOG_ERROR << "game crash" << request->game_node_id();
         return;

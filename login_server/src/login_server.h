@@ -20,7 +20,7 @@
         inline PbSyncRedisClientPtr& redis_client() { return redis_; }
         inline RpcClientPtr& controller_node() { return controller_session_; }
         inline RpcClientPtr& db_node() { return db_session_; }
-        uint32_t login_node_id() const { return login_info_db_.id(); }
+        uint32_t login_node_id() const { return conf_info_.id(); }
 		inline const NodeInfo& node_info()const { return node_info_;}
 
         void Init();
@@ -45,7 +45,7 @@
 
         LoginServiceImpl impl_;
 
-        login_server_db login_info_db_;
+        login_server_db conf_info_;
         NodeInfo node_info_;
     };
 

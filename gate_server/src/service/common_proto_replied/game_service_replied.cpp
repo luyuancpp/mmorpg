@@ -8,5 +8,5 @@ void OnGsPlayerServiceReplied(const TcpConnectionPtr& conn, const RpcClientRespo
     msg.set_body(replied->response());
     msg.set_id(replied->id());
     msg.set_msg_id(replied->msg_id());
-    g_gate_server->codec().send(conn, msg);
+    g_gate_node->codec().send(conn, msg);
 }

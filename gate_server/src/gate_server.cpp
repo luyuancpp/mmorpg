@@ -12,7 +12,7 @@
 
 #include "game_service.pb.h"
 
-GateServer* g_gate_server = nullptr; 
+GateServer* g_gate_node = nullptr; 
 
 
 
@@ -24,8 +24,10 @@ void GateServer::LoadConfig()
 
 void GateServer::Init()
 {
-    g_gate_server = this;
+    g_gate_node = this;
     LoadConfig();
+    node_info_.set_node_type(kGateNode);
+    node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     InitMsgService();
     InitRepliedCallback();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
@@ -39,7 +41,7 @@ void GateServer::Init()
 void GateServer::StartServer()
 {
 
-    auto& myinfo = serverinfo_data_.gate_info();
+    auto& myinfo = conf_info_.gate_info();
     InetAddress gate_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
@@ -74,7 +76,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             }
         );
     }
-    else if (IsSameAddr(conn->peerAddress(), serverinfo_data_.controller_info()))
+    else if (IsSameAddr(conn->peerAddress(), conf_info_.controller_info()))
     {
 		if (!conn->connected())
 		{
@@ -95,7 +97,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
     else
     {
         //todo ¶ÏÏßÖØÁ¬
-        for (auto& it : g_gs_nodes)
+        for (auto& it : g_game_node)
         {
             if (!IsSameAddr(it.second.gs_session_->peer_addr(), conn->peerAddress()))
             {
@@ -143,7 +145,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
 
 void GateServer::Connect2Controller()
 {
-    auto& controller_node_info = serverinfo_data_.controller_info();
+    auto& controller_node_info = conf_info_.controller_info();
     InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
     controller_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
     controller_node_->registerService(&gate_service_);
