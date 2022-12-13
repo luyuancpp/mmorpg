@@ -104,9 +104,9 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             //此消息一定要发，不能值通过ms 的gw disconnect去发
             //如果我的登录还没到controller,gw的disconnect 先到，登录后到，那么ms server 永远删除不了这个sessionid了
-			loginservice::DisconnectRequest rq;
+			LoginNodeDisconnectRequest rq;
 			rq.set_session_id(session_id);
-			get_login_node(session_id)->CallMethod(loginserviceDisconnectMethoddesc, &rq);
+			get_login_node(session_id)->CallMethod(DisconnectMethoddesc, &rq);
         }
         // controller
         {
@@ -146,7 +146,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     const CreatePlayerRequestPtr& message, 
                                     muduo::Timestamp)
 {
-    loginservice::CreatePlayerRequest rq;
+    LoginNodeCreatePlayerRequest rq;
     rq.set_session_id(tcp_session_id(conn));
     get_login_node(tcp_session_id(conn))->CallMethod(loginserviceCreatPlayerMethoddesc, &rq);
 }
