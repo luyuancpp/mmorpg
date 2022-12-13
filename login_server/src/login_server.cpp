@@ -2,6 +2,7 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/network/rpc_connection_event.h"
+#include "src/network/node_info.h"
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/service/common_proto_replied/replied_dispathcer.h"
 
@@ -21,7 +22,8 @@ void LoginServer::Init()
     g_login_node = this;
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
-
+    node_info_.set_node_type(kLoginNode);
+    node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     ConnectDeploy();
 }
 
@@ -55,9 +57,9 @@ void LoginServer::StartServer(const ::servers_info_data& info)
     auto& redisinfo = info.redis_info();
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
  
-    auto& myinfo = info.login_info();
-
-    InetAddress login_addr(myinfo.ip(), myinfo.port());
+    login_info_db_ = info.login_info();
+    node_info_.set_node_id(login_info_db_.id());
+    InetAddress login_addr(login_info_db_.ip(), login_info_db_.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, login_addr);
    
     Start();

@@ -291,6 +291,10 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	
+	auto rq = const_cast<::RouteMsgStringRequest*>(request);
+	rq->add_node_list()->CopyFrom(g_login_node->node_info());
+
 ///<<< END WRITING YOUR CODE 
 }
 
