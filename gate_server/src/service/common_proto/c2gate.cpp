@@ -112,7 +112,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             ControllerNodeDisconnectRequest rq;
             rq.set_session_id(session_id);
-            g_gate_server->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnectMethodDesc, &rq);
+            g_gate_node->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnectMethodDesc, &rq);
         }
         g_client_sessions_->erase(session_id);
     }
@@ -139,6 +139,8 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     rq.set_account(message->account());
     rq.set_session_id(tcp_session_id(conn));
     get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceLoginMethodDesc, &rq);
+
+    
 }
 
 void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
@@ -179,8 +181,8 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		return;
 	}
     //检测玩家可以不可以发这个消息id过来给服务器
-    auto gs = g_gs_nodes.find(it->second.gs_node_id_);
-    if (g_gs_nodes.end() == gs)
+    auto gs = g_game_node.find(it->second.gs_node_id_);
+    if (g_game_node.end() == gs)
     {
         //todo client error;
         return;

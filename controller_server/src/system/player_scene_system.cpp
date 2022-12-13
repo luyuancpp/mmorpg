@@ -73,8 +73,8 @@ NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
 void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, SessionId session_id)
 {
     //todo gs±ÀÀ£
-	auto it = g_gs_nodes.find(node_id);
-	if (it == g_gs_nodes.end())
+	auto it = g_game_node.find(node_id);
+	if (it == g_game_node.end())
 	{
         return;
     }
@@ -149,9 +149,9 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    auto from_gs_it = g_gs_nodes.find((*try_from_scene_gs)->node_id());
-    auto to_gs_it = g_gs_nodes.find((*try_to_scene_gs)->node_id());
-    if (from_gs_it == g_gs_nodes.end() || to_gs_it == g_gs_nodes.end())
+    auto from_gs_it = g_game_node.find((*try_from_scene_gs)->node_id());
+    auto to_gs_it = g_game_node.find((*try_to_scene_gs)->node_id());
+    if (from_gs_it == g_game_node.end() || to_gs_it == g_game_node.end())
     {
         LOG_ERROR << " gs not found  : " <<
             (*try_from_scene_gs)->node_id() <<

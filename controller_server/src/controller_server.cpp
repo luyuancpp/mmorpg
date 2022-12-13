@@ -161,11 +161,11 @@ void ControllerServer::receive(const OnBeConnectedEvent& es)
 				continue;
 			}
             auto gsnode = registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
-            if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGsNode)
+            if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGameNode)
             {
                 //remove AfterChangeGsEnterScene
 				//todo 
-                g_gs_nodes.erase((*gsnode)->node_info_.node_id());
+                g_game_node.erase((*gsnode)->node_info_.node_id());
             }
 			auto gatenode = registry.try_get<GateNodePtr>(e);//如果是gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)

@@ -14,7 +14,7 @@ int32_t main()
     g_controller_nodes = &controller_nodes;
 
     GsNodes gs_node;
-    g_gs_nodes = &gs_node;
+    g_game_node = &gs_node;
 
     EventLoop loop;
     LobbyServer server(&loop);

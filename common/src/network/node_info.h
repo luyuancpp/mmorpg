@@ -18,7 +18,7 @@ enum EnumNodeType : uint32_t
 {
 	kLoginNode,
 	kControllerNode,
-	kGsNode,
+	kGameNode,
 	kGateNode,
 };
 

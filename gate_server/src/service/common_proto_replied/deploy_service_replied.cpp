@@ -26,7 +26,7 @@ void OnLoginNodeInfoReplied(const TcpConnectionPtr& conn, const GruoupLoginNodeR
         }
         InetAddress login_addr(login_info.ip(), login_info.port());
         auto& login_node = it.first->second;
-        login_node.login_session_ = std::make_unique<RpcClientPtr::element_type>(g_gate_server->loop(), login_addr);
+        login_node.login_session_ = std::make_unique<RpcClientPtr::element_type>(g_gate_node->loop(), login_addr);
         login_node.login_session_->connect();
     }
 }
@@ -34,16 +34,16 @@ void OnLoginNodeInfoReplied(const TcpConnectionPtr& conn, const GruoupLoginNodeR
 void OnServerInfoReplied(const TcpConnectionPtr& conn, const ServerInfoResponsePtr& replied, Timestamp timestamp)
 {
     auto& serverinfo_data = replied->info();
-    g_gate_server->set_servers_info_data(serverinfo_data);
-    g_server_sequence_.set_node_id(g_gate_server->gate_node_id());
+    g_gate_node->set_servers_info_data(serverinfo_data);
+    g_server_sequence_.set_node_id(g_gate_node->gate_node_id());
 
     EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
         []() ->void
         {
             GroupLignRequest rq;
             rq.set_group_id(GameConfig::GetSingleton().config_info().group_id());
-            g_gate_server->deploy_session()->CallMethod(DeployServiceLoginNodeInfoMethodDesc, &rq);
+            g_gate_node->deploy_session()->CallMethod(DeployServiceLoginNodeInfoMethodDesc, &rq);
         }
     );
-    g_gate_server->StartServer();   
+    g_gate_node->StartServer();   
 }

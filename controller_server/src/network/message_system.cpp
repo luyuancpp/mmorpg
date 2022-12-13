@@ -20,8 +20,8 @@
 
 void Send2Gs(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& message, uint32_t node_id)
 {
-	auto it = g_gs_nodes.find(node_id);
-	if (it == g_gs_nodes.end())
+	auto it = g_game_node.find(node_id);
+	if (it == g_game_node.end())
 	{
 		LOG_INFO << "gs not found ->" << node_id;
 		return;
@@ -181,8 +181,8 @@ void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity playe
         LOG_ERROR << "message id not found " << msg.GetDescriptor()->full_name();
         return;
     }
-    auto gs_it = g_gs_nodes.find(try_player_session->gs_node_id());
-    if (gs_it == g_gs_nodes.end())
+    auto gs_it = g_game_node.find(try_player_session->gs_node_id());
+    if (gs_it == g_game_node.end())
     {
         return;
     }

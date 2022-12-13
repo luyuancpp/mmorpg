@@ -32,13 +32,13 @@ void GateServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 	}
 	GsNode gsi;
 	gsi.node_info_.set_node_id(request->gs_node_id());
-	gsi.node_info_.set_node_type(kGsNode);
+	gsi.node_info_.set_node_type(kGameNode);
 	gsi.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
-	gsi.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gate_server);
-	gsi.gs_session_->registerService(&g_gate_server->node_service_impl());
+	gsi.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gate_node);
+	gsi.gs_session_->registerService(&g_gate_node->node_service_impl());
 	gsi.gs_session_->connect();
 	registry.emplace<InetAddress>(gsi.entity_id, gs_addr);
-	g_gs_nodes.emplace(request->gs_node_id(), std::move(gsi));
+	g_game_node.emplace(request->gs_node_id(), std::move(gsi));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE 
 }
@@ -97,7 +97,7 @@ void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controlle
 		LOG_ERROR << "connid not found  player id " << request->ex().player_id() << "," << session_id;
 		return;
 	}
-	g_gate_server->Send2Client(it->second.conn_, request->msg());
+	g_gate_node->Send2Client(it->second.conn_, request->msg());
 ///<<< END WRITING YOUR CODE 
 }
 

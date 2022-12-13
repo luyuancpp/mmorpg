@@ -292,6 +292,14 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	
+	if (request->node_list_size() >= kMaxRouteSize)
+	{
+		LOG_ERROR << "route size " << request->DebugString();
+		return;
+	}
+
+	//处理,如果需要继续路由则拿到当前节点信息
+
 	auto rq = const_cast<::RouteMsgStringRequest*>(request);
 	rq->add_node_list()->CopyFrom(g_login_node->node_info());
 

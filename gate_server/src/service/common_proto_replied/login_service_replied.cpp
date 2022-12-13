@@ -13,14 +13,14 @@ void OnServerCreatePlayerReplied(const TcpConnectionPtr& conn, const CreatePlaye
         auto p = msg.add_players();
         p->set_player_id(it.player_id());
     }
-    g_gate_server->codec().send(conn, msg);
+    g_gate_node->codec().send(conn, msg);
 }
 
 void OnEnterGameReplied(const TcpConnectionPtr& conn, const EnterGameResponsePtr& replied, Timestamp timestamp)
 {
     EnterGameResponse msg;
     msg.mutable_error()->CopyFrom(replied->error());
-    g_gate_server->codec().send(conn, msg);
+    g_gate_node->codec().send(conn, msg);
 }
 
 
@@ -33,5 +33,5 @@ void OnServerLoginReplied(const TcpConnectionPtr& conn, const LoginLoginResponse
         auto p = msg.add_players();
         p->set_player_id(it.player_id());
     }
-    g_gate_server->codec().send(conn, msg);
+    g_gate_node->codec().send(conn, msg);
 }

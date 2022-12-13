@@ -37,11 +37,12 @@ public:
     inline EventLoop* loop() { return loop_; }
     inline ProtobufCodec& codec() { return codec_; };
     inline GateServiceImpl& node_service_impl() { return gate_service_; }
-    inline uint32_t gate_node_id()const { return serverinfo_data_.gate_info().id(); }
+    inline uint32_t gate_node_id()const { return conf_info_.gate_info().id(); }
     inline RpcClientPtr& deploy_session() { return deploy_session_; }
     inline RpcClientPtr& controller_node_session() { return controller_node_; }
+    inline const NodeInfo& node_info()const { return node_info_; }
 
-    inline void set_servers_info_data(const servers_info_data& serverinfo_data) { serverinfo_data_ = serverinfo_data; }
+	inline void set_servers_info_data(const servers_info_data& serverinfo_data) {conf_info_ = serverinfo_data; node_info_.set_node_id(conf_info_.gate_info().id());	}
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
 
@@ -79,7 +80,8 @@ private:
 
     TcpServerPtr server_;
 
-    servers_info_data serverinfo_data_;
+    servers_info_data conf_info_;
+    NodeInfo node_info_;
 
     RpcClientPtr deploy_session_;
     RpcClientPtr controller_node_;
@@ -87,7 +89,7 @@ private:
     GateServiceImpl gate_service_;
 };
 
-extern GateServer* g_gate_server;
+extern GateServer* g_gate_node;
 
 
 

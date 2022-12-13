@@ -88,7 +88,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 	auto c = registry.get<RpcServerConnection>(gs);
 	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
-	gs_node_ptr->node_info_.set_node_type(kGsNode);
+	gs_node_ptr->node_info_.set_node_type(kGameNode);
 	AddMainSceneNodeCompnent(gs);
 	registry.emplace<InetAddress>(gs, service_addr);
 	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
@@ -113,7 +113,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 		registry.remove<MainSceneServer>(gs);
 		registry.emplace<CrossRoomSceneServer>(gs);
 	}
-	g_gs_nodes->emplace(request->gs_node_id(), gs);
+	g_game_node->emplace(request->gs_node_id(), gs);
 
 	LOG_INFO << "game node connected " << response->DebugString();
 ///<<< END WRITING YOUR CODE 

@@ -20,8 +20,8 @@ void CallGsPlayerMethod(entt::entity player, RepliedCallback callback, MethodPar
     {
         return;
     }
-    auto gs_it = g_gs_nodes.find(try_player_session->gs_node_id());
-    if (gs_it == g_gs_nodes.end())
+    auto gs_it = g_game_node.find(try_player_session->gs_node_id());
+    if (gs_it == g_game_node.end())
     {
         return;
     }

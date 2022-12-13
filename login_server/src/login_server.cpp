@@ -57,9 +57,9 @@ void LoginServer::StartServer(const ::servers_info_data& info)
     auto& redisinfo = info.redis_info();
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
  
-    login_info_db_ = info.login_info();
-    node_info_.set_node_id(login_info_db_.id());
-    InetAddress login_addr(login_info_db_.ip(), login_info_db_.port());
+    conf_info_ = info.login_info();
+    node_info_.set_node_id(conf_info_.id());
+    InetAddress login_addr(conf_info_.ip(), conf_info_.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, login_addr);
    
     Start();

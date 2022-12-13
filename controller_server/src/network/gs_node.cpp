@@ -1,3 +1,3 @@
 #include "gs_node.h"
 
-GsNodes g_gs_nodes;
+GsNodes g_game_node;

@@ -56,3 +56,5 @@ public:
 private:
 	element_type* done_{ nullptr };
 };
+
+static const int32_t kMaxRouteSize = 20;
