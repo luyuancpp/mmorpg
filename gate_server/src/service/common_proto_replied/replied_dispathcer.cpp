@@ -15,9 +15,9 @@ void InitRepliedCallback()
     g_response_dispatcher.registerMessageCallback<deploy::GruoupLoginNodeResponse>(std::bind(&OnLoginNodeInfoReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     g_response_dispatcher.registerMessageCallback<deploy::ServerInfoResponse>(std::bind(&OnServerInfoReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
  
-    g_response_dispatcher.registerMessageCallback<loginservice::CreatePlayerResponse>(std::bind(&OnServerCreatePlayerReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    g_response_dispatcher.registerMessageCallback<loginservice::EnterGameResponse>(std::bind(&OnEnterGameReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-    g_response_dispatcher.registerMessageCallback<loginservice::LoginNodeLoginResponse>(std::bind(&OnServerLoginReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    g_response_dispatcher.registerMessageCallback<LoginNodeCreatePlayerResponse>(std::bind(&OnServerCreatePlayerReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    g_response_dispatcher.registerMessageCallback<LoginNodeEnterGameResponse>(std::bind(&OnEnterGameReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    g_response_dispatcher.registerMessageCallback<LoginNodeLoginResponse>(std::bind(&OnServerLoginReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         
 }
 
