@@ -68,7 +68,7 @@ void UpdateAccount(uint64_t session_id, const ::account_database& a_d)
 	ap->OnDbLoaded();
 }
 
-using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::DbNodeLoginRequest, dbservice::DbNodeLoginResponse, loginservice::LoginNodeLoginResponse>>;
+using LoginAccountDbRpc = std::shared_ptr< RpcString<DbNodeLoginRequest, DbNodeLoginResponse, loginservice::LoginNodeLoginResponse>>;
 void LoginAccountDbReplied(LoginAccountDbRpc replied)
 {
 	auto& srp = replied->s_rp_;
@@ -114,7 +114,7 @@ void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 	//g_login_node->db_node().CallMethodString1(LoginAccountDbReplied, rpc, &dbservice::DbService_Stub::Login);
 }
 
-using CreatePlayerRpc = std::shared_ptr<RpcString<dbservice::DbNodeCreatePlayerRequest, dbservice::DbNodeCreatePlayerResponse, loginservice::CreatePlayerResponse>>;
+using CreatePlayerRpc = std::shared_ptr<RpcString<DbNodeCreatePlayerRequest, DbNodeCreatePlayerResponse, loginservice::CreatePlayerResponse>>;
 void CreatePlayerDbReplied(CreatePlayerRpc replied)
 {
 	auto& srp = replied->s_rp_;
@@ -122,7 +122,7 @@ void CreatePlayerDbReplied(CreatePlayerRpc replied)
 	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
 }
 
-using EnterGameDbRpc = std::shared_ptr<RpcString<dbservice::DbNodeEnterGameRequest, dbservice::DbNodeEnterGameResponse, loginservice::EnterGameResponse>>;
+using EnterGameDbRpc = std::shared_ptr<RpcString<DbNodeEnterGameRequest, DbNodeEnterGameResponse, loginservice::EnterGameResponse>>;
 void EnterGameDbReplied(EnterGameDbRpc replied)
 {
 	//db 加载过程中断线了
