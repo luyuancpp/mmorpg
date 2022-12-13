@@ -96,6 +96,7 @@
     <ClCompile Include="src\pb\pbc\game_config\scene_config.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\account_database.pb.cc" />
     <ClCompile Include="src\pb\pbc\prototypeserviceinstance\rpc_prototype_service.cpp" />
+    <ClCompile Include="src\pb\pbc\common_proto\node_common.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -219,5 +220,6 @@
     <ClInclude Include="src\pb\pbc\service_method\team_client_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\team_server_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\teammethod.h" />
+    <ClInclude Include="src\pb\pbc\common_proto\node_common.pb.h" />
   </ItemGroup>
 </Project>

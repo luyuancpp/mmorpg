@@ -182,6 +182,7 @@
     <ClCompile Include="src\pb\pbc\common_proto\login_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\mysql_database_table.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\mysql_database_test.pb.cc" />
+    <ClCompile Include="src\pb\pbc\common_proto\node_common.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\gs_node_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\item_base_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\item_comp.pb.cc" />
@@ -290,6 +291,7 @@
     <ClInclude Include="src\pb\pbc\common_proto\login_service.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\mysql_database_table.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\mysql_database_test.pb.h" />
+    <ClInclude Include="src\pb\pbc\common_proto\node_common.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\gs_node_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\item_base_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\item_comp.pb.h" />

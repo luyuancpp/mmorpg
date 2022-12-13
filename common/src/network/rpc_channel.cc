@@ -6,6 +6,8 @@
 
 // Author: Shuo Chen (chenshuo at chenshuo dot com)
 
+#include <cstdint>
+
 #include "rpc_channel.h"
 
 #include "muduo/base/Logging.h"
@@ -69,7 +71,7 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
 {
   RpcMessage message;
   message.set_type(REQUEST);
-  int64_t id = id_.incrementAndGet();
+  int64_t id = ++id_;
   message.set_id(id);
   message.set_service(method->service()->full_name());
   message.set_method(method->name());

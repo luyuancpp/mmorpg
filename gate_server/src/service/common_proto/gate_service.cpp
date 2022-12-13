@@ -113,4 +113,24 @@ void GateServiceImpl::KickConnByController(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE 
 }
 
+void GateServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+    const ::RouteMsgStringRequest* request,
+    ::RouteMsgStringResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
+}
+
+void GateServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+    const ::RoutePlayerMsgStringRequest* request,
+    ::RoutePlayerMsgStringResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
+}
+
 ///<<<rpc end
