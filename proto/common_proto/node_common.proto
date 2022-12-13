@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+import "common_proto/common.proto";
+
+message NodeRouteMsgStringRequest
+{
+  bytes body = 1;
+  repeated NodeInfo node_list 1;
+}
+
+message NodeRouteMsgStringResponse
+{
+  bytes body = 1;
+  repeated NodeInfo node_list = 2;
+}
+
+message PlayerNodeRouteMsgStringRequest
+{
+  bytes body = 1;
+  repeated NodeInfo node_list = 2;
+  PlayerMessageExtern player_ex = 3;
+}
+
+message PlayerNodeRouteMsgStringResponse
+{
+  bytes body = 1;
+  repeated NodeInfo node_list = 2;
+  PlayerMessageExtern player_ex = 3;
+}
+
+

@@ -80,12 +80,6 @@ message NodeServiceMessageResponse
   NodeMessageBody ex = 2;
 }
 
-message RouteNodeMessageBody
-{
-	uint32 node_id = 1;
-}
-
-
 message PlayerMessageExtern
 {
   uint64 player_id = 1;
@@ -103,30 +97,8 @@ message PlayerMessageRespone
   PlayerMessageExtern ex = 2;
 }
 
-message PlayerRouteMessageExtern
+message NodeRouteMessageBody
 {
-  uint64 player_id = 1;
+   NodeInfo node_info = 2;
 }
 
-message RouteMessageExtern
-{
-}
-
-message RouteMessageBody
-{
-   uint64 id = 1;
-   bytes body = 2;
-   NodeInfo src_node_info = 3;
-   PlayerRouteMessageExtern player_ex = 4;
-   RouteMessageExtern route_ex = 5;
-}
-
-message RouteMsgStringRequest
-{
-  repeated RouteMessageBody msg_string = 1;
-}
-
-message RouteMsgStringResponse
-{
-  repeated RouteMessageBody msg_string = 1;
-}
