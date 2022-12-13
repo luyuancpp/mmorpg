@@ -28,7 +28,7 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
     : codec_(codec),
       dispatcher_(dispatcher)
 {
-    dispatcher_.registerMessageCallback<LoginRequest>(
+    dispatcher_.registerMessageCallback<DbNodeLoginRequest>(
         std::bind(&ClientReceiver::OnLogin, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<CreatePlayerRequest>(
         std::bind(&ClientReceiver::OnCreatePlayer, this, _1, _2, _3));

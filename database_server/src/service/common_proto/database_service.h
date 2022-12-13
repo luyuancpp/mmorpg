@@ -4,18 +4,18 @@ class DbServiceImpl : public dbservice::DbService{
 public:
 public:
     void Login(::google::protobuf::RpcController* controller,
-        const dbservice::LoginRequest* request,
-        dbservice::LoginResponse* response,
+        const dbservice::DbNodeLoginRequest* request,
+        dbservice::DbNodeLoginResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void CreatePlayer(::google::protobuf::RpcController* controller,
-        const dbservice::CreatePlayerRequest* request,
-        dbservice::CreatePlayerResponse* response,
+        const dbservice::DbNodeCreatePlayerRequest* request,
+        dbservice::DbNodeCreatePlayerResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterGame(::google::protobuf::RpcController* controller,
-        const dbservice::EnterGameRequest* request,
-        dbservice::EnterGameResponse* response,
+        const dbservice::DbNodeEnterGameRequest* request,
+        dbservice::DbNodeEnterGameResponse* response,
         ::google::protobuf::Closure* done)override;
 
 };

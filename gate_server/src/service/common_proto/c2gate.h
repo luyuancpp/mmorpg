@@ -35,7 +35,7 @@ struct ClosureReplied
     Guid session_id_{ kInvalidGuid };
 };
 
-using LoginRequestPtr = std::shared_ptr<LoginRequest> ;
+using LoginRequestPtr = std::shared_ptr<DbNodeLoginRequest> ;
 using CreatePlayerRequestPtr = std::shared_ptr<CreatePlayerRequest>;
 using EnterGameRequestPtr = std::shared_ptr<EnterGameRequest>;
 using LeaveGameRequestPtr = std::shared_ptr<LeaveGameRequest>;
