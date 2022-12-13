@@ -135,7 +135,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     //todo login 崩溃了
-    ::loginservice::LoginRequest rq;
+    ::loginservice::LoginNodeLoginRequest rq;
     rq.set_account(message->account());
     rq.set_password(message->password());
     rq.set_session_id(tcp_session_id(conn));

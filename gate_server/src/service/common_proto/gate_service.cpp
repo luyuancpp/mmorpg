@@ -120,6 +120,7 @@ void GateServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* cont
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	
 ///<<< END WRITING YOUR CODE 
 }
 

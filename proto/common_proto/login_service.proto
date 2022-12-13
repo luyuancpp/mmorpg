@@ -1,18 +1,23 @@
 syntax = "proto3";
 package loginservice;
+
+import "google/protobuf/empty.proto";
+
 import "common_proto/common.proto";
 import "common_proto/mysql_database_table.proto";
-import "google/protobuf/empty.proto";
+import "common_proto/node_common.proto";
+
+
 option cc_generic_services = true;
 
-message LoginRequest
+message LoginNodeLoginRequest
 {
   string account = 1;
   string password = 2;
   uint64 session_id = 3;
 }
 
-message LoginResponse
+message LoginNodeLoginResponse
 {
 	Tips error = 1;
   account_database account_player = 2;
@@ -63,4 +68,6 @@ service LoginService {
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc LeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
   rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty);
+  rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
+  rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
 }

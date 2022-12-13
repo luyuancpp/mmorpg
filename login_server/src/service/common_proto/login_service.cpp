@@ -68,7 +68,7 @@ void UpdateAccount(uint64_t session_id, const ::account_database& a_d)
 	ap->OnDbLoaded();
 }
 
-using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, loginservice::LoginResponse>>;
+using LoginAccountDbRpc = std::shared_ptr< RpcString<dbservice::LoginRequest, dbservice::LoginResponse, loginservice::LoginNodeLoginResponse>>;
 void LoginAccountDbReplied(LoginAccountDbRpc replied)
 {
 	auto& srp = replied->s_rp_;
@@ -76,7 +76,7 @@ void LoginAccountDbReplied(LoginAccountDbRpc replied)
 	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
 }
 
-using LoginAcountControllerRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, loginservice::LoginResponse>>;
+using LoginAcountControllerRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, loginservice::LoginNodeLoginResponse>>;
 void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 {
 	//只连接不登录,占用连接
@@ -144,8 +144,8 @@ void EnterGameDbReplied(EnterGameDbRpc replied)
 
 ///<<<rpc begin
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
-    const loginservice::LoginRequest* request,
-    loginservice::LoginResponse* response,
+    const loginservice::LoginNodeLoginRequest* request,
+    loginservice::LoginNodeLoginResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -282,6 +282,26 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	rq.set_session_id(request->session_id());
 	g_login_node->controller_node()->CallMethod(controllerserviceOnLsDisconnectMethoddesc, &rq);
 ///<<< END WRITING YOUR CODE 
+}
+
+void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+    const ::RouteMsgStringRequest* request,
+    ::RouteMsgStringResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void LoginServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+    const ::RoutePlayerMsgStringRequest* request,
+    ::RoutePlayerMsgStringResponse* response,
+    ::google::protobuf::Closure* done)
+{
+    AutoRecycleClosure d(done);
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end
