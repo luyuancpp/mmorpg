@@ -1,21 +1,21 @@
 #pragma once
 #include "database_service.pb.h"
-class DbServiceImpl : public dbservice::DbService{
+class DbServiceImpl : public ::DbService{
 public:
 public:
     void Login(::google::protobuf::RpcController* controller,
-        const dbservice::DbNodeLoginRequest* request,
-        dbservice::DbNodeLoginResponse* response,
+        const ::DbNodeLoginRequest* request,
+        ::DbNodeLoginResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void CreatePlayer(::google::protobuf::RpcController* controller,
-        const dbservice::DbNodeCreatePlayerRequest* request,
-        dbservice::DbNodeCreatePlayerResponse* response,
+        const ::DbNodeCreatePlayerRequest* request,
+        ::DbNodeCreatePlayerResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterGame(::google::protobuf::RpcController* controller,
-        const dbservice::DbNodeEnterGameRequest* request,
-        dbservice::DbNodeEnterGameResponse* response,
+        const ::DbNodeEnterGameRequest* request,
+        ::DbNodeEnterGameResponse* response,
         ::google::protobuf::Closure* done)override;
 
 };

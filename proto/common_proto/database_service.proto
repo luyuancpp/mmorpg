@@ -1,5 +1,4 @@
 syntax = "proto3";
-package dbservice;
 import "common_proto/common.proto";
 import "common_proto/mysql_database_table.proto";
 option cc_generic_services = true;
@@ -29,12 +28,12 @@ message DbNodeCreatePlayerResponse
   uint64 player_id = 3;
 }
 
-message EnterGameRequest
+message DbNodeEnterGameRequest
 {
   uint64 player_id = 1;
 }
 
-message EnterGameResponse
+message DbNodeEnterGameResponse
 {
   Tips error = 1;
   uint64 player_id = 2;
@@ -43,5 +42,5 @@ message EnterGameResponse
 service DbService {
   rpc Login (DbNodeLoginRequest) returns (DbNodeLoginResponse);
   rpc CreatePlayer (DbNodeCreatePlayerRequest) returns (DbNodeCreatePlayerResponse);
-  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
+  rpc EnterGame (DbNodeEnterGameRequest) returns (DbNodeEnterGameResponse);
 }
