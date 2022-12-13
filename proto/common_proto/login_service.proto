@@ -1,5 +1,4 @@
 syntax = "proto3";
-package loginservice;
 
 import "google/protobuf/empty.proto";
 
@@ -23,51 +22,51 @@ message LoginNodeLoginResponse
   account_database account_player = 2;
 }
 
-message CreatePlayerRequest
+message LoginNodeCreatePlayerRequest
 {
   uint64 session_id = 1;
 }
 
-message CreatePlayerResponse
+message LoginNodeCreatePlayerResponse
 {
   Tips error = 1;
   account_database account_player = 2;
   uint64 player_id = 3;
 }
 
-message EnterGameRequest
+message LoginNodeEnterGameRequest
 {
   uint64 session_id = 1;
   uint64 player_id = 2;
 }
 
-message EnterGameResponse
+message LoginNodeEnterGameResponse
 {
   Tips error = 1;
   uint64 player_id = 2;
   uint64 session_id = 3;// for logic
 }
 
-message DisconnectRequest
+message LoginNodeDisconnectRequest
 {
   uint64 session_id = 1;
 }
 
-message DisconnectResponse
+message LoginNodeDisconnectResponse
 {
 }
 
-message LeaveGameRequest
+message LoginNodeLeaveGameRequest
 {
   uint64 session_id = 1;
 }
 
 service LoginService {
   rpc Login (LoginNodeLoginRequest) returns (LoginNodeLoginResponse);
-  rpc CreatPlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
-  rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
-  rpc LeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
-  rpc Disconnect (DisconnectRequest) returns (google.protobuf.Empty);
+  rpc CreatPlayer (LoginNodeCreatePlayerRequest) returns (LoginNodeCreatePlayerResponse);
+  rpc EnterGame (LoginNodeEnterGameRequest) returns (LoginNodeEnterGameResponse);
+  rpc LeaveGame (LoginNodeLeaveGameRequest) returns (google.protobuf.Empty);
+  rpc Disconnect (LoginNodeDisconnectRequest) returns (google.protobuf.Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
 }

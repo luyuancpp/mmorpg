@@ -26,7 +26,7 @@ using ConnectionEntityMap = std::unordered_map<Guid, EntityPtr>;
 
 ConnectionEntityMap sessions_;
 
-using EnterGameControllerRpc = std::shared_ptr<RpcString<controllerservice::EnterGameRequest, controllerservice::EnterGameResponese, loginservice::EnterGameResponse>>;
+using EnterGameControllerRpc = std::shared_ptr<RpcString<controllerservice::EnterGameRequest, controllerservice::EnterGameResponese, LoginNodeEnterGameResponse>>;
 void EnterGameReplied(EnterGameControllerRpc replied)
 {
 	sessions_.erase(replied->s_rq_.session_id());
@@ -34,7 +34,7 @@ void EnterGameReplied(EnterGameControllerRpc replied)
 
 void EnterGame(Guid player_id,
 	uint64_t session_id,
-	::loginservice::EnterGameResponse* response,
+	LoginNodeEnterGameResponse* response,
 	::google::protobuf::Closure* done)
 {
 	auto it = sessions_.find(session_id);
@@ -68,7 +68,7 @@ void UpdateAccount(uint64_t session_id, const ::account_database& a_d)
 	ap->OnDbLoaded();
 }
 
-using LoginAccountDbRpc = std::shared_ptr< RpcString<DbNodeLoginRequest, DbNodeLoginResponse, loginservice::LoginNodeLoginResponse>>;
+using LoginAccountDbRpc = std::shared_ptr< RpcString<DatabaseNodeLoginRequest, DatabaseNodeLoginResponse, LoginNodeLoginResponse>>;
 void LoginAccountDbReplied(LoginAccountDbRpc replied)
 {
 	auto& srp = replied->s_rp_;
@@ -76,7 +76,7 @@ void LoginAccountDbReplied(LoginAccountDbRpc replied)
 	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
 }
 
-using LoginAcountControllerRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, loginservice::LoginNodeLoginResponse>>;
+using LoginAcountControllerRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, LoginNodeLoginResponse>>;
 void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 {
 	//只连接不登录,占用连接
@@ -114,7 +114,7 @@ void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 	//g_login_node->db_node().CallMethodString1(LoginAccountDbReplied, rpc, &dbservice::DbService_Stub::Login);
 }
 
-using CreatePlayerRpc = std::shared_ptr<RpcString<DbNodeCreatePlayerRequest, DbNodeCreatePlayerResponse, loginservice::CreatePlayerResponse>>;
+using CreatePlayerRpc = std::shared_ptr<RpcString<DatabaseNodeCreatePlayerRequest, DatabaseNodeCreatePlayerResponse, LoginNodeCreatePlayerResponse>>;
 void CreatePlayerDbReplied(CreatePlayerRpc replied)
 {
 	auto& srp = replied->s_rp_;
@@ -122,7 +122,7 @@ void CreatePlayerDbReplied(CreatePlayerRpc replied)
 	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
 }
 
-using EnterGameDbRpc = std::shared_ptr<RpcString<DbNodeEnterGameRequest, DbNodeEnterGameResponse, loginservice::EnterGameResponse>>;
+using EnterGameDbRpc = std::shared_ptr<RpcString<DatabaseNodeEnterGameRequest, DatabaseNodeEnterGameResponse, LoginNodeEnterGameResponse>>;
 void EnterGameDbReplied(EnterGameDbRpc replied)
 {
 	//db 加载过程中断线了
@@ -132,7 +132,7 @@ void EnterGameDbReplied(EnterGameDbRpc replied)
 	{
 		return;
 	}
-	::loginservice::EnterGameResponse* response = nullptr;
+	LoginNodeEnterGameResponse* response = nullptr;
 	::google::protobuf::Closure* done = nullptr;
 	replied->Move(response, done);
 	EnterGame(srq.player_id(), response->session_id(), response, done);
@@ -144,8 +144,8 @@ void EnterGameDbReplied(EnterGameDbRpc replied)
 
 ///<<<rpc begin
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
-    const loginservice::LoginNodeLoginRequest* request,
-    loginservice::LoginNodeLoginResponse* response,
+    const ::LoginNodeLoginRequest* request,
+    ::LoginNodeLoginResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -165,8 +165,8 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
-    const loginservice::CreatePlayerRequest* request,
-    loginservice::CreatePlayerResponse* response,
+    const ::LoginNodeCreatePlayerRequest* request,
+    ::LoginNodeCreatePlayerResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -199,8 +199,8 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-    const loginservice::EnterGameRequest* request,
-    loginservice::EnterGameResponse* response,
+    const ::LoginNodeEnterGameRequest* request,
+    ::LoginNodeEnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -250,7 +250,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
-    const loginservice::LeaveGameRequest* request,
+    const ::LoginNodeLeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -271,7 +271,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
-    const loginservice::DisconnectRequest* request,
+    const ::LoginNodeDisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
