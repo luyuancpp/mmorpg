@@ -10,5 +10,5 @@
 //using StartGsControllerRpc = std::shared_ptr< NormalClosure<controllerservice::StartGsRequest, controllerservice::StartGsResponse>>;
 //void StartGsControllerReplied(StartGsControllerRpc replied);
 //
-//using StartCrossGsRpc = std::shared_ptr<NormalClosure<lobbyservcie::StartCrossGsRequest, lobbyservcie::StartCrossGsResponse>>;
+//using StartCrossGsRpc = std::shared_ptr<NormalClosure<StartCrossGsRequest, StartCrossGsResponse>>;
 //void StartCrossGsReplied(StartCrossGsRpc replied);

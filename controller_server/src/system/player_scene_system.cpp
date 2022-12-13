@@ -78,11 +78,11 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
 	{
         return;
     }
-    gsservice::EnterGsRequest rq;
+    GameNodeEnterGsRequest rq;
     rq.set_player_id(registry.get<Guid>(player));
     rq.set_session_id(session_id);
     rq.set_controller_node_id(controller_node_id());
-    registry.get<GsNodePtr>(it->second)->session_.CallMethod(gsserviceEnterGsMethoddesc, &rq);
+    registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceEnterGsMethodDesc, &rq);
 }
 
 
@@ -202,17 +202,17 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         if (is_from_gs_is_cross_server)
         {
             //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
-            lobbyservcie::LeaveCrossMainSceneRequest rq;
+            LeaveCrossMainSceneRequest rq;
             rq.set_player_id(registry.get<Guid>(player));
-            g_controller_node->lobby_node()->CallMethod(lobbyservcieLeaveCrossMainSceneMethoddesc, &rq);
+            g_controller_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMethodDesc, &rq);
         }
         if (is_to_gs_is_cross_server)
         {
             //注意虽然一个逻辑，但是不一定是在leave后面处理
-            lobbyservcie::EnterCrossMainSceneRequest rq;
+            EnterCrossMainSceneRequest rq;
             rq.set_scene_id(to_scene_id);
             rq.set_player_id(registry.get<Guid>(player));
-            g_controller_node->lobby_node()->CallMethod(lobbyservcieEnterCrossMainSceneMethoddesc, &rq);
+            g_controller_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMethodDesc, &rq);
             return;
         }
     }

@@ -12,7 +12,7 @@ int32_t main(int argc, char* argv[])
     auto deploy_server_info = DeployConfig::GetSingleton().deploy_info();
     EventLoop loop;
     InetAddress listenAddr(deploy_server_info.ip(), deploy_server_info.port());
-    deploy::DeployServer server(&loop, listenAddr);
+    DeployServer server(&loop, listenAddr);
     server.Start();
     loop.loop();
     return 0;

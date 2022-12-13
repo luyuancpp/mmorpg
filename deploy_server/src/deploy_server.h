@@ -11,127 +11,124 @@
 #include "src/network/rpc_connection_event.h"
 #include "src/service/common_proto/deploy_service.h"
 
-namespace deploy
+class DeployServer : public Receiver<DeployServer>
 {
-    class DeployServer : public Receiver<DeployServer>
+public:
+    using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
+    using PbSyncRedisClientPtr = std::shared_ptr<MessageSyncRedisClient>;
+
+    DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr);
+
+    MysqlClientPtr& player_mysql_client() { return db_; }
+    ReuseGsId& reuse_game_id() { return reuse_id_; }
+
+    void Start();
+
+    void RegisterService(::google::protobuf::Service*);
+
+    uint32_t CreateGSId();
+
+    void LoadGSDb();
+    void SaveGSDb();
+
+    void OnDisConnected(const muduo::net::TcpConnectionPtr& conn);
+    void LogReuseInfo();
+   
+    void receive(const OnBeConnectedEvent& es);
+private:
+    void InitGroupDb();
+
+    template<typename DbRow>
+    void InitLobbyDb(uint32_t begin_port, uint32_t server_size )
     {
-    public:
-        using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
-        using PbSyncRedisClientPtr = std::shared_ptr<MessageSyncRedisClient>;
-
-        DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr);
-
-        MysqlClientPtr& player_mysql_client() { return db_; }
-        ReuseGsId& reuse_game_id() { return reuse_id_; }
-
-        void Start();
-
-        void RegisterService(::google::protobuf::Service*);
-
-        uint32_t CreateGSId();
-
-        void LoadGSDb();
-        void SaveGSDb();
-
-        void OnDisConnected(const muduo::net::TcpConnectionPtr& conn);
-        void LogReuseInfo();
-   
-        void receive(const OnBeConnectedEvent& es);
-    private:
-        void InitGroupDb();
-
-        template<typename DbRow>
-        void InitLobbyDb(uint32_t begin_port, uint32_t server_size )
+        DbRow sd;
+        std::string sql = "select * from " + sd.GetTypeName() + " LIMIT 1";
+        auto q_result = db_->QueryOne(sql);
+        if (nullptr != q_result)
         {
-            DbRow sd;
-            std::string sql = "select * from " + sd.GetTypeName() + " LIMIT 1";
-            auto q_result = db_->QueryOne(sql);
-            if (nullptr != q_result)
-            {
-                return;
-            }
-            auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
-
-            uint32_t lobby_size = 0;
-            uint32_t lobby_id = 0;
-   
-            sd.set_ip(nomoral_ip);
-            sd.set_lobby_id(lobby_id);
-
-            for (uint32_t i = 0; i < server_size; ++i)
-            {
-                if (lobby_size++ % 10 == 0)
-                {
-                    sd.set_lobby_id(++lobby_id);
-                }
-                sd.set_port(i + begin_port);
-                db_->SaveOne(sd);
-            }
+            return;
         }
+        auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
 
-        template<typename DbRow>
-		void InitRegionServer(uint32_t begin_port, uint32_t server_size)
+        uint32_t lobby_size = 0;
+        uint32_t lobby_id = 0;
+   
+        sd.set_ip(nomoral_ip);
+        sd.set_lobby_id(lobby_id);
+
+        for (uint32_t i = 0; i < server_size; ++i)
+        {
+            if (lobby_size++ % 10 == 0)
+            {
+                sd.set_lobby_id(++lobby_id);
+            }
+            sd.set_port(i + begin_port);
+            db_->SaveOne(sd);
+        }
+    }
+
+    template<typename DbRow>
+	void InitRegionServer(uint32_t begin_port, uint32_t server_size)
+	{
+        DbRow sd;
+		std::string sql = "select * from " + sd.GetTypeName() + " LIMIT 1";
+		auto q_result = db_->QueryOne(sql);
+		if (nullptr != q_result)
 		{
-            DbRow sd;
-			std::string sql = "select * from " + sd.GetTypeName() + " LIMIT 1";
-			auto q_result = db_->QueryOne(sql);
-			if (nullptr != q_result)
-			{
-				return;
-			}
-			auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
-
-			uint32_t lobby_size = 0;
-			uint32_t lobby_id = 0;
-
-			sd.set_ip(nomoral_ip);
-
-			for (uint32_t i = 0; i < server_size; ++i)
-			{
-				sd.set_port(i + begin_port);
-				db_->SaveOne(sd);
-			}
+			return;
 		}
+		auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
 
-		template<typename DbRow>
-		void InitGroupDb(uint32_t begin_port, uint32_t server_size)
+		uint32_t lobby_size = 0;
+		uint32_t lobby_id = 0;
+
+		sd.set_ip(nomoral_ip);
+
+		for (uint32_t i = 0; i < server_size; ++i)
 		{
-			DbRow sd;
-			std::string sql = "select * from " + sd.GetTypeName() + " LIMIT 1";
-			auto q_result = db_->QueryOne(sql);
-			if (nullptr != q_result)
-			{
-				return;
-			}
-			auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
-
-			uint32_t lobby_size = 0;
-			uint32_t group_id = 0;
-
-			sd.set_ip(nomoral_ip);
-			sd.set_group_id(group_id);
-
-			for (uint32_t i = 0; i < server_size; ++i)
-			{
-				if (lobby_size++ % 10 == 0)
-				{
-					sd.set_group_id(++group_id);
-				}
-				sd.set_port(i + begin_port);
-				db_->SaveOne(sd);
-			}
+			sd.set_port(i + begin_port);
+			db_->SaveOne(sd);
 		}
+	}
+
+	template<typename DbRow>
+	void InitGroupDb(uint32_t begin_port, uint32_t server_size)
+	{
+		DbRow sd;
+		std::string sql = "select * from " + sd.GetTypeName() + " LIMIT 1";
+		auto q_result = db_->QueryOne(sql);
+		if (nullptr != q_result)
+		{
+			return;
+		}
+		auto& nomoral_ip = DeployConfig::GetSingleton().deploy_info().ip();
+
+		uint32_t lobby_size = 0;
+		uint32_t group_id = 0;
+
+		sd.set_ip(nomoral_ip);
+		sd.set_group_id(group_id);
+
+		for (uint32_t i = 0; i < server_size; ++i)
+		{
+			if (lobby_size++ % 10 == 0)
+			{
+				sd.set_group_id(++group_id);
+			}
+			sd.set_port(i + begin_port);
+			db_->SaveOne(sd);
+		}
+	}
 
    
-        muduo::net::RpcServer server_;
-        MysqlClientPtr db_;   
-        std::string redis_ip_ = "127.0.0.1";
-        ReuseGsId reuse_id_;
-        TimerTask scan_over_timer_;
+    muduo::net::RpcServer server_;
+    MysqlClientPtr db_;   
+    std::string redis_ip_ = "127.0.0.1";
+    ReuseGsId reuse_id_;
+    TimerTask scan_over_timer_;
 
-        DeployServiceImpl impl_;
-    };
-}//namespace deploy
+    DeployServiceImpl impl_;
+};
 
-extern deploy::DeployServer* g_deploy_server;
+extern DeployServer* g_deploy_server;
 

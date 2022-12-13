@@ -15,7 +15,7 @@
 
 ///<<<rpc begin
 void GateServiceImpl::StartGS(::google::protobuf::RpcController* controller,
-    const gateservice::StartGSRequest* request,
+    const ::GateNodeStartGSRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -44,7 +44,7 @@ void GateServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 }
 
 void GateServiceImpl::StopGS(::google::protobuf::RpcController* controller,
-    const gateservice::StopGSRequest* request,
+    const ::GateNodeStopGSRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -65,8 +65,8 @@ void GateServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 }
 
 void GateServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controller,
-    const gateservice::PlayerEnterGsRequest* request,
-    gateservice::PlayerEnterGsResponese* response,
+    const ::GateNodePlayerEnterGsRequest* request,
+    ::GateNodePlayerEnterGsResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -102,7 +102,7 @@ void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controlle
 }
 
 void GateServiceImpl::KickConnByController(::google::protobuf::RpcController* controller,
-    const gateservice::KickConnRequest* request,
+    const ::GateNodeKickConnRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

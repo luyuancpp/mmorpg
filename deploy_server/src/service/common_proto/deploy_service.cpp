@@ -30,8 +30,8 @@ void set_player_mysql_client(MysqlClientPtr& ptr)
 
 	///<<<rpc begin
 void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller,
-    const deploy::ServerInfoRequest* request,
-    deploy::ServerInfoResponse* response,
+    const ::ServerInfoRequest* request,
+    ::ServerInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -51,8 +51,8 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
 }
 
 void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
-    const deploy::StartGSRequest* request,
-    deploy::StartGSResponse* response,
+    const ::StartGSRequest* request,
+    ::StartGSResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -79,8 +79,8 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 }
 
 void DeployServiceImpl::StartLobbyServer(::google::protobuf::RpcController* controller,
-    const deploy::LobbyServerRequest* request,
-    deploy::LobbyServerResponse* response,
+    const ::LobbyServerRequest* request,
+    ::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -90,8 +90,8 @@ void DeployServiceImpl::StartLobbyServer(::google::protobuf::RpcController* cont
 }
 
 void DeployServiceImpl::AcquireLobbyServerInfo(::google::protobuf::RpcController* controller,
-    const deploy::LobbyServerRequest* request,
-    deploy::LobbyServerResponse* response,
+    const ::LobbyServerRequest* request,
+    ::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -101,8 +101,8 @@ void DeployServiceImpl::AcquireLobbyServerInfo(::google::protobuf::RpcController
 }
 
 void DeployServiceImpl::AcquireLobbyInfo(::google::protobuf::RpcController* controller,
-    const deploy::LobbyServerRequest* request,
-    deploy::LobbyInfoResponse* response,
+    const ::LobbyServerRequest* request,
+    ::LobbyInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -114,8 +114,8 @@ void DeployServiceImpl::AcquireLobbyInfo(::google::protobuf::RpcController* cont
 }
 
 void DeployServiceImpl::LoginNodeInfo(::google::protobuf::RpcController* controller,
-    const deploy::GroupLignRequest* request,
-    deploy::GruoupLoginNodeResponse* response,
+    const ::GroupLignRequest* request,
+    ::GruoupLoginNodeResponse* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
@@ -126,8 +126,8 @@ void DeployServiceImpl::LoginNodeInfo(::google::protobuf::RpcController* control
 }
 
 void DeployServiceImpl::SceneSqueueNodeId(::google::protobuf::RpcController* controller,
-    const deploy::SceneSqueueRequest* request,
-    deploy::SceneSqueueResponese* response,
+    const ::SceneSqueueRequest* request,
+    ::SceneSqueueResponese* response,
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);

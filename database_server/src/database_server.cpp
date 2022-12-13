@@ -6,6 +6,7 @@
 #include "src/service/common_proto_replied/replied_dispathcer.h"
 
 #include "mysql_database_table.pb.h"
+#include "deploy_service.pb.h"
 
 DatabaseServer* g_database_node{nullptr};
 
@@ -67,9 +68,9 @@ void DatabaseServer::receive(const OnConnected2ServerEvent& es)
     {
         return;
     }
-    deploy::ServerInfoRequest rq;
+    ServerInfoRequest rq;
     rq.set_group(GameConfig::GetSingleton().config_info().group_id());
-    deploy_session_->CallMethod(deployServerInfoMethoddesc, &rq);
+    deploy_session_->CallMethod(DeployServiceServerInfoMethodDesc, &rq);
 }
 
 

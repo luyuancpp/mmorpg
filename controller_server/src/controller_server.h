@@ -51,7 +51,7 @@ private:
 	RpcClientPtr lobby_session_;
 	RpcClientPtr db_session_;
 
-	ControllerNodeServiceImpl contoller_service_;
+	ControllerServiceImpl contoller_service_;
 
 	servers_info_data serverinfos_;
 };

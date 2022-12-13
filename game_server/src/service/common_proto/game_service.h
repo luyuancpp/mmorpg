@@ -1,10 +1,10 @@
 #pragma once
 #include "game_service.pb.h"
-class GsServiceImpl : public gsservice::GsService{
+class GameServiceImpl : public ::GameService{
 public:
 public:
     void EnterGs(::google::protobuf::RpcController* controller,
-        const gsservice::EnterGsRequest* request,
+        const ::GameNodeEnterGsRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
@@ -14,17 +14,17 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void ClientSend2Player(::google::protobuf::RpcController* controller,
-        const gsservice::RpcClientRequest* request,
-        gsservice::RpcClientResponse* response,
+        const ::GameNodeRpcClientRequest* request,
+        ::GameNodeRpcClientResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void Disconnect(::google::protobuf::RpcController* controller,
-        const gsservice::DisconnectRequest* request,
+        const ::GameNodeDisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void GateConnectGs(::google::protobuf::RpcController* controller,
-        const gsservice::ConnectRequest* request,
+        const ::GameNodeConnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 

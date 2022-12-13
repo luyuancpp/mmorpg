@@ -53,7 +53,7 @@ void Send2Player(const google::protobuf::Message& msg, entt::entity player)
 	msg_wrapper.mutable_msg()->set_msg_id(msg_it->second);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_session_id(registry.get<GateSession>(player).session_id());
-	gate->session_.Send(gateservicePlayerMessageMethoddesc, msg_wrapper);
+	gate->session_.Send(GateServicePlayerMessageMethodDesc, msg_wrapper);
 }
 
 void Send2Player(const google::protobuf::Message& msg, EntityPtr& player)
@@ -99,7 +99,7 @@ void Send2ControllerPlayer(const google::protobuf::Message& msg, entt::entity pl
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_player_id(registry.get<Guid>(player));
-	controller_node->session_->Send(controllerserviceOnGsPlayerServiceMethoddesc, msg_wrapper);
+	controller_node->session_->Send(ControllerServiceOnGsPlayerServiceMethodDesc, msg_wrapper);
 }
 
 void Send2ControllerPlayer(const google::protobuf::Message& message, EntityPtr& player)
@@ -127,6 +127,6 @@ void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id)
 		return;
 	}
 	auto& gate_node = registry.get<GateNodePtr>(gate_it->second);
-	gate_node->session_.Send(gateservicePlayerMessageMethoddesc, messag);
+	gate_node->session_.Send(GateServicePlayerMessageMethodDesc, messag);
 }
 

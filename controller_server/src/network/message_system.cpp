@@ -62,7 +62,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	msg.mutable_msg()->set_msg_id(msg_it->second);
 	msg.mutable_msg()->set_body(message.SerializeAsString());
 	msg.mutable_ex()->set_player_id(registry.get<Guid>(player));
-	gs->session_.Send(gsserviceSend2PlayerMethoddesc, msg);
+	gs->session_.Send(GameServiceSend2PlayerMethodDesc, msg);
 }
 
 void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& player)
@@ -108,7 +108,7 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
     msg.mutable_msg()->set_msg_id(msg_it->second);
     msg.mutable_msg()->set_body(message.SerializeAsString());
     msg.mutable_ex()->set_player_id(registry.get<Guid>(player));
-	gs->session_.Send(gsserviceControllerSend2PlayerViaGsMethoddesc, msg);
+	gs->session_.Send(GameServiceControllerSend2PlayerViaGsMethodDesc, msg);
 }
 
 void Send2Player(const google::protobuf::Message& message, entt::entity player)
@@ -138,7 +138,7 @@ void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, ui
     msg_wrapper.mutable_ex()->set_session_id(session_id);
     msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
     msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
-    gate->session_.Send(gateservicePlayerMessageMethoddesc, msg_wrapper);
+    gate->session_.Send(GateServicePlayerMessageMethodDesc, msg_wrapper);
 }
 
 void Send2Player(const google::protobuf::Message& message, Guid player_id)
@@ -190,5 +190,5 @@ void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity playe
     rq.mutable_msg()->set_msg_id(msg_it->second);
     rq.mutable_msg()->set_body(msg.SerializeAsString());
     rq.mutable_ex()->set_player_id(registry.get<Guid>(player));
-    registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(gsserviceCallPlayerMethoddesc, &rq);
+    registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayerMethodDesc, &rq);
 }

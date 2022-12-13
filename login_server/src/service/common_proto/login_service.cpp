@@ -26,7 +26,7 @@ using ConnectionEntityMap = std::unordered_map<Guid, EntityPtr>;
 
 ConnectionEntityMap sessions_;
 
-using EnterGameControllerRpc = std::shared_ptr<RpcString<controllerservice::EnterGameRequest, controllerservice::EnterGameResponese, LoginNodeEnterGameResponse>>;
+using EnterGameControllerRpc = std::shared_ptr<RpcString<ControllerNodeEnterGameRequest, ControllerNodeEnterGameResponese, LoginNodeEnterGameResponse>>;
 void EnterGameReplied(EnterGameControllerRpc replied)
 {
 	sessions_.erase(replied->s_rq_.session_id());
@@ -48,7 +48,7 @@ void EnterGame(Guid player_id,
 	g_login_node->controller_node().CallMethodString1(
 		EnterGameReplied,
 		rpc,
-		&controllerservice::ControllerNodeService_Stub::OnLsEnterGame);*/
+		&ControllerService::ControllerNodeService_Stub::OnLsEnterGame);*/
 }
 
 void UpdateAccount(uint64_t session_id, const ::account_database& a_d)
@@ -76,7 +76,7 @@ void LoginAccountDbReplied(LoginAccountDbRpc replied)
 	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
 }
 
-using LoginAcountControllerRpc = std::shared_ptr<RpcString<controllerservice::LoginAccountRequest, controllerservice::LoginAccountResponse, LoginNodeLoginResponse>>;
+using LoginAcountControllerRpc = std::shared_ptr<RpcString<ControllerNodeLoginAccountRequest, ControllerNodeLoginAccountResponse, LoginNodeLoginResponse>>;
 void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 {
 	//只连接不登录,占用连接
@@ -160,7 +160,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	s_reqst.set_account(request->account());
 	s_reqst.set_session_id(request->session_id());
 	sessions_.emplace(request->session_id(), EntityPtr());
-	//g_login_node->controller_node().CallMethodString1( LoginAccountControllerReplied, rpc, &controllerservice::ControllerNodeService_Stub::OnLsLoginAccount);
+	//g_login_node->controller_node().CallMethodString1( LoginAccountControllerReplied, rpc, &ControllerService::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -263,9 +263,9 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 		LOG_ERROR << " leave game not found connection";
 		return;
 	}
-	controllerservice::LsLeaveGameRequest rq;
+	ControllerNodeLsLeaveGameRequest rq;
 	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->CallMethod(controllerserviceOnLsLeaveGameMethoddesc, &rq);
+	g_login_node->controller_node()->CallMethod(ControllerServiceOnLsLeaveGameMethodDesc, &rq);
 	sessions_.erase(sit);
 ///<<< END WRITING YOUR CODE 
 }
@@ -278,9 +278,9 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	sessions_.erase(request->session_id());
-	controllerservice::LsDisconnectRequest rq;
+	ControllerNodeLsDisconnectRequest rq;
 	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->CallMethod(controllerserviceOnLsDisconnectMethoddesc, &rq);
+	g_login_node->controller_node()->CallMethod(ControllerServiceOnLsDisconnectMethodDesc, &rq);
 ///<<< END WRITING YOUR CODE 
 }
 

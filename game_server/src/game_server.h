@@ -33,9 +33,9 @@ public:
 
     void ServerInfo(const ::servers_info_data& info);
 
-    void StartGsDeployReplied(const deploy::StartGSResponse& replied);
+    void StartGsDeployReplied(const StartGSResponse& replied);
 
-	void OnAcquireLobbyInfoReplied(deploy::LobbyInfoResponse& replied);
+	void OnAcquireLobbyInfoReplied(LobbyInfoResponse& replied);
 
     void CallControllerStartGs(ControllerSessionPtr controller_session);
     void CallLobbyStartGs();
@@ -58,7 +58,7 @@ private:
 
     ::game_server_db gs_info_;
 
-    GsServiceImpl gs_service_impl_;
+    GameServiceImpl gs_service_impl_;
 };
 
 extern GameServer* g_gs;

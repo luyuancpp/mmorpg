@@ -8,7 +8,7 @@ extern ProtobufDispatcher g_response_dispatcher;
 
 void InitRepliedCallback()
 {
-    g_response_dispatcher.registerMessageCallback<deploy::ServerInfoResponse>(std::bind(&OnServerInfoReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    g_response_dispatcher.registerMessageCallback<ServerInfoResponse>(std::bind(&OnServerInfoReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
           
 }

@@ -59,10 +59,10 @@ def genheadrpcfun():
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
         method = s[1]
-        methodname = local.pkg +  method + 'Method'
+        methodname = local.pkg + local.service +  method + 'Method'
         methodindexname = methodname + 'Index'
-        line = 'const uint32_t ' + methodindexname + ' = ' + str(index) + ';\n'
-        line += '#define ' + methodname + 'desc ' \
+        line = 'const uint32_t ' +  methodindexname + ' = ' + str(index) + ';\n'
+        line += '#define ' +  methodname + 'Desc ' \
         + local.pkg + '::' + local.service + '_Stub'\
         + '::descriptor()->method(' + methodindexname + ')\n\n'
         index += 1

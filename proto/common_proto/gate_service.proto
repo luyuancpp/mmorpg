@@ -2,7 +2,6 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 import "common_proto/common.proto";
 import "common_proto/node_common.proto";
-package gateservice;
 option cc_generic_services = true;
 
 message GsMessageExtern
@@ -10,41 +9,41 @@ message GsMessageExtern
   uint64 session_id = 1;
 }
 
-message StartGSRequest
+message GateNodeStartGSRequest
 {
   string ip = 1;
   uint32 port = 2;
   uint32 gs_node_id = 3;
 }
 
-message StopGSRequest
+message GateNodeStopGSRequest
 {
   string ip = 1;
   uint32 port = 2;
 }
 
-message PlayerEnterGsRequest
+message GateNodePlayerEnterGsRequest
 {
   uint64 session_id = 1;
   uint32 gs_node_id = 2;
 }
 
-message PlayerEnterGsResponese
+message GateNodePlayerEnterGsResponese
 {
 }
 
 
-message KickConnRequest
+message GateNodeKickConnRequest
 {
   uint64 session_id = 1;
 }
 
 service GateService {
-  rpc StartGS (StartGSRequest) returns (google.protobuf.Empty);
-  rpc StopGS (StopGSRequest) returns (google.protobuf.Empty);
-  rpc PlayerEnterGs (PlayerEnterGsRequest) returns (PlayerEnterGsResponese);
+  rpc StartGS (GateNodeStartGSRequest) returns (google.protobuf.Empty);
+  rpc StopGS (GateNodeStopGSRequest) returns (google.protobuf.Empty);
+  rpc PlayerEnterGs (GateNodePlayerEnterGsRequest) returns (GateNodePlayerEnterGsResponese);
   rpc PlayerMessage (NodeServiceMessageRequest) returns (google.protobuf.Empty);
-  rpc KickConnByController (KickConnRequest) returns (google.protobuf.Empty);
+  rpc KickConnByController (GateNodeKickConnRequest) returns (google.protobuf.Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
 }
