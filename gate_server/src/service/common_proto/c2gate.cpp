@@ -140,7 +140,11 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     rq.set_session_id(tcp_session_id(conn));
     get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceLoginMethodDesc, &rq);
 
-    
+    LoginNodeLoginRequest::descriptor()->index();
+
+    RouteMsgStringRequest msg;
+    msg.set_body(message->SerializeAsString());
+    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceRouteNodeStringMsgMethodDesc, &msg);
 }
 
 void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
