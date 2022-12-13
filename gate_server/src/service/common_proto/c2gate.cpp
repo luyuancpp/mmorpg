@@ -28,7 +28,7 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
     : codec_(codec),
       dispatcher_(dispatcher)
 {
-    dispatcher_.registerMessageCallback<DbNodeLoginRequest>(
+    dispatcher_.registerMessageCallback<DatabaseNodeLoginRequest>(
         std::bind(&ClientReceiver::OnLogin, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<CreatePlayerRequest>(
         std::bind(&ClientReceiver::OnCreatePlayer, this, _1, _2, _3));
@@ -135,11 +135,10 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     //todo login 崩溃了
-    LoginNodeLoginNodeLoginRequest rq;
+    LoginNodeLoginRequest rq;
     rq.set_account(message->account());
-    rq.set_password(message->password());
     rq.set_session_id(tcp_session_id(conn));
-    get_login_node(tcp_session_id(conn))->CallMethod(loginserviceLoginMethoddesc, &rq);
+    get_login_node(tcp_session_id(conn))->CallMethod(LoginMethoddesc, &rq);
 }
 
 void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
@@ -148,7 +147,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 {
     LoginNodeCreatePlayerRequest rq;
     rq.set_session_id(tcp_session_id(conn));
-    get_login_node(tcp_session_id(conn))->CallMethod(loginserviceCreatPlayerMethoddesc, &rq);
+    get_login_node(tcp_session_id(conn))->CallMethod(CreatPlayerMethoddesc, &rq);
 }
 
 void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -158,7 +157,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
     LoginNodeEnterGameRequest rq;
     rq.set_session_id(tcp_session_id(conn));
     rq.set_player_id(message->player_id());
-    get_login_node(tcp_session_id(conn))->CallMethod(loginserviceEnterGameMethoddesc, &rq);
+    get_login_node(tcp_session_id(conn))->CallMethod(EnterGameMethoddesc, &rq);
 }
 
 void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn, 

@@ -40,7 +40,6 @@
     <ClCompile Include="src\pb\pbc\common_proto\comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\controller_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\database_service.pb.cc" />
-    <ClCompile Include="src\pb\pbc\common_proto\db_base.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\deploy_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\game_service.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\gate_service.pb.cc" />
@@ -97,6 +96,7 @@
     <ClCompile Include="src\pb\pbc\common_proto\account_database.pb.cc" />
     <ClCompile Include="src\pb\pbc\prototypeserviceinstance\rpc_prototype_service.cpp" />
     <ClCompile Include="src\pb\pbc\common_proto\node_common.pb.cc" />
+    <ClCompile Include="src\pb\pbc\common_proto\db_base.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -166,7 +166,6 @@
     <ClInclude Include="src\pb\pbc\common_proto\comp.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\controller_service.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\database_service.pb.h" />
-    <ClInclude Include="src\pb\pbc\common_proto\db_base.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\deploy_service.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\game_service.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\gate_service.pb.h" />
@@ -221,5 +220,6 @@
     <ClInclude Include="src\pb\pbc\service_method\team_server_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\teammethod.h" />
     <ClInclude Include="src\pb\pbc\common_proto\node_common.pb.h" />
+    <ClInclude Include="src\pb\pbc\common_proto\db_base.pb.h" />
   </ItemGroup>
 </Project>
