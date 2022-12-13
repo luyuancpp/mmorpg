@@ -290,8 +290,8 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 void LoginServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
@@ -300,8 +300,8 @@ void LoginServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* c
     ::google::protobuf::Closure* done)
 {
     AutoRecycleClosure d(done);
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
 }
 
 ///<<<rpc end
