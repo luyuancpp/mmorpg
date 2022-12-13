@@ -4,5 +4,5 @@
 
 void OnServerInfoReplied(const TcpConnectionPtr& conn, const ServerInfoResponsePtr& replied, Timestamp timestamp)
 {
-    g_db_server->StartServer(replied->info());
+    g_database_node->StartServer(replied->info());
 }

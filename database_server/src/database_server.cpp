@@ -7,7 +7,7 @@
 
 #include "mysql_database_table.pb.h"
 
-DatabaseServer* g_db_server{nullptr};
+DatabaseServer* g_database_node{nullptr};
 
 DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
     : loop_(loop),

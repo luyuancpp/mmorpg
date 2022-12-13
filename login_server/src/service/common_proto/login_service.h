@@ -1,30 +1,30 @@
 #pragma once
 #include "login_service.pb.h"
-class LoginServiceImpl : public loginservice::LoginService{
+class LoginServiceImpl : public ::LoginService{
 public:
 public:
     void Login(::google::protobuf::RpcController* controller,
-        const loginservice::LoginNodeLoginRequest* request,
-        loginservice::LoginNodeLoginResponse* response,
+        const ::LoginNodeLoginRequest* request,
+        ::LoginNodeLoginResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void CreatPlayer(::google::protobuf::RpcController* controller,
-        const loginservice::CreatePlayerRequest* request,
-        loginservice::CreatePlayerResponse* response,
+        const ::LoginNodeCreatePlayerRequest* request,
+        ::LoginNodeCreatePlayerResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterGame(::google::protobuf::RpcController* controller,
-        const loginservice::EnterGameRequest* request,
-        loginservice::EnterGameResponse* response,
+        const ::LoginNodeEnterGameRequest* request,
+        ::LoginNodeEnterGameResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void LeaveGame(::google::protobuf::RpcController* controller,
-        const loginservice::LeaveGameRequest* request,
+        const ::LoginNodeLeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void Disconnect(::google::protobuf::RpcController* controller,
-        const loginservice::DisconnectRequest* request,
+        const ::LoginNodeDisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 

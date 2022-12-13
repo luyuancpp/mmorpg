@@ -45,4 +45,4 @@ private:
     DbServiceImpl impl_;
 };
 
-extern DatabaseServer* g_db_server;
+extern DatabaseServer* g_database_node;

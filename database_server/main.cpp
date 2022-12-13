@@ -7,7 +7,7 @@ int32_t main(int argc, char* argv[])
 {
     EventLoop loop;
     DatabaseServer server(&loop);
-    g_db_server = &server;
+    g_database_node = &server;
     server.Init();
     loop.loop();
     return 0;

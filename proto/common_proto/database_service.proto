@@ -3,44 +3,44 @@ import "common_proto/common.proto";
 import "common_proto/mysql_database_table.proto";
 option cc_generic_services = true;
 
-message DbNodeLoginRequest
+message DatabaseNodeLoginRequest
 {
   string account = 1;
   uint64 session_id = 2;
 }
 
-message DbNodeLoginResponse
+message DatabaseNodeLoginResponse
 {
 	Tips error = 1;
   account_database account_player = 2;
 }
 
-message DbNodeCreatePlayerRequest
+message DatabaseNodeCreatePlayerRequest
 {
   string account = 1;
   uint64 session_id = 2;
 }
 
-message DbNodeCreatePlayerResponse
+message DatabaseNodeCreatePlayerResponse
 {
   Tips error = 1;
   account_database account_player = 2;
   uint64 player_id = 3;
 }
 
-message DbNodeEnterGameRequest
+message DatabaseNodeEnterGameRequest
 {
   uint64 player_id = 1;
 }
 
-message DbNodeEnterGameResponse
+message DatabaseNodeEnterGameResponse
 {
   Tips error = 1;
   uint64 player_id = 2;
 }
 
 service DbService {
-  rpc Login (DbNodeLoginRequest) returns (DbNodeLoginResponse);
-  rpc CreatePlayer (DbNodeCreatePlayerRequest) returns (DbNodeCreatePlayerResponse);
-  rpc EnterGame (DbNodeEnterGameRequest) returns (DbNodeEnterGameResponse);
+  rpc Login (DatabaseNodeLoginRequest) returns (DatabaseNodeLoginResponse);
+  rpc CreatePlayer (DatabaseNodeCreatePlayerRequest) returns (DatabaseNodeCreatePlayerResponse);
+  rpc EnterGame (DatabaseNodeEnterGameRequest) returns (DatabaseNodeEnterGameResponse);
 }
