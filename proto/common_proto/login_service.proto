@@ -63,7 +63,7 @@ message LeaveGameRequest
 }
 
 service LoginService {
-  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc Login (LoginNodeLoginRequest) returns (LoginNodeLoginResponse);
   rpc CreatPlayer (CreatePlayerRequest) returns (CreatePlayerResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc LeaveGame (LeaveGameRequest) returns (google.protobuf.Empty);
