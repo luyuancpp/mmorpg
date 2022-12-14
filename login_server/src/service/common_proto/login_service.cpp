@@ -144,7 +144,7 @@ void EnterGameDbReplied(EnterGameDbRpc replied)
 
 ///<<<rpc begin
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
-    const ::LoginNodeLoginRequest* request,
+    const ::LoginC2LRequest* request,
     ::LoginNodeLoginResponse* response,
     ::google::protobuf::Closure* done)
 {
@@ -165,7 +165,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
-    const ::LoginNodeCreatePlayerRequest* request,
+    const ::CreatePlayerC2lRequest* request,
     ::LoginNodeCreatePlayerResponse* response,
     ::google::protobuf::Closure* done)
 {
@@ -199,7 +199,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
-    const ::LoginNodeEnterGameRequest* request,
+    const ::EnterGameC2LRequest* request,
     ::LoginNodeEnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {

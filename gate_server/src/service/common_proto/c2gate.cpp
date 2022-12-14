@@ -135,12 +135,12 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     muduo::Timestamp)
 {
     //todo login 崩溃了
-    LoginNodeLoginRequest rq;
+    LoginC2LRequest rq;
     rq.set_account(message->account());
     rq.set_session_id(tcp_session_id(conn));
     get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceLoginMethodDesc, &rq);
 
-    LoginNodeLoginRequest::descriptor()->index();
+    LoginC2LRequest::descriptor()->index();
 
     RouteMsgStringRequest msg;
     msg.set_body(message->SerializeAsString());
@@ -151,7 +151,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
                                     const CreatePlayerRequestPtr& message, 
                                     muduo::Timestamp)
 {
-    LoginNodeCreatePlayerRequest rq;
+    CreatePlayerC2lRequest rq;
     rq.set_session_id(tcp_session_id(conn));
     get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceCreatPlayerMethodDesc, &rq);
 }
@@ -160,7 +160,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
                                 const EnterGameRequestPtr& message, 
                                 muduo::Timestamp)
 {
-    LoginNodeEnterGameRequest rq;
+    EnterGameC2LRequest rq;
     rq.set_session_id(tcp_session_id(conn));
     rq.set_player_id(message->player_id());
     get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceEnterGameMethodDesc, &rq);
