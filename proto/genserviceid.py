@@ -4,7 +4,7 @@ import md5tool
 import shutil
 import threading
 import _thread
-import protofilearray
+import genpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
@@ -45,7 +45,7 @@ def parsefile(filename):
                     continue
                 clientmsgdict.add(rq)
                 index += 1
-            elif fileline.find('service ') >= 0:
+            elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
     local.playerserviceid  += local.perserviceidcount

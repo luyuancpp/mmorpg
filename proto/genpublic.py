@@ -203,3 +203,6 @@ def getdestdir(dirpath):
     elif isdeploydir(dirpath):
         srcdir = servermd5dirs[deploymd5dirindex]   
     return srcdir 
+
+def is_service_fileline(fileline):
+    return fileline.find('service ') >= 0 and (fileline.find('{') >= 0 or fileline.find('Service') >= 0)
