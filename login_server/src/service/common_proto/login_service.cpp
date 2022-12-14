@@ -22,7 +22,7 @@ using namespace muduo::net;
 
 using PlayerPtr = std::shared_ptr<AccountPlayer>;
 using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
-using ConnectionEntityMap = std::unordered_map<Guid, EntityPtr>;
+using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
 
 ConnectionEntityMap sessions_;
 
@@ -58,14 +58,8 @@ void UpdateAccount(uint64_t session_id, const ::account_database& a_d)
 	{
 		return;
 	}
-	auto* p_player = registry.try_get<PlayerPtr>(sit->second);
-	if (nullptr == p_player)
-	{
-		return;
-	}
-	auto& ap = *p_player;
-	ap->set_account_data(a_d);
-	ap->OnDbLoaded();
+	sit->second->set_account_data(a_d);
+	sit->second->OnDbLoaded();
 }
 
 using LoginAccountDbRpc = std::shared_ptr< RpcString<DatabaseNodeLoginRequest, DatabaseNodeLoginResponse, LoginNodeLoginResponse>>;
@@ -91,18 +85,17 @@ void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 	}
 	//has data
 	{
-		auto& player = registry.emplace<PlayerPtr>(sit->second, std::make_shared<PlayerPtr::element_type>());
+		auto& player = sit->second;
 		auto ret = player->Login();
 		if (ret != kRetOK)
 		{
 			replied->c_rp_->mutable_error()->set_id(ret);
 			return;
 		}
-		auto& account_data = player->account_data();
-		g_login_node->redis_client()->Load(account_data, replied->s_rq_.account());
-		if (!account_data.password().empty())
+		g_login_node->redis_client()->Load(player->account_data(), replied->s_rq_.account());
+		if (!player->account_data().password().empty())
 		{
-			replied->c_rp_->mutable_account_player()->CopyFrom(account_data);
+			replied->c_rp_->mutable_account_player()->CopyFrom(player->account_data());
 			player->OnDbLoaded();
 			return;
 		}
@@ -155,10 +148,10 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
 	//登录的时候马上断开连接换了个gate应该可以登录成功
 	//login controller
-	auto rpc(std::make_shared<LoginAcountControllerRpc::element_type>(response, done));
-	auto& s_reqst = rpc->s_rq_;
-	s_reqst.set_account(request->account());
-	//sessions_.emplace(request->session_id(), EntityPtr());
+	ControllerNodeLoginAccountRequest rq;
+	rq.set_account(request->account());
+	uint64_t session_id = 1;
+	sessions_.emplace(session_id, std::make_shared<PlayerPtr::element_type>());
 	//g_login_node->controller_node().CallMethodString1( LoginAccountControllerReplied, rpc, &ControllerService::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
@@ -178,18 +171,11 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	{
 		ReturnCloseureError(kRetLoignCreatePlayerConnectionHasNotAccount);
 	}
-	auto* p_player = registry.try_get<PlayerPtr>(sit->second);
-	if (nullptr == p_player)
-	{
-		ReturnCloseureError(kRetLoginCreateConnectionAccountEmpty);
-	}
-	auto& ap = *p_player;
-	CheckReturnCloseureError(ap->CreatePlayer());
-
+	CheckReturnCloseureError(sit->second->CreatePlayer());
 	// database process
-	auto rpc(std::make_shared<CreatePlayerRpc::element_type>(response, done));
-	rpc->s_rq_.set_session_id(request->session_id());
-	rpc->s_rq_.set_account(ap->account());
+	DatabaseNodeCreatePlayerRequest rq;
+	rq.set_session_id(request->session_id());
+	rq.set_account(sit->second->account());
 	/*g_login_node->db_node().CallMethodString1(
 		CreatePlayerDbReplied,
 		rpc,
@@ -211,33 +197,28 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	{
 		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
-	auto* p_player = registry.try_get<PlayerPtr>(sit->second);
-	if (nullptr == p_player)
-	{
-		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
-	}
 	// check second times change player id error 
-	auto& ap = *p_player;
-	CheckReturnCloseureError(ap->EnterGame());
+	CheckReturnCloseureError(sit->second->EnterGame());
 
 	// long time in login processing
 	auto player_id = request->player_id();
-	if (!ap->HasPlayer(player_id))
+	if (!sit->second->HasPlayer(player_id))
 	{
 		ReturnCloseureError(kRetLoginPlayerGuidError);
 	}
-	// player in redis return ok
+	//todo 已经在其他login
 	player_database new_player;
 	g_login_node->redis_client()->Load(new_player, player_id);
-	ap->Playing(player_id);//test
+	sit->second->Playing(player_id);//test
 	response->set_session_id(session_id);
 	response->set_player_id(player_id);//test
 	if (new_player.player_id() > 0)
 	{
+		//玩家数据已经在redis里面了直接进入游戏
 		::EnterGame(player_id, session_id, response, done);
 		return;
 	}
-	// database to redis 
+	// redis没有玩家数据去数据库取
 	auto c(std::make_shared<EnterGameDbRpc::element_type>(response, done));
 	auto& srq = c->s_rq_;
 	srq.set_player_id(player_id);
@@ -255,13 +236,13 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
-	//连接过，登录过
 	auto sit = sessions_.find(request->session_id());
 	if (sit == sessions_.end())
 	{
 		LOG_ERROR << " leave game not found connection";
 		return;
 	}
+	//连接过，登录过
 	ControllerNodeLsLeaveGameRequest rq;
 	rq.set_session_id(request->session_id());
 	g_login_node->controller_node()->CallMethod(ControllerServiceOnLsLeaveGameMethodDesc, &rq);
@@ -276,6 +257,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 {
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
+	//比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 	sessions_.erase(request->session_id());
 	ControllerNodeLsDisconnectRequest rq;
 	rq.set_session_id(request->session_id());
@@ -296,6 +278,7 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		LOG_ERROR << "route size " << request->DebugString();
 		return;
 	}
+
 
 	//处理,如果需要继续路由则拿到当前节点信息
 

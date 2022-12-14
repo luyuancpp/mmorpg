@@ -102,8 +102,8 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         auto session_id = tcp_session_id(conn);
         //如果我没登录就发送其他协议到controller game server 怎么办
         {
-            //此消息一定要发，不能值通过ms 的gw disconnect去发
-            //如果我的登录还没到controller,gw的disconnect 先到，登录后到，那么ms server 永远删除不了这个sessionid了
+            //此消息一定要发，不能值通过controller 的gw disconnect去发
+            //比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 			LoginNodeDisconnectRequest rq;
 			rq.set_session_id(session_id);
 			get_login_node(session_id)->CallMethod(LoginServiceDisconnectMethodDesc, &rq);
