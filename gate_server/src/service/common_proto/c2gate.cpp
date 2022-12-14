@@ -184,16 +184,17 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 	{
 		return;
 	}
-    //检测玩家可以不可以发这个消息id过来给服务器
-    auto gs = g_game_node.find(it->second.gs_node_id_);
-    if (g_game_node.end() == gs)
-    {
-        //todo client error;
-        return;
-    }
     //todo msg id error
     if (g_open_player_msgids.find(request->msg_id()) != g_open_player_msgids.end())
     {
+		//检测玩家可以不可以发这个消息id过来给服务器
+		auto gs = g_game_node.find(it->second.gs_node_id_);
+		if (g_game_node.end() == gs)
+		{
+			//todo client error;
+			return;
+		}
+
         GameNodeRpcClientRequest rq;
         rq.set_request(request->request());
         rq.set_session_id(session_id);
