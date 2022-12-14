@@ -33,8 +33,6 @@ def parsefile(filename):
     local.msgdict = dict()
     playerproto = False
     global clientmsgdict
-    if not filename.find(protodir) >= 0 :
-        return
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
@@ -110,8 +108,7 @@ def md5copy(destfilename, filename):
     shutil.copy(gennewfilename, destfilename)
 
 genfile = ['common_proto/game_service.proto', 
-'common_proto/controller_service.proto', 
-'common_proto/gate_service.proto']
+'common_proto/login_service.proto']
 
 def inputfile():
     for filename in os.listdir(protodir):
