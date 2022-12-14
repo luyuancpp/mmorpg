@@ -137,9 +137,7 @@ void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
     //todo login 崩溃了
     LoginC2LRequest rq;
     rq.set_account(message->account());
-    rq.set_session_id(tcp_session_id(conn));
     get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceLoginMethodDesc, &rq);
-
     LoginC2LRequest::descriptor()->index();
 
     RouteMsgStringRequest msg;

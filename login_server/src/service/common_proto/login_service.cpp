@@ -158,8 +158,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	auto rpc(std::make_shared<LoginAcountControllerRpc::element_type>(response, done));
 	auto& s_reqst = rpc->s_rq_;
 	s_reqst.set_account(request->account());
-	s_reqst.set_session_id(request->session_id());
-	sessions_.emplace(request->session_id(), EntityPtr());
+	//sessions_.emplace(request->session_id(), EntityPtr());
 	//g_login_node->controller_node().CallMethodString1( LoginAccountControllerReplied, rpc, &ControllerService::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
@@ -250,7 +249,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
-    const ::LoginNodeLeaveGameRequest* request,
+    const ::LeaveGameC2LRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

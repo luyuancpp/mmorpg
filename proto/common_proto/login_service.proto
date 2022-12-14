@@ -54,16 +54,16 @@ message LoginNodeDisconnectResponse
 {
 }
 
-message LoginNodeLeaveGameRequest
+message LeaveGameC2LRequest
 {
   uint64 session_id = 1;
 }
 
 service LoginService {
   rpc Login (LoginC2LRequest) returns (LoginNodeLoginResponse);
-  rpc CreatPlayer (LoginNodeCreatePlayerRequest) returns (LoginNodeCreatePlayerResponse);
-  rpc EnterGame (LoginNodeEnterGameRequest) returns (LoginNodeEnterGameResponse);
-  rpc LeaveGame (LoginNodeLeaveGameRequest) returns (google.protobuf.Empty);
+  rpc CreatPlayer (CreatePlayerC2lRequest) returns (LoginNodeCreatePlayerResponse);
+  rpc EnterGame (EnterGameC2LRequest) returns (LoginNodeEnterGameResponse);
+  rpc LeaveGame (LeaveGameC2LRequest) returns (google.protobuf.Empty);
   rpc Disconnect (LoginNodeDisconnectRequest) returns (google.protobuf.Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
