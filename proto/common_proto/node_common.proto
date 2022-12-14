@@ -6,12 +6,14 @@ message RouteMsgStringRequest
 {
   bytes body = 1;
   repeated NodeInfo node_list = 2;
+  uint64 session_id = 3;
 }
 
 message RouteMsgStringResponse
 {
   bytes body = 1;
   repeated NodeInfo node_list = 2;
+  uint64 session_id = 3;
 }
 
 message RoutePlayerMsgStringRequest
