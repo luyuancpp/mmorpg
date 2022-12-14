@@ -36,7 +36,7 @@ struct ClosureReplied
     Guid session_id_{ kInvalidGuid };
 };
 
-using LoginRequestPtr = std::shared_ptr<DatabaseNodeLoginRequest> ;
+
 using CreatePlayerRequestPtr = std::shared_ptr<CreatePlayerRequest>;
 using EnterGameRequestPtr = std::shared_ptr<EnterGameRequest>;
 using LeaveGameRequestPtr = std::shared_ptr<LeaveGameRequest>;
@@ -58,9 +58,7 @@ public:
     void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { codec_.send(conn, messag); }
 
     //client to gate 
-    void OnLogin(const muduo::net::TcpConnectionPtr& conn,
-        const LoginRequestPtr& message,
-        muduo::Timestamp);
+
 
     void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
         const CreatePlayerRequestPtr& message, 

@@ -48,7 +48,7 @@ def parsefile(filename):
                 local.rpcarry.append(fileline)
             elif fileline.find(genpublic.cpkg) >= 0:
                 local.pkg = fileline.replace(genpublic.cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-            elif fileline.find('service ') >= 0:
+            elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = local.service
@@ -239,7 +239,7 @@ def parseplayerservcie(filename):
         for fileline in file:
             if fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-            elif fileline.find('service ') >= 0:
+            elif genpublic.is_service_fileline(fileline) == True:
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.service)
                 if filename.find(client_player) >= 0:

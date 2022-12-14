@@ -28,8 +28,7 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
     : codec_(codec),
       dispatcher_(dispatcher)
 {
-    dispatcher_.registerMessageCallback<DatabaseNodeLoginRequest>(
-        std::bind(&ClientReceiver::OnLogin, this, _1, _2, _3));
+    
     dispatcher_.registerMessageCallback<CreatePlayerRequest>(
         std::bind(&ClientReceiver::OnCreatePlayer, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<EnterGameRequest>(
@@ -130,21 +129,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
     }
 }
 
-void ClientReceiver::OnLogin(const muduo::net::TcpConnectionPtr& conn,
-    const LoginRequestPtr& message,
-    muduo::Timestamp)
-{
-    //todo login 崩溃了
-    LoginC2LRequest rq;
-    rq.set_account(message->account());
-    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceLoginMethodDesc, &rq);
-    LoginC2LRequest::descriptor()->index();
-
-    RouteMsgStringRequest msg;
-    msg.set_body(message->SerializeAsString());
-    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceRouteNodeStringMsgMethodDesc, &msg);
-}
-
 void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
                                     const CreatePlayerRequestPtr& message, 
                                     muduo::Timestamp)
@@ -199,6 +183,15 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_msg_id(request->msg_id());
         rq.set_id(request->id());
         gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMethodDesc, &rq);
+    }
+    {
+        RouteMsgStringRequest rq;
+        rq.set_session_id(session_id);
+        auto msg = rq.add_msg_list();
+        msg->mutable_node_info()->CopyFrom(g_gate_node->node_info());
+        msg->set_body(request->request());
+		msg->set_id(request->id());
+        get_login_node(session_id)->CallMethod(LoginServiceRouteNodeStringMsgMethodDesc, &rq);
     }
 }
 
