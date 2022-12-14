@@ -4,17 +4,17 @@ class LoginServiceImpl : public ::LoginService{
 public:
 public:
     void Login(::google::protobuf::RpcController* controller,
-        const ::LoginNodeLoginRequest* request,
+        const ::LoginC2LRequest* request,
         ::LoginNodeLoginResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void CreatPlayer(::google::protobuf::RpcController* controller,
-        const ::LoginNodeCreatePlayerRequest* request,
+        const ::CreatePlayerC2lRequest* request,
         ::LoginNodeCreatePlayerResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void EnterGame(::google::protobuf::RpcController* controller,
-        const ::LoginNodeEnterGameRequest* request,
+        const ::EnterGameC2LRequest* request,
         ::LoginNodeEnterGameResponse* response,
         ::google::protobuf::Closure* done)override;
 

@@ -8,11 +8,10 @@ import "common_proto/node_common.proto";
 
 option cc_generic_services = true;
 
-message LoginNodeLoginRequest
+message LoginC2LRequest
 {
   string account = 1;
   string password = 2;
-  uint64 session_id = 3;
 }
 
 message LoginNodeLoginResponse
@@ -21,7 +20,7 @@ message LoginNodeLoginResponse
   account_database account_player = 2;
 }
 
-message LoginNodeCreatePlayerRequest
+message CreatePlayerC2lRequest
 {
   uint64 session_id = 1;
 }
@@ -33,7 +32,7 @@ message LoginNodeCreatePlayerResponse
   uint64 player_id = 3;
 }
 
-message LoginNodeEnterGameRequest
+message EnterGameC2LRequest
 {
   uint64 session_id = 1;
   uint64 player_id = 2;
@@ -61,7 +60,7 @@ message LoginNodeLeaveGameRequest
 }
 
 service LoginService {
-  rpc Login (LoginNodeLoginRequest) returns (LoginNodeLoginResponse);
+  rpc Login (LoginC2LRequest) returns (LoginNodeLoginResponse);
   rpc CreatPlayer (LoginNodeCreatePlayerRequest) returns (LoginNodeCreatePlayerResponse);
   rpc EnterGame (LoginNodeEnterGameRequest) returns (LoginNodeEnterGameResponse);
   rpc LeaveGame (LoginNodeLeaveGameRequest) returns (google.protobuf.Empty);
