@@ -25,14 +25,14 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 		std::bind(&ClientService::OnMessageBodyReplied, this, _1, _2, _3));
 }
 
-void ClientService::Send(const google::protobuf::Message& message)
+void ClientService::Send(const google::protobuf::Message& msg)
 {
-    ClientRequest wrapper_message;
-    wrapper_message.set_id(++id_);
-    wrapper_message.set_request(message.SerializeAsString());
-    auto message_id = g_msgid[message.GetDescriptor()->full_name()];
-    wrapper_message.set_msg_id(message_id);
-    codec_.send(conn_, wrapper_message);
+    ClientRequest wrap_msg;
+    wrap_msg.set_id(++id_);
+    wrap_msg.set_request(msg.SerializeAsString());
+    auto message_id = g_msgid[msg.GetDescriptor()->full_name()];
+    wrap_msg.set_msg_id(message_id);
+    codec_.send(conn_, wrap_msg);
 }
 
 void ClientService::SendOhter(const google::protobuf::Message& message)
