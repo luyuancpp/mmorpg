@@ -19,7 +19,7 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void LeaveGame(::google::protobuf::RpcController* controller,
-        const ::LoginNodeLeaveGameRequest* request,
+        const ::LeaveGameC2LRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
