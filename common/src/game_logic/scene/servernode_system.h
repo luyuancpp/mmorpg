@@ -44,7 +44,7 @@ class ServerNodeSystem
 {
 public:
 
-    static ServerNodeSystem& GetSingleton() { thread_local ServerNodeSystem singleton; return singleton; }
+    static ServerNodeSystem& GetSingleton() { static ServerNodeSystem singleton; return singleton; }
 
 	static entt::entity GetWeightRoundRobinMainScene(const GetSceneParam& param);
 

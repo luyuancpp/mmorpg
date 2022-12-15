@@ -1,7 +1,7 @@
 #include "item.h"
 
-thread_local entt::registry item_reg;
-thread_local ServerSequence16 g_bag_server_sequence;
+entt::registry item_reg;
+ServerSequence16 g_bag_server_sequence;
 
 void BagEnityPtrDeleter(entt::entity* p)
 {
