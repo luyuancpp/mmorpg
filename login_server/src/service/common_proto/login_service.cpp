@@ -303,11 +303,8 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		return;
 	}
 	
-	google::protobuf::Message* response = GetResponsePrototype(method).New();
-
-	/*int64_t id = last_msg.id();
-	service->CallMethod(method, NULL, get_pointer(request), response,
-		NewCallback(this, &RpcChannel::doneCallback, response, id));*/
+	std::unique_ptr<google::protobuf::Message> prev_response(GetResponsePrototype(method).New());
+	CallMethod(method, NULL, get_pointer(prev_request), get_pointer(prev_response), nullptr);
 
 	//处理,如果需要继续路由则拿到当前节点信息
 
