@@ -190,7 +190,6 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_session_id(session_id);
         auto msg = rq.add_msg_list();
         msg->mutable_node_info()->CopyFrom(g_gate_node->node_info());        
-		msg->set_id(request->id());
         get_login_node(session_id)->CallMethod(LoginServiceRouteNodeStringMsgMethodDesc, &rq);
     }
 }
