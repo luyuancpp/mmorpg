@@ -6,7 +6,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/network/codec/dispatcher.h"
-#include "src/network/rpc_closure.h"
+#include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_client.h"
 #include "src/network/gate_player_list.h"
 #include "src/util/snow_flake.h"
