@@ -8,7 +8,7 @@ public:
 	const LobbyConfigInfo& config_info() const { return config_info_; }
 
 	static LobbyConfig& GetSingleton() {
-		thread_local LobbyConfig singleton;
+		static LobbyConfig singleton;
 		return singleton;
 	}
 
