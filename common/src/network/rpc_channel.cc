@@ -175,11 +175,14 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 			  }
               else
               {
-				  google::protobuf::Message* response = service->GetResponsePrototype(method).New();
+                  std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
 				  // response is deleted in doneCallback
-				  int64_t id = message.id();
-				  service->CallMethod(method, NULL, get_pointer(request), response,
-					  NewCallback(this, &RpcChannel::doneCallback, response, id));
+				  service->CallMethod(method, NULL, get_pointer(request), get_pointer(response), nullptr);
+				  RpcMessage rpc_message;
+                  rpc_message.set_type(RESPONSE);
+                  rpc_message.set_id(message.id());
+                  rpc_message.set_response(response->SerializeAsString()); // FIXME: error check
+				  codec_.send(conn_, rpc_message);
               }
             error = RPC_NO_ERROR;
           }
@@ -239,16 +242,6 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   else if (message.type() == RPC_ERROR)
   {
   }
-}
-
-void RpcChannel::doneCallback(::google::protobuf::Message* response, int64_t id)
-{
-  std::unique_ptr<google::protobuf::Message> d(response);
-  RpcMessage message;
-  message.set_type(RESPONSE);
-  message.set_id(id);
-  message.set_response(response->SerializeAsString()); // FIXME: error check
-  codec_.send(conn_, message);
 }
 
 

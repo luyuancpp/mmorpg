@@ -19,7 +19,6 @@ void GateServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	InetAddress gs_addr(request->ip(), request->port());
 	for (auto e : registry.view<InetAddress>())
@@ -48,7 +47,6 @@ void GateServiceImpl::StopGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	for (auto e : registry.view<InetAddress>())
 	{
@@ -69,7 +67,6 @@ void GateServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controlle
     ::GateNodePlayerEnterGsResponese* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 
 	auto it = g_client_sessions_->find(request->session_id());
@@ -88,7 +85,6 @@ void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controlle
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto session_id = request->ex().session_id();
 	auto it = g_client_sessions_->find(session_id);
@@ -106,7 +102,6 @@ void GateServiceImpl::KickConnByController(::google::protobuf::RpcController* co
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	g_client_sessions_->erase(request->session_id());
 	LOG_INFO << "connid be kick " << request->session_id();
@@ -118,7 +113,6 @@ void GateServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* cont
     ::RouteMsgStringResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	
 ///<<< END WRITING YOUR CODE 
@@ -129,7 +123,6 @@ void GateServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* co
     ::RoutePlayerMsgStringResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE 
 }

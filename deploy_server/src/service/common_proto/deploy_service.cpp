@@ -34,7 +34,6 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
     ::ServerInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto group_id = request->group();
 	auto& servers_deploy = *response->mutable_info();
@@ -55,7 +54,6 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     ::StartGSResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto& server_deploy = *response->mutable_my_info();
 	auto& client_info = request->rpc_client();
@@ -83,7 +81,6 @@ void DeployServiceImpl::StartLobbyServer(::google::protobuf::RpcController* cont
     ::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	LoadLobbyDeploy(request->lobby_id(), response->mutable_info());
 ///<<< END WRITING YOUR CODE 
@@ -94,7 +91,6 @@ void DeployServiceImpl::AcquireLobbyServerInfo(::google::protobuf::RpcController
     ::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	LoadLobbyDeploy(request->lobby_id(), response->mutable_info());
 ///<<< END WRITING YOUR CODE 
@@ -105,7 +101,6 @@ void DeployServiceImpl::AcquireLobbyInfo(::google::protobuf::RpcController* cont
     ::LobbyInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	//获取大厅管理的controller节点
 	std::string where_case = std::to_string(request->lobby_id()) + " = lobby_id  ";
@@ -118,7 +113,6 @@ void DeployServiceImpl::LoginNodeInfo(::google::protobuf::RpcController* control
     ::GruoupLoginNodeResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
     std::string where_case = std::to_string(request->group_id()) + " = group_id  ";
     db_->LoadAll<login_server_db>(*response->mutable_login_db(), where_case);
@@ -130,7 +124,6 @@ void DeployServiceImpl::SceneSqueueNodeId(::google::protobuf::RpcController* con
     ::SceneSqueueResponese* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	response->set_node_id(g_scene_squeue_node_id.Create());
 ///<<< END WRITING YOUR CODE 

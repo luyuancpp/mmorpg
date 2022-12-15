@@ -107,7 +107,6 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
     ::ControllerNodeStartGsResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	response->set_controller_node_id(controller_node_id());
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
@@ -180,7 +179,6 @@ void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* con
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	entt::entity gate{ entt::null };
@@ -212,7 +210,6 @@ void ControllerServiceImpl::OnGateLeaveGame(::google::protobuf::RpcController* c
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE 
 }
@@ -222,7 +219,6 @@ void ControllerServiceImpl::OnGatePlayerService(::google::protobuf::RpcControlle
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE 
 }
@@ -232,7 +228,6 @@ void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* 
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
@@ -275,7 +270,6 @@ void ControllerServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
     ::ControllerNodeLoginAccountResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 
 	auto cit = g_gate_sessions.find(request->session_id());
@@ -324,7 +318,6 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
     ::ControllerNodeEnterGameResponese* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
@@ -412,7 +405,6 @@ void ControllerServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 
 	auto player_id = GetPlayerIdByConnId(request->session_id());
@@ -426,7 +418,6 @@ void ControllerServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto player_id = GetPlayerIdByConnId(request->session_id());
 	g_player_list->LeaveGame(player_id);
@@ -439,7 +430,6 @@ void ControllerServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto& message_extern = request->ex();
 	auto it = g_players.find(message_extern.player_id());
@@ -491,7 +481,6 @@ void ControllerServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
     CreateSceneBySceneInfoP create_scene_param;
 	for (auto& it : request->cross_scenes_info())
@@ -520,7 +509,6 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	auto player = g_player_list->GetPlayer(request->player_id());
 	if (entt::null == player)
