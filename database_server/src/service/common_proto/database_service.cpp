@@ -68,4 +68,22 @@ void DbServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE 
 }
 
+void DbServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+    const ::RouteMsgStringRequest* request,
+    ::RouteMsgStringResponse* response,
+    ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
+}
+
+void DbServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+    const ::RoutePlayerMsgStringRequest* request,
+    ::RoutePlayerMsgStringResponse* response,
+    ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
+}
+
 ///<<<rpc end

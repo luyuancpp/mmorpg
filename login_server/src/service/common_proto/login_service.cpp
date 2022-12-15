@@ -13,6 +13,7 @@
 #include "src/network/route_system.h"
 #include "src/redis_client/redis_client.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
+#include "src/pb/pbc/service_method/database_servicemethod.h"
 
 #include "login_service.pb.h"
 #include "database_service.pb.h"
@@ -298,15 +299,27 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	}
 	std::unique_ptr<google::protobuf::Message> prev_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(prev_request), get_pointer(prev_response), nullptr);
-
+	auto rq = const_cast<::RouteMsgStringRequest*>(request);
 	if (!g_route2controller_msg.method().empty())
 	{
+		auto route_msg = rq->add_msg_list();
+		route_msg->CopyFrom(g_route2controller_msg);
 		g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, request);
 		g_route2controller_msg.mutable_method()->clear();
 	}
+	else if (g_route2db_msg.method().empty())
+	{
+        auto route_msg = rq->add_msg_list();
+        route_msg->CopyFrom(g_route2db_msg);
+        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethodDesc, request);
+		g_route2db_msg.mutable_method()->clear();
+	}
+    else if (g_route2gate_msg.method().empty())
+    {
+    }
 	//处理,如果需要继续路由则拿到当前节点信息
 
-	auto rq = const_cast<::RouteMsgStringRequest*>(request);
+	
 	
 ///<<< END WRITING YOUR CODE 
 }
