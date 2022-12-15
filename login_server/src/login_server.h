@@ -22,6 +22,8 @@
         inline RpcClientPtr& db_node() { return db_session_; }
         uint32_t login_node_id() const { return conf_info_.id(); }
 		inline const NodeInfo& node_info()const { return node_info_;}
+		inline const NodeInfo& database_node_info()const {return dababase_node_info_;}
+        inline const NodeInfo& controller_node_info()const { return controller_node_info_; }
 
         void Init();
 
@@ -47,6 +49,8 @@
 
         login_server_db conf_info_;
         NodeInfo node_info_;
+        NodeInfo dababase_node_info_;
+        NodeInfo controller_node_info_;
     };
 
 extern LoginServer* g_login_node;

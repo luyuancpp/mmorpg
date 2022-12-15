@@ -45,12 +45,18 @@ void LoginServer::Start()
 void LoginServer::StartServer(const ::servers_info_data& info)
 {
     auto& databaseinfo = info.database_info();
+    dababase_node_info_.set_node_id(databaseinfo.id());
+    dababase_node_info_.set_node_type(kDatabaseNode);
+    g_route2db_msg.mutable_node_info()->CopyFrom(dababase_node_info_);
     InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
     db_session_ = std::make_unique<RpcClient>(loop_, database_addr);
     db_session_->connect();
 
-    auto& controller_node_info = info.controller_info();
-    InetAddress controller_node_addr(controller_node_info.ip(), controller_node_info.port());
+    auto& controller_info = info.controller_info();
+    controller_node_info_.set_node_id(controller_info.id());
+    controller_node_info_.set_node_type(kControllerNode);
+    g_route2controller_msg.mutable_node_info()->CopyFrom(controller_node_info_);
+    InetAddress controller_node_addr(controller_info.ip(), controller_info.port());
     controller_session_ = std::make_unique<RpcClient>(loop_, controller_node_addr);
     controller_session_->connect();
     

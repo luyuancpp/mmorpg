@@ -10,6 +10,7 @@
 #include "src/comp/account_player.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_client.h"
+#include "src/network/route_system.h"
 #include "src/redis_client/redis_client.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 
@@ -151,6 +152,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	rq.set_account(request->account());
 	uint64_t session_id = 1;
 	sessions_.emplace(session_id, std::make_shared<PlayerPtr::element_type>());
+	Route2Controller(rq, ControllerServiceOnLsLoginAccountMethodDesc);
 	//g_login_node->controller_node().CallMethodString1( LoginAccountControllerReplied, rpc, &ControllerService::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
@@ -297,6 +299,11 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	std::unique_ptr<google::protobuf::Message> prev_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(prev_request), get_pointer(prev_response), nullptr);
 
+	if (!g_route2controller_msg.method().empty())
+	{
+		//g_login_node->controller_node()->CallMethod();
+		g_route2controller_msg.mutable_method()->clear();
+	}
 	//处理,如果需要继续路由则拿到当前节点信息
 
 	auto rq = const_cast<::RouteMsgStringRequest*>(request);

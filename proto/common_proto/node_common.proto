@@ -19,8 +19,9 @@ message RouteMsgStringRequest
 
 message RouteMsgStringResponse
 {
-  repeated RouteMsgBody msg_list = 1;
-  uint64 session_id = 2;  
+  bytes body = 1;
+  repeated RouteMsgBody msg_list = 2;
+  uint64 session_id = 3;  
 }
 
 message RoutePlayerMsgStringRequest
