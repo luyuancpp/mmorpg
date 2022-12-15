@@ -1,6 +1,5 @@
 #include "game_registry.h"
 
-
 thread_local entt::registry registry;
 thread_local entt::dispatcher dispatcher;
 static_assert(sizeof(uint64_t) == sizeof(entt::entity), "sizeof(uint64_t) == sizeof(entt::entity)");

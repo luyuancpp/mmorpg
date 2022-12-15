@@ -16,10 +16,11 @@ struct GsServerType
 
 enum EnumNodeType : uint32_t
 {
-	kLoginNode,
-	kControllerNode,
-	kGameNode,
-	kGateNode,
+	kLoginNode,//登录服务器
+	kControllerNode,//场景切换中心服务器
+	kGameNode,//逻辑服务器
+	kGateNode,//网关服务器
+	kDatabaseNode,//数据库服务器
 };
 
 

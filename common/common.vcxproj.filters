@@ -6,7 +6,6 @@
     <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\event\event.cc" />
-    <ClCompile Include="src\game_logic\game_registry.cpp" />
     <ClCompile Include="src\game_logic\teams\team.cpp" />
     <ClCompile Include="src\game_logic\teams\teams.cpp" />
     <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
@@ -97,6 +96,8 @@
     <ClCompile Include="src\pb\pbc\prototypeserviceinstance\rpc_prototype_service.cpp" />
     <ClCompile Include="src\pb\pbc\common_proto\node_common.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\db_base.pb.cc" />
+    <ClCompile Include="src\network\rpc_msg_route.cpp" />
+    <ClCompile Include="src\game_logic\game_registry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -116,7 +117,6 @@
     <ClInclude Include="src\event\event.h" />
     <ClInclude Include="src\game_logic\exprtk\exprtk.hpp" />
     <ClInclude Include="src\util\file2string.h" />
-    <ClInclude Include="src\game_ecs\game_registry.h" />
     <ClInclude Include="src\game_logic\teams\team.h" />
     <ClInclude Include="src\game_logic\teams\teams.h" />
     <ClInclude Include="src\game_logic\teams\team_event.h" />
@@ -140,7 +140,6 @@
     <ClInclude Include="src\game_logic\scene\servernode_system.h" />
     <ClInclude Include="src\game_logic\scene\scene.h" />
     <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
-    <ClInclude Include="src\server_registry\server_registry.h" />
     <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\util\random.h" />
     <ClInclude Include="src\game_logic\player\player_list.h" />
@@ -221,5 +220,6 @@
     <ClInclude Include="src\pb\pbc\service_method\teammethod.h" />
     <ClInclude Include="src\pb\pbc\common_proto\node_common.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\db_base.pb.h" />
+    <ClInclude Include="src\game_logic\game_registry.h" />
   </ItemGroup>
 </Project>

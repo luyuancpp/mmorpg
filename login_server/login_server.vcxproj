@@ -157,6 +157,7 @@
     <ClCompile Include="src\login_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\comp\account_player.cpp" />
+    <ClCompile Include="src\network\route_system.cpp" />
     <ClCompile Include="src\service\common_proto\login_service.cpp" />
     <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp" />
     <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp" />
@@ -164,6 +165,7 @@
   <ItemGroup>
     <ClInclude Include="src\login_server.h" />
     <ClInclude Include="src\comp\account_player.h" />
+    <ClInclude Include="src\network\route_system.h" />
     <ClInclude Include="src\service\common_proto\login_service.h" />
     <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h" />
     <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h" />
