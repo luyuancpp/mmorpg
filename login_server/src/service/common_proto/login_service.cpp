@@ -1,5 +1,5 @@
 #include "login_service.h"
-#include "src/network/rpc_closure.h"
+#include "src/network/rpc_msg_route.h"
 ///<<< BEGIN WRITING YOUR CODE  
 #include "muduo/base/Logging.h"
 
@@ -8,7 +8,7 @@
 #include "src/game_logic/tips_id.h"
 #include "src/login_server.h"
 #include "src/comp/account_player.h"
-#include "src/network/rpc_closure.h"
+#include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_client.h"
 #include "src/redis_client/redis_client.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
@@ -288,14 +288,12 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-
 	std::unique_ptr<google::protobuf::Message> prev_request(GetRequestPrototype(method).New());
 	if (!prev_request->ParseFromString(request->body()))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-	
 	std::unique_ptr<google::protobuf::Message> prev_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(prev_request), get_pointer(prev_response), nullptr);
 

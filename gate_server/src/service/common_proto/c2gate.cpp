@@ -11,7 +11,7 @@
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
 #include "src/game_logic/tips_id.h"
-#include "src/network/rpc_closure.h"
+#include "src/network/rpc_msg_route.h"
 #include "src/util/random.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"

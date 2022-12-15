@@ -2,7 +2,7 @@
 
 #include "src/event/event.h"
 #include "src/network/rpc_server.h"
-#include "src/network/rpc_closure.h"
+#include "src/network/rpc_msg_route.h"
 
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_connection_event.h"

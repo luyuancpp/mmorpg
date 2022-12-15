@@ -6,7 +6,7 @@
 #include "src/mysql_wrapper/mysql_database.h"
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_client.h"
-#include "src/network/rpc_closure.h"
+#include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_server.h"
 #include "src/service/common_proto/database_service.h"
 

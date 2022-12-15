@@ -130,7 +130,7 @@
     <ClInclude Include="src\network\game_rpc.pb.h" />
     <ClInclude Include="src\network\node_info.h" />
     <ClInclude Include="src\network\rpc_channel.h" />
-    <ClInclude Include="src\network\rpc_closure.h" />
+    <ClInclude Include="src\network\rpc_msg_route.h" />
     <ClInclude Include="src\network\rpc_connection_event.h" />
     <ClInclude Include="src\network\rpc_server.h" />
     <ClInclude Include="src\network\server_component.h" />
