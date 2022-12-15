@@ -4,17 +4,17 @@ import "common_proto/common.proto";
 
 message RouteMsgBody
 {
-  bytes body = 1;
-  string service = 2;
-  string method = 3;
-  NodeInfo node_info = 4;
-  uint64 id = 5;
+  string service = 1;
+  string method = 2;
+  NodeInfo node_info = 3;
+  uint64 id = 4;
 }
 
 message RouteMsgStringRequest
 {
-  repeated RouteMsgBody msg_list = 1;
-  uint64 session_id = 2;  
+  bytes body = 1;
+  repeated RouteMsgBody msg_list = 2;
+  uint64 session_id = 3;  
 }
 
 message RouteMsgStringResponse
