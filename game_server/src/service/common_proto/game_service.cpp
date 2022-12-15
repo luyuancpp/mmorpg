@@ -29,7 +29,6 @@ void GameServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
         //连续顶号进入，还在加载中的话继续加载
     auto player_id = request->player_id();
@@ -59,7 +58,6 @@ void GameServiceImpl::Send2Player(::google::protobuf::RpcController* controller,
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
     auto it = g_players->find(request->ex().player_id());
     if (it == g_players->end())
@@ -104,7 +102,6 @@ void GameServiceImpl::ClientSend2Player(::google::protobuf::RpcController* contr
     ::GameNodeRpcClientResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
         // todo player service move to gate check
     auto mit = g_serviceinfo.find(request->msg_id());
@@ -162,7 +159,6 @@ void GameServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
         //异步加载过程中断开了？
     PlayerCommonSystem::RemovePlayereSession(request->player_id());
@@ -184,7 +180,6 @@ void GameServiceImpl::GateConnectGs(::google::protobuf::RpcController* controlle
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
     InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
     for (auto e : registry.view<RpcServerConnection>())
@@ -209,7 +204,6 @@ void GameServiceImpl::ControllerSend2PlayerViaGs(::google::protobuf::RpcControll
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
     ::Send2Player(request->msg(), request->ex().player_id());
 ///<<< END WRITING YOUR CODE 
@@ -220,7 +214,6 @@ void GameServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
     auto it = g_players->find(request->ex().player_id());
     if (it == g_players->end())

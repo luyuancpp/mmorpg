@@ -46,15 +46,4 @@ private:
 	::google::protobuf::Closure* cc_{ nullptr };
 };
 
-class AutoRecycleClosure
-{
-public:
-	using element_type = ::google::protobuf::Closure;
-	AutoRecycleClosure(element_type* done) : done_(done) {}
-	~AutoRecycleClosure() { if (nullptr != done_) { done_->Run(); } }
-	void SelfDelete() { done_ = nullptr; }//如果不自动回收的话就调用这个接口,让出管理权
-private:
-	element_type* done_{ nullptr };
-};
-
 static const int32_t kMaxRouteSize = 20;

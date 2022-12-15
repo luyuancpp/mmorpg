@@ -9,7 +9,7 @@ void ServerSceneServiceImpl::UpdateCrossMainSceneInfo(::google::protobuf::RpcCon
     ::UpdateCrossMainSceneInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
+    
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE 
 }

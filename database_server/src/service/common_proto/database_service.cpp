@@ -16,7 +16,6 @@ void DbServiceImpl::Login(::google::protobuf::RpcController* controller,
     ::DatabaseNodeLoginResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	::account_database& db = *response->mutable_account_player();
 	auto& account = request->account();
@@ -39,7 +38,6 @@ void DbServiceImpl::CreatePlayer(::google::protobuf::RpcController* controller,
     ::DatabaseNodeCreatePlayerResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	::account_database& r_db = *response->mutable_account_player();
 	g_database_node->redis_client()->Load(r_db, request->account());
@@ -59,7 +57,6 @@ void DbServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::DatabaseNodeEnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
-    AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	player_database new_player;
 	std::string where_case = std::string("player_id = '") +
