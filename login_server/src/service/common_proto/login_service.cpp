@@ -273,20 +273,46 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     AutoRecycleClosure d(done);
 ///<<< BEGIN WRITING YOUR CODE 
 	
-	auto node_list_size = request->node_list_size();
-	if (node_list_size >= kMaxRouteSize)
+	auto msg_list_size = request->msg_list_size();
+	if (msg_list_size >= kMaxRouteSize)
 	{
 		LOG_ERROR << "route size " << request->DebugString();
 		return;
 	}
+	else if (msg_list_size <= 0)
+	{
+		LOG_ERROR << "msg list empty" << request->DebugString();
+		return;
+	}
+	auto msg_prev_index = msg_list_size - 1;
+	auto& prev_msg = request->msg_list(msg_prev_index);
+	auto& method_name = prev_msg.method();
+	const google::protobuf::ServiceDescriptor* desc = GetDescriptor();
+	const google::protobuf::MethodDescriptor* method
+		= desc->FindMethodByName(method_name);
+	if (nullptr == method)
+	{
+		LOG_ERROR << "method not found" << request->DebugString() << "method name" << method_name;
+		return;
+	}
 
+	std::unique_ptr<google::protobuf::Message> prev_request(GetRequestPrototype(method).New());
+	if (!prev_request->ParseFromString(request->body()))
+	{
+		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << method_name;
+		return;
+	}
+	
+	google::protobuf::Message* response = GetResponsePrototype(method).New();
 
+	/*int64_t id = last_msg.id();
+	service->CallMethod(method, NULL, get_pointer(request), response,
+		NewCallback(this, &RpcChannel::doneCallback, response, id));*/
 
 	//处理,如果需要继续路由则拿到当前节点信息
 
 	auto rq = const_cast<::RouteMsgStringRequest*>(request);
-	rq->add_node_list()->CopyFrom(g_login_node->node_info());
-
+	
 ///<<< END WRITING YOUR CODE 
 }
 

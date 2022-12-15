@@ -168,8 +168,8 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
           std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
           if (request->ParseFromString(message.request()))
           {
-			  auto& prototype = service->GetResponsePrototype(method);
-			  if (prototype.GetDescriptor() == ::google::protobuf::Empty::GetDescriptor())
+			  auto& response_proto_type = service->GetResponsePrototype(method);
+			  if (response_proto_type.GetDescriptor() == ::google::protobuf::Empty::GetDescriptor())
 			  {
 				  service->CallMethod(method, NULL, get_pointer(request), nullptr, nullptr);
 			  }
