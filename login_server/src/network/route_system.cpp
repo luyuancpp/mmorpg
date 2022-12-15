@@ -9,16 +9,19 @@ void Route2Db(const google::protobuf::Message& msg, const google::protobuf::Meth
 {
 	g_route2db_msg.set_service(method->service()->full_name());
 	g_route2db_msg.set_method(method->name());
+	g_route_msg_body = msg.SerializeAsString();
 }
 
 void Route2Controller(const google::protobuf::Message& msg, const google::protobuf::MethodDescriptor* method)
 {
 	g_route2controller_msg.set_service(method->service()->full_name());
 	g_route2controller_msg.set_method(method->name());
+	g_route_msg_body = msg.SerializeAsString();
 }
 
 void Route2Gate(const google::protobuf::Message& msg, const google::protobuf::MethodDescriptor* method)
 {
 	g_route2gate_msg.set_service(method->service()->full_name());
 	g_route2gate_msg.set_method(method->name());
+	g_route_msg_body = msg.SerializeAsString();
 }

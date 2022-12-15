@@ -301,7 +301,7 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 
 	if (!g_route2controller_msg.method().empty())
 	{
-		//g_login_node->controller_node()->CallMethod();
+		g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, request);
 		g_route2controller_msg.mutable_method()->clear();
 	}
 	//处理,如果需要继续路由则拿到当前节点信息

@@ -83,7 +83,6 @@ def gencpprpcfunbegin(rpcindex):
     else :
         servicestr +=  tabstr + local.pkg + '::' + rsp + '* response,\n'
     servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
-    servicestr +=  tabstr + 'AutoRecycleClosure d(done);\n'
     return servicestr
 
 def genyourcode():
@@ -113,7 +112,7 @@ def gencppfile(filename, destdir, md5dir):
     destfilename =  destdir + filename
     md5filename = md5dir +   filename
     newstr = '#include "' + filename.replace('.cpp', '.h') + '"\n'
-    newstr += '#include "src/network/rpc_closure.h"\n'
+    newstr += '#include "src/network/rpc_msg_route.h"\n'
     serviceidx = 0
     try:
         with open(destfilename,'r+', encoding='utf-8') as file:

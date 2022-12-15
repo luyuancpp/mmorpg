@@ -48,6 +48,7 @@ private:
 };
 
 static const int32_t kMaxRouteSize = 20;
-extern thread_local RouteMsgBody g_route2db_msg;
-extern thread_local RouteMsgBody g_route2controller_msg;
-extern thread_local RouteMsgBody g_route2gate_msg;
+extern RouteMsgBody g_route2db_msg;
+extern RouteMsgBody g_route2controller_msg;
+extern RouteMsgBody g_route2gate_msg;
+extern std::string g_route_msg_body;

@@ -63,4 +63,14 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
+    void RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+        const ::RouteMsgStringRequest* request,
+        ::RouteMsgStringResponse* response,
+        ::google::protobuf::Closure* done)override;
+
+    void RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+        const ::RoutePlayerMsgStringRequest* request,
+        ::RoutePlayerMsgStringResponse* response,
+        ::google::protobuf::Closure* done)override;
+
 };
