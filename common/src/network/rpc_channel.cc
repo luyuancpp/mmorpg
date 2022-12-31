@@ -50,12 +50,7 @@ RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
 RpcChannel::~RpcChannel()
 {
   LOG_INFO << "RpcChannel::dtor - " << this;
-  for (const auto& outstanding : outstandings_)
-  {
-    OutstandingCall out = outstanding.second;
-    //delete out.response;
-    delete out.done;
-  }
+
 }
 
   // Call the given method of the remote service.  The signature of this
@@ -76,17 +71,6 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   message.set_service(method->service()->full_name());
   message.set_method(method->name());
   message.set_request(request->SerializeAsString()); // FIXME: error check
-
-  auto service_it = g_prototype_services.find(method->service()->full_name());
-  if (service_it == g_prototype_services.end())
-  {
-      return;
-  }
-  OutstandingCall out = { method, service_it->second.get() , done };
-  {
-
-  outstandings_[id] = out;
-  }
   codec_.send(conn_, message);
 }
 
@@ -121,33 +105,25 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   RpcMessage& message = *messagePtr;
   if (message.type() == RESPONSE)
   {
-    int64_t id = message.id();
- 
-    OutstandingCall out = { NULL, NULL };
-
-    {
-
-      std::map<int64_t, OutstandingCall>::iterator it = outstandings_.find(id);
-      if (it != outstandings_.end())
+      std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message.service());
+      if (it != services_->end())
       {
-        out = it->second;
-        outstandings_.erase(it);
-      }
-    }
+          google::protobuf::Service* service = it->second;
 
-    if (out.method && out.service)
-    {
-      MessagePtr response(out.service->GetRequestPrototype(out.method).New());
-      if (!message.response().empty())
-      {
-          response->ParseFromString(message.response());
+          assert(service != NULL);
+          const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+          const google::protobuf::MethodDescriptor* method
+              = desc->FindMethodByName(message.method());
+          if (method)
+          {
+                MessagePtr response(service->GetRequestPrototype(method).New());
+                if (!message.response().empty())
+                {
+                    response->ParseFromString(message.response());
+                }
+                g_response_dispatcher.onProtobufMessage(conn, response, receiveTime);
+          }
       }
-      g_response_dispatcher.onProtobufMessage(conn, response, receiveTime);
-      /* if (out.done)
-       {
-         out.done->Run();
-       }*/
-    }
   }
   else if (message.type() == REQUEST)
   {
@@ -178,11 +154,13 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
                   std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
 				  // response is deleted in doneCallback
 				  service->CallMethod(method, NULL, get_pointer(request), get_pointer(response), nullptr);
-				  RpcMessage rpc_message;
-                  rpc_message.set_type(RESPONSE);
-                  rpc_message.set_id(message.id());
-                  rpc_message.set_response(response->SerializeAsString()); // FIXME: error check
-				  codec_.send(conn_, rpc_message);
+				  RpcMessage rpc_response;
+                  rpc_response.set_type(RESPONSE);
+                  rpc_response.set_id(message.id());
+                  rpc_response.set_response(response->SerializeAsString()); // FIXME: error check
+                  rpc_response.set_method(method->name());
+                  rpc_response.set_service(method->service()->full_name());
+				  codec_.send(conn_, rpc_response);
               }
             error = RPC_NO_ERROR;
           }
