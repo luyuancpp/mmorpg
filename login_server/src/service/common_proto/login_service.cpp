@@ -270,19 +270,18 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE 
 	
 	auto msg_list_size = request->msg_list_size();
-	if (msg_list_size >= kMaxRouteSize)
+	if (request->msg_list_size() >= kMaxRouteSize)
 	{
 		LOG_ERROR << "route size " << request->DebugString();
 		return;
 	}
-	else if (msg_list_size <= 0)
+	else if (request->msg_list_size() <= 0)
 	{
 		LOG_ERROR << "msg list empty" << request->DebugString();
 		return;
 	}
-	auto msg_prev_index = msg_list_size - 1;
-	auto& prev_msg = request->msg_list(msg_prev_index);
-	auto& method_name = prev_msg.method();
+	auto& msg = request->msg_list(request->msg_list_size() - 1);
+	auto& method_name = msg.method();
 	const google::protobuf::ServiceDescriptor* desc = GetDescriptor();
 	const google::protobuf::MethodDescriptor* method
 		= desc->FindMethodByName(method_name);
@@ -291,14 +290,14 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> prev_request(GetRequestPrototype(method).New());
-	if (!prev_request->ParseFromString(request->body()))
+	std::unique_ptr<google::protobuf::Message> msg_request(GetRequestPrototype(method).New());
+	if (!msg_request->ParseFromString(request->body()))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> prev_response(GetResponsePrototype(method).New());
-	CallMethod(method, NULL, get_pointer(prev_request), get_pointer(prev_response), nullptr);
+	std::unique_ptr<google::protobuf::Message> msg_response(GetResponsePrototype(method).New());
+	CallMethod(method, NULL, get_pointer(msg_request), get_pointer(msg_response), nullptr);
 	auto rq = const_cast<::RouteMsgStringRequest*>(request);
 	if (!g_route2controller_msg.method().empty())
 	{
