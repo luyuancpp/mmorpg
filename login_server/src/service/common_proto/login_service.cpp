@@ -299,21 +299,21 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	std::unique_ptr<google::protobuf::Message> msg_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(msg_request), get_pointer(msg_response), nullptr);
 	auto rq = const_cast<::RouteMsgStringRequest*>(request);
-	if (!g_route2controller_msg.method().empty())
+	if (!route2controller.method().empty())
 	{
 		auto route_msg = rq->add_msg_list();
-		route_msg->CopyFrom(g_route2controller_msg);
+		route_msg->CopyFrom(route2controller);
 		g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, request);
-		g_route2controller_msg.mutable_method()->clear();
+		route2controller.mutable_method()->clear();
 	}
-	else if (g_route2db_msg.method().empty())
+	else if (route2db.method().empty())
 	{
         auto route_msg = rq->add_msg_list();
-        route_msg->CopyFrom(g_route2db_msg);
+        route_msg->CopyFrom(route2db);
         g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethodDesc, request);
-		g_route2db_msg.mutable_method()->clear();
+		route2db.mutable_method()->clear();
 	}
-    else if (g_route2gate_msg.method().empty())
+    else if (route2gate.method().empty())
     {
     }
 	//处理,如果需要继续路由则拿到当前节点信息
