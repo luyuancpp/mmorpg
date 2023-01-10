@@ -10,7 +10,7 @@ public:
     inline decltype(auto) server_type() const {  return config_info_.server_type();  }
 
     static GameConfig& GetSingleton() {
-        thread_local GameConfig singleton;
+        static GameConfig singleton;
         return singleton;
     }
 
@@ -31,7 +31,7 @@ public:
     const ConnetionParam& deploy_info() { return connetion_param_.data(SERVER_DEPLOY); }
 
     static DeployConfig& GetSingleton() {
-        thread_local DeployConfig singleton;
+        static DeployConfig singleton;
         return singleton;
     }
 

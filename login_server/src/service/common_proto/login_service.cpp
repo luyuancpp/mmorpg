@@ -13,6 +13,7 @@
 #include "src/network/route_system.h"
 #include "src/redis_client/redis_client.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
+#include "src/pb/pbc/service_method/database_servicemethod.h"
 
 #include "login_service.pb.h"
 #include "database_service.pb.h"
@@ -269,19 +270,18 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE 
 	
 	auto msg_list_size = request->msg_list_size();
-	if (msg_list_size >= kMaxRouteSize)
+	if (request->msg_list_size() >= kMaxRouteSize)
 	{
 		LOG_ERROR << "route size " << request->DebugString();
 		return;
 	}
-	else if (msg_list_size <= 0)
+	else if (request->msg_list_size() <= 0)
 	{
 		LOG_ERROR << "msg list empty" << request->DebugString();
 		return;
 	}
-	auto msg_prev_index = msg_list_size - 1;
-	auto& prev_msg = request->msg_list(msg_prev_index);
-	auto& method_name = prev_msg.method();
+	auto& msg = request->msg_list(request->msg_list_size() - 1);
+	auto& method_name = msg.method();
 	const google::protobuf::ServiceDescriptor* desc = GetDescriptor();
 	const google::protobuf::MethodDescriptor* method
 		= desc->FindMethodByName(method_name);
@@ -290,23 +290,35 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> prev_request(GetRequestPrototype(method).New());
-	if (!prev_request->ParseFromString(request->body()))
+	std::unique_ptr<google::protobuf::Message> msg_request(GetRequestPrototype(method).New());
+	if (!msg_request->ParseFromString(request->body()))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> prev_response(GetResponsePrototype(method).New());
-	CallMethod(method, NULL, get_pointer(prev_request), get_pointer(prev_response), nullptr);
-
-	if (!g_route2controller_msg.method().empty())
+	std::unique_ptr<google::protobuf::Message> msg_response(GetResponsePrototype(method).New());
+	CallMethod(method, NULL, get_pointer(msg_request), get_pointer(msg_response), nullptr);
+	auto rq = const_cast<::RouteMsgStringRequest*>(request);
+	if (!route2controller.method().empty())
 	{
-		//g_login_node->controller_node()->CallMethod();
-		g_route2controller_msg.mutable_method()->clear();
+		auto route_msg = rq->add_msg_list();
+		route_msg->CopyFrom(route2controller);
+		g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, request);
+		route2controller.mutable_method()->clear();
 	}
+	else if (route2db.method().empty())
+	{
+        auto route_msg = rq->add_msg_list();
+        route_msg->CopyFrom(route2db);
+        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethodDesc, request);
+		route2db.mutable_method()->clear();
+	}
+    else if (route2gate.method().empty())
+    {
+    }
 	//处理,如果需要继续路由则拿到当前节点信息
 
-	auto rq = const_cast<::RouteMsgStringRequest*>(request);
+	
 	
 ///<<< END WRITING YOUR CODE 
 }

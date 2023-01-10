@@ -137,18 +137,11 @@ class RpcChannel : public ::google::protobuf::RpcChannel
 
   inline void doNothing() {}
 
-  struct OutstandingCall
-  {
-    const ::google::protobuf::MethodDescriptor* method{ nullptr };
-    ::google::protobuf::Service* service{nullptr};
-    ::google::protobuf::Closure* done{nullptr};
-  };
+
 
   RpcCodec codec_;
   TcpConnectionPtr conn_;
   uint64_t id_;
-
-  std::map<int64_t, OutstandingCall> outstandings_;
 
   const std::map<std::string, ::google::protobuf::Service*>* services_;
   ProtobufDispatcher dispatcher_;
