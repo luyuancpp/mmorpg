@@ -47,19 +47,6 @@ BOOL CdrawApp::InitInstance()
 
 	EnableTaskbarInteraction(FALSE);
 
-	// 使用 RichEdit 控件需要  AfxInitRichEdit2()	
-	// AfxInitRichEdit2();
-
-	// 标准初始化
-	// 如果未使用这些功能并希望减小
-	// 最终可执行文件的大小，则应移除下列
-	// 不需要的特定初始化例程
-	// 更改用于存储设置的注册表项
-	// TODO:  应适当修改该字符串，
-	// 例如修改为公司或组织名
-	SetRegistryKey(_T("应用程序向导生成的本地应用程序"));
-
-
 	// 若要创建主窗口，此代码将创建新的框架窗口
 	// 对象，然后将其设置为应用程序的主窗口对象
 	CMainFrame* pFrame = new CMainFrame;
