@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Shape.h"
 #include "ChildView.h"
-#include "NavMesh/Detour/Include/DetourCommon.h"
+#include "Detour/Include/DetourCommon.h"
 
 #include <array>
 #include <random>
