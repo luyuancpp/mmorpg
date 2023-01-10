@@ -9,7 +9,6 @@ void S2STeamServiceImpl::EnterScene(::google::protobuf::RpcController* controlle
     ::TeamTestS2SRespone* response,
     ::google::protobuf::Closure* done)
 {
-    
 ///<<< BEGIN WRITING YOUR CODE 
 ///<<< END WRITING YOUR CODE 
 }

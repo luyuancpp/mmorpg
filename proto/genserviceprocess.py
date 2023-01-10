@@ -147,7 +147,7 @@ def gencppfile(filename, destdir, md5dir):
     destfilename = destdir + filename
     md5filename = md5dir +  filename
     newstr = '#include "' + getprevfilename(destfilename, destdir) + filename.replace('.cpp', '.h') + '"\n'
-    newstr += '#include "src/network/rpc_closure.h"\n'
+    newstr += '#include "src/network/rpc_msg_route.h"\n'
     serviceidx = 0
     try:
         with open(destfilename,'r+', encoding='utf-8') as file:

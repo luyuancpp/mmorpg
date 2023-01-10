@@ -47,7 +47,16 @@ private:
 	::google::protobuf::Closure* cc_{ nullptr };
 };
 
-static const int32_t kMaxRouteSize = 20;
-extern thread_local RouteMsgBody g_route2db_msg;
-extern thread_local RouteMsgBody g_route2controller_msg;
-extern thread_local RouteMsgBody g_route2gate_msg;
+
+struct ThreadLocalRoteMsgBodyList
+{
+
+};
+
+extern thread_local ThreadLocalRoteMsgBodyList g_route_msg;
+
+extern const int32_t kMaxRouteSize;
+extern RouteMsgBody route2db;
+extern RouteMsgBody route2controller;
+extern RouteMsgBody route2gate;
+extern std::string route_msg_body;

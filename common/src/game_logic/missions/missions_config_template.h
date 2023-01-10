@@ -11,13 +11,13 @@ struct IMissionConfig
     virtual bool auto_reward(uint32_t mission_id) const  { return false; }
     virtual const ::google::protobuf::RepeatedField<uint32_t>& condition_id(uint32_t mission_id) const
     {
-        thread_local ::google::protobuf::RepeatedField<uint32_t> s;
+        static ::google::protobuf::RepeatedField<uint32_t> s;
             s.Clear();
             return s;
     }
     virtual const ::google::protobuf::RepeatedField<uint32_t>& next_mission_id(uint32_t mission_id) const
     {
-        thread_local ::google::protobuf::RepeatedField<uint32_t> s;
+        static ::google::protobuf::RepeatedField<uint32_t> s;
         s.Clear();
         return s;
     }
@@ -27,7 +27,7 @@ struct IMissionConfig
 
 struct MissionConfig : public IMissionConfig
 {
-    static MissionConfig& GetSingleton() { thread_local MissionConfig singleton; return singleton; }
+    static MissionConfig& GetSingleton() { static MissionConfig singleton; return singleton; }
 
     virtual uint32_t mission_type(uint32_t id) const override
     {

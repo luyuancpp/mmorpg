@@ -1,6 +1,7 @@
 syntax = "proto3";
 import "common_proto/common.proto";
 import "common_proto/mysql_database_table.proto";
+import "common_proto/node_common.proto";
 option cc_generic_services = true;
 
 message DatabaseNodeLoginRequest
@@ -43,4 +44,6 @@ service DbService {
   rpc Login (DatabaseNodeLoginRequest) returns (DatabaseNodeLoginResponse);
   rpc CreatePlayer (DatabaseNodeCreatePlayerRequest) returns (DatabaseNodeCreatePlayerResponse);
   rpc EnterGame (DatabaseNodeEnterGameRequest) returns (DatabaseNodeEnterGameResponse);
+  rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
+  rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
 }
