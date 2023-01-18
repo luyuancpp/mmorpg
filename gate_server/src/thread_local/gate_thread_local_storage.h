@@ -5,7 +5,7 @@
 
 struct GateThreadStorage
 {
-	ClientSessions sessions;
+	ClientSessions sessions_;
 	LoginNodes login_nodes;
 
 };
