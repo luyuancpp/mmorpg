@@ -9,6 +9,7 @@
 
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/game_logic/scene/scene.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/recast_system.h"
 
@@ -45,7 +46,7 @@ void GsSceneSystem::EnterScene(const EnterSceneParam& param)
     auto enterer = param.enterer_;
     ScenesSystem::EnterScene(param);
 
-    if (registry.any_of<Player>(enterer))
+    if (tls.registry.any_of<Player>(enterer))
     {
         PlayerSceneSystem::OnEnterScene(enterer, param.scene_);
     }    

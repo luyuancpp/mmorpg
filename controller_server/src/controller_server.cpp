@@ -12,6 +12,7 @@
 #include "src/network/gs_node.h"
 #include "src/network/rpc_client.h"
 #include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/service/common_proto_replied/replied_dispathcer.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"
@@ -42,13 +43,13 @@ ControllerServer::ControllerServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 { 
-    global_entity() = registry.create();
+    global_entity() = tls.registry.create();
 }    
 
 void ControllerServer::Init()
 {
     g_controller_node = this;
-    EventReceiverEvent::Register(dispatcher);
+    EventReceiverEvent::Register(tls.dispatcher);
     InitConfig();
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
     InitMsgService();
@@ -94,12 +95,12 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
 
 void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
-    auto& connection_info = registry.get<InetAddress>(gs);
+    auto& connection_info = tls.registry.get<InetAddress>(gs);
     GateNodeStartGSRequest request;
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
-    request.set_gs_node_id(registry.get<GsNodePtr>(gs)->node_id());
-	registry.get<GateNodePtr>(gate)->session_.Send(GateServiceStartGSMethodDesc, request);
+    request.set_gs_node_id(tls.registry.get<GsNodePtr>(gs)->node_id());
+	tls.registry.get<GateNodePtr>(gate)->session_.Send(GateServiceStartGSMethodDesc, request);
 }
 
 void ControllerServer::receive(const OnConnected2ServerEvent& es)
@@ -147,33 +148,33 @@ void ControllerServer::receive(const OnBeConnectedEvent& es)
     auto& conn = es.conn_;
     if (conn->connected())
     {
-		auto e = registry.create();
-		registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+		auto e = tls.registry.create();
+		tls.registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
     }
     else
     {
 		auto& peer_addr = conn->peerAddress();
-		for (auto e : registry.view<RpcServerConnection>())
+		for (auto e : tls.registry.view<RpcServerConnection>())
 		{
-			auto& local_addr = registry.get<RpcServerConnection>(e).conn_->peerAddress();
+			auto& local_addr = tls.registry.get<RpcServerConnection>(e).conn_->peerAddress();
 			if (local_addr.toIpPort() != peer_addr.toIpPort())
 			{
 				continue;
 			}
-            auto gsnode = registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+            auto gsnode = tls.registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
             if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGameNode)
             {
                 //remove AfterChangeGsEnterScene
 				//todo 
                 g_game_node.erase((*gsnode)->node_info_.node_id());
             }
-			auto gatenode = registry.try_get<GateNodePtr>(e);//如果是gate
+			auto gatenode = tls.registry.try_get<GateNodePtr>(e);//如果是gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
 				//todo
                 g_gate_nodes.erase((*gatenode)->node_info_.node_id());
 			}
-			registry.destroy(e);
+			tls.registry.destroy(e);
 			break;
 		}
     }

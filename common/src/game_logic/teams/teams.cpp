@@ -8,11 +8,11 @@
 
 #define GetTeamPtrReturnError \
 auto e = entt::to_entity(team_id);\
-if (!registry.valid(e))\
+if (!tls.registry.valid(e))\
 {\
     return kRetTeamHasNotTeamId;\
 }\
-auto try_team = registry.try_get<Team>(e);\
+auto try_team = tls.registry.try_get<Team>(e);\
 if (nullptr == try_team)\
 {\
     return kRetTeamHasNotTeamId;\
@@ -20,11 +20,11 @@ if (nullptr == try_team)\
 auto& team = *try_team;\
 
 #define GetTeamEntityReturnError \
-if (!registry.valid(team_id))\
+if (!tls.registry.valid(team_id))\
 {\
     return kRetTeamHasNotTeamId;\
 }\
-auto try_team = registry.try_get<Team>(e);\
+auto try_team = tls.registry.try_get<Team>(e);\
 if (nullptr == try_team)\
 {\
     return kRetTeamHasNotTeamId;\
@@ -33,11 +33,11 @@ auto& team = *try_team;\
 
 #define GetTeamReturn(ret) \
 auto e = entt::to_entity(team_id);\
-if (!registry.valid(e))\
+if (!tls.registry.valid(e))\
 {\
     return ret;\
 }\
-auto try_team = registry.try_get<Team>(e);\
+auto try_team = tls.registry.try_get<Team>(e);\
 if (nullptr == try_team)\
 {\
     return ret;\
@@ -46,11 +46,11 @@ auto& team = *try_team;\
 
 #define GetTeamReturnVoid \
 auto e = entt::to_entity(team_id);\
-if (!registry.valid(e))\
+if (!tls.registry.valid(e))\
 {\
     return ;\
 }\
-auto try_team = registry.try_get<Team>(e);\
+auto try_team = tls.registry.try_get<Team>(e);\
 if (nullptr == try_team)\
 {\
     return;\
@@ -59,7 +59,7 @@ auto& team = *try_team;\
 
 Teams::Teams()
 {
-    my_entity_id_ = registry.create();
+    my_entity_id_ = tls.registry.create();
 }
 
 Teams::~Teams()
@@ -90,7 +90,7 @@ std::size_t Teams::applicant_size_by_team_id(Guid team_id) const
 
 std::size_t Teams::players_size()const
 {
-    return registry.storage<TeamId>().size();
+    return tls.registry.storage<TeamId>().size();
 }
 
 Guid Teams::GetTeamId(Guid guid)const
@@ -100,7 +100,7 @@ Guid Teams::GetTeamId(Guid guid)const
     {
         return entt::null_t();
     }
-    auto try_team_id =  registry.try_get<TeamId>(pit->second);
+    auto try_team_id =  tls.registry.try_get<TeamId>(pit->second);
     if (nullptr == try_team_id)
     {
         return entt::null_t();
@@ -145,7 +145,7 @@ bool Teams::HasTeam(Guid guid) const
     {
         return false;
     }
-    return registry.any_of<TeamId>(pit->second);
+    return tls.registry.any_of<TeamId>(pit->second);
 }
 
 bool Teams::IsApplicant(Guid team_id, Guid guid) const
@@ -165,8 +165,8 @@ uint32_t Teams::CreateTeam(const CreateTeamP& param)
         return kRetTeamMemberInTeam;
     }
     RET_CHECK_RET(CheckMemberInTeam(param.members));
-    auto e = registry.create();
-    registry.emplace<Team>(e, param, e);
+    auto e = tls.registry.create();
+    tls.registry.emplace<Team>(e, param, e);
     last_team_id_ = entt::to_integral(e);//for test
     return kRetOK;
 }
@@ -259,6 +259,6 @@ void Teams::ClearApplyList(Guid team_id)
 
 void Teams::EraseTeam(entt::entity team_id)
 {
-    registry.destroy(team_id);
+    tls.registry.destroy(team_id);
 }
 

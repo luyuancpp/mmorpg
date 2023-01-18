@@ -7,6 +7,7 @@
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/scene/servernode_system.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
@@ -26,8 +27,8 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 		LOG_ERROR << "player is null ";
 		return;
     }
-    auto p_scene = registry.try_get<SceneEntity>(player);
-    auto player_id = registry.get<Guid>(player);
+    auto p_scene = tls.registry.try_get<SceneEntity>(player);
+    auto player_id = tls.registry.get<Guid>(player);
     if (nullptr == p_scene)
     {
         LOG_ERROR << "player do not enter scene " << player_id;
@@ -35,14 +36,14 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
     }
     Controller2GsEnterSceneRequest enter_scene_message;
 
-    auto p_scene_info = registry.try_get<SceneInfo>((*p_scene).scene_entity_);
+    auto p_scene_info = tls.registry.try_get<SceneInfo>((*p_scene).scene_entity_);
     if (nullptr == p_scene_info)
     {
         LOG_ERROR << "scene info " << player_id;
         return;
     }
     enter_scene_message.set_scene_id(p_scene_info->scene_id());
-    auto try_player_session = registry.try_get<PlayerSession>(player);
+    auto try_player_session = tls.registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
         LOG_ERROR << "player session not valid" << player_id;
@@ -61,7 +62,7 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 
 NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
 {
-    auto* p_gs_data = registry.try_get<GsNodePtr>(scene);
+    auto* p_gs_data = tls.registry.try_get<GsNodePtr>(scene);
     if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
     {
         return kInvalidU32Id;
@@ -79,10 +80,10 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
         return;
     }
     GameNodeEnterGsRequest rq;
-    rq.set_player_id(registry.get<Guid>(player));
+    rq.set_player_id(tls.registry.get<Guid>(player));
     rq.set_session_id(session_id);
     rq.set_controller_node_id(controller_node_id());
-    registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceEnterGsMethodDesc, &rq);
+    tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceEnterGsMethodDesc, &rq);
 }
 
 
@@ -94,7 +95,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     {
         return;
     }
-    auto try_from_scene = registry.try_get<SceneEntity>(player);
+    auto try_from_scene = tls.registry.try_get<SceneEntity>(player);
     if (nullptr == try_from_scene)
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});// todo 
@@ -120,7 +121,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
             return;
         }
-        to_scene_id = registry.get<SceneInfo>(to_scene).scene_id();
+        to_scene_id = tls.registry.get<SceneInfo>(to_scene).scene_id();
     }
     else
     {
@@ -133,8 +134,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         }
     }
 
-    auto try_from_scene_gs = registry.try_get<GsNodePtr>(try_from_scene->scene_entity_);
-    auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
+    auto try_from_scene_gs = tls.registry.try_get<GsNodePtr>(try_from_scene->scene_entity_);
+    auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
     if (nullptr == try_from_scene_gs || nullptr == try_to_scene_gs)
     {
         LOG_ERROR << " gs compnent null : " << (nullptr == try_from_scene_gs) << " " << (nullptr == try_to_scene_gs);
@@ -142,7 +143,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    auto from_scene_id = registry.get<SceneInfo>(try_from_scene->scene_entity_).scene_id();
+    auto from_scene_id = tls.registry.get<SceneInfo>(try_from_scene->scene_entity_).scene_id();
     if (to_scene_id == from_scene_id)
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
@@ -161,8 +162,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     }
     entt::entity from_gs = from_gs_it->second;
     entt::entity to_gs = to_gs_it->second;
-    bool is_from_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(from_gs);
-    bool is_to_gs_is_cross_server = registry.any_of<CrossMainSceneServer>(to_gs);
+    bool is_from_gs_is_cross_server = tls.registry.any_of<CrossMainSceneServer>(from_gs);
+    bool is_to_gs_is_cross_server = tls.registry.any_of<CrossMainSceneServer>(to_gs);
 
     //不是跨服才在本地判断,跨服有自己的判断
     if (!change_scene_info.ignore_full() && !is_to_gs_is_cross_server)
@@ -203,7 +204,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         {
             //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
             LeaveCrossMainSceneRequest rq;
-            rq.set_player_id(registry.get<Guid>(player));
+            rq.set_player_id(tls.registry.get<Guid>(player));
             g_controller_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMethodDesc, &rq);
         }
         if (is_to_gs_is_cross_server)
@@ -211,7 +212,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             //注意虽然一个逻辑，但是不一定是在leave后面处理
             EnterCrossMainSceneRequest rq;
             rq.set_scene_id(to_scene_id);
-            rq.set_player_id(registry.get<Guid>(player));
+            rq.set_player_id(tls.registry.get<Guid>(player));
             g_controller_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMethodDesc, &rq);
             return;
         }

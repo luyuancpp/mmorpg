@@ -1,5 +1,5 @@
 #include "common_server_player.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -23,7 +23,7 @@ void ServerPlayerLoginServiceImpl::UpdateSessionController2Gs(entt::entity playe
     ::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    PlayerCommonSystem::RemovePlayereSession(registry.get<Guid>(player));
+    PlayerCommonSystem::RemovePlayereSession(tls.registry.get<Guid>(player));
     auto gate_node_id = node_id(request->session_id());
     auto gate_it = g_gate_nodes->find(gate_node_id);
     if (gate_it == g_gate_nodes->end())//test
@@ -31,15 +31,15 @@ void ServerPlayerLoginServiceImpl::UpdateSessionController2Gs(entt::entity playe
         LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
         return;
     }
-    auto p_gate = registry.try_get<GateNodePtr>(gate_it->second);
+    auto p_gate = tls.registry.try_get<GateNodePtr>(gate_it->second);
     if (nullptr == p_gate)
     {
         LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
         return;
     }
     g_gate_sessions->emplace(request->session_id(), player);
-    registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//登录更新gate
-    registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
+    tls.registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//登录更新gate
+    tls.registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 ///<<< END WRITING YOUR CODE
 }
 

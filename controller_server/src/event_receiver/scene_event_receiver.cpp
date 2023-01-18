@@ -8,6 +8,7 @@
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_change_scene.h"
 #include "src/network/message_system.h"
@@ -44,14 +45,14 @@ void SceneEventReceiver::Receive1(const OnEnterScene& event_obj)
 {
     ///<<< BEGIN WRITING YOUR CODE 
     entt::entity player = entt::to_entity(event_obj.entity());
-    auto try_player_id = registry.try_get<Guid>(player);
+    auto try_player_id = tls.registry.try_get<Guid>(player);
     if (nullptr == try_player_id)
     {
         return;
     }
     PlayerSceneSystem::Send2GsEnterScene(player);
     LOG_INFO << "player enter scene " << *try_player_id << " "
-        << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
+        << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).scene_id();
     ///<<< END WRITING YOUR CODE 
 }
 
@@ -59,12 +60,12 @@ void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
 {
     ///<<< BEGIN WRITING YOUR CODE 
     entt::entity player = entt::to_entity(event_obj.entity());
-    auto try_player_id = registry.try_get<Guid>(player);
+    auto try_player_id = tls.registry.try_get<Guid>(player);
     if (nullptr == try_player_id)
     {
         return;
     }
-    //LOG_INFO << "player leave scene " << *try_player_id << " " << registry.get<SceneInfo>(registry.get<SceneEntity>(player).scene_entity_).scene_id();
+    //LOG_INFO << "player leave scene " << *try_player_id << " " << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).scene_id();
 	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
 	if (change_scene_queue.empty())
 	{
@@ -73,8 +74,8 @@ void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
 	auto& change_scene_info = change_scene_queue.front();
 	auto to_scene = ScenesSystem::get_scene(change_scene_info.scene_info().scene_id());
     Controller2GsLeaveSceneRequest leave_scene_message;
-	auto try_to_scene_gs = registry.try_get<GsNodePtr>(to_scene);
-	auto p_player_gs = registry.try_get<PlayerSession>(player);
+	auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
+	auto p_player_gs = tls.registry.try_get<PlayerSession>(player);
 	if (nullptr == try_to_scene_gs || nullptr == p_player_gs)
 	{
 		LOG_ERROR << " scene null : " << (nullptr == try_to_scene_gs) << " " << (nullptr == p_player_gs);
@@ -96,7 +97,7 @@ void SceneEventReceiver::Receive4(const S2CEnterScene& event_obj)
 {
     ///<<< BEGIN WRITING YOUR CODE 
     entt::entity player = entt::to_entity(event_obj.entity());
-    auto try_player_id = registry.try_get<Guid>(player);
+    auto try_player_id = tls.registry.try_get<Guid>(player);
     if (nullptr == try_player_id)
     {
         return;

@@ -2,8 +2,8 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_logic/thread_local/game_registry.h"
 #include "src/game_logic/player/player_list.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
 #include "src/pb/pbc/msgmap.h"
@@ -27,14 +27,14 @@ void Send2Player(const google::protobuf::Message& message, Guid player_id)
 
 void Send2Player(const google::protobuf::Message& msg, entt::entity player)
 {
-	if (!registry.valid(player))
+	if (!tls.registry.valid(player))
 	{
 		return;
 	}
-	auto try_gate = registry.try_get<GateNodeWPtr>(player);
+	auto try_gate = tls.registry.try_get<GateNodeWPtr>(player);
 	if (nullptr == try_gate)
 	{
-		LOG_ERROR << "Send2Player player gate not found " << registry.get<Guid>(player);
+		LOG_ERROR << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
 		return;
 	}
 	auto msg_it = g_msgid.find(msg.GetDescriptor()->full_name());
@@ -46,13 +46,13 @@ void Send2Player(const google::protobuf::Message& msg, entt::entity player)
 	auto gate = (*try_gate).lock();
 	if (nullptr == gate)
 	{
-		LOG_INFO << "Send2Player player gate not found " << registry.get<Guid>(player);
+		LOG_INFO << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
 		return;
 	}
 	NodeServiceMessageRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_msg_id(msg_it->second);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
-	msg_wrapper.mutable_ex()->set_session_id(registry.get<GateSession>(player).session_id());
+	msg_wrapper.mutable_ex()->set_session_id(tls.registry.get<GateSession>(player).session_id());
 	gate->session_.Send(GateServicePlayerMessageMethodDesc, msg_wrapper);
 }
 
@@ -74,7 +74,7 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, Guid player
 
 void Send2ControllerPlayer(const google::protobuf::Message& msg, entt::entity player)
 {
-	if (!registry.valid(player))
+	if (!tls.registry.valid(player))
 	{
 		return;
 	}
@@ -84,21 +84,21 @@ void Send2ControllerPlayer(const google::protobuf::Message& msg, entt::entity pl
 		LOG_ERROR << " Send2ControllerPlayer message id not found " << msg.GetDescriptor()->full_name();
 		return;
 	}
-	auto controller_node = registry.get<ControllerNodePtr>(player);
+	auto controller_node = tls.registry.get<ControllerNodePtr>(player);
 	if (nullptr == controller_node)
 	{
-		LOG_ERROR << "Send2ControllerPlayer player controller not found " << registry.get<Guid>(player);
+		LOG_ERROR << "Send2ControllerPlayer player controller not found " << tls.registry.get<Guid>(player);
 		return;
 	}
 	if (!controller_node->session_->connected())
 	{
-		LOG_ERROR << "Send2ControllerPlayer controller disconnect" << registry.get<Guid>(player);
+		LOG_ERROR << "Send2ControllerPlayer controller disconnect" << tls.registry.get<Guid>(player);
 		return;
 	}
 	NodeServiceMessageRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
-	msg_wrapper.mutable_ex()->set_player_id(registry.get<Guid>(player));
+	msg_wrapper.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
 	controller_node->session_->Send(ControllerServiceOnGsPlayerServiceMethodDesc, msg_wrapper);
 }
 
@@ -126,7 +126,7 @@ void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id)
 		LOG_ERROR << "Send2Gate gate not found" << gate_node_id;
 		return;
 	}
-	auto& gate_node = registry.get<GateNodePtr>(gate_it->second);
+	auto& gate_node = tls.registry.get<GateNodePtr>(gate_it->second);
 	gate_node->session_.Send(GateServicePlayerMessageMethodDesc, messag);
 }
 

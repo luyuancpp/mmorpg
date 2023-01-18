@@ -1,5 +1,5 @@
 #include "scene_server_player.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/system/player_common_system.h"
@@ -65,14 +65,14 @@ void ServerPlayerSceneServiceImpl::Controller2GsEnterSceneS2C(entt::entity playe
     ::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto try_scene = registry.try_get<SceneEntity>(player);
+    auto try_scene = tls.registry.try_get<SceneEntity>(player);
     if (nullptr == try_scene)
     {
         LOG_ERROR << " player not enter scene ";
         return;
     }
     EnterSeceneS2C message;
-    message.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(try_scene->scene_entity_));
+    message.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(try_scene->scene_entity_));
     Send2Player(message, player);
 ///<<< END WRITING YOUR CODE
 }

@@ -4,6 +4,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/scene_comp.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/comp/player_list.h"
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"
@@ -26,7 +27,7 @@ void Send2Gs(const ::google::protobuf::MethodDescriptor* method, const google::p
 		LOG_INFO << "gs not found ->" << node_id;
 		return;
 	}
-	auto node =  registry.try_get<GsNodePtr>(it->second);
+	auto node =  tls.registry.try_get<GsNodePtr>(it->second);
 	if (nullptr == node)
 	{
 		LOG_INFO << "gs not found ->" << node_id;
@@ -37,11 +38,11 @@ void Send2Gs(const ::google::protobuf::MethodDescriptor* method, const google::p
 
 void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player)
 {
-	if (!registry.valid(player))
+	if (!tls.registry.valid(player))
 	{
 		return;
 	}
-	auto try_player_session = registry.try_get<PlayerSession>(player);
+	auto try_player_session = tls.registry.try_get<PlayerSession>(player);
 	if (nullptr == try_player_session)
 	{
 		return;
@@ -61,7 +62,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 	NodeServiceMessageRequest msg;
 	msg.mutable_msg()->set_msg_id(msg_it->second);
 	msg.mutable_msg()->set_body(message.SerializeAsString());
-	msg.mutable_ex()->set_player_id(registry.get<Guid>(player));
+	msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
 	gs->session_.Send(GameServiceSend2PlayerMethodDesc, msg);
 }
 
@@ -87,11 +88,11 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, EntityPtr& playe
 
 void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity player)
 {
-    if (!registry.valid(player))
+    if (!tls.registry.valid(player))
     {
         return;
     }
-    auto player_session = registry.get<PlayerSession>(player);
+    auto player_session = tls.registry.get<PlayerSession>(player);
     auto gs = player_session.gs();
     if (nullptr == gs)
     {
@@ -107,17 +108,17 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
     NodeServiceMessageRequest msg;
     msg.mutable_msg()->set_msg_id(msg_it->second);
     msg.mutable_msg()->set_body(message.SerializeAsString());
-    msg.mutable_ex()->set_player_id(registry.get<Guid>(player));
+    msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
 	gs->session_.Send(GameServiceControllerSend2PlayerViaGsMethodDesc, msg);
 }
 
 void Send2Player(const google::protobuf::Message& message, entt::entity player)
 {
-	if (!registry.valid(player))
+	if (!tls.registry.valid(player))
 	{
 		return;
 	}
-	auto player_session = registry.get<PlayerSession>(player);
+	auto player_session = tls.registry.get<PlayerSession>(player);
 	auto gate = player_session.gate_.lock();
 	if (nullptr == gate)
 	{
@@ -154,17 +155,17 @@ void Send2Gate(const ::google::protobuf::MethodDescriptor* method, const google:
 	{
 		return;
 	}
-	auto gate = registry.try_get<GateNodePtr>(gate_it->second);
+	auto gate = tls.registry.try_get<GateNodePtr>(gate_it->second);
 	(*gate)->session_.Send(method, message);
 }
 
 void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity player)
 {
-    if (!registry.valid(player))
+    if (!tls.registry.valid(player))
     {
         return;
     }
-    auto try_player_session = registry.try_get<PlayerSession>(player);
+    auto try_player_session = tls.registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
         return;
@@ -189,6 +190,6 @@ void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity playe
     NodeServiceMessageRequest rq;
     rq.mutable_msg()->set_msg_id(msg_it->second);
     rq.mutable_msg()->set_body(msg.SerializeAsString());
-    rq.mutable_ex()->set_player_id(registry.get<Guid>(player));
-    registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayerMethodDesc, &rq);
+    rq.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
+    tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayerMethodDesc, &rq);
 }

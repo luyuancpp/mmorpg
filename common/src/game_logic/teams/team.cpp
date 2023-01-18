@@ -2,7 +2,7 @@
 
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/teams/team_event.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 
 #include "src/game_logic/player/player_list.h"
 
@@ -158,7 +158,7 @@ bool Team::HasTeam(Guid guid) const
     {
         return false;
     }
-    return registry.any_of<TeamId>(pit->second);
+    return tls.registry.any_of<TeamId>(pit->second);
 }
 
 void Team::AddMemeber(Guid guid)
@@ -169,7 +169,7 @@ void Team::AddMemeber(Guid guid)
         return;
     }
     members_.emplace_back(guid);
-    registry.emplace<TeamId>(pit->second).set_team_id(entt::to_integral(teamid_));
+    tls.registry.emplace<TeamId>(pit->second).set_team_id(entt::to_integral(teamid_));
 }
 
 void Team::DelMemeber(Guid guid)
@@ -180,5 +180,5 @@ void Team::DelMemeber(Guid guid)
     {
         return;
     }
-    registry.remove<TeamId>(pit->second);
+    tls.registry.remove<TeamId>(pit->second);
 }

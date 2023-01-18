@@ -6,7 +6,7 @@
 
 #include "src/game_config/mainscene_config.h"
 
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
@@ -38,18 +38,18 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
 		return;
 	}
     AddCrossServerSceneRequest rq;
-    for (auto e : registry.view<MainScene>())
+    for (auto e : tls.registry.view<MainScene>())
     {
         auto p_cross_scene_info = rq.mutable_cross_scenes_info()->Add();
-        p_cross_scene_info->mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(e));
-        auto try_gs_node_ptr = registry.try_get<GsNodePtr>(e);
+        p_cross_scene_info->mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(e));
+        auto try_gs_node_ptr = tls.registry.try_get<GsNodePtr>(e);
         if (nullptr == try_gs_node_ptr)
         {
             continue;
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	registry.get<ControllerNodePtr>(controller_node_it->second)->session_.CallMethod(ControllerServiceAddCrossServerSceneMethodDesc, &rq);
+	tls.registry.get<ControllerNodePtr>(controller_node_it->second)->session_.CallMethod(ControllerServiceAddCrossServerSceneMethodDesc, &rq);
 	LOG_DEBUG << rq.DebugString();
 }
 
@@ -68,9 +68,9 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity gs{ entt::null };
-	for (auto e : registry.view<RpcServerConnection>())
+	for (auto e : tls.registry.view<RpcServerConnection>())
 	{
-		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
+		if (tls.registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
@@ -84,17 +84,17 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 		return;
 	}
 
-	auto c = registry.get<RpcServerConnection>(gs);
+	auto c = tls.registry.get<RpcServerConnection>(gs);
 	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	gs_node_ptr->node_info_.set_node_type(kGameNode);
 	AddMainSceneNodeCompnent(gs);
-	registry.emplace<InetAddress>(gs, service_addr);
-	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
+	tls.registry.emplace<InetAddress>(gs, service_addr);
+	tls.registry.emplace<GsNodePtr>(gs, gs_node_ptr);
 	if (request->server_type() == kMainSceneCrossServer)
 	{
-        registry.remove<MainSceneServer>(gs);
-        registry.emplace<CrossMainSceneServer>(gs);
+        tls.registry.remove<MainSceneServer>(gs);
+        tls.registry.emplace<CrossMainSceneServer>(gs);
 
 		auto& config_all = mainscene_config::GetSingleton().all();
 		CreateGsSceneP create_scene_param;
@@ -103,14 +103,14 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
 			auto scene = ScenesSystem::CreateScene2Gs(create_scene_param);
-			registry.emplace<GsNodePtr>(scene, gs_node_ptr);
-			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene));
+			tls.registry.emplace<GsNodePtr>(scene, gs_node_ptr);
+			response->add_scenes_info()->CopyFrom(tls.registry.get<SceneInfo>(scene));
 		}
 	}
 	else
 	{
-		registry.remove<MainSceneServer>(gs);
-		registry.emplace<CrossRoomSceneServer>(gs);
+		tls.registry.remove<MainSceneServer>(gs);
+		tls.registry.emplace<CrossRoomSceneServer>(gs);
 	}
 	g_game_node->emplace(request->gs_node_id(), gs);
 
@@ -127,9 +127,9 @@ void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* co
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity controller_node{ entt::null };
-	for (auto e : registry.view<RpcServerConnection>())
+	for (auto e : tls.registry.view<RpcServerConnection>())
 	{
-		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
+		if (tls.registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
@@ -143,11 +143,11 @@ void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* co
 		return;
 	}
 
-	auto c = registry.get<RpcServerConnection>(controller_node);
-	ControllerNodePtr controller_node_ptr = registry.emplace<ControllerNodePtr>(controller_node, std::make_shared<ControllerNodePtr::element_type>(c.conn_));
+	auto c = tls.registry.get<RpcServerConnection>(controller_node);
+	ControllerNodePtr controller_node_ptr = tls.registry.emplace<ControllerNodePtr>(controller_node, std::make_shared<ControllerNodePtr::element_type>(c.conn_));
 	controller_node_ptr->node_info_.set_node_id(request->controller_node_id());
 	controller_node_ptr->node_info_.set_node_type(kControllerNode);
-	registry.emplace<InetAddress>(controller_node, service_addr);
+	tls.registry.emplace<InetAddress>(controller_node, service_addr);
 	g_controller_nodes->emplace(request->controller_node_id(), controller_node);
 
 	//todo next frame send after responese
@@ -170,7 +170,7 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
 	auto it = players_.find(request->player_id());
 	if (it == players_.end())
 	{
-		auto result = players_.emplace(request->player_id(), registry.create());
+		auto result = players_.emplace(request->player_id(), tls.registry.create());
 		if (!result.second)
 		{
             response->mutable_error()->set_id(kRetEnterSceneCreatePlayer);
@@ -229,7 +229,7 @@ void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::R
 		return;
 	}
 	//todo 离开跨服马上删除
-	auto it = players_.emplace(request->player_id(), registry.create());
+	auto it = players_.emplace(request->player_id(), tls.registry.create());
 	if (!it.second)
 	{
 		response->mutable_error()->set_id(kRetEnterSceneCreatePlayer);

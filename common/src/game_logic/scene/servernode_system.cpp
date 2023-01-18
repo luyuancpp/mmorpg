@@ -1,7 +1,7 @@
 #include "servernode_system.h"
 
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 
 //从当前符服务器中找到一个对应场景人数最少的
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
@@ -11,13 +11,13 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     auto scene_confid = param.scene_confid_;
     entt::entity server{ entt::null };
     std::size_t min_server_player_size = UINT64_MAX;
-    for (auto e : registry.view<ServerType, ServerStatus, ServerPressure>())
+    for (auto e : tls.registry.view<ServerType, ServerStatus, ServerPressure>())
     {
-        if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))//优先判断有没有场景
+        if (!tls.registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))//优先判断有没有场景
         {
             continue;
         }
-        std::size_t server_player_size = (*registry.get<GsNodePlayerInfoPtr>(e)).player_size();
+        std::size_t server_player_size = (*tls.registry.get<GsNodePlayerInfoPtr>(e)).player_size();
         if (server_player_size >= min_server_player_size || server_player_size >= kMaxServerPlayerSize)
         {
             continue;
@@ -30,12 +30,12 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     {
         return scene;
     }
-    auto& scenes = registry.get<ConfigSceneMap>(server);
+    auto& scenes = tls.registry.get<ConfigSceneMap>(server);
     std::size_t min_scene_player_size = UINT64_MAX;
     auto& server_scenes = scenes.confid_sceneslist(scene_confid);
     for (auto& ji : server_scenes)
     {
-        std::size_t scene_player_size = registry.get<ScenePlayers>(ji).size();
+        std::size_t scene_player_size = tls.registry.get<ScenePlayers>(ji).size();
         if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
         {
             continue;
@@ -52,13 +52,13 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param)
 {
 	auto scene_config_id = param.scene_confid_;
 	entt::entity server{ entt::null };
-	for (auto e : registry.view<ServerType, ServerStatus, ServerPressure>())
+	for (auto e : tls.registry.view<ServerType, ServerStatus, ServerPressure>())
 	{
-		if (!registry.get<ConfigSceneMap>(e).HasConfig(scene_config_id))
+		if (!tls.registry.get<ConfigSceneMap>(e).HasConfig(scene_config_id))
 		{
 			continue;
 		}
-		std::size_t server_player_size = (*registry.get<GsNodePlayerInfoPtr>(e)).player_size();
+		std::size_t server_player_size = (*tls.registry.get<GsNodePlayerInfoPtr>(e)).player_size();
 		if (server_player_size >= kMaxServerPlayerSize)
 		{
 			continue;
@@ -71,11 +71,11 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param)
 	{
 		return scene;
 	}
-	auto& scenes = registry.get<ConfigSceneMap>(server);
+	auto& scenes = tls.registry.get<ConfigSceneMap>(server);
 	auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
 	for (auto& ji : server_scenes)
 	{
-		std::size_t scene_player_size = registry.get<ScenePlayers>(ji).size();
+		std::size_t scene_player_size = tls.registry.get<ScenePlayers>(ji).size();
 		if (scene_player_size >= kMaxScenePlayerSize)
 		{
 			continue;
@@ -118,25 +118,25 @@ entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 
 void ServerNodeSystem::ServerEnterPressure(const ServerPressureParam& param)
 {
-    registry.remove<NoPressure>(param.server_);
-    registry.emplace<Pressure>(param.server_);
+    tls.registry.remove<NoPressure>(param.server_);
+    tls.registry.emplace<Pressure>(param.server_);
 }
 
 void ServerNodeSystem::ServerEnterNoPressure( const ServerPressureParam& param)
 {
-    registry.remove<Pressure>(param.server_);
-    registry.emplace<NoPressure>(param.server_);
+    tls.registry.remove<Pressure>(param.server_);
+    tls.registry.emplace<NoPressure>(param.server_);
 }
 
 void ServerNodeSystem::ServerCrashed( const ServerCrashParam& param)
 {
-    registry.remove<GSNormal>(param.crash_server_);
-    registry.emplace<GSCrash>(param.crash_server_);
+    tls.registry.remove<GSNormal>(param.crash_server_);
+    tls.registry.emplace<GSCrash>(param.crash_server_);
 }
 
 void ServerNodeSystem::ServerMaintain(const MaintainServerParam& param)
 {
-    registry.remove<GSNormal>(param.maintain_server_);
-    registry.emplace<GSMainTain>(param.maintain_server_);
+    tls.registry.remove<GSNormal>(param.maintain_server_);
+    tls.registry.emplace<GSMainTain>(param.maintain_server_);
 }
 

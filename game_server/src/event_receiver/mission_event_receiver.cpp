@@ -1,7 +1,7 @@
 #include "mission_event_receiver.h"
 #include "event_proto/mission_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/missions/missions_base.h"
 ///<<< END WRITING YOUR CODE
 void MissionEventReceiverReceiver::Register(entt::dispatcher& dispatcher)
@@ -24,7 +24,7 @@ void MissionEventReceiverReceiver::Receive0(const AcceptMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE 
 	auto entity = entt::to_entity(event_obj.entity());
-	registry.get<MissionsComp>(entity).Accept(event_obj);
+	tls.registry.get<MissionsComp>(entity).Accept(event_obj);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -32,7 +32,7 @@ void MissionEventReceiverReceiver::Receive1(const MissionConditionEvent& event_o
 {
 ///<<< BEGIN WRITING YOUR CODE 
 	auto entity = entt::to_entity(event_obj.entity());
-	registry.get<MissionsComp>(entity).Receive(event_obj);
+	tls.registry.get<MissionsComp>(entity).Receive(event_obj);
 ///<<< END WRITING YOUR CODE 
 }
 

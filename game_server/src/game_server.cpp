@@ -9,8 +9,8 @@
 
 #include "src/event_receiver/event_receiver.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/thread_local/game_registry.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/rpc_connection_event.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
@@ -41,11 +41,11 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 void GameServer::Init()
 {
     g_gs = this; 
-    EventReceiver::Register(dispatcher);
+    EventReceiver::Register(tls.dispatcher);
     InitConfig();
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
-    global_entity() = registry.create();
-    registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
+    global_entity() = tls.registry.create();
+    tls.registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
     LOG_INFO << "server type" << GameConfig::GetSingleton().config_info().server_type();
     InitMsgService();
     InitPlayerServcie();
@@ -152,7 +152,7 @@ void GameServer::CallControllerStartGs(ControllerSessionPtr controller_node)
     session_info->set_port(controller_local_addr.port());
     node_info->set_ip(gs_info_.ip());
     node_info->set_port(gs_info_.port());
-    request.set_server_type(registry.get<GsServerType>(global_entity()).server_type_);
+    request.set_server_type(tls.registry.get<GsServerType>(global_entity()).server_type_);
     request.set_gs_node_id(gs_info_.id());
     controller_node->CallMethod(ControllerServiceStartGsMethodDesc,&request);
     LOG_DEBUG << "conncet to controller" ;
@@ -160,7 +160,7 @@ void GameServer::CallControllerStartGs(ControllerSessionPtr controller_node)
 
 void GameServer::CallLobbyStartGs()
 {
-    auto server_type = registry.get<GsServerType>(global_entity()).server_type_;
+    auto server_type = tls.registry.get<GsServerType>(global_entity()).server_type_;
     if (!(server_type == kMainSceneCrossServer ||
         server_type == kRoomSceneCrossServer))
     {
@@ -234,25 +234,25 @@ void GameServer::receive(const OnBeConnectedEvent& es)
     auto& conn = es.conn_;
 	if (conn->connected())
 	{
-		auto e = registry.create();
-		registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+		auto e = tls.registry.create();
+		tls.registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
 	}
     else
     {
 		auto& peer_addr = conn->peerAddress();
-		for (auto e : registry.view<RpcServerConnection>())
+		for (auto e : tls.registry.view<RpcServerConnection>())
 		{
-			auto& local_addr = registry.get<RpcServerConnection>(e).conn_->peerAddress();
+			auto& local_addr = tls.registry.get<RpcServerConnection>(e).conn_->peerAddress();
 			if (local_addr.toIpPort() != peer_addr.toIpPort())
 			{
 				continue;
 			}
-			auto gatenode = registry.try_get<GateNodePtr>(e);//如果是gate
+			auto gatenode = tls.registry.try_get<GateNodePtr>(e);//如果是gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
                 g_gate_nodes->erase((*gatenode)->node_info_.node_id());
 			}
-			registry.destroy(e);
+			tls.registry.destroy(e);
 			break;
 		}
     }

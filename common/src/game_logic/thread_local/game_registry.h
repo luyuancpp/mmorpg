@@ -3,8 +3,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include "entt/src/entt/signal/dispatcher.hpp"
 
-extern entt::registry registry;
-extern entt::dispatcher dispatcher;
+
 entt::entity& error_entity();
 entt::entity& op_enitty();
 

@@ -3,7 +3,7 @@
 #include "google/protobuf/util/json_util.h"
 
 #include "src/util/file2string.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/luacpp/lua_module.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic_proto/player_service.h"
@@ -26,8 +26,8 @@ int main(int argc, char* argv[])
         }
         EventLoop loop;
         
-        gAllFinish = registry.create();
-        registry.emplace<uint32_t>(gAllFinish, nClients);
+        gAllFinish = tls.registry.create();
+        tls.registry.emplace<uint32_t>(gAllFinish, nClients);
 
         auto contents = common::File2String("client.json");
         google::protobuf::StringPiece sp(contents.data(), contents.size());
