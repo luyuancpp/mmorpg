@@ -59,8 +59,8 @@ RpcClientPtr& ClientReceiver::get_login_node()
 RpcClientPtr& ClientReceiver::get_login_node(uint64_t session_id)
 {
     static RpcClientPtr empty_session;
-    auto session_it = gate_tls.sessions.find(session_id);
-    if (gate_tls.sessions.end() == session_it)
+    auto session_it = gate_tls.sessions_.find(session_id);
+    if (gate_tls.sessions_.end() == session_it)
     {
         return empty_session;
     }
@@ -114,19 +114,19 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             rq.set_session_id(session_id);
             g_gate_node->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnectMethodDesc, &rq);
         }
-        gate_tls.sessions.erase(session_id);
+        gate_tls.sessions_.erase(session_id);
     }
     else
     {
         auto id = g_server_sequence_.Generate();
-        while (gate_tls.sessions.find(id) != gate_tls.sessions.end())
+        while (gate_tls.sessions_.find(id) != gate_tls.sessions_.end())
         {
             id = g_server_sequence_.Generate();
         }
         conn->setContext(id);
         GateClient gc;
         gc.conn_ = conn;
-        gate_tls.sessions.emplace(id, std::move(gc));
+        gate_tls.sessions_.emplace(id, std::move(gc));
     }
 }
 
@@ -162,8 +162,8 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     muduo::Timestamp)
 {
     auto session_id = tcp_session_id(conn);
-	auto it = gate_tls.sessions.find(session_id);
-	if (it == gate_tls.sessions.end())
+	auto it = gate_tls.sessions_.find(session_id);
+	if (it == gate_tls.sessions_.end())
 	{
 		return;
 	}
