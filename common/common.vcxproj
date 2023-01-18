@@ -163,7 +163,7 @@
     <ClCompile Include="src\game_config\scene_config.cpp" />
     <ClCompile Include="src\game_logic\bag\bag.cpp" />
     <ClCompile Include="src\game_logic\bag\item.cpp" />
-    <ClCompile Include="src\game_logic\thread_local\game_registry.cpp" />
+    <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\game_logic\missions\missions_base.cpp" />
     <ClCompile Include="src\game_logic\player\player_list.cpp" />
     <ClCompile Include="src\game_logic\scene\scene.cpp" />
@@ -268,7 +268,7 @@
     <ClInclude Include="src\game_logic\comp\player_comp.h" />
     <ClInclude Include="src\game_logic\comp\scene_comp.h" />
     <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
-    <ClInclude Include="src\game_logic\thread_local\game_registry.h" />
+    <ClInclude Include="src\util\game_registry.h" />
     <ClInclude Include="src\game_logic\login_state\login_state.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_concrete.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_machine.h" />

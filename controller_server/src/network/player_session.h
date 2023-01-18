@@ -2,7 +2,7 @@
 
 #include "gate_node.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/util/game_registry.h"
 #include "src/network/gs_node.h"
 #include "src/network/message_system.h"
 #include "src/network/session.h"

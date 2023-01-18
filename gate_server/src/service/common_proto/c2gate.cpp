@@ -7,7 +7,7 @@
 #include "muduo/net/TcpConnection.h"
 
 #include "src/gate_server.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/util/game_registry.h"
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
 #include "src/game_logic/tips_id.h"

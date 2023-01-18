@@ -3,7 +3,7 @@
 ///<<< BEGIN WRITING YOUR CODE  
 #include "muduo/base/Logging.h"
 
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/util/game_registry.h"
 #include "src/network/rpc_server.h"
 #include "src/game_logic/tips_id.h"
 #include "src/login_server.h"
