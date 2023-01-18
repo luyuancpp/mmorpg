@@ -1,7 +1,7 @@
 #include "gate_service_replied.h"
 
 #include "muduo/base/Logging.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/session.h"
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"
@@ -15,7 +15,7 @@ void OnGateUpdatePlayerGsReplied(const TcpConnectionPtr& conn, const PlayerEnter
     entt::entity player = GetPlayerByConnId(tcp_session_id(conn));
     if (entt::null == player)
     {
-        LOG_ERROR << "player not found " << registry.get<Guid>(player);
+        LOG_ERROR << "player not found " << tls.registry.get<Guid>(player);
         return;
     }
 

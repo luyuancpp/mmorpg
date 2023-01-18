@@ -2,6 +2,8 @@
 
 #include "src/game_logic/scene/scene.h"
 
+#include "src/game_logic/thread_local/thread_local_storage.h"
+
 thread_local PlayerListMap  g_players;
 
 PlayerList* g_player_list = nullptr;
@@ -47,7 +49,7 @@ void PlayerList::LeaveGame(Guid guid)
     }
     auto player = it->second;
     //没进入场景，只是登录，或者切换场景过程中
-    if (nullptr == registry.try_get<SceneEntity>(player))
+    if (nullptr == tls.registry.try_get<SceneEntity>(player))
     {
     }
     else

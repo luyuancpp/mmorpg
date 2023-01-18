@@ -4,7 +4,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/network/gs_node.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_player_list.h"
 #include "src/gate_server.h"
 #include "src/game_logic/tips_id.h"
@@ -21,9 +21,9 @@ void GateServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 {
 ///<<< BEGIN WRITING YOUR CODE 
 	InetAddress gs_addr(request->ip(), request->port());
-	for (auto e : registry.view<InetAddress>())
+	for (auto e : tls.registry.view<InetAddress>())
 	{
-		auto& c = registry.get<InetAddress>(e);
+		auto& c = tls.registry.get<InetAddress>(e);
 		if (gs_addr.toIpPort() == c.toIpPort())// to do node id，已经连接过了
 		{
 			return;
@@ -36,7 +36,7 @@ void GateServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 	gsi.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gate_node);
 	gsi.gs_session_->registerService(&g_gate_node->node_service_impl());
 	gsi.gs_session_->connect();
-	registry.emplace<InetAddress>(gsi.entity_id, gs_addr);
+	tls.registry.emplace<InetAddress>(gsi.entity_id, gs_addr);
 	g_game_node.emplace(request->gs_node_id(), std::move(gsi));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->gs_node_id();
 ///<<< END WRITING YOUR CODE 
@@ -48,15 +48,15 @@ void GateServiceImpl::StopGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
-	for (auto e : registry.view<InetAddress>())
+	for (auto e : tls.registry.view<InetAddress>())
 	{
-		auto& c = registry.get<InetAddress>(e);
+		auto& c = tls.registry.get<InetAddress>(e);
 		if (c.toIp() != request->ip() ||
 			c.port() != request->port())
 		{
 			continue;
 		}
-		registry.destroy(e);
+		tls.registry.destroy(e);
 		break;
 	}
 ///<<< END WRITING YOUR CODE 

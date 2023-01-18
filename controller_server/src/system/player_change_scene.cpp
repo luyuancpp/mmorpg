@@ -1,6 +1,6 @@
 #include "player_change_scene.h"
 
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/player_session.h"
@@ -11,7 +11,7 @@
 //todo 各种服务器崩溃
 void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
 {
-	registry.emplace<PlayerControllerChangeSceneQueue>(player);
+	tls.registry.emplace<PlayerControllerChangeSceneQueue>(player);
 }
 
 uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const ControllerChangeSceneInfo& change_info)
@@ -181,5 +181,5 @@ void PlayerChangeSceneSystem::OnEnterSceneSucced(entt::entity player)
 {
     S2CEnterScene s2c_enter_scene_event;
     s2c_enter_scene_event.set_entity(entt::to_integral(player));
-    dispatcher.trigger(s2c_enter_scene_event);
+    tls.dispatcher.trigger(s2c_enter_scene_event);
 }

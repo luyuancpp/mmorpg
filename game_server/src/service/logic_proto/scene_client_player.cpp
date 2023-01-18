@@ -1,5 +1,5 @@
 #include "scene_client_player.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/network/node_info.h"
@@ -16,7 +16,7 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
         //如果是跨服副本服不能换场景
-    auto server_type = registry.get<GsServerType>(global_entity());
+    auto server_type = tls.registry.get<GsServerType>(global_entity());
     if (kRoomServer == server_type.server_type_ ||
         kRoomSceneCrossServer == server_type.server_type_)
     {
@@ -30,10 +30,10 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
         return;
     }
     //您当前就在这个场景，无需切换
-    auto my_scene = registry.try_get<SceneEntity>(player);
+    auto my_scene = tls.registry.try_get<SceneEntity>(player);
     if (nullptr != my_scene)
     {
-        auto try_my_scene_info = registry.try_get<SceneInfo>(my_scene->scene_entity_);
+        auto try_my_scene_info = tls.registry.try_get<SceneInfo>(my_scene->scene_entity_);
         if (nullptr != try_my_scene_info &&
             try_my_scene_info->scene_id() == scene_info.scene_id()
             && scene_info.scene_id() > 0)

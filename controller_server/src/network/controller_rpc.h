@@ -11,11 +11,11 @@
 template <typename RepliedCallback, typename MethodParam, typename StubMethod, typename StubType>
 void CallGsPlayerMethod(entt::entity player, RepliedCallback callback, MethodParam rpc,  StubMethod stub_method, StubType stub)
 {
-    if (!registry.valid(player))
+    if (!tls.registry.valid(player))
     {
         return;
     }
-    auto try_player_session = registry.try_get<PlayerSession>(player);
+    auto try_player_session = tls.registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
         return;
@@ -25,5 +25,5 @@ void CallGsPlayerMethod(entt::entity player, RepliedCallback callback, MethodPar
     {
         return;
     }
-    registry.get<StubType>(gs_it->second)->CallMethod<MethodParam, StubMethod>(callback, rpc, stub_method);
+    tls.registry.get<StubType>(gs_it->second)->CallMethod<MethodParam, StubMethod>(callback, rpc, stub_method);
 }

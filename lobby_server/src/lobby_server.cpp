@@ -5,7 +5,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/mainscene_config.h"
 #include "src/game_config/lobby_config.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
 #include "src/network/controller_node.h"
@@ -77,26 +77,26 @@ void LobbyServer::receive(const OnBeConnectedEvent& es)
 	auto& conn = es.conn_;
     if (conn->connected())
     {
-        auto e = registry.create();
-        registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+        auto e = tls.registry.create();
+        tls.registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
     }
     else
     {
 		auto& peer_addr = conn->peerAddress();
-		for (auto e : registry.view<RpcServerConnection>())
+		for (auto e : tls.registry.view<RpcServerConnection>())
 		{
-			auto& local_addr = registry.get<RpcServerConnection>(e).conn_->peerAddress();
+			auto& local_addr = tls.registry.get<RpcServerConnection>(e).conn_->peerAddress();
 			if (local_addr.toIpPort() != peer_addr.toIpPort())
 			{
 				continue;
 			}
-			auto gsnode = registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+			auto gsnode = tls.registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
 			if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGameNode)
 			{
 				g_game_node->erase((*gsnode)->node_info_.node_id());
 			}
             // controller 不动态扩展，所以不删除
-			registry.destroy(e);
+			tls.registry.destroy(e);
 			break;
 		}
     }		

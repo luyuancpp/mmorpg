@@ -1,7 +1,7 @@
 #include "player_common_system.h"
 
 #include "src/game_logic/player/player_list.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/network/controller_node.h"
@@ -38,13 +38,13 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 	}
     // on loaded db
     entt::entity player = ret.first->second;
-	registry.emplace<Player>(player);
-    registry.emplace<Guid>(player, player_id);
-    registry.emplace<Vector3>(player, message.pos());
+	tls.registry.emplace<Player>(player);
+    tls.registry.emplace<Guid>(player, player_id);
+    tls.registry.emplace<Vector3>(player, message.pos());
    	
     // on load db complete
 
-    EnterGs(player, registry.get<EnterGsInfo>(async_it->second));
+    EnterGs(player, tls.registry.get<EnterGsInfo>(async_it->second));
     g_async_player_data.erase(async_it);
 }
 
@@ -62,10 +62,10 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 	using SaveMessagePtr = PlayerDataRedisSystemPtr::element_type::MessageValuePtr;
 	SaveMessagePtr pb = std::make_shared<SaveMessagePtr::element_type>();
 
-	pb->set_player_id(registry.get<Guid>(player));
-	pb->mutable_pos()->CopyFrom(registry.get<Vector3>(player));
+	pb->set_player_id(tls.registry.get<Guid>(player));
+	pb->mutable_pos()->CopyFrom(tls.registry.get<Vector3>(player));
 
-	g_player_data_redis_system->Save(pb, registry.get<Guid>(player));
+	g_player_data_redis_system->Save(pb, tls.registry.get<Guid>(player));
 }
 
 //考虑: 没load 完再次进入别的gs
@@ -77,9 +77,9 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 		LOG_ERROR << "EnterGs controller not found" << enter_info.controller_node_id();
 		return;
 	}
-	registry.emplace_or_replace<ControllerNodePtr>(player, controller_it->second);//todo controller 重新启动以后
+	tls.registry.emplace_or_replace<ControllerNodePtr>(player, controller_it->second);//todo controller 重新启动以后
 	EnterGsSucceedRequest rq;
-	rq.set_player_id(registry.get<Guid>(player));
+	rq.set_player_id(tls.registry.get<Guid>(player));
 	rq.set_game_node_id(node_id());
 	controller_it->second->session_->CallMethod(ControllerServiceEnterGsSucceedMethodDesc, &rq);
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
@@ -122,7 +122,7 @@ void PlayerCommonSystem::RemovePlayereSession(Guid player_id)
 
 void PlayerCommonSystem::RemovePlayereSession(entt::entity player)
 {
-    auto try_get_session = registry.try_get<GateSession>(player);
+    auto try_get_session = tls.registry.try_get<GateSession>(player);
     if (nullptr == try_get_session)
     {
         return;

@@ -5,7 +5,7 @@
 
 #include "src/game_config/condition_config.h"
 #include "src/game_logic/constants/mission_constants.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 #include "src/util/random.h"
 
@@ -27,7 +27,7 @@ MissionsComp::MissionsComp()
 
 std::size_t MissionsComp::can_reward_size()
 {
-    auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
+    auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
     if (nullptr == try_mission_reward)
     {
         return 0;
@@ -43,7 +43,7 @@ void MissionsComp::Init()
 	}
 	if (mission_config_->CheckTypeRepeated())
 	{
-		registry.emplace<CheckTypeRepeatd>(event_owner());
+		tls.registry.emplace<CheckTypeRepeatd>(event_owner());
 	}
     
 }
@@ -83,7 +83,7 @@ uint32_t MissionsComp::IsDoNotCompleted(uint32_t mission_id)const
 
 uint32_t MissionsComp::GetReward(uint32_t missin_id)
 {
-	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
+	auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr == try_mission_reward)
 	{
 		return kRetMissionPlayerMissionCompNotFound;
@@ -107,7 +107,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 
     auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
     auto mission_type = mission_config_->mission_type(accept_event.mission_id());
-    bool check_type_repeated =  mission_sub_type > 0 && registry.any_of<CheckTypeRepeatd>(event_owner());
+    bool check_type_repeated =  mission_sub_type > 0 && tls.registry.any_of<CheckTypeRepeatd>(event_owner());
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
@@ -137,7 +137,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
     }
 
     //todo 
-    auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
+    auto try_dispatcher = tls.registry.try_get<entt::dispatcher>(event_owner());
     if (nullptr != try_dispatcher)
     {
         OnAcceptedMissionEvent on_accepted_mission_event;
@@ -151,7 +151,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 uint32_t MissionsComp::Abandon(uint32_t mission_id)
 {
     RET_CHECK_RET(IsDoNotCompleted(mission_id));//已经完成
-	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());
+	auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr != try_mission_reward)
 	{
         try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
@@ -236,7 +236,7 @@ void MissionsComp::DelMissionClassify(uint32_t mission_id)
         event_missions_classify_[condition_row->condition_type()].erase(mission_id);
     }
     auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
-    bool check_type_repeated = mission_sub_type > 0 && registry.any_of<CheckTypeRepeatd>(event_owner());
+    bool check_type_repeated = mission_sub_type > 0 && tls.registry.any_of<CheckTypeRepeatd>(event_owner());
     if (check_type_repeated)
     {
 		UInt32PairSet::value_type p(mission_config_->mission_type(mission_id), mission_sub_type);
@@ -325,12 +325,12 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
         DelMissionClassify(mission_id);        
     }
     //处理异步的
-    auto try_dispatcher = registry.try_get<entt::dispatcher>(event_owner());
+    auto try_dispatcher = tls.registry.try_get<entt::dispatcher>(event_owner());
 	if (nullptr == try_dispatcher)
 	{
 		return;
 	}
-	auto try_mission_reward = registry.try_get<MissionRewardPbComp>(event_owner());    
+	auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());    
 	MissionConditionEvent mission_condition_event;
 	mission_condition_event.set_entity(entt::to_integral(event_owner()));
 	mission_condition_event.set_type(kConditionCompleteMission);

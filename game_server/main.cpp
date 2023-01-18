@@ -2,7 +2,7 @@
 
 #include "src/game_logic/player/player_list.h"
 #include "src/game_server.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/node_info.h"
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"

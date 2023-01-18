@@ -1,5 +1,5 @@
 #include "scene_server_player.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -81,13 +81,13 @@ void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplet
 
 	if (entt::null == to_scene)//todo 场景崩溃了要去新的场景
 	{
-		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
+		LOG_ERROR << "change gs scene scene not found or destroy" << tls.registry.get<Guid>(player);
 		return;
 	}
-    auto try_player_session = registry.try_get<PlayerSession>(player);
+    auto try_player_session = tls.registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
 	{
-		LOG_ERROR << "change gs scene scene not found or destroy" << registry.get<Guid>(player);
+		LOG_ERROR << "change gs scene scene not found or destroy" << tls.registry.get<Guid>(player);
 		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return;
 

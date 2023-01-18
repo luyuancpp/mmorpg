@@ -64,7 +64,7 @@ def getrealsuffix(filename):
 
 def generatehead(filename):
 	newstr = '#pragma once\n'
-	newstr += '#include "src/game_logic/game_registry.h"\n\n'
+	newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n\n'
 	md5headfilename = getmd5destfilename(filename) + '.h'
 	classname = getfileclassname(filename)
 	for i in range(0, len(local.eventprotoarray)): 
@@ -110,7 +110,6 @@ def generatecpp(filename):
 		with open(destcppfilename,'r+', encoding='utf-8') as file:
 			yourcode = 0 
 			part = 0
-			connectfunctiondone = 0
 			head_line_count = 0
 			for fileline in file:
 				if head_line_count < 2:
@@ -123,14 +122,14 @@ def generatecpp(filename):
 						part += 1
 					continue
 				if part != cpprpceventpart and fileline.find(yourcodebegin) >= 0:
-				    yourcode = 1
-				    newstr += fileline
-				    continue
+					yourcode = 1
+					newstr += fileline
+					continue
 				elif part != cpprpceventpart and fileline.find(yourcodeend) >= 0:
-				    yourcode = 0
-				    newstr += fileline + '\n'
-				    part += 1
-				    continue 
+					yourcode = 0
+					newstr += fileline + '\n'
+					part += 1
+					continue 
 				elif part == cpprpceventpart:
 					if eventindex < len(local.eventprotoarray) and fileline.find(cppreceiverfunctionname) >= 0 :
 						yourcode = 0
@@ -163,7 +162,7 @@ def generatecpp(filename):
 def geneventreceiverhead():
 	md5headfilename = md5dir + currentfilename + '.h'
 	newstr = '#pragma once\n'
-	newstr += '#include "src/game_logic/game_registry.h"\n'	
+	newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'	
 	newstr += '\nclass ' + currentclassname + '\n{\npublic:\n'
 	newstr += tabstr + 'static void Register(entt::dispatcher& dispatcher);\n'
 	newstr += tabstr + 'static void UnRegister(entt::dispatcher& dispatcher);\n'

@@ -135,14 +135,14 @@ if (tip_code != kRetOK)\
 }\
 
 #define  GetPlayerCompnentReturnError(copm_name, compnent, tip_code)\
-auto copm_name = registry.try_get<compnent>(player);\
+auto copm_name = tls.registry.try_get<compnent>(player);\
 if (nullptr == copm_name)\
 {\
 	return tip_code;\
 }
 
 #define  GetPlayerCompnentMemberReturnError(menber_name, compnent, tip_code)\
-auto comp_name = registry.try_get<compnent>(player);\
+auto comp_name = tls.registry.try_get<compnent>(player);\
 if (nullptr == comp_name)\
 {\
 	return tip_code;\
@@ -150,7 +150,7 @@ if (nullptr == comp_name)\
 auto& menber_name = comp_name->menber_name##_;
 
 #define  GetPlayerCompnentMemberNullReturnFalse(menber_name, compnent)\
-auto comp_name = registry.try_get<compnent>(player);\
+auto comp_name = tls.registry.try_get<compnent>(player);\
 if (nullptr == comp_name)\
 {\
 	return false;\
@@ -158,7 +158,7 @@ if (nullptr == comp_name)\
 auto& menber_name = comp_name->menber_name##_;
 
 #define  GetPlayerCompnentMemberNullReturnTrue(menber_name, compnent)\
-auto comp_name = registry.try_get<compnent>(player);\
+auto comp_name = tls.registry.try_get<compnent>(player);\
 if (nullptr == comp_name)\
 {\
 	return true;\
@@ -166,7 +166,7 @@ if (nullptr == comp_name)\
 auto& menber_name = comp_name->menber_name##_;
 
 #define  GetPlayerCompnentMemberReturnVoid(menber_name, compnent)\
-auto comp_name = registry.try_get<compnent>(player);\
+auto comp_name = tls.registry.try_get<compnent>(player);\
 if (nullptr == comp_name)\
 {\
 	return;\

@@ -2,7 +2,7 @@
 #include <unordered_map>
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "entt/src/entt/entity/entity.hpp"
 #include "src/util/snow_flake.h"
 #include "src/game_logic/teams/team_event.h"
@@ -17,7 +17,7 @@ public:
     Teams();
     ~Teams();
 
-    std::size_t team_size()const { return registry.storage<Team>().size(); }
+    std::size_t team_size()const { return tls.registry.storage<Team>().size(); }
     std::size_t member_size(Guid team_id);
     std::size_t applicant_size_by_playerid(Guid guid)const;
     std::size_t applicant_size_by_team_id(Guid team_id)const;

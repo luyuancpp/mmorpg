@@ -11,6 +11,7 @@
 #include "src/controller_server.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/comp/player_list.h"
 #include "src/game_logic/comp/account_comp.h"
@@ -52,12 +53,12 @@ Guid GetPlayerIdByConnId(uint64_t session_id)
 	{
 		return kInvalidGuid;
 	}
-	auto p_try_player = registry.try_get<EntityPtr>(cit->second);
+	auto p_try_player = tls.registry.try_get<EntityPtr>(cit->second);
 	if (nullptr == p_try_player)
 	{
 		return kInvalidGuid;
 	}
-	auto player_id = registry.get<Guid>(*p_try_player);
+	auto player_id = tls.registry.get<Guid>(*p_try_player);
 	return kInvalidGuid;
 }
 
@@ -68,7 +69,7 @@ entt::entity GetPlayerByConnId(uint64_t session_id)
 	{
 		return entt::null;
 	}
-	auto p_try_player = registry.try_get<EntityPtr>(cit->second);
+	auto p_try_player = tls.registry.try_get<EntityPtr>(cit->second);
 	if (nullptr == p_try_player)
 	{
 		return entt::null;
@@ -78,20 +79,20 @@ entt::entity GetPlayerByConnId(uint64_t session_id)
 
 void OnSessionEnterGame(entt::entity conn, Guid player_id)
 {
-    registry.emplace<EntityPtr>(conn, g_player_list->GetPlayerPtr(player_id));
-    registry.emplace<Guid>(conn, player_id);
+    tls.registry.emplace<EntityPtr>(conn, g_player_list->GetPlayerPtr(player_id));
+    tls.registry.emplace<Guid>(conn, player_id);
 }
 
 void InitPlayerGate(entt::entity player, uint64_t session_id)
 {
-    auto& player_session = registry.get_or_emplace<PlayerSession>(player);
+    auto& player_session = tls.registry.get_or_emplace<PlayerSession>(player);
     player_session.gate_session_.set_session_id(session_id);
     auto gate_it = g_gate_nodes.find(node_id(session_id));
     if (gate_it == g_gate_nodes.end())
     {
 		return;  
     }
-    auto gate = registry.try_get<GateNodePtr>(gate_it->second);
+    auto gate = tls.registry.try_get<GateNodePtr>(gate_it->second);
     if (nullptr == gate)
     {
 		return;        
@@ -112,9 +113,9 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity gs{ entt::null };
-	for (auto e : registry.view<RpcServerConnection>())
+	for (auto e : tls.registry.view<RpcServerConnection>())
 	{
-		if (registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
+		if (tls.registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
@@ -128,14 +129,14 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 		return;
 	}
 
-	auto c = registry.get<RpcServerConnection>(gs);
+	auto c = tls.registry.get<RpcServerConnection>(gs);
 	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	gs_node_ptr->node_info_.set_node_type(kGameNode);
 	AddMainSceneNodeCompnent(gs);
-	registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
-	registry.emplace<GsNodePtr>(gs, gs_node_ptr);
-	registry.emplace<GsServer>(gs);
+	tls.registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
+	tls.registry.emplace<GsNodePtr>(gs, gs_node_ptr);
+	tls.registry.emplace<GsServer>(gs);
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
@@ -145,31 +146,31 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
 			auto scene_entity = ScenesSystem::CreateScene2Gs(create_scene_param);
-			registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
-			response->add_scenes_info()->CopyFrom(registry.get<SceneInfo>(scene_entity));
+			tls.registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
+			response->add_scenes_info()->CopyFrom(tls.registry.get<SceneInfo>(scene_entity));
 		}
 	}
 	else if (request->server_type() == kMainSceneCrossServer)
 	{
-        registry.remove<MainSceneServer>(gs);
-        registry.emplace<CrossMainSceneServer>(gs);
+        tls.registry.remove<MainSceneServer>(gs);
+        tls.registry.emplace<CrossMainSceneServer>(gs);
 	}
     else if (request->server_type() == kRoomSceneCrossServer)
     {
-        registry.remove<MainSceneServer>(gs);
-        registry.emplace<CrossRoomSceneServer>(gs);
+        tls.registry.remove<MainSceneServer>(gs);
+        tls.registry.emplace<CrossRoomSceneServer>(gs);
     }
 	else
 	{
-		registry.remove<MainSceneServer>(gs);
-		registry.emplace<RoomSceneServer>(gs);
+		tls.registry.remove<MainSceneServer>(gs);
+		tls.registry.emplace<RoomSceneServer>(gs);
 	}
 
-	for (auto e : registry.view<GateNodePtr>())
+	for (auto e : tls.registry.view<GateNodePtr>())
 	{
 		g_controller_node->LetGateConnect2Gs(gs, e);
 	}
-	g_game_node.emplace(registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
+	g_game_node.emplace(tls.registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE 
 }
@@ -182,23 +183,23 @@ void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE 
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	entt::entity gate{ entt::null };
-	for (auto e : registry.view<RpcServerConnection>())
+	for (auto e : tls.registry.view<RpcServerConnection>())
 	{
-		auto c = registry.get<RpcServerConnection>(e);
+		auto c = tls.registry.get<RpcServerConnection>(e);
 		auto& local_addr = c.conn_->peerAddress();
 		if (local_addr.toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
 		gate = e;
-		auto& gate_node = *registry.emplace<GateNodePtr>(gate, std::make_shared<GateNode>(c.conn_));
+		auto& gate_node = *tls.registry.emplace<GateNodePtr>(gate, std::make_shared<GateNode>(c.conn_));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(kGateNode);
 		g_gate_nodes.emplace(request->gate_node_id(), gate);
 		break;
 	}
-	registry.emplace<InetAddress>(gate, session_addr);
-	for (auto e : registry.view<GsServer>())
+	tls.registry.emplace<InetAddress>(gate, session_addr);
+	for (auto e : tls.registry.view<GsServer>())
 	{
 		g_controller_node->LetGateConnect2Gs(e, gate);
 	}
@@ -236,12 +237,12 @@ void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* 
 	{
 		return;
 	}
-	auto try_acount = registry.try_get<PlayerAccount>(player);
+	auto try_acount = tls.registry.try_get<PlayerAccount>(player);
 	if (nullptr != try_acount)
 	{
 		logined_accounts_sesion_.erase(**try_acount);
 	}	
-	auto try_player_session = registry.try_get<PlayerSession>(player);
+	auto try_player_session = tls.registry.try_get<PlayerSession>(player);
 	if (nullptr == try_player_session)//玩家已经断开连接了
 	{
 		return;
@@ -256,11 +257,11 @@ void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* 
 	{
 		return;
 	}
-	auto player_id = registry.get<Guid>(player);
+	auto player_id = tls.registry.get<Guid>(player);
 	g_gate_sessions.erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
-	registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMethodDesc, &rq);
+	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMethodDesc, &rq);
 	g_player_list->LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE 
 }
@@ -283,8 +284,8 @@ void ControllerServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
         return;
 	}
 	auto conn = cit->second;
-    registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
-    registry.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
+    tls.registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
+    tls.registry.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
 	//todo 
 	auto lit = logined_accounts_sesion_.find(request->account());
 	if (g_player_list->player_size() >= kMaxPlayerSize)
@@ -330,7 +331,7 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	auto session = sit->second;
 	auto player_id = request->player_id();
 	auto player = g_player_list->GetPlayer(player_id);
-	auto try_acount = registry.try_get<PlayerAccount>(session);
+	auto try_acount = tls.registry.try_get<PlayerAccount>(session);
 	if (nullptr != try_acount)
 	{
 		logined_accounts_sesion_.erase(**try_acount);
@@ -341,9 +342,9 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		player = g_player_list->EnterGame(player_id);
 		PlayerCommonSystem::InitPlayerCompnent(player);
 		OnSessionEnterGame(session, player_id);
-		registry.emplace<Guid>(player, player_id);
+		tls.registry.emplace<Guid>(player, player_id);
 		
-		registry.emplace<PlayerAccount>(player, registry.get<PlayerAccount>(sit->second));
+		tls.registry.emplace<PlayerAccount>(player, tls.registry.get<PlayerAccount>(sit->second));
 		
 		GetSceneParam getp;
 		getp.scene_confid_ = 1;
@@ -356,19 +357,19 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		
 	
 		InitPlayerGate(player, request->session_id());
-		registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
+		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 
-        auto try_player_session = registry.try_get<PlayerSession>(player);
+        auto try_player_session = tls.registry.try_get<PlayerSession>(player);
         if (nullptr == try_player_session)
         {
-            LOG_ERROR << "enter scene not found or destroy" << registry.get<Guid>(player);
+            LOG_ERROR << "enter scene not found or destroy" << tls.registry.get<Guid>(player);
 			// to do 让人下线
             return;
 
         }
 		PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(scene), try_player_session->session_id());
         ControllerChangeSceneInfo change_scene_info;
-        change_scene_info.mutable_scene_info()->CopyFrom(registry.get<SceneInfo>(scene));
+        change_scene_info.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(scene));
         change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);
         change_scene_info.set_change_gs_status(ControllerChangeSceneInfo::eEnterGsSceneSucceed);
         PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_scene_info);        
@@ -381,7 +382,7 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 		//告诉账号被顶
 		OnSessionEnterGame(session, player_id);
         //断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
-        auto player_session = registry.try_get<PlayerSession>(player);
+        auto player_session = tls.registry.try_get<PlayerSession>(player);
         if (nullptr != player_session)
         {
 			GateNodeKickConnRequest message;
@@ -389,7 +390,7 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
             Send2Gate(GateServiceKickConnByControllerMethodDesc, message, player_session->gate_node_id());
         }
 		InitPlayerGate(player, request->session_id());
-		registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
+		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
 	}
 	if (entt::null == player)
 	{
@@ -491,7 +492,7 @@ void ControllerServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
 			continue;
 		}
 		auto gs = git->second;
-		auto try_gs_node_ptr = registry.try_get<GsNodePtr>(gs);
+		auto try_gs_node_ptr = tls.registry.try_get<GsNodePtr>(gs);
 		if (nullptr == try_gs_node_ptr)
 		{
             LOG_ERROR << "gs not found ";
@@ -499,7 +500,7 @@ void ControllerServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
 		}
 		create_scene_param.scene_info_ = it.scene_info();
         auto scene = ScenesSystem::CreateSceneByGuid(create_scene_param);
-		registry.emplace<GsNodePtr>(scene, *try_gs_node_ptr);
+		tls.registry.emplace<GsNodePtr>(scene, *try_gs_node_ptr);
 	}
 ///<<< END WRITING YOUR CODE 
 }
@@ -515,7 +516,7 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 	{
 		return;
 	}
-	auto& player_session = registry.get<PlayerSession>(player);
+	auto& player_session = tls.registry.get<PlayerSession>(player);
 	auto gate_it = g_gate_nodes.find(player_session.gate_node_id());
 	if (gate_it == g_gate_nodes.end())
 	{
@@ -529,7 +530,7 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
         LOG_ERROR << "game crash" << request->game_node_id();
         return;
 	}
-	auto try_gs = registry.try_get<GsNodePtr>(game_it->second);
+	auto try_gs = tls.registry.try_get<GsNodePtr>(game_it->second);
 	if (nullptr == try_gs)
 	{
 		LOG_ERROR << "game crash" << request->game_node_id();
@@ -539,7 +540,7 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 	GateNodePlayerEnterGsRequest rq;
 	rq.set_session_id(player_session.session_id());
 	rq.set_gs_node_id(player_session.gs_node_id());
-	registry.get<GateNodePtr>(gate_it->second)->session_.CallMethod(GateServicePlayerEnterGsMethodDesc, &rq);
+	tls.registry.get<GateNodePtr>(gate_it->second)->session_.CallMethod(GateServicePlayerEnterGsMethodDesc, &rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE 

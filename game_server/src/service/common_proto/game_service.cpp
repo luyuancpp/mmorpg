@@ -2,7 +2,7 @@
 #include "src/network/rpc_msg_route.h"
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_server.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"
@@ -47,7 +47,7 @@ void GameServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
         LOG_ERROR << "EnterGs emplace player not found " << player_id;
         return;
     }
-    registry.emplace<EnterGsInfo>(rit.first->second).set_controller_node_id(request->controller_node_id());
+    tls.registry.emplace<EnterGsInfo>(rit.first->second).set_controller_node_id(request->controller_node_id());
     g_player_data_redis_system->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
 
 ///<<< END WRITING YOUR CODE 
@@ -131,7 +131,7 @@ void GameServiceImpl::ClientSend2Player(::google::protobuf::RpcController* contr
         LOG_INFO << "GatePlayerService session not found msg id " << request->msg_id();
         return;
     }
-    auto try_player_id = registry.try_get<Guid>(cit->second);
+    auto try_player_id = tls.registry.try_get<Guid>(cit->second);
     if (nullptr == try_player_id)
     {
         LOG_ERROR << "GatePlayerService player not loading";
@@ -182,14 +182,14 @@ void GameServiceImpl::GateConnectGs(::google::protobuf::RpcController* controlle
 {
 ///<<< BEGIN WRITING YOUR CODE 
     InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-    for (auto e : registry.view<RpcServerConnection>())
+    for (auto e : tls.registry.view<RpcServerConnection>())
     {
-        auto& conn = registry.get<RpcServerConnection>(e).conn_;
+        auto& conn = tls.registry.get<RpcServerConnection>(e).conn_;
         if (conn->peerAddress().toIpPort() != session_addr.toIpPort())
         {
             continue;
         }
-        auto& gate_node = *registry.emplace<GateNodePtr>(e, std::make_shared<GateNodePtr::element_type>(conn));
+        auto& gate_node = *tls.registry.emplace<GateNodePtr>(e, std::make_shared<GateNodePtr::element_type>(conn));
         gate_node.node_info_.set_node_id(request->gate_node_id());
         gate_node.node_info_.set_node_type(kGateNode);
         g_gate_nodes->emplace(request->gate_node_id(), e);
