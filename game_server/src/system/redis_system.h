@@ -14,5 +14,4 @@ private:
     HiredisPtr hiredis_;
 };
 
-extern RedisSystem g_redis_system;
 

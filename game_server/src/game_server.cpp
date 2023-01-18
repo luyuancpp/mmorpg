@@ -21,6 +21,7 @@
 #include "src/service/logic_proto/server_service.h"
 #include "src/service/common_proto_replied/server_replied.h"
 #include "src/service/common_proto_replied/replied_dispathcer.h"
+#include "src/thread_local/game_thread_local_storage.h"
 
 #include "src/network/node_info.h"
 #include "src/pb/pbc/msgmap.h"
@@ -80,7 +81,7 @@ void GameServer::ServerInfo(const ::servers_info_data& info)
     lobby_node_ = std::make_unique<RpcClient>(loop_, lobby_addr);
     
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
-    g_redis_system.Init(serverAddr);
+    game_tls.redis_system.Init(serverAddr);
 
     {
         StartGSRequest rq;

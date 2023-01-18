@@ -4,7 +4,6 @@
 
 #include "player_common_system.h"
 
-RedisSystem g_redis_system;
 
 using namespace muduo;
 using namespace muduo::net;
