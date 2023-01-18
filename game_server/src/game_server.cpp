@@ -81,7 +81,7 @@ void GameServer::ServerInfo(const ::servers_info_data& info)
     lobby_node_ = std::make_unique<RpcClient>(loop_, lobby_addr);
     
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
-    game_tls.redis_system.Init(serverAddr);
+    game_tls.redis_system().Init(serverAddr);
 
     {
         StartGSRequest rq;
