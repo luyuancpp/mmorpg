@@ -5,7 +5,7 @@
 #include "entt/src/entt/entt.hpp"
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/network/gate_node.h"
 
 void Send2Gs(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& message,   uint32_t gs_node_id);

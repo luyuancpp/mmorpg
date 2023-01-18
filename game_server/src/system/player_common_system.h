@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/redis_client/redis_client.h"
 
 #include "src/pb/pbc/common_proto/mysql_database_table.pb.h"

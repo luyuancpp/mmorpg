@@ -11,7 +11,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/network/rpc_client.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/service/common_proto_replied/replied_dispathcer.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"

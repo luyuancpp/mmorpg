@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 #include "src/game_logic/tips_id.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 
 #include "event_proto/scene_event.pb.h"
 #include "logic_proto/scene_server_player.pb.h"

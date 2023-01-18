@@ -2,7 +2,7 @@
 #include "src/network/rpc_msg_route.h"
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/game_server.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"

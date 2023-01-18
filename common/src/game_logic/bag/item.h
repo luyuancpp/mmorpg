@@ -1,7 +1,7 @@
 #pragma once
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/util/snow_flake.h"
 
 #include "src/pb/pbc/component_proto/item_base_comp.pb.h"

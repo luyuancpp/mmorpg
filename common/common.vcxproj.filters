@@ -97,7 +97,7 @@
     <ClCompile Include="src\pb\pbc\common_proto\node_common.pb.cc" />
     <ClCompile Include="src\pb\pbc\common_proto\db_base.pb.cc" />
     <ClCompile Include="src\network\rpc_msg_route.cpp" />
-    <ClCompile Include="src\game_logic\game_registry.cpp" />
+    <ClCompile Include="src\game_logic\thread_local\game_registry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -220,6 +220,6 @@
     <ClInclude Include="src\pb\pbc\service_method\teammethod.h" />
     <ClInclude Include="src\pb\pbc\common_proto\node_common.pb.h" />
     <ClInclude Include="src\pb\pbc\common_proto\db_base.pb.h" />
-    <ClInclude Include="src\game_logic\game_registry.h" />
+    <ClInclude Include="src\game_logic\thread_local\game_registry.h" />
   </ItemGroup>
 </Project>

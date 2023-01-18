@@ -1,7 +1,7 @@
 #pragma once
 #include "muduo/net/TcpConnection.h"
 
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/network/node_info.h"
 #include "src/network/server_component.h"
 

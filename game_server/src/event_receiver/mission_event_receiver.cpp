@@ -1,7 +1,7 @@
 #include "mission_event_receiver.h"
 #include "event_proto/mission_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/game_logic/missions/missions_base.h"
 ///<<< END WRITING YOUR CODE
 void MissionEventReceiverReceiver::Register(entt::dispatcher& dispatcher)

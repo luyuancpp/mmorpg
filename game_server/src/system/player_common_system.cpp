@@ -1,7 +1,7 @@
 #include "player_common_system.h"
 
 #include "src/game_logic/player/player_list.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/network/controller_node.h"

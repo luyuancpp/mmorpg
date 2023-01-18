@@ -5,7 +5,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/mainscene_config.h"
 #include "src/game_config/lobby_config.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
 #include "src/network/controller_node.h"

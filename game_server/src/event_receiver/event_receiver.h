@@ -1,5 +1,5 @@
 #pragma once
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 
 class EventReceiver
 {
