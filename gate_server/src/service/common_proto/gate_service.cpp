@@ -5,10 +5,10 @@
 
 #include "src/network/gs_node.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/network/gate_player_list.h"
 #include "src/gate_server.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/rpc_msg_route.h"
+#include "src/thread_local/gate_thread_local_storage.h"
 
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -69,8 +69,8 @@ void GateServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controlle
 {
 ///<<< BEGIN WRITING YOUR CODE 
 
-	auto it = g_client_sessions_->find(request->session_id());
-	if (it == g_client_sessions_->end())
+	auto it = gate_tls.sessions_.find(request->session_id());
+	if (it == gate_tls.sessions_.end())
 	{
 		LOG_INFO << "connid not found   " << request->session_id();
 		return;
@@ -87,8 +87,8 @@ void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controlle
 {
 ///<<< BEGIN WRITING YOUR CODE 
 	auto session_id = request->ex().session_id();
-	auto it = g_client_sessions_->find(session_id);
-	if (it == g_client_sessions_->end())
+	auto it = gate_tls.sessions_.find(session_id);
+	if (it == gate_tls.sessions_.end())
 	{
 		LOG_ERROR << "connid not found  player id " << request->ex().player_id() << "," << session_id;
 		return;
@@ -103,7 +103,7 @@ void GateServiceImpl::KickConnByController(::google::protobuf::RpcController* co
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
-	g_client_sessions_->erase(request->session_id());
+	gate_tls.sessions_.erase(request->session_id());
 	LOG_INFO << "connid be kick " << request->session_id();
 ///<<< END WRITING YOUR CODE 
 }
