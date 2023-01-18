@@ -99,7 +99,7 @@ def genheadfile(filename):
     newstr = '#pragma once\n'
     newstr += '#include <sol/sol.hpp>\n'  
     newstr += '#include "player_service.h"\n'  
-    newstr += '#include "src/game_logic/game_registry.h"\n'  
+    newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'  
     newstr += 'extern thread_local sol::state g_lua;\n'
     newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
     for i in range(0, len(headfun)) :             

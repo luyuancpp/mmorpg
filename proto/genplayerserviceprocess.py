@@ -161,7 +161,7 @@ def gencppfile(filename, dirpath):
     cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
     newcppfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.cpp').replace(protodir, '')
     newstr = '#include "'  + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
-    newstr += '#include "src/game_logic/game_registry.h"\n'
+    newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
     newstr += '#include "src/network/message_system.h"\n'
     serviceidx = 0
     try:

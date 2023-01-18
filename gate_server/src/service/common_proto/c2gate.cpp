@@ -12,6 +12,7 @@
 #include "src/network/login_node.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/rpc_msg_route.h"
+#include "src/thread_local/gate_thread_local_storage.h"
 #include "src/util/random.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
@@ -58,8 +59,8 @@ RpcClientPtr& ClientReceiver::get_login_node()
 RpcClientPtr& ClientReceiver::get_login_node(uint64_t session_id)
 {
     static RpcClientPtr empty_session;
-    auto session_it = g_client_sessions_->find(session_id);
-    if (g_client_sessions_->end() == session_it)
+    auto session_it = gate_tls.sessions_.find(session_id);
+    if (gate_tls.sessions_.end() == session_it)
     {
         return empty_session;
     }
@@ -113,19 +114,19 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             rq.set_session_id(session_id);
             g_gate_node->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnectMethodDesc, &rq);
         }
-        g_client_sessions_->erase(session_id);
+        gate_tls.sessions_.erase(session_id);
     }
     else
     {
         auto id = g_server_sequence_.Generate();
-        while (g_client_sessions_->find(id) != g_client_sessions_->end())
+        while (gate_tls.sessions_.find(id) != gate_tls.sessions_.end())
         {
             id = g_server_sequence_.Generate();
         }
         conn->setContext(id);
         GateClient gc;
         gc.conn_ = conn;
-        g_client_sessions_->emplace(id, std::move(gc));
+        gate_tls.sessions_.emplace(id, std::move(gc));
     }
 }
 
@@ -161,8 +162,8 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     muduo::Timestamp)
 {
     auto session_id = tcp_session_id(conn);
-	auto it = g_client_sessions_->find(session_id);
-	if (it == g_client_sessions_->end())
+	auto it = gate_tls.sessions_.find(session_id);
+	if (it == gate_tls.sessions_.end())
 	{
 		return;
 	}

@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\thread_local\gate_thread_local_storage.cpp" />
     <ClCompile Include="src\network\login_node.cpp" />
     <ClCompile Include="src\network\gate_player_list.cpp" />
     <ClCompile Include="src\gate_server.cpp" />
@@ -34,6 +35,7 @@
     <ClCompile Include="src\service\open_service.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\thread_local\gate_thread_local_storage.h" />
     <ClInclude Include="src\network\gs_node.h" />
     <ClInclude Include="src\network\login_node.h" />
     <ClInclude Include="src\network\gate_player_list.h" />

@@ -15,5 +15,3 @@ struct GateClient
 
 using ClientSessions = std::unordered_map<uint64_t, GateClient>;
 
-extern ClientSessions* g_client_sessions_;
-
