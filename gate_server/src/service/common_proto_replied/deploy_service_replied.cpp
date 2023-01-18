@@ -2,8 +2,8 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/gate_server.h"
-#include "src/network/login_node.h"
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
+#include "src/thread_local/gate_thread_local_storage.h"
 
 extern ServerSequence32 g_server_sequence_;
 
@@ -18,7 +18,7 @@ void OnLoginNodeInfoReplied(const TcpConnectionPtr& conn, const GruoupLoginNodeR
             continue;
         }
         auto& login_info = it;
-        auto it = g_login_nodes.emplace(login_info.id(), LoginNode());
+        auto it = gate_tls.login_nodes.emplace(login_info.id(), LoginNode());
         if (!it.second)
         {
             LOG_ERROR << "login server connected" << login_info.DebugString();

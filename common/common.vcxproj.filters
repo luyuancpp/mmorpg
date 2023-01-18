@@ -99,6 +99,7 @@
     <ClCompile Include="src\network\rpc_msg_route.cpp" />
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\game_logic\thread_local\thread_local_storage.cpp" />
+    <ClCompile Include="common_thread_local_storage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -223,5 +224,6 @@
     <ClInclude Include="src\pb\pbc\common_proto\db_base.pb.h" />
     <ClInclude Include="src\util\game_registry.h" />
     <ClInclude Include="src\game_logic\thread_local\thread_local_storage.h" />
+    <ClInclude Include="common_thread_local_storage.h" />
   </ItemGroup>
 </Project>

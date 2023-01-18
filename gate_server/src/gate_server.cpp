@@ -9,12 +9,11 @@
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
 #include "src/service/common_proto_replied/replied_dispathcer.h"
+#include "src/thread_local/gate_thread_local_storage.h"
 
 #include "game_service.pb.h"
 
 GateServer* g_gate_node = nullptr; 
-
-
 
 void GateServer::LoadConfig()
 {
@@ -123,7 +122,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             }
         }
 
-        for (auto& it : g_login_nodes)
+        for (auto& it : gate_tls.login_nodes)
         {
             LOG_INFO << it.second.login_session_->peer_addr().toIpPort() << "," << conn->peerAddress().toIpPort();
 			if (!IsSameAddr(it.second.login_session_->peer_addr(), conn->peerAddress()))
@@ -136,7 +135,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             }
             else
             {
-                g_login_nodes.erase(it.first);
+                gate_tls.login_nodes.erase(it.first);
                 break;
             }
         }

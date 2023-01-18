@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="common_thread_local_storage.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
     <ClCompile Include="src\game_config\condition_config.cpp" />
     <ClCompile Include="src\game_config\deploy_json.cpp" />
@@ -251,6 +252,7 @@
     <ClCompile Include="src\network\rpc_server.cc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="common_thread_local_storage.h" />
     <ClInclude Include="src\game_config\all_config.h" />
     <ClInclude Include="src\game_config\condition_config.h" />
     <ClInclude Include="src\game_config\deploy_json.h" />
