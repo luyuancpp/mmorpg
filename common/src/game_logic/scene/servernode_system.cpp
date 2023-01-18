@@ -1,7 +1,7 @@
 #include "servernode_system.h"
 
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 
 //从当前符服务器中找到一个对应场景人数最少的
 template<typename ServerType,typename ServerStatus, typename ServerPressure>

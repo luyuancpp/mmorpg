@@ -10,7 +10,7 @@
 #include "src/comp/account_player.h"
 #include "src/controller_server.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/comp/player_list.h"
 #include "src/game_logic/comp/account_comp.h"

@@ -1,7 +1,7 @@
 #include "gate_service_replied.h"
 
 #include "muduo/base/Logging.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/network/session.h"
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"

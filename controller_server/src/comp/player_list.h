@@ -1,7 +1,7 @@
 #pragma once
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 
 using PlayerListMap = std::unordered_map<Guid, EntityPtr>;
 extern thread_local PlayerListMap  g_players;

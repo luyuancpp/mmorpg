@@ -4,7 +4,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/network/gs_node.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/network/gate_player_list.h"
 #include "src/gate_server.h"
 #include "src/game_logic/tips_id.h"

@@ -3,7 +3,7 @@
 #include <array>
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/game_logic/missions/missions_config_template.h"
 
 #include "component_proto/mission_comp.pb.h"

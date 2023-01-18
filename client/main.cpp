@@ -3,7 +3,7 @@
 #include "google/protobuf/util/json_util.h"
 
 #include "src/util/file2string.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 #include "src/luacpp/lua_module.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic_proto/player_service.h"

@@ -5,7 +5,7 @@
 #include "google/protobuf/message.h"
 #include "google/protobuf/service.h"
 
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/thread_local/game_registry.h"
 
 
 class PlayerServiceReplied
