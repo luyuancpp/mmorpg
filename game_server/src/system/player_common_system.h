@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/util/game_registry.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/redis_client/redis_client.h"
 

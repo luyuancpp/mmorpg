@@ -5,7 +5,7 @@
 #include "entt/src/entt/entt.hpp"
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/util/game_registry.h"
 #include "src/network/player_session.h"
 
 template <typename RepliedCallback, typename MethodParam, typename StubMethod, typename StubType>

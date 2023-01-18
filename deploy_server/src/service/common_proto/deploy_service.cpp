@@ -4,7 +4,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/deploy_server.h"
-#include "src/game_logic/thread_local/game_registry.h"
+#include "src/util/game_registry.h"
 #include "src/deploy_variable.h"
 #include "src/game_logic/tips_id.h"
 
