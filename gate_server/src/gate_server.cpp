@@ -122,7 +122,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             }
         }
 
-        for (auto& it : gate_tls.login_nodes)
+        for (auto& it : gate_tls.login_nodes())
         {
             LOG_INFO << it.second.login_session_->peer_addr().toIpPort() << "," << conn->peerAddress().toIpPort();
 			if (!IsSameAddr(it.second.login_session_->peer_addr(), conn->peerAddress()))
@@ -135,7 +135,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             }
             else
             {
-                gate_tls.login_nodes.erase(it.first);
+                gate_tls.login_nodes().erase(it.first);
                 break;
             }
         }
