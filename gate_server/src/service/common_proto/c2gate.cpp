@@ -42,9 +42,9 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
 
 RpcClientPtr& ClientReceiver::get_login_node()
 {
-    auto index = Random::GetSingleton().Rand<std::size_t>(0, gate_tls.login_nodes.size());
+    auto index = Random::GetSingleton().Rand<std::size_t>(0, gate_tls.login_nodes().size());
     std::size_t i = 0;
-    for (auto& it : gate_tls.login_nodes)
+    for (auto& it : gate_tls.login_nodes())
     {
         if (i < index)
         {
@@ -53,14 +53,14 @@ RpcClientPtr& ClientReceiver::get_login_node()
         }
         return it.second.login_session_;
     }
-    return gate_tls.login_nodes.begin()->second.login_session_;
+    return gate_tls.login_nodes().begin()->second.login_session_;
 }
 
 RpcClientPtr& ClientReceiver::get_login_node(uint64_t session_id)
 {
     static RpcClientPtr empty_session;
-    auto session_it = gate_tls.sessions.find(session_id);
-    if (gate_tls.sessions.end() == session_it)
+    auto session_it = gate_tls.sessions().find(session_id);
+    if (gate_tls.sessions().end() == session_it)
     {
         return empty_session;
     }
@@ -68,8 +68,8 @@ RpcClientPtr& ClientReceiver::get_login_node(uint64_t session_id)
     {
         session_it->second.login_node_id_ = find_valid_login_node_id(session_id);
     }
-    auto login_node_it = gate_tls.login_nodes.find(session_it->second.login_node_id_);
-    if (gate_tls.login_nodes.end() == login_node_it)
+    auto login_node_it = gate_tls.login_nodes().find(session_it->second.login_node_id_);
+    if (gate_tls.login_nodes().end() == login_node_it)
     {
         LOG_ERROR << "player login server not found : " << session_it->second.login_node_id_;
         return empty_session;
@@ -79,9 +79,9 @@ RpcClientPtr& ClientReceiver::get_login_node(uint64_t session_id)
 
 uint32_t ClientReceiver::find_valid_login_node_id(uint64_t session_id)
 {
-	auto index = session_id % gate_tls.login_nodes.size();
+	auto index = session_id % gate_tls.login_nodes().size();
 	std::size_t i = 0;
-	for (auto& it : gate_tls.login_nodes)
+	for (auto& it : gate_tls.login_nodes())
 	{
 		if (i < index)
 		{
@@ -114,19 +114,19 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             rq.set_session_id(session_id);
             g_gate_node->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnectMethodDesc, &rq);
         }
-        gate_tls.sessions.erase(session_id);
+        gate_tls.sessions().erase(session_id);
     }
     else
     {
         auto id = g_server_sequence_.Generate();
-        while (gate_tls.sessions.find(id) != gate_tls.sessions.end())
+        while (gate_tls.sessions().find(id) != gate_tls.sessions().end())
         {
             id = g_server_sequence_.Generate();
         }
         conn->setContext(id);
         GateClient gc;
         gc.conn_ = conn;
-        gate_tls.sessions.emplace(id, std::move(gc));
+        gate_tls.sessions().emplace(id, std::move(gc));
     }
 }
 
@@ -162,8 +162,8 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     muduo::Timestamp)
 {
     auto session_id = tcp_session_id(conn);
-	auto it = gate_tls.sessions.find(session_id);
-	if (it == gate_tls.sessions.end())
+	auto it = gate_tls.sessions().find(session_id);
+	if (it == gate_tls.sessions().end())
 	{
 		return;
 	}

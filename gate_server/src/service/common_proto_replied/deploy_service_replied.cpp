@@ -18,7 +18,7 @@ void OnLoginNodeInfoReplied(const TcpConnectionPtr& conn, const GruoupLoginNodeR
             continue;
         }
         auto& login_info = it;
-        auto it = gate_tls.login_nodes.emplace(login_info.id(), LoginNode());
+        auto it = gate_tls.login_nodes().emplace(login_info.id(), LoginNode());
         if (!it.second)
         {
             LOG_ERROR << "login server connected" << login_info.DebugString();
