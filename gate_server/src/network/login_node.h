@@ -16,4 +16,4 @@ struct LoginNode
 };
 
 using LoginNodes = std::unordered_map<uint32_t, LoginNode>;
-extern thread_local LoginNodes g_login_nodes;
+
