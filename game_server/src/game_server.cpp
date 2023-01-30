@@ -77,7 +77,7 @@ void GameServer::ServerInfo(const ::servers_info_data& info)
 {
     auto& lobby_info = info.lobby_info();
     InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
-   
+    
     lobby_node_ = std::make_unique<RpcClient>(loop_, lobby_addr);
     
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
@@ -128,7 +128,7 @@ void GameServer::OnAcquireLobbyInfoReplied(LobbyInfoResponse& replied)
 	{
 		auto& controller_node_info = lobby_controllers.controllers(i);
 		InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
-		auto it = g_controller_nodes->emplace(controller_node_info.id(), std::make_shared<ControllerNode>());
+		auto it = game_tls.controller_node().emplace(controller_node_info.id(), std::make_shared<ControllerNode>());
 		auto& controller_node = *it.first->second;
 		controller_node.session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, controller_addr);
 		controller_node.node_info_.set_node_id(controller_node_info.id());
@@ -251,7 +251,7 @@ void GameServer::receive(const OnBeConnectedEvent& es)
 			auto gatenode = tls.registry.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
-                g_gate_nodes->erase((*gatenode)->node_info_.node_id());
+                game_tls.gate_node().erase((*gatenode)->node_info_.node_id());
 			}
 			tls.registry.destroy(e);
 			break;

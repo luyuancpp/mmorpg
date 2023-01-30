@@ -13,6 +13,7 @@
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/system/player_common_system.h"
+#include "src/thread_local/game_thread_local_storage.h"
 
 #include "c2gate.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
@@ -33,8 +34,8 @@ void GameServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
         //连续顶号进入，还在加载中的话继续加载
     auto player_id = request->player_id();
     PlayerCommonSystem::RemovePlayereSession(player_id);
-    auto p_it = g_players->find(player_id);
-    if (p_it != g_players->end())//已经在线，直接进入,判断是需要发送哪些信息
+    auto p_it = game_tls.player_list().find(player_id);
+    if (p_it != game_tls.player_list().end())//已经在线，直接进入,判断是需要发送哪些信息
     {
         EnterGsInfo enter_info;
         enter_info.set_controller_node_id(request->controller_node_id());
@@ -59,8 +60,8 @@ void GameServiceImpl::Send2Player(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
-    auto it = g_players->find(request->ex().player_id());
-    if (it == g_players->end())
+    auto it = game_tls.player_list().find(request->ex().player_id());
+    if (it == game_tls.player_list().end())
     {
         LOG_ERROR << "PlayerService player not found " << request->ex().player_id() << ","
             << request->descriptor()->full_name() << " msgid " << request->msg().msg_id();
@@ -125,8 +126,8 @@ void GameServiceImpl::ClientSend2Player(::google::protobuf::RpcController* contr
         LOG_ERROR << "GatePlayerService service not found " << request->msg_id();
         return;
     }
-    auto cit = g_gate_sessions->find(request->session_id());
-    if (cit == g_gate_sessions->end())
+    auto cit = game_tls.gate_sessions().find(request->session_id());
+    if (cit == game_tls.gate_sessions().end())
     {
         LOG_INFO << "GatePlayerService session not found msg id " << request->msg_id();
         return;
@@ -137,8 +138,8 @@ void GameServiceImpl::ClientSend2Player(::google::protobuf::RpcController* contr
         LOG_ERROR << "GatePlayerService player not loading";
         return;
     }
-    auto pit = g_players->find(*try_player_id);
-    if (pit == g_players->end())
+    auto pit = game_tls.player_list().find(*try_player_id);
+    if (pit == game_tls.player_list().end())
     {
         LOG_ERROR << "GatePlayerService player not found" << *try_player_id;
         return;
@@ -162,15 +163,15 @@ void GameServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE 
         //异步加载过程中断开了？
     PlayerCommonSystem::RemovePlayereSession(request->player_id());
-    auto it = g_players->find(request->player_id());
-    if (it == g_players->end())
+    auto it = game_tls.player_list().find(request->player_id());
+    if (it == game_tls.player_list().end())
     {
         return;
     }
     LeaveSceneParam lp;
     lp.leaver_ = it->second;
     //ScenesSystem::LeaveScene(lp);
-    g_players->erase(it);//todo  应该是controller 通知过来
+    game_tls.player_list().erase(it);//todo  应该是controller 通知过来
 
 ///<<< END WRITING YOUR CODE 
 }
@@ -192,7 +193,7 @@ void GameServiceImpl::GateConnectGs(::google::protobuf::RpcController* controlle
         auto& gate_node = *tls.registry.emplace<GateNodePtr>(e, std::make_shared<GateNodePtr::element_type>(conn));
         gate_node.node_info_.set_node_id(request->gate_node_id());
         gate_node.node_info_.set_node_type(kGateNode);
-        g_gate_nodes->emplace(request->gate_node_id(), e);
+        game_tls.gate_node().emplace(request->gate_node_id(), e);
         LOG_INFO << "GateConnectGs gate node id " << request->gate_node_id();
         break;
     }
@@ -215,8 +216,8 @@ void GameServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
-    auto it = g_players->find(request->ex().player_id());
-    if (it == g_players->end())
+    auto it = game_tls.player_list().find(request->ex().player_id());
+    if (it == game_tls.player_list().end())
     {
         LOG_ERROR << "PlayerService player not found " << request->ex().player_id() << ","
             << request->descriptor()->full_name() << " msgid " << request->msg().msg_id();

@@ -7,8 +7,9 @@
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
 #include "src/pb/pbc/msgmap.h"
-#include "src/pb/pbc//service_method/controller_servicemethod.h"
-#include "src/pb/pbc//service_method/gate_servicemethod.h"
+#include "src/pb/pbc/service_method/controller_servicemethod.h"
+#include "src/pb/pbc/service_method/gate_servicemethod.h"
+#include "src/thread_local/game_thread_local_storage.h"
 
 #include "gate_service.pb.h"
 #include "controller_service.pb.h"
@@ -16,8 +17,8 @@
 
 void Send2Player(const google::protobuf::Message& message, Guid player_id)
 {
-	auto it = g_players->find(player_id);
-	if (it == g_players->end())
+	auto it = game_tls.player_list().find(player_id);
+	if (it == game_tls.player_list().end())
 	{
 		LOG_DEBUG << "Send2Player player not found " << player_id;
 		return;
@@ -63,8 +64,8 @@ void Send2Player(const google::protobuf::Message& msg, EntityPtr& player)
 
 void Send2ControllerPlayer(const google::protobuf::Message& message, Guid player_id)
 {
-	auto it = g_players->find(player_id);
-	if (it == g_players->end())
+	auto it = game_tls.player_list().find(player_id);
+	if (it == game_tls.player_list().end())
 	{
 		LOG_DEBUG << " Send2ControllerPlayer player not found " << player_id;
 		return;
@@ -109,8 +110,8 @@ void Send2ControllerPlayer(const google::protobuf::Message& message, EntityPtr& 
 
 void Send2Controller(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& messag, uint32_t controller_node_id)
 {
-	auto controller_it = g_controller_nodes->find(controller_node_id);
-	if (controller_it == g_controller_nodes->end())
+	auto controller_it = game_tls.controller_node().find(controller_node_id);
+	if (controller_it == game_tls.controller_node().end())
 	{
 		LOG_ERROR << "Send2ControllerPlayer controller not found" << controller_node_id;
 		return;
@@ -120,8 +121,8 @@ void Send2Controller(const ::google::protobuf::MethodDescriptor* method, const g
 
 void Send2Gate(const google::protobuf::Message& messag, uint32_t gate_node_id)
 {
-	auto gate_it = g_gate_nodes->find(gate_node_id);
-	if (gate_it == g_gate_nodes->end())
+	auto gate_it = game_tls.gate_node().find(gate_node_id);
+	if (gate_it == game_tls.gate_node().end())
 	{
 		LOG_ERROR << "Send2Gate gate not found" << gate_node_id;
 		return;
