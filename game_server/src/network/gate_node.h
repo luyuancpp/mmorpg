@@ -22,9 +22,8 @@ struct GateNode
 using GateNodePtr = std::shared_ptr<GateNode>;
 using GateNodeWPtr = std::weak_ptr<GateNode>;
 using GateNodes = std::unordered_map<uint32_t, entt::entity>;
-extern GateNodes* g_gate_nodes;
 
 using GateSessionList = std::unordered_map<uint64_t, entt::entity>;
 using SessionPlayerList = std::unordered_map <uint64_t, uint64_t>;
-extern GateSessionList* g_gate_sessions;
+
 

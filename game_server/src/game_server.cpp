@@ -201,7 +201,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
         );
     }
 
-    for (auto& it : *g_controller_nodes)
+    for (auto& it : game_tls.controller_node())
     {
         auto& controller_node = it.second;
         auto& controller_session = controller_node->session_;
