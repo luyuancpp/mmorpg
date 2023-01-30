@@ -12,6 +12,7 @@
 #include "src/network/session.h"
 #include "src/network/gate_node.h"
 #include "src/system/player_common_system.h"
+#include "src/thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
@@ -25,8 +26,8 @@ void ServerPlayerLoginServiceImpl::UpdateSessionController2Gs(entt::entity playe
 ///<<< BEGIN WRITING YOUR CODE
     PlayerCommonSystem::RemovePlayereSession(tls.registry.get<Guid>(player));
     auto gate_node_id = node_id(request->session_id());
-    auto gate_it = g_gate_nodes->find(gate_node_id);
-    if (gate_it == g_gate_nodes->end())//test
+    auto gate_it = game_tls.gate_node().find(gate_node_id);
+    if (gate_it == game_tls.gate_node().end())//test
     {
         LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
         return;
@@ -37,7 +38,7 @@ void ServerPlayerLoginServiceImpl::UpdateSessionController2Gs(entt::entity playe
         LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
         return;
     }
-    g_gate_sessions->emplace(request->session_id(), player);
+    game_tls.gate_sessions().emplace(request->session_id(), player);
     tls.registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//登录更新gate
     tls.registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 ///<<< END WRITING YOUR CODE

@@ -7,6 +7,7 @@
 #include "src/network/controller_node.h"
 #include "src/network/session.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
+#include "src/thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
@@ -29,7 +30,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 		LOG_INFO << "player disconnect" << player_id;
 		return;
     }
-    auto ret = g_players->emplace(player_id, EntityPtr());
+    auto ret = game_tls.player_list().emplace(player_id, EntityPtr());
 	if (!ret.second)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
@@ -54,7 +55,7 @@ void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& me
 	Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
 	Send2ControllerPlayer(save_complete_message, player_id);
 
-	g_players->erase(player_id);//存储完毕从gs删除玩家
+	game_tls.player_list().erase(player_id);//存储完毕从gs删除玩家
 }
 
 void PlayerCommonSystem::SavePlayer(entt::entity player)
@@ -71,8 +72,8 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 //考虑: 没load 完再次进入别的gs
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
-	auto controller_it = g_controller_nodes->find(enter_info.controller_node_id());
-	if (controller_it == g_controller_nodes->end())
+	auto controller_it = game_tls.controller_node().find(enter_info.controller_node_id());
+	if (controller_it == game_tls.controller_node().end())
 	{
 		LOG_ERROR << "EnterGs controller not found" << enter_info.controller_node_id();
 		return;
@@ -112,8 +113,8 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
 //todo 检测
 void PlayerCommonSystem::RemovePlayereSession(Guid player_id)
 {
-    auto p_it = g_players->find(player_id);
-    if (p_it == g_players->end())//已经在线，直接进入
+    auto p_it = game_tls.player_list().find(player_id);
+    if (p_it == game_tls.player_list().end())//已经在线，直接进入
     {
         return;
     }
@@ -127,5 +128,5 @@ void PlayerCommonSystem::RemovePlayereSession(entt::entity player)
     {
         return;
     }
-    g_gate_sessions->erase(try_get_session->session_id());
+    game_tls.gate_sessions().erase(try_get_session->session_id());
 }

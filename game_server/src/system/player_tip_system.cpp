@@ -1,6 +1,7 @@
 #include "player_tip_system.h"
 
 #include "src/game_logic/player/player_list.h"
+#include "src/thread_local/game_thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/message_system.h"
 
@@ -19,8 +20,8 @@ void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVect
 
 void PlayerTipSystem::Tip(Guid player_id, uint32_t tip_id, const StringVector& str_param)
 {
-	auto it = g_players->find(player_id);
-	if (it == g_players->end())
+	auto it = game_tls.player_list().find(player_id);
+	if (it == game_tls.player_list().end())
 	{
 		return;
 	}
