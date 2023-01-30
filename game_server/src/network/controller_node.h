@@ -21,6 +21,5 @@ struct ControllerNode
 };
 using ControllerNodePtr = std::shared_ptr<ControllerNode>;
 using ControllerNodes = std::unordered_map<uint32_t, ControllerNodePtr>;
-extern ControllerNodes* g_controller_nodes;//controller 不会删除，因为不会和gs一样根据负载增加减少，只走底层的自动重连
 
 

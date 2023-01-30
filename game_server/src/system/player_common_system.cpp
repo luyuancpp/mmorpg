@@ -18,14 +18,10 @@
 
 
 
-PlayerDataRedisSystemPtr g_player_data_redis_system;
-
-std::unordered_map<uint64_t, EntityPtr> g_async_player_data;
-
 void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& message)
 {
-    auto async_it = g_async_player_data.find(player_id);
-    if (async_it == g_async_player_data.end())
+    auto async_it = game_tls.async_player_data().find(player_id);
+    if (async_it == game_tls.async_player_data().end())
     {
 		LOG_INFO << "player disconnect" << player_id;
 		return;
@@ -34,7 +30,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 	if (!ret.second)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
-		g_async_player_data.erase(async_it);
+		game_tls.async_player_data().erase(async_it);
 		return;
 	}
     // on loaded db
@@ -46,7 +42,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
     // on load db complete
 
     EnterGs(player, tls.registry.get<EnterGsInfo>(async_it->second));
-    g_async_player_data.erase(async_it);
+	game_tls.async_player_data().erase(async_it);
 }
 
 void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& message)
@@ -66,7 +62,7 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 	pb->set_player_id(tls.registry.get<Guid>(player));
 	pb->mutable_pos()->CopyFrom(tls.registry.get<Vector3>(player));
 
-	g_player_data_redis_system->Save(pb, tls.registry.get<Guid>(player));
+	game_tls.player_data_redis_system()->Save(pb, tls.registry.get<Guid>(player));
 }
 
 //考虑: 没load 完再次进入别的gs

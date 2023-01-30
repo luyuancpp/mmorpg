@@ -7,8 +7,6 @@
 #include "src/pb/pbc/common_proto/mysql_database_table.pb.h"
 
 using PlayerDataRedisSystemPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
-extern PlayerDataRedisSystemPtr g_player_data_redis_system;
-extern std::unordered_map<uint64_t, EntityPtr> g_async_player_data;
 
 class EnterGsInfo;
 
