@@ -36,6 +36,9 @@
     <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\thread_local\lobby_thread_local_storage.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\network\controller_node.h">
@@ -54,6 +57,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thread_local\lobby_thread_local_storage.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
