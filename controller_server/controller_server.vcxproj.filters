@@ -105,6 +105,9 @@
     <ClCompile Include="src\service\common_proto_replied\gate_service_replied.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\thread_local\controller_thread_local_storage.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\controller_server.h">
@@ -198,6 +201,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\common_proto_replied\gate_service_replied.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thread_local\controller_thread_local_storage.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
