@@ -4,7 +4,7 @@
 
 #include "src/common_type/common_type.h"
 
-struct GateClient
+struct Session
 {
 	static const uint32_t kInvalidNodeId{ UINT32_MAX };
     bool ValidLogin()const { return login_node_id_ != kInvalidNodeId; }
@@ -13,5 +13,5 @@ struct GateClient
 	muduo::net::TcpConnectionPtr conn_;
 };
 
-using ClientSessions = std::unordered_map<uint64_t, GateClient>;
+using ClientSessions = std::unordered_map<uint64_t, Session>;
 

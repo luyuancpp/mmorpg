@@ -6,16 +6,16 @@
 
 void OnServerInfoReplied(const TcpConnectionPtr& conn, const ServerInfoResponsePtr& replied, Timestamp timestamp)
 {
-    g_gs->ServerInfo(replied->info());
+    g_game_node->ServerInfo(replied->info());
 }
 
 void StartGsDeployReplied(const TcpConnectionPtr& conn, const StartGSResponsePtr& replied, Timestamp timestamp)
 {
-    g_gs->StartGsDeployReplied(*replied);
+    g_game_node->StartGsDeployReplied(*replied);
 }
 
 
 void OnAcquireLobbyInfoReplied(const TcpConnectionPtr& conn, const LobbyInfoResponsePtr& replied, Timestamp timestamp)
 {
-    g_gs->OnAcquireLobbyInfoReplied(*replied);
+    g_game_node->OnAcquireLobbyInfoReplied(*replied);
 }

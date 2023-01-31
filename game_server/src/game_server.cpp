@@ -30,10 +30,10 @@
 
 NodeId node_id()
 {
-    return g_gs->gs_info().id();
+    return g_game_node->gs_info().id();
 }
 
-GameServer* g_gs = nullptr;
+GameServer* g_game_node = nullptr;
 
 GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
@@ -41,7 +41,7 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 
 void GameServer::Init()
 {
-    g_gs = this; 
+    g_game_node = this; 
     EventReceiver::Register(tls.dispatcher);
     InitConfig();
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
