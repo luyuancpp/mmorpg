@@ -61,4 +61,4 @@ private:
     GameServiceImpl gs_service_impl_;
 };
 
-extern GameServer* g_gs;
+extern GameServer* g_game_node;

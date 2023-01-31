@@ -90,7 +90,7 @@ uint32_t ClientReceiver::find_valid_login_node_id(uint64_t session_id)
 		}
 		return it.first;
 	}
-    return GateSession::kInvalidNodeId;
+    return Session::kInvalidNodeId;
 }
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
@@ -124,9 +124,9 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             id = g_server_sequence_.Generate();
         }
         conn->setContext(id);
-        GateSession gs;
-        gs.conn_ = conn;
-        gate_tls.sessions().emplace(id, std::move(gs));
+        Session session;
+        session.conn_ = conn;
+        gate_tls.sessions().emplace(id, std::move(session));
     }
 }
 
