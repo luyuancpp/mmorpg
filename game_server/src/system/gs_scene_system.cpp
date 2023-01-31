@@ -15,7 +15,7 @@
 
 #include "component_proto/player_comp.pb.h"
 
-SceneNavs g_scene_nav;
+
 
 void GsSceneSystem::LoadAllMainSceneNavBin()
 {

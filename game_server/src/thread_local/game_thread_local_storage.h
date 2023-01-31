@@ -5,7 +5,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
 #include "src/system/redis_system.h"
-
+#include "src/comp/gs_scene_comp.h"
 #include "src/pb/pbc/common_proto/mysql_database_table.pb.h"
 
 using PlayerDataRedisSystemPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
@@ -21,6 +21,7 @@ public:
 	PlayerList& player_list() { return player_list_; }
 	PlayerDataRedisSystemPtr& player_data_redis_system() { return player_data_redis_system_; }
 	PlayerEntityPtrList& async_player_data() { return async_player_data_; }
+	SceneNavs& scene_nav() { return g_scene_nav; }
 private:
 	RedisSystem redis_system_;
 	ControllerNodes controller_node_;//controller 不会删除，因为不会和gs一样根据负载增加减少，只走底层的自动重连
@@ -29,6 +30,7 @@ private:
 	PlayerList player_list_;
 	PlayerDataRedisSystemPtr player_data_redis_system_;
 	PlayerEntityPtrList async_player_data_;
+	SceneNavs g_scene_nav;
 };
 
 extern thread_local GameThreadLocalStorage game_tls;

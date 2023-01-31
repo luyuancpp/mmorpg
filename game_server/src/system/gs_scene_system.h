@@ -7,8 +7,6 @@
 struct EnterSceneParam;
 struct CreateSceneBySceneInfoP;
 
-extern SceneNavs g_scene_nav;
-
 class GsSceneSystem
 {
 public:
