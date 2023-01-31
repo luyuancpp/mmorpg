@@ -154,6 +154,7 @@
     <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp" />
     <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp" />
     <ClCompile Include="src\service\logic_proto\lobby_scene.cpp" />
+    <ClCompile Include="src\thread_local\lobby_thread_local_storage.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lobby_server.h" />
@@ -162,6 +163,7 @@
     <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h" />
     <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h" />
     <ClInclude Include="src\service\logic_proto\lobby_scene.h" />
+    <ClInclude Include="src\thread_local\lobby_thread_local_storage.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
