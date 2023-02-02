@@ -23,5 +23,5 @@ using GsNodePtr = std::shared_ptr<GsNode>;
 using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
 using GsNodes = std::unordered_map<uint32_t, entt::entity>;
-extern GsNodes g_game_node;
+
 

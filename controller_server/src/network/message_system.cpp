@@ -14,6 +14,7 @@
 #include "src/pb/pbc/service_method/game_servicemethod.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
 #include "src/service/common_proto_replied/game_service_replied.h"
+#include "src/thread_local/controller_thread_local_storage.h"
 
 #include "gate_service.pb.h"
 #include "game_service.pb.h"
@@ -21,8 +22,8 @@
 
 void Send2Gs(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& message, uint32_t node_id)
 {
-	auto it = g_game_node.find(node_id);
-	if (it == g_game_node.end())
+	auto it = controller_tls.game_node().find(node_id);
+	if (it == controller_tls.game_node().end())
 	{
 		LOG_INFO << "gs not found ->" << node_id;
 		return;
@@ -182,8 +183,8 @@ void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity playe
         LOG_ERROR << "message id not found " << msg.GetDescriptor()->full_name();
         return;
     }
-    auto gs_it = g_game_node.find(try_player_session->gs_node_id());
-    if (gs_it == g_game_node.end())
+    auto gs_it = controller_tls.game_node().find(try_player_session->gs_node_id());
+    if (gs_it == controller_tls.game_node().end())
     {
         return;
     }

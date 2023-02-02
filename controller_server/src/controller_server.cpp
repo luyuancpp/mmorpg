@@ -21,6 +21,7 @@
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
 #include "src/pb/pbc/service_method/lobby_scenemethod.h"
+#include "src/thread_local/controller_thread_local_storage.h"
 
 #include "game_service.pb.h"
 #include "gate_service.pb.h"
@@ -30,7 +31,6 @@ using namespace muduo;
 using namespace net;
 
 ControllerServer* g_controller_node = nullptr;
-
 
 void set_server_squence_node_id(uint32_t node_id);
 
@@ -166,7 +166,7 @@ void ControllerServer::receive(const OnBeConnectedEvent& es)
             {
                 //remove AfterChangeGsEnterScene
 				//todo 
-                g_game_node.erase((*gsnode)->node_info_.node_id());
+                controller_tls.game_node().erase((*gsnode)->node_info_.node_id());
             }
 			auto gatenode = tls.registry.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
