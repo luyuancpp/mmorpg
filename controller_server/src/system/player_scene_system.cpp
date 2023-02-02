@@ -15,6 +15,7 @@
 #include "src/system/player_change_scene.h"
 #include "src/pb/pbc/service_method/lobby_scenemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
+#include "src/thread_local/controller_thread_local_storage.h"
 
 #include "component_proto/player_login_comp.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
@@ -74,8 +75,8 @@ NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
 void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, SessionId session_id)
 {
     //todo gs±ÀÀ£
-	auto it = g_game_node.find(node_id);
-	if (it == g_game_node.end())
+	auto it = controller_tls.game_node().find(node_id);
+	if (it == controller_tls.game_node().end())
 	{
         return;
     }
@@ -150,9 +151,9 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    auto from_gs_it = g_game_node.find((*try_from_scene_gs)->node_id());
-    auto to_gs_it = g_game_node.find((*try_to_scene_gs)->node_id());
-    if (from_gs_it == g_game_node.end() || to_gs_it == g_game_node.end())
+    auto from_gs_it = controller_tls.game_node().find((*try_from_scene_gs)->node_id());
+    auto to_gs_it = controller_tls.game_node().find((*try_to_scene_gs)->node_id());
+    if (from_gs_it == controller_tls.game_node().end() || to_gs_it == controller_tls.game_node().end())
     {
         LOG_ERROR << " gs not found  : " <<
             (*try_from_scene_gs)->node_id() <<

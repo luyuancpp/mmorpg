@@ -49,8 +49,8 @@ std::size_t kMaxPlayerSize = 1000;
 
 Guid GetPlayerIdByConnId(uint64_t session_id)
 {
-	auto cit = g_gate_sessions.find(session_id);
-	if (cit == g_gate_sessions.end())
+	auto cit = controller_tls.gate_sessions().find(session_id);
+	if (cit == controller_tls.gate_sessions().end())
 	{
 		return kInvalidGuid;
 	}
@@ -65,8 +65,8 @@ Guid GetPlayerIdByConnId(uint64_t session_id)
 
 entt::entity GetPlayerByConnId(uint64_t session_id)
 {
-	auto cit = g_gate_sessions.find(session_id);
-	if (cit == g_gate_sessions.end())
+	auto cit = controller_tls.gate_sessions().find(session_id);
+	if (cit == controller_tls.gate_sessions().end())
 	{
 		return entt::null;
 	}
@@ -171,7 +171,7 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	{
 		g_controller_node->LetGateConnect2Gs(gs, e);
 	}
-	g_game_node.emplace(tls.registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
+	controller_tls.game_node().emplace(tls.registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE 
 }
@@ -253,13 +253,13 @@ void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* 
 	{
 		return;
 	}
-	auto it = g_game_node.find(try_player_session->gs_node_id());
-	if (it == g_game_node.end())
+	auto it = controller_tls.game_node().find(try_player_session->gs_node_id());
+	if (it == controller_tls.game_node().end())
 	{
 		return;
 	}
 	auto player_id = tls.registry.get<Guid>(player);
-	g_gate_sessions.erase(player_id);
+	controller_tls.gate_sessions().erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
 	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMethodDesc, &rq);
@@ -274,12 +274,12 @@ void ControllerServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 {
 ///<<< BEGIN WRITING YOUR CODE 
 
-	auto cit = g_gate_sessions.find(request->session_id());
-	if (cit == g_gate_sessions.end())
+	auto cit = controller_tls.gate_sessions().find(request->session_id());
+	if (cit == controller_tls.gate_sessions().end())
 	{
-		cit = g_gate_sessions.emplace(request->session_id(), EntityPtr()).first;
+		cit = controller_tls.gate_sessions().emplace(request->session_id(), EntityPtr()).first;
 	}
-	if (cit == g_gate_sessions.end())
+	if (cit == controller_tls.gate_sessions().end())
 	{
         response->mutable_error()->set_id(kRetLoginUnkonwError);
         return;
@@ -323,8 +323,8 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE 
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
-    auto sit = g_gate_sessions.find(request->session_id());
-	if (sit == g_gate_sessions.end())
+    auto sit = controller_tls.gate_sessions().find(request->session_id());
+	if (sit == controller_tls.gate_sessions().end())
 	{
 		LOG_ERROR << "connection not found " << request->session_id();
 		return;
@@ -423,7 +423,7 @@ void ControllerServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 ///<<< BEGIN WRITING YOUR CODE 
 	auto player_id = GetPlayerIdByConnId(request->session_id());
 	ControllerPlayerSystem::LeaveGame(player_id);
-	g_gate_sessions.erase(player_id);
+	controller_tls.gate_sessions().erase(player_id);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -487,8 +487,8 @@ void ControllerServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
     CreateSceneBySceneInfoP create_scene_param;
 	for (auto& it : request->cross_scenes_info())
 	{
-		auto git = g_game_node.find(it.gs_node_id());
-		if (git == g_game_node.end())
+		auto git = controller_tls.game_node().find(it.gs_node_id());
+		if (git == controller_tls.game_node().end())
 		{
 			continue;
 		}
@@ -525,8 +525,8 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 		return;
 	}
 	
-	auto game_it = g_game_node.find(request->game_node_id());
-	if (game_it == g_game_node.end())
+	auto game_it = controller_tls.game_node().find(request->game_node_id());
+	if (game_it == controller_tls.game_node().end())
 	{
         LOG_ERROR << "game crash" << request->game_node_id();
         return;
