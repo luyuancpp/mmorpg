@@ -73,12 +73,12 @@ void Send2GsPlayer(const google::protobuf::Message& message, EntityPtr& player)
 
 void Send2GsPlayer(const google::protobuf::Message& message, Guid player_id)
 {
-    Send2GsPlayer(message, g_player_list->GetPlayer(player_id));
+    Send2GsPlayer(message, ControllerPlayerSystem::GetPlayer(player_id));
 }
 
 void Send2PlayerViaGs(const google::protobuf::Message& message, Guid player_id)
 {
-	Send2PlayerViaGs(message, g_player_list->GetPlayer(player_id));
+	Send2PlayerViaGs(message, ControllerPlayerSystem::GetPlayer(player_id));
 }
 
 void Send2PlayerViaGs(const google::protobuf::Message& message, EntityPtr& player)
@@ -144,7 +144,7 @@ void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, ui
 
 void Send2Player(const google::protobuf::Message& message, Guid player_id)
 {
-	auto player = g_player_list->GetPlayer(player_id);
+	auto player = ControllerPlayerSystem::GetPlayer(player_id);
 	Send2Player(message, player);
 }
 

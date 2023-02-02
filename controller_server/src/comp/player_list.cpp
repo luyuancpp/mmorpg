@@ -3,47 +3,49 @@
 #include "src/game_logic/scene/scene.h"
 
 #include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/thread_local/controller_thread_local_storage.h"
 
-thread_local PlayerListMap  g_players;
-
-PlayerList* g_player_list = nullptr;
-
-entt::entity PlayerList::GetPlayer(Guid guid)
+entt::entity ControllerPlayerSystem::GetPlayer(Guid guid)
 {
-    auto it = g_players.find(guid);
-    if (it == g_players.end())
+    auto it = controller_tls.player_list().find(guid);
+    if (it == controller_tls.player_list().end())
     {
         return entt::null;
     }
     return it->second;
 }
 
-EntityPtr PlayerList::GetPlayerPtr(Guid guid)
+EntityPtr ControllerPlayerSystem::GetPlayerPtr(Guid guid)
 {
-    auto it = g_players.find(guid);
-    if (it == g_players.end())
+    auto it = controller_tls.player_list().find(guid);
+    if (it == controller_tls.player_list().end())
     {
         return EntityPtr();
     }
     return it->second;
 }
 
-EntityPtr PlayerList::EnterGame(Guid guid)
+bool ControllerPlayerSystem::HasPlayer(Guid guid)
 {
-    auto it = g_players.find(guid);
-    if (it != g_players.end())
+	return controller_tls.player_list().find(guid) != controller_tls.player_list().end(); 
+}
+
+EntityPtr ControllerPlayerSystem::EnterGame(Guid guid)
+{
+    auto it = controller_tls.player_list().find(guid);
+    if (it != controller_tls.player_list().end())
     {
         return it->second;
     }
-    return g_players.emplace(guid, EntityPtr()).first->second;
+    return controller_tls.player_list().emplace(guid, EntityPtr()).first->second;
 }
 
-void PlayerList::LeaveGame(Guid guid)
+void ControllerPlayerSystem::LeaveGame(Guid guid)
 {
     //todo 登录的时候leave
     //todo 断线不能马上下线，这里之后会改
-    auto it = g_players.find(guid);
-    if ( it == g_players.end())
+    auto it = controller_tls.player_list().find(guid);
+    if ( it == controller_tls.player_list().end())
     {
         return;
     }
@@ -59,6 +61,6 @@ void PlayerList::LeaveGame(Guid guid)
 		ScenesSystem::LeaveScene(lsp);
     }
     
-	g_players.erase(it);
+	controller_tls.player_list().erase(it);
 }
 

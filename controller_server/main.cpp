@@ -8,10 +8,7 @@ using namespace muduo::net;
 
 int main(int argc, char* argv[])
 {
-    //global value
-    PlayerList player_list;
-    g_player_list = &player_list;
-
+ 
     EventLoop loop;
     ControllerServer server(&loop);
     server.Init();

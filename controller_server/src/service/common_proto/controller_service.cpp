@@ -32,6 +32,7 @@
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"
+#include "src/thread_local/controller_thread_local_storage.h"
 
 
 #include "component_proto/player_comp.pb.h"
@@ -79,7 +80,7 @@ entt::entity GetPlayerByConnId(uint64_t session_id)
 
 void OnSessionEnterGame(entt::entity conn, Guid player_id)
 {
-    tls.registry.emplace<EntityPtr>(conn, g_player_list->GetPlayerPtr(player_id));
+    tls.registry.emplace<EntityPtr>(conn, ControllerPlayerSystem::GetPlayerPtr(player_id));
     tls.registry.emplace<Guid>(conn, player_id);
 }
 
@@ -262,7 +263,7 @@ void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* 
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
 	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMethodDesc, &rq);
-	g_player_list->LeaveGame(player_id);
+	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -288,7 +289,7 @@ void ControllerServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
     tls.registry.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
 	//todo 
 	auto lit = logined_accounts_sesion_.find(request->account());
-	if (g_player_list->player_size() >= kMaxPlayerSize)
+	if (controller_tls.player_list().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
@@ -330,7 +331,7 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	}
 	auto session = sit->second;
 	auto player_id = request->player_id();
-	auto player = g_player_list->GetPlayer(player_id);
+	auto player = ControllerPlayerSystem::GetPlayer(player_id);
 	auto try_acount = tls.registry.try_get<PlayerAccount>(session);
 	if (nullptr != try_acount)
 	{
@@ -339,7 +340,7 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 	if (entt::null == player)
 	{
 		//把旧的connection 断掉
-		player = g_player_list->EnterGame(player_id);
+		player = ControllerPlayerSystem::EnterGame(player_id);
 		PlayerCommonSystem::InitPlayerCompnent(player);
 		OnSessionEnterGame(session, player_id);
 		tls.registry.emplace<Guid>(player, player_id);
@@ -409,7 +410,7 @@ void ControllerServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
 ///<<< BEGIN WRITING YOUR CODE 
 
 	auto player_id = GetPlayerIdByConnId(request->session_id());
-	g_player_list->LeaveGame(player_id);
+	ControllerPlayerSystem::LeaveGame(player_id);
 	//todo statistics
 ///<<< END WRITING YOUR CODE 
 }
@@ -421,7 +422,7 @@ void ControllerServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 {
 ///<<< BEGIN WRITING YOUR CODE 
 	auto player_id = GetPlayerIdByConnId(request->session_id());
-	g_player_list->LeaveGame(player_id);
+	ControllerPlayerSystem::LeaveGame(player_id);
 	g_gate_sessions.erase(player_id);
 ///<<< END WRITING YOUR CODE 
 }
@@ -433,8 +434,8 @@ void ControllerServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 {
 ///<<< BEGIN WRITING YOUR CODE 
 	auto& message_extern = request->ex();
-	auto it = g_players.find(message_extern.player_id());
-	if (it == g_players.end())
+	auto it = controller_tls.player_list().find(message_extern.player_id());
+	if (it == controller_tls.player_list().end())
 	{
 		LOG_INFO << "player not found " << message_extern.player_id();
 		return;
@@ -511,7 +512,7 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
-	auto player = g_player_list->GetPlayer(request->player_id());
+	auto player = ControllerPlayerSystem::GetPlayer(request->player_id());
 	if (entt::null == player)
 	{
 		return;

@@ -2,12 +2,14 @@
 
 #include "src/comp/player_list.h"
 
+using PlayerListMap = std::unordered_map<Guid, EntityPtr>;
+
 class ControllerThreadLocalStorage
 {
 public:
-	PlayerList& player_list() { return player_list_; }
+	PlayerListMap& player_list() { return player_list_; }
 private:
-	PlayerList player_list_;
+	PlayerListMap player_list_;
 };
 
 extern thread_local ControllerThreadLocalStorage controller_tls;

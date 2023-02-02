@@ -6,13 +6,14 @@
 #include "src/comp/player_list.h"
 #include "src/pb/pbc/msgmap.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"
+#include "src/thread_local/controller_thread_local_storage.h"
 
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 
 void OnGsCallPlayerReplied(const TcpConnectionPtr& conn, const NodeServiceMessageResponsePtr& replied, Timestamp timestamp)
 {
-    auto it = g_players.find(replied->ex().player_id());
-    if (it == g_players.end())
+    auto it = controller_tls.player_list().find(replied->ex().player_id());
+    if (it == controller_tls.player_list().end())
     {
         LOG_ERROR << "PlayerService player not found " << replied->ex().player_id() << ","
             << replied->descriptor()->full_name() << " msgid " << replied->msg().msg_id();
