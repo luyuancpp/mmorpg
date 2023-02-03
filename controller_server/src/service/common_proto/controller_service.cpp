@@ -88,8 +88,8 @@ void InitPlayerGate(entt::entity player, uint64_t session_id)
 {
     auto& player_session = tls.registry.get_or_emplace<PlayerSession>(player);
     player_session.gate_session_.set_session_id(session_id);
-    auto gate_it = g_gate_nodes.find(node_id(session_id));
-    if (gate_it == g_gate_nodes.end())
+    auto gate_it = controller_tls.gate_nodes().find(node_id(session_id));
+    if (gate_it == controller_tls.gate_nodes().end())
     {
 		return;  
     }
@@ -196,7 +196,7 @@ void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* con
 		auto& gate_node = *tls.registry.emplace<GateNodePtr>(gate, std::make_shared<GateNode>(c.conn_));
 		gate_node.node_info_.set_node_id(request->gate_node_id());
 		gate_node.node_info_.set_node_type(kGateNode);
-		g_gate_nodes.emplace(request->gate_node_id(), gate);
+		controller_tls.gate_nodes().emplace(request->gate_node_id(), gate);
 		break;
 	}
 	tls.registry.emplace<InetAddress>(gate, session_addr);
@@ -518,8 +518,8 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 		return;
 	}
 	auto& player_session = tls.registry.get<PlayerSession>(player);
-	auto gate_it = g_gate_nodes.find(player_session.gate_node_id());
-	if (gate_it == g_gate_nodes.end())
+	auto gate_it = controller_tls.gate_nodes().find(player_session.gate_node_id());
+	if (gate_it == controller_tls.gate_nodes().end())
 	{
 		LOG_ERROR << "gate crash" << player_session.gate_node_id();
 		return;

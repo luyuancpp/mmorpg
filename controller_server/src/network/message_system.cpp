@@ -151,8 +151,8 @@ void Send2Player(const google::protobuf::Message& message, Guid player_id)
 
 void Send2Gate(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& message, uint32_t gate_id)
 {
-	auto gate_it = g_gate_nodes.find(gate_id);
-	if (gate_it == g_gate_nodes.end())
+	auto gate_it = controller_tls.gate_nodes().find(gate_id);
+	if (gate_it == controller_tls.gate_nodes().end())
 	{
 		return;
 	}
