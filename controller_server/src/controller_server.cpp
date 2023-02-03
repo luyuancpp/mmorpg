@@ -172,7 +172,7 @@ void ControllerServer::receive(const OnBeConnectedEvent& es)
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
 				//todo
-                g_gate_nodes.erase((*gatenode)->node_info_.node_id());
+                controller_tls.gate_nodes().erase((*gatenode)->node_info_.node_id());
 			}
 			tls.registry.destroy(e);
 			break;
