@@ -156,8 +156,7 @@ void Send2Gate(const ::google::protobuf::MethodDescriptor* method, const google:
 	{
 		return;
 	}
-	auto gate = tls.registry.try_get<GateNodePtr>(gate_it->second);
-	(*gate)->session_.Send(method, message);
+    gate_it->second->session_.Send(method, message);
 }
 
 void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity player)

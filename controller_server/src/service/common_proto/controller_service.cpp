@@ -93,12 +93,7 @@ void InitPlayerGate(entt::entity player, uint64_t session_id)
     {
 		return;  
     }
-    auto gate = tls.registry.try_get<GateNodePtr>(gate_it->second);
-    if (nullptr == gate)
-    {
-		return;        
-    }
-	player_session.gate_ = *gate;
+	player_session.gate_ = gate_it->second;
 }
 
 ///<<< END WRITING YOUR CODE
@@ -193,10 +188,11 @@ void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* con
 			continue;
 		}
 		gate = e;
-		auto& gate_node = *tls.registry.emplace<GateNodePtr>(gate, std::make_shared<GateNode>(c.conn_));
-		gate_node.node_info_.set_node_id(request->gate_node_id());
-		gate_node.node_info_.set_node_type(kGateNode);
-		controller_tls.gate_nodes().emplace(request->gate_node_id(), gate);
+		auto& gate_node = tls.registry.emplace<GateNodePtr>(gate, std::make_shared<GateNodePtr::element_type>(c.conn_));
+		gate_node->node_info_.set_node_id(request->gate_node_id());
+		gate_node->node_info_.set_node_type(kGateNode);
+		gate_node->entity_id_ = e;
+		controller_tls.gate_nodes().emplace(request->gate_node_id(), gate_node);
 		break;
 	}
 	tls.registry.emplace<InetAddress>(gate, session_addr);
@@ -541,7 +537,7 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 	GateNodePlayerEnterGsRequest rq;
 	rq.set_session_id(player_session.session_id());
 	rq.set_gs_node_id(player_session.gs_node_id());
-	tls.registry.get<GateNodePtr>(gate_it->second)->session_.CallMethod(GateServicePlayerEnterGsMethodDesc, &rq);
+	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMethodDesc, &rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE 
