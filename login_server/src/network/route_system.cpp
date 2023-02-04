@@ -1,27 +1,13 @@
 #include "route_system.h"
 
-#include "src/network/node_info.h"
-#include "src/network/rpc_msg_route.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 
 #include "src/login_server.h"
 
-void Route2Db(const google::protobuf::Message& msg, const google::protobuf::MethodDescriptor* method)
+void Route2Node(uint32_t note_type, const google::protobuf::Message& msg, const google::protobuf::MethodDescriptor* method)
 {
-	route2db.set_service(method->service()->full_name());
-	route2db.set_method(method->name());
-	route_msg_body = msg.SerializeAsString();
-}
-
-void Route2Controller(const google::protobuf::Message& msg, const google::protobuf::MethodDescriptor* method)
-{
-	route2controller.set_service(method->service()->full_name());
-	route2controller.set_method(method->name());
-	route_msg_body = msg.SerializeAsString();
-}
-
-void Route2Gate(const google::protobuf::Message& msg, const google::protobuf::MethodDescriptor* method)
-{
-	route2gate.set_service(method->service()->full_name());
-	route2gate.set_method(method->name());
-	route_msg_body = msg.SerializeAsString();
+	cl_tls.route_info().set_service(method->service()->full_name());
+	cl_tls.route_info().set_method(method->name());
+	cl_tls.route_msg_body() = std::move(msg.SerializeAsString());
+	cl_tls.set_route_node_type(note_type);
 }
