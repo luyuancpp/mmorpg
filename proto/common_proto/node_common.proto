@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "common_proto/common.proto";
 
-message RouteInfo
+message RouteData
 {
   string service = 1;
   string method = 2;
@@ -12,7 +12,7 @@ message RouteInfo
 message RouteMsgStringRequest
 {
   bytes body = 1;
-  repeated RouteInfo route_info_list = 2;
+  repeated RouteData route_data_list = 2;
   uint64 session_id = 3;  
   uint64 id = 4;
 }
@@ -20,7 +20,7 @@ message RouteMsgStringRequest
 message RouteMsgStringResponse
 {
   bytes body = 1;
-  repeated RouteInfo route_info_list = 2;
+  repeated RouteData route_data_list = 2;
   uint64 session_id = 3;  
 }
 

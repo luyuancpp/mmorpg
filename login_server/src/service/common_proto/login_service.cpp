@@ -272,18 +272,18 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 {
 ///<<< BEGIN WRITING YOUR CODE 
 	
-	auto msg_list_size = request->msg_list_size();
-	if (request->msg_list_size() >= kMaxRouteSize)
+	auto msg_list_size = request->route_data_list_size();
+	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
 		LOG_ERROR << "route msg size " << request->DebugString();
 		return;
 	}
-	else if (request->msg_list_size() <= 0)
+	else if (request->route_data_list_size() <= 0)
 	{
 		LOG_ERROR << "msg list empty" << request->DebugString();
 		return;
 	}
-	auto& msg = request->msg_list(request->msg_list_size() - 1);
+	auto& msg = request->route_data_list(request->route_data_list_size() - 1);
 	auto& method_name = msg.method();
 	const google::protobuf::ServiceDescriptor* desc = GetDescriptor();
 	const google::protobuf::MethodDescriptor* method
@@ -307,8 +307,9 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		return;
 	}
     cl_tls.set_route_node_type(UINT32_MAX);
-    auto route_info = rq->add_msg_list();
+    auto route_info = rq->add_route_data_list();
     route_info->CopyFrom(cl_tls.route_info());
+	route_info->mutable_node_info()->CopyFrom(g_login_node->node_info());
     rq->set_body(cl_tls.route_msg_body());
     switch (cl_tls.route_node_type())
     {
@@ -316,7 +317,7 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 
         g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, rq);
     }
-                        break;
+    break;
     case kGateNode:
     {
 
