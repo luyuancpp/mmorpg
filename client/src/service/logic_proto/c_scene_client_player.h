@@ -1,7 +1,7 @@
 #pragma once
 #include <sol/sol.hpp>
 #include "player_service.h"
-#include "src/util/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 extern thread_local sol::state g_lua;
 #include "logic_proto/scene_client_player.pb.h"
 class ClientPlayerSceneServiceService : public PlayerService {

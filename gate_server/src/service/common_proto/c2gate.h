@@ -77,6 +77,8 @@ public:
 		muduo::Timestamp);
 
     inline uint64_t tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<uint64_t>(conn->getContext()); }
+
+    void Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;   
