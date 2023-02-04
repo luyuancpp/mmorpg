@@ -11,6 +11,7 @@
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_client.h"
 #include "src/network/route_system.h"
+#include "src/network/node_info.h"
 #include "src/redis_client/redis_client.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/database_servicemethod.h"
@@ -51,6 +52,7 @@ void EnterGame(Guid player_id,
 		EnterGameReplied,
 		rpc,
 		&ControllerService::ControllerNodeService_Stub::OnLsEnterGame);*/
+
 }
 
 void UpdateAccount(uint64_t session_id, const ::account_database& a_d)
@@ -153,7 +155,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	rq.set_account(request->account());
 	uint64_t session_id = 1;
 	sessions_.emplace(session_id, std::make_shared<PlayerPtr::element_type>());
-	Route2Controller(rq, ControllerServiceOnLsLoginAccountMethodDesc);
+	Route2Node(kControllerNode, rq, ControllerServiceOnLsLoginAccountMethodDesc);
 	//g_login_node->controller_node().CallMethodString1( LoginAccountControllerReplied, rpc, &ControllerService::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }

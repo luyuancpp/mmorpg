@@ -4,7 +4,7 @@ const int32_t kMaxRouteSize = 20;
 
 thread_local ThreadLocalRoteMsgBodyList g_route_msg;
 
-RouteMsgBody route2db;
-RouteMsgBody route2controller;
-RouteMsgBody route2gate;
+RouteInfo route2db;
+RouteInfo route2controller;
+RouteInfo route2gate;
 std::string route_msg_body;
