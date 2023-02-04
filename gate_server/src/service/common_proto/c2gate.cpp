@@ -186,11 +186,9 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_msg_id(request->msg_id());
         rq.set_id(request->id());
         gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMethodDesc, &rq);
+        return;
     }
     else
-    {
-        Tip(conn, 5);
-    }
     {
         RouteMsgStringRequest rq;
         rq.set_body(request->request());

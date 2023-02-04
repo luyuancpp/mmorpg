@@ -142,8 +142,8 @@ void EnterGameDbReplied(EnterGameDbRpc replied)
 
 ///<<<rpc begin
 void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
-    const ::LoginC2LRequest* request,
-    ::LoginNodeLoginResponse* response,
+    const ::LoginRequest* request,
+    ::LoginResponse* response,
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
@@ -301,31 +301,26 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	}
 	std::unique_ptr<google::protobuf::Message> service_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(service_request), get_pointer(service_response), nullptr);
-	auto rq = const_cast<::RouteMsgStringRequest*>(request);
+	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	if (cl_tls.route_node_type() == UINT32_MAX)
 	{ 
 		return;
 	}
     cl_tls.set_route_node_type(UINT32_MAX);
-    auto route_info = rq->add_route_data_list();
+    auto route_info = mutable_request->add_route_data_list();
     route_info->CopyFrom(cl_tls.route_info());
 	route_info->mutable_node_info()->CopyFrom(g_login_node->node_info());
-    rq->set_body(cl_tls.route_msg_body());
+    mutable_request->set_body(cl_tls.route_msg_body());
     switch (cl_tls.route_node_type())
     {
     case kControllerNode: {
 
-        g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, rq);
-    }
-    break;
-    case kGateNode:
-    {
-
+        g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, mutable_request);
     }
     break;
     case kDatabaseNode:
     {
-        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethodDesc, rq);
+        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethodDesc, mutable_request);
     }
     break;
     default:
