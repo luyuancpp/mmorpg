@@ -5,6 +5,7 @@
 
 #include "src/util/game_registry.h"
 #include "src/network/rpc_server.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 #include "src/login_server.h"
 #include "src/comp/account_player.h"
@@ -274,7 +275,7 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	auto msg_list_size = request->msg_list_size();
 	if (request->msg_list_size() >= kMaxRouteSize)
 	{
-		LOG_ERROR << "route size " << request->DebugString();
+		LOG_ERROR << "route msg size " << request->DebugString();
 		return;
 	}
 	else if (request->msg_list_size() <= 0)
@@ -292,31 +293,42 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> msg_request(GetRequestPrototype(method).New());
-	if (!msg_request->ParseFromString(request->body()))
+	std::unique_ptr<google::protobuf::Message> service_request(GetRequestPrototype(method).New());
+	if (!service_request->ParseFromString(request->body()))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> msg_response(GetResponsePrototype(method).New());
-	CallMethod(method, NULL, get_pointer(msg_request), get_pointer(msg_response), nullptr);
+	std::unique_ptr<google::protobuf::Message> service_response(GetResponsePrototype(method).New());
+	CallMethod(method, NULL, get_pointer(service_request), get_pointer(service_response), nullptr);
 	auto rq = const_cast<::RouteMsgStringRequest*>(request);
-	if (!route2controller.method().empty())
-	{
-		auto route_msg = rq->add_msg_list();
-		route_msg->CopyFrom(route2controller);
-		g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, request);
-		route2controller.mutable_method()->clear();
+	if (cl_tls.route_node_type() == UINT32_MAX)
+	{ 
+		return;
 	}
-	else if (route2db.method().empty())
-	{
-        auto route_msg = rq->add_msg_list();
-        route_msg->CopyFrom(route2db);
-        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethodDesc, request);
-		route2db.mutable_method()->clear();
-	}
-    else if (route2gate.method().empty())
+    cl_tls.set_route_node_type(UINT32_MAX);
+    auto route_info = rq->add_msg_list();
+    route_info->CopyFrom(cl_tls.route_info());
+    rq->set_body(cl_tls.route_msg_body());
+    switch (cl_tls.route_node_type())
     {
+    case kControllerNode: {
+
+        g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, rq);
+    }
+                        break;
+    case kGateNode:
+    {
+
+    }
+    break;
+    case kDatabaseNode:
+    {
+        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethodDesc, rq);
+    }
+    break;
+    default:
+        break;
     }
 	//处理,如果需要继续路由则拿到当前节点信息
 

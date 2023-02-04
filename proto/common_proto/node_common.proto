@@ -12,7 +12,7 @@ message RouteInfo
 message RouteMsgStringRequest
 {
   bytes body = 1;
-  repeated RouteInfo msg_list = 2;
+  repeated RouteInfo route_info_list = 2;
   uint64 session_id = 3;  
   uint64 id = 4;
 }
@@ -20,7 +20,7 @@ message RouteMsgStringRequest
 message RouteMsgStringResponse
 {
   bytes body = 1;
-  repeated RouteInfo msg_list = 2;
+  repeated RouteInfo route_info_list = 2;
   uint64 session_id = 3;  
 }
 
