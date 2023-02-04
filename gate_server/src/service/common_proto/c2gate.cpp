@@ -12,13 +12,15 @@
 #include "src/network/login_node.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/rpc_msg_route.h"
-#include "src/thread_local/gate_thread_local_storage.h"
-#include "src/util/random.h"
+#include "src/pb/pbc/msgmap.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
 #include "src/pb/pbc/service_method/login_servicemethod.h"
+#include "src/thread_local/gate_thread_local_storage.h"
+#include "src/util/random.h"
 
 #include "login_service.pb.h"
+#include "src/pb/pbc/logic_proto/common_client_player.pb.h"
 
 ServerSequence32 g_server_sequence_;
 
@@ -58,11 +60,11 @@ RpcClientPtr& ClientReceiver::get_login_node()
 
 RpcClientPtr& ClientReceiver::get_login_node(uint64_t session_id)
 {
-    static RpcClientPtr empty_session;
+    static RpcClientPtr null_session;
     auto session_it = gate_tls.sessions().find(session_id);
     if (gate_tls.sessions().end() == session_it)
     {
-        return empty_session;
+        return null_session;
     }
     if (!session_it->second.ValidLogin())
     {
@@ -71,8 +73,8 @@ RpcClientPtr& ClientReceiver::get_login_node(uint64_t session_id)
     auto login_node_it = gate_tls.login_nodes().find(session_it->second.login_node_id_);
     if (gate_tls.login_nodes().end() == login_node_it)
     {
-        LOG_ERROR << "player login server not found : " << session_it->second.login_node_id_;
-        return empty_session;
+        LOG_ERROR << "player found login server crash : " << session_it->second.login_node_id_;
+        return null_session;
     }
     return login_node_it->second.login_session_;
 }
@@ -174,7 +176,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		auto gs = g_game_node.find(it->second.gs_node_id_);
 		if (g_game_node.end() == gs)
 		{
-			//todo client error;
+            Tip(conn, 6);
 			return;
 		}
 
@@ -184,6 +186,10 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_msg_id(request->msg_id());
         rq.set_id(request->id());
         gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMethodDesc, &rq);
+    }
+    else
+    {
+        Tip(conn, 5);
     }
     {
         RouteMsgStringRequest rq;
@@ -195,5 +201,14 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     }
 }
 
+void ClientReceiver::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id)
+{
+    TipsS2C tips;
+    tips.mutable_tips()->set_id(tip_id);//tips_id.h 暂时写死，错误码不用编译
+    MessageBody msg;
+    msg.set_body(tips.SerializeAsString());
+    msg.set_msg_id(g_msgid["TipsS2C"]);
+    g_gate_node->codec().send(conn, msg);
+}
 
 
