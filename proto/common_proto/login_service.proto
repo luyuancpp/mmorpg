@@ -3,6 +3,7 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 
 import "common_proto/common.proto";
+import "common_proto/c2gate.proto";
 import "common_proto/mysql_database_table.proto";
 import "common_proto/node_common.proto";
 
@@ -60,7 +61,7 @@ message LeaveGameC2LRequest
 }
 
 service LoginService {
-  rpc Login (LoginC2LRequest) returns (LoginNodeLoginResponse);
+  rpc Login (LoginRequest) returns (LoginResponse);
   rpc CreatPlayer (CreatePlayerC2lRequest) returns (LoginNodeCreatePlayerResponse);
   rpc EnterGame (EnterGameC2LRequest) returns (LoginNodeEnterGameResponse);
   rpc LeaveGame (LeaveGameC2LRequest) returns (google.protobuf.Empty);

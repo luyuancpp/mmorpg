@@ -26,12 +26,5 @@ void OnEnterGameReplied(const TcpConnectionPtr& conn, const EnterGameResponsePtr
 
 void OnServerLoginReplied(const TcpConnectionPtr& conn, const LoginLoginResponsePtr& replied, Timestamp timestamp)
 {
-    LoginResponse msg;
-    auto& player_list = replied->account_player().simple_players().players();
-    for (auto& it : player_list)
-    {
-        auto p = msg.add_players();
-        p->set_player_id(it.player_id());
-    }
-    g_gate_node->codec().send(conn, msg);
+ 
 }

@@ -4,8 +4,8 @@ class LoginServiceImpl : public ::LoginService{
 public:
 public:
     void Login(::google::protobuf::RpcController* controller,
-        const ::LoginC2LRequest* request,
-        ::LoginNodeLoginResponse* response,
+        const ::LoginRequest* request,
+        ::LoginResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void CreatPlayer(::google::protobuf::RpcController* controller,
