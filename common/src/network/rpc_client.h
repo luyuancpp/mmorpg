@@ -87,6 +87,16 @@ public:
         }
         channel_->Send(method, request);
     }
+
+    void Route2Node(const ::google::protobuf::MethodDescriptor* method,
+        const ::google::protobuf::Message& request)
+    {
+        if (!connected_)
+        {
+            return;
+        }
+        channel_->Route2Node(method, request);
+    }
 private:
     void onConnection(const TcpConnectionPtr& conn)
     {
