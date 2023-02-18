@@ -39,7 +39,6 @@ void GateServer::Init()
 
 void GateServer::StartServer()
 {
-
     auto& myinfo = conf_info_.gate_info();
     InetAddress gate_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
@@ -54,7 +53,6 @@ void GateServer::StartServer()
 void GateServer::receive(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
-   
     if (IsSameAddr(conn->peerAddress(), DeployConfig::GetSingleton().deploy_info()))
     {
         // started 
