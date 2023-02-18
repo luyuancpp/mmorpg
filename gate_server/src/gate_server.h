@@ -70,8 +70,6 @@ private:
         conn->shutdown();
     }
 
-    void Connect2Controller();
-
     muduo::net::EventLoop* loop_{ nullptr };
 
     ProtobufDispatcher dispatcher_;

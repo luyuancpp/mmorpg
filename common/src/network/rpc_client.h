@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "muduo/base/Logging.h"
 #include "muduo/net/InetAddress.h"
 #include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
@@ -74,6 +75,7 @@ public:
     {
         if (!connected_)
         {
+            LOG_ERROR << "client disconnect";
             return;
         }
         channel_->CallMethod(method, nullptr, request, nullptr, nullptr);
@@ -83,7 +85,8 @@ public:
     {
         if (!connected_)
         {
-			return;
+            LOG_ERROR << "client disconnect";
+            return;
         }
         channel_->Send(method, request);
     }
@@ -93,6 +96,7 @@ public:
     {
         if (!connected_)
         {
+            LOG_ERROR << "client disconnect";
             return;
         }
         channel_->Route2Node(method, request);

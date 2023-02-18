@@ -50,6 +50,27 @@ void GateServer::StartServer()
     server_->setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
+
+    EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+        [this]() ->void
+        {
+            GroupLignRequest rq;
+            rq.set_group_id(GameConfig::GetSingleton().config_info().group_id());
+            deploy_session()->CallMethod(DeployServiceLoginNodeInfoMethodDesc, &rq);
+        }
+    );
+
+    EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+        [this]() ->void
+        {
+            auto& controller_node_info = conf_info_.controller_info();
+            InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
+            controller_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
+            controller_node_->registerService(&gate_service_);
+            controller_node_->subscribe<OnConnected2ServerEvent>(*this);
+            controller_node_->connect();
+        }
+    );
 }
 
 
@@ -141,14 +162,4 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             }
         }
     }
-}
-
-void GateServer::Connect2Controller()
-{
-    auto& controller_node_info = conf_info_.controller_info();
-    InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
-    controller_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
-    controller_node_->registerService(&gate_service_);
-    controller_node_->subscribe<OnConnected2ServerEvent>(*this);
-    controller_node_->connect();
 }
