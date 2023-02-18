@@ -10,6 +10,8 @@
 
 LoginServer* g_login_node = nullptr;
 
+void InitFakeProtoServiceList();
+
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()),
@@ -24,6 +26,8 @@ void LoginServer::Init()
     DeployConfig::GetSingleton().Load("deploy.json");
     node_info_.set_node_type(kLoginNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
+    InitRepliedCallback();
+    InitFakeProtoServiceList();
     ConnectDeploy();
 }
 

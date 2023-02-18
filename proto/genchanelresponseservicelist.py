@@ -21,7 +21,6 @@ def parsefile(filename, includedir):
                 local.pkg = fileline.replace(genpublic.cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
                 s = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-
                 local.service.append(s)
                 local.servicewithpkg.append(local.pkg + '::' + s)
                 local.servicefile.append(filename)
