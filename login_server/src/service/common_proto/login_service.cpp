@@ -275,12 +275,12 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	auto msg_list_size = request->route_data_list_size();
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
-		LOG_ERROR << "route msg size " << request->DebugString();
+		LOG_ERROR << "route msg size too max:" << request->DebugString();
 		return;
 	}
 	else if (request->route_data_list_size() <= 0)
 	{
-		LOG_ERROR << "msg list empty" << request->DebugString();
+		LOG_ERROR << "msg list empty:" << request->DebugString();
 		return;
 	}
 	auto& msg = request->route_data_list(request->route_data_list_size() - 1);
@@ -293,23 +293,32 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> service_request(GetRequestPrototype(method).New());
-	if (!service_request->ParseFromString(request->body()))
+	//当前节点的请求信息
+	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
+	if (!current_node_request->ParseFromString(request->body()))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << method_name;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> service_response(GetResponsePrototype(method).New());
-	CallMethod(method, NULL, get_pointer(service_request), get_pointer(service_response), nullptr);
+	//当前节点的真正回复的消息
+	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
+	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
+	//没有发送到下个节点就是要回复了
 	if (cl_tls.route_node_type() == UINT32_MAX)
 	{ 
+		response->set_body(current_node_response->SerializeAsString());
+		for (auto& it : request->route_data_list())
+		{
+			*response->add_route_data_list() = it;
+		}
+		response->set_session_id(request->session_id());
 		return;
 	}
     cl_tls.set_route_node_type(UINT32_MAX);
-    auto route_info = mutable_request->add_route_data_list();
-    route_info->CopyFrom(cl_tls.route_info());
-	route_info->mutable_node_info()->CopyFrom(g_login_node->node_info());
+    auto route_data_info = mutable_request->add_route_data_list();
+    route_data_info->CopyFrom(cl_tls.route_info());
+	route_data_info->mutable_node_info()->CopyFrom(g_login_node->node_info());
     mutable_request->set_body(cl_tls.route_msg_body());
     switch (cl_tls.route_node_type())
     {
