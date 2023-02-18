@@ -15,7 +15,6 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/empty.pb.h>
 
-#include "game_rpc.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -39,12 +38,12 @@ RpcChannel::RpcChannel()
 }
 
 RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
-  : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
+    : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
     conn_(conn),
     services_(NULL),
     dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
 {
-  LOG_INFO << "RpcChannel::ctor - " << this;
+    LOG_INFO << "RpcChannel::ctor - " << this;
 }
 
 RpcChannel::~RpcChannel()
@@ -155,14 +154,16 @@ void RpcChannel::Route2Node(const ::google::protobuf::MethodDescriptor* method, 
 
 void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
-    if (!services_)
+    if (nullptr == services_)
     {
+        SendRpcError(message, NO_SERVICE);
         return;
     }
     std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message.service());
     if (it == services_->end())
     {
-        return;       
+        SendRpcError(message, NO_SERVICE);
+        return;
     }
     google::protobuf::Service* service = it->second;
     assert(service != NULL);
@@ -171,28 +172,41 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
         = desc->FindMethodByName(message.method());
     if (!method)
     {
+        SendRpcError(message, NO_METHOD);
         return;
     }
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
     if (!request->ParseFromString(message.request()))
     {
+        SendRpcError(message, INVALID_REQUEST);
         return;
     }
-
-    auto node_msg_size = 0;
+    std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
     service->CallMethod(method, nullptr, get_pointer(request), nullptr, nullptr);
-   
+    if (response->ByteSizeLong() <= 0)
+    {
+        return;
+    }
+    RpcMessage rpc_response;
+    rpc_response.set_type(RESPONSE);
+    rpc_response.set_id(message.id());
+    rpc_response.set_response(response->SerializeAsString()); // FIXME: error check
+    rpc_response.set_method(method->name());
+    rpc_response.set_service(method->service()->full_name());
+    codec_.send(conn_, rpc_response);
 }
 
 void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
-    if (!services_)
+    if (nullptr == services_)
     {
+        SendRpcError(message, NO_SERVICE);
         return;
     }
     std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message.service());
     if (it == services_->end())
     {
+        SendRpcError(message, NO_SERVICE);
         return;
     }
     google::protobuf::Service* service = it->second;
@@ -202,11 +216,13 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
         = desc->FindMethodByName(message.method());
     if (!method)
     {
+        SendRpcError(message, NO_METHOD);
         return;
     }
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
     if (!request->ParseFromString(message.request()))
     {
+        SendRpcError(message, INVALID_REQUEST);
         return;
     }
     service->CallMethod(method, nullptr, get_pointer(request), nullptr, nullptr);
@@ -214,68 +230,58 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 
 void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
-    ErrorCode error = WRONG_PROTO;
-    if (services_)
+    if (nullptr == services_)
     {
-        std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message.service());
-        if (it != services_->end())
-        {
-            google::protobuf::Service* service = it->second;
-            assert(service != NULL);
-            const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-            const google::protobuf::MethodDescriptor* method
-                = desc->FindMethodByName(message.method());
-            if (method)
-            {
-                std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-                if (request->ParseFromString(message.request()))
-                {
-                    auto& response_proto_type = service->GetResponsePrototype(method);
-                    if (response_proto_type.GetDescriptor() == ::google::protobuf::Empty::GetDescriptor())
-                    {
-                        service->CallMethod(method, NULL, get_pointer(request), nullptr, nullptr);
-                    }
-                    else
-                    {
-                        std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
-                        // response is deleted in doneCallback
-                        service->CallMethod(method, NULL, get_pointer(request), get_pointer(response), nullptr);
-                        RpcMessage rpc_response;
-                        rpc_response.set_type(RESPONSE);
-                        rpc_response.set_id(message.id());
-                        rpc_response.set_response(response->SerializeAsString()); // FIXME: error check
-                        rpc_response.set_method(method->name());
-                        rpc_response.set_service(method->service()->full_name());
-                        codec_.send(conn_, rpc_response);
-                    }
-                    error = RPC_NO_ERROR;
-                }
-                else
-                {
-                    error = INVALID_REQUEST;
-                }
-            }
-            else
-            {
-                error = NO_METHOD;
-            }
-        }
-        else
-        {
-            error = NO_SERVICE;
-        }
+        SendRpcError(message, NO_SERVICE);
+        return;
+    }
+    std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message.service());
+    if (it == services_->end())
+    {
+        SendRpcError(message, NO_SERVICE);
+        return;
+
+    }
+    google::protobuf::Service* service = it->second;
+    assert(service != NULL);
+    const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+    const google::protobuf::MethodDescriptor* method
+        = desc->FindMethodByName(message.method());
+    if (nullptr ==  method)
+    {
+        SendRpcError(message, NO_METHOD);
+        return;
+    }
+    std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
+    if (!request->ParseFromString(message.request()))
+    {
+        SendRpcError(message, INVALID_REQUEST);
+        return;
+    }
+    if (service->GetResponsePrototype(method).GetDescriptor() == ::google::protobuf::Empty::GetDescriptor())
+    {
+        service->CallMethod(method, NULL, get_pointer(request), nullptr, nullptr);
     }
     else
     {
-        error = NO_SERVICE;
+        std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
+        service->CallMethod(method, NULL, get_pointer(request), get_pointer(response), nullptr);
+        RpcMessage rpc_response;
+        rpc_response.set_type(RESPONSE);
+        rpc_response.set_id(message.id());
+        rpc_response.set_response(response->SerializeAsString()); // FIXME: error check
+        rpc_response.set_method(method->name());
+        rpc_response.set_service(method->service()->full_name());
+        codec_.send(conn_, rpc_response);
     }
-    if (error != RPC_NO_ERROR)
-    {
-        RpcMessage response;
-        response.set_type(RESPONSE);
-        response.set_id(message.id());
-        response.set_error(error);
-        codec_.send(conn_, response);
-    }
+}
+
+void RpcChannel::SendRpcError(const RpcMessage& message, ErrorCode error)
+{
+    RpcMessage response;
+    response.set_type(RESPONSE);
+    response.set_id(message.id());
+    response.set_error(error);
+    codec_.send(conn_, response);
 }
 
