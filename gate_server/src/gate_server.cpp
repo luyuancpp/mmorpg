@@ -15,6 +15,8 @@
 
 GateServer* g_gate_node = nullptr; 
 
+void InitFakeProtoServiceList();
+
 void GateServer::LoadConfig()
 {
     GameConfig::GetSingleton().Load("game.json");
@@ -29,6 +31,7 @@ void GateServer::Init()
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     InitMsgService();
     InitRepliedCallback();
+    InitFakeProtoServiceList();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);

@@ -215,7 +215,7 @@ def inputfile():
     for filename in dir_list:
     	if not (filename[-6:].lower() == '.proto'):
             continue
-    	filelist.append(eventprotodir + filename)
+        filelist.append(eventprotodir + filename)
 
 class myThread (threading.Thread):
     def __init__(self, filename):

@@ -28,12 +28,14 @@
 #include "src/system/redis_system.h"
 #include "src/system/logic/config_system.h"
 
+GameServer* g_game_node = nullptr;
+
 NodeId node_id()
 {
     return g_game_node->gs_info().id();
 }
 
-GameServer* g_game_node = nullptr;
+void InitFakeProtoServiceList();
 
 GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
@@ -52,6 +54,7 @@ void GameServer::Init()
     InitPlayerServcie();
     InitPlayerServcieReplied();
     InitRepliedCallback();
+    InitFakeProtoServiceList();
     InitNetwork();
 }
 
