@@ -36,14 +36,5 @@ void OnServerInfoReplied(const TcpConnectionPtr& conn, const ServerInfoResponseP
     auto& serverinfo_data = replied->info();
     g_gate_node->set_servers_info_data(serverinfo_data);
     g_server_sequence_.set_node_id(g_gate_node->gate_node_id());
-
-    EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-        []() ->void
-        {
-            GroupLignRequest rq;
-            rq.set_group_id(GameConfig::GetSingleton().config_info().group_id());
-            g_gate_node->deploy_session()->CallMethod(DeployServiceLoginNodeInfoMethodDesc, &rq);
-        }
-    );
     g_gate_node->StartServer();   
 }
