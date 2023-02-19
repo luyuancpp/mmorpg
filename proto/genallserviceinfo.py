@@ -22,4 +22,4 @@ def genservcieimplobj():
 scanfiles(genpublic.commonportodir)
 scanfiles(genpublic.logicprotodir)
 
-print(filelist)
+#print(filelist)

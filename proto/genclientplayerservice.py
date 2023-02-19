@@ -70,7 +70,7 @@ def genheadrpcfun():
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
-        servicestr += tabstr + tabstr + tabstr + 'g_lua["' + s[1] + 'Process"](\n'
+        servicestr += tabstr + tabstr + tabstr + 'tls_lua_state["' + s[1] + 'Process"](\n'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
@@ -99,8 +99,7 @@ def genheadfile(filename):
     newstr = '#pragma once\n'
     newstr += '#include <sol/sol.hpp>\n'  
     newstr += '#include "player_service.h"\n'  
-    newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'  
-    newstr += 'extern thread_local sol::state g_lua;\n'
+    newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'  
     newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
     for i in range(0, len(headfun)) :             
         newstr += headfun[i]()

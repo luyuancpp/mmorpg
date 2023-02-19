@@ -41,7 +41,7 @@ def genluasol(filename, srcdir):
     newstr = '#include "' + pbheadname + '.pb.h"\n'
     newstr += '#include <sol/sol.hpp>\n'
 
-    newstr += 'extern thread_local sol::state g_lua;\n'
+    newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'
     newstr +=  funcname + '\n{\n'    
     newfilename = srcdir + filename.replace('.proto', '_sol2.cpp').replace(os.path.dirname(filename), '')
     with open(filename,'r', encoding='utf-8') as file:
@@ -58,7 +58,7 @@ def genluasol(filename, srcdir):
             if fileline.find(msg) >= 0 :
                 msgcode = 1
                 classname = fileline.split(' ')[1].strip('\n')
-                newstr += 'g_lua.new_usertype<' + classname + '>("' + classname + '",\n'
+                newstr += 'tls_lua_state.new_usertype<' + classname + '>("' + classname + '",\n'
                 continue
             if fileline.find(begin) >= 0 and msgcode == 1 and filedbegin == 0:
                 filedbegin = 1
@@ -210,15 +210,14 @@ def gentotalfile(destdir, srcdir):
         headstr += '#include <google/protobuf/message.h>\n'
         headstr += '#include <sol/sol.hpp>\n'
         headstr += totalfuncitonname + ';\n'
-        headstr += 'extern thread_local sol::state g_lua;\n'
+        headstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'
         file.write(headstr)            
     with open(cppfilename, 'w', encoding='utf-8')as file:
         cppnewstr = '#include "' + headfilename + '"\n'
-        cppnewstr += 'thread_local sol::state g_lua;\n'
         for fn in funsname:
             cppnewstr += fn + ';\n'
         cppnewstr += totalfuncitonname + '\n{\n'
-        cppnewstr += 'g_lua.new_usertype<::google::protobuf::Message>("Message");\n'
+        cppnewstr += 'tls_lua_state.new_usertype<::google::protobuf::Message>("Message");\n'
         for fn in funsname:
             cppnewstr += fn.replace('void', '').strip(' ') + ';\n'
         cppnewstr += '}\n'
