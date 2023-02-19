@@ -250,6 +250,7 @@
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\rpc_channel.cc" />
     <ClCompile Include="src\network\rpc_server.cc" />
+    <ClCompile Include="src\game_logic\thread_local\thread_local_storage_lua.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\thread_local\common_logic_thread_local_storage.h" />
@@ -375,6 +376,7 @@
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\util\random.h" />
     <ClInclude Include="src\util\snow_flake.h" />
+    <ClInclude Include="src\game_logic\thread_local\thread_local_storage_lua.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

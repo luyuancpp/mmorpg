@@ -24,7 +24,7 @@ using EnterSeceneS2CPtr = std::shared_ptr<EnterSeceneS2C>;
 
 struct AutoLuaPlayer
 {
-	void operator()(sol::state_view* v) { g_lua.set("player", sol::lua_nil); }
+	void operator()(sol::state_view* v) { tls_lua_state.set("player", sol::lua_nil); }
 };
 
 using AutoLuaPlayerPtr = std::unique_ptr<sol::state_view, AutoLuaPlayer>;

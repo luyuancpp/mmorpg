@@ -100,6 +100,7 @@
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\game_logic\thread_local\thread_local_storage.cpp" />
     <ClCompile Include="src\game_logic\thread_local\common_logic_thread_local_storage.cpp" />
+    <ClCompile Include="src\game_logic\thread_local\thread_local_storage_lua.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -225,5 +226,6 @@
     <ClInclude Include="src\util\game_registry.h" />
     <ClInclude Include="src\game_logic\thread_local\thread_local_storage.h" />
     <ClInclude Include="src\game_logic\thread_local\common_logic_thread_local_storage.h" />
+    <ClInclude Include="src\game_logic\thread_local\thread_local_storage_lua.h" />
   </ItemGroup>
 </Project>

@@ -1,13 +1,13 @@
 #include <sol/sol.hpp>
 #include "muduo/base/Logging.h"
 #include "src/util/file2string.h"
-extern thread_local sol::state g_lua;
+#include "src/game_logic/thread_local/thread_local_storage_lua.h"
 void InitServiceLua()
 {
 	std::string contents;
 	contents = common::File2String("script/client/service/client.lua");
 	{
-		auto r = g_lua.script(contents);
+		auto r = tls_lua_state.script(contents);
 		if (!r.valid())
 		{
 			sol::error err = r;
@@ -16,7 +16,7 @@ void InitServiceLua()
 	}
 	contents = common::File2String("script/client/service/c_common_client_player.lua");
 	{
-		auto r = g_lua.script(contents);
+		auto r = tls_lua_state.script(contents);
 		if (!r.valid())
 		{
 			sol::error err = r;
@@ -25,7 +25,7 @@ void InitServiceLua()
 	}
 	contents = common::File2String("script/client/service/c_scene_client_player.lua");
 	{
-		auto r = g_lua.script(contents);
+		auto r = tls_lua_state.script(contents);
 		if (!r.valid())
 		{
 			sol::error err = r;
@@ -34,7 +34,7 @@ void InitServiceLua()
 	}
 	contents = common::File2String("script/client/service/c_team_client_player.lua");
 	{
-		auto r = g_lua.script(contents);
+		auto r = tls_lua_state.script(contents);
 		if (!r.valid())
 		{
 			sol::error err = r;

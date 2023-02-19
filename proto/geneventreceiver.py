@@ -213,7 +213,7 @@ def generate(filename):
 def inputfile():
     dir_list = os.listdir(eventprotodir)
     for filename in dir_list:
-    	if not (filename[-6:].lower() == '.proto'):
+        if not (filename[-6:].lower() == '.proto'):
             continue
         filelist.append(eventprotodir + filename)
 

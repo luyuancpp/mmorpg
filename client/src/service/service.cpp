@@ -47,8 +47,8 @@ void ClientService::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 
 void ClientService::ReadyGo()
 {
-    AutoLuaPlayerPtr p(&g_lua.set("player", this));
-    g_lua["ReadyGo"]();
+    AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
+    tls_lua_state["ReadyGo"]();
 }
 
 void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn, 
@@ -57,8 +57,8 @@ void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn,
 {
     if (message->players().empty())
     {        
-        AutoLuaPlayerPtr p(&g_lua.set("player", this));
-        g_lua["CreatePlayer"]();
+        AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
+        tls_lua_state["CreatePlayer"]();
         return;
     }
     EnterGs(message->players(0).player_id());   
@@ -101,14 +101,14 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
         = desc->FindMethodByName(msg_servcie.method);
     MessagePtr response(codec_.createMessage(msg_servcie.response));
     response->ParseFromString(message->body());
-    AutoLuaPlayerPtr p(&g_lua.set("player", this));
+    AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
     g_player_services[msg_servcie.service]->CallMethod(method, nullptr, response.get());
 }
 
 void ClientService::EnterGs(Guid guid)
 {
-    AutoLuaPlayerPtr p(&g_lua.set("player", this));
-    g_lua["EnterGame"](guid);
+    AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
+    tls_lua_state["EnterGame"](guid);
 }
 
 void ClientService::DisConnect()

@@ -26,14 +26,14 @@ void LogError(const std::string& s)
 
 void InitLua()
 {
-    g_lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
-    g_lua.new_usertype<ClientService>("player","send", sol::as_function(&ClientService::Send));
+    tls_lua_state.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table);
+    tls_lua_state.new_usertype<ClientService>("player","send", sol::as_function(&ClientService::Send));
     pb2sol2();
 
-    g_lua.set_function("LogInfo", LogInfo);
-    g_lua.set_function("LogError", LogError);
+    tls_lua_state.set_function("LogInfo", LogInfo);
+    tls_lua_state.set_function("LogError", LogError);
 
-    g_lua.new_usertype<PlayerId>("PlayerId",
+    tls_lua_state.new_usertype<PlayerId>("PlayerId",
         "player_id",
         sol::var(PlayerId::player_id));
     InitServiceLua();

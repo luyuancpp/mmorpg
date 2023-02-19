@@ -1,8 +1,7 @@
 #pragma once
 #include <sol/sol.hpp>
 #include "player_service.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
-extern thread_local sol::state g_lua;
+#include "src/game_logic/thread_local/thread_local_storage_lua.h"
 #include "logic_proto/scene_client_player.pb.h"
 class ClientPlayerSceneServiceService : public PlayerService {
 public:
@@ -14,17 +13,17 @@ public:
     {
         switch(method->index()) {
         case 0:
-            g_lua["EnterSceneC2SProcess"](
+            tls_lua_state["EnterSceneC2SProcess"](
             ::google::protobuf::internal::DownCast<const ::EnterSeceneC2SRequest*>( request),
             ::google::protobuf::internal::DownCast<::EnterSeceneC2SResponse*>(response));
         break;
         case 1:
-            g_lua["PushEnterSceneS2CProcess"](
+            tls_lua_state["PushEnterSceneS2CProcess"](
             ::google::protobuf::internal::DownCast<const ::EnterSeceneS2C*>( request),
             ::google::protobuf::internal::DownCast<::EnterSeceneS2C*>(response));
         break;
         case 2:
-            g_lua["PushSceneInfoS2CProcess"](
+            tls_lua_state["PushSceneInfoS2CProcess"](
             ::google::protobuf::internal::DownCast<const ::SceneInfoS2C*>( request),
             ::google::protobuf::internal::DownCast<::SceneInfoS2C*>(response));
         break;
