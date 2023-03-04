@@ -5,7 +5,7 @@
 void InitServiceLua()
 {
 	std::string contents;
-	contents = common::File2String("script/client/service/client.lua");
+	contents = common::File2String("script/lua/service/client.lua");
 	{
 		auto r = tls_lua_state.script(contents);
 		if (!r.valid())
@@ -14,7 +14,7 @@ void InitServiceLua()
 			LOG_FATAL << err.what();
 		}
 	}
-	contents = common::File2String("script/client/service/c_common_client_player.lua");
+	contents = common::File2String("script/lua/service/c_common_client_player.lua");
 	{
 		auto r = tls_lua_state.script(contents);
 		if (!r.valid())
@@ -23,7 +23,7 @@ void InitServiceLua()
 			LOG_FATAL << err.what();
 		}
 	}
-	contents = common::File2String("script/client/service/c_scene_client_player.lua");
+	contents = common::File2String("script/lua/service/c_scene_client_player.lua");
 	{
 		auto r = tls_lua_state.script(contents);
 		if (!r.valid())
@@ -32,7 +32,7 @@ void InitServiceLua()
 			LOG_FATAL << err.what();
 		}
 	}
-	contents = common::File2String("script/client/service/c_team_client_player.lua");
+	contents = common::File2String("script/lua/service/c_team_client_player.lua");
 	{
 		auto r = tls_lua_state.script(contents);
 		if (!r.valid())
