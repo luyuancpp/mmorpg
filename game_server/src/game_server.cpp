@@ -93,13 +93,13 @@ void GameServer::ServerInfo(const ::servers_info_data& info)
         rq.mutable_my_info()->set_id(gs_info_.id());
         rq.mutable_rpc_client()->set_ip(deploy_node_->local_addr().toIp());
         rq.mutable_rpc_client()->set_port(deploy_node_->local_addr().port());
-        deploy_node_->CallMethod(DeployServiceStartGSMethodDesc, &rq);
+        deploy_node_->CallMethod(DeployServiceStartGS, &rq);
     }
    
     {
         LobbyServerRequest rq;
         rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-        deploy_node_->CallMethod(DeployServiceAcquireLobbyInfoMethodDesc, &rq);//获取大厅服下所有服务器信息
+        deploy_node_->CallMethod(DeployServiceAcquireLobbyInfo, &rq);//获取大厅服下所有服务器信息
     }
 	
 }
@@ -158,7 +158,7 @@ void GameServer::CallControllerStartGs(ControllerSessionPtr controller_node)
     node_info->set_port(gs_info_.port());
     request.set_server_type(tls.registry.get<GsServerType>(global_entity()).server_type_);
     request.set_gs_node_id(gs_info_.id());
-    controller_node->CallMethod(ControllerServiceStartGsMethodDesc,&request);
+    controller_node->CallMethod(ControllerServiceStartGs,&request);
     LOG_DEBUG << "conncet to controller" ;
 }
 
@@ -179,7 +179,7 @@ void GameServer::CallLobbyStartGs()
 	node_info->set_port(gs_info_.port());
     rq.set_server_type(server_type);
 	rq.set_gs_node_id(gs_info_.id());
-    lobby_node_->CallMethod(LobbyServiceStartCrossGsMethodDesc, &rq);
+    lobby_node_->CallMethod(LobbyServiceStartCrossGs, &rq);
 }
 
 void GameServer::receive(const OnConnected2ServerEvent& es)
@@ -199,7 +199,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
                 ServerInfoRequest rq;
                 rq.set_group(GameConfig::GetSingleton().config_info().group_id());
                 rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-                deploy_node_->CallMethod(DeployServiceServerInfoMethodDesc, &rq);
+                deploy_node_->CallMethod(DeployServiceServerInfo, &rq);
             }
         );
     }

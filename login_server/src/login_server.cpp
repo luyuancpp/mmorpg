@@ -88,5 +88,5 @@ void LoginServer::receive(const OnConnected2ServerEvent& es)
     }
     ServerInfoRequest rq;
     rq.set_group(GameConfig::GetSingleton().config_info().group_id());
-    deploy_session_->CallMethod(DeployServiceServerInfoMethodDesc, &rq);
+    deploy_session_->CallMethod(DeployServiceServerInfo, &rq);
 }

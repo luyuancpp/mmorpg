@@ -156,7 +156,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	rq.set_account(request->account());
 	uint64_t session_id = 1;
 	sessions_.emplace(session_id, std::make_shared<PlayerPtr::element_type>());
-	Route2Node(kControllerNode, rq, ControllerServiceOnLsLoginAccountMethodDesc);
+	Route2Node(kControllerNode, rq, ControllerServiceOnLsLoginAccount);
 	//g_login_node->controller_node().CallMethodString1( LoginAccountControllerReplied, rpc, &ControllerService::ControllerNodeService_Stub::OnLsLoginAccount);
 ///<<< END WRITING YOUR CODE 
 }
@@ -246,7 +246,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	//连接过，登录过
 	ControllerNodeLsLeaveGameRequest rq;
 	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->CallMethod(ControllerServiceOnLsLeaveGameMethodDesc, &rq);
+	g_login_node->controller_node()->CallMethod(ControllerServiceOnLsLeaveGame, &rq);
 	sessions_.erase(sit);
 ///<<< END WRITING YOUR CODE 
 }
@@ -261,7 +261,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	sessions_.erase(request->session_id());
 	ControllerNodeLsDisconnectRequest rq;
 	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->CallMethod(ControllerServiceOnLsDisconnectMethodDesc, &rq);
+	g_login_node->controller_node()->CallMethod(ControllerServiceOnLsDisconnect, &rq);
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -324,12 +324,12 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     {
     case kControllerNode: {
 
-        g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethodDesc, mutable_request);
+        g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsg, mutable_request);
     }
     break;
     case kDatabaseNode:
     {
-        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethodDesc, mutable_request);
+        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsg, mutable_request);
     }
     break;
     default:

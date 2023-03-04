@@ -24,7 +24,7 @@ void StartGsControllerReplied(const TcpConnectionPtr& conn, const StartGsRespons
     else if (GameConfig::GetSingleton().server_type() == kMainSceneCrossServer)
     {
         GameConnectToControllerRequest rq;
-        g_game_node->lobby_node()->CallMethod(LobbyServiceGameConnectToControllerMethodDesc, &rq);
+        g_game_node->lobby_node()->CallMethod(LobbyServiceGameConnectToController, &rq);
     }
 }
 
