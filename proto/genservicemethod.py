@@ -3,78 +3,52 @@ import os
 import md5tool
 import shutil
 import threading
-import _thread
-import protofilearray
 import genpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
 
 local.rpcarry = []
-local.servicenames = []
 local.service = ''
 
 threads = []
-local.pkg = ''
-cpkg = 'package'
-yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
-yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
-gsservicedir = '../game_server/src/service/logic_proto/'
-lobbyservicedir = '../lobby_server/src/service/logic_proto/'
-controllerservicedir = '../controller_server/src/service/logic_proto/'
 logicprotodir = 'logic_proto/'
 tabstr = '    '
-cpprpcservicepart = 1
-controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/logic_proto/'
 methodsufix = 'method.h'
 
 genfile = []
-local.packagemessage = set()
 
 def parsefile(filename):
     local.rpcarry = []
-    local.packagemessage = set()
-    local.pkg = ''
     local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 local.rpcarry.append(fileline)
-            elif fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-            elif fileline.find('message ') >= 0:
-                local.packagemessage.add(fileline.replace('message ', '').replace('\r', '').replace('\n', ''))
 def genheadrpcfun():
     servicestr = ''
-    global controller
-    local.servicenames = []
     index = 0
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
         method = s[1]
-        methodname = local.pkg + local.service +  method + 'Method'
-        methodindexname = methodname + 'Index'
-        line = 'const uint32_t ' +  methodindexname + ' = ' + str(index) + ';\n'
-        line += '#define ' +  methodname + 'Desc ' \
-        + local.pkg + '::' + local.service + '_Stub'\
-        + '::descriptor()->method(' + methodindexname + ')\n\n'
+        methodname =  local.service +  method + 'Method'
+        methodindex = methodname + 'Index'
+        line = 'const uint32_t ' +  methodindex + ' = ' + str(index) + ';\n'
+        line += '#define ' +  methodname + 'Desc ' '::' + local.service + '_Stub'\
+        + '::descriptor()->method(' + methodindex + ')\n\n'
         index += 1
         servicestr += line
     return servicestr
 
-def getfilenamewithnopath(filename, destdir):
-    servertypedir = genpublic.getservertype(destdir) + '/'
-    return filename.replace(logicprotodir, '').replace('common_proto/', '').replace(servertypedir,'')
 
 def genheadfile(filename):
-    local.servicenames = []
     filename = filename.replace('.proto', methodsufix) 
     md5filename = genpublic.servicemethodmd5dir +  filename
     newstr = '#pragma once\n'
