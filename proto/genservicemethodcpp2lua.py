@@ -37,7 +37,7 @@ def genheadrpcfun():
     index = 0
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
-        methodname =  s[1]
+        methodname = local.service + s[1]
         methodindex = methodname + 'Index'
         line = 'const uint32_t ' +  methodindex + ' = ' + str(index) + ';\n'
         line += 'tls_lua_state["' +  methodname + '"] = []()->std::string& {\n' + 'return ' + local.service + '_Stub'\
