@@ -258,7 +258,7 @@ void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* 
 	controller_tls.gate_sessions().erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
-	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMethodDesc, &rq);
+	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnect, &rq);
 	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE 
 }
@@ -384,7 +384,7 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
         {
 			GateNodeKickConnRequest message;
             message.set_session_id(player_session->gate_session_.session_id());
-            Send2Gate(GateServiceKickConnByControllerMethodDesc, message, player_session->gate_node_id());
+            Send2Gate(GateServiceKickConnByController, message, player_session->gate_node_id());
         }
 		InitPlayerGate(player, request->session_id());
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
@@ -537,7 +537,7 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 	GateNodePlayerEnterGsRequest rq;
 	rq.set_session_id(player_session.session_id());
 	rq.set_gs_node_id(player_session.gs_node_id());
-	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMethodDesc, &rq);
+	gate_it->second->session_.CallMethod(GateServicePlayerEnterGs, &rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE 

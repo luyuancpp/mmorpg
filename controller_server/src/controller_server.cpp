@@ -102,7 +102,7 @@ void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
     request.set_ip(connection_info.toIp());
     request.set_port(connection_info.port());
     request.set_gs_node_id(tls.registry.get<GsNodePtr>(gs)->node_id());
-	tls.registry.get<GateNodePtr>(gate)->session_.Send(GateServiceStartGSMethodDesc, request);
+	tls.registry.get<GateNodePtr>(gate)->session_.Send(GateServiceStartGS, request);
 }
 
 void ControllerServer::receive(const OnConnected2ServerEvent& es)
@@ -117,12 +117,12 @@ void ControllerServer::receive(const OnConnected2ServerEvent& es)
                 ServerInfoRequest rq;
                 rq.set_group(GameConfig::GetSingleton().config_info().group_id());
                 rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-                deploy_session_->CallMethod(DeployServiceServerInfoMethodDesc, &rq);
+                deploy_session_->CallMethod(DeployServiceServerInfo, &rq);
 			}
 			
             {
                 SceneSqueueRequest rq;
-                deploy_session_->CallMethod(DeployServiceSceneSqueueNodeIdMethodDesc, &rq);
+                deploy_session_->CallMethod(DeployServiceSceneSqueueNodeId, &rq);
             }
 		}
 		
@@ -211,5 +211,5 @@ void ControllerServer::Register2Lobby()
 	node_info->set_ip(myinfo.ip());
 	node_info->set_port(myinfo.port());
 	rq.set_controller_node_id(myinfo.id());
-    lobby_session_->CallMethod(LobbyServiceStartControllerNodeMethodDesc, &rq);
+    lobby_session_->CallMethod(LobbyServiceStartControllerNode, &rq);
 }

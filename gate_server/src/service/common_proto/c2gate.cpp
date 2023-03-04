@@ -108,13 +108,13 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             //比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 			LoginNodeDisconnectRequest rq;
 			rq.set_session_id(session_id);
-			get_login_node(session_id)->CallMethod(LoginServiceDisconnectMethodDesc, &rq);
+			get_login_node(session_id)->CallMethod(LoginServiceDisconnect, &rq);
         }
         // controller
         {
             ControllerNodeDisconnectRequest rq;
             rq.set_session_id(session_id);
-            g_gate_node->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnectMethodDesc, &rq);
+            g_gate_node->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnect, &rq);
         }
         gate_tls.sessions().erase(session_id);
     }
@@ -138,7 +138,7 @@ void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn,
 {
     CreatePlayerC2lRequest rq;
     rq.set_session_id(tcp_session_id(conn));
-    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceCreatPlayerMethodDesc, &rq);
+    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceCreatPlayer, &rq);
 }
 
 void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -148,7 +148,7 @@ void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
     EnterGameC2LRequest rq;
     rq.set_session_id(tcp_session_id(conn));
     rq.set_player_id(message->player_id());
-    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceEnterGameMethodDesc, &rq);
+    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceEnterGame, &rq);
 }
 
 void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn, 
@@ -185,7 +185,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_session_id(session_id);
         rq.set_msg_id(request->msg_id());
         rq.set_id(request->id());
-        gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMethodDesc, &rq);
+        gs->second.gs_session_->CallMethod(GameServiceClientSend2Player, &rq);
         return;
     }
     else
@@ -195,7 +195,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_session_id(session_id);
         auto msg = rq.add_route_data_list();
         msg->mutable_node_info()->CopyFrom(g_gate_node->node_info());        
-        get_login_node(session_id)->Route2Node(LoginServiceRouteNodeStringMsgMethodDesc, rq);
+        get_login_node(session_id)->Route2Node(LoginServiceRouteNodeStringMsg, rq);
     }
 }
 
