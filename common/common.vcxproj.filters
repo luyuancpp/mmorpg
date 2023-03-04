@@ -227,5 +227,20 @@
     <ClInclude Include="src\game_logic\thread_local\thread_local_storage.h" />
     <ClInclude Include="src\game_logic\thread_local\common_logic_thread_local_storage.h" />
     <ClInclude Include="src\game_logic\thread_local\thread_local_storage_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\teammethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\team_server_playermethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\team_client_playermethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\scenemethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\scene_server_playermethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\scene_client_playermethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\login_servicemethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\lobby_scenemethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\gate_servicemethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\game_servicemethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\deploy_servicemethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\database_servicemethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\controller_servicemethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\common_server_playermethod_lua.h" />
+    <ClInclude Include="src\pb\pbc\service_method\common_client_playermethod_lua.h" />
   </ItemGroup>
 </Project>

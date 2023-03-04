@@ -17,7 +17,7 @@ rpcend = '///<<<rpc end'
 logicprotodir = 'logic_proto/'
 tabstr = '    '
 servicedir = './md5/logic_proto/'
-methodsufix = 'method.h'
+methodsufix = 'method_lua.h'
 
 genfile = []
 
@@ -37,12 +37,11 @@ def genheadrpcfun():
     index = 0
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
-        method = s[1]
-        methodname =  local.service +  method + 'Method'
+        methodname =  s[1]
         methodindex = methodname + 'Index'
         line = 'const uint32_t ' +  methodindex + ' = ' + str(index) + ';\n'
-        line += '#define ' +  methodname + 'Desc ' '::' + local.service + '_Stub'\
-        + '::descriptor()->method(' + methodindex + ')\n\n'
+        line += 'tls_lua_state["' +  methodname + '"] = []()->std::string& {\n' + 'return ' + local.service + '_Stub'\
+        + '::descriptor()->method(' + methodindex + ');\n}\n\n'
         index += 1
         servicestr += line
     return servicestr
@@ -53,7 +52,8 @@ def genheadfile(filename):
     md5filename = genpublic.servicemethodmd5dir +  filename
     newstr = '#pragma once\n'
     newstr += '#include <cstdint>\n\n'
-    newstr += '#include "'  + filename.replace(methodsufix, '') + '.pb.h"\n'
+    newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'
+    newstr += '#include "'  + filename.replace(methodsufix, '') + '.pb.h"\n\n'
     newstr += genheadrpcfun()
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -89,7 +89,7 @@ class myThread (threading.Thread):
         if local.service == '':
             return
         genheadfile(self.filename)
-        md5copy(self.filename,  'method.h')
+        md5copy(self.filename,  methodsufix)
 
 def scanfile():
     dir_list  =  os.listdir(genpublic.logicprotodir)
