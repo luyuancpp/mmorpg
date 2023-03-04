@@ -17,7 +17,8 @@ rpcend = '///<<<rpc end'
 logicprotodir = 'logic_proto/'
 tabstr = '    '
 servicedir = './md5/logic_proto/'
-methodsufix = 'method_lua.h'
+methodsufix = 'method_lua.cpp'
+gatherfile = "init_service_lua.cpp"
 
 genfile = []
 
@@ -38,23 +39,28 @@ def genheadrpcfun():
     for service in local.rpcarry:
         s = service.strip(' ').split(' ')
         methodname = local.service + s[1]
-        methodindex = methodname + 'Index'
-        line = 'const uint32_t ' +  methodindex + ' = ' + str(index) + ';\n'
-        line += 'tls_lua_state["' +  methodname + '"] = []()->std::string& {\n' + 'return ' + local.service + '_Stub'\
-        + '::descriptor()->method(' + methodindex + ');\n}\n\n'
+        line = 'tls_lua_state["' +  methodname + '"] = []()-> const ::google::protobuf::MethodDescriptor* {\n' + 'return ' + local.service + '_Stub'\
+        + '::descriptor()->method(' + str(index) + ');\n};\n\n'
         index += 1
         servicestr += line
     return servicestr
 
 
+def getmothedname(filename):
+    return "Init" + filename.replace('.proto', '')  + 'MethodLua'
+
 def genheadfile(filename):
+    funname = getmothedname(filename)
     filename = filename.replace('.proto', methodsufix) 
     md5filename = genpublic.servicemethodmd5dir +  filename
     newstr = '#pragma once\n'
-    newstr += '#include <cstdint>\n\n'
-    newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'
+    newstr += '#include <google/protobuf/descriptor.h>\n'
+    newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'    
+    
     newstr += '#include "'  + filename.replace(methodsufix, '') + '.pb.h"\n\n'
+    newstr += 'void '  + funname + '(){\n\n'    
     newstr += genheadrpcfun()
+    newstr += "}"
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -91,6 +97,23 @@ class myThread (threading.Thread):
         genheadfile(self.filename)
         md5copy(self.filename,  methodsufix)
 
+def gengatherfile(filename):
+    funname = "InitService"   + 'MethodLua'
+    md5filename = genpublic.servicemethodmd5dir +  filename
+    # for protofilename in genfile:
+    #     newstr += '#include "src/pb/pbc/service_method/' + protofilename[0].replace('.proto', ".h") + '"\n'
+    newstr = ""
+    for protofilename in genfile:
+            funname = getmothedname(protofilename[0])
+            newstr += "void " + funname + "();\n"
+    newstr += '\n\nvoid InitServiceMethodLua(){\n\n'    
+    for protofilename in genfile:
+            funname = getmothedname(protofilename[0])
+            newstr += funname + "();\n"
+    newstr += "\n\n}"
+    with open(md5filename, 'w', encoding='utf-8')as file:
+        file.write(newstr)
+
 def scanfile():
     dir_list  =  os.listdir(genpublic.logicprotodir)
     for filename in dir_list:
@@ -115,4 +138,6 @@ def main():
 
 genpublic.makedirs()
 scanfile() 
+gengatherfile(gatherfile)
+md5copy(gatherfile, "")
 main()
