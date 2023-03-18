@@ -3,7 +3,6 @@ from os import system
 import md5tool
 import shutil
 import threading
-import _thread
 import genpublic
 from multiprocessing import cpu_count
 

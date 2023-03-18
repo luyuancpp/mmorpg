@@ -92,16 +92,12 @@ class myThread (threading.Thread):
         self.filepath = str(filepath)
     def run(self):
         parsefile(self.filepath)
-        if local.service == '':
-            return
         genheadfile(self.filename)
         md5copy(self.filename,  methodsufix)
 
 def gengatherfile(filename):
     funname = "InitService"   + 'MethodLua'
     md5filename = genpublic.servicemethodmd5dir +  filename
-    # for protofilename in genfile:
-    #     newstr += '#include "src/pb/pbc/service_method/' + protofilename[0].replace('.proto', ".h") + '"\n'
     newstr = ""
     for protofilename in genfile:
             funname = getmothedname(protofilename[0])
