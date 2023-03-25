@@ -72,7 +72,8 @@ enum TipsCode
 message ClientRequest
 {
   uint64 id = 1;
-  uint32 msg_id = 3;
+  string service = 2;
+  string method = 3;
   bytes request = 4;
 }
 

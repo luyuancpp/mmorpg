@@ -104,32 +104,25 @@ void GameServiceImpl::ClientSend2Player(::google::protobuf::RpcController* contr
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
-        // todo player service move to gate check
-    auto mit = g_serviceinfo.find(request->msg_id());
-    if (mit == g_serviceinfo.end())
-    {
-        LOG_ERROR << "GatePlayerService msg not found " << request->msg_id();
-        //todo client error;
-        return;
-    }
-    auto& serviceinfo = mit->second;
-    auto it = g_player_services.find(serviceinfo.service);
+   // todo player service move to gate check
+  
+    auto it = g_player_services.find(request->service());
     if (it == g_player_services.end())
     {
-        LOG_ERROR << "GatePlayerService service not found " << request->msg_id();
+        LOG_ERROR << "GatePlayerService service not found " << request->service();
         return;
     }
     google::protobuf::Service* service = it->second->service();
-    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(serviceinfo.method);
+    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(request->method());
     if (nullptr == method)
     {
-        LOG_ERROR << "GatePlayerService service not found " << request->msg_id();
+        LOG_ERROR << "GatePlayerService method not found " << request->method();
         return;
     }
     auto cit = game_tls.gate_sessions().find(request->session_id());
     if (cit == game_tls.gate_sessions().end())
     {
-        LOG_INFO << "GatePlayerService session not found msg id " << request->msg_id();
+        LOG_INFO << "GatePlayerService session not found  " << request->service() << "," << request->method() << "," << request->session_id();
         return;
     }
     auto try_player_id = tls.registry.try_get<Guid>(cit->second);
@@ -149,7 +142,8 @@ void GameServiceImpl::ClientSend2Player(::google::protobuf::RpcController* contr
     MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
     it->second->CallMethod(method, pit->second, get_pointer(player_request), get_pointer(player_response));
     response->set_response(player_response->SerializeAsString());
-    response->set_msg_id(request->msg_id());
+    response->set_service(request->service());
+    response->set_method(request->method());
     response->set_id(request->id());
     response->set_session_id(request->session_id());
 ///<<< END WRITING YOUR CODE 
