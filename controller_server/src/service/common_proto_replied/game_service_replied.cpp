@@ -16,29 +16,22 @@ void OnGsCallPlayerReplied(const TcpConnectionPtr& conn, const NodeServiceMessag
     if (it == controller_tls.player_list().end())
     {
         LOG_ERROR << "PlayerService player not found " << replied->ex().player_id() << ","
-            << replied->descriptor()->full_name() << " msgid " << replied->msg().msg_id();
+            << replied->descriptor()->full_name() << " service " << replied->msg().service();
         return;
     }
-    auto msg_id = replied->msg().msg_id();
-    auto sit = g_serviceinfo.find(msg_id);
-    if (sit == g_serviceinfo.end())
-    {
-        LOG_ERROR << "PlayerService msg not found " << replied->ex().player_id() << "," << msg_id;
-        return;
-    }
-    auto service_it = g_player_service_replieds.find(sit->second.service);
+    auto service_it = g_player_service_replieds.find(replied->msg().service());
     if (service_it == g_player_service_replieds.end())
     {
-        LOG_ERROR << "PlayerService service not found " << replied->ex().player_id() << "," << msg_id;
+        LOG_ERROR << "PlayerService service not found " << replied->ex().player_id() << "," << replied->msg().service();
         return;
     }
     auto& serviceimpl = service_it->second;
     google::protobuf::Service* service = serviceimpl->service();
     const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-    const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
+    const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(replied->msg().method());
     if (nullptr == method)
     {
-        LOG_ERROR << "PlayerService method not found " << msg_id;
+        LOG_ERROR << "PlayerService method not found " << replied->msg().method();
         //todo client error;
         return;
     }

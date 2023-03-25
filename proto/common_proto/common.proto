@@ -58,7 +58,8 @@ message MessageBody
 {
   uint64 id = 1;
   bytes body = 2;
-  uint32 msg_id = 3;
+  string service = 3;
+  string method = 4;
 }
 
 message NodeMessageBody

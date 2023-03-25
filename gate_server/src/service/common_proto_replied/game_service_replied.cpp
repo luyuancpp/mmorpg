@@ -4,9 +4,10 @@
 
 void OnGsPlayerServiceReplied(const TcpConnectionPtr& conn, const RpcClientResponsePtr& replied, Timestamp timestamp)
 {
-    MessageBody msg;
-    msg.set_body(replied->response());
-    msg.set_id(replied->id());
-    msg.set_msg_id(replied->msg_id());
-    g_gate_node->codec().send(conn, msg);
+    MessageBody message;
+    message.set_body(replied->response());
+    message.set_id(replied->id());
+    message.set_service(replied->service());
+    message.set_method(replied->method());
+    g_gate_node->codec().send(conn, message);
 }

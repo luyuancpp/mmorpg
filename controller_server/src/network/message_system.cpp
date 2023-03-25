@@ -54,14 +54,7 @@ void Send2GsPlayer(const google::protobuf::Message& message, entt::entity player
 		LOG_INFO << "gs not found ";
 		return;
 	}
-	auto msg_it = g_msgid.find(message.GetDescriptor()->full_name());
-	if (msg_it == g_msgid.end())
-	{
-		LOG_ERROR << "message id not found " << message.GetDescriptor()->full_name();
-		return;
-	}
 	NodeServiceMessageRequest msg;
-	msg.mutable_msg()->set_msg_id(msg_it->second);
 	msg.mutable_msg()->set_body(message.SerializeAsString());
 	msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
 	gs->session_.Send(GameServiceSend2Player, msg);
@@ -107,7 +100,6 @@ void Send2PlayerViaGs(const google::protobuf::Message& message, entt::entity pla
         return;
     }
     NodeServiceMessageRequest msg;
-    msg.mutable_msg()->set_msg_id(msg_it->second);
     msg.mutable_msg()->set_body(message.SerializeAsString());
     msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
 	gs->session_.Send(GameServiceControllerSend2PlayerViaGs, msg);
@@ -139,7 +131,6 @@ void Send2Player(const google::protobuf::Message& message, GateNodePtr& gate, ui
     NodeServiceMessageRequest msg_wrapper;
     msg_wrapper.mutable_ex()->set_session_id(session_id);
     msg_wrapper.mutable_msg()->set_body(message.SerializeAsString());
-    msg_wrapper.mutable_msg()->set_msg_id(message_it->second);
     gate->session_.Send(GateServicePlayerMessage, msg_wrapper);
 }
 
@@ -188,7 +179,6 @@ void CallGsPlayerMethod(const google::protobuf::Message& msg, entt::entity playe
         return;
     }
     NodeServiceMessageRequest rq;
-    rq.mutable_msg()->set_msg_id(msg_it->second);
     rq.mutable_msg()->set_body(msg.SerializeAsString());
     rq.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
     tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayer, &rq);
