@@ -13,11 +13,12 @@ local.service = ''
 local.rpcservicemethod = []
 local.cppfilename = 'msgmap.cpp'
 local.hfilename = 'msgmap.h'
+local.serviceidlist = {}
 
 threads = []
 tabstr = '    '
-servicedir = './md5/logic_proto/'
-writedir = '../common/src/pb/pbc/'
+servicedir = './md5/logic_proto/serviceid/'
+writedir = '../common/src/pb/pbc/serviceid/'
 protodir = './logic_proto/'
 msg_index = 0
 
@@ -25,6 +26,8 @@ clientmsgdict = set()
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
+if not os.path.exists(writedir):
+    os.makedirs(writedir)
 
 def parsefile(filename):
     local.service = ''
@@ -50,11 +53,17 @@ def parsefile(filename):
 
 def genmsgidcpp(filename):
     global msg_index
-    newstr = '#include "msgmap.h"\n'
+    newstr = '#include "' + local.hfilename + '"\n'
     for kv in local.rpcservicemethod:
         service_method_id = kv[4]
         newstr += 'const uint32_t ' + service_method_id + ' =  ' + str(msg_index) + ';\n'
         msg_index += 1
+        servicename = kv[0].lower()
+        servicedirc = local.serviceidlist.get(servicename)
+        if  servicedirc == None:
+           local.serviceidlist.setdefault(servicename, [])
+        local.serviceidlist[servicename].append([service_method_id, msg_index])
+
 
     newstr += '\nstd::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
     newstr += 'void InitMsgService()\n{\n'
@@ -67,6 +76,17 @@ def genmsgidcpp(filename):
     newstr += '}\n'
     with open(filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
+
+def genperserviceheader():
+    for key, values in  local.serviceidlist.items():
+       newstr = ''
+       for service_metho in values:
+        newstr += 'const uint32_t ' + service_metho[0] + ' = ' + str(service_metho[1])
+       filename = servicedir + key + '_' + local.hfilename
+       with open(filename, 'w', encoding='utf-8')as file: 
+        file.write(newstr)
+   
+
 
 def genmsgidhead(filename):
     newstr = '#pragma once\n'
@@ -99,6 +119,13 @@ def md5copy(destfilename, filename):
     md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
     shutil.copy(gennewfilename, destfilename)
 
+def copyperserviceheader():
+    for key, values in  local.serviceidlist.items():
+       filename = key + '_' + local.hfilename
+       destfilename = writedir + filename
+       print(destfilename)
+       md5copy(destfilename, filename)
+
 genfile = ['common_proto/game_service.proto', 
 'common_proto/login_service.proto']
 
@@ -119,7 +146,10 @@ cppdestfilename = writedir + local.cppfilename
 hsrcfilename = servicedir + local.hfilename
 hdestfilename = writedir + local.hfilename
 
-genmsgidcpp(cppsrcfilename)
 genmsgidhead(hsrcfilename)
+genmsgidcpp(cppsrcfilename)
+genperserviceheader()
+
 md5copy(cppdestfilename, local.cppfilename)
 md5copy(hdestfilename, local.hfilename)
+copyperserviceheader()
