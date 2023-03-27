@@ -124,7 +124,7 @@
     <ClCompile Include="src\pb\pbc\service_method\team_client_playermethod_lua.cpp" />
     <ClCompile Include="src\pb\pbc\service_method\team_server_playermethod_lua.cpp" />
     <ClCompile Include="src\pb\pbc\service_method\teammethod_lua.cpp" />
-    <ClCompile Include="src\pb\pbc\serviceid\msgmap.cpp" />
+    <ClCompile Include="src\pb\pbc\serviceid\service_method_id.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -250,17 +250,18 @@
     <ClInclude Include="src\pb\pbc\service_method\team_client_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\team_server_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\teammethod.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\serversceneservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\clientplayercommonservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\clientplayersceneservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\clientplayerteamservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\gameservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\lobbyservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\loginservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\s2steamservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\serverplayerloginservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\serverplayersceneservice_msgmap.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\serverplayerteamservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\clientplayercommonservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\clientplayersceneservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\clientplayerteamservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\gameservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\lobbyservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\loginservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\s2steamservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\serverplayerloginservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\serverplayersceneservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\serverplayerteamservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\serversceneservice_service_method_id.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\service_method_id.h" />
   </ItemGroup>
 </Project>
