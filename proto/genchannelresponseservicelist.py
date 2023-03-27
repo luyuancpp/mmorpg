@@ -49,7 +49,7 @@ def gen(filename, destpath, md5dir):
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
         
-def inputfile():
+def scanfilename():
     dir_list  =  os.listdir(genpublic.logicprotodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
@@ -84,7 +84,7 @@ def md5copy(filename, destdir, md5dir):
     
 genpublic.makedirs()
 
-inputfile()
+scanfilename()
 
 gen('rpc_prototype_service.cpp', genpublic.pbcserviceinstancedir, genpublic.pbcserviceinstancemd5dir)
 md5copy('rpc_prototype_service.cpp', genpublic.pbcserviceinstancedir, genpublic.pbcserviceinstancemd5dir)

@@ -48,7 +48,7 @@ def parsefile(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = local.service
 
-def inputfiledestdir(filename):
+def scanfilenamedestdir(filename):
     local.pkg = ''
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
@@ -173,12 +173,12 @@ def md5copydir():
 
 genfile = []
 
-def inputfile():
+def scanfilename():
     dir_list  = os.listdir(protodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
-        inputfiledestdir(protodir + filename)
+        scanfilenamedestdir(protodir + filename)
         genfile.append(protodir  + filename)
 
 class myThread (threading.Thread):
@@ -210,7 +210,7 @@ def main():
         parseplayerservcie(file)
     genplayerservcielist('player_service.cpp')
 
-inputfile() 
+scanfilename() 
 main()
 md5copydir()
 

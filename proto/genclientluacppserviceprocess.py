@@ -12,7 +12,7 @@ md5dirfilename = md5dir + cppfilename
 tabstr = '	'
 genfile = []
 
-def inputfile():
+def scanfilename():
     dir_list  = os.listdir(luadir)
     for filename in dir_list:
         if not (filename[-4:].lower() == '.lua'):
@@ -54,6 +54,6 @@ def md5copy(destfilename):
     md5tool.generate_md5_file_for(md5dirfilename, filenamemd5)
     shutil.copy(md5dirfilename, destfilename)
 
-inputfile()
+scanfilename()
 gencpp()
 md5copy(clientservicedir + cppfilename)
