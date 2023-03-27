@@ -53,7 +53,7 @@ def parsefile(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = local.service
 
-def inputfiledestdir(filename):
+def scanfilenamedestdir(filename):
     global filedirdestpath
     local.pkg = ''
     if filename.find(client_player) >= 0:
@@ -324,7 +324,7 @@ def md5copydir():
 
 genfile = []
 
-def inputfile():
+def scanfilename():
     global filedirdestpath
     filedirdestpath['player_service.cpp'] = gslogicervicedir
     filedirdestpath['player_service.h'] = gslogicervicedir
@@ -332,7 +332,7 @@ def inputfile():
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
-        inputfiledestdir(protodir + filename)
+        scanfilenamedestdir(protodir + filename)
         genfile.append(protodir  + filename)
 
 class myThread (threading.Thread):
@@ -366,7 +366,7 @@ def main():
 
 genpublic.makedirs()
 local.md5protodir = genpublic.makedirsbypath(protodir)
-inputfile() 
+scanfilename() 
 main()
 md5copydir()
 

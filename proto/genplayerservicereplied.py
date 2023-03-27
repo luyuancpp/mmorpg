@@ -268,7 +268,7 @@ def generate(filename):
         
 genfile = []
 
-def inputfile():
+def scanfilename():
     dir_list  = dir_list = os.listdir(protodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
@@ -308,6 +308,6 @@ def main():
 
 genpublic.makedirs()
 genpublic.makedirsbypath(protodir)
-inputfile() 
+scanfilename() 
 main()
 

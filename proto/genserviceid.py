@@ -11,8 +11,8 @@ local = threading.local()
 
 local.service = ''
 local.rpcservicemethod = []
-local.cppfilename = 'msgmap.cpp'
-local.hfilename = 'msgmap.h'
+local.cppfilename = 'service_method_id.cpp'
+local.hfilename = 'service_method_id.h'
 local.serviceidlist = {}
 
 threads = []
@@ -133,7 +133,7 @@ def copyperserviceheader():
 genfile = ['common_proto/game_service.proto', 
 'common_proto/login_service.proto']
 
-def inputfile():
+def scanfilename():
     for filename in os.listdir(protodir):
         if not (filename[-6:].lower() == '.proto'):
             continue
@@ -143,7 +143,7 @@ def main():
     for file in genfile:
         parsefile(file)
         
-inputfile()
+scanfilename()
 main()
 cppsrcfilename = servicedir + local.cppfilename
 cppdestfilename = writedir + local.cppfilename
