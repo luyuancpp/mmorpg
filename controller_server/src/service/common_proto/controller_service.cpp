@@ -436,10 +436,18 @@ void ControllerServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 		LOG_INFO << "player not found " << message_extern.player_id();
 		return;
 	}
-	auto service_it = g_player_services.find(request->msg().service());
+	auto& msg = request->msg();
+	auto msg_id = msg.msg_id();
+	auto sit = g_serviceinfo.find(msg_id);
+	if (sit == g_serviceinfo.end())
+	{
+		LOG_INFO << "msg not found " << msg_id;
+		return;
+	}
+	auto service_it = g_player_services.find(sit->second.service);
 	if (service_it == g_player_services.end())
 	{
-		LOG_INFO << "service not found " << request->msg().service();
+		LOG_INFO << "msg not found " << msg_id;
 		return;
 	}
 	auto& serviceimpl = service_it->second;
