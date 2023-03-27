@@ -56,7 +56,6 @@ def genmsgidcpp(filename):
     newstr = '#include "' + local.hfilename + '"\n'
     for kv in local.rpcservicemethod:
         service_method_id = kv[4]
-        newstr += 'const uint32_t ' + service_method_id + ' =  ' + str(msg_index) + ';\n'
         msg_index += 1
         servicename = kv[0].lower()
         servicedirc = local.serviceidlist.get(servicename)
@@ -64,6 +63,8 @@ def genmsgidcpp(filename):
            local.serviceidlist.setdefault(servicename, [])
         local.serviceidlist[servicename].append([service_method_id, msg_index])
 
+    for key, values in  local.serviceidlist.items():
+       newstr += '#include "' + getkeyfilename(key, local.hfilename) + '"\n'
 
     newstr += '\nstd::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
     newstr += 'void InitMsgService()\n{\n'
@@ -77,12 +78,15 @@ def genmsgidcpp(filename):
     with open(filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
+def getkeyfilename(key, filename):
+    return key + '_' + local.hfilename
+
 def genperserviceheader():
     for key, values in  local.serviceidlist.items():
        newstr = ''
        for service_metho in values:
-        newstr += 'const uint32_t ' + service_metho[0] + ' = ' + str(service_metho[1])
-       filename = servicedir + key + '_' + local.hfilename
+        newstr += 'const uint32_t ' + service_metho[0] + ' = ' + str(service_metho[1]) + ';\n'
+       filename = servicedir + getkeyfilename(key, local.hfilename)
        with open(filename, 'w', encoding='utf-8')as file: 
         file.write(newstr)
    
@@ -121,7 +125,7 @@ def md5copy(destfilename, filename):
 
 def copyperserviceheader():
     for key, values in  local.serviceidlist.items():
-       filename = key + '_' + local.hfilename
+       filename = getkeyfilename(key, local.hfilename)
        destfilename = writedir + filename
        print(destfilename)
        md5copy(destfilename, filename)
