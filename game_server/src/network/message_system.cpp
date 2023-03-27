@@ -26,7 +26,7 @@ void Send2Player(const google::protobuf::Message& message, Guid player_id)
 	Send2Player(message, it->second);
 }
 
-void Send2Player(const google::protobuf::Message& msg, entt::entity player)
+void Send2Player(const google::protobuf::Message& message, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
@@ -38,10 +38,10 @@ void Send2Player(const google::protobuf::Message& msg, entt::entity player)
 		LOG_ERROR << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
 		return;
 	}
-	auto msg_it = g_msgid.find(msg.GetDescriptor()->full_name());
+	auto msg_it = g_msgid.find(message.GetDescriptor()->full_name());
 	if (msg_it == g_msgid.end())
 	{
-		LOG_ERROR << "Send2Player message id not found " << msg.GetDescriptor()->full_name();
+		LOG_ERROR << "Send2Player message id not found " << message.GetDescriptor()->full_name();
 		return;
 	}
 	auto gate = (*try_gate).lock();
@@ -50,11 +50,11 @@ void Send2Player(const google::protobuf::Message& msg, entt::entity player)
 		LOG_INFO << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
 		return;
 	}
-	NodeServiceMessageRequest msg_wrapper;
-	msg_wrapper.mutable_msg()->set_msg_id(msg_it->second);
-	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
-	msg_wrapper.mutable_ex()->set_session_id(tls.registry.get<GateSession>(player).session_id());
-	gate->session_.Send(GateServicePlayerMessage, msg_wrapper);
+	NodeServiceMessageRequest message_wrapper;
+	message_wrapper.mutable_msg()->set_msg_id(msg_it->second);
+	message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
+	message_wrapper.mutable_ex()->set_session_id(tls.registry.get<GateSession>(player).session_id());
+	gate->session_.Send(GateServicePlayerMessage, message_wrapper);
 }
 
 void Send2Player(const google::protobuf::Message& msg, EntityPtr& player)
