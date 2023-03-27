@@ -10,7 +10,7 @@ from multiprocessing import cpu_count
 local = threading.local()
 
 local.service = ''
-local.rpcservicemethod = []
+local.rpcservicemethod = {}
 local.cppfilename = 'service_method_id.cpp'
 local.hfilename = 'service_method_id.h'
 local.serviceidlist = {}
@@ -22,8 +22,6 @@ writedir = '../common/src/pb/pbc/serviceid/'
 protodir = './logic_proto/'
 msg_index = 0
 
-clientmsgdict = set()
-
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 if not os.path.exists(writedir):
@@ -32,8 +30,6 @@ if not os.path.exists(writedir):
 def parsefile(filename):
     local.service = ''
     rpcbegin = 0 
-    local.msgdict = dict()
-    global clientmsgdict
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
@@ -42,11 +38,11 @@ def parsefile(filename):
                 rp = rpc[4].replace('(', '').replace(')', '').replace(';', '').replace('\n', '')
                 method = rpc[1]
                 service_method_id = local.service + '_Id_' + method 
-                local.rpcservicemethod.append([local.service, method, rq, rp, service_method_id])
-                if service_method_id in method:
-                    print('error : service method repeated', local.service, method,  ' filename:', filename)
-                    continue
-                clientmsgdict.add(service_method_id)
+                servicedict = local.rpcservicemethod.get(local.service)
+                if  servicedict == None:
+                    local.rpcservicemethod.setdefault(local.service, [])
+                block = [local.service, method, rq, rp, service_method_id]
+                local.rpcservicemethod[local.service].append(block)
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
@@ -54,26 +50,28 @@ def parsefile(filename):
 def genmsgidcpp(filename):
     global msg_index
     newstr = '#include "' + local.hfilename + '"\n'
-    for kv in local.rpcservicemethod:
-        service_method_id = kv[4]
-        msg_index += 1
-        servicename = kv[0].lower()
-        servicedirc = local.serviceidlist.get(servicename)
-        if  servicedirc == None:
-           local.serviceidlist.setdefault(servicename, [])
-        local.serviceidlist[servicename].append([service_method_id, msg_index])
+    for key, values in  local.rpcservicemethod.items():
+        servicename = key.lower()
+        servicedict = local.serviceidlist.get(servicename)
+        if  servicedict == None:
+            local.serviceidlist.setdefault(servicename, [])
+        for kv in values:
+            service_method_id = kv[4]
+            msg_index += 1
+            local.serviceidlist[servicename].append([service_method_id, msg_index])
 
     for key, values in  local.serviceidlist.items():
        newstr += '#include "' + getkeyfilename(key, local.hfilename) + '"\n'
 
     newstr += '\nstd::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
     newstr += 'void InitMsgService()\n{\n'
-    for kv in local.rpcservicemethod:
-        service_method_id = kv[4]
-        newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].service = "' + kv[0] +'";\n'
-        newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].method = "'  + kv[1] +'";\n'
-        newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].request = "' + kv[2] +'";\n'
-        newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].response = "' + kv[3] +'";\n\n'
+    for key, values in  local.rpcservicemethod.items():
+        for kv in values:
+            service_method_id = kv[4]
+            newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].service = "' + kv[0] +'";\n'
+            newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].method = "'  + kv[1] +'";\n'
+            newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].request = "' + kv[2] +'";\n'
+            newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].response = "' + kv[3] +'";\n\n'
     newstr += '}\n'
     with open(filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -127,7 +125,6 @@ def copyperserviceheader():
     for key, values in  local.serviceidlist.items():
        filename = getkeyfilename(key, local.hfilename)
        destfilename = writedir + filename
-       print(destfilename)
        md5copy(destfilename, filename)
 
 genfile = ['common_proto/game_service.proto', 
