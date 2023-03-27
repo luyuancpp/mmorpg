@@ -240,7 +240,6 @@
     <ClCompile Include="src\pb\pbc\logic_proto\team.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\team_client_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\team_server_player.pb.cc" />
-    <ClCompile Include="src\pb\pbc\msgmap.cpp" />
     <ClCompile Include="src\pb\pbc\pb2sol2\c2gate_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\pb2sol2\common_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\pb2sol2\common_sol2.cpp" />
@@ -295,6 +294,18 @@
     <ClInclude Include="src\game_logic\comp\player_comp.h" />
     <ClInclude Include="src\game_logic\comp\scene_comp.h" />
     <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\clientplayercommonservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\clientplayersceneservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\clientplayerteamservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\gameservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\lobbyservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\loginservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\s2steamservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\serverplayerloginservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\serverplayersceneservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\serverplayerteamservice_msgmap.h" />
+    <ClInclude Include="src\pb\pbc\serviceid\serversceneservice_msgmap.h" />
     <ClInclude Include="src\pb\pbc\service_method\common_client_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\common_server_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\controller_servicemethod.h" />
