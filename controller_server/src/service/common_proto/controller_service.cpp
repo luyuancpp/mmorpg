@@ -436,24 +436,16 @@ void ControllerServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 		LOG_INFO << "player not found " << message_extern.player_id();
 		return;
 	}
-	auto& msg = request->msg();
-	auto msg_id = msg.msg_id();
-	auto sit = g_serviceinfo.find(msg_id);
-	if (sit == g_serviceinfo.end())
-	{
-		LOG_INFO << "msg not found " << msg_id;
-		return;
-	}
-	auto service_it = g_player_services.find(sit->second.service);
+	auto service_it = g_player_services.find(request->msg().service());
 	if (service_it == g_player_services.end())
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_INFO << "service not found " << request->msg().service();
 		return;
 	}
 	auto& serviceimpl = service_it->second;
 	google::protobuf::Service* service = serviceimpl->service();
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(request->msg().method());
 	if (nullptr == method)
 	{
 		LOG_INFO << "message not found " << msg_id;
@@ -461,7 +453,7 @@ void ControllerServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 		return;
 	}
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
-	player_request->ParseFromString(msg.body());
+	player_request->ParseFromString(request->msg().body());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
 	serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
