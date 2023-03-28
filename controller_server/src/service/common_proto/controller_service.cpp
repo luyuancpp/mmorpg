@@ -168,7 +168,7 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	{
 		g_controller_node->LetGateConnect2Gs(gs, e);
 	}
-	controller_tls.game_node().emplace(tls.registry.get<GsNodePtr>(gs)->node_info_.node_id(), gs);
+	controller_tls.game_node().emplace(request->gs_node_id(), gs);
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE 
 }
