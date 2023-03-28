@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "entt/src/entt/entity/registry.hpp"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 
 #include "src/common_type/common_type.h"
 

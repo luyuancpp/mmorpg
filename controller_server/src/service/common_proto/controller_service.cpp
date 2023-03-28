@@ -134,7 +134,6 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	AddMainSceneNodeCompnent(gs);
 	tls.registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
 	tls.registry.emplace<GsNodePtr>(gs, gs_node_ptr);
-	tls.registry.emplace<GsServer>(gs);
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
@@ -198,7 +197,7 @@ void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* con
 		break;
 	}
 	tls.registry.emplace<InetAddress>(gate, session_addr);
-	for (auto e : tls.registry.view<GsServer>())
+	for (auto e : tls.registry.view<GsNodePtr>())
 	{
 		g_controller_node->LetGateConnect2Gs(e, gate);
 	}
