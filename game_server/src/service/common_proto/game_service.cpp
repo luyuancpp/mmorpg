@@ -64,29 +64,27 @@ void GameServiceImpl::Send2Player(::google::protobuf::RpcController* controller,
     if (it == game_tls.player_list().end())
     {
         LOG_ERROR << "PlayerService player not found " << request->ex().player_id() << ","
-            << request->descriptor()->full_name() << " msgid " << request->msg().msg_id();
+            << request->descriptor()->full_name() << " msgid " << request->msg().service_method_id();
         return;
     }
-    auto msg_id = request->msg().msg_id();
-    auto sit = g_serviceinfo.find(msg_id);
-    if (sit == g_serviceinfo.end())
+    auto sit = g_service_method_info.find(request->msg().service_method_id());
+    if (sit == g_service_method_info.end())
     {
-        LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << msg_id;
+        LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << request->msg().service_method_id();
         return;
     }
     auto service_it = g_player_services.find(sit->second.service);
     if (service_it == g_player_services.end())
     {
-        LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << msg_id;
+        LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << request->msg().service_method_id();
         return;
     }
     auto& serviceimpl = service_it->second;
     google::protobuf::Service* service = serviceimpl->service();
-    const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-    const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
+    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(sit->second.method);
     if (nullptr == method)
     {
-        LOG_ERROR << "PlayerService method not found " << msg_id;
+        LOG_ERROR << "PlayerService method not found " << request->msg().service_method_id();
         //todo client error;
         return;
     }
@@ -200,7 +198,7 @@ void GameServiceImpl::ControllerSend2PlayerViaGs(::google::protobuf::RpcControll
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
-    ::Send2Player(request->msg(), request->ex().player_id());
+    ::Send2Player(request->msg().service_method_id(), request->msg(), request->ex().player_id());
 ///<<< END WRITING YOUR CODE 
 }
 
@@ -214,20 +212,19 @@ void GameServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
     if (it == game_tls.player_list().end())
     {
         LOG_ERROR << "PlayerService player not found " << request->ex().player_id() << ","
-            << request->descriptor()->full_name() << " msgid " << request->msg().msg_id();
+            << request->descriptor()->full_name() << " msgid " << request->msg().service_method_id();
         return;
     }
-    auto msg_id = request->msg().msg_id();
-    auto sit = g_serviceinfo.find(msg_id);
-    if (sit == g_serviceinfo.end())
+    auto sit = g_service_method_info.find(request->msg().service_method_id());
+    if (sit == g_service_method_info.end())
     {
-        LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << msg_id;
+        LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << request->msg().service_method_id();
         return;
     }
     auto service_it = g_player_services.find(sit->second.service);
     if (service_it == g_player_services.end())
     {
-        LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << msg_id;
+        LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << request->msg().service_method_id();
         return;
     }
     auto& serviceimpl = service_it->second;
@@ -236,7 +233,7 @@ void GameServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
     const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
     if (nullptr == method)
     {
-        LOG_ERROR << "PlayerService method not found " << msg_id;
+        LOG_ERROR << "PlayerService method not found " << request->msg().service_method_id();
         //todo client error;
         return;
     }
@@ -250,7 +247,7 @@ void GameServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
     }
     response->mutable_msg()->set_body(player_response->SerializeAsString());
     response->mutable_ex()->set_player_id(request->ex().player_id());
-    response->mutable_msg()->set_msg_id(msg_id);
+    response->mutable_msg()->set_service_method_id(request->msg().service_method_id());
 ///<<< END WRITING YOUR CODE 
 }
 

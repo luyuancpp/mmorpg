@@ -1,6 +1,7 @@
 #include "player_tip_system.h"
 
 #include "src/game_logic/player/player_list.h"
+#include "src/pb/pbc/serviceid/clientplayercommonservice_service_method_id.h"
 #include "src/thread_local/game_thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/message_system.h"
@@ -15,7 +16,7 @@ void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVect
 	{
 		*message.mutable_tips()->mutable_param()->Add() = it;
 	}	
-	Send2Player(message, player);
+	Send2Player(ClientPlayerCommonService_Id_PushTipsS2C, message, player);
 }
 
 void PlayerTipSystem::Tip(Guid player_id, uint32_t tip_id, const StringVector& str_param)
