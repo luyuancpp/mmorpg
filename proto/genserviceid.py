@@ -23,6 +23,7 @@ tabstr = '    '
 servicedir = './md5/logic_proto/serviceid/'
 writedir = '../common/src/pb/pbc/serviceid/'
 protodir = './logic_proto/'
+commondir = './common_proto/'
 serviceidir = './servicemethodid/'
 idfilename = 'servicemethodid.txt'
 msg_index = 0
@@ -147,8 +148,7 @@ def copyperserviceheader():
        destfilename = writedir + filename
        md5copy(destfilename, filename)
 
-genfile = ['common_proto/game_service.proto', 
-'common_proto/login_service.proto']
+genfile = []
 
 def scanserviceidfile():
     global msg_index
@@ -191,6 +191,11 @@ def scanprotofile():
         if not (filename[-6:].lower() == '.proto'):
             continue
         genfile.append(protodir + filename)
+    for filename in os.listdir(commondir):
+        if not (filename[-6:].lower() == '.proto'):
+            continue
+        genfile.append(commondir + filename)
+    
 
 def main():
     for file in genfile:

@@ -94,14 +94,14 @@ void DbServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();
 		return;
 	}
-	//µ±Ç°½ÚµãµÄÇëÇóÐÅÏ¢
+	//å½“å‰èŠ‚ç‚¹çš„è¯·æ±‚ä¿¡æ¯
 	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
 	if (!current_node_request->ParseFromString(request->body()))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << route_data.method();
 		return;
 	}
-	//µ±Ç°½ÚµãµÄÕæÕý»Ø¸´µÄÏûÏ¢
+	//å½“å‰èŠ‚ç‚¹çš„çœŸæ­£å›žå¤çš„æ¶ˆæ¯
 	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);

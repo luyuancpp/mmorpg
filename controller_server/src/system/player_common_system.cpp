@@ -4,6 +4,8 @@
 
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/pb/pbc/serviceid/clientplayersceneservice_service_method_id.h"
+#include "src/pb/pbc/serviceid/serverplayerloginservice_service_method_id.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
 #include "src/system/player_change_scene.h"
@@ -29,7 +31,7 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
         return;
     }
     message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(message, player);
+    Send2GsPlayer(ServerPlayerLoginService_Id_UpdateSessionController2Gs, message, player);
 
     auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
     if (nullptr != try_enter_gs)
@@ -63,7 +65,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         Controller2GsLoginRequest message;
         message.set_enter_gs_type((*try_enter_gs).enter_gs_type());
         tls.registry.remove<EnterGsFlag>(player);
-        Send2GsPlayer(message, player);
+        Send2GsPlayer(ServerPlayerLoginService_Id_Controller2GsLogin, message, player);
     }
    
     //给客户端发所有场景消息
@@ -73,6 +75,6 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         {
             message.mutable_scene_info()->Add()->CopyFrom(tls.registry.get<SceneInfo>(e));
         }
-        Send2Player(message, player);
+        Send2Player(ClientPlayerSceneService_Id_PushSceneInfoS2C, message, player);
     }    
 }
