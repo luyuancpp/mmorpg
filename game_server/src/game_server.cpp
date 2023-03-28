@@ -46,6 +46,8 @@ void GameServer::Init()
     g_game_node = this; 
     EventReceiver::Register(tls.dispatcher);
     InitConfig();
+	node_info_.set_node_type(kGameNode);
+	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
     global_entity() = tls.registry.create();
     tls.registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
@@ -112,6 +114,7 @@ void GameServer::StartGsDeployReplied(const StartGSResponse& replied)
 	redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
 
     gs_info_ = replied.my_info();
+    node_info_.set_node_id(gs_info_.id());
     InetAddress node_addr(gs_info_.ip(), gs_info_.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, node_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);

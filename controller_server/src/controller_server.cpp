@@ -17,7 +17,7 @@
 #include "src/service/logic_proto/player_service.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"
 #include "src/service/logic_proto/server_service.h"
-#include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
 #include "src/pb/pbc/service_method/lobby_scenemethod.h"
@@ -52,6 +52,8 @@ void ControllerServer::Init()
     g_controller_node = this;
     EventReceiverEvent::Register(tls.dispatcher);
     InitConfig();
+	node_info_.set_node_type(kControllerNode);
+	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
     InitMsgService();
     InitPlayerServcie();
@@ -82,6 +84,7 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
     Connect2Lobby();
 	
     auto& myinfo = serverinfos_.controller_info();
+    node_info_.set_node_id(myinfo.id());
     InetAddress controller_addr(myinfo.ip(), myinfo.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
