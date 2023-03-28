@@ -34,11 +34,6 @@ void ClientService::Send(uint32_t service_method_id, const google::protobuf::Mes
     codec_.send(conn_, message);
 }
 
-void ClientService::SendOhter(const google::protobuf::Message& message)
-{
-    codec_.send(conn_, message);
-}
-
 void ClientService::OnConnection(const muduo::net::TcpConnectionPtr& conn)
 {
     conn_ = conn;
