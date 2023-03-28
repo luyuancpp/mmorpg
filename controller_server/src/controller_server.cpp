@@ -100,12 +100,24 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
 
 void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
-    auto& connection_info = tls.registry.get<InetAddress>(gs);
+    auto try_gs_node_ptr = tls.registry.try_get<GsNodePtr>(gs);
+    if (nullptr == try_gs_node_ptr)
+    {
+        LOG_ERROR << "gs not found ";
+        return;
+    }
+	auto try_gate_node_ptr = tls.registry.try_get<GateNodePtr>(gs);
+	if (nullptr == try_gate_node_ptr)
+	{
+		LOG_ERROR << "gate not found ";
+		return;
+	}
+    auto& gs_node_ptr = *try_gs_node_ptr;
     GateNodeStartGSRequest request;
-    request.set_ip(connection_info.toIp());
-    request.set_port(connection_info.port());
-    request.set_gs_node_id(tls.registry.get<GsNodePtr>(gs)->node_id());
-	tls.registry.get<GateNodePtr>(gate)->session_.Send(GateServiceStartGS, request);
+    request.set_ip(gs_node_ptr->inet_address_.toIp());
+    request.set_port(gs_node_ptr->inet_address_.port());
+    request.set_gs_node_id(gs_node_ptr->node_id());
+    (*try_gate_node_ptr)->session_.Send(GateServiceStartGS, request);
 }
 
 void ControllerServer::receive(const OnConnected2ServerEvent& es)
