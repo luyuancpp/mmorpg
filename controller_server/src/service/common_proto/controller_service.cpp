@@ -25,9 +25,9 @@
 #include "src/network/player_session.h"
 #include "src/network/server_component.h"
 #include "src/network/node_info.h"
-#include "src/pb/pbc/msgmap.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
+#include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
@@ -433,30 +433,27 @@ void ControllerServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 	auto it = controller_tls.player_list().find(message_extern.player_id());
 	if (it == controller_tls.player_list().end())
 	{
-		LOG_INFO << "player not found " << message_extern.player_id();
+		LOG_ERROR << "player not found " << message_extern.player_id();
 		return;
 	}
-	auto& msg = request->msg();
-	auto msg_id = msg.msg_id();
-	auto sit = g_serviceinfo.find(msg_id);
-	if (sit == g_serviceinfo.end())
+	auto sit = g_service_method_info.find(request->msg().service_method_id());
+	if (sit == g_service_method_info.end())
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_ERROR << "service_method_id not found " << request->msg().service_method_id();
 		return;
 	}
 	auto service_it = g_player_services.find(sit->second.service);
 	if (service_it == g_player_services.end())
 	{
-		LOG_INFO << "msg not found " << msg_id;
+		LOG_ERROR << "player service  not found " << request->msg().service_method_id();
 		return;
 	}
 	auto& serviceimpl = service_it->second;
 	google::protobuf::Service* service = serviceimpl->service();
-	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(request->msg().method());
+	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
-		LOG_INFO << "message not found " << msg_id;
+		LOG_ERROR << "method not found " << request->msg().service_method_id();
 		//todo client error;
 		return;
 	}
@@ -470,7 +467,7 @@ void ControllerServiceImpl::OnGsPlayerService(::google::protobuf::RpcController*
 	}
 	response->mutable_ex()->set_player_id(request->ex().player_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
-	response->mutable_msg()->set_msg_id(msg_id);
+	response->mutable_msg()->set_service_method_id(request->msg().service_method_id());
 ///<<< END WRITING YOUR CODE 
 }
 

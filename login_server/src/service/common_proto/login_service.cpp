@@ -284,8 +284,13 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		return;
 	}
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto& servcie_method_info = g_service_method_info[route_data.service_method_id()];
-	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(servcie_method_info.method);
+	auto sit = g_service_method_info.find(route_data.service_method_id());
+	if (sit == g_service_method_info.end())
+	{
+		LOG_INFO << "service_method_id not found " << route_data.service_method_id();
+		return;
+	}
+	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();
