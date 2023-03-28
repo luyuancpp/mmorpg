@@ -15,6 +15,7 @@
 #include "src/system/player_change_scene.h"
 #include "src/pb/pbc/service_method/lobby_scenemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
+#include "src/pb/pbc/serviceid/serverplayersceneservice_service_method_id.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 #include "component_proto/player_login_comp.pb.h"
@@ -51,14 +52,14 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         return;
     }
     enter_scene_message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(enter_scene_message, player);
+    Send2GsPlayer(ServerPlayerSceneService_Id_EnterSceneController2Gs, enter_scene_message, player);
 }
 
 
 void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 {
     EnterSceneS2CRequest msg;
-    CallGsPlayerMethod(msg, player);
+    CallGsPlayerMethod(ServerPlayerSceneService_Id_Controller2GsEnterSceneS2C, msg, player);
 }
 
 NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)

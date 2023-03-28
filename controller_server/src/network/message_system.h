@@ -26,5 +26,5 @@ void Send2Player(uint32_t service_method_id, const google::protobuf::Message& me
 void Send2Gate(uint32_t service_method_id, const google::protobuf::Message& message, uint32_t gate_id);
 
 
-void CallGsPlayerMethod(const google::protobuf::Message& message, entt::entity player);
+void CallGsPlayerMethod(uint32_t service_method_id, const google::protobuf::Message& message, entt::entity player);
 

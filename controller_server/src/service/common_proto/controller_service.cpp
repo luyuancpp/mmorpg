@@ -27,6 +27,7 @@
 #include "src/network/node_info.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
+#include "src/pb/pbc/serviceid/gateservice_service_method_id.h"
 #include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/system/player_scene_system.h"
@@ -384,7 +385,7 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
         {
 			GateNodeKickConnRequest message;
             message.set_session_id(player_session->gate_session_.session_id());
-            Send2Gate(GateServiceKickConnByController, message, player_session->gate_node_id());
+            Send2Gate(GateService_Id_KickConnByController, message, player_session->gate_node_id());
         }
 		InitPlayerGate(player, request->session_id());
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
