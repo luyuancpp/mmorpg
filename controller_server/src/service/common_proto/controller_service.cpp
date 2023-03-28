@@ -17,6 +17,7 @@
 #include "src/game_logic/comp/account_comp.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/network/message_system.h"
 #include "src/network/gate_session.h"
 #include "src/network/session.h"
@@ -547,6 +548,89 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
+
+	if (request->route_data_list_size() >= kMaxRouteSize)
+	{
+		LOG_ERROR << "route msg size too max:" << request->DebugString();
+		return;
+	}
+	else if (request->route_data_list_size() <= 0)
+	{
+		LOG_ERROR << "msg list empty:" << request->DebugString();
+		return;
+	}
+	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
+	auto sit = g_service_method_info.find(route_data.service_method_id());
+	if (sit == g_service_method_info.end())
+	{
+		LOG_INFO << "service_method_id not found " << route_data.service_method_id();
+		return;
+	}
+	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(sit->second.method);
+	if (nullptr == method)
+	{
+		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();
+		return;
+	}
+	//当前节点的请求信息
+	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
+	if (!current_node_request->ParseFromString(request->body()))
+	{
+		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << route_data.method();
+		return;
+	}
+	//当前节点的真正回复的消息
+	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
+	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
+	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
+	//没有发送到下个节点就是要回复了
+	if (cl_tls.next_route_node_type() == UINT32_MAX)
+	{
+		response->set_body(current_node_response->SerializeAsString());
+		for (auto& it : request->route_data_list())
+		{
+			*response->add_route_data_list() = it;
+		}
+		response->set_session_id(request->session_id());
+		return;
+	}
+	//处理,如果需要继续路由则拿到当前节点信息
+	//需要发送到下个节点
+	cl_tls.set_next_route_node_type(UINT32_MAX);
+	auto next_route_data = mutable_request->add_route_data_list();
+	next_route_data->CopyFrom(cl_tls.route_data());
+	next_route_data->mutable_node_info()->CopyFrom(g_controller_node->node_info());
+	mutable_request->set_body(cl_tls.route_msg_body());
+	switch (cl_tls.next_route_node_type())
+	{
+	case kLoginNode:
+	{
+		g_controller_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsg, mutable_request);
+	}
+	break;
+	case kDatabaseNode:
+	{
+		g_controller_node->database_node()->CallMethod(DbServiceRouteNodeStringMsg, mutable_request);
+	}
+	break;
+	case kGateNode:
+	{
+		g_controller_node->db_node()->CallMethod(DbServiceRouteNodeStringMsg, mutable_request);
+	}
+	break;
+	case kGameNode:
+	{
+		g_controller_node->db_node()->CallMethod(DbServiceRouteNodeStringMsg, mutable_request);
+	}
+	break;
+	default:
+	{
+		LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.next_route_node_type();
+	}
+	break;
+	}
+	cl_tls.set_next_route_node_id(UINT32_MAX);
+
 ///<<< END WRITING YOUR CODE 
 }
 
