@@ -36,10 +36,6 @@ struct ClosureReplied
     Guid session_id_{ kInvalidGuid };
 };
 
-
-using CreatePlayerRequestPtr = std::shared_ptr<CreatePlayerRequest>;
-using EnterGameRequestPtr = std::shared_ptr<EnterGameRequest>;
-using LeaveGameRequestPtr = std::shared_ptr<LeaveGameRequest>;
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 
 class ClientReceiver : muduo::noncopyable
@@ -58,20 +54,6 @@ public:
     void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { codec_.send(conn, messag); }
 
     //client to gate 
-
-
-    void OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
-        const CreatePlayerRequestPtr& message, 
-        muduo::Timestamp);
-
-    void OnEnterGame(const muduo::net::TcpConnectionPtr& conn,
-        const EnterGameRequestPtr& message,
-        muduo::Timestamp);
-
-    void OnLeaveGame(const muduo::net::TcpConnectionPtr& conn,
-        const LeaveGameRequestPtr& message,
-        muduo::Timestamp);
-
 	void OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
 		const RpcClientMessagePtr& message,
 		muduo::Timestamp);

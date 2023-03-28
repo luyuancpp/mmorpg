@@ -32,13 +32,6 @@ ClientReceiver::ClientReceiver(ProtobufCodec& codec,
     : codec_(codec),
       dispatcher_(dispatcher)
 {
-    
-    dispatcher_.registerMessageCallback<CreatePlayerRequest>(
-        std::bind(&ClientReceiver::OnCreatePlayer, this, _1, _2, _3));
-    dispatcher_.registerMessageCallback<EnterGameRequest>(
-        std::bind(&ClientReceiver::OnEnterGame, this, _1, _2, _3));
-    dispatcher_.registerMessageCallback<LeaveGameRequest>(
-        std::bind(&ClientReceiver::OnLeaveGame, this, _1, _2, _3));
 	dispatcher_.registerMessageCallback<ClientRequest>(
 		std::bind(&ClientReceiver::OnRpcClientMessage, this, _1, _2, _3));
 }
@@ -131,33 +124,6 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         session.conn_ = conn;
         gate_tls.sessions().emplace(id, std::move(session));
     }
-}
-
-void ClientReceiver::OnCreatePlayer(const muduo::net::TcpConnectionPtr& conn, 
-                                    const CreatePlayerRequestPtr& message, 
-                                    muduo::Timestamp)
-{
-    CreatePlayerC2lRequest rq;
-    rq.set_session_id(tcp_session_id(conn));
-    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceCreatPlayer, &rq);
-}
-
-void ClientReceiver::OnEnterGame(const muduo::net::TcpConnectionPtr& conn, 
-                                const EnterGameRequestPtr& message, 
-                                muduo::Timestamp)
-{
-    EnterGameC2LRequest rq;
-    rq.set_session_id(tcp_session_id(conn));
-    rq.set_player_id(message->player_id());
-    get_login_node(tcp_session_id(conn))->CallMethod(LoginServiceEnterGame, &rq);
-}
-
-void ClientReceiver::OnLeaveGame(const muduo::net::TcpConnectionPtr& conn, 
-    const LeaveGameRequestPtr& message, 
-    muduo::Timestamp)
-{
-    LeaveGameResponse response;
-    codec_.send(conn, response);
 }
 
 void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
