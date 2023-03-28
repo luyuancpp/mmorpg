@@ -20,22 +20,6 @@
 using namespace muduo;
 using namespace muduo::net;
 
-template <typename ClientResponse, typename ServerRequest, typename ServerResponse>
-struct ClosureReplied
-{
-	ClosureReplied(const muduo::net::TcpConnectionPtr& cc)
-		: s_rp_(new ServerResponse()),
-		client_conn_(cc),
-        session_id_(boost::any_cast<uint64_t>(client_conn_->getContext())) {}
-    ~ClosureReplied() {}
-    inline Guid session_id()const { return session_id_; }
-	ClientResponse c_rp_;
-	ServerRequest s_rq_;
-	ServerResponse* s_rp_{ nullptr };
-	const muduo::net::TcpConnectionPtr client_conn_;
-    Guid session_id_{ kInvalidGuid };
-};
-
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 
 class ClientReceiver : muduo::noncopyable

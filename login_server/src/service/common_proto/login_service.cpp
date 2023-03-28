@@ -158,7 +158,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	uint64_t session_id = 1;
 	sessions_.emplace(session_id, std::make_shared<PlayerPtr::element_type>());
 	Route2Node(kControllerNode, rq, ControllerServiceOnLsLoginAccount);
-	//g_login_node->controller_node().CallMethodString1( LoginAccountControllerReplied, rpc, &ControllerService::ControllerNodeService_Stub::OnLsLoginAccount);
+	//LoginAccountControllerReplied
 ///<<< END WRITING YOUR CODE 
 }
 
