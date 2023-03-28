@@ -210,7 +210,7 @@ def generate(filename):
 	generatehead(filename)
 	generatecpp(filename)
 
-def scanfilename():
+def scanprotofile():
     dir_list = os.listdir(eventprotodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
@@ -249,7 +249,7 @@ def main():
 
 
 #sync
-scanfilename()
+scanprotofile()
 main()
 geneventreceiverhead()
 md5copy('event', '.h')

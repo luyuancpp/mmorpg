@@ -220,7 +220,7 @@ def main():
     for t in threads :
         t.join()
 
-def scanfilename():
+def scanprotofile():
     dir_list  = os.listdir(logicprotodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
@@ -230,5 +230,5 @@ def scanfilename():
             genfile.append([logicprotodir + filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + logicprotodir])
         elif filename.find(genpublic.lobby_file_prefix) >= 0:
             genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir, genpublic.servermd5dirs[genpublic.lobbymd5dirindex] + logicprotodir])
-scanfilename()
+scanprotofile()
 main()

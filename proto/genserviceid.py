@@ -130,7 +130,7 @@ def copyperserviceheader():
 genfile = ['common_proto/game_service.proto', 
 'common_proto/login_service.proto']
 
-def scanfilename():
+def scanprotofile():
     for filename in os.listdir(protodir):
         if not (filename[-6:].lower() == '.proto'):
             continue
@@ -140,17 +140,13 @@ def main():
     for file in genfile:
         parsefile(file)
         
-scanfilename()
+scanprotofile()
 main()
-cppsrcfilename = servicedir + local.cppfilename
-cppdestfilename = writedir + local.cppfilename
-hsrcfilename = servicedir + local.hfilename
-hdestfilename = writedir + local.hfilename
 
-genmsgidhead(hsrcfilename)
-genmsgidcpp(cppsrcfilename)
+genmsgidhead(servicedir + local.hfilename)
+genmsgidcpp(servicedir + local.cppfilename)
 genperserviceheader()
 
-md5copy(cppdestfilename, local.cppfilename)
-md5copy(hdestfilename, local.hfilename)
+md5copy(writedir + local.cppfilename, local.cppfilename)
+md5copy(writedir + local.hfilename, local.hfilename)
 copyperserviceheader()
