@@ -9,6 +9,7 @@
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/pb/pbc/serviceid/serverplayersceneservice_service_method_id.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_change_scene.h"
 #include "src/network/message_system.h"
@@ -83,7 +84,7 @@ void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
 		return ;
 	}
     leave_scene_message.set_change_gs(p_player_gs->gs_node_id() != (*try_to_scene_gs)->node_id());
-    Send2GsPlayer(leave_scene_message, player);
+    Send2GsPlayer(ServerPlayerSceneService_Id_LeaveSceneController2Gs, leave_scene_message, player);
     ///<<< END WRITING YOUR CODE 
 }
 
