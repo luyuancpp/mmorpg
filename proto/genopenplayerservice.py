@@ -12,7 +12,7 @@ if not os.path.exists(md5dir):
 
 def gen(readfilename, filename):
     destfilename = md5dir + filename
-    newstr =  '#include <unordered_set>\n'
+    newstr =  '#include <unordered_set>\n\n'
     declaration = False
    
     with open(md5dir + readfilename,'r', encoding='utf-8') as file:
@@ -21,13 +21,13 @@ def gen(readfilename, filename):
                 newstr += fileline
             elif fileline.find('C2SRequest') >= 0:
                 if declaration == False:
-                    newstr += '\n\nstd::unordered_set<uint32_t> g_player_service_method_id{\n'
+                    newstr += '\nstd::unordered_set<uint32_t> g_player_service_method_id{\n'
                     declaration = True
                 str = fileline.split('[')[1]
                 msgid = str.split(']')[0]
-                newstr += tabstr  + msgid + ',\n'
+                newstr += msgid + ',\n'
     newstr = newstr.strip('\n').strip(',')
-    newstr += '};\n'
+    newstr += '\n};\n'
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 

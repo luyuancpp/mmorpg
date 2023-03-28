@@ -180,7 +180,6 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
             Tip(conn, 6);
 			return;
 		}
-
         GameNodeRpcClientRequest rq;
         rq.set_request(request->request());
         rq.set_session_id(session_id);
