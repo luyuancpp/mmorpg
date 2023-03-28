@@ -86,19 +86,19 @@ void DbServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 		LOG_ERROR << "msg list empty:" << request->DebugString();
 		return;
 	}
-	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto& servcie_method_info = g_service_method_info[route_data.service_method_id()];
+	auto& recv_route_data = request->route_data_list(request->route_data_list_size() - 1);
+	auto& servcie_method_info = g_service_method_info[recv_route_data.service_method_id()];
 	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(servcie_method_info.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();
+		LOG_ERROR << "method not found" << request->DebugString() << "method name" << recv_route_data.method();
 		return;
 	}
 	//当前节点的请求信息
 	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
 	if (!current_node_request->ParseFromString(request->body()))
 	{
-		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << route_data.method();
+		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << recv_route_data.method();
 		return;
 	}
 	//当前节点的真正回复的消息
