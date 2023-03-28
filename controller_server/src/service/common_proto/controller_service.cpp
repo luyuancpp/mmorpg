@@ -601,7 +601,7 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 	next_route_data->CopyFrom(cl_tls.route_data());
 	next_route_data->mutable_node_info()->CopyFrom(g_controller_node->node_info());
 	mutable_request->set_body(cl_tls.route_msg_body());
-	switch (cl_tls.next_route_node_type())
+	/*switch (cl_tls.next_route_node_type())
 	{
 	case kLoginNode:
 	{
@@ -628,7 +628,7 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 		LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.next_route_node_type();
 	}
 	break;
-	}
+	}*/
 	cl_tls.set_next_route_node_id(UINT32_MAX);
 
 ///<<< END WRITING YOUR CODE 
