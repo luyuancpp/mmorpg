@@ -308,7 +308,7 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
-	if (cl_tls.route_node_type() == UINT32_MAX)
+	if (cl_tls.next_route_node_type() == UINT32_MAX)
 	{ 
 		response->set_body(current_node_response->SerializeAsString());
 		for (auto& it : request->route_data_list())
@@ -320,12 +320,12 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
-    cl_tls.set_route_node_type(UINT32_MAX);
+    cl_tls.set_next_route_node_type(UINT32_MAX);
     auto next_route_data = mutable_request->add_route_data_list();
     next_route_data->CopyFrom(cl_tls.route_data());
 	next_route_data->mutable_node_info()->CopyFrom(g_login_node->node_info());
     mutable_request->set_body(cl_tls.route_msg_body());
-    switch (cl_tls.route_node_type())
+    switch (cl_tls.next_route_node_type())
     {
     case kControllerNode: {
 
@@ -339,11 +339,11 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     break;
     default:
 	{
-		LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.route_node_type();
+		LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.next_route_node_type();
 	}
     break;
     }
-
+	cl_tls.set_next_route_node_id(UINT32_MAX);
 ///<<< END WRITING YOUR CODE 
 }
 

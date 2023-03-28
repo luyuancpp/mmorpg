@@ -91,6 +91,17 @@ public:
         channel_->Send(method, request);
     }
 
+
+	void Send(const char* service, const char* method, const ::google::protobuf::Message& request)
+	{
+		if (!connected_)
+		{
+			LOG_ERROR << "client disconnect";
+			return;
+		}
+		channel_->Send(service, method, request);
+	}
+
     void Route2Node(const ::google::protobuf::MethodDescriptor* method,
         const ::google::protobuf::Message& request)
     {
@@ -101,6 +112,7 @@ public:
         }
         channel_->Route2Node(method, request);
     }
+
 private:
     void onConnection(const TcpConnectionPtr& conn)
     {
