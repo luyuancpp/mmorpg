@@ -226,7 +226,7 @@ def gentotalfile(destdir, srcdir):
 genluasol('./common_proto/common.proto', srcdir)
 genluasol('./common_proto/c2gate.proto', srcdir)
 
-def scanfilename():
+def scanprotofile():
     for protodir in genprotodir:
         dir_list  = os.listdir(protodir)
         for filename in dir_list:
@@ -236,7 +236,7 @@ def scanfilename():
 
 genpublic.makedirs()
 
-scanfilename()
+scanprotofile()
 gentotalfile(destdir, srcdir)
 md5copy(destdir, srcdir, 'sol2.h')
 md5copy(destdir, srcdir, 'sol2.cpp')

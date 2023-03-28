@@ -49,7 +49,7 @@ def parsefile(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = local.service
 
-def scanfilenamedestdir(filename):
+def scanprotofiledestdir(filename):
     local.pkg = ''
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
@@ -152,14 +152,14 @@ def md5copydir():
 
 genfile = []
 
-def scanfilename():
+def scanprotofile():
     dir_list  = os.listdir(protodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
         if filename.find(client_player) < 0:
             continue
-        scanfilenamedestdir(protodir + filename)
+        scanprotofiledestdir(protodir + filename)
         genfile.append(protodir  + filename)
 
 class myThread (threading.Thread):
@@ -187,7 +187,7 @@ def main():
     for t in threads :
         t.join()
 
-scanfilename() 
+scanprotofile() 
 main()
 md5copydir()
 
