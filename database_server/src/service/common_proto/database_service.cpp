@@ -4,7 +4,6 @@
 #include "muduo/base/Timestamp.h"
 
 #include "src/database_server.h"
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/mysql_wrapper/mysql_database.h"
 #include "src/network/node_info.h"
