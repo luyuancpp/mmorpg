@@ -5,6 +5,7 @@
 #include "src/network/node_info.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/comp/scene_comp.h"
+#include "src/pb/pbc/serviceid/serverplayersceneservice_service_method_id.h"
 
 #include "logic_proto/scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -44,7 +45,7 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
     }
     Gs2ControllerEnterSceneRequest message;
     message.mutable_scene_info()->CopyFrom(request->scene_info());
-    Send2ControllerPlayer(message, player);
+    Send2ControllerPlayer(ServerPlayerSceneService_Id_EnterSceneGs2Controller, message, player);
 ///<<< END WRITING YOUR CODE
 }
 

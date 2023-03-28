@@ -7,6 +7,7 @@
 #include "src/network/controller_node.h"
 #include "src/network/session.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
+#include "src/pb/pbc/serviceid/serverplayersceneservice_service_method_id.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_async_comp.pb.h"
@@ -49,7 +50,7 @@ void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& me
 {
 	//告诉controller 保存完毕，可以切换场景了
 	Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
-	Send2ControllerPlayer(save_complete_message, player_id);
+	Send2ControllerPlayer(ServerPlayerSceneService_Id_Gs2ControllerLeaveSceneAsyncSavePlayerComplete, save_complete_message, player_id);
 
 	game_tls.player_list().erase(player_id);//存储完毕从gs删除玩家
 }
