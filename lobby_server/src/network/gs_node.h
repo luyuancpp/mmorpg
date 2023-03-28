@@ -19,8 +19,6 @@ struct GsNode
 	RpcServerConnection session_;
 };
 
-struct GsServer{};
-
 using GsNodePtr = std::shared_ptr<GsNode>;
 
 using GsNodes = std::unordered_map<uint32_t, entt::entity>;

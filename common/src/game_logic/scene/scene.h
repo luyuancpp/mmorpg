@@ -1,8 +1,6 @@
 #pragma once
 
-#include "entt/src/entt/entity/registry.hpp"
-
-#include "src/util/game_registry.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/util/snow_flake.h"
 #include "src/game_logic/scene/servernode_system.h"
 
