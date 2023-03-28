@@ -23,8 +23,8 @@ tabstr = '    '
 servicedir = './md5/logic_proto/serviceid/'
 writedir = '../common/src/pb/pbc/serviceid/'
 protodir = './logic_proto/'
-serviceidir = './serviceid/'
-idfilename = 'serviceid.txt'
+serviceidir = './servicemethodid/'
+idfilename = 'servicemethodid.txt'
 msg_index = 0
 
 if not os.path.exists(servicedir):
