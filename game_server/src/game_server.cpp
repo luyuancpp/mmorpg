@@ -24,7 +24,7 @@
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "src/network/node_info.h"
-#include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/system/redis_system.h"
 #include "src/system/logic/config_system.h"
 

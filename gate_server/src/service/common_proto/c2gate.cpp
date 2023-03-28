@@ -12,7 +12,7 @@
 #include "src/network/login_node.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/rpc_msg_route.h"
-#include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
 #include "src/pb/pbc/service_method/login_servicemethod.h"
@@ -24,7 +24,7 @@
 
 ServerSequence32 g_server_sequence_;
 
-extern std::unordered_set<uint32_t> g_open_player_msgids;
+extern std::unordered_set<uint32_t> g_player_service_method_id;
 
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 
     ProtobufDispatcher& dispatcher)
@@ -170,7 +170,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		return;
 	}
     //todo msg id error
-    if (g_open_player_msgids.find(request->msg_id()) != g_open_player_msgids.end())
+    if (g_player_service_method_id.find(request->service_method_id()) != g_player_service_method_id.end())
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
 		auto gs = g_game_node.find(it->second.gs_node_id_);

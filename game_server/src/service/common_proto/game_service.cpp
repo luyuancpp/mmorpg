@@ -10,7 +10,7 @@
 #include "src/network/session.h"
 #include "src/game_logic/player/player_list.h"
 #include "src/network/server_component.h"
-#include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/service/logic_proto/player_service.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"

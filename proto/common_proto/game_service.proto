@@ -18,6 +18,7 @@ message GameNodeRpcClientRequest
   string service = 3;
   string method = 4;
   uint64 id = 5;
+  uint32 service_method_id = 6;
 }
 
 message GameNodeRpcClientResponse

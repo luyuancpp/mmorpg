@@ -13,16 +13,21 @@ if not os.path.exists(md5dir):
 def gen(readfilename, filename):
     destfilename = md5dir + filename
     newstr =  '#include <unordered_set>\n'
-    newstr += 'std::unordered_set<uint32_t> g_open_player_msgids{\n'
+    declaration = False
+   
     with open(md5dir + readfilename,'r', encoding='utf-8') as file:
         for fileline in file:
-            if fileline.find('};') >= 0:
-                newstr = newstr.strip(',\n')
-                newstr +=  '\n};\n'
-                break
+            if fileline.find('#include') >= 0:
+                newstr += fileline
             elif fileline.find('C2SRequest') >= 0:
-                msgid = fileline.split(',')[1].replace('}', '').replace('"', '')
+                if declaration == False:
+                    newstr += '\n\nstd::unordered_set<uint32_t> g_player_service_method_id{\n'
+                    declaration = True
+                str = fileline.split('[')[1]
+                msgid = str.split(']')[0]
                 newstr += tabstr  + msgid + ',\n'
+    newstr = newstr.strip('\n').strip(',')
+    newstr += '};\n'
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
@@ -44,5 +49,5 @@ def md5copy(filename, destdir):
     md5tool.generate_md5_file_for(srcmd5filename, md5suffixfilename)
     shutil.copy(srcmd5filename, destfilename)
 
-gen('logic_proto/msgmap.cpp', openfilename)
+gen('logic_proto/serviceid/service_method_id.cpp', openfilename)
 md5copy(openfilename, '../gate_server/src/service')
