@@ -4,7 +4,7 @@
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
 #include "src/network/server_component.h"
-#include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"

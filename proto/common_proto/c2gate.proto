@@ -75,5 +75,6 @@ message ClientRequest
   string service = 2;
   string method = 3;
   bytes request = 4;
+  uint32 service_method_id = 5;
 }
 
