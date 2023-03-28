@@ -9,49 +9,48 @@
 #include "src/redis_client/redis_client.h"
 #include "src/service/common_proto/login_service.h"
 
+class LoginServer : muduo::noncopyable, public Receiver<LoginServer>
+{
+public:
+	using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
-    class LoginServer : muduo::noncopyable, public Receiver<LoginServer>
-    {
-    public:
-        using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
+	LoginServer(muduo::net::EventLoop* loop);
 
-        LoginServer(muduo::net::EventLoop* loop);
-            
-        inline PbSyncRedisClientPtr& redis_client() { return redis_; }
-        inline RpcClientPtr& controller_node() { return controller_session_; }
-        inline RpcClientPtr& db_node() { return db_session_; }
-        uint32_t login_node_id() const { return conf_info_.id(); }
-		inline const NodeInfo& node_info()const { return node_info_;}
-		inline const NodeInfo& database_node_info()const {return dababase_node_info_;}
-        inline const NodeInfo& controller_node_info()const { return controller_node_info_; }
+	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
+	inline RpcClientPtr& controller_node() { return controller_session_; }
+	inline RpcClientPtr& db_node() { return db_session_; }
+	uint32_t login_node_id() const { return conf_info_.id(); }
+	inline const NodeInfo& node_info()const { return node_info_; }
+	inline const NodeInfo& database_node_info()const { return dababase_node_info_; }
+	inline const NodeInfo& controller_node_info()const { return controller_node_info_; }
 
-        void Init();
+	void Init();
 
-        void ConnectDeploy();
+	void ConnectDeploy();
 
-        void Start();
+	void Start();
 
-        void StartServer(const ::servers_info_data& info);
+	void StartServer(const ::servers_info_data& info);
 
-        void receive(const OnConnected2ServerEvent& es);
+	void receive(const OnConnected2ServerEvent& es);
 
-    private:
-        muduo::net::EventLoop* loop_{ nullptr };
-        
-        PbSyncRedisClientPtr redis_;
-        RpcServerPtr server_;
+private:
+	muduo::net::EventLoop* loop_{ nullptr };
 
-        RpcClientPtr deploy_session_;
-        RpcClientPtr controller_session_;
-        RpcClientPtr db_session_;
+	PbSyncRedisClientPtr redis_;
+	RpcServerPtr server_;
 
-        LoginServiceImpl impl_;
+	RpcClientPtr deploy_session_;
+	RpcClientPtr controller_session_;
+	RpcClientPtr db_session_;
 
-        login_server_db conf_info_;
-        NodeInfo node_info_;
-        NodeInfo dababase_node_info_;
-        NodeInfo controller_node_info_;
-    };
+	LoginServiceImpl impl_;
+
+	login_server_db conf_info_;
+	NodeInfo node_info_;
+	NodeInfo dababase_node_info_;
+	NodeInfo controller_node_info_;
+};
 
 extern LoginServer* g_login_node;
 
