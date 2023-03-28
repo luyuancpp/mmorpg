@@ -14,18 +14,24 @@ local.rpcservicemethod = {}
 local.cppfilename = 'service_method_id.cpp'
 local.hfilename = 'service_method_id.h'
 local.serviceidlist = {}
+local.unuseindex = {}
+local.useindex = {}
 
 threads = []
 tabstr = '    '
 servicedir = './md5/logic_proto/serviceid/'
 writedir = '../common/src/pb/pbc/serviceid/'
 protodir = './logic_proto/'
+serviceidir = './serviceid/'
+idfilename = 'serviceid.txt'
 msg_index = 0
 
 if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 if not os.path.exists(writedir):
     os.makedirs(writedir)
+if not os.path.exists(serviceidir):
+    os.makedirs(serviceidir)
 
 def parsefile(filename):
     local.service = ''
@@ -130,6 +136,21 @@ def copyperserviceheader():
 genfile = ['common_proto/game_service.proto', 
 'common_proto/login_service.proto']
 
+def scanserviceidfile():
+    index = 0
+    filename = serviceidir + idfilename
+    try:
+        with open(filename,'r', encoding='utf-8') as file:
+            for fileline in file:
+                digit = "".join(list(filter(str.isdigit, fileline)))
+                if index != digit:
+                    local.unuseindex[index] = ''
+                service_method_id = fileline.split('=')[1]
+                local.useindex[digit] = service_method_id
+    except FileNotFoundError:
+        with open(filename, 'w', encoding='utf-8')as file:
+            file.write('')
+
 def scanprotofile():
     for filename in os.listdir(protodir):
         if not (filename[-6:].lower() == '.proto'):
@@ -141,6 +162,7 @@ def main():
         parsefile(file)
         
 scanprotofile()
+scanserviceidfile()
 main()
 
 genmsgidhead(servicedir + local.hfilename)
