@@ -3,9 +3,12 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Timestamp.h"
 
-#include "src/mysql_wrapper/mysql_database.h"
-#include "src/redis_client/redis_client.h"
 #include "src/database_server.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
+#include "src/pb/pbc/serviceid/service_method_id.h"
+#include "src/mysql_wrapper/mysql_database.h"
+#include "src/network/node_info.h"
+#include "src/redis_client/redis_client.h"
 
 #include "comp.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -74,6 +77,41 @@ void DbServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* contro
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
+	if (request->route_data_list_size() >= kMaxRouteSize)
+	{
+		LOG_ERROR << "route msg size too max:" << request->DebugString();
+		return;
+	}
+	else if (request->route_data_list_size() <= 0)
+	{
+		LOG_ERROR << "msg list empty:" << request->DebugString();
+		return;
+	}
+	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
+	auto& servcie_method_info = g_service_method_info[route_data.service_method_id()];
+	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(servcie_method_info.method);
+	if (nullptr == method)
+	{
+		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();
+		return;
+	}
+	//当前节点的请求信息
+	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
+	if (!current_node_request->ParseFromString(request->body()))
+	{
+		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << route_data.method();
+		return;
+	}
+	//当前节点的真正回复的消息
+	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
+	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
+	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
+	response->set_body(current_node_response->SerializeAsString());
+	for (auto& it : request->route_data_list())
+	{
+		*response->add_route_data_list() = it;
+	}
+	response->set_session_id(request->session_id());
 ///<<< END WRITING YOUR CODE 
 }
 

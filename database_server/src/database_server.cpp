@@ -4,6 +4,7 @@
 #include "src/network/rpc_connection_event.h"
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/service/common_proto_replied/replied_dispathcer.h"
+#include "src/network/node_info.h"
 
 #include "mysql_database_table.pb.h"
 #include "deploy_service.pb.h"
@@ -19,7 +20,8 @@ void DatabaseServer::Init()
 {
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
-
+	node_info_.set_node_type(kDatabaseNode);
+	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     InitRepliedCallback();
     ConnectDeploy();
 }
@@ -53,6 +55,7 @@ void DatabaseServer::StartServer(const ::servers_info_data& info)
     InetAddress listenAddr(myinfo.ip(), myinfo.port());
     redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
     database_->Connect(myinfo);
+    node_info_.set_node_id(myinfo.id());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, listenAddr);
     Start();
 }

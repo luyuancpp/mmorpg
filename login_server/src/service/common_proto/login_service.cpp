@@ -313,6 +313,7 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		response->set_session_id(request->session_id());
 		return;
 	}
+	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
     cl_tls.set_route_node_type(UINT32_MAX);
     auto next_route_data = mutable_request->add_route_data_list();
@@ -332,12 +333,12 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     }
     break;
     default:
-        break;
+	{
+		LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.route_node_type();
+	}
+    break;
     }
-	//处理,如果需要继续路由则拿到当前节点信息
 
-	
-	
 ///<<< END WRITING YOUR CODE 
 }
 

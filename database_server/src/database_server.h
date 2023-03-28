@@ -23,7 +23,7 @@ public:
 
     inline MysqlClientPtr& player_mysql_client(){ return database_; }
     inline PbSyncRedisClientPtr& redis_client() { return redis_; }
-
+    inline const NodeInfo& node_info()const { return node_info_; }
     void Init();
 
     void ConnectDeploy();
@@ -39,6 +39,8 @@ private:
     MysqlClientPtr database_;
     PbSyncRedisClientPtr redis_;
     RpcServerPtr server_;
+
+    NodeInfo node_info_;
 
     RpcClientPtr deploy_session_;
 
