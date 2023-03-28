@@ -131,8 +131,9 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	gs_node_ptr->node_info_.set_node_type(kGameNode);
+	gs_node_ptr->inet_address_ = service_addr;//为了停掉gs，或者gs断线用
+	gs_node_ptr->server_entity_ = gs;
 	AddMainSceneNodeCompnent(gs);
-	tls.registry.emplace<InetAddress>(gs, service_addr);//为了停掉gs，或者gs断线用
 	tls.registry.emplace<GsNodePtr>(gs, gs_node_ptr);
 	if (request->server_type() == kMainSceneServer)
 	{
