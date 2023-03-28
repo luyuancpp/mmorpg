@@ -106,7 +106,7 @@ void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
         LOG_ERROR << "gs not found ";
         return;
     }
-	auto try_gate_node_ptr = tls.registry.try_get<GateNodePtr>(gs);
+	auto try_gate_node_ptr = tls.registry.try_get<GateNodePtr>(gate);
 	if (nullptr == try_gate_node_ptr)
 	{
 		LOG_ERROR << "gate not found ";
