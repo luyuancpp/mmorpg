@@ -85,15 +85,15 @@ def genmsgidcpp(filename):
     for key, values in  local.serviceidlist.items():
        newstr += '#include "' + getkeyfilename(key, local.hfilename) + '"\n'
 
-    newstr += '\nstd::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
+    newstr += '\nstd::unordered_map<uint32_t, RpcService> g_service_method_info;\n'
     newstr += 'void InitMsgService()\n{\n'
     for key, values in  local.rpcservicemethod.items():
         for kv in values:
             service_method_id = kv[4]
-            newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].service = "' + kv[0] +'";\n'
-            newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].method = "'  + kv[1] +'";\n'
-            newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].request = "' + kv[2] +'";\n'
-            newstr += tabstr + 'g_serviceinfo[' + service_method_id + '].response = "' + kv[3] +'";\n\n'
+            newstr += tabstr + 'g_service_method_info[' + service_method_id + '].service = "' + kv[0] +'";\n'
+            newstr += tabstr + 'g_service_method_info[' + service_method_id + '].method = "'  + kv[1] +'";\n'
+            newstr += tabstr + 'g_service_method_info[' + service_method_id + '].request = "' + kv[2] +'";\n'
+            newstr += tabstr + 'g_service_method_info[' + service_method_id + '].response = "' + kv[3] +'";\n\n'
     newstr += '}\n'
     with open(filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -122,8 +122,7 @@ def genmsgidhead(filename):
     newstr +=  tabstr + 'const char* request{nullptr};\n'
     newstr +=  tabstr + 'const char* response{nullptr};\n'
     newstr += '};\n'
-    newstr += 'extern std::unordered_map<std::string, uint32_t> g_msgid;\n'
-    newstr += 'extern std::unordered_map<uint32_t, RpcService> g_serviceinfo;\n'
+    newstr += 'extern std::unordered_map<uint32_t, RpcService> g_service_method_info;\n'
     newstr += 'void InitMsgService();\n'
     with open(filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
