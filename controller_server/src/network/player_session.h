@@ -33,14 +33,14 @@ public:
 	inline void set_gs(GsNodePtr& gs) { gs_ = gs; }
 	inline GsNodePtr& gs(){ return gs_; }
 
-	inline void Send(const ::google::protobuf::Message& message)
+	inline void Send(uint32_t service_method_id, const ::google::protobuf::Message& message)
 	{
 		GateNodePtr gate = gate_.lock();
 		if (nullptr == gate)
 		{
 			return;
 		}
-		Send2Player(message, gate, gate_session_.session_id());
+		Send2Player(service_method_id, message, gate, gate_session_.session_id());
 	}
 
 	void Send2Gs(::google::protobuf::Message& message)
