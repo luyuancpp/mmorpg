@@ -185,11 +185,13 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_request(request->request());
         rq.set_session_id(session_id);
         rq.set_id(request->id());
+        rq.set_service_method_id(request->service_method_id());
         gs->second.gs_session_->CallMethod(GameServiceClientSend2Player, &rq);
         return;
     }
     else
     {
+        //发往登录服务器,如果以后可能有其他服务器那么就特写一下,根据协议名字发送的对应服务器,
         RouteMsgStringRequest rq;
         rq.set_body(request->request());
         rq.set_session_id(session_id);

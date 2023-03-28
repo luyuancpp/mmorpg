@@ -4,7 +4,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/luacpp/lua_module.h"
-#include "src/pb/pbc/msgmap.h"
+#include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/service/logic_proto/player_service.h"
 
 ClientService::ClientService(ProtobufDispatcher& dispatcher,
@@ -25,12 +25,11 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 		std::bind(&ClientService::OnMessageBodyReplied, this, _1, _2, _3));
 }
 
-void ClientService::Send(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& request)
+void ClientService::Send(uint32_t service_method_id, const google::protobuf::Message& request)
 {
     ClientRequest message;
     message.set_id(++id_);
-    message.set_service(method->service()->full_name());
-    message.set_method(method->name());
+    message.set_service_method_id(service_method_id);
     message.set_request(request.SerializeAsString());
     codec_.send(conn_, message);
 }
@@ -88,21 +87,21 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
     const MessageBodyPtr& message,
     muduo::Timestamp t)
 {
-    auto msg_id = message->msg_id();
-    auto msg_servcie = g_serviceinfo[msg_id];
-    auto sit = g_player_services.find(msg_servcie.service);
+    auto service_method_id = message->service_method_id();
+    auto& servcie_method_info = g_service_method_info[service_method_id];
+    auto sit = g_player_services.find(servcie_method_info.service);
     if (sit == g_player_services.end())
     {
-        LOG_ERROR << "service not found " << msg_servcie.service;
+        LOG_ERROR << "service not found " << servcie_method_info.service;
         return;
     }
     const google::protobuf::ServiceDescriptor* desc = sit->second->service()->GetDescriptor();
     const google::protobuf::MethodDescriptor* method
-        = desc->FindMethodByName(msg_servcie.method);
-    MessagePtr response(codec_.createMessage(msg_servcie.response));
+        = desc->FindMethodByName(servcie_method_info.method);
+    MessagePtr response(codec_.createMessage(servcie_method_info.response));
     response->ParseFromString(message->body());
     AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
-    g_player_services[msg_servcie.service]->CallMethod(method, nullptr, response.get());
+    g_player_services[servcie_method_info.service]->CallMethod(method, nullptr, response.get());
 }
 
 void ClientService::EnterGs(Guid guid)

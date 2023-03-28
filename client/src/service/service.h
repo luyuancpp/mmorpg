@@ -36,7 +36,7 @@ public:
         ProtobufCodec& codec,
         TcpClient& client);
 
-    void Send(const ::google::protobuf::MethodDescriptor* method, const google::protobuf::Message& message);
+    void Send(uint32_t service_method_id, const google::protobuf::Message& message);
     void SendOhter(const google::protobuf::Message& message);
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
     void ReadyGo();
