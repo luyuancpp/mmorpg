@@ -16,6 +16,7 @@
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
 #include "src/pb/pbc/service_method/login_servicemethod.h"
+#include "src/pb/pbc/serviceid/clientplayercommonservice_service_method_id.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 #include "src/util/random.h"
 
@@ -183,9 +184,6 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         GameNodeRpcClientRequest rq;
         rq.set_request(request->request());
         rq.set_session_id(session_id);
-        rq.set_service(request->service());
-        rq.set_service(request->service());
-        rq.set_method(request->method());
         rq.set_id(request->id());
         gs->second.gs_session_->CallMethod(GameServiceClientSend2Player, &rq);
         return;
@@ -207,7 +205,7 @@ void ClientReceiver::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_
     tips.mutable_tips()->set_id(tip_id);//tips_id.h 暂时写死，错误码不用编译
     MessageBody msg;
     msg.set_body(tips.SerializeAsString());
-    msg.set_msg_id(g_msgid["TipsS2C"]);
+    msg.set_service_method_id(ClientPlayerCommonService_Id_PushTipsS2C);
     g_gate_node->codec().send(conn, msg);
 }
 
