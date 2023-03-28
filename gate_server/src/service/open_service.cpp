@@ -1,4 +1,5 @@
 #include <unordered_set>
+
 #include "service_method_id.h"
 #include "gameservice_service_method_id.h"
 #include "loginservice_service_method_id.h"
@@ -12,6 +13,6 @@
 #include "clientplayerteamservice_service_method_id.h"
 #include "serverplayerteamservice_service_method_id.h"
 
-
 std::unordered_set<uint32_t> g_player_service_method_id{
-    ClientPlayerSceneService_Id_EnterSceneC2S};
+ClientPlayerSceneService_Id_EnterSceneC2S
+};
