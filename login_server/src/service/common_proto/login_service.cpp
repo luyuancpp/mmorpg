@@ -16,6 +16,7 @@
 #include "src/redis_client/redis_client.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/database_servicemethod.h"
+#include "src/pb/pbc/serviceid/service_method_id.h"
 
 #include "login_service.pb.h"
 #include "database_service.pb.h"
@@ -284,20 +285,20 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		return;
 	}
 	auto& msg = request->route_data_list(request->route_data_list_size() - 1);
-	auto& method_name = msg.method();
+	auto& servcie_method_info = g_service_method_info[msg.service_method_id()];
 	const google::protobuf::ServiceDescriptor* desc = GetDescriptor();
 	const google::protobuf::MethodDescriptor* method
-		= desc->FindMethodByName(method_name);
+		= desc->FindMethodByName(msg.method());
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found" << request->DebugString() << "method name" << method_name;
+		LOG_ERROR << "method not found" << request->DebugString() << "method name" << msg.method();
 		return;
 	}
 	//当前节点的请求信息
 	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
 	if (!current_node_request->ParseFromString(request->body()))
 	{
-		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << method_name;
+		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << msg.method();
 		return;
 	}
 	//当前节点的真正回复的消息
