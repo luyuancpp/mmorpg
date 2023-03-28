@@ -16,6 +16,7 @@ local.hfilename = 'service_method_id.h'
 local.serviceidlist = {}
 local.unuseindex = {}
 local.useindex = {}
+local.usemethodid = {}
 
 threads = []
 tabstr = '    '
@@ -53,9 +54,15 @@ def parsefile(filename):
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
 
+def append2serviceidlist(servicename, service_method_id, digit):
+    local.serviceidlist[servicename].append([service_method_id, digit])
+    local.useindex[digit] = service_method_id
+    local.usemethodid[service_method_id] = digit
+
 def genmsgidcpp(filename):
     global msg_index
     newstr = '#include "' + local.hfilename + '"\n'
+    #原来已经有的用原来的
     for key, values in  local.rpcservicemethod.items():
         servicename = key.lower()
         servicedict = local.serviceidlist.get(servicename)
@@ -63,8 +70,17 @@ def genmsgidcpp(filename):
             local.serviceidlist.setdefault(servicename, [])
         for kv in values:
             service_method_id = kv[4]
-            msg_index += 1
-            local.serviceidlist[servicename].append([service_method_id, msg_index])
+            #原来已经有的用原来的
+            oldindex = local.usemethodid.get(service_method_id)
+            if  oldindex != None:
+                local.serviceidlist[servicename].append([service_method_id, int(oldindex)])
+            elif  len(local.unuseindex) > 0:
+                kv = local.unuseindex.popitem()
+                append2serviceidlist(servicename, service_method_id, kv[0])
+            else:
+                append2serviceidlist(servicename, service_method_id, msg_index)
+                msg_index += 1                
+            
 
     for key, values in  local.serviceidlist.items():
        newstr += '#include "' + getkeyfilename(key, local.hfilename) + '"\n'
@@ -93,7 +109,6 @@ def genperserviceheader():
        filename = servicedir + getkeyfilename(key, local.hfilename)
        with open(filename, 'w', encoding='utf-8')as file: 
         file.write(newstr)
-   
 
 
 def genmsgidhead(filename):
@@ -137,19 +152,40 @@ genfile = ['common_proto/game_service.proto',
 'common_proto/login_service.proto']
 
 def scanserviceidfile():
-    index = 0
+    global msg_index
     filename = serviceidir + idfilename
     try:
         with open(filename,'r', encoding='utf-8') as file:
             for fileline in file:
-                digit = "".join(list(filter(str.isdigit, fileline)))
-                if index != digit:
-                    local.unuseindex[index] = ''
-                service_method_id = fileline.split('=')[1]
+                if fileline.find('=') < 0 :
+                    continue
+                strdigit = fileline.split('=')[0]
+                strdigit = "".join(list(filter(str.isdigit, strdigit)))
+                digit = int(strdigit)
+                service_method_id = fileline.split('=')[1].strip()
+                if digit > msg_index:
+                    msg_index = digit
                 local.useindex[digit] = service_method_id
+                local.usemethodid[service_method_id] = digit
     except FileNotFoundError:
         with open(filename, 'w', encoding='utf-8')as file:
             file.write('')
+    msg_index += 1
+    for i in range(msg_index):
+        if local.useindex.get(i) == None:
+            local.unuseindex[i] = ''
+
+def saveserviceidfile():
+    filename = serviceidir + idfilename
+    newstr = ''
+    with open(filename, 'w', encoding='utf-8')as file:
+        for i in range(msg_index):
+            service_method_id = local.useindex.get(i)
+            if local.useindex.get(i) == None:
+                continue
+            newstr += str(i) + '=' + service_method_id + '\n'
+    with open(filename, 'w', encoding='utf-8')as file:
+            file.write(newstr)
 
 def scanprotofile():
     for filename in os.listdir(protodir):
@@ -171,4 +207,5 @@ genperserviceheader()
 
 md5copy(writedir + local.cppfilename, local.cppfilename)
 md5copy(writedir + local.hfilename, local.hfilename)
+saveserviceidfile()
 copyperserviceheader()
