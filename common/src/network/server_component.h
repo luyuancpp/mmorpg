@@ -18,6 +18,11 @@ struct RpcServerConnection
         channel_->Send(method, request);
     }
 
+    void Send(const char* service, const char* method, const ::google::protobuf::Message& request)
+    {
+        channel_->Send(service, method, request);
+    }
+
     void CallMethod(const ::google::protobuf::MethodDescriptor* method,
         const ::google::protobuf::Message* request)
     {
