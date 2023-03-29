@@ -328,8 +328,8 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     mutable_request->set_body(cl_tls.route_msg_body());
     switch (cl_tls.next_route_node_type())
     {
-    case kControllerNode: {
-
+    case kControllerNode: 
+	{
         g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsg, mutable_request);
     }
     break;

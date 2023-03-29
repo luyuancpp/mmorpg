@@ -1,6 +1,7 @@
 #pragma once
 
 //https://zhuanlan.zhihu.com/p/35191739
+//https://zhuanlan.zhihu.com/p/21303431
 //https://github.com/ricab/scope_guard
 
 #define DEFER_1(x, y) x##y
