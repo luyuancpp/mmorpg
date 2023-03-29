@@ -8,47 +8,47 @@ public:
         ::CtrlStartGsResponse* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGateConnect(::google::protobuf::RpcController* controller,
+    void GateConnect(::google::protobuf::RpcController* controller,
         const ::GateConnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGateLeaveGame(::google::protobuf::RpcController* controller,
+    void GateLeaveGame(::google::protobuf::RpcController* controller,
         const ::GateLeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGatePlayerService(::google::protobuf::RpcController* controller,
+    void GatePlayerService(::google::protobuf::RpcController* controller,
         const ::GateClientMessageRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGateDisconnect(::google::protobuf::RpcController* controller,
+    void GateDisconnect(::google::protobuf::RpcController* controller,
         const ::GateDisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnLsLoginAccount(::google::protobuf::RpcController* controller,
+    void LsLoginAccount(::google::protobuf::RpcController* controller,
         const ::CtrlLoginAccountRequest* request,
         ::CtrlLoginAccountResponse* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnLsEnterGame(::google::protobuf::RpcController* controller,
+    void LsEnterGame(::google::protobuf::RpcController* controller,
         const ::CtrlEnterGameRequest* request,
         ::CtrlEnterGameResponese* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnLsLeaveGame(::google::protobuf::RpcController* controller,
+    void LsLeaveGame(::google::protobuf::RpcController* controller,
         const ::CtrlLsLeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnLsDisconnect(::google::protobuf::RpcController* controller,
+    void LsDisconnect(::google::protobuf::RpcController* controller,
         const ::CtrlLsDisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
-    void OnGsPlayerService(::google::protobuf::RpcController* controller,
+    void GsPlayerService(::google::protobuf::RpcController* controller,
         const ::NodeServiceMessageRequest* request,
         ::NodeServiceMessageResponse* response,
         ::google::protobuf::Closure* done)override;

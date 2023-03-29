@@ -173,7 +173,7 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::GateConnect(::google::protobuf::RpcController* controller,
     const ::GateConnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -205,7 +205,7 @@ void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerServiceImpl::OnGateLeaveGame(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::GateLeaveGame(::google::protobuf::RpcController* controller,
     const ::GateLeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -214,7 +214,7 @@ void ControllerServiceImpl::OnGateLeaveGame(::google::protobuf::RpcController* c
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerServiceImpl::OnGatePlayerService(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::GatePlayerService(::google::protobuf::RpcController* controller,
     const ::GateClientMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -223,7 +223,7 @@ void ControllerServiceImpl::OnGatePlayerService(::google::protobuf::RpcControlle
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::GateDisconnect(::google::protobuf::RpcController* controller,
     const ::GateDisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -265,7 +265,7 @@ void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* 
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::LsLoginAccount(::google::protobuf::RpcController* controller,
     const ::CtrlLoginAccountRequest* request,
     ::CtrlLoginAccountResponse* response,
     ::google::protobuf::Closure* done)
@@ -313,7 +313,7 @@ void ControllerServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::LsEnterGame(::google::protobuf::RpcController* controller,
     const ::CtrlEnterGameRequest* request,
     ::CtrlEnterGameResponese* response,
     ::google::protobuf::Closure* done)
@@ -400,7 +400,7 @@ void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::LsLeaveGame(::google::protobuf::RpcController* controller,
     const ::CtrlLsLeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -413,7 +413,7 @@ void ControllerServiceImpl::OnLsLeaveGame(::google::protobuf::RpcController* con
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::LsDisconnect(::google::protobuf::RpcController* controller,
     const ::CtrlLsDisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -425,7 +425,7 @@ void ControllerServiceImpl::OnLsDisconnect(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE 
 }
 
-void ControllerServiceImpl::OnGsPlayerService(::google::protobuf::RpcController* controller,
+void ControllerServiceImpl::GsPlayerService(::google::protobuf::RpcController* controller,
     const ::NodeServiceMessageRequest* request,
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
