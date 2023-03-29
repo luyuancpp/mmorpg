@@ -3,8 +3,6 @@ import os
 import md5tool
 import shutil
 import threading
-import _thread
-import protofilearray
 import genpublic
 from multiprocessing import cpu_count
 
@@ -13,8 +11,6 @@ local = threading.local()
 local.rpcarry = []
 local.servicenames = []
 local.service = ''
-local.packagemessage = set()
-
 threads = []
 local.pkg = ''
 cpkg = 'package'
@@ -35,7 +31,6 @@ if not os.path.exists(servicedir):
 
 def parsefile(filename):
     local.rpcarry = []
-    local.packagemessage = set()
     local.pkg = ''
     local.service = ''
     rpcbegin = 0 
@@ -48,8 +43,6 @@ def parsefile(filename):
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-            elif fileline.find('message ') >= 0:
-                local.packagemessage.add(fileline.replace('message ', '').replace('\r', '').replace('\n', ''))
     
 def genheadrpcfun():
     servicestr = 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'
