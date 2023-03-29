@@ -118,11 +118,9 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
       if (it != g_prototype_services.end())
       {
           auto& service = it->second;
-
           assert(service != NULL);
           const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-          const google::protobuf::MethodDescriptor* method
-              = desc->FindMethodByName(message.method());
+          const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message.method());
           if (nullptr == method)
           {
               return;
@@ -193,7 +191,7 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
         return;
     }
     std::unique_ptr<google::protobuf::Message> response(service->GetResponsePrototype(method).New());
-    service->CallMethod(method, nullptr, get_pointer(request), nullptr, nullptr);
+    service->CallMethod(method, nullptr, get_pointer(request), get_pointer(response), nullptr);
     if (response->ByteSizeLong() <= 0)
     {
         return;
