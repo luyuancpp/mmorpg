@@ -683,20 +683,19 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 	break;
 	case kGameNode:
 	{
-		/*auto it = controller_tls.login_node().find(cl_tls.next_route_node_id());
-		if (it == controller_tls.login_node().end())
+		auto it = controller_tls.game_node().find(cl_tls.next_route_node_id());
+		if (it == controller_tls.game_node().end())
 		{
-			LOG_ERROR << "login not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			LOG_ERROR << "game not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		auto try_login = tls.registry.try_get<LoginNode>(it->second);
-		if (nullptr == try_login)
+		auto try_game = tls.registry.try_get<GsNodePtr>(it->second);
+		if (nullptr == try_game)
 		{
-			LOG_ERROR << "login not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			LOG_ERROR << "game not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		auto& login_node = *try_login;
-		login_node.session_.CallMethod(GameServiceRouteNodeStringMsg, mutable_request);*/
+		(*try_game)->session_.CallMethod(GameServiceRouteNodeStringMsg, mutable_request);
 	}
 	break;
 	default:

@@ -69,3 +69,5 @@
 68=LoginService_Id_Disconnect
 69=LoginService_Id_RouteNodeStringMsg
 70=LoginService_Id_RoutePlayerStringMsg
+71=GameService_Id_RouteNodeStringMsg
+72=GameService_Id_RoutePlayerStringMsg
