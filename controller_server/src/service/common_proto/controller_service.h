@@ -29,22 +29,22 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void OnLsLoginAccount(::google::protobuf::RpcController* controller,
-        const ::ControllerNodeLoginAccountRequest* request,
-        ::ControllerNodeLoginAccountResponse* response,
+        const ::CtrlLoginAccountRequest* request,
+        ::CtrlLoginAccountResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void OnLsEnterGame(::google::protobuf::RpcController* controller,
-        const ::ControllerNodeEnterGameRequest* request,
-        ::ControllerNodeEnterGameResponese* response,
+        const ::CtrlEnterGameRequest* request,
+        ::CrtlEnterGameResponese* response,
         ::google::protobuf::Closure* done)override;
 
     void OnLsLeaveGame(::google::protobuf::RpcController* controller,
-        const ::ControllerNodeLsLeaveGameRequest* request,
+        const ::CtrlLsLeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnLsDisconnect(::google::protobuf::RpcController* controller,
-        const ::ControllerNodeLsDisconnectRequest* request,
+        const ::CtrlLsDisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
