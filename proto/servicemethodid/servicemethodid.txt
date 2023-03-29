@@ -77,3 +77,4 @@
 76=ControllerService_Id_LsLeaveGame
 77=ControllerService_Id_LsDisconnect
 78=ControllerService_Id_GsPlayerService
+79=ControllerService_Id_StartLs
