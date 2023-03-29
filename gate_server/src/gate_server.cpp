@@ -107,7 +107,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             [this]() ->void
 			{
 				auto& controller_node_addr = controller_node_->local_addr();
-				ControllerNodeConnectRequest rq;
+				GateConnectRequest rq;
 				rq.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
 				rq.mutable_rpc_client()->set_port(controller_node_addr.port());
 				rq.set_gate_node_id(gate_node_id());

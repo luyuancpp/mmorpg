@@ -9,22 +9,22 @@ public:
         ::google::protobuf::Closure* done)override;
 
     void OnGateConnect(::google::protobuf::RpcController* controller,
-        const ::ControllerNodeConnectRequest* request,
+        const ::GateConnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGateLeaveGame(::google::protobuf::RpcController* controller,
-        const ::ControllerNodeLeaveGameRequest* request,
+        const ::GateLeaveGameRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGatePlayerService(::google::protobuf::RpcController* controller,
-        const ::ControllerNodeClientMessageRequest* request,
+        const ::GateClientMessageRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGateDisconnect(::google::protobuf::RpcController* controller,
-        const ::ControllerNodeDisconnectRequest* request,
+        const ::GateDisconnectRequest* request,
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
