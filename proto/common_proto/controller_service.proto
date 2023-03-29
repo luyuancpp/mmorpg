@@ -5,7 +5,7 @@ import "common_proto/node_common.proto";
 import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
 
-message ControllerNodeStartGsRequest
+message ControllerStartGsRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
@@ -13,7 +13,7 @@ message ControllerNodeStartGsRequest
   uint32 server_type = 4;
 }
 
-message ControllerNodeStartGsResponse
+message CtrlStartGsResponse
 {
   uint32 controller_node_id = 1;
   repeated SceneInfo scenes_info = 2;
@@ -96,7 +96,7 @@ message EnterGsSucceedRequest
 }
 
 service ControllerService {
-  rpc StartGs (ControllerNodeStartGsRequest) returns (ControllerNodeStartGsResponse);
+  rpc StartGs (CtrlStartGsRequest) returns (CtrlStartGsResponse);
   rpc OnGateConnect (ControllerNodeConnectRequest) returns (google.protobuf.Empty);
   rpc OnGateLeaveGame (ControllerNodeLeaveGameRequest) returns (google.protobuf.Empty);
   rpc OnGatePlayerService (ControllerNodeClientMessageRequest) returns (google.protobuf.Empty);

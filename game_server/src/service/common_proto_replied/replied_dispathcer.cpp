@@ -17,7 +17,7 @@ void InitRepliedCallback()
 
     g_response_dispatcher.registerMessageCallback<StartCrossGsResponse>(std::bind(&OnStartCrossGsReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     
-    g_response_dispatcher.registerMessageCallback<ControllerNodeStartGsResponse>(std::bind(&StartGsControllerReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    g_response_dispatcher.registerMessageCallback<CtrlStartGsResponse>(std::bind(&StartGsControllerReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     
 }
 

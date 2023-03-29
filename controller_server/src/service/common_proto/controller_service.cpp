@@ -102,8 +102,8 @@ void InitPlayerGate(entt::entity player, uint64_t session_id)
 
 ///<<<rpc begin
 void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controller,
-    const ::ControllerNodeStartGsRequest* request,
-    ::ControllerNodeStartGsResponse* response,
+    const ::CtrlStartGsRequest* request,
+    ::CtrlStartGsResponse* response,
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 

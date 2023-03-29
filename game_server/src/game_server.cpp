@@ -152,7 +152,7 @@ void GameServer::OnAcquireLobbyInfoReplied(LobbyInfoResponse& replied)
 void GameServer::CallControllerStartGs(ControllerSessionPtr controller_node)
 {
     auto& controller_local_addr = controller_node->local_addr();
-    ControllerNodeStartGsRequest request;
+    CtrlStartGsRequest request;
     auto session_info = request.mutable_rpc_client();
     auto node_info = request.mutable_rpc_server();
     session_info->set_ip(controller_local_addr.toIp());

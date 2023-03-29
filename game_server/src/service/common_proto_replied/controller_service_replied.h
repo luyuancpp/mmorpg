@@ -7,5 +7,5 @@
 using namespace muduo;
 using namespace muduo::net;
 
-using StartGsResponsePtr = std::shared_ptr<ControllerNodeStartGsResponse>;
+using StartGsResponsePtr = std::shared_ptr<CtrlStartGsResponse>;
 void StartGsControllerReplied(const TcpConnectionPtr& conn, const StartGsResponsePtr& replied, Timestamp timestamp);
