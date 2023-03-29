@@ -174,7 +174,7 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 }
 
 void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* controller,
-    const ::ControllerNodeConnectRequest* request,
+    const ::GateConnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -206,7 +206,7 @@ void ControllerServiceImpl::OnGateConnect(::google::protobuf::RpcController* con
 }
 
 void ControllerServiceImpl::OnGateLeaveGame(::google::protobuf::RpcController* controller,
-    const ::ControllerNodeLeaveGameRequest* request,
+    const ::GateLeaveGameRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -215,7 +215,7 @@ void ControllerServiceImpl::OnGateLeaveGame(::google::protobuf::RpcController* c
 }
 
 void ControllerServiceImpl::OnGatePlayerService(::google::protobuf::RpcController* controller,
-    const ::ControllerNodeClientMessageRequest* request,
+    const ::GateClientMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
@@ -224,7 +224,7 @@ void ControllerServiceImpl::OnGatePlayerService(::google::protobuf::RpcControlle
 }
 
 void ControllerServiceImpl::OnGateDisconnect(::google::protobuf::RpcController* controller,
-    const ::ControllerNodeDisconnectRequest* request,
+    const ::GateDisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {

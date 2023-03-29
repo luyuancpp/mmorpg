@@ -106,7 +106,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         }
         // controller
         {
-            ControllerNodeDisconnectRequest rq;
+            GateDisconnectRequest rq;
             rq.set_session_id(session_id);
             g_gate_node->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnect, &rq);
         }
