@@ -16,7 +16,7 @@ public:
 	decltype(auto) node_id() const { return node_info_.node_id(); }
 	NodeInfo node_info_;
 	RpcServerConnection session_;
-	muduo::net::InetAddress inet_address_;
+	muduo::net::InetAddress node_inet_addr_;
 	entt::entity server_entity_{entt::null};
 };
 
