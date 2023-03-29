@@ -55,6 +55,7 @@ int main(int argc, char* argv[])
     {
         printf("Usage: %s host_ip numClients [numThreads]\n", argv[0]);
     }
+    google::protobuf::ShutdownProtobufLibrary();
     return 0;
 }
 

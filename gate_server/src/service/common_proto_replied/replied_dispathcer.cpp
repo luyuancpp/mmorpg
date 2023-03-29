@@ -19,5 +19,6 @@ void InitRepliedCallback()
     g_response_dispatcher.registerMessageCallback<LoginNodeEnterGameResponse>(std::bind(&OnEnterGameReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
     g_response_dispatcher.registerMessageCallback<LoginResponse>(std::bind(&OnServerLoginReplied, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
         
+
 }
 

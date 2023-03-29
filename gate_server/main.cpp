@@ -9,5 +9,6 @@ int main(int argc, char* argv[])
     GateServer server(&loop);
     server.Init();
     loop.loop();
+    google::protobuf::ShutdownProtobufLibrary();
     return 0;
 }

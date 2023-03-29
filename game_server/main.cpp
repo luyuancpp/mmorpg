@@ -12,5 +12,6 @@ int main(int argc, char* argv[])
     GameServer server(&loop);
     server.Init();
     loop.loop();
+    google::protobuf::ShutdownProtobufLibrary();
     return 0;
 }
