@@ -15,6 +15,7 @@ int32_t main(int argc, char* argv[])
     DeployServer server(&loop, listenAddr);
     server.Start();
     loop.loop();
+    google::protobuf::ShutdownProtobufLibrary();
     return 0;
 }
 

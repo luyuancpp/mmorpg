@@ -10,6 +10,7 @@ int32_t main(int argc, char* argv[])
     g_database_node = &server;
     server.Init();
     loop.loop();
+    google::protobuf::ShutdownProtobufLibrary();
     return 0;
 }
 

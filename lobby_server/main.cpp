@@ -12,4 +12,6 @@ int32_t main()
     LobbyServer server(&loop);
     server.Init();
     loop.loop();
+    google::protobuf::ShutdownProtobufLibrary();
+    return 0;
 }
