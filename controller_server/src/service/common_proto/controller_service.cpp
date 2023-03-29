@@ -23,6 +23,7 @@
 #include "src/network/session.h"
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
+#include "src/network/login_node.h"
 #include "src/network/player_session.h"
 #include "src/network/server_component.h"
 #include "src/network/node_info.h"
@@ -271,6 +272,32 @@ void ControllerServiceImpl::StartLs(::google::protobuf::RpcController* controlle
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
+	response->set_controller_node_id(controller_node_id());
+	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
+	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
+	entt::entity login{ entt::null };
+	for (auto e : tls.registry.view<RpcServerConnection>())
+	{
+		if (tls.registry.get<RpcServerConnection>(e).conn_->peerAddress().toIpPort() != session_addr.toIpPort())
+		{
+			continue;
+		}
+		login = e;
+		break;
+	}
+	if (login == entt::null)
+	{
+		//todo
+		LOG_INFO << "login connection not found " << request->login_node_id();
+		return;
+	}
+
+	auto c = tls.registry.get<RpcServerConnection>(login);
+	auto& login_node = tls.registry.emplace<LoginNode>(login, c.conn_);
+	login_node.node_info_.set_node_id(request->login_node_id());
+	login_node.node_info_.set_node_type(kGameNode);
+
+	LOG_DEBUG << "login connect node id: " << request->login_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE 
 }
 

@@ -21,7 +21,7 @@ public:
 };
 
 using GsNodePtr = std::shared_ptr<GsNode>;
-using GsNodeWPtr = std::weak_ptr<GsNode>;
+using GsNodeWPtr = std::weak_ptr<GsNode>;//todo
 using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
 using GsNodes = std::unordered_map<uint32_t, entt::entity>;

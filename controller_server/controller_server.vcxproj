@@ -157,6 +157,7 @@
     <ClCompile Include="src\event_receiver\event_receiver.cpp" />
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
     <ClCompile Include="src\network\gate_session.cpp" />
+    <ClCompile Include="src\network\login_node.cpp" />
     <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp" />
     <ClCompile Include="src\service\common_proto_replied\gate_service_replied.cpp" />
     <ClCompile Include="src\service\common_proto_replied\lobby_service_replied.cpp" />
@@ -191,6 +192,7 @@
     <ClInclude Include="src\network\controller_rpc.h" />
     <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\gs_node.h" />
+    <ClInclude Include="src\network\login_node.h" />
     <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h" />
     <ClInclude Include="src\service\common_proto_replied\gate_service_replied.h" />
     <ClInclude Include="src\service\common_proto_replied\lobby_service_replied.h" />
