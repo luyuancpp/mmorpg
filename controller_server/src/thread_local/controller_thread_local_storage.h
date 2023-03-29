@@ -3,6 +3,7 @@
 #include "src/comp/player_list.h"
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
+#include "src/network/login_node.h"
 
 using PlayerListMap = std::unordered_map<Guid, EntityPtr>;
 using GateSessionList = std::unordered_map<uint64_t, EntityPtr>;
@@ -13,6 +14,7 @@ class ControllerThreadLocalStorage
 public:
 	PlayerListMap& player_list() { return player_list_; }
 	GsNodes& game_node() { return game_node_; }
+	LoginNodes& login_node() { return login_nodes_; }
 	GateSessionList& gate_sessions() {return gate_sessions_;}
 	GateNodes& gate_nodes() { return gate_nodes_; }
 private:
@@ -20,6 +22,7 @@ private:
 	GsNodes game_node_;
 	GateSessionList gate_sessions_;
 	GateNodes gate_nodes_;
+	LoginNodes login_nodes_;
 };
 
 extern thread_local ControllerThreadLocalStorage controller_tls;

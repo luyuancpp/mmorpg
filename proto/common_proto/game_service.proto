@@ -49,4 +49,6 @@ service GameService {
   rpc GateConnectGs (GameNodeConnectRequest) returns (google.protobuf.Empty); 
   rpc ControllerSend2PlayerViaGs (NodeServiceMessageRequest) returns (google.protobuf.Empty);
   rpc CallPlayer (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
+  rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
+  rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
 }

@@ -185,11 +185,17 @@ void ControllerServer::receive(const OnBeConnectedEvent& es)
 				//todo 
                 controller_tls.game_node().erase((*gsnode)->node_info_.node_id());
             }
-			auto gatenode = tls.registry.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
+			auto gatenode = tls.registry.try_get<GateNodePtr>(e);
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
 				//todo
                 controller_tls.gate_nodes().erase((*gatenode)->node_info_.node_id());
+			}
+			auto try_login_node = tls.registry.try_get<LoginNode>(e);
+			if (nullptr != try_login_node && (*try_login_node).node_info_.node_type() == kLoginNode)
+			{
+				//todo
+				controller_tls.login_node().erase((*try_login_node).node_info_.node_id());
 			}
 			tls.registry.destroy(e);
 			break;
