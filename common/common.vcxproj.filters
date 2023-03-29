@@ -125,6 +125,7 @@
     <ClCompile Include="src\pb\pbc\service_method\team_server_playermethod_lua.cpp" />
     <ClCompile Include="src\pb\pbc\service_method\teammethod_lua.cpp" />
     <ClCompile Include="src\pb\pbc\serviceid\service_method_id.cpp" />
+    <ClCompile Include="src\util\defer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -263,5 +264,6 @@
     <ClInclude Include="src\pb\pbc\serviceid\serverplayerteamservice_service_method_id.h" />
     <ClInclude Include="src\pb\pbc\serviceid\serversceneservice_service_method_id.h" />
     <ClInclude Include="src\pb\pbc\serviceid\service_method_id.h" />
+    <ClInclude Include="src\util\defer.h" />
   </ItemGroup>
 </Project>

@@ -10,7 +10,6 @@
 #include "src/comp/account_player.h"
 #include "src/controller_server.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/util/game_registry.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/comp/player_list.h"
@@ -29,6 +28,8 @@
 #include "src/network/node_info.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
+#include "src/pb/pbc/service_method/login_servicemethod.h"
+#include "src/pb/pbc/service_method/database_servicemethod.h"
 #include "src/pb/pbc/serviceid/gateservice_service_method_id.h"
 #include "src/pb/pbc/serviceid/service_method_id.h"
 #include "src/service/logic_proto/player_service.h"
@@ -36,6 +37,9 @@
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"
 #include "src/thread_local/controller_thread_local_storage.h"
+#include "src/util/game_registry.h"
+#include "src/util/defer.h"
+
 
 
 #include "component_proto/player_comp.pb.h"
@@ -296,7 +300,7 @@ void ControllerServiceImpl::StartLs(::google::protobuf::RpcController* controlle
 	auto& login_node = tls.registry.emplace<LoginNode>(login, c.conn_);
 	login_node.node_info_.set_node_id(request->login_node_id());
 	login_node.node_info_.set_node_type(kGameNode);
-
+	controller_tls.game_node().emplace(request->login_node_id(), login);
 	LOG_DEBUG << "login connect node id: " << request->login_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE 
 }
@@ -633,16 +637,32 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
-	cl_tls.set_next_route_node_type(UINT32_MAX);
+	
+	//函数返回前一定会执行的函数
+	defer(cl_tls.set_next_route_node_type(UINT32_MAX));
+	defer(cl_tls.set_next_route_node_id(UINT32_MAX));
+
 	auto next_route_data = mutable_request->add_route_data_list();
 	next_route_data->CopyFrom(cl_tls.route_data());
 	next_route_data->mutable_node_info()->CopyFrom(g_controller_node->node_info());
 	mutable_request->set_body(cl_tls.route_msg_body());
-	/*switch (cl_tls.next_route_node_type())
+	switch (cl_tls.next_route_node_type())
 	{
 	case kLoginNode:
 	{
-		g_controller_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsg, mutable_request);
+		auto it = controller_tls.login_node().find(cl_tls.next_route_node_id());
+		if (it == controller_tls.login_node().end())
+		{
+			LOG_ERROR << "login not found loginid "  << cl_tls.next_route_node_id() << request->DebugString();
+			return;
+		}
+		auto try_login = tls.registry.try_get<LoginNode>(it->second);
+		if (nullptr == try_login)
+		{
+			LOG_ERROR << "login not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			return;
+		}
+		(*try_login).session_.CallMethod(LoginServiceRouteNodeStringMsg, mutable_request);
 	}
 	break;
 	case kDatabaseNode:
@@ -652,12 +672,31 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 	break;
 	case kGateNode:
 	{
-		g_controller_node->db_node()->CallMethod(DbServiceRouteNodeStringMsg, mutable_request);
+		auto it = controller_tls.gate_nodes().find(cl_tls.next_route_node_id());
+		if (it == controller_tls.gate_nodes().end())
+		{
+			LOG_ERROR << "gate not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			return;
+		}
+		it->second->session_.CallMethod(GateServiceRouteNodeStringMsg, mutable_request);
 	}
 	break;
 	case kGameNode:
 	{
-		g_controller_node->db_node()->CallMethod(DbServiceRouteNodeStringMsg, mutable_request);
+		/*auto it = controller_tls.login_node().find(cl_tls.next_route_node_id());
+		if (it == controller_tls.login_node().end())
+		{
+			LOG_ERROR << "login not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			return;
+		}
+		auto try_login = tls.registry.try_get<LoginNode>(it->second);
+		if (nullptr == try_login)
+		{
+			LOG_ERROR << "login not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			return;
+		}
+		auto& login_node = *try_login;
+		login_node.session_.CallMethod(GameServiceRouteNodeStringMsg, mutable_request);*/
 	}
 	break;
 	default:
@@ -665,8 +704,7 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 		LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.next_route_node_type();
 	}
 	break;
-	}*/
-	cl_tls.set_next_route_node_id(UINT32_MAX);
+	}
 
 ///<<< END WRITING YOUR CODE 
 }
