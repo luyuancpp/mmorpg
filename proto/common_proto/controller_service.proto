@@ -31,7 +31,7 @@ message GateConnectRequest
   uint32 gate_node_id = 2;
 }
 
-message ControllerNodeConnectedGameRequest
+message CrtlConnectedGameRequest
 {
   IpPort rpc_client = 1;
 }
@@ -46,34 +46,34 @@ message GateDisconnectRequest
   uint64 session_id = 1;
 }
 
-message ControllerNodeLoginAccountRequest
+message CtrlLoginAccountRequest
 {
   string account = 1;
   uint64 session_id = 2;
 }
 
-message ControllerNodeLoginAccountResponse
+message CtrlLoginAccountResponse
 { 
   Tips error = 1;
 }
 
-message ControllerNodeEnterGameRequest
+message CrtlEnterGameRequest
 {
   uint64 player_id = 1;
   uint64 session_id = 2;
 }
 
-message ControllerNodeEnterGameResponese
+message CrtlEnterGameResponese
 {
   uint64 session_id = 1;
 }
 
-message ControllerNodeLsLeaveGameRequest
+message CrtlLsLeaveGameRequest
 {
   uint64 session_id = 1;
 }
 
-message ControllerNodeLsDisconnectRequest
+message CrtlLsDisconnectRequest
 {
   uint64 session_id = 1;
 }
@@ -100,11 +100,11 @@ service ControllerService {
   rpc OnGateConnect (GateConnectRequest) returns (google.protobuf.Empty);
   rpc OnGateLeaveGame (GateLeaveGameRequest) returns (google.protobuf.Empty);
   rpc OnGatePlayerService (GateClientMessageRequest) returns (google.protobuf.Empty);
-  rpc OnGateDisconnect (ControllerNodeDisconnectRequest) returns (google.protobuf.Empty); 
-  rpc OnLsLoginAccount (ControllerNodeLoginAccountRequest) returns (ControllerNodeLoginAccountResponse);
-  rpc OnLsEnterGame (ControllerNodeEnterGameRequest) returns (ControllerNodeEnterGameResponese);
-  rpc OnLsLeaveGame (ControllerNodeLsLeaveGameRequest) returns (google.protobuf.Empty);
-  rpc OnLsDisconnect (ControllerNodeLsDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc OnGateDisconnect (GateDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc OnLsLoginAccount (CtrlLoginAccountRequest) returns (CtrlLoginAccountResponse);
+  rpc OnLsEnterGame (CrtlEnterGameRequest) returns (CrtlEnterGameResponese);
+  rpc OnLsLeaveGame (CrtlLsLeaveGameRequest) returns (google.protobuf.Empty);
+  rpc OnLsDisconnect (CrtlLsDisconnectRequest) returns (google.protobuf.Empty); 
   rpc OnGsPlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
   rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (google.protobuf.Empty);
   rpc EnterGsSucceed (EnterGsSucceedRequest) returns (google.protobuf.Empty);

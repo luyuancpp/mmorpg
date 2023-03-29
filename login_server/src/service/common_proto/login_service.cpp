@@ -31,7 +31,7 @@ using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
 
 ConnectionEntityMap sessions_;
 
-using EnterGameControllerRpc = std::shared_ptr<RpcString<ControllerNodeEnterGameRequest, ControllerNodeEnterGameResponese, LoginNodeEnterGameResponse>>;
+using EnterGameControllerRpc = std::shared_ptr<RpcString<CtrlEnterGameRequest, CrtlEnterGameResponese, LoginNodeEnterGameResponse>>;
 void EnterGameReplied(EnterGameControllerRpc replied)
 {
 	sessions_.erase(replied->s_rq_.session_id());
@@ -76,7 +76,7 @@ void LoginAccountDbReplied(LoginAccountDbRpc replied)
 	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
 }
 
-using LoginAcountControllerRpc = std::shared_ptr<RpcString<ControllerNodeLoginAccountRequest, ControllerNodeLoginAccountResponse, LoginNodeLoginResponse>>;
+using LoginAcountControllerRpc = std::shared_ptr<RpcString<CtrlLoginAccountRequest, CtrlLoginAccountResponse, LoginNodeLoginResponse>>;
 void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 {
 	//只连接不登录,占用连接
@@ -153,7 +153,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
 	//登录的时候马上断开连接换了个gate应该可以登录成功
 	//login controller
-	ControllerNodeLoginAccountRequest rq;
+	CtrlLoginAccountRequest rq;
 	rq.set_account(request->account());
 	uint64_t session_id = 1;
 	sessions_.emplace(session_id, std::make_shared<PlayerPtr::element_type>());
@@ -245,7 +245,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 		return;
 	}
 	//连接过，登录过
-	ControllerNodeLsLeaveGameRequest rq;
+	CtrlLsLeaveGameRequest rq;
 	rq.set_session_id(request->session_id());
 	g_login_node->controller_node()->CallMethod(ControllerServiceOnLsLeaveGame, &rq);
 	sessions_.erase(sit);
@@ -260,7 +260,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE 
 	//比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 	sessions_.erase(request->session_id());
-	ControllerNodeLsDisconnectRequest rq;
+	CtrlLsDisconnectRequest rq;
 	rq.set_session_id(request->session_id());
 	g_login_node->controller_node()->CallMethod(ControllerServiceOnLsDisconnect, &rq);
 ///<<< END WRITING YOUR CODE 
