@@ -11,7 +11,6 @@ local = threading.local()
 
 local.playerservice = ''
 local.service = ''
-local.playerservice = ''
 
 threads = []
 local.pkg = ''
