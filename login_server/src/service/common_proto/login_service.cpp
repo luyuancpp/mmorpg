@@ -31,7 +31,7 @@ using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
 
 ConnectionEntityMap sessions_;
 
-using EnterGameControllerRpc = std::shared_ptr<RpcString<CtrlEnterGameRequest, CrtlEnterGameResponese, LoginNodeEnterGameResponse>>;
+using EnterGameControllerRpc = std::shared_ptr<RpcString<CtrlEnterGameRequest, CtrlEnterGameResponese, LoginNodeEnterGameResponse>>;
 void EnterGameReplied(EnterGameControllerRpc replied)
 {
 	sessions_.erase(replied->s_rq_.session_id());

@@ -35,7 +35,7 @@ public:
 
     void OnLsEnterGame(::google::protobuf::RpcController* controller,
         const ::CtrlEnterGameRequest* request,
-        ::CrtlEnterGameResponese* response,
+        ::CtrlEnterGameResponese* response,
         ::google::protobuf::Closure* done)override;
 
     void OnLsLeaveGame(::google::protobuf::RpcController* controller,
