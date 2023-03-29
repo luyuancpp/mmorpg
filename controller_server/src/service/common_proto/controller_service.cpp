@@ -315,7 +315,7 @@ void ControllerServiceImpl::OnLsLoginAccount(::google::protobuf::RpcController* 
 
 void ControllerServiceImpl::OnLsEnterGame(::google::protobuf::RpcController* controller,
     const ::CtrlEnterGameRequest* request,
-    ::CrtlEnterGameResponese* response,
+    ::CtrlEnterGameResponese* response,
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE 
