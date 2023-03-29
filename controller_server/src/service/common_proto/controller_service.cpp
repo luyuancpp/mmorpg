@@ -559,6 +559,7 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 		LOG_ERROR << "msg list empty:" << request->DebugString();
 		return;
 	}
+	//todo find all service 
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
 	auto sit = g_service_method_info.find(route_data.service_method_id());
 	if (sit == g_service_method_info.end())
