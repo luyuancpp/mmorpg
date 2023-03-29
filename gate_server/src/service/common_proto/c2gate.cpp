@@ -108,7 +108,7 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             GateDisconnectRequest rq;
             rq.set_session_id(session_id);
-            g_gate_node->controller_node_session()->CallMethod(ControllerServiceOnGateDisconnect, &rq);
+            g_gate_node->controller_node_session()->CallMethod(ControllerServiceGateDisconnect, &rq);
         }
         gate_tls.sessions().erase(session_id);
     }

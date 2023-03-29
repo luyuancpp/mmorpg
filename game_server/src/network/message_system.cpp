@@ -100,7 +100,7 @@ void Send2ControllerPlayer(uint32_t service_method_id, const google::protobuf::M
 	msg_wrapper.mutable_msg()->set_service_method_id(service_method_id);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
-	controller_node->session_->Send(ControllerServiceOnGsPlayerService, msg_wrapper);
+	controller_node->session_->Send(ControllerServiceGsPlayerService, msg_wrapper);
 }
 
 void Send2ControllerPlayer(uint32_t service_method_id, const google::protobuf::Message& message, EntityPtr& player)
