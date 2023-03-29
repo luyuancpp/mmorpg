@@ -97,15 +97,15 @@ message EnterGsSucceedRequest
 
 service ControllerService {
   rpc StartGs (CtrlStartGsRequest) returns (CtrlStartGsResponse);
-  rpc OnGateConnect (GateConnectRequest) returns (google.protobuf.Empty);
-  rpc OnGateLeaveGame (GateLeaveGameRequest) returns (google.protobuf.Empty);
-  rpc OnGatePlayerService (GateClientMessageRequest) returns (google.protobuf.Empty);
-  rpc OnGateDisconnect (GateDisconnectRequest) returns (google.protobuf.Empty); 
-  rpc OnLsLoginAccount (CtrlLoginAccountRequest) returns (CtrlLoginAccountResponse);
-  rpc OnLsEnterGame (CtrlEnterGameRequest) returns (CtrlEnterGameResponese);
-  rpc OnLsLeaveGame (CtrlLsLeaveGameRequest) returns (google.protobuf.Empty);
-  rpc OnLsDisconnect (CtrlLsDisconnectRequest) returns (google.protobuf.Empty); 
-  rpc OnGsPlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
+  rpc GateConnect (GateConnectRequest) returns (google.protobuf.Empty);
+  rpc GateLeaveGame (GateLeaveGameRequest) returns (google.protobuf.Empty);
+  rpc GatePlayerService (GateClientMessageRequest) returns (google.protobuf.Empty);
+  rpc GateDisconnect (GateDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc LsLoginAccount (CtrlLoginAccountRequest) returns (CtrlLoginAccountResponse);
+  rpc LsEnterGame (CtrlEnterGameRequest) returns (CtrlEnterGameResponese);
+  rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (google.protobuf.Empty);
+  rpc LsDisconnect (CtrlLsDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc GsPlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
   rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (google.protobuf.Empty);
   rpc EnterGsSucceed (EnterGsSucceedRequest) returns (google.protobuf.Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
