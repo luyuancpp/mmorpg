@@ -265,6 +265,15 @@ void ControllerServiceImpl::GateDisconnect(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE 
 }
 
+void ControllerServiceImpl::StartLs(::google::protobuf::RpcController* controller,
+    const ::StartLsRequest* request,
+    ::StartLsResponse* response,
+    ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE 
+}
+
 void ControllerServiceImpl::LsLoginAccount(::google::protobuf::RpcController* controller,
     const ::CtrlLoginAccountRequest* request,
     ::CtrlLoginAccountResponse* response,

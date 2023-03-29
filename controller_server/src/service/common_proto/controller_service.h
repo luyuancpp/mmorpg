@@ -28,6 +28,11 @@ public:
         ::google::protobuf::Empty* response,
         ::google::protobuf::Closure* done)override;
 
+    void StartLs(::google::protobuf::RpcController* controller,
+        const ::StartLsRequest* request,
+        ::StartLsResponse* response,
+        ::google::protobuf::Closure* done)override;
+
     void LsLoginAccount(::google::protobuf::RpcController* controller,
         const ::CtrlLoginAccountRequest* request,
         ::CtrlLoginAccountResponse* response,
