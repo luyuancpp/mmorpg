@@ -4,8 +4,8 @@ class ControllerServiceImpl : public ::ControllerService{
 public:
 public:
     void StartGs(::google::protobuf::RpcController* controller,
-        const ::ControllerNodeStartGsRequest* request,
-        ::ControllerNodeStartGsResponse* response,
+        const ::CtrlStartGsRequest* request,
+        ::CtrlStartGsResponse* response,
         ::google::protobuf::Closure* done)override;
 
     void OnGateConnect(::google::protobuf::RpcController* controller,
