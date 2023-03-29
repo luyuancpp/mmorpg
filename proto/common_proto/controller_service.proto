@@ -5,7 +5,7 @@ import "common_proto/node_common.proto";
 import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
 
-message ControllerStartGsRequest
+message CtrlStartGsRequest
 {
   IpPort rpc_client = 1;
   IpPort rpc_server = 2;
