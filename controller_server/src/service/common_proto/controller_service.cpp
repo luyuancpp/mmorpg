@@ -49,6 +49,8 @@
 #include "logic_proto/common_server_player.pb.h"
 #include "logic_proto/scene.pb.h"
 
+extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_prototype_services;
+
 using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 AccountSessionMap logined_accounts_sesion_;
 
@@ -605,6 +607,12 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 	if (sit == g_service_method_info.end())
 	{
 		LOG_INFO << "service_method_id not found " << route_data.service_method_id();
+		return;
+	}
+
+	auto it = g_prototype_services.find(sit->second.service);
+	if (it == g_prototype_services.end())
+	{
 		return;
 	}
 	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(sit->second.method);

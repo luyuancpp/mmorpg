@@ -115,23 +115,23 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   if (message.type() == RESPONSE)
   {
       auto it = g_prototype_services.find(message.service());
-      if (it != g_prototype_services.end())
+      if (it == g_prototype_services.end())
       {
-          auto& service = it->second;
-          assert(service != NULL);
-          const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-          const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message.method());
-          if (nullptr == method)
-          {
-              return;
-          }
-          MessagePtr response(service->GetResponsePrototype(method).New());
-          if (!message.response().empty())
-          {
-              response->ParseFromString(message.response());
-          }
-          g_response_dispatcher.onProtobufMessage(conn, response, receiveTime);
+          return;
       }
+	  auto& service = it->second;
+	  const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+	  const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message.method());
+	  if (nullptr == method)
+	  {
+		  return;
+	  }
+	  MessagePtr response(service->GetResponsePrototype(method).New());
+	  if (!message.response().empty())
+	  {
+		  response->ParseFromString(message.response());
+	  }
+	  g_response_dispatcher.onProtobufMessage(conn, response, receiveTime);
   }
   else if (message.type() == REQUEST)
   {
