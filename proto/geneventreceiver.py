@@ -119,12 +119,10 @@ def generatecpp(filename):
 						part += 1
 					continue
 				if part != cpprpceventpart and fileline.find(genpublic.yourcodebegin) >= 0:
-					yourcode = 1
 					newstr += fileline
 					continue
 				elif part != cpprpceventpart and fileline.find(genpublic.yourcodeend) >= 0:
-					yourcode = 0
-					newstr += fileline + '\n'
+					newstr += fileline 
 					part += 1
 					continue 
 				elif part == cpprpceventpart:
@@ -134,11 +132,11 @@ def generatecpp(filename):
 						newstr += '(const ' + local.eventprotoarray[eventindex] + '& event_obj)\n{\n'
 						continue
 					elif fileline.find(genpublic.yourcodebegin) >= 0 :
-						newstr += genpublic.yourcodebegin + ' '  + '\n'
+						newstr += genpublic.yourcodebegin + '\n'
 						yourcode = 1
 						continue
 					elif fileline.find(genpublic.yourcodeend) >= 0 :
-						newstr += genpublic.yourcodeend + ' '  + '\n}\n\n'
+						newstr += genpublic.yourcodeend  + '\n}\n\n'
 						yourcode = 0
 						eventindex += 1  
 						continue

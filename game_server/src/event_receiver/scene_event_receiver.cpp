@@ -22,31 +22,31 @@ dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventReceiverReceiver::SceneEv
 
 void SceneEventReceiverReceiver::Receive0(const BeforeEnterScene& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 void SceneEventReceiverReceiver::Receive1(const OnEnterScene& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 void SceneEventReceiverReceiver::Receive2(const BeforeLeaveScene& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 void SceneEventReceiverReceiver::Receive3(const OnLeaveScene& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 void SceneEventReceiverReceiver::Receive4(const S2CEnterScene& event_obj)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
