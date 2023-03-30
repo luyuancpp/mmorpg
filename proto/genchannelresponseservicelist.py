@@ -34,16 +34,16 @@ def gen(filename, destpath, md5dir):
     for i in range(0, len(local.servicefile)):
         pbcfile = local.servicefile[i].replace(genpublic.logicprotodir, '').replace(genpublic.commonportodir, '').replace('.proto', '.pb.h"\n') 
         newstr += '#include "' + local.fileincludedir[i]  +    pbcfile        
-    newstr += '\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_prototype_services;\n\n'
+    newstr += '\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n'
    
     for i in range(0, len(local.service)):
         newstr += 'class ' + local.service[i] + 'MethodServiceImpl : public '  + local.servicewithpkg[i] + '{};\n'
     newstr += '\nvoid InitFakeProtoServiceList()\n{\n'
     for i in range(0, len(local.service)):
         if local.servicewithpkg[i][0] == ':':
-            newstr += genpublic.tabstr + 'g_prototype_services.emplace("' + local.service[i]  + '"'
+            newstr += genpublic.tabstr + 'g_services.emplace("' + local.service[i]  + '"'
         else:
-            newstr += genpublic.tabstr + 'g_prototype_services.emplace("' + local.servicewithpkg[i].replace('::', '.')  + '"'
+            newstr += genpublic.tabstr + 'g_services.emplace("' + local.servicewithpkg[i].replace('::', '.')  + '"'
         newstr += ', std::make_unique<' + local.service[i]  + 'MethodServiceImpl>());\n'
     newstr += '}\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
