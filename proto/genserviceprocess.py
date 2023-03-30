@@ -15,8 +15,6 @@ local.servicenames = []
 local.service = ''
 
 threads = []
-local.pkg = ''
-cpkg = 'package'
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
@@ -36,22 +34,19 @@ local.packagemessage = set()
 def parsefile(filename):
     local.rpcarry = []
     local.packagemessage = set()
-    local.pkg = ''
     local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 local.rpcarry.append(fileline)
-            elif fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
             elif fileline.find('message ') >= 0:
                 local.packagemessage.add(fileline.replace('message ', '').replace('\r', '').replace('\n', ''))
 def genheadrpcfun():
-    servicestr = 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
+    servicestr = 'class ' + local.service + 'Impl : public ' + '::' + local.service + '{\npublic:\n'  
     servicestr += 'public:\n'
     global controller
     local.servicenames = []
@@ -60,21 +55,16 @@ def genheadrpcfun():
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
         rq =  s[2].replace('(', '').replace(')', '')
-        pkg = local.pkg
         if rq in local.packagemessage:
             pass
-        else:
-            pkg = ''
-        line += tabstr + tabstr + 'const ' + pkg + '::' + rq + '* request,\n'
+        line += tabstr + tabstr + 'const ' +  '::' + rq + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp in local.packagemessage:
             pass
-        else:
-            pkg = ''
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
         else :
-            line += tabstr + tabstr + pkg + '::' + rsp + '* response,\n'
+            line += tabstr + tabstr +  '::' + rsp + '* response,\n'
         line += tabstr + tabstr + '::google::protobuf::Closure* done)override;\n\n'
         servicestr += line
     servicestr += '};'
@@ -86,22 +76,17 @@ def gencpprpcfunbegin(rpcindex):
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
     rq =  s[2].replace('(', '').replace(')', '')
-    pkg = local.pkg
     if rq in local.packagemessage:
         pass
-    else:
-        pkg = ''
-    servicestr +=  tabstr + 'const ' + pkg + '::' + rq + '* request,\n'
+    servicestr +=  tabstr + 'const ' + '::' + rq + '* request,\n'
    
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
     if rsp in local.packagemessage:
         pass
-    else:
-        pkg = ''
     if rsp == 'google.protobuf.Empty' :
         servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
     else :
-        servicestr +=  tabstr + pkg + '::' + rsp + '* response,\n'
+        servicestr +=  tabstr + '::' + rsp + '* response,\n'
     servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
 
     return servicestr
