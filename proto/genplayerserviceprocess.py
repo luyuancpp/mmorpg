@@ -20,10 +20,10 @@ local.md5protodir = []
 threads = []
 local.pkg = ''
 cpkg = 'package'
-yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
-yourcodeend = '///<<< END WRITING YOUR CODE'
-rpcbegin = '///<<<rpc begin'
-rpcend = '///<<<rpc end'
+genpublic.yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
+genpublic.yourcodeend = '///<<< END WRITING YOUR CODE'
+genpublic.rpcbegin = '///<<<rpc begin'
+genpublic.rpcend = '///<<<rpc end'
 tabstr = '    '
 cpprpcservicepart = 1
 controller = '(entt::entity player'
@@ -130,7 +130,7 @@ def gencpprpcfunbegin(rpcindex):
     return servicestr
 
 def genyourcode():
-    return yourcodebegin + '\n' + yourcodeend + '\n'
+    return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
 def classbegin():
     return 
 
@@ -173,46 +173,46 @@ def gencppfile(filename, dirpath):
                 if skipheadline < 3 :
                     skipheadline += 1
                     continue
-                if part != cpprpcservicepart and fileline.find(yourcodebegin) >= 0:
+                if part != cpprpcservicepart and fileline.find(genpublic.yourcodebegin) >= 0:
                     isyourcode = 1
                     newstr += fileline
                     continue
-                elif part != cpprpcservicepart and fileline.find(yourcodeend) >= 0:
+                elif part != cpprpcservicepart and fileline.find(genpublic.yourcodeend) >= 0:
                     isyourcode = 0
                     newstr += fileline + '\n'
                     part += 1
                     continue     
                 elif part == cpprpcservicepart:
-                    if fileline.find(rpcbegin) >= 0:
+                    if fileline.find(genpublic.rpcbegin) >= 0:
                         newstr += fileline
                         continue
                     elif serviceidx < len(local.filemethodarray) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
                         isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
-                    elif fileline.find(yourcodebegin) >= 0 :
-                        newstr += yourcodebegin  + '\n'
+                    elif fileline.find(genpublic.yourcodebegin) >= 0 :
+                        newstr += genpublic.yourcodebegin  + '\n'
                         isyourcode = 1
                         continue
-                    elif fileline.find(yourcodeend) >= 0 :
-                        newstr += yourcodeend + '\n}\n\n'
+                    elif fileline.find(genpublic.yourcodeend) >= 0 :
+                        newstr += genpublic.yourcodeend + '\n}\n\n'
                         isyourcode = 0
                         serviceidx += 1  
                         continue
-                    elif fileline.find(rpcend) >= 0:
+                    elif fileline.find(genpublic.rpcend) >= 0:
                         break
                 if isyourcode == 1:
                     newstr += fileline
                     continue                
     except FileNotFoundError:
         newstr += genyourcode() + '\n'
-        newstr += rpcbegin + '\n'
+        newstr += genpublic.rpcbegin + '\n'
     while serviceidx < len(local.filemethodarray) :
             newstr += gencpprpcfunbegin(serviceidx)
-            newstr += yourcodebegin +  '\n'
-            newstr += yourcodeend + '\n}\n\n'
+            newstr += genpublic.yourcodebegin +  '\n'
+            newstr += genpublic.yourcodeend + '\n}\n\n'
             serviceidx += 1 
-    newstr += rpcend + '\n'
+    newstr += genpublic.rpcend + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 

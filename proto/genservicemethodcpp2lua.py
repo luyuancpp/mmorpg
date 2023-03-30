@@ -12,8 +12,7 @@ local.filemethodarray = []
 local.service = ''
 
 threads = []
-rpcbegin = '///<<<rpc begin'
-rpcend = '///<<<rpc end'
+
 logicprotodir = 'logic_proto/'
 tabstr = '    '
 servicedir = './md5/logic_proto/'
