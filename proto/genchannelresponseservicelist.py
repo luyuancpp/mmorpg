@@ -9,7 +9,6 @@ import genpublic
 local = threading.local()
 local.pkg = ''
 local.service = []
-local.servicewithpkg = []
 local.servicefile = []
 local.fileincludedir = []
 
@@ -17,12 +16,9 @@ def parsefile(filename, includedir):
     local.pkg = ''
     with open(filename, 'r', encoding='utf-8') as file:
         for fileline in file:
-            if fileline.find(genpublic.cpkg) >= 0:
-                local.pkg = fileline.replace(genpublic.cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
                 s = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.service.append(s)
-                local.servicewithpkg.append(local.pkg + '::' + s)
                 local.servicefile.append(filename)
                 local.fileincludedir.append(includedir)
                 return
@@ -37,13 +33,10 @@ def gen(filename, destpath, md5dir):
     newstr += '\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n'
    
     for i in range(0, len(local.service)):
-        newstr += 'class ' + local.service[i] + 'MethodServiceImpl : public '  + local.servicewithpkg[i] + '{};\n'
+        newstr += 'class ' + local.service[i] + 'MethodServiceImpl : public '  + local.service[i] + '{};\n'
     newstr += '\nvoid InitFakeProtoServiceList()\n{\n'
     for i in range(0, len(local.service)):
-        if local.servicewithpkg[i][0] == ':':
-            newstr += genpublic.tabstr + 'g_services.emplace("' + local.service[i]  + '"'
-        else:
-            newstr += genpublic.tabstr + 'g_services.emplace("' + local.servicewithpkg[i].replace('::', '.')  + '"'
+        newstr += genpublic.tabstr + 'g_services.emplace("' + local.service[i]  + '"'
         newstr += ', std::make_unique<' + local.service[i]  + 'MethodServiceImpl>());\n'
     newstr += '}\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
