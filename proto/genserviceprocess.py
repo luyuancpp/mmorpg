@@ -26,7 +26,6 @@ logicprotodir = 'logic_proto/'
 tabstr = '    '
 cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
-servicedir = './md5/logic_proto/'
 
 genfile = []
 

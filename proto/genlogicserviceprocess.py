@@ -12,7 +12,6 @@ local.filemethodarray = []
 local.servicenames = []
 local.service = ''
 threads = []
-cpkg = 'package'
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
