@@ -10,7 +10,7 @@ from multiprocessing import cpu_count
 
 local = threading.local()
 
-local.rpcarry = []
+local.filemethodarray = []
 local.playerservice = ''
 local.service = ''
 local.playerservicearray = []
@@ -32,7 +32,7 @@ if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
 def parsefile(filename):
-    local.rpcarry = []
+    local.filemethodarray = []
     local.pkg = ''
     local.playerservice = ''
     local.service = ''
@@ -40,7 +40,7 @@ def parsefile(filename):
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
-                local.rpcarry.append(fileline)
+                local.filemethodarray.append(fileline)
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
@@ -67,7 +67,7 @@ def genheadrpcfun():
     servicestr += tabstr + '{\n'
     servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
     index = 0
-    for service in local.rpcarry:
+    for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
         servicestr += tabstr + tabstr + tabstr + 'tls_lua_state["' + s[1] + 'Process"](\n'
