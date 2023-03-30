@@ -20,6 +20,12 @@ gatelogicservicedir = '../gate_server/src/service/logic_proto/'
 servicemethoddir = '../common/src/pb/pbc/service_method/'
 servicemethodmd5dir = md5dir + 'service_method/'
 
+controller = '(::google::protobuf::RpcController* controller'
+yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
+yourcodeend = '///<<< END WRITING YOUR CODE'
+rpcbegin = '///<<<rpc begin'
+rpcend = '///<<<rpc end'
+
 servermd5dirs = [md5dir + 'controller_server/', 
 md5dir + 'game_server/', 
 md5dir + 'gate_server/',

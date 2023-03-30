@@ -4,6 +4,7 @@ import md5tool
 import shutil
 import threading
 import _thread
+import genpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
@@ -25,15 +26,11 @@ normalcclassfilename = 'EventReceiver'
 currentfilename = normalcfilename
 currentclassname = normalcclassfilename
 
-
-yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
-yourcodeend = '///<<< END WRITING YOUR CODE'
-
 if not os.path.exists(md5dir):
     os.makedirs(md5dir)
 
 def beginendstring():
-    return yourcodebegin + '\n' + yourcodeend + '\n'
+    return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
 
 ##输入pb事件
 def parsefile(filename):
@@ -117,15 +114,15 @@ def generatecpp(filename):
 					continue
 				if part == 0:
 					newstr += fileline
-					if fileline.find(yourcodeend) >= 0:
+					if fileline.find(genpublic.yourcodeend) >= 0:
 						newstr += generatecppregisterunregisterfunction(filename)
 						part += 1
 					continue
-				if part != cpprpceventpart and fileline.find(yourcodebegin) >= 0:
+				if part != cpprpceventpart and fileline.find(genpublic.yourcodebegin) >= 0:
 					yourcode = 1
 					newstr += fileline
 					continue
-				elif part != cpprpceventpart and fileline.find(yourcodeend) >= 0:
+				elif part != cpprpceventpart and fileline.find(genpublic.yourcodeend) >= 0:
 					yourcode = 0
 					newstr += fileline + '\n'
 					part += 1
@@ -136,12 +133,12 @@ def generatecpp(filename):
 						newstr += cppreceiverfunctionname + str(eventindex)
 						newstr += '(const ' + local.eventprotoarray[eventindex] + '& event_obj)\n{\n'
 						continue
-					elif fileline.find(yourcodebegin) >= 0 :
-						newstr += yourcodebegin + ' '  + '\n'
+					elif fileline.find(genpublic.yourcodebegin) >= 0 :
+						newstr += genpublic.yourcodebegin + ' '  + '\n'
 						yourcode = 1
 						continue
-					elif fileline.find(yourcodeend) >= 0 :
-						newstr += yourcodeend + ' '  + '\n}\n\n'
+					elif fileline.find(genpublic.yourcodeend) >= 0 :
+						newstr += genpublic.yourcodeend + ' '  + '\n}\n\n'
 						yourcode = 0
 						eventindex += 1  
 						continue
