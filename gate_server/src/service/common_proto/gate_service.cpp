@@ -19,7 +19,7 @@ void GateServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	InetAddress gs_addr(request->ip(), request->port());
 	for (auto e : tls.registry.view<InetAddress>())
 	{
@@ -39,7 +39,7 @@ void GateServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 	tls.registry.emplace<InetAddress>(gsi.entity_id, gs_addr);
 	g_game_node.emplace(request->gs_node_id(), std::move(gsi));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->gs_node_id();
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void GateServiceImpl::StopGS(::google::protobuf::RpcController* controller,
@@ -47,7 +47,7 @@ void GateServiceImpl::StopGS(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	for (auto e : tls.registry.view<InetAddress>())
 	{
 		auto& c = tls.registry.get<InetAddress>(e);
@@ -59,7 +59,7 @@ void GateServiceImpl::StopGS(::google::protobuf::RpcController* controller,
 		tls.registry.destroy(e);
 		break;
 	}
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void GateServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controller,
@@ -67,7 +67,7 @@ void GateServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controlle
     ::GateNodePlayerEnterGsResponese* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 
 	auto it = gate_tls.sessions().find(request->session_id());
 	if (it == gate_tls.sessions().end())
@@ -77,7 +77,7 @@ void GateServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controlle
 	}
 	it->second.gs_node_id_ = request->gs_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
 
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controller,
@@ -85,7 +85,7 @@ void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controlle
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	auto session_id = request->ex().session_id();
 	auto it = gate_tls.sessions().find(session_id);
 	if (it == gate_tls.sessions().end())
@@ -94,7 +94,7 @@ void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controlle
 		return;
 	}
 	g_gate_node->Send2Client(it->second.conn_, request->msg());
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void GateServiceImpl::KickConnByController(::google::protobuf::RpcController* controller,
@@ -102,10 +102,10 @@ void GateServiceImpl::KickConnByController(::google::protobuf::RpcController* co
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	gate_tls.sessions().erase(request->session_id());
 	LOG_INFO << "connid be kick " << request->session_id();
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void GateServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
@@ -113,9 +113,9 @@ void GateServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* cont
     ::RouteMsgStringResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void GateServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
@@ -123,8 +123,8 @@ void GateServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* co
     ::RoutePlayerMsgStringResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end

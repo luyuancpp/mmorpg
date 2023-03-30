@@ -148,11 +148,11 @@ def gencppfile(filename, destdir, md5dir):
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
                     elif fileline.find(yourcodebegin) >= 0 :
-                        newstr += yourcodebegin + ' ' +  '\n'
+                        newstr += yourcodebegin + '\n'
                         isyourcode = 1
                         continue
                     elif fileline.find(yourcodeend) >= 0 :
-                        newstr += yourcodeend + ' ' +  '\n}\n\n'
+                        newstr += yourcodeend + '\n}\n\n'
                         isyourcode = 0
                         serviceidx += 1  
                         continue

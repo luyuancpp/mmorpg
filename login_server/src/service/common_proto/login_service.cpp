@@ -147,7 +147,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
     ::LoginResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 
 	//测试用例连接不登录马上断线，
 	//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
@@ -159,7 +159,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	sessions_.emplace(session_id, std::make_shared<PlayerPtr::element_type>());
 	Route2Node(kControllerNode, rq, ControllerServiceLsLoginAccount);
 	//LoginAccountControllerReplied
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller,
@@ -167,7 +167,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
     ::LoginNodeCreatePlayerResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	// login process
 	//check name rule
 	auto sit = sessions_.find(request->session_id());
@@ -184,7 +184,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 		CreatePlayerDbReplied,
 		rpc,
 		&dbservice::DbService_Stub::CreatePlayer);*/
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
@@ -192,7 +192,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
     ::LoginNodeEnterGameResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 
 	auto session_id = request->session_id();
 	auto sit = sessions_.find(session_id);
@@ -229,7 +229,7 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 		EnterGameDbReplied,
 		c,
 		&dbservice::DbService_Stub::EnterGame);*/
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
@@ -237,7 +237,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	auto sit = sessions_.find(request->session_id());
 	if (sit == sessions_.end())
 	{
@@ -249,7 +249,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	rq.set_session_id(request->session_id());
 	g_login_node->controller_node()->CallMethod(ControllerServiceLsLeaveGame, &rq);
 	sessions_.erase(sit);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
@@ -257,13 +257,13 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	//比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 	sessions_.erase(request->session_id());
 	CtrlLsDisconnectRequest rq;
 	rq.set_session_id(request->session_id());
 	g_login_node->controller_node()->CallMethod(ControllerServiceLsDisconnect, &rq);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
@@ -271,7 +271,7 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     ::RouteMsgStringResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
@@ -345,7 +345,7 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     break;
     }
 	cl_tls.set_next_route_node_id(UINT32_MAX);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
@@ -353,8 +353,8 @@ void LoginServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* c
     ::RoutePlayerMsgStringResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end

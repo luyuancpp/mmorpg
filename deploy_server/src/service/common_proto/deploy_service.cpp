@@ -34,7 +34,7 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
     ::ServerInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	auto group_id = request->group();
 	auto& servers_deploy = *response->mutable_info();
 
@@ -46,7 +46,7 @@ void DeployServiceImpl::ServerInfo(::google::protobuf::RpcController* controller
 	db_->LoadOne(*servers_deploy.mutable_redis_info(), where_case);
 
 	LoadLobbyDeploy(request->lobby_id(), servers_deploy.mutable_lobby_info());
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
@@ -54,7 +54,7 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
     ::StartGSResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	auto& server_deploy = *response->mutable_my_info();
 	auto& client_info = request->rpc_client();
 	muduo::net::InetAddress ip_port(client_info.ip(), client_info.port());
@@ -73,7 +73,7 @@ void DeployServiceImpl::StartGS(::google::protobuf::RpcController* controller,
 	g_deploy_server->reuse_game_id().Emplace(ip_port.toIpPort(), node_id);
 	g_deploy_server->SaveGSDb();
 		//g_deploy_server->LogReuseInfo();
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void DeployServiceImpl::StartLobbyServer(::google::protobuf::RpcController* controller,
@@ -81,9 +81,9 @@ void DeployServiceImpl::StartLobbyServer(::google::protobuf::RpcController* cont
     ::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	LoadLobbyDeploy(request->lobby_id(), response->mutable_info());
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void DeployServiceImpl::AcquireLobbyServerInfo(::google::protobuf::RpcController* controller,
@@ -91,9 +91,9 @@ void DeployServiceImpl::AcquireLobbyServerInfo(::google::protobuf::RpcController
     ::LobbyServerResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	LoadLobbyDeploy(request->lobby_id(), response->mutable_info());
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void DeployServiceImpl::AcquireLobbyInfo(::google::protobuf::RpcController* controller,
@@ -101,11 +101,11 @@ void DeployServiceImpl::AcquireLobbyInfo(::google::protobuf::RpcController* cont
     ::LobbyInfoResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	//获取大厅管理的controller节点
 	std::string where_case = std::to_string(request->lobby_id()) + " = lobby_id  ";
 	db_->LoadAll<controller_server_db>(*response->mutable_lobby_controllers(), where_case);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void DeployServiceImpl::LoginNodeInfo(::google::protobuf::RpcController* controller,
@@ -113,10 +113,10 @@ void DeployServiceImpl::LoginNodeInfo(::google::protobuf::RpcController* control
     ::GruoupLoginNodeResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
     std::string where_case = std::to_string(request->group_id()) + " = group_id  ";
     db_->LoadAll<login_server_db>(*response->mutable_login_db(), where_case);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void DeployServiceImpl::SceneSqueueNodeId(::google::protobuf::RpcController* controller,
@@ -124,9 +124,9 @@ void DeployServiceImpl::SceneSqueueNodeId(::google::protobuf::RpcController* con
     ::SceneSqueueResponese* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	response->set_node_id(g_scene_squeue_node_id.Create());
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end
