@@ -131,13 +131,12 @@ def gencppfile(filename, destdir, md5dir):
                 if skipheadline < 2 :
                     skipheadline += 1
                     continue
+                #处理开始自定义文件
                 if part != cpprpcservicepart and fileline.find(yourcodebegin) >= 0:
-                    isyourcode = 1
                     newstr += fileline
                     continue
                 elif part != cpprpcservicepart and fileline.find(yourcodeend) >= 0:
-                    isyourcode = 0
-                    newstr += fileline + '\n'
+                    newstr += fileline
                     part += 1
                     continue     
                 elif part == cpprpcservicepart:
