@@ -113,7 +113,7 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
     ::CtrlStartGsResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	response->set_controller_node_id(controller_node_id());
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
@@ -177,7 +177,7 @@ void ControllerServiceImpl::StartGs(::google::protobuf::RpcController* controlle
 	}
 	controller_tls.game_node().emplace(request->gs_node_id(), gs);
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::GateConnect(::google::protobuf::RpcController* controller,
@@ -185,7 +185,7 @@ void ControllerServiceImpl::GateConnect(::google::protobuf::RpcController* contr
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	entt::entity gate{ entt::null };
 	for (auto e : tls.registry.view<RpcServerConnection>())
@@ -209,7 +209,7 @@ void ControllerServiceImpl::GateConnect(::google::protobuf::RpcController* contr
 	{
 		g_controller_node->LetGateConnect2Gs(e, gate);
 	}
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::GateLeaveGame(::google::protobuf::RpcController* controller,
@@ -217,8 +217,8 @@ void ControllerServiceImpl::GateLeaveGame(::google::protobuf::RpcController* con
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::GatePlayerService(::google::protobuf::RpcController* controller,
@@ -226,8 +226,8 @@ void ControllerServiceImpl::GatePlayerService(::google::protobuf::RpcController*
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::GateDisconnect(::google::protobuf::RpcController* controller,
@@ -235,7 +235,7 @@ void ControllerServiceImpl::GateDisconnect(::google::protobuf::RpcController* co
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	auto player = GetPlayerByConnId(request->session_id());
@@ -269,7 +269,7 @@ void ControllerServiceImpl::GateDisconnect(::google::protobuf::RpcController* co
 	rq.set_player_id(player_id);
 	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnect, &rq);
 	ControllerPlayerSystem::LeaveGame(player_id);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::StartLs(::google::protobuf::RpcController* controller,
@@ -277,7 +277,7 @@ void ControllerServiceImpl::StartLs(::google::protobuf::RpcController* controlle
     ::StartLsResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	response->set_controller_node_id(controller_node_id());
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
@@ -304,7 +304,7 @@ void ControllerServiceImpl::StartLs(::google::protobuf::RpcController* controlle
 	login_node.node_info_.set_node_type(kGameNode);
 	controller_tls.game_node().emplace(request->login_node_id(), login);
 	LOG_DEBUG << "login connect node id: " << request->login_node_id() << response->DebugString() << "server type:" << request->server_type();
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::LsLoginAccount(::google::protobuf::RpcController* controller,
@@ -312,7 +312,7 @@ void ControllerServiceImpl::LsLoginAccount(::google::protobuf::RpcController* co
     ::CtrlLoginAccountResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 
 	auto cit = controller_tls.gate_sessions().find(request->session_id());
 	if (cit == controller_tls.gate_sessions().end())
@@ -352,7 +352,7 @@ void ControllerServiceImpl::LsLoginAccount(::google::protobuf::RpcController* co
 	{
 		logined_accounts_sesion_.emplace(request->account(), request->session_id());
 	}
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::LsEnterGame(::google::protobuf::RpcController* controller,
@@ -360,7 +360,7 @@ void ControllerServiceImpl::LsEnterGame(::google::protobuf::RpcController* contr
     ::CtrlEnterGameResponese* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
     auto sit = controller_tls.gate_sessions().find(request->session_id());
@@ -439,7 +439,7 @@ void ControllerServiceImpl::LsEnterGame(::google::protobuf::RpcController* contr
 		return;
 	}
 	
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::LsLeaveGame(::google::protobuf::RpcController* controller,
@@ -447,12 +447,12 @@ void ControllerServiceImpl::LsLeaveGame(::google::protobuf::RpcController* contr
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 
 	auto player_id = GetPlayerIdByConnId(request->session_id());
 	ControllerPlayerSystem::LeaveGame(player_id);
 	//todo statistics
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::LsDisconnect(::google::protobuf::RpcController* controller,
@@ -460,11 +460,11 @@ void ControllerServiceImpl::LsDisconnect(::google::protobuf::RpcController* cont
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	auto player_id = GetPlayerIdByConnId(request->session_id());
 	ControllerPlayerSystem::LeaveGame(player_id);
 	controller_tls.gate_sessions().erase(player_id);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::GsPlayerService(::google::protobuf::RpcController* controller,
@@ -472,7 +472,7 @@ void ControllerServiceImpl::GsPlayerService(::google::protobuf::RpcController* c
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	auto& message_extern = request->ex();
 	auto it = controller_tls.player_list().find(message_extern.player_id());
 	if (it == controller_tls.player_list().end())
@@ -512,7 +512,7 @@ void ControllerServiceImpl::GsPlayerService(::google::protobuf::RpcController* c
 	response->mutable_ex()->set_player_id(request->ex().player_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
 	response->mutable_msg()->set_service_method_id(request->msg().service_method_id());
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::AddCrossServerScene(::google::protobuf::RpcController* controller,
@@ -520,7 +520,7 @@ void ControllerServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
     CreateSceneBySceneInfoP create_scene_param;
 	for (auto& it : request->cross_scenes_info())
 	{
@@ -540,7 +540,7 @@ void ControllerServiceImpl::AddCrossServerScene(::google::protobuf::RpcControlle
         auto scene = ScenesSystem::CreateSceneByGuid(create_scene_param);
 		tls.registry.emplace<GsNodePtr>(scene, *try_gs_node_ptr);
 	}
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* controller,
@@ -548,7 +548,7 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	auto player = ControllerPlayerSystem::GetPlayer(request->player_id());
 	if (entt::null == player)
 	{
@@ -581,7 +581,7 @@ void ControllerServiceImpl::EnterGsSucceed(::google::protobuf::RpcController* co
 	gate_it->second->session_.CallMethod(GateServicePlayerEnterGs, &rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
@@ -589,7 +589,7 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
     ::RouteMsgStringResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
@@ -713,7 +713,7 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 	break;
 	}
 
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void ControllerServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
@@ -721,8 +721,8 @@ void ControllerServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcControll
     ::RoutePlayerMsgStringResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
-///<<< END WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end
