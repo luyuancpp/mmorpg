@@ -32,7 +32,7 @@ if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
 def parsefile(filename):
-    local.rpcarry = []
+    local.filemethodarray = []
     local.pkg = ''
     local.playerservice = ''
     local.service = ''
@@ -40,7 +40,7 @@ def parsefile(filename):
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
-                local.rpcarry.append(fileline)
+                local.filemethodarray.append(fileline)
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
@@ -57,7 +57,7 @@ def scanprotofiledestdir(filename):
                 break
 def gencpprpcfunbegin(rpcindex):
     servicestr = ''
-    s = local.rpcarry[rpcindex]
+    s = local.filemethodarray[rpcindex]
     s = s.strip(' ').split(' ')
     servicestr = 'function ' +  s[1] + process_fun_name
     return servicestr
@@ -91,7 +91,7 @@ def gencppfile(filename):
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
-                    elif serviceidx < len(local.rpcarry) and fileline.find(process_fun_name) >= 0 :
+                    elif serviceidx < len(local.filemethodarray) and fileline.find(process_fun_name) >= 0 :
                         yourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
@@ -112,7 +112,7 @@ def gencppfile(filename):
     except FileNotFoundError:
             newstr += genyourcodepair() + '\n'
             newstr += rpcbegin + '\n'
-    while serviceidx < len(local.rpcarry) :
+    while serviceidx < len(local.filemethodarray) :
         newstr += gencpprpcfunbegin(serviceidx)
         newstr += yourcodebegin +  '\n'
         newstr += yourcodeend + '\nend\n\n'

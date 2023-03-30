@@ -10,7 +10,7 @@ from multiprocessing import cpu_count
 
 local = threading.local()
 
-local.rpcarry = []
+local.filemethodarray = []
 local.servicenames = []
 local.playerservice = ''
 local.service = ''
@@ -39,7 +39,7 @@ repliedmd5dir = genpublic.logicprotodir.replace('logic_proto', 'logic_proto_repl
 def parsefile(filename):
     if not genpublic.is_server_player_proto(filename):
         return
-    local.rpcarry = []
+    local.filemethodarray = []
     local.pkg = ''
     local.service = ''
     local.playerservice = ''
@@ -47,7 +47,7 @@ def parsefile(filename):
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
-                local.rpcarry.append(fileline)
+                local.filemethodarray.append(fileline)
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
@@ -57,7 +57,7 @@ def parsefile(filename):
                 
 def initservicenames():
     local.servicenames = []
-    for service in local.rpcarry:
+    for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
         local.servicenames.append(s[1])
         
@@ -65,7 +65,7 @@ def genheadrpcfun():
     global controller
     servicestr = 'class ' + local.playerservice + 'RepliedImpl : public PlayerServiceReplied {\npublic:\n    using PlayerServiceReplied::PlayerServiceReplied;\n'  
     servicestr += 'public:\n'
-    for service in local.rpcarry:
+    for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
@@ -81,7 +81,7 @@ def genheadrpcfun():
     servicestr += tabstr + '{\n'
     servicestr += tabstr + tabstr + 'switch(method->index()) {\n'
     index = 0
-    for service in local.rpcarry:
+    for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
         servicestr += tabstr + tabstr + tabstr + s[1] + '(player,\n'
@@ -104,7 +104,7 @@ def genheadrpcfun():
 
 def gencpprpcfunbegin(rpcindex):
     servicestr = ''
-    s = local.rpcarry[rpcindex]
+    s = local.filemethodarray[rpcindex]
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.playerservice + 'RepliedImpl::' + s[1] + controller + ',\n'
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
@@ -167,7 +167,7 @@ def gencppfile(filename, destdir, md5dir):
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
-                    elif serviceidx < len(local.rpcarry) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
+                    elif serviceidx < len(local.filemethodarray) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
                         isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
@@ -188,7 +188,7 @@ def gencppfile(filename, destdir, md5dir):
     except FileNotFoundError:
         newstr += genyourcode() + '\n'
         newstr += rpcbegin + '\n'
-    while serviceidx < len(local.rpcarry) :
+    while serviceidx < len(local.filemethodarray) :
             newstr += gencpprpcfunbegin(serviceidx)
             newstr += yourcodebegin +  '\n'
             newstr += yourcodeend + '\n}\n\n'

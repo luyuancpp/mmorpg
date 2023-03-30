@@ -8,7 +8,7 @@ from multiprocessing import cpu_count
 
 local = threading.local()
 
-local.rpcarry = []
+local.filemethodarray = []
 local.servicenames = []
 local.service = ''
 threads = []
@@ -30,14 +30,14 @@ if not os.path.exists(servicedir):
     os.makedirs(servicedir)
 
 def parsefile(filename):
-    local.rpcarry = []
+    local.filemethodarray = []
     local.pkg = ''
     local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
-                local.rpcarry.append(fileline)
+                local.filemethodarray.append(fileline)
             elif fileline.find(cpkg) >= 0:
                 local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
@@ -49,7 +49,7 @@ def genheadrpcfun():
     servicestr += 'public:\n'
     global controller
     local.servicenames = []
-    for service in local.rpcarry:
+    for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
@@ -66,7 +66,7 @@ def genheadrpcfun():
 
 def gencpprpcfunbegin(rpcindex):
     servicestr = ''
-    s = local.rpcarry[rpcindex]
+    s = local.filemethodarray[rpcindex]
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
     servicestr +=  tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
@@ -129,7 +129,7 @@ def gencppfile(filename, destdir, md5dir):
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
-                    elif serviceidx < len(local.rpcarry) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
+                    elif serviceidx < len(local.filemethodarray) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
                         isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
@@ -150,7 +150,7 @@ def gencppfile(filename, destdir, md5dir):
     except FileNotFoundError:
         newstr += genyourcode() + '\n'
         newstr += rpcbegin + '\n'
-    while serviceidx < len(local.rpcarry) :
+    while serviceidx < len(local.filemethodarray) :
         newstr += gencpprpcfunbegin(serviceidx)
         newstr += yourcodebegin +  '\n'
         newstr += yourcodeend +  '\n}\n\n'

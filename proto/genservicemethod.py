@@ -8,7 +8,7 @@ from multiprocessing import cpu_count
 
 local = threading.local()
 
-local.rpcarry = []
+local.filemethodarray = []
 local.service = ''
 
 threads = []
@@ -22,20 +22,20 @@ methodsufix = 'method.h'
 genfile = []
 
 def parsefile(filename):
-    local.rpcarry = []
+    local.filemethodarray = []
     local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
-                local.rpcarry.append(fileline)
+                local.filemethodarray.append(fileline)
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
 def genheadrpcfun():
     servicestr = ''
     index = 0
-    for service in local.rpcarry:
+    for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
         method = s[1]
         methodname =  local.service +  method
