@@ -62,7 +62,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
     ::StartCrossGsResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	//只有跨服gs能连
 	
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
@@ -123,7 +123,7 @@ void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* co
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity controller_node{ entt::null };
@@ -160,7 +160,7 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
     ::EnterCrossMainSceneResponese* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	auto scene = ScenesSystem::get_scene(request->scene_id());
 	if (entt::null == scene)
 	{
@@ -219,7 +219,7 @@ void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::R
     ::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
 	GetSceneParam weight_round_robin_scene;
 	weight_round_robin_scene.scene_confid_ = request->scene_confid();
 	auto scene = ServerNodeSystem::GetSingleton().GetWeightRoundRobinMainScene(weight_round_robin_scene);
@@ -256,7 +256,7 @@ void LobbyServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* co
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
     auto it = players_.find(request->player_id());
     if (it == players_.end())
     {
@@ -275,7 +275,7 @@ void LobbyServiceImpl::GameConnectToController(::google::protobuf::RpcController
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
 {
-///<<< BEGIN WRITING YOUR CODE 
+///<<< BEGIN WRITING YOUR CODE
     for (auto& mit : *g_controller_nodes)
     {
         AddCrossScene2Controller(mit.first);

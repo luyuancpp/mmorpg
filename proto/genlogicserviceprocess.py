@@ -113,12 +113,10 @@ def gencppfile(filename, destdir, md5dir):
                     skipheadline += 1
                     continue
                 if part != cpprpcservicepart and fileline.find(yourcodebegin) >= 0:
-                    isyourcode = 1
                     newstr += fileline
                     continue
                 elif part != cpprpcservicepart and fileline.find(yourcodeend) >= 0:
-                    isyourcode = 0
-                    newstr += fileline + '\n'
+                    newstr += fileline
                     part += 1
                     continue     
                 elif part == cpprpcservicepart:
@@ -130,7 +128,7 @@ def gencppfile(filename, destdir, md5dir):
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
                     elif fileline.find(yourcodebegin) >= 0 :
-                        newstr += yourcodebegin + ' ' +  '\n'
+                        newstr += yourcodebegin +   '\n'
                         isyourcode = 1
                         continue
                     elif fileline.find(yourcodeend) >= 0 :
