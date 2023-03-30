@@ -10,8 +10,8 @@ from multiprocessing import cpu_count
 
 local = threading.local()
 
-local.rpcarry = []
-local.servicenames = []
+local.filemethodarray = []
+local.methodnames = []
 local.service = ''
 
 threads = []
@@ -31,13 +31,13 @@ servicedir = './md5/logic_proto/'
 genfile = []
 
 def parsefile(filename):
-    local.rpcarry = []
+    local.filemethodarray = []
     local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
-                local.rpcarry.append(fileline)
+                local.filemethodarray.append(fileline)
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
@@ -46,11 +46,11 @@ def genheadrpcfun():
     servicestr = 'class ' + local.service + 'Impl : public ' + '::' + local.service + '{\npublic:\n'  
     servicestr += 'public:\n'
     global controller
-    local.servicenames = []
-    for service in local.rpcarry:
+    local.methodnames = []
+    for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
-        local.servicenames.append(s[1])
+        local.methodnames.append(s[1])
         rq =  s[2].replace('(', '').replace(')', '')
         line += tabstr + tabstr + 'const ' +  '::' + rq + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
@@ -65,7 +65,7 @@ def genheadrpcfun():
 
 def gencpprpcfunbegin(rpcindex):
     servicestr = ''
-    s = local.rpcarry[rpcindex]
+    s = local.filemethodarray[rpcindex]
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
     rq =  s[2].replace('(', '').replace(')', '')
@@ -105,7 +105,7 @@ def getfilenamewithnopath(filename, destdir):
     return filename.replace('common_proto/', '')
 
 def genheadfile(filename,  destdir,  md5dir):
-    local.servicenames = []
+    local.methodnames = []
     filename = getfilenamewithnopath(filename, destdir).replace('.proto', '.h') 
     destfilename = destdir + filename
     md5filename = md5dir +  filename
@@ -144,7 +144,7 @@ def gencppfile(filename, destdir, md5dir):
                     if fileline.find(rpcbegin) >= 0:
                         newstr += fileline
                         continue
-                    elif serviceidx < len(local.rpcarry) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
+                    elif serviceidx < len(local.filemethodarray) and fileline.find(local.methodnames[serviceidx] + controller) >= 0 :
                         isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
@@ -164,7 +164,7 @@ def gencppfile(filename, destdir, md5dir):
                     continue                
     except FileNotFoundError:
         newstr += rpcbegin + '\n'
-    while serviceidx < len(local.rpcarry) :
+    while serviceidx < len(local.filemethodarray) :
         newstr += gencpprpcfunbegin(serviceidx)
         newstr += yourcodebegin +  '\n'
         newstr += yourcodeend +  '\n}\n\n'
