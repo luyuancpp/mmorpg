@@ -29,11 +29,9 @@ controller = '(::google::protobuf::RpcController* controller'
 servicedir = './md5/logic_proto/'
 
 genfile = []
-local.packagemessage = set()
 
 def parsefile(filename):
     local.rpcarry = []
-    local.packagemessage = set()
     local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
@@ -43,8 +41,7 @@ def parsefile(filename):
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-            elif fileline.find('message ') >= 0:
-                local.packagemessage.add(fileline.replace('message ', '').replace('\r', '').replace('\n', ''))
+
 def genheadrpcfun():
     servicestr = 'class ' + local.service + 'Impl : public ' + '::' + local.service + '{\npublic:\n'  
     servicestr += 'public:\n'
@@ -55,12 +52,8 @@ def genheadrpcfun():
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
         rq =  s[2].replace('(', '').replace(')', '')
-        if rq in local.packagemessage:
-            pass
         line += tabstr + tabstr + 'const ' +  '::' + rq + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
-        if rsp in local.packagemessage:
-            pass
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
         else :
@@ -76,13 +69,8 @@ def gencpprpcfunbegin(rpcindex):
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
     rq =  s[2].replace('(', '').replace(')', '')
-    if rq in local.packagemessage:
-        pass
     servicestr +=  tabstr + 'const ' + '::' + rq + '* request,\n'
-   
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
-    if rsp in local.packagemessage:
-        pass
     if rsp == 'google.protobuf.Empty' :
         servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
     else :
