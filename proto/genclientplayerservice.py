@@ -18,8 +18,6 @@ local.openplayerservicearray = []
 local.fileservice = []
 
 threads = []
-local.pkg = ''
-cpkg = 'package'
 tabstr = '    '
 servicedir = './md5/'
 protodir = 'logic_proto/'
@@ -33,7 +31,6 @@ if not os.path.exists(servicedir):
 
 def parsefile(filename):
     local.filemethodarray = []
-    local.pkg = ''
     local.playerservice = ''
     local.service = ''
     rpcbegin = 0 
@@ -41,20 +38,10 @@ def parsefile(filename):
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 local.filemethodarray.append(fileline)
-            elif fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = local.service
-
-def scanprotofiledestdir(filename):
-    local.pkg = ''
-    with open(filename,'r', encoding='utf-8') as file:
-        for fileline in file:
-            if fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-                break
 
 def classbegin():
     return 'class ' + local.playerservice + 'Service : public PlayerService {\npublic:\n    using PlayerService::PlayerService;\n'  
@@ -76,8 +63,8 @@ def genheadrpcfun():
         if rsp == 'google.protobuf.Empty' :
             respone = '::google::protobuf::Empty*>(response'
         else :
-            respone = local.pkg + '::' + rsp + '*>(response'
-        servicestr += local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '*>( request),\n'
+            respone =  '::' + rsp + '*>(response'
+        servicestr +=  '::' + s[2].replace('(', '').replace(')', '') + '*>( request),\n'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<' 
         servicestr += respone + '));\n'
         servicestr += tabstr + tabstr +'break;\n'
@@ -138,13 +125,11 @@ def parseplayerservcie(filename):
     local.fileservice.append(filename.replace('.proto', ''))
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
-            if fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-            elif genpublic.is_service_fileline(fileline) == True:
+            if genpublic.is_service_fileline(fileline) == True:
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.service)
                 if filename.find(client_player) >= 0:
-                    local.openplayerservicearray.append(local.pkg + '.' + local.service)
+                    local.openplayerservicearray.append(local.service)
                 
 def md5copy(filename):
         if filename.find('md5') >= 0 or filename.find('.lua') >= 0:
@@ -178,7 +163,6 @@ def scanprotofile():
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
-        scanprotofiledestdir(protodir + filename)
         genfile.append(protodir  + filename)
 
 class myThread (threading.Thread):
