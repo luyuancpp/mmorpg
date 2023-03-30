@@ -12,7 +12,6 @@ local.filemethodarray = []
 local.servicenames = []
 local.service = ''
 threads = []
-local.pkg = ''
 cpkg = 'package'
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
 yourcodeend = '///<<< END WRITING YOUR CODE'
@@ -31,21 +30,18 @@ if not os.path.exists(servicedir):
 
 def parsefile(filename):
     local.filemethodarray = []
-    local.pkg = ''
     local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 local.filemethodarray.append(fileline)
-            elif fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
     
 def genheadrpcfun():
-    servicestr = 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'
+    servicestr = 'class ' + local.service + 'Impl : public ' +  '::' + local.service + '{\npublic:\n'
     servicestr += 'public:\n'
     global controller
     local.servicenames = []
@@ -53,12 +49,12 @@ def genheadrpcfun():
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
-        line += tabstr + tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
+        line += tabstr + tabstr + 'const ' + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
         else :
-            line += tabstr + tabstr + local.pkg + '::' + rsp + '* response,\n'
+            line += tabstr + tabstr +  '::' + rsp + '* response,\n'
         line += tabstr + tabstr + '::google::protobuf::Closure* done)override;\n\n'
         servicestr += line
     servicestr += '};'
@@ -69,12 +65,12 @@ def gencpprpcfunbegin(rpcindex):
     s = local.filemethodarray[rpcindex]
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
-    servicestr +=  tabstr + 'const ' + local.pkg + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
+    servicestr +=  tabstr + 'const ' +  '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
     rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
     if rsp == 'google.protobuf.Empty' :
         servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
     else :
-        servicestr +=  tabstr + local.pkg + '::' + rsp + '* response,\n'
+        servicestr +=  tabstr +  '::' + rsp + '* response,\n'
     servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
     return servicestr
 
@@ -82,7 +78,7 @@ def genyourcode():
     return yourcodebegin + '\n' + yourcodeend + '\n'
 
 def classbegin():
-    return 'class ' + local.service + 'Impl : public ' + local.pkg + '::' + local.service + '{\npublic:\n'  
+    return 'class ' + local.service + 'Impl : public ' + '::' + local.service + '{\npublic:\n'  
 
 def getpbdir(writedir):
     if writedir.find(logicprotodir) >= 0:
