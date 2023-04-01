@@ -11,7 +11,6 @@ from multiprocessing import cpu_count
 local = threading.local()
 
 local.filemethodarray = []
-local.methodnames = []
 local.service = ''
 
 threads = []
@@ -21,7 +20,6 @@ lobbyservicedir = '../lobby_server/src/service/logic_proto/'
 controllerservicedir = '../controller_server/src/service/logic_proto/'
 logicprotodir = 'logic_proto/'
 tabstr = '    '
-cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
 
 genfile = []
@@ -42,11 +40,9 @@ def genheadrpcfun():
     servicestr = 'class ' + local.service + 'Impl : public ' + '::' + local.service + '{\npublic:\n'  
     servicestr += 'public:\n'
     global controller
-    local.methodnames = []
     for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
-        local.methodnames.append(s[1])
         rq =  s[2].replace('(', '').replace(')', '')
         line += tabstr + tabstr + 'const ' +  '::' + rq + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
@@ -98,7 +94,6 @@ def getpbdir(filename):
     return ''
 
 def genheadfile(file,   md5dir):
-    local.methodnames = []
     filename = file.replace('common_proto/', '').replace('.proto', '.h') 
     md5filename = md5dir +  filename
     newstr = '#pragma once\n'
@@ -116,26 +111,27 @@ def gencppfile(filename, destdir, md5dir):
     serviceidx = 0
     try:
         with open(destfilename,'r+', encoding='utf-8') as file:
-            part = 0
+            service_begined = 0
             isyourcode = 1 
             skipheadline = 0 
             for fileline in file:
                 if skipheadline < 2 :
                     skipheadline += 1
                     continue
+                if fileline.find(genpublic.rpcbegin) >= 0:
+                    newstr += fileline
+                    service_begined = 1
+                    continue
                 #处理开始自定义文件
-                if part != cpprpcservicepart and fileline.find(genpublic.yourcodebegin) >= 0:
+                if service_begined == 0 and fileline.find(genpublic.yourcodebegin) >= 0:
                     newstr += fileline
                     continue
-                elif part != cpprpcservicepart and fileline.find(genpublic.yourcodeend) >= 0:
+                elif service_begined == 0  and fileline.find(genpublic.yourcodeend) >= 0:
                     newstr += fileline
-                    part += 1
+                    service_begined = 1
                     continue     
-                elif part == cpprpcservicepart:
-                    if fileline.find(genpublic.rpcbegin) >= 0:
-                        newstr += fileline
-                        continue
-                    elif serviceidx < len(local.filemethodarray) and fileline.find(controller) >= 0 :
+                elif service_begined == 1:
+                    if serviceidx < len(local.filemethodarray) and fileline.find(controller) >= 0 :
                         isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
