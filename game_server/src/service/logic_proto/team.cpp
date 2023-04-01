@@ -10,7 +10,7 @@ void S2STeamServiceImpl::EnterScene(::google::protobuf::RpcController* controlle
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end

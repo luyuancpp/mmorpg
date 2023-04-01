@@ -3,7 +3,6 @@ from os import system
 import md5tool
 import shutil
 
-tabstr = '    '
 md5dir = './md5/'
 openfilename = 'open_service.cpp'
 
