@@ -62,7 +62,6 @@ def gencppfile(filename):
                 if service_begined == 0 and fileline.find(genpublic.luarpcbegin) >= 0:
                     newstr += fileline
                     service_begined = 1
-                    print(serviceidx)
                     continue 
                 #开始处理RPC 
                 if service_begined == 1:
