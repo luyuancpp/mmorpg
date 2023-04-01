@@ -135,7 +135,7 @@ def gencppfile(filename, destdir, md5dir):
                     if fileline.find(genpublic.rpcbegin) >= 0:
                         newstr += fileline
                         continue
-                    elif serviceidx < len(local.filemethodarray) and fileline.find(local.methodnames[serviceidx] + controller) >= 0 :
+                    elif serviceidx < len(local.filemethodarray) and fileline.find(controller) >= 0 :
                         isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
