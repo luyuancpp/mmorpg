@@ -97,9 +97,9 @@ def getpbdir(filename):
         return 'src/pb/pbc/logic_proto/'
     return ''
 
-def genheadfile(filename,   md5dir):
+def genheadfile(file,   md5dir):
     local.methodnames = []
-    filename = filename.replace('common_proto/', '').replace('.proto', '.h') 
+    filename = file.replace('common_proto/', '').replace('.proto', '.h') 
     md5filename = md5dir +  filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(filename) + filename.replace('.h', '') + '.pb.h"\n'
