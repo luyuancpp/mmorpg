@@ -23,8 +23,6 @@ controller = '(entt::entity player'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic_proto/'
 gslogicervicedir = '../game_server/src/service/logic_proto/'
-lobbylogicservicedir = '../lobby_server/src/service/logic_proto/'
-controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
 client_player = 'client_player'
 server_player = 'server_player'
 filedirdestpath = {}
@@ -127,7 +125,6 @@ def getsrcpathmd5dir(dirpath):
 
 def genheadfile(filename, destdir):
     destdir = genpublic.getdestdir(destdir)
-    destfilename = destdir +   filename.replace('.proto', '.h').replace(protodir, '')
     newheadfilename = getsrcpathmd5dir(destdir) + filename.replace('.proto', '.h').replace(protodir, '')
     newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
