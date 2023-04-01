@@ -143,30 +143,26 @@ def gencppfile(filename, dirpath):
     serviceidx = 0
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
-            part = 0
+            service_begined = 0
             isyourcode = 1 
             skipheadline = 0 
             for fileline in file:
                 if skipheadline < 3 :
                     skipheadline += 1
                     continue
-                if part != cpprpcservicepart and fileline.find(genpublic.yourcodebegin) >= 0:
+                  #处理开始自定义文件
+                if service_begined == 0 and fileline.find(genpublic.rpcbegin) >= 0:
                     newstr += fileline
-                    continue
-                elif part != cpprpcservicepart and fileline.find(genpublic.yourcodeend) >= 0:
-                    newstr += fileline
-                    part += 1
-                    continue     
-                elif part == cpprpcservicepart:
-                    if fileline.find(genpublic.rpcbegin) >= 0:
-                        newstr += fileline
-                        continue
-                    elif serviceidx < len(local.filemethodarray) and fileline.find(local.servicenames[serviceidx] + controller) >= 0 :
+                    service_begined = 1
+                    continue 
+                #开始处理RPC 
+                if service_begined == 1:
+                    if serviceidx < len(local.filemethodarray) and fileline.find(controller) >= 0 :
                         isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
                     elif fileline.find(genpublic.yourcodebegin) >= 0 :
-                        newstr += genpublic.yourcodebegin  + '\n'
+                        newstr += fileline
                         isyourcode = 1
                         continue
                     elif fileline.find(genpublic.yourcodeend) >= 0 :
@@ -176,7 +172,7 @@ def gencppfile(filename, dirpath):
                         continue
                     elif fileline.find(genpublic.rpcend) >= 0:
                         break
-                if isyourcode == 1:
+                if isyourcode == 1 or service_begined == 0:
                     newstr += fileline
                     continue                
     except FileNotFoundError:
