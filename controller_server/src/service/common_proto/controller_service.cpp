@@ -49,7 +49,7 @@
 #include "logic_proto/common_server_player.pb.h"
 #include "logic_proto/scene.pb.h"
 
-extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_prototype_services;
+extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;
 
 using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 AccountSessionMap logined_accounts_sesion_;
@@ -610,8 +610,8 @@ void ControllerServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController
 		return;
 	}
 
-	auto it = g_prototype_services.find(sit->second.service);
-	if (it == g_prototype_services.end())
+	auto it = g_services.find(sit->second.service);
+	if (it == g_services.end())
 	{
 		return;
 	}
