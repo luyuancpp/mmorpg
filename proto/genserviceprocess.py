@@ -118,19 +118,13 @@ def gencppfile(filename, destdir, md5dir):
                 if skipheadline < 2 :
                     skipheadline += 1
                     continue
-                if fileline.find(genpublic.rpcbegin) >= 0:
-                    newstr += fileline
-                    service_begined = 1
-                    continue
                 #处理开始自定义文件
-                if service_begined == 0 and fileline.find(genpublic.yourcodebegin) >= 0:
-                    newstr += fileline
-                    continue
-                elif service_begined == 0  and fileline.find(genpublic.yourcodeend) >= 0:
+                if service_begined == 0 and fileline.find(genpublic.rpcbegin) >= 0:
                     newstr += fileline
                     service_begined = 1
-                    continue     
-                elif service_begined == 1:
+                    continue 
+                #开始处理RPC 
+                if service_begined == 1:
                     if serviceidx < len(local.filemethodarray) and fileline.find(controller) >= 0 :
                         isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
@@ -146,7 +140,7 @@ def gencppfile(filename, destdir, md5dir):
                         continue
                     elif fileline.find(genpublic.rpcend) >= 0:
                         break
-                if isyourcode == 1:
+                if isyourcode == 1 or service_begined == 0:
                     newstr += fileline
                     continue                
     except FileNotFoundError:
