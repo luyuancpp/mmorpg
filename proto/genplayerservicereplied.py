@@ -18,8 +18,7 @@ local.playerservicearray = []
 local.fileservice = []
 
 threads = []
-local.pkg = ''
-cpkg = 'package'
+
 tabstr = '    '
 cpprpcservicepart = 1
 controller = '(entt::entity player'
@@ -35,7 +34,6 @@ def parsefile(filename):
     if not genpublic.is_server_player_proto(filename):
         return
     local.filemethodarray = []
-    local.pkg = ''
     local.service = ''
     local.playerservice = ''
     rpcbegin = 0 
@@ -43,8 +41,6 @@ def parsefile(filename):
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 local.filemethodarray.append(fileline)
-            elif fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
@@ -67,7 +63,7 @@ def genheadrpcfun():
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response);\n'
         else :
-            line += tabstr + tabstr + local.pkg + '::' + rsp + '* response);\n\n'
+            line += tabstr + tabstr +  '::' + rsp + '* response);\n\n'
         servicestr += line
 
     servicestr += tabstr + 'void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n'
@@ -84,7 +80,7 @@ def genheadrpcfun():
         if rsp == 'google.protobuf.Empty' :
             respone = '::google::protobuf::Empty*>(response'
         else :
-            respone = local.pkg + '::' + rsp + '*>(response'
+            respone = '::' + rsp + '*>(response'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<' 
         servicestr += respone + '));\n'
         servicestr += tabstr + tabstr +'break;\n'
@@ -106,7 +102,7 @@ def gencpprpcfunbegin(rpcindex):
     if rsp == 'google.protobuf.Empty' :
         servicestr +=  tabstr + '::google::protobuf::Empty* response)\n{\n'
     else :
-        servicestr +=  tabstr + local.pkg + '::' + rsp + '* response)\n{\n'
+        servicestr +=  tabstr +  '::' + rsp + '* response)\n{\n'
     return servicestr
 
 def genyourcode():
@@ -191,13 +187,10 @@ def gencppfile(filename, destdir, md5dir):
 def parseplayerservcie(filename):
     if not genpublic.is_server_player_proto(filename):
         return
-    local.pkg = ''
     local.fileservice.append(filename.replace('.proto', ''))
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
-            if fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-            elif genpublic.is_service_fileline(fileline) == True:
+            if genpublic.is_service_fileline(fileline) == True:
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.service)
 
