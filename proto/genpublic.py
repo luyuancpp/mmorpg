@@ -26,6 +26,12 @@ yourcodeend = '///<<< END WRITING YOUR CODE'
 rpcbegin = '///<<<rpc begin'
 rpcend = '///<<<rpc end'
 
+luayourcodebegin = '---<<< BEGIN WRITING YOUR CODE'
+luayourcodeend = '---<<< END WRITING YOUR CODE'
+luarpcbegin = '---<<<rpc begin'
+luarpcend = '---<<<rpc end'
+
+
 servermd5dirs = [md5dir + 'controller_server/', 
 md5dir + 'game_server/', 
 md5dir + 'gate_server/',

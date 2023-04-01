@@ -16,9 +16,8 @@ end
 ---<<<rpc begin
 function EnterSceneC2SProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
----<<< END WRITING YOUR CODE 
+---<<< END WRITING YOUR CODE
 end
-
 function PushEnterSceneS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
 	--连续切换有问题
@@ -26,15 +25,13 @@ function PushEnterSceneS2CProcess(request, response)
 	ChangeGsScene(response, cross_server_scene1, cross_server_scene1)
 	times = times + 1
 	LogInfo('<------------------------'..times)
----<<< END WRITING YOUR CODE 
+---<<< END WRITING YOUR CODE
 end
-
 function PushSceneInfoS2CProcess(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
 	message = EnterSeceneC2SRequest.new()
 	message:mutable_scene_info().scene_id = cross_server_scene1
 	player:send(message)
----<<< END WRITING YOUR CODE 
+---<<< END WRITING YOUR CODE
 end
-
 ---<<<rpc end
