@@ -13,12 +13,7 @@ local.playerservice = ''
 local.service = ''
 
 threads = []
-local.pkg = ''
-cpkg = 'package'
-genpublic.yourcodebegin = '---<<< BEGIN WRITING YOUR CODE'
-genpublic.yourcodeend = '---<<< END WRITING YOUR CODE'
-genpublic.rpcbegin = '---<<<rpc begin'
-genpublic.rpcend = '---<<<rpc end'
+
 tabstr = '    '
 cpprpcservicepart = 1
 servicedir = './md5/'
@@ -33,7 +28,6 @@ if not os.path.exists(servicedir):
 
 def parsefile(filename):
     local.filemethodarray = []
-    local.pkg = ''
     local.playerservice = ''
     local.service = ''
     rpcbegin = 0 
@@ -41,20 +35,11 @@ def parsefile(filename):
         for fileline in file:
             if fileline.find('rpc') >= 0 and rpcbegin == 1:
                 local.filemethodarray.append(fileline)
-            elif fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = local.service
 
-def scanprotofiledestdir(filename):
-    local.pkg = ''
-    with open(filename,'r', encoding='utf-8') as file:
-        for fileline in file:
-            if fileline.find(cpkg) >= 0:
-                local.pkg = fileline.replace(cpkg, '').replace(';', '').replace(' ', '').strip('\n')
-                break
 def gencpprpcfunbegin(rpcindex):
     servicestr = ''
     s = local.filemethodarray[rpcindex]
@@ -79,12 +64,10 @@ def gencppfile(filename):
             yourcode = 1 
             for fileline in file:
                 if part != cpprpcservicepart and fileline.find(genpublic.yourcodebegin) >= 0:
-                    yourcode = 1
                     newstr += fileline
                     continue
                 elif part != cpprpcservicepart and fileline.find(genpublic.yourcodeend) >= 0:
-                    yourcode = 0
-                    newstr += fileline + '\n'
+                    newstr += fileline 
                     part += 1
                     continue     
                 elif part == cpprpcservicepart:
@@ -96,11 +79,11 @@ def gencppfile(filename):
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
                     elif fileline.find(genpublic.yourcodebegin) >= 0 :
-                        newstr += genpublic.yourcodebegin + ' '  + '\n'
+                        newstr += genpublic.yourcodebegin  + '\n'
                         yourcode = 1
                         continue
                     elif fileline.find(genpublic.yourcodeend) >= 0 :
-                        newstr += genpublic.yourcodeend + ' '  + '\nend\n\n'
+                        newstr += genpublic.yourcodeend   + '\nend\n\n'
                         yourcode = 0
                         serviceidx += 1  
                         continue
@@ -158,7 +141,6 @@ def scanprotofile():
             continue
         if filename.find(client_player) < 0:
             continue
-        scanprotofiledestdir(protodir + filename)
         genfile.append(protodir  + filename)
 
 class myThread (threading.Thread):
