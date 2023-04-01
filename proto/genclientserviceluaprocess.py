@@ -56,21 +56,21 @@ def gencppfile(filename):
     serviceidx = 0
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
-            part = 0
+            service_begined = 0
             yourcode = 1 
             for fileline in file:
-                if part != cpprpcservicepart and fileline.find(genpublic.yourcodebegin) >= 0:
+                if service_begined == 0 and fileline.find(genpublic.rpcbegin) >= 0:
+                    newstr += fileline
+                    service_begined = 1
+                    continue
+                elif service_begined == 0 and fileline.find(genpublic.yourcodebegin) >= 0:
                     newstr += fileline
                     continue
-                elif part != cpprpcservicepart and fileline.find(genpublic.yourcodeend) >= 0:
+                elif service_begined == 0 and fileline.find(genpublic.yourcodeend) >= 0:
                     newstr += fileline 
-                    part += 1
                     continue     
-                elif part == cpprpcservicepart:
-                    if fileline.find(genpublic.rpcbegin) >= 0:
-                        newstr += fileline
-                        continue
-                    elif serviceidx < len(local.filemethodarray) and fileline.find(process_fun_name) >= 0 :
+                if service_begined == 1:
+                    if serviceidx < len(local.filemethodarray) and fileline.find(process_fun_name) >= 0 :
                         yourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
@@ -84,7 +84,7 @@ def gencppfile(filename):
                         serviceidx += 1  
                         continue
                     elif fileline.find(genpublic.rpcend) >= 0:
-                       break
+                        break
                 if yourcode == 1:
                     newstr += fileline
                     continue                

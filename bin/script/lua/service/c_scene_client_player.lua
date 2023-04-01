@@ -38,24 +38,3 @@ function PushSceneInfoS2CProcess(request, response)
 end
 
 ---<<<rpc end
-function EnterSceneC2SProcess(request, response)
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-end
-
-function EnterSceneC2SProcess(request, response)
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-end
-
-function PushEnterSceneS2CProcess(request, response)
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-end
-
-function PushSceneInfoS2CProcess(request, response)
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-end
-
-///<<<rpc end
