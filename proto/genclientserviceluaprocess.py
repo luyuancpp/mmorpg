@@ -44,7 +44,7 @@ def gencpprpcfunbegin(rpcindex):
     return servicestr
 
 def genyourcodepair():
-    return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
+    return genpublic.luayourcodebegin + '\n' + genpublic.luayourcodeend + '\n'
 
 def gencppfile(filename):
     cppfilename = writedir  + fileprev + filename.replace('.proto', '.lua').replace(protodir, '')
@@ -57,46 +57,43 @@ def gencppfile(filename):
     try:
         with open(cppfilename,'r+', encoding='utf-8') as file:
             service_begined = 0
-            yourcode = 1 
+            isyourcode = 0
             for fileline in file:
-                if service_begined == 0 and fileline.find(genpublic.rpcbegin) >= 0:
+                if service_begined == 0 and fileline.find(genpublic.luarpcbegin) >= 0:
                     newstr += fileline
                     service_begined = 1
-                    continue
-                elif service_begined == 0 and fileline.find(genpublic.yourcodebegin) >= 0:
-                    newstr += fileline
-                    continue
-                elif service_begined == 0 and fileline.find(genpublic.yourcodeend) >= 0:
-                    newstr += fileline 
-                    continue     
+                    print(serviceidx)
+                    continue 
+                #开始处理RPC 
                 if service_begined == 1:
                     if serviceidx < len(local.filemethodarray) and fileline.find(process_fun_name) >= 0 :
-                        yourcode = 0
+                        isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
-                    elif fileline.find(genpublic.yourcodebegin) >= 0 :
-                        newstr += genpublic.yourcodebegin  + '\n'
-                        yourcode = 1
+                    elif fileline.find(genpublic.luayourcodebegin) >= 0 :
+                        newstr += fileline
+                        isyourcode = 1
                         continue
-                    elif fileline.find(genpublic.yourcodeend) >= 0 :
-                        newstr += genpublic.yourcodeend   + '\nend\n\n'
-                        yourcode = 0
+                    elif fileline.find(genpublic.luayourcodeend) >= 0 :
+                        newstr += genpublic.luayourcodeend + '\nend\n'
+                        isyourcode = 0
                         serviceidx += 1  
                         continue
-                    elif fileline.find(genpublic.rpcend) >= 0:
+                    elif fileline.find(genpublic.luarpcend) >= 0:
                         break
-                if yourcode == 1:
+                if isyourcode == 1 or service_begined == 0:
                     newstr += fileline
-                    continue                
+                    continue                   
     except FileNotFoundError:
             newstr += genyourcodepair() + '\n'
-            newstr += genpublic.rpcbegin + '\n'
+            newstr += genpublic.luarpcbegin + '\n'
     while serviceidx < len(local.filemethodarray) :
         newstr += gencpprpcfunbegin(serviceidx)
-        newstr += genpublic.yourcodebegin +  '\n'
-        newstr += genpublic.yourcodeend + '\nend\n\n'
+        newstr += genpublic.luayourcodebegin +  '\n'
+        newstr += genpublic.luayourcodeend + '\nend\n\n'
         serviceidx += 1 
-    newstr += genpublic.rpcend + '\n'
+    
+    newstr += genpublic.luarpcend + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
