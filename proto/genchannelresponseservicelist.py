@@ -78,4 +78,4 @@ genpublic.makedirs()
 scanprotofile()
 
 gen('rpc_prototype_service.cpp', genpublic.pbcserviceinstancemd5dir)
-md5copy('rpc_prototype_service.cpp', genpublic.pbcserviceinstancemd5dir)
+md5copy('rpc_prototype_service.cpp', genpublic.pbcserviceinstancedir, genpublic.pbcserviceinstancemd5dir)
