@@ -14,7 +14,6 @@ local.filemethodarray = []
 local.playerservice = ''
 local.service = ''
 local.playerservicearray = []
-local.openplayerservicearray = []
 local.fileservice = []
 
 threads = []
@@ -128,8 +127,7 @@ def parseplayerservcie(filename):
             if genpublic.is_service_fileline(fileline) == True:
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.service)
-                if filename.find(client_player) >= 0:
-                    local.openplayerservicearray.append(local.service)
+
                 
 def md5copy(filename):
         if filename.find('md5') >= 0 or filename.find('.lua') >= 0:

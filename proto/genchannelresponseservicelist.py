@@ -22,12 +22,12 @@ def parsefile(filename, includedir):
                 local.servicefile.append(filename)
                 local.fileincludedir.append(includedir)
 
-def gen(filename, destpath, md5dir):
+def gen(filename,  md5dir):
     newheadfilename = md5dir + filename
     newstr = '#include <unordered_map>\n\n'
     for i in range(0, len(local.servicefile)):
         pbcfile = local.servicefile[i].replace(genpublic.logicprotodir, '').replace(genpublic.commonportodir, '').replace('.proto', '.pb.h"\n') 
-        newstr += '#include "' + local.fileincludedir[i]  +    pbcfile        
+        newstr += '#include "' + local.fileincludedir[i] + pbcfile        
     newstr += '\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n'
    
     for i in range(0, len(local.service)):
@@ -77,5 +77,5 @@ genpublic.makedirs()
 
 scanprotofile()
 
-gen('rpc_prototype_service.cpp', genpublic.pbcserviceinstancedir, genpublic.pbcserviceinstancemd5dir)
-md5copy('rpc_prototype_service.cpp', genpublic.pbcserviceinstancedir, genpublic.pbcserviceinstancemd5dir)
+gen('rpc_prototype_service.cpp', genpublic.pbcserviceinstancemd5dir)
+md5copy('rpc_prototype_service.cpp', genpublic.pbcserviceinstancemd5dir)
