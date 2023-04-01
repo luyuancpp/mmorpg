@@ -97,12 +97,9 @@ def getpbdir(filename):
         return 'src/pb/pbc/logic_proto/'
     return ''
 
-def getfilenamewithnopath(filename, destdir):
-    return filename.replace('common_proto/', '')
-
-def genheadfile(filename,  destdir,  md5dir):
+def genheadfile(filename,   md5dir):
     local.methodnames = []
-    filename = getfilenamewithnopath(filename, destdir).replace('.proto', '.h') 
+    filename = filename.replace('common_proto/', '').replace('.proto', '.h') 
     md5filename = md5dir +  filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(filename) + filename.replace('.h', '') + '.pb.h"\n'
@@ -111,7 +108,7 @@ def genheadfile(filename,  destdir,  md5dir):
         file.write(newstr)
 
 def gencppfile(filename, destdir, md5dir):
-    filename = getfilenamewithnopath(filename, destdir).replace('.proto', '.cpp') 
+    filename = filename.replace('common_proto/', '').replace('.proto', '.cpp') 
     destfilename = destdir + filename
     md5filename = md5dir +  filename
     newstr = '#include "' + getprevfilename(destfilename, destdir) + filename.replace('.cpp', '.h') + '"\n'
@@ -190,7 +187,7 @@ def md5copy(filename, destdir, md5dir, fileextend):
 
 def generate(filename, destdir, md5dir):
     parsefile(filename)
-    genheadfile(filename, destdir, md5dir)
+    genheadfile(filename,  md5dir)
     gencppfile(filename, destdir, md5dir)
     md5copy(filename, destdir, md5dir, '.h')
     md5copy(filename, destdir, md5dir, '.cpp')
