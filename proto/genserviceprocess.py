@@ -92,7 +92,7 @@ def getprevfilename(filename, destdir):
             return ''
     return ''
 
-def getpbdir(filename, destdir):
+def getpbdir(filename):
     if filename.find(logicprotodir) >= 0:
         return 'src/pb/pbc/logic_proto/'
     return ''
@@ -103,10 +103,9 @@ def getfilenamewithnopath(filename, destdir):
 def genheadfile(filename,  destdir,  md5dir):
     local.methodnames = []
     filename = getfilenamewithnopath(filename, destdir).replace('.proto', '.h') 
-    destfilename = destdir + filename
     md5filename = md5dir +  filename
     newstr = '#pragma once\n'
-    newstr += '#include "' + getpbdir(filename, destdir) + filename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "' + getpbdir(filename) + filename.replace('.h', '') + '.pb.h"\n'
     newstr += genheadrpcfun()
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
