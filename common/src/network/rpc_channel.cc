@@ -19,7 +19,7 @@
 using namespace muduo;
 using namespace muduo::net;
 
-extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_prototype_services;
+extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;
 
 void OnUnknownMessage(const TcpConnectionPtr&,
     const MessagePtr& message,
@@ -114,8 +114,8 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   RpcMessage& message = *messagePtr;
   if (message.type() == RESPONSE)
   {
-      auto it = g_prototype_services.find(message.service());
-      if (it == g_prototype_services.end())
+      auto it = g_services.find(message.service());
+      if (it == g_services.end())
       {
           return;
       }

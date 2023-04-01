@@ -16,13 +16,11 @@ def parsefile(filename, includedir):
     local.pkg = ''
     with open(filename, 'r', encoding='utf-8') as file:
         for fileline in file:
-            elif genpublic.is_service_fileline(fileline) == True:
+            if genpublic.is_service_fileline(fileline) == True:
                 s = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.service.append(s)
                 local.servicefile.append(filename)
                 local.fileincludedir.append(includedir)
-                return
-
 
 def gen(filename, destpath, md5dir):
     newheadfilename = md5dir + filename
