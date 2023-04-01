@@ -115,7 +115,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 	g_game_node->emplace(request->gs_node_id(), gs);
 
 	LOG_INFO << "game node connected " << response->DebugString();
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* controller,
@@ -152,7 +152,7 @@ void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* co
 
 	//todo next frame send after responese
 	AddCrossScene2Controller(request->controller_node_id());
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* controller,
@@ -211,7 +211,7 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
 
 	response->set_player_id(request->player_id());
 	response->set_scene_id(request->scene_id());
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
@@ -248,7 +248,7 @@ void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::R
 	esp.scene_ = scene;
 	esp.enterer_ = player;
 	ScenesSystem::EnterScene(esp);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LobbyServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* controller,
@@ -267,7 +267,7 @@ void LobbyServiceImpl::LeaveCrossMainScene(::google::protobuf::RpcController* co
     lsp.leaver_ = player;
     ScenesSystem::LeaveScene(lsp);
 	players_.erase(it);
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 void LobbyServiceImpl::GameConnectToController(::google::protobuf::RpcController* controller,
@@ -280,7 +280,7 @@ void LobbyServiceImpl::GameConnectToController(::google::protobuf::RpcController
     {
         AddCrossScene2Controller(mit.first);
     }
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end

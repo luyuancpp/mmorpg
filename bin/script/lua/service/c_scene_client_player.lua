@@ -43,6 +43,11 @@ function EnterSceneC2SProcess(request, response)
 ///<<< END WRITING YOUR CODE
 end
 
+function EnterSceneC2SProcess(request, response)
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+end
+
 function PushEnterSceneS2CProcess(request, response)
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

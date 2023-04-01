@@ -8,8 +8,6 @@ from multiprocessing import cpu_count
 
 local = threading.local()
 
-
-local.playerservice = ''
 local.service = ''
 
 threads = []
@@ -28,7 +26,6 @@ if not os.path.exists(servicedir):
 
 def parsefile(filename):
     local.filemethodarray = []
-    local.playerservice = ''
     local.service = ''
     rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
@@ -38,8 +35,7 @@ def parsefile(filename):
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-                local.playerservice = local.service
-
+                
 def gencpprpcfunbegin(rpcindex):
     servicestr = ''
     s = local.filemethodarray[rpcindex]
@@ -126,6 +122,7 @@ def md5copy(filename):
         print("copy %s ---> %s" % (gennewfilename, destfilename))
         shutil.copy(gennewfilename, destfilename)
         md5tool.generate_md5_file_for(destfilename, filenamemd5)
+        
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(servicedir):
         for filename in filenames:    

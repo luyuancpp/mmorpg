@@ -83,7 +83,6 @@ def getpbdir(writedir):
 def genheadfile(filename,  destdir,  md5dir):
     local.servicenames = []
     filename = filename.replace(logicprotodir, '').replace('.proto', '.h') 
-    destfilename = destdir + filename
     md5filename = md5dir +   filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir( destdir) + filename.replace('.h', '') + '.pb.h"\n'
@@ -127,7 +126,7 @@ def gencppfile(filename, destdir, md5dir):
                         isyourcode = 1
                         continue
                     elif fileline.find(genpublic.yourcodeend) >= 0 :
-                        newstr += genpublic.yourcodeend + ' ' +  '\n}\n\n'
+                        newstr += genpublic.yourcodeend + '\n}\n\n'
                         isyourcode = 0
                         serviceidx += 1  
                         continue

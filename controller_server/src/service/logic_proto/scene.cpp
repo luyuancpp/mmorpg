@@ -10,7 +10,7 @@ void ServerSceneServiceImpl::UpdateCrossMainSceneInfo(::google::protobuf::RpcCon
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE 
+///<<< END WRITING YOUR CODE
 }
 
 ///<<<rpc end
