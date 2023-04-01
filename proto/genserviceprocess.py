@@ -140,7 +140,7 @@ def gencppfile(filename, destdir, md5dir):
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
                     elif fileline.find(genpublic.yourcodebegin) >= 0 :
-                        newstr += genpublic.yourcodebegin + '\n'
+                        newstr += fileline
                         isyourcode = 1
                         continue
                     elif fileline.find(genpublic.yourcodeend) >= 0 :
