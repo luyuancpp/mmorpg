@@ -1,5 +1,6 @@
 import os
 from os import system
+import md5tool
 
 controller_file_prefix = 'controller_'
 gs_file_prefix = 'game_'
@@ -218,3 +219,24 @@ def getdestdir(dirpath):
 
 def is_service_fileline(fileline):
     return fileline.find('service ') >= 0 and (fileline.find('{') >= 0 or fileline.find('Service') >= 0)
+
+
+def md5check(filename, destdir, md5dir, extreplacesrc, extreplacedest):
+    filebasename = os.path.basename(filename).replace(extreplacesrc, extreplacedest)
+    genfilename = md5dir + filebasename
+    filenamemd5 = genfilename + '.md5'
+    destfilename = destdir + filebasename
+    genfilemd5error = None
+    destfilemd5error = None
+    fileempty = False
+    if  not os.path.exists(filenamemd5):
+        fileempty = True
+    elif not os.path.exists(destfilename):
+        fileempty = True
+    else:
+        genfilemd5error = md5tool.check_against_md5_file(genfilename, filenamemd5)     
+        destfilemd5error = md5tool.check_against_md5_file(destfilename, filenamemd5)        
+    
+    if genfilemd5error == None and destfilemd5error == None and  fileempty == False:
+        return True, destfilename,  genfilename,  filenamemd5
+    return False, destfilename,  genfilename,  filenamemd5
