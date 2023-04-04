@@ -35,7 +35,7 @@ def gencpprpcfunbegin(rpcindex):
 def genyourcodepair():
     return genpublic.luayourcodebegin + '\n' + genpublic.luayourcodeend + '\n'
 
-def gencppfile(filename):
+def genluafile(filename):
     cppfilename = destdir  +  os.path.basename(filename).replace('.proto', '.lua')
     newcppfilename = servicedir +  os.path.basename(filename).replace('.proto', '.lua')
     if not os.path.exists(newcppfilename) and os.path.exists(os.path.basename(cppfilename)):
@@ -86,9 +86,10 @@ def gencppfile(filename):
         file.write(newstr)
 
 def generate(filename):
-    if filename.find(client_player) >= 0:
-        parsefile(filename)
-        gencppfile(filename)
+    if filename.find(client_player) < 0:
+        return
+    parsefile(filename)
+    genluafile(filename)
                 
 def md5copy(filename):
         if filename.find('md5') >= 0 or filename.find('.lua') < 0:

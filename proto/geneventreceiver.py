@@ -42,7 +42,7 @@ def parsefile(filename):
 			local.eventprotoarray.append(fileline.split(' ')[1].strip('\n'))
 
 def getfilenamenoprefixsuffix(filename):
-	return filename.replace(eventprotodir, '').replace('.proto', '').replace('event', currentfilename)
+	return os.path.basename(filename).replace('.proto', '').replace('event', currentfilename)
 def getmd5destfilename(filename):
 	return md5dir + getfilenamenoprefixsuffix(filename)
 def getdestdestfilename(filename):
@@ -54,7 +54,7 @@ def getfileclassname(filename):
 		classname += letterarray[i].capitalize()	
 	return classname + 'Receiver'
 def getprotofilenamenoprefixsuffix(filename):
-	return filename.replace(eventprotodir, '').replace('.proto', '')
+	return os.path.basename(filename).replace('.proto', '')
 
 def getrealsuffix(filename):
 	filename.replace('event', currentfilename)
