@@ -9,6 +9,8 @@ from multiprocessing import cpu_count
 local = threading.local()
 threads = []
 
+genfile = []
+
 tabstr = '    '
 servicedir = './md5/'
 protodir = 'logic_proto/'
@@ -115,8 +117,6 @@ def md5copydir():
             if filename.find('.lua') >= 0:
                 md5copy(filename)
 
-genfile = []
-
 def scanprotofile():
     dir_list  = os.listdir(protodir)
     for filename in dir_list:
@@ -134,7 +134,6 @@ class myThread (threading.Thread):
         generate(self.filename)
 
 def main():
-    filelen = len(genfile)
     global threads
     for i in range(0, len(genfile)):
         t = myThread(genfile[i])

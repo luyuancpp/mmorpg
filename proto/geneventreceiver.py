@@ -223,21 +223,12 @@ class myThread (threading.Thread):
         md5copy(self.filename, '.cpp')
 
 def main():
-    filelen = len(filelist)
     global threads
-    step = int(filelen / cpu_count() + 1)
-    if cpu_count() > filelen:
-        for i in range(0, filelen):
-            t = myThread(filelist[i])
-            t.start()
-            threads.append(t)
-    else :
-        for i in range(0, cpu_count()):
-            for j in range(i, i * step) :
-                t = myThread(filelist[j][0], filelist[j][1])
-                threads.append(t)
-                t.start()
-    for t in threads :
+    for i in range(0, len(filelist)):
+        t = myThread(filelist[i])
+        threads.append(t)
+        t.start()
+    for t in threads:
         t.join()
     
 
