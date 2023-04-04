@@ -13,12 +13,10 @@ local.service = ''
 threads = []
 
 tabstr = '    '
-cpprpcservicepart = 1
 servicedir = './md5/'
 protodir = 'logic_proto/'
 writedir = '../bin/script/lua/service/'
 client_player = 'client_player'
-fileprev = 'c_'
 process_fun_name = 'Process(request, response)\n'
 
 if not os.path.exists(servicedir):
@@ -47,10 +45,10 @@ def genyourcodepair():
     return genpublic.luayourcodebegin + '\n' + genpublic.luayourcodeend + '\n'
 
 def gencppfile(filename):
-    cppfilename = writedir  + fileprev + filename.replace('.proto', '.lua').replace(protodir, '')
-    newcppfilename = servicedir + fileprev + filename.replace('.proto', '.lua').replace(protodir, '')
-    if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
-        shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
+    cppfilename = writedir  +  os.path.basename(filename).replace('.proto', '.lua')
+    newcppfilename = servicedir +  os.path.basename(filename).replace('.proto', '.lua')
+    if not os.path.exists(newcppfilename) and os.path.exists(os.path.basename(cppfilename)):
+        shutil.copy(os.path.basename(cppfilename), newcppfilename)
         return
     newstr = ''
     serviceidx = 0
