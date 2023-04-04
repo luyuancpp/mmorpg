@@ -54,21 +54,21 @@ def scanprotofile():
         
 
 def md5copy(filename, destdir, md5dir):
-        gennewfilename = md5dir + os.path.basename(filename)
-        filenamemd5 = gennewfilename + '.md5'
-        error = None
-        emptymd5 = False
-        if  not os.path.exists(filenamemd5):
-            emptymd5 = True
-        else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
-        destfilename =  destdir + filename
-        if error == None and os.path.exists(destfilename) and emptymd5 == False:
-            return
-        
-        print("copy %s ---> %s" % (gennewfilename, destfilename))
-        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-        shutil.copy(gennewfilename, destfilename)
+    gennewfilename = md5dir + os.path.basename(filename)
+    filenamemd5 = gennewfilename + '.md5'
+    error = None
+    emptymd5 = False
+    if  not os.path.exists(filenamemd5):
+        emptymd5 = True
+    else:
+        error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
+    destfilename =  destdir + filename
+    if error == None and os.path.exists(destfilename) and emptymd5 == False:
+        return
+    
+    print("copy %s ---> %s" % (gennewfilename, destfilename))
+    md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
+    shutil.copy(gennewfilename, destfilename)
     
 genpublic.makedirs()
 
