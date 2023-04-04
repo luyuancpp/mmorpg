@@ -136,19 +136,11 @@ class myThread (threading.Thread):
 def main():
     filelen = len(genfile)
     global threads
-    step = int(filelen / cpu_count() + 1)
-    if cpu_count() > filelen:
-        for i in range(0, filelen):
-            t = myThread(genfile[i])
-            threads.append(t)
-            t.start()
-    else :
-        for i in range(0, cpu_count()):
-            for j in range(i, i * step) :
-                t = myThread(genfile[j][0], genfile[j][1])
-                threads.append(t)
-                t.start()
-    for t in threads :
+    for i in range(0, len(genfile)):
+        t = myThread(genfile[i])
+        threads.append(t)
+        t.start()
+    for t in threads:
         t.join()
 
 scanprotofile() 
