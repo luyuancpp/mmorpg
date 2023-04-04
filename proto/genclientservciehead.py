@@ -77,8 +77,8 @@ def genheadrpcfun():
 
 def genheadfile(filename):
     headfun = [classbegin, genheadrpcfun]
-    destfilename = fileprev + filename.replace('.proto', '.h').replace(protodir, '')
-    newheadfilename = servicedir + fileprev + filename.replace('.proto', '.h').replace(protodir, '')
+    destfilename = fileprev + os.path.basename(filename).replace('.proto', '.h')
+    newheadfilename = servicedir + fileprev + os.path.basename(filename).replace('.proto', '.h')
     if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
         shutil.copy(destfilename, newheadfilename)
         return
@@ -86,7 +86,7 @@ def genheadfile(filename):
     newstr += '#include <sol/sol.hpp>\n'  
     newstr += '#include "player_service.h"\n'  
     newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'  
-    newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'
+    newstr += '#include "' + protodir  + os.path.basename(filename).replace('.proto', '.pb.h') + '"\n'
     for i in range(0, len(headfun)) :             
         newstr += headfun[i]()
     newstr += '};\n'
@@ -100,7 +100,7 @@ def genplayerservcielist(filename):
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + fileprev + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir + fileprev + os.path.basename(f) + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     for service in local.playerservicearray:
         newstr += 'class ' + service + 'Impl : public '  + service + '{};\n'
