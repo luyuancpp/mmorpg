@@ -156,8 +156,8 @@ def gencppfile(filename, destdir, md5dir):
 
 
 def md5copy(filename, destdir, md5dir, fileextend):
-    filename = os.path.basename(filename)
-    gennewfilename = md5dir + filename.replace('.proto', fileextend)
+    filename = os.path.basename(filename).replace('.proto', fileextend)
+    gennewfilename = md5dir + filename
     filenamemd5 = gennewfilename + '.md5'
     error = None
     emptymd5 = False
@@ -165,7 +165,7 @@ def md5copy(filename, destdir, md5dir, fileextend):
         emptymd5 = True
     else:
         error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
-    destfilename =  destdir + filename.replace('.proto', fileextend)
+    destfilename =  destdir + filename
     if error == None and os.path.exists(destfilename) and emptymd5 == False:
         return
     
