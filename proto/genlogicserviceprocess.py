@@ -45,7 +45,7 @@ def genheadrpcfun():
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         local.servicenames.append(s[1])
         line += tabstr + tabstr + 'const ' + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
         else :
@@ -82,7 +82,7 @@ def getpbdir(writedir):
 
 def genheadfile(filename,  destdir,  md5dir):
     local.servicenames = []
-    filename = filename.replace(logicprotodir, '').replace('.proto', '.h') 
+    filename = os.path.basename(filename).replace('.proto', '.h') 
     md5filename = md5dir +   filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir( destdir) + filename.replace('.h', '') + '.pb.h"\n'
@@ -91,7 +91,7 @@ def genheadfile(filename,  destdir,  md5dir):
         file.write(newstr)
 
 def gencppfile(filename, destdir, md5dir):
-    filename = filename.replace(logicprotodir, '').replace('.proto', '.cpp') 
+    filename = os.path.basename(filename).replace('.proto', '.cpp') 
     destfilename =  destdir + filename
     md5filename = md5dir +   filename
     newstr = '#include "' + filename.replace('.cpp', '.h') + '"\n'

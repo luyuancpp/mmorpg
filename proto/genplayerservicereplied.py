@@ -119,18 +119,19 @@ def getsrcpathmd5dir(dirpath):
     return srcdir + protodir
 
 def genheadfile(filename, md5dir):
-    newheadfilename = md5dir + filename.replace('.proto', '_replied.h').replace(protodir, '')
+    newheadfilename = md5dir + os.path.basename(filename).replace('.proto', '_replied.h')
     newstr = '#pragma once\n'
     newstr += '#include "player_service_replied.h"\n'
-    newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'           
+    newstr += '#include "' + protodir  + os.path.basename(filename).replace('.proto', '.pb.h') + '"\n'           
     newstr += genheadrpcfun()
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
         
 def gencppfile(filename, destdir, md5dir):
-    cppfilename = destdir  + filename.replace('.proto', '_replied.cpp').replace(protodir, '')
-    newcppfilename = md5dir + filename.replace('.proto', '_replied.cpp').replace(protodir, '')
-    newstr = '#include "'  + filename.replace('.proto', '_replied.h').replace(protodir, '') + '"\n'
+    filebasename = os.path.basename(filename)
+    cppfilename = destdir  + filebasename.replace('.proto', '_replied.cpp')
+    newcppfilename = md5dir + filebasename.replace('.proto', '_replied.cpp')
+    newstr = '#include "'  + filebasename.replace('.proto', '_replied.h') + '"\n'
     newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
     newstr += '#include "src/network/message_system.h"\n'
     serviceidx = 0
