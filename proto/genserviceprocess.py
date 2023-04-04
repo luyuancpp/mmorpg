@@ -156,22 +156,26 @@ def gencppfile(filename, destdir, md5dir):
 
 
 def md5copy(filename, destdir, md5dir, fileextend):
-    filename = os.path.basename(filename).replace('.proto', fileextend)
-    gennewfilename = md5dir + filename
-    filenamemd5 = gennewfilename + '.md5'
-    error = None
-    emptymd5 = False
-    if  not os.path.exists(filenamemd5):
-        emptymd5 = True
+    filebasename = os.path.basename(filename).replace('.proto', fileextend)
+    genfilename = md5dir + filebasename
+    genfilenamemd5 = genfilename + '.md5'
+    destfilename = destdir + filebasename
+    genfilemd5error = None
+    destfilemd5error = None
+    fileempty = False
+    if  not os.path.exists(genfilenamemd5):
+        fileempty = True
+    elif not os.path.exists(destfilename):
+        fileempty = True
     else:
-        error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
-    destfilename =  destdir + filename
-    if error == None and os.path.exists(destfilename) and emptymd5 == False:
-        return
+        genfilemd5error = md5tool.check_against_md5_file(genfilename, genfilenamemd5)     
+        destfilemd5error = md5tool.check_against_md5_file(destfilename, genfilenamemd5)        
     
-    print("copy %s ---> %s" % (gennewfilename, destfilename))
-    md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-    shutil.copy(gennewfilename, destfilename)
+    if genfilemd5error == None and destfilemd5error == None and  fileempty == False:
+        return
+    print("copy %s ---> %s" % (genfilename, destfilename))
+    md5tool.generate_md5_file_for(genfilename, genfilenamemd5)
+    shutil.copy(genfilename, destfilename)
 
 def generate(filename, destdir, md5dir):
     parsefile(filename)
