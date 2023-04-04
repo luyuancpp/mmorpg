@@ -7,15 +7,12 @@ import genpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
-
-local.service = ''
-
 threads = []
 
 tabstr = '    '
 servicedir = './md5/'
 protodir = 'logic_proto/'
-writedir = '../bin/script/lua/service/'
+destdir = '../bin/script/lua/service/'
 client_player = 'client_player'
 process_fun_name = 'Process(request, response)\n'
 
@@ -24,18 +21,12 @@ if not os.path.exists(servicedir):
 
 def parsefile(filename):
     local.filemethodarray = []
-    local.service = ''
-    rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
-            if fileline.find('rpc') >= 0 and rpcbegin == 1:
+            if fileline.find('rpc') >= 0 :
                 local.filemethodarray.append(fileline)
-            elif genpublic.is_service_fileline(fileline) == True:
-                rpcbegin = 1
-                local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 
 def gencpprpcfunbegin(rpcindex):
-    servicestr = ''
     s = local.filemethodarray[rpcindex]
     s = s.strip(' ').split(' ')
     servicestr = 'function ' +  s[1] + process_fun_name
@@ -45,7 +36,7 @@ def genyourcodepair():
     return genpublic.luayourcodebegin + '\n' + genpublic.luayourcodeend + '\n'
 
 def gencppfile(filename):
-    cppfilename = writedir  +  os.path.basename(filename).replace('.proto', '.lua')
+    cppfilename = destdir  +  os.path.basename(filename).replace('.proto', '.lua')
     newcppfilename = servicedir +  os.path.basename(filename).replace('.proto', '.lua')
     if not os.path.exists(newcppfilename) and os.path.exists(os.path.basename(cppfilename)):
         shutil.copy(os.path.basename(cppfilename), newcppfilename)
@@ -87,7 +78,7 @@ def gencppfile(filename):
     while serviceidx < len(local.filemethodarray) :
         newstr += gencpprpcfunbegin(serviceidx)
         newstr += genpublic.luayourcodebegin +  '\n'
-        newstr += genpublic.luayourcodeend + '\nend\n\n'
+        newstr += genpublic.luayourcodeend + '\nend\n'
         serviceidx += 1 
     
     newstr += genpublic.luarpcend + '\n'
@@ -106,7 +97,7 @@ def md5copy(filename):
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
-        destfilename = writedir  + filename
+        destfilename = destdir  + filename
         if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
             emptymd5 = True
         else:
