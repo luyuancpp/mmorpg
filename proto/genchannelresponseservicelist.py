@@ -26,7 +26,7 @@ def gen(filename,  md5dir):
     newheadfilename = md5dir + filename
     newstr = '#include <unordered_map>\n\n'
     for i in range(0, len(local.servicefile)):
-        pbcfile = local.servicefile[i].replace(genpublic.logicprotodir, '').replace(genpublic.commonportodir, '').replace('.proto', '.pb.h"\n') 
+        pbcfile = os.path.basename(local.servicefile[i]).replace('.proto', '.pb.h"\n') 
         newstr += '#include "' + local.fileincludedir[i] + pbcfile        
     newstr += '\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n'
    
@@ -54,10 +54,7 @@ def scanprotofile():
         
 
 def md5copy(filename, destdir, md5dir):
-        if filename.find('/') >= 0 :
-            s = filename.split('/')
-            filename = s[len(s) - 1]
-        gennewfilename = md5dir + filename
+        gennewfilename = md5dir + os.path.basename(filename)
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
