@@ -157,7 +157,6 @@ def gencppfile(filename, destdir, md5dir):
 def generate(filename, destdir, md5dir):
     checkheadmd5,_,_,_ = genpublic.md5check(filename, destdir, md5dir, '.proto', '.h' )    
     checkcppmd5,_,_,_  = genpublic.md5check(filename, destdir, md5dir, '.proto', '.cpp' )    
-    print(checkheadmd5, checkcppmd5)
     if checkheadmd5 == True and checkcppmd5 == True:
         return
     parsefile(filename)
