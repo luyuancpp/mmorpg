@@ -43,7 +43,7 @@ def genluasol(filename, srcdir):
 
     newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'
     newstr +=  funcname + '\n{\n'    
-    newfilename = srcdir + filename.replace('.proto', '_sol2.cpp').replace(os.path.dirname(filename), '')
+    newfilename = srcdir + os.path.basename(filename).replace('.proto', '_sol2.cpp')
     with open(filename,'r', encoding='utf-8') as file:
         filedbegin = 0
         for fileline in file:
