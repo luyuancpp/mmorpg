@@ -1,6 +1,7 @@
 import os
 from os import system
 import md5tool
+import shutil
 
 controller_file_prefix = 'controller_'
 gs_file_prefix = 'game_'
@@ -240,3 +241,11 @@ def md5check(filename, destdir, md5dir, extreplacesrc, extreplacedest):
     if genfilemd5error == None and destfilemd5error == None and  fileempty == False:
         return True, destfilename,  genfilename,  filenamemd5
     return False, destfilename,  genfilename,  filenamemd5
+
+def md5copy(filename, destdir, md5dir, extreplacesrc, extreplacedest):
+    checkmd5, destfilename, genfilename , genfilenamemd5 = md5check(filename, destdir, md5dir, extreplacesrc, extreplacedest )    
+    if checkmd5 == True:
+        return
+    print("copy %s ---> %s" % (genfilename, destfilename))
+    md5tool.generate_md5_file_for(genfilename, genfilenamemd5)
+    shutil.copy(genfilename, destfilename)
