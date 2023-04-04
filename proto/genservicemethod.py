@@ -103,9 +103,8 @@ def scanfile():
         genfile.append([filename, genpublic.commonportodir + filename])
         
 def main():
-    filelen = len(genfile)
     global threads
-    for i in range(0, filelen):
+    for i in range(0, len(genfile)):
         t = myThread( genfile[i][0], genfile[i][1])
         threads.append(t)
         t.start()
