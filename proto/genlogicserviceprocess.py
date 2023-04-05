@@ -9,7 +9,6 @@ from multiprocessing import cpu_count
 local = threading.local()
 
 local.filemethodarray = []
-local.servicenames = []
 local.service = ''
 threads = []
 logicprotodir = 'logic_proto/'
@@ -39,11 +38,9 @@ def genheadrpcfun():
     servicestr = 'class ' + local.service + 'Impl : public ' +  '::' + local.service + '{\npublic:\n'
     servicestr += 'public:\n'
     global controller
-    local.servicenames = []
     for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
-        local.servicenames.append(s[1])
         line += tabstr + tabstr + 'const ' + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
         rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
         if rsp == 'google.protobuf.Empty' :
@@ -81,7 +78,6 @@ def getpbdir(writedir):
     return ''
 
 def genheadfile(filename,  destdir,  md5dir):
-    local.servicenames = []
     filename = os.path.basename(filename).replace('.proto', '.h') 
     md5filename = md5dir +   filename
     newstr = '#pragma once\n'
@@ -156,7 +152,7 @@ class myThread (threading.Thread):
             return
         parsefile(self.filename)
         if checkheadmd5 == False:
-            genheadfile(self.filename,  self.md5dir)
+            genheadfile(self.filename, self.destdir, self.md5dir)
             genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.h')
         if checkcppmd5 == False:
             gencppfile(self.filename, self.destdir, self.md5dir)
