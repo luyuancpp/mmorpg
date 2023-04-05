@@ -154,33 +154,18 @@ def gencppfile(filename, destdir, md5dir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-
-def md5copy(filename, destdir, md5dir, fileextend):
-        if filename.find('/') >= 0 :
-            s = filename.split('/')
-            filename = s[len(s) - 1]
-        gennewfilename = md5dir + filename.replace('.proto', fileextend)
-        filenamemd5 = gennewfilename + '.md5'
-        error = None
-        emptymd5 = False
-        if  not os.path.exists(filenamemd5):
-            emptymd5 = True
-        else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
-        destfilename =  destdir + filename.replace('.proto', fileextend)
-        if error == None and os.path.exists(destfilename) and emptymd5 == False:
-            return
-        
-        print("copy %s ---> %s" % (gennewfilename, destfilename))
-        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-        shutil.copy(gennewfilename, destfilename)
-
 def generate(filename, destdir, md5dir):
+    checkheadmd5,_,_,_ = genpublic.md5check(filename, destdir, md5dir, '.proto', '.h' )    
+    checkcppmd5,_,_,_  = genpublic.md5check(filename, destdir, md5dir, '.proto', '.cpp' )    
+    if checkheadmd5 == True and checkcppmd5 == True:
+        return
     parsefile(filename)
-    genheadfile(filename,  md5dir)
-    gencppfile(filename, destdir, md5dir)
-    md5copy(filename, destdir, md5dir, '.h')
-    md5copy(filename, destdir, md5dir, '.cpp')
+    if checkheadmd5 == False:
+        genheadfile(filename,  md5dir)
+        genpublic.md5copy(filename, destdir, md5dir, '.proto', '.h')
+    if checkcppmd5 == False:
+        gencppfile(filename, destdir, md5dir)
+        genpublic.md5copy(filename, destdir, md5dir, '.proto', '.cpp')
 
 class myThread (threading.Thread):
     def __init__(self, filename, destdir, md5dir):
@@ -192,20 +177,11 @@ class myThread (threading.Thread):
         generate(self.filename, self.destdir, self.md5dir)
 
 def main():
-    filelen = len(genfile)
     global threads
-    step = int(filelen / cpu_count() + 1)
-    if cpu_count() > filelen:
-        for i in range(0, filelen):
+    for i in range(0, len(genfile)):
             t = myThread( genfile[i][0], genfile[i][1], genfile[i][2])
             threads.append(t)
             t.start()
-    else :
-        for i in range(0, cpu_count()):
-            for j in range(i, i * step) :
-                t = myThread(genfile[j][0], genfile[j][1], genfile[i][2])
-                threads.append(t)
-                t.start()
     for t in threads :
         t.join()
 

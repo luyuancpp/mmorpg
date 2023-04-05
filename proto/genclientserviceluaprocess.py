@@ -7,18 +7,15 @@ import genpublic
 from multiprocessing import cpu_count
 
 local = threading.local()
-
-local.service = ''
-
 threads = []
 
+genfile = []
+
 tabstr = '    '
-cpprpcservicepart = 1
 servicedir = './md5/'
 protodir = 'logic_proto/'
-writedir = '../bin/script/lua/service/'
+destdir = '../bin/script/lua/service/'
 client_player = 'client_player'
-fileprev = 'c_'
 process_fun_name = 'Process(request, response)\n'
 
 if not os.path.exists(servicedir):
@@ -26,18 +23,12 @@ if not os.path.exists(servicedir):
 
 def parsefile(filename):
     local.filemethodarray = []
-    local.service = ''
-    rpcbegin = 0 
     with open(filename,'r', encoding='utf-8') as file:
         for fileline in file:
-            if fileline.find('rpc') >= 0 and rpcbegin == 1:
+            if fileline.find('rpc') >= 0 :
                 local.filemethodarray.append(fileline)
-            elif genpublic.is_service_fileline(fileline) == True:
-                rpcbegin = 1
-                local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 
 def gencpprpcfunbegin(rpcindex):
-    servicestr = ''
     s = local.filemethodarray[rpcindex]
     s = s.strip(' ').split(' ')
     servicestr = 'function ' +  s[1] + process_fun_name
@@ -46,11 +37,11 @@ def gencpprpcfunbegin(rpcindex):
 def genyourcodepair():
     return genpublic.luayourcodebegin + '\n' + genpublic.luayourcodeend + '\n'
 
-def gencppfile(filename):
-    cppfilename = writedir  + fileprev + filename.replace('.proto', '.lua').replace(protodir, '')
-    newcppfilename = servicedir + fileprev + filename.replace('.proto', '.lua').replace(protodir, '')
-    if not os.path.exists(newcppfilename) and os.path.exists(cppfilename.replace(protodir, '')):
-        shutil.copy(cppfilename.replace(protodir, ''), newcppfilename)
+def genluafile(filename):
+    cppfilename = destdir  +  os.path.basename(filename).replace('.proto', '.lua')
+    newcppfilename = servicedir +  os.path.basename(filename).replace('.proto', '.lua')
+    if not os.path.exists(newcppfilename) and os.path.exists(os.path.basename(cppfilename)):
+        shutil.copy(os.path.basename(cppfilename), newcppfilename)
         return
     newstr = ''
     serviceidx = 0
@@ -89,7 +80,7 @@ def gencppfile(filename):
     while serviceidx < len(local.filemethodarray) :
         newstr += gencpprpcfunbegin(serviceidx)
         newstr += genpublic.luayourcodebegin +  '\n'
-        newstr += genpublic.luayourcodeend + '\nend\n\n'
+        newstr += genpublic.luayourcodeend + '\nend\n'
         serviceidx += 1 
     
     newstr += genpublic.luarpcend + '\n'
@@ -97,9 +88,10 @@ def gencppfile(filename):
         file.write(newstr)
 
 def generate(filename):
-    if filename.find(client_player) >= 0:
-        parsefile(filename)
-        gencppfile(filename)
+    if filename.find(client_player) < 0:
+        return
+    parsefile(filename)
+    genluafile(filename)
                 
 def md5copy(filename):
         if filename.find('md5') >= 0 or filename.find('.lua') < 0:
@@ -108,7 +100,7 @@ def md5copy(filename):
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
-        destfilename = writedir  + filename
+        destfilename = destdir  + filename
         if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
             emptymd5 = True
         else:
@@ -124,8 +116,6 @@ def md5copydir():
         for filename in filenames:    
             if filename.find('.lua') >= 0:
                 md5copy(filename)
-
-genfile = []
 
 def scanprotofile():
     dir_list  = os.listdir(protodir)
@@ -144,21 +134,12 @@ class myThread (threading.Thread):
         generate(self.filename)
 
 def main():
-    filelen = len(genfile)
     global threads
-    step = int(filelen / cpu_count() + 1)
-    if cpu_count() > filelen:
-        for i in range(0, filelen):
-            t = myThread(genfile[i])
-            threads.append(t)
-            t.start()
-    else :
-        for i in range(0, cpu_count()):
-            for j in range(i, i * step) :
-                t = myThread(genfile[j][0], genfile[j][1])
-                threads.append(t)
-                t.start()
-    for t in threads :
+    for i in range(0, len(genfile)):
+        t = myThread(genfile[i])
+        threads.append(t)
+        t.start()
+    for t in threads:
         t.join()
 
 scanprotofile() 

@@ -42,7 +42,7 @@ def parsefile(filename):
 			local.eventprotoarray.append(fileline.split(' ')[1].strip('\n'))
 
 def getfilenamenoprefixsuffix(filename):
-	return filename.replace(eventprotodir, '').replace('.proto', '').replace('event', currentfilename)
+	return os.path.basename(filename).replace('.proto', '').replace('event', currentfilename)
 def getmd5destfilename(filename):
 	return md5dir + getfilenamenoprefixsuffix(filename)
 def getdestdestfilename(filename):
@@ -54,7 +54,7 @@ def getfileclassname(filename):
 		classname += letterarray[i].capitalize()	
 	return classname + 'Receiver'
 def getprotofilenamenoprefixsuffix(filename):
-	return filename.replace(eventprotodir, '').replace('.proto', '')
+	return os.path.basename(filename).replace('.proto', '')
 
 def getrealsuffix(filename):
 	filename.replace('event', currentfilename)
@@ -223,21 +223,12 @@ class myThread (threading.Thread):
         md5copy(self.filename, '.cpp')
 
 def main():
-    filelen = len(filelist)
     global threads
-    step = int(filelen / cpu_count() + 1)
-    if cpu_count() > filelen:
-        for i in range(0, filelen):
-            t = myThread(filelist[i])
-            t.start()
-            threads.append(t)
-    else :
-        for i in range(0, cpu_count()):
-            for j in range(i, i * step) :
-                t = myThread(filelist[j][0], filelist[j][1])
-                threads.append(t)
-                t.start()
-    for t in threads :
+    for i in range(0, len(filelist)):
+        t = myThread(filelist[i])
+        threads.append(t)
+        t.start()
+    for t in threads:
         t.join()
     
 
