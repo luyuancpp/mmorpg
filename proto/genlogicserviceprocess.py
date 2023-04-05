@@ -27,6 +27,11 @@ def parsefile(filename):
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
     
+def getpbdir(writedir):
+    if writedir.find(logicprotodir) >= 0:
+        return 'src/pb/pbc/logic_proto/'
+    return ''
+
 def genheadrpcfun():
     servicestr = 'class ' + local.service + 'Impl : public ' +  '::' + local.service + '{\npublic:\n'
     servicestr += 'public:\n'
@@ -66,11 +71,6 @@ def gencpprpcfunbegin(rpcindex):
 
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
-
-def getpbdir(writedir):
-    if writedir.find(logicprotodir) >= 0:
-        return 'src/pb/pbc/logic_proto/'
-    return ''
 
 def genheadfile(filename,  destdir,  md5dir):
     filename = os.path.basename(filename).replace('.proto', '.h') 
