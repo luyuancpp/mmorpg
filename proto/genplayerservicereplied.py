@@ -127,8 +127,7 @@ def genheadfile(filename, md5dir):
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
     
-def getincludebyfilename(filename):
-    filebasename = os.path.basename(filename)
+def getincludebyfilename(filebasename):
     includestr = '#include "'  + filebasename.replace('.proto', '_replied.h') + '"\n'
     includestr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
     includestr += '#include "src/network/message_system.h"\n'
@@ -238,25 +237,6 @@ def md5copy(filename, destdir, md5dir, fileextend):
         md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
         shutil.copy(gennewfilename, destfilename)
 
-
-def generate(filename):
-    if not genpublic.is_server_player_proto(filename):
-        return
-    parsefile(filename)
-    initservicenames()
-    
-    genheadfile(filename, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-    md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
-    
-    gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, getincludebyfilename(filename))    
-    md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
-    
-    genheadfile(filename, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
-    md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
-    
-    gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, getincludebyfilename(filename))
-    md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
-        
         
 genfile = []
 
@@ -272,7 +252,33 @@ class myThread (threading.Thread):
         threading.Thread.__init__(self)
         self.filename = str(filename)
     def run(self):
-        generate(self.filename)
+        if not genpublic.is_server_player_proto(self.filename):
+            return
+        parsefile(self.filename)
+        initservicenames()
+        
+        genheadfile(self.filename, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+        md5copy(self.filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
+        
+        destext = '_replied.cpp'
+        basefilename = os.path.basename(self.filename).replace('.proto', destext) 
+        cppfile = genpublic.cpp()
+        cppfile.destfilename = genpublic.gslogicrepliedservicedir + basefilename
+        cppfile.md5filename = genpublic.servermd5dirs[genpublic.gamemd5dirindex] + basefilename
+        cppfile.includestr =  getincludebyfilename(basefilename)
+        cppfile.filemethodarray = local.filemethodarray
+        cppfile.begunfun = gencpprpcfunbegin
+        cppfile.controller = controller
+        genpublic.gencppfile(cppfile)    
+        md5copy(self.filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
+        
+        genheadfile(self.filename, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+        md5copy(self.filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
+        
+        cppfile.destfilename = genpublic.controllerlogicrepliedservicedir + basefilename
+        cppfile.md5filename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + basefilename
+        genpublic.gencppfile(cppfile)
+        md5copy(self.filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
 
 def main():
     global threads
