@@ -170,14 +170,11 @@ class myThread (threading.Thread):
         if checkcppmd5 == False:
             destext = '.cpp'
             filename = os.path.basename(self.filename).replace('.proto', destext) 
-            destfilename = self.destdir + filename
-            skillinclude = '#include "' + getprevfilename(destfilename, self.destdir) + filename.replace(destext, '.h') + '"\n'
-            skillinclude += '#include "src/network/rpc_msg_route.h"\n'
-            destfilename = self.destdir + filename
-            md5filename = self.destdir + filename
             cppfile = cpp()
-            cppfile.destfilename = destfilename
-            cppfile.md5filename = md5filename
+            cppfile.destfilename = self.destdir + filename
+            skillinclude = '#include "' + getprevfilename(cppfile.destfilename, self.destdir) + filename.replace(destext, '.h') + '"\n'
+            skillinclude += '#include "src/network/rpc_msg_route.h"\n'
+            cppfile.md5filename = self.destdir + filename
             cppfile.includestr = skillinclude
             cppfile.filemethodarray = local.filemethodarray
             cppfile.begunfun = gencpprpcfunbegin
