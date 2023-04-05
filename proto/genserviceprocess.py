@@ -15,7 +15,7 @@ logicprotodir = 'logic_proto/'
 tabstr = '    '
 controller = '(::google::protobuf::RpcController* controller'
 
-genfile = []
+genfile = protofilearray.genfile
 
 
 def parsefile(filename):
@@ -168,12 +168,12 @@ class myThread (threading.Thread):
 
 
 def main():
-    global threads
-    for i in range(0, len(protofilearray.genfile)):
-            t = myThread( protofilearray.genfile[i][0], protofilearray.genfile[i][1], protofilearray.genfile[i][2])
-            threads.append(t)
-            t.start()
-    for t in threads:
+    filelen = len(genfile)
+    for i in range(0, filelen):
+        t = myThread( genfile[i][0], genfile[i][1], genfile[i][2])
+        threads.append(t)
+        t.start()
+    for t in threads :
         t.join()
 
 genpublic.makedirs()
