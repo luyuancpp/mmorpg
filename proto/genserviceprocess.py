@@ -95,10 +95,10 @@ def genheadfile(filename,  destdir,  md5dir):
         file.write(newstr)
 
 
-def gencppfile(filename, destdir, md5dir,  skipline, skillinclude):
+def gencppfile(filename, destdir, md5dir,  skipline, includestr):
     destfilename = destdir + filename
     md5filename = md5dir +  filename
-    newstr = skillinclude
+    newstr = includestr
     serviceidx = 0
     try:
         with open(destfilename,'r+', encoding='utf-8') as file:
