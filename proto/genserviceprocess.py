@@ -94,7 +94,7 @@ def genheadfile(filename,  destdir,  md5dir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(destfilename, md5filename, includestr):
+def gencppfile(destfilename, md5filename, includestr, filemethodarray):
     newstr = includestr
     serviceidx = 0
     skipline = includestr.count('\n')
@@ -114,7 +114,7 @@ def gencppfile(destfilename, md5filename, includestr):
                     continue 
                 #开始处理RPC 
                 if service_begined == 1:
-                    if serviceidx < len(local.filemethodarray) and fileline.find(controller) >= 0 :
+                    if serviceidx < len(filemethodarray) and fileline.find(controller) >= 0 :
                         isyourcode = 0
                         newstr += gencpprpcfunbegin(serviceidx)
                         continue
@@ -134,7 +134,7 @@ def gencppfile(destfilename, md5filename, includestr):
                     continue                
     except FileNotFoundError:
         newstr += genpublic.rpcbegin + '\n'
-    while serviceidx < len(local.filemethodarray) :
+    while serviceidx < len(filemethodarray) :
         newstr += gencpprpcfunbegin(serviceidx)
         newstr += genpublic.yourcodebegin +  '\n'
         newstr += genpublic.yourcodeend +  '\n}\n\n'
@@ -166,7 +166,7 @@ class myThread (threading.Thread):
             skillinclude += '#include "src/network/rpc_msg_route.h"\n'
             destfilename = self.destdir + filename
             md5filename = self.destdir + filename
-            gencppfile(destfilename, md5filename, skillinclude)
+            gencppfile(destfilename, md5filename, skillinclude, local.filemethodarray)
             genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', destext)
 
 def main():
