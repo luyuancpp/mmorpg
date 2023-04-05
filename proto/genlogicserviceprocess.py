@@ -40,9 +40,12 @@ def genheadrpcfun():
     global controller
     for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
-        line = tabstr + 'void ' + s[1] + controller + ',\n'
-        line += tabstr + tabstr + 'const ' + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
+        methodname = s[1]
+        requestname = s[2]
+        responsespb = s[4]
+        line = tabstr + 'void ' + methodname + controller + ',\n'
+        line += tabstr + tabstr + 'const ' + '::' + requestname.replace('(', '').replace(')', '') + '* request,\n'
+        rsp = responsespb.replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
         else :
@@ -56,9 +59,11 @@ def gencpprpcfunbegin(rpcindex):
     servicestr = ''
     s = local.filemethodarray[rpcindex]
     s = s.strip(' ').split(' ')
+    requestname = s[2]
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
-    servicestr +=  tabstr + 'const ' +  '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
-    rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+    servicestr +=  tabstr + 'const ' +  '::' + requestname.replace('(', '').replace(')', '') + '* request,\n'
+    responsespb = s[4]
+    rsp = responsespb.replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
     if rsp == 'google.protobuf.Empty' :
         servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
     else :
@@ -68,9 +73,6 @@ def gencpprpcfunbegin(rpcindex):
 
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
-
-def classbegin():
-    return 'class ' + local.service + 'Impl : public ' + '::' + local.service + '{\npublic:\n'  
 
 def getpbdir(writedir):
     if writedir.find(logicprotodir) >= 0:
@@ -89,7 +91,7 @@ def genheadfile(filename,  destdir,  md5dir):
 def gencppfile(filename, destdir, md5dir):
     filename = os.path.basename(filename).replace('.proto', '.cpp') 
     destfilename =  destdir + filename
-    md5filename = md5dir +   filename
+    genfilename = md5dir +   filename
     newstr = '#include "' + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_msg_route.h"\n'
     serviceidx = 0
@@ -136,7 +138,7 @@ def gencppfile(filename, destdir, md5dir):
         newstr += genpublic.yourcodeend +  '\n}\n\n'
         serviceidx += 1 
     newstr += genpublic.rpcend + '\n'
-    with open(md5filename, 'w', encoding='utf-8')as file:
+    with open(genfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 class myThread (threading.Thread):
@@ -157,7 +159,6 @@ class myThread (threading.Thread):
         if checkcppmd5 == False:
             gencppfile(self.filename, self.destdir, self.md5dir)
             genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.cpp')
-
 
 def main():
     filelen = len(genfile)
