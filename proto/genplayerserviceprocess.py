@@ -187,20 +187,6 @@ def gencppfile(filename, dirpath):
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def generate(filename):
-    parsefile(filename)
-    initservicenames()
-    if filename.find(client_player) >= 0:
-        genheadfile(filename, genpublic.gamemd5dir())
-        gencppfile(filename, genpublic.gamemd5dir())
-    elif filename.find(server_player) >= 0:
-        genheadfile(filename, genpublic.gamemd5dir())
-        gencppfile(filename, genpublic.gamemd5dir())
-        genheadfile(filename, genpublic.controllermd5dir())
-        gencppfile(filename, genpublic.controllermd5dir())
-    elif filename.find(genpublic.lobby_file_prefix) >= 0:
-        pass
-
 def parseplayerservcie(filename):
     if genpublic.is_server_proto(filename) == True :
         return
@@ -305,7 +291,16 @@ class myThread (threading.Thread):
         threading.Thread.__init__(self)
         self.filename = str(filename)
     def run(self):
-        generate(self.filename)
+        parsefile(self.filename)
+        initservicenames()
+        if self.filename.find(client_player) >= 0:
+            genheadfile(self.filename, genpublic.gamemd5dir())
+            gencppfile(self.filename, genpublic.gamemd5dir())
+        elif self.filename.find(server_player) >= 0:
+            genheadfile(self.filename, genpublic.gamemd5dir())
+            gencppfile(self.filename, genpublic.gamemd5dir())
+            genheadfile(self.filename, genpublic.controllermd5dir())
+            gencppfile(self.filename, genpublic.controllermd5dir())
 
 def main():
     global threads
