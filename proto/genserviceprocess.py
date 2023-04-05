@@ -29,15 +29,17 @@ def parsefile(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
 
 def genheadrpcfun():
-    servicestr = 'class ' + local.service + 'Impl : public ' + '::' + local.service + '{\npublic:\n'  
+    servicestr = 'class ' + local.service + 'Impl : public ' +  '::' + local.service + '{\npublic:\n'
     servicestr += 'public:\n'
     global controller
     for service in local.filemethodarray:
         s = service.strip(' ').split(' ')
-        line = tabstr + 'void ' + s[1] + controller + ',\n'
-        rq =  s[2].replace('(', '').replace(')', '')
-        line += tabstr + tabstr + 'const ' +  '::' + rq + '* request,\n'
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+        methodname = s[1]
+        requestname = s[2]
+        responsespb = s[4]
+        line = tabstr + 'void ' + methodname + controller + ',\n'
+        line += tabstr + tabstr + 'const ' + '::' + requestname.replace('(', '').replace(')', '') + '* request,\n'
+        rsp = responsespb.replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
         else :
@@ -47,18 +49,19 @@ def genheadrpcfun():
     servicestr += '};'
     return servicestr
 
-def gencpprpcfunbegin(methodindex):
+def gencpprpcfunbegin(rpcindex):
     servicestr = ''
-    s = local.filemethodarray[methodindex]
+    s = local.filemethodarray[rpcindex]
     s = s.strip(' ').split(' ')
+    requestname = s[2]
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
-    rq =  s[2].replace('(', '').replace(')', '')
-    servicestr +=  tabstr + 'const ' + '::' + rq + '* request,\n'
-    rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+    servicestr +=  tabstr + 'const ' +  '::' + requestname.replace('(', '').replace(')', '') + '* request,\n'
+    responsespb = s[4]
+    rsp = responsespb.replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
     if rsp == 'google.protobuf.Empty' :
         servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
     else :
-        servicestr +=  tabstr + '::' + rsp + '* response,\n'
+        servicestr +=  tabstr +  '::' + rsp + '* response,\n'
     servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
     return servicestr
 
