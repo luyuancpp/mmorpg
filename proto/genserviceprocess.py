@@ -81,7 +81,7 @@ def getpbdir(filename):
     return ''
 
 def genheadfile(file,   md5dir):
-    filename = file.replace('common_proto/', '').replace('.proto', '.h') 
+    filename = os.path.basename(filename).replace('.proto', '.h') 
     genfilename = md5dir +  filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(filename) + filename.replace('.h', '') + '.pb.h"\n'
