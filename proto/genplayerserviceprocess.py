@@ -57,7 +57,7 @@ def genheadrpcfun():
         s = service.strip(' ').split(' ')
         line = tabstr + 'void ' + s[1] + controller + ',\n'
         line += tabstr + tabstr + 'const ' + '::' + s[2].replace('(', '').replace(')', '') + '* request,\n'
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
         if rsp == 'google.protobuf.Empty' :
             line += tabstr + tabstr + '::google::protobuf::Empty* response);\n'
         else :
@@ -76,7 +76,7 @@ def genheadrpcfun():
         servicestr += tabstr + tabstr + 'case ' + str(index) + ':\n'
         servicestr += tabstr + tabstr + tabstr + s[1] + '(player,\n'
         servicestr += tabstr + tabstr + tabstr + '::google::protobuf::internal::DownCast<const ' 
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
         if rsp == 'google.protobuf.Empty' :
             respone = '::google::protobuf::Empty*>(response'
         else :
@@ -125,19 +125,19 @@ def getsrcpathmd5dir(dirpath):
 
 def genheadfile(filename, destdir):
     destdir = genpublic.getdestdir(destdir)
-    newheadfilename = getsrcpathmd5dir(destdir) + filename.replace('.proto', '.h').replace(protodir, '')
+    newheadfilename = getsrcpathmd5dir(destdir) + os.path.basename(filename).replace('.proto', '.h')
     newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
-    newstr += '#include "' + protodir  + filename.replace('.proto', '.pb.h').replace(protodir, '') + '"\n'           
+    newstr += '#include "' + protodir  + os.path.basename(filename).replace('.proto', '.pb.h') + '"\n'           
     newstr += genheadrpcfun()
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
         
 def gencppfile(filename, dirpath):
     destdir = genpublic.getdestdir(dirpath)
-    cppfilename = destdir  + filename.replace('.proto', '.cpp').replace(protodir, '')
-    newcppfilename = getsrcpathmd5dir(dirpath) + filename.replace('.proto', '.cpp').replace(protodir, '')
-    newstr = '#include "'  + filename.replace('.proto', '.h').replace(protodir, '') + '"\n'
+    cppfilename = destdir  + os.path.basename(filename).replace('.proto', '.cpp')
+    newcppfilename = getsrcpathmd5dir(dirpath) + os.path.basename(filename).replace('.proto', '.cpp')
+    newstr = '#include "'  + os.path.basename(filename).replace('.proto', '.h') + '"\n'
     newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
     newstr += '#include "src/network/message_system.h"\n'
     serviceidx = 0
@@ -218,7 +218,7 @@ def gengsplayerservcielist(filename):
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir  + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir  + os.path.basename(f)+ '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     for service in local.playerservicearray:
         newstr += 'class ' + service + 'OpenImpl : public '  + service + '{};\n'
@@ -240,7 +240,7 @@ def gencontrollerplayerservcielist(filename):
         if f.find(server_player) < 0:
             continue
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + f.replace(protodir, '') + '.h"\n'
+        newstr += '#include "' + includedir + os.path.basename(f) + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     for service in local.playerservicearray:
         if service.lower().find('serverplayer') < 0:
@@ -308,21 +308,12 @@ class myThread (threading.Thread):
         generate(self.filename)
 
 def main():
-    filelen = len(genfile)
     global threads
-    step = int(filelen / cpu_count() + 1)
-    if cpu_count() > filelen:
-        for i in range(0, filelen):
-            t = myThread(genfile[i])
-            threads.append(t)
-            t.start()
-    else :
-        for i in range(0, cpu_count()):
-            for j in range(i, i * step) :
-                t = myThread(genfile[j][0], genfile[j][1])
-                threads.append(t)
-                t.start()
-    for t in threads :
+    for i in range(0, len(genfile)):
+        t = myThread(genfile[i])
+        threads.append(t)
+        t.start()
+    for t in threads:
         t.join()
     for file in genfile:
         parseplayerservcie(file)
