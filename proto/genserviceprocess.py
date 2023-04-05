@@ -1,18 +1,12 @@
-import os
-
-import md5tool
-import shutil
 import threading
-import _thread
 import protofilearray
+import os
 import genpublic
-from multiprocessing import cpu_count
 
 local = threading.local()
 
 local.filemethodarray = []
 local.service = ''
-
 threads = []
 
 gsservicedir = '../game_server/src/service/logic_proto/'
@@ -21,8 +15,6 @@ controllerservicedir = '../controller_server/src/service/logic_proto/'
 logicprotodir = 'logic_proto/'
 tabstr = '    '
 controller = '(::google::protobuf::RpcController* controller'
-
-genfile = []
 
 def parsefile(filename):
     local.filemethodarray = []
@@ -55,9 +47,9 @@ def genheadrpcfun():
     servicestr += '};'
     return servicestr
 
-def gencpprpcfunbegin(rpcindex):
+def gencpprpcfunbegin(methodindex):
     servicestr = ''
-    s = local.filemethodarray[rpcindex]
+    s = local.filemethodarray[methodindex]
     s = s.strip(' ').split(' ')
     servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
     rq =  s[2].replace('(', '').replace(')', '')
@@ -68,15 +60,10 @@ def gencpprpcfunbegin(rpcindex):
     else :
         servicestr +=  tabstr + '::' + rsp + '* response,\n'
     servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
-
     return servicestr
 
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
-
-def classbegin():
-    return 
-
 
 def getprevfilename(filename, destdir):
     if filename.find(logicprotodir) >= 0:
@@ -95,15 +82,15 @@ def getpbdir(filename):
 
 def genheadfile(file,   md5dir):
     filename = file.replace('common_proto/', '').replace('.proto', '.h') 
-    md5filename = md5dir +  filename
+    genfilename = md5dir +  filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir(filename) + filename.replace('.h', '') + '.pb.h"\n'
     newstr += genheadrpcfun()
-    with open(md5filename, 'w', encoding='utf-8')as file:
+    with open(genfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def gencppfile(filename, destdir, md5dir):
-    filename = filename.replace('common_proto/', '').replace('.proto', '.cpp') 
+    filename = os.path.basename(filename).replace('.proto', '.cpp') 
     destfilename = destdir + filename
     md5filename = md5dir +  filename
     newstr = '#include "' + getprevfilename(destfilename, destdir) + filename.replace('.cpp', '.h') + '"\n'
@@ -178,13 +165,12 @@ class myThread (threading.Thread):
 
 def main():
     global threads
-    for i in range(0, len(genfile)):
-            t = myThread( genfile[i][0], genfile[i][1], genfile[i][2])
+    for i in range(0, len(protofilearray.genfile)):
+            t = myThread( protofilearray.genfile[i][0], protofilearray.genfile[i][1], protofilearray.genfile[i][2])
             threads.append(t)
             t.start()
-    for t in threads :
+    for t in threads:
         t.join()
 
-genfile = protofilearray.genfile
 genpublic.makedirs()
 main()
