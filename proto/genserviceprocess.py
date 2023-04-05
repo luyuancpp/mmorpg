@@ -83,13 +83,13 @@ def getpbdir(filename):
         return 'src/pb/pbc/logic_proto/'
     return ''
 
-def genheadfile(file, md5dir):
-    filename = os.path.basename(file).replace('.proto', '.h') 
-    genfilename = md5dir +  filename
+def genheadfile(filename,  destdir,  md5dir):
+    filename = os.path.basename(filename).replace('.proto', '.h') 
+    md5filename = md5dir +   filename
     newstr = '#pragma once\n'
-    newstr += '#include "' + getpbdir(filename) + filename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "' + getpbdir( destdir) + filename.replace('.h', '') + '.pb.h"\n'
     newstr += genheadrpcfun()
-    with open(genfilename, 'w', encoding='utf-8')as file:
+    with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def gencppfile(filename, destdir, md5dir):
