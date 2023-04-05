@@ -5,7 +5,6 @@ from os import system
 system("python genprotoc.py")
 system("python genserviceprocess.py")
 system("python genservicerepliedprocess.py")
-system("python genlogicserviceprocess.py")
 system("python genserviceid.py")
 system("python genprotosol.py")
 system("python genplayerserviceprocess.py")
