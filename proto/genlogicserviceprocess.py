@@ -1,5 +1,6 @@
-import os
 import threading
+import protofilearray
+import os
 import genpublic
 
 local = threading.local()
