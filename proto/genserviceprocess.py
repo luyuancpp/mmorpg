@@ -174,7 +174,7 @@ class myThread (threading.Thread):
             cppfile.destfilename = self.destdir + filename
             skillinclude = '#include "' + getprevfilename(cppfile.destfilename, self.destdir) + filename.replace(destext, '.h') + '"\n'
             skillinclude += '#include "src/network/rpc_msg_route.h"\n'
-            cppfile.md5filename = self.destdir + filename
+            cppfile.md5filename = self.md5dir + filename
             cppfile.includestr = skillinclude
             cppfile.filemethodarray = local.filemethodarray
             cppfile.begunfun = gencpprpcfunbegin
