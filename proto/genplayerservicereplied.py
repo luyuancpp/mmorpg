@@ -135,13 +135,14 @@ def getincludebyfilename(filename):
     return includestr
 
     
-def gencppfile(filename, destdir, md5dir,  skipline):
+def gencppfile(filename, destdir, md5dir,  includestr):
     filebasename = os.path.basename(filename)
     destfilename = destdir  + filebasename.replace('.proto', '_replied.cpp')
     md5filename = md5dir + filebasename.replace('.proto', '_replied.cpp')
     newstr = '#include "'  + filebasename.replace('.proto', '_replied.h') + '"\n'
     newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
     newstr += '#include "src/network/message_system.h"\n'
+    skipline = includestr.count('\n')
     serviceidx = 0
     try:
         with open(destfilename,'r+', encoding='utf-8') as file:
@@ -246,11 +247,11 @@ def generate(filename):
     parsefile(filename)
     initservicenames()
     genheadfile(filename, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-    gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, 3)
+    gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, getincludebyfilename(filename))
     md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
     md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
     genheadfile(filename, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
-    gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, 3)
+    gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, getincludebyfilename(filename))
     md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
     md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
         
