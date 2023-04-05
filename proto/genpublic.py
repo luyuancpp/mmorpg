@@ -33,7 +33,7 @@ luayourcodeend = '---<<< END WRITING YOUR CODE'
 luarpcbegin = '---<<<rpc begin'
 luarpcend = '---<<<rpc end'
 
-
+logicmd5dir = './md5/logic_proto/'
 servermd5dirs = [md5dir + 'controller_server/', 
 md5dir + 'game_server/', 
 md5dir + 'gate_server/',
@@ -80,6 +80,8 @@ def makedirs():
         os.makedirs(servicemethoddir)
     if not os.path.exists(servicemethodmd5dir):
         os.makedirs(servicemethodmd5dir)
+    if not os.path.exists(logicmd5dir):
+        os.makedirs(logicmd5dir)    
     if not os.path.exists(pbcserviceinstancemd5dir):
         os.makedirs(pbcserviceinstancemd5dir)
     for d in servermd5dirs :
