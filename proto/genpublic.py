@@ -250,3 +250,61 @@ def md5copy(filename, destdir, md5dir, extreplacesrc, extreplacedest):
     print("copy %s ---> %s" % (genfilename, destfilename))
     md5tool.generate_md5_file_for(genfilename, genfilenamemd5)
     shutil.copy(genfilename, destfilename)
+    
+class cpp():
+    def __init__(self):
+        self.destfilename = ''
+        self.md5filename = ''
+        self.includestr = ''
+        self.filemethodarray = []
+        self.begunfun = None
+        self.controller = ''
+
+def gencppfile(cppfile):
+    newstr = cppfile.includestr
+    serviceidx = 0
+    skipline = cppfile.includestr.count('\n')
+    try:
+        with open(cppfile.destfilename,'r+', encoding='utf-8') as file:
+            service_begined = 0
+            isyourcode = 1 
+            skipheadline = 0 
+            for fileline in file:
+                if skipheadline < skipline :
+                    skipheadline += 1
+                    continue
+                #处理开始自定义文件
+                if service_begined == 0 and fileline.find(rpcbegin) >= 0:
+                    newstr += fileline
+                    service_begined = 1
+                    continue 
+                #开始处理RPC 
+                if service_begined == 1:
+                    if serviceidx < len(cppfile.filemethodarray) and fileline.find(cppfile.controller) >= 0 :
+                        isyourcode = 0
+                        newstr += cppfile.begunfun(serviceidx)
+                        continue
+                    elif fileline.find(yourcodebegin) >= 0 :
+                        newstr += fileline
+                        isyourcode = 1
+                        continue
+                    elif fileline.find(yourcodeend) >= 0 :
+                        newstr += yourcodeend + '\n}\n\n'
+                        isyourcode = 0
+                        serviceidx += 1  
+                        continue
+                    elif fileline.find(rpcend) >= 0:
+                        break
+                if isyourcode == 1 or service_begined == 0:
+                    newstr += fileline
+                    continue                
+    except FileNotFoundError:
+        newstr += rpcbegin + '\n'
+    while serviceidx < len(cppfile.filemethodarray) :
+        newstr += cppfile.begunfun(serviceidx)
+        newstr += yourcodebegin +  '\n'
+        newstr += yourcodeend +  '\n}\n\n'
+        serviceidx += 1 
+    newstr += rpcend + '\n'
+    with open(cppfile.md5filename, 'w', encoding='utf-8')as file:
+        file.write(newstr)
