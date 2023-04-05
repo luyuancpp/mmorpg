@@ -246,13 +246,17 @@ def generate(filename):
         return
     parsefile(filename)
     initservicenames()
+    
     genheadfile(filename, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-    gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, getincludebyfilename(filename))
     md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
+    
+    gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, getincludebyfilename(filename))    
     md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
+    
     genheadfile(filename, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
-    gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, getincludebyfilename(filename))
     md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
+    
+    gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, getincludebyfilename(filename))
     md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
         
         
