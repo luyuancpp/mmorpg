@@ -8,13 +8,15 @@ local = threading.local()
 local.filemethodarray = []
 local.service = ''
 threads = []
-
 gsservicedir = '../game_server/src/service/logic_proto/'
 lobbyservicedir = '../lobby_server/src/service/logic_proto/'
 controllerservicedir = '../controller_server/src/service/logic_proto/'
 logicprotodir = 'logic_proto/'
 tabstr = '    '
 controller = '(::google::protobuf::RpcController* controller'
+
+genfile = protofilearray.genfile
+
 
 def parsefile(filename):
     local.filemethodarray = []
@@ -27,44 +29,7 @@ def parsefile(filename):
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-
-def genheadrpcfun():
-    servicestr = 'class ' + local.service + 'Impl : public ' + '::' + local.service + '{\npublic:\n'  
-    servicestr += 'public:\n'
-    global controller
-    for service in local.filemethodarray:
-        s = service.strip(' ').split(' ')
-        line = tabstr + 'void ' + s[1] + controller + ',\n'
-        rq =  s[2].replace('(', '').replace(')', '')
-        line += tabstr + tabstr + 'const ' +  '::' + rq + '* request,\n'
-        rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
-        if rsp == 'google.protobuf.Empty' :
-            line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
-        else :
-            line += tabstr + tabstr +  '::' + rsp + '* response,\n'
-        line += tabstr + tabstr + '::google::protobuf::Closure* done)override;\n\n'
-        servicestr += line
-    servicestr += '};'
-    return servicestr
-
-def gencpprpcfunbegin(methodindex):
-    servicestr = ''
-    s = local.filemethodarray[methodindex]
-    s = s.strip(' ').split(' ')
-    servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
-    rq =  s[2].replace('(', '').replace(')', '')
-    servicestr +=  tabstr + 'const ' + '::' + rq + '* request,\n'
-    rsp = s[4].replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
-    if rsp == 'google.protobuf.Empty' :
-        servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
-    else :
-        servicestr +=  tabstr + '::' + rsp + '* response,\n'
-    servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
-    return servicestr
-
-def genyourcode():
-    return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
-
+    
 def getprevfilename(filename, destdir):
     if filename.find(logicprotodir) >= 0:
         if destdir == gsservicedir:
@@ -75,19 +40,60 @@ def getprevfilename(filename, destdir):
             return ''
     return ''
 
-def getpbdir(filename):
-    if filename.find(logicprotodir) >= 0:
+def getpbdir(writedir):
+    if writedir.find(logicprotodir) >= 0:
         return 'src/pb/pbc/logic_proto/'
     return ''
 
-def genheadfile(file, md5dir):
-    filename = os.path.basename(file).replace('.proto', '.h') 
-    genfilename = md5dir +  filename
+def genheadrpcfun():
+    servicestr = 'class ' + local.service + 'Impl : public ' +  '::' + local.service + '{\npublic:\n'
+    servicestr += 'public:\n'
+    global controller
+    for service in local.filemethodarray:
+        s = service.strip(' ').split(' ')
+        methodname = s[1]
+        requestname = s[2]
+        responsespb = s[4]
+        line = tabstr + 'void ' + methodname + controller + ',\n'
+        line += tabstr + tabstr + 'const ' + '::' + requestname.replace('(', '').replace(')', '') + '* request,\n'
+        rsp = responsespb.replace('(', '').replace(')',  '').replace(';',  '').strip('\n')
+        if rsp == 'google.protobuf.Empty' :
+            line += tabstr + tabstr + '::google::protobuf::Empty* response,\n'
+        else :
+            line += tabstr + tabstr +  '::' + rsp + '* response,\n'
+        line += tabstr + tabstr + '::google::protobuf::Closure* done)override;\n\n'
+        servicestr += line
+    servicestr += '};'
+    return servicestr
+
+def gencpprpcfunbegin(rpcindex):
+    servicestr = ''
+    s = local.filemethodarray[rpcindex]
+    s = s.strip(' ').split(' ')
+    requestname = s[2]
+    servicestr = 'void ' + local.service + 'Impl::' + s[1] + controller + ',\n'
+    servicestr +=  tabstr + 'const ' +  '::' + requestname.replace('(', '').replace(')', '') + '* request,\n'
+    responsespb = s[4]
+    rsp = responsespb.replace('(', '').replace(')',  '').replace(';',  '').strip('\n');
+    if rsp == 'google.protobuf.Empty' :
+        servicestr +=  tabstr + '::google::protobuf::Empty* response,\n'
+    else :
+        servicestr +=  tabstr +  '::' + rsp + '* response,\n'
+    servicestr +=  tabstr + '::google::protobuf::Closure* done)\n{\n'
+    return servicestr
+
+def genyourcode():
+    return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
+
+def genheadfile(filename,  destdir,  md5dir):
+    filename = os.path.basename(filename).replace('.proto', '.h') 
+    md5filename = md5dir +   filename
     newstr = '#pragma once\n'
-    newstr += '#include "' + getpbdir(filename) + filename.replace('.h', '') + '.pb.h"\n'
+    newstr += '#include "' + getpbdir( destdir) + filename.replace('.h', '') + '.pb.h"\n'
     newstr += genheadrpcfun()
-    with open(genfilename, 'w', encoding='utf-8')as file:
+    with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
+
 
 def gencppfile(filename, destdir, md5dir):
     filename = os.path.basename(filename).replace('.proto', '.cpp') 
@@ -154,21 +160,32 @@ class myThread (threading.Thread):
             return
         parsefile(self.filename)
         if checkheadmd5 == False:
-            genheadfile(self.filename,  self.md5dir)
+            genheadfile(self.filename, self.destdir, self.md5dir)
             genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.h')
         if checkcppmd5 == False:
             gencppfile(self.filename, self.destdir, self.md5dir)
             genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.cpp')
 
-
 def main():
-    global threads
-    for i in range(0, len(protofilearray.genfile)):
-            t = myThread( protofilearray.genfile[i][0], protofilearray.genfile[i][1], protofilearray.genfile[i][2])
-            threads.append(t)
-            t.start()
-    for t in threads:
+    filelen = len(genfile)
+    for i in range(0, filelen):
+        t = myThread( genfile[i][0], genfile[i][1], genfile[i][2])
+        threads.append(t)
+        t.start()
+    for t in threads :
         t.join()
 
+def scanprotofile():
+    dir_list  = os.listdir(logicprotodir)
+    for filename in dir_list:
+        if not (filename[-6:].lower() == '.proto'):
+            continue
+        if genpublic.is_gs_and_controller_server_proto(filename) == True :
+            genfile.append([logicprotodir + filename, genpublic.controllerlogicservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + logicprotodir ])
+            genfile.append([logicprotodir + filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + logicprotodir])
+        elif filename.find(genpublic.lobby_file_prefix) >= 0:
+            genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir, genpublic.servermd5dirs[genpublic.lobbymd5dirindex] + logicprotodir])
+            
 genpublic.makedirs()
+scanprotofile()
 main()
