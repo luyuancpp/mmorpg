@@ -31,7 +31,7 @@ void GameServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-        //连续顶号进入，还在加载中的话继续加载
+    //连续顶号进入，还在加载中的话继续加载
     auto player_id = request->player_id();
     PlayerCommonSystem::RemovePlayereSession(player_id);
     auto p_it = game_tls.player_list().find(player_id);
