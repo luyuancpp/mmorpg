@@ -126,22 +126,30 @@ def genheadfile(filename, md5dir):
     newstr += genheadrpcfun()
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
-        
-def gencppfile(filename, destdir, md5dir):
+    
+def getincludebyfilename(filename):
     filebasename = os.path.basename(filename)
-    cppfilename = destdir  + filebasename.replace('.proto', '_replied.cpp')
-    newcppfilename = md5dir + filebasename.replace('.proto', '_replied.cpp')
+    includestr = '#include "'  + filebasename.replace('.proto', '_replied.h') + '"\n'
+    includestr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
+    includestr += '#include "src/network/message_system.h"\n'
+    return includestr
+
+    
+def gencppfile(filename, destdir, md5dir,  skipline):
+    filebasename = os.path.basename(filename)
+    destfilename = destdir  + filebasename.replace('.proto', '_replied.cpp')
+    md5filename = md5dir + filebasename.replace('.proto', '_replied.cpp')
     newstr = '#include "'  + filebasename.replace('.proto', '_replied.h') + '"\n'
     newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
     newstr += '#include "src/network/message_system.h"\n'
     serviceidx = 0
     try:
-        with open(cppfilename,'r+', encoding='utf-8') as file:
+        with open(destfilename,'r+', encoding='utf-8') as file:
             service_begined = 0
             isyourcode = 1 
             skipheadline = 0 
             for fileline in file:
-                if skipheadline < 3 :
+                if skipheadline < skipline :
                     skipheadline += 1
                     continue
                      #处理开始自定义文件
@@ -178,7 +186,7 @@ def gencppfile(filename, destdir, md5dir):
             newstr += genpublic.yourcodeend + '\n}\n\n'
             serviceidx += 1 
     newstr += genpublic.rpcend + '\n'
-    with open(newcppfilename, 'w', encoding='utf-8')as file:
+    with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def parseplayerservcie(filename):
@@ -238,11 +246,11 @@ def generate(filename):
     parsefile(filename)
     initservicenames()
     genheadfile(filename, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-    gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+    gencppfile(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, 3)
     md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
     md5copy(filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
     genheadfile(filename, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
-    gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+    gencppfile(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, 3)
     md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
     md5copy(filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
         
@@ -264,7 +272,6 @@ class myThread (threading.Thread):
         generate(self.filename)
 
 def main():
-    filelen = len(genfile)
     global threads
     for i in range(0, len(genfile)):
             t = myThread(genfile[i])
