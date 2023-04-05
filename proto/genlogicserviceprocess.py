@@ -15,12 +15,9 @@ logicprotodir = 'logic_proto/'
 tabstr = '    '
 cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
-servicedir = './md5/logic_proto/'
 
-genfile = [] #[proto, destdir, md5dir]
+genfile = []
 
-if not os.path.exists(servicedir):
-    os.makedirs(servicedir)
 
 def parsefile(filename):
     local.filemethodarray = []
@@ -179,5 +176,7 @@ def scanprotofile():
             genfile.append([logicprotodir + filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + logicprotodir])
         elif filename.find(genpublic.lobby_file_prefix) >= 0:
             genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir, genpublic.servermd5dirs[genpublic.lobbymd5dirindex] + logicprotodir])
+            
+genpublic.makedirs()
 scanprotofile()
 main()
