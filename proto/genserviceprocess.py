@@ -8,13 +8,15 @@ local = threading.local()
 local.filemethodarray = []
 local.service = ''
 threads = []
-
 gsservicedir = '../game_server/src/service/logic_proto/'
 lobbyservicedir = '../lobby_server/src/service/logic_proto/'
 controllerservicedir = '../controller_server/src/service/logic_proto/'
 logicprotodir = 'logic_proto/'
 tabstr = '    '
 controller = '(::google::protobuf::RpcController* controller'
+
+genfile = []
+
 
 def parsefile(filename):
     local.filemethodarray = []
@@ -27,7 +29,7 @@ def parsefile(filename):
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-
+    
 def getprevfilename(filename, destdir):
     if filename.find(logicprotodir) >= 0:
         if destdir == gsservicedir:
@@ -38,6 +40,10 @@ def getprevfilename(filename, destdir):
             return ''
     return ''
 
+def getpbdir(writedir):
+    if writedir.find(logicprotodir) >= 0:
+        return 'src/pb/pbc/logic_proto/'
+    return ''
 
 def genheadrpcfun():
     servicestr = 'class ' + local.service + 'Impl : public ' +  '::' + local.service + '{\npublic:\n'
@@ -79,11 +85,6 @@ def gencpprpcfunbegin(rpcindex):
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
 
-def getpbdir(filename):
-    if filename.find(logicprotodir) >= 0:
-        return 'src/pb/pbc/logic_proto/'
-    return ''
-
 def genheadfile(filename,  destdir,  md5dir):
     filename = os.path.basename(filename).replace('.proto', '.h') 
     md5filename = md5dir +   filename
@@ -92,6 +93,7 @@ def genheadfile(filename,  destdir,  md5dir):
     newstr += genheadrpcfun()
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
+
 
 def gencppfile(filename, destdir, md5dir):
     filename = os.path.basename(filename).replace('.proto', '.cpp') 
@@ -158,7 +160,7 @@ class myThread (threading.Thread):
             return
         parsefile(self.filename)
         if checkheadmd5 == False:
-            genheadfile(self.filename,  self.md5dir)
+            genheadfile(self.filename, self.destdir, self.md5dir)
             genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.h')
         if checkcppmd5 == False:
             gencppfile(self.filename, self.destdir, self.md5dir)
