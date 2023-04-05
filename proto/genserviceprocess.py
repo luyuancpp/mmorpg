@@ -141,19 +141,6 @@ def gencppfile(filename, destdir, md5dir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def generate(filename, destdir, md5dir):
-    checkheadmd5,_,_,_ = genpublic.md5check(filename, destdir, md5dir, '.proto', '.h' )    
-    checkcppmd5,_,_,_  = genpublic.md5check(filename, destdir, md5dir, '.proto', '.cpp' )    
-    if checkheadmd5 == True and checkcppmd5 == True:
-        return
-    parsefile(filename)
-    if checkheadmd5 == False:
-        genheadfile(filename,  md5dir)
-        genpublic.md5copy(filename, destdir, md5dir, '.proto', '.h')
-    if checkcppmd5 == False:
-        gencppfile(filename, destdir, md5dir)
-        genpublic.md5copy(filename, destdir, md5dir, '.proto', '.cpp')
-
 class myThread (threading.Thread):
     def __init__(self, filename, destdir, md5dir):
         threading.Thread.__init__(self)
@@ -161,7 +148,18 @@ class myThread (threading.Thread):
         self.md5dir = str(md5dir)
         self.destdir = str(destdir)
     def run(self):
-        generate(self.filename, self.destdir, self.md5dir)
+        checkheadmd5,_,_,_ = genpublic.md5check(self.filename, self.destdir, self.md5dir, '.proto', '.h')    
+        checkcppmd5,_,_,_  = genpublic.md5check(self.filename, self.destdir, self.md5dir, '.proto', '.cpp' )    
+        if checkheadmd5 == True and checkcppmd5 == True:
+            return
+        parsefile(self.filename)
+        if checkheadmd5 == False:
+            genheadfile(self.filename,  self.md5dir)
+            genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.h')
+        if checkcppmd5 == False:
+            gencppfile(self.filename, self.destdir, self.md5dir)
+            genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.cpp')
+
 
 def main():
     global threads
