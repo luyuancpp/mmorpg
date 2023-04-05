@@ -8,6 +8,9 @@ local = threading.local()
 local.filemethodarray = []
 local.service = ''
 threads = []
+gsservicedir = '../game_server/src/service/logic_proto/'
+lobbyservicedir = '../lobby_server/src/service/logic_proto/'
+controllerservicedir = '../controller_server/src/service/logic_proto/'
 logicprotodir = 'logic_proto/'
 tabstr = '    '
 controller = '(::google::protobuf::RpcController* controller'
@@ -27,6 +30,16 @@ def parsefile(filename):
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
     
+def getprevfilename(filename, destdir):
+    if filename.find(logicprotodir) >= 0:
+        if destdir == gsservicedir:
+            return genpublic.gs_file_prefix
+        if destdir == controllerservicedir:
+            return genpublic.controller_file_prefix
+        if destdir == lobbyservicedir:
+            return ''
+    return ''
+
 def getpbdir(writedir):
     if writedir.find(logicprotodir) >= 0:
         return 'src/pb/pbc/logic_proto/'
