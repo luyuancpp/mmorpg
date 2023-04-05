@@ -133,60 +133,6 @@ def getincludebyfilename(filebasename):
     includestr += '#include "src/network/message_system.h"\n'
     return includestr
 
-    
-def gencppfile(filename, destdir, md5dir,  includestr):
-    filebasename = os.path.basename(filename)
-    destfilename = destdir  + filebasename.replace('.proto', '_replied.cpp')
-    md5filename = md5dir + filebasename.replace('.proto', '_replied.cpp')
-    newstr = includestr
-    skipline = includestr.count('\n')
-    serviceidx = 0
-    try:
-        with open(destfilename,'r+', encoding='utf-8') as file:
-            service_begined = 0
-            isyourcode = 1 
-            skipheadline = 0 
-            for fileline in file:
-                if skipheadline < skipline :
-                    skipheadline += 1
-                    continue
-                     #处理开始自定义文件
-                if service_begined == 0 and fileline.find(genpublic.rpcbegin) >= 0:
-                    newstr += fileline
-                    service_begined = 1
-                    continue 
-                #开始处理RPC 
-                if service_begined == 1:
-                    if serviceidx < len(local.filemethodarray) and fileline.find(controller) >= 0 :
-                        isyourcode = 0
-                        newstr += gencpprpcfunbegin(serviceidx)
-                        continue
-                    elif fileline.find(genpublic.yourcodebegin) >= 0 :
-                        newstr += fileline
-                        isyourcode = 1
-                        continue
-                    elif fileline.find(genpublic.yourcodeend) >= 0 :
-                        newstr += genpublic.yourcodeend + '\n}\n\n'
-                        isyourcode = 0
-                        serviceidx += 1  
-                        continue
-                    elif fileline.find(genpublic.rpcend) >= 0:
-                        break
-                if isyourcode == 1 or service_begined == 0:
-                    newstr += fileline
-                    continue                
-    except FileNotFoundError:
-        newstr += genyourcode() + '\n'
-        newstr += genpublic.rpcbegin + '\n'
-    while serviceidx < len(local.filemethodarray) :
-            newstr += gencpprpcfunbegin(serviceidx)
-            newstr += genpublic.yourcodebegin +  '\n'
-            newstr += genpublic.yourcodeend + '\n}\n\n'
-            serviceidx += 1 
-    newstr += genpublic.rpcend + '\n'
-    with open(md5filename, 'w', encoding='utf-8')as file:
-        file.write(newstr)
-
 def parseplayerservcie(filename):
     if not genpublic.is_server_player_proto(filename):
         return
