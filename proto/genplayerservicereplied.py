@@ -139,9 +139,7 @@ def gencppfile(filename, destdir, md5dir,  includestr):
     filebasename = os.path.basename(filename)
     destfilename = destdir  + filebasename.replace('.proto', '_replied.cpp')
     md5filename = md5dir + filebasename.replace('.proto', '_replied.cpp')
-    newstr = '#include "'  + filebasename.replace('.proto', '_replied.h') + '"\n'
-    newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
-    newstr += '#include "src/network/message_system.h"\n'
+    newstr = includestr
     skipline = includestr.count('\n')
     serviceidx = 0
     try:
