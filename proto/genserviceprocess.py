@@ -95,12 +95,12 @@ def genheadfile(filename,  destdir,  md5dir):
         file.write(newstr)
 
 
-def gencppfile(filename, destdir, md5dir, destext):
+def gencppfile(filename, destdir, md5dir, destext, skipline, skillinclude):
     filename = os.path.basename(filename).replace('.proto', destext) 
     destfilename = destdir + filename
     md5filename = md5dir +  filename
     newstr = '#include "' + getprevfilename(destfilename, destdir) + filename.replace(destext, '.h') + '"\n'
-    newstr += '#include "src/network/rpc_msg_route.h"\n'
+    newstr += skillinclude
     serviceidx = 0
     try:
         with open(destfilename,'r+', encoding='utf-8') as file:
@@ -108,7 +108,7 @@ def gencppfile(filename, destdir, md5dir, destext):
             isyourcode = 1 
             skipheadline = 0 
             for fileline in file:
-                if skipheadline < 2 :
+                if skipheadline < skipline :
                     skipheadline += 1
                     continue
                 #处理开始自定义文件
@@ -163,7 +163,8 @@ class myThread (threading.Thread):
             genheadfile(self.filename, self.destdir, self.md5dir)
             genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.h')
         if checkcppmd5 == False:
-            gencppfile(self.filename, self.destdir, self.md5dir, '.cpp')
+            skillinclude = '#include "src/network/rpc_msg_route.h"\n'
+            gencppfile(self.filename, self.destdir, self.md5dir, '.cpp', 2, skillinclude)
             genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.cpp')
 
 def main():
