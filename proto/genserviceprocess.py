@@ -166,7 +166,6 @@ class myThread (threading.Thread):
             gencppfile(self.filename, self.destdir, self.md5dir)
             genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.cpp')
 
-
 def main():
     filelen = len(genfile)
     for i in range(0, filelen):
@@ -176,5 +175,17 @@ def main():
     for t in threads :
         t.join()
 
+def scanprotofile():
+    dir_list  = os.listdir(logicprotodir)
+    for filename in dir_list:
+        if not (filename[-6:].lower() == '.proto'):
+            continue
+        if genpublic.is_gs_and_controller_server_proto(filename) == True :
+            genfile.append([logicprotodir + filename, genpublic.controllerlogicservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + logicprotodir ])
+            genfile.append([logicprotodir + filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + logicprotodir])
+        elif filename.find(genpublic.lobby_file_prefix) >= 0:
+            genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir, genpublic.servermd5dirs[genpublic.lobbymd5dirindex] + logicprotodir])
+            
 genpublic.makedirs()
+scanprotofile()
 main()
