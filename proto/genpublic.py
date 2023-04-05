@@ -47,7 +47,6 @@ lobbymd5dirindex = 4
 databasemd5dirindex = 5
 deploymd5dirindex = 6 
 
-cpkg = 'package'
 tabstr = '    '
 
 def is_server_proto(filename):

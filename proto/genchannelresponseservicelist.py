@@ -7,13 +7,11 @@ import threading
 import genpublic
 
 local = threading.local()
-local.pkg = ''
 local.service = []
 local.servicefile = []
 local.fileincludedir = []
 
 def parsefile(filename, includedir):
-    local.pkg = ''
     with open(filename, 'r', encoding='utf-8') as file:
         for fileline in file:
             if genpublic.is_service_fileline(fileline) == True:
