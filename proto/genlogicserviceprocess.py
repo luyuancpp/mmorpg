@@ -9,7 +9,6 @@ local.service = ''
 threads = []
 logicprotodir = 'logic_proto/'
 tabstr = '    '
-cpprpcservicepart = 1
 controller = '(::google::protobuf::RpcController* controller'
 
 genfile = []
@@ -81,11 +80,12 @@ def genheadfile(filename,  destdir,  md5dir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
+
 def gencppfile(filename, destdir, md5dir):
     filename = os.path.basename(filename).replace('.proto', '.cpp') 
-    destfilename =  destdir + filename
-    genfilename = md5dir +   filename
-    newstr = '#include "' + filename.replace('.cpp', '.h') + '"\n'
+    destfilename = destdir + filename
+    md5filename = md5dir +  filename
+    newstr = '#include "' + getprevfilename(destfilename, destdir) + filename.replace('.cpp', '.h') + '"\n'
     newstr += '#include "src/network/rpc_msg_route.h"\n'
     serviceidx = 0
     try:
@@ -97,7 +97,7 @@ def gencppfile(filename, destdir, md5dir):
                 if skipheadline < 2 :
                     skipheadline += 1
                     continue
-                     #处理开始自定义文件
+                #处理开始自定义文件
                 if service_begined == 0 and fileline.find(genpublic.rpcbegin) >= 0:
                     newstr += fileline
                     service_begined = 1
@@ -121,9 +121,8 @@ def gencppfile(filename, destdir, md5dir):
                         break
                 if isyourcode == 1 or service_begined == 0:
                     newstr += fileline
-                    continue                 
+                    continue                
     except FileNotFoundError:
-        newstr += genyourcode() + '\n'
         newstr += genpublic.rpcbegin + '\n'
     while serviceidx < len(local.filemethodarray) :
         newstr += gencpprpcfunbegin(serviceidx)
@@ -131,7 +130,7 @@ def gencppfile(filename, destdir, md5dir):
         newstr += genpublic.yourcodeend +  '\n}\n\n'
         serviceidx += 1 
     newstr += genpublic.rpcend + '\n'
-    with open(genfilename, 'w', encoding='utf-8')as file:
+    with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 class myThread (threading.Thread):
