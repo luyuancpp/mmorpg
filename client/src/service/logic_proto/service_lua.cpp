@@ -23,33 +23,6 @@ void InitServiceLua()
 			LOG_FATAL << err.what();
 		}
 	}
-	contents = common::File2String("script/lua/service/c_common_client_player.lua");
-	{
-		auto r = tls_lua_state.script(contents);
-		if (!r.valid())
-		{
-			sol::error err = r;
-			LOG_FATAL << err.what();
-		}
-	}
-	contents = common::File2String("script/lua/service/c_scene_client_player.lua");
-	{
-		auto r = tls_lua_state.script(contents);
-		if (!r.valid())
-		{
-			sol::error err = r;
-			LOG_FATAL << err.what();
-		}
-	}
-	contents = common::File2String("script/lua/service/c_team_client_player.lua");
-	{
-		auto r = tls_lua_state.script(contents);
-		if (!r.valid())
-		{
-			sol::error err = r;
-			LOG_FATAL << err.what();
-		}
-	}
 	contents = common::File2String("script/lua/service/scene_client_player.lua");
 	{
 		auto r = tls_lua_state.script(contents);
