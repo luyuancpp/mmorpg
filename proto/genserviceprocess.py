@@ -28,6 +28,17 @@ def parsefile(filename):
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
 
+def getprevfilename(filename, destdir):
+    if filename.find(logicprotodir) >= 0:
+        if destdir == gsservicedir:
+            return genpublic.gs_file_prefix
+        if destdir == controllerservicedir:
+            return genpublic.controller_file_prefix
+        if destdir == lobbyservicedir:
+            return ''
+    return ''
+
+
 def genheadrpcfun():
     servicestr = 'class ' + local.service + 'Impl : public ' +  '::' + local.service + '{\npublic:\n'
     servicestr += 'public:\n'
@@ -67,16 +78,6 @@ def gencpprpcfunbegin(rpcindex):
 
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
-
-def getprevfilename(filename, destdir):
-    if filename.find(logicprotodir) >= 0:
-        if destdir == gsservicedir:
-            return genpublic.gs_file_prefix
-        if destdir == controllerservicedir:
-            return genpublic.controller_file_prefix
-        if destdir == lobbyservicedir:
-            return ''
-    return ''
 
 def getpbdir(filename):
     if filename.find(logicprotodir) >= 0:
