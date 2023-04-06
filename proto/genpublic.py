@@ -275,6 +275,15 @@ def is_service_fileline(fileline):
     return fileline.find('service ') >= 0 and (fileline.find('{') >= 0 or fileline.find('Service') >= 0)
 
 
+class md5fileinfo():
+    def __init__(self):
+        self.filename = ''
+        self.destdir = ''
+        self.md5dir = ''
+        self.originalextension = ''
+        self.targetextension = ''
+        self.fitler = []
+
 def md5check(filename, destdir, md5dir, originalextension, targetextension):
     filebasename = os.path.basename(filename).replace(originalextension, targetextension)
     genfilename = md5dir + filebasename
