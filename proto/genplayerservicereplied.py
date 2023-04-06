@@ -20,7 +20,6 @@ controller = '(entt::entity player'
 protodir = 'logic_proto/'
 destextcpp = '_replied.cpp'
 destexth = '_replied.h'
-includedir = 'src/service/logic_proto/'
 
 def parsefile(filename):
     if not genpublic.is_server_player_proto(filename):
@@ -137,7 +136,7 @@ def genplayerservcierepliedlist(filename, md5dir):
     newstr += '#include "player_service_replied.h"\n'
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir.replace('logic_proto', 'logic_proto_replied')  + f.replace(protodir, '') + '_replied.h"\n'
+        newstr += '#include "' + 'src/service/logic_proto_replied/'  + f.replace(protodir, '') + '_replied.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replieds;\n'
     for service in local.playerservicearray:
         newstr += 'class ' + service + 'RepliedRegisterImpl : public '  + service + '{};\n'
