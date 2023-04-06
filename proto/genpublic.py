@@ -34,7 +34,7 @@ luarpcbegin = '---<<<rpc begin'
 luarpcend = '---<<<rpc end'
 
 logicmd5dir = './md5/logic_proto/'
-servermd5dirs = [md5dir + 'controller_server/', 
+md5dirs = [md5dir + 'controller_server/', 
 md5dir + 'game_server/', 
 md5dir + 'gate_server/',
 md5dir + 'login_server/',
@@ -84,7 +84,7 @@ def makedirs():
         os.makedirs(logicmd5dir)    
     if not os.path.exists(pbcserviceinstancemd5dir):
         os.makedirs(pbcserviceinstancemd5dir)
-    for d in servermd5dirs :
+    for d in md5dirs :
         if not os.path.exists(d):
             os.makedirs(d)
         logic_proto_dir = d + '/logic_proto/' 
@@ -100,7 +100,7 @@ def makedirs():
     
 def makedirsbypath(dirname):
     dirlist = []
-    for d in servermd5dirs :
+    for d in md5dirs :
         fulldir = d + dirname
         dirlist.append(fulldir)
         if not os.path.exists(fulldir):            
@@ -108,7 +108,7 @@ def makedirsbypath(dirname):
     return dirlist
  
 def controllermd5dir():
-    return servermd5dirs[conrollermd5dirindex]  
+    return md5dirs[conrollermd5dirindex]  
     
 def controller():
     return 'controller' 
@@ -117,7 +117,7 @@ def iscontrollerdir(dirpath):
     return dirpath.find('controller_server') >= 0 or dirpath.find('controller') >= 0
     
 def gamemd5dir():
-    return servermd5dirs[gamemd5dirindex]  
+    return md5dirs[gamemd5dirindex]  
  
 def game():
     return 'game'  
@@ -126,7 +126,7 @@ def isgamedir(dirpath):
     return dirpath.find('game_server') >= 0 or dirpath.find('game') >= 0
 
 def lobbymd5dir():
-    return servermd5dirs[lobbymd5dirindex]  
+    return md5dirs[lobbymd5dirindex]  
 
 def lobby():
     return 'lobby'  
@@ -135,25 +135,25 @@ def islobbydir(dirpath):
     return dirpath.find('lobby_server') >= 0 or dirpath.find('lobby') >= 0
     
 def loginmd5dir():
-    return servermd5dirs[loginmd5dirindex]  
+    return md5dirs[loginmd5dirindex]  
 
 def islogindir(dirpath):
     return dirpath.find('login_server') >= 0 or dirpath.find('login') >= 0
 
 def databasemd5dir():
-    return servermd5dirs[databasemd5dirindex]  
+    return md5dirs[databasemd5dirindex]  
 
 def isdatabasedir(dirpath):
     return dirpath.find('database_server') >= 0 or dirpath.find('database') >= 0
     
 def gatemd5dir():
-    return servermd5dirs[gatemd5dirindex]  
+    return md5dirs[gatemd5dirindex]  
 
 def isgatedir(dirpath):
     return dirpath.find('gate_server') >= 0 or dirpath.find('gate') >= 0
    
 def deploymd5dir():
-    return servermd5dirs[deploymd5dirindex]   
+    return md5dirs[deploymd5dirindex]   
 
 def isdeploydir(dirpath):
     return dirpath.find('deploy_server') >= 0 or dirpath.find('deploy') >= 0 
@@ -186,19 +186,19 @@ def getsrcpathmd5dir(dirpath, subdir):
     if iscommonproto(dirpath):
         subdir = commonproto()
     if isgamedir(dirpath):
-        srcdir = servermd5dirs[gamemd5dirindex]
+        srcdir = md5dirs[gamemd5dirindex]
     elif iscontrollerdir(dirpath):
-        srcdir = servermd5dirs[conrollermd5dirindex]
+        srcdir = md5dirs[conrollermd5dirindex]
     elif islobbydir(dirpath):
-        srcdir = servermd5dirs[lobbymd5dirindex]
+        srcdir = md5dirs[lobbymd5dirindex]
     elif isgatedir(dirpath):
-        srcdir = servermd5dirs[gatemd5dirindex]
+        srcdir = md5dirs[gatemd5dirindex]
     elif islogindir(dirpath):
-        srcdir = servermd5dirs[loginmd5dirindex]  
+        srcdir = md5dirs[loginmd5dirindex]  
     elif isdatabasedir(dirpath):
-        srcdir = servermd5dirs[databasemd5dirindex]    
+        srcdir = md5dirs[databasemd5dirindex]    
     elif isdeploydir(dirpath):
-        srcdir = servermd5dirs[deploymd5dirindex]   
+        srcdir = md5dirs[deploymd5dirindex]   
     return srcdir + subdir
     
 def getdestdir(dirpath):
@@ -212,11 +212,11 @@ def getdestdir(dirpath):
     elif isgatedir(dirpath):
         srcdir = gatelogicservicedir
     elif islogindir(dirpath):
-        srcdir = servermd5dirs[loginmd5dirindex]  
+        srcdir = md5dirs[loginmd5dirindex]  
     elif isdatabasedir(dirpath):
-        srcdir = servermd5dirs[databasemd5dirindex]    
+        srcdir = md5dirs[databasemd5dirindex]    
     elif isdeploydir(dirpath):
-        srcdir = servermd5dirs[deploymd5dirindex]   
+        srcdir = md5dirs[deploymd5dirindex]   
     return srcdir 
 
 def is_service_fileline(fileline):
