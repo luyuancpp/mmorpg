@@ -103,14 +103,28 @@ class myThread (threading.Thread):
         self.md5dir = str(md5dir)
         self.destdir = str(destdir)
     def run(self):
-        checkheadmd5,_,_,_ = genpublic.md5check(self.filename, self.destdir, self.md5dir, '.proto', '.h')    
-        checkcppmd5,_,_,_  = genpublic.md5check(self.filename, self.destdir, self.md5dir, '.proto', '.cpp' )    
+        
+        hmd5info = genpublic.md5fileinfo()
+        hmd5info.filename = self.filename
+        hmd5info.destdir = self.destdir
+        hmd5info.md5dir = self.md5dir
+        hmd5info.originalextension = '.proto'
+        hmd5info.targetextension = '.h'
+        checkheadmd5,_,_,_ = genpublic.md5check(hmd5info)  
+        
+        cppmd5info = genpublic.md5fileinfo()
+        cppmd5info.filename = self.filename
+        cppmd5info.destdir = self.destdir
+        cppmd5info.md5dir = self.md5dir
+        cppmd5info.originalextension = '.proto'
+        cppmd5info.targetextension = '.cpp'  
+        checkcppmd5,_,_,_  = genpublic.md5check(cppmd5info)    
         if checkheadmd5 == True and checkcppmd5 == True:
             return
         parsefile(self.filename)
         if checkheadmd5 == False:
             genheadfile(self.filename, self.destdir, self.md5dir)
-            genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', '.h')
+            genpublic.md5copy(hmd5info)
         if checkcppmd5 == False:
             destext = '.cpp'
             filename = os.path.basename(self.filename).replace('.proto', destext) 
@@ -124,7 +138,7 @@ class myThread (threading.Thread):
             cppfile.begunfun = gencpprpcfunbegin
             cppfile.controller = controller
             genpublic.gencppfile(cppfile)
-            genpublic.md5copy(self.filename, self.destdir, self.md5dir, '.proto', destext)
+            genpublic.md5copy(cppmd5info)
 
 def main():
     filelen = len(genfile)
