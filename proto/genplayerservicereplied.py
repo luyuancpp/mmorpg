@@ -150,26 +150,6 @@ def genplayerservcierepliedlist(filename, md5dir):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(filename, destdir, md5dir, fileextend):
-        if filename.find('/') >= 0 :
-            s = filename.split('/')
-            filename = s[len(s) - 1]
-        gennewfilename = md5dir + filename.replace('.proto', fileextend)
-        filenamemd5 = gennewfilename + '.md5'
-        error = None
-        emptymd5 = False
-        if  not os.path.exists(filenamemd5):
-            emptymd5 = True
-        else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
-        destfilename =  destdir + filename.replace('.proto', fileextend)
-        if error == None and os.path.exists(destfilename) and emptymd5 == False:
-            return
-        
-        print("copy %s ---> %s" % (gennewfilename, destfilename))
-        md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-        shutil.copy(gennewfilename, destfilename)
-
         
 genfile = []
 
@@ -223,9 +203,9 @@ def main():
     for file in genfile:
         parseplayerservcie(file)
     genplayerservcierepliedlist('player_service_replied.cpp', genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex])
-    md5copy('player_service_replied.cpp', genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex], '')
+    genpublic.md5copy('player_service_replied.cpp', genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex], '', '')
     genplayerservcierepliedlist('player_service_replied.cpp', genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex])    
-    md5copy('player_service_replied.cpp', genpublic.controllerservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex], '')
+    genpublic.md5copy('player_service_replied.cpp', genpublic.controllerservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex], '', '')
 
 genpublic.makedirs()
 genpublic.makedirsbypath(protodir)
