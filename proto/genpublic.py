@@ -14,10 +14,10 @@ logicprotodir = 'logic_proto/'
 commonportodir = 'common_proto/'
 
 gslogicervicedir = '../game_server/src/service/logic_proto/'
-gslogicrepliedservicedir = '../game_server/src/service/logic_proto_replied/'
+gsservicelogicreplieddir = '../game_server/src/service/logic_proto_replied/'
 lobbylogicservicedir = '../lobby_server/src/service/logic_proto/'
 controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
-controllerlogicrepliedservicedir = '../controller_server/src/service/logic_proto_replied/'
+controllerservicelogicreplieddir = '../controller_server/src/service/logic_proto_replied/'
 gatelogicservicedir = '../gate_server/src/service/logic_proto/'
 servicemethoddir = '../common/src/pb/pbc/service_method/'
 servicemethodmd5dir = md5dir + 'service_method/'
@@ -41,6 +41,15 @@ md5dir + 'login_server/',
 md5dir + 'lobby_server/',
 md5dir + 'database_server/',
 md5dir + 'deploy_server/']
+
+logicrepliedmd5dirs = [md5dir + 'controller_server/', 
+md5dir + 'game_server/logic_proto_replied/', 
+md5dir + 'gate_server/logic_proto_replied/',
+md5dir + 'login_server/logic_proto_replied/',
+md5dir + 'lobby_server/logic_proto_replied/',
+md5dir + 'database_server/logic_proto_replied/',
+md5dir + 'deploy_server/logic_proto_replied/']
+
 conrollermd5dirindex = 0
 gamemd5dirindex = 1
 gatemd5dirindex = 2
@@ -85,6 +94,9 @@ def makedirs():
     if not os.path.exists(pbcserviceinstancemd5dir):
         os.makedirs(pbcserviceinstancemd5dir)
     for d in md5dirs :
+        if not os.path.exists(d):
+            os.makedirs(d)
+    for d in logicrepliedmd5dirs :
         if not os.path.exists(d):
             os.makedirs(d)
         logic_proto_dir = d + '/logic_proto/' 
@@ -308,3 +320,5 @@ def gencppfile(cppfile):
     newstr += rpcend + '\n'
     with open(cppfile.md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
+        
+makedirs()
