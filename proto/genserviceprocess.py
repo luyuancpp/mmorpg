@@ -116,7 +116,7 @@ class myThread (threading.Thread):
             filename = os.path.basename(self.filename).replace('.proto', destext) 
             cppfile = genpublic.cpp()
             cppfile.destfilename = self.destdir + filename
-            skillinclude = '#include "' + getprevfilename(cppfile.destfilename, self.destdir) + filename.replace(destext, '.h') + '"\n'
+            skillinclude = '#include "' +  filename.replace(destext, '.h') + '"\n'
             skillinclude += '#include "src/network/rpc_msg_route.h"\n'
             cppfile.md5filename = self.md5dir + filename
             cppfile.includestr = skillinclude
