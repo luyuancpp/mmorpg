@@ -69,12 +69,19 @@ class myThread (threading.Thread):
         self.filename = str(filename)
         self.filepath = str(filepath)
     def run(self):
-        checkheadmd5,_,_,_ = genpublic.md5check(self.filename, genpublic.servicemethoddir, genpublic.servicemethodmd5dir, '.proto', methodsufix )   
+        md5info = genpublic.md5fileinfo()
+        md5info.filename = self.filename
+        md5info.destdir = genpublic.servicemethoddir
+        md5info.md5dir = genpublic.servicemethodmd5dir
+        md5info.originalextension = '.proto'
+        md5info.targetextension = methodsufix
+        checkheadmd5,_,_,_ = genpublic.md5check(md5info)   
         if checkheadmd5 == True:
             return
         parsefile(self.filepath)
         genheadfile(self.filename)
-        genpublic.md5copy(self.filename, genpublic.servicemethoddir, genpublic.servicemethodmd5dir, '.proto', methodsufix)
+       
+        genpublic.md5copy(md5info)
 
 def gengatherfile(filename):
     funname = "InitService"   + 'MethodLua'
@@ -116,5 +123,11 @@ def main():
 genpublic.makedirs()
 scanfile() 
 gengatherfile(gatherfile)
-genpublic.md5copy(gatherfile, genpublic.servicemethoddir, genpublic.servicemethodmd5dir, '.proto', "")
+md5info = genpublic.md5fileinfo()
+md5info.filename = gatherfile
+md5info.destdir = genpublic.servicemethoddir
+md5info.md5dir = genpublic.servicemethodmd5dir
+md5info.originalextension = '.proto'
+md5info.targetextension = ''
+genpublic.md5copy(md5info)
 main()

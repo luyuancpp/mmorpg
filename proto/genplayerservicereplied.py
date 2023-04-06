@@ -159,7 +159,15 @@ class myThread (threading.Thread):
         parsefile(self.filename)
 
         genheadfile(self.filename, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex])
-        genpublic.md5copy(self.filename, genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex], '.proto', '_replied.h')
+        
+         
+        hmd5info = genpublic.md5fileinfo()
+        hmd5info.filename = self.filename
+        hmd5info.destdir = genpublic.gsservicelogicreplieddir
+        hmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex]
+        hmd5info.originalextension = '.proto'
+        hmd5info.targetextension = '_replied.h'
+        genpublic.md5copy(hmd5info)
         
         basefilename = os.path.basename(self.filename)
         cppfilename = os.path.basename(self.filename).replace('.proto', destextcpp) 
@@ -171,15 +179,28 @@ class myThread (threading.Thread):
         cppfile.begunfun = gencpprpcfunbegin
         cppfile.controller = controller
         genpublic.gencppfile(cppfile)    
-        genpublic.md5copy(self.filename, genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex] , '.proto', '_replied.cpp')
+        
+        cppmd5info = genpublic.md5fileinfo()
+        cppmd5info.filename = self.filename
+        cppmd5info.destdir = genpublic.gsservicelogicreplieddir
+        cppmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex]
+        cppmd5info.originalextension = '.proto'
+        cppmd5info.targetextension = '_replied.cpp'
+        genpublic.md5copy(cppmd5info)
         
         genheadfile(self.filename, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex])
-        genpublic.md5copy(self.filename, genpublic.controllerservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex] ,  '.proto',  '_replied.h')
+        
+        hmd5info.destdir = genpublic.controllerservicelogicreplieddir
+        hmd5info.md5dir =  genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex]
+        genpublic.md5copy(hmd5info)
         
         cppfile.destfilename = genpublic.controllerservicelogicreplieddir + cppfilename
         cppfile.md5filename = genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex] + cppfilename
         genpublic.gencppfile(cppfile)
-        genpublic.md5copy(self.filename, genpublic.controllerservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex] ,  '.proto',  '_replied.cpp')
+        
+        cppmd5info.destdir = genpublic.controllerservicelogicreplieddir
+        cppmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex]
+        genpublic.md5copy(cppmd5info)
 
 def main():
     global threads
@@ -191,10 +212,20 @@ def main():
         t.join()
     for file in genfile:
         parseplayerservcie(file)
-    genplayerservcierepliedlist('player_service_replied.cpp', genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex])
-    genpublic.md5copy('player_service_replied.cpp', genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex], '', '')
-    genplayerservcierepliedlist('player_service_replied.cpp', genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex])    
-    genpublic.md5copy('player_service_replied.cpp', genpublic.controllerservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex], '', '')
+        
+    cppmd5info = genpublic.md5fileinfo()
+    cppmd5info.filename = 'player_service_replied.cpp'
+    
+    genplayerservcierepliedlist(cppmd5info.filename, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex])
+  
+    cppmd5info.destdir = genpublic.gsservicelogicreplieddir
+    cppmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex]
+    genpublic.md5copy(cppmd5info)
+    
+    cppmd5info.destdir =  genpublic.controllerservicelogicreplieddir
+    cppmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex]
+    genplayerservcierepliedlist(cppmd5info.filename, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex])    
+    genpublic.md5copy(cppmd5info)
 
 genpublic.makedirs()
 genpublic.makedirsbypath(protodir)
