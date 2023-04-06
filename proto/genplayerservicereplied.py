@@ -205,7 +205,7 @@ class myThread (threading.Thread):
         md5copy(self.filename, genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex], '_replied.h')
         
         
-        basefilename = os.path.basename(self.filename).replace('.proto', destextcpp) 
+        basefilename = os.path.basename(self.filename)
         cppfilename = os.path.basename(self.filename).replace('.proto', destextcpp) 
         cppfile = genpublic.cpp()
         cppfile.destfilename = genpublic.gsservicelogicreplieddir + cppfilename
