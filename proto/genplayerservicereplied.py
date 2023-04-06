@@ -1,5 +1,4 @@
 import os
-from os import system
 import md5tool
 import shutil
 import threading
@@ -8,7 +7,6 @@ import genpublic
 local = threading.local()
 
 local.filemethodarray = []
-local.servicenames = []
 local.playerservice = ''
 local.service = ''
 local.playerservicearray = []
@@ -17,17 +15,12 @@ local.fileservice = []
 threads = []
 
 tabstr = '    '
-cpprpcservicepart = 1
+
 controller = '(entt::entity player'
 protodir = 'logic_proto/'
-includedir = 'src/service/logic_proto/'
-gslogicervicedir = '../game_server/src/service/logic_proto/'
-lobbylogicservicedir = '../lobby_server/src/service/logic_proto/'
-controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
 destextcpp = '_replied.cpp'
 destexth = '_replied.h'
-
-repliedmd5dir = genpublic.logicprotodir.replace('logic_proto', 'logic_proto_replied')
+includedir = 'src/service/logic_proto/'
 
 def parsefile(filename):
     if not genpublic.is_server_player_proto(filename):
@@ -45,11 +38,7 @@ def parsefile(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservice = local.service
                 
-def initservicenames():
-    local.servicenames = []
-    for service in local.filemethodarray:
-        s = service.strip(' ').split(' ')
-        local.servicenames.append(s[1])
+
         
 def genheadrpcfun():
     global controller
@@ -199,8 +188,7 @@ class myThread (threading.Thread):
         if not genpublic.is_server_player_proto(self.filename):
             return
         parsefile(self.filename)
-        initservicenames()
-        
+
         genheadfile(self.filename, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex])
         md5copy(self.filename, genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex], '_replied.h')
         
