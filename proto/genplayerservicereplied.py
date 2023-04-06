@@ -93,16 +93,6 @@ def gencpprpcfunbegin(rpcindex):
 
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
- 
-def getsrcpathmd5dir(dirpath):
-    srcdir = ''
-    if genpublic.isgamedir(dirpath):
-        srcdir = genpublic.md5dirs[genpublic.gamemd5dirindex]
-    elif genpublic.iscontrollerdir(dirpath):
-        srcdir = genpublic.md5dirs[genpublic.conrollermd5dirindex]
-    elif genpublic.islobbydir(dirpath):
-        srcdir = genpublic.md5dirs[genpublic.lobbymd5dirindex]
-    return srcdir + protodir
 
 def genheadfile(filename, md5dir):
     newheadfilename = md5dir + os.path.basename(filename).replace('.proto', destexth)

@@ -263,16 +263,16 @@ def md5copy(filename, md5path):
         md5tool.generate_md5_file_for(destfilename, filenamemd5)
 def md5copydir():
     for d in local.md5protodir:
-        for (dirpath, dirnames, filenames) in os.walk(d):
+        for (md5dir, dirnames, filenames) in os.walk(d):
             for filename in filenames:    
                 if filename.find(client_player) >= 0:
-                    md5copy(filename,  dirpath)
-                elif (filename.find(server_player) >= 0 and genpublic.isgamedir(dirpath)) or\
-                    (filename == 'player_service.cpp' and genpublic.isgamedir(dirpath)):    
-                    md5copy(filename, dirpath)
-                elif (filename.find(server_player) >= 0 and genpublic.iscontrollerdir(dirpath)) or\
-                     (filename == 'player_service.cpp' and genpublic.iscontrollerdir(dirpath)):                   
-                    md5copy(filename,  dirpath)
+                    md5copy(filename,  md5dir)
+                elif (filename.find(server_player) >= 0 and genpublic.isgamedir(md5dir)) or\
+                    (filename == 'player_service.cpp' and genpublic.isgamedir(md5dir)):    
+                    md5copy(filename, md5dir)
+                elif (filename.find(server_player) >= 0 and genpublic.iscontrollerdir(md5dir)) or\
+                     (filename == 'player_service.cpp' and genpublic.iscontrollerdir(md5dir)):                   
+                    md5copy(filename,  md5dir)
 
 genfile = []
 
