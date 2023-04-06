@@ -1,5 +1,4 @@
 import os
-from os import system
 import md5tool
 import shutil
 
@@ -12,6 +11,7 @@ pbcserviceinstancedir = '../common/src/pb/pbc/prototypeserviceinstance/'
 pbcserviceinstancemd5dir = md5dir + 'rototypeserviceinstance/'
 logicprotodir = 'logic_proto/'
 commonportodir = 'common_proto/'
+eventprotodir = 'event_proto/'
 
 gslogicervicedir = '../game_server/src/service/logic_proto/'
 gsservicelogicreplieddir = '../game_server/src/service/logic_proto_replied/'
@@ -42,13 +42,41 @@ md5dir + 'lobby_server/',
 md5dir + 'database_server/',
 md5dir + 'deploy_server/']
 
-logicrepliedmd5dirs = [md5dir + 'controller_server/', 
+logicrepliedmd5dirs = \
+[md5dir + 'controller_server/', 
 md5dir + 'game_server/logic_proto_replied/', 
 md5dir + 'gate_server/logic_proto_replied/',
 md5dir + 'login_server/logic_proto_replied/',
 md5dir + 'lobby_server/logic_proto_replied/',
 md5dir + 'database_server/logic_proto_replied/',
 md5dir + 'deploy_server/logic_proto_replied/']
+
+commonprotomd5dirs = \
+[md5dir + 'controller_server/', 
+md5dir + 'game_server/common_proto/', 
+md5dir + 'gate_server/common_proto/',
+md5dir + 'login_server/common_proto/',
+md5dir + 'lobby_server/common_proto/',
+md5dir + 'database_server/common_proto/',
+md5dir + 'deploy_server/common_proto/']
+
+eventprotomd5dirs = \
+[md5dir + 'controller_server/', 
+md5dir + 'game_server/event_proto/', 
+md5dir + 'gate_server/event_proto/',
+md5dir + 'login_server/event_proto/',
+md5dir + 'lobby_server/event_proto/',
+md5dir + 'database_server/event_proto/',
+md5dir + 'deploy_server/event_proto/']
+
+logicprotomd5dirs = \
+[md5dir + 'controller_server/', 
+md5dir + 'game_server/logic_proto/', 
+md5dir + 'gate_server/logic_proto/',
+md5dir + 'login_server/logic_proto/',
+md5dir + 'lobby_server/logic_proto/',
+md5dir + 'database_server/logic_proto/',
+md5dir + 'deploy_server/logic_proto/']
 
 conrollermd5dirindex = 0
 gamemd5dirindex = 1
@@ -96,6 +124,17 @@ def makedirs():
     for d in md5dirs :
         if not os.path.exists(d):
             os.makedirs(d)
+    for d in commonprotomd5dirs :
+        if not os.path.exists(d):
+            os.makedirs(d)
+    for d in eventprotomd5dirs :
+        if not os.path.exists(d):
+            os.makedirs(d)
+    for d in logicprotomd5dirs :
+        if not os.path.exists(d):
+            os.makedirs(d)
+    
+            
     for d in logicrepliedmd5dirs :
         if not os.path.exists(d):
             os.makedirs(d)
@@ -108,7 +147,8 @@ def makedirs():
         common_proto_dir = d + '/common_proto/' 
         if not os.path.exists(common_proto_dir):
             os.makedirs(common_proto_dir)
-
+    
+    
     
 def makedirsbypath(dirname):
     dirlist = []
