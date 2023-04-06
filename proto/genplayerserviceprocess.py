@@ -116,11 +116,11 @@ def classbegin():
 def getsrcpathmd5dir(dirpath):
     srcdir = ''
     if genpublic.isgamedir(dirpath):
-        srcdir = genpublic.servermd5dirs[genpublic.gamemd5dirindex]
+        srcdir = genpublic.md5dirs[genpublic.gamemd5dirindex]
     elif genpublic.iscontrollerdir(dirpath):
-        srcdir = genpublic.servermd5dirs[genpublic.conrollermd5dirindex]
+        srcdir = genpublic.md5dirs[genpublic.conrollermd5dirindex]
     elif genpublic.islobbydir(dirpath):
-        srcdir = genpublic.servermd5dirs[genpublic.lobbymd5dirindex]
+        srcdir = genpublic.md5dirs[genpublic.lobbymd5dirindex]
     return srcdir + protodir
 
 def genheadfile(filename, destdir):
@@ -198,7 +198,7 @@ def parseplayerservcie(filename):
                 local.playerservicearray.append(local.service)
 
 def gengsplayerservcielist(filename):
-    destfilename = genpublic.servermd5dirs[genpublic.gamemd5dirindex] + protodir  + filename
+    destfilename = genpublic.md5dirs[genpublic.gamemd5dirindex] + protodir  + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -218,7 +218,7 @@ def gengsplayerservcielist(filename):
         file.write(newstr)
 
 def gencontrollerplayerservcielist(filename):
-    destfilename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + protodir + filename
+    destfilename = genpublic.md5dirs[genpublic.conrollermd5dirindex] + protodir + filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'

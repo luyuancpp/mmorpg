@@ -111,11 +111,11 @@ def genyourcode():
 def getsrcpathmd5dir(dirpath):
     srcdir = ''
     if genpublic.isgamedir(dirpath):
-        srcdir = genpublic.servermd5dirs[genpublic.gamemd5dirindex]
+        srcdir = genpublic.md5dirs[genpublic.gamemd5dirindex]
     elif genpublic.iscontrollerdir(dirpath):
-        srcdir = genpublic.servermd5dirs[genpublic.conrollermd5dirindex]
+        srcdir = genpublic.md5dirs[genpublic.conrollermd5dirindex]
     elif genpublic.islobbydir(dirpath):
-        srcdir = genpublic.servermd5dirs[genpublic.lobbymd5dirindex]
+        srcdir = genpublic.md5dirs[genpublic.lobbymd5dirindex]
     return srcdir + protodir
 
 def genheadfile(filename, md5dir):
@@ -203,28 +203,28 @@ class myThread (threading.Thread):
         parsefile(self.filename)
         initservicenames()
         
-        genheadfile(self.filename, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-        md5copy(self.filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
+        genheadfile(self.filename, genpublic.md5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+        md5copy(self.filename, genpublic.gslogicrepliedservicedir, genpublic.md5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.h')
         
         destext = '_replied.cpp'
         basefilename = os.path.basename(self.filename).replace('.proto', destext) 
         cppfile = genpublic.cpp()
         cppfile.destfilename = genpublic.gslogicrepliedservicedir + basefilename
-        cppfile.md5filename = genpublic.servermd5dirs[genpublic.gamemd5dirindex] + basefilename
+        cppfile.md5filename = genpublic.md5dirs[genpublic.gamemd5dirindex] + basefilename
         cppfile.includestr =  getincludebyfilename(basefilename)
         cppfile.filemethodarray = local.filemethodarray
         cppfile.begunfun = gencpprpcfunbegin
         cppfile.controller = controller
         genpublic.gencppfile(cppfile)    
-        md5copy(self.filename, genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
+        md5copy(self.filename, genpublic.gslogicrepliedservicedir, genpublic.md5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '_replied.cpp')
         
-        genheadfile(self.filename, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
-        md5copy(self.filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
+        genheadfile(self.filename, genpublic.md5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)
+        md5copy(self.filename, genpublic.controllerlogicrepliedservicedir, genpublic.md5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.h')
         
         cppfile.destfilename = genpublic.controllerlogicrepliedservicedir + basefilename
-        cppfile.md5filename = genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + basefilename
+        cppfile.md5filename = genpublic.md5dirs[genpublic.conrollermd5dirindex] + basefilename
         genpublic.gencppfile(cppfile)
-        md5copy(self.filename, genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
+        md5copy(self.filename, genpublic.controllerlogicrepliedservicedir, genpublic.md5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '_replied.cpp')
 
 def main():
     global threads
@@ -236,10 +236,10 @@ def main():
         t.join()
     for file in genfile:
         parseplayerservcie(file)
-    genplayerservcierepliedlist('player_service_replied.cpp', genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
-    md5copy('player_service_replied.cpp', genpublic.gslogicrepliedservicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '')
-    genplayerservcierepliedlist('player_service_replied.cpp', genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)    
-    md5copy('player_service_replied.cpp', genpublic.controllerlogicrepliedservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '')
+    genplayerservcierepliedlist('player_service_replied.cpp', genpublic.md5dirs[genpublic.gamemd5dirindex] + repliedmd5dir)
+    md5copy('player_service_replied.cpp', genpublic.gslogicrepliedservicedir, genpublic.md5dirs[genpublic.gamemd5dirindex] + repliedmd5dir, '')
+    genplayerservcierepliedlist('player_service_replied.cpp', genpublic.md5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir)    
+    md5copy('player_service_replied.cpp', genpublic.controllerlogicrepliedservicedir, genpublic.md5dirs[genpublic.conrollermd5dirindex] + repliedmd5dir, '')
 
 genpublic.makedirs()
 genpublic.makedirsbypath(protodir)

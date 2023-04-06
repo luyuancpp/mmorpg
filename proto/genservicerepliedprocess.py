@@ -181,10 +181,10 @@ def scanprotofile():
         if not (filename[-6:].lower() == '.proto'):
             continue
         if genpublic.is_gs_and_controller_server_proto(filename) == True :
-            genfile.append([logicprotodir + filename, genpublic.controllerlogicservicedir, genpublic.servermd5dirs[genpublic.conrollermd5dirindex] + logicprotodir ])
-            genfile.append([logicprotodir + filename, genpublic.gslogicervicedir, genpublic.servermd5dirs[genpublic.gamemd5dirindex] + logicprotodir])
+            genfile.append([logicprotodir + filename, genpublic.controllerlogicservicedir, genpublic.md5dirs[genpublic.conrollermd5dirindex] + logicprotodir ])
+            genfile.append([logicprotodir + filename, genpublic.gslogicervicedir, genpublic.md5dirs[genpublic.gamemd5dirindex] + logicprotodir])
         elif filename.find(genpublic.lobby_file_prefix) >= 0:
-            genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir, genpublic.servermd5dirs[genpublic.lobbymd5dirindex] + logicprotodir])
+            genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir, genpublic.md5dirs[genpublic.lobbymd5dirindex] + logicprotodir])
             
 genpublic.makedirs()
 scanprotofile()
