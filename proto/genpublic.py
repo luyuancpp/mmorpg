@@ -223,8 +223,8 @@ def is_service_fileline(fileline):
     return fileline.find('service ') >= 0 and (fileline.find('{') >= 0 or fileline.find('Service') >= 0)
 
 
-def md5check(filename, destdir, md5dir, extreplacesrc, extreplacedest):
-    filebasename = os.path.basename(filename).replace(extreplacesrc, extreplacedest)
+def md5check(filename, destdir, md5dir, originalextension, targetextension):
+    filebasename = os.path.basename(filename).replace(originalextension, targetextension)
     genfilename = md5dir + filebasename
     filenamemd5 = genfilename + '.md5'
     destfilename = destdir + filebasename
@@ -243,8 +243,8 @@ def md5check(filename, destdir, md5dir, extreplacesrc, extreplacedest):
         return True, destfilename,  genfilename,  filenamemd5
     return False, destfilename,  genfilename,  filenamemd5
 
-def md5copy(filename, destdir, md5dir, extreplacesrc, extreplacedest):
-    checkmd5, destfilename, genfilename , genfilenamemd5 = md5check(filename, destdir, md5dir, extreplacesrc, extreplacedest )    
+def md5copy(filename, destdir, md5dir, originalextension, targetextension):
+    checkmd5, destfilename, genfilename , genfilenamemd5 = md5check(filename, destdir, md5dir, originalextension, targetextension )    
     if checkmd5 == True:
         return
     print("copy %s ---> %s" % (genfilename, destfilename))
