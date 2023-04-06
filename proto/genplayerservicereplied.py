@@ -190,8 +190,7 @@ class myThread (threading.Thread):
         parsefile(self.filename)
 
         genheadfile(self.filename, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex])
-        md5copy(self.filename, genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex], '_replied.h')
-        
+        genpublic.md5copy(self.filename, genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex], '.proto', '_replied.h')
         
         basefilename = os.path.basename(self.filename)
         cppfilename = os.path.basename(self.filename).replace('.proto', destextcpp) 
@@ -203,15 +202,15 @@ class myThread (threading.Thread):
         cppfile.begunfun = gencpprpcfunbegin
         cppfile.controller = controller
         genpublic.gencppfile(cppfile)    
-        md5copy(self.filename, genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex] , '_replied.cpp')
+        genpublic.md5copy(self.filename, genpublic.gsservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex] , '.proto', '_replied.cpp')
         
         genheadfile(self.filename, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex])
-        md5copy(self.filename, genpublic.controllerservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex] , '_replied.h')
+        genpublic.md5copy(self.filename, genpublic.controllerservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex] ,  '.proto',  '_replied.h')
         
         cppfile.destfilename = genpublic.controllerservicelogicreplieddir + cppfilename
         cppfile.md5filename = genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex] + cppfilename
         genpublic.gencppfile(cppfile)
-        md5copy(self.filename, genpublic.controllerservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex] , '_replied.cpp')
+        genpublic.md5copy(self.filename, genpublic.controllerservicelogicreplieddir, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex] ,  '.proto',  '_replied.cpp')
 
 def main():
     global threads
