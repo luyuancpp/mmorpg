@@ -280,7 +280,7 @@ def scanprotofile():
     global filedirdestpath
     filedirdestpath['player_service.cpp'] = gslogicervicedir
     filedirdestpath['player_service.h'] = gslogicervicedir
-    dir_list  = dir_list = os.listdir(protodir)
+    dir_list = os.listdir(protodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
