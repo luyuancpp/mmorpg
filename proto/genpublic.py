@@ -282,13 +282,16 @@ class md5fileinfo():
         self.md5dir = ''
         self.originalextension = ''
         self.targetextension = ''
-        self.fitler = []
+        self.extensionfitler = []
+        self.destfilename = ''
+        self.genfilename = ''
+        self.filenamemd5= ''
 
-def md5check(filename, destdir, md5dir, originalextension, targetextension):
-    filebasename = os.path.basename(filename).replace(originalextension, targetextension)
-    genfilename = md5dir + filebasename
+def md5check(md5info):
+    filebasename = os.path.basename(md5info.filename).replace(md5info.originalextension, md5info.targetextension)
+    genfilename = md5info.md5dir + filebasename
     filenamemd5 = genfilename + '.md5'
-    destfilename = destdir + filebasename
+    destfilename = md5info.destdir + filebasename
     genfilemd5error = None
     destfilemd5error = None
     fileempty = False
@@ -304,8 +307,8 @@ def md5check(filename, destdir, md5dir, originalextension, targetextension):
         return True, destfilename,  genfilename,  filenamemd5
     return False, destfilename,  genfilename,  filenamemd5
 
-def md5copy(filename, destdir, md5dir, originalextension, targetextension):
-    checkmd5, destfilename, genfilename , genfilenamemd5 = md5check(filename, destdir, md5dir, originalextension, targetextension )    
+def md5copy(md5info):
+    checkmd5, destfilename, genfilename , genfilenamemd5 = md5check(md5info)    
     if checkmd5 == True:
         return
     print("copy %s ---> %s" % (genfilename, destfilename))
