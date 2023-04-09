@@ -3,10 +3,7 @@ from os import system
 import md5tool
 import shutil
 import threading
-import _thread
-import protofilearray
 import genpublic
-from multiprocessing import cpu_count
 
 local = threading.local()
 
@@ -77,7 +74,6 @@ def genheadrpcfun():
     return servicestr
 
 def genheadfile(filename):
-    headfun = [classbegin, genheadrpcfun]
     destfilename = fileprev + os.path.basename(filename).replace('.proto', '.h')
     newheadfilename = servicedir + fileprev + os.path.basename(filename).replace('.proto', '.h')
     if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
@@ -88,8 +84,8 @@ def genheadfile(filename):
     newstr += '#include "player_service.h"\n'  
     newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'  
     newstr += '#include "' + protodir  + os.path.basename(filename).replace('.proto', '.pb.h') + '"\n'
-    for i in range(0, len(headfun)) :             
-        newstr += headfun[i]()
+    newstr += classbegin()
+    newstr += genheadrpcfun()          
     newstr += '};\n'
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
@@ -113,11 +109,6 @@ def genplayerservcielist(filename):
     newstr += '}\n'
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
-
-def generate(filename):
-    if filename.find(client_player) >= 0:
-        parsefile(filename)
-        genheadfile(filename)
 
 def parseplayerservcie(filename):
     if genpublic.is_not_client_proto(filename) == True :
@@ -168,7 +159,10 @@ class myThread (threading.Thread):
         threading.Thread.__init__(self)
         self.filename = str(filename)
     def run(self):
-        generate(self.filename)
+        if self.filename.find(client_player) >= 0:
+            parsefile(self.filename)
+            genheadfile(self.filename)
+
 
 def main():
     global threads
