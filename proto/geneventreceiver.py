@@ -225,7 +225,7 @@ class myThread (threading.Thread):
         cppmd5info.md5dir =  md5dir 
         cppmd5info.filename = basefilename.replace('event', currentfilename) + '.h'
         genpublic.md5copy(cppmd5info)
-        cppmd5info.filename = basefilename.replace('event', currentfilename) + '.h'
+        cppmd5info.filename = basefilename.replace('event', currentfilename) + '.cpp'
         genpublic.md5copy(cppmd5info)
 
 def main():
