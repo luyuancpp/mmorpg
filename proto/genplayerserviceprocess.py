@@ -297,21 +297,27 @@ class myThread (threading.Thread):
         newstr = '#include "'  + self.basefilename.replace('.proto', '.h') + '"\n'
         newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
         newstr += '#include "src/network/message_system.h"\n'
+        cppext = '.cpp'
+        
+        cppfile = genpublic.cpp()
+        cppfile.includestr = newstr
+        cppfile.filemethodarray = local.filemethodarray
+        cppfile.begunfun = gencpprpcfunbegin
+        cppfile.controller = controller
+        
         if self.filename.find(client_player) >= 0:
-            cppext = '.cpp'
-            genheadfile(self.filename, genpublic.gamemd5dir())
-            cppfile = genpublic.cpp()
             cppfile.destfilename = genpublic.getdestdir(genpublic.gamemd5dir())  + self.basefilename.replace('.proto', cppext) 
             cppfile.md5filename = getsrcpathmd5dir(genpublic.gamemd5dir()) + self.basefilename.replace('.proto', cppext) 
-            cppfile.includestr = newstr
-            cppfile.filemethodarray = local.filemethodarray
-            cppfile.begunfun = gencpprpcfunbegin
-            cppfile.controller = controller
+            genheadfile(self.filename, genpublic.gamemd5dir())
             genpublic.gencppfile(cppfile)
         elif self.filename.find(server_player) >= 0:
             genheadfile(self.filename, genpublic.gamemd5dir())
+            cppfile.destfilename = genpublic.getdestdir(genpublic.gamemd5dir())  + self.basefilename.replace('.proto', cppext) 
+            cppfile.md5filename = getsrcpathmd5dir(genpublic.gamemd5dir()) + self.basefilename.replace('.proto', cppext) 
             gencppfile(self.filename, genpublic.gamemd5dir())
             genheadfile(self.filename, genpublic.controllermd5dir())
+            cppfile.destfilename = genpublic.getdestdir(genpublic.controllermd5dir())  + self.basefilename.replace('.proto', cppext) 
+            cppfile.md5filename = getsrcpathmd5dir(genpublic.controllermd5dir()) + self.basefilename.replace('.proto', cppext) 
             gencppfile(self.filename, genpublic.controllermd5dir())
 
 def main():
