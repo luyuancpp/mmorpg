@@ -16,15 +16,15 @@ local.fileservice = []
 genfile = []
 threads = []
 tabstr = '    '
-servicedir = './md5/'
+clienservciemd5dir = genpublic.md5dirs[genpublic.clientmd5dirindex]
 protodir = 'logic_proto/'
 includedir = 'src/service/logic_proto/'
 clientservicedir = '../client/src/service/logic_proto/'
 fileprev = 'c_'
 client_player = 'client_player'
 
-if not os.path.exists(servicedir):
-    os.makedirs(servicedir)
+if not os.path.exists(clienservciemd5dir):
+    os.makedirs(clienservciemd5dir)
 
 def parsefile(filename):
     local.filemethodarray = []
@@ -74,8 +74,8 @@ def genheadrpcfun():
     return servicestr
 
 def genheadfile(filename):
-    destfilename = fileprev + os.path.basename(filename).replace('.proto', '.h')
-    newheadfilename = servicedir + fileprev + os.path.basename(filename).replace('.proto', '.h')
+    destfilename =  os.path.basename(filename).replace('.proto', '.h')
+    newheadfilename = clienservciemd5dir  + os.path.basename(filename).replace('.proto', '.h')
     if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
         shutil.copy(destfilename, newheadfilename)
         return
@@ -91,13 +91,13 @@ def genheadfile(filename):
         file.write(newstr)
 
 def genplayerservcielist(filename):
-    destfilename = servicedir + fileprev + filename
+    destfilename = clienservciemd5dir +  filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
     for f in local.fileservice:
         newstr += '#include "' + f + '.pb.h"\n'
-        newstr += '#include "' + includedir + fileprev + os.path.basename(f) + '.h"\n'
+        newstr += '#include "' + includedir +  os.path.basename(f) + '.h"\n'
     newstr += 'std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n'
     for service in local.playerservicearray:
         newstr += 'class ' + service + 'Impl : public '  + service + '{};\n'
@@ -124,7 +124,7 @@ def parseplayerservcie(filename):
 def md5copy(filename):
         if filename.find('md5') >= 0 or filename.find('.lua') >= 0:
             return
-        gennewfilename = servicedir  + filename
+        gennewfilename = clienservciemd5dir  + filename
         filenamemd5 = gennewfilename + '.md5'
         error = None
         emptymd5 = False
@@ -139,7 +139,7 @@ def md5copy(filename):
         shutil.copy(gennewfilename, destfilename)
         md5tool.generate_md5_file_for(destfilename, filenamemd5)
 def md5copydir():
-    for (dirpath, dirnames, filenames) in os.walk(servicedir):
+    for (dirpath, dirnames, filenames) in os.walk(clienservciemd5dir):
         for filename in filenames:    
             if filename.find(client_player) >= 0 and filename.find(fileprev) >= 0:
                 md5copy(filename)
