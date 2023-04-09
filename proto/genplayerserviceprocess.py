@@ -290,12 +290,24 @@ class myThread (threading.Thread):
     def __init__(self, filename):
         threading.Thread.__init__(self)
         self.filename = str(filename)
+        self.basefilename = os.path.basename(filename)
     def run(self):
         parsefile(self.filename)
         initservicenames()
+        newstr = '#include "'  + self.basefilename.replace('.proto', '.h') + '"\n'
+        newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
+        newstr += '#include "src/network/message_system.h"\n'
         if self.filename.find(client_player) >= 0:
+            cppext = '.cpp'
             genheadfile(self.filename, genpublic.gamemd5dir())
-            gencppfile(self.filename, genpublic.gamemd5dir())
+            cppfile = genpublic.cpp()
+            cppfile.destfilename = genpublic.getdestdir(genpublic.gamemd5dir())  + self.basefilename.replace('.proto', cppext) 
+            cppfile.md5filename = getsrcpathmd5dir(genpublic.gamemd5dir()) + self.basefilename.replace('.proto', cppext) 
+            cppfile.includestr = newstr
+            cppfile.filemethodarray = local.filemethodarray
+            cppfile.begunfun = gencpprpcfunbegin
+            cppfile.controller = controller
+            genpublic.gencppfile(cppfile)
         elif self.filename.find(server_player) >= 0:
             genheadfile(self.filename, genpublic.gamemd5dir())
             gencppfile(self.filename, genpublic.gamemd5dir())
