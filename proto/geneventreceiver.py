@@ -219,12 +219,13 @@ class myThread (threading.Thread):
     def run(self):
         parsefile(self.filename)
         generate(self.filename)
+        basefilename =  os.path.basename(self.filename).replace('.proto', '')
         cppmd5info = genpublic.md5fileinfo()
-        cppmd5info.destdir = md5dir + getfilenamenoprefixsuffix(self.filename)
-        cppmd5info.md5dir = destdirpath + getfilenamenoprefixsuffix(self.filename)
-        cppmd5info.filename = getfilenamenoprefixsuffix(self.filename) + '.h'
+        cppmd5info.destdir = destdirpath
+        cppmd5info.md5dir =  md5dir 
+        cppmd5info.filename = basefilename.replace('event', currentfilename) + '.h'
         genpublic.md5copy(cppmd5info)
-        cppmd5info.filename = getfilenamenoprefixsuffix(self.filename) + '.cpp'
+        cppmd5info.filename = basefilename.replace('event', currentfilename) + '.h'
         genpublic.md5copy(cppmd5info)
 
 def main():
@@ -245,11 +246,13 @@ main()
 geneventreceiverhead()
 
 cppmd5info = genpublic.md5fileinfo()
-cppmd5info.destdir = destdirpath
-cppmd5info.md5dir = md5dir 
 cppmd5info.filename = 'event_receiver.h'
+cppmd5info.destdir = destdirpath 
+cppmd5info.md5dir = md5dir
 genpublic.md5copy(cppmd5info)
 geneventreceivercpp()
+cppmd5info.destdir = destdirpath 
+cppmd5info.md5dir =   md5dir 
 cppmd5info.filename = 'event_receiver.cpp'
 genpublic.md5copy(cppmd5info)
 

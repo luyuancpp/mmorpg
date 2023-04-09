@@ -292,6 +292,7 @@ class md5fileinfo():
         self.destfilename = ''
         self.genfilename = ''
         self.filenamemd5= ''
+        self.basefilename = ''
 
 def md5check(md5info):
     filebasename = os.path.basename(md5info.filename).replace(md5info.originalextension, md5info.targetextension)
@@ -317,9 +318,8 @@ def md5copy(md5info):
     for filterext in md5info.extensionfitler:
         if md5info.filename.find(filterext) >= 0:
             return 
-    if md5info.filename.find('md5'):
-        return
     checkmd5, destfilename, genfilename , genfilenamemd5 = md5check(md5info)    
+    
     if checkmd5 == True:
         return
     print("copy %s ---> %s" % (genfilename, destfilename))
