@@ -4,8 +4,6 @@ import md5tool
 import shutil
 import threading
 import genpublic
-from multiprocessing import cpu_count
-
 local = threading.local()
 
 local.filemethodarray = []
@@ -109,10 +107,7 @@ def gencpprpcfunbegin(rpcindex):
 
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
-def classbegin():
-    return 
 
- 
 def getsrcpathmd5dir(dirpath):
     srcdir = ''
     if genpublic.isgamedir(dirpath):
@@ -133,60 +128,6 @@ def genheadfile(filename, destdir):
     with open(newheadfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
         
-def gencppfile(filename, dirpath):
-    destdir = genpublic.getdestdir(dirpath)
-    cppfilename = destdir  + os.path.basename(filename).replace('.proto', '.cpp')
-    newcppfilename = getsrcpathmd5dir(dirpath) + os.path.basename(filename).replace('.proto', '.cpp')
-    newstr = '#include "'  + os.path.basename(filename).replace('.proto', '.h') + '"\n'
-    newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'
-    newstr += '#include "src/network/message_system.h"\n'
-    serviceidx = 0
-    try:
-        with open(cppfilename,'r+', encoding='utf-8') as file:
-            service_begined = 0
-            isyourcode = 1 
-            skipheadline = 0 
-            for fileline in file:
-                if skipheadline < 3 :
-                    skipheadline += 1
-                    continue
-                  #处理开始自定义文件
-                if service_begined == 0 and fileline.find(genpublic.rpcbegin) >= 0:
-                    newstr += fileline
-                    service_begined = 1
-                    continue 
-                #开始处理RPC 
-                if service_begined == 1:
-                    if serviceidx < len(local.filemethodarray) and fileline.find(controller) >= 0 :
-                        isyourcode = 0
-                        newstr += gencpprpcfunbegin(serviceidx)
-                        continue
-                    elif fileline.find(genpublic.yourcodebegin) >= 0 :
-                        newstr += fileline
-                        isyourcode = 1
-                        continue
-                    elif fileline.find(genpublic.yourcodeend) >= 0 :
-                        newstr += genpublic.yourcodeend + '\n}\n\n'
-                        isyourcode = 0
-                        serviceidx += 1  
-                        continue
-                    elif fileline.find(genpublic.rpcend) >= 0:
-                        break
-                if isyourcode == 1 or service_begined == 0:
-                    newstr += fileline
-                    continue                
-    except FileNotFoundError:
-        newstr += genyourcode() + '\n'
-        newstr += genpublic.rpcbegin + '\n'
-    while serviceidx < len(local.filemethodarray) :
-            newstr += gencpprpcfunbegin(serviceidx)
-            newstr += genpublic.yourcodebegin +  '\n'
-            newstr += genpublic.yourcodeend + '\n}\n\n'
-            serviceidx += 1 
-    newstr += genpublic.rpcend + '\n'
-    with open(newcppfilename, 'w', encoding='utf-8')as file:
-        file.write(newstr)
-
 def parseplayerservcie(filename):
     if genpublic.is_server_proto(filename) == True :
         return
@@ -314,11 +255,11 @@ class myThread (threading.Thread):
             genheadfile(self.filename, genpublic.gamemd5dir())
             cppfile.destfilename = genpublic.getdestdir(genpublic.gamemd5dir())  + self.basefilename.replace('.proto', cppext) 
             cppfile.md5filename = getsrcpathmd5dir(genpublic.gamemd5dir()) + self.basefilename.replace('.proto', cppext) 
-            gencppfile(self.filename, genpublic.gamemd5dir())
+            genpublic.gencppfile(cppfile)
             genheadfile(self.filename, genpublic.controllermd5dir())
             cppfile.destfilename = genpublic.getdestdir(genpublic.controllermd5dir())  + self.basefilename.replace('.proto', cppext) 
             cppfile.md5filename = getsrcpathmd5dir(genpublic.controllermd5dir()) + self.basefilename.replace('.proto', cppext) 
-            gencppfile(self.filename, genpublic.controllermd5dir())
+            genpublic.gencppfile(cppfile)
 
 def main():
     global threads
