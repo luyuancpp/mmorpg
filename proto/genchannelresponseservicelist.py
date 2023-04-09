@@ -49,28 +49,15 @@ def scanprotofile():
         if not (filename[-6:].lower() == '.proto'):
             continue
         parsefile(genpublic.commonportodir + filename, 'src/pb/pbc/common_proto/')
-        
-
-def md5copy(filename, destdir, md5dir):
-    gennewfilename = md5dir + os.path.basename(filename)
-    filenamemd5 = gennewfilename + '.md5'
-    error = None
-    emptymd5 = False
-    if  not os.path.exists(filenamemd5):
-        emptymd5 = True
-    else:
-        error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)           
-    destfilename =  destdir + filename
-    if error == None and os.path.exists(destfilename) and emptymd5 == False:
-        return
-    
-    print("copy %s ---> %s" % (gennewfilename, destfilename))
-    md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-    shutil.copy(gennewfilename, destfilename)
-    
+            
 genpublic.makedirs()
 
 scanprotofile()
 
 gen('rpc_prototype_service.cpp', genpublic.pbcserviceinstancemd5dir)
-md5copy('rpc_prototype_service.cpp', genpublic.pbcserviceinstancedir, genpublic.pbcserviceinstancemd5dir)
+
+cppmd5info = genpublic.md5fileinfo()
+cppmd5info.filename = 'rpc_prototype_service.cpp'
+cppmd5info.destdir = genpublic.pbcserviceinstancedir
+cppmd5info.md5dir = genpublic.pbcserviceinstancemd5dir
+genpublic.md5copy(cppmd5info)
