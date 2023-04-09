@@ -127,9 +127,10 @@ cppmd5info.md5dir = clienservciemd5dir
 def md5copydir():
     for (dirpath, dirnames, filenames) in os.walk(clienservciemd5dir):
         for filename in filenames:    
-            if filename.find(client_player) >= 0 or filename.find('player_service') >= 0:
+            if  filename.find('player_service') >= 0:
                 cppmd5info.filename = filename
                 genpublic.md5copy(cppmd5info)
+                break
 
 
 def scanprotofile():
