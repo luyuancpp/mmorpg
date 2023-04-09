@@ -219,8 +219,13 @@ class myThread (threading.Thread):
     def run(self):
         parsefile(self.filename)
         generate(self.filename)
-        md5copy(self.filename, '.h')
-        md5copy(self.filename, '.cpp')
+        cppmd5info = genpublic.md5fileinfo()
+        cppmd5info.destdir = md5dir + getfilenamenoprefixsuffix(self.filename)
+        cppmd5info.md5dir = destdirpath + getfilenamenoprefixsuffix(self.filename)
+        cppmd5info.filename = getfilenamenoprefixsuffix(self.filename) + '.h'
+        genpublic.md5copy(cppmd5info)
+        cppmd5info.filename = getfilenamenoprefixsuffix(self.filename) + '.cpp'
+        genpublic.md5copy(cppmd5info)
 
 def main():
     global threads
@@ -238,9 +243,15 @@ def main():
 scanprotofile()
 main()
 geneventreceiverhead()
-md5copy('event', '.h')
+
+cppmd5info = genpublic.md5fileinfo()
+cppmd5info.destdir = destdirpath
+cppmd5info.md5dir = md5dir 
+cppmd5info.filename = 'event_receiver.h'
+genpublic.md5copy(cppmd5info)
 geneventreceivercpp()
-md5copy('event', '.cpp')
+cppmd5info.filename = 'event_receiver.cpp'
+genpublic.md5copy(cppmd5info)
 
 #currentfilename = asyncfilename
 #currentclassname = asyncclassfilename

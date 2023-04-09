@@ -84,7 +84,6 @@ def genluafile(filename):
               
 def md5copydir():
     cppmd5info = genpublic.md5fileinfo()
-    cppmd5info.extensionfitler = ['md5', '.lua']
     cppmd5info.destdir = destdir
     cppmd5info.md5dir = serviceluamd5dir 
     for (dirpath, dirnames, filenames) in os.walk(serviceluamd5dir):
