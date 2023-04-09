@@ -1,4 +1,3 @@
-import os
 
 genfile = [['common_proto/login_service.proto', '../login_server/src/service/common_proto/', 'md5/login_server/common_proto/'],
 ['common_proto/database_service.proto', '../database_server/src/service/common_proto/', 'md5/database_server/common_proto/'],
