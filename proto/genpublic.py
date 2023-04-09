@@ -11,7 +11,6 @@ pbcserviceinstancedir = '../common/src/pb/pbc/prototypeserviceinstance/'
 pbcserviceinstancemd5dir = md5dir + 'rototypeserviceinstance/'
 logicprotodir = 'logic_proto/'
 commonportodir = 'common_proto/'
-eventprotodir = 'event_proto/'
 
 gslogicervicedir = '../game_server/src/service/logic_proto/'
 gsservicelogicreplieddir = '../game_server/src/service/logic_proto_replied/'
@@ -40,7 +39,8 @@ md5dir + 'gate_server/',
 md5dir + 'login_server/',
 md5dir + 'lobby_server/',
 md5dir + 'database_server/',
-md5dir + 'deploy_server/']
+md5dir + 'deploy_server/',
+md5dir + 'client/']
 
 logicrepliedmd5dirs = \
 [md5dir + 'controller_server/', 
@@ -49,7 +49,8 @@ md5dir + 'gate_server/logic_proto_replied/',
 md5dir + 'login_server/logic_proto_replied/',
 md5dir + 'lobby_server/logic_proto_replied/',
 md5dir + 'database_server/logic_proto_replied/',
-md5dir + 'deploy_server/logic_proto_replied/']
+md5dir + 'deploy_server/logic_proto_replied/',
+md5dir + 'client/deploy_server/']
 
 commonprotomd5dirs = \
 [md5dir + 'controller_server/', 
@@ -58,7 +59,8 @@ md5dir + 'gate_server/common_proto/',
 md5dir + 'login_server/common_proto/',
 md5dir + 'lobby_server/common_proto/',
 md5dir + 'database_server/common_proto/',
-md5dir + 'deploy_server/common_proto/']
+md5dir + 'deploy_server/common_proto/',
+md5dir + 'client/common_proto/']
 
 eventprotomd5dirs = \
 [md5dir + 'controller_server/', 
@@ -67,7 +69,9 @@ md5dir + 'gate_server/event_proto/',
 md5dir + 'login_server/event_proto/',
 md5dir + 'lobby_server/event_proto/',
 md5dir + 'database_server/event_proto/',
-md5dir + 'deploy_server/event_proto/']
+md5dir + 'deploy_server/event_proto/',
+md5dir + 'client/event_proto/'
+]
 
 logicprotomd5dirs = \
 [md5dir + 'controller_server/', 
@@ -76,7 +80,8 @@ md5dir + 'gate_server/logic_proto/',
 md5dir + 'login_server/logic_proto/',
 md5dir + 'lobby_server/logic_proto/',
 md5dir + 'database_server/logic_proto/',
-md5dir + 'deploy_server/logic_proto/']
+md5dir + 'deploy_server/logic_proto/',
+md5dir + 'client/logic_proto/']
 
 conrollermd5dirindex = 0
 gamemd5dirindex = 1
@@ -85,6 +90,7 @@ loginmd5dirindex = 3
 lobbymd5dirindex = 4
 databasemd5dirindex = 5
 deploymd5dirindex = 6 
+clientmd5dirindex = 7
 
 tabstr = '    '
 
