@@ -1,6 +1,5 @@
 import os
 from os import system
-import md5tool
 import shutil
 import threading
 import genpublic
@@ -120,12 +119,12 @@ def parseplayerservcie(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.service)
 
+cppmd5info = genpublic.md5fileinfo()
+cppmd5info.extensionfitler = ['md5', '.lua']
+cppmd5info.destdir = clientservicedir
+cppmd5info.md5dir = clienservciemd5dir 
 
 def md5copydir():
-    cppmd5info = genpublic.md5fileinfo()
-    cppmd5info.extensionfitler = ['md5', '.lua']
-    cppmd5info.destdir = clientservicedir
-    cppmd5info.md5dir = clienservciemd5dir 
     for (dirpath, dirnames, filenames) in os.walk(clienservciemd5dir):
         for filename in filenames:    
             if filename.find(client_player) >= 0 or filename.find('player_service') >= 0:
@@ -147,7 +146,9 @@ class myThread (threading.Thread):
     def run(self):
         if self.filename.find(client_player) >= 0:
             parsefile(self.filename)
-            genheadfile(self.filename)
+            cppmd5info.filename = self.filename
+            if genpublic.md5check(cppmd5info) == False:
+                genheadfile(self.filename)
 
 
 def main():
