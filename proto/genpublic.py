@@ -317,6 +317,8 @@ def md5copy(md5info):
     for filterext in md5info.extensionfitler:
         if md5info.filename.find(filterext) >= 0:
             return 
+    if md5info.filename.find('md5'):
+        return
     checkmd5, destfilename, genfilename , genfilenamemd5 = md5check(md5info)    
     if checkmd5 == True:
         return
