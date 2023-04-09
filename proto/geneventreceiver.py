@@ -1,15 +1,10 @@
 import os
-
-import md5tool
-import shutil
 import threading
-import _thread
 import genpublic
-from multiprocessing import cpu_count
 
 local = threading.local()
 
-md5dir = './md5/event_proto/'
+eventricevermd5dir = './md5/event_proto/'
 destdirpath = '../game_server/src/event_receiver/'
 eventprotodir = './event_proto/'
 tabstr = '    '
@@ -26,13 +21,12 @@ normalcclassfilename = 'EventReceiver'
 currentfilename = normalcfilename
 currentclassname = normalcclassfilename
 
-if not os.path.exists(md5dir):
-    os.makedirs(md5dir)
+if not os.path.exists(eventricevermd5dir):
+    os.makedirs(eventricevermd5dir)
 
 def beginendstring():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
 
-##输入pb事件
 def parsefile(filename):
 	local.eventprotoarray = []
 	with open(filename,'r', encoding='utf-8') as file:
@@ -44,9 +38,10 @@ def parsefile(filename):
 def getfilenamenoprefixsuffix(filename):
 	return os.path.basename(filename).replace('.proto', '').replace('event', currentfilename)
 def getmd5destfilename(filename):
-	return md5dir + getfilenamenoprefixsuffix(filename)
+	return eventricevermd5dir + getfilenamenoprefixsuffix(filename)
 def getdestdestfilename(filename):
 	return destdirpath + getfilenamenoprefixsuffix(filename)
+
 def getfileclassname(filename):
 	letterarray = getfilenamenoprefixsuffix(filename).split('_')
 	classname = ''
@@ -155,7 +150,7 @@ def generatecpp(filename):
 		file.write(newstr)  
 
 def geneventreceiverhead():
-	md5headfilename = md5dir + currentfilename + '.h'
+	md5headfilename = eventricevermd5dir + currentfilename + '.h'
 	newstr = '#pragma once\n'
 	newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'	
 	newstr += '\nclass ' + currentclassname + '\n{\npublic:\n'
@@ -166,7 +161,7 @@ def geneventreceiverhead():
 		file.write(newstr)
 
 def geneventreceivercpp():
-	md5headfilename = md5dir + currentfilename + '.cpp'
+	md5headfilename = eventricevermd5dir + currentfilename + '.cpp'
 	newstr = '#pragma once\n'
 	newstr += '#include "' + currentfilename + '.h"\n'
 	for i in range(0, len(filelist)): 
@@ -185,26 +180,6 @@ def geneventreceivercpp():
 	with open(md5headfilename, 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
-def md5copy(filename, destfilesuffix):
-    gennewfilename = getmd5destfilename(filename) + destfilesuffix
-    filenamemd5 = gennewfilename + '.md5'
-    error = None
-    need_copy = False
-    destfilename = getdestdestfilename(filename) + destfilesuffix
-    if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
-        need_copy = True
-    else:
-        error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-    if error == None and os.path.exists(destfilename) and need_copy == False:
-        return
-    print("copy %s ---> %s" % (gennewfilename, destfilename))
-    shutil.copy(gennewfilename, destfilename)
-    md5tool.generate_md5_file_for(destfilename, filenamemd5)
-
-def generate(filename):
-	generatehead(filename)
-	generatecpp(filename)
-
 def scanprotofile():
     dir_list = os.listdir(eventprotodir)
     for filename in dir_list:
@@ -218,14 +193,14 @@ class myThread (threading.Thread):
         self.filename = str(filename)
     def run(self):
         parsefile(self.filename)
-        generate(self.filename)
-        basefilename =  os.path.basename(self.filename).replace('.proto', '')
+        generatehead(self.filename)
+        generatecpp(self.filename)
         cppmd5info = genpublic.md5fileinfo()
         cppmd5info.destdir = destdirpath
-        cppmd5info.md5dir =  md5dir 
-        cppmd5info.filename = basefilename.replace('event', currentfilename) + '.h'
+        cppmd5info.md5dir =  eventricevermd5dir 
+        cppmd5info.filename = getfilenamenoprefixsuffix(self.filename) + '.h'
         genpublic.md5copy(cppmd5info)
-        cppmd5info.filename = basefilename.replace('event', currentfilename) + '.cpp'
+        cppmd5info.filename = getfilenamenoprefixsuffix(self.filename) + '.cpp'
         genpublic.md5copy(cppmd5info)
 
 def main():
@@ -239,6 +214,7 @@ def main():
     
 
 
+genpublic.makedirs()
 
 #sync
 scanprotofile()
@@ -248,11 +224,11 @@ geneventreceiverhead()
 cppmd5info = genpublic.md5fileinfo()
 cppmd5info.filename = 'event_receiver.h'
 cppmd5info.destdir = destdirpath 
-cppmd5info.md5dir = md5dir
+cppmd5info.md5dir = eventricevermd5dir
 genpublic.md5copy(cppmd5info)
 geneventreceivercpp()
 cppmd5info.destdir = destdirpath 
-cppmd5info.md5dir =   md5dir 
+cppmd5info.md5dir =   eventricevermd5dir 
 cppmd5info.filename = 'event_receiver.cpp'
 genpublic.md5copy(cppmd5info)
 
