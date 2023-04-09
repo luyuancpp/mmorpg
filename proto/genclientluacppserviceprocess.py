@@ -1,7 +1,5 @@
 import os
 from os import system
-import md5tool
-import shutil
 import genpublic
 
 luadir = '../bin/script/lua/service/'
