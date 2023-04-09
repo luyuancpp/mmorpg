@@ -27,10 +27,10 @@
     <ClCompile Include="src\client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\c_player_service.cpp">
+    <ClCompile Include="src\service\logic_proto\service_lua.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\service_lua.cpp">
+    <ClCompile Include="src\service\logic_proto\player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,16 +44,16 @@
     <ClInclude Include="src\luacpp\lua_module.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\c_scene_client_player.h">
+    <ClInclude Include="src\service\logic_proto\scene_client_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\c_team_client_player.h">
+    <ClInclude Include="src\service\logic_proto\team_client_player.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\logic_proto\common_client_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\logic_proto\player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\service\logic_proto\c_common_client_player.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
