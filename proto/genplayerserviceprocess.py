@@ -203,17 +203,24 @@ def md5copy(filename, md5path):
         shutil.copy(gennewfilename, destfilename)
         md5tool.generate_md5_file_for(destfilename, filenamemd5)
 def md5copydir():
+    cppmd5info = genpublic.md5fileinfo()
+    cppmd5info.extensionfitler = ['md5', 'c_', 'sol2']
     for d in local.md5protodir:
         for (md5dir, dirnames, filenames) in os.walk(d):
+            cppmd5info.destdir = genpublic.getdestdir(md5dir)
+            cppmd5info.md5dir = md5dir
             for filename in filenames:    
                 if filename.find(client_player) >= 0:
-                    md5copy(filename,  md5dir)
+                    cppmd5info.filename = filename
+                    genpublic.md5copy(cppmd5info)
                 elif (filename.find(server_player) >= 0 and genpublic.isgamedir(md5dir)) or\
                     (filename == 'player_service.cpp' and genpublic.isgamedir(md5dir)):    
-                    md5copy(filename, md5dir)
+                    cppmd5info.filename = filename
+                    genpublic.md5copy(cppmd5info)
                 elif (filename.find(server_player) >= 0 and genpublic.iscontrollerdir(md5dir)) or\
                      (filename == 'player_service.cpp' and genpublic.iscontrollerdir(md5dir)):                   
-                    md5copy(filename,  md5dir)
+                    cppmd5info.filename = filename
+                    genpublic.md5copy(cppmd5info)
 
 genfile = []
 
