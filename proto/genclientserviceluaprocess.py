@@ -1,10 +1,8 @@
 import os
 from os import system
-import md5tool
 import shutil
 import threading
 import genpublic
-from multiprocessing import cpu_count
 
 local = threading.local()
 threads = []
@@ -12,14 +10,11 @@ threads = []
 genfile = []
 
 tabstr = '    '
-servicedir = './md5/'
+serviceluamd5dir = './md5/'
 protodir = 'logic_proto/'
 destdir = '../bin/script/lua/service/'
 client_player = 'client_player'
 process_fun_name = 'Process(request, response)\n'
-
-if not os.path.exists(servicedir):
-    os.makedirs(servicedir)
 
 def parsefile(filename):
     local.filemethodarray = []
@@ -39,7 +34,7 @@ def genyourcodepair():
 
 def genluafile(filename):
     cppfilename = destdir  +  os.path.basename(filename).replace('.proto', '.lua')
-    newcppfilename = servicedir +  os.path.basename(filename).replace('.proto', '.lua')
+    newcppfilename = serviceluamd5dir +  os.path.basename(filename).replace('.proto', '.lua')
     if not os.path.exists(newcppfilename) and os.path.exists(os.path.basename(cppfilename)):
         shutil.copy(os.path.basename(cppfilename), newcppfilename)
         return
@@ -86,36 +81,17 @@ def genluafile(filename):
     newstr += genpublic.luarpcend + '\n'
     with open(newcppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
-
-def generate(filename):
-    if filename.find(client_player) < 0:
-        return
-    parsefile(filename)
-    genluafile(filename)
-                
-def md5copy(filename):
-        if filename.find('md5') >= 0 or filename.find('.lua') < 0:
-            return
-        gennewfilename = servicedir  + filename
-        filenamemd5 = gennewfilename + '.md5'
-        error = None
-        emptymd5 = False
-        destfilename = destdir  + filename
-        if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
-            emptymd5 = True
-        else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        if error == None and os.path.exists(destfilename) and emptymd5 == False:
-            return
-        print("copy %s ---> %s" % (gennewfilename, destfilename))
-        shutil.copy(gennewfilename, destfilename)
-        md5tool.generate_md5_file_for(destfilename, filenamemd5)
-        
+              
 def md5copydir():
-    for (dirpath, dirnames, filenames) in os.walk(servicedir):
+    cppmd5info = genpublic.md5fileinfo()
+    cppmd5info.extensionfitler = ['md5', '.lua']
+    cppmd5info.destdir = destdir
+    cppmd5info.md5dir = serviceluamd5dir 
+    for (dirpath, dirnames, filenames) in os.walk(serviceluamd5dir):
         for filename in filenames:    
             if filename.find('.lua') >= 0:
-                md5copy(filename)
+                cppmd5info.filename = filename
+                genpublic.md5copy(cppmd5info)
 
 def scanprotofile():
     dir_list  = os.listdir(protodir)
@@ -131,11 +107,14 @@ class myThread (threading.Thread):
         threading.Thread.__init__(self)
         self.filename = str(filename)
     def run(self):
-        generate(self.filename)
+        parsefile(self.filename)
+        genluafile(self.filename)
 
 def main():
     global threads
     for i in range(0, len(genfile)):
+        if genfile[i].find(client_player) < 0:
+            continue
         t = myThread(genfile[i])
         threads.append(t)
         t.start()
