@@ -120,31 +120,17 @@ def parseplayerservcie(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.service)
 
-                
-def md5copy(filename):
-        if filename.find('md5') >= 0 or filename.find('.lua') >= 0:
-            return
-        gennewfilename = clienservciemd5dir  + filename
-        filenamemd5 = gennewfilename + '.md5'
-        error = None
-        emptymd5 = False
-        destfilename =  clientservicedir + filename
-        if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
-            emptymd5 = True
-        else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        if error == None and os.path.exists(destfilename) and emptymd5 == False:
-            return
-        print("copy %s ---> %s" % (gennewfilename, destfilename))
-        shutil.copy(gennewfilename, destfilename)
-        md5tool.generate_md5_file_for(destfilename, filenamemd5)
+
 def md5copydir():
+    cppmd5info = genpublic.md5fileinfo()
+    cppmd5info.extensionfitler = ['md5', '.lua']
+    cppmd5info.destdir = clientservicedir
+    cppmd5info.md5dir = clienservciemd5dir 
     for (dirpath, dirnames, filenames) in os.walk(clienservciemd5dir):
         for filename in filenames:    
-            if filename.find(client_player) >= 0:
-                md5copy(filename)
-            if filename.find('player_service') >= 0:
-                md5copy(filename)
+            if filename.find(client_player) >= 0 or filename.find('player_service') >= 0:
+                cppmd5info.filename = filename
+                genpublic.md5copy(cppmd5info)
 
 
 def scanprotofile():
