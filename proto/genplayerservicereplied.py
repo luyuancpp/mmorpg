@@ -1,6 +1,4 @@
 import os
-import md5tool
-import shutil
 import threading
 import genpublic
 
