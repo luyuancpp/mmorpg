@@ -288,11 +288,15 @@ class md5fileinfo():
         self.md5dir = ''
         self.originalextension = ''
         self.targetextension = ''
-        self.extensionfitler = []
+        self.extensionfitler = ['.md5']
         self.destfilename = ''
         self.genfilename = ''
         self.filenamemd5= ''
         self.basefilename = ''
+        
+    def addextfilters(self, fiters):
+        for f in fiters:
+            self.extensionfitler.append(f)
 
 def md5check(md5info):
     filebasename = os.path.basename(md5info.filename).replace(md5info.originalextension, md5info.targetextension)
