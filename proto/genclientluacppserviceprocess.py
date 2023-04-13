@@ -1,5 +1,4 @@
 import os
-from os import system
 import genpublic
 
 luadir = '../bin/script/lua/service/'

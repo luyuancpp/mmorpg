@@ -1,5 +1,4 @@
 import os
-from os import system
 import shutil
 import threading
 import genpublic
@@ -126,7 +125,7 @@ def md5copydir():
     cppmd5info.extensionfitler = ['md5', '.lua']
     cppmd5info.destdir = clientservicedir
     cppmd5info.md5dir = clienservciemd5dir 
-    for (dirpath, dirnames, filenames) in os.walk(clienservciemd5dir):
+    for (_, _, filenames) in os.walk(clienservciemd5dir):
         for filename in filenames:    
             if  filename.find('player_service') >= 0:
                 cppmd5info.filename = filename
