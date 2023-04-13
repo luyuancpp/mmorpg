@@ -179,24 +179,15 @@ def genluasol(filename, srcdir):
         file.write(newstr)                
 
 def md5copy(destdir, srcdir, fileextend):
+    cppmd5info = genpublic.md5fileinfo()
+    cppmd5info.destdir = destdir
+    cppmd5info.md5dir = srcdir
     for (dirpath, dirnames, filenames) in os.walk(srcdir):
         for each_filename in filenames:
-            relative_path_filename = srcdir + each_filename
             if each_filename[-len(fileextend):].lower() != fileextend:
                 continue
-            filenamemd5 = relative_path_filename + '.md5'
-            error = None
-            first = False
-            if not os.path.exists(filenamemd5):
-                first = True
-            else:
-                error = md5tool.check_against_md5_file(relative_path_filename, filenamemd5)
-            destfilename = destdir + each_filename 
-            if error == None and os.path.exists(destfilename) and first != True:
-                continue
-            print("copy %s %s" % (relative_path_filename, destfilename))
-            md5tool.generate_md5_file_for(relative_path_filename, filenamemd5)
-            shutil.copy(relative_path_filename , destfilename)
+            cppmd5info.filename = each_filename
+            genpublic.md5copy(cppmd5info)
 
 def gentotalfile(destdir, srcdir):
     global funsname
