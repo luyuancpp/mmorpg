@@ -3,9 +3,7 @@ import os
 import md5tool
 import shutil
 import threading
-import _thread
 import genpublic
-from multiprocessing import cpu_count
 
 local = threading.local()
 
@@ -128,25 +126,13 @@ def genmsgidhead(filename):
     with open(filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(destfilename, filename):    
-    gennewfilename = servicedir + filename
-    filenamemd5 = gennewfilename + '.md5'
-    error = None
-    copy = False
-    if  not os.path.exists(filenamemd5) or not os.path.exists(destfilename):
-        copy = True
-    else:
-        error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-    if error == None and copy == False:
-        return
-    md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-    shutil.copy(gennewfilename, destfilename)
-
 def copyperserviceheader():
+    cppmd5info = genpublic.md5fileinfo()
     for key, values in  local.serviceidlist.items():
-       filename = getkeyfilename(key, local.hfilename)
-       destfilename = writedir + filename
-       md5copy(destfilename, filename)
+        cppmd5info.filename = getkeyfilename(key, local.hfilename)
+        cppmd5info.destdir = writedir
+        cppmd5info.md5dir = servicedir
+        genpublic.md5copy(cppmd5info)
 
 genfile = []
 
@@ -209,7 +195,13 @@ genmsgidhead(servicedir + local.hfilename)
 genmsgidcpp(servicedir + local.cppfilename)
 genperserviceheader()
 
-md5copy(writedir + local.cppfilename, local.cppfilename)
-md5copy(writedir + local.hfilename, local.hfilename)
+cppmd5info = genpublic.md5fileinfo()
+cppmd5info.filename = local.cppfilename
+cppmd5info.destdir = writedir
+cppmd5info.md5dir = servicedir
+genpublic.md5copy(cppmd5info)
+
+cppmd5info.filename = local.hfilename
+genpublic.md5copy(cppmd5info)
 saveserviceidfile()
 copyperserviceheader()
