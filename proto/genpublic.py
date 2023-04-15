@@ -112,6 +112,33 @@ def is_player_proto(filename):
 def is_not_client_proto(filename):
     return is_client_player_proto(filename)  == False
     
+
+def create_dirtree_without_files2md5(src, dst):
+    if not os.path.exists(dst):
+        os.makedirs(dst)
+    src_prefix = len(src) + len(os.path.sep) - 1
+    for root, dirs, files in os.walk(src):
+        for dirname in dirs:
+            iscopydir =  root.find(src + 'client') >= 0  or \
+            root.find(src + 'common') >= 0 or \
+            root.find(src + 'controller_server') >= 0 or \
+            root.find(src + 'database_server') >= 0 or \
+            root.find(src + 'deploy_server') > 0 or \
+            root.find(src + 'game_server') >= 0 or \
+            root.find(src + 'gate_server') >= 0 or \
+            root.find(src + 'lobby_server') >= 0 or \
+            root.find(src + 'login_server') >= 0
+            if not iscopydir:
+                continue
+            dirpath = os.path.join(dst, root[src_prefix:], dirname)
+            
+            if os.path.exists(dirpath) or not os.path.isdir(dirname):
+                continue
+            os.makedirs(dirpath)
+            
+
+create_dirtree_without_files2md5('../', md5dir)
+
 def makedirs():
     if not os.path.exists(pbcdir):
         os.makedirs(pbcdir)
