@@ -177,9 +177,6 @@ def iscontrollerdir(dirpath):
 def gamemd5dir():
     return md5dirs[gamemd5dirindex]  
  
-def game():
-    return 'game'  
- 
 def isgamedir(dirpath):
     return dirpath.find('game_server') >= 0 or dirpath.find('game') >= 0
 
@@ -198,21 +195,12 @@ def loginmd5dir():
 def islogindir(dirpath):
     return dirpath.find('login_server') >= 0 or dirpath.find('login') >= 0
 
-def databasemd5dir():
-    return md5dirs[databasemd5dirindex]  
-
 def isdatabasedir(dirpath):
     return dirpath.find('database_server') >= 0 or dirpath.find('database') >= 0
-    
-def gatemd5dir():
-    return md5dirs[gatemd5dirindex]  
 
 def isgatedir(dirpath):
     return dirpath.find('gate_server') >= 0 or dirpath.find('gate') >= 0
    
-def deploymd5dir():
-    return md5dirs[deploymd5dirindex]   
-
 def isdeploydir(dirpath):
     return dirpath.find('deploy_server') >= 0 or dirpath.find('deploy') >= 0 
   
@@ -221,24 +209,7 @@ def commonproto():
     
 def iscommonproto(dirpath):
     return dirpath.find(commonproto()) >= 0
-       
-def getservertype(dirpath):
-    if isgamedir(dirpath):  
-        return 'game'
-    elif iscontrollerdir(dirpath):
-        return 'controller'
-    elif islobbydir(dirpath):
-        return 'lobby'
-    elif isgatedir(dirpath):
-        return 'gate'
-    elif islogindir(dirpath):
-        return 'login'  
-    elif isdatabasedir(dirpath):
-        return 'database'  
-    elif isdeploydir(dirpath):
-        return 'deploy'  
-    return ''
-  
+
 def getsrcpathmd5dir(dirpath, subdir):
     srcdir = ''
     if iscommonproto(dirpath):

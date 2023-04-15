@@ -18,7 +18,6 @@ clienservciemd5dir = genpublic.md5dirs[genpublic.clientmd5dirindex]
 protodir = 'logic_proto/'
 includedir = 'src/service/logic_proto/'
 clientservicedir = '../client/src/service/logic_proto/'
-fileprev = 'c_'
 client_player = 'client_player'
 
 if not os.path.exists(clienservciemd5dir):
@@ -117,9 +116,7 @@ def parseplayerservcie(filename):
             if genpublic.is_service_fileline(fileline) == True:
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.service)
-
-
-
+                
 def md5copydir():
     cppmd5info = genpublic.md5fileinfo()
     cppmd5info.extensionfitler = ['md5', '.lua']
