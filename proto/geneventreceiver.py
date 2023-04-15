@@ -104,26 +104,19 @@ def generatecpp(filename):
 	try:
 		with open(destcppfilename,'r+', encoding='utf-8') as file:
 			yourcode = 0 
-			part = 0
+			service_begined = 0
 			head_line_count = 0
 			for fileline in file:
 				if head_line_count < 2:
 					head_line_count += 1
 					continue
-				if part == 0:
+				if service_begined == 0:
 					newstr += fileline
 					if fileline.find(genpublic.yourcodeend) >= 0:
 						newstr += generatecppregisterunregisterfunction(filename)
-						part += 1
+						service_begined = 1
 					continue
-				if part != cpprpceventpart and fileline.find(genpublic.yourcodebegin) >= 0:
-					newstr += fileline
-					continue
-				elif part != cpprpceventpart and fileline.find(genpublic.yourcodeend) >= 0:
-					newstr += fileline 
-					part += 1
-					continue 
-				elif part == cpprpceventpart:
+				if service_begined == cpprpceventpart:
 					if eventindex < len(local.eventprotoarray) and fileline.find(cppreceiverfunctionname) >= 0 :
 						yourcode = 0
 						newstr += cppreceiverfunctionname + str(eventindex)
