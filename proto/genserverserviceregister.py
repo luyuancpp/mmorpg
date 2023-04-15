@@ -49,25 +49,34 @@ def gencppfile(writedfilename):
     with open(writedfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(writedfilename, destfilename):
-    filenamemd5 = writedfilename + '.md5'
-    error = None
-    emptymd5 = False
-    if  not os.path.exists(filenamemd5):
-        emptymd5 = True
-    else:
-        error = md5tool.check_against_md5_file(writedfilename, filenamemd5) 
-    if error == None and os.path.exists(destfilename) and emptymd5 == False:
-        return
-    print("copy %s ---> %s" % (writedfilename, destfilename))
-    md5tool.generate_md5_file_for(writedfilename, filenamemd5)
-    shutil.copy(writedfilename, destfilename)
-
 scanservice()
 genheadfile('./md5/server_service.h')
 gencppfile('./md5/controller_server/server_service.cpp')
 gencppfile('./md5/game_server/server_service.cpp')
-md5copy('./md5/controller_server/server_service.cpp', '../controller_server/src/service/logic_proto/server_service.cpp')
-md5copy('./md5/game_server/server_service.cpp', '../game_server/src/service/logic_proto/server_service.cpp')
-md5copy('./md5/server_service.h', '../controller_server/src/service/logic_proto/server_service.h')
-md5copy('./md5/server_service.h', '../game_server/src/service/logic_proto/server_service.h')
+
+cppmd5info = genpublic.md5fileinfo()
+cppmd5info.filename = 'server_service.cpp'
+cppmd5info.destdir = '../controller_server/src/service/logic_proto/'
+cppmd5info.md5dir = './md5/controller_server/'
+    
+genpublic.md5copy(cppmd5info)
+
+cppmd5info.filename = 'server_service.h'
+cppmd5info.destdir = '../controller_server/src/service/logic_proto/'
+cppmd5info.md5dir = './md5/'
+genpublic.md5copy(cppmd5info)
+
+cppmd5info.filename = 'server_service.cpp'
+cppmd5info.destdir = '../game_server/src/service/logic_proto/'
+cppmd5info.md5dir = './md5/game_server/'
+genpublic.md5copy(cppmd5info)
+
+cppmd5info.filename = 'server_service.h'
+cppmd5info.destdir = '../game_server/src/service/logic_proto/'
+cppmd5info.md5dir = './md5/'
+genpublic.md5copy(cppmd5info)
+
+#md5copy('./md5/server_service.h', '../controller_server/src/service/logic_proto/server_service.h')
+#md5copy('./md5/controller_server/server_service.cpp', '../controller_server/src/service/logic_proto/server_service.cpp')
+#md5copy('./md5/game_server/server_service.cpp', '../game_server/src/service/logic_proto/server_service.cpp')
+#md5copy('./md5/server_service.h', '../game_server/src/service/logic_proto/server_service.h')
