@@ -75,8 +75,3 @@ cppmd5info.filename = 'server_service.h'
 cppmd5info.destdir = '../game_server/src/service/logic_proto/'
 cppmd5info.md5dir = './md5/'
 genpublic.md5copy(cppmd5info)
-
-#md5copy('./md5/server_service.h', '../controller_server/src/service/logic_proto/server_service.h')
-#md5copy('./md5/controller_server/server_service.cpp', '../controller_server/src/service/logic_proto/server_service.cpp')
-#md5copy('./md5/game_server/server_service.cpp', '../game_server/src/service/logic_proto/server_service.cpp')
-#md5copy('./md5/server_service.h', '../game_server/src/service/logic_proto/server_service.h')
