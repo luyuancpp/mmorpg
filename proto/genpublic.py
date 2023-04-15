@@ -42,6 +42,16 @@ md5dir + 'database_server/',
 md5dir + 'deploy_server/',
 md5dir + 'client/']
 
+projectdirs = ['common',
+'controller_server/', 
+'game_server/', 
+'gate_server/',
+'login_server/',
+'lobby_server/',
+'database_server/',
+'deploy_server/',
+'client/']
+
 logicrepliedmd5dirs = \
 [md5dir + 'controller_server/', 
 md5dir + 'game_server/logic_proto_replied/', 
@@ -114,24 +124,20 @@ def is_not_client_proto(filename):
     
 
 def create_dirtree_without_files2md5(src, dst):
-    if not os.path.exists(dst):
-        os.makedirs(dst)
+    if os.path.exists(dst):
+        return
+    os.makedirs(dst)
     src_prefix = len(src) + len(os.path.sep) - 1
+    projectlen = len(projectdirs)
     for root, dirs, files in os.walk(src):
         for dirname in dirs:
-            iscopydir =  root.find(src + 'client') >= 0  or \
-            root.find(src + 'common') >= 0 or \
-            root.find(src + 'controller_server') >= 0 or \
-            root.find(src + 'database_server') >= 0 or \
-            root.find(src + 'deploy_server') > 0 or \
-            root.find(src + 'game_server') >= 0 or \
-            root.find(src + 'gate_server') >= 0 or \
-            root.find(src + 'lobby_server') >= 0 or \
-            root.find(src + 'login_server') >= 0
-            if not iscopydir:
+            iscopydir = False
+            for i in range(0, projectlen):
+                if root.find(src + projectdirs[i]) >= 0:
+                    iscopydir = True
+            if iscopydir == False:
                 continue
             dirpath = os.path.join(dst, root[src_prefix:], dirname)
-            
             if os.path.exists(dirpath) or not os.path.isdir(dirname):
                 continue
             os.makedirs(dirpath)
