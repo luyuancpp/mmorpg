@@ -1,11 +1,6 @@
 import os
-
-import md5tool
-import shutil
 import threading
 import genpublic
-from multiprocessing import cpu_count
-
 local = threading.local()
 
 local.filemethodarray = []
@@ -57,27 +52,6 @@ def genheadfile(filename):
     with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def md5copy(filename,   fileextend):
-    gennewfilename = genpublic.servicemethodmd5dir + filename.replace('.proto', fileextend)
-    destfilename = genpublic.servicemethoddir  + filename.replace('.proto', fileextend)
-    filenamemd5 = gennewfilename + '.md5'
-    error = None
-    emptymd5 = False
-    if  not os.path.exists(filenamemd5):
-        emptymd5 = True
-    else:
-        if not os.path.exists(destfilename):
-            error = True
-        else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)   
-      
-    if error == None and emptymd5 == False:
-        return
-    print("copy %s ---> %s" % (gennewfilename, destfilename))
-    shutil.copy(gennewfilename, destfilename)
-    md5tool.generate_md5_file_for(gennewfilename, filenamemd5)
-
-
 class myThread (threading.Thread):
     def __init__(self, filename, filepath):
         threading.Thread.__init__(self)
@@ -87,8 +61,17 @@ class myThread (threading.Thread):
         parsefile(self.filepath)
         if local.service == '':
             return
+        md5info = genpublic.md5fileinfo()
+        md5info.filename = self.filename
+        md5info.destdir = genpublic.servicemethoddir
+        md5info.md5dir = genpublic.servicemethodmd5dir
+        md5info.originalextension = '.proto'
+        md5info.targetextension = methodsufix
+        checkheadmd5,_,_,_ = genpublic.md5check(md5info)   
+        if checkheadmd5 == True:
+            return
         genheadfile(self.filename)
-        md5copy(self.filename,  'method.h')
+        genpublic.md5copy(md5info)
 
 def scanfile():
     dir_list  =  os.listdir(genpublic.logicprotodir)
