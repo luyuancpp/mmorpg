@@ -2,50 +2,40 @@
 #include "event_proto/scene_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void SceneEventReceiverReceiver::Register(entt::dispatcher& dispatcher)
+void SceneEventReceiver::Register(entt::dispatcher& dispatcher)
 {
-dispatcher.sink<BeforeEnterScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive0>();
-dispatcher.sink<OnEnterScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive1>();
-dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive2>();
-dispatcher.sink<OnLeaveScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive3>();
-dispatcher.sink<S2CEnterScene>().connect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive4>();
+dispatcher.sink<BeforeEnterScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive0>();
+dispatcher.sink<OnEnterScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive1>();
+dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive2>();
+dispatcher.sink<OnLeaveScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive3>();
+dispatcher.sink<S2CEnterScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive4>();
 }
 
-void SceneEventReceiverReceiver::UnRegister(entt::dispatcher& dispatcher)
+void SceneEventReceiver::UnRegister(entt::dispatcher& dispatcher)
 {
-dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive0>();
-dispatcher.sink<OnEnterScene>().disconnect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive1>();
-dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive2>();
-dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive3>();
-dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventReceiverReceiver::SceneEventReceiverReceiver::Receive4>();
+dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive0>();
+dispatcher.sink<OnEnterScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive1>();
+dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive2>();
+dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive3>();
+dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive4>();
 }
 
-void SceneEventReceiverReceiver::Receive0(const BeforeEnterScene& event_obj)
-{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventReceiverReceiver::Receive1(const OnEnterScene& event_obj)
-{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventReceiverReceiver::Receive2(const BeforeLeaveScene& event_obj)
-{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventReceiverReceiver::Receive3(const OnLeaveScene& event_obj)
-{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventReceiverReceiver::Receive4(const S2CEnterScene& event_obj)
-{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }

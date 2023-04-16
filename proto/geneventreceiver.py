@@ -3,8 +3,6 @@ import threading
 import genpublic
 
 local = threading.local()
-local.destdir = '../game_server/src/event_receiver/'
-local.md5dir = ''
 local.eventprotoarray = []
 
 eventricevermd5dir = './md5/event_proto/'
@@ -22,9 +20,8 @@ syncclassfilename = 'SyncEventReceiver'
 asyncfilename = 'async_event_receiver'
 asyncclassfilename = 'AsyncEventReceiver'
 normalcfilename = 'event_receiver'
-normalcclassfilename = 'EventReceiver'
 currentfilename = normalcfilename
-currentclassname = normalcclassfilename
+currentclassname = 'EventReceiver'
 
 if not os.path.exists(eventricevermd5dir):
     os.makedirs(eventricevermd5dir)
@@ -42,25 +39,19 @@ def parsefile(filename):
 
 def getfilenamenoprefixsuffix(filename):
 	return os.path.basename(filename).replace('.proto', '').replace('event', currentfilename)
-def getmd5destfilename(filename):
-	return eventricevermd5dir + getfilenamenoprefixsuffix(filename)
 
 def getfileclassname(filename):
 	letterarray = getfilenamenoprefixsuffix(filename).split('_')
 	classname = ''
 	for i in range(0, len(letterarray)): 
 		classname += letterarray[i].capitalize()	
-	return classname + 'Receiver'
+	return classname
 def getprotofilenamenoprefixsuffix(filename):
 	return os.path.basename(filename).replace('.proto', '')
 
-def getrealsuffix(filename):
-	filename.replace('event', currentfilename)
-
-def generatehead(filename):
+def generatehead(filename, destdir):
 	newstr = '#pragma once\n'
 	newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n\n'
-	md5headfilename = getmd5destfilename(filename) + '.h'
 	classname = getfileclassname(filename)
 	for i in range(0, len(local.eventprotoarray)): 
 		newstr += 'class ' + local.eventprotoarray[i] + ';\n'
@@ -70,7 +61,7 @@ def generatehead(filename):
 	for i in range(0, len(local.eventprotoarray)): 
 		newstr += tabstr + 'static void Receive' + str(i) + '(const ' + local.eventprotoarray[i] + '& event_obj);\n'
 	newstr += '};\n'
-	with open(md5headfilename, 'w', encoding='utf-8')as file:
+	with open(genpublic.getmd5filename(destdir + getfilenamenoprefixsuffix(filename) + '.h'), 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
 def generatecppregisterunregisterfunction(filename):
@@ -92,9 +83,8 @@ def generatecppregisterunregisterfunction(filename):
 	newstr += '}\n\n'
 	return newstr
 
-def generatecpp(filename):
-	md5cppfilename = getmd5destfilename(filename) + '.cpp'
-	destcppfilename = local.destdir + getfilenamenoprefixsuffix(filename) + '.cpp'
+def generatecpp(filename, destdir):
+	destcppfilename = destdir + getfilenamenoprefixsuffix(filename) + '.cpp' 
 	classname = getfileclassname(filename)
 	headerinclude = '#include "' + getfilenamenoprefixsuffix(filename)  + '.h"\n'
 	pbinclude = '#include "event_proto/' + getprotofilenamenoprefixsuffix(filename) + '.pb.h"\n'
@@ -142,22 +132,20 @@ def generatecpp(filename):
 		newstr += beginendstring()
 		newstr += '}\n'
 		eventindex += 1
-	with open(md5cppfilename, 'w', encoding='utf-8')as file:
+	with open(genpublic.getmd5filename(destdir + getfilenamenoprefixsuffix(filename) + '.cpp'), 'w', encoding='utf-8')as file:
 		file.write(newstr)  
 
-def geneventreceiverhead():
-	md5headfilename = eventricevermd5dir + currentfilename + '.h'
+def geneventreceiverhead(destdir):
 	newstr = '#pragma once\n'
 	newstr += '#include "src/game_logic/thread_local/thread_local_storage.h"\n'	
 	newstr += '\nclass ' + currentclassname + '\n{\npublic:\n'
 	newstr += tabstr + 'static void Register(entt::dispatcher& dispatcher);\n'
 	newstr += tabstr + 'static void UnRegister(entt::dispatcher& dispatcher);\n'
 	newstr += '};\n'
-	with open(md5headfilename, 'w', encoding='utf-8')as file:
+	with open(genpublic.getmd5filename(destdir + currentfilename + '.h'), 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
-def geneventreceivercpp():
-	md5headfilename = eventricevermd5dir + currentfilename + '.cpp'
+def geneventreceivercpp(destdir):
 	newstr = '#pragma once\n'
 	newstr += '#include "' + currentfilename + '.h"\n'
 	for i in range(0, len(filelist)): 
@@ -173,7 +161,7 @@ def geneventreceivercpp():
 		classname = getfileclassname(filelist[i])
 		newstr += tabstr +  classname + '::UnRegister(dispatcher);\n'
 	newstr += '}\n'
-	with open(md5headfilename, 'w', encoding='utf-8')as file:
+	with open(genpublic.getmd5filename(destdir + currentfilename + '.cpp'), 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
 def scanprotofile():
@@ -190,16 +178,25 @@ class myThread (threading.Thread):
     def run(self):
         cppmd5info = genpublic.md5fileinfo()
         local.destdir = gsdestdir
-        cppmd5info.destdir = local.destdir
-        cppmd5info.md5dir =  eventricevermd5dir 
+        cppmd5info.destdir = gsdestdir
         parsefile(self.filename)
-        print(self.filename)
-        generatehead(self.filename)
-        generatecpp(self.filename)
+        
+        generatehead(self.filename, gsdestdir)
+        generatehead(self.filename, controllerdestdir)
+        generatecpp(self.filename, gsdestdir)
+        generatecpp(self.filename, controllerdestdir)
         
         cppmd5info.filename = getfilenamenoprefixsuffix(self.filename) + '.h'
+        cppmd5info.destdir = gsdestdir
         genpublic.md5copy(cppmd5info)
+        cppmd5info.destdir = controllerdestdir
+        genpublic.md5copy(cppmd5info)
+        
+        cppmd5info.md5dir = ''
         cppmd5info.filename = getfilenamenoprefixsuffix(self.filename) + '.cpp'
+        cppmd5info.destdir = gsdestdir
+        genpublic.md5copy(cppmd5info)
+        cppmd5info.destdir = controllerdestdir
         genpublic.md5copy(cppmd5info)
 
 def main():
@@ -218,23 +215,21 @@ genpublic.makedirs()
 #sync
 scanprotofile()
 main()
-geneventreceiverhead()
-
+geneventreceiverhead(gsdestdir)
 cppmd5info = genpublic.md5fileinfo()
 cppmd5info.filename = 'event_receiver.h'
-cppmd5info.destdir = local.destdir 
-cppmd5info.md5dir = eventricevermd5dir
+cppmd5info.destdir = gsdestdir
 genpublic.md5copy(cppmd5info)
-geneventreceivercpp()
-cppmd5info.destdir = local.destdir  
-cppmd5info.md5dir =   eventricevermd5dir 
+geneventreceivercpp(gsdestdir)
+cppmd5info.destdir = gsdestdir 
 cppmd5info.filename = 'event_receiver.cpp'
 genpublic.md5copy(cppmd5info)
 
-#currentfilename = asyncfilename
-#currentclassname = asyncclassfilename
-#main()
-#geneventreceiverhead()
-#md5copy('event', '.h')
-#geneventreceivercpp()
-#md5copy('event', '.cpp')
+geneventreceiverhead(controllerdestdir)
+cppmd5info.filename = 'event_receiver.h'
+cppmd5info.destdir = controllerdestdir
+genpublic.md5copy(cppmd5info)
+geneventreceivercpp(controllerdestdir)
+cppmd5info.destdir = controllerdestdir 
+cppmd5info.filename = 'event_receiver.cpp'
+genpublic.md5copy(cppmd5info)

@@ -311,9 +311,10 @@ class md5fileinfo():
 
 def md5check(md5info):
     filebasename = os.path.basename(md5info.filename).replace(md5info.originalextension, md5info.targetextension)
-    if md5info.md5dir == '':
-        md5info.md5dir = md5info.destdir.replace(projectdir, md5dir)
-    genfilename = md5info.md5dir + filebasename
+    tomd5dir = md5info.md5dir
+    if tomd5dir == '':
+        tomd5dir = md5info.destdir.replace(projectdir, md5dir)
+    genfilename = tomd5dir + filebasename
     filenamemd5 = genfilename + '.md5'
     destfilename = md5info.destdir + filebasename
     genfilemd5error = None
@@ -336,7 +337,6 @@ def md5copy(md5info):
         if md5info.filename.find(filterext) >= 0:
             return 
     checkmd5, destfilename, genfilename , genfilenamemd5 = md5check(md5info)    
-    
     if checkmd5 == True:
         return
     print("copy %s ---> %s" % (genfilename, destfilename))

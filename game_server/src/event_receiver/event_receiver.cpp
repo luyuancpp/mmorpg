@@ -5,12 +5,12 @@
 
 void EventReceiver::Register(entt::dispatcher& dispatcher)
 {
-    MissionEventReceiverReceiver::Register(dispatcher);
-    SceneEventReceiverReceiver::Register(dispatcher);
+    MissionEventReceiver::Register(dispatcher);
+    SceneEventReceiver::Register(dispatcher);
 }
 
 void EventReceiver::UnRegister(entt::dispatcher& dispatcher)
 {
-    MissionEventReceiverReceiver::UnRegister(dispatcher);
-    SceneEventReceiverReceiver::UnRegister(dispatcher);
+    MissionEventReceiver::UnRegister(dispatcher);
+    SceneEventReceiver::UnRegister(dispatcher);
 }
