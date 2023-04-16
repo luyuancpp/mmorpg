@@ -72,6 +72,7 @@ def create_dirtree_without_files2md5(src, dst):
         srcprojectdirs.append(src + projectdirs[i])
     for root, dirs, files in os.walk(src):
         iscopydir = False
+        #print(root)
         for i in range(0, projectlen):
             if root.find(srcprojectdirs[i]) >= 0:
                 iscopydir = True
@@ -81,7 +82,7 @@ def create_dirtree_without_files2md5(src, dst):
         #print(dirs)
         for dirname in dirs:
             dirpath = os.path.join(dst, root[src_prefix:], dirname)
-            print(dirpath)
+            #print(dirpath)
             if os.path.exists(dirpath):
                 continue
             os.makedirs(dirpath)
@@ -209,5 +210,5 @@ def gencppfile(cppfile):
     with open(cppfile.getmd5filename(), 'w', encoding='utf-8')as file:
         file.write(newstr)
         
-makedirs()
 create_dirtree_without_files2md5(projectdir, md5dir)
+makedirs()
