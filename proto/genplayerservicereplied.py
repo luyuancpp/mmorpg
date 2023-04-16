@@ -92,8 +92,8 @@ def gencpprpcfunbegin(rpcindex):
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
 
-def genheadfile(filename, md5dir):
-    newheadfilename = md5dir + os.path.basename(filename).replace('.proto', destexth)
+def genheadfile(filename, destdir):
+    newheadfilename = genpublic.getmd5filename(destdir  + os.path.basename(filename).replace('.proto', destexth) )
     newstr = '#pragma once\n'
     newstr += '#include "player_service_replied.h"\n'
     newstr += '#include "' + protodir  + os.path.basename(filename).replace('.proto', '.pb.h') + '"\n'           
@@ -156,7 +156,7 @@ class myThread (threading.Thread):
             return
         parsefile(self.filename)
 
-        genheadfile(self.filename, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex])
+        genheadfile(self.filename, genpublic.gsservicelogicreplieddir)
         
          
         hmd5info = genpublic.md5fileinfo()
@@ -185,7 +185,7 @@ class myThread (threading.Thread):
         cppmd5info.targetextension = '_replied.cpp'
         genpublic.md5copy(cppmd5info)
         
-        genheadfile(self.filename, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex])
+        genheadfile(self.filename, genpublic.controllerservicelogicreplieddir)
         
         hmd5info.destdir = genpublic.controllerservicelogicreplieddir
         hmd5info.md5dir =  genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex]

@@ -14,13 +14,16 @@ logicprotodir = 'logic_proto/'
 commonportodir = 'common_proto/'
 
 gslogicervicedir = '../game_server/src/service/logic_proto/'
-gsservicelogicreplieddir = '../game_server/src/service/logic_proto_replied/'
+
 lobbylogicservicedir = '../lobby_server/src/service/logic_proto/'
 controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
-controllerservicelogicreplieddir = '../controller_server/src/service/logic_proto_replied/'
+
 gatelogicservicedir = '../gate_server/src/service/logic_proto/'
 servicemethoddir = '../common/src/pb/pbc/service_method/'
 servicemethodmd5dir = md5dir + 'service_method/'
+
+gsservicelogicreplieddir = '../game_server/src/service/logic_proto_replied/'
+controllerservicelogicreplieddir = '../controller_server/src/service/logic_proto_replied/'
 
 controller = '(::google::protobuf::RpcController* controller'
 yourcodebegin = '///<<< BEGIN WRITING YOUR CODE'
@@ -250,26 +253,6 @@ def commonproto():
 def iscommonproto(dirpath):
     return dirpath.find(commonproto()) >= 0
 
-def getsrcpathmd5dir(dirpath, subdir):
-    srcdir = ''
-    if iscommonproto(dirpath):
-        subdir = commonproto()
-    if isgamedir(dirpath):
-        srcdir = md5dirs[gamemd5dirindex]
-    elif iscontrollerdir(dirpath):
-        srcdir = md5dirs[conrollermd5dirindex]
-    elif islobbydir(dirpath):
-        srcdir = md5dirs[lobbymd5dirindex]
-    elif isgatedir(dirpath):
-        srcdir = md5dirs[gatemd5dirindex]
-    elif islogindir(dirpath):
-        srcdir = md5dirs[loginmd5dirindex]  
-    elif isdatabasedir(dirpath):
-        srcdir = md5dirs[databasemd5dirindex]    
-    elif isdeploydir(dirpath):
-        srcdir = md5dirs[deploymd5dirindex]   
-    return srcdir + subdir
-    
 def getdestdir(dirpath):
     srcdir = ''
     if isgamedir(dirpath):
