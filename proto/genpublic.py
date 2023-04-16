@@ -145,6 +145,8 @@ def create_dirtree_without_files2md5(src, dst):
         for dirname in dirs:
             dirpath = os.path.join(dst, root[src_prefix:], dirname)
             #print(dirpath)
+            if os.path.exists(dirpath):
+                continue
             os.makedirs(dirpath)
             
 
