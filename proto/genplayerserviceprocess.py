@@ -127,7 +127,7 @@ def parseplayerservcie(filename):
                 local.playerservicearray.append(local.service)
 
 def gengsplayerservcielist(filename):
-    destfilename = genpublic.md5dirs[genpublic.gamemd5dirindex] + protodir  + filename
+    destfilename = genpublic.getmd5filename(genpublic.gslogicervicedir) +  filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -145,10 +145,13 @@ def gengsplayerservcielist(filename):
     newstr += '}\n'
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
-    
+    cppmd5info = genpublic.md5fileinfo()
+    cppmd5info.destdir = genpublic.gslogicervicedir
+    cppmd5info.filename = filename
+    genpublic.md5copy(cppmd5info)
 
 def gencontrollerplayerservcielist(filename):
-    destfilename = genpublic.md5dirs[genpublic.conrollermd5dirindex] + protodir + filename
+    destfilename = genpublic.getmd5filename(genpublic.controllerlogicservicedir) +  filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -172,6 +175,10 @@ def gencontrollerplayerservcielist(filename):
     newstr += '}\n'
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
+    cppmd5info = genpublic.md5fileinfo()
+    cppmd5info.destdir = genpublic.controllerlogicservicedir
+    cppmd5info.filename = filename
+    genpublic.md5copy(cppmd5info)
 
 genfile = []
 
@@ -209,24 +216,24 @@ class myThread (threading.Thread):
         cppmd5info.originalextension = '.proto'
         cppmd5info.filename = self.basefilename
         if self.filename.find(client_player) >= 0: 
-            genheadfile(self.filename, gslogicervicedir)
+            genheadfile(self.filename, genpublic.gslogicervicedir)
             
-            cppmd5info.destdir = gslogicervicedir
+            cppmd5info.destdir = genpublic.gslogicervicedir
             cppmd5info.targetextension = '.h'
             genpublic.md5copy(cppmd5info)
             
-            cppfile.destfilename = gslogicervicedir  + self.basefilename.replace('.proto', cppext) 
+            cppfile.destfilename = genpublic.gslogicervicedir  + self.basefilename.replace('.proto', cppext) 
             genpublic.gencppfile(cppfile)
             cppmd5info.targetextension = cppext
             genpublic.md5copy(cppmd5info)
 
         elif self.filename.find(server_player) >= 0:
-            genheadfile(self.filename, gslogicervicedir)
-            cppmd5info.destdir = gslogicervicedir
+            genheadfile(self.filename, genpublic.gslogicervicedir)
+            cppmd5info.destdir = genpublic.gslogicervicedir
             cppmd5info.targetextension = '.h'
             genpublic.md5copy(cppmd5info)
             
-            cppfile.destfilename = gslogicervicedir  + self.basefilename.replace('.proto', cppext) 
+            cppfile.destfilename = genpublic.gslogicervicedir  + self.basefilename.replace('.proto', cppext) 
             genpublic.gencppfile(cppfile)
             cppmd5info.targetextension = cppext
             genpublic.md5copy(cppmd5info)
