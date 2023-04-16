@@ -193,6 +193,7 @@ class myThread (threading.Thread):
         cppmd5info.destdir = local.destdir
         cppmd5info.md5dir =  eventricevermd5dir 
         parsefile(self.filename)
+        print(self.filename)
         generatehead(self.filename)
         generatecpp(self.filename)
         

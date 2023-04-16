@@ -14,14 +14,11 @@ local.fileservice = []
 genfile = []
 threads = []
 tabstr = '    '
-clienservciemd5dir = genpublic.md5dirs[genpublic.clientmd5dirindex]
 protodir = 'logic_proto/'
 includedir = 'src/service/logic_proto/'
 clientservicedir = '../client/src/service/logic_proto/'
 client_player = 'client_player'
 
-if not os.path.exists(clienservciemd5dir):
-    os.makedirs(clienservciemd5dir)
 
 def parsefile(filename):
     local.filemethodarray = []
