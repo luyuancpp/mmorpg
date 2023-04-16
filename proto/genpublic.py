@@ -36,15 +36,6 @@ luayourcodeend = '---<<< END WRITING YOUR CODE'
 luarpcbegin = '---<<<rpc begin'
 luarpcend = '---<<<rpc end'
 
-logicmd5dir = './md5/logic_proto/'
-md5dirs = [md5dir + 'controller_server/', 
-md5dir + 'game_server/', 
-md5dir + 'gate_server/',
-md5dir + 'login_server/',
-md5dir + 'lobby_server/',
-md5dir + 'database_server/',
-md5dir + 'deploy_server/',
-md5dir + 'client/']
 
 projectdirs = ['common',
 'controller_server', 
@@ -55,16 +46,6 @@ projectdirs = ['common',
 'database_server',
 'deploy_server',
 'client']
-
-logicrepliedmd5dirs = \
-[md5dir + 'controller_server/', 
-md5dir + 'game_server/logic_proto_replied/', 
-md5dir + 'gate_server/logic_proto_replied/',
-md5dir + 'login_server/logic_proto_replied/',
-md5dir + 'lobby_server/logic_proto_replied/',
-md5dir + 'database_server/logic_proto_replied/',
-md5dir + 'deploy_server/logic_proto_replied/',
-md5dir + 'client/deploy_server/']
 
 commonprotomd5dirs = \
 [md5dir + 'controller_server/', 
@@ -165,66 +146,24 @@ def makedirs():
     if not os.path.exists(servicemethoddir):
         os.makedirs(servicemethoddir)
     if not os.path.exists(servicemethodmd5dir):
-        os.makedirs(servicemethodmd5dir)
-    if not os.path.exists(logicmd5dir):
-        os.makedirs(logicmd5dir)    
+        os.makedirs(servicemethodmd5dir)  
     if not os.path.exists(pbcserviceinstancemd5dir):
         os.makedirs(pbcserviceinstancemd5dir)
-    for d in md5dirs :
-        if not os.path.exists(d):
-            os.makedirs(d)
-    for d in commonprotomd5dirs :
-        if not os.path.exists(d):
-            os.makedirs(d)
     for d in eventprotomd5dirs :
         if not os.path.exists(d):
             os.makedirs(d)
     for d in logicprotomd5dirs :
         if not os.path.exists(d):
             os.makedirs(d)
-    
             
-    for d in logicrepliedmd5dirs :
-        if not os.path.exists(d):
-            os.makedirs(d)
-        logic_proto_dir = d + '/logic_proto/' 
-        if not os.path.exists(logic_proto_dir):
-            os.makedirs(logic_proto_dir)
-        logic_proto_replied_dir = logic_proto_dir.replace('/logic_proto/', '/logic_proto_replied/')
-        if not os.path.exists(logic_proto_replied_dir):
-            os.makedirs(logic_proto_replied_dir)
-        common_proto_dir = d + '/common_proto/' 
-        if not os.path.exists(common_proto_dir):
-            os.makedirs(common_proto_dir)
-    
-    
-    
-def makedirsbypath(dirname):
-    dirlist = []
-    for d in md5dirs :
-        fulldir = d + dirname
-        dirlist.append(fulldir)
-        if not os.path.exists(fulldir):            
-            os.makedirs(fulldir)
-    return dirlist
- 
-def controllermd5dir():
-    return md5dirs[conrollermd5dirindex]  
-    
 def controller():
     return 'controller' 
  
 def iscontrollerdir(dirpath):
     return dirpath.find('controller_server') >= 0 or dirpath.find('controller') >= 0
-    
-def gamemd5dir():
-    return md5dirs[gamemd5dirindex]  
  
 def isgamedir(dirpath):
     return dirpath.find('game_server') >= 0 or dirpath.find('game') >= 0
-
-def lobbymd5dir():
-    return md5dirs[lobbymd5dirindex]  
 
 def lobby():
     return 'lobby'  
