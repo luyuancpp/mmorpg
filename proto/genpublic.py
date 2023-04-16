@@ -81,16 +81,11 @@ def create_dirtree_without_files2md5(src, dst):
         #print(dirs)
         for dirname in dirs:
             dirpath = os.path.join(dst, root[src_prefix:], dirname)
-            #print(dirpath)
+            print(dirpath)
             if os.path.exists(dirpath):
                 continue
-            if dirpath.find('logic_proto') >= 0:
-                print(dirpath)
             os.makedirs(dirpath)
             
-
-create_dirtree_without_files2md5(projectdir, md5dir)
-
 def makedirs():
     if not os.path.exists(md5dir):
         os.makedirs(md5dir)
@@ -215,3 +210,4 @@ def gencppfile(cppfile):
         file.write(newstr)
         
 makedirs()
+create_dirtree_without_files2md5(projectdir, md5dir)
