@@ -349,11 +349,12 @@ def getmd5filename(destfilename):
 class cpp():
     def __init__(self):
         self.destfilename = ''
-        self.md5filename = ''
         self.includestr = ''
         self.filemethodarray = []
         self.begunfun = None
         self.controller = ''
+    def getmd5filename(self):
+        return self.destfilename.replace(projectdir, md5dir)
 
 def gencppfile(cppfile):
     newstr = cppfile.includestr
@@ -401,7 +402,7 @@ def gencppfile(cppfile):
         newstr += yourcodeend +  '\n}\n\n'
         serviceidx += 1 
     newstr += rpcend + '\n'
-    with open(cppfile.md5filename, 'w', encoding='utf-8')as file:
+    with open(cppfile.getmd5filename(), 'w', encoding='utf-8')as file:
         file.write(newstr)
         
 makedirs()
