@@ -181,7 +181,6 @@ def genluasol(filename, srcdir):
 def md5copy(destdir, srcdir, fileextend):
     cppmd5info = genpublic.md5fileinfo()
     cppmd5info.destdir = destdir
-    cppmd5info.md5dir = srcdir
     for (dirpath, dirnames, filenames) in os.walk(srcdir):
         for each_filename in filenames:
             if each_filename[-len(fileextend):].lower() != fileextend:

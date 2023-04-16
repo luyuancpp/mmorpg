@@ -1,14 +1,12 @@
-import os
 import genpublic
 
-md5dir = './md5/'
 srcdir = '../gate_server/src/service/'
 openfilename = 'open_service.cpp'
 
 def gen(readfilename, filename):
     newstr =  '#include <unordered_set>\n\n'
     declaration = False
-    with open(md5dir + readfilename,'r', encoding='utf-8') as file:
+    with open(genpublic.md5dir + readfilename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('#include') >= 0:
                 newstr += fileline

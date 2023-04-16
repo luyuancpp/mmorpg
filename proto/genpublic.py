@@ -106,7 +106,6 @@ class md5fileinfo():
     def __init__(self):
         self.filename = ''
         self.destdir = ''
-        self.md5dir = ''
         self.originalextension = ''
         self.targetextension = ''
         self.extensionfitler = ['.md5']
@@ -121,9 +120,7 @@ class md5fileinfo():
 
 def md5check(md5info):
     filebasename = os.path.basename(md5info.filename).replace(md5info.originalextension, md5info.targetextension)
-    tomd5dir = md5info.md5dir
-    if tomd5dir == '':
-        tomd5dir = md5info.destdir.replace(projectdir, md5dir)
+    tomd5dir = getmd5filename(md5info.destdir)
     genfilename = tomd5dir + filebasename
     filenamemd5 = genfilename + '.md5'
     destfilename = md5info.destdir + filebasename
