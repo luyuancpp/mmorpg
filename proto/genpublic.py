@@ -17,7 +17,6 @@ controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
 
 gatelogicservicedir = '../gate_server/src/service/logic_proto/'
 servicemethoddir = '../common/src/pb/pbc/service_method/'
-servicemethoddir = '../common/src/pb/pbc/service_method/'
 
 gsservicelogicreplieddir = '../game_server/src/service/logic_proto_replied/'
 controllerservicelogicreplieddir = '../controller_server/src/service/logic_proto_replied/'
@@ -91,12 +90,12 @@ def create_dirtree_without_files2md5(src, dst):
 create_dirtree_without_files2md5(projectdir, md5dir)
 
 def makedirs():
+    if not os.path.exists(md5dir):
+        os.makedirs(md5dir)
     if not os.path.exists(pbcdir):
         os.makedirs(pbcdir)
     if not os.path.exists(pbcserviceinstancedir):
         os.makedirs(pbcserviceinstancedir)
-    if not os.path.exists(md5dir):
-        os.makedirs(md5dir)
     if not os.path.exists(servicemethoddir):
         os.makedirs(servicemethoddir)
                          
