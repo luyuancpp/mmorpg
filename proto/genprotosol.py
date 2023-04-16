@@ -1,7 +1,5 @@
 import os
 
-import md5tool
-import shutil
 import genpublic
 
 funsname = []
@@ -16,8 +14,6 @@ genprotodir = ['./logic_proto/', './component_proto/', ]
 enum = {}
 maptype = 'map'
 
-if not os.path.exists(srcdir):
-    os.makedirs(srcdir)
 if not os.path.exists(destdir):
     os.makedirs(destdir)    
 
@@ -31,7 +27,7 @@ def iscpptype(typestring):
        return True
     return False
 
-def genluasol(filename, srcdir):
+def genluasol(filename):
     global funsname
     msgcode = 0
     enumcode = 0
@@ -43,7 +39,7 @@ def genluasol(filename, srcdir):
 
     newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'
     newstr +=  funcname + '\n{\n'    
-    newfilename = srcdir + os.path.basename(filename).replace('.proto', '_sol2.cpp')
+    newfilename = genpublic.getmd5filename(destdir) + os.path.basename(filename).replace('.proto', '_sol2.cpp')
     with open(filename,'r', encoding='utf-8') as file:
         filedbegin = 0
         for fileline in file:
@@ -178,21 +174,21 @@ def genluasol(filename, srcdir):
     with open(newfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)                
 
-def md5copy(destdir, srcdir, fileextend):
+def md5copy(destdir,  fileextend):
     cppmd5info = genpublic.md5fileinfo()
     cppmd5info.destdir = destdir
-    for (dirpath, dirnames, filenames) in os.walk(srcdir):
+    for (dirpath, dirnames, filenames) in os.walk(genpublic.getmd5filename(destdir)):
         for each_filename in filenames:
             if each_filename[-len(fileextend):].lower() != fileextend:
                 continue
             cppmd5info.filename = each_filename
             genpublic.md5copy(cppmd5info)
 
-def gentotalfile(destdir, srcdir):
+def gentotalfile(destdir):
     global funsname
     headfilename = 'pb2sol2.h'
-    srcheadfilename = srcdir + 'pb2sol2.h'
-    cppfilename = srcdir + 'pb2sol2.cpp'    
+    srcheadfilename = genpublic.getmd5filename(destdir) + 'pb2sol2.h'
+    cppfilename = genpublic.getmd5filename(destdir) + 'pb2sol2.cpp'    
     totalfuncitonname = 'void pb2sol2()'
     
     with open(srcheadfilename, 'w', encoding='utf-8')as file:
@@ -213,8 +209,8 @@ def gentotalfile(destdir, srcdir):
         cppnewstr += '}\n'
         file.write(cppnewstr)    
 
-genluasol('./common_proto/common.proto', srcdir)
-genluasol('./common_proto/c2gate.proto', srcdir)
+genluasol('./common_proto/common.proto')
+genluasol('./common_proto/c2gate.proto')
 
 def scanprotofile():
     for protodir in genprotodir:
@@ -222,12 +218,12 @@ def scanprotofile():
         for filename in dir_list:
             if not (filename.find('client_player.proto') >= 0 or filename.find('comp.proto') >= 0):
                 continue
-            genluasol(protodir + filename, srcdir)
+            genluasol(protodir + filename)
 
 genpublic.makedirs()
 
 scanprotofile()
-gentotalfile(destdir, srcdir)
-md5copy(destdir, srcdir, 'sol2.h')
-md5copy(destdir, srcdir, 'sol2.cpp')
+gentotalfile(destdir)
+md5copy(destdir, 'sol2.h')
+md5copy(destdir, 'sol2.cpp')
 
