@@ -1,5 +1,4 @@
 import os
-from os import system
 import md5tool
 import shutil
 import threading
@@ -119,13 +118,12 @@ def getsrcpathmd5dir(dirpath):
     return srcdir + protodir
 
 def genheadfile(filename, destdir):
-    destdir = genpublic.getdestdir(destdir)
-    newheadfilename = getsrcpathmd5dir(destdir) + os.path.basename(filename).replace('.proto', '.h')
+    md5filename = genpublic.getmd5filename(destdir + os.path.basename(filename).replace('.proto', '.h'))
     newstr = '#pragma once\n'
     newstr += '#include "player_service.h"\n'
     newstr += '#include "' + protodir  + os.path.basename(filename).replace('.proto', '.pb.h') + '"\n'           
     newstr += genheadrpcfun()
-    with open(newheadfilename, 'w', encoding='utf-8')as file:
+    with open(md5filename, 'w', encoding='utf-8')as file:
         file.write(newstr)
         
 def parseplayerservcie(filename):
@@ -256,14 +254,14 @@ class myThread (threading.Thread):
         if self.filename.find(client_player) >= 0:
             cppfile.destfilename = genpublic.getdestdir(genpublic.gamemd5dir())  + self.basefilename.replace('.proto', cppext) 
             cppfile.md5filename = getsrcpathmd5dir(genpublic.gamemd5dir()) + self.basefilename.replace('.proto', cppext) 
-            genheadfile(self.filename, genpublic.gamemd5dir())
+            genheadfile(self.filename, gslogicervicedir)
             genpublic.gencppfile(cppfile)
         elif self.filename.find(server_player) >= 0:
-            genheadfile(self.filename, genpublic.gamemd5dir())
+            genheadfile(self.filename, gslogicervicedir)
             cppfile.destfilename = genpublic.getdestdir(genpublic.gamemd5dir())  + self.basefilename.replace('.proto', cppext) 
             cppfile.md5filename = getsrcpathmd5dir(genpublic.gamemd5dir()) + self.basefilename.replace('.proto', cppext) 
             genpublic.gencppfile(cppfile)
-            genheadfile(self.filename, genpublic.controllermd5dir())
+            genheadfile(self.filename, genpublic.controllerlogicservicedir)
             cppfile.destfilename = genpublic.getdestdir(genpublic.controllermd5dir())  + self.basefilename.replace('.proto', cppext) 
             cppfile.md5filename = getsrcpathmd5dir(genpublic.controllermd5dir()) + self.basefilename.replace('.proto', cppext) 
             genpublic.gencppfile(cppfile)
