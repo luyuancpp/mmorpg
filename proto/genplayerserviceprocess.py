@@ -1,17 +1,11 @@
 import os
-import md5tool
-import shutil
 import threading
 import genpublic
 local = threading.local()
 
-local.filemethodarray = []
-local.servicenames = []
-local.playerservice = ''
 local.service = ''
 local.playerservicearray = []
 local.fileservice = []
-local.md5protodir = []
 
 threads = []
 tabstr = '    '
@@ -19,10 +13,8 @@ cpprpcservicepart = 1
 controller = '(entt::entity player'
 protodir = 'logic_proto/'
 includedir = 'src/service/logic_proto/'
-gslogicervicedir = '../game_server/src/service/logic_proto/'
 client_player = 'client_player'
 server_player = 'server_player'
-filedirdestpath = {}
 
 def parsefile(filename):
     local.filemethodarray = []
@@ -183,9 +175,6 @@ def gencontrollerplayerservcielist(filename):
 genfile = []
 
 def scanprotofile():
-    global filedirdestpath
-    filedirdestpath['player_service.cpp'] = gslogicervicedir
-    filedirdestpath['player_service.h'] = gslogicervicedir
     dir_list = os.listdir(protodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
@@ -261,7 +250,6 @@ def main():
     gencontrollerplayerservcielist('player_service.cpp')
 
 genpublic.makedirs()
-local.md5protodir = genpublic.makedirsbypath(protodir)
 scanprotofile() 
 main()
 
