@@ -1,7 +1,4 @@
 import os
-
-import md5tool
-import shutil
 import threading
 import genpublic
 
@@ -18,7 +15,6 @@ local.usemethodid = {}
 
 threads = []
 tabstr = '    '
-servicedir = './md5/logic_proto/serviceid/'
 writedir = '../common/src/pb/pbc/serviceid/'
 protodir = './logic_proto/'
 commondir = './common_proto/'
@@ -26,8 +22,7 @@ serviceidir = './servicemethodid/'
 idfilename = 'servicemethodid.txt'
 msg_index = 0
 
-if not os.path.exists(servicedir):
-    os.makedirs(servicedir)
+
 if not os.path.exists(writedir):
     os.makedirs(writedir)
 if not os.path.exists(serviceidir):
@@ -105,7 +100,7 @@ def genperserviceheader():
        newstr = ''
        for service_metho in values:
         newstr += 'const uint32_t ' + service_metho[0] + ' = ' + str(service_metho[1]) + ';\n'
-       filename = servicedir + getkeyfilename(key, local.hfilename)
+       filename = genpublic.getmd5filename(writedir) + getkeyfilename(key, local.hfilename)
        with open(filename, 'w', encoding='utf-8')as file: 
         file.write(newstr)
 
@@ -131,7 +126,6 @@ def copyperserviceheader():
     for key, values in  local.serviceidlist.items():
         cppmd5info.filename = getkeyfilename(key, local.hfilename)
         cppmd5info.destdir = writedir
-        cppmd5info.md5dir = servicedir
         genpublic.md5copy(cppmd5info)
 
 genfile = []
@@ -191,14 +185,13 @@ scanprotofile()
 scanserviceidfile()
 main()
 
-genmsgidhead(servicedir + local.hfilename)
-genmsgidcpp(servicedir + local.cppfilename)
+genmsgidhead(genpublic.getmd5filename(writedir) + local.hfilename)
+genmsgidcpp(genpublic.getmd5filename(writedir) + local.cppfilename)
 genperserviceheader()
 
 cppmd5info = genpublic.md5fileinfo()
 cppmd5info.filename = local.cppfilename
 cppmd5info.destdir = writedir
-cppmd5info.md5dir = servicedir
 genpublic.md5copy(cppmd5info)
 
 cppmd5info.filename = local.hfilename

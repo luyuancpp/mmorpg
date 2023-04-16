@@ -186,7 +186,6 @@ class myThread (threading.Thread):
         cppmd5info.destdir = controllerdestdir
         genpublic.md5copy(cppmd5info)
         
-        cppmd5info.md5dir = ''
         cppmd5info.filename = getfilenamenoprefixsuffix(self.filename) + '.cpp'
         cppmd5info.destdir = gsdestdir
         genpublic.md5copy(cppmd5info)

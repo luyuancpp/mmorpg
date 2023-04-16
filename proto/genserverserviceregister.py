@@ -4,10 +4,6 @@ import genpublic
 
 servicearray = []
 servicefilenamearray = []
-md5dir = './md5/logic_proto/'
-
-if not os.path.exists(md5dir):
-    os.makedirs(md5dir)
 
 def scanservice():
     for (dirpath, dirnames, filenames) in os.walk(genpublic.logicprotodir):
@@ -54,21 +50,17 @@ gencppfile('./md5/game_server/server_service.cpp')
 cppmd5info = genpublic.md5fileinfo()
 cppmd5info.filename = 'server_service.cpp'
 cppmd5info.destdir = '../controller_server/src/service/logic_proto/'
-cppmd5info.md5dir = './md5/controller_server/'
     
 genpublic.md5copy(cppmd5info)
 
 cppmd5info.filename = 'server_service.h'
 cppmd5info.destdir = '../controller_server/src/service/logic_proto/'
-cppmd5info.md5dir = './md5/'
 genpublic.md5copy(cppmd5info)
 
 cppmd5info.filename = 'server_service.cpp'
 cppmd5info.destdir = '../game_server/src/service/logic_proto/'
-cppmd5info.md5dir = './md5/game_server/'
 genpublic.md5copy(cppmd5info)
 
 cppmd5info.filename = 'server_service.h'
 cppmd5info.destdir = '../game_server/src/service/logic_proto/'
-cppmd5info.md5dir = './md5/'
 genpublic.md5copy(cppmd5info)
