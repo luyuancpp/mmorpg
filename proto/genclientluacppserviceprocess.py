@@ -7,6 +7,7 @@ includedir = 'script/lua/service/'
 md5dir = './md5/'
 cppfilename = 'service_lua.cpp'
 md5dirfilename = md5dir + cppfilename
+destfilename = clientservicedir + cppfilename
 tabstr = '	'
 genfile = []
 
@@ -35,7 +36,7 @@ def gencpp():
 		newstr += tabstr + tabstr +	'}\n'
 		newstr += tabstr + '}\n'
 	newstr += '\n}\n'
-	with open(md5dirfilename, 'w', encoding='utf-8')as file:
+	with open(genpublic.getmd5filename(destfilename), 'w', encoding='utf-8')as file:
 		file.write(newstr)
 
 scanprotofile()
@@ -44,5 +45,4 @@ gencpp()
 cppmd5info = genpublic.md5fileinfo()
 cppmd5info.filename = cppfilename
 cppmd5info.destdir = clientservicedir
-cppmd5info.md5dir = md5dir
 genpublic.md5copy(cppmd5info)
