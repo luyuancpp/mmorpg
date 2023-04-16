@@ -171,7 +171,6 @@ class myThread (threading.Thread):
         cppfilename = os.path.basename(self.filename).replace('.proto', destextcpp) 
         cppfile = genpublic.cpp()
         cppfile.destfilename = genpublic.gsservicelogicreplieddir + cppfilename
-        cppfile.md5filename = genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex] + cppfilename
         cppfile.includestr =  getincludebyfilename(basefilename)
         cppfile.filemethodarray = local.filemethodarray
         cppfile.begunfun = gencpprpcfunbegin
@@ -193,7 +192,6 @@ class myThread (threading.Thread):
         genpublic.md5copy(hmd5info)
         
         cppfile.destfilename = genpublic.controllerservicelogicreplieddir + cppfilename
-        cppfile.md5filename = genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex] + cppfilename
         genpublic.gencppfile(cppfile)
         
         cppmd5info.destdir = genpublic.controllerservicelogicreplieddir
