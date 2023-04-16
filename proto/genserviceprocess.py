@@ -85,9 +85,9 @@ def gencpprpcfunbegin(rpcindex):
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
 
-def genheadfile(filename,  destdir,  md5dir):
+def genheadfile(filename,  destdir):
     filename = os.path.basename(filename).replace('.proto', '.h') 
-    md5filename = md5dir +   filename
+    md5filename = genpublic.getmd5filename(destdir) +   filename
     newstr = '#pragma once\n'
     newstr += '#include "' + getpbdir( destdir) + filename.replace('.h', '') + '.pb.h"\n'
     newstr += genheadrpcfun()
@@ -97,17 +97,15 @@ def genheadfile(filename,  destdir,  md5dir):
 
 
 class myThread (threading.Thread):
-    def __init__(self, filename, destdir, md5dir):
+    def __init__(self, filename, destdir):
         threading.Thread.__init__(self)
         self.filename = str(filename)
-        self.md5dir = str(md5dir)
         self.destdir = str(destdir)
     def run(self):
         
         hmd5info = genpublic.md5fileinfo()
         hmd5info.filename = self.filename
         hmd5info.destdir = self.destdir
-        hmd5info.md5dir = self.md5dir
         hmd5info.originalextension = '.proto'
         hmd5info.targetextension = '.h'
         checkheadmd5,_,_,_ = genpublic.md5check(hmd5info)  
@@ -115,7 +113,6 @@ class myThread (threading.Thread):
         cppmd5info = genpublic.md5fileinfo()
         cppmd5info.filename = self.filename
         cppmd5info.destdir = self.destdir
-        cppmd5info.md5dir = self.md5dir
         cppmd5info.originalextension = '.proto'
         cppmd5info.targetextension = '.cpp'  
         checkcppmd5,_,_,_  = genpublic.md5check(cppmd5info)    
@@ -123,7 +120,7 @@ class myThread (threading.Thread):
             return
         parsefile(self.filename)
         if checkheadmd5 == False:
-            genheadfile(self.filename, self.destdir, self.md5dir)
+            genheadfile(self.filename, self.destdir)
             genpublic.md5copy(hmd5info)
         if checkcppmd5 == False:
             destext = '.cpp'
@@ -132,7 +129,6 @@ class myThread (threading.Thread):
             cppfile.destfilename = self.destdir + filename
             skillinclude = '#include "' +  filename.replace(destext, '.h') + '"\n'
             skillinclude += '#include "src/network/rpc_msg_route.h"\n'
-            cppfile.md5filename = self.md5dir + filename
             cppfile.includestr = skillinclude
             cppfile.filemethodarray = local.filemethodarray
             cppfile.begunfun = gencpprpcfunbegin
@@ -143,7 +139,7 @@ class myThread (threading.Thread):
 def main():
     filelen = len(genfile)
     for i in range(0, filelen):
-        t = myThread( genfile[i][0], genfile[i][1], genfile[i][2])
+        t = myThread( genfile[i][0], genfile[i][1])
         threads.append(t)
         t.start()
     for t in threads :
@@ -155,10 +151,10 @@ def scanprotofile():
         if not (filename[-6:].lower() == '.proto'):
             continue
         if genpublic.is_gs_and_controller_server_proto(filename) == True :
-            genfile.append([logicprotodir + filename, genpublic.controllerlogicservicedir, genpublic.md5dirs[genpublic.conrollermd5dirindex] + logicprotodir ])
-            genfile.append([logicprotodir + filename, genpublic.gslogicervicedir, genpublic.md5dirs[genpublic.gamemd5dirindex] + logicprotodir])
+            genfile.append([logicprotodir + filename, genpublic.controllerlogicservicedir])
+            genfile.append([logicprotodir + filename, genpublic.gslogicervicedir])
         elif filename.find(genpublic.lobby_file_prefix) >= 0:
-            genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir, genpublic.md5dirs[genpublic.lobbymd5dirindex] + logicprotodir])
+            genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir])
             
 genpublic.makedirs()
 scanprotofile()

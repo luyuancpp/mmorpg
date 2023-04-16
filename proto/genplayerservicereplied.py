@@ -217,7 +217,6 @@ def main():
     genpublic.md5copy(cppmd5info)
 
 genpublic.makedirs()
-genpublic.makedirsbypath(protodir)
 scanprotofile() 
 main()
 
