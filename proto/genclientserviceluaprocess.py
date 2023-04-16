@@ -9,7 +9,6 @@ threads = []
 genfile = []
 
 tabstr = '    '
-serviceluamd5dir = './md5/'
 protodir = 'logic_proto/'
 destdir = '../bin/script/lua/service/'
 client_player = 'client_player'
@@ -33,10 +32,6 @@ def genyourcodepair():
 
 def genluafile(filename):
     cppfilename = destdir  +  os.path.basename(filename).replace('.proto', '.lua')
-    newcppfilename = serviceluamd5dir +  os.path.basename(filename).replace('.proto', '.lua')
-    if not os.path.exists(newcppfilename) and os.path.exists(os.path.basename(cppfilename)):
-        shutil.copy(os.path.basename(cppfilename), newcppfilename)
-        return
     newstr = ''
     serviceidx = 0
     try:
@@ -78,13 +73,13 @@ def genluafile(filename):
         serviceidx += 1 
     
     newstr += genpublic.luarpcend + '\n'
-    with open(newcppfilename, 'w', encoding='utf-8')as file:
+    with open(cppfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
               
 def md5copydir():
     cppmd5info = genpublic.md5fileinfo()
     cppmd5info.destdir = destdir
-    for (_, _, filenames) in os.walk(serviceluamd5dir):
+    for (_, _, filenames) in os.walk(genpublic.getmd5filename(destdir)):
         for filename in filenames:    
             if filename.find('.lua') >= 0:
                 cppmd5info.filename = filename
