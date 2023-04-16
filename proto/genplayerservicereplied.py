@@ -117,8 +117,7 @@ def parseplayerservcie(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.service)
 
-def genplayerservcierepliedlist(filename, md5dir):
-    md5filename = md5dir   + filename
+def genplayerservcierepliedlist(filename, destdir):
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service_replied.h"\n'
@@ -134,7 +133,7 @@ def genplayerservcierepliedlist(filename, md5dir):
         newstr += ', std::make_unique<' + service + 'RepliedImpl>(new '
         newstr +=  service.replace('.', '') + 'RepliedRegisterImpl));\n'
     newstr += '}\n'
-    with open(md5filename, 'w', encoding='utf-8')as file:
+    with open(genpublic.getmd5filename(destdir  + filename), 'w', encoding='utf-8')as file:
         file.write(newstr)
 
         
@@ -212,15 +211,13 @@ def main():
     cppmd5info = genpublic.md5fileinfo()
     cppmd5info.filename = 'player_service_replied.cpp'
     
-    genplayerservcierepliedlist(cppmd5info.filename, genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex])
+    genplayerservcierepliedlist(cppmd5info.filename, genpublic.gsservicelogicreplieddir)
   
     cppmd5info.destdir = genpublic.gsservicelogicreplieddir
-    cppmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex]
     genpublic.md5copy(cppmd5info)
     
     cppmd5info.destdir =  genpublic.controllerservicelogicreplieddir
-    cppmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex]
-    genplayerservcierepliedlist(cppmd5info.filename, genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex])    
+    genplayerservcierepliedlist(cppmd5info.filename, genpublic.controllerservicelogicreplieddir)    
     genpublic.md5copy(cppmd5info)
 
 genpublic.makedirs()
