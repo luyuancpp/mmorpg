@@ -6,7 +6,7 @@ openfilename = 'open_service.cpp'
 def gen(readfilename, filename):
     newstr =  '#include <unordered_set>\n\n'
     declaration = False
-    with open(genpublic.md5dir + readfilename,'r', encoding='utf-8') as file:
+    with open(readfilename,'r', encoding='utf-8') as file:
         for fileline in file:
             if fileline.find('#include') >= 0:
                 newstr += fileline
@@ -22,7 +22,7 @@ def gen(readfilename, filename):
     with open(genpublic.getmd5filename(srcdir + filename), 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-gen('logic_proto/serviceid/service_method_id.cpp', openfilename)
+gen('../common/src/pb/pbc/serviceid/service_method_id.cpp', openfilename)
 
 cppmd5info = genpublic.md5fileinfo()
 cppmd5info.destdir = srcdir

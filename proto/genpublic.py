@@ -84,6 +84,8 @@ def create_dirtree_without_files2md5(src, dst):
             #print(dirpath)
             if os.path.exists(dirpath):
                 continue
+            if dirpath.find('logic_proto') >= 0:
+                print(dirpath)
             os.makedirs(dirpath)
             
 
