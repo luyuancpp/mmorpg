@@ -4,9 +4,7 @@ import genpublic
 luadir = '../bin/script/lua/service/'
 clientservicedir = '../client/src/service/logic_proto/'
 includedir = 'script/lua/service/'
-md5dir = './md5/'
 cppfilename = 'service_lua.cpp'
-md5dirfilename = md5dir + cppfilename
 destfilename = clientservicedir + cppfilename
 tabstr = '	'
 genfile = []

@@ -17,8 +17,7 @@ def parsefile(filename, includedir):
                 local.servicefile.append(filename)
                 local.fileincludedir.append(includedir)
 
-def gen(filename,  md5dir):
-    newheadfilename = md5dir + filename
+def gen(filename):
     newstr = '#include <unordered_map>\n\n'
     for i in range(0, len(local.servicefile)):
         pbcfile = os.path.basename(local.servicefile[i]).replace('.proto', '.pb.h"\n') 
@@ -32,7 +31,7 @@ def gen(filename,  md5dir):
         newstr += genpublic.tabstr + 'g_services.emplace("' + local.service[i]  + '"'
         newstr += ', std::make_unique<' + local.service[i]  + 'MethodServiceImpl>());\n'
     newstr += '}\n'
-    with open(newheadfilename, 'w', encoding='utf-8')as file:
+    with open(genpublic.getmd5filename(genpublic.pbcserviceinstancedir + filename), 'w', encoding='utf-8')as file:
         file.write(newstr)
         
 def scanprotofile():
@@ -51,10 +50,9 @@ genpublic.makedirs()
 
 scanprotofile()
 
-gen('rpc_prototype_service.cpp', genpublic.pbcserviceinstancemd5dir)
+gen('rpc_prototype_service.cpp')
 
 cppmd5info = genpublic.md5fileinfo()
 cppmd5info.filename = 'rpc_prototype_service.cpp'
 cppmd5info.destdir = genpublic.pbcserviceinstancedir
-cppmd5info.md5dir = genpublic.pbcserviceinstancemd5dir
 genpublic.md5copy(cppmd5info)
