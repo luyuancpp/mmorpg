@@ -2,6 +2,7 @@ import os
 import md5tool
 import shutil
 
+projectdir = '../'
 controller_file_prefix = 'controller_'
 gs_file_prefix = 'game_'
 lobby_file_prefix = 'lobby_'
@@ -43,14 +44,14 @@ md5dir + 'deploy_server/',
 md5dir + 'client/']
 
 projectdirs = ['common',
-'controller_server/', 
-'game_server/', 
-'gate_server/',
-'login_server/',
-'lobby_server/',
-'database_server/',
-'deploy_server/',
-'client/']
+'controller_server', 
+'game_server', 
+'gate_server',
+'login_server',
+'lobby_server',
+'database_server',
+'deploy_server',
+'client']
 
 logicrepliedmd5dirs = \
 [md5dir + 'controller_server/', 
@@ -129,21 +130,25 @@ def create_dirtree_without_files2md5(src, dst):
     os.makedirs(dst)
     src_prefix = len(src) + len(os.path.sep) - 1
     projectlen = len(projectdirs)
+    srcprojectdirs = []
+    for i in range(0, projectlen):
+        srcprojectdirs.append(src + projectdirs[i])
     for root, dirs, files in os.walk(src):
+        iscopydir = False
+        for i in range(0, projectlen):
+            if root.find(srcprojectdirs[i]) >= 0:
+                iscopydir = True
+                break
+        if iscopydir == False:
+            continue
+        #print(dirs)
         for dirname in dirs:
-            iscopydir = False
-            for i in range(0, projectlen):
-                if root.find(src + projectdirs[i]) >= 0:
-                    iscopydir = True
-            if iscopydir == False:
-                continue
             dirpath = os.path.join(dst, root[src_prefix:], dirname)
-            if os.path.exists(dirpath) or not os.path.isdir(dirname):
-                continue
+            #print(dirpath)
             os.makedirs(dirpath)
             
 
-create_dirtree_without_files2md5('../', md5dir)
+create_dirtree_without_files2md5(projectdir, md5dir)
 
 def makedirs():
     if not os.path.exists(pbcdir):
@@ -304,6 +309,8 @@ class md5fileinfo():
 
 def md5check(md5info):
     filebasename = os.path.basename(md5info.filename).replace(md5info.originalextension, md5info.targetextension)
+    if md5info.md5dir == '':
+        md5info.md5dir = md5info.destdir.replace(projectdir, md5dir)
     genfilename = md5info.md5dir + filebasename
     filenamemd5 = genfilename + '.md5'
     destfilename = md5info.destdir + filebasename
@@ -333,7 +340,10 @@ def md5copy(md5info):
     print("copy %s ---> %s" % (genfilename, destfilename))
     md5tool.generate_md5_file_for(genfilename, genfilenamemd5)
     shutil.copy(genfilename, destfilename)
-    
+
+def getmd5filename(destfilename):
+    return destfilename.replace(projectdir, md5dir)
+
 class cpp():
     def __init__(self):
         self.destfilename = ''
