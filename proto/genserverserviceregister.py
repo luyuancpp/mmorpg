@@ -18,17 +18,17 @@ def scanservice():
                     servicefilenamearray.append(filename.replace('.proto', '.h'))
                     break;
 
-def genheadfile(writedfilename):
+def genheadfile(writedfilename, destdir):
     global servicearray
     newstr = '#pragma once\n'
     newstr += '#include <array>\n'
     newstr += '#include <memory>\n'
     newstr += '#include <google/protobuf/message.h>\n\n'
     newstr += 'extern std::array<std::unique_ptr<::google::protobuf::Service>, ' + str(len(servicearray)) + '> g_server_service;\n'
-    with open(writedfilename, 'w', encoding='utf-8')as file:
+    with open(genpublic.getmd5filename(destdir) + writedfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
-def gencppfile(writedfilename):
+def gencppfile(writedfilename, destdir):
     global servicearray
     newstr = '#include <array>\n'
     newstr += '#include <memory>\n'
@@ -39,13 +39,14 @@ def gencppfile(writedfilename):
     for service in servicearray:
         newstr += 'std::unique_ptr<::google::protobuf::Service>(new ' +  service.replace('\n', '') + 'Impl),\n'
     newstr = newstr.strip(',\n') + '};\n'
-    with open(writedfilename, 'w', encoding='utf-8')as file:
+    with open(genpublic.getmd5filename(destdir) + writedfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 scanservice()
-genheadfile('./md5/server_service.h')
-gencppfile('./md5/controller_server/server_service.cpp')
-gencppfile('./md5/game_server/server_service.cpp')
+genheadfile('server_service.h', genpublic.gslogicervicedir)
+genheadfile('server_service.h', genpublic.controllerlogicservicedir)
+gencppfile('server_service.cpp', genpublic.gslogicervicedir)
+gencppfile('server_service.cpp', genpublic.controllerlogicservicedir)
 
 cppmd5info = genpublic.md5fileinfo()
 cppmd5info.filename = 'server_service.cpp'
