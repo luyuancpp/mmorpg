@@ -58,9 +58,6 @@ def is_client_player_proto(filename):
 def is_server_player_proto(filename):
     return filename.find('server_player') >= 0 
 
-def is_player_proto(filename):
-    return is_client_player_proto(filename) or is_server_player_proto(filename)
-
 def is_not_client_proto(filename):
     return is_client_player_proto(filename)  == False
     
@@ -104,44 +101,9 @@ def makedirs():
         os.makedirs(servicemethoddir)
     if not os.path.exists(servicemethodmd5dir):
         os.makedirs(servicemethodmd5dir)  
-                        
-def controller():
-    return 'controller' 
- 
-def iscontrollerdir(dirpath):
-    return dirpath.find('controller_server') >= 0 or dirpath.find('controller') >= 0
- 
-def isgamedir(dirpath):
-    return dirpath.find('game_server') >= 0 or dirpath.find('game') >= 0
-
-def lobby():
-    return 'lobby'  
-
-def islobbydir(dirpath):
-    return dirpath.find('lobby_server') >= 0 or dirpath.find('lobby') >= 0
-    
-def islogindir(dirpath):
-    return dirpath.find('login_server') >= 0 or dirpath.find('login') >= 0
-
-def isdatabasedir(dirpath):
-    return dirpath.find('database_server') >= 0 or dirpath.find('database') >= 0
-
-def isgatedir(dirpath):
-    return dirpath.find('gate_server') >= 0 or dirpath.find('gate') >= 0
-   
-def isdeploydir(dirpath):
-    return dirpath.find('deploy_server') >= 0 or dirpath.find('deploy') >= 0 
-  
-def commonproto():
-    return commonportodir
-    
-def iscommonproto(dirpath):
-    return dirpath.find(commonproto()) >= 0
-
-
+                         
 def is_service_fileline(fileline):
     return fileline.find('service ') >= 0 and (fileline.find('{') >= 0 or fileline.find('Service') >= 0)
-
 
 class md5fileinfo():
     def __init__(self):
