@@ -107,16 +107,6 @@ def gencpprpcfunbegin(rpcindex):
 def genyourcode():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
 
-def getsrcpathmd5dir(dirpath):
-    srcdir = ''
-    if genpublic.isgamedir(dirpath):
-        srcdir = genpublic.md5dirs[genpublic.gamemd5dirindex]
-    elif genpublic.iscontrollerdir(dirpath):
-        srcdir = genpublic.md5dirs[genpublic.conrollermd5dirindex]
-    elif genpublic.islobbydir(dirpath):
-        srcdir = genpublic.md5dirs[genpublic.lobbymd5dirindex]
-    return srcdir + protodir
-
 def genheadfile(filename, destdir):
     md5filename = genpublic.getmd5filename(destdir + os.path.basename(filename).replace('.proto', '.h'))
     newstr = '#pragma once\n'
@@ -155,6 +145,7 @@ def gengsplayerservcielist(filename):
     newstr += '}\n'
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
+    
 
 def gencontrollerplayerservcielist(filename):
     destfilename = genpublic.md5dirs[genpublic.conrollermd5dirindex] + protodir + filename
@@ -181,44 +172,6 @@ def gencontrollerplayerservcielist(filename):
     newstr += '}\n'
     with open(destfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)
-
-def md5copy(filename, md5path):
-        destdir = genpublic.getdestdir(md5path)
-        if filename.find('md5') >= 0 or filename.find('c_') >= 0 or filename.find('sol2') >= 0:
-            return
-        gennewfilename = md5path  + filename
-        filenamemd5 = gennewfilename + '.md5'
-        error = None
-        emptymd5 = False
-        destfilename = destdir  + filename
-        if  not os.path.exists(filenamemd5) or not os.path.exists(gennewfilename) or not os.path.exists(destfilename):
-            emptymd5 = True
-        else:
-            error = md5tool.check_against_md5_file(gennewfilename, filenamemd5)              
-        if error == None and os.path.exists(destfilename) and emptymd5 == False:
-            return
-        print("copy %s ---> %s" % (gennewfilename, destfilename))
-        shutil.copy(gennewfilename, destfilename)
-        md5tool.generate_md5_file_for(destfilename, filenamemd5)
-def md5copydir():
-    cppmd5info = genpublic.md5fileinfo()
-    cppmd5info.extensionfitler = ['md5', 'c_', 'sol2']
-    for d in local.md5protodir:
-        for (md5dir, dirnames, filenames) in os.walk(d):
-            cppmd5info.destdir = genpublic.getdestdir(md5dir)
-            cppmd5info.md5dir = md5dir
-            for filename in filenames:    
-                if filename.find(client_player) >= 0:
-                    cppmd5info.filename = filename
-                    genpublic.md5copy(cppmd5info)
-                elif (filename.find(server_player) >= 0 and genpublic.isgamedir(md5dir)) or\
-                    (filename == 'player_service.cpp' and genpublic.isgamedir(md5dir)):    
-                    cppmd5info.filename = filename
-                    genpublic.md5copy(cppmd5info)
-                elif (filename.find(server_player) >= 0 and genpublic.iscontrollerdir(md5dir)) or\
-                     (filename == 'player_service.cpp' and genpublic.iscontrollerdir(md5dir)):                   
-                    cppmd5info.filename = filename
-                    genpublic.md5copy(cppmd5info)
 
 genfile = []
 
@@ -251,20 +204,41 @@ class myThread (threading.Thread):
         cppfile.begunfun = gencpprpcfunbegin
         cppfile.controller = controller
         
-        if self.filename.find(client_player) >= 0:
-            cppfile.destfilename = genpublic.getdestdir(genpublic.gamemd5dir())  + self.basefilename.replace('.proto', cppext) 
-            cppfile.md5filename = getsrcpathmd5dir(genpublic.gamemd5dir()) + self.basefilename.replace('.proto', cppext) 
+        cppmd5info = genpublic.md5fileinfo()
+        cppmd5info.extensionfitler = ['md5', 'c_', 'sol2']
+        cppmd5info.originalextension = '.proto'
+        cppmd5info.filename = self.basefilename
+        if self.filename.find(client_player) >= 0: 
             genheadfile(self.filename, gslogicervicedir)
+            
+            cppmd5info.destdir = gslogicervicedir
+            cppmd5info.targetextension = '.h'
+            genpublic.md5copy(cppmd5info)
+            
+            cppfile.destfilename = gslogicervicedir  + self.basefilename.replace('.proto', cppext) 
             genpublic.gencppfile(cppfile)
+            cppmd5info.targetextension = cppext
+            genpublic.md5copy(cppmd5info)
+
         elif self.filename.find(server_player) >= 0:
             genheadfile(self.filename, gslogicervicedir)
-            cppfile.destfilename = genpublic.getdestdir(genpublic.gamemd5dir())  + self.basefilename.replace('.proto', cppext) 
-            cppfile.md5filename = getsrcpathmd5dir(genpublic.gamemd5dir()) + self.basefilename.replace('.proto', cppext) 
+            cppmd5info.destdir = gslogicervicedir
+            cppmd5info.targetextension = '.h'
+            genpublic.md5copy(cppmd5info)
+            
+            cppfile.destfilename = gslogicervicedir  + self.basefilename.replace('.proto', cppext) 
             genpublic.gencppfile(cppfile)
+            cppmd5info.targetextension = cppext
+            genpublic.md5copy(cppmd5info)
+            
+            cppmd5info.destdir = genpublic.controllerlogicservicedir
+            cppmd5info.targetextension = '.h'
             genheadfile(self.filename, genpublic.controllerlogicservicedir)
-            cppfile.destfilename = genpublic.getdestdir(genpublic.controllermd5dir())  + self.basefilename.replace('.proto', cppext) 
-            cppfile.md5filename = getsrcpathmd5dir(genpublic.controllermd5dir()) + self.basefilename.replace('.proto', cppext) 
+            genpublic.md5copy(cppmd5info)
+            cppfile.destfilename = genpublic.controllerlogicservicedir  + self.basefilename.replace('.proto', cppext) 
             genpublic.gencppfile(cppfile)
+            cppmd5info.targetextension = cppext
+            genpublic.md5copy(cppmd5info)
 
 def main():
     global threads
@@ -283,5 +257,4 @@ genpublic.makedirs()
 local.md5protodir = genpublic.makedirsbypath(protodir)
 scanprotofile() 
 main()
-md5copydir()
 
