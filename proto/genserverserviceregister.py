@@ -5,13 +5,12 @@ import genpublic
 servicearray = []
 servicefilenamearray = []
 md5dir = './md5/logic_proto/'
-logicprotodir = './logic_proto/'
 
 if not os.path.exists(md5dir):
     os.makedirs(md5dir)
 
 def scanservice():
-    for (dirpath, dirnames, filenames) in os.walk(logicprotodir):
+    for (dirpath, dirnames, filenames) in os.walk(genpublic.logicprotodir):
         for filename in filenames:  
             if filename.find('client_player') >= 0 or filename.find('server_player') >= 0 or filename.find(genpublic.lobby_file_prefix) >= 0:
                 continue  
