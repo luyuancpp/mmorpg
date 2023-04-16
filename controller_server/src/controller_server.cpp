@@ -50,7 +50,7 @@ ControllerServer::ControllerServer(muduo::net::EventLoop* loop)
 void ControllerServer::Init()
 {
     g_controller_node = this;
-    EventReceiverEvent::Register(tls.dispatcher);
+    EventReceiver::Register(tls.dispatcher);
     InitConfig();
 	node_info_.set_node_type(kControllerNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
