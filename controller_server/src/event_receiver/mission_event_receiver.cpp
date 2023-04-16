@@ -18,18 +18,27 @@ dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventReceiver::Miss
 dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive3>();
 }
 
+void MissionEventReceiver::Receive0(const AcceptMissionEvent& event_obj)
+{
+///<<< BEGIN WRITING YOUR CODE
+///     test
+///<<< END WRITING YOUR CODE
+}
+
+void MissionEventReceiver::Receive1(const MissionConditionEvent& event_obj)
+{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
+void MissionEventReceiver::Receive2(const OnAcceptedMissionEvent& event_obj)
+{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
+void MissionEventReceiver::Receive3(const OnMissionAwardEvent& event_obj)
+{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
