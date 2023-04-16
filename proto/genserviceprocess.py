@@ -11,7 +11,6 @@ threads = []
 gsservicedir = '../game_server/src/service/logic_proto/'
 lobbyservicedir = '../lobby_server/src/service/logic_proto/'
 controllerservicedir = '../controller_server/src/service/logic_proto/'
-logicprotodir = 'logic_proto/'
 tabstr = '    '
 controller = '(::google::protobuf::RpcController* controller'
 
@@ -31,7 +30,7 @@ def parsefile(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
 
 def getpbdir(writedir):
-    if writedir.find(logicprotodir) >= 0:
+    if writedir.find(genpublic.logicprotodir) >= 0:
         return 'src/pb/pbc/logic_proto/'
     return ''
 
@@ -136,15 +135,15 @@ def main():
         t.join()
 
 def scanprotofile():
-    dir_list  = os.listdir(logicprotodir)
+    dir_list  = os.listdir(genpublic.logicprotodir)
     for filename in dir_list:
         if not (filename[-6:].lower() == '.proto'):
             continue
         if genpublic.is_gs_and_controller_server_proto(filename) == True :
-            genfile.append([logicprotodir + filename, genpublic.controllerlogicservicedir])
-            genfile.append([logicprotodir + filename, genpublic.gslogicervicedir])
+            genfile.append([genpublic.logicprotodir + filename, genpublic.controllerlogicservicedir])
+            genfile.append([genpublic.logicprotodir + filename, genpublic.gslogicervicedir])
         elif filename.find(genpublic.lobby_file_prefix) >= 0:
-            genfile.append([logicprotodir + filename, genpublic.lobbylogicservicedir])
+            genfile.append([genpublic.logicprotodir + filename, genpublic.lobbylogicservicedir])
             
 genpublic.makedirs()
 scanprotofile()

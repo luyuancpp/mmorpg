@@ -8,7 +8,6 @@ local.service = ''
 
 threads = []
 
-logicprotodir = 'logic_proto/'
 tabstr = '    '
 servicedir = './md5/logic_proto/'
 methodsufix = 'method.h'
