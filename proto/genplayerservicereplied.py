@@ -161,7 +161,6 @@ class myThread (threading.Thread):
         hmd5info = genpublic.md5fileinfo()
         hmd5info.filename = self.filename
         hmd5info.destdir = genpublic.gsservicelogicreplieddir
-        hmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex]
         hmd5info.originalextension = '.proto'
         hmd5info.targetextension = '_replied.h'
         genpublic.md5copy(hmd5info)
@@ -179,7 +178,6 @@ class myThread (threading.Thread):
         cppmd5info = genpublic.md5fileinfo()
         cppmd5info.filename = self.filename
         cppmd5info.destdir = genpublic.gsservicelogicreplieddir
-        cppmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.gamemd5dirindex]
         cppmd5info.originalextension = '.proto'
         cppmd5info.targetextension = '_replied.cpp'
         genpublic.md5copy(cppmd5info)
@@ -187,14 +185,12 @@ class myThread (threading.Thread):
         genheadfile(self.filename, genpublic.controllerservicelogicreplieddir)
         
         hmd5info.destdir = genpublic.controllerservicelogicreplieddir
-        hmd5info.md5dir =  genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex]
         genpublic.md5copy(hmd5info)
         
         cppfile.destfilename = genpublic.controllerservicelogicreplieddir + cppfilename
         genpublic.gencppfile(cppfile)
         
         cppmd5info.destdir = genpublic.controllerservicelogicreplieddir
-        cppmd5info.md5dir = genpublic.logicrepliedmd5dirs[genpublic.conrollermd5dirindex]
         genpublic.md5copy(cppmd5info)
 
 def main():
