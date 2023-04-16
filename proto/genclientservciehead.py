@@ -72,7 +72,8 @@ def genheadrpcfun():
 
 def genheadfile(filename):
     destfilename =  os.path.basename(filename).replace('.proto', '.h')
-    newheadfilename = clienservciemd5dir  + os.path.basename(filename).replace('.proto', '.h')
+    newheadfilename = genpublic.getmd5filename(clientservicedir + destfilename) #clienservciemd5dir  + os.path.basename(filename).replace('.proto', '.h')
+    
     if not os.path.exists(newheadfilename)  and os.path.exists(destfilename):
         shutil.copy(destfilename, newheadfilename)
         return
@@ -88,7 +89,6 @@ def genheadfile(filename):
         file.write(newstr)
 
 def genplayerservcielist(filename):
-    destfilename = clienservciemd5dir +  filename
     newstr =  '#include <memory>\n'
     newstr +=  '#include <unordered_map>\n'
     newstr += '#include "player_service.h"\n'
@@ -104,7 +104,7 @@ def genplayerservcielist(filename):
         newstr += ', std::make_unique<' + service + 'Service>(new '
         newstr +=  service.replace('.', '') + 'Impl));\n'
     newstr += '}\n'
-    with open(destfilename, 'w', encoding='utf-8')as file:
+    with open(genpublic.getmd5filename(clientservicedir + filename), 'w', encoding='utf-8')as file:
         file.write(newstr)
 
 def parseplayerservcie(filename):
@@ -121,7 +121,6 @@ def md5copydir():
     cppmd5info = genpublic.md5fileinfo()
     cppmd5info.extensionfitler = ['md5', '.lua']
     cppmd5info.destdir = clientservicedir
-    cppmd5info.md5dir = clienservciemd5dir 
     for (_, _, filenames) in os.walk(clienservciemd5dir):
         for filename in filenames:    
             if  filename.find('player_service') >= 0:
@@ -144,13 +143,17 @@ class myThread (threading.Thread):
     def run(self):
         if self.filename.find(client_player) >= 0:
             parsefile(self.filename)
-            cppmd5info = genpublic.md5fileinfo()
-            cppmd5info.extensionfitler = ['md5', '.lua']
-            cppmd5info.destdir = clientservicedir
-            cppmd5info.md5dir = clienservciemd5dir 
-            cppmd5info.filename = self.filename
-            if genpublic.md5check(cppmd5info) == False:
-                genheadfile(self.filename)
+            md5info = genpublic.md5fileinfo()
+            md5info.extensionfitler = ['md5', '.lua']
+            md5info.destdir = clientservicedir
+            md5info.filename = self.filename
+            md5info.originalextension = '.proto'
+            md5info.targetextension = '.h' 
+            checkheadmd5,_,_,_ = genpublic.md5check(md5info)   
+            if checkheadmd5 == True:
+                return
+            genheadfile(self.filename)
+            genpublic.md5copy(md5info)   
 
 
 def main():
