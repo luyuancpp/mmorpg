@@ -117,18 +117,6 @@ def parseplayerservcie(filename):
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
                 local.playerservicearray.append(local.service)
                 
-def md5copydir():
-    cppmd5info = genpublic.md5fileinfo()
-    cppmd5info.extensionfitler = ['md5', '.lua']
-    cppmd5info.destdir = clientservicedir
-    for (_, _, filenames) in os.walk(clienservciemd5dir):
-        for filename in filenames:    
-            if  filename.find('player_service') >= 0:
-                cppmd5info.filename = filename
-                genpublic.md5copy(cppmd5info)
-                break
-
-
 def scanprotofile():
     dir_list  = os.listdir(protodir)
     for filename in dir_list:
@@ -166,9 +154,14 @@ def main():
         t.join()
     for file in genfile:
         parseplayerservcie(file)
-    genplayerservcielist('player_service.cpp')
+    
+    cppmd5info = genpublic.md5fileinfo()
+    cppmd5info.extensionfitler = ['md5', '.lua']
+    cppmd5info.destdir = clientservicedir
+    cppmd5info.filename = 'player_service.cpp'
+    genplayerservcielist(cppmd5info.filename)
+    genpublic.md5copy(cppmd5info)
 
 scanprotofile() 
 main()
-md5copydir()
 
