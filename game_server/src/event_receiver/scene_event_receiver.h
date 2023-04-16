@@ -7,7 +7,7 @@ class BeforeLeaveScene;
 class OnLeaveScene;
 class S2CEnterScene;
 
-class SceneEventReceiverReceiver
+class SceneEventReceiver
 {
 public:
     static void Register(entt::dispatcher& dispatcher);
