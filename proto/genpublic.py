@@ -3,13 +3,10 @@ import md5tool
 import shutil
 
 projectdir = '../'
-controller_file_prefix = 'controller_'
-gs_file_prefix = 'game_'
 lobby_file_prefix = 'lobby_'
 md5dir = 'md5/'
 pbcdir = '../common/src/pb/pbc/'
 pbcserviceinstancedir = '../common/src/pb/pbc/prototypeserviceinstance/'
-pbcserviceinstancemd5dir = md5dir + 'rototypeserviceinstance/'
 logicprotodir = 'logic_proto/'
 commonportodir = 'common_proto/'
 
@@ -107,8 +104,6 @@ def makedirs():
         os.makedirs(servicemethoddir)
     if not os.path.exists(servicemethodmd5dir):
         os.makedirs(servicemethodmd5dir)  
-    if not os.path.exists(pbcserviceinstancemd5dir):
-        os.makedirs(pbcserviceinstancemd5dir)
                         
 def controller():
     return 'controller' 

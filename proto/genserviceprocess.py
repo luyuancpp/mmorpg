@@ -29,16 +29,6 @@ def parsefile(filename):
             elif genpublic.is_service_fileline(fileline) == True:
                 rpcbegin = 1
                 local.service = fileline.replace('service', '').replace('{', '').replace(' ', '').strip('\n')
-    
-def getprevfilename(filename, destdir):
-    if filename.find(logicprotodir) >= 0:
-        if destdir == gsservicedir:
-            return genpublic.gs_file_prefix
-        if destdir == controllerservicedir:
-            return genpublic.controller_file_prefix
-        if destdir == lobbyservicedir:
-            return ''
-    return ''
 
 def getpbdir(writedir):
     if writedir.find(logicprotodir) >= 0:
