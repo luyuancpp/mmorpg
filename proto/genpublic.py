@@ -47,46 +47,6 @@ projectdirs = ['common',
 'deploy_server',
 'client']
 
-commonprotomd5dirs = \
-[md5dir + 'controller_server/', 
-md5dir + 'game_server/common_proto/', 
-md5dir + 'gate_server/common_proto/',
-md5dir + 'login_server/common_proto/',
-md5dir + 'lobby_server/common_proto/',
-md5dir + 'database_server/common_proto/',
-md5dir + 'deploy_server/common_proto/',
-md5dir + 'client/common_proto/']
-
-eventprotomd5dirs = \
-[md5dir + 'controller_server/', 
-md5dir + 'game_server/event_proto/', 
-md5dir + 'gate_server/event_proto/',
-md5dir + 'login_server/event_proto/',
-md5dir + 'lobby_server/event_proto/',
-md5dir + 'database_server/event_proto/',
-md5dir + 'deploy_server/event_proto/',
-md5dir + 'client/event_proto/'
-]
-
-logicprotomd5dirs = \
-[md5dir + 'controller_server/', 
-md5dir + 'game_server/logic_proto/', 
-md5dir + 'gate_server/logic_proto/',
-md5dir + 'login_server/logic_proto/',
-md5dir + 'lobby_server/logic_proto/',
-md5dir + 'database_server/logic_proto/',
-md5dir + 'deploy_server/logic_proto/',
-md5dir + 'client/logic_proto/']
-
-conrollermd5dirindex = 0
-gamemd5dirindex = 1
-gatemd5dirindex = 2
-loginmd5dirindex = 3
-lobbymd5dirindex = 4
-databasemd5dirindex = 5
-deploymd5dirindex = 6 
-clientmd5dirindex = 7
-
 tabstr = '    '
 
 def is_server_proto(filename):
@@ -149,13 +109,7 @@ def makedirs():
         os.makedirs(servicemethodmd5dir)  
     if not os.path.exists(pbcserviceinstancemd5dir):
         os.makedirs(pbcserviceinstancemd5dir)
-    for d in eventprotomd5dirs :
-        if not os.path.exists(d):
-            os.makedirs(d)
-    for d in logicprotomd5dirs :
-        if not os.path.exists(d):
-            os.makedirs(d)
-            
+                        
 def controller():
     return 'controller' 
  
@@ -171,9 +125,6 @@ def lobby():
 def islobbydir(dirpath):
     return dirpath.find('lobby_server') >= 0 or dirpath.find('lobby') >= 0
     
-def loginmd5dir():
-    return md5dirs[loginmd5dirindex]  
-
 def islogindir(dirpath):
     return dirpath.find('login_server') >= 0 or dirpath.find('login') >= 0
 
@@ -192,23 +143,6 @@ def commonproto():
 def iscommonproto(dirpath):
     return dirpath.find(commonproto()) >= 0
 
-def getdestdir(dirpath):
-    srcdir = ''
-    if isgamedir(dirpath):
-        srcdir = gslogicervicedir
-    elif iscontrollerdir(dirpath):
-        srcdir = controllerlogicservicedir
-    elif islobbydir(dirpath):
-        srcdir = lobbylogicservicedir
-    elif isgatedir(dirpath):
-        srcdir = gatelogicservicedir
-    elif islogindir(dirpath):
-        srcdir = md5dirs[loginmd5dirindex]  
-    elif isdatabasedir(dirpath):
-        srcdir = md5dirs[databasemd5dirindex]    
-    elif isdeploydir(dirpath):
-        srcdir = md5dirs[deploymd5dirindex]   
-    return srcdir 
 
 def is_service_fileline(fileline):
     return fileline.find('service ') >= 0 and (fileline.find('{') >= 0 or fileline.find('Service') >= 0)
