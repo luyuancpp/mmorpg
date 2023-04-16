@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 # coding=utf-8
-import hashlib
-import optparse
 import os
 import os.path
-import sys
-import shutil
 import md5tool
 import genpublic
 import threading
-from multiprocessing import cpu_count
 from os import system
 
 md5str = 'md5/'
