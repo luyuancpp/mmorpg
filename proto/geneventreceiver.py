@@ -5,7 +5,6 @@ import genpublic
 local = threading.local()
 local.eventprotoarray = []
 
-eventricevermd5dir = './md5/event_proto/'
 gsdestdir = '../game_server/src/event_receiver/'
 controllerdestdir = '../controller_server/src/event_receiver/'
 
@@ -22,9 +21,6 @@ asyncclassfilename = 'AsyncEventReceiver'
 normalcfilename = 'event_receiver'
 currentfilename = normalcfilename
 currentclassname = 'EventReceiver'
-
-if not os.path.exists(eventricevermd5dir):
-    os.makedirs(eventricevermd5dir)
 
 def beginendstring():
     return genpublic.yourcodebegin + '\n' + genpublic.yourcodeend + '\n'
@@ -46,8 +42,6 @@ def getfileclassname(filename):
 	for i in range(0, len(letterarray)): 
 		classname += letterarray[i].capitalize()	
 	return classname
-def getprotofilenamenoprefixsuffix(filename):
-	return os.path.basename(filename).replace('.proto', '')
 
 def generatehead(filename, destdir):
 	newstr = '#pragma once\n'
@@ -87,7 +81,7 @@ def generatecpp(filename, destdir):
 	destcppfilename = destdir + getfilenamenoprefixsuffix(filename) + '.cpp' 
 	classname = getfileclassname(filename)
 	headerinclude = '#include "' + getfilenamenoprefixsuffix(filename)  + '.h"\n'
-	pbinclude = '#include "event_proto/' + getprotofilenamenoprefixsuffix(filename) + '.pb.h"\n'
+	pbinclude = '#include "event_proto/' + os.path.basename(filename).replace('.proto', '.pb.h') + '"\n'
 	newstr = headerinclude + pbinclude
 	eventindex = 0
 	cppreceiverfunctionname = 'void '+ classname + '::Receive'
