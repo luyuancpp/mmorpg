@@ -43,7 +43,7 @@ def genheadrpcfun():
 
 def genheadfile(filename):
     filename = filename.replace('.proto', methodsufix) 
-    md5filename = genpublic.servicemethodmd5dir +  filename
+    md5filename = genpublic.getmd5filename(genpublic.servicemethoddir) +  filename
     newstr = '#pragma once\n'
     newstr += '#include <cstdint>\n\n'
     newstr += '#include "'  + filename.replace(methodsufix, '') + '.pb.h"\n'
@@ -63,7 +63,6 @@ class myThread (threading.Thread):
         md5info = genpublic.md5fileinfo()
         md5info.filename = self.filename
         md5info.destdir = genpublic.servicemethoddir
-        md5info.md5dir = genpublic.servicemethodmd5dir
         md5info.originalextension = '.proto'
         md5info.targetextension = methodsufix
         checkheadmd5,_,_,_ = genpublic.md5check(md5info)   
