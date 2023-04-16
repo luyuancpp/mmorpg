@@ -17,7 +17,7 @@ controllerlogicservicedir = '../controller_server/src/service/logic_proto/'
 
 gatelogicservicedir = '../gate_server/src/service/logic_proto/'
 servicemethoddir = '../common/src/pb/pbc/service_method/'
-servicemethodmd5dir = md5dir + 'service_method/'
+servicemethoddir = '../common/src/pb/pbc/service_method/'
 
 gsservicelogicreplieddir = '../game_server/src/service/logic_proto_replied/'
 controllerservicelogicreplieddir = '../controller_server/src/service/logic_proto_replied/'
@@ -99,8 +99,6 @@ def makedirs():
         os.makedirs(md5dir)
     if not os.path.exists(servicemethoddir):
         os.makedirs(servicemethoddir)
-    if not os.path.exists(servicemethodmd5dir):
-        os.makedirs(servicemethodmd5dir)  
                          
 def is_service_fileline(fileline):
     return fileline.find('service ') >= 0 and (fileline.find('{') >= 0 or fileline.find('Service') >= 0)

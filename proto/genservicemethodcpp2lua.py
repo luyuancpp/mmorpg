@@ -1,10 +1,6 @@
 import os
-
-import md5tool
-import shutil
 import threading
 import genpublic
-from multiprocessing import cpu_count
 
 local = threading.local()
 
@@ -50,7 +46,7 @@ def getmothedname(filename):
 def genheadfile(filename):
     funname = getmothedname(filename)
     filename = filename.replace('.proto', methodsufix) 
-    md5filename = genpublic.servicemethodmd5dir +  filename
+    md5filename = genpublic.getmd5filename(genpublic.servicemethoddir) +  filename
     newstr = '#pragma once\n'
     newstr += '#include <google/protobuf/descriptor.h>\n'
     newstr += '#include "src/game_logic/thread_local/thread_local_storage_lua.h"\n'    
@@ -71,7 +67,6 @@ class myThread (threading.Thread):
         md5info = genpublic.md5fileinfo()
         md5info.filename = self.filename
         md5info.destdir = genpublic.servicemethoddir
-        md5info.md5dir = genpublic.servicemethodmd5dir
         md5info.originalextension = '.proto'
         md5info.targetextension = methodsufix
         checkheadmd5,_,_,_ = genpublic.md5check(md5info)   
@@ -84,7 +79,7 @@ class myThread (threading.Thread):
 
 def gengatherfile(filename):
     funname = "InitService"   + 'MethodLua'
-    md5filename = genpublic.servicemethodmd5dir +  filename
+    md5filename = genpublic.getmd5filename(genpublic.servicemethoddir) +  filename
     newstr = ""
     for protofilename in genfile:
             funname = getmothedname(protofilename[0])
@@ -125,7 +120,6 @@ gengatherfile(gatherfile)
 md5info = genpublic.md5fileinfo()
 md5info.filename = gatherfile
 md5info.destdir = genpublic.servicemethoddir
-md5info.md5dir = genpublic.servicemethodmd5dir
 md5info.originalextension = '.proto'
 md5info.targetextension = ''
 genpublic.md5copy(md5info)
