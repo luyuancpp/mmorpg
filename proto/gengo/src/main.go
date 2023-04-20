@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	gen "gengo/gen"
 	"io/ioutil"
 	"os"
 	"path"
@@ -18,22 +19,6 @@ var serverDirs = [...]string{"common",
 	"database_server",
 	"deploy_server",
 	"client"}
-
-// return true if md5 is same otherwise return false
-func Md5Compare(dstFilePath string, srcFilePath string) (same bool, err error) {
-	srcmd5, err := genmd5.FileMD5(srcFilePath)
-	if err != nil {
-		return false, err
-	}
-	dstmd5, err := genmd5.FileMD5(dstFilePath)
-	if err != nil {
-		return false, err
-	}
-	if srcmd5 != dstmd5 {
-		return false, nil
-	}
-	return true, nil
-}
 
 func MakeProjectMd5Dir(src string, dst string) error {
 	os.MkdirAll(md5Dir, os.FileMode(0777))
@@ -70,6 +55,6 @@ func main() {
 	for i := 0; i < len(serverDirs); i++ {
 		MakeProjectMd5Dir(projectDir+serverDirs[i], md5Dir+serverDirs[i])
 	}
-	md5str, _ := genmd5.FileMD5(projectDir + "autogen.sh")
+	md5str, _ := gen.FileMD5(projectDir + "autogen.sh")
 	print(md5str)
 }
