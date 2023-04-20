@@ -1,10 +1,7 @@
 package main
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -22,43 +19,20 @@ var serverDirs = [...]string{"common",
 	"deploy_server",
 	"client"}
 
-func FileMD5(filePath string) (string, error) {
-	file, err := os.Open(filePath)
+// return true if md5 is same otherwise return false
+func Md5Compare(dstFilePath string, srcFilePath string) (same bool, err error) {
+	srcmd5, err := genmd5.FileMD5(srcFilePath)
 	if err != nil {
-		return "", err
+		return false, err
 	}
-	hash := md5.New()
-	_, _ = io.Copy(hash, file)
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-func GenCopy(dst string, src string) (written int64, err error) {
-	filedst, dsterr := os.Open(dst)
-	if dsterr != nil {
-		return 0, dsterr
+	dstmd5, err := genmd5.FileMD5(dstFilePath)
+	if err != nil {
+		return false, err
 	}
-	filesrc, srcerr := os.Open(src)
-	if srcerr != nil {
-		return 0, srcerr
+	if srcmd5 != dstmd5 {
+		return false, nil
 	}
-	written, err = io.Copy(filedst, filesrc)
-	return written, err
-}
-
-func Md5Copy(dstFilePath string, srcFilePath string) error {
-	srcmd5, srcerr := FileMD5(srcFilePath)
-	if srcerr != nil {
-		return srcerr
-	}
-	dstmd5, dsterr := FileMD5(dstFilePath)
-	if dsterr != nil {
-		return dsterr
-	}
-	if srcmd5 == dstmd5 {
-		return nil
-	}
-	_, copyerr := GenCopy(srcFilePath, dstFilePath)
-	return copyerr
+	return true, nil
 }
 
 func MakeProjectMd5Dir(src string, dst string) error {
@@ -96,6 +70,6 @@ func main() {
 	for i := 0; i < len(serverDirs); i++ {
 		MakeProjectMd5Dir(projectDir+serverDirs[i], md5Dir+serverDirs[i])
 	}
-	md5str, _ := FileMD5(projectDir + "autogen.sh")
+	md5str, _ := genmd5.FileMD5(projectDir + "autogen.sh")
 	print(md5str)
 }
