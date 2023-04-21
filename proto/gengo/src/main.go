@@ -2,26 +2,14 @@ package main
 
 import (
 	"fmt"
+	config "gengo/config"
 	gen "gengo/gen"
 	"io/ioutil"
 	"os"
 	"path"
 )
 
-var projectDir = "../"
-var md5Dir = string("md5/")
-var serverDirs = [...]string{"common",
-	"controller_server",
-	"game_server",
-	"gate_server",
-	"login_server",
-	"lobby_server",
-	"database_server",
-	"deploy_server",
-	"client"}
-
 func MakeProjectMd5Dir(src string, dst string) error {
-	os.MkdirAll(md5Dir, os.FileMode(0777))
 
 	var err error
 	var fds []os.FileInfo
@@ -52,9 +40,11 @@ func MakeProjectMd5Dir(src string, dst string) error {
 }
 
 func main() {
-	for i := 0; i < len(serverDirs); i++ {
-		MakeProjectMd5Dir(projectDir+serverDirs[i], md5Dir+serverDirs[i])
+	os.MkdirAll(config.Md5Dir, os.FileMode(0777))
+
+	for i := 0; i < len(config.ServerDirs); i++ {
+		MakeProjectMd5Dir(config.ProjectDir+config.ServerDirs[i], config.Md5Dir+config.ServerDirs[i])
 	}
-	md5str, _ := gen.FileMD5(projectDir + "autogen.sh")
+	md5str, _ := gen.FileMD5(config.ProjectDir + "autogen.sh")
 	print(md5str)
 }
