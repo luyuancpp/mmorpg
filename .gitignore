@@ -32,6 +32,7 @@ bin/zlib*
 common/src/game_config/
 bin/config/
 proto/md5/
+proto/gengo/.idea/
 common/src/pb/pb2sol2/
 third_party/boost/
 third_party/mysql/
