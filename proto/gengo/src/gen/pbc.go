@@ -39,3 +39,9 @@ func GenPbc(protoPath string, protoCppOutPath string, ch chan error) {
 	}
 	ch <- nil
 }
+
+func CompateAndGenPbc(protoPath string, protoCppOutPath string, ch chan error) {
+	for {
+
+	}
+}

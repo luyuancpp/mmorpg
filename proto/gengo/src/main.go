@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	config "gengo/config"
-	gen "gengo/gen"
+	"gengo/config"
+	"gengo/gen"
 	"os"
 	"path"
 )
