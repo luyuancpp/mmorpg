@@ -19,15 +19,15 @@ func FileMD5(filePath string) (md5str string, err error) {
 
 // return true if md5 is same otherwise return false
 func Md5Compare(dstFilePath string, srcFilePath string) (same bool, err error) {
-	srcmd5, err := FileMD5(srcFilePath)
+	srcMd5, err := FileMD5(srcFilePath)
 	if err != nil {
 		return false, err
 	}
-	dstmd5, err := FileMD5(dstFilePath)
+	dstMd5, err := FileMD5(dstFilePath)
 	if err != nil {
 		return false, err
 	}
-	if srcmd5 != dstmd5 {
+	if srcMd5 != dstMd5 {
 		return false, nil
 	}
 	return true, nil
@@ -46,14 +46,14 @@ func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
 }
 
 func GenCopy(dst string, src string) (written int64, err error) {
-	filedst, err := os.Open(dst)
+	fileDst, err := os.Open(dst)
 	if err != nil {
 		return 0, err
 	}
-	filesrc, err := os.Open(src)
+	fileSrc, err := os.Open(src)
 	if err != nil {
 		return 0, err
 	}
-	written, err = io.Copy(filedst, filesrc)
+	written, err = io.Copy(fileDst, fileSrc)
 	return written, err
 }
