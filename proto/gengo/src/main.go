@@ -43,6 +43,12 @@ func main() {
 	for i := 0; i < len(config.ServerDirs); i++ {
 		MakeProjectMd5Dir(config.ProjectDir+config.ServerDirs[i], config.Md5Dir+config.ServerDirs[i])
 	}
-	md5str, _ := gen.FileMD5(config.ProjectDir + "autogen.sh")
-	print(md5str)
+
+	doneSize := make(chan error)
+	for _, v := range config.ProtoDirs {
+		go gen.GenPbc(v, config.PbcOutDir, doneSize)
+	}
+	for i := 0; i < len(config.ProtoDirs); i++ {
+		<-doneSize
+	}
 }
