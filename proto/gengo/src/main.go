@@ -9,7 +9,6 @@ import (
 )
 
 func MakeProjectMd5Dir(src string, dst string) error {
-
 	var err error
 	var fds []os.DirEntry
 	var srcFileInfo os.FileInfo
