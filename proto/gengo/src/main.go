@@ -4,7 +4,6 @@ import (
 	"fmt"
 	config "gengo/config"
 	gen "gengo/gen"
-	"io/ioutil"
 	"os"
 	"path"
 )
@@ -12,27 +11,27 @@ import (
 func MakeProjectMd5Dir(src string, dst string) error {
 
 	var err error
-	var fds []os.FileInfo
-	var srcinfo os.FileInfo
+	var fds []os.DirEntry
+	var srcFileInfo os.FileInfo
 
-	if srcinfo, err = os.Stat(src); err != nil {
+	if srcFileInfo, err = os.Stat(src); err != nil {
 		return err
 	}
 
-	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
+	if err = os.MkdirAll(dst, srcFileInfo.Mode()); err != nil {
 		return err
 	}
 
-	if fds, err = ioutil.ReadDir(src); err != nil {
+	if fds, err = os.ReadDir(src); err != nil {
 		return err
 	}
 	for _, fd := range fds {
-		srcfp := path.Join(src, fd.Name())
-		dstfp := path.Join(dst, fd.Name())
 		if !fd.IsDir() {
 			continue
 		}
-		if err = MakeProjectMd5Dir(srcfp, dstfp); err != nil {
+		srcFp := path.Join(src, fd.Name())
+		dstFp := path.Join(dst, fd.Name())
+		if err = MakeProjectMd5Dir(srcFp, dstFp); err != nil {
 			fmt.Println(err)
 		}
 	}
