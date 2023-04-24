@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 func BuildProto(protoPath string, protoMd5Path string) (err error) {
@@ -26,19 +27,22 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.Md5Ex
 			fileSame, err := CompareByMd5Ex(fileName, md5FileName)
-			fileExists := util.FileExists(fileName)
-			md5FileExists := util.FileExists(md5FileName)
-			if fileSame && fileExists && md5FileExists {
+			dstFileName := strings.Replace(fileName, config.ProtoDir, config.PbcOutDir, 1)
+			dstFileName = strings.Replace(dstFileName, config.ProtoEx, config.ProtoPbcEx, 1)
+			if fileSame &&
+				util.FileExists(fileName) &&
+				util.FileExists(md5FileName) &&
+				util.FileExists(dstFileName) {
 				return
 			}
 			cmd := exec.Command("../../protoc",
 				"--cpp_out="+config.PbcOutDir,
 				fileName,
-				"-I=../../",
-				"-I=../../common_proto/",
-				"-I=../../component_proto/",
-				"-I=../../event_proto/",
-				"-I=../../logic_proto/",
+				"-I="+config.ProtoDir,
+				"-I="+config.ProtoDir+"common_proto/",
+				"-I="+config.ProtoDir+"component_proto/",
+				"-I="+config.ProtoDir+"event_proto/",
+				"-I="+config.ProtoDir+"logic_proto/",
 				"-I=../../../third_party/protobuf/src/")
 			var out bytes.Buffer
 			var stderr bytes.Buffer
