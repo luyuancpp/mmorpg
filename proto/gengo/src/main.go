@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"gengo/config"
+	"gengo/gen"
 	"os"
 	"path"
 )
@@ -36,7 +37,7 @@ func MakeProjectMd5Dir(src string, dst string) error {
 	return nil
 }
 
-func main() {
+func MakeMd5Dir() {
 	os.MkdirAll(config.Md5Dir, os.FileMode(0777))
 
 	for i := 0; i < len(config.SourceNames); i++ {
@@ -56,4 +57,10 @@ func main() {
 	for i := 0; i < len(config.ProtoMd5Dirs); i++ {
 		os.MkdirAll(config.ProtoMd5Dirs[i], os.FileMode(0777))
 	}
+}
+
+func main() {
+	MakeMd5Dir()
+	gen.Pbc()
+	gen.Wg.Wait()
 }

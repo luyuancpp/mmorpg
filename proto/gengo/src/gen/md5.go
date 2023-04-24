@@ -59,12 +59,11 @@ func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
 	return true, err
 }
 
-func WriteToMd5ExFile(filePath string) (err error) {
+func WriteToMd5ExFile(filePath string, md5FilePath string) (err error) {
 	md5Str, err := MD5Str(filePath)
 	if err != nil {
 		return err
 	}
-	md5FilePath := filePath + config.Md5Ex
 	err = os.WriteFile(md5FilePath, []byte(md5Str), 0666)
 	return err
 }
