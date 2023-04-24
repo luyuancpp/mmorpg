@@ -4,6 +4,8 @@ const ProjectDir = "../../../"
 const ProtoDir = "../../"
 const Md5Ex = ".md5"
 const Md5Dir = ProtoDir + "gengo/bin/md5/"
+const ProtoEx = ".proto"
+const ProtoPbcEx = ".pb.cc"
 
 var SourceNames = [...]string{
 	"common/",

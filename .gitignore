@@ -33,6 +33,7 @@ common/src/game_config/
 bin/config/
 proto/md5/
 proto/gengo/.idea/
+proto/gengo/bin/
 common/src/pb/pb2sol2/
 third_party/boost/
 third_party/mysql/
