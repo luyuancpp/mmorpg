@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	"gengo/config"
+	"fmt"
 	"io"
 	"os"
 )
@@ -65,11 +65,11 @@ func WriteToMd5ExFile(filePath string, md5FilePath string) (err error) {
 		return err
 	}
 	err = os.WriteFile(md5FilePath, []byte(md5Str), 0666)
+	fmt.Println("Generator md5 file for", filePath, "->", md5FilePath)
 	return err
 }
 
-func CompareByMd5Ex(dstFilePath string, srcFilePath string) (same bool, err error) {
-	md5SrcFilePath := srcFilePath + config.Md5Ex
+func CompareByMd5Ex(dstFilePath string, md5SrcFilePath string) (same bool, err error) {
 	srcByteMd5, err := os.ReadFile(md5SrcFilePath)
 	srcMd5 := bytes.NewBuffer(srcByteMd5).String()
 	if err != nil {
