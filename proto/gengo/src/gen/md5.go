@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
-	"fmt"
 	"gengo/util"
 	"io"
 	"os"
@@ -53,7 +52,7 @@ func WriteToMd5ExFile(filePath string, md5FilePath string) (err error) {
 		return err
 	}
 	err = os.WriteFile(md5FilePath, []byte(md5Str), 0666)
-	fmt.Println("Generator md5 file for", filePath, "->", md5FilePath)
+	//fmt.Println("Generator md5 file for", filePath, "->", md5FilePath)
 	return err
 }
 
