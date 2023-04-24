@@ -4,17 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"gengo/config"
+	"gengo/util"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
-
-type ProtoMd5 struct {
-	ProtoPath       string
-	ProtoCppOutPath string
-	NeedBuild       bool
-}
 
 func BuildProto(protoPath string, protoMd5Path string) (err error) {
 	var fds []os.DirEntry
@@ -28,11 +23,12 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 		Wg.Add(1)
 		go func(fd os.DirEntry) {
 			defer Wg.Done()
-			var same bool
-			var err error
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.Md5Ex
-			if same, err = CompareByMd5Ex(fileName, md5FileName); same {
+			fileSame, err := CompareByMd5Ex(fileName, md5FileName)
+			fileExists := util.FileExists(fileName)
+			md5FileExists := util.FileExists(md5FileName)
+			if fileSame && fileExists && md5FileExists {
 				return
 			}
 			cmd := exec.Command("../../protoc",
@@ -63,7 +59,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 	return err
 }
 
-func Pbc() {
+func BuildAllProtoc() {
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		BuildProto(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
 	}

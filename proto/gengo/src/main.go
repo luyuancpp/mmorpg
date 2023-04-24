@@ -37,6 +37,10 @@ func MakeProjectMd5Dir(src string, dst string) error {
 	return nil
 }
 
+func MakeProjectDir() {
+	os.MkdirAll(config.PbcOutDir, os.FileMode(0777))
+}
+
 func MakeMd5Dir() {
 	os.MkdirAll(config.Md5Dir, os.FileMode(0777))
 
@@ -60,7 +64,8 @@ func MakeMd5Dir() {
 }
 
 func main() {
+	MakeProjectDir()
 	MakeMd5Dir()
-	gen.Pbc()
+	gen.BuildAllProtoc()
 	gen.Wg.Wait()
 }

@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"gengo/util"
 	"io"
 	"os"
 )
@@ -34,19 +35,6 @@ func Compare(dstFilePath string, srcFilePath string) (same bool, err error) {
 	return true, err
 }
 
-func Copy(dst string, src string) (written int64, err error) {
-	fileDst, err := os.Open(dst)
-	if err != nil {
-		return 0, err
-	}
-	fileSrc, err := os.Open(src)
-	if err != nil {
-		return 0, err
-	}
-	written, err = io.Copy(fileDst, fileSrc)
-	return written, err
-}
-
 func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
 	same, err := Compare(dstFilePath, srcFilePath)
 	if err != nil {
@@ -55,7 +43,7 @@ func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
 	if !same {
 		return false, err
 	}
-	_, err = Copy(srcFilePath, dstFilePath)
+	_, err = util.Copy(srcFilePath, dstFilePath)
 	return true, err
 }
 
@@ -93,6 +81,6 @@ func MD5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err erro
 	if !same {
 		return false, err
 	}
-	_, err = Copy(srcFilePath, dstFilePath)
+	_, err = util.Copy(srcFilePath, dstFilePath)
 	return true, err
 }
