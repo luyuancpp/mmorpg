@@ -26,7 +26,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			continue
 		}
 		Wg.Add(1)
-		go func() {
+		go func(fd os.DirEntry) {
 			defer Wg.Done()
 			var same bool
 			var err error
@@ -49,7 +49,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			cmd.Stdout = &out
 			cmd.Stderr = &stderr
 			err = cmd.Run()
-			//fmt.Println(cmd.String())
+			fmt.Println(cmd.String())
 			if err != nil {
 				fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 				log.Fatal(err)
@@ -58,7 +58,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 			if err != nil {
 				log.Fatal(err)
 			}
-		}()
+		}(fd)
 	}
 	return err
 }

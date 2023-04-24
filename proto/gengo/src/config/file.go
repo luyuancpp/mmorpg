@@ -1,9 +1,9 @@
 package config
 
 const ProjectDir = "../../../"
-const GenDir = ProjectDir + "proto/"
+const ProtoDir = "../../"
 const Md5Ex = ".md5"
-const Md5Dir = GenDir + "gengo/bin/md5/"
+const Md5Dir = ProtoDir + "gengo/bin/md5/"
 
 var SourceNames = [...]string{
 	"common/",
