@@ -68,7 +68,7 @@ func main() {
 	MakeProjectDir()
 	MakeMd5Dir()
 	gen.BuildAllProtoc()
-	gen.BuildAllService()
+	gen.ReadAllServices()
 	util.Wg.Wait()
-	gen.PrintAll()
+	//gen.PrintAll()
 }
