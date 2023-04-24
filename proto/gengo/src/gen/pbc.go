@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -18,12 +17,12 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 		return err
 	}
 	for _, fd := range fds {
-		if fd.IsDir() || filepath.Ext(fd.Name()) != ".proto" {
+		if !util.IsProtoFile(fd) {
 			continue
 		}
-		Wg.Add(1)
+		util.Wg.Add(1)
 		go func(fd os.DirEntry) {
-			defer Wg.Done()
+			defer util.Wg.Done()
 			fileName := protoPath + fd.Name()
 			md5FileName := protoMd5Path + fd.Name() + config.Md5Ex
 			fileSame, err := CompareByMd5Ex(fileName, md5FileName)
