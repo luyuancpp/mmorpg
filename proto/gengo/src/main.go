@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gengo/config"
 	"gengo/gen"
+	"gengo/util"
 	"os"
 	"path"
 )
@@ -67,5 +68,7 @@ func main() {
 	MakeProjectDir()
 	MakeMd5Dir()
 	gen.BuildAllProtoc()
-	gen.Wg.Wait()
+	gen.BuildAllService()
+	util.Wg.Wait()
+	gen.PrintAll()
 }
