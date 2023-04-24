@@ -39,11 +39,21 @@ func MakeProjectMd5Dir(src string, dst string) error {
 func main() {
 	os.MkdirAll(config.Md5Dir, os.FileMode(0777))
 
-	for i := 0; i < len(config.ServerDirs); i++ {
-		MakeProjectMd5Dir(config.ProjectDir+config.ServerDirs[i], config.Md5Dir+config.ServerDirs[i])
+	for i := 0; i < len(config.SourceNames); i++ {
+		config.ProjectSourceDirs = append(config.ProjectSourceDirs, config.ProjectDir+config.SourceNames[i])
+		config.ProjectSourceMd5Dirs = append(config.ProjectSourceMd5Dirs, config.Md5Dir+config.SourceNames[i])
 	}
 
 	for i := 0; i < len(config.ProtoDirNames); i++ {
-		os.MkdirAll(config.Md5Dir+config.ProtoDirNames[i], os.FileMode(0777))
+		config.ProtoDirs = append(config.ProtoDirs, config.GenDir+config.ProtoDirNames[i])
+		config.ProtoMd5Dirs = append(config.ProtoMd5Dirs, config.Md5Dir+config.ProtoDirNames[i])
+	}
+
+	for i := 0; i < len(config.SourceNames); i++ {
+		MakeProjectMd5Dir(config.ProjectSourceDirs[i], config.ProjectSourceMd5Dirs[i])
+	}
+
+	for i := 0; i < len(config.ProtoMd5Dirs); i++ {
+		os.MkdirAll(config.ProtoMd5Dirs[i], os.FileMode(0777))
 	}
 }

@@ -1,10 +1,11 @@
 package config
 
-var ProjectDir = "../../../"
-var Md5Ex = ".md5"
-var Md5Dir = string("../bin/md5/")
-var PbcOutDir = "../../../common/src/pb/pbc/"
-var ServerDirs = [...]string{
+const ProjectDir = "../../../"
+const GenDir = ProjectDir + "proto/"
+const Md5Ex = ".md5"
+const Md5Dir = GenDir + "gengo/bin/md5/"
+
+var SourceNames = [...]string{
 	"common/",
 	"controller_server/",
 	"game_server/",
@@ -14,16 +15,19 @@ var ServerDirs = [...]string{
 	"database_server/",
 	"deploy_server/",
 	"client"}
-var DstDir = "src/service"
+
+var ProjectSourceDirs []string
+var ProjectSourceMd5Dirs []string
+
+const ServiceDirName = "src/service"
+
+const PbcOutDir = ProjectDir + "common/src/pb/pbc/"
+
 var ProtoDirNames = [...]string{
 	"common_proto/",
 	"component_proto/",
 	"event_proto/",
 	"logic_proto/",
 }
-var ProtoDirs = [...]string{
-	"../common_proto/",
-	"../component_proto/",
-	"../event_proto/",
-	"../logic_proto/",
-}
+var ProtoDirs []string
+var ProtoMd5Dirs []string
