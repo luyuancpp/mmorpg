@@ -3,12 +3,19 @@ package gen
 import (
 	"bytes"
 	"fmt"
+	"gengo/config"
 	"os"
 	"os/exec"
 	"path/filepath"
 )
 
-func GenPbc(protoPath string, protoCppOutPath string, ch chan error) {
+type ProtoMd5 struct {
+	ProtoPath       string
+	ProtoCppOutPath string
+	NeedBuild       bool
+}
+
+func BuildProto(protoPath string, protoCppOutPath string, ch chan error) {
 	var err error
 	var fds []os.DirEntry
 	if fds, err = os.ReadDir(protoPath); err != nil {
@@ -37,11 +44,20 @@ func GenPbc(protoPath string, protoCppOutPath string, ch chan error) {
 			fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
 		}
 	}
-	ch <- nil
+	ch <- err
 }
 
-func CompateAndGenPbc(protoPath string, protoCppOutPath string, ch chan error) {
-	for {
+func Md5CompareProto(protoPath string, protoCppOutPath string, ch chan ProtoMd5) {
 
+}
+
+func Pbc(protoPath string, protoCppOutPath string, ch chan error) {
+	doneSize := make(chan error)
+	for _, v := range config.ProtoDirs {
+
+		go BuildProto(v, config.PbcOutDir, doneSize)
+	}
+	for i := 0; i < len(config.ProtoDirs); i++ {
+		<-doneSize
 	}
 }

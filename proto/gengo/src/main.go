@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"gengo/config"
-	"gengo/gen"
 	"os"
 	"path"
 )
@@ -44,11 +43,7 @@ func main() {
 		MakeProjectMd5Dir(config.ProjectDir+config.ServerDirs[i], config.Md5Dir+config.ServerDirs[i])
 	}
 
-	doneSize := make(chan error)
-	for _, v := range config.ProtoDirs {
-		go gen.GenPbc(v, config.PbcOutDir, doneSize)
-	}
-	for i := 0; i < len(config.ProtoDirs); i++ {
-		<-doneSize
+	for i := 0; i < len(config.ProtoDirNames); i++ {
+		os.MkdirAll(config.Md5Dir+config.ProtoDirNames[i], os.FileMode(0777))
 	}
 }
