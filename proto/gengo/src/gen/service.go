@@ -24,7 +24,7 @@ var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 var rpcServiceList sync.Map
 var rpcMethodList sync.Map
 
-func BuildService(fd os.DirEntry, filePath string) (err error) {
+func ReadService(fd os.DirEntry, filePath string) (err error) {
 	defer util.Wg.Done()
 	f, err := os.Open(filePath + fd.Name())
 	if err != nil {
@@ -62,7 +62,7 @@ func BuildService(fd os.DirEntry, filePath string) (err error) {
 	return err
 }
 
-func BuildAllService() {
+func ReadAllServices() {
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		fds, err := os.ReadDir(config.ProtoDirs[i])
 		if err != nil {
@@ -73,7 +73,7 @@ func BuildAllService() {
 				continue
 			}
 			util.Wg.Add(1)
-			BuildService(fd, config.ProtoDirs[i])
+			ReadService(fd, config.ProtoDirs[i])
 		}
 	}
 }
