@@ -67,8 +67,10 @@ func MakeMd5Dir() {
 func main() {
 	MakeProjectDir()
 	MakeMd5Dir()
-	gen.BuildAllProtoc()
+	//开始读所有的proto文件
+	gen.ReadServiceIdFile()
 	gen.ReadAllServices()
+	gen.BuildAllProtoc()
 	util.Wg.Wait()
-	//gen.PrintAll()
+	gen.InitServiceId()
 }

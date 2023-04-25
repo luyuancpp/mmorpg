@@ -18,7 +18,7 @@ tabstr = '    '
 writedir = '../common/src/pb/pbc/serviceid/'
 protodir = './logic_proto/'
 commondir = './common_proto/'
-serviceidir = './servicemethodid/'
+serviceidir = './'
 idfilename = 'servicemethodid.txt'
 msg_index = 0
 

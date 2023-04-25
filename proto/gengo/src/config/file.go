@@ -21,8 +21,6 @@ var SourceNames = [...]string{
 var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string
 
-const ServiceDirName = "src/service"
-
 const PbcOutDir = ProjectDir + "common/src/pb/pbc/"
 
 var ProtoDirNames = [...]string{
@@ -33,3 +31,6 @@ var ProtoDirNames = [...]string{
 }
 var ProtoDirs []string
 var ProtoMd5Dirs []string
+
+const ServiceDirName = "src/service"
+const ServiceIdsFileName = ProtoDir + "serviceid.txt"
