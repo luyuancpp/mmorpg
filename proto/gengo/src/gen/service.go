@@ -24,6 +24,7 @@ var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 
 var rpcService sync.Map
 var rpcMethod sync.Map
+var rpcIdMethod = map[uint64]RpcMethodInfo{}
 var serviceId = map[string]uint64{}
 var unUseServiceId = map[uint64]struct{}{}
 var maxServiceId uint64
@@ -71,7 +72,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	return err
 }
 
-func ReadAllServices() {
+func ReadAllProtoFileServices() {
 	for i := 0; i < len(config.ProtoDirs); i++ {
 		fds, err := os.ReadDir(config.ProtoDirs[i])
 		if err != nil {
@@ -88,7 +89,8 @@ func ReadAllServices() {
 	}
 }
 
-func ReadServiceIdFile() {
+func readServiceIdFile() {
+	defer util.Wg.Done()
 	f, err := os.Open(config.ServiceIdsFileName)
 	if err != nil {
 		log.Fatal(err)
@@ -108,29 +110,31 @@ func ReadServiceIdFile() {
 	}
 }
 
-func walk(key, value interface{}) bool {
-	fmt.Println("Key =", key, "Value =", value)
-	return true
+func ReadServiceIdFile() {
+	util.Wg.Add(1)
+	go readServiceIdFile()
 }
 
-func initMethodId(k, v interface{}) bool {
-	key := k.(string)
-	newMethodValue := v.(RpcMethodInfo)
-	for uk, _ := range unUseServiceId {
-		newMethodValue.Id = uk
-		delete(unUseServiceId, uk)
-		break
+func writeServiceIdFile() {
+	defer util.Wg.Done()
+	var data string
+	for i := 0; i < len(rpcIdMethod); i++ {
+		rpcMethodInfo := rpcIdMethod[uint64(i)]
+		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + rpcMethodInfo.KeyName() + "\n"
 	}
-	if newMethodValue.Id <= 0 {
-		maxServiceId += 1
-		newMethodValue.Id = maxServiceId
-	}
-	rpcMethod.Swap(key, newMethodValue)
-	return true
+	os.WriteFile(config.ServiceIdsFileName, []byte(data), 0666)
+}
+
+func WriteServiceIdFile() {
+	util.Wg.Add(1)
+	go writeServiceIdFile()
 }
 
 func PrintAll() {
-	rpcMethod.Range(walk)
+	rpcMethod.Range(func(key, value interface{}) bool {
+		fmt.Println("Key =", key, "Value =", value)
+		return true
+	})
 }
 
 func InitServiceId() {
@@ -147,6 +151,20 @@ func InitServiceId() {
 		newMethodValue.Id = v
 		rpcMethod.Swap(newMethodValue.KeyName(), newMethodValue)
 	}
-	rpcMethod.Range(initMethodId)
-	PrintAll()
+	rpcMethod.Range(func(k, v interface{}) bool {
+		key := k.(string)
+		newMethodValue := v.(RpcMethodInfo)
+		for uk, _ := range unUseServiceId {
+			newMethodValue.Id = uk
+			delete(unUseServiceId, uk)
+			break
+		}
+		if newMethodValue.Id <= 0 {
+			maxServiceId += 1
+			newMethodValue.Id = maxServiceId
+		}
+		rpcIdMethod[newMethodValue.Id] = newMethodValue
+		rpcMethod.Swap(key, newMethodValue)
+		return true
+	})
 }
