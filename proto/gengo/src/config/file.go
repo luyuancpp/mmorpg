@@ -6,6 +6,7 @@ const Md5Ex = ".md5"
 const Md5Dir = ProtoDir + "gengo/bin/md5/"
 const ProtoEx = ".proto"
 const ProtoPbcEx = ".pb.cc"
+const ProtoPbhEx = ".pb.h"
 
 var SourceNames = [...]string{
 	"common/",
@@ -22,6 +23,7 @@ var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string
 
 const PbcOutDir = ProjectDir + "common/src/pb/pbc/"
+const ServiceImplFileName = PbcOutDir + "service_impl.cpp"
 
 var ProtoDirNames = [...]string{
 	"common_proto/",

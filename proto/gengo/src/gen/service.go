@@ -20,14 +20,17 @@ type RpcMethodInfo struct {
 	Id       uint64
 }
 
+type RpcServiceInfo struct {
+	FileName string
+	Path     string
+}
+
 var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 
 var rpcService sync.Map
 var rpcMethod sync.Map
 var rpcIdMethod = map[uint64]RpcMethodInfo{}
 var serviceId = map[string]uint64{}
-var unUseServiceId = map[uint64]struct{}{}
-var maxServiceId uint64
 
 func (info *RpcMethodInfo) KeyName() (idName string) {
 	return info.Service + info.Method
@@ -49,7 +52,10 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
 			service = strings.ReplaceAll(line, "{", "")
 			service = strings.Split(service, " ")[1]
-			rpcService.Store(service, "")
+			var rpcServiceInfo RpcServiceInfo
+			rpcServiceInfo.FileName = fd.Name()
+			rpcServiceInfo.Path = filePath
+			rpcService.Store(service, rpcServiceInfo)
 			continue
 		} else if strings.Contains(line, "rpc ") {
 			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
@@ -138,6 +144,9 @@ func PrintAll() {
 }
 
 func InitServiceId() {
+	var unUseServiceId = map[uint64]struct{}{}
+	maxServiceId := uint64(1)
+
 	for k, v := range serviceId {
 		if maxServiceId < v {
 			maxServiceId = v
@@ -167,4 +176,19 @@ func InitServiceId() {
 		rpcMethod.Swap(key, newMethodValue)
 		return true
 	})
+}
+
+func serviceImpl() {
+	defer util.Wg.Done()
+	var data string
+	for i := 0; i < len(rpcIdMethod); i++ {
+		rpcMethodInfo := rpcIdMethod[uint64(i)]
+		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + rpcMethodInfo.KeyName() + "\n"
+	}
+	os.WriteFile(config.ServiceIdsFileName, []byte(data), 0666)
+}
+
+func ServiceImpl() {
+	util.Wg.Add(1)
+	go serviceImpl()
 }
