@@ -6,6 +6,7 @@ import (
 	"gengo/config"
 	"gengo/util"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -65,6 +66,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.Method = splitList[1]
 			rpcMethodInfo.Request = splitList[2]
 			rpcMethodInfo.Response = splitList[4]
+			rpcMethodInfo.Id = math.MaxUint64
 			rpcMethod.Store(rpcMethodInfo.KeyName(), rpcMethodInfo)
 			continue
 		} else if len(service) > 0 && strings.Contains(line, "}") {
@@ -145,7 +147,7 @@ func PrintAll() {
 
 func InitServiceId() {
 	var unUseServiceId = map[uint64]struct{}{}
-	maxServiceId := uint64(1)
+	var maxServiceId uint64
 
 	for k, v := range serviceId {
 		if maxServiceId < v {
@@ -168,7 +170,7 @@ func InitServiceId() {
 			delete(unUseServiceId, uk)
 			break
 		}
-		if newMethodValue.Id <= 0 {
+		if newMethodValue.Id == math.MaxUint64 {
 			maxServiceId += 1
 			newMethodValue.Id = maxServiceId
 		}

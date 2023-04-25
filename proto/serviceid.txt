@@ -1,4 +1,4 @@
-73=ClientPlayerCommonServicePushTipsS2C
+0=ClientPlayerCommonServicePushTipsS2C
 1=ServerPlayerLoginServiceUpdateSessionController2Gs
 2=ServerPlayerLoginServiceController2GsLogin
 3=ServerPlayerLoginServiceController2GsEnterGateSucceed
