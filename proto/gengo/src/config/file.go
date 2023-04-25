@@ -22,7 +22,8 @@ var SourceNames = [...]string{
 var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string
 
-const PbcOutDir = ProjectDir + "common/src/pb/pbc/"
+const PbcDirName = "common/src/pb/pbc/"
+const PbcOutDir = ProjectDir + PbcDirName
 const ServiceImplFileName = PbcOutDir + "service_impl.cpp"
 
 var ProtoDirNames = [...]string{
