@@ -69,8 +69,11 @@ func main() {
 	MakeMd5Dir()
 	//开始读所有的proto文件
 	gen.ReadServiceIdFile()
-	gen.ReadAllServices()
+	gen.ReadAllProtoFileServices()
 	gen.BuildAllProtoc()
 	util.Wg.Wait()
+	//所有文件的proto读完以后
 	gen.InitServiceId()
+	gen.WriteServiceIdFile()
+	util.Wg.Wait()
 }
