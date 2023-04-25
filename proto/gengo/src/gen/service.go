@@ -182,12 +182,23 @@ func InitServiceId() {
 
 func serviceImpl() {
 	defer util.Wg.Done()
-	var data string
-	for i := 0; i < len(rpcIdMethod); i++ {
-		rpcMethodInfo := rpcIdMethod[uint64(i)]
-		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + rpcMethodInfo.KeyName() + "\n"
-	}
-	os.WriteFile(config.ServiceIdsFileName, []byte(data), 0666)
+	var includeData = "#include <unordered_map>\n"
+	var classImplData = ""
+	var initFuncData = "void InitServiceImpl()\n{\n"
+	rpcService.Range(func(k, v interface{}) bool {
+		key := k.(string)
+		rpcServiceInfo := v.(RpcServiceInfo)
+		includeData += "#include \"" + strings.Replace(rpcServiceInfo.FileName, config.ProtoEx, config.ProtoPbhEx, 1) + "\"\n"
+		serviceImplName := key + "Impl"
+		classImplData += "class " + serviceImplName + ":public " + key + "{};\n"
+		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceImplName + ">());\n"
+		return true
+	})
+	includeData += "}\n"
+	classImplData += "}\n"
+	initFuncData += "}\n"
+	var data = includeData + classImplData + initFuncData
+	os.WriteFile(config.ServiceImplFileName, []byte(data), 0666)
 }
 
 func ServiceImpl() {
