@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"gengo/config"
 	"gengo/util"
 	"io"
 	"os"
+	"strings"
 )
 
 func MD5Str(filePath string) (md5str string, err error) {
@@ -39,10 +41,10 @@ func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	if !same {
+	if same {
 		return false, err
 	}
-	_, err = util.Copy(srcFilePath, dstFilePath)
+	_, err = util.Copy(dstFilePath, srcFilePath)
 	return true, err
 }
 
@@ -70,6 +72,14 @@ func CompareByMd5Ex(dstFilePath string, md5SrcFilePath string) (same bool, err e
 		return false, nil
 	}
 	return true, err
+}
+
+func GetMd5FileName(dstFilePath string) (filename string) {
+	return strings.Replace(dstFilePath, config.ProjectDir, config.Md5Dir, 1)
+}
+
+func GetMd5ExFileName(dstFilePath string) (filename string) {
+	return GetMd5FileName(dstFilePath) + config.Md5Ex
 }
 
 func MD5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err error) {

@@ -2,7 +2,6 @@ package gen
 
 import (
 	"bufio"
-	"fmt"
 	"gengo/config"
 	"gengo/util"
 	"log"
@@ -35,6 +34,14 @@ var serviceId = map[string]uint64{}
 
 func (info *RpcMethodInfo) KeyName() (idName string) {
 	return info.Service + info.Method
+}
+
+func (info *RpcServiceInfo) IncludeDir() (idName string) {
+	return strings.Replace(info.Path, config.ProtoDir, "", 1)
+}
+
+func (info *RpcServiceInfo) CppHeadName() (idName string) {
+	return strings.Replace(info.FileName, config.ProtoEx, config.ProtoPbhEx, 1)
 }
 
 func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
@@ -138,13 +145,6 @@ func WriteServiceIdFile() {
 	go writeServiceIdFile()
 }
 
-func PrintAll() {
-	rpcMethod.Range(func(key, value interface{}) bool {
-		fmt.Println("Key =", key, "Value =", value)
-		return true
-	})
-}
-
 func InitServiceId() {
 	var unUseServiceId = map[uint64]struct{}{}
 	var maxServiceId uint64
@@ -188,17 +188,18 @@ func serviceImpl() {
 	rpcService.Range(func(k, v interface{}) bool {
 		key := k.(string)
 		rpcServiceInfo := v.(RpcServiceInfo)
-		includeData += "#include \"" + strings.Replace(rpcServiceInfo.FileName, config.ProtoEx, config.ProtoPbhEx, 1) + "\"\n"
+		includeData += "#include \"" + rpcServiceInfo.IncludeDir() + rpcServiceInfo.CppHeadName() + "\"\n"
 		serviceImplName := key + "Impl"
 		classImplData += "class " + serviceImplName + ":public " + key + "{};\n"
 		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceImplName + ">());\n"
 		return true
 	})
-	includeData += "}\n"
-	classImplData += "}\n"
+	includeData += "\n"
+	classImplData += "\n"
 	initFuncData += "}\n"
 	var data = includeData + classImplData + initFuncData
-	os.WriteFile(config.ServiceImplFileName, []byte(data), 0666)
+	os.WriteFile(GetMd5FileName(config.ServiceImplFileName), []byte(data), 0666)
+	Md5Copy(config.ServiceImplFileName, GetMd5FileName(config.ServiceImplFileName))
 }
 
 func ServiceImpl() {
