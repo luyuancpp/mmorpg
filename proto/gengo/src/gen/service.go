@@ -206,8 +206,8 @@ func serviceImpl() {
 	classImplData += "\n"
 	initFuncData += "}\n"
 	var data = includeData + classImplData + initFuncData
-	os.WriteFile(GetMd5FileName(config.ServiceImplFileName), []byte(data), 0666)
-	Md5Copy(config.ServiceImplFileName, GetMd5FileName(config.ServiceImplFileName))
+
+	Md5CopyData2File(config.ServiceImplFileName, data)
 }
 
 func ServiceImpl() {
