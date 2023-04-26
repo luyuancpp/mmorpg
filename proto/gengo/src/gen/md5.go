@@ -11,22 +11,22 @@ import (
 	"strings"
 )
 
-func MD5Str(filePath string) (md5str string, err error) {
+func FileMD5(filePath string) (md5str string, err error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return "", err
 	}
 	hash := md5.New()
-	_, err = io.Copy(hash, file)
-	return hex.EncodeToString(hash.Sum(nil)), err
+	_, _ = io.Copy(hash, file)
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func Compare(dstFilePath string, srcFilePath string) (same bool, err error) {
-	srcMd5, err := MD5Str(srcFilePath)
+	srcMd5, err := FileMD5(srcFilePath)
 	if err != nil {
 		return false, err
 	}
-	dstMd5, err := MD5Str(dstFilePath)
+	dstMd5, err := FileMD5(dstFilePath)
 	if err != nil {
 		return false, err
 	}
@@ -46,7 +46,7 @@ func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
 }
 
 func WriteToMd5ExFile(filePath string, md5FilePath string) (err error) {
-	md5Str, err := MD5Str(filePath)
+	md5Str, err := FileMD5(filePath)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func CompareByMd5Ex(dstFilePath string, md5SrcFilePath string) (same bool, err e
 	if err != nil {
 		return false, err
 	}
-	dstMd5, err := MD5Str(dstFilePath)
+	dstMd5, err := FileMD5(dstFilePath)
 	if err != nil {
 		return false, err
 	}
