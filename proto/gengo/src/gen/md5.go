@@ -7,11 +7,18 @@ import (
 	"gengo/config"
 	"gengo/util"
 	"io"
+	"log"
 	"os"
 	"strings"
 )
 
-func FileMD5(filePath string) (md5str string, err error) {
+func StrMd5(data string) (md5str string) {
+	hash := md5.New()
+	hash.Write([]byte(data))
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+func FileMd5(filePath string) (md5str string, err error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return "", err
@@ -21,12 +28,23 @@ func FileMD5(filePath string) (md5str string, err error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func Compare(dstFilePath string, srcFilePath string) (same bool, err error) {
-	srcMd5, err := FileMD5(srcFilePath)
+func CompareFile(dstFilePath string, srcFilePath string) (same bool, err error) {
+	srcMd5, err := FileMd5(srcFilePath)
 	if err != nil {
 		return false, err
 	}
-	dstMd5, err := FileMD5(dstFilePath)
+	dstMd5, err := FileMd5(dstFilePath)
+	if err != nil {
+		return false, err
+	}
+	if srcMd5 != dstMd5 {
+		return false, nil
+	}
+	return true, err
+}
+
+func CompareFileWithString(dstFilePath string, srcMd5 string) (same bool, err error) {
+	dstMd5, err := FileMd5(dstFilePath)
 	if err != nil {
 		return false, err
 	}
@@ -37,7 +55,7 @@ func Compare(dstFilePath string, srcFilePath string) (same bool, err error) {
 }
 
 func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
-	same, err := Compare(dstFilePath, srcFilePath)
+	same, err := CompareFile(dstFilePath, srcFilePath)
 	if same {
 		return false, err
 	}
@@ -46,7 +64,7 @@ func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
 }
 
 func WriteToMd5ExFile(filePath string, md5FilePath string) (err error) {
-	md5Str, err := FileMD5(filePath)
+	md5Str, err := FileMd5(filePath)
 	if err != nil {
 		return err
 	}
@@ -61,7 +79,7 @@ func CompareByMd5Ex(dstFilePath string, md5SrcFilePath string) (same bool, err e
 	if err != nil {
 		return false, err
 	}
-	dstMd5, err := FileMD5(dstFilePath)
+	dstMd5, err := FileMd5(dstFilePath)
 	if err != nil {
 		return false, err
 	}
@@ -79,7 +97,7 @@ func GetMd5ExFileName(dstFilePath string) (filename string) {
 	return GetMd5FileName(dstFilePath) + config.Md5Ex
 }
 
-func MD5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err error) {
+func Md5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err error) {
 	same, err := CompareByMd5Ex(dstFilePath, srcFilePath)
 	if err != nil {
 		return false, err
@@ -89,4 +107,14 @@ func MD5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err erro
 	}
 	_, err = util.Copy(srcFilePath, dstFilePath)
 	return true, err
+}
+
+func Md5CopyData2File(dstFilePath string, data string) {
+	if same, _ := CompareFileWithString(dstFilePath, StrMd5(data)); same {
+		return
+	}
+	os.WriteFile(GetMd5FileName(dstFilePath), []byte(data), 0666)
+	os.WriteFile(dstFilePath, []byte(data), 0666)
+	log.Default().Println(GetMd5FileName(dstFilePath), " -> ", dstFilePath)
+	return
 }
