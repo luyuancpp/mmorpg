@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -185,15 +186,21 @@ func serviceImpl() {
 	var includeData = "#include <unordered_map>\n"
 	var classImplData = ""
 	var initFuncData = "void InitServiceImpl()\n{\n"
+	var serviceList []string
 	rpcService.Range(func(k, v interface{}) bool {
 		key := k.(string)
-		rpcServiceInfo := v.(RpcServiceInfo)
+		serviceList = append(serviceList, key)
+		return true
+	})
+	sort.Strings(serviceList)
+	for _, key := range serviceList {
+		value, _ := rpcService.Load(key)
+		rpcServiceInfo := value.(RpcServiceInfo)
 		includeData += "#include \"" + rpcServiceInfo.IncludeDir() + rpcServiceInfo.CppHeadName() + "\"\n"
 		serviceImplName := key + "Impl"
 		classImplData += "class " + serviceImplName + ":public " + key + "{};\n"
 		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceImplName + ">());\n"
-		return true
-	})
+	}
 	includeData += "\n"
 	classImplData += "\n"
 	initFuncData += "}\n"
