@@ -165,6 +165,7 @@
     <ClCompile Include="src\game_logic\bag\bag.cpp" />
     <ClCompile Include="src\game_logic\bag\item.cpp" />
     <ClCompile Include="src\pb\pbc\serviceid\service_method_id.cpp" />
+    <ClCompile Include="src\pb\pbc\service_impl.cpp" />
     <ClCompile Include="src\pb\pbc\service_method\account_databasemethod_lua.cpp" />
     <ClCompile Include="src\pb\pbc\service_method\c2gatemethod_lua.cpp" />
     <ClCompile Include="src\pb\pbc\service_method\commonmethod_lua.cpp" />
@@ -259,7 +260,6 @@
     <ClCompile Include="src\pb\pbc\pb2sol2\scene_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\pb2sol2\team_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\pb2sol2\team_comp_sol2.cpp" />
-    <ClCompile Include="src\pb\pbc\prototypeserviceinstance\rpc_prototype_service.cpp" />
     <ClCompile Include="src\util\file2string.cpp" />
     <ClCompile Include="src\game_logic\login_state\login_state.cpp" />
     <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp" />
@@ -383,7 +383,6 @@
     <ClInclude Include="src\pb\pbc\logic_proto\team.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\team_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\team_server_player.pb.h" />
-    <ClInclude Include="src\pb\pbc\msgmap.h" />
     <ClInclude Include="src\pb\pbc\pb2sol2\pb2sol2.h" />
     <ClInclude Include="src\pb\pbc\pb3.pb.h" />
     <ClInclude Include="src\network\codec\codec.h" />

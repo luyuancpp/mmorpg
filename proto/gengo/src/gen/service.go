@@ -185,7 +185,8 @@ func serviceImpl() {
 	defer util.Wg.Done()
 	var includeData = "#include <unordered_map>\n"
 	var classImplData = ""
-	var initFuncData = "void InitServiceImpl()\n{\n"
+	var initFuncData = "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n"
+	initFuncData += "void InitServiceImpl()\n{\n"
 	var serviceList []string
 	rpcService.Range(func(k, v interface{}) bool {
 		key := k.(string)
