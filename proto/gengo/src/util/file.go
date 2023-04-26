@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -41,5 +42,6 @@ func Copy(dst string, src string) (written int64, err error) {
 	}
 	defer destination.Close()
 	nBytes, err := io.Copy(destination, source)
+	log.Default().Println(src, " -> ", dst)
 	return nBytes, err
 }
