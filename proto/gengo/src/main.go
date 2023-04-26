@@ -75,6 +75,6 @@ func main() {
 	//所有文件的proto读完以后
 	gen.InitServiceId()
 	gen.WriteServiceIdFile()
-	gen.ServiceImpl()
+	gen.WriteServiceImplFile()
 	util.Wg.Wait()
 }

@@ -181,7 +181,7 @@ func InitServiceId() {
 	})
 }
 
-func serviceImpl() {
+func writeServiceImplFile() {
 	defer util.Wg.Done()
 	var includeData = "#include <unordered_map>\n"
 	var classImplData = ""
@@ -210,7 +210,15 @@ func serviceImpl() {
 	Md5CopyData2File(config.ServiceImplFileName, data)
 }
 
-func ServiceImpl() {
+func WriteServiceImplFile() {
 	util.Wg.Add(1)
-	go serviceImpl()
+	go writeServiceImplFile()
+}
+
+func writeMethodIdFile() {
+
+}
+
+func WriteMethodIdFile() {
+
 }
