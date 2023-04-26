@@ -38,9 +38,6 @@ func Compare(dstFilePath string, srcFilePath string) (same bool, err error) {
 
 func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
 	same, err := Compare(dstFilePath, srcFilePath)
-	if err != nil {
-		return false, err
-	}
 	if same {
 		return false, err
 	}
