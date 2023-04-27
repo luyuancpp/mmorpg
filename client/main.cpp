@@ -5,7 +5,7 @@
 #include "src/util/file2string.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/luacpp/lua_module.h"
-#include "src/pb/pbc/serviceid/service_method_id.h"
+#include "src/pb/pbc/service.h"
 #include "src/service/logic_proto/player_service.h"
 
 int main(int argc, char* argv[])
@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     if (argc > 0)
     {
         InitLua();
-        InitMsgService();
+        InitService();
         InitPlayerServcie();
 
         int32_t nClients = 1;

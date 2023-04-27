@@ -1,6 +1,6 @@
 #include <unordered_set>
 
-#include "service_method_id.h"
+#include "service.h"
 #include "clientplayercommonservice_service_method_id.h"
 #include "serverplayerloginservice_service_method_id.h"
 #include "lobbyservice_service_method_id.h"

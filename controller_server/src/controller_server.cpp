@@ -33,7 +33,6 @@ using namespace net;
 ControllerServer* g_controller_node = nullptr;
 
 void set_server_squence_node_id(uint32_t node_id);
-void InitService();
 
 uint32_t controller_node_id()
 {

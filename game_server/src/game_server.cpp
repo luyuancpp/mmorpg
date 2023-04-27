@@ -24,7 +24,7 @@
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "src/network/node_info.h"
-#include "src/pb/pbc/serviceid/service_method_id.h"
+#include "src/pb/pbc/service.h"
 #include "src/system/redis_system.h"
 #include "src/system/logic/config_system.h"
 
@@ -35,7 +35,6 @@ NodeId node_id()
     return g_game_node->gs_info().id();
 }
 
-void InitFakeProtoServiceList();
 
 GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
@@ -52,11 +51,10 @@ void GameServer::Init()
     global_entity() = tls.registry.create();
     tls.registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
     LOG_INFO << "server type" << GameConfig::GetSingleton().config_info().server_type();
-    InitMsgService();
+    InitService();
     InitPlayerServcie();
     InitPlayerServcieReplied();
     InitRepliedCallback();
-    InitFakeProtoServiceList();
     InitNetwork();
 }
 

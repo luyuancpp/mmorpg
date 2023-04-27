@@ -3,6 +3,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/network/rpc_connection_event.h"
 #include "src/network/node_info.h"
+#include "src/pb/pbc/service.h"
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/service/common_proto_replied/replied_dispathcer.h"
 
@@ -10,7 +11,6 @@
 
 LoginServer* g_login_node = nullptr;
 
-void InitFakeProtoServiceList();
 
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
     : loop_(loop),
@@ -27,7 +27,7 @@ void LoginServer::Init()
     node_info_.set_node_type(kLoginNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     InitRepliedCallback();
-    InitFakeProtoServiceList();
+    InitService();
     ConnectDeploy();
 }
 

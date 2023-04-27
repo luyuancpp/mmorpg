@@ -4,7 +4,7 @@
 #include "muduo/base/Timestamp.h"
 
 #include "src/database_server.h"
-#include "src/pb/pbc/serviceid/service_method_id.h"
+#include "src/pb/pbc/service.h"
 #include "src/mysql_wrapper/mysql_database.h"
 #include "src/network/node_info.h"
 #include "src/redis_client/redis_client.h"

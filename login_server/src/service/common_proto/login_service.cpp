@@ -16,7 +16,7 @@
 #include "src/redis_client/redis_client.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/database_servicemethod.h"
-#include "src/pb/pbc/serviceid/service_method_id.h"
+#include "src/pb/pbc/service.h"
 
 #include "login_service.pb.h"
 #include "database_service.pb.h"

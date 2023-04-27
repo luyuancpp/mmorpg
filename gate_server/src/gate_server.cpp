@@ -4,7 +4,7 @@
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
 #include "src/network/server_component.h"
-#include "src/pb/pbc/serviceid/service_method_id.h"
+#include "src/pb/pbc/service.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/pb/pbc/service_method/game_servicemethod.h"
@@ -15,12 +15,10 @@
 
 GateServer* g_gate_node = nullptr; 
 
-void InitFakeProtoServiceList();
-
 void GateServer::LoadConfig()
 {
-    GameConfig::GetSingleton().Load("game.json");
-    DeployConfig::GetSingleton().Load("deploy.json");
+	GameConfig::GetSingleton().Load("game.json");
+	DeployConfig::GetSingleton().Load("deploy.json");
 }
 
 void GateServer::Init()
@@ -29,9 +27,8 @@ void GateServer::Init()
     LoadConfig();
     node_info_.set_node_type(kGateNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
-    InitMsgService();
+    InitService();
     InitRepliedCallback();
-    InitFakeProtoServiceList();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
