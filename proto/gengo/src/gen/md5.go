@@ -109,7 +109,7 @@ func Md5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err erro
 	return true, err
 }
 
-func Md5CopyData2File(dstFilePath string, data string) {
+func Md5WriteData2File(dstFilePath string, data string) {
 	if same, _ := CompareFileWithString(dstFilePath, StrMd5(data)); same {
 		return
 	}
