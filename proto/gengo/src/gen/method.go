@@ -39,11 +39,29 @@ func writeMethodCppFile(s RpcMethodInfos) {
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
 
+func writeMethodHandleHeadFile(s RpcMethodInfos) {
+
+}
+
+func writeMethodHandleCppFile(s RpcMethodInfos) {
+
+}
+
+func writeMethodRepliedHandleCppFile(s RpcMethodInfos) {
+
+}
+
 func WriteMethodFile() {
 	for _, v := range ServiceMethods {
 		util.Wg.Add(1)
 		go writeMethodHeadFile(v)
 		util.Wg.Add(1)
 		go writeMethodCppFile(v)
+		util.Wg.Add(1)
+		go writeMethodHandleHeadFile(v)
+		util.Wg.Add(1)
+		go writeMethodHandleCppFile(v)
+		util.Wg.Add(1)
+		go writeMethodRepliedHandleCppFile(v)
 	}
 }

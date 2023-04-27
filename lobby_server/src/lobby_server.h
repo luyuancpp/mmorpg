@@ -7,7 +7,7 @@
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_server.h"
 
-#include "src/service/logic_proto/lobby_scene.h"
+#include "src/service/lobby_scene.h"
 
 #include "deploy_service.pb.h"
 

@@ -21,13 +21,13 @@
     <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp">
+    <ClCompile Include="src\service\replied_dispathcer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp">
+    <ClCompile Include="src\service\deploy_service_replied.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto\database_service.cpp">
+    <ClCompile Include="src\service\database_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,13 +35,13 @@
     <ClInclude Include="src\database_server.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h">
+    <ClInclude Include="src\service\replied_dispathcer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h">
+    <ClInclude Include="src\service\deploy_service_replied.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto\database_service.h">
+    <ClInclude Include="src\service\database_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

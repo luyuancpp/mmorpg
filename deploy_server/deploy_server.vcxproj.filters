@@ -24,7 +24,7 @@
     <ClCompile Include="src\reuse_game_id\reuse_game_id.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto\deploy_service.cpp">
+    <ClCompile Include="src\service\deploy_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,7 +38,7 @@
     <ClInclude Include="src\deploy_variable.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto\deploy_service.h">
+    <ClInclude Include="src\service\deploy_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
