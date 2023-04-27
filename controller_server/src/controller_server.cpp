@@ -17,7 +17,7 @@
 #include "src/service/logic_proto/player_service.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"
 #include "src/service/logic_proto/server_service.h"
-#include "src/pb/pbc/serviceid/service_method_id.h"
+#include "src/pb/pbc/service.h"
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
 #include "src/pb/pbc/service_method/lobby_scenemethod.h"
@@ -33,7 +33,7 @@ using namespace net;
 ControllerServer* g_controller_node = nullptr;
 
 void set_server_squence_node_id(uint32_t node_id);
-void InitServiceImpl();
+void InitService();
 
 uint32_t controller_node_id()
 {
@@ -55,11 +55,10 @@ void ControllerServer::Init()
 	node_info_.set_node_type(kControllerNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
-    InitMsgService();
     InitPlayerServcie();
     InitPlayerServcieReplied();
     InitRepliedCallback();
-    InitServiceImpl();
+    InitService();
     //connect 
     Connect2Deploy();
 }
