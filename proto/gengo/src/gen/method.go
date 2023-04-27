@@ -29,7 +29,7 @@ func writeMethodCppFile(s RpcMethodInfos) {
 	if len(s) <= 0 {
 		return
 	}
-	var data = "#include \"" + s[0].ServiceInfo.FileBaseName() + "_service" + config.HeadEx + "\"\n"
+	var data = config.ProtoPbhIncludeBegin + s[0].ServiceInfo.FileBaseName() + "_service" + config.HeadEx + config.IncludeEndLine
 
 	for i := 0; i < len(s); i++ {
 		data += "const uint32_t " + s[i].KeyName() + config.RpcIdName + " = " + strconv.FormatUint(s[i].Id, 10) + ";\n"
@@ -40,15 +40,30 @@ func writeMethodCppFile(s RpcMethodInfos) {
 }
 
 func writeMethodHandleHeadFile(s RpcMethodInfos) {
-
+	defer util.Wg.Done()
+	if len(s) <= 0 {
+		return
+	}
+	var data = "#pragma once\n"
+	data += config.ProtoPbhIncludeBegin + s[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
+	data += "class " + s[0].Service + "Handler : public ::" + s[0].Service + "\n{\npulbic:\n"
+	for i := 0; i < len(s); i++ {
+		data += config.Tab + "void " + s[i].Method + config.GoogleMethodController +
+			config.Tab + config.Tab + "::" + s[i].Request + "* request,\n" +
+			config.Tab + config.Tab + "::" + s[i].Response + "* response,\n" +
+			config.Tab + config.Tab + " ::google::protobuf::Closure* done)override;\n\n"
+	}
+	data += "};\n\n"
+	fileName := s[0].ServiceInfo.FileBaseName() + "_handler" + config.HeadEx
+	Md5WriteData2File(config.GsMethodHandleDir+fileName, data)
 }
 
 func writeMethodHandleCppFile(s RpcMethodInfos) {
-
+	defer util.Wg.Done()
 }
 
 func writeMethodRepliedHandleCppFile(s RpcMethodInfos) {
-
+	defer util.Wg.Done()
 }
 
 func WriteMethodFile() {

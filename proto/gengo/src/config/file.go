@@ -11,6 +11,12 @@ const HeadEx = ".h"
 const CppEx = ".cpp"
 const RpcIdName = "MsgId"
 const PlayerName = "player"
+const GoogleMethodController = "(::google::protobuf::RpcController* controller,"
+const IncludeEndLine = "\"\n"
+const ProtoPbhIncludeBegin = "#include \""
+const ProtoPbhIncludeEndLine = ProtoEx + IncludeEndLine
+const Tab = "	"
+const GsName = "game_server/"
 
 var SourceNames = [...]string{
 	"common/",
@@ -39,5 +45,7 @@ var ProtoDirNames = [...]string{
 var ProtoDirs []string
 var ProtoMd5Dirs []string
 
-const ServiceDirName = "src/service"
+const ServiceDirName = "src/service/"
 const ServiceIdsFileName = ProtoDir + "serviceid.txt"
+
+const GsMethodHandleDir = ProjectDir + GsName + ServiceDirName
