@@ -6,7 +6,7 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
-#include "src/pb/pbc/serviceid/service_method_id.h"
+#include "src/pb/pbc/service.h"
 #include "src/pb/pbc/service_method/controller_servicemethod.h"
 #include "src/pb/pbc/service_method/gate_servicemethod.h"
 #include "src/thread_local/game_thread_local_storage.h"

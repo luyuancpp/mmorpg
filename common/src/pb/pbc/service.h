@@ -10,3 +10,5 @@ struct RpcService
     const char* response{nullptr};
 };
 extern std::unordered_map<uint32_t, RpcService> g_service_method_info;
+
+void InitService();
