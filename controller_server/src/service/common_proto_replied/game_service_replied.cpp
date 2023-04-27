@@ -4,7 +4,7 @@
 #include <muduo/base/Logging.h>
 
 #include "src/comp/player_list.h"
-#include "src/pb/pbc/serviceid/service_method_id.h"
+#include "src/pb/pbc/service.h"
 #include "src/service/logic_proto_replied/player_service_replied.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
