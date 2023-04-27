@@ -223,11 +223,11 @@ func InitServiceId() {
 	}
 }
 
-func writeServiceImplFile() {
+func writeServiceHandlerFile() {
 	defer util.Wg.Done()
 	var includeData = "#include <unordered_map>\n"
 	includeData += "#include \"service.h\"\n"
-	var classImplData = ""
+	var classHandlerData = ""
 	var initFuncData = "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n"
 	initFuncData += "std::unordered_map<uint32_t, RpcService> g_service_method_info;\n"
 	initFuncData += "void InitService()\n{\n"
@@ -242,9 +242,9 @@ func writeServiceImplFile() {
 		value, _ := RpcService.Load(key)
 		rpcServiceInfo := value.(RpcServiceInfo)
 		includeData += rpcServiceInfo.IncludeName()
-		serviceImplName := key + "Impl"
-		classImplData += "class " + serviceImplName + ":public " + key + "{};\n"
-		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceImplName + ">());\n"
+		serviceHandlerName := key + "Impl"
+		classHandlerData += "class " + serviceHandlerName + ":public " + key + "{};\n"
+		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceHandlerName + ">());\n"
 	}
 	initFuncData += "\n"
 	for _, v := range ServiceMethods {
@@ -262,14 +262,14 @@ func writeServiceImplFile() {
 		initFuncData += "\n"
 	}
 	includeData += "\n"
-	classImplData += "\n"
+	classHandlerData += "\n"
 	initFuncData += "}\n"
-	var data = includeData + classImplData + initFuncData
+	var data = includeData + classHandlerData + initFuncData
 
 	Md5WriteData2File(config.ServiceFileName, data)
 }
 
-func WriteServiceImplFile() {
+func WriteServiceHandlerFile() {
 	util.Wg.Add(1)
-	go writeServiceImplFile()
+	go writeServiceHandlerFile()
 }
