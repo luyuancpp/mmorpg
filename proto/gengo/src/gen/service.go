@@ -28,12 +28,15 @@ type RpcMethodInfo struct {
 	ServiceInfo *RpcServiceInfo
 }
 
+type RpcMethodInfos []RpcMethodInfo
+
 var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 
 var RpcService sync.Map
 var RpcMethod sync.Map
 var RpcIdMethod = map[uint64]RpcMethodInfo{}
 var ServiceId = map[string]uint64{}
+var ServiceMethods = map[string]RpcMethodInfos{}
 
 func (info *RpcMethodInfo) KeyName() (idName string) {
 	return info.Service + info.Method
@@ -53,6 +56,21 @@ func (info *RpcServiceInfo) HeadName() (headName string) {
 
 func (info *RpcServiceInfo) FileBaseName() (fileBaseName string) {
 	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
+}
+
+func (s RpcMethodInfos) Len() int {
+	return len(s)
+}
+
+func (s RpcMethodInfos) Less(i, j int) bool {
+	if s[i].Service < s[j].Service {
+		return true
+	}
+	return s[i].Index < s[j].Index
+}
+
+func (s RpcMethodInfos) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
 }
 
 func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
@@ -193,15 +211,25 @@ func InitServiceId() {
 		}
 		RpcIdMethod[newMethodValue.Id] = newMethodValue
 		RpcMethod.Swap(key, newMethodValue)
+
+		if _, ok := ServiceMethods[newMethodValue.Service]; !ok {
+			ServiceMethods[newMethodValue.Service] = RpcMethodInfos{}
+		}
+		ServiceMethods[newMethodValue.Service] = append(ServiceMethods[newMethodValue.Service], newMethodValue)
 		return true
 	})
+	for _, v := range ServiceMethods {
+		sort.Sort(v)
+	}
 }
 
 func writeServiceImplFile() {
 	defer util.Wg.Done()
 	var includeData = "#include <unordered_map>\n"
+	includeData += "#include \"service.h\"\n"
 	var classImplData = ""
 	var initFuncData = "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n"
+	initFuncData += "std::unordered_map<uint32_t, RpcService> g_service_method_info;"
 	initFuncData += "void InitServiceImpl()\n{\n"
 	var serviceList []string
 	RpcService.Range(func(k, v interface{}) bool {
@@ -218,12 +246,27 @@ func writeServiceImplFile() {
 		classImplData += "class " + serviceImplName + ":public " + key + "{};\n"
 		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceImplName + ">());\n"
 	}
+	initFuncData += "\n"
+	for _, v := range ServiceMethods {
+		for i := 0; i < len(v); i++ {
+			rpcMethodInfo := v[i]
+			rpcId := rpcMethodInfo.KeyName() + config.RpcIdName
+			initFuncData += "extern const uint32_t " + rpcId + ";\n"
+			cppValue := "g_service_method_info[" + rpcId
+			initFuncData += cppValue + "] = RpcService{" +
+				"\"" + rpcMethodInfo.Service + "\"," +
+				"\"" + rpcMethodInfo.Method + "\"," +
+				"\"" + rpcMethodInfo.Request + "\"," +
+				"\"" + rpcMethodInfo.Response + "\"};\n"
+		}
+		initFuncData += "\n"
+	}
 	includeData += "\n"
 	classImplData += "\n"
 	initFuncData += "}\n"
 	var data = includeData + classImplData + initFuncData
 
-	Md5WriteData2File(config.ServiceImplFileName, data)
+	Md5WriteData2File(config.ServiceFileName, data)
 }
 
 func WriteServiceImplFile() {
