@@ -7,6 +7,8 @@ const Md5Dir = ProtoDir + "gengo/bin/md5/"
 const ProtoEx = ".proto"
 const ProtoPbcEx = ".pb.cc"
 const ProtoPbhEx = ".pb.h"
+const HeadEx = ".h"
+const CppEx = ".cpp"
 
 var SourceNames = [...]string{
 	"common/",
