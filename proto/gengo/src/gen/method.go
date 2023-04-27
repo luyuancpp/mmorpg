@@ -33,8 +33,11 @@ func writeMethodFile(s RpcMethodInfos) {
 	data += s[0].ServiceInfo.IncludeName() + "\n"
 	for i := 0; i < len(s); i++ {
 		data += "const uint32_t " + s[i].KeyName() + "MsgId = " + strconv.FormatUint(s[i].Id, 10) + ";\n"
+		data += "const uint32_t " + s[i].KeyName() + "Index = " + strconv.FormatUint(s[i].Index, 10) + ";\n"
+		data += "#define " + s[i].KeyName() + "Method  ::" + s[i].Service + "_Stub::descriptor()->method(" +
+			strconv.FormatUint(s[i].Index, 10) + ");\n"
+		data += "\n"
 	}
-	data += "\n"
 	fileName := s[0].ServiceInfo.FileBaseName() + "method" + config.HeadEx
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
