@@ -9,6 +9,7 @@ const ProtoPbcEx = ".pb.cc"
 const ProtoPbhEx = ".pb.h"
 const HeadEx = ".h"
 const CppEx = ".cpp"
+const RpcIdName = "MsgId"
 
 var SourceNames = [...]string{
 	"common/",
@@ -26,7 +27,7 @@ var ProjectSourceMd5Dirs []string
 
 const PbcDirName = "common/src/pb/pbc/"
 const PbcOutDir = ProjectDir + PbcDirName
-const ServiceImplFileName = PbcOutDir + "service_impl.cpp"
+const ServiceFileName = PbcOutDir + "service.cpp"
 
 var ProtoDirNames = [...]string{
 	"common_proto/",

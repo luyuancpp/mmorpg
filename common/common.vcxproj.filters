@@ -124,7 +124,7 @@
     <ClCompile Include="src\pb\pbc\service_method\team_server_playermethod_lua.cpp" />
     <ClCompile Include="src\pb\pbc\service_method\teammethod_lua.cpp" />
     <ClCompile Include="src\util\defer.cpp" />
-    <ClCompile Include="src\pb\pbc\service_impl.cpp" />
+    <ClCompile Include="src\pb\pbc\service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -251,5 +251,21 @@
     <ClInclude Include="src\pb\pbc\service_method\team_server_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\teammethod.h" />
     <ClInclude Include="src\util\defer.h" />
+    <ClInclude Include="src\pb\pbc\common_client_player_service.h" />
+    <ClInclude Include="src\pb\pbc\common_server_player_service.h" />
+    <ClInclude Include="src\pb\pbc\controller_service_service.h" />
+    <ClInclude Include="src\pb\pbc\database_service_service.h" />
+    <ClInclude Include="src\pb\pbc\deploy_service_service.h" />
+    <ClInclude Include="src\pb\pbc\game_service_service.h" />
+    <ClInclude Include="src\pb\pbc\gate_service_service.h" />
+    <ClInclude Include="src\pb\pbc\lobby_scene_service.h" />
+    <ClInclude Include="src\pb\pbc\login_service_service.h" />
+    <ClInclude Include="src\pb\pbc\scene_client_player_service.h" />
+    <ClInclude Include="src\pb\pbc\scene_server_player_service.h" />
+    <ClInclude Include="src\pb\pbc\scene_service.h" />
+    <ClInclude Include="src\pb\pbc\team_client_player_service.h" />
+    <ClInclude Include="src\pb\pbc\team_server_player_service.h" />
+    <ClInclude Include="src\pb\pbc\team_service.h" />
+    <ClInclude Include="src\pb\pbc\service.h" />
   </ItemGroup>
 </Project>
