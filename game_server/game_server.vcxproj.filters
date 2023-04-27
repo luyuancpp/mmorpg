@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto_replied\server_replied.cpp">
+    <ClCompile Include="src\service\server_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\gate_node.cpp">
@@ -63,61 +63,61 @@
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\common_client_player.cpp">
+    <ClCompile Include="src\service\common_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\common_server_player.cpp">
+    <ClCompile Include="src\service\common_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\player_service.cpp">
+    <ClCompile Include="src\service\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\scene.cpp">
+    <ClCompile Include="src\service\scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\scene_client_player.cpp">
+    <ClCompile Include="src\service\scene_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\scene_server_player.cpp">
+    <ClCompile Include="src\service\scene_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\team.cpp">
+    <ClCompile Include="src\service\team.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\team_client_player.cpp">
+    <ClCompile Include="src\service\team_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\team_server_player.cpp">
+    <ClCompile Include="src\service\team_server_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto\server_service.cpp">
+    <ClCompile Include="src\service\server_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto\game_service.cpp">
+    <ClCompile Include="src\service\game_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto_replied\scene_server_player_replied.cpp">
+    <ClCompile Include="src\service\scene_server_player_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto_replied\team_server_player_replied.cpp">
+    <ClCompile Include="src\service\team_server_player_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto_replied\common_server_player_replied.cpp">
+    <ClCompile Include="src\service\common_server_player_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\logic_proto_replied\player_service_replied.cpp">
+    <ClCompile Include="src\service\player_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto_replied\replied_dispathcer.cpp">
+    <ClCompile Include="src\service\replied_dispathcer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto_replied\controller_service_replied.cpp">
+    <ClCompile Include="src\service\controller_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto_replied\lobby_service_replied.cpp">
+    <ClCompile Include="src\service\lobby_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_proto_replied\deploy_service_replied.cpp">
+    <ClCompile Include="src\service\deploy_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\thread_local\game_thread_local_storage.cpp">
@@ -128,7 +128,7 @@
     <ClInclude Include="src\game_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto_replied\server_replied.h">
+    <ClInclude Include="src\service\server_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gate_node.h">
@@ -176,61 +176,61 @@
     <ClInclude Include="src\event_receiver\scene_event_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\team_server_player.h">
+    <ClInclude Include="src\service\team_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\common_client_player.h">
+    <ClInclude Include="src\service\common_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\common_server_player.h">
+    <ClInclude Include="src\service\common_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\scene.h">
+    <ClInclude Include="src\service\scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\scene_client_player.h">
+    <ClInclude Include="src\service\scene_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\scene_server_player.h">
+    <ClInclude Include="src\service\scene_server_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\server_service.h">
+    <ClInclude Include="src\service\server_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\team.h">
+    <ClInclude Include="src\service\team.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\team_client_player.h">
+    <ClInclude Include="src\service\team_client_player.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto\player_service.h">
+    <ClInclude Include="src\service\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto\game_service.h">
+    <ClInclude Include="src\service\game_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto_replied\player_service_replied.h">
+    <ClInclude Include="src\service\player_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto_replied\scene_server_player_replied.h">
+    <ClInclude Include="src\service\scene_server_player_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto_replied\team_server_player_replied.h">
+    <ClInclude Include="src\service\team_server_player_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\logic_proto_replied\common_server_player_replied.h">
+    <ClInclude Include="src\service\common_server_player_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto_replied\replied_dispathcer.h">
+    <ClInclude Include="src\service\replied_dispathcer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto_replied\lobby_service_replied.h">
+    <ClInclude Include="src\service\lobby_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto_replied\controller_service_replied.h">
+    <ClInclude Include="src\service\controller_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_proto_replied\deploy_service_replied.h">
+    <ClInclude Include="src\service\deploy_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\game_thread_local_storage.h">

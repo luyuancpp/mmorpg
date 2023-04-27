@@ -10,7 +10,7 @@
 #include "src/network/gs_node.h"
 #include "src/network/controller_node.h"
 #include "src/pb/pbc/service_method/deploy_servicemethod.h"
-#include "src/service/common_proto_replied/replied_dispathcer.h"
+#include "src/service/replied_dispathcer.h"
 
 
 LobbyServer* g_lobby_server = nullptr;
