@@ -10,6 +10,7 @@ const ProtoPbhEx = ".pb.h"
 const HeadEx = ".h"
 const CppEx = ".cpp"
 const RpcIdName = "MsgId"
+const PlayerName = "player"
 
 var SourceNames = [...]string{
 	"common/",

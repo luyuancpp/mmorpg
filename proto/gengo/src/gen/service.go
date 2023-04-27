@@ -229,8 +229,8 @@ func writeServiceImplFile() {
 	includeData += "#include \"service.h\"\n"
 	var classImplData = ""
 	var initFuncData = "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n"
-	initFuncData += "std::unordered_map<uint32_t, RpcService> g_service_method_info;"
-	initFuncData += "void InitServiceImpl()\n{\n"
+	initFuncData += "std::unordered_map<uint32_t, RpcService> g_service_method_info;\n"
+	initFuncData += "void InitService()\n{\n"
 	var serviceList []string
 	RpcService.Range(func(k, v interface{}) bool {
 		key := k.(string)
