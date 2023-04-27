@@ -123,7 +123,6 @@
     <ClCompile Include="src\pb\pbc\service_method\team_client_playermethod_lua.cpp" />
     <ClCompile Include="src\pb\pbc\service_method\team_server_playermethod_lua.cpp" />
     <ClCompile Include="src\pb\pbc\service_method\teammethod_lua.cpp" />
-    <ClCompile Include="src\pb\pbc\serviceid\service_method_id.cpp" />
     <ClCompile Include="src\util\defer.cpp" />
     <ClCompile Include="src\pb\pbc\service_impl.cpp" />
   </ItemGroup>
@@ -251,18 +250,6 @@
     <ClInclude Include="src\pb\pbc\service_method\team_client_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\team_server_playermethod.h" />
     <ClInclude Include="src\pb\pbc\service_method\teammethod.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\clientplayercommonservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\clientplayersceneservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\clientplayerteamservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\gameservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\lobbyservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\loginservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\s2steamservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\serverplayerloginservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\serverplayersceneservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\serverplayerteamservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\serversceneservice_service_method_id.h" />
-    <ClInclude Include="src\pb\pbc\serviceid\service_method_id.h" />
     <ClInclude Include="src\util\defer.h" />
   </ItemGroup>
 </Project>

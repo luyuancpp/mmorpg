@@ -13,17 +13,19 @@ import (
 	"sync"
 )
 
-type RpcMethodInfo struct {
-	Service  string
-	Method   string
-	Request  string
-	Response string
-	Id       uint64
-}
-
 type RpcServiceInfo struct {
 	FileName string
 	Path     string
+}
+
+type RpcMethodInfo struct {
+	Service     string
+	Method      string
+	Request     string
+	Response    string
+	Id          uint64
+	Index       uint64
+	ServiceInfo *RpcServiceInfo
 }
 
 var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
@@ -37,12 +39,20 @@ func (info *RpcMethodInfo) KeyName() (idName string) {
 	return info.Service + info.Method
 }
 
-func (info *RpcServiceInfo) IncludeDir() (idName string) {
-	return strings.Replace(info.Path, config.ProtoDir, "", 1)
+func (info *RpcServiceInfo) IncludeName() (includeName string) {
+	return "#include \"" + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
 }
 
-func (info *RpcServiceInfo) CppHeadName() (idName string) {
+func (info *RpcServiceInfo) PbcHeadName() (pbcHeadName string) {
 	return strings.Replace(info.FileName, config.ProtoEx, config.ProtoPbhEx, 1)
+}
+
+func (info *RpcServiceInfo) HeadName() (headName string) {
+	return strings.Replace(info.FileName, config.ProtoEx, config.HeadEx, 1)
+}
+
+func (info *RpcServiceInfo) FileBaseName() (fileBaseName string) {
+	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
 }
 
 func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
@@ -56,6 +66,8 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	scanner := bufio.NewScanner(f)
 	var line string
 	var service string
+	var methodIndex uint64
+	var serviceInfo *RpcServiceInfo
 	for scanner.Scan() {
 		line = scanner.Text()
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
@@ -65,6 +77,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
 			RpcService.Store(service, rpcServiceInfo)
+			serviceInfo = &rpcServiceInfo
 			continue
 		} else if strings.Contains(line, "rpc ") {
 			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
@@ -75,6 +88,9 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.Request = splitList[2]
 			rpcMethodInfo.Response = splitList[4]
 			rpcMethodInfo.Id = math.MaxUint64
+			rpcMethodInfo.Index = methodIndex
+			rpcMethodInfo.ServiceInfo = serviceInfo
+			methodIndex += 1
 			RpcMethod.Store(rpcMethodInfo.KeyName(), rpcMethodInfo)
 			continue
 		} else if len(service) > 0 && strings.Contains(line, "}") {
@@ -197,7 +213,7 @@ func writeServiceImplFile() {
 	for _, key := range serviceList {
 		value, _ := RpcService.Load(key)
 		rpcServiceInfo := value.(RpcServiceInfo)
-		includeData += "#include \"" + rpcServiceInfo.IncludeDir() + rpcServiceInfo.CppHeadName() + "\"\n"
+		includeData += rpcServiceInfo.IncludeName()
 		serviceImplName := key + "Impl"
 		classImplData += "class " + serviceImplName + ":public " + key + "{};\n"
 		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceImplName + ">());\n"

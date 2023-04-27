@@ -76,5 +76,6 @@ func main() {
 	gen.InitServiceId()
 	gen.WriteServiceIdFile()
 	gen.WriteServiceImplFile()
+	gen.WriteMethodFile()
 	util.Wg.Wait()
 }
