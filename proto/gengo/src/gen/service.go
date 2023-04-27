@@ -28,10 +28,10 @@ type RpcServiceInfo struct {
 
 var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 
-var rpcService sync.Map
-var rpcMethod sync.Map
-var rpcIdMethod = map[uint64]RpcMethodInfo{}
-var serviceId = map[string]uint64{}
+var RpcService sync.Map
+var RpcMethod sync.Map
+var RpcIdMethod = map[uint64]RpcMethodInfo{}
+var ServiceId = map[string]uint64{}
 
 func (info *RpcMethodInfo) KeyName() (idName string) {
 	return info.Service + info.Method
@@ -64,7 +64,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			var rpcServiceInfo RpcServiceInfo
 			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
-			rpcService.Store(service, rpcServiceInfo)
+			RpcService.Store(service, rpcServiceInfo)
 			continue
 		} else if strings.Contains(line, "rpc ") {
 			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
@@ -75,7 +75,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.Request = splitList[2]
 			rpcMethodInfo.Response = splitList[4]
 			rpcMethodInfo.Id = math.MaxUint64
-			rpcMethod.Store(rpcMethodInfo.KeyName(), rpcMethodInfo)
+			RpcMethod.Store(rpcMethodInfo.KeyName(), rpcMethodInfo)
 			continue
 		} else if len(service) > 0 && strings.Contains(line, "}") {
 			break
@@ -119,7 +119,7 @@ func readServiceIdFile() {
 	for scanner.Scan() {
 		line = scanner.Text()
 		splitList := strings.Split(line, "=")
-		serviceId[splitList[1]], err = strconv.ParseUint(splitList[0], 10, 32)
+		ServiceId[splitList[1]], err = strconv.ParseUint(splitList[0], 10, 32)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -134,8 +134,8 @@ func ReadServiceIdFile() {
 func writeServiceIdFile() {
 	defer util.Wg.Done()
 	var data string
-	for i := 0; i < len(rpcIdMethod); i++ {
-		rpcMethodInfo := rpcIdMethod[uint64(i)]
+	for i := 0; i < len(RpcIdMethod); i++ {
+		rpcMethodInfo := RpcIdMethod[uint64(i)]
 		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + rpcMethodInfo.KeyName() + "\n"
 	}
 	os.WriteFile(config.ServiceIdsFileName, []byte(data), 0666)
@@ -150,20 +150,20 @@ func InitServiceId() {
 	var unUseServiceId = map[uint64]struct{}{}
 	var maxServiceId uint64
 
-	for k, v := range serviceId {
+	for k, v := range ServiceId {
 		if maxServiceId < v {
 			maxServiceId = v
 		}
-		methodValue, ok := rpcMethod.Load(k)
+		methodValue, ok := RpcMethod.Load(k)
 		if !ok {
 			unUseServiceId[v] = struct{}{}
 			continue
 		}
 		newMethodValue := methodValue.(RpcMethodInfo)
 		newMethodValue.Id = v
-		rpcMethod.Swap(newMethodValue.KeyName(), newMethodValue)
+		RpcMethod.Swap(newMethodValue.KeyName(), newMethodValue)
 	}
-	rpcMethod.Range(func(k, v interface{}) bool {
+	RpcMethod.Range(func(k, v interface{}) bool {
 		key := k.(string)
 		newMethodValue := v.(RpcMethodInfo)
 		for uk, _ := range unUseServiceId {
@@ -175,8 +175,8 @@ func InitServiceId() {
 			maxServiceId += 1
 			newMethodValue.Id = maxServiceId
 		}
-		rpcIdMethod[newMethodValue.Id] = newMethodValue
-		rpcMethod.Swap(key, newMethodValue)
+		RpcIdMethod[newMethodValue.Id] = newMethodValue
+		RpcMethod.Swap(key, newMethodValue)
 		return true
 	})
 }
@@ -188,14 +188,14 @@ func writeServiceImplFile() {
 	var initFuncData = "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n"
 	initFuncData += "void InitServiceImpl()\n{\n"
 	var serviceList []string
-	rpcService.Range(func(k, v interface{}) bool {
+	RpcService.Range(func(k, v interface{}) bool {
 		key := k.(string)
 		serviceList = append(serviceList, key)
 		return true
 	})
 	sort.Strings(serviceList)
 	for _, key := range serviceList {
-		value, _ := rpcService.Load(key)
+		value, _ := RpcService.Load(key)
 		rpcServiceInfo := value.(RpcServiceInfo)
 		includeData += "#include \"" + rpcServiceInfo.IncludeDir() + rpcServiceInfo.CppHeadName() + "\"\n"
 		serviceImplName := key + "Impl"
@@ -207,18 +207,10 @@ func writeServiceImplFile() {
 	initFuncData += "}\n"
 	var data = includeData + classImplData + initFuncData
 
-	Md5CopyData2File(config.ServiceImplFileName, data)
+	Md5WriteData2File(config.ServiceImplFileName, data)
 }
 
 func WriteServiceImplFile() {
 	util.Wg.Add(1)
 	go writeServiceImplFile()
-}
-
-func writeMethodIdFile() {
-
-}
-
-func WriteMethodIdFile() {
-
 }
