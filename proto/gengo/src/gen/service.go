@@ -36,7 +36,7 @@ var RpcServiceSyncMap sync.Map
 var RpcMethodSyncMap sync.Map
 var RpcIdMethodMap = map[uint64]RpcMethodInfo{}
 var ServiceIdMap = map[string]uint64{}
-var ServiceMethodMap = map[string]RpcMethodInfos{}
+var ServiceMethodMap = map[string]*RpcMethodInfos{}
 var ServiceList []string
 
 func (info *RpcMethodInfo) KeyName() (idName string) {
@@ -214,9 +214,9 @@ func InitServiceId() {
 		RpcMethodSyncMap.Swap(key, newMethodValue)
 
 		if _, ok := ServiceMethodMap[newMethodValue.Service]; !ok {
-			ServiceMethodMap[newMethodValue.Service] = RpcMethodInfos{}
+			ServiceMethodMap[newMethodValue.Service] = &RpcMethodInfos{}
 		}
-		ServiceMethodMap[newMethodValue.Service] = append(ServiceMethodMap[newMethodValue.Service], newMethodValue)
+		*ServiceMethodMap[newMethodValue.Service] = append(*ServiceMethodMap[newMethodValue.Service], newMethodValue)
 		return true
 	})
 	for _, v := range ServiceMethodMap {
@@ -249,7 +249,7 @@ func writeServiceHandlerFile() {
 	}
 	initFuncData += "\n"
 	for _, key := range ServiceList {
-		v := ServiceMethodMap[key]
+		v := *ServiceMethodMap[key]
 		for i := 0; i < len(v); i++ {
 			rpcMethodInfo := v[i]
 			rpcId := rpcMethodInfo.KeyName() + config.RpcIdName

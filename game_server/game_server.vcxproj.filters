@@ -185,9 +185,6 @@
     <ClInclude Include="src\handler\server_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\team.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\handler\team_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -234,6 +231,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\scene_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\team_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

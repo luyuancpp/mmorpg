@@ -32,7 +32,7 @@
 #include "src/pb/pbc/service_method/database_servicemethod.h"
 #include "src/pb/pbc/serviceid/gateservice_service_method_id.h"
 #include "src/pb/pbc/service.h"
-#include "src/service/player_service.h"
+#include "src/handler/player_service.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"
