@@ -10,10 +10,10 @@
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
 class ClientPlayerCommonServiceImpl : public ClientPlayerCommonService{};
 class ClientPlayerSceneServiceHandler : public ClientPlayerSceneService{};
-class ClientPlayerTeamServiceImpl : public ClientPlayerTeamService{};
+class ClientPlayerTeamServiceHandler : public ClientPlayerTeamService{};
 void InitPlayerServcie()
 {
     g_player_services.emplace("ClientPlayerCommonService", std::make_unique<ClientPlayerCommonServiceService>(new ClientPlayerCommonServiceImpl));
     g_player_services.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceService>(new ClientPlayerSceneServiceHandler));
-    g_player_services.emplace("ClientPlayerTeamService", std::make_unique<ClientPlayerTeamServiceService>(new ClientPlayerTeamServiceImpl));
+    g_player_services.emplace("ClientPlayerTeamService", std::make_unique<ClientPlayerTeamServiceService>(new ClientPlayerTeamServiceHandler));
 }
