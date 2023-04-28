@@ -1,6 +1,6 @@
 #pragma once
 #include "scene.pb.h"
-class ServerSceneServiceImpl : public ::ServerSceneService
+class ServerSceneServiceHandler : public ::ServerSceneService
 {
 public:
 	void UpdateCrossMainSceneInfo(::google::protobuf::RpcController* controller,
