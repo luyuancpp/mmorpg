@@ -87,7 +87,7 @@ func writePlayerMethodHandlerHeadFile(s RpcMethodInfos) {
 	var data = "#pragma once\n"
 	data += config.ProtoPbhIncludeBegin + s[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
 	data += config.PlayerServiceIncludeName
-	data += "\nclass " + s[0].Service + "Handler : public ::PlayerService" + "\n{\npublic:\n"
+	data += "\nclass " + s[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n"
 	data += config.Tab + "PlayerService::PlayerService;\n"
 	var functionNameList string
 	var callFunctionList = " void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n   " +
