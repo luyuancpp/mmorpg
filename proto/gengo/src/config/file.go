@@ -12,11 +12,15 @@ const CppEx = ".cpp"
 const RpcIdName = "MsgId"
 const PlayerName = "player"
 const GoogleMethodController = "(::google::protobuf::RpcController* controller,"
+const PlayerMethodController = "(entt::entity player,"
 const IncludeEndLine = "\"\n"
 const ProtoPbhIncludeBegin = "#include \""
 const ProtoPbhIncludeEndLine = ProtoPbhEx + IncludeEndLine
 const Tab = "	"
+const Tab2 = Tab + Tab
+const Tab3 = Tab + Tab + Tab
 const GsName = "game_server/"
+const PlayerServiceIncludeName = "#include \"player_service.h\""
 
 var SourceNames = [...]string{
 	"common/",
