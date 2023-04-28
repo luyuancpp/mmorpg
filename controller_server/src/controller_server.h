@@ -3,7 +3,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "src/event/event.h"
-#include "src/service/common_proto/controller_service.h"
+#include "src/service/controller_service_handler.h"
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_connection_event.h"
@@ -53,7 +53,7 @@ private:
 	RpcClientPtr lobby_session_;
 	RpcClientPtr db_session_;
 
-	ControllerServiceImpl contoller_service_;
+	ControllerServiceHandler contoller_service_;
 
 	NodeInfo node_info_;
 	servers_info_data serverinfos_;

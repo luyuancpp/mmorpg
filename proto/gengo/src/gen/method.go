@@ -78,6 +78,25 @@ func writeGsMethodHandlerHeadFile(pMethodList *RpcMethodInfos) {
 	Md5WriteData2File(config.GsMethodHandleDir+fileName, getMethodHandlerHeadStr(pMethodList))
 }
 
+func writeControllerMethodHandlerHeadFile(pMethodList *RpcMethodInfos) {
+	defer util.Wg.Done()
+
+	methodList := *pMethodList
+	if len(methodList) <= 0 {
+		return
+	}
+	if strings.Contains(methodList[0].ServiceInfo.FileBaseName(), config.PlayerName) {
+		return
+	}
+	if methodList[0].ServiceInfo.Path != config.ProtoDirNames[config.LogicProtoDirIndex] {
+		if !strings.Contains(methodList[0].ServiceInfo.FileBaseName(), "controller") {
+			return
+		}
+	}
+	fileName := methodList[0].ServiceInfo.FileBaseName() + "_handler" + config.HeadEx
+	Md5WriteData2File(config.ControllerMethodHandleDir+fileName, getMethodHandlerHeadStr(pMethodList))
+}
+
 func writeMethodHandlerCppFile(s RpcMethodInfos) {
 	defer util.Wg.Done()
 
@@ -163,6 +182,8 @@ func WriteMethodFile() {
 		go writeMethodCppFile(&v)
 		util.Wg.Add(1)
 		go writeGsMethodHandlerHeadFile(&v)
+		util.Wg.Add(1)
+		go writeControllerMethodHandlerHeadFile(&v)
 		util.Wg.Add(1)
 		go writeMethodHandlerCppFile(v)
 		util.Wg.Add(1)
