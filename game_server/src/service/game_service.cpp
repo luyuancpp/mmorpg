@@ -1,4 +1,4 @@
-#include "game_service.h"
+#include "game_service_handler.h"
 #include "src/network/rpc_msg_route.h"
 ///<<< BEGIN WRITING YOUR CODE
 
@@ -11,7 +11,7 @@
 #include "src/game_logic/player/player_list.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/service.h"
-#include "src/service/logic_proto/player_service.h"
+#include "src/service/player_service.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
@@ -25,7 +25,7 @@ using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void GameServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
+void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
     const ::GameNodeEnterGsRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -54,7 +54,7 @@ void GameServiceImpl::EnterGs(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceImpl::Send2Player(::google::protobuf::RpcController* controller,
+void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controller,
     const ::NodeServiceMessageRequest* request,
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
@@ -96,7 +96,7 @@ void GameServiceImpl::Send2Player(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceImpl::ClientSend2Player(::google::protobuf::RpcController* controller,
+void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* controller,
     const ::GameNodeRpcClientRequest* request,
     ::GameNodeRpcClientResponse* response,
     ::google::protobuf::Closure* done)
@@ -147,7 +147,7 @@ void GameServiceImpl::ClientSend2Player(::google::protobuf::RpcController* contr
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
+void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controller,
     const ::GameNodeDisconnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -168,7 +168,7 @@ void GameServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceImpl::GateConnectGs(::google::protobuf::RpcController* controller,
+void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* controller,
     const ::GameNodeConnectRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -192,7 +192,7 @@ void GameServiceImpl::GateConnectGs(::google::protobuf::RpcController* controlle
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceImpl::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
+void GameServiceHandler::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
     const ::NodeServiceMessageRequest* request,
     ::google::protobuf::Empty* response,
     ::google::protobuf::Closure* done)
@@ -202,7 +202,7 @@ void GameServiceImpl::ControllerSend2PlayerViaGs(::google::protobuf::RpcControll
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
+void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controller,
     const ::NodeServiceMessageRequest* request,
     ::NodeServiceMessageResponse* response,
     ::google::protobuf::Closure* done)
@@ -251,7 +251,7 @@ void GameServiceImpl::CallPlayer(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+void GameServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
     const ::RouteMsgStringRequest* request,
     ::RouteMsgStringResponse* response,
     ::google::protobuf::Closure* done)
@@ -260,7 +260,7 @@ void GameServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* cont
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceImpl::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
     const ::RoutePlayerMsgStringRequest* request,
     ::RoutePlayerMsgStringResponse* response,
     ::google::protobuf::Closure* done)

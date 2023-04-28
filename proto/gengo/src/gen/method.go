@@ -46,10 +46,10 @@ func writeMethodHandleHeadFile(s RpcMethodInfos) {
 	}
 	var data = "#pragma once\n"
 	data += config.ProtoPbhIncludeBegin + s[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
-	data += "class " + s[0].Service + "Handler : public ::" + s[0].Service + "\n{\npulbic:\n"
+	data += "class " + s[0].Service + "Handler : public ::" + s[0].Service + "\n{\npublic:\n"
 	for i := 0; i < len(s); i++ {
-		data += config.Tab + "void " + s[i].Method + config.GoogleMethodController +
-			config.Tab + config.Tab + "::" + s[i].Request + "* request,\n" +
+		data += config.Tab + "void " + s[i].Method + config.GoogleMethodController + "\n" +
+			config.Tab + config.Tab + "const ::" + s[i].Request + "* request,\n" +
 			config.Tab + config.Tab + "::" + s[i].Response + "* response,\n" +
 			config.Tab + config.Tab + " ::google::protobuf::Closure* done)override;\n\n"
 	}

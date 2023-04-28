@@ -4,7 +4,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/network/controller_node.h"
-#include "src/service/common_proto/game_service.h"
+#include "src/service/game_service_handler.h"
 #include "src/network/rpc_server.h"
 
 #include "src/redis_client/redis_client.h"
@@ -60,7 +60,7 @@ private:
     ::game_server_db gs_info_;
     NodeInfo node_info_;
 
-    GameServiceImpl gs_service_impl_;
+    GameServiceHandler gs_service_impl_;
 };
 
 extern GameServer* g_game_node;

@@ -105,7 +105,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.Service = service
 			rpcMethodInfo.Method = splitList[1]
 			rpcMethodInfo.Request = splitList[2]
-			rpcMethodInfo.Response = splitList[4]
+			rpcMethodInfo.Response = strings.Replace(splitList[4], ".", "::", -1)
 			rpcMethodInfo.Id = math.MaxUint64
 			rpcMethodInfo.Index = methodIndex
 			rpcMethodInfo.ServiceInfo = serviceInfo

@@ -14,7 +14,7 @@ const PlayerName = "player"
 const GoogleMethodController = "(::google::protobuf::RpcController* controller,"
 const IncludeEndLine = "\"\n"
 const ProtoPbhIncludeBegin = "#include \""
-const ProtoPbhIncludeEndLine = ProtoEx + IncludeEndLine
+const ProtoPbhIncludeEndLine = ProtoPbhEx + IncludeEndLine
 const Tab = "	"
 const GsName = "game_server/"
 

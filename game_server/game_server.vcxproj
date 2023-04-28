@@ -167,9 +167,9 @@
     <ClInclude Include="src\event_receiver\event_receiver.h" />
     <ClInclude Include="src\event_receiver\mission_event_receiver.h" />
     <ClInclude Include="src\event_receiver\scene_event_receiver.h" />
-    <ClInclude Include="src\service\game_service.h" />
     <ClInclude Include="src\service\controller_service_replied.h" />
     <ClInclude Include="src\service\deploy_service_replied.h" />
+    <ClInclude Include="src\service\game_service_handler.h" />
     <ClInclude Include="src\service\lobby_service_replied.h" />
     <ClInclude Include="src\service\replied_dispathcer.h" />
     <ClInclude Include="src\service\common_client_player.h" />
