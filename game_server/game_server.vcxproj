@@ -134,8 +134,8 @@
     <ClCompile Include="src\service\deploy_service_replied.cpp" />
     <ClCompile Include="src\service\lobby_service_replied.cpp" />
     <ClCompile Include="src\service\replied_dispathcer.cpp" />
-    <ClCompile Include="src\service\common_client_player.cpp" />
-    <ClCompile Include="src\service\common_server_player.cpp" />
+    <ClCompile Include="src\service\common_client_player_handler.cpp" />
+    <ClCompile Include="src\service\common_server_player_handler.cpp" />
     <ClCompile Include="src\service\player_service.cpp" />
     <ClCompile Include="src\service\scene.cpp" />
     <ClCompile Include="src\service\scene_client_player.cpp" />
@@ -168,12 +168,12 @@
     <ClInclude Include="src\event_receiver\mission_event_receiver.h" />
     <ClInclude Include="src\event_receiver\scene_event_receiver.h" />
     <ClInclude Include="src\service\common_client_player_handler.h" />
+    <ClInclude Include="src\service\common_server_player_handler.h" />
     <ClInclude Include="src\service\controller_service_replied.h" />
     <ClInclude Include="src\service\deploy_service_replied.h" />
     <ClInclude Include="src\service\game_service_handler.h" />
     <ClInclude Include="src\service\lobby_service_replied.h" />
     <ClInclude Include="src\service\replied_dispathcer.h" />
-    <ClInclude Include="src\service\common_server_player.h" />
     <ClInclude Include="src\service\player_service.h" />
     <ClInclude Include="src\service\common_server_player_replied.h" />
     <ClInclude Include="src\service\player_service_replied.h" />

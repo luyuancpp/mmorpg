@@ -13,7 +13,7 @@ class ServerPlayerSceneServiceOpenImpl : public ServerPlayerSceneService{};
 class ServerPlayerTeamServiceOpenImpl : public ServerPlayerTeamService{};
 void InitPlayerServcie()
 {
-    g_player_services.emplace("ServerPlayerLoginService", std::make_unique<ServerPlayerLoginServiceImpl>(new ServerPlayerLoginServiceOpenImpl));
+    g_player_services.emplace("ServerPlayerLoginService", std::make_unique<ServerPlayerLoginServiceHandler>(new ServerPlayerLoginServiceOpenImpl));
     g_player_services.emplace("ServerPlayerSceneService", std::make_unique<ServerPlayerSceneServiceImpl>(new ServerPlayerSceneServiceOpenImpl));
     g_player_services.emplace("ServerPlayerTeamService", std::make_unique<ServerPlayerTeamServiceImpl>(new ServerPlayerTeamServiceOpenImpl));
 }

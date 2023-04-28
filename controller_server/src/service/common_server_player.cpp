@@ -6,7 +6,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerPlayerLoginServiceImpl::UpdateSessionController2Gs(entt::entity player,
+void ServerPlayerLoginServiceHandler::UpdateSessionController2Gs(entt::entity player,
     const ::UpdateSessionController2GsRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -14,7 +14,7 @@ void ServerPlayerLoginServiceImpl::UpdateSessionController2Gs(entt::entity playe
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerLoginServiceImpl::Controller2GsLogin(entt::entity player,
+void ServerPlayerLoginServiceHandler::Controller2GsLogin(entt::entity player,
     const ::Controller2GsLoginRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -22,7 +22,7 @@ void ServerPlayerLoginServiceImpl::Controller2GsLogin(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerLoginServiceImpl::Controller2GsEnterGateSucceed(entt::entity player,
+void ServerPlayerLoginServiceHandler::Controller2GsEnterGateSucceed(entt::entity player,
     const ::Controller2GsEnterGateSucceedRequest* request,
     ::google::protobuf::Empty* response)
 {

@@ -21,6 +21,7 @@ const Tab2 = Tab + Tab
 const Tab3 = Tab + Tab + Tab
 const GsName = "game_server/"
 const PlayerServiceIncludeName = "#include \"player_service.h\""
+const HandlerName = "Handler"
 
 var SourceNames = [...]string{
 	"common/",
