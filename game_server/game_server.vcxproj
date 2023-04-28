@@ -177,8 +177,8 @@
     <ClInclude Include="src\service\player_service.h" />
     <ClInclude Include="src\service\common_server_player_replied.h" />
     <ClInclude Include="src\service\player_service_replied.h" />
-    <ClInclude Include="src\service\scene.h" />
-    <ClInclude Include="src\service\scene_client_player.h" />
+    <ClInclude Include="src\service\scene_client_player_handler.h" />
+    <ClInclude Include="src\service\scene_handler.h" />
     <ClInclude Include="src\service\scene_server_player.h" />
     <ClInclude Include="src\service\server_service.h" />
     <ClInclude Include="src\service\team.h" />
