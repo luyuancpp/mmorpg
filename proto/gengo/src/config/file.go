@@ -24,6 +24,8 @@ const GsName = "game_server/"
 const ControllerName = "controller_server/"
 const PlayerServiceIncludeName = "#include \"player_service.h\""
 const HandlerName = "Handler"
+const YourCodeBegin = "///<<< BEGIN WRITING YOUR CODE"
+const YourCodeEnd = "///<<< END WRITING YOUR CODE"
 
 var SourceNames = [...]string{
 	"common/",
