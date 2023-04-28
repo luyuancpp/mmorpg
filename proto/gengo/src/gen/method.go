@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-func writeMethodHeadFile(methodList RpcMethodInfos) {
+func writeMethodHeadFile(pMethodList *RpcMethodInfos) {
 	defer util.Wg.Done()
-
+	methodList := *pMethodList
 	if len(methodList) <= 0 {
 		return
 	}
@@ -26,9 +26,9 @@ func writeMethodHeadFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
 
-func writeMethodCppFile(methodList RpcMethodInfos) {
+func writeMethodCppFile(pMethodList *RpcMethodInfos) {
 	defer util.Wg.Done()
-
+	methodList := *pMethodList
 	if len(methodList) <= 0 {
 		return
 	}
@@ -42,7 +42,8 @@ func writeMethodCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
 
-func getMethodHandlerHeadStr(methodList RpcMethodInfos) string {
+func getMethodHandlerHeadStr(pMethodList *RpcMethodInfos) string {
+	methodList := *pMethodList
 	var data = "#pragma once\n"
 	data += config.ProtoPbhIncludeBegin + methodList[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
 	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
@@ -56,8 +57,10 @@ func getMethodHandlerHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
-func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeGsMethodHandlerHeadFile(pMethodList *RpcMethodInfos) {
 	defer util.Wg.Done()
+
+	methodList := *pMethodList
 
 	if len(methodList) <= 0 {
 		return
@@ -71,11 +74,13 @@ func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		}
 	}
 	fileName := methodList[0].ServiceInfo.FileBaseName() + "_handler" + config.HeadEx
-	Md5WriteData2File(config.GsMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+	Md5WriteData2File(config.GsMethodHandleDir+fileName, getMethodHandlerHeadStr(pMethodList))
 }
 
-func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeControllerMethodHandlerHeadFile(pMethodList *RpcMethodInfos) {
 	defer util.Wg.Done()
+
+	methodList := *pMethodList
 	if len(methodList) <= 0 {
 		return
 	}
@@ -89,36 +94,30 @@ func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		}
 	}
 	fileName := methodList[0].ServiceInfo.FileBaseName() + "_handler" + config.HeadEx
-	Md5WriteData2File(config.ControllerMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+	Md5WriteData2File(config.ControllerMethodHandleDir+fileName, getMethodHandlerHeadStr(pMethodList))
 }
 
-func writeMethodHandlerCppFile(s RpcMethodInfos) {
+func writeMethodHandlerCppFile(pMethodList *RpcMethodInfos) {
 	defer util.Wg.Done()
-
-	if strings.Contains(s[0].ServiceInfo.FileBaseName(), config.PlayerName) {
-		return
-	}
 }
 
-func writeMethodRepliedHandleCppFile(s RpcMethodInfos) {
+func writeMethodRepliedHandleCppFile(pMethodList *RpcMethodInfos) {
 	defer util.Wg.Done()
-	if strings.Contains(s[0].ServiceInfo.FileBaseName(), config.PlayerName) {
-		return
-	}
 }
 
-func writePlayerMethodHandlerHeadFile(s RpcMethodInfos) {
+func writePlayerMethodHandlerHeadFile(pMethodList *RpcMethodInfos) {
 	defer util.Wg.Done()
-	if len(s) <= 0 {
+	methodList := *pMethodList
+	if len(methodList) <= 0 {
 		return
 	}
-	if !strings.Contains(s[0].ServiceInfo.FileBaseName(), config.PlayerName) {
+	if !strings.Contains(methodList[0].ServiceInfo.FileBaseName(), config.PlayerName) {
 		return
 	}
 	var data = "#pragma once\n"
-	data += config.ProtoPbhIncludeBegin + s[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
+	data += config.ProtoPbhIncludeBegin + methodList[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
 	data += config.PlayerServiceIncludeName
-	data += "\nclass " + s[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n"
+	data += "\nclass " + methodList[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n"
 	data += config.Tab + "PlayerService::PlayerService;\n"
 	var functionNameList string
 	var callFunctionList = " void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n   " +
@@ -127,14 +126,14 @@ func writePlayerMethodHandlerHeadFile(s RpcMethodInfos) {
 		"::google::protobuf::Message* response)override \n " +
 		" {\n        switch(method->index()) {\n"
 
-	for i := 0; i < len(s); i++ {
-		rq := s[i].Request
-		rsp := s[i].Response
-		functionNameList += config.Tab + "void " + s[i].Method + config.PlayerMethodController + "\n" +
+	for i := 0; i < len(methodList); i++ {
+		rq := methodList[i].Request
+		rsp := methodList[i].Response
+		functionNameList += config.Tab + "void " + methodList[i].Method + config.PlayerMethodController + "\n" +
 			config.Tab2 + "const ::" + rq + "* request,\n" +
 			config.Tab2 + "::" + rsp + "* response);\n\n"
 		callFunctionList += config.Tab2 + "case " + strconv.Itoa(i) + ":\n"
-		callFunctionList += config.Tab3 + s[i].Method + "(player,\n"
+		callFunctionList += config.Tab3 + methodList[i].Method + "(player,\n"
 		callFunctionList += config.Tab3 + "::google::protobuf::internal::DownCast<const " + rq + "*>( request),\n"
 		callFunctionList += config.Tab3 + "::google::protobuf::internal::DownCast<" + rsp + "*>(response));\n"
 		callFunctionList += config.Tab2 + "break;\n"
@@ -145,26 +144,22 @@ func writePlayerMethodHandlerHeadFile(s RpcMethodInfos) {
 	data += functionNameList
 	data += callFunctionList
 	data += "};\n\n"
-	fileName := s[0].ServiceInfo.FileBaseName() + "_handler" + config.HeadEx
+	fileName := methodList[0].ServiceInfo.FileBaseName() + "_handler" + config.HeadEx
 	Md5WriteData2File(config.GsMethodHandleDir+fileName, data)
 }
 
-func writePlayerMethodHandlerCppFile(s RpcMethodInfos) {
+func writePlayerMethodHandlerCppFile(pMethodList *RpcMethodInfos) {
 	defer util.Wg.Done()
-	if len(s) <= 0 {
-		return
-	}
-	if !strings.Contains(s[0].ServiceInfo.FileBaseName(), config.PlayerName) {
+	methodList := *pMethodList
+	if len(methodList) <= 0 {
 		return
 	}
 }
 
-func writePlayerMethodRepliedHandleCppFile(s RpcMethodInfos) {
+func writePlayerMethodRepliedHandleCppFile(pMethodList *RpcMethodInfos) {
 	defer util.Wg.Done()
-	if len(s) <= 0 {
-		return
-	}
-	if !strings.Contains(s[0].ServiceInfo.FileBaseName(), config.PlayerName) {
+	methodList := *pMethodList
+	if len(methodList) <= 0 {
 		return
 	}
 }

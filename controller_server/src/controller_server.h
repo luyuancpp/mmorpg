@@ -3,7 +3,7 @@
 #include "entt/src/entt/entity/registry.hpp"
 
 #include "src/event/event.h"
-#include "src/service/controller_service_handler.h"
+#include "src/handler/controller_service_handler.h"
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_connection_event.h"
