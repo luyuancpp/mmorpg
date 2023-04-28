@@ -48,6 +48,11 @@ func writeMethodHandlerHeadFile(s RpcMethodInfos) {
 	if strings.Contains(s[0].ServiceInfo.FileBaseName(), config.PlayerName) {
 		return
 	}
+	if s[0].ServiceInfo.Path != config.ProtoDirNames[config.LogicProtoDirIndex] {
+		if !strings.Contains(s[0].ServiceInfo.FileBaseName(), "game") {
+			return
+		}
+	}
 	var data = "#pragma once\n"
 	data += config.ProtoPbhIncludeBegin + s[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
 	data += "class " + s[0].Service + "Handler : public ::" + s[0].Service + "\n{\npublic:\n"
