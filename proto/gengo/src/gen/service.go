@@ -125,6 +125,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.FileName = fd.Name()
 			rpcMethodInfo.Path = filePath
 			rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
+
 			methodIndex += 1
 			continue
 		} else if len(service) > 0 && strings.Contains(line, "}") {
@@ -231,10 +232,9 @@ func InitServiceId() {
 		if _, ok := useServiceId[v]; !ok {
 			unUseServiceId[v] = EmptyStruct{}
 		}
-		if maxServiceId > v {
-			continue
+		if maxServiceId < v {
+			maxServiceId = v
 		}
-		maxServiceId = v
 	}
 
 	for _, methodList := range ServiceMethodMap {
@@ -247,9 +247,10 @@ func InitServiceId() {
 				break
 			}
 			if mv.Id == math.MaxUint64 {
-				maxServiceId += 1
 				mv.Id = maxServiceId
+				maxServiceId += 1
 			}
+			fmt.Println(mv)
 			RpcIdMethodMap[mv.Id] = mv
 		}
 	}
