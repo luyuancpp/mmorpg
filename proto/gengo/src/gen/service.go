@@ -32,11 +32,12 @@ type RpcMethodInfos []RpcMethodInfo
 
 var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 
-var RpcService sync.Map
-var RpcMethod sync.Map
-var RpcIdMethod = map[uint64]RpcMethodInfo{}
-var ServiceId = map[string]uint64{}
-var ServiceMethods = map[string]RpcMethodInfos{}
+var RpcServiceSyncMap sync.Map
+var RpcMethodSyncMap sync.Map
+var RpcIdMethodMap = map[uint64]RpcMethodInfo{}
+var ServiceIdMap = map[string]uint64{}
+var ServiceMethodMap = map[string]RpcMethodInfos{}
+var ServiceList []string
 
 func (info *RpcMethodInfo) KeyName() (idName string) {
 	return info.Service + info.Method
@@ -94,7 +95,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			var rpcServiceInfo RpcServiceInfo
 			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
-			RpcService.Store(service, rpcServiceInfo)
+			RpcServiceSyncMap.Store(service, rpcServiceInfo)
 			serviceInfo = &rpcServiceInfo
 			continue
 		} else if strings.Contains(line, "rpc ") {
@@ -109,7 +110,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.Index = methodIndex
 			rpcMethodInfo.ServiceInfo = serviceInfo
 			methodIndex += 1
-			RpcMethod.Store(rpcMethodInfo.KeyName(), rpcMethodInfo)
+			RpcMethodSyncMap.Store(rpcMethodInfo.KeyName(), rpcMethodInfo)
 			continue
 		} else if len(service) > 0 && strings.Contains(line, "}") {
 			break
@@ -153,7 +154,7 @@ func readServiceIdFile() {
 	for scanner.Scan() {
 		line = scanner.Text()
 		splitList := strings.Split(line, "=")
-		ServiceId[splitList[1]], err = strconv.ParseUint(splitList[0], 10, 32)
+		ServiceIdMap[splitList[1]], err = strconv.ParseUint(splitList[0], 10, 32)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -168,8 +169,8 @@ func ReadServiceIdFile() {
 func writeServiceIdFile() {
 	defer util.Wg.Done()
 	var data string
-	for i := 0; i < len(RpcIdMethod); i++ {
-		rpcMethodInfo := RpcIdMethod[uint64(i)]
+	for i := 0; i < len(RpcIdMethodMap); i++ {
+		rpcMethodInfo := RpcIdMethodMap[uint64(i)]
 		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + rpcMethodInfo.KeyName() + "\n"
 	}
 	os.WriteFile(config.ServiceIdsFileName, []byte(data), 0666)
@@ -184,20 +185,20 @@ func InitServiceId() {
 	var unUseServiceId = map[uint64]struct{}{}
 	var maxServiceId uint64
 
-	for k, v := range ServiceId {
+	for k, v := range ServiceIdMap {
 		if maxServiceId < v {
 			maxServiceId = v
 		}
-		methodValue, ok := RpcMethod.Load(k)
+		methodValue, ok := RpcMethodSyncMap.Load(k)
 		if !ok {
 			unUseServiceId[v] = struct{}{}
 			continue
 		}
 		newMethodValue := methodValue.(RpcMethodInfo)
 		newMethodValue.Id = v
-		RpcMethod.Swap(newMethodValue.KeyName(), newMethodValue)
+		RpcMethodSyncMap.Swap(newMethodValue.KeyName(), newMethodValue)
 	}
-	RpcMethod.Range(func(k, v interface{}) bool {
+	RpcMethodSyncMap.Range(func(k, v interface{}) bool {
 		key := k.(string)
 		newMethodValue := v.(RpcMethodInfo)
 		for uk, _ := range unUseServiceId {
@@ -209,16 +210,16 @@ func InitServiceId() {
 			maxServiceId += 1
 			newMethodValue.Id = maxServiceId
 		}
-		RpcIdMethod[newMethodValue.Id] = newMethodValue
-		RpcMethod.Swap(key, newMethodValue)
+		RpcIdMethodMap[newMethodValue.Id] = newMethodValue
+		RpcMethodSyncMap.Swap(key, newMethodValue)
 
-		if _, ok := ServiceMethods[newMethodValue.Service]; !ok {
-			ServiceMethods[newMethodValue.Service] = RpcMethodInfos{}
+		if _, ok := ServiceMethodMap[newMethodValue.Service]; !ok {
+			ServiceMethodMap[newMethodValue.Service] = RpcMethodInfos{}
 		}
-		ServiceMethods[newMethodValue.Service] = append(ServiceMethods[newMethodValue.Service], newMethodValue)
+		ServiceMethodMap[newMethodValue.Service] = append(ServiceMethodMap[newMethodValue.Service], newMethodValue)
 		return true
 	})
-	for _, v := range ServiceMethods {
+	for _, v := range ServiceMethodMap {
 		sort.Sort(v)
 	}
 }
@@ -229,17 +230,17 @@ func writeServiceHandlerFile() {
 	includeData += "#include \"service.h\"\n"
 	var classHandlerData = ""
 	var initFuncData = "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n"
-	initFuncData += "std::unordered_map<uint32_t, RpcService> g_service_method_info;\n"
+	initFuncData += "std::unordered_map<uint32_t, RpcService> g_service_method_info;\n\n"
 	initFuncData += "void InitService()\n{\n"
-	var serviceList []string
-	RpcService.Range(func(k, v interface{}) bool {
+
+	RpcServiceSyncMap.Range(func(k, v interface{}) bool {
 		key := k.(string)
-		serviceList = append(serviceList, key)
+		ServiceList = append(ServiceList, key)
 		return true
 	})
-	sort.Strings(serviceList)
-	for _, key := range serviceList {
-		value, _ := RpcService.Load(key)
+	sort.Strings(ServiceList)
+	for _, key := range ServiceList {
+		value, _ := RpcServiceSyncMap.Load(key)
 		rpcServiceInfo := value.(RpcServiceInfo)
 		includeData += rpcServiceInfo.IncludeName()
 		serviceHandlerName := key + "Impl"
@@ -247,7 +248,8 @@ func writeServiceHandlerFile() {
 		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceHandlerName + ">());\n"
 	}
 	initFuncData += "\n"
-	for _, v := range ServiceMethods {
+	for _, key := range ServiceList {
+		v := ServiceMethodMap[key]
 		for i := 0; i < len(v); i++ {
 			rpcMethodInfo := v[i]
 			rpcId := rpcMethodInfo.KeyName() + config.RpcIdName
