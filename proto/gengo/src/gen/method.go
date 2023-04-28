@@ -65,7 +65,7 @@ func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	if strings.Contains(methodList[0].ServiceInfo.FileBaseName(), config.PlayerName) {
 		return
 	}
-	if methodList[0].ServiceInfo.Path != config.ProtoDirNames[config.LogicProtoDirIndex] {
+	if !strings.Contains(methodList[0].ServiceInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
 		if !strings.Contains(methodList[0].ServiceInfo.FileBaseName(), "game") {
 			return
 		}
@@ -83,7 +83,7 @@ func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	if strings.Contains(methodList[0].ServiceInfo.FileBaseName(), config.PlayerName) {
 		return
 	}
-	if methodList[0].ServiceInfo.Path != config.ProtoDirNames[config.LogicProtoDirIndex] {
+	if !strings.Contains(methodList[0].ServiceInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
 		if !strings.Contains(methodList[0].ServiceInfo.FileBaseName(), "controller") {
 			return
 		}
@@ -171,7 +171,6 @@ func writePlayerMethodRepliedHandleCppFile(s RpcMethodInfos) {
 
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
-
 		util.Wg.Add(1)
 		go writeMethodHeadFile(v)
 		util.Wg.Add(1)
