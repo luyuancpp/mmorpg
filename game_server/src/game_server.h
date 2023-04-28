@@ -4,7 +4,7 @@
 #include "muduo/net/EventLoop.h"
 
 #include "src/network/controller_node.h"
-#include "src/service/game_service_handler.h"
+#include "src/handler/game_service_handler.h"
 #include "src/network/rpc_server.h"
 
 #include "src/redis_client/redis_client.h"

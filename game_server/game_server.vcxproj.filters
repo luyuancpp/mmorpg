@@ -21,7 +21,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\server_replied.cpp">
+    <ClCompile Include="src\handler\server_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\gate_node.cpp">
@@ -63,61 +63,61 @@
     <ClCompile Include="src\event_receiver\scene_event_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_client_player_handler.cpp">
+    <ClCompile Include="src\handler\common_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_server_player_handler.cpp">
+    <ClCompile Include="src\handler\common_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\player_service.cpp">
+    <ClCompile Include="src\handler\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\scene.cpp">
+    <ClCompile Include="src\handler\scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\scene_client_player.cpp">
+    <ClCompile Include="src\handler\scene_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\scene_server_player_handler.cpp">
+    <ClCompile Include="src\handler\scene_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team.cpp">
+    <ClCompile Include="src\handler\team.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team_client_player_handler.cpp">
+    <ClCompile Include="src\handler\team_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team_server_player_handler.cpp">
+    <ClCompile Include="src\handler\team_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\server_service.cpp">
+    <ClCompile Include="src\handler\server_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\game_service.cpp">
+    <ClCompile Include="src\handler\game_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\scene_server_player_replied.cpp">
+    <ClCompile Include="src\handler\scene_server_player_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team_server_player_replied.cpp">
+    <ClCompile Include="src\handler\team_server_player_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_server_player_replied.cpp">
+    <ClCompile Include="src\handler\common_server_player_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\player_service_replied.cpp">
+    <ClCompile Include="src\handler\player_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\replied_dispathcer.cpp">
+    <ClCompile Include="src\handler\replied_dispathcer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\controller_service_replied.cpp">
+    <ClCompile Include="src\handler\controller_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\lobby_service_replied.cpp">
+    <ClCompile Include="src\handler\lobby_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\deploy_service_replied.cpp">
+    <ClCompile Include="src\handler\deploy_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\thread_local\game_thread_local_storage.cpp">
@@ -128,7 +128,7 @@
     <ClInclude Include="src\game_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\server_replied.h">
+    <ClInclude Include="src\handler\server_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gate_node.h">
@@ -176,64 +176,64 @@
     <ClInclude Include="src\event_receiver\scene_event_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team_server_player_handler.h">
+    <ClInclude Include="src\handler\team_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\scene_server_player_handler.h">
+    <ClInclude Include="src\handler\scene_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\server_service.h">
+    <ClInclude Include="src\handler\server_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team.h">
+    <ClInclude Include="src\handler\team.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team_client_player_handler.h">
+    <ClInclude Include="src\handler\team_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\player_service.h">
+    <ClInclude Include="src\handler\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\player_service_replied.h">
+    <ClInclude Include="src\handler\player_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\scene_server_player_replied.h">
+    <ClInclude Include="src\handler\scene_server_player_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team_server_player_replied.h">
+    <ClInclude Include="src\handler\team_server_player_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_server_player_replied.h">
+    <ClInclude Include="src\handler\common_server_player_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\replied_dispathcer.h">
+    <ClInclude Include="src\handler\replied_dispathcer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\lobby_service_replied.h">
+    <ClInclude Include="src\handler\lobby_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\controller_service_replied.h">
+    <ClInclude Include="src\handler\controller_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\deploy_service_replied.h">
+    <ClInclude Include="src\handler\deploy_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\game_thread_local_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\game_service_handler.h">
+    <ClInclude Include="src\handler\game_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_client_player_handler.h">
+    <ClInclude Include="src\handler\common_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_server_player_handler.h">
+    <ClInclude Include="src\handler\common_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\scene_client_player_handler.h">
+    <ClInclude Include="src\handler\scene_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\scene_handler.h">
+    <ClInclude Include="src\handler\scene_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

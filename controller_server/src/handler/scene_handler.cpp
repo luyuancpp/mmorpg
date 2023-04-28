@@ -4,7 +4,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerSceneServiceImpl::UpdateCrossMainSceneInfo(::google::protobuf::RpcController* controller,
+void ServerSceneServiceHandler::UpdateCrossMainSceneInfo(::google::protobuf::RpcController* controller,
     const ::UpdateCrossMainSceneInfoRequest* request,
     ::UpdateCrossMainSceneInfoResponse* response,
     ::google::protobuf::Closure* done)
