@@ -53,8 +53,8 @@ var ProtoDirNames = [...]string{
 var ProtoDirs []string
 var ProtoMd5Dirs []string
 
-const ServiceDirName = "src/service/"
+const HandlerDirName = "src/handler/"
 const ServiceIdsFileName = ProtoDir + "serviceid.txt"
 
-const GsMethodHandleDir = ProjectDir + GsName + ServiceDirName
-const ControllerMethodHandleDir = ProjectDir + ControllerName + ServiceDirName
+const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
+const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
