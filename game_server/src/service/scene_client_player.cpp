@@ -1,4 +1,4 @@
-#include "scene_client_player.h"
+#include "scene_client_player_handler.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
@@ -11,7 +11,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
+void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
     const ::EnterSeceneC2SRequest* request,
     ::EnterSeceneC2SResponse* response)
 {
@@ -49,7 +49,7 @@ void ClientPlayerSceneServiceImpl::EnterSceneC2S(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceImpl::PushEnterSceneS2C(entt::entity player,
+void ClientPlayerSceneServiceHandler::PushEnterSceneS2C(entt::entity player,
     const ::EnterSeceneS2C* request,
     ::EnterSeceneS2C* response)
 {
@@ -57,7 +57,7 @@ void ClientPlayerSceneServiceImpl::PushEnterSceneS2C(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ClientPlayerSceneServiceImpl::PushSceneInfoS2C(entt::entity player,
+void ClientPlayerSceneServiceHandler::PushSceneInfoS2C(entt::entity player,
     const ::SceneInfoS2C* request,
     ::SceneInfoS2C* response)
 {
