@@ -2,6 +2,7 @@ package gen
 
 import (
 	"bufio"
+	"fmt"
 	"gengo/config"
 	"gengo/util"
 	"log"
@@ -13,10 +14,7 @@ import (
 	"sync"
 )
 
-type RpcServiceInfo struct {
-	FileName string
-	Path     string
-}
+type EmptyStruct struct{}
 
 type RpcMethodInfo struct {
 	Service  string
@@ -29,16 +27,21 @@ type RpcMethodInfo struct {
 	Path     string
 }
 
-type RpcMethodInfos []RpcMethodInfo
+type RpcMethodInfos []*RpcMethodInfo
+
+type RpcServiceInfo struct {
+	FileName   string
+	Path       string
+	MethodInfo RpcMethodInfos
+}
 
 var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 
 var RpcServiceSyncMap sync.Map
-var RpcMethodSyncMap sync.Map
-var RpcIdMethodMap = map[uint64]RpcMethodInfo{}
+var RpcIdMethodMap = map[uint64]*RpcMethodInfo{}
 var ServiceIdMap = map[string]uint64{}
-var ServiceMethodMap = map[string]*RpcMethodInfos{}
 var ServiceList []string
+var ServiceMethodMap = map[string]RpcMethodInfos{}
 
 func (info *RpcMethodInfo) KeyName() (idName string) {
 	return info.Service + info.Method
@@ -99,15 +102,15 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	var line string
 	var service string
 	var methodIndex uint64
+	var rpcServiceInfo RpcServiceInfo
 	for scanner.Scan() {
 		line = scanner.Text()
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
 			service = strings.ReplaceAll(line, "{", "")
 			service = strings.Split(service, " ")[1]
-			var rpcServiceInfo RpcServiceInfo
 			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
-			RpcServiceSyncMap.Store(service, rpcServiceInfo)
+			RpcServiceSyncMap.Store(service, &rpcServiceInfo)
 			continue
 		} else if strings.Contains(line, "rpc ") {
 			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
@@ -121,8 +124,8 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.Index = methodIndex
 			rpcMethodInfo.FileName = fd.Name()
 			rpcMethodInfo.Path = filePath
+			rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
 			methodIndex += 1
-			RpcMethodSyncMap.Store(rpcMethodInfo.KeyName(), rpcMethodInfo)
 			continue
 		} else if len(service) > 0 && strings.Contains(line, "}") {
 			break
@@ -182,8 +185,13 @@ func writeServiceIdFile() {
 	defer util.Wg.Done()
 	var data string
 	for i := 0; i < len(RpcIdMethodMap); i++ {
-		rpcMethodInfo := RpcIdMethodMap[uint64(i)]
-		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + rpcMethodInfo.KeyName() + "\n"
+		rpcMethodInfo, ok := RpcIdMethodMap[uint64(i)]
+		if !ok {
+			fmt.Println("msg id=", strconv.Itoa(i), " not use ")
+			continue
+		}
+		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
+
 	}
 	os.WriteFile(config.ServiceIdsFileName, []byte(data), 0666)
 }
@@ -194,45 +202,56 @@ func WriteServiceIdFile() {
 }
 
 func InitServiceId() {
-	var unUseServiceId = map[uint64]struct{}{}
+	var unUseServiceId = map[uint64]EmptyStruct{}
+	var useServiceId = map[uint64]EmptyStruct{}
 	var maxServiceId uint64
+	var curMethodCount = 0
 
-	for k, v := range ServiceIdMap {
-		if maxServiceId < v {
-			maxServiceId = v
-		}
-		methodValue, ok := RpcMethodSyncMap.Load(k)
-		if !ok {
-			unUseServiceId[v] = struct{}{}
-			continue
-		}
-		newMethodValue := methodValue.(RpcMethodInfo)
-		newMethodValue.Id = v
-		RpcMethodSyncMap.Swap(newMethodValue.KeyName(), newMethodValue)
-	}
-	RpcMethodSyncMap.Range(func(k, v interface{}) bool {
+	RpcServiceSyncMap.Range(func(k, v interface{}) bool {
 		key := k.(string)
-		newMethodValue := v.(RpcMethodInfo)
-		for uk, _ := range unUseServiceId {
-			newMethodValue.Id = uk
-			delete(unUseServiceId, uk)
-			break
-		}
-		if newMethodValue.Id == math.MaxUint64 {
-			maxServiceId += 1
-			newMethodValue.Id = maxServiceId
-		}
-		RpcIdMethodMap[newMethodValue.Id] = newMethodValue
-		RpcMethodSyncMap.Swap(key, newMethodValue)
-
-		if _, ok := ServiceMethodMap[newMethodValue.Service]; !ok {
-			ServiceMethodMap[newMethodValue.Service] = &RpcMethodInfos{}
-		}
-		*ServiceMethodMap[newMethodValue.Service] = append(*ServiceMethodMap[newMethodValue.Service], newMethodValue)
+		methodInfo := v.(*RpcServiceInfo).MethodInfo
+		ServiceMethodMap[key] = methodInfo
 		return true
 	})
-	for _, v := range ServiceMethodMap {
-		sort.Sort(v)
+
+	for _, methodList := range ServiceMethodMap {
+		curMethodCount += len(methodList)
+		for _, mv := range methodList {
+			id, ok := ServiceIdMap[mv.KeyName()]
+			//Id文件未找到则是新消息，新消息后面处理，这里不处理
+			if !ok {
+				continue
+			}
+			useServiceId[id] = EmptyStruct{}
+			mv.Id = id
+		}
+	}
+
+	for _, v := range ServiceIdMap {
+		if _, ok := useServiceId[v]; !ok {
+			unUseServiceId[v] = EmptyStruct{}
+		}
+		if maxServiceId > v {
+			continue
+		}
+		maxServiceId = v
+	}
+
+	for _, methodList := range ServiceMethodMap {
+		curMethodCount += len(methodList)
+		for _, mv := range methodList {
+			for uk, _ := range unUseServiceId {
+				mv.Id = uk
+				useServiceId[uk] = EmptyStruct{}
+				delete(unUseServiceId, uk)
+				break
+			}
+			if mv.Id == math.MaxUint64 {
+				maxServiceId += 1
+				mv.Id = maxServiceId
+			}
+			RpcIdMethodMap[mv.Id] = mv
+		}
 	}
 }
 
@@ -245,23 +264,22 @@ func writeServiceHandlerFile() {
 	initFuncData += "std::unordered_map<uint32_t, RpcService> g_service_method_info;\n\n"
 	initFuncData += "void InitService()\n{\n"
 
-	RpcServiceSyncMap.Range(func(k, v interface{}) bool {
-		key := k.(string)
-		ServiceList = append(ServiceList, key)
-		return true
-	})
+	for k, _ := range ServiceMethodMap {
+		ServiceList = append(ServiceList, k)
+	}
 	sort.Strings(ServiceList)
 	for _, key := range ServiceList {
-		value, _ := RpcServiceSyncMap.Load(key)
-		rpcServiceInfo := value.(RpcServiceInfo)
-		includeData += rpcServiceInfo.IncludeName()
+		methodList := ServiceMethodMap[key]
+		if len(methodList) > 0 {
+			includeData += methodList[0].IncludeName()
+		}
 		serviceHandlerName := key + "Impl"
 		classHandlerData += "class " + serviceHandlerName + ":public " + key + "{};\n"
 		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceHandlerName + ">());\n"
 	}
 	initFuncData += "\n"
 	for _, key := range ServiceList {
-		v := *ServiceMethodMap[key]
+		v := ServiceMethodMap[key]
 		for i := 0; i < len(v); i++ {
 			rpcMethodInfo := v[i]
 			rpcId := rpcMethodInfo.KeyName() + config.RpcIdName
