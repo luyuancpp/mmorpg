@@ -1,7 +1,7 @@
 #pragma once
 #include "player_service.h"
 #include "logic_proto/team_server_player.pb.h"
-class ServerPlayerTeamServiceImpl : public PlayerService {
+class ServerPlayerTeamServiceHandler : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:

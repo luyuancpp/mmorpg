@@ -78,16 +78,16 @@
     <ClCompile Include="src\service\scene_client_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\scene_server_player.cpp">
+    <ClCompile Include="src\service\scene_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\service\team.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team_client_player.cpp">
+    <ClCompile Include="src\service\team_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team_server_player.cpp">
+    <ClCompile Include="src\service\team_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\service\server_service.cpp">
@@ -176,10 +176,10 @@
     <ClInclude Include="src\event_receiver\scene_event_receiver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team_server_player.h">
+    <ClInclude Include="src\service\team_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\scene_server_player.h">
+    <ClInclude Include="src\service\scene_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\server_service.h">
@@ -188,7 +188,7 @@
     <ClInclude Include="src\service\team.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team_client_player.h">
+    <ClInclude Include="src\service\team_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\player_service.h">

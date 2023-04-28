@@ -1,7 +1,7 @@
 #pragma once
 #include "player_service.h"
 #include "logic_proto/scene_server_player.pb.h"
-class ServerPlayerSceneServiceImpl : public PlayerService {
+class ServerPlayerSceneServiceHandler : public PlayerService {
 public:
     using PlayerService::PlayerService;
 public:

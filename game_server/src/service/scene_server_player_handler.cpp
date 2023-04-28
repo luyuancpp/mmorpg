@@ -1,4 +1,4 @@
-#include "scene_server_player.h"
+#include "scene_server_player_handler.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
@@ -11,7 +11,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void ServerPlayerSceneServiceImpl::EnterSceneGs2Controller(entt::entity player,
+void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity player,
     const ::Gs2ControllerEnterSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -19,7 +19,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneGs2Controller(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::EnterSceneController2Gs(entt::entity player,
+void ServerPlayerSceneServiceHandler::EnterSceneController2Gs(entt::entity player,
     const ::Controller2GsEnterSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -29,7 +29,7 @@ void ServerPlayerSceneServiceImpl::EnterSceneController2Gs(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::LeaveSceneGs2Controller(entt::entity player,
+void ServerPlayerSceneServiceHandler::LeaveSceneGs2Controller(entt::entity player,
     const ::Gs2ControllerLeaveSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -38,7 +38,7 @@ void ServerPlayerSceneServiceImpl::LeaveSceneGs2Controller(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::LeaveSceneController2Gs(entt::entity player,
+void ServerPlayerSceneServiceHandler::LeaveSceneController2Gs(entt::entity player,
     const ::Controller2GsLeaveSceneRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -53,7 +53,7 @@ void ServerPlayerSceneServiceImpl::LeaveSceneController2Gs(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
+void ServerPlayerSceneServiceHandler::Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
     const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
     ::google::protobuf::Empty* response)
 {
@@ -61,7 +61,7 @@ void ServerPlayerSceneServiceImpl::Gs2ControllerLeaveSceneAsyncSavePlayerComplet
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerSceneServiceImpl::Controller2GsEnterSceneS2C(entt::entity player,
+void ServerPlayerSceneServiceHandler::Controller2GsEnterSceneS2C(entt::entity player,
     const ::EnterSceneS2CRequest* request,
     ::EnterScenerS2CResponse* response)
 {
