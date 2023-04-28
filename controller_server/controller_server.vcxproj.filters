@@ -27,7 +27,7 @@
     <ClCompile Include="src\comp\player_list.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\controller_service.cpp">
+    <ClCompile Include="src\service\controller_service_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\network\gate_node.cpp">
@@ -57,25 +57,25 @@
     <ClCompile Include="src\event_receiver\event_receiver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\common_server_player.cpp">
+    <ClCompile Include="src\service\common_server_player_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\scene.cpp">
+    <ClCompile Include="src\service\scene_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\scene_server_player.cpp">
+    <ClCompile Include="src\service\scene_server_player_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\server_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team.cpp">
+    <ClCompile Include="src\service\team_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\team_server_player.cpp">
+    <ClCompile Include="src\service\team_server_player_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\game_service_replied.cpp">
@@ -131,7 +131,7 @@
     <ClInclude Include="src\network\player_session.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\controller_service.h">
+    <ClInclude Include="src\service\controller_service_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\system\player_scene_system.h">
@@ -158,25 +158,25 @@
     <ClInclude Include="src\event_receiver\event_receiver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team_server_player.h">
+    <ClInclude Include="src\service\team_server_player_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\common_server_player.h">
+    <ClInclude Include="src\service\common_server_player_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\player_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\scene.h">
+    <ClInclude Include="src\service\scene_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\scene_server_player.h">
+    <ClInclude Include="src\service\scene_server_player_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\server_service.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\team.h">
+    <ClInclude Include="src\service\team_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\network\controller_rpc.h">
