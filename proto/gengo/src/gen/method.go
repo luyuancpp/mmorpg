@@ -67,7 +67,7 @@ func writeMethodRepliedHandleCppFile(s RpcMethodInfos) {
 }
 
 func WriteMethodFile() {
-	for _, v := range ServiceMethods {
+	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
 		go writeMethodHeadFile(v)
 		util.Wg.Add(1)
