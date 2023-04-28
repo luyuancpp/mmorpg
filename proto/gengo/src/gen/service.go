@@ -250,7 +250,6 @@ func InitServiceId() {
 				mv.Id = maxServiceId
 				maxServiceId += 1
 			}
-			fmt.Println(mv)
 			RpcIdMethodMap[mv.Id] = mv
 		}
 	}

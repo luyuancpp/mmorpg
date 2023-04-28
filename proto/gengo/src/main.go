@@ -77,6 +77,7 @@ func main() {
 	gen.WriteServiceIdFile()
 	gen.WriteMethodFile()
 	util.Wg.Wait()
+	//所有service初始化完以后
 	gen.WriteServiceHandlerFile()
 	util.Wg.Wait()
 }
