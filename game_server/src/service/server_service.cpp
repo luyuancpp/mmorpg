@@ -5,5 +5,5 @@
 #include "scene_handler.h"
 #include "team.h"
 std::array<std::unique_ptr<::google::protobuf::Service>, 2> g_server_service{
-std::unique_ptr<::google::protobuf::Service>(new ServerSceneServiceImpl),
+std::unique_ptr<::google::protobuf::Service>(new ServerSceneServiceHandler),
 std::unique_ptr<::google::protobuf::Service>(new S2STeamServiceImpl)};
