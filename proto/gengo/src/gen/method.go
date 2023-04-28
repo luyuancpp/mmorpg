@@ -7,8 +7,11 @@ import (
 	"strings"
 )
 
-func writeMethodHeadFile(s RpcMethodInfos) {
+func writeMethodHeadFile(pMethodList *RpcMethodInfos) {
+
 	defer util.Wg.Done()
+
+	s := *pMethodList
 	if len(s) <= 0 {
 		return
 	}
@@ -25,8 +28,11 @@ func writeMethodHeadFile(s RpcMethodInfos) {
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
 
-func writeMethodCppFile(s RpcMethodInfos) {
+func writeMethodCppFile(pMethodList *RpcMethodInfos) {
+
 	defer util.Wg.Done()
+
+	s := *pMethodList
 	if len(s) <= 0 {
 		return
 	}
@@ -40,35 +46,44 @@ func writeMethodCppFile(s RpcMethodInfos) {
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
 
-func writeMethodHandlerHeadFile(s RpcMethodInfos) {
-	defer util.Wg.Done()
-	if len(s) <= 0 {
-		return
-	}
-	if strings.Contains(s[0].ServiceInfo.FileBaseName(), config.PlayerName) {
-		return
-	}
-	if s[0].ServiceInfo.Path != config.ProtoDirNames[config.LogicProtoDirIndex] {
-		if !strings.Contains(s[0].ServiceInfo.FileBaseName(), "game") {
-			return
-		}
-	}
+func getMethodHandlerHeadStr(pMethodList *RpcMethodInfos) string {
+	methodList := *pMethodList
 	var data = "#pragma once\n"
-	data += config.ProtoPbhIncludeBegin + s[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
-	data += "class " + s[0].Service + "Handler : public ::" + s[0].Service + "\n{\npublic:\n"
-	for i := 0; i < len(s); i++ {
-		data += config.Tab + "void " + s[i].Method + config.GoogleMethodController + "\n" +
-			config.Tab2 + "const ::" + s[i].Request + "* request,\n" +
-			config.Tab2 + "::" + s[i].Response + "* response,\n" +
+	data += config.ProtoPbhIncludeBegin + methodList[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
+	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
+	for i := 0; i < len(methodList); i++ {
+		data += config.Tab + "void " + methodList[i].Method + config.GoogleMethodController + "\n" +
+			config.Tab2 + "const ::" + methodList[i].Request + "* request,\n" +
+			config.Tab2 + "::" + methodList[i].Response + "* response,\n" +
 			config.Tab2 + " ::google::protobuf::Closure* done)override;\n\n"
 	}
 	data += "};\n\n"
-	fileName := s[0].ServiceInfo.FileBaseName() + "_handler" + config.HeadEx
-	Md5WriteData2File(config.GsMethodHandleDir+fileName, data)
+	return data
+}
+
+func writeGsMethodHandlerHeadFile(pMethodList *RpcMethodInfos) {
+
+	defer util.Wg.Done()
+
+	methodList := *pMethodList
+	if len(methodList) <= 0 {
+		return
+	}
+	if strings.Contains(methodList[0].ServiceInfo.FileBaseName(), config.PlayerName) {
+		return
+	}
+	if methodList[0].ServiceInfo.Path != config.ProtoDirNames[config.LogicProtoDirIndex] {
+		if !strings.Contains(methodList[0].ServiceInfo.FileBaseName(), "game") {
+			return
+		}
+	}
+	fileName := methodList[0].ServiceInfo.FileBaseName() + "_handler" + config.HeadEx
+	Md5WriteData2File(config.GsMethodHandleDir+fileName, getMethodHandlerHeadStr(pMethodList))
 }
 
 func writeMethodHandlerCppFile(s RpcMethodInfos) {
 	defer util.Wg.Done()
+
 	if strings.Contains(s[0].ServiceInfo.FileBaseName(), config.PlayerName) {
 		return
 	}
@@ -146,11 +161,11 @@ func writePlayerMethodRepliedHandleCppFile(s RpcMethodInfos) {
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
-		go writeMethodHeadFile(v)
+		go writeMethodHeadFile(&v)
 		util.Wg.Add(1)
-		go writeMethodCppFile(v)
+		go writeMethodCppFile(&v)
 		util.Wg.Add(1)
-		go writeMethodHandlerHeadFile(v)
+		go writeGsMethodHandlerHeadFile(&v)
 		util.Wg.Add(1)
 		go writeMethodHandlerCppFile(v)
 		util.Wg.Add(1)
