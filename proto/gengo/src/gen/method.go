@@ -8,41 +8,39 @@ import (
 )
 
 func writeMethodHeadFile(pMethodList *RpcMethodInfos) {
-
 	defer util.Wg.Done()
 
-	s := *pMethodList
-	if len(s) <= 0 {
+	methodList := *pMethodList
+	if len(methodList) <= 0 {
 		return
 	}
 	var data = "#pragma once\n#include <cstdint>\n\n"
-	data += s[0].ServiceInfo.IncludeName() + "\n"
-	for i := 0; i < len(s); i++ {
-		data += "extern const uint32_t " + s[i].KeyName() + config.RpcIdName + ";\n"
-		data += "extern const uint32_t " + s[i].KeyName() + "Index;\n"
-		data += "#define " + s[i].KeyName() + "Method  ::" + s[i].Service + "_Stub::descriptor()->method(" +
-			strconv.FormatUint(s[i].Index, 10) + ");\n"
+	data += methodList[0].ServiceInfo.IncludeName() + "\n"
+	for i := 0; i < len(methodList); i++ {
+		data += "extern const uint32_t " + methodList[i].KeyName() + config.RpcIdName + ";\n"
+		data += "extern const uint32_t " + methodList[i].KeyName() + "Index;\n"
+		data += "#define " + methodList[i].KeyName() + "Method  ::" + methodList[i].Service + "_Stub::descriptor()->method(" +
+			strconv.FormatUint(methodList[i].Index, 10) + ");\n"
 		data += "\n"
 	}
-	fileName := s[0].ServiceInfo.FileBaseName() + "_service" + config.HeadEx
+	fileName := methodList[0].ServiceInfo.FileBaseName() + "_service" + config.HeadEx
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
 
 func writeMethodCppFile(pMethodList *RpcMethodInfos) {
-
 	defer util.Wg.Done()
 
-	s := *pMethodList
-	if len(s) <= 0 {
+	methodList := *pMethodList
+	if len(methodList) <= 0 {
 		return
 	}
-	var data = config.ProtoPbhIncludeBegin + s[0].ServiceInfo.FileBaseName() + "_service" + config.HeadEx + config.IncludeEndLine
+	var data = config.ProtoPbhIncludeBegin + methodList[0].ServiceInfo.FileBaseName() + "_service" + config.HeadEx + config.IncludeEndLine
 
-	for i := 0; i < len(s); i++ {
-		data += "const uint32_t " + s[i].KeyName() + config.RpcIdName + " = " + strconv.FormatUint(s[i].Id, 10) + ";\n"
-		data += "const uint32_t " + s[i].KeyName() + "Index = " + strconv.FormatUint(s[i].Index, 10) + ";\n"
+	for i := 0; i < len(methodList); i++ {
+		data += "const uint32_t " + methodList[i].KeyName() + config.RpcIdName + " = " + strconv.FormatUint(methodList[i].Id, 10) + ";\n"
+		data += "const uint32_t " + methodList[i].KeyName() + "Index = " + strconv.FormatUint(methodList[i].Index, 10) + ";\n"
 	}
-	fileName := s[0].ServiceInfo.FileBaseName() + "_service" + config.CppEx
+	fileName := methodList[0].ServiceInfo.FileBaseName() + "_service" + config.CppEx
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
 
@@ -62,7 +60,6 @@ func getMethodHandlerHeadStr(pMethodList *RpcMethodInfos) string {
 }
 
 func writeGsMethodHandlerHeadFile(pMethodList *RpcMethodInfos) {
-
 	defer util.Wg.Done()
 
 	methodList := *pMethodList
