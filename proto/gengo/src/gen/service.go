@@ -19,13 +19,14 @@ type RpcServiceInfo struct {
 }
 
 type RpcMethodInfo struct {
-	Service     string
-	Method      string
-	Request     string
-	Response    string
-	Id          uint64
-	Index       uint64
-	ServiceInfo *RpcServiceInfo
+	Service  string
+	Method   string
+	Request  string
+	Response string
+	Id       uint64
+	Index    uint64
+	FileName string
+	Path     string
 }
 
 type RpcMethodInfos []RpcMethodInfo
@@ -59,6 +60,18 @@ func (info *RpcServiceInfo) FileBaseName() (fileBaseName string) {
 	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
 }
 
+func (info *RpcMethodInfo) FileBaseName() (fileBaseName string) {
+	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
+}
+
+func (info *RpcMethodInfo) PbcHeadName() (pbcHeadName string) {
+	return strings.Replace(info.FileName, config.ProtoEx, config.ProtoPbhEx, 1)
+}
+
+func (info *RpcMethodInfo) IncludeName() (includeName string) {
+	return "#include \"" + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
+}
+
 func (s RpcMethodInfos) Len() int {
 	return len(s)
 }
@@ -86,7 +99,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	var line string
 	var service string
 	var methodIndex uint64
-	var serviceInfo *RpcServiceInfo
 	for scanner.Scan() {
 		line = scanner.Text()
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
@@ -96,7 +108,6 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcServiceInfo.FileName = fd.Name()
 			rpcServiceInfo.Path = filePath
 			RpcServiceSyncMap.Store(service, rpcServiceInfo)
-			serviceInfo = &rpcServiceInfo
 			continue
 		} else if strings.Contains(line, "rpc ") {
 			line = rpcLineReplacer.Replace(strings.Trim(line, " "))
@@ -108,7 +119,8 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.Response = strings.Replace(splitList[4], ".", "::", -1)
 			rpcMethodInfo.Id = math.MaxUint64
 			rpcMethodInfo.Index = methodIndex
-			rpcMethodInfo.ServiceInfo = serviceInfo
+			rpcMethodInfo.FileName = fd.Name()
+			rpcMethodInfo.Path = filePath
 			methodIndex += 1
 			RpcMethodSyncMap.Store(rpcMethodInfo.KeyName(), rpcMethodInfo)
 			continue
