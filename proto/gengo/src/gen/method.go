@@ -87,7 +87,7 @@ func writePlayerMethodHandlerHeadFile(s RpcMethodInfos) {
 	var data = "#pragma once\n"
 	data += config.ProtoPbhIncludeBegin + s[0].ServiceInfo.FileBaseName() + config.ProtoPbhIncludeEndLine
 	data += config.PlayerServiceIncludeName
-	data += "\nclass " + s[0].Service + "Handler : public ::" + s[0].Service + "\n{\npublic:\n"
+	data += "\nclass " + s[0].Service + "Handler : public ::PlayerService" + "\n{\npublic:\n"
 	data += config.Tab + "PlayerService::PlayerService;\n"
 	var functionNameList string
 	var callFunctionList = " void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n   " +
@@ -101,7 +101,7 @@ func writePlayerMethodHandlerHeadFile(s RpcMethodInfos) {
 		rsp := s[i].Response
 		functionNameList += config.Tab + "void " + s[i].Method + config.PlayerMethodController + "\n" +
 			config.Tab2 + "const ::" + rq + "* request,\n" +
-			config.Tab2 + "::" + rsp + "* response)override;\n\n"
+			config.Tab2 + "::" + rsp + "* response);\n\n"
 		callFunctionList += config.Tab2 + "case " + strconv.Itoa(i) + ":\n"
 		callFunctionList += config.Tab3 + s[i].Method + "(player,\n"
 		callFunctionList += config.Tab3 + "::google::protobuf::internal::DownCast<const " + rq + "*>( request),\n"
