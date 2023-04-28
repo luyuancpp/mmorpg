@@ -11,7 +11,7 @@
 #include "src/game_logic/player/player_list.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/service.h"
-#include "src/service/player_service.h"
+#include "src/handler/player_service.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"
 

@@ -2,11 +2,11 @@
 #include <unordered_map>
 #include "player_service_replied.h"
 #include "logic_proto/common_server_player.pb.h"
-#include "src/service/logic_proto_replied/common_server_player_replied.h"
+#include "src/handler/common_server_player_replied.h"
 #include "logic_proto/scene_server_player.pb.h"
-#include "src/service/logic_proto_replied/scene_server_player_replied.h"
+#include "src/handler/scene_server_player_replied.h"
 #include "logic_proto/team_server_player.pb.h"
-#include "src/service/logic_proto_replied/team_server_player_replied.h"
+#include "src/handler/team_server_player_replied.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replieds;
 class ServerPlayerLoginServiceRepliedRegisterImpl : public ServerPlayerLoginService{};
 class ServerPlayerSceneServiceRepliedRegisterImpl : public ServerPlayerSceneService{};

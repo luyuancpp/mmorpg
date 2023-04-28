@@ -2,17 +2,17 @@
 #include <unordered_map>
 #include "player_service.h"
 #include "logic_proto/common_client_player.pb.h"
-#include "src/service/common_client_player_handler.h"
+#include "src/handler/common_client_player_handler.h"
 #include "logic_proto/common_server_player.pb.h"
-#include "src/service/common_server_player_handler.h"
+#include "src/handler/common_server_player_handler.h"
 #include "logic_proto/scene_client_player.pb.h"
-#include "src/service/scene_client_player_handler.h"
+#include "src/handler/scene_client_player_handler.h"
 #include "logic_proto/scene_server_player.pb.h"
-#include "src/service/scene_server_player_handler.h"
+#include "src/handler/scene_server_player_handler.h"
 #include "logic_proto/team_client_player.pb.h"
-#include "src/service/team_client_player_handler.h"
+#include "src/handler/team_client_player_handler.h"
 #include "logic_proto/team_server_player.pb.h"
-#include "src/service/team_server_player_handler.h"
+#include "src/handler/team_server_player_handler.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
 class ClientPlayerCommonServiceOpenImpl : public ClientPlayerCommonService{};
 class ServerPlayerLoginServiceOpenImpl : public ServerPlayerLoginService{};
