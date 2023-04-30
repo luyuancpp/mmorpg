@@ -1,0 +1,17 @@
+syntax = "proto3";
+import "common_proto/common.proto";
+option cc_generic_services = true;
+
+message TeamTestRequest
+{
+}
+
+message TeamTestResponse
+{
+	Tips error = 1;
+}
+
+service ServerPlayerTeamService
+{
+  rpc EnterScene (TeamTestRequest) returns (TeamTestResponse);
+}
