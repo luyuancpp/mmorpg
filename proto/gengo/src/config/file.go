@@ -45,13 +45,18 @@ const PbcDirName = "common/src/pb/pbc/"
 const PbcOutDir = ProjectDir + PbcDirName
 const ServiceFileName = PbcOutDir + "service.cpp"
 
+const CommonProtoDirIndex = 0
 const LogicProtoDirIndex = 3
+const ClientPlayerDirIndex = 4
+const ServerPlayerDirIndex = 5
 
 var ProtoDirNames = [...]string{
 	"common_proto/",
 	"component_proto/",
 	"event_proto/",
 	"logic_proto/",
+	"client_player_proto/",
+	"server_player_proto/",
 }
 var ProtoDirs []string
 var ProtoMd5Dirs []string
