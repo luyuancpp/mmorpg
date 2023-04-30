@@ -212,8 +212,10 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 			return
 		}
 	}
+
 	fileName := methodList[0].FileBaseName() + "_handler" + config.CppEx
-	fmt.Println(getMethodHandlerCppStr(methodList, config.GsMethodHandleDir+fileName))
+	fmt.Println(fileName)
+	//fmt.Println(getMethodHandlerCppStr(methodList, config.GsMethodHandleDir+fileName))
 }
 
 func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
