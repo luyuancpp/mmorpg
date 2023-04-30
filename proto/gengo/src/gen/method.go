@@ -2,10 +2,8 @@ package gen
 
 import (
 	"bufio"
-	"fmt"
 	"gengo/config"
 	"gengo/util"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -133,52 +131,48 @@ func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
-func getMethodHandlerCppStr(methodList RpcMethodInfos, dst string) string {
-
-	var data = config.ProtoPbhIncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine +
+func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string) {
+	data = config.ProtoPbhIncludeBegin + methodInfo.FileBaseName() + config.ProtoPbhIncludeEndLine +
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"" +
-		"// 大家注意把逻辑写的简洁一点，防止文件过大导致编译过久，和生成文件工具读取文件内存不够\n"
+		"// 大家注意把逻辑写的简洁一点，防止文件过大导致编译过久，和生成文件工具读取文件内存不够,函数尽量短小,最好不要超过100行\n"
 
-	f, err := os.Open(dst)
-	if err != nil {
-		log.Fatal(err)
-		return ""
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
 	var line string
 	yourCodeIndex := 0
 	var yourCodes []string
-	for scanner.Scan() {
-		line = scanner.Text()
-		if strings.Contains(line, config.YourCodeBegin) {
-			yourCodes = append(yourCodes, line)
-		} else if strings.Contains(line, config.YourCodeEnd) {
-			yourCodes = append(yourCodes, line)
-			yourCodeIndex += 1
-		} else if yourCodeIndex < len(yourCodes) {
-			yourCodes[yourCodeIndex] += line
+	isYourCodes := false
+	f, err := os.Open(dst)
+	if err != nil {
+		defer f.Close()
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			line = scanner.Text()
+			if strings.Contains(line, config.YourCodeBegin) {
+				yourCodes = append(yourCodes, line)
+			} else if strings.Contains(line, config.YourCodeEnd) {
+				isYourCodes = false
+				yourCodes = append(yourCodes, line)
+				yourCodeIndex += 1
+			} else if isYourCodes {
+				yourCodes[yourCodeIndex] += line
+			}
 		}
+	} else {
+
 	}
 
-	for i := 0; i < len(yourCodes); i++ {
-		j := i - 1
-		isMethodIndex := j >= 0 && j < len(methodList)
-		if isMethodIndex {
-			data += "void " + methodList[j].Method + config.GoogleMethodController + "\n" +
-				config.Tab + "const ::" + methodList[j].Request + "* request,\n" +
-				config.Tab + "::" + methodList[j].Response + "* response,\n" +
-				config.Tab + " ::google::protobuf::Closure* done)override;\n{\n"
-		}
-		data += yourCodes[i]
-
-		if isMethodIndex {
-			data += "}\n\n"
-		}
+	if nil == yourCodes {
+		yourCodes = append(yourCodes, config.YourCodeBegin+"\n"+config.YourCodeEnd+"\n")
+		yourCodes = append(yourCodes, config.YourCodeBegin+"\n"+config.YourCodeEnd)
 	}
 
+	data += yourCodes[0]
+	data += "void " + methodInfo.Method + config.GoogleMethodController + "\n" +
+		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
+		config.Tab + "::" + methodInfo.Response + "* response,\n" +
+		config.Tab + " ::google::protobuf::Closure* done)override;\n{\n"
+	data += yourCodes[1]
+	data += "}\n\n"
 	return data
 }
 
@@ -204,18 +198,31 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	if strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
-		return
-	}
-	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
 		if !strings.Contains(methodList[0].FileBaseName(), "game") {
 			return
 		}
+	} else if !(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
+		!strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ServerPlayerDirIndex]) ||
+		!(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]))) {
+		return
 	}
 
-	fileName := methodList[0].FileBaseName() + "_handler" + config.CppEx
-	fmt.Println(fileName)
-	//fmt.Println(getMethodHandlerCppStr(methodList, config.GsMethodHandleDir+fileName))
+	//fmt.Println(fileName)
+	for i := 0; i < len(methodList); i++ {
+		util.Wg.Add(1)
+		go func(i int) {
+			defer util.Wg.Done()
+			method := methodList[i]
+			fileName := strings.ToLower(method.Method) + "_handler" + config.CppEx
+			dstFileName := config.GsMethodHandleDir + fileName
+			md5FileName := GetMd5FileName(dstFileName)
+			data := getMethodHandlerCppStr(dstFileName, method)
+			Md5WriteData2File(md5FileName, data)
+			Md5Copy(dstFileName, md5FileName)
+		}(i)
+	}
+
 }
 
 func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
