@@ -6,8 +6,8 @@
 void RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
 	const ::RoutePlayerMsgStringRequest* request,
 	::RoutePlayerMsgStringResponse* response,
-	 ::google::protobuf::Closure* done)override;
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE}
-
+///<<< END WRITING YOUR CODE
+}

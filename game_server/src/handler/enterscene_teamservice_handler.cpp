@@ -6,8 +6,8 @@
 void EnterScene(::google::protobuf::RpcController* controller,
 	const ::TeamTestS2SRequest* request,
 	::TeamTestS2SRespone* response,
-	 ::google::protobuf::Closure* done)override;
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE}
-
+///<<< END WRITING YOUR CODE
+}

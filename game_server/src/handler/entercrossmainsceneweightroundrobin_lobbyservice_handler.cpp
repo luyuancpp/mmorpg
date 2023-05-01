@@ -6,8 +6,8 @@
 void EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
 	const ::EnterCrossMainSceneWeightRoundRobinRequest* request,
 	::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
-	 ::google::protobuf::Closure* done)override;
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE}
-
+///<<< END WRITING YOUR CODE
+}

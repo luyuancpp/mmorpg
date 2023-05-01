@@ -6,8 +6,8 @@
 void CallPlayer(::google::protobuf::RpcController* controller,
 	const ::NodeServiceMessageRequest* request,
 	::NodeServiceMessageResponse* response,
-	 ::google::protobuf::Closure* done)override;
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE}
-
+///<<< END WRITING YOUR CODE
+}

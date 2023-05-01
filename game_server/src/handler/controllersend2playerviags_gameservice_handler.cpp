@@ -6,8 +6,8 @@
 void ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
 	const ::NodeServiceMessageRequest* request,
 	::google::protobuf::Empty* response,
-	 ::google::protobuf::Closure* done)override;
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE}
-
+///<<< END WRITING YOUR CODE
+}
