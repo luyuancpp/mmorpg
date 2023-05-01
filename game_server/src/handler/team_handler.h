@@ -1,6 +1,6 @@
 #pragma once
 #include "team.pb.h"
-class S2STeamServiceHandler : public ::S2STeamService
+class TeamServiceHandler : public ::TeamService
 {
 public:
 	void EnterScene(::google::protobuf::RpcController* controller,

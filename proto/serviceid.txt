@@ -7,7 +7,7 @@
 6=GameServiceCallPlayer
 7=GameServiceRouteNodeStringMsg
 8=GameServiceRoutePlayerStringMsg
-9=S2STeamServiceEnterScene
+9=ClientPlayerCommonServicePushTipsS2C
 10=ControllerServiceStartGs
 11=ControllerServiceGateConnect
 12=ControllerServiceGateLeaveGame
@@ -42,7 +42,6 @@
 41=ServerPlayerSceneServiceLeaveSceneController2Gs
 42=ServerPlayerSceneServiceGs2ControllerLeaveSceneAsyncSavePlayerComplete
 43=ServerPlayerSceneServiceController2GsEnterSceneS2C
-44=ClientPlayerCommonServicePushTipsS2C
 45=GateServiceStartGS
 46=GateServiceStopGS
 47=GateServicePlayerEnterGs
@@ -70,4 +69,3 @@
 69=DeployServiceAcquireLobbyInfo
 70=DeployServiceLoginNodeInfo
 71=DeployServiceSceneSqueueNodeId
-72=ServerSceneServiceUpdateCrossMainSceneInfo
