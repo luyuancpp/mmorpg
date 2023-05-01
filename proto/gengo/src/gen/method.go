@@ -214,9 +214,11 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 		go func(i int) {
 			defer util.Wg.Done()
 			method := methodList[i]
-			fileName := strings.ToLower(method.Method) + "_handler" + config.CppEx
+			fileName := strings.ToLower(method.Method+"_"+method.Service) + "_handler" + config.CppEx
 			dstFileName := config.GsMethodHandleDir + fileName
 			md5FileName := GetMd5FileName(dstFileName)
+			//os.RemoveAll(dstFileName)
+			//os.RemoveAll(md5FileName)
 			data := getMethodHandlerCppStr(dstFileName, method)
 			Md5WriteData2File(md5FileName, data)
 			Md5Copy(dstFileName, md5FileName)
