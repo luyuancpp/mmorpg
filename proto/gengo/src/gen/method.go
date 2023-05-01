@@ -202,13 +202,9 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 		if !strings.Contains(methodList[0].FileBaseName(), "game") {
 			return
 		}
-	} else if !(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-		!strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ServerPlayerDirIndex]) ||
-		!(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]))) {
+	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
 		return
 	}
-
-	//fmt.Println(fileName)
 	for i := 0; i < len(methodList); i++ {
 		util.Wg.Add(1)
 		go func(i int) {
@@ -217,11 +213,11 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 			fileName := strings.ToLower(method.Method+"_"+method.Service) + "_handler" + config.CppEx
 			dstFileName := config.GsMethodHandleDir + fileName
 			md5FileName := GetMd5FileName(dstFileName)
-			os.RemoveAll(dstFileName)
-			os.RemoveAll(md5FileName)
-			//data := getMethodHandlerCppStr(dstFileName, method)
-			//Md5WriteData2File(md5FileName, data)
-			//Md5Copy(dstFileName, md5FileName)
+			//os.RemoveAll(dstFileName)
+			//os.RemoveAll(md5FileName)
+			data := getMethodHandlerCppStr(dstFileName, method)
+			Md5WriteData2File(md5FileName, data)
+			Md5Copy(dstFileName, md5FileName)
 		}(i)
 	}
 }
