@@ -6,8 +6,8 @@
 void EnterCrossMainScene(::google::protobuf::RpcController* controller,
 	const ::EnterCrossMainSceneRequest* request,
 	::EnterCrossMainSceneResponese* response,
-	 ::google::protobuf::Closure* done)override;
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE}
-
+///<<< END WRITING YOUR CODE
+}
