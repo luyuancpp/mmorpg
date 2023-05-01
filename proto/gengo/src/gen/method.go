@@ -224,7 +224,6 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 			//Md5Copy(dstFileName, md5FileName)
 		}(i)
 	}
-
 }
 
 func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
