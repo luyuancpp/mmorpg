@@ -14,23 +14,27 @@ import (
 
 func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 	util.Wg.Done()
-	f, err := os.Open(config.ProtoDirs[config.EventProtoDirIndex] + fd.Name())
-	if err != nil {
-		return
-	}
-	defer f.Close()
 
-	scanner := bufio.NewScanner(f)
-	var line string
 	var eventList []string
-	for scanner.Scan() {
-		line = scanner.Text()
-		if !strings.Contains(line, "message") {
-			continue
+	{
+		f, err := os.Open(config.ProtoDirs[config.EventProtoDirIndex] + fd.Name())
+		if err != nil {
+			return
 		}
-		eventMessage := strings.Split(line, " ")[1]
-		eventMessage = strings.Replace(eventMessage, "\n", "", -1)
-		eventList = append(eventList, eventMessage)
+		defer f.Close()
+		scanner := bufio.NewScanner(f)
+		var line string
+
+		for scanner.Scan() {
+			line = scanner.Text()
+			if !strings.Contains(line, "message") {
+				continue
+			}
+			eventMessage := strings.Split(line, " ")[1]
+			eventMessage = strings.Replace(eventMessage, "\n", "", -1)
+			eventList = append(eventList, eventMessage)
+		}
+
 	}
 
 	dataHead := "#pragma once\n" + "#include \"src/game_logic/thread_local/thread_local_storage.h\"\n\n"
@@ -54,10 +58,8 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 	dataHead += classDeclareHeader + "\n"
 	dataHead += "class " + className + "\n"
 	dataHead += "{\npublic:\n"
-	dataHead += config.Tab + "static void Register(entt::dispatcher& dispatcher)\n"
-	dataHead += config.Tab + "{\n" + registerFunctionBody + config.Tab + "}\n\n"
-	dataHead += config.Tab + "static void UnRegister(entt::dispatcher& dispatcher)\n"
-	dataHead += config.Tab + "{\n" + unregisterFunctionBody + config.Tab + "}\n\n"
+	dataHead += config.Tab + "static void Register(entt::dispatcher& dispatcher);\n"
+	dataHead += config.Tab + "static void UnRegister(entt::dispatcher& dispatcher);\n"
 	dataHead += handlerFunction
 	dataHead += "};\n"
 
@@ -70,24 +72,23 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 	dataCpp := config.IncludeBegin + filepath.Base(headerFileName) + config.IncludeEndLine +
 		config.IncludeBegin + config.ProtoDirNames[config.EventProtoDirIndex] +
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine
-	dataCpp += config.YourCodePair
 
 	var yourCodes []string
 	fdCpp, errCpp := os.Open(cppFileName)
 	if errCpp == nil {
 		defer fdCpp.Close()
-		scanner := bufio.NewScanner(f)
+		scanner := bufio.NewScanner(fdCpp)
 		var line string
 		yourCodeIndex := 0
 		for scanner.Scan() {
 			line = scanner.Text()
 			if strings.Contains(line, config.YourCodeBegin) {
-				yourCodes = append(yourCodes, line)
+				yourCodes = append(yourCodes, line+"\n")
 			} else if strings.Contains(line, config.YourCodeEnd) {
-				yourCodes = append(yourCodes, line)
+				yourCodes[yourCodeIndex] += line + "\n"
 				yourCodeIndex += 1
 			} else if yourCodeIndex < len(yourCodes) {
-				yourCodes[yourCodeIndex] += line
+				yourCodes[yourCodeIndex] += line + "\n"
 			}
 		}
 	} else {
@@ -99,6 +100,12 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
 		isEventIndex := j >= 0 && j < len(eventList)
+		if j == 0 {
+			dataCpp += "void " + className + "::Register(entt::dispatcher& dispatcher)\n" +
+				config.Tab + "{\n" + registerFunctionBody + config.Tab + "}\n\n"
+			dataCpp += "void " + className + "::UnRegister(entt::dispatcher& dispatcher)\n" +
+				config.Tab + "{\n" + unregisterFunctionBody + config.Tab + "}\n\n"
+		}
 		if isEventIndex {
 			dataCpp += "void " + className + "::" + eventList[j] + "Handler(const " + eventList[j] + "& message)\n{\n"
 		}
