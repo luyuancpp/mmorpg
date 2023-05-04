@@ -72,6 +72,7 @@ func main() {
 	gen.ReadAllProtoFileServices()
 	gen.BuildAllProtoc()
 	gen.LoadClientLua()
+	gen.WriteEventHandlerFile()
 	util.Wg.Wait()
 	//所有文件的proto读完以后
 	gen.InitServiceId()

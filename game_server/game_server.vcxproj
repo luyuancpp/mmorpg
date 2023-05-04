@@ -126,9 +126,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\event_receiver\event_receiver.cpp" />
-    <ClCompile Include="src\event_receiver\mission_event_receiver.cpp" />
-    <ClCompile Include="src\event_receiver\scene_event_receiver.cpp" />
+    <ClCompile Include="src\event_handler\event_handler.cpp" />
+    <ClCompile Include="src\event_handler\mission_event_handler.cpp" />
+    <ClCompile Include="src\event_handler\scene_event_handler.cpp" />
     <ClCompile Include="src\handler\callplayer_gameservice_handler.cpp" />
     <ClCompile Include="src\handler\clientsend2player_gameservice_handler.cpp" />
     <ClCompile Include="src\handler\common_server_player_replied.cpp" />
@@ -185,9 +185,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\gs_scene_comp.h" />
-    <ClInclude Include="src\event_receiver\event_receiver.h" />
-    <ClInclude Include="src\event_receiver\mission_event_receiver.h" />
-    <ClInclude Include="src\event_receiver\scene_event_receiver.h" />
+    <ClInclude Include="src\event_handler\event_handler.h" />
+    <ClInclude Include="src\event_handler\mission_event_handler.h" />
+    <ClInclude Include="src\event_handler\scene_event_handler.h" />
     <ClInclude Include="src\handler\common_client_player_handler.h" />
     <ClInclude Include="src\handler\common_server_player_handler.h" />
     <ClInclude Include="src\handler\common_server_player_replied.h" />

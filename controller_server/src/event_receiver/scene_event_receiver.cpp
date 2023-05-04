@@ -18,31 +18,31 @@
 #include "component_proto/scene_comp.pb.h"
 #include "logic_proto/scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE
-void SceneEventReceiver::Register(entt::dispatcher& dispatcher)
+void SceneEventHandler::Register(entt::dispatcher& dispatcher)
 {
-dispatcher.sink<BeforeEnterScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive0>();
-dispatcher.sink<OnEnterScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive1>();
-dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive2>();
-dispatcher.sink<OnLeaveScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive3>();
-dispatcher.sink<S2CEnterScene>().connect<&SceneEventReceiver::SceneEventReceiver::Receive4>();
+dispatcher.sink<BeforeEnterScene>().connect<&SceneEventHandler::SceneEventHandler::Receive0>();
+dispatcher.sink<OnEnterScene>().connect<&SceneEventHandler::SceneEventHandler::Receive1>();
+dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventHandler::SceneEventHandler::Receive2>();
+dispatcher.sink<OnLeaveScene>().connect<&SceneEventHandler::SceneEventHandler::Receive3>();
+dispatcher.sink<S2CEnterScene>().connect<&SceneEventHandler::SceneEventHandler::Receive4>();
 }
 
-void SceneEventReceiver::UnRegister(entt::dispatcher& dispatcher)
+void SceneEventHandler::UnRegister(entt::dispatcher& dispatcher)
 {
-dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive0>();
-dispatcher.sink<OnEnterScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive1>();
-dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive2>();
-dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive3>();
-dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventReceiver::SceneEventReceiver::Receive4>();
+dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive0>();
+dispatcher.sink<OnEnterScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive1>();
+dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive2>();
+dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive3>();
+dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive4>();
 }
 
-void SceneEventReceiver::Receive0(const BeforeEnterScene& event_obj)
+void SceneEventHandler::Receive0(const BeforeEnterScene& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventReceiver::Receive1(const OnEnterScene& event_obj)
+void SceneEventHandler::Receive1(const OnEnterScene& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
     entt::entity player = entt::to_entity(event_obj.entity());
@@ -57,7 +57,7 @@ void SceneEventReceiver::Receive1(const OnEnterScene& event_obj)
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
+void SceneEventHandler::Receive2(const BeforeLeaveScene& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
     entt::entity player = entt::to_entity(event_obj.entity());
@@ -88,13 +88,13 @@ void SceneEventReceiver::Receive2(const BeforeLeaveScene& event_obj)
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventReceiver::Receive3(const OnLeaveScene& event_obj)
+void SceneEventHandler::Receive3(const OnLeaveScene& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventReceiver::Receive4(const S2CEnterScene& event_obj)
+void SceneEventHandler::Receive4(const S2CEnterScene& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
     entt::entity player = entt::to_entity(event_obj.entity());

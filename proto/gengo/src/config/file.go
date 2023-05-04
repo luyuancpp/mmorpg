@@ -46,6 +46,8 @@ const PbcOutDir = ProjectDir + PbcDirName
 const ServiceFileName = PbcOutDir + "service.cpp"
 
 const CommonProtoDirIndex = 0
+const ComponentProtoDirIndex = 1
+const EventProtoDirIndex = 2
 const LogicProtoDirIndex = 3
 const ClientPlayerDirIndex = 4
 const ServerPlayerDirIndex = 5
