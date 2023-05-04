@@ -5,22 +5,22 @@
 #include "src/game_logic/missions/missions_base.h"
 ///<<< END WRITING YOUR CODE
 void MissionEventHandler::Register(entt::dispatcher& dispatcher)
-{
-dispatcher.sink<AcceptMissionEvent>().connect<&MissionEventHandler::MissionEventHandler::Receive0>();
-dispatcher.sink<MissionConditionEvent>().connect<&MissionEventHandler::MissionEventHandler::Receive1>();
-dispatcher.sink<OnAcceptedMissionEvent>().connect<&MissionEventHandler::MissionEventHandler::Receive2>();
-dispatcher.sink<OnMissionAwardEvent>().connect<&MissionEventHandler::MissionEventHandler::Receive3>();
-}
+	{
+		dispatcher.sink<AcceptMissionEvent>().connect<&MissionEventHandler::AcceptMissionEventHandler>();
+		dispatcher.sink<MissionConditionEvent>().connect<&MissionEventHandler::MissionConditionEventHandler>();
+		dispatcher.sink<OnAcceptedMissionEvent>().connect<&MissionEventHandler::OnAcceptedMissionEventHandler>();
+		dispatcher.sink<OnMissionAwardEvent>().connect<&MissionEventHandler::OnMissionAwardEventHandler>();
+	}
 
 void MissionEventHandler::UnRegister(entt::dispatcher& dispatcher)
-{
-dispatcher.sink<AcceptMissionEvent>().disconnect<&MissionEventHandler::MissionEventHandler::Receive0>();
-dispatcher.sink<MissionConditionEvent>().disconnect<&MissionEventHandler::MissionEventHandler::Receive1>();
-dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventHandler::MissionEventHandler::Receive2>();
-dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventHandler::MissionEventHandler::Receive3>();
-}
+	{
+		dispatcher.sink<AcceptMissionEvent>().disconnect<&MissionEventHandler::AcceptMissionEventHandler>();
+		dispatcher.sink<MissionConditionEvent>().disconnect<&MissionEventHandler::MissionConditionEventHandler>();
+		dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventHandler::OnAcceptedMissionEventHandler>();
+		dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventHandler::OnMissionAwardEventHandler>();
+	}
 
-void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& event_obj)
+void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto entity = entt::to_entity(event_obj.entity());
@@ -28,7 +28,7 @@ void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& ev
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& event_obj)
+void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto entity = entt::to_entity(event_obj.entity());
@@ -36,14 +36,14 @@ void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEve
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventHandler::OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& event_obj)
+void MissionEventHandler::OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
         //触发接任务自动匹配当前的任务进度,接受的时候已经拥有金币
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventHandler::OnMissionAwardEventHandler(const OnMissionAwardEvent& event_obj)
+void MissionEventHandler::OnMissionAwardEventHandler(const OnMissionAwardEvent& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
