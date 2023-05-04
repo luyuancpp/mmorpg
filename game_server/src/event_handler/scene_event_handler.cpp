@@ -3,48 +3,48 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 void SceneEventHandler::Register(entt::dispatcher& dispatcher)
-{
-dispatcher.sink<BeforeEnterScene>().connect<&SceneEventHandler::SceneEventHandler::Receive0>();
-dispatcher.sink<OnEnterScene>().connect<&SceneEventHandler::SceneEventHandler::Receive1>();
-dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventHandler::SceneEventHandler::Receive2>();
-dispatcher.sink<OnLeaveScene>().connect<&SceneEventHandler::SceneEventHandler::Receive3>();
-dispatcher.sink<S2CEnterScene>().connect<&SceneEventHandler::SceneEventHandler::Receive4>();
-}
+	{
+		dispatcher.sink<BeforeEnterScene>().connect<&SceneEventHandler::BeforeEnterSceneHandler>();
+		dispatcher.sink<OnEnterScene>().connect<&SceneEventHandler::OnEnterSceneHandler>();
+		dispatcher.sink<BeforeLeaveScene>().connect<&SceneEventHandler::BeforeLeaveSceneHandler>();
+		dispatcher.sink<OnLeaveScene>().connect<&SceneEventHandler::OnLeaveSceneHandler>();
+		dispatcher.sink<S2CEnterScene>().connect<&SceneEventHandler::S2CEnterSceneHandler>();
+	}
 
 void SceneEventHandler::UnRegister(entt::dispatcher& dispatcher)
-{
-dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive0>();
-dispatcher.sink<OnEnterScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive1>();
-dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive2>();
-dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive3>();
-dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventHandler::SceneEventHandler::Receive4>();
-}
+	{
+		dispatcher.sink<BeforeEnterScene>().disconnect<&SceneEventHandler::BeforeEnterSceneHandler>();
+		dispatcher.sink<OnEnterScene>().disconnect<&SceneEventHandler::OnEnterSceneHandler>();
+		dispatcher.sink<BeforeLeaveScene>().disconnect<&SceneEventHandler::BeforeLeaveSceneHandler>();
+		dispatcher.sink<OnLeaveScene>().disconnect<&SceneEventHandler::OnLeaveSceneHandler>();
+		dispatcher.sink<S2CEnterScene>().disconnect<&SceneEventHandler::S2CEnterSceneHandler>();
+	}
 
-void SceneEventHandler::Receive0(const BeforeEnterScene& event_obj)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
-void SceneEventHandler::Receive1(const OnEnterScene& event_obj)
+void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::Receive2(const BeforeLeaveScene& event_obj)
+void SceneEventHandler::OnEnterSceneHandler(const OnEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::Receive3(const OnLeaveScene& event_obj)
+void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void SceneEventHandler::Receive4(const S2CEnterScene& event_obj)
+void SceneEventHandler::OnLeaveSceneHandler(const OnLeaveScene& message)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
