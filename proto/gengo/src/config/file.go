@@ -28,6 +28,7 @@ const PlayerServiceIncludeName = "#include \"player_service.h\""
 const HandlerName = "Handler"
 const YourCodeBegin = "///<<< BEGIN WRITING YOUR CODE"
 const YourCodeEnd = "///<<< END WRITING YOUR CODE"
+const YourCodePair = YourCodeBegin + "\n" + YourCodeEnd + "\n"
 
 var SourceNames = [...]string{
 	"common/",
