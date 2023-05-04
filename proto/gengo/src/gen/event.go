@@ -81,14 +81,14 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 		var line string
 		yourCodeIndex := 0
 		for scanner.Scan() {
-			line = scanner.Text()
+			line = scanner.Text() + "\n"
 			if strings.Contains(line, config.YourCodeBegin) {
-				yourCodes = append(yourCodes, line+"\n")
+				yourCodes = append(yourCodes, line)
 			} else if strings.Contains(line, config.YourCodeEnd) {
-				yourCodes[yourCodeIndex] += line + "\n"
+				yourCodes[yourCodeIndex] += line
 				yourCodeIndex += 1
 			} else if yourCodeIndex < len(yourCodes) {
-				yourCodes[yourCodeIndex] += line + "\n"
+				yourCodes[yourCodeIndex] += line
 			}
 		}
 	} else {
