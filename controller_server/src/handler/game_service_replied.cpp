@@ -5,7 +5,7 @@
 
 #include "src/comp/player_list.h"
 #include "src/pb/pbc/service.h"
-#include "src/service/logic_proto_replied/player_service_replied.h"
+#include "src/handler/player_service_replied.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
