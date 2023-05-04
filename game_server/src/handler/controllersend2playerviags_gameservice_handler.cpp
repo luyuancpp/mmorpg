@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
+void GameService::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
 	const ::NodeServiceMessageRequest* request,
 	::google::protobuf::Empty* response,
 	 ::google::protobuf::Closure* done)

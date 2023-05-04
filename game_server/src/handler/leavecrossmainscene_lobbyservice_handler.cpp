@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void LeaveCrossMainScene(::google::protobuf::RpcController* controller,
+void LobbyService::LeaveCrossMainScene(::google::protobuf::RpcController* controller,
 	const ::LeaveCrossMainSceneRequest* request,
 	::google::protobuf::Empty* response,
 	 ::google::protobuf::Closure* done)

@@ -166,7 +166,7 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 	}
 
 	data += yourCodes[0]
-	data += "void " + methodInfo.Method + config.GoogleMethodController + "\n" +
+	data += "void " + methodInfo.Service + "::" + methodInfo.Method + config.GoogleMethodController + "\n" +
 		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
 		config.Tab + "::" + methodInfo.Response + "* response,\n" +
 		config.Tab + " ::google::protobuf::Closure* done)\n{\n"

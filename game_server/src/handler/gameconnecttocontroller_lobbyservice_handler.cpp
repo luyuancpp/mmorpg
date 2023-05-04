@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void GameConnectToController(::google::protobuf::RpcController* controller,
+void LobbyService::GameConnectToController(::google::protobuf::RpcController* controller,
 	const ::GameConnectToControllerRequest* request,
 	::google::protobuf::Empty* response,
 	 ::google::protobuf::Closure* done)

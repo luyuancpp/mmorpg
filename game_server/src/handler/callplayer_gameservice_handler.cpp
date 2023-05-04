@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void CallPlayer(::google::protobuf::RpcController* controller,
+void GameService::CallPlayer(::google::protobuf::RpcController* controller,
 	const ::NodeServiceMessageRequest* request,
 	::NodeServiceMessageResponse* response,
 	 ::google::protobuf::Closure* done)
