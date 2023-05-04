@@ -139,20 +139,18 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 	var line string
 	yourCodeIndex := 0
 	var yourCodes []string
-	isYourCodes := false
 	f, err := os.Open(dst)
 	if err == nil {
 		defer f.Close()
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
-			line = scanner.Text()
+			line = scanner.Text() + "\n"
 			if strings.Contains(line, config.YourCodeBegin) {
 				yourCodes = append(yourCodes, line)
 			} else if strings.Contains(line, config.YourCodeEnd) {
-				isYourCodes = false
-				yourCodes = append(yourCodes, line)
+				yourCodes[yourCodeIndex] += line
 				yourCodeIndex += 1
-			} else if isYourCodes {
+			} else if yourCodeIndex < len(yourCodes) {
 				yourCodes[yourCodeIndex] += line
 			}
 		}
@@ -186,7 +184,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data s
 		defer f.Close()
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
-			line = scanner.Text()
+			line = scanner.Text() + "\n"
 			if strings.Contains(line, config.YourCodeBegin) {
 				yourCodes = append(yourCodes, line)
 			} else if strings.Contains(line, config.YourCodeEnd) {
