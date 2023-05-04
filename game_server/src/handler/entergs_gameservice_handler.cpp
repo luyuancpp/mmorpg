@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void EnterGs(::google::protobuf::RpcController* controller,
+void GameService::EnterGs(::google::protobuf::RpcController* controller,
 	const ::GameNodeEnterGsRequest* request,
 	::google::protobuf::Empty* response,
 	 ::google::protobuf::Closure* done)

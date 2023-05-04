@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void StartControllerNode(::google::protobuf::RpcController* controller,
+void LobbyService::StartControllerNode(::google::protobuf::RpcController* controller,
 	const ::StartControllerRequest* request,
 	::google::protobuf::Empty* response,
 	 ::google::protobuf::Closure* done)

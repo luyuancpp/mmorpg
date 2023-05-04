@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
+void LobbyService::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
 	const ::EnterCrossMainSceneWeightRoundRobinRequest* request,
 	::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
 	 ::google::protobuf::Closure* done)

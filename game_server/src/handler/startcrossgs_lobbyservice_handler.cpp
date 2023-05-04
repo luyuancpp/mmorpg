@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void StartCrossGs(::google::protobuf::RpcController* controller,
+void LobbyService::StartCrossGs(::google::protobuf::RpcController* controller,
 	const ::StartCrossGsRequest* request,
 	::StartCrossGsResponse* response,
 	 ::google::protobuf::Closure* done)

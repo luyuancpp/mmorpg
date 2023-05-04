@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void Disconnect(::google::protobuf::RpcController* controller,
+void GameService::Disconnect(::google::protobuf::RpcController* controller,
 	const ::GameNodeDisconnectRequest* request,
 	::google::protobuf::Empty* response,
 	 ::google::protobuf::Closure* done)

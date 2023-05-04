@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void GateConnectGs(::google::protobuf::RpcController* controller,
+void GameService::GateConnectGs(::google::protobuf::RpcController* controller,
 	const ::GameNodeConnectRequest* request,
 	::google::protobuf::Empty* response,
 	 ::google::protobuf::Closure* done)

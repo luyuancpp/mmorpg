@@ -4,7 +4,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+void GameService::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
 	const ::RoutePlayerMsgStringRequest* request,
 	::RoutePlayerMsgStringResponse* response,
 	 ::google::protobuf::Closure* done)
