@@ -23,6 +23,13 @@ func IsProtoFile(fd os.DirEntry) bool {
 	return true
 }
 
+func IsLuaFile(fd os.DirEntry) bool {
+	if fd.IsDir() || filepath.Ext(fd.Name()) != ".lua" {
+		return false
+	}
+	return true
+}
+
 func Copy(dst string, src string) (written int64, err error) {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
