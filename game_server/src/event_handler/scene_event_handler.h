@@ -9,13 +9,12 @@ class S2CEnterScene;
 
 class SceneEventHandler
 {
-public:
-    static void Register(entt::dispatcher& dispatcher);
-    static void UnRegister(entt::dispatcher& dispatcher);
+	static void Register(entt::dispatcher& dispatcher);
+	static void UnRegister(entt::dispatcher& dispatcher);
 
-    static void Receive0(const BeforeEnterScene& event_obj);
-    static void Receive1(const OnEnterScene& event_obj);
-    static void Receive2(const BeforeLeaveScene& event_obj);
-    static void Receive3(const OnLeaveScene& event_obj);
-    static void Receive4(const S2CEnterScene& event_obj);
+	static void BeforeEnterSceneHandler(const BeforeEnterScene& message);
+	static void OnEnterSceneHandler(const OnEnterScene& message);
+	static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);
+	static void OnLeaveSceneHandler(const OnLeaveScene& message);
+	static void S2CEnterSceneHandler(const S2CEnterScene& message);
 };
