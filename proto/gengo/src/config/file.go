@@ -66,3 +66,7 @@ const ServiceIdsFileName = ProtoDir + "serviceid.txt"
 
 const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
 const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
+
+const ClientLuaProjectRelative = "script/lua/service/"
+const ClientLuaDir = ProjectDir + "bin/" + ClientLuaProjectRelative
+const ClientLuaServiceFile = ProjectDir + "client/src/service/logic_proto/service_lua.cpp"
