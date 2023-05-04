@@ -48,13 +48,13 @@
     <ClCompile Include="src\system\player_tip_system.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\scene_event_receiver.cpp">
+    <ClCompile Include="src\event_handler\scene_event_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\system\player_change_scene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\event_receiver.cpp">
+    <ClCompile Include="src\event_handler\event_receiver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\common_server_player_handler.cpp">
@@ -111,7 +111,7 @@
     <ClCompile Include="src\network\login_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\mission_event_receiver.cpp">
+    <ClCompile Include="src\event_handler\mission_event_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -149,13 +149,13 @@
     <ClInclude Include="src\network\gs_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\scene_event_receiver.h">
+    <ClInclude Include="src\event_handler\scene_event_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\system\player_change_scene.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\event_receiver.h">
+    <ClInclude Include="src\event_handler\event_receiver.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\team_server_player_handler.h">
@@ -215,7 +215,7 @@
     <ClInclude Include="src\network\login_node.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\mission_event_receiver.h">
+    <ClInclude Include="src\event_handler\mission_event_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

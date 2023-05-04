@@ -1,7 +1,7 @@
 #pragma once
 #include "event_receiver.h"
-#include "mission_event_receiver.h"
-#include "scene_event_receiver.h"
+#include "mission_event_handler.h"
+#include "scene_event_handler.h"
 
 void EventReceiver::Register(entt::dispatcher& dispatcher)
 {
