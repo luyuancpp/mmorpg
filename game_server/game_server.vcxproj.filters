@@ -84,9 +84,6 @@
     <ClCompile Include="src\handler\team_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\team_server_player_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\server_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -142,6 +139,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\routeplayerstringmsg_gameservice_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\handler\enterscene_teamservice_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\handler\send2player_gameservice_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
