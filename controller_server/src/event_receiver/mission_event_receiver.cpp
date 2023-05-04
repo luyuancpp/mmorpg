@@ -2,42 +2,42 @@
 #include "event_proto/mission_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void MissionEventReceiver::Register(entt::dispatcher& dispatcher)
+void MissionEventHandler::Register(entt::dispatcher& dispatcher)
 {
-dispatcher.sink<AcceptMissionEvent>().connect<&MissionEventReceiver::MissionEventReceiver::Receive0>();
-dispatcher.sink<MissionConditionEvent>().connect<&MissionEventReceiver::MissionEventReceiver::Receive1>();
-dispatcher.sink<OnAcceptedMissionEvent>().connect<&MissionEventReceiver::MissionEventReceiver::Receive2>();
-dispatcher.sink<OnMissionAwardEvent>().connect<&MissionEventReceiver::MissionEventReceiver::Receive3>();
+dispatcher.sink<AcceptMissionEvent>().connect<&MissionEventHandler::MissionEventHandler::Receive0>();
+dispatcher.sink<MissionConditionEvent>().connect<&MissionEventHandler::MissionEventHandler::Receive1>();
+dispatcher.sink<OnAcceptedMissionEvent>().connect<&MissionEventHandler::MissionEventHandler::Receive2>();
+dispatcher.sink<OnMissionAwardEvent>().connect<&MissionEventHandler::MissionEventHandler::Receive3>();
 }
 
-void MissionEventReceiver::UnRegister(entt::dispatcher& dispatcher)
+void MissionEventHandler::UnRegister(entt::dispatcher& dispatcher)
 {
-dispatcher.sink<AcceptMissionEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive0>();
-dispatcher.sink<MissionConditionEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive1>();
-dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive2>();
-dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventReceiver::MissionEventReceiver::Receive3>();
+dispatcher.sink<AcceptMissionEvent>().disconnect<&MissionEventHandler::MissionEventHandler::Receive0>();
+dispatcher.sink<MissionConditionEvent>().disconnect<&MissionEventHandler::MissionEventHandler::Receive1>();
+dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventHandler::MissionEventHandler::Receive2>();
+dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventHandler::MissionEventHandler::Receive3>();
 }
 
-void MissionEventReceiver::Receive0(const AcceptMissionEvent& event_obj)
+void MissionEventHandler::Receive0(const AcceptMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///     test
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventReceiver::Receive1(const MissionConditionEvent& event_obj)
+void MissionEventHandler::Receive1(const MissionConditionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventReceiver::Receive2(const OnAcceptedMissionEvent& event_obj)
+void MissionEventHandler::Receive2(const OnAcceptedMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventReceiver::Receive3(const OnMissionAwardEvent& event_obj)
+void MissionEventHandler::Receive3(const OnMissionAwardEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

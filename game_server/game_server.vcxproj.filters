@@ -54,13 +54,13 @@
     <ClCompile Include="src\system\logic\config_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\event_receiver.cpp">
+    <ClCompile Include="src\event_handler\event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\mission_event_receiver.cpp">
+    <ClCompile Include="src\event_handler\mission_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_receiver\scene_event_receiver.cpp">
+    <ClCompile Include="src\event_handler\scene_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\player_service.cpp">
@@ -230,13 +230,13 @@
     <ClInclude Include="src\module\master.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\event_receiver.h">
+    <ClInclude Include="src\event_handler\event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\mission_event_receiver.h">
+    <ClInclude Include="src\event_handler\mission_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_receiver\scene_event_receiver.h">
+    <ClInclude Include="src\event_handler\scene_event_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\team_server_player_handler.h">

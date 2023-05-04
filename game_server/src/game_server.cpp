@@ -7,7 +7,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/lobby_config.h"
 
-#include "src/event_receiver/event_receiver.h"
+#include "src/event_handler/event_handler.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
