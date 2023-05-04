@@ -75,6 +75,10 @@ func (info *RpcMethodInfo) IncludeName() (includeName string) {
 	return "#include \"" + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
 }
 
+func (info *RpcMethodInfo) CppHandlerIncludeName() (includeName string) {
+	return config.IncludeBegin + info.FileBaseName() + "_handler" + config.HeadEx + config.IncludeEndLine
+}
+
 func (s RpcMethodInfos) Len() int {
 	return len(s)
 }

@@ -34,7 +34,7 @@ func writeMethodCppFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	var data = config.ProtoPbhIncludeBegin + methodList[0].FileBaseName() + "_service" + config.HeadEx + config.IncludeEndLine
+	var data = config.IncludeBegin + methodList[0].FileBaseName() + "_service" + config.HeadEx + config.IncludeEndLine
 
 	for i := 0; i < len(methodList); i++ {
 		data += "const uint32_t " + methodList[i].KeyName() + config.RpcIdName + " = " + strconv.FormatUint(methodList[i].Id, 10) + ";\n"
@@ -47,7 +47,7 @@ func writeMethodCppFile(methodList RpcMethodInfos) {
 func getMethodHandlerHeadStr(methodList RpcMethodInfos) string {
 
 	var data = "#pragma once\n"
-	data += config.ProtoPbhIncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine
+	data += config.IncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine
 	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
 	for i := 0; i < len(methodList); i++ {
 		data += config.Tab + "void " + methodList[i].Method + config.GoogleMethodController + "\n" +
@@ -99,7 +99,7 @@ func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 
 	var data = "#pragma once\n"
-	data += config.ProtoPbhIncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine
+	data += config.IncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine
 	data += config.PlayerServiceIncludeName
 	data += "\nclass " + methodList[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n"
 	data += config.Tab + "PlayerService::PlayerService;\n"
@@ -132,7 +132,7 @@ func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 }
 
 func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string) {
-	data = config.ProtoPbhIncludeBegin + methodInfo.FileBaseName() + config.ProtoPbhIncludeEndLine +
+	data = methodInfo.CppHandlerIncludeName() +
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"\n\n"
 
@@ -166,7 +166,7 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 	}
 
 	data += yourCodes[0]
-	data += "void " + methodInfo.Service + "::" + methodInfo.Method + config.GoogleMethodController + "\n" +
+	data += "void " + methodInfo.Service + "Handler::" + methodInfo.Method + config.GoogleMethodController + "\n" +
 		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
 		config.Tab + "::" + methodInfo.Response + "* response,\n" +
 		config.Tab + " ::google::protobuf::Closure* done)\n{\n"
@@ -176,7 +176,7 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 }
 
 func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string) {
-	data = config.ProtoPbhIncludeBegin + methodInfo.FileBaseName() + config.ProtoPbhIncludeEndLine +
+	data = methodInfo.CppHandlerIncludeName() +
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"\n"
 
@@ -210,7 +210,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data s
 	}
 
 	data += yourCodes[0]
-	data += "void " + methodInfo.Service + "::" + methodInfo.Method + config.PlayerMethodController + "\n" +
+	data += "void " + methodInfo.Service + "Handler::" + methodInfo.Method + config.PlayerMethodController + "\n" +
 		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
 		config.Tab + "::" + methodInfo.Response + "* response)\n{\n"
 	data += yourCodes[1]
