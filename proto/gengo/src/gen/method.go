@@ -134,8 +134,7 @@ func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string) {
 	data = config.ProtoPbhIncludeBegin + methodInfo.FileBaseName() + config.ProtoPbhIncludeEndLine +
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
-		"#include \"src/network/message_system.h\"" +
-		"// 大家注意把逻辑写的简洁一点，防止文件过大导致编译过久，和生成文件工具读取文件内存不够,函数尽量短小,最好不要超过100行\n"
+		"#include \"src/network/message_system.h\"\n\n"
 
 	var line string
 	yourCodeIndex := 0
@@ -179,8 +178,7 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string) {
 	data = config.ProtoPbhIncludeBegin + methodInfo.FileBaseName() + config.ProtoPbhIncludeEndLine +
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
-		"#include \"src/network/message_system.h\"" +
-		"// 大家注意把逻辑写的简洁一点，防止文件过大导致编译过久，和生成文件工具读取文件内存不够,函数尽量短小,最好不要超过100行\n"
+		"#include \"src/network/message_system.h\"\n"
 
 	var line string
 	yourCodeIndex := 0
@@ -216,7 +214,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data s
 		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
 		config.Tab + "::" + methodInfo.Response + "* response)\n{\n"
 	data += yourCodes[1]
-	data += "}\n\n"
+	data += "\n}\n"
 	return data
 }
 
