@@ -161,8 +161,8 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 	}
 
 	if nil == yourCodes {
-		yourCodes = append(yourCodes, config.YourCodeBegin+"\n"+config.YourCodeEnd+"\n")
-		yourCodes = append(yourCodes, config.YourCodeBegin+"\n"+config.YourCodeEnd)
+		yourCodes = append(yourCodes, config.YourCodePair)
+		yourCodes = append(yourCodes, config.YourCodePair)
 	}
 
 	data += yourCodes[0]
@@ -205,8 +205,8 @@ func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data s
 	}
 
 	if nil == yourCodes {
-		yourCodes = append(yourCodes, config.YourCodeBegin+"\n"+config.YourCodeEnd+"\n")
-		yourCodes = append(yourCodes, config.YourCodeBegin+"\n"+config.YourCodeEnd)
+		yourCodes = append(yourCodes, config.YourCodePair)
+		yourCodes = append(yourCodes, config.YourCodePair)
 	}
 
 	data += yourCodes[0]

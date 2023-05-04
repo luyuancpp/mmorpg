@@ -60,10 +60,52 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 	dataHead += handlerFunction
 	dataHead += "};\n"
 
-	headerFileName := dstDir + strings.ToLower(fd.Name())
-	headerFileName = strings.Replace(headerFileName, config.ProtoEx, "", -1) + config.HeadHandlerEx
+	baseName := strings.Replace(dstDir+strings.ToLower(fd.Name()), config.ProtoEx, "", -1)
+	headerFileName := baseName + config.HeadHandlerEx
+	cppFileName := baseName + config.CppHandlerEx
 	Md5WriteData2File(headerFileName, dataHead)
 
+	dataCpp := config.IncludeBegin + headerFileName + config.IncludeEndLine +
+		config.IncludeBegin + strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine
+	dataCpp += config.YourCodePair
+
+	var yourCodes []string
+	fdCpp, errCpp := os.Open(cppFileName)
+	if errCpp != nil {
+		defer fdCpp.Close()
+		scanner := bufio.NewScanner(f)
+		var line string
+		yourCodeIndex := 0
+		for scanner.Scan() {
+			line = scanner.Text()
+			if strings.Contains(line, config.YourCodeBegin) {
+				yourCodes = append(yourCodes, line)
+			} else if strings.Contains(line, config.YourCodeEnd) {
+				yourCodes = append(yourCodes, line)
+				yourCodeIndex += 1
+			} else if yourCodeIndex < len(yourCodes) {
+				yourCodes[yourCodeIndex] += line
+			}
+		}
+	} else {
+		for i := 0; i < len(eventList)+1; i++ {
+			yourCodes = append(yourCodes, config.YourCodePair)
+		}
+	}
+
+	for i := 0; i < len(yourCodes); i++ {
+		j := i - 1
+		isEventIndex := j >= 0 && j < len(eventList)
+		if isEventIndex {
+			dataCpp += "void " + className + "::" + eventList[j] + "Handler(const " + eventList[j] + "& message)\n{\n"
+		}
+		dataCpp += yourCodes[i]
+
+		if isEventIndex {
+			dataCpp += "}\n\n"
+		}
+	}
+	Md5WriteData2File(cppFileName, dataCpp)
 }
 
 func WriteEventHandlerFile() {
