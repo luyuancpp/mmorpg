@@ -257,9 +257,9 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 			md5FileName := GetMd5FileName(dstFileName)
 			os.RemoveAll(dstFileName)
 			os.RemoveAll(md5FileName)
-			data := getMethodHandlerCppStr(dstFileName, method)
-			Md5WriteData2File(md5FileName, data)
-			Md5Copy(dstFileName, md5FileName)
+			//data := getMethodHandlerCppStr(dstFileName, method)
+			//Md5WriteData2File(md5FileName, data)
+			//Md5Copy(dstFileName, md5FileName)
 		}(i)
 	}
 }
@@ -283,9 +283,9 @@ func writeGsMethodPlayerHandlerCppFile(methodList RpcMethodInfos) {
 			md5FileName := GetMd5FileName(dstFileName)
 			os.RemoveAll(dstFileName)
 			os.RemoveAll(md5FileName)
-			data := getMethodPlayerHandlerCppStr(dstFileName, method)
-			Md5WriteData2File(md5FileName, data)
-			Md5Copy(dstFileName, md5FileName)
+			//data := getMethodPlayerHandlerCppStr(dstFileName, method)
+			//Md5WriteData2File(md5FileName, data)
+			//Md5Copy(dstFileName, md5FileName)
 		}(i)
 	}
 }
