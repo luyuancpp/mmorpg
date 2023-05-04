@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void EnterSceneGs2Controller(entt::entity player,
+void ServerPlayerSceneService::EnterSceneGs2Controller(entt::entity player,
 	const ::Gs2ControllerEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {

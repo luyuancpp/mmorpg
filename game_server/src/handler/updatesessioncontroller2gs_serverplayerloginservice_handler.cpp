@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void UpdateSessionController2Gs(entt::entity player,
+void ServerPlayerLoginService::UpdateSessionController2Gs(entt::entity player,
 	const ::UpdateSessionController2GsRequest* request,
 	::google::protobuf::Empty* response)
 {

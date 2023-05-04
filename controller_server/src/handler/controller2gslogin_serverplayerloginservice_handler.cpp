@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void Controller2GsLogin(entt::entity player,
+void ServerPlayerLoginService::Controller2GsLogin(entt::entity player,
 	const ::Controller2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
 {
