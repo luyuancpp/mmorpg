@@ -73,25 +73,8 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 		config.IncludeBegin + config.ProtoDirNames[config.EventProtoDirIndex] +
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine
 
-	var yourCodes []string
-	fdCpp, errCpp := os.Open(cppFileName)
-	if errCpp == nil {
-		defer fdCpp.Close()
-		scanner := bufio.NewScanner(fdCpp)
-		var line string
-		yourCodeIndex := 0
-		for scanner.Scan() {
-			line = scanner.Text() + "\n"
-			if strings.Contains(line, config.YourCodeBegin) {
-				yourCodes = append(yourCodes, line)
-			} else if strings.Contains(line, config.YourCodeEnd) {
-				yourCodes[yourCodeIndex] += line
-				yourCodeIndex += 1
-			} else if yourCodeIndex < len(yourCodes) {
-				yourCodes[yourCodeIndex] += line
-			}
-		}
-	} else {
+	yourCodes, err := util.GetDstCodeData(cppFileName)
+	if err != nil {
 		for i := 0; i < len(eventList)+1; i++ {
 			yourCodes = append(yourCodes, config.YourCodePair)
 		}
