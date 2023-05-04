@@ -8,6 +8,7 @@ import (
 	"golang.org/x/text/language"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -60,18 +61,20 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 	dataHead += handlerFunction
 	dataHead += "};\n"
 
-	baseName := strings.Replace(dstDir+strings.ToLower(fd.Name()), config.ProtoEx, "", -1)
-	headerFileName := baseName + config.HeadHandlerEx
-	cppFileName := baseName + config.CppHandlerEx
+	baseName := filepath.Base(strings.ToLower(fd.Name()))
+	fileName := strings.Replace(dstDir+strings.ToLower(fd.Name()), config.ProtoEx, "", -1)
+	headerFileName := fileName + config.HeadHandlerEx
+	cppFileName := fileName + config.CppHandlerEx
 	Md5WriteData2File(headerFileName, dataHead)
 
-	dataCpp := config.IncludeBegin + headerFileName + config.IncludeEndLine +
-		config.IncludeBegin + strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine
+	dataCpp := config.IncludeBegin + filepath.Base(headerFileName) + config.IncludeEndLine +
+		config.IncludeBegin + config.ProtoDirNames[config.EventProtoDirIndex] +
+		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine
 	dataCpp += config.YourCodePair
 
 	var yourCodes []string
 	fdCpp, errCpp := os.Open(cppFileName)
-	if errCpp != nil {
+	if errCpp == nil {
 		defer fdCpp.Close()
 		scanner := bufio.NewScanner(f)
 		var line string
@@ -100,7 +103,6 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 			dataCpp += "void " + className + "::" + eventList[j] + "Handler(const " + eventList[j] + "& message)\n{\n"
 		}
 		dataCpp += yourCodes[i]
-
 		if isEventIndex {
 			dataCpp += "}\n\n"
 		}
