@@ -12,6 +12,13 @@ import (
 	"strings"
 )
 
+func getClassName(fd os.DirEntry) string {
+	className := strings.Split(fd.Name(), "_")[0]
+	caString := cases.Title(language.English)
+	className = caString.String(className) + "EventHandler"
+	return className
+}
+
 func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 	util.Wg.Done()
 
@@ -39,9 +46,7 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 
 	dataHead := "#pragma once\n" + "#include \"src/game_logic/thread_local/thread_local_storage.h\"\n\n"
 
-	className := strings.Split(fd.Name(), "_")[0]
-	caString := cases.Title(language.English)
-	className = caString.String(className) + "EventHandler"
+	className := getClassName(fd)
 
 	var classDeclareHeader string
 	var registerFunctionBody string
@@ -106,6 +111,10 @@ func WriteEventHandlerFile() {
 		log.Fatal(err)
 		return
 	}
+
+	var cppIncludeData string
+	var registerData string
+	var unRegisterData string
 	for _, fd := range fds {
 		if !util.IsProtoFile(fd) {
 			continue
@@ -114,5 +123,27 @@ func WriteEventHandlerFile() {
 		writeEventCppHandler(fd, config.GsEventHandleDir)
 		util.Wg.Add(1)
 		writeEventCppHandler(fd, config.ControllerEventHandleDir)
+		cppIncludeData += config.IncludeBegin + filepath.Base(strings.ToLower(fd.Name())) +
+			config.HeadEx + config.IncludeEndLine
+		registerData += getClassName(fd) + "::Register(dispatcher);\n"
+		unRegisterData += getClassName(fd) + "::UnRegister(dispatcher);\n"
 	}
+	eventHeadData := "#pragma once\n" + "#include \"src/game_logic/thread_local/thread_local_storage.h\"\n\n"
+	eventHeadData += "class EventHandler\n{\npublic:\n"
+	eventHeadData += "static void Register(entt::dispatcher& dispatcher);\n"
+	eventHeadData += "static void UnRegister(entt::dispatcher& dispatcher);\n"
+	eventHeadData += "};\n"
+	Md5WriteData2File(config.GsEventHandleDir+config.EventHandlerFileNameHead, eventHeadData)
+	Md5WriteData2File(config.ControllerEventHandleDir+config.EventHandlerFileNameHead, eventHeadData)
+
+	eventCppData := config.IncludeBegin + config.EventHandlerFileNameHead + config.IncludeEndLine
+	eventCppData += cppIncludeData
+	eventCppData += "void EventHandler::Register(entt::dispatcher& dispatcher)\n{\n"
+	eventCppData += registerData
+	eventCppData += "}\n"
+	eventCppData += "void EventHandler::UnRegister(entt::dispatcher& dispatcher)\n{\n"
+	eventCppData += unRegisterData
+	eventCppData += "}\n"
+	Md5WriteData2File(config.GsEventHandleDir+config.EventHandlerFileNameHead, eventCppData)
+	Md5WriteData2File(config.ControllerEventHandleDir+config.EventHandlerFileNameHead, eventCppData)
 }

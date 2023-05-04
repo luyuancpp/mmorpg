@@ -70,7 +70,9 @@ const HandlerDirName = "src/handler/"
 const ServiceIdsFileName = ProtoDir + "serviceid.txt"
 
 const EventHandlerDirName = "src/event_handler/"
-
+const EventHandlerFileName = "event_handler"
+const EventHandlerFileNameHead = EventHandlerFileName + HeadEx
+const EventHandlerFileNameCpp = EventHandlerFileName + CppEx
 const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
 const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
 
