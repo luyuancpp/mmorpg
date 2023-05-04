@@ -4,7 +4,7 @@
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
-void S2STeamServiceHandler::EnterScene(::google::protobuf::RpcController* controller,
+void TeamServiceHandler::EnterScene(::google::protobuf::RpcController* controller,
     const ::TeamTestS2SRequest* request,
     ::TeamTestS2SRespone* response,
     ::google::protobuf::Closure* done)

@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void PushSceneInfoS2C(entt::entity player,
+void ClientPlayerSceneService::PushSceneInfoS2C(entt::entity player,
 	const ::SceneInfoS2C* request,
 	::SceneInfoS2C* response)
 {

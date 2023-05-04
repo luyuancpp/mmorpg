@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void Controller2GsEnterSceneS2C(entt::entity player,
+void ServerPlayerSceneService::Controller2GsEnterSceneS2C(entt::entity player,
 	const ::EnterSceneS2CRequest* request,
 	::EnterScenerS2CResponse* response)
 {

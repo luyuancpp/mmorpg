@@ -210,7 +210,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data s
 	}
 
 	data += yourCodes[0]
-	data += "void " + methodInfo.Method + config.PlayerMethodController + "\n" +
+	data += "void " + methodInfo.Service + "::" + methodInfo.Method + config.PlayerMethodController + "\n" +
 		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
 		config.Tab + "::" + methodInfo.Response + "* response)\n{\n"
 	data += yourCodes[1]
@@ -255,8 +255,8 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 			fileName := strings.ToLower(method.Method+"_"+method.Service) + "_handler" + config.CppEx
 			dstFileName := config.GsMethodHandleDir + fileName
 			md5FileName := GetMd5FileName(dstFileName)
-			//os.RemoveAll(dstFileName)
-			//os.RemoveAll(md5FileName)
+			os.RemoveAll(dstFileName)
+			os.RemoveAll(md5FileName)
 			data := getMethodHandlerCppStr(dstFileName, method)
 			Md5WriteData2File(md5FileName, data)
 			Md5Copy(dstFileName, md5FileName)
@@ -281,6 +281,8 @@ func writeGsMethodPlayerHandlerCppFile(methodList RpcMethodInfos) {
 			fileName := strings.ToLower(method.Method+"_"+method.Service) + "_handler" + config.CppEx
 			dstFileName := config.GsMethodHandleDir + fileName
 			md5FileName := GetMd5FileName(dstFileName)
+			os.RemoveAll(dstFileName)
+			os.RemoveAll(md5FileName)
 			data := getMethodPlayerHandlerCppStr(dstFileName, method)
 			Md5WriteData2File(md5FileName, data)
 			Md5Copy(dstFileName, md5FileName)

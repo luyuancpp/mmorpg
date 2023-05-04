@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void LeaveSceneController2Gs(entt::entity player,
+void ServerPlayerSceneService::LeaveSceneController2Gs(entt::entity player,
 	const ::Controller2GsLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {

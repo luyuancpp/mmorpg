@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void Controller2GsEnterGateSucceed(entt::entity player,
+void ServerPlayerLoginService::Controller2GsEnterGateSucceed(entt::entity player,
 	const ::Controller2GsEnterGateSucceedRequest* request,
 	::google::protobuf::Empty* response)
 {

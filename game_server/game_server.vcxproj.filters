@@ -123,6 +123,12 @@
     <ClCompile Include="src\thread_local\game_thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\handler\callplayer_gameservice_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\handler\clientsend2player_gameservice_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_server.h">

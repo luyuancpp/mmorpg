@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void EnterScene(entt::entity player,
+void ServerPlayerTeamService::EnterScene(entt::entity player,
 	const ::TeamTestRequest* request,
 	::TeamTestResponse* response)
 {

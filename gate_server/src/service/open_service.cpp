@@ -7,7 +7,7 @@
 #include "serversceneservice_service_method_id.h"
 #include "clientplayersceneservice_service_method_id.h"
 #include "serverplayersceneservice_service_method_id.h"
-#include "s2steamservice_service_method_id.h"
+#include "TeamService_service_method_id.h"
 #include "clientplayerteamservice_service_method_id.h"
 #include "serverplayerteamservice_service_method_id.h"
 #include "controllerservice_service_method_id.h"

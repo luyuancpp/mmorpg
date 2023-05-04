@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void TeamInfoNotify(entt::entity player,
+void ClientPlayerTeamService::TeamInfoNotify(entt::entity player,
 	const ::TeamInfoS2CRequest* request,
 	::TeamInfoS2CResponse* response)
 {

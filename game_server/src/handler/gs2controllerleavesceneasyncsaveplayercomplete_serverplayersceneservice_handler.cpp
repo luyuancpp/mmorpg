@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
+void ServerPlayerSceneService::Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
 	const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	::google::protobuf::Empty* response)
 {
