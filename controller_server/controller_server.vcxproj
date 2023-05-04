@@ -154,7 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\event_handler\event_receiver.cpp" />
+    <ClCompile Include="src\event_handler\event_handler.cpp" />
     <ClCompile Include="src\event_handler\mission_event_handler.cpp" />
     <ClCompile Include="src\event_handler\scene_event_handler.cpp" />
     <ClCompile Include="src\network\gate_session.cpp" />
@@ -188,7 +188,7 @@
     <ClCompile Include="src\thread_local\controller_thread_local_storage.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\event_handler\event_receiver.h" />
+    <ClInclude Include="src\event_handler\event_handler.h" />
     <ClInclude Include="src\event_handler\mission_event_handler.h" />
     <ClInclude Include="src\event_handler\scene_event_handler.h" />
     <ClInclude Include="src\network\controller_rpc.h" />
