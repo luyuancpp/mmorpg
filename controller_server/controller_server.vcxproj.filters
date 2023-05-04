@@ -54,7 +54,7 @@
     <ClCompile Include="src\system\player_change_scene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\event_handler\event_receiver.cpp">
+    <ClCompile Include="src\event_handler\event_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\common_server_player_handler.cpp">
@@ -155,7 +155,7 @@
     <ClInclude Include="src\system\player_change_scene.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\event_handler\event_receiver.h">
+    <ClInclude Include="src\event_handler\event_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\team_server_player_handler.h">

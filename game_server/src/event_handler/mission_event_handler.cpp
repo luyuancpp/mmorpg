@@ -20,7 +20,7 @@ dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventHandler::Missi
 dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventHandler::MissionEventHandler::Receive3>();
 }
 
-void MissionEventHandler::Receive0(const AcceptMissionEvent& event_obj)
+void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto entity = entt::to_entity(event_obj.entity());
@@ -28,7 +28,7 @@ void MissionEventHandler::Receive0(const AcceptMissionEvent& event_obj)
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventHandler::Receive1(const MissionConditionEvent& event_obj)
+void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto entity = entt::to_entity(event_obj.entity());
@@ -36,14 +36,14 @@ void MissionEventHandler::Receive1(const MissionConditionEvent& event_obj)
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventHandler::Receive2(const OnAcceptedMissionEvent& event_obj)
+void MissionEventHandler::OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
         //触发接任务自动匹配当前的任务进度,接受的时候已经拥有金币
 ///<<< END WRITING YOUR CODE
 }
 
-void MissionEventHandler::Receive3(const OnMissionAwardEvent& event_obj)
+void MissionEventHandler::OnMissionAwardEventHandler(const OnMissionAwardEvent& event_obj)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

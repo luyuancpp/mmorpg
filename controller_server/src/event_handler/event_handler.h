@@ -1,7 +1,7 @@
 #pragma once
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
-class EventReceiver
+class EventHandler
 {
 public:
     static void Register(entt::dispatcher& dispatcher);
