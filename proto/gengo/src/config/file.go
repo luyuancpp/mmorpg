@@ -9,6 +9,8 @@ const ProtoPbcEx = ".pb.cc"
 const ProtoPbhEx = ".pb.h"
 const HeadEx = ".h"
 const CppEx = ".cpp"
+const HeadHandlerEx = "_handler.h"
+const CppHandlerEx = "_handler.cpp"
 const RpcIdName = "MsgId"
 const PlayerName = "player"
 const ClientPlayerName = "client_player"
@@ -66,8 +68,13 @@ var ProtoMd5Dirs []string
 const HandlerDirName = "src/handler/"
 const ServiceIdsFileName = ProtoDir + "serviceid.txt"
 
+const EventHandlerDirName = "src/event_handler/"
+
 const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
 const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
+
+const GsEventHandleDir = ProjectDir + GsName + EventHandlerDirName
+const ControllerEventHandleDir = ProjectDir + ControllerName + EventHandlerDirName
 
 const ClientLuaProjectRelative = "script/lua/service/"
 const ClientLuaDir = ProjectDir + "bin/" + ClientLuaProjectRelative
