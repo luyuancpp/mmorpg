@@ -30,20 +30,22 @@ void OnUnknownMessage(const TcpConnectionPtr&,
 ProtobufDispatcher g_response_dispatcher(std::bind(&OnUnknownMessage,  _1, _2, _3));
 
 RpcChannel::RpcChannel()
-  : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
-    services_(NULL),
-    dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
+	: codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
+	id_(0),
+	services_(NULL),
+	dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
 {
-  LOG_INFO << "RpcChannel::ctor - " << this;
+	LOG_INFO << "RpcChannel::ctor - " << this;
 }
 
 RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
-    : codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
-    conn_(conn),
-    services_(NULL),
-    dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
+	: codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
+	conn_(conn),
+	id_(0),
+	services_(NULL),
+	dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
 {
-    LOG_INFO << "RpcChannel::ctor - " << this;
+	LOG_INFO << "RpcChannel::ctor - " << this;
 }
 
 RpcChannel::~RpcChannel()
