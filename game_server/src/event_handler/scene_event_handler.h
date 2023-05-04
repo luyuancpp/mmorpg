@@ -12,6 +12,7 @@ class SceneEventHandler
 public:
 	static void Register(entt::dispatcher& dispatcher);
 	static void UnRegister(entt::dispatcher& dispatcher);
+
 	static void BeforeEnterSceneHandler(const BeforeEnterScene& message);
 	static void OnEnterSceneHandler(const OnEnterScene& message);
 	static void BeforeLeaveSceneHandler(const BeforeLeaveScene& message);

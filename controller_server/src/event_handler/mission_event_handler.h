@@ -11,6 +11,7 @@ class MissionEventHandler
 public:
 	static void Register(entt::dispatcher& dispatcher);
 	static void UnRegister(entt::dispatcher& dispatcher);
+
 	static void AcceptMissionEventHandler(const AcceptMissionEvent& message);
 	static void MissionConditionEventHandler(const MissionConditionEvent& message);
 	static void OnAcceptedMissionEventHandler(const OnAcceptedMissionEvent& message);
