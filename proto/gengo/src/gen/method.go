@@ -141,7 +141,7 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 	var yourCodes []string
 	isYourCodes := false
 	f, err := os.Open(dst)
-	if err != nil {
+	if err == nil {
 		defer f.Close()
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
@@ -156,10 +156,7 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 				yourCodes[yourCodeIndex] += line
 			}
 		}
-	} else {
-
 	}
-
 	if nil == yourCodes {
 		yourCodes = append(yourCodes, config.YourCodePair)
 		yourCodes = append(yourCodes, config.YourCodePair)
@@ -185,7 +182,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data s
 	var yourCodes []string
 	isYourCodes := false
 	f, err := os.Open(dst)
-	if err != nil {
+	if err == nil {
 		defer f.Close()
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
@@ -200,8 +197,6 @@ func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data s
 				yourCodes[yourCodeIndex] += line
 			}
 		}
-	} else {
-
 	}
 
 	if nil == yourCodes {
