@@ -7,7 +7,7 @@
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/lobby_config.h"
 
-#include "src/handler/event_handler.h"
+#include "src/event_handler/event_handler.h"
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/network/rpc_client.h"

@@ -59,7 +59,7 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 	dataHead += "class " + className + "\n"
 	dataHead += "{\npublic:\n"
 	dataHead += config.Tab + "static void Register(entt::dispatcher& dispatcher);\n"
-	dataHead += config.Tab + "static void UnRegister(entt::dispatcher& dispatcher);\n"
+	dataHead += config.Tab + "static void UnRegister(entt::dispatcher& dispatcher);\n\n"
 	dataHead += handlerFunction
 	dataHead += "};\n"
 
@@ -102,9 +102,9 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 		isEventIndex := j >= 0 && j < len(eventList)
 		if j == 0 {
 			dataCpp += "void " + className + "::Register(entt::dispatcher& dispatcher)\n" +
-				config.Tab + "{\n" + registerFunctionBody + config.Tab + "}\n\n"
+				"{\n" + registerFunctionBody + "}\n\n"
 			dataCpp += "void " + className + "::UnRegister(entt::dispatcher& dispatcher)\n" +
-				config.Tab + "{\n" + unregisterFunctionBody + config.Tab + "}\n\n"
+				"{\n" + unregisterFunctionBody + "}\n\n"
 		}
 		if isEventIndex {
 			dataCpp += "void " + className + "::" + eventList[j] + "Handler(const " + eventList[j] + "& message)\n{\n"

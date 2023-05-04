@@ -45,7 +45,7 @@ void SceneEventHandler::BeforeEnterSceneHandler(const BeforeEnterScene& message)
 void SceneEventHandler::OnEnterSceneHandler(const OnEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity player = entt::to_entity(event_obj.entity());
+    entt::entity player = entt::to_entity(message.entity());
     auto try_player_id = tls.registry.try_get<Guid>(player);
     if (nullptr == try_player_id)
     {
@@ -60,7 +60,7 @@ void SceneEventHandler::OnEnterSceneHandler(const OnEnterScene& message)
 void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity player = entt::to_entity(event_obj.entity());
+    entt::entity player = entt::to_entity(message.entity());
     auto try_player_id = tls.registry.try_get<Guid>(player);
     if (nullptr == try_player_id)
     {
@@ -97,7 +97,7 @@ void SceneEventHandler::OnLeaveSceneHandler(const OnLeaveScene& message)
 void SceneEventHandler::S2CEnterSceneHandler(const S2CEnterScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity player = entt::to_entity(event_obj.entity());
+    entt::entity player = entt::to_entity(message.entity());
     auto try_player_id = tls.registry.try_get<Guid>(player);
     if (nullptr == try_player_id)
     {

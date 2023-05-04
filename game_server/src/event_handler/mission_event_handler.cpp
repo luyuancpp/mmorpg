@@ -23,16 +23,16 @@ void MissionEventHandler::UnRegister(entt::dispatcher& dispatcher)
 void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto entity = entt::to_entity(event_obj.entity());
-    tls.registry.get<MissionsComp>(entity).Accept(event_obj);
+    auto entity = entt::to_entity(message.entity());
+    tls.registry.get<MissionsComp>(entity).Accept(message);
 ///<<< END WRITING YOUR CODE
 }
 
 void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto entity = entt::to_entity(event_obj.entity());
-    tls.registry.get<MissionsComp>(entity).Receive(event_obj);
+    auto entity = entt::to_entity(message.entity());
+    tls.registry.get<MissionsComp>(entity).Receive(message);
 ///<<< END WRITING YOUR CODE
 }
 
