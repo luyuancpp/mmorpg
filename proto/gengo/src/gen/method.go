@@ -1,10 +1,8 @@
 package gen
 
 import (
-	"bufio"
 	"gengo/config"
 	"gengo/util"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -136,26 +134,8 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"\n\n"
 
-	var line string
-	yourCodeIndex := 0
-	var yourCodes []string
-	f, err := os.Open(dst)
-	if err == nil {
-		defer f.Close()
-		scanner := bufio.NewScanner(f)
-		for scanner.Scan() {
-			line = scanner.Text() + "\n"
-			if strings.Contains(line, config.YourCodeBegin) {
-				yourCodes = append(yourCodes, line)
-			} else if strings.Contains(line, config.YourCodeEnd) {
-				yourCodes[yourCodeIndex] += line
-				yourCodeIndex += 1
-			} else if yourCodeIndex < len(yourCodes) {
-				yourCodes[yourCodeIndex] += line
-			}
-		}
-	}
-	if nil == yourCodes {
+	yourCodes, err := util.GetDstCodeData(dst)
+	if nil != err {
 		yourCodes = append(yourCodes, config.YourCodePair)
 		yourCodes = append(yourCodes, config.YourCodePair)
 	}
@@ -175,27 +155,8 @@ func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data s
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"\n"
 
-	var line string
-	yourCodeIndex := 0
-	var yourCodes []string
-	f, err := os.Open(dst)
-	if err == nil {
-		defer f.Close()
-		scanner := bufio.NewScanner(f)
-		for scanner.Scan() {
-			line = scanner.Text() + "\n"
-			if strings.Contains(line, config.YourCodeBegin) {
-				yourCodes = append(yourCodes, line)
-			} else if strings.Contains(line, config.YourCodeEnd) {
-				yourCodes[yourCodeIndex] += line
-				yourCodeIndex += 1
-			} else if yourCodeIndex < len(yourCodes) {
-				yourCodes[yourCodeIndex] += line
-			}
-		}
-	}
-
-	if nil == yourCodes {
+	yourCodes, err := util.GetDstCodeData(dst)
+	if nil != err {
 		yourCodes = append(yourCodes, config.YourCodePair)
 		yourCodes = append(yourCodes, config.YourCodePair)
 	}
