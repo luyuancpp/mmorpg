@@ -8,8 +8,22 @@ class OnMissionAwardEvent;
 
 class MissionEventHandler
 {
-	static void Register(entt::dispatcher& dispatcher);
-	static void UnRegister(entt::dispatcher& dispatcher);
+public:
+	static void Register(entt::dispatcher& dispatcher)
+	{
+		dispatcher.sink<AcceptMissionEvent>().connect<&MissionEventHandler::AcceptMissionEventHandler>();
+		dispatcher.sink<MissionConditionEvent>().connect<&MissionEventHandler::MissionConditionEventHandler>();
+		dispatcher.sink<OnAcceptedMissionEvent>().connect<&MissionEventHandler::OnAcceptedMissionEventHandler>();
+		dispatcher.sink<OnMissionAwardEvent>().connect<&MissionEventHandler::OnMissionAwardEventHandler>();
+	}
+
+	static void UnRegister(entt::dispatcher& dispatcher)
+	{
+		dispatcher.sink<AcceptMissionEvent>().disconnect<&MissionEventHandler::AcceptMissionEventHandler>();
+		dispatcher.sink<MissionConditionEvent>().disconnect<&MissionEventHandler::MissionConditionEventHandler>();
+		dispatcher.sink<OnAcceptedMissionEvent>().disconnect<&MissionEventHandler::OnAcceptedMissionEventHandler>();
+		dispatcher.sink<OnMissionAwardEvent>().disconnect<&MissionEventHandler::OnMissionAwardEventHandler>();
+	}
 
 	static void AcceptMissionEventHandler(const AcceptMissionEvent& message);
 	static void MissionConditionEventHandler(const MissionConditionEvent& message);
