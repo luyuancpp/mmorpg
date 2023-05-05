@@ -6,13 +6,14 @@ funsname = []
 msg = 'message'
 begin = '{'
 end = '}'
+maptype = 'map'
 srcdir = './md5/sol2/'
 destdir = '../common/src/pb/pbc/pb2sol2/'
 setname = '::set_'
 mutablename = '::mutable_'
 genprotodir = ['./logic_proto/', './component_proto/', ]
 enum = {}
-maptype = 'map'
+
 
 if not os.path.exists(destdir):
     os.makedirs(destdir)    
