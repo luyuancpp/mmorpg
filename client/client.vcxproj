@@ -156,18 +156,18 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\client.cpp" />
     <ClCompile Include="src\luacpp\lua_module.cpp" />
-    <ClCompile Include="src\service\logic_proto\player_service.cpp" />
-    <ClCompile Include="src\service\logic_proto\service_lua.cpp" />
-    <ClCompile Include="src\service\service.cpp" />
+    <ClCompile Include="src\handler\player_service.cpp" />
+    <ClCompile Include="src\handler\service_lua.cpp" />
+    <ClCompile Include="src\handler\service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client.h" />
     <ClInclude Include="src\luacpp\lua_module.h" />
-    <ClInclude Include="src\service\logic_proto\common_client_player.h" />
-    <ClInclude Include="src\service\logic_proto\player_service.h" />
-    <ClInclude Include="src\service\logic_proto\scene_client_player.h" />
-    <ClInclude Include="src\service\logic_proto\team_client_player.h" />
-    <ClInclude Include="src\service\service.h" />
+    <ClInclude Include="src\handler\common_client_player.h" />
+    <ClInclude Include="src\handler\player_service.h" />
+    <ClInclude Include="src\handler\scene_client_player.h" />
+    <ClInclude Include="src\handler\team_client_player.h" />
+    <ClInclude Include="src\handler\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

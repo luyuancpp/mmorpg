@@ -43,26 +43,27 @@ func WriteLoadClientLuaFile() {
 }
 
 func getClientMethodHandlerHeadStr(methodList RpcMethodInfos) string {
-	var data = "#pragma once\n" + config.IncludeBegin + "<sol/sol.hpp>" + config.ProtoPbhIncludeEndLine
+	var data = "#pragma once\n" + "#include <sol/sol.hpp>\n"
 	data += config.IncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine
 	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
-	data += "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n" +
-		"::google::protobuf::RpcController* controller,\n" +
-		"const ::google::protobuf::Message* request,\n" +
-		"::google::protobuf::Message* response,\n" +
-		"::google::protobuf::Closure* done)override\n" +
+	data += config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n" +
+		config.Tab + "::google::protobuf::RpcController* controller,\n" +
+		config.Tab + "const ::google::protobuf::Message* request,\n" +
+		config.Tab + "::google::protobuf::Message* response,\n" +
+		config.Tab + "::google::protobuf::Closure* done)override\n" +
 		config.Tab + "{\n" + config.Tab2 + " switch(method->index())\n" +
 		config.Tab2 + "{\n"
 	for i := 0; i < len(methodList); i++ {
-		data += config.Tab3 + "case " + strconv.Itoa(i) + ":\n" + config.Tab2 + "{\n" +
-			config.Tab3 + "tls_lua_state[\"" + methodList[i].Method + "\"](\n" +
-			config.Tab3 + "::google::protobuf::internal::DownCast<const ::" + methodList[i].Request + "*>( request),\n" +
-			config.Tab3 + "::google::protobuf::internal::DownCast<::" + methodList[i].Response + "*>(response));\n" +
-			config.Tab2 + "}\n" + config.Tab2 + "break;\n"
+		data += config.Tab3 + "case " + strconv.Itoa(i) + ":\n" + config.Tab3 + "{\n" +
+			config.Tab4 + "tls_lua_state[\"" + methodList[i].Method + "\"](\n" +
+			config.Tab4 + "::google::protobuf::internal::DownCast<const ::" + methodList[i].Request + "*>( request),\n" +
+			config.Tab4 + "::google::protobuf::internal::DownCast<::" + methodList[i].Response + "*>(response));\n" +
+			config.Tab3 + "}\n" +
+			config.Tab3 + "break;\n"
 	}
-	data += config.Tab2 + "default:\n" +
-		config.Tab3 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";" +
-		config.Tab2 + "break;\n" + config.Tab2 + "};\n" + config.Tab + "};\n" + "};\n"
+	data += config.Tab3 + "default:\n" +
+		config.Tab4 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\"\n;" +
+		config.Tab3 + "break;\n" + config.Tab2 + "};\n" + config.Tab + "};\n" + "};\n"
 	return data
 }
 
