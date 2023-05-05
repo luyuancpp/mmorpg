@@ -24,6 +24,7 @@ const Tab2 = Tab + Tab
 const Tab3 = Tab + Tab + Tab
 const GsName = "game_server/"
 const ControllerName = "controller_server/"
+const ClientName = "client"
 const PlayerServiceIncludeName = "#include \"player_service.h\""
 const HandlerName = "Handler"
 const YourCodeBegin = "///<<< BEGIN WRITING YOUR CODE"
@@ -75,6 +76,7 @@ const EventHandlerFileNameHead = EventHandlerFileName + HeadEx
 const EventHandlerFileNameCpp = EventHandlerFileName + CppEx
 const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
 const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
+const ClientMethodHandleDir = ProjectDir + ClientName + HandlerDirName
 
 const GsEventHandleDir = ProjectDir + GsName + EventHandlerDirName
 const ControllerEventHandleDir = ProjectDir + ControllerName + EventHandlerDirName

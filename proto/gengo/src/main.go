@@ -71,7 +71,7 @@ func main() {
 	gen.ReadServiceIdFile()
 	gen.ReadAllProtoFileServices()
 	gen.BuildAllProtoc()
-	gen.LoadClientLua()
+	gen.WriteLoadClientLuaFile()
 	gen.WriteEventHandlerFile()
 	util.Wg.Wait()
 	//所有文件的proto读完以后
@@ -81,5 +81,6 @@ func main() {
 	util.Wg.Wait()
 	//所有service初始化完以后
 	gen.WriteServiceHandlerFile()
+	gen.WriteClientServiceHeadHandlerFile()
 	util.Wg.Wait()
 }

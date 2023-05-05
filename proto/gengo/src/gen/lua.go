@@ -4,9 +4,11 @@ import (
 	"gengo/config"
 	"gengo/util"
 	"os"
+	"strconv"
+	"strings"
 )
 
-func LoadClientLua() {
+func WriteLoadClientLuaFile() {
 	util.Wg.Add(1)
 	go func() {
 		defer util.Wg.Done()
@@ -38,5 +40,47 @@ func LoadClientLua() {
 		data += "\n}\n"
 		Md5WriteData2File(config.ClientLuaServiceFile, data)
 	}()
+}
 
+func getClientMethodHandlerHeadStr(methodList RpcMethodInfos) string {
+	var data = "#pragma once\n" + config.IncludeBegin + "<sol/sol.hpp>" + config.ProtoPbhIncludeEndLine
+	data += config.IncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine
+	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
+	data += "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n" +
+		"::google::protobuf::RpcController* controller,\n" +
+		"const ::google::protobuf::Message* request,\n" +
+		"::google::protobuf::Message* response,\n" +
+		"::google::protobuf::Closure* done)override\n" +
+		config.Tab + "{\n" + config.Tab2 + " switch(method->index())\n" +
+		config.Tab2 + "{\n"
+	for i := 0; i < len(methodList); i++ {
+		data += config.Tab3 + "case " + strconv.Itoa(i) + ":\n" + config.Tab2 + "{\n" +
+			config.Tab3 + "tls_lua_state[\"" + methodList[i].Method + "\"](\n" +
+			config.Tab3 + "::google::protobuf::internal::DownCast<const ::" + methodList[i].Request + "*>( request),\n" +
+			config.Tab3 + "::google::protobuf::internal::DownCast<::" + methodList[i].Response + "*>(response));\n" +
+			config.Tab2 + "}\n" + config.Tab2 + "break;\n"
+	}
+	data += config.Tab2 + "default:\n" +
+		config.Tab3 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";" +
+		config.Tab2 + "break;\n" + config.Tab2 + "};\n" + config.Tab + "};\n" + "};\n"
+	return data
+}
+
+func writeClientMethodHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+		return
+	}
+	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+	Md5WriteData2File(config.ClientMethodHandleDir+fileName, getClientMethodHandlerHeadStr(methodList))
+}
+
+func WriteClientServiceHeadHandlerFile() {
+	for _, v := range ServiceMethodMap {
+		util.Wg.Add(1)
+		go writeClientMethodHandlerHeadFile(v)
+	}
 }
