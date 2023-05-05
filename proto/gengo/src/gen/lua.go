@@ -291,20 +291,44 @@ func writeProtoSol2LuaFile(fd os.DirEntry, filePath string) {
 }
 
 func writeAllProtoSol2LuaFile() {
-	for i := 0; i < len(config.ProtoDirs); i++ {
-		fds, err := os.ReadDir(config.ProtoDirs[i])
-		if err != nil {
-			log.Fatal(err)
-			continue
-		}
-		for _, fd := range fds {
-			if !util.IsProtoFile(fd) {
+	util.Wg.Add(1)
+	go func() {
+		defer util.Wg.Done()
+		data := "#include <google/protobuf/message.h>\n" +
+			"#include <sol/sol.hpp>\n" +
+			"#include \"src/game_logic/thread_local/thread_local_storage_lua.h\"\n\n"
+		declarationData := ""
+		callData := ""
+
+		for i := 0; i < len(config.ProtoDirs); i++ {
+			fds, err := os.ReadDir(config.ProtoDirs[i])
+			if err != nil {
+				log.Fatal(err)
 				continue
 			}
-			util.Wg.Add(1)
-			writeProtoSol2LuaFile(fd, config.ProtoDirs[i])
+			for _, fd := range fds {
+				if !util.IsProtoFile(fd) {
+					continue
+				}
+				util.Wg.Add(1)
+				writeProtoSol2LuaFile(fd, config.ProtoDirs[i])
+				if strings.Contains(fd.Name(), "mysql") {
+					continue
+				}
+				fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), config.ProtoEx, "")))
+				declarationData += "void Pb2sol2" + fileBaseName + "();\n"
+				callData += "Pb2sol2" + fileBaseName + "();\n"
+			}
+
 		}
-	}
+		data += declarationData + "\n"
+		data += "void pb2sol2()\n{\n"
+		data += "tls_lua_state.new_usertype<::google::protobuf::Message>(\"Message\");\n"
+		data += callData + "\n"
+		data += "}\n"
+		Md5WriteData2File(config.PbcLuaDirName+"pb"+config.CppSol2Ex, data)
+	}()
+
 }
 
 func writeLuaServiceFile() {
