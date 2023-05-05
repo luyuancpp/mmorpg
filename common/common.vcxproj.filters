@@ -157,6 +157,7 @@
     <ClCompile Include="src\pb\pbc\lua\team_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\team_server_player_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\team_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\pb_sol2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />

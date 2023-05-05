@@ -194,6 +194,7 @@
     <ClCompile Include="src\pb\pbc\lua\mission_event_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\node_common_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\node_comp_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\pb_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\player_async_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\player_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\player_login_comp_sol2.cpp" />
