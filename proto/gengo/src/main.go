@@ -40,6 +40,7 @@ func MakeProjectMd5Dir(src string, dst string) error {
 
 func MakeProjectDir() {
 	os.MkdirAll(config.PbcOutDir, os.FileMode(0777))
+	os.MkdirAll(config.PbcLuaDirName, os.FileMode(0777))
 }
 
 func MakeMd5Dir() {
@@ -73,6 +74,7 @@ func main() {
 	gen.BuildAllProtoc()
 	gen.WriteLoadClientLuaFile()
 	gen.WriteEventHandlerFile()
+	gen.WritePbcLua()
 	util.Wg.Wait()
 	//所有文件的proto读完以后
 	gen.InitServiceId()

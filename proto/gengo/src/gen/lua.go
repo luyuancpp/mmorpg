@@ -102,6 +102,27 @@ func writeClientHandlerDefaultInstanceFile() {
 	Md5WriteData2File(config.ClientServiceInstanceFile, data)
 }
 
+func writeProtoSol2LuaFile(protoPath string) {
+
+}
+
+func writeAllProtoSol2LuaFile() {
+	for i := 0; i < len(config.ProtoDirs); i++ {
+		util.Wg.Add(1)
+		writeProtoSol2LuaFile(config.ProtoDirs[i])
+	}
+}
+
+func writeLuaServiceFile() {
+	for i := 0; i < len(config.ProtoDirs); i++ {
+		//BuildProto(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+	}
+}
+
+func WritePbcLua() {
+	writeAllProtoSol2LuaFile()
+}
+
 func WriteClientServiceHeadHandlerFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
