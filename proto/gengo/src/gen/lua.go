@@ -107,7 +107,7 @@ func writeClientHandlerDefaultInstanceFile() {
 		if !strings.Contains(method1Info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
 			continue
 		}
-		includeData += method1Info.IncludeName()
+		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
 		instanceData += config.Tab + "g_player_services.emplace(\"" + method1Info.Service +
 			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">());\n"
 	}
