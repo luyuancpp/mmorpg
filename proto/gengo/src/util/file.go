@@ -33,6 +33,11 @@ func IsLuaFile(fd os.DirEntry) bool {
 	return true
 }
 
+func IncludeName(path string, protoName string) (includeName string) {
+	pbcHeadName := strings.Replace(protoName, config.ProtoEx, config.ProtoPbhEx, 1)
+	return config.IncludeBegin + strings.Replace(path, config.ProtoDir, "", 1) + pbcHeadName + "\"\n"
+}
+
 func Copy(dst string, src string) (written int64, err error) {
 	sourceFileStat, err := os.Stat(src)
 	if err != nil {
