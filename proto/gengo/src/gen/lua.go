@@ -43,8 +43,9 @@ func WriteLoadClientLuaFile() {
 }
 
 func getClientMethodHandlerHeadStr(methodList RpcMethodInfos) string {
-	var data = "#pragma once\n" + "#include <sol/sol.hpp>\n"
-	data += methodList[0].IncludeName()
+	var data = "#pragma once\n" + "#include <sol/sol.hpp>\n" +
+		"#include \"src/game_logic/thread_local/thread_local_storage_lua.h\"\n"
+	data += methodList[0].IncludeName() + "\n"
 	data += "class " + methodList[0].Service + config.HandlerName + " : public ::" + methodList[0].Service + "\n{\npublic:\n"
 	data += config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n" +
 		config.Tab + "::google::protobuf::RpcController* controller,\n" +
@@ -94,7 +95,7 @@ func writeClientHandlerDefaultInstanceFile() {
 			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">());\n"
 	}
 	data += includeData
-	data += "std::unordered_map<std::string, std::unique_ptr<Service>> g_player_services;\n"
+	data += "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_player_services;\n"
 	data += "void InitPlayerService()\n{\n"
 	data += instanceData
 	data += "}"

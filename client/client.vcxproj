@@ -162,11 +162,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client.h" />
+    <ClInclude Include="src\handler\common_client_player_handler.h" />
+    <ClInclude Include="src\handler\scene_client_player_handler.h" />
+    <ClInclude Include="src\handler\team_client_player_handler.h" />
     <ClInclude Include="src\luacpp\lua_module.h" />
-    <ClInclude Include="src\handler\common_client_player.h" />
     <ClInclude Include="src\handler\player_service.h" />
-    <ClInclude Include="src\handler\scene_client_player.h" />
-    <ClInclude Include="src\handler\team_client_player.h" />
     <ClInclude Include="src\handler\service.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
