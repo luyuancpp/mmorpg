@@ -45,7 +45,7 @@ func writeMethodCppFile(methodList RpcMethodInfos) {
 func getMethodHandlerHeadStr(methodList RpcMethodInfos) string {
 
 	var data = "#pragma once\n"
-	data += config.IncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine
+	data += methodList[0].IncludeName()
 	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
 	for i := 0; i < len(methodList); i++ {
 		data += config.Tab + "void " + methodList[i].Method + config.GoogleMethodController + "\n" +

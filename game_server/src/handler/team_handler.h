@@ -1,5 +1,5 @@
 #pragma once
-#include "team.pb.h"
+#include "logic_proto/team.pb.h"
 class TeamServiceHandler : public ::TeamService
 {
 public:

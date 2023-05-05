@@ -1,5 +1,5 @@
 #pragma once
-#include "lobby_scene.pb.h"
+#include "logic_proto/lobby_scene.pb.h"
 class LobbyServiceHandler : public ::LobbyService
 {
 public:

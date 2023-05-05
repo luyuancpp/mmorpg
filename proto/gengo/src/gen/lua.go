@@ -44,8 +44,8 @@ func WriteLoadClientLuaFile() {
 
 func getClientMethodHandlerHeadStr(methodList RpcMethodInfos) string {
 	var data = "#pragma once\n" + "#include <sol/sol.hpp>\n"
-	data += config.IncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine
-	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
+	data += methodList[0].IncludeName()
+	data += "class " + methodList[0].Service + config.HandlerName + " : public ::" + methodList[0].Service + "\n{\npublic:\n"
 	data += config.Tab + "void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n" +
 		config.Tab + "::google::protobuf::RpcController* controller,\n" +
 		config.Tab + "const ::google::protobuf::Message* request,\n" +
@@ -79,9 +79,33 @@ func writeClientMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(config.ClientMethodHandleDir+fileName, getClientMethodHandlerHeadStr(methodList))
 }
 
+func writeClientHandlerDefaultInstanceFile() {
+	defer util.Wg.Done()
+	data := ""
+	includeData := ""
+	instanceData := ""
+	for _, v := range ServiceMethodMap {
+		method1Info := v[0]
+		if !strings.Contains(method1Info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+			continue
+		}
+		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
+		instanceData += config.Tab + "g_player_services.emplace(\"" + method1Info.Service +
+			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">());\n"
+	}
+	data += includeData
+	data += "std::unordered_map<std::string, std::unique_ptr<Service>> g_player_services;\n"
+	data += "void InitPlayerService()\n{\n"
+	data += instanceData
+	data += "}"
+	Md5WriteData2File(config.ClientServiceInstanceFile, data)
+}
+
 func WriteClientServiceHeadHandlerFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
 		go writeClientMethodHandlerHeadFile(v)
 	}
+	util.Wg.Add(1)
+	go writeClientHandlerDefaultInstanceFile()
 }
