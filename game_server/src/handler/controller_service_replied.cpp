@@ -4,7 +4,7 @@
 
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/scene/scene.h"
-#include "src/pb/pbc/service_method/lobby_scenemethod.h"
+#include "src/pb/pbc/lobby_scene_service.h"
 #include "src/system/gs_scene_system.h"
 #include "src/game_config/deploy_json.h"
 #include "src/game_server.h"
@@ -24,7 +24,7 @@ void StartGsControllerReplied(const TcpConnectionPtr& conn, const StartGsRespons
     else if (GameConfig::GetSingleton().server_type() == kMainSceneCrossServer)
     {
         GameConnectToControllerRequest rq;
-        g_game_node->lobby_node()->CallMethod(LobbyServiceGameConnectToController, &rq);
+        g_game_node->lobby_node()->CallMethod(LobbyServiceGameConnectToControllerMethod, &rq);
     }
 }
 

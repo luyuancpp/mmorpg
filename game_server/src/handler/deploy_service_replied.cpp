@@ -2,7 +2,7 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/game_server.h"
-#include "src/pb/pbc/service_method/deploy_servicemethod.h"
+#include "src/pb/pbc/deploy_service_service.h"
 
 void OnServerInfoReplied(const TcpConnectionPtr& conn, const ServerInfoResponsePtr& replied, Timestamp timestamp)
 {

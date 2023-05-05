@@ -7,8 +7,8 @@
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
 #include "src/pb/pbc/service.h"
-#include "src/pb/pbc/service_method/controller_servicemethod.h"
-#include "src/pb/pbc/service_method/gate_servicemethod.h"
+#include "src/pb/pbc/controller_service_service.h"
+#include "src/pb/pbc/gate_service_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "gate_service.pb.h"
@@ -54,7 +54,7 @@ void Send2Player(uint32_t service_method_id, const google::protobuf::Message& me
 	message_wrapper.mutable_msg()->set_service_method_id(service_method_id);
 	message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
 	message_wrapper.mutable_ex()->set_session_id(tls.registry.get<GateSession>(player).session_id());
-	gate->session_.Send(GateServicePlayerMessage, message_wrapper);
+	gate->session_.Send(GateServicePlayerMessageMethod, message_wrapper);
 }
 
 void Send2Player(uint32_t service_method_id, const google::protobuf::Message& msg, EntityPtr& player)
@@ -100,7 +100,7 @@ void Send2ControllerPlayer(uint32_t service_method_id, const google::protobuf::M
 	msg_wrapper.mutable_msg()->set_service_method_id(service_method_id);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
-	controller_node->session_->Send(ControllerServiceGsPlayerService, msg_wrapper);
+	controller_node->session_->Send(ControllerServiceGsPlayerServiceMethod, msg_wrapper);
 }
 
 void Send2ControllerPlayer(uint32_t service_method_id, const google::protobuf::Message& message, EntityPtr& player)
@@ -128,6 +128,6 @@ void Send2Gate(uint32_t service_method_id, const google::protobuf::Message& mess
 		return;
 	}
 	auto& gate_node = tls.registry.get<GateNodePtr>(gate_it->second);
-	gate_node->session_.Send(GateServicePlayerMessage, messag);
+	gate_node->session_.Send(GateServicePlayerMessageMethod, messag);
 }
 

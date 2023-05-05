@@ -16,12 +16,12 @@ class ClientPlayerTeamServiceImpl : public ClientPlayerTeamService{};
 class ServerPlayerLoginServiceImpl : public ServerPlayerLoginService{};
 class ServerPlayerSceneServiceImpl : public ServerPlayerSceneService{};
 class ServerPlayerTeamServiceImpl : public ServerPlayerTeamService{};
-void InitPlayerService()
+void InitPlayerServiceReplied()
 {
-	g_player_services.emplace("ClientPlayerCommonService", std::make_unique<ClientPlayerCommonServiceHandler>(new ClientPlayerCommonServiceImpl));
-	g_player_services.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceHandler>(new ClientPlayerSceneServiceImpl));
-	g_player_services.emplace("ClientPlayerTeamService", std::make_unique<ClientPlayerTeamServiceHandler>(new ClientPlayerTeamServiceImpl));
-	g_player_services.emplace("ServerPlayerLoginService", std::make_unique<ServerPlayerLoginServiceHandler>(new ServerPlayerLoginServiceImpl));
-	g_player_services.emplace("ServerPlayerSceneService", std::make_unique<ServerPlayerSceneServiceHandler>(new ServerPlayerSceneServiceImpl));
-	g_player_services.emplace("ServerPlayerTeamService", std::make_unique<ServerPlayerTeamServiceHandler>(new ServerPlayerTeamServiceImpl));
+	g_player_service_replieds.emplace("ClientPlayerCommonService", std::make_unique<ClientPlayerCommonServiceRepliedHandler>(new ClientPlayerCommonServiceImpl));
+	g_player_service_replieds.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceRepliedHandler>(new ClientPlayerSceneServiceImpl));
+	g_player_service_replieds.emplace("ClientPlayerTeamService", std::make_unique<ClientPlayerTeamServiceRepliedHandler>(new ClientPlayerTeamServiceImpl));
+	g_player_service_replieds.emplace("ServerPlayerLoginService", std::make_unique<ServerPlayerLoginServiceRepliedHandler>(new ServerPlayerLoginServiceImpl));
+	g_player_service_replieds.emplace("ServerPlayerSceneService", std::make_unique<ServerPlayerSceneServiceRepliedHandler>(new ServerPlayerSceneServiceImpl));
+	g_player_service_replieds.emplace("ServerPlayerTeamService", std::make_unique<ServerPlayerTeamServiceRepliedHandler>(new ServerPlayerTeamServiceImpl));
 }
