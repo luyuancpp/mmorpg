@@ -44,9 +44,6 @@
     <ClInclude Include="src\luacpp\lua_module.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\player_service.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\handler\common_client_player_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>

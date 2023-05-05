@@ -13,7 +13,7 @@
 
 #include "src/network/codec/dispatcher.h"
 #include "src/network/codec/codec.h"
-#include "src/service/service.h"
+#include "src/handler/service.h"
 
 #include "c2gate.pb.h"
 

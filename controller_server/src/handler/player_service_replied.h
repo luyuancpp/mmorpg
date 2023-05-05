@@ -23,7 +23,7 @@ private:
     std::unique_ptr<::google::protobuf::Service> pb_service_;
 };
 
-void InitPlayerServcieReplied();
+void InitPlayerServiceReplied();
 
 extern std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replieds;
 

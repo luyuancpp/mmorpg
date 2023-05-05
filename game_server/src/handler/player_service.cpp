@@ -20,7 +20,7 @@ class ClientPlayerSceneServiceOpenImpl : public ClientPlayerSceneService{};
 class ServerPlayerSceneServiceOpenImpl : public ServerPlayerSceneService{};
 class ClientPlayerTeamServiceOpenImpl : public ClientPlayerTeamService{};
 class ServerPlayerTeamServiceOpenImpl : public ServerPlayerTeamService{};
-void InitPlayerServcie()
+void InitPlayerService()
 {
     g_player_services.emplace("ClientPlayerCommonService", std::make_unique<ClientPlayerCommonServiceHandler>(new ClientPlayerCommonServiceOpenImpl));
     g_player_services.emplace("ServerPlayerLoginService", std::make_unique<ServerPlayerLoginServiceHandler>(new ServerPlayerLoginServiceOpenImpl));

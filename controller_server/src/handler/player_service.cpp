@@ -11,7 +11,7 @@ std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service
 class ServerPlayerLoginServiceOpenImpl : public ServerPlayerLoginService{};
 class ServerPlayerSceneServiceOpenImpl : public ServerPlayerSceneService{};
 class ServerPlayerTeamServiceOpenImpl : public ServerPlayerTeamService{};
-void InitPlayerServcie()
+void InitPlayerService()
 {
     g_player_services.emplace("ServerPlayerLoginService", std::make_unique<ServerPlayerLoginServiceHandler>(new ServerPlayerLoginServiceOpenImpl));
     g_player_services.emplace("ServerPlayerSceneService", std::make_unique<ServerPlayerSceneServiceHandler>(new ServerPlayerSceneServiceOpenImpl));

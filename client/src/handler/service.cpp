@@ -4,8 +4,9 @@
 #include "muduo/base/Logging.h"
 
 #include "src/luacpp/lua_module.h"
-#include "src/pb/pbc/serviceid/service_method_id.h"
-#include "src/service/logic_proto/player_service.h"
+#include "src/pb/pbc/service.h"
+
+extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_player_services;
 
 ClientService::ClientService(ProtobufDispatcher& dispatcher,
                              ProtobufCodec& codec, 
@@ -90,13 +91,13 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
         LOG_ERROR << "service not found " << servcie_method_info.service;
         return;
     }
-    const google::protobuf::ServiceDescriptor* desc = sit->second->service()->GetDescriptor();
+    const google::protobuf::ServiceDescriptor* desc = sit->second->GetDescriptor();
     const google::protobuf::MethodDescriptor* method
         = desc->FindMethodByName(servcie_method_info.method);
     MessagePtr response(codec_.createMessage(servcie_method_info.response));
     response->ParseFromString(message->body());
     AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
-    g_player_services[servcie_method_info.service]->CallMethod(method, nullptr, response.get());
+    g_player_services[servcie_method_info.service]->CallMethod(method, nullptr, nullptr, response.get(), nullptr);
 }
 
 void ClientService::EnterGs(Guid guid)
