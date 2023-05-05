@@ -41,7 +41,6 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 			eventMessage = strings.Replace(eventMessage, "\n", "", -1)
 			eventList = append(eventList, eventMessage)
 		}
-
 	}
 
 	dataHead := "#pragma once\n" + "#include \"src/game_logic/thread_local/thread_local_storage.h\"\n\n"
@@ -78,12 +77,7 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 		config.IncludeBegin + config.ProtoDirNames[config.EventProtoDirIndex] +
 		strings.Replace(baseName, config.ProtoEx, config.ProtoPbhEx, -1) + config.IncludeEndLine
 
-	yourCodes, err := util.GetDstCodeData(cppFileName)
-	if err != nil {
-		for i := 0; i < len(eventList)+1; i++ {
-			yourCodes = append(yourCodes, config.YourCodePair)
-		}
-	}
+	yourCodes, _ := util.GetDstCodeData(cppFileName, len(eventList)+1)
 
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
