@@ -1,13 +1,9 @@
-#include "event_handler.h"
-#include "mission_event.proto.h"
-#include "scene_event.proto.h"
-void EventHandler::Register(entt::dispatcher& dispatcher)
+#pragma once
+#include "src/game_logic/thread_local/thread_local_storage.h"
+
+class EventHandler
 {
-MissionEventHandler::Register(dispatcher);
-SceneEventHandler::Register(dispatcher);
-}
-void EventHandler::UnRegister(entt::dispatcher& dispatcher)
-{
-MissionEventHandler::UnRegister(dispatcher);
-SceneEventHandler::UnRegister(dispatcher);
-}
+public:
+static void Register(entt::dispatcher& dispatcher);
+static void UnRegister(entt::dispatcher& dispatcher);
+};
