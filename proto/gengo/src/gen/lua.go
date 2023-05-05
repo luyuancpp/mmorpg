@@ -97,12 +97,17 @@ func writeClientHandlerDefaultInstanceFile() {
 	data := ""
 	includeData := ""
 	instanceData := ""
-	for _, v := range ServiceMethodMap {
-		method1Info := v[0]
+
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok {
+			continue
+		}
+		method1Info := methodList[0]
 		if !strings.Contains(method1Info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
 			continue
 		}
-		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
+		includeData += method1Info.IncludeName()
 		instanceData += config.Tab + "g_player_services.emplace(\"" + method1Info.Service +
 			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">());\n"
 	}
