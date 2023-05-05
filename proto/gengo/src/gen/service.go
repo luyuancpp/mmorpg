@@ -375,14 +375,14 @@ func writePlayerServiceRepliedInstanceFile() {
 		className := method1Info.Service + "Impl"
 		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
-		instanceData += config.Tab + "g_player_services.emplace(\"" + method1Info.Service +
-			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">(new " +
+		instanceData += config.Tab + "g_player_service_replieds.emplace(\"" + method1Info.Service +
+			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerName + ">(new " +
 			className + "));\n"
 	}
 	data += includeData
 	data += "std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replieds;\n\n"
 	data += classData
-	data += "void InitPlayerService()\n{\n"
+	data += "void InitPlayerServiceReplied()\n{\n"
 	data += instanceData
 	data += "}"
 	Md5WriteData2File(config.GsMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)

@@ -6,8 +6,8 @@
 #include "src/network/message_system.h"
 #include "src/network/controller_node.h"
 #include "src/network/session.h"
-#include "src/pb/pbc/service_method/controller_servicemethod.h"
-#include "src/pb/pbc/serviceid/serverplayersceneservice_service_method_id.h"
+#include "src/pb/pbc/controller_service_service.h"
+#include "src/pb/pbc/scene_server_player_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_async_comp.pb.h"
@@ -15,7 +15,7 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 #include "controller_service.pb.h"
-#include "logic_proto/scene_server_player.pb.h"
+#include "server_player_proto/scene_server_player.pb.h"
 
 
 
@@ -50,7 +50,7 @@ void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& me
 {
 	//告诉controller 保存完毕，可以切换场景了
 	Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
-	Send2ControllerPlayer(ServerPlayerSceneService_Id_Gs2ControllerLeaveSceneAsyncSavePlayerComplete, save_complete_message, player_id);
+	Send2ControllerPlayer(ServerPlayerSceneServiceGs2ControllerLeaveSceneAsyncSavePlayerCompleteMsgId, save_complete_message, player_id);
 
 	game_tls.player_list().erase(player_id);//存储完毕从gs删除玩家
 }
@@ -79,7 +79,7 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 	EnterGsSucceedRequest rq;
 	rq.set_player_id(tls.registry.get<Guid>(player));
 	rq.set_game_node_id(node_id());
-	controller_it->second->session_->CallMethod(ControllerServiceEnterGsSucceed, &rq);
+	controller_it->second->session_->CallMethod(ControllerServiceEnterGsSucceedMethod, &rq);
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 }
 

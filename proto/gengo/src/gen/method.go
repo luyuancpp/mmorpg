@@ -19,7 +19,7 @@ func writeMethodHeadFile(methodList RpcMethodInfos) {
 		data += "extern const uint32_t " + methodList[i].KeyName() + config.RpcIdName + ";\n"
 		data += "extern const uint32_t " + methodList[i].KeyName() + "Index;\n"
 		data += "#define " + methodList[i].KeyName() + "Method  ::" + methodList[i].Service + "_Stub::descriptor()->method(" +
-			strconv.FormatUint(methodList[i].Index, 10) + ");\n"
+			strconv.FormatUint(methodList[i].Index, 10) + ")\n"
 		data += "\n"
 	}
 	fileName := methodList[0].FileBaseName() + "_service" + config.HeadEx
