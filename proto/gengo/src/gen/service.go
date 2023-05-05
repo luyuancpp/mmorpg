@@ -271,8 +271,10 @@ func writeServiceHandlerFile() {
 	var includeData = "#include <unordered_map>\n"
 	includeData += "#include \"service.h\"\n"
 	var classHandlerData = ""
-	var initFuncData = "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n"
-	initFuncData += "std::unordered_map<uint32_t, RpcService> g_service_method_info;\n\n"
+	var initFuncData = "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n" +
+		"std::unordered_set<uint32_t> g_c2s_service_id;\n" +
+		"std::unordered_map<uint32_t, RpcService> g_service_method_info;\n\n"
+
 	initFuncData += "void InitService()\n{\n"
 	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
@@ -297,6 +299,9 @@ func writeServiceHandlerFile() {
 				"\"" + rpcMethodInfo.Method + "\"," +
 				"\"" + rpcMethodInfo.Request + "\"," +
 				"\"" + rpcMethodInfo.Response + "\"};\n"
+			if strings.Contains(rpcId, config.C2SMethodContainsName) {
+				initFuncData += "g_c2s_service_id.emplace(" + rpcId + ");\n"
+			}
 		}
 		initFuncData += "\n"
 	}

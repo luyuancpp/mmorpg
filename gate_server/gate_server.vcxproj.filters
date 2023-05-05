@@ -30,9 +30,6 @@
     <ClCompile Include="src\network\gs_node.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\open_service.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\service\gate_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>

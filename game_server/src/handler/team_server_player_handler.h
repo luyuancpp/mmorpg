@@ -1,5 +1,5 @@
 #pragma once
-#include "team_server_player.pb.h"
+#include "server_player_proto/team_server_player.pb.h"
 #include "player_service.h"
 class ServerPlayerTeamServiceHandler : public ::PlayerService
 {

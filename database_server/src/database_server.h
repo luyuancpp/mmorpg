@@ -8,7 +8,7 @@
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_server.h"
-#include "src/service/common_proto/database_service.h"
+#include "src/service/database_service.h"
 
 #include "deploy_service.pb.h"
 
