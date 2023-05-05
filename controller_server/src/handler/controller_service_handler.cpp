@@ -26,11 +26,11 @@
 #include "src/network/player_session.h"
 #include "src/network/server_component.h"
 #include "src/network/node_info.h"
-#include "src/pb/pbc/service_method/gate_servicemethod.h"
-#include "src/pb/pbc/service_method/game_servicemethod.h"
-#include "src/pb/pbc/service_method/login_servicemethod.h"
-#include "src/pb/pbc/service_method/database_servicemethod.h"
-#include "src/pb/pbc/serviceid/gateservice_service_method_id.h"
+#include "src/pb/pbc/gate_service_service.h"
+#include "src/pb/pbc/game_service_service.h"
+#include "src/pb/pbc/login_service_service.h"
+#include "src/pb/pbc/database_service_service.h"
+#include "src/pb/pbc/gate_service_service.h"
 #include "src/pb/pbc/service.h"
 #include "src/handler/player_service.h"
 #include "src/system/player_scene_system.h"
@@ -46,7 +46,7 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "game_service.pb.h"
 #include "gate_service.pb.h"
-#include "logic_proto/common_server_player.pb.h"
+#include "server_player_proto/common_server_player.pb.h"
 #include "logic_proto/scene.pb.h"
 
 extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;
@@ -267,7 +267,7 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 	controller_tls.gate_sessions().erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
-	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnect, &rq);
+	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMethod, &rq);
 	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
@@ -428,7 +428,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
         {
 			GateNodeKickConnRequest message;
             message.set_session_id(player_session->gate_session_.session_id());
-            Send2Gate(GateService_Id_KickConnByController, message, player_session->gate_node_id());
+            Send2Gate(GateServiceKickConnByControllerMsgId, message, player_session->gate_node_id());
         }
 		InitPlayerGate(player, request->session_id());
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
@@ -578,7 +578,7 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 	GateNodePlayerEnterGsRequest rq;
 	rq.set_session_id(player_session.session_id());
 	rq.set_gs_node_id(player_session.gs_node_id());
-	gate_it->second->session_.CallMethod(GateServicePlayerEnterGs, &rq);
+	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMethod, &rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
@@ -670,12 +670,12 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 			LOG_ERROR << "login not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		(*try_login).session_.CallMethod(LoginServiceRouteNodeStringMsg, mutable_request);
+		(*try_login).session_.CallMethod(LoginServiceRouteNodeStringMsgMethod, mutable_request);
 	}
 	break;
 	case kDatabaseNode:
 	{
-		g_controller_node->database_node()->CallMethod(DbServiceRouteNodeStringMsg, mutable_request);
+		g_controller_node->database_node()->CallMethod(DbServiceRouteNodeStringMsgMethod, mutable_request);
 	}
 	break;
 	case kGateNode:
@@ -686,7 +686,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 			LOG_ERROR << "gate not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		it->second->session_.CallMethod(GateServiceRouteNodeStringMsg, mutable_request);
+		it->second->session_.CallMethod(GateServiceRouteNodeStringMsgMethod, mutable_request);
 	}
 	break;
 	case kGameNode:
@@ -703,7 +703,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 			LOG_ERROR << "game not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		(*try_game)->session_.CallMethod(GameServiceRouteNodeStringMsg, mutable_request);
+		(*try_game)->session_.CallMethod(GameServiceRouteNodeStringMsgMethod, mutable_request);
 	}
 	break;
 	default:

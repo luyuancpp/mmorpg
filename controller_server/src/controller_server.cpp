@@ -15,12 +15,12 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/handler/replied_dispathcer.h"
 #include "src/handler/player_service.h"
-#include "src/handler/player_service_replied.h"
+#include "src/replied_handler/player_service_replied.h"
 #include "src/handler/server_service.h"
 #include "src/pb/pbc/service.h"
-#include "src/pb/pbc/service_method/deploy_servicemethod.h"
-#include "src/pb/pbc/service_method/gate_servicemethod.h"
-#include "src/pb/pbc/service_method/lobby_scenemethod.h"
+#include "src/pb/pbc/deploy_service_service.h"
+#include "src/pb/pbc/gate_service_service.h"
+#include "src/pb/pbc/lobby_scene_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 #include "game_service.pb.h"
@@ -115,7 +115,7 @@ void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
     request.set_ip(gs_node_ptr->node_inet_addr_.toIp());
     request.set_port(gs_node_ptr->node_inet_addr_.port());
     request.set_gs_node_id(gs_node_ptr->node_id());
-    (*try_gate_node_ptr)->session_.Send(GateServiceStartGS, request);
+    (*try_gate_node_ptr)->session_.Send(GateServiceStartGSMethod, request);
 }
 
 void ControllerServer::receive(const OnConnected2ServerEvent& es)
@@ -130,12 +130,12 @@ void ControllerServer::receive(const OnConnected2ServerEvent& es)
                 ServerInfoRequest rq;
                 rq.set_group(GameConfig::GetSingleton().config_info().group_id());
                 rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-                deploy_session_->CallMethod(DeployServiceServerInfo, &rq);
+                deploy_session_->CallMethod(DeployServiceServerInfoMethod, &rq);
 			}
 			
             {
                 SceneSqueueRequest rq;
-                deploy_session_->CallMethod(DeployServiceSceneSqueueNodeId, &rq);
+                deploy_session_->CallMethod(DeployServiceSceneSqueueNodeIdMethod, &rq);
             }
 		}
 		
@@ -230,5 +230,5 @@ void ControllerServer::Register2Lobby()
 	node_info->set_ip(myinfo.ip());
 	node_info->set_port(myinfo.port());
 	rq.set_controller_node_id(myinfo.id());
-    lobby_session_->CallMethod(LobbyServiceStartControllerNode, &rq);
+    lobby_session_->CallMethod(LobbyServiceStartControllerNodeMethod, &rq);
 }
