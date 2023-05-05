@@ -5,7 +5,7 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
 #include "event_proto/scene_event.pb.h"
-#include "logic_proto/scene_server_player.pb.h"
+#include "server_player_proto/scene_server_player.pb.h"
 
 static const std::size_t kMaxMainScenePlayer = 1000;
 
