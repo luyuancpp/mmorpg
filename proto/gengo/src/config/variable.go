@@ -11,6 +11,8 @@ const HeadEx = ".h"
 const CppEx = ".cpp"
 const HeadHandlerEx = "_handler.h"
 const CppHandlerEx = "_handler.cpp"
+const HeadRepliedHandlerEx = "_replied_handler.h"
+const CppRepliedHandlerEx = "_replied_handler.cpp"
 const CppSol2Ex = "_sol2.cpp"
 const RpcIdName = "MsgId"
 const PlayerName = "player"
@@ -28,7 +30,9 @@ const GsName = "game_server/"
 const ControllerName = "controller_server/"
 const ClientName = "client/"
 const PlayerServiceIncludeName = "#include \"player_service.h\""
+const PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\""
 const HandlerName = "Handler"
+const RepliedHandlerName = "RepliedHandler"
 const YourCodeBegin = "///<<< BEGIN WRITING YOUR CODE"
 const YourCodeEnd = "///<<< END WRITING YOUR CODE"
 const YourCodePair = YourCodeBegin + "\n" + YourCodeEnd + "\n"
@@ -72,6 +76,7 @@ var ProtoDirs []string
 var ProtoMd5Dirs []string
 
 const HandlerDirName = "src/handler/"
+const RepliedHandlerDirName = "src/replied_handler/"
 const ServiceIdsFileName = ProtoDir + "serviceid.txt"
 
 const EventHandlerDirName = "src/event_handler/"
@@ -80,6 +85,8 @@ const EventHandlerFileNameHead = EventHandlerFileName + HeadEx
 const EventHandlerFileNameCpp = EventHandlerFileName + CppEx
 const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
 const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
+const GsMethodRepliedHandleDir = ProjectDir + GsName + RepliedHandlerDirName
+const ControllerMethodRepliedHandleDir = ProjectDir + ControllerName + RepliedHandlerDirName
 const ClientMethodHandleDir = ProjectDir + ClientName + HandlerDirName
 
 const GsEventHandleDir = ProjectDir + GsName + EventHandlerDirName
@@ -92,3 +99,4 @@ const ClientServiceInstanceFile = ProjectDir + "client/src/handler/player_servic
 const C2SMethodContainsName = "C2S"
 const MysqlName = "mysql"
 const PlayerServiceName = "player_service.cpp"
+const PlayerRepliedServiceName = "player_service_replied.cpp"
