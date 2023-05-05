@@ -134,12 +134,7 @@ func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string)
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"\n\n"
 
-	yourCodes, err := util.GetDstCodeData(dst)
-	if nil != err {
-		yourCodes = append(yourCodes, config.YourCodePair)
-		yourCodes = append(yourCodes, config.YourCodePair)
-	}
-
+	yourCodes, _ := util.GetDstCodeData(dst, 2)
 	data += yourCodes[0]
 	data += "void " + methodInfo.Service + "Handler::" + methodInfo.Method + config.GoogleMethodController + "\n" +
 		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
@@ -155,12 +150,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data s
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"\n"
 
-	yourCodes, err := util.GetDstCodeData(dst)
-	if nil != err {
-		yourCodes = append(yourCodes, config.YourCodePair)
-		yourCodes = append(yourCodes, config.YourCodePair)
-	}
-
+	yourCodes, _ := util.GetDstCodeData(dst, 2)
 	data += yourCodes[0]
 	data += "void " + methodInfo.Service + "Handler::" + methodInfo.Method + config.PlayerMethodController + "\n" +
 		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
