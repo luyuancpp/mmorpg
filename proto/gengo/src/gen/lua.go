@@ -278,7 +278,7 @@ func writeProtoSol2LuaFile(fd os.DirEntry, filePath string) {
 		}
 	}
 	data += "}\n"
-	Md5WriteData2File(config.PbcSol2DirName+fileBaseName+config.CppSol2Ex, data)
+	Md5WriteData2File(config.PbcLuaDirName+fileBaseName+config.CppSol2Ex, data)
 }
 
 func writeAllProtoSol2LuaFile() {

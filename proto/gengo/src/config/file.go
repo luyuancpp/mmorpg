@@ -48,10 +48,10 @@ var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string
 
 const PbcDirName = "common/src/pb/pbc/"
-const PbcLuaDirName = PbcDirName + "lua/"
+
 const PbcOutDir = ProjectDir + PbcDirName
 const ServiceFileName = PbcOutDir + "service.cpp"
-const PbcSol2DirName = PbcOutDir + "sol2/"
+const PbcLuaDirName = PbcOutDir + "lua/"
 
 const CommonProtoDirIndex = 0
 const ComponentProtoDirIndex = 1
