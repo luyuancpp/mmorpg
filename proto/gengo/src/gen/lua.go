@@ -139,6 +139,10 @@ func isCppType(typeString string) bool {
 		reflect.DeepEqual(typeString, "uint32") ||
 		reflect.DeepEqual(typeString, "uint64") ||
 		reflect.DeepEqual(typeString, "int64") ||
+		reflect.DeepEqual(typeString, "int32_t") ||
+		reflect.DeepEqual(typeString, "uint32_t") ||
+		reflect.DeepEqual(typeString, "uint64_t") ||
+		reflect.DeepEqual(typeString, "int64_t") ||
 		reflect.DeepEqual(typeString, "bool") ||
 		reflect.DeepEqual(typeString, "float") ||
 		reflect.DeepEqual(typeString, "double")
@@ -154,7 +158,7 @@ func writeProtoSol2LuaFile(fd os.DirEntry, filePath string) {
 	if err != nil {
 		return
 	}
-	data := config.IncludeBegin + fileBaseName + config.ProtoPbhEx + config.IncludeEndLine +
+	data := util.IncludeName(filePath, fd.Name()) +
 		"#include <sol/sol.hpp>\n" +
 		"#include \"src/game_logic/thread_local/thread_local_storage_lua.h\"\n" +
 		"void Pb2sol2" + fileBaseName + "()" + "\n{\n"
@@ -187,7 +191,7 @@ func writeProtoSol2LuaFile(fd os.DirEntry, filePath string) {
 			isMsgCode = 0
 			continue
 		} else if isMsgCode == 1 {
-			s := strings.Split(strings.Trim(line, "\t"), " ")
+			s := strings.Split(strings.Trim(strings.Trim(line, "\t"), " "), " ")
 			if len(s) < 3 {
 				continue
 			}
