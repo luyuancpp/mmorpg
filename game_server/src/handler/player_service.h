@@ -24,7 +24,7 @@ private:
     std::unique_ptr<::google::protobuf::Service> pb_service_;
 };
 
-void InitPlayerServcie();
+void InitPlayerService();
 
 extern std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
 extern std::unordered_set<std::string> g_open_player_services;//开放给玩家的服务

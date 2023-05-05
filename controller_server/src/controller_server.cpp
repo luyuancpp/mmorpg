@@ -54,8 +54,8 @@ void ControllerServer::Init()
 	node_info_.set_node_type(kControllerNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
-    InitPlayerServcie();
-    InitPlayerServcieReplied();
+    InitPlayerService();
+    InitPlayerServiceReplied();
     InitRepliedCallback();
     InitService();
     //connect 
