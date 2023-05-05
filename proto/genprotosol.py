@@ -174,15 +174,7 @@ def genluasol(filename):
     with open(newfilename, 'w', encoding='utf-8')as file:
         file.write(newstr)                
 
-def md5copy(destdir,  fileextend):
-    cppmd5info = genpublic.md5fileinfo()
-    cppmd5info.destdir = destdir
-    for (dirpath, dirnames, filenames) in os.walk(genpublic.getmd5filename(destdir)):
-        for each_filename in filenames:
-            if each_filename[-len(fileextend):].lower() != fileextend:
-                continue
-            cppmd5info.filename = each_filename
-            genpublic.md5copy(cppmd5info)
+
 
 def gentotalfile(destdir):
     global funsname
@@ -224,6 +216,4 @@ genpublic.makedirs()
 
 scanprotofile()
 gentotalfile(destdir)
-md5copy(destdir, 'sol2.h')
-md5copy(destdir, 'sol2.cpp')
 
