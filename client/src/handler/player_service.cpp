@@ -1,19 +1,10 @@
-#include <memory>
-#include <unordered_map>
-#include "player_service.h"
-#include "logic_proto/common_client_player.pb.h"
-#include "src/service/logic_proto/common_client_player.h"
-#include "logic_proto/scene_client_player.pb.h"
-#include "src/service/logic_proto/scene_client_player.h"
-#include "logic_proto/team_client_player.pb.h"
-#include "src/service/logic_proto/team_client_player.h"
-std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
-class ClientPlayerCommonServiceImpl : public ClientPlayerCommonService{};
-class ClientPlayerSceneServiceHandler : public ClientPlayerSceneService{};
-class ClientPlayerTeamServiceHandler : public ClientPlayerTeamService{};
-void InitPlayerServcie()
+#include "common_client_player_handler.h"
+#include "scene_client_player_handler.h"
+#include "team_client_player_handler.h"
+std::unordered_map<std::string, std::unique_ptr<Service>> g_player_services;
+void InitPlayerService()
 {
-    g_player_services.emplace("ClientPlayerCommonService", std::make_unique<ClientPlayerCommonServiceService>(new ClientPlayerCommonServiceImpl));
-    g_player_services.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceService>(new ClientPlayerSceneServiceHandler));
-    g_player_services.emplace("ClientPlayerTeamService", std::make_unique<ClientPlayerTeamServiceService>(new ClientPlayerTeamServiceHandler));
+	g_player_services.emplace("ClientPlayerCommonService", std::make_unique<ClientPlayerCommonServiceHandler>());
+	g_player_services.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceHandler>());
+	g_player_services.emplace("ClientPlayerTeamService", std::make_unique<ClientPlayerTeamServiceHandler>());
 }

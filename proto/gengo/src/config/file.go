@@ -84,4 +84,5 @@ const ControllerEventHandleDir = ProjectDir + ControllerName + EventHandlerDirNa
 
 const ClientLuaProjectRelative = "script/lua/service/"
 const ClientLuaDir = ProjectDir + "bin/" + ClientLuaProjectRelative
-const ClientLuaServiceFile = ProjectDir + "client/src/service/logic_proto/service_lua.cpp"
+const ClientLuaServiceFile = ProjectDir + "client/src/handler/service_lua.cpp"
+const ClientServiceInstanceFile = ProjectDir + "client/src/handler/player_service.cpp"

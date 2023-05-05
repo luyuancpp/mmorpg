@@ -1,5 +1,5 @@
 #pragma once
-#include "controller_service.pb.h"
+#include "common_proto/controller_service.pb.h"
 class ControllerServiceHandler : public ::ControllerService
 {
 public:

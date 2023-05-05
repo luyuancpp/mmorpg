@@ -1,6 +1,6 @@
 #pragma once
 #include <sol/sol.hpp>
-#include "scene_client_player.pb.h"
+#include "client_player_proto/scene_client_player.pb.h"
 class ClientPlayerSceneServiceHandler : public ::ClientPlayerSceneService
 {
 public:

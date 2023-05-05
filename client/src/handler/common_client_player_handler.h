@@ -1,6 +1,6 @@
 #pragma once
 #include <sol/sol.hpp>
-#include "common_client_player.pb.h"
+#include "client_player_proto/common_client_player.pb.h"
 class ClientPlayerCommonServiceHandler : public ::ClientPlayerCommonService
 {
 public:

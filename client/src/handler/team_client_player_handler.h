@@ -1,6 +1,6 @@
 #pragma once
 #include <sol/sol.hpp>
-#include "team_client_player.pb.h"
+#include "client_player_proto/team_client_player.pb.h"
 class ClientPlayerTeamServiceHandler : public ::ClientPlayerTeamService
 {
 public:
