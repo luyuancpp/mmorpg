@@ -63,7 +63,7 @@
     <ClCompile Include="src\event_handler\scene_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\player_service.cpp">
+    <ClCompile Include="src\replied_handler\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\server_service.cpp">
@@ -251,7 +251,7 @@
     <ClInclude Include="src\handler\team_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\player_service.h">
+    <ClInclude Include="src\replied_handler\player_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\player_service_replied.h">
@@ -297,6 +297,24 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\common_server_player_replied.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\team_server_player_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\common_client_player_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\common_server_player_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\scene_client_player_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\scene_server_player_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\team_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -95,7 +95,6 @@ func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 }
 
 func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
-
 	var data = "#pragma once\n"
 	data += methodList[0].IncludeName()
 	data += config.PlayerServiceIncludeName
@@ -117,6 +116,40 @@ func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 		callFunctionList += config.Tab2 + "case " + strconv.Itoa(i) + ":\n"
 		callFunctionList += config.Tab3 + methodList[i].Method + "(player,\n"
 		callFunctionList += config.Tab3 + "::google::protobuf::internal::DownCast<const " + rq + "*>( request),\n"
+		callFunctionList += config.Tab3 + "::google::protobuf::internal::DownCast<" + rsp + "*>(response));\n"
+		callFunctionList += config.Tab2 + "break;\n"
+	}
+	callFunctionList += config.Tab2 + "default:\n" +
+		config.Tab3 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";\n" +
+		config.Tab2 + "break;\n" + config.Tab2 + "}\n" + config.Tab + "}\n"
+	data += functionNameList
+	data += callFunctionList
+	data += "\n};\n"
+	return data
+}
+
+func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
+	var data = "#pragma once\n"
+	data += methodList[0].IncludeName()
+	data += config.PlayerServiceRepliedIncludeName
+	data += "\nclass " + methodList[0].Service + config.RepliedHandlerName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n"
+	data += config.Tab + "PlayerServiceReplied::PlayerServiceReplied;\n"
+	var functionNameList string
+	var callFunctionList = " void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n   " +
+		"entt::entity player,\n    " +
+		"const ::google::protobuf::Message* request,\n    " +
+		"::google::protobuf::Message* response)override \n " +
+		" {\n        switch(method->index()) {\n"
+
+	for i := 0; i < len(methodList); i++ {
+		rq := methodList[i].Request
+		rsp := methodList[i].Response
+		functionNameList += config.Tab + "void " + methodList[i].Method + config.PlayerMethodController + "\n" +
+			config.Tab2 + "const ::" + rq + "* request,\n" +
+			config.Tab2 + "::" + rsp + "* response);\n\n"
+		callFunctionList += config.Tab2 + "case " + strconv.Itoa(i) + ":\n"
+		callFunctionList += config.Tab3 + methodList[i].Method + "(player,\n"
+		callFunctionList += config.Tab3 + "nullptr,\n"
 		callFunctionList += config.Tab3 + "::google::protobuf::internal::DownCast<" + rsp + "*>(response));\n"
 		callFunctionList += config.Tab2 + "break;\n"
 	}
@@ -177,6 +210,32 @@ func writeGsPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(config.GsMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
 }
 
+func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+
+	if len(methodList) <= 0 {
+		return
+	}
+	if !strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
+		return
+	}
+	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+	Md5WriteData2File(config.GsMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
+}
+
+func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+
+	if len(methodList) <= 0 {
+		return
+	}
+	if !strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
+		return
+	}
+	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+	Md5WriteData2File(config.ControllerMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
+}
+
 func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
@@ -211,8 +270,7 @@ func writeGsMethodPlayerHandlerCppFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	if !(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ServerPlayerDirIndex])) {
+	if !methodList[0].IsPlayerService() {
 		return
 	}
 	for i := 0; i < len(methodList); i++ {
@@ -238,8 +296,7 @@ func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	if !(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ServerPlayerDirIndex])) {
+	if !methodList[0].IsPlayerService() {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
@@ -251,8 +308,7 @@ func writePlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	if !(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ServerPlayerDirIndex])) {
+	if !methodList[0].IsPlayerService() {
 		return
 	}
 
@@ -297,6 +353,10 @@ func WriteMethodFile() {
 		go writeMethodRepliedHandleCppFile(v)
 		util.Wg.Add(1)
 		go writeGsPlayerMethodHandlerHeadFile(v)
+		util.Wg.Add(1)
+		writeGsPlayerMethodRepliedHandlerHeadFile(v)
+		util.Wg.Add(1)
+		writeControllerPlayerMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
 		go writeControllerPlayerMethodHandlerHeadFile(v)
 		util.Wg.Add(1)

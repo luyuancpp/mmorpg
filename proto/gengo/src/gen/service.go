@@ -62,6 +62,11 @@ func (info *RpcServiceInfo) FileBaseName() (fileBaseName string) {
 	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
 }
 
+func (info *RpcServiceInfo) IsPlayerService() (isPlayerService bool) {
+	return strings.Contains(info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
+		strings.Contains(info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])
+}
+
 func (info *RpcMethodInfo) FileBaseName() (fileBaseName string) {
 	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
 }
@@ -76,6 +81,11 @@ func (info *RpcMethodInfo) IncludeName() (includeName string) {
 
 func (info *RpcMethodInfo) CppHandlerIncludeName() (includeName string) {
 	return config.IncludeBegin + info.FileBaseName() + "_handler" + config.HeadEx + config.IncludeEndLine
+}
+
+func (info *RpcMethodInfo) IsPlayerService() (isPlayerService bool) {
+	return strings.Contains(info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
+		strings.Contains(info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])
 }
 
 func (s RpcMethodInfos) Len() int {
@@ -326,8 +336,7 @@ func writePlayerServiceInstanceFile() {
 			continue
 		}
 		method1Info := methodList[0]
-		if !(strings.Contains(method1Info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-			strings.Contains(method1Info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])) {
+		if !method1Info.IsPlayerService() {
 			continue
 		}
 		className := method1Info.Service + "Impl"
@@ -347,9 +356,44 @@ func writePlayerServiceInstanceFile() {
 	Md5WriteData2File(config.ControllerMethodHandleDir+config.PlayerServiceName, data)
 }
 
+func writePlayerServiceRepliedInstanceFile() {
+	defer util.Wg.Done()
+	data := ""
+	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service_replied.h\"\n\n"
+	instanceData := ""
+	classData := ""
+	ServiceList := GetSortServiceList()
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok {
+			continue
+		}
+		method1Info := methodList[0]
+		if !method1Info.IsPlayerService() {
+			continue
+		}
+		className := method1Info.Service + "Impl"
+		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
+		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
+		instanceData += config.Tab + "g_player_services.emplace(\"" + method1Info.Service +
+			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">(new " +
+			className + "));\n"
+	}
+	data += includeData
+	data += "std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replieds;\n\n"
+	data += classData
+	data += "void InitPlayerService()\n{\n"
+	data += instanceData
+	data += "}"
+	Md5WriteData2File(config.GsMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
+	Md5WriteData2File(config.ControllerMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
+}
+
 func WriteServiceHandlerFile() {
 	util.Wg.Add(1)
 	go writeServiceHandlerFile()
 	util.Wg.Add(1)
 	writePlayerServiceInstanceFile()
+	util.Wg.Add(1)
+	writePlayerServiceRepliedInstanceFile()
 }
