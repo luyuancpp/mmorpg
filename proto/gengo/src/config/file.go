@@ -11,6 +11,7 @@ const HeadEx = ".h"
 const CppEx = ".cpp"
 const HeadHandlerEx = "_handler.h"
 const CppHandlerEx = "_handler.cpp"
+const CppSol2Ex = "_sol2.cpp"
 const RpcIdName = "MsgId"
 const PlayerName = "player"
 const ClientPlayerName = "client_player"
@@ -50,6 +51,7 @@ const PbcDirName = "common/src/pb/pbc/"
 const PbcLuaDirName = PbcDirName + "lua/"
 const PbcOutDir = ProjectDir + PbcDirName
 const ServiceFileName = PbcOutDir + "service.cpp"
+const PbcSol2DirName = PbcOutDir + "sol2/"
 
 const CommonProtoDirIndex = 0
 const ComponentProtoDirIndex = 1
