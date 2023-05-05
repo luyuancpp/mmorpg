@@ -1,5 +1,5 @@
 #pragma once
-#include "scene_server_player.pb.h"
+#include "server_player_proto/scene_server_player.pb.h"
 #include "player_service.h"
 class ServerPlayerSceneServiceHandler : public ::PlayerService
 {

@@ -32,7 +32,6 @@
     <ClCompile Include="src\service\game_service_replied.cpp" />
     <ClCompile Include="src\service\login_service_replied.cpp" />
     <ClCompile Include="src\service\replied_dispathcer.cpp" />
-    <ClCompile Include="src\service\open_service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\thread_local\gate_thread_local_storage.h" />

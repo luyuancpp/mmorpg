@@ -8,10 +8,10 @@
 #include "muduo/net/TcpServer.h"
 
 #include "src/event/event.h"
-#include "src/service/common_proto/c2gate.h"
+#include "src/service/c2gate.h"
 #include "src/network/codec/codec.h"
 #include "src/network/codec/dispatcher.h"
-#include "src/service/common_proto/gate_service.h"
+#include "src/service/gate_service.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_connection_event.h"
 

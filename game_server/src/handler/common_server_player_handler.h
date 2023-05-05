@@ -1,5 +1,5 @@
 #pragma once
-#include "common_server_player.pb.h"
+#include "server_player_proto/common_server_player.pb.h"
 #include "player_service.h"
 class ServerPlayerLoginServiceHandler : public ::PlayerService
 {

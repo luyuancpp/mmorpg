@@ -97,7 +97,7 @@ func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 
 	var data = "#pragma once\n"
-	data += config.IncludeBegin + methodList[0].FileBaseName() + config.ProtoPbhIncludeEndLine
+	data += methodList[0].IncludeName()
 	data += config.PlayerServiceIncludeName
 	data += "\nclass " + methodList[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n"
 	data += config.Tab + "PlayerService::PlayerService;\n"
