@@ -8,6 +8,8 @@
 #include "db_base.pb.h"
 
 
+//todo 注意替换空格
+
 void FillMessageField(::google::protobuf::Message& message, const ResultRow& row)
 {
     const auto reflection = message.GetReflection();
