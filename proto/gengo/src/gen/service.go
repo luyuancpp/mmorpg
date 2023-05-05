@@ -40,7 +40,6 @@ var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
 var RpcServiceSyncMap sync.Map
 var RpcIdMethodMap = map[uint64]*RpcMethodInfo{}
 var ServiceIdMap = map[string]uint64{}
-var ServiceList []string
 var ServiceMethodMap = map[string]RpcMethodInfos{}
 
 func (info *RpcMethodInfo) KeyName() (idName string) {
@@ -259,6 +258,14 @@ func InitServiceId() {
 	}
 }
 
+func GetSortServiceList() (ServiceList []string) {
+	for k, _ := range ServiceMethodMap {
+		ServiceList = append(ServiceList, k)
+	}
+	sort.Strings(ServiceList)
+	return ServiceList
+}
+
 func writeServiceHandlerFile() {
 	defer util.Wg.Done()
 	var includeData = "#include <unordered_map>\n"
@@ -267,11 +274,7 @@ func writeServiceHandlerFile() {
 	var initFuncData = "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;\n\n"
 	initFuncData += "std::unordered_map<uint32_t, RpcService> g_service_method_info;\n\n"
 	initFuncData += "void InitService()\n{\n"
-
-	for k, _ := range ServiceMethodMap {
-		ServiceList = append(ServiceList, k)
-	}
-	sort.Strings(ServiceList)
+	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
 		methodList := ServiceMethodMap[key]
 		if len(methodList) > 0 {

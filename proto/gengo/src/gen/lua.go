@@ -97,7 +97,7 @@ func writeClientHandlerDefaultInstanceFile() {
 	data := ""
 	includeData := ""
 	instanceData := ""
-
+	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
 		methodList, ok := ServiceMethodMap[key]
 		if !ok {
