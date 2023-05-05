@@ -11,8 +11,8 @@
 #include "src/network/gate_node.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/service.h"
-#include "src/pb/pbc/service_method/game_servicemethod.h"
-#include "src/pb/pbc/service_method/gate_servicemethod.h"
+#include "src/pb/pbc/game_service_service.h"
+#include "src/pb/pbc/gate_service_service.h"
 #include "src/handler/game_service_replied.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
@@ -201,5 +201,5 @@ void CallGsPlayerMethod(uint32_t service_method_id, const google::protobuf::Mess
     rq.mutable_msg()->set_body(msg.SerializeAsString());
 	rq.mutable_msg()->set_service_method_id(service_method_id);
     rq.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
-    tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayer, &rq);
+    tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayerMethod, &rq);
 }

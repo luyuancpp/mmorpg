@@ -13,13 +13,13 @@
 #include "src/network/player_session.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
-#include "src/pb/pbc/service_method/lobby_scenemethod.h"
-#include "src/pb/pbc/service_method/game_servicemethod.h"
-#include "src/pb/pbc/serviceid/serverplayersceneservice_service_method_id.h"
+#include "src/pb/pbc/lobby_scene_service.h"
+#include "src/pb/pbc/game_service_service.h"
+#include "src/pb/pbc/scene_server_player_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 #include "component_proto/player_login_comp.pb.h"
-#include "logic_proto/scene_server_player.pb.h"
+#include "server_player_proto/scene_server_player.pb.h"
 #include "game_service.pb.h"
 
 void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
@@ -52,14 +52,14 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         return;
     }
     enter_scene_message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(ServerPlayerSceneService_Id_EnterSceneController2Gs, enter_scene_message, player);
+    Send2GsPlayer(ServerPlayerSceneServiceEnterSceneController2GsMsgId, enter_scene_message, player);
 }
 
 
 void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 {
     EnterSceneS2CRequest msg;
-    CallGsPlayerMethod(ServerPlayerSceneService_Id_Controller2GsEnterSceneS2C, msg, player);
+    CallGsPlayerMethod(ServerPlayerSceneServiceController2GsEnterSceneS2CMsgId, msg, player);
 }
 
 NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
@@ -85,7 +85,7 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
     rq.set_player_id(tls.registry.get<Guid>(player));
     rq.set_session_id(session_id);
     rq.set_controller_node_id(controller_node_id());
-    tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceEnterGs, &rq);
+    tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceEnterGsMethod, &rq);
 }
 
 
@@ -207,7 +207,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
             LeaveCrossMainSceneRequest rq;
             rq.set_player_id(tls.registry.get<Guid>(player));
-            g_controller_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainScene, &rq);
+            g_controller_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMethod, &rq);
         }
         if (is_to_gs_is_cross_server)
         {
@@ -215,7 +215,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             EnterCrossMainSceneRequest rq;
             rq.set_scene_id(to_scene_id);
             rq.set_player_id(tls.registry.get<Guid>(player));
-            g_controller_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainScene, &rq);
+            g_controller_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMethod, &rq);
             return;
         }
     }

@@ -9,14 +9,14 @@
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/pb/pbc/serviceid/serverplayersceneservice_service_method_id.h"
+#include "src/pb/pbc/scene_server_player_service.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_change_scene.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
 
 #include "component_proto/scene_comp.pb.h"
-#include "logic_proto/scene_server_player.pb.h"
+#include "server_player_proto/scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE
 void SceneEventHandler::Register(entt::dispatcher& dispatcher)
 {
@@ -84,7 +84,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 		return ;
 	}
     leave_scene_message.set_change_gs(p_player_gs->gs_node_id() != (*try_to_scene_gs)->node_id());
-    Send2GsPlayer(ServerPlayerSceneService_Id_LeaveSceneController2Gs, leave_scene_message, player);
+    Send2GsPlayer(ServerPlayerSceneServiceLeaveSceneController2GsMsgId, leave_scene_message, player);
 ///<<< END WRITING YOUR CODE
 }
 
