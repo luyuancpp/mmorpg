@@ -310,11 +310,12 @@ func writeAllProtoSol2LuaFile() {
 				if !util.IsProtoFile(fd) {
 					continue
 				}
-				util.Wg.Add(1)
-				writeProtoSol2LuaFile(fd, config.ProtoDirs[i])
-				if strings.Contains(fd.Name(), "mysql") {
+				if strings.Contains(fd.Name(), config.MysqlName) {
 					continue
 				}
+				util.Wg.Add(1)
+				writeProtoSol2LuaFile(fd, config.ProtoDirs[i])
+
 				fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), config.ProtoEx, "")))
 				declarationData += "void Pb2sol2" + fileBaseName + "();\n"
 				callData += "Pb2sol2" + fileBaseName + "();\n"

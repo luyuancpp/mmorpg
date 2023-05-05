@@ -90,3 +90,5 @@ const ClientLuaDir = ProjectDir + "bin/" + ClientLuaProjectRelative
 const ClientLuaServiceFile = ProjectDir + "client/src/handler/service_lua.cpp"
 const ClientServiceInstanceFile = ProjectDir + "client/src/handler/player_service.cpp"
 const C2SMethodContainsName = "C2S"
+const MysqlName = "mysql"
+const PlayerServiceName = "player_service.cpp"

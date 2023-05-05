@@ -313,7 +313,43 @@ func writeServiceHandlerFile() {
 	Md5WriteData2File(config.ServiceFileName, data)
 }
 
+func writePlayerServiceInstanceFile() {
+	defer util.Wg.Done()
+	data := ""
+	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service.h\"\n\n"
+	instanceData := ""
+	classData := ""
+	ServiceList := GetSortServiceList()
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok {
+			continue
+		}
+		method1Info := methodList[0]
+		if !(strings.Contains(method1Info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
+			strings.Contains(method1Info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])) {
+			continue
+		}
+		className := method1Info.Service + "Impl"
+		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
+		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
+		instanceData += config.Tab + "g_player_services.emplace(\"" + method1Info.Service +
+			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">(new " +
+			className + "));\n"
+	}
+	data += includeData
+	data += "std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n\n"
+	data += classData
+	data += "void InitPlayerService()\n{\n"
+	data += instanceData
+	data += "}"
+	Md5WriteData2File(config.GsMethodHandleDir+config.PlayerServiceName, data)
+	Md5WriteData2File(config.ControllerMethodHandleDir+config.PlayerServiceName, data)
+}
+
 func WriteServiceHandlerFile() {
 	util.Wg.Add(1)
 	go writeServiceHandlerFile()
+	util.Wg.Add(1)
+	writePlayerServiceInstanceFile()
 }
