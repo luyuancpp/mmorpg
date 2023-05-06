@@ -17,6 +17,7 @@
 #include "src/system/player_change_scene.h"
 
 #include "game_service.pb.h"
+#include "component_proto/scene_comp.pb.h"
 
 ///<<< END WRITING YOUR CODE
 void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity player,

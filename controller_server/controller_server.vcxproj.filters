@@ -99,6 +99,21 @@
     <ClCompile Include="src\event_handler\mission_event_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\handler\common_client_player_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\handler\lobby_scene_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\handler\scene_client_player_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\handler\team_client_player_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\handler\team_server_player_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\controller_server.h">
