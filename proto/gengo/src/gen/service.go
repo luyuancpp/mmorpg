@@ -385,7 +385,7 @@ func writePlayerServiceRepliedInstanceFile() {
 			continue
 		}
 		className := method1Info.Service + "Impl"
-		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
+		includeData += method1Info.CppRepliedHandlerIncludeName()
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
 		instanceData += config.Tab + "g_player_service_replieds.emplace(\"" + method1Info.Service +
 			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerName + ">(new " +

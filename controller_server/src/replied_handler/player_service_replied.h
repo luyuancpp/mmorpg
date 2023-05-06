@@ -14,9 +14,10 @@ public:
     PlayerServiceReplied(::google::protobuf::Service* pb_service)
         : pb_service_(pb_service) {}
 
-    virtual void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-        entt::entity player,
-        ::google::protobuf::Message* response) = 0;
+	virtual void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+		entt::entity player,
+		const ::google::protobuf::Message* request,
+		::google::protobuf::Message* response) = 0;
 
     ::google::protobuf::Service* service() { return pb_service_.get(); }
 private:
