@@ -4,8 +4,8 @@
 #include "src/network/rpc_connection_event.h"
 #include "src/network/node_info.h"
 #include "src/pb/pbc/service.h"
-#include "src/pb/pbc/service_method/deploy_servicemethod.h"
-#include "src/service/common_proto_replied/replied_dispathcer.h"
+#include "src/pb/pbc/deploy_service_service.h"
+#include "src/service/replied_dispathcer.h"
 
 #include "common.pb.h"
 
@@ -88,5 +88,5 @@ void LoginServer::receive(const OnConnected2ServerEvent& es)
     }
     ServerInfoRequest rq;
     rq.set_group(GameConfig::GetSingleton().config_info().group_id());
-    deploy_session_->CallMethod(DeployServiceServerInfo, &rq);
+    deploy_session_->CallMethod(DeployServiceServerInfoMethod, &rq);
 }

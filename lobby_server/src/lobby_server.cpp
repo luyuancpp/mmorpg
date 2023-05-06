@@ -9,7 +9,7 @@
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
 #include "src/network/controller_node.h"
-#include "src/pb/pbc/service_method/deploy_servicemethod.h"
+#include "src/pb/pbc/deploy_service_service.h"
 #include "src/service/replied_dispathcer.h"
 
 
@@ -61,12 +61,12 @@ void LobbyServer::receive(const OnConnected2ServerEvent& es)
         {
             LobbyServerRequest rq;
             rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-            deploy_session_->CallMethod(DeployServiceStartLobbyServer, &rq);
+            deploy_session_->CallMethod(DeployServiceStartLobbyServerMethod, &rq);
         }
 			
         {
             SceneSqueueRequest rq;
-            deploy_session_->CallMethod(DeployServiceSceneSqueueNodeId, &rq);
+            deploy_session_->CallMethod(DeployServiceSceneSqueueNodeIdMethod, &rq);
         }
 	}
       

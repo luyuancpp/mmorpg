@@ -13,14 +13,15 @@
 #include "src/game_logic/tips_id.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/pb/pbc/service.h"
-#include "src/pb/pbc/service_method/controller_servicemethod.h"
-#include "src/pb/pbc/service_method/game_servicemethod.h"
-#include "src/pb/pbc/service_method/login_servicemethod.h"
+#include "src/pb/pbc/controller_service_service.h"
+#include "src/pb/pbc/game_service_service.h"
+#include "src/pb/pbc/login_service_service.h"
+#include "src/pb/pbc/common_client_player_service.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 #include "src/util/random.h"
 
 #include "login_service.pb.h"
-#include "src/pb/pbc/logic_proto/common_client_player.pb.h"
+#include "src/pb/pbc/client_player_proto/common_client_player.pb.h"
 
 ServerSequence32 g_server_sequence_;
 
@@ -101,13 +102,13 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             //比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 			LoginNodeDisconnectRequest rq;
 			rq.set_session_id(session_id);
-			get_login_node(session_id)->CallMethod(LoginServiceDisconnect, &rq);
+			get_login_node(session_id)->CallMethod(LoginServiceDisconnectMethod, &rq);
         }
         // controller
         {
             GateDisconnectRequest rq;
             rq.set_session_id(session_id);
-            g_gate_node->controller_node_session()->CallMethod(ControllerServiceGateDisconnect, &rq);
+            g_gate_node->controller_node_session()->CallMethod(ControllerServiceGateDisconnectMethod, &rq);
         }
         gate_tls.sessions().erase(session_id);
     }
@@ -150,7 +151,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_session_id(session_id);
         rq.set_id(request->id());
         rq.set_service_method_id(request->service_method_id());
-        gs->second.gs_session_->CallMethod(GameServiceClientSend2Player, &rq);
+        gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMethod, &rq);
         return;
     }
     else
@@ -161,7 +162,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_session_id(session_id);
         auto msg = rq.add_route_data_list();
         msg->mutable_node_info()->CopyFrom(g_gate_node->node_info());        
-        get_login_node(session_id)->Route2Node(LoginServiceRouteNodeStringMsg, rq);
+        get_login_node(session_id)->Route2Node(LoginServiceRouteNodeStringMsgMethod, rq);
     }
 }
 
@@ -171,7 +172,7 @@ void ClientReceiver::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_
     tips.mutable_tips()->set_id(tip_id);//tips_id.h 暂时写死，错误码不用编译
     MessageBody msg;
     msg.set_body(tips.SerializeAsString());
-    msg.set_service_method_id(ClientPlayerCommonService_Id_PushTipsS2C);
+    msg.set_service_method_id(ClientPlayerCommonServicePushTipsS2CMsgId);
     g_gate_node->codec().send(conn, msg);
 }
 

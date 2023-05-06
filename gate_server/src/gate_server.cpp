@@ -5,9 +5,9 @@
 #include "src/network/login_node.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/service.h"
-#include "src/pb/pbc/service_method/controller_servicemethod.h"
-#include "src/pb/pbc/service_method/deploy_servicemethod.h"
-#include "src/pb/pbc/service_method/game_servicemethod.h"
+#include "src/pb/pbc/controller_service_service.h"
+#include "src/pb/pbc/deploy_service_service.h"
+#include "src/pb/pbc/game_service_service.h"
 #include "src/service/replied_dispathcer.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 
@@ -53,7 +53,7 @@ void GateServer::StartServer()
         {
             GroupLignRequest rq;
             rq.set_group_id(GameConfig::GetSingleton().config_info().group_id());
-            deploy_session()->CallMethod(DeployServiceLoginNodeInfo, &rq);
+            deploy_session()->CallMethod(DeployServiceLoginNodeInfoMethod, &rq);
         }
     );
 
@@ -90,7 +90,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             {
                 ServerInfoRequest rq;
                 rq.set_group(GameConfig::GetSingleton().config_info().group_id());
-                deploy_session()->CallMethod(DeployServiceServerInfo, &rq);
+                deploy_session()->CallMethod(DeployServiceServerInfoMethod, &rq);
             }
         );
     }
@@ -108,7 +108,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
 				rq.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
 				rq.mutable_rpc_client()->set_port(controller_node_addr.port());
 				rq.set_gate_node_id(gate_node_id());
-				controller_node_session()->CallMethod(ControllerServiceGateConnect, &rq);
+				controller_node_session()->CallMethod(ControllerServiceGateConnectMethod, &rq);
 			}
         );
     }
@@ -131,7 +131,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
 						rq.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
 						rq.mutable_rpc_client()->set_port(conn->localAddress().port());
 						rq.set_gate_node_id(gate_node_id());
-						gs_node.gs_session_->CallMethod(GameServiceGateConnectGs, &rq);
+						gs_node.gs_session_->CallMethod(GameServiceGateConnectGsMethod, &rq);
 					}
 				);
             }

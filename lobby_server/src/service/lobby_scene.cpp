@@ -18,7 +18,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/tips_id.h"
-#include "src/pb/pbc/service_method/controller_servicemethod.h"
+#include "src/pb/pbc/controller_service_service.h"
 
 #include "game_service.pb.h"
 #include "controller_service.pb.h"
@@ -49,7 +49,7 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	tls.registry.get<ControllerNodePtr>(controller_node_it->second)->session_.CallMethod(ControllerServiceAddCrossServerScene, &rq);
+	tls.registry.get<ControllerNodePtr>(controller_node_it->second)->session_.CallMethod(ControllerServiceAddCrossServerSceneMethod, &rq);
 	LOG_DEBUG << rq.DebugString();
 }
 
