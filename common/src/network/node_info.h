@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "src/common_type/common_type.h"
 
 enum eServerType : uint32_t
