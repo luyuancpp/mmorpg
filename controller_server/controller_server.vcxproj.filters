@@ -114,6 +114,9 @@
     <ClCompile Include="src\handler\team_server_player_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\replied_handler\player_service_replied.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\controller_server.h">
