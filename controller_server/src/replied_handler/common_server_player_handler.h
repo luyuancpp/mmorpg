@@ -21,8 +21,9 @@ public:
    entt::entity player,
     const ::google::protobuf::Message* request,
     ::google::protobuf::Message* response)override 
-  {
-        switch(method->index()) {
+ 		{
+        switch(method->index())
+		{
 		case 0:
 			UpdateSessionController2Gs(player,
 			nullptr,

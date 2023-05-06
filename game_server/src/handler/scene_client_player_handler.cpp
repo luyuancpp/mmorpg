@@ -46,6 +46,7 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
     Send2ControllerPlayer(ServerPlayerSceneServiceEnterSceneGs2ControllerMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
+
 void ClientPlayerSceneServiceHandler::PushEnterSceneS2C(entt::entity player,
 	const ::EnterSeceneS2C* request,
 	::EnterSeceneS2C* response)
@@ -53,6 +54,7 @@ void ClientPlayerSceneServiceHandler::PushEnterSceneS2C(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void ClientPlayerSceneServiceHandler::PushSceneInfoS2C(entt::entity player,
 	const ::SceneInfoS2C* request,
 	::SceneInfoS2C* response)
@@ -60,3 +62,4 @@ void ClientPlayerSceneServiceHandler::PushSceneInfoS2C(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+

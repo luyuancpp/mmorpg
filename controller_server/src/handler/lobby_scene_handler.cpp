@@ -11,6 +11,7 @@ void LobbyServiceHandler::StartCrossGs(::google::protobuf::RpcController* contro
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void LobbyServiceHandler::StartControllerNode(::google::protobuf::RpcController* controller,
 	const ::StartControllerRequest* request,
 	::google::protobuf::Empty* response,
@@ -19,6 +20,7 @@ void LobbyServiceHandler::StartControllerNode(::google::protobuf::RpcController*
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void LobbyServiceHandler::EnterCrossMainScene(::google::protobuf::RpcController* controller,
 	const ::EnterCrossMainSceneRequest* request,
 	::EnterCrossMainSceneResponese* response,
@@ -27,6 +29,7 @@ void LobbyServiceHandler::EnterCrossMainScene(::google::protobuf::RpcController*
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void LobbyServiceHandler::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::RpcController* controller,
 	const ::EnterCrossMainSceneWeightRoundRobinRequest* request,
 	::EnterCrossRoomSceneSceneWeightRoundRobinResponse* response,
@@ -35,6 +38,7 @@ void LobbyServiceHandler::EnterCrossMainSceneWeightRoundRobin(::google::protobuf
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void LobbyServiceHandler::LeaveCrossMainScene(::google::protobuf::RpcController* controller,
 	const ::LeaveCrossMainSceneRequest* request,
 	::google::protobuf::Empty* response,
@@ -43,6 +47,7 @@ void LobbyServiceHandler::LeaveCrossMainScene(::google::protobuf::RpcController*
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void LobbyServiceHandler::GameConnectToController(::google::protobuf::RpcController* controller,
 	const ::GameConnectToControllerRequest* request,
 	::google::protobuf::Empty* response,
@@ -51,3 +56,4 @@ void LobbyServiceHandler::GameConnectToController(::google::protobuf::RpcControl
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+

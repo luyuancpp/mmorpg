@@ -51,6 +51,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 
 ///<<< END WRITING YOUR CODE
 }
+
 void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controller,
 	const ::NodeServiceMessageRequest* request,
 	::NodeServiceMessageResponse* response,
@@ -92,6 +93,7 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
 
 ///<<< END WRITING YOUR CODE
 }
+
 void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* controller,
 	const ::GameNodeRpcClientRequest* request,
 	::GameNodeRpcClientResponse* response,
@@ -142,6 +144,7 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
     response->set_session_id(request->session_id());
 ///<<< END WRITING YOUR CODE
 }
+
 void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controller,
 	const ::GameNodeDisconnectRequest* request,
 	::google::protobuf::Empty* response,
@@ -162,6 +165,7 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 
 ///<<< END WRITING YOUR CODE
 }
+
 void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* controller,
 	const ::GameNodeConnectRequest* request,
 	::google::protobuf::Empty* response,
@@ -185,6 +189,7 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
     }
 ///<<< END WRITING YOUR CODE
 }
+
 void GameServiceHandler::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
 	const ::NodeServiceMessageRequest* request,
 	::google::protobuf::Empty* response,
@@ -194,6 +199,7 @@ void GameServiceHandler::ControllerSend2PlayerViaGs(::google::protobuf::RpcContr
     ::Send2Player(request->msg().service_method_id(), request->msg(), request->ex().player_id());
 ///<<< END WRITING YOUR CODE
 }
+
 void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controller,
 	const ::NodeServiceMessageRequest* request,
 	::NodeServiceMessageResponse* response,
@@ -242,6 +248,7 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
     response->mutable_msg()->set_service_method_id(request->msg().service_method_id());
 ///<<< END WRITING YOUR CODE
 }
+
 void GameServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
 	const ::RouteMsgStringRequest* request,
 	::RouteMsgStringResponse* response,
@@ -250,6 +257,7 @@ void GameServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* c
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
 	const ::RoutePlayerMsgStringRequest* request,
 	::RoutePlayerMsgStringResponse* response,
@@ -258,3 +266,4 @@ void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController*
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+

@@ -16,6 +16,7 @@ void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity playe
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void ServerPlayerSceneServiceHandler::EnterSceneController2Gs(entt::entity player,
 	const ::Controller2GsEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
@@ -25,6 +26,7 @@ void ServerPlayerSceneServiceHandler::EnterSceneController2Gs(entt::entity playe
 	PlayerSceneSystem::EnterScene(player, request->scene_id());
 ///<<< END WRITING YOUR CODE
 }
+
 void ServerPlayerSceneServiceHandler::LeaveSceneGs2Controller(entt::entity player,
 	const ::Gs2ControllerLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
@@ -33,6 +35,7 @@ void ServerPlayerSceneServiceHandler::LeaveSceneGs2Controller(entt::entity playe
 
 ///<<< END WRITING YOUR CODE
 }
+
 void ServerPlayerSceneServiceHandler::LeaveSceneController2Gs(entt::entity player,
 	const ::Controller2GsLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
@@ -47,6 +50,7 @@ void ServerPlayerSceneServiceHandler::LeaveSceneController2Gs(entt::entity playe
 	}
 ///<<< END WRITING YOUR CODE
 }
+
 void ServerPlayerSceneServiceHandler::Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
 	const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	::google::protobuf::Empty* response)
@@ -54,6 +58,7 @@ void ServerPlayerSceneServiceHandler::Gs2ControllerLeaveSceneAsyncSavePlayerComp
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void ServerPlayerSceneServiceHandler::Controller2GsEnterSceneS2C(entt::entity player,
 	const ::EnterSceneS2CRequest* request,
 	::EnterScenerS2CResponse* response)
@@ -70,3 +75,4 @@ void ServerPlayerSceneServiceHandler::Controller2GsEnterSceneS2C(entt::entity pl
     Send2Player(ClientPlayerSceneServicePushEnterSceneS2CMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
+

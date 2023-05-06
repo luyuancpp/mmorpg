@@ -33,8 +33,9 @@ public:
    entt::entity player,
     const ::google::protobuf::Message* request,
     ::google::protobuf::Message* response)override 
-  {
-        switch(method->index()) {
+ 		{
+        switch(method->index())
+		{
 		case 0:
 			EnterSceneGs2Controller(player,
 			::google::protobuf::internal::DownCast<const Gs2ControllerEnterSceneRequest*>( request),

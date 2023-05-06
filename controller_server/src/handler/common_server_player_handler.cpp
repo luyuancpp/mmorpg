@@ -11,6 +11,7 @@ void ServerPlayerLoginServiceHandler::UpdateSessionController2Gs(entt::entity pl
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void ServerPlayerLoginServiceHandler::Controller2GsLogin(entt::entity player,
 	const ::Controller2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
@@ -18,6 +19,7 @@ void ServerPlayerLoginServiceHandler::Controller2GsLogin(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void ServerPlayerLoginServiceHandler::Controller2GsEnterGateSucceed(entt::entity player,
 	const ::Controller2GsEnterGateSucceedRequest* request,
 	::google::protobuf::Empty* response)
@@ -25,3 +27,4 @@ void ServerPlayerLoginServiceHandler::Controller2GsEnterGateSucceed(entt::entity
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+

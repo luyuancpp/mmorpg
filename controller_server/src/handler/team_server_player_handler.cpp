@@ -10,3 +10,4 @@ void ServerPlayerTeamServiceHandler::EnterScene(entt::entity player,
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+

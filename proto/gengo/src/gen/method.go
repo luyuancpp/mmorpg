@@ -105,7 +105,8 @@ func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 		"entt::entity player,\n    " +
 		"const ::google::protobuf::Message* request,\n    " +
 		"::google::protobuf::Message* response)override \n " +
-		" {\n        switch(method->index()) {\n"
+		config.Tab2 + "{\n        switch(method->index())\n" +
+		config.Tab2 + "{\n"
 
 	for i := 0; i < len(methodList); i++ {
 		rq := methodList[i].Request
@@ -139,7 +140,8 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 		"entt::entity player,\n    " +
 		"const ::google::protobuf::Message* request,\n    " +
 		"::google::protobuf::Message* response)override \n " +
-		" {\n        switch(method->index()) {\n"
+		config.Tab2 + "{\n        switch(method->index())\n" +
+		config.Tab2 + "{\n"
 
 	for i := 0; i < len(methodList); i++ {
 		rq := methodList[i].Request
@@ -183,7 +185,7 @@ func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string
 		}
 		data += yourCodes[i]
 		if isMessage {
-			data += "}\n"
+			data += "}\n\n"
 		}
 	}
 	return data
@@ -209,7 +211,7 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos) (data 
 		}
 		data += yourCodes[i]
 		if isMessage {
-			data += "}\n"
+			data += "}\n\n"
 		}
 	}
 	return data
@@ -363,8 +365,8 @@ func WriteMethodFile() {
 		go writeGsPlayerMethodHandlerCppFile(v)
 		util.Wg.Add(1)
 		go writeGsPlayerMethodHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeGsPlayerMethodRepliedHandlerCppFile(v)
+		//util.Wg.Add(1)
+		//go writeGsPlayerMethodRepliedHandlerCppFile(v)
 
 		//Controller
 		util.Wg.Add(1)
@@ -376,9 +378,9 @@ func WriteMethodFile() {
 		util.Wg.Add(1)
 		go writeControllerPlayerMethodHandlerCppFile(v)
 		util.Wg.Add(1)
-		writeControllerPlayerMethodRepliedHandlerHeadFile(v)
-		util.Wg.Add(1)
-		writeControllerPlayerMethodRepliedHandlerCppFile(v)
+		go writeControllerPlayerMethodRepliedHandlerHeadFile(v)
+		//util.Wg.Add(1)
+		//go writeControllerPlayerMethodRepliedHandlerCppFile(v)
 
 		util.Wg.Add(1)
 		go writeMethodRepliedHandleCppFile(v)
