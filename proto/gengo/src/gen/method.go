@@ -363,6 +363,8 @@ func WriteMethodFile() {
 		go writeGsPlayerMethodHandlerCppFile(v)
 		util.Wg.Add(1)
 		go writeGsPlayerMethodHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeGsPlayerMethodRepliedHandlerCppFile(v)
 
 		//Controller
 		util.Wg.Add(1)
@@ -375,6 +377,8 @@ func WriteMethodFile() {
 		go writeControllerPlayerMethodHandlerCppFile(v)
 		util.Wg.Add(1)
 		writeControllerPlayerMethodRepliedHandlerHeadFile(v)
+		util.Wg.Add(1)
+		writeControllerPlayerMethodRepliedHandlerCppFile(v)
 
 		util.Wg.Add(1)
 		go writeMethodRepliedHandleCppFile(v)
