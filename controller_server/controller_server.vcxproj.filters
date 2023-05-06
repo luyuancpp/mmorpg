@@ -135,6 +135,18 @@
     <ClCompile Include="src\replied_handler\team_server_player_replied_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\replied_handler\controller_service_replied_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\replied_handler\lobby_scene_replied_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\replied_handler\scene_replied_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\replied_handler\team_replied_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\controller_server.h">
@@ -258,6 +270,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\team_server_player_replied_handler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\controller_service_replied_handler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\lobby_scene_replied_handler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\scene_replied_handler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\team_replied_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
