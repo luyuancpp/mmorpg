@@ -163,6 +163,23 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
+func getMethodRepliedHandlerHeadStr(dst string, methodList *RpcMethodInfos) (data string) {
+	methodLen := len(*methodList)
+	firstMethodInfo := (*methodList)[0]
+	data = firstMethodInfo.CppHandlerIncludeName() +
+		"#include \"muduo/net/TcpConnection.h\"\n" +
+		"using namespace muduo;\n" +
+		"using namespace muduo::net;\n\n"
+
+	for i := 0; i < methodLen; i++ {
+		methodInfo := (*methodList)[i]
+		data += "using " + "::" + methodInfo.Response + "Ptr = std::shared_ptr<" + methodInfo.Response + ">;\n"
+		data += "void On" + methodInfo.Service + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
+			methodInfo.Response + "Ptr& replied, Timestamp timestamp);\n\n"
+	}
+	return data
+}
+
 func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
@@ -172,6 +189,34 @@ func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string
 		"#include \"src/network/message_system.h\"\n"
 
 	className := firstMethodInfo.Service + config.HandlerName
+	for i := 0; i < len(yourCodes); i++ {
+		j := i - 1
+		isMessage := j >= 0 && j < methodLen
+		if isMessage {
+			methodInfo := (*methodList)[j]
+			data += "void " + className + "::" + methodInfo.Method + config.GoogleMethodController + "\n" +
+				config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
+				config.Tab + "::" + methodInfo.Response + "* response,\n" +
+				config.Tab + " ::google::protobuf::Closure* done)\n{\n"
+		}
+		data += yourCodes[i]
+		if isMessage {
+			data += "}\n\n"
+		}
+	}
+	return data
+}
+
+func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
+	methodLen := len(*methodList)
+	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
+	firstMethodInfo := (*methodList)[0]
+	data = firstMethodInfo.CppHandlerIncludeName() +
+		"#include \"muduo/net/TcpConnection.h\"\n" +
+		"using namespace muduo;\n" +
+		"using namespace muduo::net;\n\n"
+
+	className := firstMethodInfo.Service + config.RepliedHandlerName
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
 		isMessage := j >= 0 && j < methodLen
@@ -379,7 +424,7 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	}
 
 	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "controller") {
+		if !strings.Contains(methodList[0].FileBaseName(), "game") {
 			return
 		}
 	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
@@ -387,6 +432,94 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	}
 
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
+	dstFileName := config.ControllerMethodHandleDir + fileName
+	md5FileName := GetMd5FileName(dstFileName)
+	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(md5FileName, data)
+	Md5Copy(dstFileName, md5FileName)
+}
+
+func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+
+	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !strings.Contains(methodList[0].FileBaseName(), "game") {
+			return
+		}
+	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+		return
+	}
+
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
+	dstFileName := config.GsMethodRepliedHandleDir + fileName
+	md5FileName := GetMd5FileName(dstFileName)
+	data := getMethodRepliedHandlerHeadStr(dstFileName, &methodList)
+	Md5WriteData2File(md5FileName, data)
+	Md5Copy(dstFileName, md5FileName)
+}
+
+func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+
+	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !strings.Contains(methodList[0].FileBaseName(), "controller") {
+			return
+		}
+	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+		return
+	}
+
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
+	dstFileName := config.GsMethodRepliedHandleDir + fileName
+	md5FileName := GetMd5FileName(dstFileName)
+	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(md5FileName, data)
+	Md5Copy(dstFileName, md5FileName)
+}
+
+func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+
+	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !strings.Contains(methodList[0].FileBaseName(), "controller") {
+			return
+		}
+	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+		return
+	}
+
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
+	dstFileName := config.ControllerMethodHandleDir + fileName
+	md5FileName := GetMd5FileName(dstFileName)
+	data := getMethodRepliedHandlerHeadStr(dstFileName, &methodList)
+	Md5WriteData2File(md5FileName, data)
+	Md5Copy(dstFileName, md5FileName)
+}
+
+func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+
+	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !strings.Contains(methodList[0].FileBaseName(), "controller") {
+			return
+		}
+	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+		return
+	}
+
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.ControllerMethodHandleDir + fileName
 	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodHandlerCppStr(dstFileName, &methodList)
@@ -411,6 +544,10 @@ func WriteMethodFile() {
 		util.Wg.Add(1)
 		go writeGsPlayerMethodHandlerCppFile(v)
 		util.Wg.Add(1)
+		go writeGsMethodRepliedHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeGsMethodRepliedHandlerCppFile(v)
+		util.Wg.Add(1)
 		go writeGsPlayerMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
 		go writeGsPlayerMethodRepliedHandlerCppFile(v)
@@ -424,6 +561,10 @@ func WriteMethodFile() {
 		go writeControllerPlayerMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
 		go writeControllerPlayerMethodHandlerCppFile(v)
+		util.Wg.Add(1)
+		go writeControllerMethodRepliedHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeControllerMethodRepliedHandlerCppFile(v)
 		util.Wg.Add(1)
 		go writeControllerPlayerMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
