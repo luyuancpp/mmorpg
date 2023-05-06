@@ -98,7 +98,7 @@ func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 	data += methodList[0].IncludeName()
 	data += config.PlayerServiceIncludeName
 	data += "\nclass " + methodList[0].Service + config.HandlerName + " : public ::PlayerService" + "\n{\npublic:\n"
-	data += config.Tab + "PlayerService::PlayerService;\n"
+	data += config.Tab + "using PlayerService::PlayerService;\n"
 	var functionNameList string
 	var callFunctionList = " void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n   " +
 		"entt::entity player,\n    " +
@@ -133,7 +133,7 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 	data += methodList[0].IncludeName()
 	data += config.PlayerServiceRepliedIncludeName
 	data += "\nclass " + methodList[0].Service + config.RepliedHandlerName + " : public ::PlayerServiceReplied" + "\n{\npublic:\n"
-	data += config.Tab + "PlayerServiceReplied::PlayerServiceReplied;\n"
+	data += config.Tab + "using PlayerServiceReplied::PlayerServiceReplied;\n"
 	var functionNameList string
 	var callFunctionList = " void CallMethod(const ::google::protobuf::MethodDescriptor* method,\n   " +
 		"entt::entity player,\n    " +

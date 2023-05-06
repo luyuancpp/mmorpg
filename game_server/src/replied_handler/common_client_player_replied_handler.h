@@ -4,7 +4,7 @@
 class ClientPlayerCommonServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
-	PlayerServiceReplied::PlayerServiceReplied;
+	using PlayerServiceReplied::PlayerServiceReplied;
 	void PushTipsS2C(entt::entity player,
 		const ::TipsS2C* request,
 		::TipsS2C* response);

@@ -4,7 +4,7 @@
 class ServerPlayerLoginServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
-	PlayerServiceReplied::PlayerServiceReplied;
+	using PlayerServiceReplied::PlayerServiceReplied;
 	void UpdateSessionController2Gs(entt::entity player,
 		const ::UpdateSessionController2GsRequest* request,
 		::google::protobuf::Empty* response);

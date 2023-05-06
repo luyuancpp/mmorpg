@@ -4,7 +4,7 @@
 class ClientPlayerSceneServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
-	PlayerServiceReplied::PlayerServiceReplied;
+	using PlayerServiceReplied::PlayerServiceReplied;
 	void EnterSceneC2S(entt::entity player,
 		const ::EnterSeceneC2SRequest* request,
 		::EnterSeceneC2SResponse* response);
