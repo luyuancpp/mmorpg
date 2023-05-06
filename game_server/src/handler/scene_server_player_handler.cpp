@@ -9,38 +9,33 @@
 
 #include "client_player_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
-
-///<<<rpc begin
 void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity player,
-    const ::Gs2ControllerEnterSceneRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Gs2ControllerEnterSceneRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::EnterSceneController2Gs(entt::entity player,
-    const ::Controller2GsEnterSceneRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Controller2GsEnterSceneRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 		//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 	PlayerSceneSystem::EnterScene(player, request->scene_id());
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::LeaveSceneGs2Controller(entt::entity player,
-    const ::Gs2ControllerLeaveSceneRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Gs2ControllerLeaveSceneRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::LeaveSceneController2Gs(entt::entity player,
-    const ::Controller2GsLeaveSceneRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Controller2GsLeaveSceneRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	PlayerSceneSystem::LeaveScene(player);
@@ -52,18 +47,16 @@ void ServerPlayerSceneServiceHandler::LeaveSceneController2Gs(entt::entity playe
 	}
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
-    const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::Controller2GsEnterSceneS2C(entt::entity player,
-    const ::EnterSceneS2CRequest* request,
-    ::EnterScenerS2CResponse* response)
+	const ::EnterSceneS2CRequest* request,
+	::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto try_scene = tls.registry.try_get<SceneEntity>(player);
@@ -77,5 +70,3 @@ void ServerPlayerSceneServiceHandler::Controller2GsEnterSceneS2C(entt::entity pl
     Send2Player(ClientPlayerSceneServicePushEnterSceneS2CMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
-
-///<<<rpc end
