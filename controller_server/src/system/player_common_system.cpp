@@ -54,10 +54,10 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
 	if (try_enter_gs->enter_gs_type() == LOGIN_FIRST)
 	{
 	}
-	else if (try_enter_gs->enter_gs_type() == LOGIN_REPLACE)//¶¥ºÅ
+	else if (try_enter_gs->enter_gs_type() == LOGIN_REPLACE)//é¡¶å·
 	{
 	}
-	else if (try_enter_gs->enter_gs_type() == LOGIN_RECONNET)//ÖØÁ¬
+	else if (try_enter_gs->enter_gs_type() == LOGIN_RECONNET)//é‡è¿
 	{
 	}
 
@@ -68,7 +68,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         Send2GsPlayer(ServerPlayerLoginServiceController2GsLoginMsgId, message, player);
     }
    
-    //¸ø¿Í»§¶Ë·¢ËùÓĞ³¡¾°ÏûÏ¢
+    //ç»™å®¢æˆ·ç«¯å‘æ‰€æœ‰åœºæ™¯æ¶ˆæ¯
     {
         SceneInfoS2C message;
         for (auto e : tls.registry.view<MainScene>())

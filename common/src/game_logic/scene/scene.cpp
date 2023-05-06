@@ -105,7 +105,7 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 
 void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 {
-    // todo ÈËµÃ»»³¡¾°
+    // todo äººå¾—æ¢åœºæ™¯
     auto scene_entity = param.scene_;
 	auto& si = tls.registry.get<SceneInfo>(scene_entity);
 	scene_list_.erase(si.scene_id());
@@ -116,7 +116,7 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 
 void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 {
-    // todo ÈËµÃ»»³¡¾°
+    // todo äººå¾—æ¢åœºæ™¯
     auto server_entity = param.server_;
 	EntitySet server_scenes;
 	for (auto& it : tls.registry.get<ConfigSceneMap>(server_entity).confid_sceneslist())
@@ -146,11 +146,11 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
     {
         for (auto& ji : it.second)
         {
-            tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, p_to_server_data);//todo ÈËÊı¼ÆËã´íÎó,Ã»ÓĞ¼ÓÉÏÔ­À´³¡¾°µÄÈËÊı
+            tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, p_to_server_data);//todo äººæ•°è®¡ç®—é”™è¯¯,æ²¡æœ‰åŠ ä¸ŠåŸæ¥åœºæ™¯çš„äººæ•°
             to_scenes_id.AddScene(it.first, ji);
         }
     }
-    tls.registry.emplace_or_replace<ConfigSceneMap>(param.from_server_);//todo Èç¹ûÔ­À´server »¹ÓĞ³¡¾°ÄØ
+    tls.registry.emplace_or_replace<ConfigSceneMap>(param.from_server_);//todo å¦‚æœåŸæ¥server è¿˜æœ‰åœºæ™¯å‘¢
 }
 
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
@@ -185,7 +185,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
         tls.dispatcher.trigger(before_enter_scene_event);
     }
     
-    //todo gs Ö»ÒªÈËÊı¸ü¸Ä
+    //todo gs åªè¦äººæ•°æ›´æ”¹
     tls.registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
     tls.registry.emplace<SceneEntity>(param.enterer_, param.scene_);
 	auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.scene_);// todo weak_ptr ?

@@ -42,15 +42,15 @@ EntityPtr ControllerPlayerSystem::EnterGame(Guid guid)
 
 void ControllerPlayerSystem::LeaveGame(Guid guid)
 {
-    //todo µÇÂ¼µÄÊ±ºòleave
-    //todo ¶ÏÏß²»ÄÜÂíÉÏÏÂÏß£¬ÕâÀïÖ®ºó»á¸Ä
+    //todo ç™»å½•çš„æ—¶å€™leave
+    //todo æ–­çº¿ä¸èƒ½é©¬ä¸Šä¸‹çº¿ï¼Œè¿™é‡Œä¹‹åä¼šæ”¹
     auto it = controller_tls.player_list().find(guid);
     if ( it == controller_tls.player_list().end())
     {
         return;
     }
     auto player = it->second;
-    //Ã»½øÈë³¡¾°£¬Ö»ÊÇµÇÂ¼£¬»òÕßÇĞ»»³¡¾°¹ı³ÌÖĞ
+    //æ²¡è¿›å…¥åœºæ™¯ï¼Œåªæ˜¯ç™»å½•ï¼Œæˆ–è€…åˆ‡æ¢åœºæ™¯è¿‡ç¨‹ä¸­
     if (nullptr == tls.registry.try_get<SceneEntity>(player))
     {
     }

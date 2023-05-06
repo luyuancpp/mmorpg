@@ -176,7 +176,7 @@ void ControllerServer::receive(const OnBeConnectedEvent& es)
 			{
 				continue;
 			}
-            auto gsnode = tls.registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+            auto gsnode = tls.registry.try_get<GsNodePtr>(e);//濡傛灉鏄父鎴忛�昏緫鏈嶅垯鍒犻櫎
             if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGameNode)
             {
                 //remove AfterChangeGsEnterScene

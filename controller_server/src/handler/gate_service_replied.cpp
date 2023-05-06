@@ -10,8 +10,8 @@ extern entt::entity GetPlayerByConnId(uint64_t session_id);
 
 void OnGateUpdatePlayerGsReplied(const TcpConnectionPtr& conn, const PlayerEnterGsResponesePtr& replied, Timestamp timestamp)
 {
-    //gate ¸üĞÂÍêgs£¬ÏàÓ¦µÄgs¿ÉÒÔÍùÄÇ¸ögateÉÏ·¢ËÍÏûÏ¢ÁË
-    //todo ÖĞ¼ä·µ»ØÊÇ¶Ï¿ªÁË
+    //gate æ›´æ–°å®Œgsï¼Œç›¸åº”çš„gså¯ä»¥å¾€é‚£ä¸ªgateä¸Šå‘é€æ¶ˆæ¯äº†
+    //todo ä¸­é—´è¿”å›æ˜¯æ–­å¼€äº†
     entt::entity player = GetPlayerByConnId(tcp_session_id(conn));
     if (entt::null == player)
     {
