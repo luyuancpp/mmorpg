@@ -165,16 +165,17 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
-	methodInfo := (*methodList)[0]
-	data = methodInfo.CppHandlerIncludeName() +
+	firstMethodInfo := (*methodList)[0]
+	data = firstMethodInfo.CppHandlerIncludeName() +
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"\n"
 
-	className := methodInfo.Service + config.HandlerName
+	className := firstMethodInfo.Service + config.HandlerName
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
 		isMessage := j >= 0 && j < methodLen
 		if isMessage {
+			methodInfo := (*methodList)[j]
 			data += "void " + className + "::" + methodInfo.Method + config.GoogleMethodController + "\n" +
 				config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
 				config.Tab + "::" + methodInfo.Response + "* response,\n" +
@@ -191,16 +192,17 @@ func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string
 func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
-	methodInfo := (*methodList)[0]
-	data = methodInfo.CppHandlerIncludeName() +
+	firstMethodInfo := (*methodList)[0]
+	data = firstMethodInfo.CppHandlerIncludeName() +
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"\n"
 
-	className := methodInfo.Service + config.HandlerName
+	className := firstMethodInfo.Service + config.HandlerName
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
 		isMessage := j >= 0 && j < methodLen
 		if isMessage {
+			methodInfo := (*methodList)[j]
 			data += "void " + className + "::" + methodInfo.Method + config.PlayerMethodController + "\n" +
 				config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
 				config.Tab + "::" + methodInfo.Response + "* response)\n{\n"
@@ -327,13 +329,15 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	if !methodList[0].IsPlayerService() {
+
+	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !strings.Contains(methodList[0].FileBaseName(), "controller") {
+			return
+		}
+	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
 		return
 	}
 
-	if !methodList[0].IsPlayerService() {
-		return
-	}
 	fileName := strings.ToLower(methodList[0].Service) + config.CppHandlerEx
 	dstFileName := config.ControllerMethodHandleDir + fileName
 	md5FileName := GetMd5FileName(dstFileName)
