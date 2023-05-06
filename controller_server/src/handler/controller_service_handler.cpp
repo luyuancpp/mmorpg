@@ -27,6 +27,7 @@
 #include "src/network/player_session.h"
 #include "src/network/server_component.h"
 #include "src/network/node_info.h"
+#include "src/network/rpc_msg_route.h"
 #include "src/pb/pbc/gate_service_service.h"
 #include "src/pb/pbc/game_service_service.h"
 #include "src/pb/pbc/login_service_service.h"
