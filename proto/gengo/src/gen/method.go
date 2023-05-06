@@ -3,6 +3,7 @@ package gen
 import (
 	"gengo/config"
 	"gengo/util"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -256,11 +257,11 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 			fileName := strings.ToLower(method.Method+"_"+method.Service) + config.CppHandlerEx
 			dstFileName := config.GsMethodHandleDir + fileName
 			md5FileName := GetMd5FileName(dstFileName)
-			//os.RemoveAll(dstFileName)
-			//os.RemoveAll(md5FileName)
-			data := getMethodHandlerCppStr(dstFileName, method)
-			Md5WriteData2File(md5FileName, data)
-			Md5Copy(dstFileName, md5FileName)
+			os.RemoveAll(dstFileName)
+			os.RemoveAll(md5FileName)
+			//data := getMethodHandlerCppStr(dstFileName, method)
+			//Md5WriteData2File(md5FileName, data)
+			//Md5Copy(dstFileName, md5FileName)
 		}(i)
 	}
 }
@@ -281,11 +282,11 @@ func writeGsMethodPlayerHandlerCppFile(methodList RpcMethodInfos) {
 			fileName := strings.ToLower(method.Method+"_"+method.Service) + config.CppHandlerEx
 			dstFileName := config.GsMethodHandleDir + fileName
 			md5FileName := GetMd5FileName(dstFileName)
-			//os.RemoveAll(dstFileName)
-			//os.RemoveAll(md5FileName)
-			data := getMethodPlayerHandlerCppStr(dstFileName, method)
-			Md5WriteData2File(md5FileName, data)
-			Md5Copy(dstFileName, md5FileName)
+			os.RemoveAll(dstFileName)
+			os.RemoveAll(md5FileName)
+			//data := getMethodPlayerHandlerCppStr(dstFileName, method)
+			//Md5WriteData2File(md5FileName, data)
+			//Md5Copy(dstFileName, md5FileName)
 		}(i)
 	}
 }
@@ -320,9 +321,11 @@ func writePlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 			fileName := strings.ToLower(method.Method+"_"+method.Service) + config.CppHandlerEx
 			dstFileName := config.ControllerMethodHandleDir + fileName
 			md5FileName := GetMd5FileName(dstFileName)
-			data := getMethodPlayerHandlerCppStr(dstFileName, method)
-			Md5WriteData2File(md5FileName, data)
-			Md5Copy(dstFileName, md5FileName)
+			os.RemoveAll(dstFileName)
+			os.RemoveAll(md5FileName)
+			//data := getMethodPlayerHandlerCppStr(dstFileName, method)
+			//Md5WriteData2File(md5FileName, data)
+			//Md5Copy(dstFileName, md5FileName)
 		}(i)
 	}
 }
