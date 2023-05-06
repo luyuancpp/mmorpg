@@ -14,8 +14,8 @@
 #include "src/network/route_system.h"
 #include "src/network/node_info.h"
 #include "src/redis_client/redis_client.h"
-#include "src/pb/pbc/service_method/controller_servicemethod.h"
-#include "src/pb/pbc/service_method/database_servicemethod.h"
+#include "src/pb/pbc/controller_service_service.h"
+#include "src/pb/pbc/database_service_service.h"
 #include "src/pb/pbc/service.h"
 
 #include "login_service.pb.h"
@@ -157,7 +157,7 @@ void LoginServiceImpl::Login(::google::protobuf::RpcController* controller,
 	rq.set_account(request->account());
 	uint64_t session_id = 1;
 	sessions_.emplace(session_id, std::make_shared<PlayerPtr::element_type>());
-	Route2Node(kControllerNode, rq, ControllerServiceLsLoginAccount);
+	Route2Node(kControllerNode, rq, ControllerServiceLsLoginAccountMethod);
 	//LoginAccountControllerReplied
 ///<<< END WRITING YOUR CODE
 }
@@ -247,7 +247,7 @@ void LoginServiceImpl::LeaveGame(::google::protobuf::RpcController* controller,
 	//连接过，登录过
 	CtrlLsLeaveGameRequest rq;
 	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->CallMethod(ControllerServiceLsLeaveGame, &rq);
+	g_login_node->controller_node()->CallMethod(ControllerServiceLsLeaveGameMethod, &rq);
 	sessions_.erase(sit);
 ///<<< END WRITING YOUR CODE
 }
@@ -262,7 +262,7 @@ void LoginServiceImpl::Disconnect(::google::protobuf::RpcController* controller,
 	sessions_.erase(request->session_id());
 	CtrlLsDisconnectRequest rq;
 	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->CallMethod(ControllerServiceLsDisconnect, &rq);
+	g_login_node->controller_node()->CallMethod(ControllerServiceLsDisconnectMethod, &rq);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -330,12 +330,12 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
     {
     case kControllerNode: 
 	{
-        g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsg, mutable_request);
+        g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethod, mutable_request);
     }
     break;
     case kDatabaseNode:
     {
-        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsg, mutable_request);
+        g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethod, mutable_request);
     }
     break;
     default:

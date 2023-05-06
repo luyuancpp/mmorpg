@@ -13,7 +13,6 @@ thread_local uint64_t PlayerId::player_id = 100;
 
 void pb2sol2();
 void InitServiceLua();
-void InitServiceMethodLua();
 
 void LogInfo(const std::string& s)
 {
@@ -38,6 +37,5 @@ void InitLua()
         "player_id",
         sol::var(PlayerId::player_id));
     InitServiceLua();
-    InitServiceMethodLua();
 }
 
