@@ -186,6 +186,11 @@
     <ClInclude Include="src\event_handler\event_handler.h" />
     <ClInclude Include="src\event_handler\mission_event_handler.h" />
     <ClInclude Include="src\event_handler\scene_event_handler.h" />
+    <ClInclude Include="src\handler\common_client_player_handler.h" />
+    <ClInclude Include="src\handler\lobby_scene_handler.h" />
+    <ClInclude Include="src\handler\scene_client_player_handler.h" />
+    <ClInclude Include="src\handler\team_client_player_handler.h" />
+    <ClInclude Include="src\handler\team_server_player_handler.h" />
     <ClInclude Include="src\network\controller_rpc.h" />
     <ClInclude Include="src\network\gate_session.h" />
     <ClInclude Include="src\network\gs_node.h" />

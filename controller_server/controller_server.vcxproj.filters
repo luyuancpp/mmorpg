@@ -191,5 +191,20 @@
     <ClInclude Include="src\event_handler\mission_event_handler.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\handler\common_client_player_handler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\lobby_scene_handler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\scene_client_player_handler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\team_client_player_handler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\team_server_player_handler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

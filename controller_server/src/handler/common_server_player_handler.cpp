@@ -4,30 +4,24 @@
 ///<<< BEGIN WRITING YOUR CODE
 
 ///<<< END WRITING YOUR CODE
-
-///<<<rpc begin
 void ServerPlayerLoginServiceHandler::UpdateSessionController2Gs(entt::entity player,
-    const ::UpdateSessionController2GsRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::UpdateSessionController2GsRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerLoginServiceHandler::Controller2GsLogin(entt::entity player,
-    const ::Controller2GsLoginRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Controller2GsLoginRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerLoginServiceHandler::Controller2GsEnterGateSucceed(entt::entity player,
-    const ::Controller2GsEnterGateSucceedRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Controller2GsEnterGateSucceedRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
-///<<<rpc end

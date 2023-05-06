@@ -302,7 +302,7 @@ func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	if !methodList[0].IsPlayerService() {
 		return
 	}
-	fileName := strings.ToLower(methodList[0].Service) + config.CppHandlerEx
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.ControllerMethodHandleDir + fileName
 	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodPlayerHandlerCppStr(dstFileName, &methodList)
@@ -337,7 +337,7 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 		return
 	}
 
-	fileName := strings.ToLower(methodList[0].Service) + config.CppHandlerEx
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.ControllerMethodHandleDir + fileName
 	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodHandlerCppStr(dstFileName, &methodList)
