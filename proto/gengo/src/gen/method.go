@@ -455,10 +455,8 @@ func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 
 	fileName := strings.ToLower(fileBaseName) + config.HeadRepliedHandlerEx
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodRepliedHandlerHeadStr(dstFileName, &methodList)
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
 }
 
 func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
@@ -479,10 +477,8 @@ func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 
 	fileName := strings.ToLower(fileBaseName) + config.CppRepliedHandlerEx
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
 }
 
 func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
@@ -495,13 +491,10 @@ func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 		strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return
 	}
-
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
 	dstFileName := config.ControllerMethodRepliedHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodRepliedHandlerHeadStr(dstFileName, &methodList)
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
 }
 
 func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
@@ -517,10 +510,8 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.ControllerMethodRepliedHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
 }
 
 func WriteMethodFile() {
