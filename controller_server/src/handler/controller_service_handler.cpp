@@ -178,6 +178,7 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* controller,
 	const ::GateConnectRequest* request,
 	::google::protobuf::Empty* response,
@@ -209,6 +210,7 @@ void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* co
 	}
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::GateLeaveGame(::google::protobuf::RpcController* controller,
 	const ::GateLeaveGameRequest* request,
 	::google::protobuf::Empty* response,
@@ -217,6 +219,7 @@ void ControllerServiceHandler::GateLeaveGame(::google::protobuf::RpcController* 
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,
 	const ::GateClientMessageRequest* request,
 	::google::protobuf::Empty* response,
@@ -225,6 +228,7 @@ void ControllerServiceHandler::GatePlayerService(::google::protobuf::RpcControll
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController* controller,
 	const ::GateDisconnectRequest* request,
 	::google::protobuf::Empty* response,
@@ -266,6 +270,7 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::StartLs(::google::protobuf::RpcController* controller,
 	const ::StartLsRequest* request,
 	::StartLsResponse* response,
@@ -300,6 +305,7 @@ void ControllerServiceHandler::StartLs(::google::protobuf::RpcController* contro
 	LOG_DEBUG << "login connect node id: " << request->login_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController* controller,
 	const ::CtrlLoginAccountRequest* request,
 	::CtrlLoginAccountResponse* response,
@@ -347,6 +353,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	}
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* controller,
 	const ::CtrlEnterGameRequest* request,
 	::CtrlEnterGameResponese* response,
@@ -433,6 +440,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 	
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,
 	const ::CtrlLsLeaveGameRequest* request,
 	::google::protobuf::Empty* response,
@@ -445,6 +453,7 @@ void ControllerServiceHandler::LsLeaveGame(::google::protobuf::RpcController* co
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::LsDisconnect(::google::protobuf::RpcController* controller,
 	const ::CtrlLsDisconnectRequest* request,
 	::google::protobuf::Empty* response,
@@ -456,6 +465,7 @@ void ControllerServiceHandler::LsDisconnect(::google::protobuf::RpcController* c
 	controller_tls.gate_sessions().erase(player_id);
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController* controller,
 	const ::NodeServiceMessageRequest* request,
 	::NodeServiceMessageResponse* response,
@@ -503,6 +513,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 	response->mutable_msg()->set_service_method_id(request->msg().service_method_id());
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcController* controller,
 	const ::AddCrossServerSceneRequest* request,
 	::google::protobuf::Empty* response,
@@ -530,6 +541,7 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 	}
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
 	const ::EnterGsSucceedRequest* request,
 	::google::protobuf::Empty* response,
@@ -570,6 +582,7 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
 	const ::RouteMsgStringRequest* request,
 	::RouteMsgStringResponse* response,
@@ -701,6 +714,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 
 ///<<< END WRITING YOUR CODE
 }
+
 void ControllerServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
 	const ::RoutePlayerMsgStringRequest* request,
 	::RoutePlayerMsgStringResponse* response,
@@ -709,3 +723,4 @@ void ControllerServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcContr
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
+

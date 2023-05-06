@@ -41,6 +41,7 @@ void ServerPlayerLoginServiceHandler::UpdateSessionController2Gs(entt::entity pl
     tls.registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 ///<<< END WRITING YOUR CODE
 }
+
 void ServerPlayerLoginServiceHandler::Controller2GsLogin(entt::entity player,
 	const ::Controller2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
@@ -53,6 +54,7 @@ void ServerPlayerLoginServiceHandler::Controller2GsLogin(entt::entity player,
     PlayerCommonSystem::OnPlayerLogin(player, request->enter_gs_type());
 ///<<< END WRITING YOUR CODE
 }
+
 void ServerPlayerLoginServiceHandler::Controller2GsEnterGateSucceed(entt::entity player,
 	const ::Controller2GsEnterGateSucceedRequest* request,
 	::google::protobuf::Empty* response)
@@ -61,3 +63,4 @@ void ServerPlayerLoginServiceHandler::Controller2GsEnterGateSucceed(entt::entity
     PlayerCommonSystem::OnEnterGateSucceed(player);
 ///<<< END WRITING YOUR CODE
 }
+
