@@ -443,16 +443,17 @@ func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-
-	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "game") {
+	path := methodList[0].Path
+	fileBaseName := methodList[0].FileBaseName()
+	if strings.Contains(path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !strings.Contains(fileBaseName, "controller") {
 			return
 		}
-	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+	} else if !strings.Contains(path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
 		return
 	}
 
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
+	fileName := strings.ToLower(fileBaseName) + config.HeadRepliedHandlerEx
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
 	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodRepliedHandlerHeadStr(dstFileName, &methodList)
@@ -466,15 +467,17 @@ func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 		return
 	}
 
-	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "controller") {
+	path := methodList[0].Path
+	fileBaseName := methodList[0].FileBaseName()
+	if strings.Contains(path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !strings.Contains(fileBaseName, "controller") {
 			return
 		}
-	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+	} else if !strings.Contains(path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
 		return
 	}
 
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
+	fileName := strings.ToLower(fileBaseName) + config.CppRepliedHandlerEx
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
 	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
@@ -488,8 +491,8 @@ func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 
-	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		!strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+	if !(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return
 	}
 
@@ -507,8 +510,8 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 		return
 	}
 
-	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		!strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+	if !(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return
 	}
 
