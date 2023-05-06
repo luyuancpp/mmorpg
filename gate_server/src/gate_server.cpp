@@ -77,7 +77,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
     if (IsSameAddr(conn->peerAddress(), DeployConfig::GetSingleton().deploy_info()))
     {
         // started 
-        if (nullptr != server_)//断线重连
+        if (nullptr != server_)//鏂嚎閲嶈繛
         {
             return;
         }
@@ -114,7 +114,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
     }
     else
     {
-        //todo 断线重连
+        //todo 鏂嚎閲嶈繛
         for (auto& it : g_game_node)
         {
             if (!IsSameAddr(it.second.gs_session_->peer_addr(), conn->peerAddress()))

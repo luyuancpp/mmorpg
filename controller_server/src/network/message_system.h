@@ -12,13 +12,13 @@ void Send2Gs(uint32_t service_method_id, const google::protobuf::Message& messag
 void Send2GsPlayer(uint32_t service_method_id, const google::protobuf::Message& message, entt::entity player);
 void Send2GsPlayer(uint32_t service_method_id, const google::protobuf::Message& message, EntityPtr& entity);
 void Send2GsPlayer(uint32_t service_method_id, const google::protobuf::Message& message, Guid player_id);
-void Send2PlayerViaGs(uint32_t service_method_id, const google::protobuf::Message& message, Guid player_id);//Í¨¹ıgs×ª·¢¸ø¿Í»§¶Ë
+void Send2PlayerViaGs(uint32_t service_method_id, const google::protobuf::Message& message, Guid player_id);//é€šè¿‡gsè½¬å‘ç»™å®¢æˆ·ç«¯
 void Send2PlayerViaGs(uint32_t service_method_id, const google::protobuf::Message& message, EntityPtr& player);
 void Send2PlayerViaGs(uint32_t service_method_id, const google::protobuf::Message& message, entt::entity player);
-/*×¢Òâ£¬controller·¢¸øplayerÏûÏ¢ºÍgs·¢¸øplayerµÄÏûÏ¢ÊÇÒì²½µÄ£¬²»ÄÜ±£Ö¤ms gs µÄÏûÏ¢ÄÄ¸öÏÈµ½player
-* Èç¹ûĞèÒª±£Ö¤µÄ»°£¬×Ô¼ºÔÚÊÕµ½¶ÔÓ¦µÄnodeserver»Ø°üÒÔºóÔÙÍ¬²½ÏûÏ¢¸øplayer
-* Èç¹ûgs·¢¹ıÀ´µÄÏûÏ¢,ĞèÒª°´Ë³ĞòÍÆËÍ¸ø¸ø¿Í»§¶Ë£¬²»ÄÜÖ±½ÓÔÚgs2controllerµÄÎ¢·şÎñÀïÃæÀïÃæµ÷ÓÃÕâ¸ö½Ó¿Ú
-* ±ØĞëµÃreplied·µ»Ø¸øgsºóÔÙÔÚgs·µ»Ø¸ø¿Í»§¡£
+/*æ³¨æ„ï¼Œcontrollerå‘ç»™playeræ¶ˆæ¯å’Œgså‘ç»™playerçš„æ¶ˆæ¯æ˜¯å¼‚æ­¥çš„ï¼Œä¸èƒ½ä¿è¯ms gs çš„æ¶ˆæ¯å“ªä¸ªå…ˆåˆ°player
+* å¦‚æœéœ€è¦ä¿è¯çš„è¯ï¼Œè‡ªå·±åœ¨æ”¶åˆ°å¯¹åº”çš„nodeserverå›åŒ…ä»¥åå†åŒæ­¥æ¶ˆæ¯ç»™player
+* å¦‚æœgså‘è¿‡æ¥çš„æ¶ˆæ¯,éœ€è¦æŒ‰é¡ºåºæ¨é€ç»™ç»™å®¢æˆ·ç«¯ï¼Œä¸èƒ½ç›´æ¥åœ¨gs2controllerçš„å¾®æœåŠ¡é‡Œé¢é‡Œé¢è°ƒç”¨è¿™ä¸ªæ¥å£
+* å¿…é¡»å¾—repliedè¿”å›ç»™gsåå†åœ¨gsè¿”å›ç»™å®¢æˆ·ã€‚
 */
 void Send2Player(uint32_t service_method_id, const google::protobuf::Message& message, entt::entity player);
 void Send2Player(uint32_t service_method_id, const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id);

@@ -99,7 +99,7 @@ void GameServer::ServerInfo(const ::servers_info_data& info)
     {
         LobbyServerRequest rq;
         rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-        deploy_node_->CallMethod(DeployServiceAcquireLobbyInfoMethod, &rq);//»ñÈ¡´óÌü·şÏÂËùÓĞ·şÎñÆ÷ĞÅÏ¢
+        deploy_node_->CallMethod(DeployServiceAcquireLobbyInfoMethod, &rq);//è·å–å¤§å…æœä¸‹æ‰€æœ‰æœåŠ¡å™¨ä¿¡æ¯
     }
 	
 }
@@ -215,7 +215,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
             EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::CallControllerStartGs, this, controller_session));
             break;
         }
-        // ms ×ß¶ÏÏßÖØÁ¬£¬²»É¾³ı
+        // ms èµ°æ–­çº¿é‡è¿ï¼Œä¸åˆ é™¤
     }
 
     if (nullptr != lobby_node_)
@@ -252,7 +252,7 @@ void GameServer::receive(const OnBeConnectedEvent& es)
 			{
 				continue;
 			}
-			auto gatenode = tls.registry.try_get<GateNodePtr>(e);//Èç¹ûÊÇgate
+			auto gatenode = tls.registry.try_get<GateNodePtr>(e);//å¦‚æœæ˜¯gate
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
                 game_tls.gate_node().erase((*gatenode)->node_info_.node_id());

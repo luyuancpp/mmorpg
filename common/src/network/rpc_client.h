@@ -126,7 +126,7 @@ private:
         {
             connected_ = false;
         }
-        //todo ÕâÀïÈç¹û°Ñ×Ô¼ºÉ¾³ýÁËÔõÃ´°ì
+        //todo è¿™é‡Œå¦‚æžœæŠŠè‡ªå·±åˆ é™¤äº†æ€Žä¹ˆåŠž
         emp_->emit<OnConnected2ServerEvent>(conn);
     }
 

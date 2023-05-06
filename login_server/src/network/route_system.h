@@ -2,6 +2,6 @@
 
 #include "google/protobuf/message.h"
 
-//Óësend ²»Í¬,route ÊÇ»áÔÚ¸÷¸ö½Úµã¼ä´«²¥ÏûÏ¢,ÓĞ×î´óÖµÉÏÏŞ
+//ä¸send ä¸åŒ,route æ˜¯ä¼šåœ¨å„ä¸ªèŠ‚ç‚¹é—´ä¼ æ’­æ¶ˆæ¯,æœ‰æœ€å¤§å€¼ä¸Šé™
 
 void Route2Node(uint32_t note_type, const google::protobuf::Message& msg, const google::protobuf::MethodDescriptor* method);
