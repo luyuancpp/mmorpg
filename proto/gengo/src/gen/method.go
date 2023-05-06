@@ -176,7 +176,7 @@ func getMethodRepliedHandlerHeadStr(dst string, methodList *RpcMethodInfos) (dat
 		if methodInfo.Response == config.GoogleEmptyProtoName {
 			continue
 		}
-		data += "void On" + methodInfo.Service + methodInfo.Response + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
+		data += "void On" + methodInfo.Method + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
 			"std::shared_ptr<" + methodInfo.Response + ">& replied, Timestamp timestamp);\n\n"
 	}
 	return data
@@ -223,7 +223,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 			if methodInfo.Response == config.GoogleEmptyProtoName {
 				continue
 			}
-			data += "void On" + methodInfo.Service + methodInfo.Response + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
+			data += "void On" + methodInfo.Method + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
 				"std::shared_ptr<" + methodInfo.Response + ">& replied, Timestamp timestamp)\n{\n"
 		}
 		data += yourCodes[i]
@@ -423,7 +423,7 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	}
 
 	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "game") {
+		if !strings.Contains(methodList[0].FileBaseName(), "controller") {
 			return
 		}
 	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
