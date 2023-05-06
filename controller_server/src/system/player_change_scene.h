@@ -2,21 +2,21 @@
 
 #include "src/game_logic/comp/player_scene_comp.h"
 
-//todo ²âÊÔ»»³¡¾°µÄÊ±ºò·şÎñÆ÷±ÀÀ££¬¶ÓÁĞÊ×¸ö»»³¡¾°É¾³ıÒÔºó»¹ÄÜÕı³£»»³¡¾°
+//todo æµ‹è¯•æ¢åœºæ™¯çš„æ—¶å€™æœåŠ¡å™¨å´©æºƒï¼Œé˜Ÿåˆ—é¦–ä¸ªæ¢åœºæ™¯åˆ é™¤ä»¥åè¿˜èƒ½æ­£å¸¸æ¢åœºæ™¯
 class PlayerChangeSceneSystem
 {
 public:
 	static void InitChangeSceneQueue(entt::entity player);
-	//¶Ó³¤À­ÈËÒ²µÃµÈ´ı£¬²»È»Ì«¸´ÔÓÁË,¶Ó³¤À­½ø¸±±¾µÃµÈÍæ¼Ò¼ÌĞøÇĞ»»´ÎÊıÇĞÍêÁË
+	//é˜Ÿé•¿æ‹‰äººä¹Ÿå¾—ç­‰å¾…ï¼Œä¸ç„¶å¤ªå¤æ‚äº†,é˜Ÿé•¿æ‹‰è¿›å‰¯æœ¬å¾—ç­‰ç©å®¶ç»§ç»­åˆ‡æ¢æ¬¡æ•°åˆ‡å®Œäº†
 	static uint32_t PushChangeSceneInfo(entt::entity player, const ControllerChangeSceneInfo& change_info);
 	static bool IsChangeQueueEmpty(entt::entity player);
 	static void TryProcessChangeSceneQueue(entt::entity player);
 	static void PopFrontChangeSceneQueue(entt::entity player);
 	static void SetChangeGsStatus(entt::entity player, ControllerChangeSceneInfo::eChangeGsStatus s);
 private:
-	static void TryProcessZoneServerChangeScene(entt::entity player, ControllerChangeSceneInfo& change_info);//´¦Àí±¾·şÎñÆ÷µÄÇĞ»»,²»¿ç·ş
-	static void TryProcessViaCrossServerChangeScene(entt::entity player, ControllerChangeSceneInfo& change_info);//´¦ÀíÍ¨¹ı¿ç·şÏûÏ¢µÄ»»³¡¾°
+	static void TryProcessZoneServerChangeScene(entt::entity player, ControllerChangeSceneInfo& change_info);//å¤„ç†æœ¬æœåŠ¡å™¨çš„åˆ‡æ¢,ä¸è·¨æœ
+	static void TryProcessViaCrossServerChangeScene(entt::entity player, ControllerChangeSceneInfo& change_info);//å¤„ç†é€šè¿‡è·¨æœæ¶ˆæ¯çš„æ¢åœºæ™¯
 	static uint32_t TryChangeSameGsScene(entt::entity player);
-	static uint32_t ChangeDiffGsScene(entt::entity player);//×Ô¼ºµÄ·şÎñÆ÷¸Ä±ägs gs1µÄ³¡¾°µ½gs2µÄ³¡¾°
+	static uint32_t ChangeDiffGsScene(entt::entity player);//è‡ªå·±çš„æœåŠ¡å™¨æ”¹å˜gs gs1çš„åœºæ™¯åˆ°gs2çš„åœºæ™¯
 	static void OnEnterSceneSucced(entt::entity player);
 };
