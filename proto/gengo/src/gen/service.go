@@ -80,7 +80,19 @@ func (info *RpcMethodInfo) IncludeName() (includeName string) {
 }
 
 func (info *RpcMethodInfo) CppHandlerIncludeName() (includeName string) {
-	return config.IncludeBegin + info.FileBaseName() + "_handler" + config.HeadEx + config.IncludeEndLine
+	return config.IncludeBegin + info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
+}
+
+func (info *RpcMethodInfo) CppRepliedHandlerIncludeName() (includeName string) {
+	return config.IncludeBegin + info.FileBaseName() + config.HeadRepliedHandlerEx + config.IncludeEndLine
+}
+
+func (info *RpcMethodInfo) CppHandlerClassName() (includeName string) {
+	return info.Service + config.HandlerName
+}
+
+func (info *RpcMethodInfo) CppRepliedHandlerClassName() (includeName string) {
+	return info.Service + config.RepliedHandlerName
 }
 
 func (info *RpcMethodInfo) IsPlayerService() (isPlayerService bool) {

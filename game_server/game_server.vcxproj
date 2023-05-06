@@ -145,7 +145,6 @@
     <ClCompile Include="src\handler\team_client_player_handler.cpp" />
     <ClCompile Include="src\handler\team_handler.cpp" />
     <ClCompile Include="src\handler\team_server_player_handler.cpp" />
-    <ClCompile Include="src\replied_handler\player_service_replied.cpp" />
     <ClCompile Include="src\system\logic\config_system.cpp" />
     <ClCompile Include="src\system\player_common_system.cpp" />
     <ClCompile Include="src\system\player_scene_system.cpp" />
@@ -174,7 +173,6 @@
     <ClInclude Include="src\handler\lobby_service_replied.h" />
     <ClInclude Include="src\handler\replied_dispathcer.h" />
     <ClInclude Include="src\handler\player_service.h" />
-    <ClInclude Include="src\replied_handler\player_service_replied.h" />
     <ClInclude Include="src\handler\scene_client_player_handler.h" />
     <ClInclude Include="src\handler\scene_handler.h" />
     <ClInclude Include="src\handler\scene_server_player_handler.h" />
@@ -182,12 +180,6 @@
     <ClInclude Include="src\handler\team_client_player_handler.h" />
     <ClInclude Include="src\handler\team_handler.h" />
     <ClInclude Include="src\handler\team_server_player_handler.h" />
-    <ClInclude Include="src\replied_handler\common_client_player_handler.h" />
-    <ClInclude Include="src\replied_handler\common_server_player_handler.h" />
-    <ClInclude Include="src\replied_handler\scene_client_player_handler.h" />
-    <ClInclude Include="src\replied_handler\scene_server_player_handler.h" />
-    <ClInclude Include="src\replied_handler\team_client_player_handler.h" />
-    <ClInclude Include="src\replied_handler\team_server_player_handler.h" />
     <ClInclude Include="src\system\logic\config_system.h" />
     <ClInclude Include="src\system\player_common_system.h" />
     <ClInclude Include="src\system\player_scene_system.h" />
