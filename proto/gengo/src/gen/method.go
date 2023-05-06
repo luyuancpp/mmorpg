@@ -3,12 +3,11 @@ package gen
 import (
 	"gengo/config"
 	"gengo/util"
-	"os"
 	"strconv"
 	"strings"
 )
 
-func writeMethodHeadFile(methodList RpcMethodInfos) {
+func writeCommonMethodHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -27,7 +26,7 @@ func writeMethodHeadFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
 
-func writeMethodCppFile(methodList RpcMethodInfos) {
+func writeCommonMethodCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -163,34 +162,54 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
-func getMethodHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string) {
-	data = methodInfo.CppHandlerIncludeName() +
-		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
-		"#include \"src/network/message_system.h\"\n\n"
-
-	yourCodes, _ := util.GetDstCodeData(dst, 2)
-	data += yourCodes[0]
-	data += "void " + methodInfo.Service + "Handler::" + methodInfo.Method + config.GoogleMethodController + "\n" +
-		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
-		config.Tab + "::" + methodInfo.Response + "* response,\n" +
-		config.Tab + " ::google::protobuf::Closure* done)\n{\n"
-	data += yourCodes[1]
-	data += "}\n"
-	return data
-}
-
-func getMethodPlayerHandlerCppStr(dst string, methodInfo *RpcMethodInfo) (data string) {
+func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
+	methodLen := len(*methodList)
+	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
+	methodInfo := (*methodList)[0]
 	data = methodInfo.CppHandlerIncludeName() +
 		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
 		"#include \"src/network/message_system.h\"\n"
 
-	yourCodes, _ := util.GetDstCodeData(dst, 2)
-	data += yourCodes[0]
-	data += "void " + methodInfo.Service + "Handler::" + methodInfo.Method + config.PlayerMethodController + "\n" +
-		config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
-		config.Tab + "::" + methodInfo.Response + "* response)\n{\n"
-	data += yourCodes[1]
-	data += "}\n"
+	className := methodInfo.Service + config.HandlerName
+	for i := 0; i < len(yourCodes); i++ {
+		j := i - 1
+		isMessage := j >= 0 && j < methodLen
+		if isMessage {
+			data += "void " + className + "::" + methodInfo.Method + config.GoogleMethodController + "\n" +
+				config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
+				config.Tab + "::" + methodInfo.Response + "* response,\n" +
+				config.Tab + " ::google::protobuf::Closure* done)\n{\n"
+		}
+		data += yourCodes[i]
+		if isMessage {
+			data += "}\n"
+		}
+	}
+	return data
+}
+
+func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
+	methodLen := len(*methodList)
+	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
+	methodInfo := (*methodList)[0]
+	data = methodInfo.CppHandlerIncludeName() +
+		"#include \"src/game_logic/thread_local/thread_local_storage.h\"\n" +
+		"#include \"src/network/message_system.h\"\n"
+
+	className := methodInfo.Service + config.HandlerName
+	for i := 0; i < len(yourCodes); i++ {
+		j := i - 1
+		isMessage := j >= 0 && j < methodLen
+		if isMessage {
+			data += "void " + className + "::" + methodInfo.Method + config.PlayerMethodController + "\n" +
+				config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
+				config.Tab + "::" + methodInfo.Response + "* response)\n{\n"
+		}
+		data += yourCodes[i]
+		if isMessage {
+			data += "}\n"
+		}
+	}
 	return data
 }
 
@@ -249,24 +268,16 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
 		return
 	}
-	for i := 0; i < len(methodList); i++ {
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			method := methodList[i]
-			fileName := strings.ToLower(method.Method+"_"+method.Service) + config.CppHandlerEx
-			dstFileName := config.GsMethodHandleDir + fileName
-			md5FileName := GetMd5FileName(dstFileName)
-			os.RemoveAll(dstFileName)
-			os.RemoveAll(md5FileName)
-			//data := getMethodHandlerCppStr(dstFileName, method)
-			//Md5WriteData2File(md5FileName, data)
-			//Md5Copy(dstFileName, md5FileName)
-		}(i)
-	}
+	method := methodList[0]
+	fileName := strings.ToLower(method.Service) + config.CppHandlerEx
+	dstFileName := config.GsMethodHandleDir + fileName
+	md5FileName := GetMd5FileName(dstFileName)
+	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(md5FileName, data)
+	Md5Copy(dstFileName, md5FileName)
 }
 
-func writeGsMethodPlayerHandlerCppFile(methodList RpcMethodInfos) {
+func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
 		return
@@ -274,21 +285,28 @@ func writeGsMethodPlayerHandlerCppFile(methodList RpcMethodInfos) {
 	if !methodList[0].IsPlayerService() {
 		return
 	}
-	for i := 0; i < len(methodList); i++ {
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			method := methodList[i]
-			fileName := strings.ToLower(method.Method+"_"+method.Service) + config.CppHandlerEx
-			dstFileName := config.GsMethodHandleDir + fileName
-			md5FileName := GetMd5FileName(dstFileName)
-			os.RemoveAll(dstFileName)
-			os.RemoveAll(md5FileName)
-			//data := getMethodPlayerHandlerCppStr(dstFileName, method)
-			//Md5WriteData2File(md5FileName, data)
-			//Md5Copy(dstFileName, md5FileName)
-		}(i)
+	fileName := strings.ToLower(methodList[0].Service) + config.CppHandlerEx
+	dstFileName := config.GsMethodHandleDir + fileName
+	md5FileName := GetMd5FileName(dstFileName)
+	data := getMethodPlayerHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(md5FileName, data)
+	Md5Copy(dstFileName, md5FileName)
+}
+
+func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
 	}
+	if !methodList[0].IsPlayerService() {
+		return
+	}
+	fileName := strings.ToLower(methodList[0].Service) + config.CppHandlerEx
+	dstFileName := config.ControllerMethodHandleDir + fileName
+	md5FileName := GetMd5FileName(dstFileName)
+	data := getMethodPlayerHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(md5FileName, data)
+	Md5Copy(dstFileName, md5FileName)
 }
 
 func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
@@ -304,7 +322,7 @@ func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(config.ControllerMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
 }
 
-func writePlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
+func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
 		return
@@ -313,58 +331,50 @@ func writePlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 		return
 	}
 
-	for i := 0; i < len(methodList); i++ {
-		util.Wg.Add(1)
-		go func(i int) {
-			defer util.Wg.Done()
-			method := methodList[i]
-			fileName := strings.ToLower(method.Method+"_"+method.Service) + config.CppHandlerEx
-			dstFileName := config.ControllerMethodHandleDir + fileName
-			md5FileName := GetMd5FileName(dstFileName)
-			os.RemoveAll(dstFileName)
-			os.RemoveAll(md5FileName)
-			//data := getMethodPlayerHandlerCppStr(dstFileName, method)
-			//Md5WriteData2File(md5FileName, data)
-			//Md5Copy(dstFileName, md5FileName)
-		}(i)
-	}
-}
-
-func writePlayerMethodRepliedHandleCppFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-
-	if len(methodList) <= 0 {
+	if !methodList[0].IsPlayerService() {
 		return
 	}
+	fileName := strings.ToLower(methodList[0].Service) + config.CppHandlerEx
+	dstFileName := config.ControllerMethodHandleDir + fileName
+	md5FileName := GetMd5FileName(dstFileName)
+	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(md5FileName, data)
+	Md5Copy(dstFileName, md5FileName)
 }
 
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
-		go writeMethodHeadFile(v)
+		go writeCommonMethodHeadFile(v)
 		util.Wg.Add(1)
-		go writeMethodCppFile(v)
+		go writeCommonMethodCppFile(v)
+
+		//gs
 		util.Wg.Add(1)
 		go writeGsMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
-		go writeControllerMethodHandlerHeadFile(v)
-		util.Wg.Add(1)
 		go writeGsMethodHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeGsMethodPlayerHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeMethodRepliedHandleCppFile(v)
 		util.Wg.Add(1)
 		go writeGsPlayerMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
-		writeGsPlayerMethodRepliedHandlerHeadFile(v)
+		go writeGsPlayerMethodHandlerCppFile(v)
 		util.Wg.Add(1)
-		writeControllerPlayerMethodRepliedHandlerHeadFile(v)
+		go writeGsPlayerMethodHandlerHeadFile(v)
+
+		//Controller
+		util.Wg.Add(1)
+		go writeControllerMethodHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeControllerMethodHandlerCppFile(v)
 		util.Wg.Add(1)
 		go writeControllerPlayerMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
-		go writePlayerMethodHandlerCppFile(v)
+		go writeControllerPlayerMethodHandlerCppFile(v)
 		util.Wg.Add(1)
-		go writePlayerMethodRepliedHandleCppFile(v)
+		writeControllerPlayerMethodRepliedHandlerHeadFile(v)
+
+		util.Wg.Add(1)
+		go writeMethodRepliedHandleCppFile(v)
+
 	}
 }
