@@ -9,6 +9,17 @@
 
 
 //todo 注意替换空格
+void EscapeString(std::string& str, MYSQL* mysql)
+{
+	std::string buffer;
+	// reserve space in the buffer according to the mysql documentation
+	unsigned long resultSize = 0;
+	buffer.resize(str.size() * 2 + 1);
+	resultSize = mysql_real_escape_string(mysql, (char*)buffer.c_str(), str.c_str(), (unsigned long)str.size());
+	buffer.resize(resultSize);
+	str = buffer;
+}
+
 
 void FillMessageField(::google::protobuf::Message& message, const ResultRow& row)
 {
@@ -118,7 +129,7 @@ const char* table_name_descriptor[google::protobuf::FieldDescriptor::MAX_CPPTYPE
 };
 
 #undef  GetMessage
-std::string ConvertFieldValue(const ::google::protobuf::Message& message, const google::protobuf::FieldDescriptor* fieldDesc)
+std::string ConvertFieldValue(const ::google::protobuf::Message& message, const google::protobuf::FieldDescriptor* fieldDesc, MYSQL* mysql)
 {
     const auto reflect = message.GetReflection();
     std::string field_value;
@@ -154,6 +165,7 @@ std::string ConvertFieldValue(const ::google::protobuf::Message& message, const 
     default:
         return field_value;
     }
+    EscapeString(field_value, mysql);
     return field_value;
 }
 
@@ -309,8 +321,8 @@ std::string Message2MysqlSql::GetInsertSql(const ::google::protobuf::Message& me
         }
 
         field_desc = descriptor_->FindFieldByName(descriptor_->field(i)->name());
-        std::string value = ConvertFieldValue(message, field_desc);
-        EscapeString(value, mysql);
+        std::string value = ConvertFieldValue(message, field_desc, mysql);
+        
         sql += "'";
         sql += value;
         sql += "'";
@@ -332,8 +344,7 @@ std::string Message2MysqlSql::GetInsertOnDupKeyForPririmarykey(const ::google::p
     std::string sql = GetInsertSql(message, mysql);
     sql += " ON DUPLICATE KEY UPDATE ";
     sql += " " + primarykey_field_->name();
-    std::string value = ConvertFieldValue(message, primarykey_field_);
-    EscapeString(value, mysql);
+    std::string value = ConvertFieldValue(message, primarykey_field_, mysql);
     sql += "=";
     sql += "'";
     sql += value;
@@ -341,16 +352,6 @@ std::string Message2MysqlSql::GetInsertOnDupKeyForPririmarykey(const ::google::p
     return sql;
 }
 
-void Message2MysqlSql::EscapeString(std::string& str, MYSQL* mysql)
-{
-    std::string buffer;
-    // reserve space in the buffer according to the mysql documentation
-    unsigned long resultSize = 0;
-    buffer.resize(str.size() * 2 + 1);
-    resultSize = mysql_real_escape_string(mysql, (char*)buffer.c_str(), str.c_str(), (unsigned long)str.size());
-    buffer.resize(resultSize);
-    str = buffer;
-}
 
 bool Message2MysqlSql::OnSelectTableColumnReturn(const MYSQL_ROW& ptr, const unsigned long* filed_length, uint32_t filed_size)
 {
@@ -463,21 +464,21 @@ std::string Message2MysqlSql::GetSelectAllSql(const std::string& where_clause)
     return sql;
 }
 
-std::string Message2MysqlSql::GetDeleteSql(const ::google::protobuf::Message& message)
+std::string Message2MysqlSql::GetDeleteSql(const ::google::protobuf::Message& message, MYSQL* mysql)
 {
     std::string sql = "delete ";
     sql += " from ";
     sql += GetTypeName();
     sql += " where ";
     sql += descriptor_->field(kPrimaryKeyIndex)->name();
-    std::string value = ConvertFieldValue(message, primarykey_field_);
+    std::string value = ConvertFieldValue(message, primarykey_field_, mysql);
     sql += " = '";
     sql += value;
     sql += "'";
     return sql;
 }
 
-std::string Message2MysqlSql::GetDeleteSql( const std::string& where_clause)
+std::string Message2MysqlSql::GetDeleteSql( const std::string& where_clause, MYSQL* mysql)
 {
     std::string sql = "delete ";
     sql += " from ";
@@ -518,8 +519,7 @@ std::string Message2MysqlSql::GetReplaceSql(const ::google::protobuf::Message& m
             bNeedComma = true;
         }
         file_desc = descriptor_->FindFieldByName(descriptor_->field(i)->name());
-        std::string value = ConvertFieldValue(message, file_desc);
-        EscapeString(value, mysql);
+        std::string value = ConvertFieldValue(message, file_desc, mysql);
         sql += "'";
         sql += value;
         sql += "'";
@@ -552,8 +552,7 @@ std::string Message2MysqlSql::GetUpdateSet(const ::google::protobuf::Message& me
                 bNeedComma = true;
             }
             sql += " " + field_name;
-            std::string value = ConvertFieldValue(message, file_desc);
-            EscapeString(value, mysql);
+            std::string value = ConvertFieldValue(message, file_desc, mysql);
             sql += "=";
             sql += "'";
             sql += value;
@@ -588,8 +587,7 @@ std::string Message2MysqlSql::GetUpdateSql(const ::google::protobuf::Message& me
                 bNeedComma = true;
             }
             sql += strPrimary;
-            std::string value = ConvertFieldValue(message, pFileDesc);
-            EscapeString(value, mysql);
+            std::string value = ConvertFieldValue(message, pFileDesc, mysql);
             sql += "='";
             sql += value;
             sql += "'";
@@ -617,8 +615,7 @@ std::string Message2MysqlSql::GetUpdateSql(::google::protobuf::Message& message,
         }
         sql += " " + descriptor_->field(i)->name();
         file_desc = descriptor_->FindFieldByName(descriptor_->field(i)->name());
-        std::string value = ConvertFieldValue(message, file_desc);
-        EscapeString(value, mysql);
+        std::string value = ConvertFieldValue(message, file_desc, mysql);
         sql += "=";
 
         sql += "'";
@@ -808,7 +805,7 @@ std::string Pb2DbTables::GetDeleteSql(const ::google::protobuf::Message& message
     {
         return "";
     }
-    return it->second.GetDeleteSql(message);
+    return it->second.GetDeleteSql(message, mysql_);
 }
 
 std::string Pb2DbTables::GetDeleteSql(const ::google::protobuf::Message& message, std::string where_clause)
@@ -819,7 +816,7 @@ std::string Pb2DbTables::GetDeleteSql(const ::google::protobuf::Message& message
     {
         return "";
     }
-    return it->second.GetDeleteSql(where_clause);
+    return it->second.GetDeleteSql(where_clause, mysql_);
 }
 
 std::string Pb2DbTables::GetTruncateSql(::google::protobuf::Message& message)
