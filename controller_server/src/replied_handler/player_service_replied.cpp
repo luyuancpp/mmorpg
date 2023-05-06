@@ -2,12 +2,12 @@
 #include <unordered_map>
 #include "player_service_replied.h"
 
-#include "common_client_player_handler.h"
-#include "scene_client_player_handler.h"
-#include "team_client_player_handler.h"
-#include "common_server_player_handler.h"
-#include "scene_server_player_handler.h"
-#include "team_server_player_handler.h"
+#include "common_client_player_replied_handler.h"
+#include "scene_client_player_replied_handler.h"
+#include "team_client_player_replied_handler.h"
+#include "common_server_player_replied_handler.h"
+#include "scene_server_player_replied_handler.h"
+#include "team_server_player_replied_handler.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replieds;
 
 class ClientPlayerCommonServiceImpl : public ClientPlayerCommonService{};
