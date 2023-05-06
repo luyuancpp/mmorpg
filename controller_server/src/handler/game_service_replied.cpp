@@ -5,7 +5,7 @@
 
 #include "src/comp/player_list.h"
 #include "src/pb/pbc/service.h"
-#include "src/handler/player_service_replied.h"
+#include "src/replied_handler/player_service_replied.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
@@ -37,6 +37,6 @@ void OnGsCallPlayerReplied(const TcpConnectionPtr& conn, const NodeServiceMessag
     }
     MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
     player_response->ParseFromString(replied->msg().body());
-    serviceimpl->CallMethod(method, it->second,  boost::get_pointer(player_response));
+    serviceimpl->CallMethod(method, it->second,  nullptr, boost::get_pointer(player_response));
 }
 
