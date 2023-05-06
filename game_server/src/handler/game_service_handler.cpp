@@ -1,5 +1,6 @@
 #include "game_service_handler.h"
-#include "src/network/rpc_msg_route.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "src/game_logic/thread_local/thread_local_storage.h"
@@ -22,12 +23,10 @@
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 
 ///<<< END WRITING YOUR CODE
-
-///<<<rpc begin
 void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
-    const ::GameNodeEnterGsRequest* request,
-    ::google::protobuf::Empty* response,
-    ::google::protobuf::Closure* done)
+	const ::GameNodeEnterGsRequest* request,
+	::google::protobuf::Empty* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     //连续顶号进入，还在加载中的话继续加载
@@ -52,11 +51,10 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 
 ///<<< END WRITING YOUR CODE
 }
-
 void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controller,
-    const ::NodeServiceMessageRequest* request,
-    ::NodeServiceMessageResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::NodeServiceMessageRequest* request,
+	::NodeServiceMessageResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto it = game_tls.player_list().find(request->ex().player_id());
@@ -94,11 +92,10 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
 
 ///<<< END WRITING YOUR CODE
 }
-
 void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* controller,
-    const ::GameNodeRpcClientRequest* request,
-    ::GameNodeRpcClientResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::GameNodeRpcClientRequest* request,
+	::GameNodeRpcClientResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
    // todo player service move to gate check
@@ -145,11 +142,10 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
     response->set_session_id(request->session_id());
 ///<<< END WRITING YOUR CODE
 }
-
 void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controller,
-    const ::GameNodeDisconnectRequest* request,
-    ::google::protobuf::Empty* response,
-    ::google::protobuf::Closure* done)
+	const ::GameNodeDisconnectRequest* request,
+	::google::protobuf::Empty* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
         //异步加载过程中断开了？
@@ -166,11 +162,10 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 
 ///<<< END WRITING YOUR CODE
 }
-
 void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* controller,
-    const ::GameNodeConnectRequest* request,
-    ::google::protobuf::Empty* response,
-    ::google::protobuf::Closure* done)
+	const ::GameNodeConnectRequest* request,
+	::google::protobuf::Empty* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
@@ -190,21 +185,19 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
     }
 ///<<< END WRITING YOUR CODE
 }
-
 void GameServiceHandler::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
-    const ::NodeServiceMessageRequest* request,
-    ::google::protobuf::Empty* response,
-    ::google::protobuf::Closure* done)
+	const ::NodeServiceMessageRequest* request,
+	::google::protobuf::Empty* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     ::Send2Player(request->msg().service_method_id(), request->msg(), request->ex().player_id());
 ///<<< END WRITING YOUR CODE
 }
-
 void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controller,
-    const ::NodeServiceMessageRequest* request,
-    ::NodeServiceMessageResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::NodeServiceMessageRequest* request,
+	::NodeServiceMessageResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
     auto it = game_tls.player_list().find(request->ex().player_id());
@@ -249,23 +242,19 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
     response->mutable_msg()->set_service_method_id(request->msg().service_method_id());
 ///<<< END WRITING YOUR CODE
 }
-
 void GameServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-    const ::RouteMsgStringRequest* request,
-    ::RouteMsgStringResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::RouteMsgStringRequest* request,
+	::RouteMsgStringResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
 void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-    const ::RoutePlayerMsgStringRequest* request,
-    ::RoutePlayerMsgStringResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::RoutePlayerMsgStringRequest* request,
+	::RoutePlayerMsgStringResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
-///<<<rpc end

@@ -9,11 +9,9 @@
 
 #include "server_player_proto/scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE
-
-///<<<rpc begin
 void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
-    const ::EnterSeceneC2SRequest* request,
-    ::EnterSeceneC2SResponse* response)
+	const ::EnterSeceneC2SRequest* request,
+	::EnterSeceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
         //如果是跨服副本服不能换场景
@@ -48,21 +46,17 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
     Send2ControllerPlayer(ServerPlayerSceneServiceEnterSceneGs2ControllerMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
-
 void ClientPlayerSceneServiceHandler::PushEnterSceneS2C(entt::entity player,
-    const ::EnterSeceneS2C* request,
-    ::EnterSeceneS2C* response)
+	const ::EnterSeceneS2C* request,
+	::EnterSeceneS2C* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
 void ClientPlayerSceneServiceHandler::PushSceneInfoS2C(entt::entity player,
-    const ::SceneInfoS2C* request,
-    ::SceneInfoS2C* response)
+	const ::SceneInfoS2C* request,
+	::SceneInfoS2C* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
-///<<<rpc end

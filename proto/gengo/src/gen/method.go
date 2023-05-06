@@ -270,8 +270,7 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
 		return
 	}
-	method := methodList[0]
-	fileName := strings.ToLower(method.Service) + config.CppHandlerEx
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.GsMethodHandleDir + fileName
 	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodHandlerCppStr(dstFileName, &methodList)
@@ -287,7 +286,7 @@ func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	if !methodList[0].IsPlayerService() {
 		return
 	}
-	fileName := strings.ToLower(methodList[0].Service) + config.CppHandlerEx
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.GsMethodHandleDir + fileName
 	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodPlayerHandlerCppStr(dstFileName, &methodList)

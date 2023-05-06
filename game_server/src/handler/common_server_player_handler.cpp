@@ -17,11 +17,9 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-
-///<<<rpc begin
 void ServerPlayerLoginServiceHandler::UpdateSessionController2Gs(entt::entity player,
-    const ::UpdateSessionController2GsRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::UpdateSessionController2GsRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     PlayerCommonSystem::RemovePlayereSession(tls.registry.get<Guid>(player));
@@ -43,10 +41,9 @@ void ServerPlayerLoginServiceHandler::UpdateSessionController2Gs(entt::entity pl
     tls.registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerLoginServiceHandler::Controller2GsLogin(entt::entity player,
-    const ::Controller2GsLoginRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Controller2GsLoginRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     if (request->enter_gs_type() == LOGIN_NONE)//登录，不是普通切换场景
@@ -56,14 +53,11 @@ void ServerPlayerLoginServiceHandler::Controller2GsLogin(entt::entity player,
     PlayerCommonSystem::OnPlayerLogin(player, request->enter_gs_type());
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerLoginServiceHandler::Controller2GsEnterGateSucceed(entt::entity player,
-    const ::Controller2GsEnterGateSucceedRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Controller2GsEnterGateSucceedRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     PlayerCommonSystem::OnEnterGateSucceed(player);
 ///<<< END WRITING YOUR CODE
 }
-
-///<<<rpc end
