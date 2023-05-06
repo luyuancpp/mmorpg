@@ -19,11 +19,9 @@
 #include "game_service.pb.h"
 
 ///<<< END WRITING YOUR CODE
-
-///<<<rpc begin
 void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity player,
-    const ::Gs2ControllerEnterSceneRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Gs2ControllerEnterSceneRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     //正在切换场景中，不能马上切换，gs崩溃了怎么办
@@ -38,34 +36,30 @@ void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity playe
 	PlayerSceneSystem::TryEnterNextScene(player);
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::EnterSceneController2Gs(entt::entity player,
-    const ::Controller2GsEnterSceneRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Controller2GsEnterSceneRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::LeaveSceneGs2Controller(entt::entity player,
-    const ::Gs2ControllerLeaveSceneRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Gs2ControllerLeaveSceneRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::LeaveSceneController2Gs(entt::entity player,
-    const ::Controller2GsLeaveSceneRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Controller2GsLeaveSceneRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
-    const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
-    ::google::protobuf::Empty* response)
+	const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
+	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
     //异步切换考虑消息队列
@@ -99,13 +93,10 @@ void ServerPlayerSceneServiceHandler::Gs2ControllerLeaveSceneAsyncSavePlayerComp
     PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(to_scene), try_player_session->session_id());
 ///<<< END WRITING YOUR CODE
 }
-
 void ServerPlayerSceneServiceHandler::Controller2GsEnterSceneS2C(entt::entity player,
-    const ::EnterSceneS2CRequest* request,
-    ::EnterScenerS2CResponse* response)
+	const ::EnterSceneS2CRequest* request,
+	::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
-///<<<rpc end

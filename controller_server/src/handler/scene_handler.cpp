@@ -1,16 +1,13 @@
 #include "scene_handler.h"
-#include "src/network/rpc_msg_route.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-
-///<<<rpc begin
 void ServerSceneServiceHandler::UpdateCrossMainSceneInfo(::google::protobuf::RpcController* controller,
-    const ::UpdateCrossMainSceneInfoRequest* request,
-    ::UpdateCrossMainSceneInfoResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::UpdateCrossMainSceneInfoRequest* request,
+	::UpdateCrossMainSceneInfoResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
-
-///<<<rpc end

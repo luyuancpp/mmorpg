@@ -1,12 +1,11 @@
-#include "team_handler.h"
+#include "team_client_player_handler.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void TeamServiceHandler::EnterScene(::google::protobuf::RpcController* controller,
-	const ::TeamTestS2SRequest* request,
-	::TeamTestS2SRespone* response,
-	 ::google::protobuf::Closure* done)
+void ClientPlayerTeamServiceHandler::TeamInfoNotify(entt::entity player,
+	const ::TeamInfoS2CRequest* request,
+	::TeamInfoS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
