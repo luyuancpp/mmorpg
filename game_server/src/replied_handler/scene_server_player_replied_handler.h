@@ -4,7 +4,7 @@
 class ServerPlayerSceneServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
-	PlayerServiceReplied::PlayerServiceReplied;
+	using PlayerServiceReplied::PlayerServiceReplied;
 	void EnterSceneGs2Controller(entt::entity player,
 		const ::Gs2ControllerEnterSceneRequest* request,
 		::google::protobuf::Empty* response);

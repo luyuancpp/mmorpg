@@ -4,7 +4,7 @@
 class ServerPlayerLoginServiceHandler : public ::PlayerService
 {
 public:
-	PlayerService::PlayerService;
+	using PlayerService::PlayerService;
 	void UpdateSessionController2Gs(entt::entity player,
 		const ::UpdateSessionController2GsRequest* request,
 		::google::protobuf::Empty* response);
