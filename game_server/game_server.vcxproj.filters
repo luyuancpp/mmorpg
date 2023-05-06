@@ -87,94 +87,22 @@
     <ClCompile Include="src\thread_local\game_thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\callplayer_gameservice_handler.cpp">
+    <ClCompile Include="src\handler\common_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\clientsend2player_gameservice_handler.cpp">
+    <ClCompile Include="src\handler\game_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\entergs_gameservice_handler.cpp">
+    <ClCompile Include="src\handler\scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\enterscene_serverplayerteamservice_handler.cpp">
+    <ClCompile Include="src\handler\scene_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\controllersend2playerviags_gameservice_handler.cpp">
+    <ClCompile Include="src\handler\scene_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\disconnect_gameservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\gateconnectgs_gameservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\routenodestringmsg_gameservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\routeplayerstringmsg_gameservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\enterscene_teamservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\send2player_gameservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\pushtipss2c_clientplayercommonservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\updatesessioncontroller2gs_serverplayerloginservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\controller2gslogin_serverplayerloginservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\controller2gsentergatesucceed_serverplayerloginservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\controller2gsenterscenes2c_serverplayersceneservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\entercrossmainscene_lobbyservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\entercrossmainsceneweightroundrobin_lobbyservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\enterscenec2s_clientplayersceneservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\enterscenecontroller2gs_serverplayersceneservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\enterscenegs2controller_serverplayersceneservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\gameconnecttocontroller_lobbyservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\gs2controllerleavesceneasyncsaveplayercomplete_serverplayersceneservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\leavecrossmainscene_lobbyservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\leavescenecontroller2gs_serverplayersceneservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\leavescenegs2controller_serverplayersceneservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\pushenterscenes2c_clientplayersceneservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\pushsceneinfos2c_clientplayersceneservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\teaminfonotify_clientplayerteamservice_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\updatecrossmainsceneinfo_serversceneservice_handler.cpp">
+    <ClCompile Include="src\handler\team_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -297,6 +225,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\team_client_player_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\lobby_scene_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

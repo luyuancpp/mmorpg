@@ -5,9 +5,9 @@
 #include "src/system/player_common_system.h"
 #include "src/system/player_scene_system.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/pb/pbc/serviceid/clientplayersceneservice_service_method_id.h"
+#include "src/pb/pbc/scene_client_player_service.h"
 
-#include "logic_proto/scene_client_player.pb.h"
+#include "client_player_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin
@@ -74,7 +74,7 @@ void ServerPlayerSceneServiceHandler::Controller2GsEnterSceneS2C(entt::entity pl
     }
     EnterSeceneS2C message;
     message.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(try_scene->scene_entity_));
-    Send2Player(ClientPlayerSceneService_Id_PushEnterSceneS2C, message, player);
+    Send2Player(ClientPlayerSceneServicePushEnterSceneS2CMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
 
