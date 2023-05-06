@@ -48,15 +48,14 @@ public:
     std::string GetSelectAllSql(const std::string& where_clause);
     std::string GetInsertOnDupUpdateSql(const ::google::protobuf::Message& message, MYSQL* mysql);
     std::string GetInsertOnDupKeyForPririmarykey(const ::google::protobuf::Message& message, MYSQL* mysql);
-    std::string GetDeleteSql(const ::google::protobuf::Message& message);
-    std::string GetDeleteSql(const std::string& where_clause);
+    std::string GetDeleteSql(const ::google::protobuf::Message& message, MYSQL* mysql);
+    std::string GetDeleteSql(const std::string& where_clause, MYSQL* mysql);
     std::string GetReplaceSql(const ::google::protobuf::Message& message, MYSQL* mysql);
     std::string GetUpdateSql(const ::google::protobuf::Message& message, MYSQL* mysql);
     std::string GetUpdateSql( ::google::protobuf::Message& message, MYSQL* mysql, std::string where_clause);
     std::string GetTruncateSql(::google::protobuf::Message& message);
     std::string GetSelectColumn();
 
-    void EscapeString(std::string& str, MYSQL* mysql);
     bool OnSelectTableColumnReturn(const MYSQL_ROW&, const unsigned long*, uint32_t);
 
        
