@@ -8,7 +8,7 @@
 
 #include "event_proto/scene_event.pb.h"
 
-//todo ¸÷ÖÖ·şÎñÆ÷±ÀÀ£
+//todo å„ç§æœåŠ¡å™¨å´©æºƒ
 void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
 {
 	tls.registry.emplace<PlayerControllerChangeSceneQueue>(player);
@@ -63,21 +63,21 @@ void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, ControllerC
 
 void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity player, ControllerChangeSceneInfo& change_info)
 {
-    //²»×ß¿ç·ş£¬Ö»ÔÚÇø·şÎñÆ÷
+    //ä¸èµ°è·¨æœï¼Œåªåœ¨åŒºæœåŠ¡å™¨
     if (change_info.change_cross_server_type() != ControllerChangeSceneInfo::eDotnotCrossServer)
     {
         return;
     }
-    if (change_info.change_gs_type() == ControllerChangeSceneInfo::eSameGs)//Í¬Ò»¸ögsÇĞ»»
+    if (change_info.change_gs_type() == ControllerChangeSceneInfo::eSameGs)//åŒä¸€ä¸ªgsåˆ‡æ¢
     {
-        TryChangeSameGsScene(player);//¾ÍËãÍ¬gs,¶ÓÁĞÓĞÏûÏ¢Ò²²»ÄÜÖ±½ÓÇĞ»»£¬
+        TryChangeSameGsScene(player);//å°±ç®—åŒgs,é˜Ÿåˆ—æœ‰æ¶ˆæ¯ä¹Ÿä¸èƒ½ç›´æ¥åˆ‡æ¢ï¼Œ
         return;
     }
     else if (change_info.change_gs_type() == ControllerChangeSceneInfo::eDifferentGs)
     {
-        //ÕıÔÚÇĞ»»
-        //ÇĞ»»gs  ´æ´¢Íê±ÏÖ®ºó²ÅÄÜ½øÈëÏÂÒ»¸ö³¡¾°
-        //·Åµ½´æ´¢Íê±ÏÇĞ»»³¡¾°µÄ¶ÓÁĞÀïÃæ£¬Èç¹ûµÈ¹»×ã¹»Ê±¼äÃ»ÓĞ´æ´¢Íê±Ï£¬¿ÉÄÜ¾ÍÊÇ·şÎñÆ÷±ÀÀ£ÁË,×¢Òâ£¬ÊÇ¿ÉÄÜ 
+        //æ­£åœ¨åˆ‡æ¢
+        //åˆ‡æ¢gs  å­˜å‚¨å®Œæ¯•ä¹‹åæ‰èƒ½è¿›å…¥ä¸‹ä¸€ä¸ªåœºæ™¯
+        //æ”¾åˆ°å­˜å‚¨å®Œæ¯•åˆ‡æ¢åœºæ™¯çš„é˜Ÿåˆ—é‡Œé¢ï¼Œå¦‚æœç­‰å¤Ÿè¶³å¤Ÿæ—¶é—´æ²¡æœ‰å­˜å‚¨å®Œæ¯•ï¼Œå¯èƒ½å°±æ˜¯æœåŠ¡å™¨å´©æºƒäº†,æ³¨æ„ï¼Œæ˜¯å¯èƒ½ 
         ChangeDiffGsScene(player);
         return;
     }
@@ -85,19 +85,19 @@ void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity playe
 
 void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity player, ControllerChangeSceneInfo& change_info)
 {
-    //²»¿ç·ş²»×ßÕâÀï
+    //ä¸è·¨æœä¸èµ°è¿™é‡Œ
     if (change_info.change_cross_server_type() != ControllerChangeSceneInfo::eCrossServer)
     {
         return;
     }
-    //cross server ´¦ÀíÍêÁË
+    //cross server å¤„ç†å®Œäº†
     if (change_info.change_cross_server_status() != ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed)
     {
         return;
     }
-    if (change_info.change_gs_type() == ControllerChangeSceneInfo::eSameGs)//¿ç·şÍ¬Ò»¸ögs
+    if (change_info.change_gs_type() == ControllerChangeSceneInfo::eSameGs)//è·¨æœåŒä¸€ä¸ªgs
     {
-        TryChangeSameGsScene(player);//¾ÍËãÍ¬gs,¶ÓÁĞÓĞÏûÏ¢Ò²²»ÄÜÖ±½ÓÇĞ»»£¬
+        TryChangeSameGsScene(player);//å°±ç®—åŒgs,é˜Ÿåˆ—æœ‰æ¶ˆæ¯ä¹Ÿä¸èƒ½ç›´æ¥åˆ‡æ¢ï¼Œ
         return;
     }   
     else if (change_info.change_gs_type() == ControllerChangeSceneInfo::eDifferentGs)
@@ -107,7 +107,7 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
     }    
 }
 
-//µ±Ç°·şÎñÆ÷È¥¼ÆËãµ±Ç°µÄÏûÏ¢ÊÇ²»ÊÇÍ¬Ò»¸ögs
+//å½“å‰æœåŠ¡å™¨å»è®¡ç®—å½“å‰çš„æ¶ˆæ¯æ˜¯ä¸æ˜¯åŒä¸€ä¸ªgs
 
 uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 {
@@ -119,7 +119,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
     }
     auto& change_info = change_scene_queue.front();
     auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
-    if (entt::null == to_scene)//³¡¾°²»´æÔÚÁË°ÑÏûÏ¢É¾³ı,Õâ¸öÎÄ¼şÒ»¶¨Òª×¢ÒâÕâ¸ö¶ÓÁĞ¸÷ÖÖÒì³£Çé¿ö
+    if (entt::null == to_scene)//åœºæ™¯ä¸å­˜åœ¨äº†æŠŠæ¶ˆæ¯åˆ é™¤,è¿™ä¸ªæ–‡ä»¶ä¸€å®šè¦æ³¨æ„è¿™ä¸ªé˜Ÿåˆ—å„ç§å¼‚å¸¸æƒ…å†µ
     {
         change_scene_queue.pop_front();//todo
         return kRetEnterSceneSceneNotFound;
@@ -132,7 +132,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
     ep.enterer_ = player;
     ep.scene_ = to_scene;
     ScenesSystem::EnterScene(ep);
-    change_scene_queue.pop_front();//ÇĞ»»³É¹¦ÏûÏ¢É¾³ı
+    change_scene_queue.pop_front();//åˆ‡æ¢æˆåŠŸæ¶ˆæ¯åˆ é™¤
 
     OnEnterSceneSucced(player);
     return kRetOK;
@@ -149,9 +149,9 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
     auto& change_info = change_scene_queue.front();
     if (change_info.change_gs_status() == ControllerChangeSceneInfo::eLeaveGsScene)
     {
-        //ÕıÔÚÇĞ»»
-        //ÇĞ»»gs  ´æ´¢Íê±ÏÖ®ºó²ÅÄÜ½øÈëÏÂÒ»¸ö³¡¾°
-        //·Åµ½´æ´¢Íê±ÏÇĞ»»³¡¾°µÄ¶ÓÁĞÀïÃæ£¬Èç¹ûµÈ¹»×ã¹»Ê±¼äÃ»ÓĞ´æ´¢Íê±Ï£¬¿ÉÄÜ¾ÍÊÇ·şÎñÆ÷±ÀÀ£ÁË,×¢Òâ£¬ÊÇ¿ÉÄÜ 
+        //æ­£åœ¨åˆ‡æ¢
+        //åˆ‡æ¢gs  å­˜å‚¨å®Œæ¯•ä¹‹åæ‰èƒ½è¿›å…¥ä¸‹ä¸€ä¸ªåœºæ™¯
+        //æ”¾åˆ°å­˜å‚¨å®Œæ¯•åˆ‡æ¢åœºæ™¯çš„é˜Ÿåˆ—é‡Œé¢ï¼Œå¦‚æœç­‰å¤Ÿè¶³å¤Ÿæ—¶é—´æ²¡æœ‰å­˜å‚¨å®Œæ¯•ï¼Œå¯èƒ½å°±æ˜¯æœåŠ¡å™¨å´©æºƒäº†,æ³¨æ„ï¼Œæ˜¯å¯èƒ½ 
         LeaveSceneParam lp;
         lp.leaver_ = player;
         ScenesSystem::LeaveScene(lp);
@@ -159,7 +159,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
     else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eEnterGsSceneSucceed)
     {
         auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
-        if (entt::null == to_scene)//³¡¾°²»´æÔÚÁË°ÑÏûÏ¢É¾³ı,Õâ¸öÎÄ¼şÒ»¶¨Òª×¢ÒâÕâ¸ö¶ÓÁĞ¸÷ÖÖÒì³£Çé¿ö
+        if (entt::null == to_scene)//åœºæ™¯ä¸å­˜åœ¨äº†æŠŠæ¶ˆæ¯åˆ é™¤,è¿™ä¸ªæ–‡ä»¶ä¸€å®šè¦æ³¨æ„è¿™ä¸ªé˜Ÿåˆ—å„ç§å¼‚å¸¸æƒ…å†µ
         {
             change_scene_queue.pop_front();//todo
             return kRetEnterSceneSceneNotFound;

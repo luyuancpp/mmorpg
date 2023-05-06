@@ -3,17 +3,17 @@
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
-//´Óµ±Ç°·û·şÎñÆ÷ÖĞÕÒµ½Ò»¸ö¶ÔÓ¦³¡¾°ÈËÊı×îÉÙµÄ
+//ä»å½“å‰ç¬¦æœåŠ¡å™¨ä¸­æ‰¾åˆ°ä¸€ä¸ªå¯¹åº”åœºæ™¯äººæ•°æœ€å°‘çš„
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
 {
-    //todoÈç¹û×îÉÙÈËÊıµÄ·şÎñÆ÷Ã»ÓĞÕâ¸ö³¡¾°Õ¦°ì
+    //todoå¦‚æœæœ€å°‘äººæ•°çš„æœåŠ¡å™¨æ²¡æœ‰è¿™ä¸ªåœºæ™¯å’‹åŠ
     auto scene_confid = param.scene_confid_;
     entt::entity server{ entt::null };
     std::size_t min_server_player_size = UINT64_MAX;
     for (auto e : tls.registry.view<ServerType, ServerStatus, ServerPressure>())
     {
-        if (!tls.registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))//ÓÅÏÈÅĞ¶ÏÓĞÃ»ÓĞ³¡¾°
+        if (!tls.registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))//ä¼˜å…ˆåˆ¤æ–­æœ‰æ²¡æœ‰åœºæ™¯
         {
             continue;
         }
@@ -46,7 +46,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     return scene;
 }
 
-//Ñ¡Ôñ²»ÂúÈËµÃ·şÎñÆ÷³¡¾°
+//é€‰æ‹©ä¸æ»¡äººå¾—æœåŠ¡å™¨åœºæ™¯
 template<typename ServerType, typename ServerStatus, typename ServerPressure>
 entt::entity GetMainSceneNotFullT(const GetSceneParam& param)
 {
