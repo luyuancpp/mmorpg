@@ -27,6 +27,6 @@ private:
 void InitPlayerService();
 
 extern std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;
-extern std::unordered_set<std::string> g_open_player_services;//¿ª·Å¸øÍæ¼ÒµÄ·şÎñ
+extern std::unordered_set<std::string> g_open_player_services;//å¼€æ”¾ç»™ç©å®¶çš„æœåŠ¡
 
 

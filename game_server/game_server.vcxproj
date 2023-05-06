@@ -118,6 +118,7 @@
       <DisableSpecificWarnings>4200;4819</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>third_party.lib;common.lib;libprotobufd.lib;zlib.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>

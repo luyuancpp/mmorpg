@@ -65,7 +65,7 @@ bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress
 
 uint32_t MissionsComp::IsDoNotAccepted(uint32_t mission_id)const
 {
-	if (missions_comp_pb_.missions().count(mission_id) > 0)//“—æ≠Ω” ‹π˝
+	if (missions_comp_pb_.missions().count(mission_id) > 0)//Â∑≤ÁªèÊé•ÂèóËøá
 	{
 		return kRetMissionIdRepeated;
 	}
@@ -74,7 +74,7 @@ uint32_t MissionsComp::IsDoNotAccepted(uint32_t mission_id)const
 
 uint32_t MissionsComp::IsDoNotCompleted(uint32_t mission_id)const
 {
-	if (missions_comp_pb_.complete_missions().count(mission_id) > 0)//“—æ≠ÕÍ≥…
+	if (missions_comp_pb_.complete_missions().count(mission_id) > 0)//Â∑≤ÁªèÂÆåÊàê
 	{
 		return kRetMissionComplete;
 	}
@@ -101,8 +101,8 @@ uint32_t MissionsComp::GetReward(uint32_t missin_id)
 uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 {
     //check 
-    RET_CHECK_RET(IsDoNotAccepted(accept_event.mission_id()));//“—æ≠Ω” ‹π˝
-    RET_CHECK_RET(IsDoNotCompleted(accept_event.mission_id()));//“—æ≠ÕÍ≥…
+    RET_CHECK_RET(IsDoNotAccepted(accept_event.mission_id()));//Â∑≤ÁªèÊé•ÂèóËøá
+    RET_CHECK_RET(IsDoNotCompleted(accept_event.mission_id()));//Â∑≤ÁªèÂÆåÊàê
     CheckCondtion(!mission_config_->HasKey(accept_event.mission_id()), kRetTableId);
 
     auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
@@ -125,7 +125,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
             LOG_ERROR << "has not condtion" << cid;
             continue;
         }
-        //±ÌµƒÃıº˛‘ı√¥∏ƒ∂ºŒﬁÀ˘ŒΩ,÷ª”–Ãıº˛∫Õ±Ì∂‘”¶…œæÕº”Ω¯∂»
+        //Ë°®ÁöÑÊù°‰ª∂ÊÄé‰πàÊîπÈÉΩÊó†ÊâÄË∞ì,Âè™ÊúâÊù°‰ª∂ÂíåË°®ÂØπÂ∫î‰∏äÂ∞±Âä†ËøõÂ∫¶
         misison.add_progress(0);
         event_missions_classify_[p->condition_type()].emplace(accept_event.mission_id());
     }
@@ -150,7 +150,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 
 uint32_t MissionsComp::Abandon(uint32_t mission_id)
 {
-    RET_CHECK_RET(IsDoNotCompleted(mission_id));//“—æ≠ÕÍ≥…
+    RET_CHECK_RET(IsDoNotCompleted(mission_id));//Â∑≤ÁªèÂÆåÊàê
 	auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr != try_mission_reward)
 	{
@@ -185,8 +185,8 @@ void MissionsComp::Receive(const MissionConditionEvent& condition_event)
     }
     auto missions = missions_comp_pb_.mutable_missions();
     UInt32Set temp_complete;
-    auto& classify_missions = it->second;//∏˘æ› ¬º˛¥•∑¢¿‡–Õ∑÷¿‡µƒ»ŒŒÒ
-    //todo Õ¨≤Ω“Ï≤Ω ¬º˛
+    auto& classify_missions = it->second;//Ê†πÊçÆ‰∫ã‰ª∂Ëß¶ÂèëÁ±ªÂûãÂàÜÁ±ªÁöÑ‰ªªÂä°
+    //todo ÂêåÊ≠•ÂºÇÊ≠•‰∫ã‰ª∂
     for (auto lit : classify_missions)
     {
         auto mit = missions->find(lit);
@@ -251,7 +251,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
         return false;
     }
     bool mission_updated = false;
-    //»Áπ˚Œ“…æ≥˝¡Àƒ≥∏ˆÃıº˛£¨¿œÕÊº“ ˝æ›ª·≤ªª·¥Ì?’˝≥£»ŒŒÒ «≤ªƒ‹…æ≥˝µƒ£¨µ´ «ø…“‘øº¬«…æ≥˝Ãıº˛
+    //Â¶ÇÊûúÊàëÂà†Èô§‰∫ÜÊüê‰∏™Êù°‰ª∂ÔºåËÄÅÁé©ÂÆ∂Êï∞ÊçÆ‰ºö‰∏ç‰ºöÈîô?Ê≠£Â∏∏‰ªªÂä°ÊòØ‰∏çËÉΩÂà†Èô§ÁöÑÔºå‰ΩÜÊòØÂèØ‰ª•ËÄÉËôëÂà†Èô§Êù°‰ª∂
     auto& mission_conditions = mission_config_->condition_id(mission.id());
     for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i)
     {
@@ -269,7 +269,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
         {
             continue;
         }
-        //±ÌºÏ≤‚÷¡…Ÿ”–“ª∏ˆcondition
+        //Ë°®Ê£ÄÊµãËá≥Â∞ëÊúâ‰∏Ä‰∏™condition
         std::size_t config_condition_size = 0;
         std::size_t equal_condition_size = 0;
         auto calc_equal_condition_size = [&equal_condition_size, &condition_event, &config_condition_size](auto index, const auto& config_conditions)
@@ -324,7 +324,7 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
     {
         DelMissionClassify(mission_id);        
     }
-    //¥¶¿Ì“Ï≤Ωµƒ
+    //Â§ÑÁêÜÂºÇÊ≠•ÁöÑ
     auto try_dispatcher = tls.registry.try_get<entt::dispatcher>(event_owner());
 	if (nullptr == try_dispatcher)
 	{
@@ -338,8 +338,8 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
 	for (auto& mission_id : completed_missions_this_time)
 	{
 		missions_comp_pb_.mutable_complete_missions()->insert({ mission_id, true });
-		//◊‘∂Ø¡ÏΩ±,∏¯æ≠—È£¨Œ™ ≤√¥∑¢ ¬º˛£ø“ÚŒ™∏¯æ≠—È…˝º∂¡Àª·¬Ì…œΩ”»ŒŒÒ£¨ªÚ’ﬂ¥•∑¢“ª–©»ŒŒÒµƒ∂´Œ˜,
-		//µ´ «Œ“–Ë“™≤ª”∞œÏµ±«∞»ŒŒÒ¬ﬂº≠¡˜≥Ã,“≤ø…“‘¬Ì…œ¥•∑¢£¨ø¥«Èøˆ∂¯∂®
+		//Ëá™Âä®È¢ÜÂ•ñ,ÁªôÁªèÈ™åÔºå‰∏∫‰ªÄ‰πàÂèë‰∫ã‰ª∂ÔºüÂõ†‰∏∫ÁªôÁªèÈ™åÂçáÁ∫ß‰∫Ü‰ºöÈ©¨‰∏äÊé•‰ªªÂä°ÔºåÊàñËÄÖËß¶Âèë‰∏Ä‰∫õ‰ªªÂä°ÁöÑ‰∏úË•ø,
+		//‰ΩÜÊòØÊàëÈúÄË¶Å‰∏çÂΩ±ÂìçÂΩìÂâç‰ªªÂä°ÈÄªËæëÊµÅÁ®ã,‰πüÂèØ‰ª•È©¨‰∏äËß¶ÂèëÔºåÁúãÊÉÖÂÜµËÄåÂÆö
 		if (mission_config_->reward_id(mission_id) > 0 && mission_config_->auto_reward(mission_id))
 		{
 			OnMissionAwardEvent mission_award_event;
@@ -349,10 +349,10 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
 		}
 		else if (nullptr != try_mission_reward && mission_config_->reward_id(mission_id) > 0)
 		{
-			try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });// ÷∂Ø¡ÏΩ±
+			try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });//ÊâãÂä®È¢ÜÂ•ñ
 		}
 
-		//»Áπ˚ «ªÓ∂Ø≤ª”√◊ﬂ
+		//Â¶ÇÊûúÊòØÊ¥ªÂä®‰∏çÁî®Ëµ∞
 		AcceptMissionEvent accept_mission_event;
 		accept_mission_event.set_entity(entt::to_integral(event_owner()));
 		auto& next_missions = mission_config_->next_mission_id(mission_id);

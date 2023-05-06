@@ -24,7 +24,7 @@ public:
 	SceneNavs& scene_nav() { return g_scene_nav; }
 private:
 	RedisSystem redis_system_;
-	ControllerNodes controller_node_;//controller ²»»áÉ¾³ı£¬ÒòÎª²»»áºÍgsÒ»Ñù¸ù¾İ¸ºÔØÔö¼Ó¼õÉÙ£¬Ö»×ßµ×²ãµÄ×Ô¶¯ÖØÁ¬
+	ControllerNodes controller_node_;//controller ä¸ä¼šåˆ é™¤ï¼Œå› ä¸ºä¸ä¼šå’Œgsä¸€æ ·æ ¹æ®è´Ÿè½½å¢åŠ å‡å°‘ï¼Œåªèµ°åº•å±‚çš„è‡ªåŠ¨é‡è¿
 	GateNodes gate_nodes_;
 	GateSessionList gate_sessions_;
 	PlayerList player_list_;

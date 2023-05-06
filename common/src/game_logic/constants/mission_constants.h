@@ -4,13 +4,13 @@
 
 enum eCondtionType : uint32_t
 {
-	kConditionKillMonster = 1,//É±¹Ö
-	kConditionTalkWithNpc,//¶Ô»°
-	kConditionCompleteCondition,//Íê³ÉÏàÓ¦Ìõ¼ş
-	kConditionUseItem,//Ê¹ÓÃÎïÆ·
-	kConditionInteration,//½»»¥
-	kConditionLevelUp,//Éı¼¶
-	kConditionCustom,//×Ô¶¨ÒåÌõ¼ş
-	kConditionCompleteMission,//Íê³ÉÈÎÎñ
+	kConditionKillMonster = 1,//æ€æ€ª
+	kConditionTalkWithNpc,//å¯¹è¯
+	kConditionCompleteCondition,//å®Œæˆç›¸åº”æ¡ä»¶
+	kConditionUseItem,//ä½¿ç”¨ç‰©å“
+	kConditionInteration,//äº¤äº’
+	kConditionLevelUp,//å‡çº§
+	kConditionCustom,//è‡ªå®šä¹‰æ¡ä»¶
+	kConditionCompleteMission,//å®Œæˆä»»åŠ¡
 	kConditionTypeMax,
 };

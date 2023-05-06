@@ -65,7 +65,7 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
 {
     auto* p_gs_data = tls.registry.try_get<GsNodePtr>(scene);
-    if (nullptr == p_gs_data)//ÕÒ²»µ½gsÁË£¬·Åµ½ºÃµÄgsÀïÃæ
+    if (nullptr == p_gs_data)//æ‰¾ä¸åˆ°gsäº†ï¼Œæ”¾åˆ°å¥½çš„gsé‡Œé¢
     {
         return kInvalidU32Id;
     }
@@ -75,7 +75,7 @@ NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
 
 void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, SessionId session_id)
 {
-    //todo gs±ÀÀ£
+    //todo gså´©æºƒ
 	auto it = controller_tls.game_node().find(node_id);
 	if (it == controller_tls.game_node().end())
 	{
@@ -89,7 +89,7 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
 }
 
 
-//Ç°Ò»¸ö¶ÓÁĞÍê³ÉµÄÊ±ºò²ÅÓ¦¸Ãµ÷ÓÃµ½ÕâÀïÈ¥ÅĞ¶Ïµ±Ç°¶ÓÁĞ
+//å‰ä¸€ä¸ªé˜Ÿåˆ—å®Œæˆçš„æ—¶å€™æ‰åº”è¯¥è°ƒç”¨åˆ°è¿™é‡Œå»åˆ¤æ–­å½“å‰é˜Ÿåˆ—
 void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 {
     GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
@@ -112,7 +112,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     auto& scene_info = change_scene_info.scene_info();
     auto to_scene_id = scene_info.scene_id();
     entt::entity to_scene = entt::null;
-    if (to_scene_id <= 0)//ÓÃscene_config id È¥»»±¾·şµÄcontroller
+    if (to_scene_id <= 0)//ç”¨scene_config id å»æ¢æœ¬æœçš„controller
     {
         GetSceneParam getp;
         getp.scene_confid_ = scene_info.scene_confid();
@@ -167,7 +167,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     bool is_from_gs_is_cross_server = tls.registry.any_of<CrossMainSceneServer>(from_gs);
     bool is_to_gs_is_cross_server = tls.registry.any_of<CrossMainSceneServer>(to_gs);
 
-    //²»ÊÇ¿ç·ş²ÅÔÚ±¾µØÅĞ¶Ï,¿ç·şÓĞ×Ô¼ºµÄÅĞ¶Ï
+    //ä¸æ˜¯è·¨æœæ‰åœ¨æœ¬åœ°åˆ¤æ–­,è·¨æœæœ‰è‡ªå·±çš„åˆ¤æ–­
     if (!change_scene_info.ignore_full() && !is_to_gs_is_cross_server)
     {
         auto ret = ScenesSystem::CheckScenePlayerSize(to_scene);
@@ -191,12 +191,12 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         }
     }
 
-    //¿ç·ş¼äÇĞ»»,Èç¹ûÁíÒ»¸ö¿ç·şÂúÁË¾Í²»Ó¦¸Ã½øÈ¥ÁË
-    //Èç¹ûÊÇ¿ç·ş£¬¾ÍÓ¦¸ÃÏÈ¿ç·şÈ¥´¦Àí
-    //Ô­À´·şÎñÆ÷Ö®¼ä»»³¡¾°£¬²»ÓÃÍ¨Öª¿ç·şÀë¿ª³¡¾°
-    //todo Èç¹ûÊÇ½ø³ö¾µÏñ£¬Ò»¶¨±£³ÖÔÚÔ­À´µÄgsÇĞ»»,Ö÷ÊÀ½ç·ÖÏßºÍ¾µÏñÃ»¹ØÏµ£¬ÕâÑù¾Í½ÚÊ¡ÁËÍæ¼ÒÇĞ»»Á÷³Ì£¬Ğ§ÂÊÒ²Ìá¸ßÁË
-    //todo ¿ç·şµÄÊ±ºòÖØĞÂÉÏÏß
-    //Ä¿±ê³¡¾°ÊÇ¿ç·ş³¡¾°£¬Í¨Öª¿ç·şÈ¥»»,¿ç·şÖ»×öÈËÊı¼ì²â£¬²»×öÆäËûµÄÊÂÇé
+    //è·¨æœé—´åˆ‡æ¢,å¦‚æœå¦ä¸€ä¸ªè·¨æœæ»¡äº†å°±ä¸åº”è¯¥è¿›å»äº†
+    //å¦‚æœæ˜¯è·¨æœï¼Œå°±åº”è¯¥å…ˆè·¨æœå»å¤„ç†
+    //åŸæ¥æœåŠ¡å™¨ä¹‹é—´æ¢åœºæ™¯ï¼Œä¸ç”¨é€šçŸ¥è·¨æœç¦»å¼€åœºæ™¯
+    //todo å¦‚æœæ˜¯è¿›å‡ºé•œåƒï¼Œä¸€å®šä¿æŒåœ¨åŸæ¥çš„gsåˆ‡æ¢,ä¸»ä¸–ç•Œåˆ†çº¿å’Œé•œåƒæ²¡å…³ç³»ï¼Œè¿™æ ·å°±èŠ‚çœäº†ç©å®¶åˆ‡æ¢æµç¨‹ï¼Œæ•ˆç‡ä¹Ÿæé«˜äº†
+    //todo è·¨æœçš„æ—¶å€™é‡æ–°ä¸Šçº¿
+    //ç›®æ ‡åœºæ™¯æ˜¯è·¨æœåœºæ™¯ï¼Œé€šçŸ¥è·¨æœå»æ¢,è·¨æœåªåšäººæ•°æ£€æµ‹ï¼Œä¸åšå…¶ä»–çš„äº‹æƒ…
 
     if (is_from_gs_is_cross_server || is_to_gs_is_cross_server)
     {
@@ -204,14 +204,14 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         change_scene_info.set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerScene);
         if (is_from_gs_is_cross_server)
         {
-            //¿ç·şµ½Ô­À´·şÎñÆ÷£¬Í¨Öª¿ç·şÀë¿ª³¡¾°£¬todo×¢Òâ»Øµ½Ô­À´·şÎñÆ÷µÄÊ±ºò¿ÉÄÜÔ­À´·şÎñÆ÷ÂúÁË
+            //è·¨æœåˆ°åŸæ¥æœåŠ¡å™¨ï¼Œé€šçŸ¥è·¨æœç¦»å¼€åœºæ™¯ï¼Œtodoæ³¨æ„å›åˆ°åŸæ¥æœåŠ¡å™¨çš„æ—¶å€™å¯èƒ½åŸæ¥æœåŠ¡å™¨æ»¡äº†
             LeaveCrossMainSceneRequest rq;
             rq.set_player_id(tls.registry.get<Guid>(player));
             g_controller_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMethod, &rq);
         }
         if (is_to_gs_is_cross_server)
         {
-            //×¢ÒâËäÈ»Ò»¸öÂß¼­£¬µ«ÊÇ²»Ò»¶¨ÊÇÔÚleaveºóÃæ´¦Àí
+            //æ³¨æ„è™½ç„¶ä¸€ä¸ªé€»è¾‘ï¼Œä½†æ˜¯ä¸ä¸€å®šæ˜¯åœ¨leaveåé¢å¤„ç†
             EnterCrossMainSceneRequest rq;
             rq.set_scene_id(to_scene_id);
             rq.set_player_id(tls.registry.get<Guid>(player));
@@ -226,7 +226,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 
     if (ControllerChangeSceneInfo::eDotnotCrossServer == change_scene_info.change_cross_server_status())
     {
-        PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);//²»¿ç·ş¾Í¿ªÊ¼´¦ÀíÍ¬Ò»¸ögs »òÕß²»Í¬gs
+        PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);//ä¸è·¨æœå°±å¼€å§‹å¤„ç†åŒä¸€ä¸ªgs æˆ–è€…ä¸åŒgs
         return;
     }
 
