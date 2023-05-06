@@ -90,12 +90,12 @@ void LobbyServer::receive(const OnBeConnectedEvent& es)
 			{
 				continue;
 			}
-			auto gsnode = tls.registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+			auto gsnode = tls.registry.try_get<GsNodePtr>(e);//濡傛灉鏄父鎴忛�昏緫鏈嶅垯鍒犻櫎
 			if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGameNode)
 			{
 				g_game_node->erase((*gsnode)->node_info_.node_id());
 			}
-            // controller 不动态扩展，所以不删除
+            // controller 涓嶅姩鎬佹墿灞曪紝鎵�浠ヤ笉鍒犻櫎
 			tls.registry.destroy(e);
 			break;
 		}
