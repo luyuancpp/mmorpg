@@ -7,10 +7,9 @@
 #include "src/game_logic/timer_task/timer_task.h"
 #include "src/network/codec/codec.h"
 #include "src/network/codec/dispatcher.h"
-#include "src/pb/pbc/pb2sol2/pb2sol2.h"
 
 #include "c2gate.pb.h"
-#include "logic_proto/scene_client_player.pb.h"
+#include "client_player_proto/scene_client_player.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
