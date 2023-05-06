@@ -3,10 +3,10 @@
 
 enum eServerType : uint32_t
 {
-	kMainSceneServer,//Ö÷ÊÀ½ç³¡¾°
-	kRoomServer,//¸±±¾³¡¾°
-	kMainSceneCrossServer,//¿ç·şÖ÷ÊÀ½ç³¡¾°
-	kRoomSceneCrossServer,//¿ç·ş¸±±¾³¡¾°
+	kMainSceneServer,//ä¸»ä¸–ç•Œåœºæ™¯
+	kRoomServer,//å‰¯æœ¬åœºæ™¯
+	kMainSceneCrossServer,//è·¨æœä¸»ä¸–ç•Œåœºæ™¯
+	kRoomSceneCrossServer,//è·¨æœå‰¯æœ¬åœºæ™¯
 };
 
 struct GsServerType
@@ -16,11 +16,11 @@ struct GsServerType
 
 enum EnumNodeType : uint32_t
 {
-	kLoginNode,//µÇÂ¼·şÎñÆ÷
-	kControllerNode,//³¡¾°ÇĞ»»ÖĞĞÄ·şÎñÆ÷
-	kGameNode,//Âß¼­·şÎñÆ÷
-	kGateNode,//Íø¹Ø·şÎñÆ÷
-	kDatabaseNode,//Êı¾İ¿â·şÎñÆ÷
+	kLoginNode,//ç™»å½•æœåŠ¡å™¨
+	kControllerNode,//åœºæ™¯åˆ‡æ¢ä¸­å¿ƒæœåŠ¡å™¨
+	kGameNode,//é€»è¾‘æœåŠ¡å™¨
+	kGateNode,//ç½‘å…³æœåŠ¡å™¨
+	kDatabaseNode,//æ•°æ®åº“æœåŠ¡å™¨
 };
 
 
