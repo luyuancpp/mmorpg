@@ -176,7 +176,7 @@ func getMethodRepliedHandlerHeadStr(dst string, methodList *RpcMethodInfos) (dat
 		if methodInfo.Response == config.GoogleEmptyProtoName {
 			continue
 		}
-		data += "void On" + methodInfo.Method + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
+		data += "void On" + methodInfo.KeyName() + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
 			"std::shared_ptr<" + methodInfo.Response + ">& replied, Timestamp timestamp);\n\n"
 	}
 	return data
@@ -210,6 +210,9 @@ func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string
 }
 
 func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
+	if strings.Contains(dst, "game_service_replied_handler") {
+		print("data")
+	}
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
@@ -223,7 +226,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 			if methodInfo.Response == config.GoogleEmptyProtoName {
 				continue
 			}
-			data += "void On" + methodInfo.Method + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
+			data += "void On" + methodInfo.KeyName() + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
 				"std::shared_ptr<" + methodInfo.Response + ">& replied, Timestamp timestamp)\n{\n"
 		}
 		data += yourCodes[i]

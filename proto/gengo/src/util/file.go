@@ -61,11 +61,11 @@ func Copy(dst string, src string) (written int64, err error) {
 	return nBytes, err
 }
 
-func GetDstCodeData(cppFileName string, emptyPair int) (data []string, err error) {
+func GetDstCodeData(cppFileName string, codeCount int) (data []string, err error) {
 	var yourCodes []string
 	fd, err := os.Open(cppFileName)
 	if err != nil {
-		for i := 0; i < emptyPair; i++ {
+		for i := 0; i < codeCount; i++ {
 			yourCodes = append(yourCodes, config.YourCodePair)
 		}
 		return yourCodes, err
@@ -83,6 +83,12 @@ func GetDstCodeData(cppFileName string, emptyPair int) (data []string, err error
 			yourCodeIndex += 1
 		} else if yourCodeIndex < len(yourCodes) {
 			yourCodes[yourCodeIndex] += line
+		}
+	}
+	if len(yourCodes) < codeCount {
+		addCount := codeCount - len(yourCodes)
+		for i := 0; i < addCount; i++ {
+			yourCodes = append(yourCodes, config.YourCodePair)
 		}
 	}
 	return yourCodes, err
