@@ -211,21 +211,15 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
-	data = firstMethodInfo.CppHandlerIncludeName() +
-		"#include \"muduo/net/TcpConnection.h\"\n" +
-		"using namespace muduo;\n" +
-		"using namespace muduo::net;\n\n"
+	data = firstMethodInfo.CppRepliedHandlerIncludeName()
 
-	className := firstMethodInfo.Service + config.RepliedHandlerName
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
 		isMessage := j >= 0 && j < methodLen
 		if isMessage {
 			methodInfo := (*methodList)[j]
-			data += "void " + className + "::" + methodInfo.Method + config.GoogleMethodController + "\n" +
-				config.Tab + "const ::" + methodInfo.Request + "* request,\n" +
-				config.Tab + "::" + methodInfo.Response + "* response,\n" +
-				config.Tab + " ::google::protobuf::Closure* done)\n{\n"
+			data += "void On" + methodInfo.Service + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
+				methodInfo.Response + "Ptr& replied, Timestamp timestamp);\n{\n"
 		}
 		data += yourCodes[i]
 		if isMessage {
@@ -522,7 +516,7 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.ControllerMethodHandleDir + fileName
 	md5FileName := GetMd5FileName(dstFileName)
-	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
 	Md5WriteData2File(md5FileName, data)
 	Md5Copy(dstFileName, md5FileName)
 }
