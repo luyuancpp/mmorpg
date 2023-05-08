@@ -92,7 +92,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;../game_proto/pbc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../third_party/;../third_party/boost/;./;../third_party/protobuf/src/;../third_party/zlib/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -319,7 +319,6 @@
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
     <ClInclude Include="src\game_logic\comp\player_comp.h" />
     <ClInclude Include="src\game_logic\comp\scene_comp.h" />
-    <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
     <ClInclude Include="src\pb\pbc\client_player_proto\common_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\client_player_proto\scene_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\client_player_proto\team_client_player.pb.h" />
