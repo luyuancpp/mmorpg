@@ -20,7 +20,6 @@
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/server_service.h"
 #include "src/handler/server_replied.h"
-#include "src/handler/replied_dispathcer.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "src/network/node_info.h"
@@ -35,6 +34,7 @@ NodeId node_id()
     return g_game_node->gs_info().id();
 }
 
+void InitRepliedHandler();
 
 GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
@@ -54,7 +54,7 @@ void GameServer::Init()
     InitService();
     InitPlayerService();
     InitPlayerServiceReplied();
-    InitRepliedCallback();
+    InitRepliedHandler();
     InitNetwork();
 }
 

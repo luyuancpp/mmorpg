@@ -137,7 +137,6 @@
     <ClCompile Include="src\handler\game_service_handler.cpp" />
     <ClCompile Include="src\handler\lobby_scene_handler.cpp" />
     <ClCompile Include="src\handler\lobby_service_replied.cpp" />
-    <ClCompile Include="src\handler\replied_dispathcer.cpp" />
     <ClCompile Include="src\handler\player_service.cpp" />
     <ClCompile Include="src\handler\scene_client_player_handler.cpp" />
     <ClCompile Include="src\handler\scene_handler.cpp" />
@@ -151,6 +150,7 @@
     <ClCompile Include="src\replied_handler\controller_service_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\lobby_scene_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\player_service_replied.cpp" />
+    <ClCompile Include="src\replied_handler\register_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\scene_client_player_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\scene_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\scene_server_player_replied_handler.cpp" />
@@ -183,7 +183,6 @@
     <ClInclude Include="src\handler\game_service_handler.h" />
     <ClInclude Include="src\handler\lobby_scene_handler.h" />
     <ClInclude Include="src\handler\lobby_service_replied.h" />
-    <ClInclude Include="src\handler\replied_dispathcer.h" />
     <ClInclude Include="src\handler\player_service.h" />
     <ClInclude Include="src\handler\scene_client_player_handler.h" />
     <ClInclude Include="src\handler\scene_handler.h" />
