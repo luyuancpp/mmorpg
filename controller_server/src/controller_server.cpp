@@ -13,7 +13,6 @@
 #include "src/network/rpc_client.h"
 #include "src/util/game_registry.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/handler/replied_dispathcer.h"
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/server_service.h"
@@ -33,6 +32,7 @@ using namespace net;
 ControllerServer* g_controller_node = nullptr;
 
 void set_server_squence_node_id(uint32_t node_id);
+void InitRepliedHandler();
 
 uint32_t controller_node_id()
 {
@@ -56,7 +56,7 @@ void ControllerServer::Init()
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
     InitPlayerService();
     InitPlayerServiceReplied();
-    InitRepliedCallback();
+    InitRepliedHandler();
     InitService();
     //connect 
     Connect2Deploy();

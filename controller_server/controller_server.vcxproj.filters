@@ -78,9 +78,6 @@
     <ClCompile Include="src\handler\game_service_replied.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\replied_dispathcer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\deploy_service_replied.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -162,6 +159,9 @@
     <ClCompile Include="src\replied_handler\login_service_replied_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\replied_handler\register_replied_handler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\controller_server.h">
@@ -231,9 +231,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\player_service_replied.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\replied_dispathcer.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\deploy_service_replied.h">
