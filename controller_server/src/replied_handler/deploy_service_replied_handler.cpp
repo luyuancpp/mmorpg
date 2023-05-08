@@ -1,9 +1,25 @@
 #include "deploy_service_replied_handler.h"
+#include "src/network/codec/dispatcher.h"
+
+extern ProtobufDispatcher g_response_dispatcher;
+
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/controller_server.h"
 
 void set_server_squence_node_id(uint32_t node_id);
 ///<<< END WRITING YOUR CODE
+
+void InitDeployServiceServerInfoHandler()
+{
+	g_response_dispatcher.registerMessageCallback<ServerInfoResponse>(std::bind(&OnDeployServiceServerInfoRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<StartGSResponse>(std::bind(&OnDeployServiceStartGSRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<LobbyServerResponse>(std::bind(&OnDeployServiceStartLobbyServerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<LobbyServerResponse>(std::bind(&OnDeployServiceAcquireLobbyServerInfoRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<LobbyInfoResponse>(std::bind(&OnDeployServiceAcquireLobbyInfoRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<GruoupLoginNodeResponse>(std::bind(&OnDeployServiceLoginNodeInfoRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<SceneSqueueResponese>(std::bind(&OnDeployServiceSceneSqueueNodeIdRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+}
+
 void OnDeployServiceServerInfoRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<ServerInfoResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
