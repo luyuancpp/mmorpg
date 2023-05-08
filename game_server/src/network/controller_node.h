@@ -20,6 +20,6 @@ struct ControllerNode
 	EntityPtr controller_;
 };
 using ControllerNodePtr = std::shared_ptr<ControllerNode>;
-using ControllerNodes = std::unordered_map<uint32_t, ControllerNodePtr>;
+using ControllerNodes = std::unordered_map<uint64_t, ControllerNodePtr>;
 
 
