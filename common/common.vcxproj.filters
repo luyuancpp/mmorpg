@@ -134,6 +134,21 @@
     <ClCompile Include="src\pb\pbc\client_player_proto\common_client_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\client_player_proto\scene_client_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\client_player_proto\team_client_player.pb.cc" />
+    <ClCompile Include="src\pb\pbc\lua\common_client_player_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\common_server_player_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\controller_service_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\database_service_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\deploy_service_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\game_service_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\gate_service_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\lobby_scene_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\login_service_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\scene_client_player_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\scene_server_player_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\team_client_player_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\scene_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\team_server_player_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\team_service_lua.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
