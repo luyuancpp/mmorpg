@@ -350,13 +350,16 @@ func writeLuaServiceMethodCppFile(methodList RpcMethodInfos) {
 
 	data += "void Init" + methodList[0].KeyName() + "Lua()\n{\n"
 	for i := 0; i < len(methodList); i++ {
+		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() + config.MessageIdName + "\"] = " +
+			strconv.FormatUint(methodList[i].Id, 10) + ";\n"
+		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() + config.MethodIndexName + "\"] = " +
+			strconv.FormatUint(methodList[i].Index, 10) + ";\n"
 		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() +
 			"\"] = []()-> const ::google::protobuf::MethodDescriptor* {\n" +
 			config.Tab2 + "return " + methodList[i].Service + "_Stub::descriptor()->method(" +
 			strconv.FormatUint(methodList[i].Index, 10) + ");\n" +
 			config.Tab + "};\n\n"
-		//data += "const uint32_t " + methodList[i].KeyName() + config.MessageIdName + " = " + strconv.FormatUint(methodList[i].Id, 10) + ";\n"
-		//data += "const uint32_t " + methodList[i].KeyName() + "Index = " + strconv.FormatUint(methodList[i].Index, 10) + ";\n"
+
 	}
 	data += "}\n"
 	fileName := methodList[0].FileBaseName() + "_service" + config.LuaCppEx
