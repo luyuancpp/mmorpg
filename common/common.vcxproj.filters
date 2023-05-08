@@ -149,6 +149,7 @@
     <ClCompile Include="src\pb\pbc\lua\scene_service_lua.cpp" />
     <ClCompile Include="src\pb\pbc\lua\team_server_player_service_lua.cpp" />
     <ClCompile Include="src\pb\pbc\lua\team_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\lua_service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />

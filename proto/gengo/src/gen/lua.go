@@ -348,7 +348,7 @@ func writeLuaServiceMethodCppFile(methodList RpcMethodInfos) {
 	data += "#include \"src/game_logic/thread_local/thread_local_storage_lua.h\"\n"
 	data += methodList[0].IncludeName() + "\n\n"
 
-	data += "void Init" + methodList[0].KeyName() + "Lua()\n{\n"
+	data += "void Init" + methodList[0].Service + "Lua()\n{\n"
 	for i := 0; i < len(methodList); i++ {
 		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() + config.MessageIdName + "\"] = " +
 			strconv.FormatUint(methodList[i].Id, 10) + ";\n"
@@ -359,11 +359,27 @@ func writeLuaServiceMethodCppFile(methodList RpcMethodInfos) {
 			config.Tab2 + "return " + methodList[i].Service + "_Stub::descriptor()->method(" +
 			strconv.FormatUint(methodList[i].Index, 10) + ");\n" +
 			config.Tab + "};\n\n"
-
 	}
 	data += "}\n"
 	fileName := methodList[0].FileBaseName() + "_service" + config.LuaCppEx
 	Md5WriteData2File(config.PbcLuaDirName+fileName, data)
+}
+
+func writeInitLuaServiceFile() {
+	defer util.Wg.Done()
+	data := "void InitServiceLua()\n{\n"
+	ServiceList := GetSortServiceList()
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok {
+			continue
+		}
+		firstMethodInfo := methodList[0]
+		data += config.Tab + "void Init" + firstMethodInfo.Service + "Lua();\n"
+		data += config.Tab + "Init" + firstMethodInfo.Service + "Lua();\n\n"
+	}
+	data += "}\n"
+	Md5WriteData2File(config.LuaServiceFileName, data)
 }
 
 func WriteClientServiceHeadHandlerFile() {
@@ -375,4 +391,6 @@ func WriteClientServiceHeadHandlerFile() {
 	}
 	util.Wg.Add(1)
 	go writeClientHandlerDefaultInstanceFile()
+	util.Wg.Add(1)
+	go writeInitLuaServiceFile()
 }

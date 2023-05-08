@@ -20,6 +20,9 @@ int main(int argc, char* argv[])
         void InitPlayerService();
         InitPlayerService();
 
+        void InitServiceLua();
+        InitServiceLua();
+
         int32_t nClients = 1;
 
         if (argc > 1)
