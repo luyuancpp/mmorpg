@@ -40,3 +40,5 @@ third_party/mysql/
 build/
 Cmake/
 .vscode/
+cmake-build-debug*/
+.idea/

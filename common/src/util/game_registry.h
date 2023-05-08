@@ -3,9 +3,8 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include "entt/src/entt/signal/dispatcher.hpp"
 
-
-entt::entity& error_entity();
-entt::entity& op_enitty();
+entt::entity error_entity();
+entt::entity op_entity();
 
 using EntityWeakPtr = std::weak_ptr<entt::entity>;
 
