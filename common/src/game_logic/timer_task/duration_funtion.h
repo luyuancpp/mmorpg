@@ -15,7 +15,6 @@ time_t GetTime(muduo::Date & dateTime, const std::string & hms);
 time_t GetWeekTime(muduo::Date & dateToday, const std::string & whms);
 
 
-#endif // !__DURATION_FUNTION_H_
 
 
 
