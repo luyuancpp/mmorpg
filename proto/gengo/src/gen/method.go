@@ -210,13 +210,24 @@ func getMethodHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string
 }
 
 func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data string) {
-	if strings.Contains(dst, "game_service_replied_handler") {
-		print("data")
-	}
 	methodLen := len(*methodList)
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
-	data = firstMethodInfo.CppRepliedHandlerIncludeName()
+	data = firstMethodInfo.CppRepliedHandlerIncludeName() +
+		"#include \"src/network/codec/dispatcher.h\"\n\n" +
+		"extern ProtobufDispatcher g_response_dispatcher;\n\n"
+
+	implData := ""
+	declarationData := ""
+
+	for i := 0; i < len(yourCodes); i++ {
+		j := i - 1
+		isMessage := j >= 0 && j < methodLen
+		if isMessage {
+			break
+		}
+		data += yourCodes[i]
+	}
 
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
@@ -226,14 +237,30 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 			if methodInfo.Response == config.GoogleEmptyProtoName {
 				continue
 			}
-			data += "void On" + methodInfo.KeyName() + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
+			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerName
+			declarationData += config.Tab + "g_response_dispatcher.registerMessageCallback<" +
+				methodInfo.Response + ">(std::bind(&" + funcName +
+				", std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));\n"
+			implData += "void " + funcName + "(const TcpConnectionPtr& conn, const " +
 				"std::shared_ptr<" + methodInfo.Response + ">& replied, Timestamp timestamp)\n{\n"
-		}
-		data += yourCodes[i]
-		if isMessage {
-			data += "}\n\n"
+			implData += yourCodes[i]
+			implData += "}\n\n"
 		}
 	}
+	data += "\nvoid Init" + firstMethodInfo.KeyName() + config.HandlerName + "()\n{\n"
+	data += declarationData
+	data += "}\n\n"
+
+	data += implData
+
+	for i := 0; i < len(yourCodes); i++ {
+		j := i - 1
+		if j < methodLen {
+			continue
+		}
+		data += yourCodes[i]
+	}
+
 	return data
 }
 
