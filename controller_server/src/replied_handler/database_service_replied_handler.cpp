@@ -1,10 +1,10 @@
 #include "database_service_replied_handler.h"
 #include "src/network/codec/dispatcher.h"
 
-extern ProtobufDispatcher g_response_dispatcher;
-
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
+extern ProtobufDispatcher g_response_dispatcher;
+
 
 void InitDbServiceLoginRepliedHandler()
 {

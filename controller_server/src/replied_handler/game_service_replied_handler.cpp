@@ -1,8 +1,6 @@
 #include "game_service_replied_handler.h"
 #include "src/network/codec/dispatcher.h"
 
-extern ProtobufDispatcher g_response_dispatcher;
-
 ///<<< BEGIN WRITING YOUR CODE
 
 #include <boost/get_pointer.hpp>
@@ -14,6 +12,8 @@ extern ProtobufDispatcher g_response_dispatcher;
 #include "src/thread_local/controller_thread_local_storage.h"
 
 ///<<< END WRITING YOUR CODE
+extern ProtobufDispatcher g_response_dispatcher;
+
 
 void InitGameServiceEnterGsRepliedHandler()
 {
@@ -33,6 +33,7 @@ void OnGameServiceSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, const 
 void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<GameNodeRpcClientResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+
 ///<<< END WRITING YOUR CODE
 }
 

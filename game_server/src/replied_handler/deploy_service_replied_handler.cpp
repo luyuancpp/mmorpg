@@ -1,14 +1,14 @@
 #include "deploy_service_replied_handler.h"
 #include "src/network/codec/dispatcher.h"
 
-extern ProtobufDispatcher g_response_dispatcher;
-
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/game_config/deploy_json.h"
 #include "src/game_server.h"
 #include "src/pb/pbc/deploy_service_service.h"
 
 ///<<< END WRITING YOUR CODE
+extern ProtobufDispatcher g_response_dispatcher;
+
 
 void InitDeployServiceServerInfoRepliedHandler()
 {

@@ -1,13 +1,13 @@
 #include "deploy_service_replied_handler.h"
 #include "src/network/codec/dispatcher.h"
 
-extern ProtobufDispatcher g_response_dispatcher;
-
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/controller_server.h"
 
 void set_server_squence_node_id(uint32_t node_id);
 ///<<< END WRITING YOUR CODE
+extern ProtobufDispatcher g_response_dispatcher;
+
 
 void InitDeployServiceServerInfoRepliedHandler()
 {

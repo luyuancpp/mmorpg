@@ -1,8 +1,6 @@
 #include "controller_service_replied_handler.h"
 #include "src/network/codec/dispatcher.h"
 
-extern ProtobufDispatcher g_response_dispatcher;
-
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
@@ -13,6 +11,8 @@ extern ProtobufDispatcher g_response_dispatcher;
 #include "src/game_config/deploy_json.h"
 #include "src/game_server.h"
 ///<<< END WRITING YOUR CODE
+extern ProtobufDispatcher g_response_dispatcher;
+
 
 void InitControllerServiceStartGsRepliedHandler()
 {

@@ -216,8 +216,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 	yourCodes, _ := util.GetDstCodeData(dst, methodLen+1)
 	firstMethodInfo := (*methodList)[0]
 	data = firstMethodInfo.CppRepliedHandlerIncludeName() +
-		"#include \"src/network/codec/dispatcher.h\"\n\n" +
-		"extern ProtobufDispatcher g_response_dispatcher;\n\n"
+		"#include \"src/network/codec/dispatcher.h\"\n\n"
 
 	implData := ""
 	declarationData := ""
@@ -230,7 +229,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 		}
 		data += yourCodes[i]
 	}
-
+	data += "extern ProtobufDispatcher g_response_dispatcher;\n\n"
 	for i := 0; i < len(yourCodes); i++ {
 		j := i - 1
 		isMessage := j >= 0 && j < methodLen
