@@ -101,3 +101,4 @@ const MysqlName = "mysql"
 const PlayerServiceName = "player_service.cpp"
 const PlayerRepliedServiceName = "player_service_replied.cpp"
 const GoogleEmptyProtoName = "google::protobuf::Empty"
+const RegisterRepliedHandlerCppEx = "register" + CppRepliedHandlerEx

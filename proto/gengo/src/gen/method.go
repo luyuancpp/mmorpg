@@ -163,7 +163,7 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
-func getMethodRepliedHandlerHeadStr(dst string, methodList *RpcMethodInfos) (data string) {
+func getMethodRepliedHandlerHeadStr(methodList *RpcMethodInfos) (data string) {
 	methodLen := len(*methodList)
 	firstMethodInfo := (*methodList)[0]
 	data = firstMethodInfo.IncludeName() +
@@ -247,7 +247,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 			implData += "}\n\n"
 		}
 	}
-	data += "\nvoid Init" + firstMethodInfo.KeyName() + config.HandlerName + "()\n{\n"
+	data += "\nvoid Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + "()\n{\n"
 	data += declarationData
 	data += "}\n\n"
 
@@ -285,10 +285,6 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos, classN
 		}
 	}
 	return data
-}
-
-func writeMethodRepliedHandleCppFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
 }
 
 func writeGsPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
@@ -331,13 +327,11 @@ func writeGsPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodPlayerHandlerCppStr(dstFileName,
 		&methodList,
 		firstMethodInfo.CppRepliedHandlerClassName(),
 		firstMethodInfo.CppRepliedHandlerIncludeName())
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
 }
 
 func writeControllerPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
@@ -351,13 +345,11 @@ func writeControllerPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos)
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.ControllerMethodRepliedHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodPlayerHandlerCppStr(dstFileName,
 		&methodList,
 		firstMethodInfo.CppRepliedHandlerClassName(),
 		firstMethodInfo.CppRepliedHandlerIncludeName())
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
 }
 
 func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
@@ -387,10 +379,8 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.GsMethodHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodHandlerCppStr(dstFileName, &methodList)
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
 }
 
 func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
@@ -404,13 +394,12 @@ func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.GsMethodHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodPlayerHandlerCppStr(dstFileName,
 		&methodList,
 		firstMethodInfo.CppHandlerClassName(),
 		firstMethodInfo.CppHandlerIncludeName())
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
+
 }
 
 func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
@@ -424,13 +413,11 @@ func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.ControllerMethodHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodPlayerHandlerCppStr(dstFileName,
 		&methodList,
 		firstMethodInfo.CppHandlerClassName(),
 		firstMethodInfo.CppHandlerIncludeName())
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
 }
 
 func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
@@ -462,10 +449,23 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.ControllerMethodHandleDir + fileName
-	md5FileName := GetMd5FileName(dstFileName)
 	data := getMethodHandlerCppStr(dstFileName, &methodList)
-	Md5WriteData2File(md5FileName, data)
-	Md5Copy(dstFileName, md5FileName)
+	Md5WriteData2File(dstFileName, data)
+}
+
+func writeRepliedRegisterFile(dst string, methodList *RpcMethodInfos) {
+	methodLen := len(*methodList)
+	if methodLen <= 0 {
+		return
+	}
+	firstMethodInfo := (*methodList)[0]
+	data := "void InitRepliedHandler()\n{\n"
+	for i := 0; i < methodLen; i++ {
+		data += "void Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + ";\n"
+		data += "Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + ";\n"
+	}
+	data += "}\n"
+	Md5WriteData2File(dst, data)
 }
 
 func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
@@ -485,7 +485,7 @@ func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 
 	fileName := strings.ToLower(fileBaseName) + config.HeadRepliedHandlerEx
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
-	data := getMethodRepliedHandlerHeadStr(dstFileName, &methodList)
+	data := getMethodRepliedHandlerHeadStr(&methodList)
 	Md5WriteData2File(dstFileName, data)
 }
 
@@ -509,6 +509,8 @@ func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	dstFileName := config.GsMethodRepliedHandleDir + fileName
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
 	Md5WriteData2File(dstFileName, data)
+
+	writeRepliedRegisterFile(config.GsMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, &methodList)
 }
 
 func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
@@ -523,25 +525,28 @@ func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
 	dstFileName := config.ControllerMethodRepliedHandleDir + fileName
-	data := getMethodRepliedHandlerHeadStr(dstFileName, &methodList)
+	data := getMethodRepliedHandlerHeadStr(&methodList)
 	Md5WriteData2File(dstFileName, data)
 }
 
 func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if len(methodList) <= 0 {
+	methodLen := len(methodList)
+	if methodLen <= 0 {
+		return
+	}
+	firstMethodInfo := methodList[0]
+	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return
 	}
 
-	if !(strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
-		return
-	}
-
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
+	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.ControllerMethodRepliedHandleDir + fileName
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
 	Md5WriteData2File(dstFileName, data)
+
+	writeRepliedRegisterFile(config.ControllerMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, &methodList)
 }
 
 func WriteMethodFile() {
@@ -586,9 +591,6 @@ func WriteMethodFile() {
 		go writeControllerPlayerMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
 		go writeControllerPlayerMethodRepliedHandlerCppFile(v)
-
-		util.Wg.Add(1)
-		go writeMethodRepliedHandleCppFile(v)
 
 	}
 }
