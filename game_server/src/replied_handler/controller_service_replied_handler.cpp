@@ -4,6 +4,14 @@
 extern ProtobufDispatcher g_response_dispatcher;
 
 ///<<< BEGIN WRITING YOUR CODE
+#include "muduo/base/Logging.h"
+
+#include "src/game_logic/comp/scene_comp.h"
+#include "src/game_logic/scene/scene.h"
+#include "src/pb/pbc/lobby_scene_service.h"
+#include "src/system/gs_scene_system.h"
+#include "src/game_config/deploy_json.h"
+#include "src/game_server.h"
 ///<<< END WRITING YOUR CODE
 
 void InitControllerServiceStartGsRepliedHandler()
@@ -20,6 +28,21 @@ void InitControllerServiceStartGsRepliedHandler()
 void OnControllerServiceStartGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<CtrlStartGsResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	if (GameConfig::GetSingleton().server_type() == kMainSceneServer)
+	{
+		for (int32_t i = 0; i < replied->scenes_info_size(); ++i)
+		{
+			CreateSceneBySceneInfoP param;
+			param.scene_info_ = replied->scenes_info(i);
+			GsSceneSystem::CreateSceneByGuid(param);
+		}
+		LOG_DEBUG << replied->DebugString();
+	}
+	else if (GameConfig::GetSingleton().server_type() == kMainSceneCrossServer)
+	{
+		GameConnectToControllerRequest rq;
+		g_game_node->lobby_node()->CallMethod(LobbyServiceGameConnectToControllerMethod, &rq);
+	}
 ///<<< END WRITING YOUR CODE
 }
 

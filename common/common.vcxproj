@@ -232,6 +232,7 @@
     <ClCompile Include="src\pb\pbc\lua\lobby_scene_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\login_service_service_lua.cpp" />
     <ClCompile Include="src\pb\pbc\lua\login_service_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\lua_service.cpp" />
     <ClCompile Include="src\pb\pbc\lua\mission_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\mission_event_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\node_common_sol2.cpp" />
