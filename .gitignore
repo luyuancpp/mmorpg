@@ -37,4 +37,5 @@ proto/gengo/bin/
 common/src/pb/pb2sol2/
 third_party/boost/
 third_party/mysql/
-
+build/
+Cmake/
