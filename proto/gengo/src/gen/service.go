@@ -313,7 +313,7 @@ func writeServiceHandlerFile() {
 		v := ServiceMethodMap[key]
 		for i := 0; i < len(v); i++ {
 			rpcMethodInfo := v[i]
-			rpcId := rpcMethodInfo.KeyName() + config.RpcIdName
+			rpcId := rpcMethodInfo.KeyName() + config.MessageIdName
 			initFuncData += "extern const uint32_t " + rpcId + ";\n"
 			cppValue := "g_service_method_info[" + rpcId
 			initFuncData += cppValue + "] = RpcService{" +

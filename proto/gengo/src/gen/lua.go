@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"gengo/config"
 	"gengo/util"
-	"log"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -16,7 +15,6 @@ const msg = "message"
 const begin = "{"
 const end = "}"
 const setName = "::set_"
-const mutableName = "::mutable_"
 const mapType = "map"
 const stringType = "string"
 
@@ -167,7 +165,12 @@ func writeProtoSol2LuaFile(fd os.DirEntry, filePath string) {
 		"#include <sol/sol.hpp>\n" +
 		"#include \"src/game_logic/thread_local/thread_local_storage_lua.h\"\n" +
 		"void Pb2sol2" + fileBaseName + "()" + "\n{\n"
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			return
+		}
+	}(f)
 	scanner := bufio.NewScanner(f)
 	className := ""
 	for scanner.Scan() {
@@ -303,7 +306,6 @@ func writeAllProtoSol2LuaFile() {
 		for i := 0; i < len(config.ProtoDirs); i++ {
 			fds, err := os.ReadDir(config.ProtoDirs[i])
 			if err != nil {
-				log.Fatal(err)
 				continue
 			}
 			for _, fd := range fds {
@@ -332,20 +334,41 @@ func writeAllProtoSol2LuaFile() {
 
 }
 
-func writeLuaServiceFile() {
-	for i := 0; i < len(config.ProtoDirs); i++ {
-		//BuildProto(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
-	}
-}
-
 func WritePbcLua() {
 	writeAllProtoSol2LuaFile()
+}
+
+func writeLuaServiceMethodCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+
+	if len(methodList) <= 0 {
+		return
+	}
+	var data = "#pragma once\n#include <cstdint>\n\n"
+	data += "#include \"src/game_logic/thread_local/thread_local_storage_lua.h\"\n"
+	data += methodList[0].IncludeName() + "\n\n"
+
+	data += "void Init" + methodList[0].KeyName() + "Lua()\n{\n"
+	for i := 0; i < len(methodList); i++ {
+		data += config.Tab + "tls_lua_state[\"" + methodList[i].KeyName() +
+			"\"] = []()-> const ::google::protobuf::MethodDescriptor* {\n" +
+			config.Tab2 + "return " + methodList[i].Service + "_Stub::descriptor()->method(" +
+			strconv.FormatUint(methodList[i].Index, 10) + ");\n" +
+			config.Tab + "};\n\n"
+		//data += "const uint32_t " + methodList[i].KeyName() + config.MessageIdName + " = " + strconv.FormatUint(methodList[i].Id, 10) + ";\n"
+		//data += "const uint32_t " + methodList[i].KeyName() + "Index = " + strconv.FormatUint(methodList[i].Index, 10) + ";\n"
+	}
+	data += "}\n"
+	fileName := methodList[0].FileBaseName() + "_service" + config.LuaCppEx
+	Md5WriteData2File(config.PbcLuaDirName+fileName, data)
 }
 
 func WriteClientServiceHeadHandlerFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
 		go writeClientMethodHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeLuaServiceMethodCppFile(v)
 	}
 	util.Wg.Add(1)
 	go writeClientHandlerDefaultInstanceFile()
