@@ -478,7 +478,9 @@ func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 func isGsMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
 	firstMethodInfo := (*methodList)[0]
 	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		if !strings.Contains(firstMethodInfo.FileBaseName(), "controller") {
+		if !(strings.Contains(firstMethodInfo.FileBaseName(), "controller") ||
+			strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
+			strings.Contains(firstMethodInfo.FileBaseName(), "lobby")) {
 			return
 		}
 	} else if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {

@@ -75,18 +75,6 @@
     <ClCompile Include="src\handler\team_handler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\game_service_replied.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\deploy_service_replied.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\lobby_service_replied.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\gate_service_replied.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\thread_local\controller_thread_local_storage.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -227,19 +215,7 @@
     <ClInclude Include="src\network\controller_rpc.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\game_service_replied.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="src\replied_handler\player_service_replied.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\deploy_service_replied.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\lobby_service_replied.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\gate_service_replied.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\controller_thread_local_storage.h">

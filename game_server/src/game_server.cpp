@@ -19,7 +19,7 @@
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/server_service.h"
-#include "src/handler/server_replied.h"
+
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "src/network/node_info.h"
