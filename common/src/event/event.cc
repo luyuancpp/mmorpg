@@ -1,6 +1,5 @@
 #include "event.h"
 
-
 Family BaseEvent::family_counter_ = 0;
 
 BaseReceiver::~BaseReceiver()

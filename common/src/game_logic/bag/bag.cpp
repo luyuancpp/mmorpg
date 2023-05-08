@@ -2,8 +2,6 @@
 
 #include <vector>
 
-#include "muduo/base/Logging.h"
-
 #include "src/game_logic/tips_id.h"
 
 #include"src/game_config/item_config.h"
