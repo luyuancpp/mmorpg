@@ -13,7 +13,7 @@
 #include "src/pb/pbc/service.h"
 #include "src/pb/pbc/game_service_service.h"
 #include "src/pb/pbc/gate_service_service.h"
-#include "src/handler/game_service_replied.h"
+#include "src/replied_handler/game_service_replied_handler.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 #include "gate_service.pb.h"
