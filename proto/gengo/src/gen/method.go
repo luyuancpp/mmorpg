@@ -9,7 +9,7 @@ import (
 
 type checkRepliedCb func(methodList *RpcMethodInfos) bool
 
-func writeCommonMethodHeadFile(methodList RpcMethodInfos) {
+func writeServiceMethodHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -18,7 +18,7 @@ func writeCommonMethodHeadFile(methodList RpcMethodInfos) {
 	var data = "#pragma once\n#include <cstdint>\n\n"
 	data += methodList[0].IncludeName() + "\n"
 	for i := 0; i < len(methodList); i++ {
-		data += "extern const uint32_t " + methodList[i].KeyName() + config.RpcIdName + ";\n"
+		data += "extern const uint32_t " + methodList[i].KeyName() + config.MessageIdName + ";\n"
 		data += "extern const uint32_t " + methodList[i].KeyName() + "Index;\n"
 		data += "#define " + methodList[i].KeyName() + "Method  ::" + methodList[i].Service + "_Stub::descriptor()->method(" +
 			strconv.FormatUint(methodList[i].Index, 10) + ")\n"
@@ -28,7 +28,7 @@ func writeCommonMethodHeadFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(config.PbcOutDir+fileName, data)
 }
 
-func writeCommonMethodCppFile(methodList RpcMethodInfos) {
+func writeServiceMethodCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -37,7 +37,7 @@ func writeCommonMethodCppFile(methodList RpcMethodInfos) {
 	var data = config.IncludeBegin + methodList[0].FileBaseName() + "_service" + config.HeadEx + config.IncludeEndLine
 
 	for i := 0; i < len(methodList); i++ {
-		data += "const uint32_t " + methodList[i].KeyName() + config.RpcIdName + " = " + strconv.FormatUint(methodList[i].Id, 10) + ";\n"
+		data += "const uint32_t " + methodList[i].KeyName() + config.MessageIdName + " = " + strconv.FormatUint(methodList[i].Id, 10) + ";\n"
 		data += "const uint32_t " + methodList[i].KeyName() + "Index = " + strconv.FormatUint(methodList[i].Index, 10) + ";\n"
 	}
 	fileName := methodList[0].FileBaseName() + "_service" + config.CppEx
@@ -563,9 +563,9 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
-		go writeCommonMethodHeadFile(v)
+		go writeServiceMethodHeadFile(v)
 		util.Wg.Add(1)
-		go writeCommonMethodCppFile(v)
+		go writeServiceMethodCppFile(v)
 
 		//gs
 		util.Wg.Add(1)
