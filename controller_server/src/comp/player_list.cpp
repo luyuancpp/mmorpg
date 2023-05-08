@@ -2,7 +2,6 @@
 
 #include "src/game_logic/scene/scene.h"
 
-#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 entt::entity ControllerPlayerSystem::GetPlayer(Guid guid)

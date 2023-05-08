@@ -39,3 +39,4 @@ third_party/boost/
 third_party/mysql/
 build/
 Cmake/
+.vscode/
