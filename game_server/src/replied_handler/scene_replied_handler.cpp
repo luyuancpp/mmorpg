@@ -6,7 +6,7 @@ extern ProtobufDispatcher g_response_dispatcher;
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-void InitServerSceneServiceUpdateCrossMainSceneInfoHandler()
+void InitServerSceneServiceUpdateCrossMainSceneInfoRepliedHandler()
 {
 	g_response_dispatcher.registerMessageCallback<UpdateCrossMainSceneInfoResponse>(std::bind(&OnServerSceneServiceUpdateCrossMainSceneInfoRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }

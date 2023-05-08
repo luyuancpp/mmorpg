@@ -6,7 +6,7 @@ extern ProtobufDispatcher g_response_dispatcher;
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 
-void InitDbServiceLoginHandler()
+void InitDbServiceLoginRepliedHandler()
 {
 	g_response_dispatcher.registerMessageCallback<DatabaseNodeLoginResponse>(std::bind(&OnDbServiceLoginRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<DatabaseNodeCreatePlayerResponse>(std::bind(&OnDbServiceCreatePlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
