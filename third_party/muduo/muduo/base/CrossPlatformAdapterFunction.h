@@ -59,7 +59,7 @@
 typedef long long ssize_t;
 #define pid_t int32_t
 #undef off_t
-#define off_t std::size_t
+#define off_t uint64_t
 #define sa_family_t int32_t
 #define rlim_t uint64_t
 typedef uint64_t uid_t;
