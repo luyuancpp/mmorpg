@@ -1,12 +1,12 @@
 #include "lobby_scene_replied_handler.h"
 #include "src/network/codec/dispatcher.h"
 
-extern ProtobufDispatcher g_response_dispatcher;
-
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/game_logic/scene/scene.h"
 #include "src/system/gs_scene_system.h"
 ///<<< END WRITING YOUR CODE
+extern ProtobufDispatcher g_response_dispatcher;
+
 
 void InitLobbyServiceStartCrossGsRepliedHandler()
 {
