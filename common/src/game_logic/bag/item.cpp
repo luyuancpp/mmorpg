@@ -3,13 +3,13 @@
 entt::registry item_reg;
 ServerSequence16 g_bag_server_sequence;
 
-void BagEnityPtrDeleter(entt::entity* p)
+void BagEntityPtrDeleter(entt::entity* p)
 {
 	item_reg.destroy(*p);
 	delete p;
 }
 
-ItemEntity::ItemEntity() : entity_(new entt::entity(item_reg.create()), BagEnityPtrDeleter) {}
+ItemEntity::ItemEntity() : entity_(new entt::entity(item_reg.create()), BagEntityPtrDeleter) {}
 
 Item CreateItem(const CreateItemParam& p)
 {

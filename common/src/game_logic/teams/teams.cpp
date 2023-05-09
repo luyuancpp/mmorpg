@@ -219,18 +219,18 @@ uint32_t Teams::KickMember(Guid team_id, Guid current_leader, Guid  kick_guid)
     return kRetOK;
 }
 
-uint32_t Teams::DissMissTeam(Guid team_id, Guid current_leader)
+uint32_t Teams::Disbanded(Guid team_id, Guid current_leader)
 {
     GetTeamPtrReturnError;
-    RET_CHECK_RET(team.DissMiss(current_leader));
+    RET_CHECK_RET(team.Disbanded(current_leader));
     EraseTeam(e);
     return kRetOK;
 }
 
-uint32_t Teams::DissMissTeamNoLeader(Guid team_id)
+uint32_t Teams::DisbandedTeamNoLeader(Guid team_id)
 {
     GetTeamPtrReturnError;
-    return DissMissTeam(team_id, team.leader_id());
+    return Disbanded(team_id, team.leader_id());
 }
 
 uint32_t Teams::AppointLeader(Guid team_id, Guid current_leader, Guid  new_leader)

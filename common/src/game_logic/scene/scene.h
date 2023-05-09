@@ -52,7 +52,7 @@ struct DestroyServerParam
     entt::entity server_{ entt::null };
 };
 
-void AddMainSceneNodeCompnent(entt::entity e);
+void AddMainSceneNodeComponent(entt::entity server);
 
 
 //todo 1线镜像和一线应该是同一个gs,这样就不会有切换服务器的开销
@@ -65,7 +65,7 @@ public:
     static std::size_t scenes_size(uint32_t scene_config_id);
     static inline std::size_t scenes_size()  { return scene_list_.size(); }
     static inline std::size_t scenes_map_size()  { return scene_list_.size(); }
-    static void set_server_squence_node_id(uint32_t node_id) { server_squence_.set_node_id(node_id); }
+    static void set_server_squence_node_id(uint32_t node_id) { server_sequence_.set_node_id(node_id); }
 
     static entt::entity get_scene(Guid scene_id);
 
@@ -93,6 +93,6 @@ public:
 
 private:
 	static SceneList scene_list_;
-	static ServerSequence24 server_squence_;
+	static ServerSequence24 server_sequence_;
 };
 

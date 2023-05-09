@@ -39,8 +39,8 @@ public:
     uint32_t JoinTeam(const UInt64Set& member_list, Guid  team_id);
     uint32_t LeaveTeam(Guid guid);
     uint32_t KickMember(Guid team_id, Guid current_leader_id, Guid  kick_guid);
-    uint32_t DissMissTeam(Guid team_id, Guid current_leader_id);
-    uint32_t DissMissTeamNoLeader(Guid team_id);
+    uint32_t Disbanded(Guid team_id, Guid current_leader_id);
+    uint32_t DisbandedTeamNoLeader(Guid team_id);
     uint32_t AppointLeader(Guid team_id, Guid current_leader_id, Guid  nNewLeaderPlayerId);
     uint32_t ApplyToTeam(Guid team_id, Guid guid);
     uint32_t DelApplicant(Guid team_id, Guid apply_guid);

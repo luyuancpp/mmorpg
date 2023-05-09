@@ -67,7 +67,7 @@ public:
         auto rf_message = ref->GetRepeatedFieldRef<T>(message, fd_sub_message);
         for (auto it = rf_message.begin(); it != rf_message.end(); ++it)
         {
-            Execute(pb2db_.GetInsertOnDupKeyForPririmarykey(*it));
+            Execute(pb2db_.GetInsertOnDupKeyForPrimaryKey(*it));
         }
     }
 

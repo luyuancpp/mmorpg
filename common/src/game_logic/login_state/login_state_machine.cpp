@@ -7,11 +7,11 @@
 LoginStateMachine::LoginStateMachine()
 {
     state_list_[kLoginNone] = std::make_shared<NoneState>(*this);
-    state_list_[kLoginAccountLogining] = std::make_shared<LoginState>(*this);
-    state_list_[kLoginAcccountCreatePlayer] = std::make_shared<CreatePlayerState>(*this);
+    state_list_[kLoginAccountIngBeingProcessing] = std::make_shared<LoginState>(*this);
+    state_list_[kLoginAccountCreatePlayer] = std::make_shared<CreatePlayerState>(*this);
     state_list_[kLoginAccountEnterGame] = std::make_shared<EnterGameState>(*this);
-    state_list_[kLoignAccountPling] = std::make_shared<PlayingState>(*this);
-    state_list_[kLoginWatingEnterGame] = std::make_shared<WaitingEnterGameState>(*this);
+    state_list_[kLoginAccountPlaying] = std::make_shared<PlayingState>(*this);
+    state_list_[kLoginWaitingEnterGame] = std::make_shared<WaitingEnterGameState>(*this);
     state_list_[kLoginAccountNoPlayer] = std::make_shared<EmptyPlayerState>(*this);
     state_list_[kLoginAccountFullPlayer] = std::make_shared<FullPlayerState>(*this);
     set_state(kLoginNone);

@@ -47,7 +47,7 @@ public:
     std::string GetSelectAllSql();
     std::string GetSelectAllSql(const std::string& where_clause);
     std::string GetInsertOnDupUpdateSql(const ::google::protobuf::Message& message, MYSQL* mysql);
-    std::string GetInsertOnDupKeyForPririmarykey(const ::google::protobuf::Message& message, MYSQL* mysql);
+    std::string GetInsertOnDupKeyForPrimaryKey(const ::google::protobuf::Message& message, MYSQL* mysql);
     std::string GetDeleteSql(const ::google::protobuf::Message& message, MYSQL* mysql);
     std::string GetDeleteSql(const std::string& where_clause, MYSQL* mysql);
     std::string GetReplaceSql(const ::google::protobuf::Message& message, MYSQL* mysql);
@@ -88,7 +88,7 @@ public:
     std::string GetInsertSql(::google::protobuf::Message& message);
     std::string GetReplaceSql(const::google::protobuf::Message& message);
     std::string GetInsertOnDupUpdateSql(const ::google::protobuf::Message& message);
-    std::string GetInsertOnDupKeyForPririmarykey(const ::google::protobuf::Message& message);
+    std::string GetInsertOnDupKeyForPrimaryKey(const ::google::protobuf::Message& message);
     std::string GetUpdateSql(::google::protobuf::Message& message);
     std::string GetUpdateSql(::google::protobuf::Message& message, std::string where_clause);
     std::string GetSelectSql(::google::protobuf::Message& message, const std::string& key, const std::string& val);

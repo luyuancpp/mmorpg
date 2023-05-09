@@ -2,7 +2,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "mysql_database_test.pb.h"
+#include "common_proto/mysql_database_test.pb.h"
 
 void MysqlDatabase::set_auto_increment(const ::google::protobuf::Message& message_default_instance, uint64_t auto_increment)
 {

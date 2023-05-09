@@ -10,11 +10,11 @@
 static const std::size_t kMaxMainScenePlayer = 1000;
 
 SceneList ScenesSystem::scene_list_;
-ServerSequence24 ScenesSystem::server_squence_;
+ServerSequence24 ScenesSystem::server_sequence_;
 
-void set_server_squence_node_id(uint32_t node_id) { ScenesSystem::set_server_squence_node_id(node_id); }
+void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_squence_node_id(node_id); }
 
-void AddMainSceneNodeCompnent(entt::entity server)
+void AddMainSceneNodeComponent(entt::entity server)
 {
     tls.registry.emplace<MainSceneServer>(server);
     tls.registry.emplace<GSNormal>(server);
@@ -69,7 +69,7 @@ entt::entity ScenesSystem::CreateScene(const CreateSceneP& param)
 {
     CreateSceneBySceneInfoP create_by_guid_param;
     create_by_guid_param.scene_info_.set_scene_confid(param.scene_confid_);
-    create_by_guid_param.scene_info_.set_scene_id(server_squence_.Generate());
+    create_by_guid_param.scene_info_.set_scene_id(server_sequence_.Generate());
     return CreateSceneByGuid(create_by_guid_param);
 }
 

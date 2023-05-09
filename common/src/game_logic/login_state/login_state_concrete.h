@@ -13,7 +13,7 @@ public:
 
     virtual uint32_t LoginAccount()override
     {
-        login_machine_.set_state(kLoginAccountLogining);
+        login_machine_.set_state(kLoginAccountIngBeingProcessing);
         return kRetOK;
     }
     virtual uint32_t CreatePlayer() override { return kRetLoginHadnotLogin; }
@@ -54,7 +54,7 @@ public:
     virtual uint32_t LoginAccount() override { return kRetLoginEnteringGame; }
     virtual uint32_t CreatePlayer() override { return kRetLoginEnteringGame; }
     virtual uint32_t EnterGame()override { return kRetLoginEnteringGame; }
-    virtual void OnPlaying()override { login_machine_.set_state(kLoignAccountPling ); }
+    virtual void OnPlaying()override { login_machine_.set_state(kLoginAccountPlaying ); }
 };
 
 class PlayingState : public IAccountState
@@ -74,7 +74,7 @@ public:
     virtual uint32_t LoginAccount() override { return kRetLoignWatingEnterGame; }
     virtual uint32_t CreatePlayer() override
     {
-        login_machine_.set_state(kLoginAcccountCreatePlayer);
+        login_machine_.set_state(kLoginAccountCreatePlayer);
         return kRetOK;
     }
     virtual uint32_t EnterGame()override
@@ -92,7 +92,7 @@ public:
     virtual uint32_t LoginAccount() override { return kRetLoignWatingEnterGame; }
     virtual uint32_t CreatePlayer() override
     {
-        login_machine_.set_state(kLoginAcccountCreatePlayer);
+        login_machine_.set_state(kLoginAccountCreatePlayer);
         return kRetOK;
     }
 

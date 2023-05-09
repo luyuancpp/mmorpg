@@ -88,7 +88,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	gs_node_ptr->node_info_.set_node_type(kGameNode);
-	AddMainSceneNodeCompnent(gs);
+    AddMainSceneNodeComponent(gs);
 	tls.registry.emplace<InetAddress>(gs, service_addr);
 	tls.registry.emplace<GsNodePtr>(gs, gs_node_ptr);
 	if (request->server_type() == kMainSceneCrossServer)

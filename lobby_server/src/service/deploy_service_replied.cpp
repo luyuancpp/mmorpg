@@ -2,7 +2,7 @@
 
 #include "src/lobby_server.h"
 
-void set_server_squence_node_id(uint32_t node_id);
+void set_server_sequence_node_id(uint32_t node_id);
 
 void OnLobbyServerReplied(const TcpConnectionPtr& conn, const LobbyServerResponsePtr& replied, Timestamp timestamp)
 {
@@ -11,5 +11,5 @@ void OnLobbyServerReplied(const TcpConnectionPtr& conn, const LobbyServerRespons
 
 void SceneSqueueNodeIdReplied(const TcpConnectionPtr& conn, const SceneSqueueResponesePtr& replied, Timestamp timestamp)
 {
-    set_server_squence_node_id(replied->node_id());
+    set_server_sequence_node_id(replied->node_id());
 }

@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/controller_server.h"
 
-void set_server_squence_node_id(uint32_t node_id);
+void set_server_sequence_node_id(uint32_t node_id);
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
@@ -61,7 +61,7 @@ void OnDeployServiceLoginNodeInfoRepliedHandler(const TcpConnectionPtr& conn, co
 void OnDeployServiceSceneSqueueNodeIdRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<SceneSqueueResponese>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	set_server_squence_node_id(replied->node_id());
+    set_server_sequence_node_id(replied->node_id());
 ///<<< END WRITING YOUR CODE
 }
 

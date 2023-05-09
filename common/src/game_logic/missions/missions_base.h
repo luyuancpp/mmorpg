@@ -8,7 +8,7 @@
 
 #include "component_proto/mission_comp.pb.h"
 
-struct CheckTypeRepeatd {};
+struct CheckTypeRepeated {};
 
 class AcceptMissionEvent;
 class MissionConditionEvent;

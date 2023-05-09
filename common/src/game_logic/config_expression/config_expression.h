@@ -3,7 +3,7 @@
 #include "src/game_logic/exprtk/exprtk.hpp"
 
 template<class T>
-inline T randu()
+inline T myRandom()
 {
     return 1;
 }
@@ -23,7 +23,7 @@ public:
         iparams_.clear();
         iparams_.resize(params_name.size());
         std::size_t value_index = 0;
-        symbol_table_.add_function("random", randu);
+        symbol_table_.add_function("random", myRandom);
         for (auto& nane : params_name)
         {
             symbol_table_.add_variable(nane, iparams_[value_index++]);
