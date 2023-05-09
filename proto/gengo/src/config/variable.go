@@ -87,16 +87,22 @@ const EventHandlerDirName = "src/event_handler/"
 const EventHandlerFileName = "event_handler"
 const EventHandlerFileNameHead = EventHandlerFileName + HeadEx
 const EventHandlerFileNameCpp = EventHandlerFileName + CppEx
-const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
-const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
-const GsMethodRepliedHandleDir = ProjectDir + GsName + RepliedHandlerDirName
-const ControllerMethodRepliedHandleDir = ProjectDir + ControllerName + RepliedHandlerDirName
-const ClientMethodHandleDir = ProjectDir + ClientName + HandlerDirName
-const GateMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
-const LoginMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
 
+const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
 const GsEventHandleDir = ProjectDir + GsName + EventHandlerDirName
+const GsMethodRepliedHandleDir = ProjectDir + GsName + RepliedHandlerDirName
+
+const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
+const ControllerMethodRepliedHandleDir = ProjectDir + ControllerName + RepliedHandlerDirName
 const ControllerEventHandleDir = ProjectDir + ControllerName + EventHandlerDirName
+
+const ClientMethodHandleDir = ProjectDir + ClientName + HandlerDirName
+
+const GateMethodHandleDir = ProjectDir + GateName + HandlerDirName
+const GateMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
+
+const LoginMethodHandleDir = ProjectDir + LoginName + HandlerDirName
+const LoginMethodRepliedHandleDir = ProjectDir + LoginName + RepliedHandlerDirName
 
 const ClientLuaProjectRelative = "script/lua/service/"
 const ClientLuaDir = ProjectDir + "bin/" + ClientLuaProjectRelative
