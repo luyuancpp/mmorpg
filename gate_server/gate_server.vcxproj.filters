@@ -54,6 +54,15 @@
     <ClCompile Include="src\thread_local\gate_thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\replied_handler\controller_service_replied_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\replied_handler\deploy_service_replied_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\replied_handler\game_service_replied_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\c2gate.h">
@@ -90,6 +99,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\gate_thread_local_storage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\controller_service_replied_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\deploy_service_replied_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\game_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
