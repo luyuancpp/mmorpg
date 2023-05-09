@@ -158,9 +158,6 @@
     <ClInclude Include="src\game_logic\login_state\login_state_concrete.h" />
     <ClInclude Include="src\game_logic\login_state\login_state_machine.h" />
     <ClInclude Include="src\game_logic\constants\time_variable.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\player_scene.pb.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\player_team.pb.h" />
-    <ClInclude Include="src\pb\pbc\pb3.pb.h" />
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
     <ClInclude Include="src\network\codec\dispatcher_lite.h" />
@@ -188,10 +185,8 @@
     <ClInclude Include="src\network\server_component.h" />
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\util\snow_flake.h" />
-    <ClInclude Include="src\game_logic\scene\scene_factories.h" />
     <ClInclude Include="src\game_logic\scene\servernode_system.h" />
     <ClInclude Include="src\game_logic\scene\scene.h" />
-    <ClInclude Include="src\game_logic\game_component\player_common_component.h" />
     <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\util\random.h" />
     <ClInclude Include="src\game_logic\player\player_list.h" />
@@ -212,12 +207,6 @@
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
     <ClInclude Include="src\game_config\mainscene_config.h" />
     <ClInclude Include="src\game_config\monster_base_config.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\common_client_player.pb.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\common_server_player.pb.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\scene_client_player.pb.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\scene_server_player.pb.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\team_client_player.pb.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\team_server_player.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\condition_config.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\global_variable_config.pb.h" />
     <ClInclude Include="src\pb\pbc\game_config\item_config.pb.h" />

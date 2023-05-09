@@ -35,9 +35,12 @@ int main(int argc, char* argv[])
         tls.registry.emplace<uint32_t>(gAllFinish, nClients);
 
         auto contents = common::File2String("client.json");
-        google::protobuf::StringPiece sp(contents.data(), contents.size());
+        absl::string_view sv(contents.data(), contents.size());
         ConnetionParamJsonFormat connetion_param_;
-        google::protobuf::util::JsonStringToMessage(sp, &connetion_param_);
+        auto result =  google::protobuf::util::JsonStringToMessage(sv, &connetion_param_);
+		if (!result.ok()) {
+			LOG_FATAL << result.message().data();
+		}
         InetAddress serverAddr(connetion_param_.data(0).ip(), connetion_param_.data(0).port());
   
         muduo::Logger::setLogLevel(muduo::Logger::WARN);
