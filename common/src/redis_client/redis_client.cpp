@@ -8,11 +8,11 @@ void MessageSyncRedisClient::Connect(const std::string& redis_server_addr, int32
     context_.reset(redisConnectWithTimeout(redis_server_addr.c_str(), port, timeout));
     if (nullptr == context_)
     {
-        LOG_FATAL << "Conect Redis " << redis_server_addr << ":" << port;
+        LOG_FATAL << "Connect Redis " << redis_server_addr << ":" << port;
     }
     else if (context_->err != REDIS_OK)
     {
-        LOG_FATAL << "Conect Redis " << redis_server_addr << ":" << port << context_->errstr;
+        LOG_FATAL << "Connect Redis " << redis_server_addr << ":" << port << context_->errstr;
     }
 }
 
@@ -27,7 +27,7 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message, Guid
     const auto* desc = message.GetDescriptor();
     if (kInvalidGuid == guid)
     {
-        LOG_ERROR << "Message Save To Redis Gameguid Key Empty : " << desc->full_name();
+        LOG_ERROR << "Message Save To Redis Game Guid Key Empty : " << desc->full_name();
         return;
     }
     std::string key = desc->full_name() + std::to_string(guid);

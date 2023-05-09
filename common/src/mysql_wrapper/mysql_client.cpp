@@ -2,7 +2,6 @@
 
 #include <chrono>
 
-
 void MysqlClient::Execute(const std::string& query)
 {
 #ifndef LOG_MYSQL_QUERY
@@ -31,19 +30,18 @@ MysqlClient::ResultRowPtr MysqlClient::QueryOne(const std::string& query)
         return {};
     }
 
-    // no resultset
     if (!query_res.value()) return {};
 
     auto* res = query_res.value().get();
 
     // get column info and give it to field validator,
     // which should throw if it doesn't like the columns
-    unsigned int nfields = mysql_num_fields(res);
-    if (nfields == 0) return {};
+    unsigned int filed = mysql_num_fields(res);
+    if (filed == 0) return {};
    
     if (MYSQL_ROW row = mysql_fetch_row(res)) {
         unsigned long* lengths = mysql_fetch_lengths(res);
-        return std::make_unique<ResultRow>(row, lengths, query_res.value().release(), nfields);
+        return std::make_unique<ResultRow>(row, lengths, query_res.value().release(), filed);
     }
 
     return {};
@@ -63,7 +61,6 @@ void MysqlClient::Query(const std::string& query, const RowProcessor& processor)
         return;
     }
 
-    // no resultset
     if (!query_res.value()) return;
 
     auto* res = query_res.value().get();
@@ -72,9 +69,9 @@ void MysqlClient::Query(const std::string& query, const RowProcessor& processor)
     // which should throw if it doesn't like the columns
     
     while (MYSQL_ROW row = mysql_fetch_row(res)) {
-        uint32_t nfields = mysql_num_fields(res);
+        uint32_t filed = mysql_num_fields(res);
         unsigned long* lengths = mysql_fetch_lengths(res);
-        if (!processor(row, lengths, nfields)) break;
+        if (!processor(row, lengths, filed)) break;
     }
 }
 
@@ -92,7 +89,6 @@ void MysqlClient::QueryResultRowProcessor(const std::string& query, const Result
         return;
     }
 
-    // no resultset
     if (!query_res.value()) return;
 
     auto* res = query_res.value().get();
@@ -101,9 +97,9 @@ void MysqlClient::QueryResultRowProcessor(const std::string& query, const Result
     // which should throw if it doesn't like the columns
 
     while (MYSQL_ROW row = mysql_fetch_row(res)) {
-        uint32_t nfields = mysql_num_fields(res);
+        uint32_t filed = mysql_num_fields(res);
         unsigned long* lengths = mysql_fetch_lengths(res);
-        if (!processor(std::make_unique<ResultRow>(row, lengths, nullptr, nfields))) break;
+        if (!processor(std::make_unique<ResultRow>(row, lengths, nullptr, filed))) break;
     }
 }
 
