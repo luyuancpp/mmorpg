@@ -9,11 +9,11 @@
 enum EnumLoginState : uint8_t
 {
     kLoginNone,
-    kLoginAccountLogining,//登录状态，重复登录的话提示，比如快点俩下
-    kLoginAcccountCreatePlayer,//登录状态，创建账号
+    kLoginAccountIngBeingProcessing,//登录状态，重复登录的话提示，比如快点俩下
+    kLoginAccountCreatePlayer,//登录状态，创建账号
     kLoginAccountEnterGame,//登录状态，有角色进入了游戏
-    kLoignAccountPling,
-    kLoginWatingEnterGame,//登录状态，账号加载数据完成,可以进入游戏
+    kLoginAccountPlaying,
+    kLoginWaitingEnterGame,//登录状态，账号加载数据完成,可以进入游戏
     kLoginAccountNoPlayer,//登录状态，没有角色，不能进入游戏，必须发创建角色协议
     kLoginAccountFullPlayer,//登录状态，角色已经满了不能再创建角色了
     kLoginStateMax,
@@ -21,7 +21,6 @@ enum EnumLoginState : uint8_t
 
 class LoginStateMachine;
 
-//login state interfase
 class IAccountState 
 {
 public:

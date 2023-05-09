@@ -2,44 +2,31 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
-
-#include "muduo/net/InetAddress.h"
-
 #include "src/game_config/mainscene_config.h"
 
-#include "src/common_type/common_type.h"
 #include "src/comp/account_player.h"
 #include "src/controller_server.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/comp/player_list.h"
 #include "src/game_logic/comp/account_comp.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/network/message_system.h"
-#include "src/network/gate_session.h"
-#include "src/network/session.h"
-#include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
 #include "src/network/player_session.h"
-#include "src/network/server_component.h"
-#include "src/network/node_info.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/pb/pbc/gate_service_service.h"
 #include "src/pb/pbc/game_service_service.h"
 #include "src/pb/pbc/login_service_service.h"
 #include "src/pb/pbc/database_service_service.h"
-#include "src/pb/pbc/gate_service_service.h"
 #include "src/pb/pbc/service.h"
 #include "src/handler/player_service.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"
 #include "src/thread_local/controller_thread_local_storage.h"
-#include "src/util/game_registry.h"
 #include "src/util/defer.h"
 
 
@@ -140,7 +127,7 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 	gs_node_ptr->node_info_.set_node_type(kGameNode);
 	gs_node_ptr->node_inet_addr_ = service_addr;//为了停掉gs，或者gs断线用
 	gs_node_ptr->server_entity_ = gs;
-	AddMainSceneNodeCompnent(gs);
+    AddMainSceneNodeComponent(gs);
 	tls.registry.emplace<GsNodePtr>(gs, gs_node_ptr);
 	if (request->server_type() == kMainSceneServer)
 	{

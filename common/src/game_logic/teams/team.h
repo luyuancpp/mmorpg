@@ -49,7 +49,7 @@ public:
     uint32_t LeaveTeam(Guid guid);
     uint32_t KickMember(Guid current_leader, Guid  nKickplayerid);
     uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
-    uint32_t DissMiss(Guid current_leader_id);
+    uint32_t Disbanded(Guid current_leader_id);
     void ClearApplyList();
     uint32_t ApplyToTeam(Guid guid);
     uint32_t DelApplicant(Guid applicant_id);
@@ -57,7 +57,7 @@ public:
 private:
     inline bool HasTeam(Guid guid) const;
     void AddMemeber(Guid guid);
-    void DelMemeber(Guid guid);
+    void DelMember(Guid guid);
     void OnAppointLeader(Guid  new_leader_guid);
    
     Guid leader_id_{};

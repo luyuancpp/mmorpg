@@ -4,7 +4,7 @@
 
 void IAccountState::WaitingEnterGame()
 {
-    login_machine_.set_state(kLoginWatingEnterGame);
+    login_machine_.set_state(kLoginWaitingEnterGame);
 }
 
 void IAccountState::OnFullPlayer()

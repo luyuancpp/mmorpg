@@ -2,10 +2,10 @@
 
 #include "src/mysql_wrapper/mysql_database.h"
 
-#include "mysql_database_test.pb.h"
+#include "common_proto/mysql_database_test.pb.h"
 
 
-DatabasePtr query_database;
+MysqlClientPtr query_database;
 ConnetionParam query_database_param;
 std::string main_acount("lu hailong");
 std::string main_password("lu yaun");

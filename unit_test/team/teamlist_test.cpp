@@ -28,7 +28,7 @@ TEST(TeamManger, CreateFullDismiss)
 	for (auto it = teamidlist.begin(); it != teamidlist.end(); ++it)
 	{
 		auto leader_player_id = team_list.get_leader_id_by_teamid(*it);
-		EXPECT_EQ(kRetOK, team_list.DissMissTeam(*it, leader_player_id));
+		EXPECT_EQ(kRetOK, team_list.Disbanded(*it, leader_player_id));
 	}
 	EXPECT_EQ(0, team_list.team_size());
 	EXPECT_EQ(0, team_list.players_size());
@@ -214,9 +214,9 @@ TEST(TeamManger, DismissTeam)
 	m = (104);
 	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
 
-	EXPECT_EQ(kRetTeamDismissNotLeader, team_list.DissMissTeam(team_list.last_team_id(), 104));
-	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.DissMissTeam(111, 104));
-	EXPECT_EQ(kRetOK, team_list.DissMissTeam(team_list.last_team_id(), 100));
+	EXPECT_EQ(kRetTeamDismissNotLeader, team_list.Disbanded(team_list.last_team_id(), 104));
+	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.Disbanded(111, 104));
+	EXPECT_EQ(kRetOK, team_list.Disbanded(team_list.last_team_id(), 100));
 	EXPECT_FALSE(team_list.HasTeam(100));
 }
 
@@ -459,7 +459,7 @@ TEST(TeamManger, PlayerTeamId)
 	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
 	
 
-	EXPECT_EQ(kRetOK, team_list.DissMissTeam(team_list.last_team_id(), 2));
+	EXPECT_EQ(kRetOK, team_list.Disbanded(team_list.last_team_id(), 2));
 	for (std::size_t i = 4; i <= kMaxMemberSize; ++i)
 	{
 		EXPECT_FALSE(team_list.HasTeam(m));

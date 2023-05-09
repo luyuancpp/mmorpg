@@ -50,7 +50,7 @@ uint32_t Team::LeaveTeam(Guid guid)
         return kRetTeamMemberNotInTeam;
     }
     bool is_leader_leave = IsLeader(guid);
-    DelMemeber(guid);
+    DelMember(guid);
     if (!members_.empty() && is_leader_leave)
     {
         OnAppointLeader(*members_.begin());
@@ -76,7 +76,7 @@ uint32_t Team::KickMember(Guid current_leader, Guid  be_kick_guid)
     {
         return kRetTeamMemberNotInTeam;
     }
-    DelMemeber(be_kick_guid);
+    DelMember(be_kick_guid);
     return kRetOK;
 }
 
@@ -103,7 +103,7 @@ void Team::OnAppointLeader(Guid guid)
     leader_id_ = guid;
 }
 
-uint32_t Team::DissMiss(Guid current_leader_id)
+uint32_t Team::Disbanded(Guid current_leader_id)
 {
     if (leader_id() != current_leader_id)
     {
@@ -112,7 +112,7 @@ uint32_t Team::DissMiss(Guid current_leader_id)
     auto temp_memebers = members_;
     for (auto& it : temp_memebers)
     {
-        DelMemeber(it);
+        DelMember(it);
     }
     return kRetOK;
 }
@@ -172,7 +172,7 @@ void Team::AddMemeber(Guid guid)
     tls.registry.emplace<TeamId>(pit->second).set_team_id(entt::to_integral(teamid_));
 }
 
-void Team::DelMemeber(Guid guid)
+void Team::DelMember(Guid guid)
 {
     members_.erase(std::find(members_.begin(), members_.end(), guid));
     auto pit = g_players->find(guid);

@@ -43,7 +43,7 @@ void MissionsComp::Init()
 	}
 	if (mission_config_->CheckTypeRepeated())
 	{
-		tls.registry.emplace<CheckTypeRepeatd>(event_owner());
+		tls.registry.emplace<CheckTypeRepeated>(event_owner());
 	}
     
 }
@@ -107,7 +107,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 
     auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
     auto mission_type = mission_config_->mission_type(accept_event.mission_id());
-    bool check_type_repeated =  mission_sub_type > 0 && tls.registry.any_of<CheckTypeRepeatd>(event_owner());
+    bool check_type_repeated =  mission_sub_type > 0 && tls.registry.any_of<CheckTypeRepeated>(event_owner());
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
@@ -236,7 +236,7 @@ void MissionsComp::DelMissionClassify(uint32_t mission_id)
         event_missions_classify_[condition_row->condition_type()].erase(mission_id);
     }
     auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
-    bool check_type_repeated = mission_sub_type > 0 && tls.registry.any_of<CheckTypeRepeatd>(event_owner());
+    bool check_type_repeated = mission_sub_type > 0 && tls.registry.any_of<CheckTypeRepeated>(event_owner());
     if (check_type_repeated)
     {
 		UInt32PairSet::value_type p(mission_config_->mission_type(mission_id), mission_sub_type);

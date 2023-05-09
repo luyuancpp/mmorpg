@@ -20,11 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\src\event\event.cc" />
-    <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\player\player_list.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\teams\team.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\teams\teams.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\thread_local\thread_local_storage.cpp" />
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\team_comp.pb.cc" />
+    <ClCompile Include="..\..\common\src\util\game_registry.cpp" />
     <ClCompile Include="teamlist_test.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -34,6 +35,7 @@
     <ClInclude Include="..\..\common\src\game_logic\teams\team_event.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\team_comp.pb.h" />
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h" />
+    <ClInclude Include="..\..\common\src\util\game_registry.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\common\common.vcxproj" />

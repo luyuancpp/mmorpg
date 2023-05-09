@@ -5,7 +5,7 @@
 #include "muduo/base/Logging.h"
 #include "src/util/utility.h"
 
-#include "db_base.pb.h"
+#include "common_proto/db_base.pb.h"
 
 
 //todo 注意替换空格
@@ -19,7 +19,6 @@ void EscapeString(std::string& str, MYSQL* mysql)
 	buffer.resize(resultSize);
 	str = buffer;
 }
-
 
 void FillMessageField(::google::protobuf::Message& message, const ResultRow& row)
 {
@@ -339,7 +338,7 @@ std::string Message2MysqlSql::GetInsertOnDupUpdateSql(const ::google::protobuf::
     return sql;
 }
 
-std::string Message2MysqlSql::GetInsertOnDupKeyForPririmarykey(const ::google::protobuf::Message& message, MYSQL* mysql)
+std::string Message2MysqlSql::GetInsertOnDupKeyForPrimaryKey(const ::google::protobuf::Message& message, MYSQL* mysql)
 {
     std::string sql = GetInsertSql(message, mysql);
     sql += " ON DUPLICATE KEY UPDATE ";
@@ -719,7 +718,7 @@ std::string Pb2DbTables::GetInsertOnDupUpdateSql(const ::google::protobuf::Messa
     return it->second.GetInsertOnDupUpdateSql(message, mysql_);
 }
 
-std::string Pb2DbTables::GetInsertOnDupKeyForPririmarykey(const ::google::protobuf::Message& message)
+std::string Pb2DbTables::GetInsertOnDupKeyForPrimaryKey(const ::google::protobuf::Message& message)
 {
     const auto& table_name = message.GetDescriptor()->full_name();
     auto it = tables_.find(table_name);
@@ -727,7 +726,7 @@ std::string Pb2DbTables::GetInsertOnDupKeyForPririmarykey(const ::google::protob
     {
         return "";
     }
-    return it->second.GetInsertOnDupKeyForPririmarykey(message, mysql_);
+    return it->second.GetInsertOnDupKeyForPrimaryKey(message, mysql_);
 }
 
 std::string Pb2DbTables::GetUpdateSql(::google::protobuf::Message& message)

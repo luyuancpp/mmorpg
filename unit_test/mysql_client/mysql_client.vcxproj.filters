@@ -24,16 +24,16 @@
     <ClCompile Include="..\..\common\src\mysql_wrapper\mysql_database.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\common.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\mysql_wrapper\message2mysqlsql.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\db_base.pb.cc">
+    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\common.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\mysql_database_test.pb.cc">
+    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\db_base.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\mysql_database_test.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -53,16 +53,16 @@
     <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_result.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\common.pb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\src\mysql_wrapper\message2mysqlsql.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\db_base.pb.h">
+    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\common.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\mysql_database_test.pb.h">
+    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\db_base.pb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\mysql_database_test.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

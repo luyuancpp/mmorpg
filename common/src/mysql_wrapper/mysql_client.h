@@ -12,7 +12,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "common.pb.h"
+#include "common_proto/common.pb.h"
 
 
 //https://github.com/mysql/mysql-server/blob/8.0/router/src/router/src/common/mysql_session.cc
