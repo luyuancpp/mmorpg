@@ -173,7 +173,7 @@ std::string Message2MysqlSql::GetCreateTableSql()
     std::string sql = "CREATE TABLE IF NOT EXISTS " + GetTypeName();
     if (options_.HasExtension(OptionPrimaryKey))
     {
-        boost::split(primarykeys_, options_.GetExtension(OptionPrimaryKey), boost::is_any_of(","));
+        boost::split(primary_key_, options_.GetExtension(OptionPrimaryKey), boost::is_any_of(","));
     }
     if (options_.HasExtension(OptionIndex))
     {
@@ -248,7 +248,7 @@ std::string Message2MysqlSql::GetCreateTableSql()
 
 std::string Message2MysqlSql::GetAlterTableAddFieldSql()
 {
-    if ((std::size_t)descriptor_->field_count() == fileds_.size())
+    if ((std::size_t)descriptor_->field_count() == filed_.size())
     {
         return "";
     }
@@ -257,8 +257,8 @@ std::string Message2MysqlSql::GetAlterTableAddFieldSql()
     for (int32_t i = 0; i < descriptor_->field_count(); ++i)
     {
         auto filed = descriptor_->field(i);
-        auto fi = fileds_.find(i);
-        if (fi != fileds_.end())
+        auto fi = filed_.find(i);
+        if (fi != filed_.end())
         {
             continue;
         }
@@ -357,7 +357,7 @@ bool Message2MysqlSql::OnSelectTableColumnReturn(const MYSQL_ROW& ptr, const uns
     for (std::size_t i = 0; i < filed_size; ++i)
     {
         std::string field_name(ptr[i], filed_length[i]);
-        fileds_.emplace(fileds_.size(), field_name);
+        filed_.emplace(filed_.size(), field_name);
     }
     return true;
 }
@@ -570,7 +570,7 @@ std::string Message2MysqlSql::GetUpdateSql(const ::google::protobuf::Message& me
     sql += GetUpdateSet(message, mysql);
     sql += " where ";
     bNeedComma = false;
-    for (auto& strPrimary : primarykeys_)
+    for (auto& strPrimary : primary_key_)
     {
         pFileDesc = message.GetDescriptor()->FindFieldByName(strPrimary);
         const google::protobuf::Reflection* reflect = message.GetReflection();

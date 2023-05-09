@@ -62,8 +62,8 @@ public:
 private:
     std::string GetUpdateSet(const ::google::protobuf::Message& message, MYSQL* mysql);
 
-    Fields fileds_;
-    StringVector primarykeys_;
+    Fields filed_;
+    StringVector primary_key_;
     StringVector indexes_;
     StringVector unique_keys_;
     std::string foreign_keys_;
