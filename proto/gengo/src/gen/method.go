@@ -561,6 +561,70 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(dstFileName, data)
 }
 
+func writeGateMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+
+	if !isControllerMethodRepliedProto(&methodList) {
+		return
+	}
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
+	dstFileName := config.GateMethodRepliedHandleDir + fileName
+	data := getMethodRepliedHandlerHeadStr(&methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
+func writeGateMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	methodLen := len(methodList)
+	if methodLen <= 0 {
+		return
+	}
+
+	if !isControllerMethodRepliedProto(&methodList) {
+		return
+	}
+	firstMethodInfo := methodList[0]
+	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
+	dstFileName := config.GateMethodRepliedHandleDir + fileName
+	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
+func writeLoginMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+
+	if !isControllerMethodRepliedProto(&methodList) {
+		return
+	}
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
+	dstFileName := config.LoginMethodRepliedHandleDir + fileName
+	data := getMethodRepliedHandlerHeadStr(&methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
+func writeLoginMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	methodLen := len(methodList)
+	if methodLen <= 0 {
+		return
+	}
+
+	if !isControllerMethodRepliedProto(&methodList) {
+		return
+	}
+	firstMethodInfo := methodList[0]
+	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
+	dstFileName := config.LoginMethodRepliedHandleDir + fileName
+	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
@@ -603,6 +667,20 @@ func WriteMethodFile() {
 		go writeControllerPlayerMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
 		go writeControllerPlayerMethodRepliedHandlerCppFile(v)
+
+		//gate
+		util.Wg.Add(1)
+		go writeGateMethodRepliedHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeGateMethodRepliedHandlerCppFile(v)
+
+		// login
+		util.Wg.Add(1)
+		go writeLoginMethodRepliedHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeLoginMethodRepliedHandlerCppFile(v)
+
+		//
 
 	}
 

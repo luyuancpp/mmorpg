@@ -5,7 +5,7 @@
 #include "src/network/node_info.h"
 #include "src/pb/pbc/service.h"
 #include "src/pb/pbc/deploy_service_service.h"
-#include "src/service/replied_dispathcer.h"
+#include "src/handler/replied_dispathcer.h"
 
 #include "common.pb.h"
 
