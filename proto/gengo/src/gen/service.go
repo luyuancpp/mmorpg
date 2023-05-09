@@ -246,6 +246,7 @@ func InitServiceId() {
 			id, ok := ServiceIdMap[mv.KeyName()]
 			//Id文件未找到则是新消息，新消息后面处理，这里不处理
 			if !ok {
+				mv.Id = math.MaxUint64
 				continue
 			}
 			useServiceId[id] = EmptyStruct{}
@@ -265,11 +266,13 @@ func InitServiceId() {
 	for _, methodList := range ServiceMethodMap {
 		curMethodCount += len(methodList)
 		for _, mv := range methodList {
-			for uk, _ := range unUseServiceId {
-				mv.Id = uk
-				useServiceId[uk] = EmptyStruct{}
-				delete(unUseServiceId, uk)
-				break
+			if mv.Id == math.MaxUint64 {
+				for uk, _ := range unUseServiceId {
+					mv.Id = uk
+					useServiceId[uk] = EmptyStruct{}
+					delete(unUseServiceId, uk)
+					break
+				}
 			}
 			if mv.Id == math.MaxUint64 {
 				mv.Id = maxServiceId
