@@ -561,6 +561,42 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(dstFileName, data)
 }
 
+func writeGateMethodHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+
+	if len(methodList) <= 0 {
+		return
+	}
+	if strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
+		return
+	}
+	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+		if !strings.Contains(methodList[0].FileBaseName(), "game") {
+			return
+		}
+	}
+	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+	Md5WriteData2File(config.GateMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+}
+
+func writeGateMethodHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !strings.Contains(methodList[0].FileBaseName(), "game") {
+			return
+		}
+	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+		return
+	}
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
+	dstFileName := config.GateMethodHandleDir + fileName
+	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
 func writeGateMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
@@ -590,6 +626,42 @@ func writeGateMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
 	dstFileName := config.GateMethodRepliedHandleDir + fileName
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
+func writeLoginMethodHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+
+	if len(methodList) <= 0 {
+		return
+	}
+	if strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
+		return
+	}
+	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+		if !strings.Contains(methodList[0].FileBaseName(), "game") {
+			return
+		}
+	}
+	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+	Md5WriteData2File(config.LoginMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+}
+
+func writeLoginMethodHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !strings.Contains(methodList[0].FileBaseName(), "game") {
+			return
+		}
+	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+		return
+	}
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
+	dstFileName := config.LoginMethodHandleDir + fileName
+	data := getMethodHandlerCppStr(dstFileName, &methodList)
 	Md5WriteData2File(dstFileName, data)
 }
 
@@ -670,11 +742,19 @@ func WriteMethodFile() {
 
 		//gate
 		util.Wg.Add(1)
+		go writeGateMethodHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeGateMethodHandlerCppFile(v)
+		util.Wg.Add(1)
 		go writeGateMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
 		go writeGateMethodRepliedHandlerCppFile(v)
 
 		// login
+		util.Wg.Add(1)
+		go writeLoginMethodHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeLoginMethodHandlerCppFile(v)
 		util.Wg.Add(1)
 		go writeLoginMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
