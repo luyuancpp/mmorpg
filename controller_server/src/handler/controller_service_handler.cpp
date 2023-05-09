@@ -41,7 +41,7 @@
 extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;
 
 using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
-AccountSessionMap logined_accounts_sesion_;
+AccountSessionMap login_accounts_session_;
 
 std::size_t kMaxPlayerSize = 1000;
 
@@ -230,10 +230,10 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 	{
 		return;
 	}
-	auto try_acount = tls.registry.try_get<PlayerAccount>(player);
-	if (nullptr != try_acount)
+	auto try_account = tls.registry.try_get<PlayerAccount>(player);
+	if (nullptr != try_account)
 	{
-		logined_accounts_sesion_.erase(**try_acount);
+		login_accounts_session_.erase(**try_account);
 	}	
 	auto try_player_session = tls.registry.try_get<PlayerSession>(player);
 	if (nullptr == try_player_session)//玩家已经断开连接了
@@ -315,7 +315,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
     tls.registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
     tls.registry.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
 	//todo 
-	auto lit = logined_accounts_sesion_.find(request->account());
+	auto lit = login_accounts_session_.find(request->account());
 	if (controller_tls.player_list().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
@@ -323,7 +323,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 		return;
 	}
 
-	if (lit != logined_accounts_sesion_.end())
+	if (lit != login_accounts_session_.end())
 	{
 		//如果不是同一个登录服务器,踢掉已经登录的账号
 		if (lit->second != request->session_id())
@@ -337,7 +337,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	}
 	else
 	{
-		logined_accounts_sesion_.emplace(request->account(), request->session_id());
+		login_accounts_session_.emplace(request->account(), request->session_id());
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -362,13 +362,13 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 	auto try_acount = tls.registry.try_get<PlayerAccount>(session);
 	if (nullptr != try_acount)
 	{
-		logined_accounts_sesion_.erase(**try_acount);
+		login_accounts_session_.erase(**try_acount);
 	}
 	if (entt::null == player)
 	{
 		//把旧的connection 断掉
 		player = ControllerPlayerSystem::EnterGame(player_id);
-		PlayerCommonSystem::InitPlayerCompnent(player);
+        PlayerCommonSystem::InitPlayerComponent(player);
 		OnSessionEnterGame(session, player_id);
 		tls.registry.emplace<Guid>(player, player_id);
 		

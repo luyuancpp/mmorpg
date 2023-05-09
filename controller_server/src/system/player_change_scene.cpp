@@ -134,7 +134,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
     ScenesSystem::EnterScene(ep);
     change_scene_queue.pop_front();//切换成功消息删除
 
-    OnEnterSceneSucced(player);
+    OnEnterSceneOk(player);
     return kRetOK;
 }
 
@@ -172,12 +172,12 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
     else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eGateEnterGsSceneSucceed)
     {
         change_scene_queue.pop_front();
-        OnEnterSceneSucced(player);
+        OnEnterSceneOk(player);
     }
     return kRetOK;
 }
 
-void PlayerChangeSceneSystem::OnEnterSceneSucced(entt::entity player)
+void PlayerChangeSceneSystem::OnEnterSceneOk(entt::entity player)
 {
     S2CEnterScene s2c_enter_scene_event;
     s2c_enter_scene_event.set_entity(entt::to_integral(player));

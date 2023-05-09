@@ -31,7 +31,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 ///<<< BEGIN WRITING YOUR CODE
     //连续顶号进入，还在加载中的话继续加载
     auto player_id = request->player_id();
-    PlayerCommonSystem::RemovePlayereSession(player_id);
+    PlayerCommonSystem::RemovePlayerSession(player_id);
     auto p_it = game_tls.player_list().find(player_id);
     if (p_it != game_tls.player_list().end())//已经在线，直接进入,判断是需要发送哪些信息
     {
@@ -152,7 +152,7 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 {
 ///<<< BEGIN WRITING YOUR CODE
         //异步加载过程中断开了？
-    PlayerCommonSystem::RemovePlayereSession(request->player_id());
+    PlayerCommonSystem::RemovePlayerSession(request->player_id());
     auto it = game_tls.player_list().find(request->player_id());
     if (it == game_tls.player_list().end())
     {

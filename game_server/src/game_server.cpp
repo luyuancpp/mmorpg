@@ -8,11 +8,8 @@
 #include "src/game_config/lobby_config.h"
 
 #include "src/event_handler/event_handler.h"
-#include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
-#include "src/network/rpc_connection_event.h"
 #include "src/pb/pbc/controller_service_service.h"
 #include "src/pb/pbc/deploy_service_service.h"
 #include "src/pb/pbc/lobby_scene_service.h"
@@ -22,9 +19,7 @@
 
 #include "src/thread_local/game_thread_local_storage.h"
 
-#include "src/network/node_info.h"
 #include "src/pb/pbc/service.h"
-#include "src/system/redis_system.h"
 #include "src/system/logic/config_system.h"
 
 GameServer* g_game_node = nullptr;
@@ -108,8 +103,8 @@ void GameServer::StartGsDeployReplied(const StartGSResponse& replied)
 {
     Connect2Lobby();
 
-    auto& redisinfo = replied.redis_info();
-	redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
+    auto& redis_info = replied.redis_info();
+	redis_->Connect(redis_info.ip(), redis_info.port(), 1, 1);
 
     gs_info_ = replied.my_info();
     node_info_.set_node_id(gs_info_.id());

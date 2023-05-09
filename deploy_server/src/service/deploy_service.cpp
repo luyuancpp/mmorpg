@@ -119,7 +119,7 @@ void DeployServiceImpl::LoginNodeInfo(::google::protobuf::RpcController* control
 ///<<< END WRITING YOUR CODE
 }
 
-void DeployServiceImpl::SceneSqueueNodeId(::google::protobuf::RpcController* controller,
+void DeployServiceImpl::SceneSequenceNodeId(::google::protobuf::RpcController* controller,
     const ::SceneSqueueRequest* request,
     ::SceneSqueueResponese* response,
     ::google::protobuf::Closure* done)

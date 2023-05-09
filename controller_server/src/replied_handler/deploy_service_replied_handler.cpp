@@ -17,7 +17,7 @@ void InitDeployServiceServerInfoRepliedHandler()
 	g_response_dispatcher.registerMessageCallback<LobbyServerResponse>(std::bind(&OnDeployServiceAcquireLobbyServerInfoRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<LobbyInfoResponse>(std::bind(&OnDeployServiceAcquireLobbyInfoRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<GruoupLoginNodeResponse>(std::bind(&OnDeployServiceLoginNodeInfoRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<SceneSqueueResponese>(std::bind(&OnDeployServiceSceneSqueueNodeIdRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<SceneSqueueResponese>(std::bind(&OnDeployServiceSceneSequenceNodeIdRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 void OnDeployServiceServerInfoRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<ServerInfoResponse>& replied, Timestamp timestamp)
@@ -58,7 +58,7 @@ void OnDeployServiceLoginNodeInfoRepliedHandler(const TcpConnectionPtr& conn, co
 ///<<< END WRITING YOUR CODE
 }
 
-void OnDeployServiceSceneSqueueNodeIdRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<SceneSqueueResponese>& replied, Timestamp timestamp)
+void OnDeployServiceSceneSequenceNodeIdRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<SceneSqueueResponese>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
     set_server_sequence_node_id(replied->node_id());

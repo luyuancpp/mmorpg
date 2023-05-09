@@ -28,7 +28,7 @@ public:
 
 using StdFilePtr = std::unique_ptr<std::FILE, StdFilePtrDeleter>;
 
-void RecstSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
+void RecastSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 {
 	StdFilePtr fp(std::fopen(path, "rb"));
 	if (nullptr == fp)
@@ -39,8 +39,7 @@ void RecstSystem::LoadNavMesh(const char* path, dtNavMesh* mesh)
 
 	// Read header.
 	NavMeshSetHeader header;
-	size_t sizenum = sizeof(NavMeshSetHeader);
-	size_t readLen = std::fread(&header, sizenum, 1, fp.get());
+	size_t readLen = std::fread(&header, sizeof(NavMeshSetHeader), 1, fp.get());
 	if (readLen != 1)
 	{
 		LOG_ERROR << "load nav bin header " << path;

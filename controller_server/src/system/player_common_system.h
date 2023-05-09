@@ -5,7 +5,7 @@
 class PlayerCommonSystem
 {
 public:
-    static void InitPlayerCompnent(entt::entity player);
+    static void InitPlayerComponent(entt::entity player);
     static void OnEnterGateSucceed(entt::entity player);
     static void OnLogin(entt::entity player);
 };

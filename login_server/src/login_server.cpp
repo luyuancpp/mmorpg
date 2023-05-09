@@ -48,11 +48,11 @@ void LoginServer::Start()
 
 void LoginServer::StartServer(const ::servers_info_data& info)
 {
-    auto& databaseinfo = info.database_info();
-    dababase_node_info_.set_node_id(databaseinfo.id());
-    dababase_node_info_.set_node_type(kDatabaseNode);
-    //route2db.mutable_node_info()->CopyFrom(dababase_node_info_);
-    InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
+    auto& database_info = info.database_info();
+    database_node_info_.set_node_id(database_info.id());
+    database_node_info_.set_node_type(kDatabaseNode);
+    //route2db.mutable_node_info()->CopyFrom(database_node_info_);
+    InetAddress database_addr(database_info.ip(), database_info.port());
     db_session_ = std::make_unique<RpcClient>(loop_, database_addr);
     db_session_->connect();
 
@@ -64,8 +64,8 @@ void LoginServer::StartServer(const ::servers_info_data& info)
     controller_session_ = std::make_unique<RpcClient>(loop_, controller_node_addr);
     controller_session_->connect();
     
-    auto& redisinfo = info.redis_info();
-    redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
+    auto& redis_info = info.redis_info();
+    redis_->Connect(redis_info.ip(), redis_info.port(), 1, 1);
  
     conf_info_ = info.login_info();
     node_info_.set_node_id(conf_info_.id());

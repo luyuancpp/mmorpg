@@ -24,11 +24,6 @@ EntityPtr ControllerPlayerSystem::GetPlayerPtr(Guid guid)
     return it->second;
 }
 
-bool ControllerPlayerSystem::HasPlayer(Guid guid)
-{
-	return controller_tls.player_list().find(guid) != controller_tls.player_list().end(); 
-}
-
 EntityPtr ControllerPlayerSystem::EnterGame(Guid guid)
 {
     auto it = controller_tls.player_list().find(guid);

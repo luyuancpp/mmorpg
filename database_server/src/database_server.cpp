@@ -1,7 +1,6 @@
 #include "database_server.h"
 
 #include "src/game_config/deploy_json.h"
-#include "src/network/rpc_connection_event.h"
 #include "src/pb/pbc/deploy_service_service.h"
 #include "src/service/replied_dispathcer.h"
 #include "src/network/node_info.h"
@@ -50,12 +49,12 @@ void DatabaseServer::Start()
 
 void DatabaseServer::StartServer(const ::servers_info_data& info)
 {
-    auto& redisinfo = info.redis_info();
-    auto& myinfo = info.database_info();
-    InetAddress listenAddr(myinfo.ip(), myinfo.port());
-    redis_->Connect(redisinfo.ip(), redisinfo.port(), 1, 1);
-    database_->Connect(myinfo);
-    node_info_.set_node_id(myinfo.id());
+    auto& redis_info = info.redis_info();
+    auto& my_node_info = info.database_info();
+    InetAddress listenAddr(my_node_info.ip(), my_node_info.port());
+    redis_->Connect(redis_info.ip(), redis_info.port(), 1, 1);
+    database_->Connect(my_node_info);
+    node_info_.set_node_id(my_node_info.id());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, listenAddr);
     Start();
 }
