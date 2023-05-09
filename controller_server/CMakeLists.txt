@@ -203,7 +203,7 @@ if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE
             $<$<CONFIG:Debug>:
                 /MP;
-                /std:c++17;
+                /std:c++latest;
                 /WX;
                 /wd4200;
                 /wd4819;

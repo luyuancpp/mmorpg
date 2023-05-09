@@ -2,6 +2,8 @@
 
 #include "google/protobuf/util/json_util.h"
 
+#include "muduo/base/Logging.h"
+
 #include "src/util/file2string.h"
 
 using namespace common;
@@ -9,6 +11,9 @@ using namespace common;
 void LobbyConfig::Load(const std::string& filename)
 {
     auto contents = File2String(filename);
-    google::protobuf::StringPiece sp(contents.data(), contents.size());
-    google::protobuf::util::JsonStringToMessage(sp, &config_info_);
+    absl::string_view sv(contents.data(), contents.size());
+    auto result = google::protobuf::util::JsonStringToMessage(sv, &config_info_);
+    if (!result.ok()) {
+        LOG_FATAL << result.message().data();
+    }
 }

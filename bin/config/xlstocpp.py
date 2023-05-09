@@ -85,8 +85,8 @@ def getcpp(datastring, sheetname):
         s += 'using namespace std;\n'
         s += 'void %s_config::load()\n{\n data_.Clear();\n' % (sheetname)
         s += ' auto contents = File2String("config/json/%s.json");\n' % (sheetname)
-        s += ' google::protobuf::StringPiece sp(contents.data(), contents.size());\n'
-        s += ' auto result = google::protobuf::util::JsonStringToMessage(sp, &data_);\n'
+        s += ' absl::string_view sv(contents.data(), contents.size());\n'
+        s += ' auto result = google::protobuf::util::JsonStringToMessage(sv, &data_);\n'
         s += ' if (!result.ok()){cout << "%s " << result.message().data() << endl;}\n' % (sheetname)
         s += ' for (int32_t i = 0; i < data_.data_size(); ++i)\n {\n'
         counter = 0
