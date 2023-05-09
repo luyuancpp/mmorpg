@@ -70,6 +70,9 @@ func GetDstCodeData(cppFileName string, codeCount int) (data []string, err error
 		}
 		return yourCodes, err
 	}
+	if strings.Contains(cppFileName, "game_service") {
+		println(cppFileName)
+	}
 	defer fd.Close()
 	scanner := bufio.NewScanner(fd)
 	var line string
