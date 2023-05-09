@@ -480,7 +480,7 @@ func isGsMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
 		if !(strings.Contains(firstMethodInfo.FileBaseName(), "controller") ||
 			strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
 			strings.Contains(firstMethodInfo.FileBaseName(), "lobby")) {
-			return
+			return false
 		}
 	} else if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
 		return false
@@ -561,19 +561,40 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(dstFileName, data)
 }
 
+// /gate
+func isGateMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
+	firstMethodInfo := (*methodList)[0]
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if !(strings.Contains(firstMethodInfo.FileBaseName(), "controller") ||
+			strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
+			strings.Contains(firstMethodInfo.FileBaseName(), "lobby") ||
+			strings.Contains(firstMethodInfo.FileBaseName(), "game")) {
+			return false
+		}
+	} else if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+		return false
+	}
+	return true
+}
+
+func isGateServiceProto(methodList *RpcMethodInfos) (check bool) {
+	firstMethodInfo := (*methodList)[0]
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if strings.Contains(firstMethodInfo.FileBaseName(), "gate") {
+			return true
+		}
+	}
+	return false
+}
+
 func writeGateMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
 		return
 	}
-	if strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
+	if !isGateServiceProto(&methodList) {
 		return
-	}
-	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "game") {
-			return
-		}
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
 	Md5WriteData2File(config.GateMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
@@ -584,11 +605,7 @@ func writeGateMethodHandlerCppFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "game") {
-			return
-		}
-	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+	if !isGateServiceProto(&methodList) {
 		return
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
@@ -602,8 +619,7 @@ func writeGateMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-
-	if !isControllerMethodRepliedProto(&methodList) {
+	if !isGateMethodRepliedProto(&methodList) {
 		return
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
@@ -629,19 +645,37 @@ func writeGateMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(dstFileName, data)
 }
 
+///login
+
+func isLoginMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
+	firstMethodInfo := (*methodList)[0]
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if strings.Contains(firstMethodInfo.FileBaseName(), "controller") ||
+			strings.Contains(firstMethodInfo.FileBaseName(), "deploy") {
+			return true
+		}
+	}
+	return false
+}
+
+func isLoginServiceProto(methodList *RpcMethodInfos) (check bool) {
+	firstMethodInfo := (*methodList)[0]
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		if strings.Contains(firstMethodInfo.FileBaseName(), "login") {
+			return true
+		}
+	}
+	return false
+}
+
 func writeLoginMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
 		return
 	}
-	if strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
+	if !isLoginServiceProto(&methodList) {
 		return
-	}
-	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "game") {
-			return
-		}
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
 	Md5WriteData2File(config.LoginMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
@@ -652,11 +686,7 @@ func writeLoginMethodHandlerCppFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "game") {
-			return
-		}
-	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
+	if !isLoginServiceProto(&methodList) {
 		return
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
@@ -671,7 +701,7 @@ func writeLoginMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 
-	if !isControllerMethodRepliedProto(&methodList) {
+	if !isLoginMethodRepliedProto(&methodList) {
 		return
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
@@ -687,7 +717,7 @@ func writeLoginMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 		return
 	}
 
-	if !isControllerMethodRepliedProto(&methodList) {
+	if !isLoginMethodRepliedProto(&methodList) {
 		return
 	}
 	firstMethodInfo := methodList[0]
