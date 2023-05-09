@@ -25,13 +25,13 @@
     <ClCompile Include="src\gate_server.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\network\gs_node.cpp" />
-    <ClCompile Include="src\service\c2gate.cpp" />
-    <ClCompile Include="src\service\gate_service.cpp" />
-    <ClCompile Include="src\service\controller_service_replied.cpp" />
-    <ClCompile Include="src\service\deploy_service_replied.cpp" />
-    <ClCompile Include="src\service\game_service_replied.cpp" />
-    <ClCompile Include="src\service\login_service_replied.cpp" />
-    <ClCompile Include="src\service\replied_dispathcer.cpp" />
+    <ClCompile Include="src\handler\c2gate.cpp" />
+    <ClCompile Include="src\handler\gate_service.cpp" />
+    <ClCompile Include="src\handler\controller_service_replied.cpp" />
+    <ClCompile Include="src\handler\deploy_service_replied.cpp" />
+    <ClCompile Include="src\handler\game_service_replied.cpp" />
+    <ClCompile Include="src\handler\login_service_replied.cpp" />
+    <ClCompile Include="src\handler\replied_dispathcer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\thread_local\gate_thread_local_storage.h" />
@@ -39,13 +39,13 @@
     <ClInclude Include="src\network\login_node.h" />
     <ClInclude Include="src\network\gate_player_list.h" />
     <ClInclude Include="src\gate_server.h" />
-    <ClInclude Include="src\service\c2gate.h" />
-    <ClInclude Include="src\service\gate_service.h" />
-    <ClInclude Include="src\service\controller_service_replied.h" />
-    <ClInclude Include="src\service\deploy_service_replied.h" />
-    <ClInclude Include="src\service\game_service_replied.h" />
-    <ClInclude Include="src\service\login_service_replied.h" />
-    <ClInclude Include="src\service\replied_dispathcer.h" />
+    <ClInclude Include="src\handler\c2gate.h" />
+    <ClInclude Include="src\handler\gate_service.h" />
+    <ClInclude Include="src\handler\controller_service_replied.h" />
+    <ClInclude Include="src\handler\deploy_service_replied.h" />
+    <ClInclude Include="src\handler\game_service_replied.h" />
+    <ClInclude Include="src\handler\login_service_replied.h" />
+    <ClInclude Include="src\handler\replied_dispathcer.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

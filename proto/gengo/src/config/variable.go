@@ -29,6 +29,8 @@ const Tab3 = Tab + Tab + Tab
 const Tab4 = Tab + Tab + Tab + Tab
 const GsName = "game_server/"
 const ControllerName = "controller_server/"
+const GateName = "gate_server/"
+const LoginName = "login_server/"
 const ClientName = "client/"
 const PlayerServiceIncludeName = "#include \"player_service.h\""
 const PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\""
@@ -90,6 +92,8 @@ const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
 const GsMethodRepliedHandleDir = ProjectDir + GsName + RepliedHandlerDirName
 const ControllerMethodRepliedHandleDir = ProjectDir + ControllerName + RepliedHandlerDirName
 const ClientMethodHandleDir = ProjectDir + ClientName + HandlerDirName
+const GateMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
+const LoginMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
 
 const GsEventHandleDir = ProjectDir + GsName + EventHandlerDirName
 const ControllerEventHandleDir = ProjectDir + ControllerName + EventHandlerDirName

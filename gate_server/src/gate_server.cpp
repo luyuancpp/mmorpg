@@ -8,7 +8,7 @@
 #include "src/pb/pbc/controller_service_service.h"
 #include "src/pb/pbc/deploy_service_service.h"
 #include "src/pb/pbc/game_service_service.h"
-#include "src/service/replied_dispathcer.h"
+#include "src/handler/replied_dispathcer.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 
 #include "game_service.pb.h"
