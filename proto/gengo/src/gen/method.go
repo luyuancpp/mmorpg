@@ -175,9 +175,7 @@ func getMethodRepliedHandlerHeadStr(methodList *RpcMethodInfos) (data string) {
 
 	for i := 0; i < methodLen; i++ {
 		methodInfo := (*methodList)[i]
-		if methodInfo.Response == config.GoogleEmptyProtoName {
-			continue
-		}
+
 		data += "void On" + methodInfo.KeyName() + config.RepliedHandlerName + "(const TcpConnectionPtr& conn, const " +
 			"std::shared_ptr<" + methodInfo.Response + ">& replied, Timestamp timestamp);\n\n"
 	}
@@ -235,9 +233,7 @@ func getMethodRepliedHandlerCppStr(dst string, methodList *RpcMethodInfos) (data
 		isMessage := j >= 0 && j < methodLen
 		if isMessage {
 			methodInfo := (*methodList)[j]
-			if methodInfo.Response == config.GoogleEmptyProtoName {
-				continue
-			}
+
 			funcName := "On" + methodInfo.KeyName() + config.RepliedHandlerName
 			declarationData += config.Tab + "g_response_dispatcher.registerMessageCallback<" +
 				methodInfo.Response + ">(std::bind(&" + funcName +
