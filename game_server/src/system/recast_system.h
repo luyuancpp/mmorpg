@@ -4,7 +4,7 @@
 
 #include "Detour/DetourNavMeshQuery.h"
 
-class RecstSystem
+class RecastSystem
 {
 public:
 	static void LoadNavMesh(const char* path, dtNavMesh* mesh);

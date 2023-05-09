@@ -108,17 +108,17 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
 }
 
 //todo 检测
-void PlayerCommonSystem::RemovePlayereSession(Guid player_id)
+void PlayerCommonSystem::RemovePlayerSession(Guid player_id)
 {
     auto p_it = game_tls.player_list().find(player_id);
     if (p_it == game_tls.player_list().end())//已经在线，直接进入
     {
         return;
     }
-	RemovePlayereSession(p_it->second);
+	RemovePlayerSession(p_it->second);
 }
 
-void PlayerCommonSystem::RemovePlayereSession(entt::entity player)
+void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 {
     auto try_get_session = tls.registry.try_get<GateSession>(player);
     if (nullptr == try_get_session)

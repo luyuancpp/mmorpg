@@ -10,14 +10,14 @@ extern ServerSequence32 g_server_sequence_;
 
 void OnLoginNodeInfoReplied(const TcpConnectionPtr& conn, const GruoupLoginNodeResponsePtr& replied, Timestamp timestamp)
 {
-    for (const auto& it : replied->login_db().login_nodes())
+    for (const auto& replied_it : replied->login_db().login_nodes())
     {
         //todo
-        if (it.id() != 1)
+        if (replied_it.id() != 1)
         {
             continue;
         }
-        auto& login_info = it;
+        auto& login_info = replied_it;
         auto it = gate_tls.login_nodes().emplace(login_info.id(), LoginNode());
         if (!it.second)
         {
@@ -33,8 +33,8 @@ void OnLoginNodeInfoReplied(const TcpConnectionPtr& conn, const GruoupLoginNodeR
 
 void OnServerInfoReplied(const TcpConnectionPtr& conn, const ServerInfoResponsePtr& replied, Timestamp timestamp)
 {
-    auto& serverinfo_data = replied->info();
-    g_gate_node->set_servers_info_data(serverinfo_data);
+    auto& server_node_data = replied->info();
+    g_gate_node->set_servers_info_data(server_node_data);
     g_server_sequence_.set_node_id(g_gate_node->gate_node_id());
     g_gate_node->StartServer();   
 }

@@ -28,7 +28,7 @@ public:
 	static void OnEnterGateSucceed(entt::entity player);
 
 
-	static void RemovePlayereSession(Guid player_id);
-	static void RemovePlayereSession(entt::entity player);
+	static void RemovePlayerSession(Guid player_id);
+	static void RemovePlayerSession(entt::entity player);
 };
 

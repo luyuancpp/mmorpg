@@ -15,5 +15,5 @@ void OnDeployServiceAcquireLobbyInfoRepliedHandler(const TcpConnectionPtr& conn,
 
 void OnDeployServiceLoginNodeInfoRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<GruoupLoginNodeResponse>& replied, Timestamp timestamp);
 
-void OnDeployServiceSceneSqueueNodeIdRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<SceneSqueueResponese>& replied, Timestamp timestamp);
+void OnDeployServiceSceneSequenceNodeIdRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<SceneSqueueResponese>& replied, Timestamp timestamp);
 

@@ -58,7 +58,6 @@ void ControllerServer::Init()
     InitPlayerServiceReplied();
     InitRepliedHandler();
     InitService();
-    //connect 
     Connect2Deploy();
 }
 
@@ -74,16 +73,16 @@ void ControllerServer::Connect2Deploy()
 void ControllerServer::StartServer(const ::servers_info_data& info)
 {
     serverinfos_ = info;
-    auto& databaseinfo = serverinfos_.database_info();
-    InetAddress database_addr(databaseinfo.ip(), databaseinfo.port());
+    auto& database_info = serverinfos_.database_info();
+    InetAddress database_addr(database_info.ip(), database_info.port());
     db_session_ = std::make_unique<RpcClient>(loop_, database_addr);
     db_session_->connect();    
 
     Connect2Lobby();
 	
-    auto& myinfo = serverinfos_.controller_info();
-    node_info_.set_node_id(myinfo.id());
-    InetAddress controller_addr(myinfo.ip(), myinfo.port());
+    auto& my_node_info = serverinfos_.controller_info();
+    node_info_.set_node_id(my_node_info.id());
+    InetAddress controller_addr(my_node_info.ip(), my_node_info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
     server_->subscribe<OnBeConnectedEvent>(*this);
     server_->registerService(&contoller_service_);
@@ -92,7 +91,7 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
         server_->registerService(it.get());
     }
     server_->start();
-    LOG_INFO << "controller start " << myinfo.DebugString();
+    LOG_INFO << "controller start " << my_node_info.DebugString();
 }
 
 
@@ -135,7 +134,7 @@ void ControllerServer::receive(const OnConnected2ServerEvent& es)
 			
             {
                 SceneSqueueRequest rq;
-                deploy_session_->CallMethod(DeployServiceSceneSqueueNodeIdMethod, &rq);
+                deploy_session_->CallMethod(DeployServiceSceneSequenceNodeIdMethod, &rq);
             }
 		}
 		

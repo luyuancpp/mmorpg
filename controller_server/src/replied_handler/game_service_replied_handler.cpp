@@ -27,19 +27,6 @@ void InitGameServiceEnterGsRepliedHandler()
 void OnGameServiceSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<NodeServiceMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
-void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<GameNodeRpcClientResponse>& replied, Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
-
-///<<< END WRITING YOUR CODE
-}
-
-void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<NodeServiceMessageResponse>& replied, Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
 
 	auto it = controller_tls.player_list().find(replied->ex().player_id());
 	if (it == controller_tls.player_list().end())
@@ -54,8 +41,8 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "PlayerService service not found " << replied->ex().player_id() << "," << replied->msg().service();
 		return;
 	}
-	auto& serviceimpl = service_it->second;
-	google::protobuf::Service* service = serviceimpl->service();
+	auto& service_impl = service_it->second;
+	google::protobuf::Service* service = service_impl->service();
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(replied->msg().method());
 	if (nullptr == method)
@@ -66,7 +53,19 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 	}
 	MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
 	player_response->ParseFromString(replied->msg().body());
-	serviceimpl->CallMethod(method, it->second, nullptr, boost::get_pointer(player_response));
+	service_impl->CallMethod(method, it->second, nullptr, boost::get_pointer(player_response));
+///<<< END WRITING YOUR CODE
+}
+
+void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<GameNodeRpcClientResponse>& replied, Timestamp timestamp)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
+void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<NodeServiceMessageResponse>& replied, Timestamp timestamp)
+{
+///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 

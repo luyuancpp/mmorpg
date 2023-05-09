@@ -9,7 +9,7 @@ void OnLobbyServerReplied(const TcpConnectionPtr& conn, const LobbyServerRespons
     g_lobby_server->StartServer(replied->info());
 }
 
-void SceneSqueueNodeIdReplied(const TcpConnectionPtr& conn, const SceneSqueueResponesePtr& replied, Timestamp timestamp)
+void SceneSequenceNodeIdReplied(const TcpConnectionPtr& conn, const SceneSqueueResponesePtr& replied, Timestamp timestamp)
 {
     set_server_sequence_node_id(replied->node_id());
 }

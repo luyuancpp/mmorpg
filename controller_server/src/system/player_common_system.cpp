@@ -15,7 +15,7 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 
-void PlayerCommonSystem::InitPlayerCompnent(entt::entity player)
+void PlayerCommonSystem::InitPlayerComponent(entt::entity player)
 {
     PlayerChangeSceneSystem::InitChangeSceneQueue(player);
     tls.registry.emplace<Player>(player);

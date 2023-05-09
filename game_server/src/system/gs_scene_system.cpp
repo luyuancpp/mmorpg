@@ -25,7 +25,7 @@ void GsSceneSystem::LoadAllMainSceneNavBin()
         auto scene_nav_ptr = std::make_shared<SceneNavPtr::element_type>();
         scene_nav_ptr->p_nav_  = std::make_unique<SceneNav::DtNavMeshPtr::element_type>();
         scene_nav_ptr->p_nav_query_ = std::make_unique<SceneNav::DtNavMeshQueryPtr::element_type>();
-        RecstSystem::LoadNavMesh(config_all.data(i).nav_bin_file().c_str(), scene_nav_ptr->p_nav_.get());
+        RecastSystem::LoadNavMesh(config_all.data(i).nav_bin_file().c_str(), scene_nav_ptr->p_nav_.get());
     }    
 }
 
@@ -43,12 +43,12 @@ void GsSceneSystem::CreateSceneByGuid(CreateSceneBySceneInfoP& param)
 
 void GsSceneSystem::EnterScene(const EnterSceneParam& param)
 {
-    auto enterer = param.enterer_;
+    auto enter_ = param.enterer_;
     ScenesSystem::EnterScene(param);
 
-    if (tls.registry.any_of<Player>(enterer))
+    if (tls.registry.any_of<Player>(enter_))
     {
-        PlayerSceneSystem::OnEnterScene(enterer, param.scene_);
+        PlayerSceneSystem::OnEnterScene(enter_, param.scene_);
     }    
     else
     {

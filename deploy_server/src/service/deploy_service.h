@@ -33,7 +33,7 @@ public:
         ::GruoupLoginNodeResponse* response,
         ::google::protobuf::Closure* done)override;
 
-    void SceneSqueueNodeId(::google::protobuf::RpcController* controller,
+    void SceneSequenceNodeId(::google::protobuf::RpcController* controller,
         const ::SceneSqueueRequest* request,
         ::SceneSqueueResponese* response,
         ::google::protobuf::Closure* done)override;

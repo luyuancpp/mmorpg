@@ -79,5 +79,5 @@ service DeployService {
   rpc AcquireLobbyServerInfo (LobbyServerRequest) returns (LobbyServerResponse);
   rpc AcquireLobbyInfo (LobbyServerRequest) returns (LobbyInfoResponse);
   rpc LoginNodeInfo (GroupLignRequest) returns (GruoupLoginNodeResponse);
-  rpc SceneSqueueNodeId (SceneSqueueRequest) returns (SceneSqueueResponese);
+  rpc SceneSequenceNodeId (SceneSqueueRequest) returns (SceneSqueueResponese);
 }

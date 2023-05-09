@@ -66,7 +66,7 @@ void LobbyServer::receive(const OnConnected2ServerEvent& es)
 			
         {
             SceneSqueueRequest rq;
-            deploy_session_->CallMethod(DeployServiceSceneSqueueNodeIdMethod, &rq);
+            deploy_session_->CallMethod(DeployServiceSceneSequenceNodeIdMethod, &rq);
         }
 	}
       
@@ -90,10 +90,10 @@ void LobbyServer::receive(const OnBeConnectedEvent& es)
 			{
 				continue;
 			}
-			auto gsnode = tls.registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
-			if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGameNode)
+			auto gs_node = tls.registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+			if (nullptr != gs_node && (*gs_node)->node_info_.node_type() == kGameNode)
 			{
-				g_game_node->erase((*gsnode)->node_info_.node_id());
+				g_game_node->erase((*gs_node)->node_info_.node_id());
 			}
             // controller 不动态扩展，所以不删除
 			tls.registry.destroy(e);
