@@ -331,7 +331,8 @@ if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
             "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/lua/src;"
             "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/redis/deps;"
             "${CMAKE_CURRENT_SOURCE_DIR}/src/pb/pbc/common_proto;"
-            "${CMAKE_CURRENT_SOURCE_DIR}/src/pb/pbc/logic_proto"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pb/pbc/logic_proto;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/protobuf/third_party/abseil-cpp"
         ">"
     )
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
@@ -358,8 +359,10 @@ if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
             "_CRT_SECURE_NO_DEPRECATE;"
             "_CRT_NONSTDC_NO_DEPRECATE;"
             "ENTT_ID_TYPE=uint64_t;"
-            "_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING;"
-            "NOMINMAX"
+            "NOMINMAX;"
+            "GOOGLE_CHECK_EQ=ABSL_CHECK_EQ;"
+            "GOOGLE_LOG=ABSL_LOG;"
+            "GOOGLE_DCHECK=ABSL_DCHECK"
         ">"
         "$<$<CONFIG:Release>:"
             "NDEBUG;"
@@ -394,10 +397,10 @@ if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE
             $<$<CONFIG:Debug>:
                 /MP;
-                /std:c++17;
                 /WX;
                 /wd4200;
                 /wd4819;
+                /wd4146;
                 /bigobj;
                 /utf-8
             >
