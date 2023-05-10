@@ -67,7 +67,6 @@ public:
 			::google::protobuf::internal::DownCast<EnterScenerS2CResponse*>(response));
 		break;
 		default:
-			GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
 		break;
 		}
 	}
