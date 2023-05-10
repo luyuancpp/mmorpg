@@ -40,7 +40,6 @@ public:
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		default:
-			GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
 		break;
 		}
 	}

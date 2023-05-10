@@ -122,7 +122,7 @@ func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 		callFunctionList += config.Tab2 + "break;\n"
 	}
 	callFunctionList += config.Tab2 + "default:\n" +
-		config.Tab3 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";\n" +
+		//config.Tab3 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";\n" +
 		config.Tab2 + "break;\n" + config.Tab2 + "}\n" + config.Tab + "}\n"
 	data += functionNameList
 	data += callFunctionList
@@ -157,7 +157,7 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 		callFunctionList += config.Tab2 + "break;\n"
 	}
 	callFunctionList += config.Tab2 + "default:\n" +
-		config.Tab3 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";\n" +
+		//config.Tab3 + "GOOGLE_LOG(FATAL) << \"Bad method index; this should never happen.\";\n" +
 		config.Tab2 + "break;\n" + config.Tab2 + "}\n" + config.Tab + "}\n"
 	data += functionNameList
 	data += callFunctionList
