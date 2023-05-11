@@ -17,8 +17,7 @@
 16=ClientPlayerSceneServiceEnterSceneC2S
 17=ClientPlayerSceneServicePushEnterSceneS2C
 18=ClientPlayerSceneServicePushSceneInfoS2C
-19=ServerSceneServiceUpdateCrossMainSceneInfo
-20=TeamServiceEnterScene
+19=ControllerSceneServiceUpdateCrossMainSceneInfo
 21=ControllerServiceStartGs
 22=ControllerServiceGateConnect
 23=ControllerServiceGateLeaveGame
