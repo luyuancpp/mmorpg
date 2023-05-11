@@ -6,8 +6,7 @@
 #include "src/controller_server.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/scene/scene.h"
-#include "src/game_logic/scene/servernode_system.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+
 #include "src/game_logic/tips_id.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
@@ -18,9 +17,6 @@
 #include "src/pb/pbc/scene_server_player_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
-#include "component_proto/player_login_comp.pb.h"
-#include "server_player_proto/scene_server_player.pb.h"
-#include "game_service.pb.h"
 
 void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 {
@@ -140,7 +136,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
     if (nullptr == try_from_scene_gs || nullptr == try_to_scene_gs)
     {
-        LOG_ERROR << " gs compnent null : " << (nullptr == try_from_scene_gs) << " " << (nullptr == try_to_scene_gs);
+        LOG_ERROR << " gs component null : " << (nullptr == try_from_scene_gs) << " " << (nullptr == try_to_scene_gs);
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }
