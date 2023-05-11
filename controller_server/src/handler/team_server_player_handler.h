@@ -5,7 +5,7 @@ class ServerPlayerTeamServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
-	void EnterScene(entt::entity player,
+	static void EnterScene(entt::entity player,
 		const ::TeamTestRequest* request,
 		::TeamTestResponse* response);
 

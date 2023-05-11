@@ -73,7 +73,7 @@ uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items)
 		if (p_c_item->max_statck_size() <= 0)
 		{
 			LOG_ERROR << "config error:" << it.first << "player:" << player_guid();
-			return kRetCofnigData;
+			return kRetConfigData;
 		}
 		else if (p_c_item->max_statck_size() == 1)//不可叠加占用一个格子
 		{
@@ -152,7 +152,7 @@ uint32_t Bag::AdequateItem(const UInt32UInt32UnorderedMap& adequate_items)
 			if (p_c_item->max_statck_size() <= 0)
 			{
 				LOG_ERROR << "config error:" << it.first << "player:" << player_guid();
-				return kRetCofnigData;
+				return kRetConfigData;
 			}
 			auto sz = it.second.size();
 			if (ji.second <= sz)
@@ -169,7 +169,7 @@ uint32_t Bag::AdequateItem(const UInt32UInt32UnorderedMap& adequate_items)
 	}
 	if (!stack_item_list.empty())
 	{
-		return kRetBagAdequatetem;
+		return kRetBagAdequateItem;
 	}
 	return kRetOK;
 }
@@ -350,7 +350,7 @@ uint32_t Bag::AddItem(const Item& add_item)
 	if (p_c_item->max_statck_size() <= 0)
 	{
 		LOG_ERROR << "config error:" << item_base_db.config_id()  << "player:" << player_guid();
-		return kRetCofnigData;
+		return kRetConfigData;
 	}
 	if (p_c_item->max_statck_size() == 1)//不可以堆叠直接生成新guid
 	{
@@ -490,7 +490,7 @@ uint32_t Bag::DelItem(Guid del_guid)
 	auto it = items_.find(del_guid);
 	if (it == items_.end())
 	{
-		return kRetBagDeleteItemHasnotGuid;
+		return kRetBagDeleteItemFindGuid;
 	}
 	items_.erase(del_guid);
 	for (auto& pit : pos_)

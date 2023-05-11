@@ -5,7 +5,7 @@ class ClientPlayerCommonServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
-	void PushTipsS2C(entt::entity player,
+	static void PushTipsS2C(entt::entity player,
 		const ::TipsS2C* request,
 		::TipsS2C* response);
 

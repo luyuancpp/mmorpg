@@ -308,7 +308,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	}
 	if (cit == controller_tls.gate_sessions().end())
 	{
-        response->mutable_error()->set_id(kRetLoginUnkonwError);
+        response->mutable_error()->set_id(kRetLoginUnknownError);
         return;
 	}
 	auto conn = cit->second;

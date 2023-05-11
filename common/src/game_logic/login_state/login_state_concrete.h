@@ -16,8 +16,8 @@ public:
         login_machine_.set_state(kLoginAccountIngBeingProcessing);
         return kRetOK;
     }
-    virtual uint32_t CreatePlayer() override { return kRetLoginHadnotLogin; }
-    virtual uint32_t EnterGame()override { return kRetLoginHadnotLogin; }
+    virtual uint32_t CreatePlayer() override { return kRetLoginUnLogin; }
+    virtual uint32_t EnterGame()override { return kRetLoginUnLogin; }
 
 
     virtual void WaitingEnterGame()override{}
@@ -42,9 +42,9 @@ class CreatePlayerState : public IAccountState
 {
 public:
     using IAccountState::IAccountState;
-    virtual uint32_t LoginAccount() override { return kRetLoignCreatingPlayer; }
-    virtual uint32_t CreatePlayer() override { return kRetLoignCreatingPlayer; }
-    virtual uint32_t EnterGame()override { return kRetLoignCreatingPlayer; }
+    virtual uint32_t LoginAccount() override { return kRetLoginCreatingPlayer; }
+    virtual uint32_t CreatePlayer() override { return kRetLoginCreatingPlayer; }
+    virtual uint32_t EnterGame()override { return kRetLoginCreatingPlayer; }
 };
 
 class EnterGameState : public IAccountState
@@ -71,7 +71,7 @@ class WaitingEnterGameState : public IAccountState
 public:
     using IAccountState::IAccountState;
   
-    virtual uint32_t LoginAccount() override { return kRetLoignWatingEnterGame; }
+    virtual uint32_t LoginAccount() override { return kRetLoginWaitingEnterGame; }
     virtual uint32_t CreatePlayer() override
     {
         login_machine_.set_state(kLoginAccountCreatePlayer);
@@ -89,7 +89,7 @@ class EmptyPlayerState : public IAccountState
 public:
     using IAccountState::IAccountState;
 
-    virtual uint32_t LoginAccount() override { return kRetLoignWatingEnterGame; }
+    virtual uint32_t LoginAccount() override { return kRetLoginWaitingEnterGame; }
     virtual uint32_t CreatePlayer() override
     {
         login_machine_.set_state(kLoginAccountCreatePlayer);
@@ -107,7 +107,7 @@ class FullPlayerState : public IAccountState
 public:
     using IAccountState::IAccountState;
 
-    virtual uint32_t LoginAccount() override { return kRetLoignWatingEnterGame; }
+    virtual uint32_t LoginAccount() override { return kRetLoginWaitingEnterGame; }
     virtual uint32_t CreatePlayer() override
     {
         return kRetLoginAccountPlayerFull;

@@ -86,7 +86,7 @@ void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 	auto sit = sessions_.find(replied->s_rq_.session_id());
 	if (sit == sessions_.end())
 	{
-		replied->c_rp_->mutable_error()->set_id(kRetLoignCreatePlayerConnectionHasNotAccount);
+		replied->c_rp_->mutable_error()->set_id(kRetLoginCreatePlayerConnectionHasNotAccount);
 		return;
 	}
 	//has data
@@ -173,7 +173,7 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	auto sit = sessions_.find(request->session_id());
 	if (sit == sessions_.end())
 	{
-		ReturnClosureError(kRetLoignCreatePlayerConnectionHasNotAccount);
+		ReturnClosureError(kRetLoginCreatePlayerConnectionHasNotAccount);
 	}
 	CheckReturnClosureError(sit->second->CreatePlayer());
 	// database process
