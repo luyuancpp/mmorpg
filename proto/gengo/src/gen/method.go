@@ -299,7 +299,21 @@ func isGsMethodHandlerFile(methodList *RpcMethodInfos) (isGsFile bool) {
 		strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return false
 	}
-	return strings.Contains(firstMethodList.FileBaseName(), config.GamePrefixName)
+	return strings.Contains(firstMethodList.FileBaseName(), config.GsPrefixName)
+}
+
+func isGsPlayerHandler(methodList *RpcMethodInfos) (result bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
+	firstMethodInfo := (*methodList)[0]
+	if !firstMethodInfo.IsPlayerService() {
+		return false
+	}
+	if !strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName) {
+		return false
+	}
+	return true
 }
 
 func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
@@ -325,11 +339,7 @@ func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 
 func writeGsPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-
-	if len(methodList) <= 0 {
-		return
-	}
-	if !strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
+	if !isGsPlayerHandler(&methodList) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
@@ -375,10 +385,10 @@ func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	firstMethodInfo := methodList[0]
-	if !firstMethodInfo.IsPlayerService() {
+	if !isGsPlayerHandler(&methodList) {
 		return
 	}
+	firstMethodInfo := methodList[0]
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.GsMethodHandleDir + fileName
 	data := getMethodPlayerHandlerCppStr(dstFileName,
@@ -475,6 +485,20 @@ func writeControllerPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos)
 	Md5WriteData2File(dstFileName, data)
 }
 
+func isControllerPlayerHandler(methodList *RpcMethodInfos) (result bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
+	firstMethodInfo := (*methodList)[0]
+	if !firstMethodInfo.IsPlayerService() {
+		return false
+	}
+	if !strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) {
+		return false
+	}
+	return true
+}
+
 func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
@@ -488,15 +512,21 @@ func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos
 	Md5WriteData2File(config.ControllerMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
 }
 
+func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if !isControllerPlayerHandler(&methodList) {
+		return
+	}
+	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+	Md5WriteData2File(config.ControllerMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
+}
+
 func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if len(methodList) <= 0 {
+	if !isControllerPlayerHandler(&methodList) {
 		return
 	}
 	firstMethodInfo := methodList[0]
-	if !firstMethodInfo.IsPlayerService() {
-		return
-	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
 	dstFileName := config.ControllerMethodHandleDir + fileName
 	data := getMethodPlayerHandlerCppStr(dstFileName,
@@ -504,19 +534,6 @@ func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 		firstMethodInfo.CppHandlerClassName(),
 		firstMethodInfo.CppHandlerIncludeName())
 	Md5WriteData2File(dstFileName, data)
-}
-
-func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-
-	if len(methodList) <= 0 {
-		return
-	}
-	if !methodList[0].IsPlayerService() {
-		return
-	}
-	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	Md5WriteData2File(config.ControllerMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
 }
 
 func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
@@ -579,7 +596,7 @@ func isGateMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
 		strings.Contains(firstMethodInfo.FileBaseName(), "lobby") ||
-		strings.Contains(firstMethodInfo.FileBaseName(), config.GamePrefixName)
+		strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName)
 }
 
 func isGateServiceProto(methodList *RpcMethodInfos) (check bool) {
