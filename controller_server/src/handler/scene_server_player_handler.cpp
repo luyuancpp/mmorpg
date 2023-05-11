@@ -16,7 +16,6 @@
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
 
-#include "game_service.pb.h"
 #include "component_proto/scene_comp.pb.h"
 
 ///<<< END WRITING YOUR CODE
@@ -68,7 +67,7 @@ void ServerPlayerSceneServiceHandler::Gs2ControllerLeaveSceneAsyncSavePlayerComp
 {
 ///<<< BEGIN WRITING YOUR CODE
     //异步切换考虑消息队列
-	GetPlayerCompnentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
+	GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
 	if (change_scene_queue.empty())
 	{
 		return;

@@ -103,7 +103,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
     //check 
     RET_CHECK_RET(IsDoNotAccepted(accept_event.mission_id()));//已经接受过
     RET_CHECK_RET(IsDoNotCompleted(accept_event.mission_id()));//已经完成
-    CheckCondtion(!mission_config_->HasKey(accept_event.mission_id()), kRetTableId);
+    CheckCondition(!mission_config_->HasKey(accept_event.mission_id()), kRetTableId);
 
     auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
     auto mission_type = mission_config_->mission_type(accept_event.mission_id());
@@ -111,7 +111,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
-        CheckCondtion(type_filter_.find(p) != type_filter_.end(), kRetMisionTypeRepeated);
+        CheckCondition(type_filter_.find(p) != type_filter_.end(), kRetMisionTypeRepeated);
     }
     MissionPbComp misison;
     misison.set_id(accept_event.mission_id());

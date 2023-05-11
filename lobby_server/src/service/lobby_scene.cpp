@@ -236,7 +236,7 @@ void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::R
 		LOG_ERROR << "EnterCrossMainScene" << request->player_id();
 		return;
 	}
-	ReturnAutoCloseureError(ScenesSystem::CheckScenePlayerSize(scene));
+	ReturnAutoClosureError(ScenesSystem::CheckScenePlayerSize(scene));
 	auto player = it.first->second;
 
 	//todo error

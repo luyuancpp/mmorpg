@@ -359,10 +359,10 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 	auto session = sit->second;
 	auto player_id = request->player_id();
 	auto player = ControllerPlayerSystem::GetPlayer(player_id);
-	auto try_acount = tls.registry.try_get<PlayerAccount>(session);
-	if (nullptr != try_acount)
+	auto try_account = tls.registry.try_get<PlayerAccount>(session);
+	if (nullptr != try_account)
 	{
-		login_accounts_session_.erase(**try_acount);
+		login_accounts_session_.erase(**try_account);
 	}
 	if (entt::null == player)
 	{
@@ -374,16 +374,15 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		
 		tls.registry.emplace<PlayerAccount>(player, tls.registry.get<PlayerAccount>(sit->second));
 		
-		GetSceneParam getp;
-		getp.scene_confid_ = 1;
-		auto scene = ServerNodeSystem::GetMainSceneNotFull(getp);
+		GetSceneParam get_scene_param;
+        get_scene_param.scene_confid_ = 1;
+		auto scene = ServerNodeSystem::GetMainSceneNotFull(get_scene_param);
 		if (scene == entt::null)//找不到上次的场景，放到默认场景里面
 		{
 			// todo default
 			LOG_INFO << "player " << player_id << " enter default secne";
 		} 
-		
-	
+
 		InitPlayerGate(player, request->session_id());
 		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 
@@ -393,7 +392,6 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
             LOG_ERROR << "enter scene not found or destroy" << tls.registry.get<Guid>(player);
 			// to do 让人下线
             return;
-
         }
 		PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(scene), try_player_session->session_id());
         ControllerChangeSceneInfo change_scene_info;
