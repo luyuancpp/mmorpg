@@ -71,8 +71,8 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
         LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << request->msg().service_method_id();
         return;
     }
-    auto service_it = g_player_services.find(sit->second.service);
-    if (service_it == g_player_services.end())
+    auto service_it = g_player_service.find(sit->second.service);
+    if (service_it == g_player_service.end())
     {
         LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << request->msg().service_method_id();
         return;
@@ -102,8 +102,8 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
 ///<<< BEGIN WRITING YOUR CODE
    // todo player service move to gate check
   
-    auto it = g_player_services.find(request->service());
-    if (it == g_player_services.end())
+    auto it = g_player_service.find(request->service());
+    if (it == g_player_service.end())
     {
         LOG_ERROR << "GatePlayerService service not found " << request->service();
         return;
@@ -219,8 +219,8 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
         LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << request->msg().service_method_id();
         return;
     }
-    auto service_it = g_player_services.find(sit->second.service);
-    if (service_it == g_player_services.end())
+    auto service_it = g_player_service.find(sit->second.service);
+    if (service_it == g_player_service.end())
     {
         LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << request->msg().service_method_id();
         return;
