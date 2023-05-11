@@ -13,7 +13,7 @@
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
 ///<<< END WRITING YOUR CODE
-void ControllerSceneServerPlayerServiceHandler::EnterScene(entt::entity player,
+void ControllerScenePlayerServiceHandler::EnterScene(entt::entity player,
 	const ::ControllerEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -31,7 +31,7 @@ void ControllerSceneServerPlayerServiceHandler::EnterScene(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerSceneServerPlayerServiceHandler::LeaveScene(entt::entity player,
+void ControllerScenePlayerServiceHandler::LeaveScene(entt::entity player,
 	const ::ControllerLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -39,7 +39,7 @@ void ControllerSceneServerPlayerServiceHandler::LeaveScene(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerSceneServerPlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,
+void ControllerScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,
 	const ::ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	::google::protobuf::Empty* response)
 {

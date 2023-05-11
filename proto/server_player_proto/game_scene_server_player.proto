@@ -25,7 +25,7 @@ message EnterScenerS2CResponse
 {
 }
 
-service GameServerPlayerSceneService 
+service GamePlayerSceneService 
 {
   rpc EnterScene (GsEnterSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveScene (GsLeaveSceneRequest) returns (google.protobuf.Empty);

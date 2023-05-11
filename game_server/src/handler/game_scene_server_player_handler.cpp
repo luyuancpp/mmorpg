@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void GameServerPlayerSceneServiceHandler::EnterScene(entt::entity player,
+void GamePlayerSceneServiceHandler::EnterScene(entt::entity player,
 	const ::GsEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -11,7 +11,7 @@ void GameServerPlayerSceneServiceHandler::EnterScene(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServerPlayerSceneServiceHandler::LeaveScene(entt::entity player,
+void GamePlayerSceneServiceHandler::LeaveScene(entt::entity player,
 	const ::GsLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -19,7 +19,7 @@ void GameServerPlayerSceneServiceHandler::LeaveScene(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServerPlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,
+void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,
 	const ::EnterSceneS2CRequest* request,
 	::EnterScenerS2CResponse* response)
 {

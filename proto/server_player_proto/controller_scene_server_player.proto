@@ -16,7 +16,7 @@ message ControllerLeaveSceneAsyncSavePlayerCompleteRequest
 {
 }
 
-service ControllerSceneServerPlayerService 
+service ControllerScenePlayerService 
 {
   rpc EnterScene (ControllerEnterSceneRequest) returns (google.protobuf.Empty);
   rpc LeaveScene (ControllerLeaveSceneRequest) returns (google.protobuf.Empty);
