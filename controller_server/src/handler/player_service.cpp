@@ -6,10 +6,10 @@
 #include "controller_scene_server_player_handler.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;
 
-class ConstrollerServerPlayerServiceImpl : public ConstrollerServerPlayerService{};
-class ControllerSceneServerPlayerServiceImpl : public ControllerSceneServerPlayerService{};
+class ConstrollerPlayerServiceImpl : public ConstrollerPlayerService{};
+class ControllerScenePlayerServiceImpl : public ControllerScenePlayerService{};
 void InitPlayerService()
 {
-	g_player_service.emplace("ConstrollerServerPlayerService", std::make_unique<ConstrollerServerPlayerServiceHandler>(new ConstrollerServerPlayerServiceImpl));
-	g_player_service.emplace("ControllerSceneServerPlayerService", std::make_unique<ControllerSceneServerPlayerServiceHandler>(new ControllerSceneServerPlayerServiceImpl));
+	g_player_service.emplace("ConstrollerPlayerService", std::make_unique<ConstrollerPlayerServiceHandler>(new ConstrollerPlayerServiceImpl));
+	g_player_service.emplace("ControllerScenePlayerService", std::make_unique<ControllerScenePlayerServiceHandler>(new ControllerScenePlayerServiceImpl));
 }

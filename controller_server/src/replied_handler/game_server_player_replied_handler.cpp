@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void ServerPlayerLoginServiceRepliedHandler::UpdateSessionController2Gs(entt::entity player,
+void GameLoginPlayerServiceRepliedHandler::UpdateSessionController2Gs(entt::entity player,
 	const ::UpdateSessionController2GsRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -11,7 +11,7 @@ void ServerPlayerLoginServiceRepliedHandler::UpdateSessionController2Gs(entt::en
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerLoginServiceRepliedHandler::Controller2GsLogin(entt::entity player,
+void GameLoginPlayerServiceRepliedHandler::Controller2GsLogin(entt::entity player,
 	const ::Controller2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -19,7 +19,7 @@ void ServerPlayerLoginServiceRepliedHandler::Controller2GsLogin(entt::entity pla
 ///<<< END WRITING YOUR CODE
 }
 
-void ServerPlayerLoginServiceRepliedHandler::Controller2GsEnterGateSucceed(entt::entity player,
+void GameLoginPlayerServiceRepliedHandler::Controller2GsEnterGateSucceed(entt::entity player,
 	const ::Controller2GsEnterGateSucceedRequest* request,
 	::google::protobuf::Empty* response)
 {

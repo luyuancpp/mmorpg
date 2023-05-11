@@ -1,7 +1,7 @@
 #pragma once
 #include "server_player_proto/controller_scene_server_player.pb.h"
 #include "player_service.h"
-class ControllerSceneServerPlayerServiceHandler : public ::PlayerService
+class ControllerScenePlayerServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
