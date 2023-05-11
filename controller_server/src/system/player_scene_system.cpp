@@ -48,14 +48,14 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         return;
     }
     enter_scene_message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(GameServerPlayerSceneServiceEnterSceneMsgId, enter_scene_message, player);
+    Send2GsPlayer(GamePlayerSceneServiceEnterSceneMsgId, enter_scene_message, player);
 }
 
 
 void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 {
     EnterSceneS2CRequest msg;
-    CallGsPlayerMethod(GameServerPlayerSceneServiceEnterSceneS2CMsgId, msg, player);
+    CallGsPlayerMethod(GamePlayerSceneServiceEnterSceneS2CMsgId, msg, player);
 }
 
 NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)

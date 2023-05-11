@@ -83,7 +83,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 		return ;
 	}
     leave_scene_message.set_change_gs(p_player_gs->gs_node_id() != (*try_to_scene_gs)->node_id());
-    Send2GsPlayer(GameServerPlayerSceneServiceLeaveSceneMsgId, leave_scene_message, player);
+    Send2GsPlayer(GamePlayerSceneServiceLeaveSceneMsgId, leave_scene_message, player);
 ///<<< END WRITING YOUR CODE
 }
 

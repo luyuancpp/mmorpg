@@ -48,7 +48,7 @@ void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& me
 {
 	//告诉controller 保存完毕，可以切换场景了
 	ControllerLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
-	Send2ControllerPlayer(ControllerSceneServerPlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId, save_complete_message, player_id);
+	Send2ControllerPlayer(ControllerScenePlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId, save_complete_message, player_id);
 
 	game_tls.player_list().erase(player_id);//存储完毕从gs删除玩家
 }

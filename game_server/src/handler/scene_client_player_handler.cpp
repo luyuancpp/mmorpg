@@ -43,7 +43,7 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
     }
     ControllerEnterSceneRequest message;
     message.mutable_scene_info()->CopyFrom(request->scene_info());
-    Send2ControllerPlayer(ControllerSceneServerPlayerServiceEnterSceneMsgId, message, player);
+    Send2ControllerPlayer(ControllerScenePlayerServiceEnterSceneMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
 
