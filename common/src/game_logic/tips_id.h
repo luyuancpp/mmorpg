@@ -108,7 +108,7 @@ if (ret != kRetOK)\
 }\
 }
 
-#define  CheckReturnCloseureError(tip_code)\
+#define  CheckReturnClosureError(tip_code)\
 if (tip_code != kRetOK)\
 {\
     response->mutable_error()->set_id(tip_code);\
@@ -116,63 +116,63 @@ if (tip_code != kRetOK)\
     return;\
 }\
 
-#define CheckCondtion(condition, tip_code)\
+#define CheckCondition(condition, tip_code)\
 if (condition)\
 {\
      return  tip_code; \
 }\
 
-#define  ReturnCloseureError(f)\
+#define  ReturnClosureError(f)\
 response->mutable_error()->set_id(f);\
 done->Run();\
 return;
 
-#define ReturnCloseureOK ReturnCloseureError(kRetOK);
+#define ReturnClosureOK ReturnClosureError(kRetOK);
 
-#define  ReturnAutoCloseureError(tip_code)\
+#define  ReturnAutoClosureError(tip_code)\
 if (tip_code != kRetOK)\
 {\
     response->mutable_error()->set_id(tip_code);\
     return;\
 }\
 
-#define  GetPlayerCompnentReturnError(copm_name, compnent, tip_code)\
-auto copm_name = tls.registry.try_get<compnent>(player);\
-if (nullptr == copm_name)\
+#define  GetPlayerComponentReturnError(component_name, component, tip_code)\
+auto component_name = tls.registry.try_get<component>(player);\
+if (nullptr == component_name)\
 {\
 	return tip_code;\
 }
 
-#define  GetPlayerCompnentMemberReturnError(menber_name, compnent, tip_code)\
-auto comp_name = tls.registry.try_get<compnent>(player);\
-if (nullptr == comp_name)\
+#define  GetPlayerComponentMemberReturnError(member_name, component, tip_code)\
+auto component_name = tls.registry.try_get<component>(player);\
+if (nullptr == component_name)\
 {\
 	return tip_code;\
 }\
-auto& menber_name = comp_name->menber_name##_;
+auto& member_name = component_name->member_name##_;
 
-#define  GetPlayerCompnentMemberNullReturnFalse(menber_name, compnent)\
-auto comp_name = tls.registry.try_get<compnent>(player);\
-if (nullptr == comp_name)\
+#define  GetPlayerComponentMemberNullReturnFalse(member_name, component)\
+auto component_name = tls.registry.try_get<component>(player);\
+if (nullptr == component_name)\
 {\
 	return false;\
 }\
-auto& menber_name = comp_name->menber_name##_;
+auto& member_name = component_name->member_name##_;
 
-#define  GetPlayerCompnentMemberNullReturnTrue(menber_name, compnent)\
-auto comp_name = tls.registry.try_get<compnent>(player);\
-if (nullptr == comp_name)\
+#define  GetPlayerComponentMemberNullReturnTrue(member_name, component)\
+auto component_name = tls.registry.try_get<component>(player);\
+if (nullptr == component_name)\
 {\
 	return true;\
 }\
-auto& menber_name = comp_name->menber_name##_;
+auto& member_name = comp_name->menber_name##_;
 
-#define  GetPlayerCompnentMemberReturnVoid(menber_name, compnent)\
-auto comp_name = tls.registry.try_get<compnent>(player);\
-if (nullptr == comp_name)\
+#define  GetPlayerComponentMemberReturnVoid(member_name, component)\
+auto component_name = tls.registry.try_get<component>(player);\
+if (nullptr == component_name)\
 {\
 	return;\
 }\
-auto& menber_name = comp_name->menber_name##_;
+auto& member_name = component_name->member_name##_;
 
 #endif // !COMMON_SRC_tip_code_ERROR_CODE

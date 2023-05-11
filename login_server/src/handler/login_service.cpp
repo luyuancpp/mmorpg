@@ -45,7 +45,7 @@ void EnterGame(Guid player_id,
 	auto it = sessions_.find(session_id);
 	if (sessions_.end() == it)
 	{
-		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
+		ReturnClosureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
 	auto rpc(std::make_shared<EnterGameControllerRpc::element_type>(response, done));
 	rpc->s_rq_.set_player_id(player_id);
@@ -173,9 +173,9 @@ void LoginServiceImpl::CreatPlayer(::google::protobuf::RpcController* controller
 	auto sit = sessions_.find(request->session_id());
 	if (sit == sessions_.end())
 	{
-		ReturnCloseureError(kRetLoignCreatePlayerConnectionHasNotAccount);
+		ReturnClosureError(kRetLoignCreatePlayerConnectionHasNotAccount);
 	}
-	CheckReturnCloseureError(sit->second->CreatePlayer());
+	CheckReturnClosureError(sit->second->CreatePlayer());
 	// database process
 	DatabaseNodeCreatePlayerRequest rq;
 	rq.set_session_id(request->session_id());
@@ -198,16 +198,16 @@ void LoginServiceImpl::EnterGame(::google::protobuf::RpcController* controller,
 	auto sit = sessions_.find(session_id);
 	if (sit == sessions_.end())
 	{
-		ReturnCloseureError(kRetLoginEnterGameConnectionAccountEmpty);
+		ReturnClosureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
 	// check second times change player id error 
-	CheckReturnCloseureError(sit->second->EnterGame());
+	CheckReturnClosureError(sit->second->EnterGame());
 
 	// long time in login processing
 	auto player_id = request->player_id();
 	if (!sit->second->HasPlayer(player_id))
 	{
-		ReturnCloseureError(kRetLoginPlayerGuidError);
+		ReturnClosureError(kRetLoginPlayerGuidError);
 	}
 	//todo 已经在其他login
 	player_database new_player;
