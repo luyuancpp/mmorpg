@@ -1,0 +1,10 @@
+syntax = "proto3";
+import "component_proto/scene_comp.proto";
+option cc_generic_services = true;
+
+
+//正常或者顶号进入场景
+//断线重连进入场景,断线重连分时间
+service ServerSceneService
+{
+}
