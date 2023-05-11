@@ -11,7 +11,7 @@
     <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
     <ClCompile Include="src\mysql_wrapper\mysql_client.cpp" />
     <ClCompile Include="src\mysql_wrapper\mysql_database.cpp" />
-    <ClCompile Include="src\mysql_wrapper\message2mysqlsql.cpp" />
+    <ClCompile Include="src\mysql_wrapper\message_2_mysql.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
     <ClCompile Include="src\network\game_rpc.pb.cc" />
     <ClCompile Include="src\network\rpc_channel.cc" />
@@ -173,7 +173,7 @@
     <ClInclude Include="src\mysql_wrapper\mysql_client.h" />
     <ClInclude Include="src\mysql_wrapper\mysql_result.h" />
     <ClInclude Include="src\mysql_wrapper\mysql_database.h" />
-    <ClInclude Include="src\mysql_wrapper\message2mysqlsql.h" />
+    <ClInclude Include="src\mysql_wrapper\message_2_mysql.h" />
     <ClInclude Include="src\redis_client\redis_client.h" />
     <ClInclude Include="src\game_logic\tips_id.h" />
     <ClInclude Include="src\network\game_rpc.pb.h" />

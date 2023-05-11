@@ -32,17 +32,10 @@ set(CMAKE_CONFIGURATION_TYPES
 if(MSVC)
     # remove default flags provided with CMake for MSVC
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++20")
+    set(CMAKE_CXX_FLAGS_DEBUG "")
     set(CMAKE_CXX_FLAGS_RELEASE "")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-	add_definitions("/W3")
+	add_compile_options(/wd4146)
 endif()
-
-add_definitions(-DENTT_ID_TYPE="uint64_t")
-add_definitions(-DENTT_HAS_HEADER_VERSION)
-add_definitions(-D_ENABLE_EXTENDED_ALIGNED_STORAGE)
-add_definitions(-DNOMINMAX)
-
-set(CMAKE_VERBOSE_MAKEFILE on)
 
 
 ################################################################################

@@ -73,7 +73,7 @@ void Hiredis::disconnect()
 int Hiredis::fd() const
 {
   assert(context_);
-  return context_->c.fd;
+  return int(context_->c.fd);
 }
 
 void Hiredis::setChannel()

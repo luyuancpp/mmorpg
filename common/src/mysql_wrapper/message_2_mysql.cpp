@@ -1,4 +1,4 @@
-#include "message2mysqlsql.h"
+#include "message_2_mysql.h"
 
 #include <boost/algorithm/string.hpp>
 
