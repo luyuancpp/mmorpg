@@ -6,7 +6,7 @@
 #include "src/luacpp/lua_module.h"
 #include "src/pb/pbc/service.h"
 
-extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_player_services;
+extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_player_service;
 
 ClientService::ClientService(ProtobufDispatcher& dispatcher,
                              ProtobufCodec& codec, 
@@ -85,8 +85,8 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
 {
     auto service_method_id = message->service_method_id();
     auto& servcie_method_info = g_service_method_info[service_method_id];
-    auto sit = g_player_services.find(servcie_method_info.service);
-    if (sit == g_player_services.end())
+    auto sit = g_player_service.find(servcie_method_info.service);
+    if (sit == g_player_service.end())
     {
         LOG_ERROR << "service not found " << servcie_method_info.service;
         return;
@@ -97,7 +97,7 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
     MessagePtr response(codec_.createMessage(servcie_method_info.response));
     response->ParseFromString(message->body());
     AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
-    g_player_services[servcie_method_info.service]->CallMethod(method, nullptr, nullptr, response.get(), nullptr);
+    g_player_service[servcie_method_info.service]->CallMethod(method, nullptr, nullptr, response.get(), nullptr);
 }
 
 void ClientService::EnterGs(Guid guid)

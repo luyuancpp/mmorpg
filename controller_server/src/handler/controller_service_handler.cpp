@@ -469,8 +469,8 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "service_method_id not found " << request->msg().service_method_id();
 		return;
 	}
-	auto service_it = g_player_services.find(sit->second.service);
-	if (service_it == g_player_services.end())
+	auto service_it = g_player_service.find(sit->second.service);
+	if (service_it == g_player_service.end())
 	{
 		LOG_ERROR << "player service  not found " << request->msg().service_method_id();
 		return;
