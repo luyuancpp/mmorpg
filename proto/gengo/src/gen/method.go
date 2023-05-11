@@ -112,7 +112,7 @@ func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 	for i := 0; i < len(methodList); i++ {
 		rq := methodList[i].Request
 		rsp := methodList[i].Response
-		functionNameList += config.Tab + "void " + methodList[i].Method + config.PlayerMethodController + "\n" +
+		functionNameList += config.Tab + "static void " + methodList[i].Method + config.PlayerMethodController + "\n" +
 			config.Tab2 + "const ::" + rq + "* request,\n" +
 			config.Tab2 + "::" + rsp + "* response);\n\n"
 		callFunctionList += config.Tab2 + "case " + strconv.Itoa(i) + ":\n"
@@ -147,7 +147,7 @@ func getPlayerMethodRepliedHeadStr(methodList RpcMethodInfos) string {
 	for i := 0; i < len(methodList); i++ {
 		rq := methodList[i].Request
 		rsp := methodList[i].Response
-		functionNameList += config.Tab + "void " + methodList[i].Method + config.PlayerMethodController + "\n" +
+		functionNameList += config.Tab + "static void " + methodList[i].Method + config.PlayerMethodController + "\n" +
 			config.Tab2 + "const ::" + rq + "* request,\n" +
 			config.Tab2 + "::" + rsp + "* response);\n\n"
 		callFunctionList += config.Tab2 + "case " + strconv.Itoa(i) + ":\n"

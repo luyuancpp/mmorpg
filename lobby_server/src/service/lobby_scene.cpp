@@ -164,7 +164,7 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
 	auto scene = ScenesSystem::get_scene(request->scene_id());
 	if (entt::null == scene)
 	{
-		response->mutable_error()->set_id(kRetEnterScenetWeightRoundRobinMainScene);
+		response->mutable_error()->set_id(kRetEnterSceneWeightRoundRobinMainScene);
 		return;
 	}
 	auto it = players_.find(request->player_id());
@@ -225,7 +225,7 @@ void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::R
 	auto scene = ServerNodeSystem::GetSingleton().GetWeightRoundRobinMainScene(weight_round_robin_scene);
 	if (entt::null == scene)
 	{
-		response->mutable_error()->set_id(kRetEnterScenetWeightRoundRobinMainScene);
+		response->mutable_error()->set_id(kRetEnterSceneWeightRoundRobinMainScene);
 		return;
 	}
 	//todo 离开跨服马上删除

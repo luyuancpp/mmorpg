@@ -5,15 +5,15 @@ class ServerPlayerLoginServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
-	void UpdateSessionController2Gs(entt::entity player,
+	static void UpdateSessionController2Gs(entt::entity player,
 		const ::UpdateSessionController2GsRequest* request,
 		::google::protobuf::Empty* response);
 
-	void Controller2GsLogin(entt::entity player,
+	static void Controller2GsLogin(entt::entity player,
 		const ::Controller2GsLoginRequest* request,
 		::google::protobuf::Empty* response);
 
-	void Controller2GsEnterGateSucceed(entt::entity player,
+	static void Controller2GsEnterGateSucceed(entt::entity player,
 		const ::Controller2GsEnterGateSucceedRequest* request,
 		::google::protobuf::Empty* response);
 

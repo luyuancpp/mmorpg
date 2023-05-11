@@ -5,27 +5,27 @@ class ServerPlayerSceneServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
-	void EnterSceneGs2Controller(entt::entity player,
+	static void EnterSceneGs2Controller(entt::entity player,
 		const ::Gs2ControllerEnterSceneRequest* request,
 		::google::protobuf::Empty* response);
 
-	void EnterSceneController2Gs(entt::entity player,
+	static void EnterSceneController2Gs(entt::entity player,
 		const ::Controller2GsEnterSceneRequest* request,
 		::google::protobuf::Empty* response);
 
-	void LeaveSceneGs2Controller(entt::entity player,
+	static void LeaveSceneGs2Controller(entt::entity player,
 		const ::Gs2ControllerLeaveSceneRequest* request,
 		::google::protobuf::Empty* response);
 
-	void LeaveSceneController2Gs(entt::entity player,
+	static void LeaveSceneController2Gs(entt::entity player,
 		const ::Controller2GsLeaveSceneRequest* request,
 		::google::protobuf::Empty* response);
 
-	void Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
+	static void Gs2ControllerLeaveSceneAsyncSavePlayerComplete(entt::entity player,
 		const ::Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
 		::google::protobuf::Empty* response);
 
-	void Controller2GsEnterSceneS2C(entt::entity player,
+	static void Controller2GsEnterSceneS2C(entt::entity player,
 		const ::EnterSceneS2CRequest* request,
 		::EnterScenerS2CResponse* response);
 

@@ -5,7 +5,7 @@ class ClientPlayerTeamServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
-	void TeamInfoNotify(entt::entity player,
+	static void TeamInfoNotify(entt::entity player,
 		const ::TeamInfoS2CRequest* request,
 		::TeamInfoS2CResponse* response);
 

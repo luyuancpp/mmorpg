@@ -5,15 +5,15 @@ class ClientPlayerSceneServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
-	void EnterSceneC2S(entt::entity player,
+	static void EnterSceneC2S(entt::entity player,
 		const ::EnterSeceneC2SRequest* request,
 		::EnterSeceneC2SResponse* response);
 
-	void PushEnterSceneS2C(entt::entity player,
+	static void PushEnterSceneS2C(entt::entity player,
 		const ::EnterSeceneS2C* request,
 		::EnterSeceneS2C* response);
 
-	void PushSceneInfoS2C(entt::entity player,
+	static void PushSceneInfoS2C(entt::entity player,
 		const ::SceneInfoS2C* request,
 		::SceneInfoS2C* response);
 

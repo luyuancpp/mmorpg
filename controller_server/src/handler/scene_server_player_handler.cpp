@@ -37,7 +37,6 @@ void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity playe
 	PlayerSceneSystem::TryEnterNextScene(player);
 ///<<< END WRITING YOUR CODE
 }
-#pragma clang diagnostic pop
 
 void ServerPlayerSceneServiceHandler::EnterSceneController2Gs(entt::entity player,
 	const ::Controller2GsEnterSceneRequest* request,
@@ -69,7 +68,7 @@ void ServerPlayerSceneServiceHandler::Gs2ControllerLeaveSceneAsyncSavePlayerComp
 {
 ///<<< BEGIN WRITING YOUR CODE
     //异步切换考虑消息队列
-	GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
+	GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue)
 	if (change_scene_queue.empty())
 	{
 		return;

@@ -111,7 +111,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
-        CheckCondition(type_filter_.find(p) != type_filter_.end(), kRetMisionTypeRepeated);
+        CheckCondition(type_filter_.find(p) != type_filter_.end(), kRetMissionTypeRepeated);
     }
     MissionPbComp misison;
     misison.set_id(accept_event.mission_id());

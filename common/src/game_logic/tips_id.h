@@ -2,15 +2,13 @@
 #define COMMON_SRC_tip_code_ERROR_CODE
 
 #include <cstdint>
-#include <string>
-#include <vector>
 
 
 enum  EnumCode : uint32_t
 {
     kRetOK = 0,
     kRetTableId = 2,
-    kRetCofnigData = 3,
+    kRetConfigData = 3,
     kRetEnttNull = 4,
     kRetServiceNotOpen = 5, //改功能暂时关闭gate 用,gate写死了
     kRetServerCrush = 6,//服务器关闭请重新登录 gate 用,gate写死了
@@ -18,25 +16,25 @@ enum  EnumCode : uint32_t
     //login server 
     kRetLoginCantFindAccount = 1000,//找不到
     kRetLoginAccountPlayerFull = 1001,
-    kRetLoginCreatePlayerDonotLoadAccount = 1002,
-    kRetLoignCreatePlayerConnectionHasNotAccount = 1003,
-    kRetLoginHadnotLogin = 1004,
+    kRetLoginCreatePlayerUnLoadAccount = 1002,
+    kRetLoginCreatePlayerConnectionHasNotAccount = 1003,
+    kRetLoginUnLogin = 1004,
     kRetLoginIng = 1005,
     kRetLoginPlayerGuidError = 1006,
     kRetLoginEnteringGame = 1007,
     kRetLoginPlaying = 1008,
-    kRetLoignCreatingPlayer = 1009,
-    kRetLoignWatingEnterGame = 1010,//已经登录了，等待进入游戏
-    kRetLoignEnterGuid = 1011,
-    kRetLoignAccountNameEmpty = 1012,
+    kRetLoginCreatingPlayer = 1009,
+    kRetLoginWaitingEnterGame = 1010,//已经登录了，等待进入游戏
+    kRetLoginEnterGuid = 1011,
+    kRetLoginAccountNameEmpty = 1012,
     kRetLoginCreateConnectionAccountEmpty = 1013,
     kRetLoginEnterGameConnectionAccountEmpty = 1014,
-    kRetLoginUnkonwError = 1015,
+    kRetLoginUnknownError = 1015,
 
     //Scene
     kRetEnterSceneNotFound = 4000,
     kRetEnterSceneNotFull = 4001,
-    kRetEnterScenetWeightRoundRobinMainScene = 4002,//所有场景已经满了
+    kRetEnterSceneWeightRoundRobinMainScene = 4002,//所有场景已经满了
     kRetEnterSceneCreatePlayer = 4003,//玩家进入不了跨服
     kRetEnterGameGsCrash = 4004,//当前服务器不可进入，请重新进入
     kRetEnterSceneServerType = 4005,//当前服务器不可切换场景
@@ -76,20 +74,20 @@ enum  EnumCode : uint32_t
 
     //mission
     kRetMissionIdRepeated = 6000,
-    kRetMisionTypeRepeated = 6001,
+    kRetMissionTypeRepeated = 6001,
     kRetMissionComplete = 6002,
     kRetMissionGetRewardNoMissionId = 6003,
     kRetMissionPlayerMissionCompNotFound = 6004,
 
     //bag 
-    kRetBagDeleteItemHasnotGuid = 7000,
+    kRetBagDeleteItemFindGuid = 7000,
     kRetBagDeleteItemAlreadyHasGuid = 7001,
     kRetBagAddItemHasNotBaseComponent = 7002,
     kRetBagAddItemInvalidGuid = 7003,
     kRetBagAddItemInvalidParam = 7004,
     kRetBagAddItemBagFull = 7005,
     kRetBagAdequateAddItemSize = 7006,//不可叠加
-    kRetBagAdequatetem = 7007,//不够物品
+    kRetBagAdequateItem = 7007,//不够物品
     kRetBagDelItemPos = 7008,
     kRetBagDelItemConfig = 7009,
     kRetBagDelItemGuid = 7010,
