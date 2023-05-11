@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 void ConstrollerServerPlayerServiceHandler::Test(entt::entity player,
-	const ::google.protobuf.Empty* request,
+	const ::google::protobuf::Empty* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE

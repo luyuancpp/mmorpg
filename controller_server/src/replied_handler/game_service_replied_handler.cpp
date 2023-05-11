@@ -76,8 +76,8 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 			<< replied->descriptor()->full_name() << " service " << replied->msg().service();
 		return;
 	}
-	auto service_it = g_player_service_replieds.find(replied->msg().service());
-	if (service_it == g_player_service_replieds.end())
+	auto service_it = g_player_service_replied.find(replied->msg().service());
+	if (service_it == g_player_service_replied.end())
 	{
 		LOG_ERROR << "PlayerService service not found " << replied->ex().player_id() << "," << replied->msg().service();
 		return;

@@ -7,7 +7,7 @@
 #include "src/network/controller_node.h"
 #include "src/network/session.h"
 #include "src/pb/pbc/controller_service_service.h"
-#include "src/pb/pbc/scene_server_player_service.h"
+#include "src/pb/pbc/controller_scene_server_player_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_async_comp.pb.h"
@@ -15,8 +15,6 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 #include "controller_service.pb.h"
-#include "server_player_proto/scene_server_player.pb.h"
-
 
 
 void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& message)
@@ -49,8 +47,8 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 void PlayerCommonSystem::OnAsyncSavePlayerDb(Guid player_id, player_database& message)
 {
 	//告诉controller 保存完毕，可以切换场景了
-	Gs2ControllerLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
-	Send2ControllerPlayer(ServerPlayerSceneServiceGs2ControllerLeaveSceneAsyncSavePlayerCompleteMsgId, save_complete_message, player_id);
+	ControllerLeaveSceneAsyncSavePlayerCompleteRequest save_complete_message;
+	Send2ControllerPlayer(ControllerSceneServerPlayerServiceLeaveSceneAsyncSavePlayerCompleteMsgId, save_complete_message, player_id);
 
 	game_tls.player_list().erase(player_id);//存储完毕从gs删除玩家
 }

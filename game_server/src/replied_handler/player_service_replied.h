@@ -26,6 +26,6 @@ private:
 
 void InitPlayerServiceReplied();
 
-extern std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replieds;
+extern std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;
 
 

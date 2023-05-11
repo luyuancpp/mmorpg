@@ -14,7 +14,7 @@
 #include "src/system/player_change_scene.h"
 #include "src/pb/pbc/lobby_scene_service.h"
 #include "src/pb/pbc/game_service_service.h"
-#include "src/pb/pbc/scene_server_player_service.h"
+#include "src/pb/pbc/game_scene_server_player_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 
@@ -32,7 +32,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         LOG_ERROR << "player do not enter scene " << player_id;
         return;
     }
-    Controller2GsEnterSceneRequest enter_scene_message;
+    GsEnterSceneRequest enter_scene_message;
 
     auto p_scene_info = tls.registry.try_get<SceneInfo>((*p_scene).scene_entity_);
     if (nullptr == p_scene_info)
@@ -48,14 +48,14 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         return;
     }
     enter_scene_message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(ServerPlayerSceneServiceEnterSceneController2GsMsgId, enter_scene_message, player);
+    Send2GsPlayer(GameServerPlayerSceneServiceEnterSceneMsgId, enter_scene_message, player);
 }
 
 
 void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 {
     EnterSceneS2CRequest msg;
-    CallGsPlayerMethod(ServerPlayerSceneServiceController2GsEnterSceneS2CMsgId, msg, player);
+    CallGsPlayerMethod(GameServerPlayerSceneServiceEnterSceneS2CMsgId, msg, player);
 }
 
 NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)

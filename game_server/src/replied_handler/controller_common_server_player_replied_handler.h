@@ -6,7 +6,7 @@ class ConstrollerServerPlayerServiceRepliedHandler : public ::PlayerServiceRepli
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
 	static void Test(entt::entity player,
-		const ::google.protobuf.Empty* request,
+		const ::google::protobuf::Empty* request,
 		::google::protobuf::Empty* response);
 
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,

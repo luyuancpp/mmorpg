@@ -364,7 +364,7 @@ func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(dstFileName, data)
 }
 
-func isGsPlayerMethodRepliedHandler(methodList *RpcMethodInfos) (result bool) {
+func isGsPlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) {
 	if len(*methodList) <= 0 {
 		return
 	}
@@ -377,7 +377,7 @@ func isGsPlayerMethodRepliedHandler(methodList *RpcMethodInfos) (result bool) {
 
 func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isGsPlayerMethodRepliedHandler(&methodList) {
+	if !isGsPlayerRepliedHandler(&methodList) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadRepliedHandlerEx
@@ -386,7 +386,7 @@ func writeGsPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 
 func writeGsPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isGsPlayerMethodRepliedHandler(&methodList) {
+	if !isGsPlayerRepliedHandler(&methodList) {
 		return
 	}
 	firstMethodInfo := methodList[0]
@@ -554,7 +554,7 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(dstFileName, data)
 }
 
-func isControllerPlayerMethodRepliedHandler(methodList *RpcMethodInfos) (result bool) {
+func isControllerPlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) {
 	if len(*methodList) <= 0 {
 		return
 	}
@@ -567,7 +567,7 @@ func isControllerPlayerMethodRepliedHandler(methodList *RpcMethodInfos) (result 
 
 func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isControllerPlayerMethodRepliedHandler(&methodList) {
+	if !isControllerPlayerRepliedHandler(&methodList) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadRepliedHandlerEx
@@ -576,7 +576,7 @@ func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos
 
 func writeControllerPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isControllerPlayerMethodRepliedHandler(&methodList) {
+	if !isControllerPlayerRepliedHandler(&methodList) {
 		return
 	}
 	firstMethodInfo := methodList[0]
