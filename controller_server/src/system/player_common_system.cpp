@@ -5,13 +5,12 @@
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/pb/pbc/scene_client_player_service.h"
-#include "src/pb/pbc/common_server_player_service.h"
+#include "src/pb/pbc/game_server_player_service.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
 #include "src/system/player_change_scene.h"
 
 #include "client_player_proto/scene_client_player.pb.h"
-#include "server_player_proto/common_server_player.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 
@@ -31,7 +30,7 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
         return;
     }
     message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(ServerPlayerLoginServiceUpdateSessionController2GsMsgId, message, player);
+    Send2GsPlayer(GameLoginPlayerServiceUpdateSessionController2GsMsgId, message, player);
 
     auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
     if (nullptr != try_enter_gs)
@@ -65,7 +64,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         Controller2GsLoginRequest message;
         message.set_enter_gs_type((*try_enter_gs).enter_gs_type());
         tls.registry.remove<EnterGsFlag>(player);
-        Send2GsPlayer(ServerPlayerLoginServiceController2GsLoginMsgId, message, player);
+        Send2GsPlayer(GameLoginPlayerServiceController2GsLoginMsgId, message, player);
     }
    
     //给客户端发所有场景消息
