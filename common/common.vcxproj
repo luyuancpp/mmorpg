@@ -200,6 +200,7 @@
     <ClCompile Include="src\pb\pbc\deploy_service_service.cpp" />
     <ClCompile Include="src\pb\pbc\event_proto\mission_event.pb.cc" />
     <ClCompile Include="src\pb\pbc\event_proto\scene_event.pb.cc" />
+    <ClCompile Include="src\pb\pbc\game_scene_service.cpp" />
     <ClCompile Include="src\pb\pbc\game_service_service.cpp" />
     <ClCompile Include="src\pb\pbc\gate_service_service.cpp" />
     <ClCompile Include="src\pb\pbc\lobby_scene_service.cpp" />
@@ -357,6 +358,7 @@
     <ClInclude Include="src\pb\pbc\deploy_service_service.h" />
     <ClInclude Include="src\pb\pbc\event_proto\mission_event.pb.h" />
     <ClInclude Include="src\pb\pbc\event_proto\scene_event.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_scene_service.h" />
     <ClInclude Include="src\pb\pbc\game_service_service.h" />
     <ClInclude Include="src\pb\pbc\gate_service_service.h" />
     <ClInclude Include="src\pb\pbc\lobby_scene_service.h" />

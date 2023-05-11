@@ -6,6 +6,9 @@ void InitRepliedHandler()
 	void InitDeployServiceServerInfoRepliedHandler();
 	InitDeployServiceServerInfoRepliedHandler();
 
+	void InitGameSceneServiceTestRepliedHandler();
+	InitGameSceneServiceTestRepliedHandler();
+
 	void InitGameServiceEnterGsRepliedHandler();
 	InitGameServiceEnterGsRepliedHandler();
 

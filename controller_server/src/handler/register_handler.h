@@ -1,6 +1,6 @@
 #pragma once
 #include <array>
 #include <memory>
-#include <google/protobuf/message.h>
+#include <google/protobuf/service.h>
 
 extern std::array<std::unique_ptr<::google::protobuf::Service>, 2> g_server_service;

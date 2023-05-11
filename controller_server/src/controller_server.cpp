@@ -15,7 +15,7 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
-#include "src/handler/server_service.h"
+#include "src/handler/register_handler.h"
 #include "src/pb/pbc/service.h"
 #include "src/pb/pbc/deploy_service_service.h"
 #include "src/pb/pbc/gate_service_service.h"
