@@ -370,12 +370,17 @@ func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 }
 
 func isGsMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
 	firstMethodInfo := (*methodList)[0]
 	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
 		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return false
 	}
-	return !strings.Contains(firstMethodInfo.FileBaseName(), "game")
+	return strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
+		strings.Contains(firstMethodInfo.FileBaseName(), "controller") ||
+		strings.Contains(firstMethodInfo.FileBaseName(), "lobby")
 }
 
 func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
@@ -412,21 +417,19 @@ func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 
 // controller server
 func isControllerMethodHandlerFile(methodList *RpcMethodInfos) (isGsFile bool) {
-	firstMethodList := (*methodList)[0]
-	if !(strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		!strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
+	if len(*methodList) <= 0 {
 		return false
 	}
-	return strings.Contains(firstMethodList.FileBaseName(), "controller")
+	firstMethodInfo := (*methodList)[0]
+	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		!strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
+		return false
+	}
+	return strings.Contains(firstMethodInfo.FileBaseName(), "controller")
 }
 
 func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-
-	if len(methodList) <= 0 {
-		return
-	}
-
 	if !isControllerMethodHandlerFile(&methodList) {
 		return
 	}
@@ -517,6 +520,9 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 }
 
 func isControllerMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
 	firstMethodInfo := (*methodList)[0]
 	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
 		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
@@ -527,9 +533,6 @@ func isControllerMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
 
 func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
 
 	if !isControllerMethodRepliedProto(&methodList) {
 		return
@@ -542,11 +545,6 @@ func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 
 func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	methodLen := len(methodList)
-	if methodLen <= 0 {
-		return
-	}
-
 	if !isControllerMethodRepliedProto(&methodList) {
 		return
 	}
@@ -559,6 +557,9 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 
 // /gate
 func isGateMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
 	firstMethodInfo := (*methodList)[0]
 	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
 		return false
@@ -570,6 +571,9 @@ func isGateMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
 }
 
 func isGateServiceProto(methodList *RpcMethodInfos) (check bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
 	firstMethodInfo := (*methodList)[0]
 	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
 		return false
@@ -620,11 +624,6 @@ func writeGateMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 
 func writeGateMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	methodLen := len(methodList)
-	if methodLen <= 0 {
-		return
-	}
-
 	if !isGateMethodRepliedProto(&methodList) {
 		return
 	}
@@ -638,6 +637,9 @@ func writeGateMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 ///login
 
 func isLoginMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
 	firstMethodInfo := (*methodList)[0]
 	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
 		return false
@@ -647,6 +649,9 @@ func isLoginMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
 }
 
 func isLoginServiceProto(methodList *RpcMethodInfos) (check bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
 	firstMethodInfo := (*methodList)[0]
 	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
 		return false

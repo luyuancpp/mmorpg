@@ -1,5 +1,8 @@
 void InitRepliedHandler()
 {
+	void InitControllerSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
+	InitControllerSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
+
 	void InitControllerServiceStartGsRepliedHandler();
 	InitControllerServiceStartGsRepliedHandler();
 
@@ -8,11 +11,5 @@ void InitRepliedHandler()
 
 	void InitLobbyServiceStartCrossGsRepliedHandler();
 	InitLobbyServiceStartCrossGsRepliedHandler();
-
-	void InitServerSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
-	InitServerSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
-
-	void InitTeamServiceEnterSceneRepliedHandler();
-	InitTeamServiceEnterSceneRepliedHandler();
 
 }

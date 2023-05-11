@@ -1,8 +1,6 @@
 syntax = "proto3";
-import "common_proto/common.proto";
+import "component_proto/team_comp.proto";
 option cc_generic_services = true;
-
-
 
 service ControllerTeamService
 {

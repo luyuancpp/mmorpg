@@ -350,6 +350,9 @@ func writePlayerServiceInstanceFile() {
 		if !ok {
 			continue
 		}
+		if len(methodList) <= 0 {
+			continue
+		}
 		method1Info := methodList[0]
 		if !method1Info.IsPlayerService() {
 			continue
@@ -381,6 +384,9 @@ func writePlayerServiceRepliedInstanceFile() {
 	for _, key := range ServiceList {
 		methodList, ok := ServiceMethodMap[key]
 		if !ok {
+			continue
+		}
+		if len(methodList) <= 0 {
 			continue
 		}
 		method1Info := methodList[0]

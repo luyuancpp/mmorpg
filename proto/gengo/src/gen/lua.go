@@ -101,6 +101,9 @@ func writeClientHandlerDefaultInstanceFile() {
 		if !ok {
 			continue
 		}
+		if len(methodList) <= 0 {
+			continue
+		}
 		method1Info := methodList[0]
 		if !strings.Contains(method1Info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
 			continue
@@ -372,6 +375,9 @@ func writeInitLuaServiceFile() {
 	for _, key := range ServiceList {
 		methodList, ok := ServiceMethodMap[key]
 		if !ok {
+			continue
+		}
+		if len(methodList) <= 0 {
 			continue
 		}
 		firstMethodInfo := methodList[0]
