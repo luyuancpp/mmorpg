@@ -5,9 +5,9 @@
 #include "src/network/node_info.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/pb/pbc/scene_server_player_service.h"
+#include "src/pb/pbc/controller_scene_server_player_service.h"
 
-#include "server_player_proto/scene_server_player.pb.h"
+#include "server_player_proto/controller_scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE
 void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
 	const ::EnterSeceneC2SRequest* request,
@@ -41,9 +41,9 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
             return;
         }
     }
-    Gs2ControllerEnterSceneRequest message;
+    ControllerEnterSceneRequest message;
     message.mutable_scene_info()->CopyFrom(request->scene_info());
-    Send2ControllerPlayer(ServerPlayerSceneServiceEnterSceneGs2ControllerMsgId, message, player);
+    Send2ControllerPlayer(ControllerSceneServerPlayerServiceEnterSceneMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
 

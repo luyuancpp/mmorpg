@@ -15,10 +15,6 @@
 #include "src/system/player_change_scene.h"
 
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "UnusedParameter"
-#pragma ide diagnostic ignored "UnusedParameter"
-#pragma ide diagnostic ignored "UnusedParameter"
 ///<<< END WRITING YOUR CODE
 void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity player,
 	const ::Gs2ControllerEnterSceneRequest* request,

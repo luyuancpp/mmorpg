@@ -35,8 +35,6 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "game_service.pb.h"
 #include "gate_service.pb.h"
-#include "server_player_proto/common_server_player.pb.h"
-#include "logic_proto/scene.pb.h"
 
 extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;
 

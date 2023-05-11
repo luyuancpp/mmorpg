@@ -143,7 +143,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			var rpcMethodInfo RpcMethodInfo
 			rpcMethodInfo.Service = service
 			rpcMethodInfo.Method = splitList[1]
-			rpcMethodInfo.Request = splitList[2]
+			rpcMethodInfo.Request = strings.Replace(splitList[2], ".", "::", -1)
 			rpcMethodInfo.Response = strings.Replace(splitList[4], ".", "::", -1)
 			rpcMethodInfo.Id = math.MaxUint64
 			rpcMethodInfo.Index = methodIndex
@@ -343,7 +343,7 @@ func writeServiceHandlerFile() {
 	Md5WriteData2File(config.ServiceFileName, data)
 }
 
-func writePlayerServiceInstanceFile() {
+func writeGsPlayerServiceInstanceFile() {
 	defer util.Wg.Done()
 	data := ""
 	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service.h\"\n\n"
@@ -355,31 +355,61 @@ func writePlayerServiceInstanceFile() {
 		if !ok {
 			continue
 		}
-		if len(methodList) <= 0 {
+
+		if !isGsPlayerHandler(&methodList) {
 			continue
 		}
 		method1Info := methodList[0]
-		if !method1Info.IsPlayerService() {
-			continue
-		}
 		className := method1Info.Service + "Impl"
 		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
-		instanceData += config.Tab + "g_player_services.emplace(\"" + method1Info.Service +
+		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
 			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">(new " +
 			className + "));\n"
 	}
 	data += includeData
-	data += "std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_services;\n\n"
+	data += "std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;\n\n"
 	data += classData
 	data += "void InitPlayerService()\n{\n"
 	data += instanceData
 	data += "}"
 	Md5WriteData2File(config.GsMethodHandleDir+config.PlayerServiceName, data)
+}
+
+func writeControllerPlayerServiceInstanceFile() {
+	defer util.Wg.Done()
+	data := ""
+	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service.h\"\n\n"
+	instanceData := ""
+	classData := ""
+	ServiceList := GetSortServiceList()
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok {
+			continue
+		}
+		if !isControllerPlayerHandler(&methodList) {
+			continue
+		}
+		method1Info := methodList[0]
+
+		className := method1Info.Service + "Impl"
+		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
+		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
+		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
+			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">(new " +
+			className + "));\n"
+	}
+	data += includeData
+	data += "std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;\n\n"
+	data += classData
+	data += "void InitPlayerService()\n{\n"
+	data += instanceData
+	data += "}"
 	Md5WriteData2File(config.ControllerMethodHandleDir+config.PlayerServiceName, data)
 }
 
-func writePlayerServiceRepliedInstanceFile() {
+func writeGsPlayerServiceRepliedInstanceFile() {
 	defer util.Wg.Done()
 	data := ""
 	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service_replied.h\"\n\n"
@@ -395,23 +425,57 @@ func writePlayerServiceRepliedInstanceFile() {
 			continue
 		}
 		method1Info := methodList[0]
-		if !method1Info.IsPlayerService() {
+		if !isGsPlayerRepliedHandler(&methodList) {
 			continue
 		}
 		className := method1Info.Service + "Impl"
 		includeData += method1Info.CppRepliedHandlerIncludeName()
 		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
-		instanceData += config.Tab + "g_player_service_replieds.emplace(\"" + method1Info.Service +
+		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service +
 			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerName + ">(new " +
 			className + "));\n"
 	}
 	data += includeData
-	data += "std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replieds;\n\n"
+	data += "std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;\n\n"
 	data += classData
 	data += "void InitPlayerServiceReplied()\n{\n"
 	data += instanceData
 	data += "}"
 	Md5WriteData2File(config.GsMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
+}
+
+func writeControllerPlayerServiceRepliedInstanceFile() {
+	defer util.Wg.Done()
+	data := ""
+	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service_replied.h\"\n\n"
+	instanceData := ""
+	classData := ""
+	ServiceList := GetSortServiceList()
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok {
+			continue
+		}
+		if len(methodList) <= 0 {
+			continue
+		}
+		method1Info := methodList[0]
+		if !isControllerPlayerRepliedHandler(&methodList) {
+			continue
+		}
+		className := method1Info.Service + "Impl"
+		includeData += method1Info.CppRepliedHandlerIncludeName()
+		classData += "class " + className + " : public " + method1Info.Service + "{};\n"
+		instanceData += config.Tab + "g_player_service_replied.emplace(\"" + method1Info.Service +
+			"\", std::make_unique<" + method1Info.Service + config.RepliedHandlerName + ">(new " +
+			className + "));\n"
+	}
+	data += includeData
+	data += "std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_service_replied;\n\n"
+	data += classData
+	data += "void InitPlayerServiceReplied()\n{\n"
+	data += instanceData
+	data += "}"
 	Md5WriteData2File(config.ControllerMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
 }
 
@@ -419,7 +483,11 @@ func WriteServiceHandlerFile() {
 	util.Wg.Add(1)
 	go writeServiceHandlerFile()
 	util.Wg.Add(1)
-	writePlayerServiceInstanceFile()
+	writeGsPlayerServiceInstanceFile()
 	util.Wg.Add(1)
-	writePlayerServiceRepliedInstanceFile()
+	writeControllerPlayerServiceInstanceFile()
+	util.Wg.Add(1)
+	writeGsPlayerServiceRepliedInstanceFile()
+	util.Wg.Add(1)
+	writeControllerPlayerServiceRepliedInstanceFile()
 }

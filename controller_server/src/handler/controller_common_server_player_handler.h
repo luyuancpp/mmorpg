@@ -6,7 +6,7 @@ class ConstrollerServerPlayerServiceHandler : public ::PlayerService
 public:
 	using PlayerService::PlayerService;
 	static void Test(entt::entity player,
-		const ::google.protobuf.Empty* request,
+		const ::google::protobuf::Empty* request,
 		::google::protobuf::Empty* response);
 
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
@@ -18,7 +18,7 @@ public:
 		{
 		case 0:
 			Test(player,
-			::google::protobuf::internal::DownCast<const google.protobuf.Empty*>( request),
+			::google::protobuf::internal::DownCast<const google::protobuf::Empty*>( request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		default:
