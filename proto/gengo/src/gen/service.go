@@ -210,14 +210,18 @@ func ReadServiceIdFile() {
 func writeServiceIdFile() {
 	defer util.Wg.Done()
 	var data string
-	for i := 0; i < len(RpcIdMethodMap); i++ {
-		rpcMethodInfo, ok := RpcIdMethodMap[uint64(i)]
+	var idList []uint64
+	for k, _ := range RpcIdMethodMap {
+		idList = append(idList, k)
+	}
+	sort.Slice(idList, func(i, j int) bool { return idList[i] < idList[j] })
+	for i := 0; i < len(idList); i++ {
+		rpcMethodInfo, ok := RpcIdMethodMap[idList[i]]
 		if !ok {
 			fmt.Println("msg id=", strconv.Itoa(i), " not use ")
 			continue
 		}
 		data += strconv.FormatUint(rpcMethodInfo.Id, 10) + "=" + (*rpcMethodInfo).KeyName() + "\n"
-
 	}
 	os.WriteFile(config.ServiceIdsFileName, []byte(data), 0666)
 }
