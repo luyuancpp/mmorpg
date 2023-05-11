@@ -33,13 +33,13 @@
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\player_network_comp.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\controller_server\src\system\player_change_scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\game_logic\thread_local\thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -59,13 +59,13 @@
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\player_network_comp.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\game_registry.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\controller_server\src\system\player_change_scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\thread_local\thread_local_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
