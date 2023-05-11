@@ -58,43 +58,6 @@ func getMethodHandlerHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
-func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-
-	if len(methodList) <= 0 {
-		return
-	}
-	if strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
-		return
-	}
-	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "game") {
-			return
-		}
-	}
-	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	Md5WriteData2File(config.GsMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
-}
-
-func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-
-	if len(methodList) <= 0 {
-		return
-	}
-
-	if strings.Contains(methodList[0].FileBaseName(), config.PlayerName) {
-		return
-	}
-	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "controller") {
-			return
-		}
-	}
-	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	Md5WriteData2File(config.ControllerMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
-}
-
 func getPlayerMethodHeadStr(methodList RpcMethodInfos) string {
 	var data = "#pragma once\n"
 	data += methodList[0].IncludeName()
@@ -284,6 +247,63 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos, classN
 	return data
 }
 
+func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
+	defer util.Wg.Done()
+	data := "void InitRepliedHandler()\n{\n"
+	ServiceList := GetSortServiceList()
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok {
+			continue
+		}
+		if !cb(&methodList) {
+			continue
+		}
+		firstMethodInfo := methodList[0]
+		data += config.Tab + "void Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + "();\n"
+		data += config.Tab + "Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + "();\n\n"
+	}
+	data += "}\n"
+	Md5WriteData2File(dst, data)
+}
+
+// / game server
+func isGsMethodHandlerFile(methodList *RpcMethodInfos) (isGsFile bool) {
+	firstMethodList := (*methodList)[0]
+	if !(strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		!strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
+		return false
+	}
+	return strings.Contains(firstMethodList.FileBaseName(), "game")
+}
+
+func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+
+	if len(methodList) <= 0 {
+		return
+	}
+	if !isGsMethodHandlerFile(&methodList) {
+		return
+	}
+	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+	Md5WriteData2File(config.GsMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+}
+
+func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+	if !isGsMethodHandlerFile(&methodList) {
+		return
+	}
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
+	dstFileName := config.GsMethodHandleDir + fileName
+	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
 func writeGsPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
@@ -331,6 +351,89 @@ func writeGsPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(dstFileName, data)
 }
 
+func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+	firstMethodInfo := methodList[0]
+	if !firstMethodInfo.IsPlayerService() {
+		return
+	}
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
+	dstFileName := config.GsMethodHandleDir + fileName
+	data := getMethodPlayerHandlerCppStr(dstFileName,
+		&methodList,
+		firstMethodInfo.CppHandlerClassName(),
+		firstMethodInfo.CppHandlerIncludeName())
+	Md5WriteData2File(dstFileName, data)
+}
+
+func isGsMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
+	firstMethodInfo := (*methodList)[0]
+	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
+		return false
+	}
+	return !strings.Contains(firstMethodInfo.FileBaseName(), "game")
+}
+
+func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+	fileBaseName := methodList[0].FileBaseName()
+	if !isGsMethodRepliedProto(&methodList) {
+		return
+	}
+
+	fileName := strings.ToLower(fileBaseName) + config.HeadRepliedHandlerEx
+	dstFileName := config.GsMethodRepliedHandleDir + fileName
+	data := getMethodRepliedHandlerHeadStr(&methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
+func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+	fileBaseName := methodList[0].FileBaseName()
+	if !isGsMethodRepliedProto(&methodList) {
+		return
+	}
+
+	fileName := strings.ToLower(fileBaseName) + config.CppRepliedHandlerEx
+	dstFileName := config.GsMethodRepliedHandleDir + fileName
+	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
+// controller server
+func isControllerMethodHandlerFile(methodList *RpcMethodInfos) (isGsFile bool) {
+	firstMethodList := (*methodList)[0]
+	if !(strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		!strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
+		return false
+	}
+	return strings.Contains(firstMethodList.FileBaseName(), "controller")
+}
+
+func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+
+	if len(methodList) <= 0 {
+		return
+	}
+
+	if !isControllerMethodHandlerFile(&methodList) {
+		return
+	}
+	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+	Md5WriteData2File(config.ControllerMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+}
+
 func writeControllerPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
@@ -360,43 +463,6 @@ func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadRepliedHandlerEx
 	Md5WriteData2File(config.ControllerMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
-}
-
-func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-	if strings.Contains(methodList[0].Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		if !strings.Contains(methodList[0].FileBaseName(), "game") {
-			return
-		}
-	} else if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
-		return
-	}
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.GsMethodHandleDir + fileName
-	data := getMethodHandlerCppStr(dstFileName, &methodList)
-	Md5WriteData2File(dstFileName, data)
-}
-
-func writeGsPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-	firstMethodInfo := methodList[0]
-	if !firstMethodInfo.IsPlayerService() {
-		return
-	}
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.GsMethodHandleDir + fileName
-	data := getMethodPlayerHandlerCppStr(dstFileName,
-		&methodList,
-		firstMethodInfo.CppHandlerClassName(),
-		firstMethodInfo.CppHandlerIncludeName())
-	Md5WriteData2File(dstFileName, data)
-
 }
 
 func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
@@ -450,76 +516,13 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(dstFileName, data)
 }
 
-func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
-	defer util.Wg.Done()
-	data := "void InitRepliedHandler()\n{\n"
-	ServiceList := GetSortServiceList()
-	for _, key := range ServiceList {
-		methodList, ok := ServiceMethodMap[key]
-		if !ok {
-			continue
-		}
-		if !cb(&methodList) {
-			continue
-		}
-		firstMethodInfo := methodList[0]
-		data += config.Tab + "void Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + "();\n"
-		data += config.Tab + "Init" + firstMethodInfo.KeyName() + config.RepliedHandlerName + "();\n\n"
-	}
-	data += "}\n"
-	Md5WriteData2File(dst, data)
-}
-
-func isGsMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
-	firstMethodInfo := (*methodList)[0]
-	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		if !(strings.Contains(firstMethodInfo.FileBaseName(), "controller") ||
-			strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
-			strings.Contains(firstMethodInfo.FileBaseName(), "lobby")) {
-			return false
-		}
-	} else if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex]) {
-		return false
-	}
-	return true
-}
-
-func writeGsMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-	fileBaseName := methodList[0].FileBaseName()
-	if !isGsMethodRepliedProto(&methodList) {
-		return
-	}
-
-	fileName := strings.ToLower(fileBaseName) + config.HeadRepliedHandlerEx
-	dstFileName := config.GsMethodRepliedHandleDir + fileName
-	data := getMethodRepliedHandlerHeadStr(&methodList)
-	Md5WriteData2File(dstFileName, data)
-}
-
-func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-	fileBaseName := methodList[0].FileBaseName()
-	if !isGsMethodRepliedProto(&methodList) {
-		return
-	}
-
-	fileName := strings.ToLower(fileBaseName) + config.CppRepliedHandlerEx
-	dstFileName := config.GsMethodRepliedHandleDir + fileName
-	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
-	Md5WriteData2File(dstFileName, data)
-}
-
 func isControllerMethodRepliedProto(methodList *RpcMethodInfos) (check bool) {
 	firstMethodInfo := (*methodList)[0]
-	return strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
-		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])
+	if !(strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
+		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
+		return false
+	}
+	return !strings.Contains(firstMethodInfo.FileBaseName(), "controller")
 }
 
 func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {

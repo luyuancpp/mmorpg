@@ -13,7 +13,7 @@ message UpdateCrossMainSceneInfoResponse
 
 //正常或者顶号进入场景
 //断线重连进入场景,断线重连分时间
-service ServerSceneService
+service ControllerServerSceneService
 {
   rpc UpdateCrossMainSceneInfo (UpdateCrossMainSceneInfoRequest) returns (UpdateCrossMainSceneInfoResponse);
 }
