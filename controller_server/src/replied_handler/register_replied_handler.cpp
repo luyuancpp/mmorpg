@@ -1,8 +1,5 @@
 void InitRepliedHandler()
 {
-	void InitControllerServiceStartGsRepliedHandler();
-	InitControllerServiceStartGsRepliedHandler();
-
 	void InitDbServiceLoginRepliedHandler();
 	InitDbServiceLoginRepliedHandler();
 
@@ -20,11 +17,5 @@ void InitRepliedHandler()
 
 	void InitLoginServiceLoginRepliedHandler();
 	InitLoginServiceLoginRepliedHandler();
-
-	void InitServerSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
-	InitServerSceneServiceUpdateCrossMainSceneInfoRepliedHandler();
-
-	void InitTeamServiceEnterSceneRepliedHandler();
-	InitTeamServiceEnterSceneRepliedHandler();
 
 }
