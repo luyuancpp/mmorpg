@@ -91,7 +91,7 @@ const EventHandlerFileNameCpp = EventHandlerFileName + CppEx
 const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
 const GsEventHandleDir = ProjectDir + GsName + EventHandlerDirName
 const GsMethodRepliedHandleDir = ProjectDir + GsName + RepliedHandlerDirName
-const GamePrefixName = "game"
+const GsPrefixName = "game"
 
 const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
 const ControllerMethodRepliedHandleDir = ProjectDir + ControllerName + RepliedHandlerDirName
