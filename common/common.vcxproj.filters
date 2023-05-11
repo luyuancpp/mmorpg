@@ -152,6 +152,7 @@
     <ClCompile Include="src\pb\pbc\lua\controller_team_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\game_scene_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\game_team_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\game_scene_service.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -274,5 +275,6 @@
     <ClInclude Include="src\pb\pbc\logic_proto\controller_scene.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\controller_team.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\game_scene.pb.h" />
+    <ClInclude Include="src\pb\pbc\game_scene_service.h" />
   </ItemGroup>
 </Project>

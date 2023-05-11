@@ -15,7 +15,7 @@
 #include "src/pb/pbc/lobby_scene_service.h"
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
-#include "src/handler/server_service.h"
+#include "src/handler/register_handler.h"
 
 #include "src/thread_local/game_thread_local_storage.h"
 

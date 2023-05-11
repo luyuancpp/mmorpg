@@ -247,6 +247,28 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos, classN
 	return data
 }
 
+func writeRegisterFile(dst string, cb checkRepliedCb) {
+	defer util.Wg.Done()
+	data := ""
+	initData := "std::array<std::unique_ptr<::google::protobuf::Service>, 2> g_server_service{\n"
+	ServiceList := GetSortServiceList()
+	for _, key := range ServiceList {
+		methodList, ok := ServiceMethodMap[key]
+		if !ok {
+			continue
+		}
+		if !cb(&methodList) {
+			continue
+		}
+		firstMethodInfo := methodList[0]
+		data += firstMethodInfo.CppHandlerIncludeName()
+		initData += "std::unique_ptr<::google::protobuf::Service>(new " + firstMethodInfo.Service + config.HandlerName + "),\n"
+	}
+	initData += "};\n"
+	data += initData
+	Md5WriteData2File(dst, data)
+}
+
 func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 	defer util.Wg.Done()
 	data := "void InitRepliedHandler()\n{\n"
@@ -269,6 +291,9 @@ func writeRepliedRegisterFile(dst string, cb checkRepliedCb) {
 
 // / game server
 func isGsMethodHandlerFile(methodList *RpcMethodInfos) (isGsFile bool) {
+	if len(*methodList) <= 0 {
+		return
+	}
 	firstMethodList := (*methodList)[0]
 	if !(strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) ||
 		strings.Contains(firstMethodList.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
@@ -280,9 +305,6 @@ func isGsMethodHandlerFile(methodList *RpcMethodInfos) (isGsFile bool) {
 func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
-	if len(methodList) <= 0 {
-		return
-	}
 	if !isGsMethodHandlerFile(&methodList) {
 		return
 	}
@@ -292,9 +314,6 @@ func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
 
 func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
 	if !isGsMethodHandlerFile(&methodList) {
 		return
 	}
@@ -416,6 +435,7 @@ func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 }
 
 // controller server
+
 func isControllerMethodHandlerFile(methodList *RpcMethodInfos) (isGsFile bool) {
 	if len(*methodList) <= 0 {
 		return false
@@ -776,10 +796,15 @@ func WriteMethodFile() {
 		//
 
 	}
-
+	//game
+	util.Wg.Add(1)
+	go writeRegisterFile(config.GsMethodHandleDir+config.RegisterHandlerCppEx, isGsMethodHandlerFile)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GsMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isGsMethodRepliedProto)
 
+	//controller
+	util.Wg.Add(1)
+	go writeRegisterFile(config.ControllerMethodHandleDir+config.RegisterHandlerCppEx, isControllerMethodHandlerFile)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.ControllerMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isControllerMethodRepliedProto)
 }
