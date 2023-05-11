@@ -58,12 +58,9 @@
     <ClCompile Include="src\pb\pbc\login_service_service.cpp" />
     <ClCompile Include="src\pb\pbc\scene_client_player_service.cpp" />
     <ClCompile Include="src\pb\pbc\scene_server_player_service.cpp" />
-    <ClCompile Include="src\pb\pbc\scene_service.cpp" />
     <ClCompile Include="src\pb\pbc\service.cpp" />
     <ClCompile Include="src\pb\pbc\team_client_player_service.cpp" />
     <ClCompile Include="src\pb\pbc\team_server_player_service.cpp" />
-    <ClCompile Include="src\pb\pbc\team_service.cpp" />
-    <ClCompile Include="src\pb\pbc\lua\team_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\c2gate_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\common_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\common_server_player_sol2.cpp" />
@@ -93,7 +90,6 @@
     <ClCompile Include="src\pb\pbc\lua\scene_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\scene_event_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\scene_server_player_sol2.cpp" />
-    <ClCompile Include="src\pb\pbc\lua\scene_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\team_client_player_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\team_comp_sol2.cpp" />
     <ClCompile Include="src\pb\pbc\lua\team_server_player_sol2.cpp" />
@@ -102,8 +98,6 @@
     <ClCompile Include="src\pb\pbc\server_player_proto\scene_server_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\server_player_proto\team_server_player.pb.cc" />
     <ClCompile Include="src\pb\pbc\logic_proto\lobby_scene.pb.cc" />
-    <ClCompile Include="src\pb\pbc\logic_proto\scene.pb.cc" />
-    <ClCompile Include="src\pb\pbc\logic_proto\team.pb.cc" />
     <ClCompile Include="src\pb\pbc\event_proto\mission_event.pb.cc" />
     <ClCompile Include="src\pb\pbc\event_proto\scene_event.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\gs_node_comp.pb.cc" />
@@ -146,10 +140,18 @@
     <ClCompile Include="src\pb\pbc\lua\scene_client_player_service_lua.cpp" />
     <ClCompile Include="src\pb\pbc\lua\scene_server_player_service_lua.cpp" />
     <ClCompile Include="src\pb\pbc\lua\team_client_player_service_lua.cpp" />
-    <ClCompile Include="src\pb\pbc\lua\scene_service_lua.cpp" />
     <ClCompile Include="src\pb\pbc\lua\team_server_player_service_lua.cpp" />
-    <ClCompile Include="src\pb\pbc\lua\team_service_lua.cpp" />
     <ClCompile Include="src\pb\pbc\lua\lua_service.cpp" />
+    <ClCompile Include="src\pb\pbc\controller_scene_service.cpp" />
+    <ClCompile Include="src\pb\pbc\logic_proto\controller_scene.pb.cc" />
+    <ClCompile Include="src\pb\pbc\logic_proto\controller_team.pb.cc" />
+    <ClCompile Include="src\pb\pbc\logic_proto\game_scene.pb.cc" />
+    <ClCompile Include="src\pb\pbc\logic_proto\game_team.pb.cc" />
+    <ClCompile Include="src\pb\pbc\lua\controller_scene_service_lua.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\controller_scene_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\controller_team_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\game_scene_sol2.cpp" />
+    <ClCompile Include="src\pb\pbc\lua\game_team_sol2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -231,16 +233,12 @@
     <ClInclude Include="src\pb\pbc\login_service_service.h" />
     <ClInclude Include="src\pb\pbc\scene_client_player_service.h" />
     <ClInclude Include="src\pb\pbc\scene_server_player_service.h" />
-    <ClInclude Include="src\pb\pbc\scene_service.h" />
     <ClInclude Include="src\pb\pbc\team_client_player_service.h" />
     <ClInclude Include="src\pb\pbc\team_server_player_service.h" />
-    <ClInclude Include="src\pb\pbc\team_service.h" />
     <ClInclude Include="src\pb\pbc\server_player_proto\common_server_player.pb.h" />
     <ClInclude Include="src\pb\pbc\server_player_proto\scene_server_player.pb.h" />
     <ClInclude Include="src\pb\pbc\server_player_proto\team_server_player.pb.h" />
     <ClInclude Include="src\pb\pbc\logic_proto\lobby_scene.pb.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\scene.pb.h" />
-    <ClInclude Include="src\pb\pbc\logic_proto\team.pb.h" />
     <ClInclude Include="src\pb\pbc\event_proto\mission_event.pb.h" />
     <ClInclude Include="src\pb\pbc\event_proto\scene_event.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\gs_node_comp.pb.h" />
@@ -271,5 +269,10 @@
     <ClInclude Include="src\pb\pbc\client_player_proto\common_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\client_player_proto\scene_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\client_player_proto\team_client_player.pb.h" />
+    <ClInclude Include="src\pb\pbc\controller_scene_service.h" />
+    <ClInclude Include="src\pb\pbc\logic_proto\game_team.pb.h" />
+    <ClInclude Include="src\pb\pbc\logic_proto\controller_scene.pb.h" />
+    <ClInclude Include="src\pb\pbc\logic_proto\controller_team.pb.h" />
+    <ClInclude Include="src\pb\pbc\logic_proto\game_scene.pb.h" />
   </ItemGroup>
 </Project>

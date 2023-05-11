@@ -308,9 +308,10 @@ func writeServiceHandlerFile() {
 	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
 		methodList := ServiceMethodMap[key]
-		if len(methodList) > 0 {
-			includeData += methodList[0].IncludeName()
+		if len(methodList) <= 0 {
+			continue
 		}
+		includeData += methodList[0].IncludeName()
 		serviceHandlerName := key + "Impl"
 		classHandlerData += "class " + serviceHandlerName + ":public " + key + "{};\n"
 		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceHandlerName + ">());\n"

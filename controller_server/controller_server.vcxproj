@@ -159,6 +159,7 @@
     <ClCompile Include="src\event_handler\mission_event_handler.cpp" />
     <ClCompile Include="src\event_handler\scene_event_handler.cpp" />
     <ClCompile Include="src\handler\common_client_player_handler.cpp" />
+    <ClCompile Include="src\handler\controller_scene_handler.cpp" />
     <ClCompile Include="src\handler\lobby_scene_handler.cpp" />
     <ClCompile Include="src\handler\scene_client_player_handler.cpp" />
     <ClCompile Include="src\handler\team_client_player_handler.cpp" />
@@ -205,6 +206,7 @@
     <ClInclude Include="src\event_handler\mission_event_handler.h" />
     <ClInclude Include="src\event_handler\scene_event_handler.h" />
     <ClInclude Include="src\handler\common_client_player_handler.h" />
+    <ClInclude Include="src\handler\controller_scene_handler.h" />
     <ClInclude Include="src\handler\lobby_scene_handler.h" />
     <ClInclude Include="src\handler\scene_client_player_handler.h" />
     <ClInclude Include="src\handler\team_client_player_handler.h" />
