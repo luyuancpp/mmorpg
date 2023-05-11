@@ -5,9 +5,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/comp/player_list.h"
 #include "src/game_logic/scene/scene.h"
-#include "src/game_logic/scene/servernode_system.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"
@@ -16,8 +14,11 @@
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
 
-#include "component_proto/scene_comp.pb.h"
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnusedParameter"
+#pragma ide diagnostic ignored "UnusedParameter"
+#pragma ide diagnostic ignored "UnusedParameter"
 ///<<< END WRITING YOUR CODE
 void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity player,
 	const ::Gs2ControllerEnterSceneRequest* request,
@@ -36,6 +37,7 @@ void ServerPlayerSceneServiceHandler::EnterSceneGs2Controller(entt::entity playe
 	PlayerSceneSystem::TryEnterNextScene(player);
 ///<<< END WRITING YOUR CODE
 }
+#pragma clang diagnostic pop
 
 void ServerPlayerSceneServiceHandler::EnterSceneController2Gs(entt::entity player,
 	const ::Controller2GsEnterSceneRequest* request,
