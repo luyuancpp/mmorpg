@@ -62,7 +62,7 @@ TEST(MissionsComp, RepeatedMission)
 		AcceptMissionEvent accept_mission_event2;
         accept_mission_event2.set_mission_id(2);
 		EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event1));
-		EXPECT_EQ(kRetMissionIdRepeated, ms.Accept(accept_mission_event2));
+		EXPECT_EQ(kRetMissionTypeRepeated, ms.Accept(accept_mission_event2));
     }
 }
 

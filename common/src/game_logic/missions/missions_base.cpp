@@ -61,18 +61,18 @@ bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress
     return function_compare[operator_id](progress_value, p->amount());
 }
 
-uint32_t MissionsComp::IsDoNotAccepted(uint32_t mission_id)const
+uint32_t MissionsComp::IsUnAccepted(uint32_t mission_id)const
 {
-	if (missions_comp_pb_.missions().find(mission_id) != missions_comp_pb_.missions().end())
+	if (missions_comp_.missions().find(mission_id) != missions_comp_.missions().end())
     {
 		return kRetMissionIdRepeated;
 	}
     return kRetOK;
 }
 
-uint32_t MissionsComp::IsDoNotCompleted(uint32_t mission_id)const
+uint32_t MissionsComp::IsUnCompleted(uint32_t mission_id)const
 {
-	if (missions_comp_pb_.complete_missions().count(mission_id) > 0)//已经完成
+	if (missions_comp_.complete_missions().count(mission_id) > 0)//已经完成
 	{
 		return kRetMissionComplete;
 	}
@@ -99,8 +99,8 @@ uint32_t MissionsComp::GetReward(uint32_t missin_id)
 uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 {
     //check 
-    RET_CHECK_RET(IsDoNotAccepted(accept_event.mission_id()));//已经接受过
-    RET_CHECK_RET(IsDoNotCompleted(accept_event.mission_id()));//已经完成
+    RET_CHECK_RET(IsUnAccepted(accept_event.mission_id()));//已经接受过
+    RET_CHECK_RET(IsUnCompleted(accept_event.mission_id()));//已经完成
     CheckCondition(!mission_config_->HasKey(accept_event.mission_id()), kRetTableId);
 
     auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
@@ -127,7 +127,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
         misison.add_progress(0);
         event_missions_classify_[p->condition_type()].emplace(accept_event.mission_id());
     }
-    missions_comp_pb_.mutable_missions()->insert({ accept_event.mission_id(), std::move(misison) });
+    missions_comp_.mutable_missions()->insert({ accept_event.mission_id(), std::move(misison) });
     if (check_type_repeated)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
@@ -146,26 +146,26 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 
 uint32_t MissionsComp::Abandon(uint32_t mission_id)
 {
-    RET_CHECK_RET(IsDoNotCompleted(mission_id));//已经完成
+    RET_CHECK_RET(IsUnCompleted(mission_id));//已经完成
 	auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr != try_mission_reward)
 	{
         try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
 	}
-    missions_comp_pb_.mutable_missions()->erase(mission_id);
-    missions_comp_pb_.mutable_complete_missions()->erase(mission_id);
-    missions_comp_pb_.mutable_mission_begin_time()->erase(mission_id);
-    DelMissionClassify(mission_id);
+    missions_comp_.mutable_missions()->erase(mission_id);
+    missions_comp_.mutable_complete_missions()->erase(mission_id);
+    missions_comp_.mutable_mission_begin_time()->erase(mission_id);
+    DeleteMissionClassify(mission_id);
     return kRetOK;
 }
 
 void MissionsComp::CompleteAllMission()
 {
-    for (auto& meit : missions_comp_pb_.missions())
+    for (auto& meit : missions_comp_.missions())
     {
-        missions_comp_pb_.mutable_complete_missions()->insert({ meit.first, false });
+        missions_comp_.mutable_complete_missions()->insert({ meit.first, false });
     }
-    missions_comp_pb_.mutable_missions()->clear();
+    missions_comp_.mutable_missions()->clear();
 }
 
 void MissionsComp::Receive(const MissionConditionEvent& condition_event)
@@ -179,14 +179,13 @@ void MissionsComp::Receive(const MissionConditionEvent& condition_event)
     {
         return;
     }
-    auto missions = missions_comp_pb_.mutable_missions();
     UInt32Set temp_complete;
     auto& classify_missions = it->second;//根据事件触发类型分类的任务
     //todo 同步异步事件
     for (auto lit : classify_missions)
     {
-        auto mit = missions->find(lit);
-        if (mit == missions->end())
+        auto mit = missions_comp_.mutable_missions()->find(lit);
+        if (mit == missions_comp_.mutable_missions()->end())
         {
             continue;
         }
@@ -213,13 +212,13 @@ void MissionsComp::Receive(const MissionConditionEvent& condition_event)
         mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
         // to client
         temp_complete.emplace(mission.id());
-        missions->erase(mit);
+        missions_comp_.mutable_missions()->erase(mit);
     }
 
     OnMissionComplete(temp_complete);
 }
 
-void MissionsComp::DelMissionClassify(uint32_t mission_id)
+void MissionsComp::DeleteMissionClassify(uint32_t mission_id)
 {
     auto& config_conditions = mission_config_->condition_id(mission_id);
     for (int32_t i = 0; i < config_conditions.size(); ++i)
@@ -232,8 +231,8 @@ void MissionsComp::DelMissionClassify(uint32_t mission_id)
         event_missions_classify_[condition_row->condition_type()].erase(mission_id);
     }
     auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
-    bool check_type_repeated = mission_sub_type > 0 && tls.registry.any_of<CheckTypeRepeated>(event_owner());
-    if (check_type_repeated)
+    if (mission_sub_type > 0 && 
+        tls.registry.any_of<CheckTypeRepeated>(event_owner()))
     {
 		UInt32PairSet::value_type p(mission_config_->mission_type(mission_id), mission_sub_type);
 		type_filter_.erase(p);
@@ -318,7 +317,7 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
     }
     for (auto& mission_id : completed_missions_this_time)
     {
-        DelMissionClassify(mission_id);        
+        DeleteMissionClassify(mission_id);        
     }
     //处理异步的
     auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
@@ -328,7 +327,7 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
 	mission_condition_event.set_amount(1);
 	for (auto& mission_id : completed_missions_this_time)
 	{
-		missions_comp_pb_.mutable_complete_missions()->insert({ mission_id, true });
+		missions_comp_.mutable_complete_missions()->insert({ mission_id, true });
 		//自动领奖,给经验，为什么发事件？因为给经验升级了会马上接任务，或者触发一些任务的东西,
 		//但是我需要不影响当前任务逻辑流程,也可以马上触发，看情况而定
 		if (mission_config_->reward_id(mission_id) > 0 && mission_config_->auto_reward(mission_id))
