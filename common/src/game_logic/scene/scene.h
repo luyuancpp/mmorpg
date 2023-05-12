@@ -65,7 +65,7 @@ public:
     static std::size_t scenes_size(uint32_t scene_config_id);
     static inline std::size_t scenes_size()  { return scene_list_.size(); }
     static inline std::size_t scenes_map_size()  { return scene_list_.size(); }
-    static void set_server_squence_node_id(uint32_t node_id) { server_sequence_.set_node_id(node_id); }
+    static void set_server_sequence_node_id(uint32_t node_id) { server_sequence_.set_node_id(node_id); }
 
     static entt::entity get_scene(Guid scene_id);
 

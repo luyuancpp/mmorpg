@@ -11,7 +11,7 @@ static const std::size_t kMaxMainScenePlayer = 1000;
 SceneList ScenesSystem::scene_list_;
 ServerSequence24 ScenesSystem::server_sequence_;
 
-void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_squence_node_id(node_id); }
+void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_sequence_node_id(node_id); }
 
 void AddMainSceneNodeComponent(entt::entity server)
 {
@@ -91,13 +91,12 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
     CreateSceneP cp;
     cp.scene_confid_ = param.scene_confid_;
     auto scene = CreateScene(cp);
-	auto server = param.node_;
-    auto try_server_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(server);
+    auto try_server_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.node_);
     if (nullptr != try_server_player_info)
     {
         tls.registry.emplace<GsNodePlayerInfoPtr>(scene, *try_server_player_info);
     }
-	auto& server_scenes = tls.registry.get<ConfigSceneMap>(server);
+	auto& server_scenes = tls.registry.get<ConfigSceneMap>(param.node_);
 	server_scenes.AddScene(tls.registry.get<SceneInfo>(scene).scene_confid(), scene);
     return scene;
 }
@@ -105,42 +104,39 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 {
     // todo 人得换场景
-    auto scene_entity = param.scene_;
-	auto& si = tls.registry.get<SceneInfo>(scene_entity);
+	auto& si = tls.registry.get<SceneInfo>(param.scene_);
 	scene_list_.erase(si.scene_id());
-	tls.registry.destroy(scene_entity);
+	tls.registry.destroy(param.scene_);
 	auto& server_scene = tls.registry.get<ConfigSceneMap>(param.server_);
-	server_scene.RemoveScene(si.scene_confid(), scene_entity);
+	server_scene.RemoveScene(si.scene_confid(), param.scene_);
 }
 
 void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 {
     // todo 人得换场景
-    auto server_entity = param.server_;
-	EntitySet server_scenes;
-	for (auto& it : tls.registry.get<ConfigSceneMap>(server_entity).confid_sceneslist())
+	EntitySet server_scenes_set;
+	for (auto& it : tls.registry.get<ConfigSceneMap>(param.server_).confid_sceneslist())
 	{
 		for (auto& ji : it.second)
 		{
-            server_scenes.emplace(ji);
+            server_scenes_set.emplace(ji);
 		}
 	}
-    DestroySceneParam destroy_param;
-    destroy_param.server_ = server_entity;
-    for (auto& it : server_scenes)
+    DestroySceneParam dp;
+    dp.server_ = param.server_;
+    for (auto& it : server_scenes_set)
     {
-        destroy_param.scene_ = it;
-        DestroyScene(destroy_param);
+        dp.scene_ = it;
+        DestroyScene(dp);
     }
-    tls.registry.destroy(server_entity);
+    tls.registry.destroy(param.server_);
 }
 
 void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param)
 {
-    auto to_server_entity = param.to_server_;
     auto& from_scenes_ids = tls.registry.get<ConfigSceneMap>(param.from_server_).confid_sceneslist();
-    auto& to_scenes_id = tls.registry.get<ConfigSceneMap>(to_server_entity);
-    auto& p_to_server_data = tls.registry.get<GsNodePlayerInfoPtr>(to_server_entity);
+    auto& to_scenes_id = tls.registry.get<ConfigSceneMap>(param.to_server_);
+    auto& p_to_server_data = tls.registry.get<GsNodePlayerInfoPtr>(param.to_server_);
     for (auto& it : from_scenes_ids)
     {
         for (auto& ji : it.second)
@@ -154,17 +150,18 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
 
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
 {
+    //todo weak ptr ?
     if (tls.registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
     {
         return kRetEnterSceneNotFull;
     }
-    auto p_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
-    if (nullptr == p_gs_player_info)
+    auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
+    if (nullptr == try_gs_player_info)
     {
         LOG_ERROR << " gs null";
         return kRetEnterSceneGsInfoNull;
     }
-    if ((*p_gs_player_info)->player_size() >= kMaxServerPlayerSize)
+    if ((*try_gs_player_info)->player_size() >= kMaxServerPlayerSize)
     {
         return kRetEnterSceneGsFull;
     }
@@ -217,10 +214,10 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
     
     tls.registry.get<ScenePlayers>(scene).erase(leaver);
     tls.registry.remove<SceneEntity>(leaver);
-    auto p_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
-    if (nullptr != p_gs_player_info)
+    auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
+    if (nullptr != try_gs_player_info)
     {
-        (*p_gs_player_info)->set_player_size((*p_gs_player_info)->player_size() - 1);
+        (*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() - 1);
     }
     {
         OnLeaveScene on_leave_scene_event;
@@ -231,16 +228,13 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 
 void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 {
-    auto new_server = param.new_server_;
-    auto player = param.player_;
-    auto& new_server_scene = tls.registry.get<ConfigSceneMap>(new_server);
-    auto scene_config_id = param.scene_confid_;
+    auto& new_server_scene = tls.registry.get<ConfigSceneMap>(param.new_server_);
     entt::entity server_scene_enitity = entt::null;
     if (!new_server_scene.HasConfig(param.scene_confid_))
     {
         CreateGsSceneP create_gs_scene_param;
-        create_gs_scene_param.scene_confid_ = scene_config_id;
-        create_gs_scene_param.node_ = new_server;
+        create_gs_scene_param.scene_confid_ = param.scene_confid_;
+        create_gs_scene_param.node_ = param.new_server_;
         server_scene_enitity = CreateScene2Gs(create_gs_scene_param);
     }
     else
@@ -255,11 +249,11 @@ void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
     }
 
     LeaveSceneParam leave_param;
-    leave_param.leaver_ = player;
+    leave_param.leaver_ = param.player_;
     LeaveScene(leave_param);
 
     EnterSceneParam enter_param;
-    enter_param.enterer_ = player;
+    enter_param.enterer_ = param.player_;
     enter_param.scene_ = server_scene_enitity;
     EnterScene(enter_param);
 }
