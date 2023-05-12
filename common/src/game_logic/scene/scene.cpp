@@ -84,7 +84,7 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 	create_by_guid_param.scene_info_.set_scene_confid(param.scene_confid_);
 	create_by_guid_param.scene_info_.set_scene_id(server_sequence_.Generate());
     auto scene = CreateSceneByGuid(create_by_guid_param);
-    if (param.node_ == entt::null )
+    if (param.IsNull())
     {
 		LOG_ERROR << "server id error" << param.scene_confid_;
         return scene;
@@ -102,19 +102,29 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 
 void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 {
+    if (param.IsNull())
+    {
+        LOG_ERROR << "entity null";
+        return;
+    }
     // todo 人得换场景
 	auto& si = tls.registry.get<SceneInfo>(param.scene_);
 	scene_list_.erase(si.scene_id());
 	tls.registry.destroy(param.scene_);
-	auto& server_scene = tls.registry.get<ConfigSceneMap>(param.server_);
+	auto& server_scene = tls.registry.get<ConfigSceneMap>(param.node_);
 	server_scene.RemoveScene(si.scene_confid(), param.scene_);
 }
 
 void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 {
+	if (param.IsNull())
+	{
+		LOG_ERROR << "entity null";
+		return;
+	}
     // todo 人得换场景
 	EntitySet server_scenes_set;
-	for (auto& it : tls.registry.get<ConfigSceneMap>(param.server_).confid_sceneslist())
+	for (auto& it : tls.registry.get<ConfigSceneMap>(param.node_).confid_sceneslist())
 	{
 		for (auto& ji : it.second)
 		{
@@ -122,33 +132,38 @@ void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 		}
 	}
     DestroySceneParam dp;
-    dp.server_ = param.server_;
+    dp.node_ = param.node_;
     for (auto& it : server_scenes_set)
     {
         dp.scene_ = it;
         DestroyScene(dp);
     }
-    tls.registry.destroy(param.server_);
+    tls.registry.destroy(param.node_);
 }
 
 void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param)
 {
-    auto& from_scenes_ids = tls.registry.get<ConfigSceneMap>(param.from_server_).confid_sceneslist();
-    auto& to_scenes_id = tls.registry.get<ConfigSceneMap>(param.to_server_);
-    auto p_to_server_data = tls.registry.try_get<GsNodePlayerInfoPtr>(param.to_server_);
+	if (param.IsNull())
+	{
+		LOG_ERROR << "entity null";
+		return;
+	}
+    auto& from_server_config_scenes_map = tls.registry.get<ConfigSceneMap>(param.from_node_).confid_sceneslist();
+    auto& to_server_config_scenes_map = tls.registry.get<ConfigSceneMap>(param.to_node_);
+    auto p_to_server_data = tls.registry.try_get<GsNodePlayerInfoPtr>(param.to_node_);
     if (nullptr == p_to_server_data)
     {
         return;
     }
-    for (auto& it : from_scenes_ids)
+    for (auto& it : from_server_config_scenes_map)
     {
         for (auto& ji : it.second)
         {
             tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, *p_to_server_data);//todo 人数计算错误,没有加上原来场景的人数
-            to_scenes_id.AddScene(it.first, ji);
+            to_server_config_scenes_map.AddScene(it.first, ji);
         }
     }
-    tls.registry.emplace_or_replace<ConfigSceneMap>(param.from_server_);//todo 如果原来server 还有场景呢
+    tls.registry.emplace_or_replace<ConfigSceneMap>(param.from_node_);//todo 如果原来server 还有场景呢
 }
 
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
@@ -173,9 +188,9 @@ uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
 
 void ScenesSystem::EnterScene(const EnterSceneParam& param)
 {
-    if (param.scene_ == entt::null)
+    if (param.IsNull())
     {
-        LOG_INFO << "enter error" << entt::to_integral(param.enterer_);
+        LOG_INFO << "param null error";
         return;
     }
     {
@@ -201,6 +216,11 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 {
+	if (param.IsNull())
+	{
+		LOG_ERROR << "entity null";
+		return;
+	}
     auto leaver = param.leaver_;
     if (nullptr == tls.registry.try_get<SceneEntity>(leaver))
     {
@@ -231,6 +251,10 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 
 void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 {
+	if (param.IsNull())
+	{
+		return;
+	}
     auto& new_server_scene = tls.registry.get<ConfigSceneMap>(param.new_server_);
     entt::entity server_scene_enitity = entt::null;
     if (!new_server_scene.HasConfig(param.scene_confid_))
@@ -263,10 +287,14 @@ void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 
 void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
 {
+    if (param.IsNull())
+    {
+        return;
+    }
     MoveServerScene2ServerSceneP move_param;
-    move_param.from_server_ = param.cransh_server_;
-    move_param.to_server_ = param.replace_server_;
+    move_param.from_node_ = param.cransh_server_;
+    move_param.to_node_ = param.replace_server_;
     MoveServerScene2ServerScene(move_param);
-    tls.registry.destroy(move_param.from_server_);
+    tls.registry.destroy(move_param.from_node_);
 }
 

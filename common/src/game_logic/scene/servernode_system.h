@@ -14,27 +14,47 @@ struct GetSceneParam
 
 struct ServerPressureParam
 {
+	inline bool IsNull() const
+	{
+		return server_ == entt::null;
+	}
     entt::entity server_{ entt::null };
 };
 
 struct ServerCrashParam
 {
+	inline bool IsNull() const
+	{
+		return crash_server_ == entt::null;
+	}
     entt::entity crash_server_{ entt::null };
 };
 
 struct ReplaceCrashServerParam
 {
+	inline bool IsNull() const
+	{
+		return cransh_server_ == entt::null || replace_server_ == entt::null;
+	}
     entt::entity cransh_server_{ entt::null };
-    entt::entity replace_server_{ entt::null };
+	entt::entity replace_server_{ entt::null };
 };
 
 struct MaintainServerParam
 {
+	inline bool IsNull() const
+	{
+		return maintain_server_ == entt::null;
+	}
     entt::entity maintain_server_{ entt::null };
 };
 
 struct CompelChangeSceneParam
 {
+	inline bool IsNull() const
+	{
+		return player_ == entt::null || new_server_ == entt::null;
+	}
     entt::entity player_{ entt::null };
     entt::entity new_server_{ entt::null };
     uint32_t scene_confid_{0};

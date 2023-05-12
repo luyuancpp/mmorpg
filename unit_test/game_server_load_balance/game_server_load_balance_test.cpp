@@ -87,7 +87,7 @@ TEST(GS, DestroyScene)
     EXPECT_EQ(1, server_scenes.scenes_size());
 
     DestroySceneParam dparam;
-    dparam.server_ = server_entity1;
+    dparam.node_ = server_entity1;
     dparam.scene_ = scene_entity;
     sm.DestroyScene(dparam);
     EXPECT_TRUE(sm.Empty());
@@ -122,7 +122,7 @@ TEST(GS, DestroySever)
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 
     DestroyServerParam destroy_server_param;
-    destroy_server_param.server_ = server_entity1;
+    destroy_server_param.node_ = server_entity1;
     sm.DestroyServer(destroy_server_param);
 
     EXPECT_FALSE(tls.registry.valid(server_entity1));
@@ -135,7 +135,7 @@ TEST(GS, DestroySever)
     EXPECT_EQ(0, sm.scenes_size(server1_param.scene_confid_));
     EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
 
-    destroy_server_param.server_ = server_entity2;
+    destroy_server_param.node_ = server_entity2;
     sm.DestroyServer(destroy_server_param);
 
     EXPECT_EQ(0, sm.scenes_size());
@@ -175,8 +175,8 @@ TEST(GS, ServerScene2Sever)
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 
     MoveServerScene2ServerSceneP move_scene_param;
-    move_scene_param.from_server_ = server_entity1;
-    move_scene_param.to_server_ = server_entity2;
+    move_scene_param.from_node_ = server_entity1;
+    move_scene_param.to_node_ = server_entity2;
     sm.MoveServerScene2ServerScene(move_scene_param);
 
     EXPECT_TRUE(tls.registry.valid(server_entity1));
