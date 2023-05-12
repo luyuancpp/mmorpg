@@ -189,6 +189,37 @@ TEST(MissionsComp, CompleteAcceptMission)
     EXPECT_EQ(kRetMissionComplete, ms.Accept(accept_mission_event));
 }
 
+TEST(MissionsComp, EventTriggerMutableMission)
+{
+    auto& ms = *CreateMission();
+	AcceptMissionEvent accept_mission_event;
+    uint32_t misid1 = 1;
+    uint32_t misid2 = 2;
+	accept_mission_event.set_mission_id(misid1);
+	EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_mission_id(misid2);
+	EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+
+	MissionConditionEvent ce;
+	ce.set_entity(ms);
+	ce.set_type(kConditionKillMonster);
+    ce.set_amount(4);
+    ce.clear_condtion_ids();
+	ce.add_condtion_ids(1);
+    ms.Receive(ce);
+    ce.clear_condtion_ids();
+	ce.add_condtion_ids(2);
+    ms.Receive(ce);
+    ce.clear_condtion_ids();
+	ce.add_condtion_ids(3);
+    ms.Receive(ce);
+    ce.clear_condtion_ids();
+	ce.add_condtion_ids(4);	
+	ms.Receive(ce);
+    EXPECT_TRUE(ms.IsComplete(misid1));
+    EXPECT_TRUE(ms.IsComplete(misid2));
+}
+
 TEST(MissionsComp, OnCompleteMission)
 {
     auto& ms = *CreateMission();

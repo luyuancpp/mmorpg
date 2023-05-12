@@ -207,7 +207,7 @@ void MissionsComp::Receive(const MissionConditionEvent& condition_event)
         }
         if (!is_all_condition_complete)
         {
-            break;
+            continue;
         }
         mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
         // to client
@@ -267,7 +267,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
         //表检测至少有一个condition
         std::size_t config_condition_size = 0;
         std::size_t equal_condition_size = 0;
-        auto calc_equal_condition_size = [&equal_condition_size, &condition_event, &config_condition_size](auto index, const auto& config_conditions)
+        auto calc_equal_condition_size = [&equal_condition_size, &condition_event, &config_condition_size](int32_t index, const auto& config_conditions)
         {
 			if (config_conditions.size() > 0)
 			{
@@ -277,12 +277,14 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
             {
                 return;
             }           
+            //验证条件和表里面的列的列表条件是否有一项匹配
 			for (int32_t ci = 0; ci < config_conditions.size(); ++ci)
 			{
 				if (condition_event.condtion_ids(index) != config_conditions.Get(ci))
 				{
 					continue;
 				}
+                //在这列中有一项匹配
 				++equal_condition_size;
 				break;
 			}
@@ -291,6 +293,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
         calc_equal_condition_size(1, condition_row->condition2());
         calc_equal_condition_size(2, condition_row->condition3());
         calc_equal_condition_size(3, condition_row->condition4());
+        //有效列中的条件列表匹配了
         if (config_condition_size == 0 || equal_condition_size != config_condition_size)
         {
             continue;
