@@ -7,13 +7,14 @@
 template<typename ServerType,typename ServerStatus, typename ServerPressure>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
 {
-    //todo如果最少人数的服务器没有这个场景咋办
     auto scene_confid = param.scene_confid_;
     entt::entity server{ entt::null };
     std::size_t min_server_player_size = UINT64_MAX;
     for (auto e : tls.registry.view<ServerType, ServerStatus, ServerPressure>())
     {
-        if (!tls.registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))//优先判断有没有场景
+        //如果最少人数的服务器没有这个场景咋办
+        //所以优先判断有没有场景
+        if (!tls.registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))
         {
             continue;
         }
@@ -32,7 +33,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     }
     auto& scenes = tls.registry.get<ConfigSceneMap>(server);
     std::size_t min_scene_player_size = UINT64_MAX;
-    auto& server_scenes = scenes.confid_sceneslist(scene_confid);
+    auto& server_scenes = scenes.get_sceneslist_by_config(scene_confid);
     for (auto& ji : server_scenes)
     {
         std::size_t scene_player_size = tls.registry.get<ScenePlayers>(ji).size();
@@ -46,7 +47,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     return scene;
 }
 
-//选择不满人得服务器场景
+//选择不满人的服务器场景
 template<typename ServerType, typename ServerStatus, typename ServerPressure>
 entt::entity GetMainSceneNotFullT(const GetSceneParam& param)
 {
@@ -72,7 +73,7 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param)
 		return scene;
 	}
 	auto& scenes = tls.registry.get<ConfigSceneMap>(server);
-	auto& server_scenes = scenes.confid_sceneslist(scene_config_id);
+	auto& server_scenes = scenes.get_sceneslist_by_config(scene_config_id);
 	for (auto& ji : server_scenes)
 	{
 		std::size_t scene_player_size = tls.registry.get<ScenePlayers>(ji).size();

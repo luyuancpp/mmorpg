@@ -21,7 +21,7 @@ class ConfigSceneMap
 {
 public:
     const Uint32KeyEntitySetValue& confid_sceneslist() const { return confid_scenelist_; }
-    const EntitySet& confid_sceneslist(uint32_t scene_config_id) const 
+    const EntitySet& get_sceneslist_by_config(uint32_t scene_config_id) const 
     {
         auto it = confid_scenelist_.find(scene_config_id);
         if (it == confid_scenelist_.end())
@@ -32,7 +32,7 @@ public:
         return it->second;
     }
 
-    entt::entity scenelist(uint32_t scene_config_id)const
+    entt::entity get_firstscene_by_configid(uint32_t scene_config_id)const
     {
         auto it = confid_scenelist_.find(scene_config_id);
         if (it == confid_scenelist_.end())

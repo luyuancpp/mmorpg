@@ -251,10 +251,6 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 
 void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 {
-	if (param.IsNull())
-	{
-		return;
-	}
     auto& new_server_scene = tls.registry.get<ConfigSceneMap>(param.new_server_);
     entt::entity server_scene_enitity = entt::null;
     if (!new_server_scene.HasConfig(param.scene_confid_))
@@ -266,7 +262,7 @@ void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
     }
     else
     {
-        server_scene_enitity = new_server_scene.scenelist(param.scene_confid_);
+        server_scene_enitity = new_server_scene.get_firstscene_by_configid(param.scene_confid_);
     }
 
     if (entt::null == server_scene_enitity)
