@@ -20,14 +20,15 @@ entt::entity CreateMainSceneNode()
 TEST(GS, CreateMainScene)
 {
     ScenesSystem sm;
-    CreateSceneP param;
-   
+    CreateGsSceneP param;
+    auto server_entity1 = CreateMainSceneNode();
+    param.node_ = server_entity1;
     for (uint32_t i = 0; i < confid_scenelist_size; ++i)
     {
         param.scene_confid_ = i;
         for (uint32_t j = 0; j < per_scene_config_size; ++j)
         {
-            sm.CreateScene(param);
+            sm.CreateScene2Gs(param);
         }
         EXPECT_EQ(sm.scenes_size(i), std::size_t(per_scene_config_size));
     }

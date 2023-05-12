@@ -64,14 +64,6 @@ bool ScenesSystem::HasScene(uint32_t scene_config_id)
 	return false;
 }
 
-entt::entity ScenesSystem::CreateScene(const CreateSceneP& param)
-{
-    CreateSceneBySceneInfoP create_by_guid_param;
-    create_by_guid_param.scene_info_.set_scene_confid(param.scene_confid_);
-    create_by_guid_param.scene_info_.set_scene_id(server_sequence_.Generate());
-    return CreateSceneByGuid(create_by_guid_param);
-}
-
 entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& param)
 {
 	auto e = tls.registry.create();
@@ -88,16 +80,23 @@ entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& para
 
 entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 {
-    CreateSceneP cp;
-    cp.scene_confid_ = param.scene_confid_;
-    auto scene = CreateScene(cp);
-    auto try_server_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.node_);
-    if (nullptr != try_server_player_info)
+	CreateSceneBySceneInfoP create_by_guid_param;
+	create_by_guid_param.scene_info_.set_scene_confid(param.scene_confid_);
+	create_by_guid_param.scene_info_.set_scene_id(server_sequence_.Generate());
+    auto scene = CreateSceneByGuid(create_by_guid_param);
+    if (param.node_ == entt::null )
     {
-        tls.registry.emplace<GsNodePlayerInfoPtr>(scene, *try_server_player_info);
+		LOG_ERROR << "server id error" << param.scene_confid_;
+        return scene;
     }
+	if (auto* try_server_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.node_))
+	{
+		tls.registry.emplace<GsNodePlayerInfoPtr>(scene, *try_server_player_info);
+	}
+
 	auto& server_scenes = tls.registry.get<ConfigSceneMap>(param.node_);
 	server_scenes.AddScene(tls.registry.get<SceneInfo>(scene).scene_confid(), scene);
+    
     return scene;
 }
 
@@ -136,12 +135,16 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
 {
     auto& from_scenes_ids = tls.registry.get<ConfigSceneMap>(param.from_server_).confid_sceneslist();
     auto& to_scenes_id = tls.registry.get<ConfigSceneMap>(param.to_server_);
-    auto& p_to_server_data = tls.registry.get<GsNodePlayerInfoPtr>(param.to_server_);
+    auto p_to_server_data = tls.registry.try_get<GsNodePlayerInfoPtr>(param.to_server_);
+    if (nullptr == p_to_server_data)
+    {
+        return;
+    }
     for (auto& it : from_scenes_ids)
     {
         for (auto& ji : it.second)
         {
-            tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, p_to_server_data);//todo 人数计算错误,没有加上原来场景的人数
+            tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, *p_to_server_data);//todo 人数计算错误,没有加上原来场景的人数
             to_scenes_id.AddScene(it.first, ji);
         }
     }
@@ -184,8 +187,8 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
     //todo gs 只要人数更改
     tls.registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
     tls.registry.emplace<SceneEntity>(param.enterer_, param.scene_);
-	auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.scene_);// todo weak_ptr ?
-	if (nullptr != try_gs_player_info)
+	// todo weak_ptr ?
+	if (auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.scene_))
 	{
         (*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() + 1);
 	}	
@@ -214,8 +217,8 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
     
     tls.registry.get<ScenePlayers>(scene).erase(leaver);
     tls.registry.remove<SceneEntity>(leaver);
-    auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
-    if (nullptr != try_gs_player_info)
+   
+    if (auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene))
     {
         (*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() - 1);
     }

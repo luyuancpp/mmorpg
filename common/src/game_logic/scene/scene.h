@@ -74,7 +74,6 @@ public:
 
     static uint32_t CheckScenePlayerSize(entt::entity scene);
 
-    static entt::entity CreateScene(const CreateSceneP& param);
     static entt::entity CreateSceneByGuid(const CreateSceneBySceneInfoP& param);
     static entt::entity CreateScene2Gs(const CreateGsSceneP& param);
 
