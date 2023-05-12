@@ -24,15 +24,6 @@
     <ClCompile Include="..\..\common\src\game_logic\missions\missions_base.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\game_registry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\mission_config.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\condition_config.pb.cc">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\game_config\condition_config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,27 +36,21 @@
     <ClCompile Include="..\..\common\src\pb\pbc\event_proto\mission_event.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\game_server\src\event_receiver\mission_event_receiver.cpp">
+    <ClCompile Include="..\..\common\src\util\game_registry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\game_config\condition_config.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\game_config\mission_config.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\game_config\mission_config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_base.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\mission_config.pb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\condition_config.pb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\mission_comp.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\constants\mission_constants.h">
@@ -74,7 +59,10 @@
     <ClInclude Include="..\..\common\src\pb\pbc\event_proto\mission_event.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\game_server\src\event_receiver\mission_event_receiver.h">
+    <ClInclude Include="..\..\common\src\pb\pbc\game_config\condition_config.pb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\game_config\mission_config.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
