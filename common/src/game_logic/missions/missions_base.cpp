@@ -241,6 +241,7 @@ void MissionsComp::DeleteMissionClassify(uint32_t mission_id)
 
 bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& condition_event, MissionPbComp& mission)
 {
+    //todo 活跃度减少超
     if (condition_event.condtion_ids().empty())
     {
         return false;
@@ -265,13 +266,13 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
             continue;
         }
         //表检测至少有一个condition
-        std::size_t config_condition_size = 0;
+        std::size_t valid_config_condition_size = 0;
         std::size_t equal_condition_size = 0;
-        auto calc_equal_condition_size = [&equal_condition_size, &condition_event, &config_condition_size](int32_t index, const auto& config_conditions)
+        auto calc_equal_condition_size = [&equal_condition_size, &condition_event, &valid_config_condition_size](int32_t index, const auto& config_conditions)
         {
 			if (config_conditions.size() > 0)
 			{
-				++config_condition_size;
+				++valid_config_condition_size;
 			}
             if (condition_event.condtion_ids().size() <= index)
             {
@@ -294,7 +295,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
         calc_equal_condition_size(2, condition_row->condition3());
         calc_equal_condition_size(3, condition_row->condition4());
         //有效列中的条件列表都匹配了
-        if (config_condition_size == 0 || equal_condition_size != config_condition_size)
+        if (valid_config_condition_size == 0 || equal_condition_size != valid_config_condition_size)
         {
             continue;
         }
