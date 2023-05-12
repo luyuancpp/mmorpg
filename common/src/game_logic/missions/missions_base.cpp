@@ -1,6 +1,4 @@
 #include "missions_base.h"
-
-
 #include "muduo/base/Logging.h"
 
 #include "src/game_config/condition_config.h"
@@ -10,7 +8,6 @@
 #include "src/util/random.h"
 
 #include "event_proto/mission_event.pb.h"
-
 
 static std::vector<std::function<bool(int32_t, int32_t)>> function_compare{
 	{[](int32_t a, int32_t b) {return a >= b; }},
@@ -65,8 +62,8 @@ bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress
 
 uint32_t MissionsComp::IsDoNotAccepted(uint32_t mission_id)const
 {
-	if (missions_comp_pb_.missions().count(mission_id) > 0)//已经接受过
-	{
+	if (missions_comp_pb_.missions().find(mission_id) != missions_comp_pb_.missions().end())
+    {
 		return kRetMissionIdRepeated;
 	}
     return kRetOK;
@@ -137,13 +134,11 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
     }
 
     //todo 
-    auto try_dispatcher = tls.registry.try_get<entt::dispatcher>(event_owner());
-    if (nullptr != try_dispatcher)
     {
         OnAcceptedMissionEvent on_accepted_mission_event;
         on_accepted_mission_event.set_entity(entt::to_integral(event_owner()));
         on_accepted_mission_event.set_mission_id(accept_event.mission_id());
-		try_dispatcher->enqueue(on_accepted_mission_event);
+        tls.dispatcher.enqueue(on_accepted_mission_event);
     }
     return kRetOK;
 }
@@ -325,11 +320,6 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
         DelMissionClassify(mission_id);        
     }
     //处理异步的
-    auto try_dispatcher = tls.registry.try_get<entt::dispatcher>(event_owner());
-	if (nullptr == try_dispatcher)
-	{
-		return;
-	}
 	auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());    
 	MissionConditionEvent mission_condition_event;
 	mission_condition_event.set_entity(entt::to_integral(event_owner()));
@@ -345,7 +335,7 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
 			OnMissionAwardEvent mission_award_event;
             mission_award_event.set_entity(entt::to_integral(event_owner()));
             mission_award_event.set_mission_id(mission_id);
-			try_dispatcher->enqueue(mission_award_event);
+			tls.dispatcher.enqueue(mission_award_event);
 		}
 		else if (nullptr != try_mission_reward && mission_config_->reward_id(mission_id) > 0)
 		{
@@ -359,10 +349,10 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
 		for (int32_t i = 0; i < next_missions.size(); ++i)
 		{
 			accept_mission_event.set_mission_id(next_missions.Get(i));
-			try_dispatcher->enqueue(accept_mission_event);
+            tls.dispatcher.enqueue(accept_mission_event);
 		}
 		mission_condition_event.clear_condtion_ids();
 		mission_condition_event.mutable_condtion_ids()->Add(mission_id);
-		try_dispatcher->enqueue(mission_condition_event);
+        tls.dispatcher.enqueue(mission_condition_event);
 	}
 }

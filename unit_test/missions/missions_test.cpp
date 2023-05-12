@@ -3,24 +3,23 @@
 #include "src/game_config/condition_config.h"
 #include "src/game_config/mission_config.h"
 #include "src/game_logic/constants/mission_constants.h"
-#include "src/game_logic/game_registry.h"
+#include "src/game_logic/missions/missions_base.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/missions/missions_base.h"
-#include "src/event_receiver/mission_event_receiver.h"
+#include "src/event_handler/mission_event_handler.h"
 #include "src/util/random.h"
 #include "src/game_logic/tips_id.h"
 
-#include "comp.pb.h"
+#include "component_proto/mission_comp.pb.h"
 #include "event_proto/mission_event.pb.h"
 
 decltype(auto) CreateMission()
 {
-	auto player = registry.create();
-	auto& ms = registry.emplace<MissionsComp>(player);
+	auto player = tls.registry.create();
+	auto& ms = tls.registry.emplace<MissionsComp>(player);
     ms.set_event_owner(player);
-    registry.emplace<entt::dispatcher>(player);
     ms.Init();	
-    MissionEventReceiver::Register(registry.get<entt::dispatcher>(ms));
+    MissionEventHandler::Register(tls.dispatcher);
     return &ms;
 }
 
@@ -28,7 +27,7 @@ TEST(MissionsComp, AcceptMission)
 {
     uint32_t mid = 1;
     auto& ms = *CreateMission();
-    registry.remove<CheckTypeRepeatd>(ms);
+    tls.registry.remove<CheckTypeRepeated>(ms);
     AcceptMissionEvent accept_mission_event;
     accept_mission_event.set_mission_id(mid);
     auto& data = mission_config::GetSingleton().all();
@@ -63,7 +62,7 @@ TEST(MissionsComp, RepeatedMission)
 		AcceptMissionEvent accept_mission_event2;
         accept_mission_event2.set_mission_id(2);
 		EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event1));
-		EXPECT_EQ(kRetMisionTypeRepeated, ms.Accept(accept_mission_event2));
+		EXPECT_EQ(kRetMissionIdRepeated, ms.Accept(accept_mission_event2));
     }
 }
 
@@ -108,8 +107,7 @@ TEST(MissionsComp, TriggerCondition)
 TEST(MissionsComp, TypeSize)
 {
     auto& ms = *CreateMission();
-	auto& dispatcher = registry.get<entt::dispatcher>(ms);
-	dispatcher.update<AcceptMissionEvent>();
+	tls.dispatcher.update<AcceptMissionEvent>();
     uint32_t mid = 6;
     //auto mrow = mission_config::GetSingleton().get(mid);
 	AcceptMissionEvent accept_mission_event;
@@ -154,12 +152,12 @@ TEST(MissionsComp, TypeSize)
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
 
-	ce.set_type(kConditionInteration);
+	ce.set_type(kConditionInteraction);
 	ce.clear_condtion_ids();
 	ce.add_condtion_ids(1);
     ce.add_condtion_ids(2);
     ms.Receive(ce);
-    dispatcher.update<MissionConditionEvent>();
+    tls.dispatcher.update<MissionConditionEvent>();
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(1, ms.complete_size());
     EXPECT_FALSE(ms.IsAccepted(mid));
@@ -205,23 +203,22 @@ TEST(MissionsComp, OnCompleteMission)
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
     ms.Receive(ce);
-    auto& dispatcher = registry.get<entt::dispatcher>(ms);
-    dispatcher.update<AcceptMissionEvent>();
+    tls.dispatcher.update<AcceptMissionEvent>();
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
 
     auto next_mission = ++mid;
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
-    for (uint32_t i = kConditionKillMonster; i < kConditionInteration; ++i)
+    for (uint32_t i = kConditionKillMonster; i < kConditionInteraction; ++i)
     {
         ce.clear_condtion_ids();
         ce.add_condtion_ids(i);
         ms.Receive(ce);
         EXPECT_FALSE(ms.IsAccepted(mid));
         EXPECT_TRUE(ms.IsComplete(mid));
-        dispatcher.update<AcceptMissionEvent>();
-        EXPECT_EQ(0, dispatcher.size<AcceptMissionEvent>());
+        tls.dispatcher.update<AcceptMissionEvent>();
+        EXPECT_EQ(0, tls.dispatcher.size<AcceptMissionEvent>());
         EXPECT_TRUE(ms.IsAccepted(++mid));
         EXPECT_FALSE(ms.IsComplete(mid));
     }
@@ -230,7 +227,6 @@ TEST(MissionsComp, OnCompleteMission)
 TEST(MissionsComp, AcceptNextMirroMission)
 {
     auto& ms = *CreateMission();
-    auto& dispatcher = registry.get<entt::dispatcher>(ms);
 	uint32_t mid = 7;
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
@@ -245,7 +241,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
 	EXPECT_FALSE(ms.IsAccepted(mid));
 	EXPECT_TRUE(ms.IsComplete(mid));
 	auto next_mission_id = ++mid;
-    dispatcher.update<AcceptMissionEvent>();
+    tls.dispatcher.update<AcceptMissionEvent>();
 	EXPECT_TRUE(ms.IsAccepted(next_mission_id));
 	EXPECT_FALSE(ms.IsComplete(next_mission_id));
 }
@@ -253,8 +249,7 @@ TEST(MissionsComp, AcceptNextMirroMission)
 TEST(MissionsComp, MissionCondition)
 {
     auto& ms = *CreateMission();
-	auto& dispatcher = registry.get<entt::dispatcher>(ms);
-	
+
     uint32_t mid = 14;
     uint32_t mid1 = 15;
     uint32_t mid2 = 16;
@@ -276,8 +271,8 @@ TEST(MissionsComp, MissionCondition)
 	ce.add_condtion_ids(1);
 	ce.set_amount(1);
     ms.Receive(ce);
-    dispatcher.update<AcceptMissionEvent>();
-    dispatcher.update<MissionConditionEvent>();
+    tls.dispatcher.update<AcceptMissionEvent>();
+    tls.dispatcher.update<MissionConditionEvent>();
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
     EXPECT_FALSE(ms.IsAccepted(mid1));
@@ -313,7 +308,7 @@ TEST(MissionsComp, ConditionAmount)
 TEST(MissionsComp, MissionRewardList)
 {
     auto& ms = *CreateMission();
-    registry.emplace<MissionRewardPbComp>(ms);
+    tls.registry.emplace<MissionRewardPbComp>(ms);
 
     uint32_t mid = 12;
 
@@ -350,7 +345,7 @@ TEST(MissionsComp, RemoveMission)
     auto& type_missions = ms.classify_for_unittest();
 
     EXPECT_EQ(1, type_missions.find(kConditionKillMonster)->second.size());
-    registry.emplace_or_replace<MissionRewardPbComp>(ms).mutable_can_reward_mission_id()->insert({ mid, true });
+    tls.registry.emplace_or_replace<MissionRewardPbComp>(ms).mutable_can_reward_mission_id()->insert({ mid, true });
     ms.Abandon(mid);
 
     EXPECT_EQ(0, ms.mission_size());
