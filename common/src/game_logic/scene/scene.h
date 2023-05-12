@@ -10,12 +10,20 @@
 
 struct EnterSceneParam
 {
+    inline bool IsNull() const
+    {
+        return scene_ == entt::null || enterer_ == entt::null;
+    }
 	entt::entity scene_{ entt::null };
 	entt::entity enterer_{ entt::null };
 };
 
 struct LeaveSceneParam
 {
+	inline bool IsNull() const
+	{
+        return leaver_ == entt::null;
+	}
 	entt::entity leaver_{ entt::null };
 };
 
@@ -31,25 +39,41 @@ struct CreateSceneBySceneInfoP
 
 struct CreateGsSceneP
 {
+	inline bool IsNull() const
+	{
+		return node_ == entt::null;
+	}
     entt::entity node_{ entt::null };
     uint32_t scene_confid_{ 0 };
 };
 
 struct MoveServerScene2ServerSceneP
 {
-    entt::entity from_server_{ entt::null };
-    entt::entity to_server_{ entt::null };
+	inline bool IsNull() const
+	{
+		return from_node_ == entt::null || to_node_ == entt::null;
+	}
+    entt::entity from_node_{ entt::null };
+    entt::entity to_node_{ entt::null };
 };
 
 struct DestroySceneParam
 {
+	inline bool IsNull() const
+	{
+		return scene_ == entt::null || node_ == entt::null;
+	}
     entt::entity scene_{ entt::null };
-    entt::entity server_{ entt::null };
+    entt::entity node_{ entt::null };
 };
 
 struct DestroyServerParam
 {
-    entt::entity server_{ entt::null };
+	inline bool IsNull() const
+	{
+		return node_ == entt::null;
+	}
+    entt::entity node_{ entt::null };
 };
 
 void AddMainSceneNodeComponent(entt::entity server);
