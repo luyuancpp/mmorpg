@@ -260,10 +260,11 @@ void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
         create_gs_scene_param.node_ = param.new_server_;
         server_scene_enitity = CreateScene2Gs(create_gs_scene_param);
     }
-    else
-    {
-        server_scene_enitity = new_server_scene.get_firstscene_by_configid(param.scene_confid_);
-    }
+	else
+	{
+        //todo 第一个 场景压力会特别大
+		server_scene_enitity = new_server_scene.get_firstscene_by_configid(param.scene_confid_);
+	}
 
     if (entt::null == server_scene_enitity)
     {
