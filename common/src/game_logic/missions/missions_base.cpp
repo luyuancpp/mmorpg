@@ -8,6 +8,7 @@
 #include "src/util/random.h"
 
 #include "event_proto/mission_event.pb.h"
+#include "component_proto/mission_comp.pb.h"
 
 static std::vector<std::function<bool(int32_t, int32_t)>> function_compare{
 	{[](int32_t a, int32_t b) {return a >= b; }},
@@ -320,7 +321,7 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
         DelMissionClassify(mission_id);        
     }
     //处理异步的
-	auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());    
+    auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	MissionConditionEvent mission_condition_event;
 	mission_condition_event.set_entity(entt::to_integral(event_owner()));
 	mission_condition_event.set_type(kConditionCompleteMission);
