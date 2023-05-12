@@ -277,7 +277,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
             {
                 return;
             }           
-            //验证条件和表里面的列的列表条件是否有一项匹配
+            //验证条件和表里面的每列的多个条件是否有一项匹配
 			for (int32_t ci = 0; ci < config_conditions.size(); ++ci)
 			{
 				if (condition_event.condtion_ids(index) != config_conditions.Get(ci))
@@ -293,7 +293,7 @@ bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& 
         calc_equal_condition_size(1, condition_row->condition2());
         calc_equal_condition_size(2, condition_row->condition3());
         calc_equal_condition_size(3, condition_row->condition4());
-        //有效列中的条件列表匹配了
+        //有效列中的条件列表都匹配了
         if (config_condition_size == 0 || equal_condition_size != config_condition_size)
         {
             continue;
@@ -345,7 +345,7 @@ void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_ti
 			try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });//手动领奖
 		}
 
-		//如果是活动不用走
+		//todo 如果是活动不用走,让活动去接,这里应该是属于主任务系统的逻辑，想想怎么改方便，活动和任务逻辑分开，互不影响
 		AcceptMissionEvent accept_mission_event;
 		accept_mission_event.set_entity(entt::to_integral(event_owner()));
 		auto& next_missions = mission_config_->next_mission_id(mission_id);
