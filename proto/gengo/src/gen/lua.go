@@ -31,7 +31,7 @@ func WriteLoadClientLuaFile() {
 			"#include \"muduo/base/Logging.h\"\n" +
 			"#include \"src/util/file2string.h\"\n" +
 			"#include \"src/game_logic/thread_local/thread_local_storage_lua.h\"\n" +
-			"void InitServiceLua()\n{\n"
+			"void LoadLuaScript()\n{\n"
 		data += config.Tab + "std::string contents;\n"
 		for _, fd := range fds {
 			if !util.IsLuaFile(fd) {
