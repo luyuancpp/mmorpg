@@ -7,7 +7,7 @@
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
-#include "src/handler/login_service.h"
+#include "src/handler/login_service_handler.h"
 
 class LoginServer : muduo::noncopyable, public Receiver<LoginServer>
 {
@@ -44,7 +44,7 @@ private:
 	RpcClientPtr controller_session_;
 	RpcClientPtr db_session_;
 
-	LoginServiceImpl impl_;
+	LoginServiceHandler handler_;
 
 	login_server_db conf_info_;
 	NodeInfo node_info_;

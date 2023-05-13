@@ -15,7 +15,7 @@ LoginServer* g_login_node = nullptr;
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()),
-      impl_()
+      handler_()
 {
 }
 
@@ -42,7 +42,7 @@ void LoginServer::ConnectDeploy()
 
 void LoginServer::Start()
 {
-    server_->registerService(&impl_);
+    server_->registerService(&handler_);
     server_->start();
 }
 

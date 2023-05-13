@@ -24,9 +24,6 @@
     <ClCompile Include="src\comp\account_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\login_service.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\deploy_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,15 +42,15 @@
     <ClCompile Include="src\replied_handler\deploy_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\handler\login_service_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\login_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\comp\account_player.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\login_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\deploy_service_replied.h">
@@ -72,6 +69,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\deploy_service_replied_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\login_service_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\network.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
