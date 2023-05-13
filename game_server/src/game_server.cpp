@@ -38,7 +38,7 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
 void GameServer::Init()
 {
     g_game_node = this; 
-    EventHandler::Register(tls.dispatcher);
+    EventHandler::Register();
     InitConfig();
 	node_info_.set_node_type(kGameNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
