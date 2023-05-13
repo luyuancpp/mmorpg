@@ -375,8 +375,9 @@ failure:
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
+  cached_has_bits = _impl_._has_bits_[0];
   // optional string service_name = 1;
-  if ((_impl_._has_bits_[0] & 0x00000001u) != 0) {
+  if (cached_has_bits & 0x00000001u) {
     const std::string& _s = this->_internal_service_name();
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
         _s.data(), static_cast<int>(_s.length()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE, "muduo.net.ListRpcRequest.service_name");
@@ -384,7 +385,7 @@ failure:
   }
 
   // optional bool list_method = 2;
-  if ((_impl_._has_bits_[0] & 0x00000002u) != 0) {
+  if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
     target = ::_pbi::WireFormatLite::WriteBoolToArray(
         2, this->_internal_list_method(), target);
@@ -556,7 +557,7 @@ const char* ListRpcResponse::_InternalParse(const char* ptr, ::_pbi::ParseContex
       // .muduo.net.ErrorCode error = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 8)) {
-          ::uint32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          ::int32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
           _internal_set_error(static_cast<::muduo::net::ErrorCode>(val));
         } else {
@@ -1030,7 +1031,7 @@ const char* GetServiceResponse::_InternalParse(const char* ptr, ::_pbi::ParseCon
       // .muduo.net.ErrorCode error = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 8)) {
-          ::uint32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          ::int32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
           _internal_set_error(static_cast<::muduo::net::ErrorCode>(val));
         } else {
