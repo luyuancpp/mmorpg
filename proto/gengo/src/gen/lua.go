@@ -109,11 +109,11 @@ func writeClientHandlerDefaultInstanceFile() {
 			continue
 		}
 		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
-		instanceData += config.Tab + "g_player_services.emplace(\"" + method1Info.Service +
+		instanceData += config.Tab + "g_player_service.emplace(\"" + method1Info.Service +
 			"\", std::make_unique<" + method1Info.Service + config.HandlerName + ">());\n"
 	}
 	data += includeData
-	data += "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_player_services;\n"
+	data += "std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_player_service;\n"
 	data += "void InitPlayerService()\n{\n"
 	data += instanceData
 	data += "}"
