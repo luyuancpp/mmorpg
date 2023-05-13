@@ -528,8 +528,8 @@ ListRpcResponse::~ListRpcResponse() {
 
 inline void ListRpcResponse::SharedDtor() {
   ABSL_DCHECK(GetArenaForAllocation() == nullptr);
-  _impl_.service_name_.~RepeatedPtrField();
-  _impl_.method_name_.~RepeatedPtrField();
+  _internal_mutable_service_name()->~RepeatedPtrField();
+  _internal_mutable_method_name()->~RepeatedPtrField();
 }
 
 void ListRpcResponse::SetCachedSize(int size) const {
@@ -542,8 +542,8 @@ void ListRpcResponse::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _impl_.service_name_.Clear();
-  _impl_.method_name_.Clear();
+  _internal_mutable_service_name()->Clear();
+  _internal_mutable_method_name()->Clear();
   _impl_.error_ = 0;
   _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
@@ -665,15 +665,17 @@ failure:
   (void) cached_has_bits;
 
   // repeated string service_name = 2;
-  total_size += 1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(_impl_.service_name_.size());
-  for (int i = 0, n = _impl_.service_name_.size(); i < n; ++i) {
-    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(_impl_.service_name_.Get(i));
+  total_size += 1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(_internal_service_name().size());
+  for (int i = 0, n = _internal_service_name().size(); i < n; ++i) {
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        _internal_service_name().Get(i));
   }
 
   // repeated string method_name = 3;
-  total_size += 1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(_impl_.method_name_.size());
-  for (int i = 0, n = _impl_.method_name_.size(); i < n; ++i) {
-    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(_impl_.method_name_.Get(i));
+  total_size += 1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(_internal_method_name().size());
+  for (int i = 0, n = _internal_method_name().size(); i < n; ++i) {
+    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        _internal_method_name().Get(i));
   }
 
   // .muduo.net.ErrorCode error = 1;
@@ -700,8 +702,8 @@ void ListRpcResponse::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const 
   ::uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
-  _this->_impl_.service_name_.MergeFrom(from._impl_.service_name_);
-  _this->_impl_.method_name_.MergeFrom(from._impl_.method_name_);
+  _this->_internal_mutable_service_name()->MergeFrom(from._internal_service_name());
+  _this->_internal_mutable_method_name()->MergeFrom(from._internal_method_name());
   if (from._internal_error() != 0) {
     _this->_internal_set_error(from._internal_error());
   }
@@ -722,8 +724,10 @@ bool ListRpcResponse::IsInitialized() const {
 void ListRpcResponse::InternalSwap(ListRpcResponse* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  _impl_.service_name_.InternalSwap(&other->_impl_.service_name_);
-  _impl_.method_name_.InternalSwap(&other->_impl_.method_name_);
+  _internal_mutable_service_name()->InternalSwap(
+      other->_internal_mutable_service_name());
+  _internal_mutable_method_name()->InternalSwap(
+      other->_internal_mutable_method_name());
   swap(_impl_.error_, other->_impl_.error_);
 }
 
