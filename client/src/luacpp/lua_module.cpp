@@ -12,7 +12,6 @@ public:
 thread_local uint64_t PlayerId::player_id = 100;
 
 void pb2sol2();
-void InitServiceLua();
 
 void LogInfo(const std::string& s)
 {
@@ -36,6 +35,8 @@ void InitLua()
     tls_lua_state.new_usertype<PlayerId>("PlayerId",
         "player_id",
         sol::var(PlayerId::player_id));
-    InitServiceLua();
+
+    void LoadLuaScript();
+    LoadLuaScript();
 }
 

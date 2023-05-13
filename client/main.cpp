@@ -14,15 +14,14 @@ int main(int argc, char* argv[])
 
     if (argc > 0)
     {
-        InitLua();
         InitService();
 
         void InitPlayerService();
         InitPlayerService();
 
+        
         void InitServiceLua();
-        InitServiceLua();
-
+   
         int32_t nClients = 1;
 
         if (argc > 1)
@@ -30,6 +29,10 @@ int main(int argc, char* argv[])
             nClients = atoi(argv[1]);
         }
         EventLoop loop;
+
+        loop.runInLoop(InitLua);
+        loop.runInLoop(InitServiceLua);
+
         
         gAllFinish = tls.registry.create();
         tls.registry.emplace<uint32_t>(gAllFinish, nClients);

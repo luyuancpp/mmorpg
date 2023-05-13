@@ -6,19 +6,20 @@ end
 function ReadyGo()
 	request = LoginRequest.new()
 	request:ReadyGo()
-	player:send(request)
+	print(LoginServiceLoginMsgId)
+	player:send(LoginServiceLoginMsgId, request)
 end
 
 function Example()
-	responese = TestResponse.new()
-	player = responese:add_players()
+	response = TestResponse.new()
+	player = response:add_players()
 	player.player_id = 1
-	for i=0,responese:players_size() - 1 do
-		p = responese:players(i)
+	for i=0,response:players_size() - 1 do
+		p = response:players(i)
 		print(p.player_id)
 	end
-	responese:mutable_error().error_no = 1
-	print(responese:error().error_no)
+	response:mutable_error().error_no = 1
+	print(response:error().error_no)
 end
 
 function CreatePlayer()

@@ -69,4 +69,4 @@
 69=DeployServiceAcquireLobbyServerInfo
 70=DeployServiceAcquireLobbyInfo
 71=DeployServiceLoginNodeInfo
-72=GameLoginPlayerServiceController2GsEnterGateSucceed
+72=GamePlayerSceneServiceEnterSceneS2C

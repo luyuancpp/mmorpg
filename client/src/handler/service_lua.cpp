@@ -2,7 +2,7 @@
 #include "muduo/base/Logging.h"
 #include "src/util/file2string.h"
 #include "src/game_logic/thread_local/thread_local_storage_lua.h"
-void InitServiceLua()
+void LoadLuaScript()
 {
 	std::string contents;
 	contents = common::File2String("script/lua/service/client.lua");
