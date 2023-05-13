@@ -320,7 +320,7 @@ const char* RpcMessage::_InternalParse(const char* ptr, ::_pbi::ParseContext* ct
       // .muduo.net.MessageType type = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 8)) {
-          ::uint32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          ::int32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
           _internal_set_type(static_cast<::muduo::net::MessageType>(val));
         } else {
@@ -381,7 +381,7 @@ const char* RpcMessage::_InternalParse(const char* ptr, ::_pbi::ParseContext* ct
       // .muduo.net.ErrorCode error = 7;
       case 7:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 56)) {
-          ::uint32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          ::int32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
           CHK_(ptr);
           _internal_set_error(static_cast<::muduo::net::ErrorCode>(val));
         } else {
