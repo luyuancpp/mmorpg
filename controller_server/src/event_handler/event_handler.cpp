@@ -1,13 +1,13 @@
 #include "event_handler.h"
 #include "mission_event_handler.h"
 #include "scene_event_handler.h"
-void EventHandler::Register(entt::dispatcher& dispatcher)
+void EventHandler::Register()
 {
-MissionEventHandler::Register(dispatcher);
-SceneEventHandler::Register(dispatcher);
+MissionEventHandler::Register();
+SceneEventHandler::Register();
 }
-void EventHandler::UnRegister(entt::dispatcher& dispatcher)
+void EventHandler::UnRegister()
 {
-MissionEventHandler::UnRegister(dispatcher);
-SceneEventHandler::UnRegister(dispatcher);
+MissionEventHandler::UnRegister();
+SceneEventHandler::UnRegister();
 }

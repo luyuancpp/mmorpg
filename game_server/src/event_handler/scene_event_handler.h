@@ -10,8 +10,8 @@ class S2CEnterScene;
 class SceneEventHandler
 {
 public:
-	static void Register(entt::dispatcher& dispatcher);
-	static void UnRegister(entt::dispatcher& dispatcher);
+	static void Register();
+	static void UnRegister();
 
 	static void BeforeEnterSceneHandler(const BeforeEnterScene& message);
 	static void OnEnterSceneHandler(const OnEnterScene& message);

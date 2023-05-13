@@ -9,8 +9,8 @@ class OnMissionAwardEvent;
 class MissionEventHandler
 {
 public:
-	static void Register(entt::dispatcher& dispatcher);
-	static void UnRegister(entt::dispatcher& dispatcher);
+	static void Register();
+	static void UnRegister();
 
 	static void AcceptMissionEventHandler(const AcceptMissionEvent& message);
 	static void MissionConditionEventHandler(const MissionConditionEvent& message);
