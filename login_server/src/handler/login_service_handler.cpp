@@ -1,5 +1,6 @@
-#include "login_service.h"
-#include "src/network/rpc_msg_route.h"
+#include "login_service_handler.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE  
 #include "muduo/base/Logging.h"
 
@@ -140,12 +141,10 @@ void EnterGameDbReplied(EnterGameDbRpc replied)
 
 
 ///<<< END WRITING YOUR CODE
-
-///<<<rpc begin
 void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	const ::LoginRequest* request,
 	::LoginResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -165,7 +164,7 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* controller,
 	const ::CreatePlayerC2lRequest* request,
 	::LoginNodeCreatePlayerResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 		// login process
@@ -190,7 +189,7 @@ void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* control
 void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
 	const ::EnterGameC2LRequest* request,
 	::LoginNodeEnterGameResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -235,7 +234,7 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 void LoginServiceHandler::LeaveGame(::google::protobuf::RpcController* controller,
 	const ::LeaveGameC2LRequest* request,
 	::google::protobuf::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	auto sit = sessions_.find(request->session_id());
@@ -255,7 +254,7 @@ void LoginServiceHandler::LeaveGame(::google::protobuf::RpcController* controlle
 void LoginServiceHandler::Disconnect(::google::protobuf::RpcController* controller,
 	const ::LoginNodeDisconnectRequest* request,
 	::google::protobuf::Empty* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 		//比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
@@ -269,7 +268,7 @@ void LoginServiceHandler::Disconnect(::google::protobuf::RpcController* controll
 void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
 	const ::RouteMsgStringRequest* request,
 	::RouteMsgStringResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 
@@ -351,10 +350,9 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 void LoginServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
 	const ::RoutePlayerMsgStringRequest* request,
 	::RoutePlayerMsgStringResponse* response,
-	::google::protobuf::Closure* done)
+	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
 	///<<< END WRITING YOUR CODE
 }
 
-///<<<rpc end
