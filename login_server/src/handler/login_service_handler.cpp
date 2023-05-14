@@ -303,9 +303,11 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << recv_route_data.method();
 		return;
 	}
+	cl_tls.set_current_session_id(request->session_id());
 	//当前节点的真正回复的消息
 	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
+	cl_tls.set_current_session_id(kInvalidSessionId);
 	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
 	if (cl_tls.next_route_node_type() == UINT32_MAX)
@@ -329,11 +331,13 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	{
 	case kControllerNode:
 	{
+		//发送到下个节点
 		g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethod, mutable_request);
 	}
 	break;
 	case kDatabaseNode:
 	{
+		//发送到下个节点
 		g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethod, mutable_request);
 	}
 	break;

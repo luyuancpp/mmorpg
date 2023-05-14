@@ -37,5 +37,6 @@ using UInt32UInt64UnorderedMap = std::unordered_map<uint32_t, uint64_t>;
 using GuidUint64Map = std::unordered_map<Guid, uint64_t>;
 
 static const Guid kInvalidGuid{ UINT64_MAX };
+static const uint64_t kInvalidSessionId{ UINT64_MAX };
 static const uint32_t kInvalidU32Id{ UINT32_MAX };
 
