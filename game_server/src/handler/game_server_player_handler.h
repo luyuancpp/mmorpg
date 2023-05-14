@@ -1,7 +1,7 @@
 #pragma once
 #include "server_player_proto/game_server_player.pb.h"
 #include "player_service.h"
-class GameLoginPlayerServiceHandler : public ::PlayerService
+class GamePlayerServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
@@ -13,7 +13,7 @@ public:
 		const ::Controller2GsLoginRequest* request,
 		::google::protobuf::Empty* response);
 
-	static void Controller2GsEnterGateSucceed(entt::entity player,
+	static void OnControllerEnterGateSucceed(entt::entity player,
 		const ::Controller2GsEnterGateSucceedRequest* request,
 		::google::protobuf::Empty* response);
 
@@ -35,7 +35,7 @@ public:
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		case 2:
-			Controller2GsEnterGateSucceed(player,
+			OnControllerEnterGateSucceed(player,
 			::google::protobuf::internal::DownCast<const Controller2GsEnterGateSucceedRequest*>( request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;

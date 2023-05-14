@@ -586,10 +586,10 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	}
 	//todo find all service 
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto sit = g_service_method_info.find(route_data.service_method_id());
+	auto sit = g_service_method_info.find(route_data.message_id());
 	if (sit == g_service_method_info.end())
 	{
-		LOG_INFO << "service_method_id not found " << route_data.service_method_id();
+		LOG_INFO << "service_method_id not found " << route_data.message_id();
 		return;
 	}
 

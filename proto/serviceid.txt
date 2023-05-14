@@ -4,7 +4,7 @@
 3=DbServiceEnterGame
 4=DbServiceRouteNodeStringMsg
 5=DbServiceRoutePlayerStringMsg
-6=GameLoginPlayerServiceUpdateSessionController2Gs
+6=GamePlayerServiceUpdateSessionController2Gs
 7=ControllerScenePlayerServiceLeaveScene
 8=ControllerScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
 9=GateServiceStartGS
@@ -40,7 +40,7 @@
 40=LoginServiceDisconnect
 41=LoginServiceRouteNodeStringMsg
 42=LoginServiceRoutePlayerStringMsg
-43=GameLoginPlayerServiceController2GsLogin
+43=GamePlayerSceneServiceEnterSceneS2C
 44=ControllerScenePlayerServiceEnterScene
 45=ConstrollerPlayerServiceTest
 46=GamePlayerSceneServiceEnterScene
@@ -69,4 +69,4 @@
 69=DeployServiceAcquireLobbyServerInfo
 70=DeployServiceAcquireLobbyInfo
 71=DeployServiceLoginNodeInfo
-72=GameLoginPlayerServiceController2GsEnterGateSucceed
+72=GamePlayerServiceOnControllerEnterGateSucceed

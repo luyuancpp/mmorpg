@@ -16,9 +16,9 @@ message Controller2GsEnterGateSucceedRequest
 {
 }
 
-service GameLoginPlayerService 
+service GamePlayerService 
 {
   rpc UpdateSessionController2Gs (UpdateSessionController2GsRequest) returns (google.protobuf.Empty);
   rpc Controller2GsLogin (Controller2GsLoginRequest) returns (google.protobuf.Empty);
-  rpc Controller2GsEnterGateSucceed (Controller2GsEnterGateSucceedRequest) returns (google.protobuf.Empty);
+  rpc OnControllerEnterGateSucceed (Controller2GsEnterGateSucceedRequest) returns (google.protobuf.Empty);
 }

@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const msg = "message"
+const msg = "message "
 const begin = "{"
 const end = "}"
 const setName = "::set_"

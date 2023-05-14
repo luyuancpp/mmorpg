@@ -17,7 +17,7 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-void GameLoginPlayerServiceHandler::UpdateSessionController2Gs(entt::entity player,
+void GamePlayerServiceHandler::UpdateSessionController2Gs(entt::entity player,
 	const ::UpdateSessionController2GsRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -42,7 +42,7 @@ void GameLoginPlayerServiceHandler::UpdateSessionController2Gs(entt::entity play
 	///<<< END WRITING YOUR CODE
 }
 
-void GameLoginPlayerServiceHandler::Controller2GsLogin(entt::entity player,
+void GamePlayerServiceHandler::Controller2GsLogin(entt::entity player,
 	const ::Controller2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -55,7 +55,7 @@ void GameLoginPlayerServiceHandler::Controller2GsLogin(entt::entity player,
 	///<<< END WRITING YOUR CODE
 }
 
-void GameLoginPlayerServiceHandler::Controller2GsEnterGateSucceed(entt::entity player,
+void GamePlayerServiceHandler::OnControllerEnterGateSucceed(entt::entity player,
 	const ::Controller2GsEnterGateSucceedRequest* request,
 	::google::protobuf::Empty* response)
 {
