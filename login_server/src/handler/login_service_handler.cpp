@@ -28,7 +28,6 @@ using namespace muduo;
 using namespace muduo::net;
 
 using PlayerPtr = std::shared_ptr<AccountPlayer>;
-using LoginPlayersMap = std::unordered_map<std::string, PlayerPtr>;
 using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
 
 ConnectionEntityMap sessions_;
@@ -85,7 +84,8 @@ void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 	// login process
 	// check account rule: empty , errno
 	// check string rule
-	auto sit = sessions_.find(replied->s_rq_.session_id());
+	auto session_id = cl_tls.session_id();
+	auto sit = sessions_.find(session_id);
 	if (sit == sessions_.end())
 	{
 		replied->c_rp_->mutable_error()->set_id(kRetLoginCreatePlayerConnectionHasNotAccount);
@@ -111,7 +111,7 @@ void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 	// database process
 	auto rpc(std::make_shared<LoginAccountDbRpc::element_type>(*replied));
 	rpc->s_rq_.set_account(replied->s_rq_.account());
-	rpc->s_rq_.set_session_id(replied->s_rq_.session_id());
+	rpc->s_rq_.set_session_id(session_id);
 	//g_login_node->db_node().CallMethodString1(LoginAccountDbReplied, rpc, &dbservice::DbService_Stub::Login);
 }
 

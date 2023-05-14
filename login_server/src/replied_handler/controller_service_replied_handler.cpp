@@ -2,6 +2,16 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
+#include "src/comp/account_player.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
+#include "src/game_logic/tips_id.h"
+#include "src/login_server.h"
+#include "src/util/defer.h"
+
+using PlayerPtr = std::shared_ptr<AccountPlayer>;
+using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
+
+extern ConnectionEntityMap sessions_;
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
@@ -64,6 +74,34 @@ void OnControllerServiceStartLsRepliedHandler(const TcpConnectionPtr& conn, cons
 void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<CtrlLoginAccountResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    auto session_id = cl_tls.session_id();
+    auto sit = sessions_.find(session_id);
+    if (sit == sessions_.end())
+    {
+        replied->mutable_error()->set_id(kRetLoginSessionDisconnect);
+        return;
+    }
+    //has data
+    {
+        auto& player = sit->second;
+        auto ret = player->Login();
+        if (ret != kRetOK)
+        {
+            replied->mutable_error()->set_id(ret);
+            return;
+        }
+        g_login_node->redis_client()->Load(player->account_data(), sit->second->account());
+        if (!player->account_data().password().empty())
+        {
+            replied->mutable_account_player()->CopyFrom(player->account_data());
+            player->OnDbLoaded();
+            return;
+        }
+    }
+    // database process
+    auto rpc(std::make_shared<LoginAccountDbRpc::element_type>(*replied));
+    rpc->s_rq_.set_account(replied->s_rq_.account());
+    rpc->s_rq_.set_session_id(session_id);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -106,6 +144,9 @@ void OnControllerServiceEnterGsSucceedRepliedHandler(const TcpConnectionPtr& con
 void OnControllerServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMsgStringResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	defer(cl_tls.set_current_session_id(kInvalidSessionId));
+	cl_tls.set_current_session_id(replied->session_id());
+
 ///<<< END WRITING YOUR CODE
 }
 

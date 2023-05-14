@@ -17,7 +17,7 @@ message LoginC2LRequest
 
 message LoginNodeLoginResponse
 {
-	Tips error = 1;
+  Tips error = 1;
   account_database account_player = 2;
 }
 

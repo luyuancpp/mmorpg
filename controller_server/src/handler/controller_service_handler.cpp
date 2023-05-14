@@ -296,7 +296,6 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-
 	auto cit = controller_tls.gate_sessions().find(cl_tls.session_id());
 	if (cit == controller_tls.gate_sessions().end())
 	{
@@ -309,7 +308,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	}
 	auto conn = cit->second;
     tls.registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
-    tls.registry.emplace<AccountLoginNode>(conn, AccountLoginNode{request->session_id()});
+    tls.registry.emplace<AccountLoginNode>(conn, AccountLoginNode{ cl_tls.session_id() });
 	//todo 
 	auto lit = login_accounts_session_.find(request->account());
 	if (controller_tls.player_list().size() >= kMaxPlayerSize)
@@ -322,7 +321,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	if (lit != login_accounts_session_.end())
 	{
 		//如果不是同一个登录服务器,踢掉已经登录的账号
-		if (lit->second != request->session_id())
+		if (lit->second != cl_tls.session_id())
 		{
 
 		}
@@ -333,7 +332,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	}
 	else
 	{
-		login_accounts_session_.emplace(request->account(), request->session_id());
+		login_accounts_session_.emplace(request->account(), cl_tls.session_id());
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -634,7 +633,6 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
 	
-
 	auto next_route_data = mutable_request->add_route_data_list();
 	next_route_data->CopyFrom(cl_tls.route_data());
 	next_route_data->mutable_node_info()->CopyFrom(g_controller_node->node_info());
