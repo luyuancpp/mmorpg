@@ -64,7 +64,6 @@ message GateDisconnectRequest
 message CtrlLoginAccountRequest
 {
   string account = 1;
-  uint64 session_id = 2;
 }
 
 message CtrlLoginAccountResponse

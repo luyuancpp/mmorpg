@@ -29,8 +29,6 @@
 #include "src/thread_local/controller_thread_local_storage.h"
 #include "src/util/defer.h"
 
-
-
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "game_service.pb.h"
@@ -299,10 +297,10 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 {
 ///<<< BEGIN WRITING YOUR CODE
 
-	auto cit = controller_tls.gate_sessions().find(request->session_id());
+	auto cit = controller_tls.gate_sessions().find(cl_tls.session_id());
 	if (cit == controller_tls.gate_sessions().end())
 	{
-		cit = controller_tls.gate_sessions().emplace(request->session_id(), EntityPtr()).first;
+		cit = controller_tls.gate_sessions().emplace(cl_tls.session_id(), EntityPtr()).first;
 	}
 	if (cit == controller_tls.gate_sessions().end())
 	{
@@ -574,6 +572,11 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 {
 ///<<< BEGIN WRITING YOUR CODE
 
+    //函数返回前一定会执行的函数
+    defer(cl_tls.set_next_route_node_type(UINT32_MAX));
+    defer(cl_tls.set_next_route_node_id(UINT32_MAX));
+	defer(cl_tls.set_current_session_id(kInvalidSessionId));
+
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
 		LOG_ERROR << "route msg size too max:" << request->DebugString();
@@ -611,9 +614,11 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << route_data.method();
 		return;
 	}
+	cl_tls.set_current_session_id(request->session_id());
 	//当前节点的真正回复的消息
 	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
+	
 	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
 	if (cl_tls.next_route_node_type() == UINT32_MAX)
@@ -629,9 +634,6 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
 	
-	//函数返回前一定会执行的函数
-	defer(cl_tls.set_next_route_node_type(UINT32_MAX));
-	defer(cl_tls.set_next_route_node_id(UINT32_MAX));
 
 	auto next_route_data = mutable_request->add_route_data_list();
 	next_route_data->CopyFrom(cl_tls.route_data());
