@@ -30,7 +30,7 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
         return;
     }
     message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(GameLoginPlayerServiceUpdateSessionController2GsMsgId, message, player);
+    Send2GsPlayer(GamePlayerServiceUpdateSessionController2GsMsgId, message, player);
 
     auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
     if (nullptr != try_enter_gs)
@@ -64,7 +64,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         Controller2GsLoginRequest message;
         message.set_enter_gs_type((*try_enter_gs).enter_gs_type());
         tls.registry.remove<EnterGsFlag>(player);
-        Send2GsPlayer(GameLoginPlayerServiceController2GsLoginMsgId, message, player);
+        Send2GsPlayer(GamePlayerServiceController2GsLoginMsgId, message, player);
     }
    
     //给客户端发所有场景消息

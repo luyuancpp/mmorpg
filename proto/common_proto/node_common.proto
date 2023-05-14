@@ -7,7 +7,7 @@ message RouteData
   string service = 1;
   string method = 2;
   NodeInfo node_info = 3;//当前节点信息
-  uint32 service_method_id = 4;
+  uint32 message_id = 4;
 }
 
 message RouteMsgStringRequest
