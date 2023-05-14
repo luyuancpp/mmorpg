@@ -4,6 +4,8 @@
 //https://zhuanlan.zhihu.com/p/21303431
 //https://github.com/ricab/scope_guard
 
+//go defer
+
 #define DEFER_1(x, y) x##y
 #define DEFER_2(x, y) DEFER_1(x, y)
 #define DEFER_0(x)    DEFER_2(x, __COUNTER__)
