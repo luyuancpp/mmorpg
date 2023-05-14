@@ -18,6 +18,7 @@
 #include "src/pb/pbc/controller_service_service.h"
 #include "src/pb/pbc/database_service_service.h"
 #include "src/pb/pbc/service.h"
+#include "src/util/defer.h"
 
 #include "login_service.pb.h"
 #include "database_service.pb.h"
@@ -154,8 +155,7 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 		//login controller
 	CtrlLoginAccountRequest rq;
 	rq.set_account(request->account());
-	uint64_t session_id = 1;
-	sessions_.emplace(session_id, std::make_shared<PlayerPtr::element_type>());
+	sessions_.emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
 	Route2Node(kControllerNode, rq, ControllerServiceLsLoginAccountMethod);
 	//LoginAccountControllerReplied
 ///<<< END WRITING YOUR CODE
@@ -271,6 +271,9 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
+    defer(cl_tls.set_next_route_node_type(UINT32_MAX));
+    defer(cl_tls.set_next_route_node_id(UINT32_MAX));
+    defer(cl_tls.set_current_session_id(kInvalidSessionId));
 
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
@@ -307,7 +310,7 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	//当前节点的真正回复的消息
 	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
-	cl_tls.set_current_session_id(kInvalidSessionId);
+	
 	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
 	if (cl_tls.next_route_node_type() == UINT32_MAX)
@@ -322,7 +325,6 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
-	cl_tls.set_next_route_node_type(UINT32_MAX);
 	auto send_route_data = mutable_request->add_route_data_list();
 	send_route_data->CopyFrom(cl_tls.route_data());
 	send_route_data->mutable_node_info()->CopyFrom(g_login_node->node_info());
