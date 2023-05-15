@@ -295,7 +295,7 @@ func GetSortServiceList() (ServiceList []string) {
 	return ServiceList
 }
 
-func writeServiceHandlerFile() {
+func writeGlobalServiceInfoFile() {
 	defer util.Wg.Done()
 	var includeData = "#include <unordered_map>\n"
 	includeData += "#include \"service.h\"\n"
@@ -343,7 +343,7 @@ func writeServiceHandlerFile() {
 	Md5WriteData2File(config.ServiceFileName, data)
 }
 
-func writeGsPlayerServiceInstanceFile() {
+func writeGsGlobalPlayerServiceInstanceFile() {
 	defer util.Wg.Done()
 	data := ""
 	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service.h\"\n\n"
@@ -376,7 +376,7 @@ func writeGsPlayerServiceInstanceFile() {
 	Md5WriteData2File(config.GsMethodHandleDir+config.PlayerServiceName, data)
 }
 
-func writeControllerPlayerServiceInstanceFile() {
+func writeControllerGlobalPlayerServiceInstanceFile() {
 	defer util.Wg.Done()
 	data := ""
 	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service.h\"\n\n"
@@ -409,7 +409,7 @@ func writeControllerPlayerServiceInstanceFile() {
 	Md5WriteData2File(config.ControllerMethodHandleDir+config.PlayerServiceName, data)
 }
 
-func writeGsPlayerServiceRepliedInstanceFile() {
+func writeGsGlobalPlayerServiceRepliedInstanceFile() {
 	defer util.Wg.Done()
 	data := ""
 	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service_replied.h\"\n\n"
@@ -423,6 +423,7 @@ func writeGsPlayerServiceRepliedInstanceFile() {
 		}
 		if len(methodList) <= 0 {
 			continue
+
 		}
 		method1Info := methodList[0]
 		if !isGsPlayerRepliedHandler(&methodList) {
@@ -444,7 +445,7 @@ func writeGsPlayerServiceRepliedInstanceFile() {
 	Md5WriteData2File(config.GsMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
 }
 
-func writeControllerPlayerServiceRepliedInstanceFile() {
+func writeControllerGlobalPlayerServiceRepliedInstanceFile() {
 	defer util.Wg.Done()
 	data := ""
 	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service_replied.h\"\n\n"
@@ -481,13 +482,13 @@ func writeControllerPlayerServiceRepliedInstanceFile() {
 
 func WriteServiceHandlerFile() {
 	util.Wg.Add(1)
-	go writeServiceHandlerFile()
+	go writeGlobalServiceInfoFile()
 	util.Wg.Add(1)
-	writeGsPlayerServiceInstanceFile()
+	writeGsGlobalPlayerServiceInstanceFile()
 	util.Wg.Add(1)
-	writeControllerPlayerServiceInstanceFile()
+	writeControllerGlobalPlayerServiceInstanceFile()
 	util.Wg.Add(1)
-	writeGsPlayerServiceRepliedInstanceFile()
+	writeGsGlobalPlayerServiceRepliedInstanceFile()
 	util.Wg.Add(1)
-	writeControllerPlayerServiceRepliedInstanceFile()
+	writeControllerGlobalPlayerServiceRepliedInstanceFile()
 }
