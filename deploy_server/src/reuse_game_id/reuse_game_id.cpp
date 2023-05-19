@@ -1,6 +1,5 @@
 #include "reuse_game_id.h"
 
-
 void ReuseGsId::OnDbLoadComplete()
 {
     for (uint32_t i = 0; i < size(); ++i)

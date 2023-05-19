@@ -69,6 +69,7 @@ message CtrlLoginAccountRequest
 message CtrlLoginAccountResponse
 { 
   Tips error = 1;
+  string account = 2;
 }
 
 message CtrlEnterGameRequest
