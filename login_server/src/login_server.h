@@ -23,7 +23,7 @@ public:
 	inline const NodeInfo& node_info()const { return node_info_; }
 	inline const NodeInfo& database_node_info()const { return database_node_info_; }
 	inline const NodeInfo& controller_node_info()const { return controller_node_info_; }
-
+    inline LoginServiceHandler& login_handler(){return  handler_;}
 	void Init();
 
 	void ConnectDeploy();

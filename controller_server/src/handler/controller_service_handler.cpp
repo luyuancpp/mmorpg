@@ -472,8 +472,8 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "player service  not found " << request->msg().service_method_id();
 		return;
 	}
-	auto& serviceimpl = service_it->second;
-	google::protobuf::Service* service = serviceimpl->service();
+	auto& service_handler = service_it->second;
+	google::protobuf::Service* service = service_handler->service();
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
@@ -484,7 +484,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
 	player_request->ParseFromString(request->msg().body());
 	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
-	serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
+	service_handler->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
 	{
 		return;
@@ -594,13 +594,12 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		LOG_INFO << "service_method_id not found " << route_data.message_id();
 		return;
 	}
-
 	auto it = g_services.find(sit->second.service);
 	if (it == g_services.end())
 	{
 		return;
 	}
-	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(sit->second.method);
+	const google::protobuf::MethodDescriptor* method = it->second->GetDescriptor()->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();
@@ -623,9 +622,9 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	if (cl_tls.next_route_node_type() == UINT32_MAX)
 	{
 		response->set_body(current_node_response->SerializeAsString());
-		for (auto& it : request->route_data_list())
+		for (auto& request_data_it : request->route_data_list())
 		{
-			*response->add_route_data_list() = it;
+			*response->add_route_data_list() = request_data_it;
 		}
 		response->set_session_id(request->session_id());
 		return;
@@ -641,16 +640,16 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	{
 	case kLoginNode:
 	{
-		auto it = controller_tls.login_node().find(cl_tls.next_route_node_id());
-		if (it == controller_tls.login_node().end())
+		auto login_node_it = controller_tls.login_node().find(cl_tls.next_route_node_id());
+		if (login_node_it == controller_tls.login_node().end())
 		{
-			LOG_ERROR << "login not found loginid "  << cl_tls.next_route_node_id() << request->DebugString();
+			LOG_ERROR << "login not found node id "  << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		auto try_login = tls.registry.try_get<LoginNode>(it->second);
+		auto try_login = tls.registry.try_get<LoginNode>(login_node_it->second);
 		if (nullptr == try_login)
 		{
-			LOG_ERROR << "login not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			LOG_ERROR << "login not found node id " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
 		(*try_login).session_.CallMethod(LoginServiceRouteNodeStringMsgMethod, mutable_request);
@@ -663,27 +662,27 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	break;
 	case kGateNode:
 	{
-		auto it = controller_tls.gate_nodes().find(cl_tls.next_route_node_id());
-		if (it == controller_tls.gate_nodes().end())
+		auto gate_it = controller_tls.gate_nodes().find(cl_tls.next_route_node_id());
+		if (gate_it == controller_tls.gate_nodes().end())
 		{
-			LOG_ERROR << "gate not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			LOG_ERROR << "gate not found node id " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		it->second->session_.CallMethod(GateServiceRouteNodeStringMsgMethod, mutable_request);
+        gate_it->second->session_.CallMethod(GateServiceRouteNodeStringMsgMethod, mutable_request);
 	}
 	break;
 	case kGameNode:
 	{
-		auto it = controller_tls.game_node().find(cl_tls.next_route_node_id());
-		if (it == controller_tls.game_node().end())
+		auto controller_it = controller_tls.game_node().find(cl_tls.next_route_node_id());
+		if (controller_it == controller_tls.game_node().end())
 		{
-			LOG_ERROR << "game not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		auto try_game = tls.registry.try_get<GsNodePtr>(it->second);
+		auto try_game = tls.registry.try_get<GsNodePtr>(controller_it->second);
 		if (nullptr == try_game)
 		{
-			LOG_ERROR << "game not found loginid " << cl_tls.next_route_node_id() << request->DebugString();
+			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
 		(*try_game)->session_.CallMethod(GameServiceRouteNodeStringMsgMethod, mutable_request);

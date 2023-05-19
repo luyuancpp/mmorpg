@@ -6,7 +6,13 @@
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 #include "src/login_server.h"
+#include "src/network/node_info.h"
+#include "src/network/route_system.h"
 #include "src/util/defer.h"
+#include "src/pb/pbc/service.h"
+
+#include "src/pb/pbc/common_proto/database_service.pb.h"
+#include "controller_service_service.h"
 
 using PlayerPtr = std::shared_ptr<AccountPlayer>;
 using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
@@ -93,15 +99,18 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
         g_login_node->redis_client()->Load(player->account_data(), sit->second->account());
         if (!player->account_data().password().empty())
         {
-            replied->mutable_account_player()->CopyFrom(player->account_data());
+            LoginNodeLoginResponse message;
+            message.mutable_account_player()->CopyFrom(player->account_data());
             player->OnDbLoaded();
             return;
         }
     }
     // database process
-    auto rpc(std::make_shared<LoginAccountDbRpc::element_type>(*replied));
-    rpc->s_rq_.set_account(replied->s_rq_.account());
-    rpc->s_rq_.set_session_id(session_id);
+    DatabaseNodeLoginRequest rq;
+    rq.set_account(replied->account());
+    rq.set_session_id(session_id);
+
+    Route2Node(kDatabaseNode, rq, ControllerServiceLsLoginAccountMethod);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -147,6 +156,82 @@ void OnControllerServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr&
 	defer(cl_tls.set_current_session_id(kInvalidSessionId));
 	cl_tls.set_current_session_id(replied->session_id());
 
+    //函数返回前一定会执行的函数
+    defer(cl_tls.set_next_route_node_type(UINT32_MAX));
+    defer(cl_tls.set_next_route_node_id(UINT32_MAX));
+    defer(cl_tls.set_current_session_id(kInvalidSessionId));
+    if (replied->route_data_list_size() <= 0)
+    {
+        LOG_ERROR << "msg list empty:" << replied->DebugString();
+        return;
+    }
+    //todo find all service
+    auto& route_data = replied->route_data_list(replied->route_data_list_size() - 1);
+    auto sit = g_service_method_info.find(route_data.message_id());
+    if (sit == g_service_method_info.end())
+    {
+        LOG_INFO << "service_method_id not found " << route_data.message_id();
+        return;
+    }
+    const google::protobuf::MethodDescriptor* method = g_login_node->login_handler().GetDescriptor()->FindMethodByName(sit->second.method);
+    if (nullptr == method)
+    {
+        LOG_ERROR << "method not found" << replied->DebugString() << "method name" << route_data.method();
+        return;
+    }
+    //当前节点的请求信息
+    std::shared_ptr<google::protobuf::Message> current_node_response(g_login_node->login_handler().GetResponsePrototype(method).New());
+    if (!current_node_response->ParseFromString(replied->body()))
+    {
+        LOG_ERROR << "invalid  body response" << replied->DebugString() << "method name" << route_data.method();
+        return;
+    }
+    cl_tls.set_current_session_id(replied->session_id());
+    //当前节点的真正回复的消息
+    g_response_dispatcher.onProtobufMessage(conn, current_node_response, timestamp);
+
+    auto mutable_replied = const_cast<::RouteMsgStringResponse*>(replied.get());
+    //没有发送到下个节点就是要回复了
+    if (cl_tls.next_route_node_type() == UINT32_MAX)
+    {
+        mutable_replied->set_body(current_node_response->SerializeAsString());
+        for (auto& it : mutable_replied->route_data_list())
+        {
+            *mutable_replied->add_route_data_list() = it;
+        }
+        mutable_replied->set_session_id(mutable_replied->session_id());
+        return;
+    }
+    //处理,如果需要继续路由则拿到当前节点信息
+    //需要发送到下个节点
+
+    auto next_route_data = mutable_replied->add_route_data_list();
+    next_route_data->CopyFrom(cl_tls.route_data());
+    next_route_data->mutable_node_info()->CopyFrom(g_login_node->node_info());
+    mutable_replied->set_body(cl_tls.route_msg_body());
+    switch (cl_tls.next_route_node_type())
+    {
+        case kLoginNode:
+        {
+
+        }
+            break;
+        case kDatabaseNode:
+        {
+        }
+            break;
+        case kGateNode:
+        {
+
+        }
+        break;
+
+        default:
+        {
+            LOG_ERROR << "route to next node type error " << replied->DebugString() << "," << cl_tls.next_route_node_type();
+        }
+        break;
+    }
 ///<<< END WRITING YOUR CODE
 }
 

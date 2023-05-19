@@ -20,6 +20,7 @@ namespace _pb = ::PROTOBUF_NAMESPACE_ID;
 namespace _pbi = ::PROTOBUF_NAMESPACE_ID::internal;
 namespace muduo {
 namespace net {
+template <typename>
 PROTOBUF_CONSTEXPR RpcMessage::RpcMessage(
     ::_pbi::ConstantInitialized): _impl_{
     /*decltype(_impl_.service_)*/ {

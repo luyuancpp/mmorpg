@@ -284,24 +284,24 @@ void LoginServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		return;
 	}
 	//当前节点收到的数据
-	auto& recv_route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto sit = g_service_method_info.find(recv_route_data.service_method_id());
+	auto& next_route_data = request->route_data_list(request->route_data_list_size() - 1);
+	auto sit = g_service_method_info.find(next_route_data.service_method_id());
 	if (sit == g_service_method_info.end())
 	{
-		LOG_INFO << "service_method_id not found " << recv_route_data.service_method_id();
+		LOG_INFO << "service_method_id not found " << next_route_data.service_method_id();
 		return;
 	}
 	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found" << request->DebugString() << "method name" << recv_route_data.method();
+		LOG_ERROR << "method not found" << request->DebugString() << "method name" << next_route_data.method();
 		return;
 	}
 	//当前节点的请求信息
 	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
 	if (!current_node_request->ParseFromString(request->body()))
 	{
-		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << recv_route_data.method();
+		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << next_route_data.method();
 		return;
 	}
 	//当前节点的真正回复的消息
