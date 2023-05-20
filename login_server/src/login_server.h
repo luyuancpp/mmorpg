@@ -33,6 +33,7 @@ public:
 	void StartServer(const ::servers_info_data& info);
 
 	void receive(const OnConnected2ServerEvent& es);
+	void receive(const OnBeConnectedEvent& es);
 
 private:
 	muduo::net::EventLoop* loop_{ nullptr };

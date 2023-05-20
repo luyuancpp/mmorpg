@@ -33,9 +33,6 @@
     <ClCompile Include="src\network\route_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_local\login_thread_local_storage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\replied_handler\controller_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -43,6 +40,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\login_service_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread_local\login_thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,9 +62,6 @@
     <ClInclude Include="src\network\route_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_local\login_thread_local_storage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\replied_handler\controller_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -75,6 +72,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\message_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thread_local\login_thread_local_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

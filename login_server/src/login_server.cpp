@@ -1,8 +1,12 @@
 #include "login_server.h"
 
 #include "src/game_config/deploy_json.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/network/server_component.h"
 #include "src/network/rpc_connection_event.h"
+#include "src/network/gate_node.h"
 #include "src/network/node_info.h"
+#include "src/thread_local/login_thread_local_storage.h"
 #include "src/pb/pbc/service.h"
 #include "src/pb/pbc/deploy_service_service.h"
 #include "src/handler/replied_dispathcer.h"
@@ -89,4 +93,37 @@ void LoginServer::receive(const OnConnected2ServerEvent& es)
     ServerInfoRequest rq;
     rq.set_group(GameConfig::GetSingleton().config_info().group_id());
     deploy_session_->CallMethod(DeployServiceServerInfoMethod, &rq);
+}
+
+
+void LoginServer::receive(const OnBeConnectedEvent& es)
+{
+	auto& conn = es.conn_;
+	if (conn->connected())
+	{
+		auto e = tls.registry.create();
+		tls.registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+	}
+	else
+	{
+		auto& peer_addr = conn->peerAddress();
+		for (auto e : tls.registry.view<RpcServerConnection>())
+		{
+			auto& local_addr = tls.registry.get<RpcServerConnection>(e).conn_->peerAddress();
+			if (local_addr.toIpPort() != peer_addr.toIpPort())
+			{
+				continue;
+			}
+
+			auto gatenode = tls.registry.try_get<GateNodePtr>(e);
+			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
+			{
+				//todo
+                login_tls.gate_nodes().erase((*gatenode)->node_info_.node_id());
+			}
+
+			tls.registry.destroy(e);
+			break;
+		}
+	}
 }
