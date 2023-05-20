@@ -38,5 +38,10 @@ public:
 		::RoutePlayerMsgStringResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
+	void GateConnect(::google::protobuf::RpcController* controller,
+		const ::GateConnectRequest* request,
+		::google::protobuf::Empty* response,
+		 ::google::protobuf::Closure* done)override;
+
 };
 

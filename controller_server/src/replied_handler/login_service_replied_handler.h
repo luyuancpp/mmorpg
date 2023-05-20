@@ -17,3 +17,5 @@ void OnLoginServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn
 
 void OnLoginServiceRoutePlayerStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RoutePlayerMsgStringResponse>& replied, Timestamp timestamp);
 
+void OnLoginServiceGateConnectRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<google::protobuf::Empty>& replied, Timestamp timestamp);
+
