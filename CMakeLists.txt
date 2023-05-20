@@ -12,8 +12,7 @@ if(NOT CMAKE_VS_PLATFORM_NAME)
 endif()
 message("${CMAKE_VS_PLATFORM_NAME} architecture in use")
 
-if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64"
-     OR "${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86"))
+if(NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64"))
     message(FATAL_ERROR "${CMAKE_VS_PLATFORM_NAME} arch is not supported!")
 endif()
 
@@ -31,9 +30,11 @@ set(CMAKE_CONFIGURATION_TYPES
 ################################################################################
 if(MSVC)
     # remove default flags provided with CMake for MSVC
-    set(CMAKE_CXX_FLAGS "")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++20")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MDd")
     set(CMAKE_CXX_FLAGS_DEBUG "")
     set(CMAKE_CXX_FLAGS_RELEASE "")
+	add_compile_options(/wd4146)
 endif()
 
 ################################################################################
