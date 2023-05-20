@@ -27,6 +27,7 @@ set(Source_Files
     "src/network/route_system.cpp"
     "src/replied_handler/controller_service_replied_handler.cpp"
     "src/replied_handler/deploy_service_replied_handler.cpp"
+    "src/replied_handler/route_message_replied_handler.cpp"
     "src/thread_local/login_thread_local_storage.cpp"
 )
 source_group("Source Files" FILES ${Source_Files})
