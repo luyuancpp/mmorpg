@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gate_node.h"
+#include "src/network/gate_node.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/util/game_registry.h"
 #include "src/network/gs_node.h"

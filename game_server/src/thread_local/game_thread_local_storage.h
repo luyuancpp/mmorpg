@@ -10,6 +10,7 @@
 
 using PlayerDataRedisSystemPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 using PlayerEntityPtrList = std::unordered_map<uint64_t, EntityPtr>;
+using GateSessionList = std::unordered_map<uint64_t, entt::entity>;
 
 class GameThreadLocalStorage
 {

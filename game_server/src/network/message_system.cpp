@@ -127,7 +127,6 @@ void Send2Gate(uint32_t service_method_id, const google::protobuf::Message& mess
 		LOG_ERROR << "Send2Gate gate not found" << gate_node_id;
 		return;
 	}
-	auto& gate_node = tls.registry.get<GateNodePtr>(gate_it->second);
-	gate_node->session_.Send(GateServicePlayerMessageMethod, messag);
+	gate_it->second->session_.Send(GateServicePlayerMessageMethod, messag);
 }
 

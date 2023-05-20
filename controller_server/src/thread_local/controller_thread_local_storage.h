@@ -7,7 +7,6 @@
 
 using PlayerListMap = std::unordered_map<Guid, EntityPtr>;
 using GateSessionList = std::unordered_map<uint64_t, EntityPtr>;
-using GateNodes = std::unordered_map<uint32_t, GateNodePtr>;
 
 class ControllerThreadLocalStorage
 {

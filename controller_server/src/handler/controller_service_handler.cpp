@@ -174,8 +174,7 @@ void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* co
 	for (auto e : tls.registry.view<RpcServerConnection>())
 	{
 		auto c = tls.registry.get<RpcServerConnection>(e);
-		auto& local_addr = c.conn_->peerAddress();
-		if (local_addr.toIpPort() != session_addr.toIpPort())
+		if (c.conn_->peerAddress().toIpPort() != session_addr.toIpPort())
 		{
 			continue;
 		}
@@ -186,6 +185,10 @@ void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* co
 		gate_node->entity_id_ = e;
 		controller_tls.gate_nodes().emplace(request->gate_node_id(), gate_node);
 		break;
+	}
+	if (entt::null == gate)
+	{
+		return;
 	}
 	tls.registry.emplace<InetAddress>(gate, session_addr);
 	for (auto e : tls.registry.view<GsNodePtr>())
