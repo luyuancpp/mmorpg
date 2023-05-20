@@ -20,7 +20,6 @@ set(Header_Files
     "src/handler/scene_client_player_handler.h"
     "src/handler/team_client_player_handler.h"
     "src/network/controller_node.h"
-    "src/network/gate_node.h"
     "src/network/message_system.h"
     "src/replied_handler/common_client_player_replied_handler.h"
     "src/replied_handler/controller_common_server_player_replied_handler.h"
@@ -60,7 +59,6 @@ set(Source_Files
     "src/handler/scene_client_player_handler.cpp"
     "src/handler/team_client_player_handler.cpp"
     "src/network/controller_node.cpp"
-    "src/network/gate_node.cpp"
     "src/network/message_system.cpp"
     "src/replied_handler/common_client_player_replied_handler.cpp"
     "src/replied_handler/controller_common_server_player_replied_handler.cpp"
@@ -116,7 +114,14 @@ endif()
 # MSVC runtime library
 ################################################################################
 get_property(MSVC_RUNTIME_LIBRARY_DEFAULT TARGET ${PROJECT_NAME} PROPERTY MSVC_RUNTIME_LIBRARY)
-if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
+if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
+    string(CONCAT "MSVC_RUNTIME_LIBRARY_STR"
+        $<$<CONFIG:Debug>:
+            MultiThreadedDebugDLL
+        >
+        $<$<NOT:$<OR:$<CONFIG:Debug>>>:${MSVC_RUNTIME_LIBRARY_DEFAULT}>
+    )
+elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
     string(CONCAT "MSVC_RUNTIME_LIBRARY_STR"
         $<$<CONFIG:Debug>:
             MultiThreadedDebugDLL
@@ -127,6 +132,7 @@ if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
         $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:Release>>>:${MSVC_RUNTIME_LIBRARY_DEFAULT}>
     )
 endif()
+set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY ${MSVC_RUNTIME_LIBRARY_STR})
 
 ################################################################################
 # Include directories
@@ -202,7 +208,10 @@ if(MSVC)
     if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
         target_compile_options(${PROJECT_NAME} PRIVATE
             $<$<CONFIG:Debug>:
+                /permissive-;
                 /MP;
+                /sdl;
+                /W3;
                 /WX;
                 /wd4200;
                 /wd4819;
@@ -225,9 +234,13 @@ if(MSVC)
     if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
         target_link_options(${PROJECT_NAME} PRIVATE
             $<$<CONFIG:Debug>:
-                /MANIFEST:NO
+                /MANIFEST:NO;
+                /DEBUG;
+                /SUBSYSTEM:CONSOLE
             >
-            /DEBUG:FULL
+            $<$<CONFIG:Release>:
+                /DEBUG:FULL
+            >
         )
     elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
         target_link_options(${PROJECT_NAME} PRIVATE
