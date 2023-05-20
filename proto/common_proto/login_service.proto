@@ -6,6 +6,7 @@ import "common_proto/common.proto";
 import "common_proto/c2gate.proto";
 import "common_proto/mysql_database_table.proto";
 import "common_proto/node_common.proto";
+import "common_proto/common_message.proto";
 
 option cc_generic_services = true;
 
@@ -68,4 +69,5 @@ service LoginService {
   rpc Disconnect (LoginNodeDisconnectRequest) returns (google.protobuf.Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+  rpc GateConnect (GateConnectRequest) returns (google.protobuf.Empty);
 }

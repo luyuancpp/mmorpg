@@ -362,3 +362,12 @@ void LoginServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController
 	///<<< END WRITING YOUR CODE
 }
 
+void LoginServiceHandler::GateConnect(::google::protobuf::RpcController* controller,
+	const ::GateConnectRequest* request,
+	::google::protobuf::Empty* response,
+	 ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+
