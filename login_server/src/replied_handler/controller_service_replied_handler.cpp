@@ -8,11 +8,13 @@
 #include "src/login_server.h"
 #include "src/network/node_info.h"
 #include "src/network/route_system.h"
+#include "src/thread_local/login_thread_local_storage.h"
 #include "src/util/defer.h"
 #include "src/pb/pbc/service.h"
 
 #include "src/pb/pbc/common_proto/database_service.pb.h"
 #include "controller_service_service.h"
+#include "gate_service_service.h"
 
 using PlayerPtr = std::shared_ptr<AccountPlayer>;
 using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
@@ -209,11 +211,19 @@ void OnControllerServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr&
         break;
         case kDatabaseNode:
         {
+
         }
         break;
         case kGateNode:
         {
             //todo test 节点不存在了消息会不会存留
+            auto gate_it = login_tls.gate_nodes().find(cl_tls.next_route_node_id());
+            if (gate_it == login_tls.gate_nodes().end())
+            {
+                LOG_ERROR << "gate not found node id " << cl_tls.next_route_node_id() << replied->DebugString();
+                return;
+            }
+            gate_it->second->session_.CallMethod(GateServiceRouteNodeStringMsgMethod, mutable_replied);
         }
         break;
 
