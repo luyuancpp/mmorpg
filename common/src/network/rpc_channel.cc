@@ -112,7 +112,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
                               Timestamp receiveTime)
 {
   assert(conn == conn_);
-  //printf("%s\n", message.DebugString().c_str());
+
   RpcMessage& message = *messagePtr;
   if (message.type() == RESPONSE)
   {
