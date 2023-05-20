@@ -102,9 +102,11 @@ const ClientMethodHandleDir = ProjectDir + ClientName + HandlerDirName
 
 const GateMethodHandleDir = ProjectDir + GateName + HandlerDirName
 const GateMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
+const GatePrefixName = "gate"
 
 const LoginMethodHandleDir = ProjectDir + LoginName + HandlerDirName
 const LoginMethodRepliedHandleDir = ProjectDir + LoginName + RepliedHandlerDirName
+const LoginPrefixName = "login"
 
 const ClientLuaProjectRelative = "script/lua/service/"
 const ClientLuaDir = ProjectDir + "bin/" + ClientLuaProjectRelative
