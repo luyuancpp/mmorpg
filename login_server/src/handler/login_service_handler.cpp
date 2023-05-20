@@ -10,9 +10,12 @@
 #include "src/game_logic/tips_id.h"
 #include "src/login_server.h"
 #include "src/comp/account_player.h"
+#include "src/thread_local/login_thread_local_storage.h"
+#include "src/network/gate_node.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_client.h"
 #include "src/network/route_system.h"
+#include "src/network/server_component.h"
 #include "src/network/node_info.h"
 #include "src/redis_client/redis_client.h"
 #include "src/pb/pbc/controller_service_service.h"
@@ -368,7 +371,29 @@ void LoginServiceHandler::GateConnect(::google::protobuf::RpcController* control
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
- 
+ 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
+	entt::entity gate{ entt::null };
+	for (auto e : tls.registry.view<RpcServerConnection>())
+	{
+		auto c = tls.registry.get<RpcServerConnection>(e);
+		if (c.conn_->peerAddress().toIpPort() != session_addr.toIpPort())
+		{
+			continue;
+		}
+		gate = e;
+		auto& gate_node = tls.registry.emplace<GateNodePtr>(gate, std::make_shared<GateNodePtr::element_type>(c.conn_));
+		gate_node->node_info_.set_node_id(request->gate_node_id());
+		gate_node->node_info_.set_node_type(kGateNode);
+		gate_node->entity_id_ = e;
+		login_tls.gate_nodes().emplace(request->gate_node_id(), gate_node);
+		break;
+	}
+	if (entt::null == gate)
+	{
+		return;
+	}
+	tls.registry.emplace<InetAddress>(gate, session_addr);
+
 ///<<< END WRITING YOUR CODE
 }
 
