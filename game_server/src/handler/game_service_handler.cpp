@@ -180,10 +180,10 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
         {
             continue;
         }
-        auto& gate_node = *tls.registry.emplace<GateNodePtr>(e, std::make_shared<GateNodePtr::element_type>(conn));
-        gate_node.node_info_.set_node_id(request->gate_node_id());
-        gate_node.node_info_.set_node_type(kGateNode);
-        game_tls.gate_node().emplace(request->gate_node_id(), e);
+        auto gate_node = std::make_shared<GateNodePtr::element_type>(conn);
+        gate_node->node_info_.set_node_id(request->gate_node_id());
+        gate_node->node_info_.set_node_type(kGateNode);
+        game_tls.gate_node().emplace(request->gate_node_id(), gate_node);
         LOG_INFO << "GateConnectGs gate node id " << request->gate_node_id();
         break;
     }

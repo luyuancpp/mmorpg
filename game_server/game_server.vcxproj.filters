@@ -21,9 +21,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\gate_node.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\network\message_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -129,9 +126,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\network\gate_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\message_system.h">

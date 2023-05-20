@@ -327,6 +327,7 @@
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
     <ClInclude Include="src\game_logic\comp\player_comp.h" />
     <ClInclude Include="src\game_logic\comp\scene_comp.h" />
+    <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\pb\pbc\client_player_proto\common_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\client_player_proto\scene_client_player.pb.h" />
     <ClInclude Include="src\pb\pbc\client_player_proto\team_client_player.pb.h" />

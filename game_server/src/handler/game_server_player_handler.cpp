@@ -30,15 +30,9 @@ void GamePlayerServiceHandler::UpdateSessionController2Gs(entt::entity player,
 		LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
 		return;
 	}
-	auto p_gate = tls.registry.try_get<GateNodePtr>(gate_it->second);
-	if (nullptr == p_gate)
-	{
-		LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
-		return;
-	}
 	game_tls.gate_sessions().emplace(request->session_id(), player);
 	tls.registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//登录更新gate
-	tls.registry.emplace_or_replace<GateNodeWPtr>(player, *p_gate);
+	tls.registry.emplace_or_replace<GateNodeWPtr>(player, gate_it->second);
 	///<<< END WRITING YOUR CODE
 }
 

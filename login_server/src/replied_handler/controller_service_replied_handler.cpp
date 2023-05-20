@@ -191,38 +191,29 @@ void OnControllerServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr&
     g_response_dispatcher.onProtobufMessage(conn, current_node_response, timestamp);
 
     auto mutable_replied = const_cast<::RouteMsgStringResponse*>(replied.get());
-    //没有发送到下个节点就是要回复了
-    if (cl_tls.next_route_node_type() == UINT32_MAX)
+    mutable_replied->mutable_route_data_list()->RemoveLast();
+    //已经是最后一个节点了
+    if (mutable_replied->route_data_list_size() <= 0)
     {
-        mutable_replied->set_body(current_node_response->SerializeAsString());
-        for (auto& it : mutable_replied->route_data_list())
-        {
-            *mutable_replied->add_route_data_list() = it;
-        }
-        mutable_replied->set_session_id(mutable_replied->session_id());
         return;
     }
-    //处理,如果需要继续路由则拿到当前节点信息
-    //需要发送到下个节点
-
-    auto next_route_data = mutable_replied->add_route_data_list();
-    next_route_data->CopyFrom(cl_tls.route_data());
-    next_route_data->mutable_node_info()->CopyFrom(g_login_node->node_info());
+    //需要回复到前个节点
+    auto prev_route_data = replied->route_data_list(replied->route_data_list_size() - 1);
     mutable_replied->set_body(cl_tls.route_msg_body());
     switch (cl_tls.next_route_node_type())
     {
-        case kLoginNode:
+        case kControllerNode:
         {
 
         }
-            break;
+        break;
         case kDatabaseNode:
         {
         }
-            break;
+        break;
         case kGateNode:
         {
-
+            //todo test 节点不存在了消息会不会存留
         }
         break;
 
