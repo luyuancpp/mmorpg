@@ -98,6 +98,7 @@
     <ClCompile Include="src\handler\replied_dispathcer.cpp" />
     <ClCompile Include="src\replied_handler\controller_service_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\deploy_service_replied_handler.cpp" />
+    <ClCompile Include="src\replied_handler\route_message_replied_handler.cpp" />
     <ClCompile Include="src\thread_local\login_thread_local_storage.cpp" />
   </ItemGroup>
   <ItemGroup>

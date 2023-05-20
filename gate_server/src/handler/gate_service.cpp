@@ -72,7 +72,7 @@ void GateServiceImpl::PlayerEnterGs(::google::protobuf::RpcController* controlle
 	auto it = gate_tls.sessions().find(request->session_id());
 	if (it == gate_tls.sessions().end())
 	{
-		LOG_INFO << "connid not found   " << request->session_id();
+		LOG_INFO << "conn id not found   " << request->session_id();
 		return;
 	}
 	it->second.gs_node_id_ = request->gs_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
@@ -90,7 +90,7 @@ void GateServiceImpl::PlayerMessage(::google::protobuf::RpcController* controlle
 	auto it = gate_tls.sessions().find(session_id);
 	if (it == gate_tls.sessions().end())
 	{
-		LOG_ERROR << "connid not found  player id " << request->ex().player_id() << "," << session_id;
+		LOG_ERROR << "conn id not found  player id " << request->ex().player_id() << "," << session_id;
 		return;
 	}
 	g_gate_node->Send2Client(it->second.conn_, request->msg());
@@ -104,7 +104,7 @@ void GateServiceImpl::KickConnByController(::google::protobuf::RpcController* co
 {
 ///<<< BEGIN WRITING YOUR CODE
 	gate_tls.sessions().erase(request->session_id());
-	LOG_INFO << "connid be kick " << request->session_id();
+	LOG_INFO << "conn id be kick " << request->session_id();
 ///<<< END WRITING YOUR CODE
 }
 
