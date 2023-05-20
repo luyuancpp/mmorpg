@@ -358,7 +358,18 @@ elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
             "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/boost;"
             "${CMAKE_CURRENT_SOURCE_DIR}/.;"
             "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/protobuf/src;"
-            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/zlib"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/zlib;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pb/pbc;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/muduo;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mysql/include;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/redis;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/muduo/contrib/windows/include;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/sol2/include;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/lua/src;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/redis/deps;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pb/pbc/common_proto;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/pb/pbc/logic_proto;"
+            "${CMAKE_CURRENT_SOURCE_DIR}/../third_party/protobuf/third_party/abseil-cpp"
         ">"
     )
 endif()
@@ -390,16 +401,21 @@ if("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x64")
 elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
     target_compile_definitions(${PROJECT_NAME} PRIVATE
         "$<$<CONFIG:Debug>:"
+            "WIN32;"
             "_CRT_SECURE_NO_WARNINGS;"
             "_WINSOCK_DEPRECATED_NO_WARNINGS;"
             "_CRT_SECURE_NO_DEPRECATE;"
-            "_CRT_NONSTDC_NO_DEPRECATE"
+            "_CRT_NONSTDC_NO_DEPRECATE;"
+            "ENTT_ID_TYPE=uint64_t;"
+            "NOMINMAX;"
+            "GOOGLE_CHECK_EQ=ABSL_CHECK_EQ;"
+            "GOOGLE_LOG=ABSL_LOG;"
+            "GOOGLE_DCHECK=ABSL_DCHECK"
         ">"
         "$<$<CONFIG:Release>:"
             "NDEBUG;"
             "_CONSOLE"
         ">"
-        "WIN32;"
         "UNICODE;"
         "_UNICODE"
     )
@@ -433,7 +449,13 @@ if(MSVC)
     elseif("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "x86")
         target_compile_options(${PROJECT_NAME} PRIVATE
             $<$<CONFIG:Debug>:
-                /MP
+                /MP;
+                /WX;
+                /wd4200;
+                /wd4819;
+                /wd4146;
+                /bigobj;
+                /utf-8
             >
             $<$<CONFIG:Release>:
                 /Oi;
