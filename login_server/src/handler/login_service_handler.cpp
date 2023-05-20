@@ -368,6 +368,7 @@ void LoginServiceHandler::GateConnect(::google::protobuf::RpcController* control
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+ 
 ///<<< END WRITING YOUR CODE
 }
 
