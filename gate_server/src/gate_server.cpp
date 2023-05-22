@@ -8,7 +8,6 @@
 #include "src/pb/pbc/controller_service_service.h"
 #include "src/pb/pbc/deploy_service_service.h"
 #include "src/pb/pbc/game_service_service.h"
-#include "src/handler/replied_dispathcer.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 
 #include "game_service.pb.h"
@@ -28,7 +27,8 @@ void GateServer::Init()
     node_info_.set_node_type(kGateNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     InitService();
-    InitRepliedCallback();
+    void InitRepliedHandler();
+    InitRepliedHandler();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);

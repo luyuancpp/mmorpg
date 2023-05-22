@@ -829,4 +829,12 @@ func WriteMethodFile() {
 	go writeRegisterFile(config.ControllerMethodHandleDir+config.RegisterHandlerCppEx, isControllerMethodHandler)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.ControllerMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isControllerMethodRepliedHandler)
+
+	//login
+	util.Wg.Add(1)
+	go writeRepliedRegisterFile(config.LoginMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isLoginMethodRepliedHandler)
+
+	//gate
+	util.Wg.Add(1)
+	go writeRepliedRegisterFile(config.GateMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isGateMethodRepliedHandler)
 }
