@@ -50,7 +50,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	auto it = gate_tls.sessions().find(replied->session_id());
 	if (it == gate_tls.sessions().end())
 	{
-		LOG_ERROR << "conn id not found  player id " << request->ex().player_id() << "," << replied->session_id();
+		LOG_ERROR << "conn id not found  session id "  << "," << replied->session_id();
 		return;
 	}
 
