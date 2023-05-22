@@ -271,54 +271,13 @@ class RpcMessage final :
   // accessors -------------------------------------------------------
 
   enum : int {
-    kServiceFieldNumber = 3,
-    kMethodFieldNumber = 4,
     kRequestFieldNumber = 5,
     kResponseFieldNumber = 6,
     kIdFieldNumber = 2,
     kTypeFieldNumber = 1,
     kErrorFieldNumber = 7,
+    kMessageIdFieldNumber = 8,
   };
-  // string service = 3;
-  void clear_service() ;
-  const std::string& service() const;
-
-
-
-
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_service(Arg_&& arg, Args_... args);
-  std::string* mutable_service();
-  PROTOBUF_NODISCARD std::string* release_service();
-  void set_allocated_service(std::string* ptr);
-
-  private:
-  const std::string& _internal_service() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_service(
-      const std::string& value);
-  std::string* _internal_mutable_service();
-
-  public:
-  // string method = 4;
-  void clear_method() ;
-  const std::string& method() const;
-
-
-
-
-  template <typename Arg_ = const std::string&, typename... Args_>
-  void set_method(Arg_&& arg, Args_... args);
-  std::string* mutable_method();
-  PROTOBUF_NODISCARD std::string* release_method();
-  void set_allocated_method(std::string* ptr);
-
-  private:
-  const std::string& _internal_method() const;
-  inline PROTOBUF_ALWAYS_INLINE void _internal_set_method(
-      const std::string& value);
-  std::string* _internal_mutable_method();
-
-  public:
   // bytes request = 5;
   void clear_request() ;
   const std::string& request() const;
@@ -389,6 +348,16 @@ class RpcMessage final :
   void _internal_set_error(::muduo::net::ErrorCode value);
 
   public:
+  // uint32 message_id = 8;
+  void clear_message_id() ;
+  ::uint32_t message_id() const;
+  void set_message_id(::uint32_t value);
+
+  private:
+  ::uint32_t _internal_message_id() const;
+  void _internal_set_message_id(::uint32_t value);
+
+  public:
   // @@protoc_insertion_point(class_scope:muduo.net.RpcMessage)
  private:
   class _Internal;
@@ -397,13 +366,12 @@ class RpcMessage final :
   typedef void InternalArenaConstructable_;
   typedef void DestructorSkippable_;
   struct Impl_ {
-    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr service_;
-    ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr method_;
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr request_;
     ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr response_;
     ::uint64_t id_;
     int type_;
     int error_;
+    ::uint32_t message_id_;
     mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   };
   union { Impl_ _impl_; };
@@ -464,100 +432,6 @@ inline ::uint64_t RpcMessage::_internal_id() const {
 inline void RpcMessage::_internal_set_id(::uint64_t value) {
   ;
   _impl_.id_ = value;
-}
-
-// string service = 3;
-inline void RpcMessage::clear_service() {
-  _impl_.service_.ClearToEmpty();
-}
-inline const std::string& RpcMessage::service() const {
-  // @@protoc_insertion_point(field_get:muduo.net.RpcMessage.service)
-  return _internal_service();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void RpcMessage::set_service(Arg_&& arg,
-                                                     Args_... args) {
-  ;
-  _impl_.service_.Set(static_cast<Arg_&&>(arg), args..., GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set:muduo.net.RpcMessage.service)
-}
-inline std::string* RpcMessage::mutable_service() {
-  std::string* _s = _internal_mutable_service();
-  // @@protoc_insertion_point(field_mutable:muduo.net.RpcMessage.service)
-  return _s;
-}
-inline const std::string& RpcMessage::_internal_service() const {
-  return _impl_.service_.Get();
-}
-inline void RpcMessage::_internal_set_service(const std::string& value) {
-  ;
-
-
-  _impl_.service_.Set(value, GetArenaForAllocation());
-}
-inline std::string* RpcMessage::_internal_mutable_service() {
-  ;
-  return _impl_.service_.Mutable( GetArenaForAllocation());
-}
-inline std::string* RpcMessage::release_service() {
-  // @@protoc_insertion_point(field_release:muduo.net.RpcMessage.service)
-  return _impl_.service_.Release();
-}
-inline void RpcMessage::set_allocated_service(std::string* value) {
-  _impl_.service_.SetAllocated(value, GetArenaForAllocation());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.service_.IsDefault()) {
-          _impl_.service_.Set("", GetArenaForAllocation());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:muduo.net.RpcMessage.service)
-}
-
-// string method = 4;
-inline void RpcMessage::clear_method() {
-  _impl_.method_.ClearToEmpty();
-}
-inline const std::string& RpcMessage::method() const {
-  // @@protoc_insertion_point(field_get:muduo.net.RpcMessage.method)
-  return _internal_method();
-}
-template <typename Arg_, typename... Args_>
-inline PROTOBUF_ALWAYS_INLINE void RpcMessage::set_method(Arg_&& arg,
-                                                     Args_... args) {
-  ;
-  _impl_.method_.Set(static_cast<Arg_&&>(arg), args..., GetArenaForAllocation());
-  // @@protoc_insertion_point(field_set:muduo.net.RpcMessage.method)
-}
-inline std::string* RpcMessage::mutable_method() {
-  std::string* _s = _internal_mutable_method();
-  // @@protoc_insertion_point(field_mutable:muduo.net.RpcMessage.method)
-  return _s;
-}
-inline const std::string& RpcMessage::_internal_method() const {
-  return _impl_.method_.Get();
-}
-inline void RpcMessage::_internal_set_method(const std::string& value) {
-  ;
-
-
-  _impl_.method_.Set(value, GetArenaForAllocation());
-}
-inline std::string* RpcMessage::_internal_mutable_method() {
-  ;
-  return _impl_.method_.Mutable( GetArenaForAllocation());
-}
-inline std::string* RpcMessage::release_method() {
-  // @@protoc_insertion_point(field_release:muduo.net.RpcMessage.method)
-  return _impl_.method_.Release();
-}
-inline void RpcMessage::set_allocated_method(std::string* value) {
-  _impl_.method_.SetAllocated(value, GetArenaForAllocation());
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        if (_impl_.method_.IsDefault()) {
-          _impl_.method_.Set("", GetArenaForAllocation());
-        }
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  // @@protoc_insertion_point(field_set_allocated:muduo.net.RpcMessage.method)
 }
 
 // bytes request = 5;
@@ -672,6 +546,26 @@ inline ::muduo::net::ErrorCode RpcMessage::_internal_error() const {
 inline void RpcMessage::_internal_set_error(::muduo::net::ErrorCode value) {
   ;
   _impl_.error_ = value;
+}
+
+// uint32 message_id = 8;
+inline void RpcMessage::clear_message_id() {
+  _impl_.message_id_ = 0u;
+}
+inline ::uint32_t RpcMessage::message_id() const {
+  // @@protoc_insertion_point(field_get:muduo.net.RpcMessage.message_id)
+  return _internal_message_id();
+}
+inline void RpcMessage::set_message_id(::uint32_t value) {
+  _internal_set_message_id(value);
+  // @@protoc_insertion_point(field_set:muduo.net.RpcMessage.message_id)
+}
+inline ::uint32_t RpcMessage::_internal_message_id() const {
+  return _impl_.message_id_;
+}
+inline void RpcMessage::_internal_set_message_id(::uint32_t value) {
+  ;
+  _impl_.message_id_ = value;
 }
 
 #ifdef __GNUC__

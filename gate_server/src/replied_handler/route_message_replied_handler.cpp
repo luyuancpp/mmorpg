@@ -36,7 +36,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	auto sit = g_service_method_info.find(route_data.message_id());
 	if (sit == g_service_method_info.end())
 	{
-		LOG_INFO << "service_method_id not found " << route_data.message_id();
+		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
 	const google::protobuf::MethodDescriptor* method = g_gate_node->gate_service_hanlder().GetDescriptor()->FindMethodByName(sit->second.method);

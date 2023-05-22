@@ -123,13 +123,10 @@ namespace muduo
                 ::google::protobuf::Message* response,
                 ::google::protobuf::Closure* done) override;
 
-            void Send(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request);
-            void Send(const char* service, const char* method, const ::google::protobuf::Message& request);
+            void Send(uint32_t message_id, const ::google::protobuf::Message& message);
 
-            void Route2Node(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request);
-            void SendRouteResponse(const ::google::protobuf::MethodDescriptor* method,
-                                   uint64_t id,
-                                   const std::string&& message_bytes);
+            void Route2Node(uint32_t message_id, const ::google::protobuf::Message& request);
+            void SendRouteResponse(uint32_t message_id, uint64_t id, const std::string&& message_bytes);
 
             void onMessage(const TcpConnectionPtr& conn,
                 Buffer* buf,

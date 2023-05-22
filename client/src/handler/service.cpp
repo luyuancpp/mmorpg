@@ -26,11 +26,11 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
 		std::bind(&ClientService::OnMessageBodyReplied, this, _1, _2, _3));
 }
 
-void ClientService::Send(uint32_t service_method_id, const google::protobuf::Message& request)
+void ClientService::Send(uint32_t message_id, const google::protobuf::Message& request)
 {
     ClientRequest message;
     message.set_id(++id_);
-    message.set_service_method_id(service_method_id);
+    message.set_message_id(message_id);
     message.set_request(request.SerializeAsString());
     codec_.send(conn_, message);
 }
@@ -83,8 +83,8 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
     const MessageBodyPtr& message,
     muduo::Timestamp t)
 {
-    auto service_method_id = message->service_method_id();
-    auto& servcie_method_info = g_service_method_info[service_method_id];
+    auto message_id = message->message_id();
+    auto& servcie_method_info = g_service_method_info[message_id];
     auto sit = g_player_service.find(servcie_method_info.service);
     if (sit == g_player_service.end())
     {

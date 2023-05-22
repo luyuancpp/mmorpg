@@ -3,7 +3,7 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void ConstrollerPlayerServiceHandler::Test(entt::entity player,
+void ControllerPlayerServiceHandler::Test(entt::entity player,
 	const ::google::protobuf::Empty* request,
 	::google::protobuf::Empty* response)
 {

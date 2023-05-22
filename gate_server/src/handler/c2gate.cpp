@@ -102,13 +102,13 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             //比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 			LoginNodeDisconnectRequest rq;
 			rq.set_session_id(session_id);
-			get_login_node(session_id)->CallMethod(LoginServiceDisconnectMethod, &rq);
+			get_login_node(session_id)->Send(LoginServiceDisconnectMsgId, rq);
         }
         // controller
         {
             GateDisconnectRequest rq;
             rq.set_session_id(session_id);
-            g_gate_node->controller_node_session()->CallMethod(ControllerServiceGateDisconnectMethod, &rq);
+            g_gate_node->controller_node_session()->Send(ControllerServiceGateDisconnectMsgId, rq);
         }
         gate_tls.sessions().erase(session_id);
     }
@@ -137,7 +137,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		return;
 	}
     //todo msg id error
-    if (g_c2s_service_id.find(request->service_method_id()) != g_c2s_service_id.end())
+    if (g_c2s_service_id.find(request->message_id()) != g_c2s_service_id.end())
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
 		auto gs = g_game_node.find(it->second.gs_node_id_);
@@ -150,8 +150,8 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_request(request->request());
         rq.set_session_id(session_id);
         rq.set_id(request->id());
-        rq.set_service_method_id(request->service_method_id());
-        gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMethod, &rq);
+        rq.set_message_id(request->message_id());
+        gs->second.gs_session_->Send(GameServiceClientSend2PlayerMsgId, rq);
         return;
     }
     else
@@ -162,9 +162,9 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_session_id(session_id);
         rq.set_id(request->id());
         auto message = rq.add_route_data_list();
-        message->set_message_id(request->service_method_id());
+        message->set_message_id(request->message_id());
         message->mutable_node_info()->CopyFrom(g_gate_node->node_info());
-        get_login_node(session_id)->Route2Node(LoginServiceRouteNodeStringMsgMethod, rq);
+        get_login_node(session_id)->Route2Node(LoginServiceRouteNodeStringMsgMsgId, rq);
     }
 }
 
@@ -174,7 +174,7 @@ void ClientReceiver::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_
     tips.mutable_tips()->set_id(tip_id);//tips_id.h 暂时写死，错误码不用编译
     MessageBody msg;
     msg.set_body(tips.SerializeAsString());
-    msg.set_service_method_id(ClientPlayerCommonServicePushTipsS2CMsgId);
+    msg.set_message_id(ClientPlayerCommonServicePushTipsS2CMsgId);
     g_gate_node->codec().send(conn, msg);
 }
 

@@ -60,7 +60,7 @@ message MessageBody
   bytes body = 2;
   string service = 3;
   string method = 4;
-  uint32 service_method_id = 5;
+  uint32 message_id = 5;
 }
 
 message NodeMessageBody

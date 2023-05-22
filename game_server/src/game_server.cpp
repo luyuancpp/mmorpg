@@ -88,13 +88,13 @@ void GameServer::ServerInfo(const ::servers_info_data& info)
         rq.mutable_my_info()->set_id(gs_info_.id());
         rq.mutable_rpc_client()->set_ip(deploy_node_->local_addr().toIp());
         rq.mutable_rpc_client()->set_port(deploy_node_->local_addr().port());
-        deploy_node_->CallMethod(DeployServiceStartGSMethod, &rq);
+        deploy_node_->Send(DeployServiceStartGSMsgId, rq);
     }
    
     {
         LobbyServerRequest rq;
         rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-        deploy_node_->CallMethod(DeployServiceAcquireLobbyInfoMethod, &rq);//获取大厅服下所有服务器信息
+        deploy_node_->Send(DeployServiceAcquireLobbyInfoMsgId, rq);//获取大厅服下所有服务器信息
     }
 	
 }
@@ -145,17 +145,17 @@ void GameServer::OnAcquireLobbyInfoReplied(LobbyInfoResponse& replied)
 void GameServer::CallControllerStartGs(ControllerSessionPtr controller_node)
 {
     auto& controller_local_addr = controller_node->local_addr();
-    CtrlStartGsRequest request;
-    auto session_info = request.mutable_rpc_client();
-    auto node_info = request.mutable_rpc_server();
+    CtrlStartGsRequest rq;
+    auto session_info = rq.mutable_rpc_client();
+    auto node_info = rq.mutable_rpc_server();
     session_info->set_ip(controller_local_addr.toIp());
     session_info->set_port(controller_local_addr.port());
     node_info->set_ip(gs_info_.ip());
     node_info->set_port(gs_info_.port());
-    request.set_server_type(tls.registry.get<GsServerType>(global_entity()).server_type_);
-    request.set_gs_node_id(gs_info_.id());
-    controller_node->CallMethod(ControllerServiceStartGsMethod,&request);
-    LOG_DEBUG << "conncet to controller" ;
+    rq.set_server_type(tls.registry.get<GsServerType>(global_entity()).server_type_);
+    rq.set_gs_node_id(gs_info_.id());
+    controller_node->Send(ControllerServiceStartGsMsgId,rq);
+    LOG_DEBUG << "connect to controller" ;
 }
 
 void GameServer::CallLobbyStartGs()
@@ -175,7 +175,7 @@ void GameServer::CallLobbyStartGs()
 	node_info->set_port(gs_info_.port());
     rq.set_server_type(server_type);
 	rq.set_gs_node_id(gs_info_.id());
-    lobby_node_->CallMethod(LobbyServiceStartCrossGsMethod, &rq);
+    lobby_node_->CallMethod(LobbyServiceStartCrossGsMsgId, rq);
 }
 
 void GameServer::receive(const OnConnected2ServerEvent& es)
@@ -195,7 +195,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
                 ServerInfoRequest rq;
                 rq.set_group(GameConfig::GetSingleton().config_info().group_id());
                 rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-                deploy_node_->CallMethod(DeployServiceServerInfoMethod, &rq);
+                deploy_node_->Send(DeployServiceServerInfoMsgId, rq);
             }
         );
     }

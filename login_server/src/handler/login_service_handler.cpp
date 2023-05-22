@@ -54,7 +54,7 @@ void EnterGame(Guid player_id,
 	auto rpc(std::make_shared<EnterGameControllerRpc::element_type>(response, done));
 	rpc->s_rq_.set_player_id(player_id);
 	rpc->s_rq_.set_session_id(response->session_id());/*
-	g_login_node->controller_node().CallMethodString1(
+	g_login_node->controller_node().SendString1(
 		EnterGameReplied,
 		rpc,
 		&ControllerService::ControllerNodeService_Stub::OnLsEnterGame);*/
@@ -115,7 +115,7 @@ void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
 	auto rpc(std::make_shared<LoginAccountDbRpc::element_type>(*replied));
 	rpc->s_rq_.set_account(replied->s_rq_.account());
 	rpc->s_rq_.set_session_id(session_id);
-	//g_login_node->db_node().CallMethodString1(LoginAccountDbReplied, rpc, &dbservice::DbService_Stub::Login);
+	//g_login_node->db_node().SendString1(LoginAccountDbReplied, rpc, &dbservice::DbService_Stub::Login);
 }
 
 using CreatePlayerRpc = std::shared_ptr<RpcString<DatabaseNodeCreatePlayerRequest, DatabaseNodeCreatePlayerResponse, LoginNodeCreatePlayerResponse>>;
@@ -182,7 +182,7 @@ void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* control
 	DatabaseNodeCreatePlayerRequest rq;
 	rq.set_session_id(request->session_id());
 	rq.set_account(sit->second->account());
-	/*g_login_node->db_node().CallMethodString1(
+	/*g_login_node->db_node().SendString1(
 		CreatePlayerDbReplied,
 		rpc,
 		&dbservice::DbService_Stub::CreatePlayer);*/
@@ -227,7 +227,7 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	auto c(std::make_shared<EnterGameDbRpc::element_type>(response, done));
 	auto& srq = c->s_rq_;
 	srq.set_player_id(player_id);
-	/*g_login_node->db_node().CallMethodString1(
+	/*g_login_node->db_node().SendString1(
 		EnterGameDbReplied,
 		c,
 		&dbservice::DbService_Stub::EnterGame);*/
@@ -249,7 +249,7 @@ void LoginServiceHandler::LeaveGame(::google::protobuf::RpcController* controlle
 	//连接过，登录过
 	CtrlLsLeaveGameRequest rq;
 	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->CallMethod(ControllerServiceLsLeaveGameMethod, &rq);
+	g_login_node->controller_node()->Send(ControllerServiceLsLeaveGameMsgId, rq);
 	sessions_.erase(sit);
 	///<<< END WRITING YOUR CODE
 }
@@ -264,7 +264,7 @@ void LoginServiceHandler::Disconnect(::google::protobuf::RpcController* controll
 	sessions_.erase(request->session_id());
 	CtrlLsDisconnectRequest rq;
 	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->CallMethod(ControllerServiceLsDisconnectMethod, &rq);
+	g_login_node->controller_node()->Send(ControllerServiceLsDisconnectMsgId, rq);
 	///<<< END WRITING YOUR CODE
 }
 
@@ -293,7 +293,7 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	auto sit = g_service_method_info.find(route_data.message_id());
 	if (sit == g_service_method_info.end())
 	{
-		LOG_INFO << "service_method_id not found " << route_data.message_id();
+		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
 	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(sit->second.method);
@@ -312,7 +312,7 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	cl_tls.set_current_session_id(request->session_id());
 	//当前节点的真正回复的消息
 	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
-	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
+	Send(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 	
 	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
@@ -339,13 +339,13 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	case kControllerNode:
 	{
 		//发送到下个节点
-		g_login_node->controller_node()->CallMethod(ControllerServiceRouteNodeStringMsgMethod, mutable_request);
+		g_login_node->controller_node()->Send(ControllerServiceRouteNodeStringMsgMethod, mutable_request);
 	}
 	break;
 	case kDatabaseNode:
 	{
 		//发送到下个节点
-		g_login_node->db_node()->CallMethod(DbServiceRouteNodeStringMsgMethod, mutable_request);
+		g_login_node->db_node()->Send(DbServiceRouteNodeStringMsgMethod, mutable_request);
 	}
 	break;
 	default:

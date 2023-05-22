@@ -70,47 +70,24 @@ public:
         client_.connect();
     }
 
-    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-        const ::google::protobuf::Message* request)
+    void Send(uint32_t message_id, const ::google::protobuf::Message& request)
     {
         if (!connected_)
         {
             LOG_ERROR << "client disconnect";
             return;
         }
-        channel_->CallMethod(method, nullptr, request, nullptr, nullptr);
+        channel_->Send(message_id, request);
     }
 
-    void Send(const ::google::protobuf::MethodDescriptor* method,  const ::google::protobuf::Message& request)
+    void Route2Node(uint32_t message_id,  const ::google::protobuf::Message& request)
     {
         if (!connected_)
         {
             LOG_ERROR << "client disconnect";
             return;
         }
-        channel_->Send(method, request);
-    }
-
-
-	void Send(const char* service, const char* method, const ::google::protobuf::Message& request)
-	{
-		if (!connected_)
-		{
-			LOG_ERROR << "client disconnect";
-			return;
-		}
-		channel_->Send(service, method, request);
-	}
-
-    void Route2Node(const ::google::protobuf::MethodDescriptor* method,
-        const ::google::protobuf::Message& request)
-    {
-        if (!connected_)
-        {
-            LOG_ERROR << "client disconnect";
-            return;
-        }
-        channel_->Route2Node(method, request);
+        channel_->Route2Node(message_id, request);
     }
 
 private:
