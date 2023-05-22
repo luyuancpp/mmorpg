@@ -18,6 +18,7 @@
 17=ClientPlayerSceneServicePushEnterSceneS2C
 18=ClientPlayerSceneServicePushSceneInfoS2C
 19=ControllerSceneServiceUpdateCrossMainSceneInfo
+20=ControllerPlayerServiceTest
 21=ControllerServiceStartGs
 22=ControllerServiceGateConnect
 23=ControllerServiceGateLeaveGame
