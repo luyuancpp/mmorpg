@@ -463,8 +463,8 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "player not found " << message_extern.player_id();
 		return;
 	}
-	auto sit = g_service_method_info.find(request->msg().message_id());
-	if (sit == g_service_method_info.end())
+	auto sit = g_services.find(request->msg().message_id());
+	if (sit == g_services.end())
 	{
 		LOG_ERROR << "message_id not found " << request->msg().message_id();
 		return;
@@ -592,18 +592,18 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		return;
 	}
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto sit = g_service_method_info.find(route_data.message_id());
-	if (sit == g_service_method_info.end())
+	auto it = g_services.find(route_data.message_id());
+	if (it == g_services.end())
 	{
 		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
-	auto it = g_services.find(sit->second.service);
-	if (it == g_services.end())
+	if (nullptr == it->second.service_impl_instance_)
 	{
+		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
-	const google::protobuf::MethodDescriptor* method = it->second->GetDescriptor()->FindMethodByName(sit->second.method);
+	const google::protobuf::MethodDescriptor* method = it->second.service_impl_instance_->GetDescriptor()->FindMethodByName(it->second.method);
 	if (nullptr == method)
 	{
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();
