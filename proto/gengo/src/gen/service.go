@@ -96,9 +96,7 @@ func readServiceIdFile() {
 		splitList := strings.Split(line, "=")
 		id, _ := strconv.ParseUint(splitList[0], 10, 64)
 		ServiceIdMap[splitList[1]] = id
-		if MessageIdFileMaxId < id {
-			MessageIdFileMaxId = id
-		}
+
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -152,6 +150,9 @@ func InitServiceId() {
 				//Id文件未找到则是新消息,或者已经改名，新消息后面处理，这里不处理
 				continue
 			}
+			if MessageIdFileMaxId < id {
+				MessageIdFileMaxId = id
+			}
 			useServiceId[id] = EmptyStruct{}
 			mv.Id = id
 		}
@@ -168,6 +169,7 @@ func InitServiceId() {
 			if len(unUseServiceId) > 0 && mv.Id == math.MaxUint64 {
 				for uk, _ := range unUseServiceId {
 					mv.Id = uk
+					RpcIdMethodMap[mv.Id] = mv
 					delete(unUseServiceId, uk)
 					break
 				}
