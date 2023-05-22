@@ -23,7 +23,6 @@ void OnEnterGameReplied(const TcpConnectionPtr& conn, const EnterGameResponsePtr
     g_gate_node->codec().send(conn, msg);
 }
 
-
 void OnServerLoginReplied(const TcpConnectionPtr& conn, const LoginLoginResponsePtr& replied, Timestamp timestamp)
 {
  

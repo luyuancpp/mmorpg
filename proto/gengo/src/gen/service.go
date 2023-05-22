@@ -255,7 +255,8 @@ func writeGlobalServiceInfoHeadFile() {
 		" std::unique_ptr<::google::protobuf::Service> service_impl_instance_;\n};\n\n" +
 		"using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;\n\n" +
 		"void InitMessageInfo();\n\n" +
-		"extern std::array<RpcService, " + strconv.FormatUint(MaxMessageId, 10) + "> g_message_info;\n\n"
+		"extern std::array<RpcService, " + strconv.FormatUint(MaxMessageId, 10) + "> g_message_info;\n\n" +
+		"extern std::unordered_set<uint32_t> g_c2s_service_id;\n"
 
 	Md5WriteData2File(config.ServiceHeadFileName, data)
 }
