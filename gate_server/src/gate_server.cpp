@@ -26,7 +26,7 @@ void GateServer::Init()
     LoadConfig();
     node_info_.set_node_type(kGateNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
-    InitService();
+    InitMessageInfo();
     void InitRepliedHandler();
     InitRepliedHandler();
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();

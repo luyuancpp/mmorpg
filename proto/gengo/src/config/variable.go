@@ -57,7 +57,8 @@ var ProjectSourceMd5Dirs []string
 const PbcDirName = "common/src/pb/pbc/"
 
 const PbcOutDir = ProjectDir + PbcDirName
-const ServiceFileName = PbcOutDir + "service.cpp"
+const ServiceCppFileName = PbcOutDir + "service.cpp"
+const ServiceHeadFileName = PbcOutDir + "service.h"
 const LuaServiceFileName = PbcLuaDirName + "lua_service.cpp"
 const PbcLuaDirName = PbcOutDir + "lua/"
 

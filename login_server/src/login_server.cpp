@@ -31,7 +31,7 @@ void LoginServer::Init()
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     void InitRepliedHandler();
     InitRepliedHandler();
-    InitService();
+    InitMessageInfo();
     ConnectDeploy();
 }
 

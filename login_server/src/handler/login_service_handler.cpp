@@ -290,13 +290,13 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	}
 	//当前节点收到的数据
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto sit = g_message_info.find(route_data.message_id());
-	if (sit == g_message_info.end())
+	if (route_data.message_id() >= g_message_info.size())
 	{
 		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
-	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(sit->second.method);
+	auto& message_info = g_message_info[route_data.message_id()];
+	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();

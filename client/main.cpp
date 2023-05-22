@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
     if (argc > 0)
     {
-        InitService();
+        InitMessageInfo();
 
         void InitPlayerService();
         InitPlayerService();

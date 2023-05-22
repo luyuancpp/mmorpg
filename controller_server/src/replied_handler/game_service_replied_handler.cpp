@@ -92,7 +92,7 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		//todo client error;
 		return;
 	}
-	MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
+	MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
 	player_response->ParseFromString(replied->msg().body());
 	service_impl->CallMethod(method, it->second, nullptr, boost::get_pointer(player_response));
 ///<<< END WRITING YOUR CODE

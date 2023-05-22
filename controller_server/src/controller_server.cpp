@@ -57,7 +57,7 @@ void ControllerServer::Init()
     InitPlayerService();
     InitPlayerServiceReplied();
     InitRepliedHandler();
-    InitService();
+    InitMessageInfo();
     Connect2Deploy();
 }
 
