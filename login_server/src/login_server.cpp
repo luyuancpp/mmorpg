@@ -9,7 +9,6 @@
 #include "src/thread_local/login_thread_local_storage.h"
 #include "src/pb/pbc/service.h"
 #include "src/pb/pbc/deploy_service_service.h"
-#include "src/handler/replied_dispathcer.h"
 
 #include "common.pb.h"
 
@@ -30,7 +29,8 @@ void LoginServer::Init()
     DeployConfig::GetSingleton().Load("deploy.json");
     node_info_.set_node_type(kLoginNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
-    InitRepliedCallback();
+    void InitRepliedHandler();
+    InitRepliedHandler();
     InitService();
     ConnectDeploy();
 }
