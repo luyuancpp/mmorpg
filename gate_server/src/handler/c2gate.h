@@ -2,20 +2,14 @@
 
 #include "src/network/codec/codec.h"
 
-#include "muduo/base/noncopyable.h"
 #include "muduo/net/EventLoop.h"
 
 #include "src/network/codec/dispatcher.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_client.h"
-#include "src/network/gate_player_list.h"
-#include "src/util/snow_flake.h"
 
 #include "database_service.pb.h"
 #include "c2gate.pb.h"
-#include "login_service.pb.h"
-#include "controller_service.pb.h"
-#include "game_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

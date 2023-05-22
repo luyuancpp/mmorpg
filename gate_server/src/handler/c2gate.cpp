@@ -3,28 +3,19 @@
 #include  <functional>
 #include <memory>
 
-#include "muduo/base/Logging.h"
-#include "muduo/net/TcpConnection.h"
-
 #include "src/gate_server.h"
 #include "src/util/game_registry.h"
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
-#include "src/game_logic/tips_id.h"
-#include "src/network/rpc_msg_route.h"
-#include "src/pb/pbc/service.h"
 #include "src/pb/pbc/controller_service_service.h"
 #include "src/pb/pbc/game_service_service.h"
 #include "src/pb/pbc/login_service_service.h"
 #include "src/pb/pbc/common_client_player_service.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 #include "src/util/random.h"
-
-#include "login_service.pb.h"
-#include "src/pb/pbc/client_player_proto/common_client_player.pb.h"
+#include "src/util/snow_flake.h"
 
 ServerSequence32 g_server_sequence_;
-
 extern std::unordered_set<uint32_t> g_c2s_service_id;
 
 ClientReceiver::ClientReceiver(ProtobufCodec& codec, 

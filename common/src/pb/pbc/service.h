@@ -20,3 +20,4 @@ void InitMessageInfo();
 
 extern std::array<RpcService, 74> g_message_info;
 
+extern std::unordered_set<uint32_t> g_c2s_service_id;

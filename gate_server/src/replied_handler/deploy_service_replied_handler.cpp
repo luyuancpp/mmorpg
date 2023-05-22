@@ -4,6 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/gate_server.h"
 #include "src/thread_local/gate_thread_local_storage.h"
+#include "src/util/snow_flake.h"
 
 extern ServerSequence32 g_server_sequence_;
 ///<<< END WRITING YOUR CODE
