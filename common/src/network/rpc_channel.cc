@@ -296,3 +296,17 @@ void RpcChannel::SendRpcError(const RpcMessage& message, ErrorCode error)
     codec_.send(conn_, response);
 }
 
+void RpcChannel::SendRouteResponse(const ::google::protobuf::MethodDescriptor* method,
+                                   uint64_t id,
+                                   const std::string&& message_bytes)
+{
+    //todo check message id error
+    RpcMessage rpc_response;
+    rpc_response.set_type(RESPONSE);
+    rpc_response.set_id(id);
+    rpc_response.set_response(std::move(message_bytes)); // FIXME: error check
+    rpc_response.set_method(method->name());
+    rpc_response.set_service(method->service()->full_name());
+    codec_.send(conn_, rpc_response);
+}
+

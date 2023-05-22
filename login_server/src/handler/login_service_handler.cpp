@@ -289,24 +289,24 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 		return;
 	}
 	//当前节点收到的数据
-	auto& recv_route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto sit = g_service_method_info.find(recv_route_data.message_id());
+	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
+	auto sit = g_service_method_info.find(route_data.message_id());
 	if (sit == g_service_method_info.end())
 	{
-		LOG_INFO << "service_method_id not found " << recv_route_data.message_id();
+		LOG_INFO << "service_method_id not found " << route_data.message_id();
 		return;
 	}
 	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found" << request->DebugString() << "method name" << recv_route_data.method();
+		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();
 		return;
 	}
 	//当前节点的请求信息
 	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
 	if (!current_node_request->ParseFromString(request->body()))
 	{
-		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << recv_route_data.method();
+		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << route_data.method();
 		return;
 	}
 	cl_tls.set_current_session_id(request->session_id());
@@ -324,6 +324,7 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 			*response->add_route_data_list() = it;
 		}
 		response->set_session_id(request->session_id());
+        response->set_id(request->id());
 		return;
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
@@ -332,6 +333,7 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	send_route_data->CopyFrom(cl_tls.route_data());
 	send_route_data->mutable_node_info()->CopyFrom(g_login_node->node_info());
 	mutable_request->set_body(cl_tls.route_msg_body());
+    mutable_request->set_id(request->id());
 	switch (cl_tls.next_route_node_type())
 	{
 	case kControllerNode:

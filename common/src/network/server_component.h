@@ -33,6 +33,16 @@ struct RpcServerConnection
         channel_->CallMethod(method, nullptr, request, nullptr, nullptr);
     }
 
+    void SendRouteResponse(const ::google::protobuf::MethodDescriptor* method,
+                           uint64_t id,
+                           const std::string&& message_bytes)
+    {
+        if (!conn_->connected())
+        {
+            return;
+        }
+        channel_->SendRouteResponse(method, id, std::move(message_bytes));
+    }
 
     muduo::net::TcpConnectionPtr conn_;
 private:
