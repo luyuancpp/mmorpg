@@ -314,7 +314,6 @@ func writeGlobalServiceInfoFile() {
 		includeData += methodList[0].IncludeName()
 		serviceHandlerName := key + "Impl"
 		classHandlerData += "class " + serviceHandlerName + ":public " + key + "{};\n"
-		initFuncData += " g_services.emplace(\"" + key + "\", std::make_unique<" + serviceHandlerName + ">());\n"
 	}
 	initFuncData += "\n"
 	for _, key := range ServiceList {
@@ -323,12 +322,14 @@ func writeGlobalServiceInfoFile() {
 			rpcMethodInfo := v[i]
 			rpcId := rpcMethodInfo.KeyName() + config.MessageIdName
 			initFuncData += "extern const uint32_t " + rpcId + ";\n"
+			serviceHandlerName := key + "Impl"
 			cppValue := "g_service_method_info[" + rpcId
 			initFuncData += cppValue + "] = RpcService{" +
 				"\"" + rpcMethodInfo.Service + "\"," +
 				"\"" + rpcMethodInfo.Method + "\"," +
 				"\"" + rpcMethodInfo.Request + "\"," +
-				"\"" + rpcMethodInfo.Response + "\"};\n"
+				"\"" + rpcMethodInfo.Response + "\"," +
+				"std::make_unique<" + serviceHandlerName + ">()};\n"
 			if strings.Contains(rpcId, config.C2SMethodContainsName) {
 				initFuncData += "g_c2s_service_id.emplace(" + rpcId + ");\n"
 			}
