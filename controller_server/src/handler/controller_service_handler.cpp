@@ -34,8 +34,6 @@
 #include "game_service.pb.h"
 #include "gate_service.pb.h"
 
-extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_services;
-
 using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 AccountSessionMap login_accounts_session_;
 
@@ -463,8 +461,8 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "player not found " << message_extern.player_id();
 		return;
 	}
-	auto sit = g_services.find(request->msg().message_id());
-	if (sit == g_services.end())
+	auto sit = g_message_info.find(request->msg().message_id());
+	if (sit == g_message_info.end())
 	{
 		LOG_ERROR << "message_id not found " << request->msg().message_id();
 		return;
@@ -592,8 +590,8 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		return;
 	}
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto it = g_services.find(route_data.message_id());
-	if (it == g_services.end())
+	auto it = g_message_info.find(route_data.message_id());
+	if (it == g_message_info.end())
 	{
 		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
