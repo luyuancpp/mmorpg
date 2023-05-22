@@ -4,13 +4,10 @@
 #include "src/game_logic/tips_id.h"
 #include "src/gate_server.h"
 #include "src/network/codec/dispatcher.h"
-#include "src/network/node_info.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 #include "src/util/defer.h"
 #include "src/pb/pbc/service.h"
 
-#include "src/pb/pbc/common_proto/database_service.pb.h"
-#include "controller_service_service.h"
 #include "gate_service_service.h"
 
 extern ProtobufDispatcher g_response_dispatcher;
@@ -33,8 +30,8 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	}
 	//todo find all service
 	auto& route_data = replied->route_data_list(replied->route_data_list_size() - 1);
-	auto sit = g_service_method_info.find(route_data.message_id());
-	if (sit == g_service_method_info.end())
+	auto sit = g_services.find(route_data.message_id());
+	if (sit == g_services.end())
 	{
 		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;

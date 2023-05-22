@@ -30,9 +30,6 @@
     <ClCompile Include="src\network\gs_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\login_node.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\game_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

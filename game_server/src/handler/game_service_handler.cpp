@@ -65,8 +65,8 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
             << request->descriptor()->full_name() << " msgid " << request->msg().message_id();
         return;
     }
-    auto sit = g_service_method_info.find(request->msg().message_id());
-    if (sit == g_service_method_info.end())
+    auto sit = g_services.find(request->msg().message_id());
+    if (sit == g_services.end())
     {
         LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << request->msg().message_id();
         return;
@@ -213,8 +213,8 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
             << request->descriptor()->full_name() << " msgid " << request->msg().message_id();
         return;
     }
-    auto sit = g_service_method_info.find(request->msg().message_id());
-    if (sit == g_service_method_info.end())
+    auto sit = g_services.find(request->msg().message_id());
+    if (sit == g_services.end())
     {
         LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << request->msg().message_id();
         return;

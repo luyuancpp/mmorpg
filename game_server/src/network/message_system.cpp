@@ -38,8 +38,8 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
 		return;
 	}
-	auto sit = g_service_method_info.find(message_id);
-	if (sit == g_service_method_info.end())
+	auto sit = g_services.find(message_id);
+	if (sit == g_services.end())
 	{
 		LOG_ERROR << "message_id found ->" << message_id;
 		return;
@@ -79,8 +79,8 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 	{
 		return;
 	}
-	auto sit = g_service_method_info.find(message_id);
-	if (sit == g_service_method_info.end())
+	auto sit = g_services.find(message_id);
+	if (sit == g_services.end())
 	{
 		LOG_ERROR << "message_id found ->" << message_id;
 		return;

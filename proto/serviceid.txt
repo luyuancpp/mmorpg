@@ -70,4 +70,4 @@
 70=DeployServiceAcquireLobbyInfo
 71=DeployServiceLoginNodeInfo
 72=GamePlayerServiceOnControllerEnterGateSucceed
-73=GamePlayerServiceController2GsLogin
+73=ControllerPlayerServiceTest
