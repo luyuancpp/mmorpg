@@ -20,7 +20,7 @@
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 
-using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
+using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
 ///<<< END WRITING YOUR CODE
 void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
@@ -65,13 +65,13 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
             << request->descriptor()->full_name() << " msgid " << request->msg().message_id();
         return;
     }
-    auto sit = g_message_info.find(request->msg().message_id());
-    if (sit == g_message_info.end())
-    {
-        LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << request->msg().message_id();
-        return;
-    }
-    auto service_it = g_player_service.find(sit->second.service);
+	if (request->msg().message_id() >= g_message_info.size())
+	{
+		LOG_ERROR << "message_id not found " << request->msg().message_id();
+		return;
+	}
+	auto& message_info = g_message_info[request->msg().message_id()];
+    auto service_it = g_player_service.find(message_info.service);
     if (service_it == g_player_service.end())
     {
         LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << request->msg().message_id();
@@ -79,16 +79,16 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
     }
     auto& serviceimpl = service_it->second;
     google::protobuf::Service* service = serviceimpl->service();
-    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(sit->second.method);
+    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
     if (nullptr == method)
     {
         LOG_ERROR << "PlayerService method not found " << request->msg().message_id();
         //todo client error;
         return;
     }
-    MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
+    MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
     player_request->ParseFromString(request->msg().body());
-    MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
+    MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
     serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 
 ///<<< END WRITING YOUR CODE
@@ -133,9 +133,9 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
         LOG_ERROR << "GatePlayerService player not found" << *try_player_id;
         return;
     }
-    MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
+    MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
     player_request->ParseFromString(request->request());
-    MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
+    MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
     it->second->CallMethod(method, pit->second, get_pointer(player_request), get_pointer(player_response));
     response->set_response(player_response->SerializeAsString());
     response->set_service(request->service());
@@ -213,13 +213,13 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
             << request->descriptor()->full_name() << " msgid " << request->msg().message_id();
         return;
     }
-    auto sit = g_message_info.find(request->msg().message_id());
-    if (sit == g_message_info.end())
-    {
-        LOG_ERROR << "PlayerService msg not found " << request->ex().player_id() << "," << request->msg().message_id();
-        return;
-    }
-    auto service_it = g_player_service.find(sit->second.service);
+	if (request->msg().message_id() >= g_message_info.size())
+	{
+		LOG_ERROR << "message_id not found " << request->msg().message_id();
+		return;
+	}
+    auto& message_info = g_message_info[request->msg().message_id()];
+    auto service_it = g_player_service.find(message_info.service);
     if (service_it == g_player_service.end())
     {
         LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << request->msg().message_id();
@@ -228,16 +228,16 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
     auto& serviceimpl = service_it->second;
     google::protobuf::Service* service = serviceimpl->service();
     const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-    const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(sit->second.method);
+    const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
     if (nullptr == method)
     {
         LOG_ERROR << "PlayerService method not found " << request->msg().message_id();
         //todo client error;
         return;
     }
-    MessageUnqiuePtr player_request(service->GetRequestPrototype(method).New());
+    MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
     player_request->ParseFromString(request->msg().body());
-    MessageUnqiuePtr player_response(service->GetResponsePrototype(method).New());
+    MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
     serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
     if (nullptr == response)
     {

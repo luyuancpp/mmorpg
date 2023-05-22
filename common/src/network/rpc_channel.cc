@@ -78,6 +78,12 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
 
 void RpcChannel::Send(uint32_t message_id, const ::google::protobuf::Message& request)
 {
+	if (message_id >= g_message_info.size())
+	{
+		LOG_ERROR << "message_id found ->" << message_id;
+		return;
+	}
+
     RpcMessage message;    
     message.set_type(S2C_REQUEST);
     message.set_message_id(message_id);
@@ -107,20 +113,20 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   if (message.type() == RESPONSE)
   {
 	  assert(services_ != NULL);
-	  auto message_it = g_message_info.find(message.message_id());
-	  if (message_it == g_message_info.end())
+      if ( message.message_id() >= g_message_info.size())
+      {
+          return;
+      }
+	  auto& message_info = g_message_info[message.message_id()];
+	  std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
+	  if (nullptr == message_info.service_impl_instance_)
 	  {
 		  return;
 	  }
-	  std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_it->second.service);
-	  if (nullptr == message_it->second.service_impl_instance_)
-	  {
-		  return;
-	  }
-	  google::protobuf::Service* service = message_it->second.service_impl_instance_.get();
+	  google::protobuf::Service* service = message_info.service_impl_instance_.get();
 	  assert(service != NULL);
 	  const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	  const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_it->second.method);
+	  const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	  if (nullptr == method)
 	  {
 		  return;
@@ -159,13 +165,12 @@ void RpcChannel::Route2Node(uint32_t message_id, const ::google::protobuf::Messa
 void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
 	assert(services_ != NULL);
-	auto message_it = g_message_info.find(message.message_id());
-	if (message_it == g_message_info.end())
+	if ( message.message_id() >= g_message_info.size())
 	{
-		SendRpcError(message, NO_SERVICE);
 		return;
 	}
-	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_it->second.service);
+	auto& message_info = g_message_info[message.message_id()];
+	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	if (it == services_->end())
 	{
 		SendRpcError(message, NO_SERVICE);
@@ -174,7 +179,7 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
 	google::protobuf::Service* service = it->second;
 	assert(service != NULL);
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_it->second.method);
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
 		SendRpcError(message, NO_METHOD);
@@ -203,13 +208,12 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
 void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
 	assert(services_ != NULL);
-	auto message_it = g_message_info.find(message.message_id());
-	if (message_it == g_message_info.end())
+	if ( message.message_id() >= g_message_info.size())
 	{
-		SendRpcError(message, NO_SERVICE);
 		return;
 	}
-	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_it->second.service);
+	auto& message_info = g_message_info[message.message_id()];
+	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	if (it == services_->end())
 	{
 		SendRpcError(message, NO_SERVICE);
@@ -218,7 +222,7 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 	google::protobuf::Service* service = it->second;
 	assert(service != NULL);
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_it->second.method);
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
 		SendRpcError(message, NO_METHOD);
@@ -235,28 +239,27 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 
 void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
-    assert(services_ != NULL);
-    auto message_it = g_message_info.find(message.message_id());
-    if (message_it == g_message_info.end())
-    {
-        SendRpcError(message, NO_SERVICE);
-        return;
-    }
-	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_it->second.service);
+	assert(services_ != NULL);
+	if ( message.message_id() >= g_message_info.size())
+	{
+		return;
+	}
+	auto& message_info = g_message_info[message.message_id()];
+	std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	if (it == services_->end())
 	{
 		SendRpcError(message, NO_SERVICE);
 		return;
 	}
-    google::protobuf::Service* service = it->second;
-    assert(service != NULL);
-    const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-    const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_it->second.method);
-    if (nullptr ==  method)
-    {
-        SendRpcError(message, NO_METHOD);
-        return;
-    }
+	google::protobuf::Service* service = it->second;
+	assert(service != NULL);
+	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
+	if (nullptr == method)
+	{
+		SendRpcError(message, NO_METHOD);
+		return;
+	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
     if (!request->ParseFromString(message.request()))
     {
@@ -291,6 +294,11 @@ void RpcChannel::SendRpcError(const RpcMessage& message, ErrorCode error)
 
 void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::string&& message_bytes)
 {
+	if (message_id >= g_message_info.size())
+	{
+		LOG_ERROR << "message_id found ->" << message_id;
+		return;
+	}
     //todo check message id error
     RpcMessage rpc_response;
     rpc_response.set_type(RESPONSE);

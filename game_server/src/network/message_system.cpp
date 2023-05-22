@@ -6,7 +6,6 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
-#include "src/pb/pbc/service.h"
 #include "src/pb/pbc/controller_service_service.h"
 #include "src/pb/pbc/gate_service_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
@@ -38,12 +37,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
 		return;
 	}
-	auto sit = g_message_info.find(message_id);
-	if (sit == g_message_info.end())
-	{
-		LOG_ERROR << "message_id found ->" << message_id;
-		return;
-	}
+
 	auto gate = (*try_gate).lock();
 	if (nullptr == gate)
 	{
@@ -77,12 +71,6 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 {
 	if (!tls.registry.valid(player))
 	{
-		return;
-	}
-	auto sit = g_message_info.find(message_id);
-	if (sit == g_message_info.end())
-	{
-		LOG_ERROR << "message_id found ->" << message_id;
 		return;
 	}
 	auto controller_node = tls.registry.get<ControllerNodePtr>(player);

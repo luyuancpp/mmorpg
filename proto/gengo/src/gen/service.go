@@ -11,109 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 )
-
-type EmptyStruct struct{}
-
-type RpcMethodInfo struct {
-	Service  string
-	Method   string
-	Request  string
-	Response string
-	Id       uint64
-	Index    uint64
-	FileName string
-	Path     string
-}
-
-type RpcMethodInfos []*RpcMethodInfo
-
-type RpcServiceInfo struct {
-	FileName   string
-	Path       string
-	MethodInfo RpcMethodInfos
-}
-
-var rpcLineReplacer = strings.NewReplacer("(", "", ")", "", ";", "", "\n", "")
-
-var RpcServiceSyncMap sync.Map
-var RpcIdMethodMap = map[uint64]*RpcMethodInfo{}
-var ServiceIdMap = map[string]uint64{}
-var ServiceMethodMap = map[string]RpcMethodInfos{}
-
-func (info *RpcMethodInfo) KeyName() (idName string) {
-	return info.Service + info.Method
-}
-
-func (info *RpcServiceInfo) IncludeName() (includeName string) {
-	return "#include \"" + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
-}
-
-func (info *RpcServiceInfo) PbcHeadName() (pbcHeadName string) {
-	return strings.Replace(info.FileName, config.ProtoEx, config.ProtoPbhEx, 1)
-}
-
-func (info *RpcServiceInfo) HeadName() (headName string) {
-	return strings.Replace(info.FileName, config.ProtoEx, config.HeadEx, 1)
-}
-
-func (info *RpcServiceInfo) FileBaseName() (fileBaseName string) {
-	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
-}
-
-func (info *RpcServiceInfo) IsPlayerService() (isPlayerService bool) {
-	return strings.Contains(info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])
-}
-
-func (info *RpcMethodInfo) FileBaseName() (fileBaseName string) {
-	return strings.Replace(info.FileName, config.ProtoEx, "", 1)
-}
-
-func (info *RpcMethodInfo) PbcHeadName() (pbcHeadName string) {
-	return strings.Replace(info.FileName, config.ProtoEx, config.ProtoPbhEx, 1)
-}
-
-func (info *RpcMethodInfo) IncludeName() (includeName string) {
-	return config.IncludeBegin + strings.Replace(info.Path, config.ProtoDir, "", 1) + info.PbcHeadName() + "\"\n"
-}
-
-func (info *RpcMethodInfo) CppHandlerIncludeName() (includeName string) {
-	return config.IncludeBegin + info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
-}
-
-func (info *RpcMethodInfo) CppRepliedHandlerIncludeName() (includeName string) {
-	return config.IncludeBegin + info.FileBaseName() + config.HeadRepliedHandlerEx + config.IncludeEndLine
-}
-
-func (info *RpcMethodInfo) CppHandlerClassName() (includeName string) {
-	return info.Service + config.HandlerName
-}
-
-func (info *RpcMethodInfo) CppRepliedHandlerClassName() (includeName string) {
-	return info.Service + config.RepliedHandlerName
-}
-
-func (info *RpcMethodInfo) IsPlayerService() (isPlayerService bool) {
-	return strings.Contains(info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) ||
-		strings.Contains(info.Path, config.ProtoDirNames[config.ServerPlayerDirIndex])
-}
-
-func (s RpcMethodInfos) Len() int {
-	return len(s)
-}
-
-func (s RpcMethodInfos) Less(i, j int) bool {
-	if s[i].Service < s[j].Service {
-		return true
-	}
-	return s[i].Index < s[j].Index
-}
-
-func (s RpcMethodInfos) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
 
 func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	defer util.Wg.Done()
@@ -234,7 +132,6 @@ func WriteServiceIdFile() {
 func InitServiceId() {
 	var unUseServiceId = map[uint64]EmptyStruct{}
 	var useServiceId = map[uint64]EmptyStruct{}
-	var maxServiceId uint64
 	var curMethodCount = 0
 
 	RpcServiceSyncMap.Range(func(k, v interface{}) bool {
@@ -262,8 +159,8 @@ func InitServiceId() {
 		if _, ok := useServiceId[v]; !ok {
 			unUseServiceId[v] = EmptyStruct{}
 		}
-		if maxServiceId < v {
-			maxServiceId = v
+		if MaxMessageId < v {
+			MaxMessageId = v
 		}
 	}
 
@@ -279,8 +176,8 @@ func InitServiceId() {
 				}
 			}
 			if mv.Id == math.MaxUint64 {
-				mv.Id = maxServiceId
-				maxServiceId += 1
+				mv.Id = MaxMessageId
+				MaxMessageId += 1
 			}
 			RpcIdMethodMap[mv.Id] = mv
 		}
@@ -297,13 +194,13 @@ func GetSortServiceList() (ServiceList []string) {
 
 func writeGlobalServiceInfoFile() {
 	defer util.Wg.Done()
-	var includeData = "#include <unordered_map>\n"
+	var includeData = "#include <array>\n"
 	includeData += "#include \"service.h\"\n"
 	var classHandlerData = ""
 	var initFuncData = "std::unordered_set<uint32_t> g_c2s_service_id;\n" +
-		"std::unordered_map<uint32_t, RpcService> g_message_info;\n\n"
+		"std::array<RpcService, " + strconv.FormatUint(MaxMessageId, 10) + "> g_message_info;\n\n"
 
-	initFuncData += "void InitService()\n{\n"
+	initFuncData += "void InitMessageInfo()\n{\n"
 	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
 		methodList := ServiceMethodMap[key]
@@ -340,7 +237,27 @@ func writeGlobalServiceInfoFile() {
 	initFuncData += "}\n"
 	var data = includeData + classHandlerData + initFuncData
 
-	Md5WriteData2File(config.ServiceFileName, data)
+	Md5WriteData2File(config.ServiceCppFileName, data)
+}
+
+func writeGlobalServiceInfoHeadFile() {
+	defer util.Wg.Done()
+	var data = "#pragma once\n#include <memory>\n" +
+		"#include <string>\n" +
+		"#include <array>\n" +
+		"#include <google/protobuf/message.h>\n" +
+		"#include <google/protobuf/service.h>\n\n" +
+		"struct RpcService\n{\n" +
+		config.Tab + "const char* service{nullptr};\n" +
+		config.Tab + "const char* method{nullptr};\n    " +
+		config.Tab + "const char* request{nullptr};\n    " +
+		config.Tab + "const char* response{nullptr};\n   " +
+		" std::unique_ptr<::google::protobuf::Service> service_impl_instance_;\n};\n\n" +
+		"using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;\n\n" +
+		"void InitMessageInfo();\n\n" +
+		"extern std::array<RpcService, " + strconv.FormatUint(MaxMessageId, 10) + "> g_message_info;\n\n"
+
+	Md5WriteData2File(config.ServiceHeadFileName, data)
 }
 
 func writeGsGlobalPlayerServiceInstanceFile() {
@@ -483,6 +400,8 @@ func writeControllerGlobalPlayerServiceRepliedInstanceFile() {
 func WriteServiceHandlerFile() {
 	util.Wg.Add(1)
 	go writeGlobalServiceInfoFile()
+	util.Wg.Add(1)
+	go writeGlobalServiceInfoHeadFile()
 	util.Wg.Add(1)
 	writeGsGlobalPlayerServiceInstanceFile()
 	util.Wg.Add(1)
