@@ -84,7 +84,7 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
     muduo::Timestamp t)
 {
     auto message_id = message->message_id();
-    auto& servcie_method_info = g_services[message_id];
+    auto& servcie_method_info = g_message_info[message_id];
     auto sit = g_player_service.find(servcie_method_info.service);
     if (sit == g_player_service.end())
     {

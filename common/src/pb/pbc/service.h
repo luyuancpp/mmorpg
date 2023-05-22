@@ -14,7 +14,7 @@ struct RpcService
     const char* response{nullptr};
     std::unique_ptr<::google::protobuf::Service> service_impl_instance_;
 };
-extern std::unordered_map<uint32_t, RpcService> g_services;
+extern std::unordered_map<uint32_t, RpcService> g_message_info;
 
 using MessageUnqiuePtr = std::unique_ptr<google::protobuf::Message>;
 

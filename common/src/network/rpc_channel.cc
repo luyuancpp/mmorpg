@@ -107,8 +107,8 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
   if (message.type() == RESPONSE)
   {
 	  assert(services_ != NULL);
-	  auto message_it = g_services.find(message.message_id());
-	  if (message_it == g_services.end())
+	  auto message_it = g_message_info.find(message.message_id());
+	  if (message_it == g_message_info.end())
 	  {
 		  return;
 	  }
@@ -159,8 +159,8 @@ void RpcChannel::Route2Node(uint32_t message_id, const ::google::protobuf::Messa
 void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
 	assert(services_ != NULL);
-	auto message_it = g_services.find(message.message_id());
-	if (message_it == g_services.end())
+	auto message_it = g_message_info.find(message.message_id());
+	if (message_it == g_message_info.end())
 	{
 		SendRpcError(message, NO_SERVICE);
 		return;
@@ -203,8 +203,8 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
 void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
 	assert(services_ != NULL);
-	auto message_it = g_services.find(message.message_id());
-	if (message_it == g_services.end())
+	auto message_it = g_message_info.find(message.message_id());
+	if (message_it == g_message_info.end())
 	{
 		SendRpcError(message, NO_SERVICE);
 		return;
@@ -236,8 +236,8 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, const RpcMessage& message, Timestamp receiveTime)
 {
     assert(services_ != NULL);
-    auto message_it = g_services.find(message.message_id());
-    if (message_it == g_services.end())
+    auto message_it = g_message_info.find(message.message_id());
+    if (message_it == g_message_info.end())
     {
         SendRpcError(message, NO_SERVICE);
         return;

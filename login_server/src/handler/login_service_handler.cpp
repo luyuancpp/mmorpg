@@ -290,8 +290,8 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	}
 	//当前节点收到的数据
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto sit = g_services.find(route_data.message_id());
-	if (sit == g_services.end())
+	auto sit = g_message_info.find(route_data.message_id());
+	if (sit == g_message_info.end())
 	{
 		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;

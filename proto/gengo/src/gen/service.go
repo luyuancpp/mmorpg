@@ -301,7 +301,7 @@ func writeGlobalServiceInfoFile() {
 	includeData += "#include \"service.h\"\n"
 	var classHandlerData = ""
 	var initFuncData = "std::unordered_set<uint32_t> g_c2s_service_id;\n" +
-		"std::unordered_map<uint32_t, RpcService> g_services;\n\n"
+		"std::unordered_map<uint32_t, RpcService> g_message_info;\n\n"
 
 	initFuncData += "void InitService()\n{\n"
 	ServiceList := GetSortServiceList()
@@ -322,7 +322,7 @@ func writeGlobalServiceInfoFile() {
 			rpcId := rpcMethodInfo.KeyName() + config.MessageIdName
 			initFuncData += "extern const uint32_t " + rpcId + ";\n"
 			serviceHandlerName := key + "Impl"
-			cppValue := "g_services[" + rpcId
+			cppValue := "g_message_info[" + rpcId
 			initFuncData += cppValue + "] = RpcService{" +
 				"\"" + rpcMethodInfo.Service + "\"," +
 				"\"" + rpcMethodInfo.Method + "\"," +

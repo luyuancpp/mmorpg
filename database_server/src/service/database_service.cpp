@@ -87,7 +87,7 @@ void DbServiceImpl::RouteNodeStringMsg(::google::protobuf::RpcController* contro
 		return;
 	}
 	auto& receive_route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto& service_method_info = g_services[receive_route_data.message_id()];
+	auto& service_method_info = g_message_info[receive_route_data.message_id()];
 	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(service_method_info.method);
 	if (nullptr == method)
 	{
