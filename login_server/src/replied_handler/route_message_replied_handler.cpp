@@ -66,16 +66,6 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	mutable_replied->set_body(cl_tls.route_msg_body());
 	switch (cl_tls.next_route_node_type())
 	{
-	case kControllerNode:
-	{
-
-	}
-	break;
-	case kDatabaseNode:
-	{
-
-	}
-	break;
 	case kGateNode:
 	{
 		//todo test 节点不存在了消息会不会存留
@@ -85,7 +75,9 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 			LOG_ERROR << "gate not found node id " << cl_tls.next_route_node_id() << replied->DebugString();
 			return;
 		}
-		gate_it->second->session_.CallMethod(GateServiceRouteNodeStringMsgMethod, mutable_replied);
+		gate_it->second->session_.SendRouteResponse(GateServiceRouteNodeStringMsgMethod,
+                                                    replied->id(),
+                                                    mutable_replied->SerializeAsString());
 	}
 	break;
 

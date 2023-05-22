@@ -630,6 +630,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 			*response->add_route_data_list() = request_data_it;
 		}
 		response->set_session_id(request->session_id());
+        response->set_id(request->id());
 		return;
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
@@ -639,6 +640,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	next_route_data->CopyFrom(cl_tls.route_data());
 	next_route_data->mutable_node_info()->CopyFrom(g_controller_node->node_info());
 	mutable_request->set_body(cl_tls.route_msg_body());
+    mutable_request->set_id(request->id());
 	switch (cl_tls.next_route_node_type())
 	{
 	case kLoginNode:

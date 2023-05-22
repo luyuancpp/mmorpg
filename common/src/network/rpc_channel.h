@@ -127,6 +127,9 @@ namespace muduo
             void Send(const char* service, const char* method, const ::google::protobuf::Message& request);
 
             void Route2Node(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request);
+            void SendRouteResponse(const ::google::protobuf::MethodDescriptor* method,
+                                   uint64_t id,
+                                   const std::string&& message_bytes);
 
             void onMessage(const TcpConnectionPtr& conn,
                 Buffer* buf,
