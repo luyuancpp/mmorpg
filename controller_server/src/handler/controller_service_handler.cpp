@@ -253,7 +253,7 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 	controller_tls.gate_sessions().erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
-	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
+	tls.registry.get<GsNodePtr>(it->second)->session_.Send(GameServiceDisconnectMsgId, rq);
 	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
@@ -561,7 +561,7 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 	GateNodePlayerEnterGsRequest rq;
 	rq.set_session_id(player_session.session_id());
 	rq.set_gs_node_id(player_session.gs_node_id());
-	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMsgId, rq);
+	gate_it->second->session_.Send(GateServicePlayerEnterGsMsgId, rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
@@ -658,12 +658,12 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 			LOG_ERROR << "login not found node id " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		(*try_login).session_.CallMethod(LoginServiceRouteNodeStringMsgMethod, mutable_request);
+		(*try_login).session_.Send(LoginServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
 	case kDatabaseNode:
 	{
-		g_controller_node->database_node()->CallMethod(DbServiceRouteNodeStringMsgMethod, mutable_request);
+		g_controller_node->database_node()->Send(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
 	case kGateNode:
@@ -674,7 +674,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 			LOG_ERROR << "gate not found node id " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-        gate_it->second->session_.CallMethod(GateServiceRouteNodeStringMsgMethod, mutable_request);
+        gate_it->second->session_.Send(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
 	case kGameNode:
@@ -691,7 +691,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		(*try_game)->session_.CallMethod(GameServiceRouteNodeStringMsgMethod, mutable_request);
+		(*try_game)->session_.Send(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
 	default:

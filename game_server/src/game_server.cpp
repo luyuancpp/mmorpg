@@ -175,7 +175,7 @@ void GameServer::CallLobbyStartGs()
 	node_info->set_port(gs_info_.port());
     rq.set_server_type(server_type);
 	rq.set_gs_node_id(gs_info_.id());
-    lobby_node_->CallMethod(LobbyServiceStartCrossGsMsgId, rq);
+    lobby_node_->Send(LobbyServiceStartCrossGsMsgId, rq);
 }
 
 void GameServer::receive(const OnConnected2ServerEvent& es)

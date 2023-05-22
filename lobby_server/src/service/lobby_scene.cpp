@@ -49,7 +49,7 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	tls.registry.get<ControllerNodePtr>(controller_node_it->second)->session_.CallMethod(ControllerServiceAddCrossServerSceneMsgId, rq);
+	tls.registry.get<ControllerNodePtr>(controller_node_it->second)->session_.Send(ControllerServiceAddCrossServerSceneMsgId, rq);
 	LOG_DEBUG << rq.DebugString();
 }
 
