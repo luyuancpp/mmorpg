@@ -63,7 +63,7 @@ void GateServer::StartServer()
             auto& controller_node_info = conf_info_.controller_info();
             InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
             controller_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
-            controller_node_->registerService(&gate_service_);
+            controller_node_->registerService(&gate_service_handler_);
             controller_node_->subscribe<OnConnected2ServerEvent>(*this);
             controller_node_->connect();
         }

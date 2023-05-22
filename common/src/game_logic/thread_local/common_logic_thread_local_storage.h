@@ -8,7 +8,7 @@ class CommonLogicThreadLocalStorage
 public:
     RouteData& route_data() { return route_data_; };
     std::string& route_msg_body() { return route_msg_body_; }
-    void set_next_route_node_type(uint32_t note_type) { next_route_node_type_ = note_type; }
+    void set_next_route_node_type(uint32_t node_type) { next_route_node_type_ = node_type; }
 	uint32_t next_route_node_type()const { return next_route_node_type_; }
 	void set_next_route_node_id(uint32_t next_node_id) { next_route_node_id_ = next_node_id; }
 	uint32_t next_route_node_id()const { return next_route_node_id_; }

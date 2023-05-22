@@ -17,13 +17,13 @@ extern ProtobufDispatcher g_response_dispatcher;
 void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMsgStringResponse>& replied, Timestamp timestamp)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	defer(cl_tls.set_current_session_id(kInvalidSessionId));
-	cl_tls.set_current_session_id(replied->session_id());
-
 	//函数返回前一定会执行的函数
 	defer(cl_tls.set_next_route_node_type(UINT32_MAX));
 	defer(cl_tls.set_next_route_node_id(UINT32_MAX));
 	defer(cl_tls.set_current_session_id(kInvalidSessionId));
+
+    cl_tls.set_current_session_id(replied->session_id());
+
 	if (replied->route_data_list_size() <= 0)
 	{
 		LOG_ERROR << "msg list empty:" << replied->DebugString();
@@ -50,11 +50,13 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		LOG_ERROR << "invalid  body response" << replied->DebugString() << "method name" << route_data.method();
 		return;
 	}
-	cl_tls.set_current_session_id(replied->session_id());
+
 	//当前节点的真正回复的消息
 	g_response_dispatcher.onProtobufMessage(conn, current_node_response, timestamp);
 
 	auto mutable_replied = const_cast<::RouteMsgStringResponse*>(replied.get());
+
+    //处理完以后要删除当前节点的信息
 	mutable_replied->mutable_route_data_list()->RemoveLast();
 	//已经是最后一个节点了
 	if (mutable_replied->route_data_list_size() <= 0)
