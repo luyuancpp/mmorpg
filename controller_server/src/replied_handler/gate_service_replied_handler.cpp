@@ -57,6 +57,9 @@ void OnGateServiceKickConnByControllerRepliedHandler(const TcpConnectionPtr& con
 void OnGateServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMsgStringResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+
+
+
 ///<<< END WRITING YOUR CODE
 }
 

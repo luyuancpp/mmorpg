@@ -579,6 +579,8 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
     defer(cl_tls.set_next_route_node_id(UINT32_MAX));
 	defer(cl_tls.set_current_session_id(kInvalidSessionId));
 
+    cl_tls.set_current_session_id(request->session_id());
+
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
 		LOG_ERROR << "route msg size too max:" << request->DebugString();
@@ -589,7 +591,6 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		LOG_ERROR << "msg list empty:" << request->DebugString();
 		return;
 	}
-	//todo find all service 
 	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
 	auto sit = g_service_method_info.find(route_data.message_id());
 	if (sit == g_service_method_info.end())
@@ -615,7 +616,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << route_data.method();
 		return;
 	}
-	cl_tls.set_current_session_id(request->session_id());
+
 	//当前节点的真正回复的消息
 	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
 	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);

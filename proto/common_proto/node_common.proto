@@ -16,6 +16,7 @@ message RouteMsgStringRequest
   repeated RouteData route_data_list = 2;
   uint64 session_id = 3;  
   uint64 id = 4;
+  bool is_client = 5;
 }
 
 message RouteMsgStringResponse
@@ -24,6 +25,7 @@ message RouteMsgStringResponse
   repeated RouteData route_data_list = 2;
   uint64 session_id = 3;  
   uint64 id = 4;
+  bool is_client = 5;
 }
 
 message RoutePlayerMsgStringRequest

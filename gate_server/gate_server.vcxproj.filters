@@ -30,9 +30,6 @@
     <ClCompile Include="src\network\gs_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\gate_service.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\network\login_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -63,6 +60,12 @@
     <ClCompile Include="src\replied_handler\game_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\replied_handler\route_message_replied_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\handler\gate_service_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\handler\c2gate.h">
@@ -72,9 +75,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gate_player_list.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\gate_service.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\login_node.h">
@@ -108,6 +108,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\game_service_replied_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\handler\gate_service_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -11,7 +11,7 @@
 #include "src/handler/c2gate.h"
 #include "src/network/codec/codec.h"
 #include "src/network/codec/dispatcher.h"
-#include "src/handler/gate_service.h"
+#include "src/handler/gate_service_handler.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_connection_event.h"
 
@@ -36,7 +36,7 @@ public:
 
     inline EventLoop* loop() { return loop_; }
     inline ProtobufCodec& codec() { return codec_; };
-    inline GateServiceImpl& node_service_impl() { return gate_service_; }
+    inline GateServiceHandler& gate_service_hanlder() { return gate_service_handler_; }
     inline uint32_t gate_node_id()const { return conf_info_.gate_info().id(); }
     inline RpcClientPtr& deploy_session() { return deploy_session_; }
     inline RpcClientPtr& controller_node_session() { return controller_node_; }
@@ -84,7 +84,7 @@ private:
     RpcClientPtr deploy_session_;
     RpcClientPtr controller_node_;
 
-    GateServiceImpl gate_service_;
+    GateServiceHandler gate_service_handler_;
 };
 
 extern GateServer* g_gate_node;

@@ -1,6 +1,6 @@
 #pragma once
 #include "gate_service.pb.h"
-class GateServiceImpl : public ::GateService{
+class GateServiceHandler : public ::GateService{
 public:
 public:
     void StartGS(::google::protobuf::RpcController* controller,
