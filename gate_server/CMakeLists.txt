@@ -31,8 +31,6 @@ set(Source_Files
     "src/handler/game_service_replied.cpp"
     "src/handler/gate_service_handler.cpp"
     "src/handler/login_service_replied.cpp"
-    "src/network/gate_player_list.cpp"
-    "src/network/gs_node.cpp"
     "src/replied_handler/controller_service_replied_handler.cpp"
     "src/replied_handler/deploy_service_replied_handler.cpp"
     "src/replied_handler/game_service_replied_handler.cpp"

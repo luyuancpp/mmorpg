@@ -24,18 +24,6 @@
     <ClCompile Include="src\gate_server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\game_service_replied.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\controller_service_replied.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\deploy_service_replied.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\login_service_replied.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\thread_local\gate_thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -72,18 +60,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\gs_node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\game_service_replied.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\controller_service_replied.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\deploy_service_replied.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\login_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\gate_thread_local_storage.h">
