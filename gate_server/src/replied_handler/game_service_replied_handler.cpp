@@ -2,6 +2,7 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
+#include "src/gate_server.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
@@ -34,6 +35,12 @@ void OnGameServiceSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, const 
 void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<GameNodeRpcClientResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    MessageBody message;
+    message.set_body(replied->response());
+    message.set_id(replied->id());
+    message.set_service(replied->service());
+    message.set_method(replied->method());
+    g_gate_node->codec().send(conn, message);
 ///<<< END WRITING YOUR CODE
 }
 

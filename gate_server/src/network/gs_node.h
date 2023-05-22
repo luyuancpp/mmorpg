@@ -16,5 +16,4 @@ struct GsNode
 };
 
 using GsNodes = std::unordered_map<uint32_t, GsNode>;
-extern thread_local GsNodes g_game_node;
 

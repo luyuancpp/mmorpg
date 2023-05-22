@@ -115,7 +115,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
     else
     {
         //todo 断线重连
-        for (auto& it : g_game_node)
+        for (auto& it : gate_tls.game_nodes())
         {
             if (!IsSameAddr(it.second.gs_session_->peer_addr(), conn->peerAddress()))
             {

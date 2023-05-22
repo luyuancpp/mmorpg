@@ -24,12 +24,6 @@
     <ClCompile Include="src\gate_server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\gate_player_list.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\network\gs_node.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\game_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
