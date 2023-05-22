@@ -127,6 +127,6 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, uin
 		LOG_ERROR << "Send2Gate gate not found" << gate_node_id;
 		return;
 	}
-	gate_it->second->session_.Send(GateServicePlayerMessageMethod, messag);
+	gate_it->second->session_.Send(GateServicePlayerMessageMsgId, messag);
 }
 

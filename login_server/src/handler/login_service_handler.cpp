@@ -312,7 +312,7 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	cl_tls.set_current_session_id(request->session_id());
 	//当前节点的真正回复的消息
 	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
-	Send(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
+	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 	
 	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
@@ -339,13 +339,13 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	case kControllerNode:
 	{
 		//发送到下个节点
-		g_login_node->controller_node()->Send(ControllerServiceRouteNodeStringMsgMethod, mutable_request);
+		g_login_node->controller_node()->Send(ControllerServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
 	case kDatabaseNode:
 	{
 		//发送到下个节点
-		g_login_node->db_node()->Send(DbServiceRouteNodeStringMsgMethod, mutable_request);
+		g_login_node->db_node()->Send(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
 	default:
