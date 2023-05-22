@@ -253,7 +253,7 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 	controller_tls.gate_sessions().erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
-	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMethod, &rq);
+	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
 	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
@@ -463,16 +463,16 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "player not found " << message_extern.player_id();
 		return;
 	}
-	auto sit = g_service_method_info.find(request->msg().service_method_id());
+	auto sit = g_service_method_info.find(request->msg().message_id());
 	if (sit == g_service_method_info.end())
 	{
-		LOG_ERROR << "service_method_id not found " << request->msg().service_method_id();
+		LOG_ERROR << "message_id not found " << request->msg().message_id();
 		return;
 	}
 	auto service_it = g_player_service.find(sit->second.service);
 	if (service_it == g_player_service.end())
 	{
-		LOG_ERROR << "player service  not found " << request->msg().service_method_id();
+		LOG_ERROR << "player service  not found " << request->msg().message_id();
 		return;
 	}
 	auto& service_handler = service_it->second;
@@ -480,7 +480,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(sit->second.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found " << request->msg().service_method_id();
+		LOG_ERROR << "method not found " << request->msg().message_id();
 		//todo client error;
 		return;
 	}
@@ -494,7 +494,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 	}
 	response->mutable_ex()->set_player_id(request->ex().player_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
-	response->mutable_msg()->set_service_method_id(request->msg().service_method_id());
+	response->mutable_msg()->set_message_id(request->msg().message_id());
 ///<<< END WRITING YOUR CODE
 }
 
@@ -561,7 +561,7 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 	GateNodePlayerEnterGsRequest rq;
 	rq.set_session_id(player_session.session_id());
 	rq.set_gs_node_id(player_session.gs_node_id());
-	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMethod, &rq);
+	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMsgId, rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
@@ -595,7 +595,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	auto sit = g_service_method_info.find(route_data.message_id());
 	if (sit == g_service_method_info.end())
 	{
-		LOG_INFO << "service_method_id not found " << route_data.message_id();
+		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
 	auto it = g_services.find(sit->second.service);

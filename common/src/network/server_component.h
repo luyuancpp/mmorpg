@@ -13,27 +13,12 @@ struct RpcServerConnection
 
     bool Connected() const { return conn_->connected(); }
 
-    void Send(const ::google::protobuf::MethodDescriptor* method, const ::google::protobuf::Message& request)
+    void Send(uint32_t message_id, const ::google::protobuf::Message& request)
     {
-        channel_->Send(method, request);
+        channel_->Send(message_id, request);
     }
 
-    void Send(const char* service, const char* method, const ::google::protobuf::Message& request)
-    {
-        channel_->Send(service, method, request);
-    }
-
-    void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-        const ::google::protobuf::Message* request)
-    {
-        if (!conn_->connected())
-        {
-            return;
-        }
-        channel_->CallMethod(method, nullptr, request, nullptr, nullptr);
-    }
-
-    void SendRouteResponse(const ::google::protobuf::MethodDescriptor* method,
+    void SendRouteResponse(uint32_t message_id,
                            uint64_t id,
                            const std::string&& message_bytes)
     {
@@ -41,7 +26,7 @@ struct RpcServerConnection
         {
             return;
         }
-        channel_->SendRouteResponse(method, id, std::move(message_bytes));
+        channel_->SendRouteResponse(message_id, id, std::move(message_bytes));
     }
 
     muduo::net::TcpConnectionPtr conn_;

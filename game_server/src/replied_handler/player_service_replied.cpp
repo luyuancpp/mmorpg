@@ -12,13 +12,13 @@ std::unordered_map<std::string, std::unique_ptr<PlayerServiceReplied>> g_player_
 class ClientPlayerCommonServiceImpl : public ClientPlayerCommonService{};
 class ClientPlayerSceneServiceImpl : public ClientPlayerSceneService{};
 class ClientPlayerTeamServiceImpl : public ClientPlayerTeamService{};
-class ConstrollerPlayerServiceImpl : public ConstrollerPlayerService{};
+class ControllerPlayerServiceImpl : public ControllerPlayerService{};
 class ControllerScenePlayerServiceImpl : public ControllerScenePlayerService{};
 void InitPlayerServiceReplied()
 {
 	g_player_service_replied.emplace("ClientPlayerCommonService", std::make_unique<ClientPlayerCommonServiceRepliedHandler>(new ClientPlayerCommonServiceImpl));
 	g_player_service_replied.emplace("ClientPlayerSceneService", std::make_unique<ClientPlayerSceneServiceRepliedHandler>(new ClientPlayerSceneServiceImpl));
 	g_player_service_replied.emplace("ClientPlayerTeamService", std::make_unique<ClientPlayerTeamServiceRepliedHandler>(new ClientPlayerTeamServiceImpl));
-	g_player_service_replied.emplace("ConstrollerPlayerService", std::make_unique<ConstrollerPlayerServiceRepliedHandler>(new ConstrollerPlayerServiceImpl));
+	g_player_service_replied.emplace("ControllerPlayerService", std::make_unique<ControllerPlayerServiceRepliedHandler>(new ControllerPlayerServiceImpl));
 	g_player_service_replied.emplace("ControllerScenePlayerService", std::make_unique<ControllerScenePlayerServiceRepliedHandler>(new ControllerScenePlayerServiceImpl));
 }

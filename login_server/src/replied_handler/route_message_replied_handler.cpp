@@ -34,7 +34,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	auto sit = g_service_method_info.find(route_data.message_id());
 	if (sit == g_service_method_info.end())
 	{
-		LOG_INFO << "service_method_id not found " << route_data.message_id();
+		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
 	const google::protobuf::MethodDescriptor* method = g_login_node->login_handler().GetDescriptor()->FindMethodByName(sit->second.method);
@@ -77,7 +77,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 			LOG_ERROR << "gate not found node id " << cl_tls.next_route_node_id() << replied->DebugString();
 			return;
 		}
-		gate_it->second->session_.SendRouteResponse(GateServiceRouteNodeStringMsgMethod,
+		gate_it->second->session_.SendRouteResponse(GateServiceRouteNodeStringMsgMsgId,
                                                     replied->id(),
                                                     mutable_replied->SerializeAsString());
 	}

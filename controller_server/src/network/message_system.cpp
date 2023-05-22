@@ -20,7 +20,7 @@
 #include "game_service.pb.h"
 
 
-void Send2Gs(uint32_t service_method_id, const google::protobuf::Message& message, uint32_t node_id)
+void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, uint32_t node_id)
 {
 	auto it = controller_tls.game_node().find(node_id);
 	if (it == controller_tls.game_node().end())
@@ -34,16 +34,11 @@ void Send2Gs(uint32_t service_method_id, const google::protobuf::Message& messag
 		LOG_ERROR << "gs not found ->" << node_id;
 		return;
 	}
-    auto sit = g_service_method_info.find(service_method_id);
-    if (sit == g_service_method_info.end())
-    {
-        LOG_ERROR << "service_method_id found ->" << service_method_id;
-        return;
-    }
-	(*node)->session_.Send(sit->second.service, sit->second.method, message);
+
+	(*node)->session_.Send(message_id, message);
 }
 
-void Send2GsPlayer(uint32_t service_method_id, const google::protobuf::Message& message, entt::entity player)
+void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
@@ -60,39 +55,33 @@ void Send2GsPlayer(uint32_t service_method_id, const google::protobuf::Message& 
 		LOG_INFO << "gs not found ";
 		return;
 	}
-	auto sit = g_service_method_info.find(service_method_id);
-	if (sit == g_service_method_info.end())
-	{
-		LOG_ERROR << "service_method_id found ->" << service_method_id;
-		return;
-	}
 	NodeServiceMessageRequest msg;
 	msg.mutable_msg()->set_body(message.SerializeAsString());
 	msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
-	gs->session_.Send(sit->second.service, sit->second.method, message);
+	gs->session_.Send(message_id,  message);
 }
 
-void Send2GsPlayer(uint32_t service_method_id, const google::protobuf::Message& message, EntityPtr& player)
+void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& player)
 {
-	Send2GsPlayer(service_method_id, message, (entt::entity)player);
+	Send2GsPlayer(message_id, message, (entt::entity)player);
 }
 
-void Send2GsPlayer(uint32_t service_method_id, const google::protobuf::Message& message, Guid player_id)
+void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-    Send2GsPlayer(service_method_id, message, ControllerPlayerSystem::GetPlayer(player_id));
+    Send2GsPlayer(message_id, message, ControllerPlayerSystem::GetPlayer(player_id));
 }
 
-void Send2PlayerViaGs(uint32_t service_method_id, const google::protobuf::Message& message, Guid player_id)
+void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
-	Send2PlayerViaGs(service_method_id, message, ControllerPlayerSystem::GetPlayer(player_id));
+	Send2PlayerViaGs(message_id, message, ControllerPlayerSystem::GetPlayer(player_id));
 }
 
-void Send2PlayerViaGs(uint32_t service_method_id, const google::protobuf::Message& message, EntityPtr& player)
+void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& player)
 {
-	Send2PlayerViaGs(service_method_id, message, (entt::entity)player);
+	Send2PlayerViaGs(message_id, message, (entt::entity)player);
 }
 
-void Send2PlayerViaGs(uint32_t service_method_id, const google::protobuf::Message& message, entt::entity player)
+void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
     if (!tls.registry.valid(player))
     {
@@ -105,20 +94,14 @@ void Send2PlayerViaGs(uint32_t service_method_id, const google::protobuf::Messag
         LOG_INFO << "gs not found ";
         return;
     }
-    
-	auto sit = g_service_method_info.find(service_method_id);
-	if (sit == g_service_method_info.end())
-	{
-		LOG_ERROR << "service_method_id found ->" << service_method_id;
-		return;
-	}
+   
     NodeServiceMessageRequest msg;
     msg.mutable_msg()->set_body(message.SerializeAsString());
     msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
-	gs->session_.Send(sit->second.service, sit->second.method, message);
+	gs->session_.Send(message_id, message);
 }
 
-void Send2Player(uint32_t service_method_id, const google::protobuf::Message& message, entt::entity player)
+void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
@@ -130,46 +113,34 @@ void Send2Player(uint32_t service_method_id, const google::protobuf::Message& me
 	{
 		return;
 	}
-	Send2Player(service_method_id, message, gate, player_session.gate_session_.session_id());
+	Send2Player(message_id, message, gate, player_session.gate_session_.session_id());
 }
 
-void Send2Player(uint32_t service_method_id, const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id)
+void Send2Player(uint32_t message_id, const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id)
 {
-	auto sit = g_service_method_info.find(service_method_id);
-	if (sit == g_service_method_info.end())
-	{
-		LOG_ERROR << "service_method_id found ->" << service_method_id;
-		return;
-	}
     NodeServiceMessageRequest message_wrapper;
     message_wrapper.mutable_ex()->set_session_id(session_id);
     message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
-    gate->session_.Send(sit->second.service, sit->second.method, message_wrapper);
+    gate->session_.Send(message_id, message_wrapper);
 }
 
-void Send2Player(uint32_t service_method_id, const google::protobuf::Message& message, Guid player_id)
+void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
 	auto player = ControllerPlayerSystem::GetPlayer(player_id);
-	Send2Player(service_method_id, message, player);
+	Send2Player(message_id, message, player);
 }
 
-void Send2Gate(uint32_t service_method_id, const google::protobuf::Message& message, uint32_t gate_id)
+void Send2Gate(uint32_t message_id, const google::protobuf::Message& message, uint32_t gate_id)
 {
 	auto gate_it = controller_tls.gate_nodes().find(gate_id);
 	if (gate_it == controller_tls.gate_nodes().end())
 	{
 		return;
 	}
-	auto sit = g_service_method_info.find(service_method_id);
-	if (sit == g_service_method_info.end())
-	{
-		LOG_ERROR << "service_method_id found ->" << service_method_id;
-		return;
-	}
-    gate_it->second->session_.Send(sit->second.service, sit->second.method, message);
+    gate_it->second->session_.Send(message_id, message);
 }
 
-void CallGsPlayerMethod(uint32_t service_method_id, const google::protobuf::Message& msg, entt::entity player)
+void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)
 {
     if (!tls.registry.valid(player))
     {
@@ -186,12 +157,6 @@ void CallGsPlayerMethod(uint32_t service_method_id, const google::protobuf::Mess
         LOG_INFO << "gs not found ";
         return;
     }
-	auto sit = g_service_method_info.find(service_method_id);
-	if (sit == g_service_method_info.end())
-	{
-		LOG_ERROR << "service_method_id found ->" << service_method_id;
-		return;
-	}
     auto gs_it = controller_tls.game_node().find(try_player_session->gs_node_id());
     if (gs_it == controller_tls.game_node().end())
     {
@@ -199,7 +164,7 @@ void CallGsPlayerMethod(uint32_t service_method_id, const google::protobuf::Mess
     }
     NodeServiceMessageRequest rq;
     rq.mutable_msg()->set_body(msg.SerializeAsString());
-	rq.mutable_msg()->set_service_method_id(service_method_id);
+	rq.mutable_msg()->set_message_id(message_id);
     rq.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
-    tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayerMethod, &rq);
+    tls.registry.get<GsNodePtr>(gs_it->second)->session_.Send(message_id, rq);
 }

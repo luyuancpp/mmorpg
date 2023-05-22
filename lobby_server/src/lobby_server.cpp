@@ -61,12 +61,12 @@ void LobbyServer::receive(const OnConnected2ServerEvent& es)
         {
             LobbyServerRequest rq;
             rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-            deploy_session_->CallMethod(DeployServiceStartLobbyServerMethod, &rq);
+            deploy_session_->Send(DeployServiceStartLobbyServerMsgId, rq);
         }
 			
         {
             SceneSqueueRequest rq;
-            deploy_session_->CallMethod(DeployServiceSceneSequenceNodeIdMethod, &rq);
+            deploy_session_->Send(DeployServiceSceneSequenceNodeIdMsgId, rq);
         }
 	}
       

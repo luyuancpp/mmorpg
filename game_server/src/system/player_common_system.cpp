@@ -77,7 +77,7 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 	EnterGsSucceedRequest rq;
 	rq.set_player_id(tls.registry.get<Guid>(player));
 	rq.set_game_node_id(node_id());
-	controller_it->second->session_->CallMethod(ControllerServiceEnterGsSucceedMethod, &rq);
+	controller_it->second->session_->Send(ControllerServiceEnterGsSucceedMsgId, rq);
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 }
 

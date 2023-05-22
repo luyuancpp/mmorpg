@@ -2,7 +2,7 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
-service ConstrollerPlayerService 
+service ControllerPlayerService 
 {
   rpc Test (google.protobuf.Empty) returns (google.protobuf.Empty);
 }

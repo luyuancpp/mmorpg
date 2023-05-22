@@ -42,7 +42,7 @@
 42=LoginServiceRoutePlayerStringMsg
 43=GamePlayerSceneServiceEnterSceneS2C
 44=ControllerScenePlayerServiceEnterScene
-45=ConstrollerPlayerServiceTest
+45=LoginServiceGateConnect
 46=GamePlayerSceneServiceEnterScene
 47=DeployServiceSceneSequenceNodeId
 48=GameSceneServiceTest
@@ -70,4 +70,4 @@
 70=DeployServiceAcquireLobbyInfo
 71=DeployServiceLoginNodeInfo
 72=GamePlayerServiceOnControllerEnterGateSucceed
-73=LoginServiceGateConnect
+73=GamePlayerServiceController2GsLogin
