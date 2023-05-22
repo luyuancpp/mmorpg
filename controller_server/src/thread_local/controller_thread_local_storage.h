@@ -11,11 +11,11 @@ using GateSessionList = std::unordered_map<uint64_t, EntityPtr>;
 class ControllerThreadLocalStorage
 {
 public:
-	PlayerListMap& player_list() { return player_list_; }
-	GsNodes& game_node() { return game_node_; }
-	LoginNodes& login_node() { return login_nodes_; }
-	GateSessionList& gate_sessions() {return gate_sessions_;}
-	GateNodes& gate_nodes() { return gate_nodes_; }
+	inline PlayerListMap& player_list() { return player_list_; }
+	inline GsNodes& game_node() { return game_node_; }
+	inline LoginNodes& login_node() { return login_nodes_; }
+	inline GateSessionList& gate_sessions() {return gate_sessions_;}
+	inline GateNodes& gate_nodes() { return gate_nodes_; }
 private:
 	PlayerListMap player_list_;
 	GsNodes game_node_;

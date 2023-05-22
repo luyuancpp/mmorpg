@@ -18,10 +18,8 @@
     <ClCompile Include="src\replied_handler\register_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\route_message_replied_handler.cpp" />
     <ClCompile Include="src\thread_local\gate_thread_local_storage.cpp" />
-    <ClCompile Include="src\network\gate_player_list.cpp" />
     <ClCompile Include="src\gate_server.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\handler\c2gate.cpp" />
     <ClCompile Include="src\handler\controller_service_replied.cpp" />
     <ClCompile Include="src\handler\deploy_service_replied.cpp" />
