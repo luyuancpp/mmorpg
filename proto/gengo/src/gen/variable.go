@@ -34,6 +34,7 @@ var RpcIdMethodMap = map[uint64]*RpcMethodInfo{}
 var ServiceIdMap = map[string]uint64{}
 var ServiceMethodMap = map[string]RpcMethodInfos{}
 var MaxMessageId = uint64(0)
+var MessageIdFileMaxId = uint64(0)
 
 func (info *RpcMethodInfo) KeyName() (idName string) {
 	return info.Service + info.Method

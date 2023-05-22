@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
@@ -48,7 +49,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 			rpcMethodInfo.FileName = fd.Name()
 			rpcMethodInfo.Path = filePath
 			rpcServiceInfo.MethodInfo = append(rpcServiceInfo.MethodInfo, &rpcMethodInfo)
-
+			MaxMessageId = atomic.AddUint64(&MaxMessageId, 1)
 			methodIndex += 1
 			continue
 		} else if len(service) > 0 && strings.Contains(line, "}") {
@@ -93,7 +94,11 @@ func readServiceIdFile() {
 	for scanner.Scan() {
 		line = scanner.Text()
 		splitList := strings.Split(line, "=")
-		ServiceIdMap[splitList[1]], err = strconv.ParseUint(splitList[0], 10, 32)
+		id, _ := strconv.ParseUint(splitList[0], 10, 64)
+		ServiceIdMap[splitList[1]] = id
+		if MessageIdFileMaxId < id {
+			MessageIdFileMaxId = id
+		}
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -132,7 +137,6 @@ func WriteServiceIdFile() {
 func InitServiceId() {
 	var unUseServiceId = map[uint64]EmptyStruct{}
 	var useServiceId = map[uint64]EmptyStruct{}
-	var curMethodCount = 0
 
 	RpcServiceSyncMap.Range(func(k, v interface{}) bool {
 		key := k.(string)
@@ -142,12 +146,10 @@ func InitServiceId() {
 	})
 
 	for _, methodList := range ServiceMethodMap {
-		curMethodCount += len(methodList)
 		for _, mv := range methodList {
 			id, ok := ServiceIdMap[mv.KeyName()]
-			//Id文件未找到则是新消息，新消息后面处理，这里不处理
 			if !ok {
-				mv.Id = math.MaxUint64
+				//Id文件未找到则是新消息,或者已经改名，新消息后面处理，这里不处理
 				continue
 			}
 			useServiceId[id] = EmptyStruct{}
@@ -155,29 +157,25 @@ func InitServiceId() {
 		}
 	}
 
-	for _, v := range ServiceIdMap {
-		if _, ok := useServiceId[v]; !ok {
-			unUseServiceId[v] = EmptyStruct{}
-		}
-		if MaxMessageId < v {
-			MaxMessageId = v
+	for i := uint64(0); i < MaxMessageId; i++ {
+		if _, ok := useServiceId[i]; !ok {
+			unUseServiceId[i] = EmptyStruct{}
 		}
 	}
 
 	for _, methodList := range ServiceMethodMap {
-		curMethodCount += len(methodList)
 		for _, mv := range methodList {
-			if mv.Id == math.MaxUint64 {
+			if len(unUseServiceId) > 0 && mv.Id == math.MaxUint64 {
 				for uk, _ := range unUseServiceId {
 					mv.Id = uk
-					useServiceId[uk] = EmptyStruct{}
 					delete(unUseServiceId, uk)
 					break
 				}
+				continue
 			}
 			if mv.Id == math.MaxUint64 {
-				mv.Id = MaxMessageId
-				MaxMessageId += 1
+				MessageIdFileMaxId += 1
+				mv.Id = MessageIdFileMaxId
 			}
 			RpcIdMethodMap[mv.Id] = mv
 		}
