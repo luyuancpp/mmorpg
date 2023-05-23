@@ -7,18 +7,13 @@
 #include "src/game_server.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"
-#include "src/network/message_system.h"
-#include "src/network/session.h"
 #include "src/game_logic/player/player_list.h"
-#include "src/network/server_component.h"
 #include "src/pb/pbc/service.h"
 #include "src/handler/player_service.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
-#include "c2gate.pb.h"
 #include "component_proto/player_async_comp.pb.h"
-#include "component_proto/player_comp.pb.h"
 
 using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 

@@ -1,15 +1,8 @@
 #include "database_service.h"
 #include "src/network/rpc_msg_route.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "muduo/base/Timestamp.h"
-
 #include "src/database_server.h"
 #include "src/pb/pbc/service.h"
-#include "src/mysql_wrapper/mysql_database.h"
-#include "src/network/node_info.h"
-#include "src/redis_client/redis_client.h"
-
-#include "comp.pb.h"
 ///<<< END WRITING YOUR CODE
 
 ///<<<rpc begin

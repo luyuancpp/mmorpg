@@ -29,10 +29,7 @@
 #include "src/thread_local/controller_thread_local_storage.h"
 #include "src/util/defer.h"
 
-#include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
-#include "game_service.pb.h"
-#include "gate_service.pb.h"
 
 using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 AccountSessionMap login_accounts_session_;

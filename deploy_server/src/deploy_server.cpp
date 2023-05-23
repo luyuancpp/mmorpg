@@ -1,10 +1,6 @@
 #include "deploy_server.h"
 
-#include "muduo/base/Logging.h"
-
 #include "src/deploy_variable.h"
-
-#include "mysql_database_table.pb.h"
 
 DeployServer* g_deploy_server = nullptr;
 

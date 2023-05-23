@@ -6,11 +6,8 @@
 #include "muduo/base/Logging.h"
 
 #include "src/game_logic/player/player_list.h"
-#include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"
-#include "src/network/message_system.h"
 #include "src/network/session.h"
-#include "src/network/gate_node.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"
 

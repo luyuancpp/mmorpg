@@ -2,12 +2,7 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/comp/player_list.h"
-#include "src/game_logic/scene/scene.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/game_logic/tips_id.h"
-#include "src/system/player_tip_system.h"
-#include "src/system/player_change_scene.h"
+
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 

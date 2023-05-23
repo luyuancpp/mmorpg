@@ -10,7 +10,6 @@
 #include "src/network/player_session.h"
 #include "src/system/player_change_scene.h"
 
-#include "client_player_proto/scene_client_player.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 
