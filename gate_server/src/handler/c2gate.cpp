@@ -93,13 +93,13 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             //比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 			LoginNodeDisconnectRequest rq;
 			rq.set_session_id(session_id);
-			get_login_node(session_id)->Send(LoginServiceDisconnectMsgId, rq);
+			get_login_node(session_id)->CallMethod(LoginServiceDisconnectMsgId, rq);
         }
         // controller
         {
             GateDisconnectRequest rq;
             rq.set_session_id(session_id);
-            g_gate_node->controller_node_session()->Send(ControllerServiceGateDisconnectMsgId, rq);
+            g_gate_node->controller_node_session()->CallMethod(ControllerServiceGateDisconnectMsgId, rq);
         }
         gate_tls.sessions().erase(session_id);
     }
@@ -142,7 +142,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         rq.set_session_id(session_id);
         rq.set_id(request->id());
         rq.set_message_id(request->message_id());
-        gs->second.gs_session_->Send(GameServiceClientSend2PlayerMsgId, rq);
+        gs->second.gs_session_->CallMethod(GameServiceClientSend2PlayerMsgId, rq);
         return;
     }
     else

@@ -31,6 +31,15 @@ struct RpcServerConnection
         channel_->Send(message_id, message);
     }
 
+    void Route2Node(uint32_t message_id, const ::google::protobuf::Message& message)
+    {
+		if (!Connected())
+		{
+			return;
+		}
+		channel_->Route2Node(message_id, message);
+    }
+
     void SendRouteResponse(uint32_t message_id,
                            uint64_t id,
                            const std::string&& message_bytes)

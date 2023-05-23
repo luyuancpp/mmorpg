@@ -49,7 +49,7 @@ void OnControllerServiceStartGsRepliedHandler(const TcpConnectionPtr& conn, cons
 	else if (GameConfig::GetSingleton().server_type() == kMainSceneCrossServer)
 	{
 		GameConnectToControllerRequest rq;
-		g_game_node->lobby_node()->Send(LobbyServiceGameConnectToControllerMsgId, rq);
+		g_game_node->lobby_node()->CallMethod(LobbyServiceGameConnectToControllerMsgId, rq);
 	}
 ///<<< END WRITING YOUR CODE
 }
