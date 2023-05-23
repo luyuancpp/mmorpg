@@ -18,6 +18,9 @@ DeployServer::DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAd
 
 void DeployServer::Start()
 {
+    void InitMessageInfo();
+    InitMessageInfo();
+
 	set_player_mysql_client(player_mysql_client());
 	RegisterService(&impl_);
 

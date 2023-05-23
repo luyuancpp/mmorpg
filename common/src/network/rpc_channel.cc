@@ -60,11 +60,7 @@ RpcChannel::~RpcChannel()
   // are less strict in one important way:  the request and response objects
   // need not be of any specific class as long as their descriptors are
   // method->input_type() and method->output_type().
-void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                            google::protobuf::RpcController* controller,
-                            const ::google::protobuf::Message* request,
-                            ::google::protobuf::Message* response,
-                            ::google::protobuf::Closure* done)
+void RpcChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Message& request)
 {
   RpcMessage message;
   message.set_type(REQUEST);
@@ -72,7 +68,8 @@ void RpcChannel::CallMethod(const ::google::protobuf::MethodDescriptor* method,
   message.set_id(id);
   //message.set_service(method->service()->full_name());
   //message.set_method(method->name());
-  message.set_request(request->SerializeAsString()); // FIXME: error check
+  message.set_message_id(message_id);
+  message.set_request(request.SerializeAsString()); // FIXME: error check
   codec_.send(conn_, message);
 }
 

@@ -58,7 +58,6 @@ set(Source_Files
     "src/handler/register_handler.cpp"
     "src/handler/scene_client_player_handler.cpp"
     "src/handler/team_client_player_handler.cpp"
-    "src/network/controller_node.cpp"
     "src/network/message_system.cpp"
     "src/replied_handler/common_client_player_replied_handler.cpp"
     "src/replied_handler/controller_common_server_player_replied_handler.cpp"

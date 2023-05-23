@@ -91,14 +91,14 @@ namespace muduo
         //   RpcChannel* channel = new MyRpcChannel("remotehost.example.com:1234");
         //   MyService* service = new MyService::Stub(channel);
         //   service->MyMethod(request, &response, callback);
-        class RpcChannel : public ::google::protobuf::RpcChannel
+        class RpcChannel 
         {
         public:
             RpcChannel();
 
             explicit RpcChannel(const TcpConnectionPtr& conn);
 
-            ~RpcChannel() override;
+			~RpcChannel();
 
             void setConnection(const TcpConnectionPtr& conn)
             {
@@ -112,20 +112,13 @@ namespace muduo
 
             ProtobufDispatcher& protobufdispatcher() { return dispatcher_; }
 
-            // Call the given method of the remote service.  The signature of this
-            // procedure looks the same as Service::CallMethod(), but the requirements
-            // are less strict in one important way:  the request and response objects
-            // need not be of any specific class as long as their descriptors are
-            // method->input_type() and method->output_type().
-            void CallMethod(const ::google::protobuf::MethodDescriptor* method,
-                ::google::protobuf::RpcController* controller,
-                const ::google::protobuf::Message* request,
-                ::google::protobuf::Message* response,
-                ::google::protobuf::Closure* done) override;
-
+            //rpc远程调用，回复rpc 的response
+            void CallMethod(uint32_t message_id, const ::google::protobuf::Message& request);
+            //发送到对应的服务器不回复
             void Send(uint32_t message_id, const ::google::protobuf::Message& message);
-
+            //发送对应的串消息,
             void Route2Node(uint32_t message_id, const ::google::protobuf::Message& request);
+            //返回串消息
             void SendRouteResponse(uint32_t message_id, uint64_t id, const std::string&& message_bytes);
 
             void onMessage(const TcpConnectionPtr& conn,
