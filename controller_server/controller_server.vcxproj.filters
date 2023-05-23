@@ -30,16 +30,10 @@
     <ClCompile Include="src\handler\controller_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\gs_node.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\system\player_scene_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\player_common_system.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\network\gate_session.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\player_tip_system.cpp">
@@ -58,9 +52,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\thread_local\controller_thread_local_storage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\network\login_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\event_handler\mission_event_handler.cpp">
