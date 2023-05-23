@@ -16,6 +16,8 @@ void DatabaseServer::Init()
 {
     GameConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
+	void InitMessageInfo();
+	InitMessageInfo();
 	node_info_.set_node_type(kDatabaseNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     InitRepliedCallback();

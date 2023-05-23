@@ -22,6 +22,9 @@ void LobbyServer::Init()
 {
     g_lobby_server = this;
 
+	void InitMessageInfo();
+	InitMessageInfo();
+
     LobbyConfig::GetSingleton().Load("lobby.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)LobbyConfig::GetSingleton().config_info().loglevel());
@@ -61,12 +64,12 @@ void LobbyServer::receive(const OnConnected2ServerEvent& es)
         {
             LobbyServerRequest rq;
             rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-            deploy_session_->Send(DeployServiceStartLobbyServerMsgId, rq);
+            deploy_session_->CallMethod(DeployServiceStartLobbyServerMsgId, rq);
         }
 			
         {
             SceneSqueueRequest rq;
-            deploy_session_->Send(DeployServiceSceneSequenceNodeIdMsgId, rq);
+            deploy_session_->CallMethod(DeployServiceSceneSequenceNodeIdMsgId, rq);
         }
 	}
       
