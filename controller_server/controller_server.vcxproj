@@ -102,8 +102,6 @@
     <ClCompile Include="src\handler\register_handler.cpp" />
     <ClCompile Include="src\handler\scene_client_player_handler.cpp" />
     <ClCompile Include="src\handler\team_client_player_handler.cpp" />
-    <ClCompile Include="src\network\gate_session.cpp" />
-    <ClCompile Include="src\network\login_node.cpp" />
     <ClCompile Include="src\handler\player_service.cpp" />
     <ClCompile Include="src\replied_handler\common_client_player_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\controller_service_replied_handler.cpp" />
@@ -124,7 +122,6 @@
     <ClCompile Include="src\system\player_common_system.cpp" />
     <ClCompile Include="src\comp\player_list.cpp" />
     <ClCompile Include="src\controller_server.cpp" />
-    <ClCompile Include="src\network\gs_node.cpp" />
     <ClCompile Include="src\network\message_system.cpp" />
     <ClCompile Include="src\handler\controller_service_handler.cpp" />
     <ClCompile Include="src\system\player_scene_system.cpp" />
