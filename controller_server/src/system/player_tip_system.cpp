@@ -6,8 +6,6 @@
 #include "src/pb/pbc/common_client_player_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
-#include "src/pb/pbc/client_player_proto/common_client_player.pb.h"
-
 void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVector& str_param)
 {
 	TipsS2C message;

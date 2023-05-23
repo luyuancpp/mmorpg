@@ -37,7 +37,6 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
 		return;
 	}
-
 	auto gate = (*try_gate).lock();
 	if (nullptr == gate)
 	{

@@ -5,9 +5,6 @@
 #include "src/service/replied_dispathcer.h"
 #include "src/network/node_info.h"
 
-#include "mysql_database_table.pb.h"
-#include "deploy_service.pb.h"
-
 DatabaseServer* g_database_node{nullptr};
 
 DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)

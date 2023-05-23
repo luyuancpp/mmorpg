@@ -10,8 +10,6 @@
 #include "src/network/rpc_server.h"
 #include "src/service/database_service.h"
 
-#include "deploy_service.pb.h"
-
 class DatabaseServer : muduo::noncopyable, public Receiver<DatabaseServer>
 {
 public:

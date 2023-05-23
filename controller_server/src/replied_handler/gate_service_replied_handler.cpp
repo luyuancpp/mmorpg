@@ -2,13 +2,7 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "muduo/base/Logging.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/network/session.h"
-#include "src/system/player_common_system.h"
-#include "src/system/player_change_scene.h"
 
-extern entt::entity GetPlayerByConnId(uint64_t session_id);
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 

@@ -1,6 +1,5 @@
 #include "controller_server.h"
 
-#include "muduo/base/Logging.h"
 #include "muduo//net/EventLoop.h"
 
 #include "src/game_config/all_config.h"
@@ -10,9 +9,7 @@
 #include "src/event_handler/event_handler.h"
 #include "src/network/gate_node.h"
 #include "src/network/gs_node.h"
-#include "src/network/rpc_client.h"
-#include "src/util/game_registry.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/register_handler.h"
@@ -22,9 +19,6 @@
 #include "src/pb/pbc/lobby_scene_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
-#include "game_service.pb.h"
-#include "gate_service.pb.h"
-#include "component_proto/player_network_comp.pb.h"
 
 using namespace muduo;
 using namespace net;

@@ -3,7 +3,6 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/game_logic/tips_id.h"
-#include "src/network/player_session.h"
 #include "src/system/player_scene_system.h"
 
 #include "event_proto/scene_event.pb.h"

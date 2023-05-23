@@ -2,6 +2,8 @@
 #include "src/network/rpc_msg_route.h"
 ///<<< BEGIN WRITING YOUR CODE
 
+#include <unordered_map>
+
 #include "muduo/base/Logging.h"
 
 #include "src/game_config/mainscene_config.h"
@@ -12,16 +14,10 @@
 #include "src/network/gs_node.h"
 #include "src/network/controller_node.h"
 
-#include <unordered_map>
 
-#include "entt/src/entt/entity/registry.hpp"
-
-#include "src/common_type/common_type.h"
 #include "src/game_logic/tips_id.h"
 #include "src/pb/pbc/controller_service_service.h"
 
-#include "game_service.pb.h"
-#include "controller_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
