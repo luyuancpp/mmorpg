@@ -123,12 +123,12 @@ void ControllerServer::receive(const OnConnected2ServerEvent& es)
                 ServerInfoRequest rq;
                 rq.set_group(GameConfig::GetSingleton().config_info().group_id());
                 rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-                deploy_session_->Send(DeployServiceServerInfoMsgId, rq);
+                deploy_session_->CallMethod(DeployServiceServerInfoMsgId, rq);
 			}
 			
             {
                 SceneSqueueRequest rq;
-                deploy_session_->Send(DeployServiceSceneSequenceNodeIdMsgId, rq);
+                deploy_session_->CallMethod(DeployServiceSceneSequenceNodeIdMsgId, rq);
             }
 		}
 		
@@ -223,5 +223,5 @@ void ControllerServer::Register2Lobby()
 	node_info->set_ip(myinfo.ip());
 	node_info->set_port(myinfo.port());
 	rq.set_controller_node_id(myinfo.id());
-    lobby_session_->Send(LobbyServiceStartControllerNodeMsgId, rq);
+    lobby_session_->CallMethod(LobbyServiceStartControllerNodeMsgId, rq);
 }

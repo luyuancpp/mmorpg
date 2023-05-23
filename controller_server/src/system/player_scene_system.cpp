@@ -81,10 +81,12 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
     rq.set_player_id(tls.registry.get<Guid>(player));
     rq.set_session_id(session_id);
     rq.set_controller_node_id(controller_node_id());
-    tls.registry.get<GsNodePtr>(it->second)->session_.Send(GameServiceEnterGsMsgId, rq);
+    tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceEnterGsMsgId, rq);
 }
 
 
+
+//todo clear code 
 //前一个队列完成的时候才应该调用到这里去判断当前队列
 void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 {
@@ -203,7 +205,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
             LeaveCrossMainSceneRequest rq;
             rq.set_player_id(tls.registry.get<Guid>(player));
-            g_controller_node->lobby_node()->Send(LobbyServiceLeaveCrossMainSceneMsgId, rq);
+            g_controller_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMsgId, rq);
         }
         if (is_to_gs_is_cross_server)
         {
@@ -211,7 +213,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             EnterCrossMainSceneRequest rq;
             rq.set_scene_id(to_scene_id);
             rq.set_player_id(tls.registry.get<Guid>(player));
-            g_controller_node->lobby_node()->Send(LobbyServiceEnterCrossMainSceneMsgId, rq);
+            g_controller_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMsgId, rq);
             return;
         }
     }

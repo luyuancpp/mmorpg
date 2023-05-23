@@ -166,5 +166,5 @@ void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& ms
     rq.mutable_msg()->set_body(msg.SerializeAsString());
 	rq.mutable_msg()->set_message_id(message_id);
     rq.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
-    tls.registry.get<GsNodePtr>(gs_it->second)->session_.Send(message_id, rq);
+    tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(message_id, rq);
 }

@@ -54,7 +54,7 @@ void EnterGame(Guid player_id,
 	auto rpc(std::make_shared<EnterGameControllerRpc::element_type>(response, done));
 	rpc->s_rq_.set_player_id(player_id);
 	rpc->s_rq_.set_session_id(response->session_id());/*
-	g_login_node->controller_node().SendString1(
+	g_login_node->controller_node().CallMethodString1(
 		EnterGameReplied,
 		rpc,
 		&ControllerService::ControllerNodeService_Stub::OnLsEnterGame);*/
@@ -339,13 +339,13 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	case kControllerNode:
 	{
 		//发送到下个节点
-		g_login_node->controller_node()->Send(ControllerServiceRouteNodeStringMsgMsgId, *mutable_request);
+		g_login_node->controller_node()->Route2Node(ControllerServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
 	case kDatabaseNode:
 	{
 		//发送到下个节点
-		g_login_node->db_node()->Send(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
+		g_login_node->db_node()->Route2Node(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
 	default:
