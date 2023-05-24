@@ -40,14 +40,14 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	const google::protobuf::MethodDescriptor* method = g_login_node->login_handler().GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found" << replied->DebugString() << "method name" << route_data.method();
+		LOG_ERROR << "method not found" << replied->DebugString();
 		return;
 	}
 	//当前节点的请求信息
 	std::shared_ptr<google::protobuf::Message> current_node_response(g_login_node->login_handler().GetResponsePrototype(method).New());
 	if (!current_node_response->ParseFromString(replied->body()))
 	{
-		LOG_ERROR << "invalid  body response" << replied->DebugString() << "method name" << route_data.method();
+		LOG_ERROR << "invalid  body response" << replied->DebugString();
 		return;
 	}
 

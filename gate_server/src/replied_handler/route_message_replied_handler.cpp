@@ -39,7 +39,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	const google::protobuf::MethodDescriptor* method = g_gate_node->gate_service_hanlder().GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found" << replied->DebugString() << "method name" << route_data.method();
+		LOG_ERROR << "method not found " << replied->DebugString() ;
 		return;
 	}
 	//gate 和其他服务器不一样，直接返回消息给客户端
@@ -54,8 +54,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	MessageBody message;
 	message.set_body(replied->body());
 	message.set_id(replied->id());
-	message.set_service(route_data.service());
-	message.set_method(route_data.method());
+	message.set_message_id(route_data.message_id());
 	g_gate_node->codec().send(conn, message);
 	g_gate_node->Send2Client(it->second.conn_, message);
 

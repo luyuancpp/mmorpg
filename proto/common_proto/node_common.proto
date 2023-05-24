@@ -4,10 +4,8 @@ import "common_proto/common.proto";
 
 message RouteData
 {
-  string service = 1;
-  string method = 2;
-  NodeInfo node_info = 3;//当前节点信息
-  uint32 message_id = 4;
+  NodeInfo node_info = 1;//当前节点信息
+  uint32 message_id = 2;
 }
 
 message RouteMsgStringRequest
