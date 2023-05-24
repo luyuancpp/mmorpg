@@ -88,8 +88,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="src\network\gs_node.cpp" />
-    <ClCompile Include="src\network\controller_node.cpp" />
     <ClCompile Include="src\lobby_server.cpp" />
     <ClCompile Include="src\service\deploy_service_replied.cpp" />
     <ClCompile Include="src\service\replied_dispathcer.cpp" />
@@ -98,8 +96,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\lobby_server.h" />
-    <ClInclude Include="src\network\gs_node.h" />
     <ClInclude Include="src\network\controller_node.h" />
+    <ClInclude Include="src\network\gs_node.h" />
     <ClInclude Include="src\service\deploy_service_replied.h" />
     <ClInclude Include="src\service\replied_dispathcer.h" />
     <ClInclude Include="src\service\lobby_scene.h" />
