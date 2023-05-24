@@ -2,6 +2,7 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
+#include "src/login_server.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
@@ -20,6 +21,7 @@ void InitDeployServiceServerInfoRepliedHandler()
 void OnDeployServiceServerInfoRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<ServerInfoResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	g_login_node->StartServer(replied->info());
 ///<<< END WRITING YOUR CODE
 }
 

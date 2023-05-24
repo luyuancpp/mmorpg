@@ -19,7 +19,7 @@ EntityPtr ControllerPlayerSystem::GetPlayerPtr(Guid guid)
     auto it = controller_tls.player_list().find(guid);
     if (it == controller_tls.player_list().end())
     {
-        return EntityPtr();
+        return EntityPtr{};
     }
     return it->second;
 }
