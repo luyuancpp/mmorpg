@@ -23,6 +23,7 @@
 #include "src/pb/pbc/database_service_service.h"
 #include "src/pb/pbc/service.h"
 #include "src/handler/player_service.h"
+#include "src/handler/register_handler.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_common_system.h"
 #include "src/system/player_change_scene.h"
@@ -598,7 +599,14 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
-	const google::protobuf::MethodDescriptor* method = message_info.service_impl_instance_->GetDescriptor()->FindMethodByName(message_info.method);
+
+	const auto it = g_server_service.find(message_info.service);
+	if (it == g_server_service.end())
+	{
+		LOG_INFO << "message_id not found " << route_data.message_id();
+		return;
+	}
+	const google::protobuf::MethodDescriptor* method = it->second->GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
 		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();

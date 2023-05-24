@@ -48,11 +48,17 @@ void ControllerServer::Init()
 	node_info_.set_node_type(kControllerNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
+
+	Connect2Deploy();
+
     InitPlayerService();
     InitPlayerServiceReplied();
     InitRepliedHandler();
     InitMessageInfo();
-    Connect2Deploy();
+   
+    void InitServiceHandler();
+    InitServiceHandler();
+
 }
 
 void ControllerServer::Connect2Deploy()
@@ -82,7 +88,7 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
     server_->registerService(&contoller_service_);
     for (auto& it : g_server_service)
     {
-        server_->registerService(it.get());
+        server_->registerService(it.second.get());
     }
     server_->start();
     LOG_INFO << "controller start " << my_node_info.DebugString();
