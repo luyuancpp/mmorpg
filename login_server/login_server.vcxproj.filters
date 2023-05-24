@@ -24,9 +24,6 @@
     <ClCompile Include="src\comp\account_player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\deploy_service_replied.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\network\route_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -54,9 +51,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\comp\account_player.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\deploy_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\route_system.h">
