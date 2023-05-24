@@ -159,7 +159,7 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	CtrlLoginAccountRequest rq;
 	rq.set_account(request->account());
 	sessions_.emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
-	Route2Node(kControllerNode, rq, ControllerServiceLsLoginAccountMethod);
+	Route2Node(kControllerNode, ControllerServiceLsLoginAccountMsgId, rq);
 	//LoginAccountControllerReplied
 ///<<< END WRITING YOUR CODE
 }
@@ -299,14 +299,14 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "method not found" << request->DebugString() << "method name" << route_data.method();
+		LOG_ERROR << "method not found" << request->DebugString();
 		return;
 	}
 	//当前节点的请求信息
 	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
 	if (!current_node_request->ParseFromString(request->body()))
 	{
-		LOG_ERROR << "invalid  body request" << request->DebugString() << "method name" << route_data.method();
+		LOG_ERROR << "invalid  body request" << request->DebugString() ;
 		return;
 	}
 	cl_tls.set_current_session_id(request->session_id());
