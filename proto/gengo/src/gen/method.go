@@ -250,7 +250,8 @@ func getMethodPlayerHandlerCppStr(dst string, methodList *RpcMethodInfos, classN
 func writeRegisterFile(dst string, cb checkRepliedCb) {
 	defer util.Wg.Done()
 	data := ""
-	initData := "std::array<std::unique_ptr<::google::protobuf::Service>, 2> g_server_service{\n"
+	instanceData := ""
+
 	ServiceList := GetSortServiceList()
 	for _, key := range ServiceList {
 		methodList, ok := ServiceMethodMap[key]
@@ -262,10 +263,14 @@ func writeRegisterFile(dst string, cb checkRepliedCb) {
 		}
 		firstMethodInfo := methodList[0]
 		data += firstMethodInfo.CppHandlerIncludeName()
-		initData += "std::unique_ptr<::google::protobuf::Service>(new " + firstMethodInfo.Service + config.HandlerName + "),\n"
+		instanceData += config.Tab + "g_server_service.emplace(\"" + firstMethodInfo.Service +
+			"\", std::move(std::make_unique_for_overwrite<" + firstMethodInfo.Service + config.HandlerName + ">()));\n"
 	}
-	initData += "};\n"
-	data += initData
+	data += "\nstd::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_server_service;\n\n"
+
+	data += "void InitServiceHandler()\n{\n"
+	data += instanceData
+	data += "}"
 	Md5WriteData2File(dst, data)
 }
 

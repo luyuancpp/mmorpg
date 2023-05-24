@@ -51,6 +51,9 @@ void GameServer::Init()
     InitPlayerServiceReplied();
     InitRepliedHandler();
     InitNetwork();
+
+	void InitServiceHandler();
+	InitServiceHandler();
 }
 
 void GameServer::InitConfig()
@@ -114,7 +117,7 @@ void GameServer::StartGsDeployReplied(const StartGSResponse& replied)
     server_->registerService(&gs_service_impl_);
     for (auto& it : g_server_service)
     {
-        server_->registerService(it.get());
+        server_->registerService(it.second.get());
     }
     server_->start();   
 }
@@ -135,7 +138,7 @@ void GameServer::OnAcquireLobbyInfoReplied(LobbyInfoResponse& replied)
 		controller_node_session->registerService(&gs_service_impl_);
         for (auto& it : g_server_service)
         {
-            controller_node_session->registerService(it.get());
+            controller_node_session->registerService(it.second.get());
         }
 		controller_node_session->subscribe<OnConnected2ServerEvent>(*this);
 		controller_node_session->connect();

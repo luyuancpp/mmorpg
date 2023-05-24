@@ -1,6 +1,6 @@
 #pragma once
-#include <array>
+#include <unordered_map>
 #include <memory>
 #include <google/protobuf/service.h>
 
-extern std::array<std::unique_ptr<::google::protobuf::Service>, 2> g_server_service;
+extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_server_service;
