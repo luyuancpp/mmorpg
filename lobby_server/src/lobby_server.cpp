@@ -8,9 +8,9 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
-#include "src/network/controller_node.h"
 #include "src/pb/pbc/deploy_service_service.h"
 #include "src/service/replied_dispathcer.h"
+#include "src/thread_local/lobby_thread_local_storage.h"
 
 
 LobbyServer* g_lobby_server = nullptr;
@@ -96,7 +96,7 @@ void LobbyServer::receive(const OnBeConnectedEvent& es)
 			auto gs_node = tls.registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
 			if (nullptr != gs_node && (*gs_node)->node_info_.node_type() == kGameNode)
 			{
-				g_game_node->erase((*gs_node)->node_info_.node_id());
+				lobby_tls.gs_node().erase((*gs_node)->node_info_.node_id());
 			}
             // controller 不动态扩展，所以不删除
 			tls.registry.destroy(e);

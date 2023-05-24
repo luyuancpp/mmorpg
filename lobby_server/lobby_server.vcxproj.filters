@@ -21,12 +21,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\controller_node.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\network\gs_node.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\service\lobby_scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -41,9 +35,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\network\controller_node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\network\gs_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -60,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\lobby_thread_local_storage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\controller_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

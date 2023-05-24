@@ -12,8 +12,7 @@
 #include "src/game_logic/scene/scene.h"
 #include "src/network/server_component.h"
 #include "src/network/gs_node.h"
-#include "src/network/controller_node.h"
-
+#include "src/thread_local/lobby_thread_local_storage.h"
 
 #include "src/game_logic/tips_id.h"
 #include "src/pb/pbc/controller_service_service.h"
@@ -27,8 +26,8 @@ PlayerListMap  players_;
 
 void AddCrossScene2Controller(uint32_t controller_node_id)
 {
-	auto controller_node_it = g_controller_nodes->find(controller_node_id);
-	if (controller_node_it == g_controller_nodes->end())
+	auto controller_node_it = lobby_tls.controller_nodes().find(controller_node_id);
+	if (controller_node_it == lobby_tls.controller_nodes().end())
 	{
 		LOG_ERROR << "controller not found " << controller_node_id;
 		return;
@@ -45,7 +44,7 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
         }
         p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
     }
-	tls.registry.get<ControllerNodePtr>(controller_node_it->second)->session_.Send(ControllerServiceAddCrossServerSceneMsgId, rq);
+	controller_node_it->second->session_.Send(ControllerServiceAddCrossServerSceneMsgId, rq);
 	LOG_DEBUG << rq.DebugString();
 }
 
@@ -108,7 +107,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 		tls.registry.remove<MainSceneServer>(gs);
 		tls.registry.emplace<CrossRoomSceneServer>(gs);
 	}
-	g_game_node->emplace(request->gs_node_id(), gs);
+	lobby_tls.gs_node().emplace(request->gs_node_id(), gs);
 
 	LOG_INFO << "game node connected " << response->DebugString();
 ///<<< END WRITING YOUR CODE
@@ -135,16 +134,16 @@ void LobbyServiceImpl::StartControllerNode(::google::protobuf::RpcController* co
 	if (controller_node == entt::null)
 	{
 		//todo
-		LOG_INFO << "ms id found: " << request->controller_node_id();
+		LOG_INFO << "controller id found: " << request->controller_node_id();
 		return;
 	}
 
-	auto c = tls.registry.get<RpcServerConnection>(controller_node);
+	auto& c = tls.registry.get<RpcServerConnection>(controller_node);
 	ControllerNodePtr controller_node_ptr = tls.registry.emplace<ControllerNodePtr>(controller_node, std::make_shared<ControllerNodePtr::element_type>(c.conn_));
 	controller_node_ptr->node_info_.set_node_id(request->controller_node_id());
 	controller_node_ptr->node_info_.set_node_type(kControllerNode);
 	tls.registry.emplace<InetAddress>(controller_node, service_addr);
-	g_controller_nodes->emplace(request->controller_node_id(), controller_node);
+	lobby_tls.controller_nodes().emplace(request->controller_node_id(), controller_node_ptr);
 
 	//todo next frame send after responese
 	AddCrossScene2Controller(request->controller_node_id());
@@ -272,7 +271,7 @@ void LobbyServiceImpl::GameConnectToController(::google::protobuf::RpcController
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    for (auto& mit : *g_controller_nodes)
+    for (auto& mit : lobby_tls.controller_nodes())
     {
         AddCrossScene2Controller(mit.first);
     }

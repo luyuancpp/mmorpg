@@ -20,7 +20,6 @@ struct ControllerNode
 	RpcServerConnection session_;
 };
 using ControllerNodePtr = std::shared_ptr<ControllerNode>;
-using ControllerNodes = std::unordered_map<uint32_t, entt::entity>;
-extern ControllerNodes* g_controller_nodes;
+using ControllerNodes = std::unordered_map<uint32_t, ControllerNodePtr>;
 
 
