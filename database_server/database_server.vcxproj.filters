@@ -27,7 +27,7 @@
     <ClCompile Include="src\service\deploy_service_replied.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\service\database_service.cpp">
+    <ClCompile Include="src\service\database_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,7 +41,7 @@
     <ClInclude Include="src\service\deploy_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\service\database_service.h">
+    <ClInclude Include="src\service\database_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
