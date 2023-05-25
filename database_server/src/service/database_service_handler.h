@@ -1,6 +1,6 @@
 #pragma once
 #include "database_service.pb.h"
-class DbServiceImpl : public ::DbService{
+class DbServiceHandler : public ::DbService{
 public:
 public:
     void Login(::google::protobuf::RpcController* controller,
