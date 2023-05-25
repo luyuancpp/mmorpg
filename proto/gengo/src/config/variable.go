@@ -27,12 +27,12 @@ const Tab = "	"
 const Tab2 = Tab + Tab
 const Tab3 = Tab + Tab + Tab
 const Tab4 = Tab + Tab + Tab + Tab
-const GsName = "game_server/"
-const ControllerName = "controller_server/"
+const GameDirName = "game_server/"
+const ControllerDirName = "controller_server/"
 const GateName = "gate_server/"
-const LoginName = "login_server/"
-const DataBaseName = "database_server/"
-const ClientName = "client/"
+const LoginDirName = "login_server/"
+const DataBaseDirName = "database_server/"
+const ClientDirName = "client/"
 const PlayerServiceIncludeName = "#include \"player_service.h\""
 const PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\""
 const HandlerName = "Handler"
@@ -90,28 +90,28 @@ const EventHandlerFileName = "event_handler"
 const EventHandlerFileNameHead = EventHandlerFileName + HeadEx
 const EventHandlerFileNameCpp = EventHandlerFileName + CppEx
 
-const GsMethodHandleDir = ProjectDir + GsName + HandlerDirName
-const GsEventHandleDir = ProjectDir + GsName + EventHandlerDirName
-const GsMethodRepliedHandleDir = ProjectDir + GsName + RepliedHandlerDirName
+const GsMethodHandleDir = ProjectDir + GameDirName + HandlerDirName
+const GsEventHandleDir = ProjectDir + GameDirName + EventHandlerDirName
+const GsMethodRepliedHandleDir = ProjectDir + GameDirName + RepliedHandlerDirName
 const GsPrefixName = "game"
 
-const ControllerMethodHandleDir = ProjectDir + ControllerName + HandlerDirName
-const ControllerMethodRepliedHandleDir = ProjectDir + ControllerName + RepliedHandlerDirName
-const ControllerEventHandleDir = ProjectDir + ControllerName + EventHandlerDirName
+const ControllerMethodHandleDir = ProjectDir + ControllerDirName + HandlerDirName
+const ControllerMethodRepliedHandleDir = ProjectDir + ControllerDirName + RepliedHandlerDirName
+const ControllerEventHandleDir = ProjectDir + ControllerDirName + EventHandlerDirName
 const ControllerPrefixName = "controller"
 
-const ClientMethodHandleDir = ProjectDir + ClientName + HandlerDirName
+const ClientMethodHandleDir = ProjectDir + ClientDirName + HandlerDirName
 
 const GateMethodHandleDir = ProjectDir + GateName + HandlerDirName
 const GateMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
 const GatePrefixName = "gate"
 
-const LoginMethodHandleDir = ProjectDir + LoginName + HandlerDirName
-const LoginMethodRepliedHandleDir = ProjectDir + LoginName + RepliedHandlerDirName
+const LoginMethodHandleDir = ProjectDir + LoginDirName + HandlerDirName
+const LoginMethodRepliedHandleDir = ProjectDir + LoginDirName + RepliedHandlerDirName
 const LoginPrefixName = "login"
 
-const DataBaseMethodHandleDir = ProjectDir + DataBaseName + HandlerDirName
-const DataBaseMethodRepliedHandleDir = ProjectDir + DataBaseName + RepliedHandlerDirName
+const DataBaseMethodHandleDir = ProjectDir + DataBaseDirName + HandlerDirName
+const DataBaseMethodRepliedHandleDir = ProjectDir + DataBaseDirName + RepliedHandlerDirName
 const DataBasePrefixName = "database"
 
 const ClientLuaProjectRelative = "script/lua/service/"
