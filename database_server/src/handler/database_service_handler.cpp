@@ -1,15 +1,14 @@
 #include "database_service_handler.h"
-#include "src/network/rpc_msg_route.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/database_server.h"
 #include "src/pb/pbc/service.h"
 ///<<< END WRITING YOUR CODE
-
-///<<<rpc begin
 void DbServiceHandler::Login(::google::protobuf::RpcController* controller,
-    const ::DatabaseNodeLoginRequest* request,
-    ::DatabaseNodeLoginResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::DatabaseNodeLoginRequest* request,
+	::DatabaseNodeLoginResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	::account_database& db = *response->mutable_account_player();
@@ -29,9 +28,9 @@ void DbServiceHandler::Login(::google::protobuf::RpcController* controller,
 }
 
 void DbServiceHandler::CreatePlayer(::google::protobuf::RpcController* controller,
-    const ::DatabaseNodeCreatePlayerRequest* request,
-    ::DatabaseNodeCreatePlayerResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::DatabaseNodeCreatePlayerRequest* request,
+	::DatabaseNodeCreatePlayerResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	::account_database& r_db = *response->mutable_account_player();
@@ -48,9 +47,9 @@ void DbServiceHandler::CreatePlayer(::google::protobuf::RpcController* controlle
 }
 
 void DbServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
-    const ::DatabaseNodeEnterGameRequest* request,
-    ::DatabaseNodeEnterGameResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::DatabaseNodeEnterGameRequest* request,
+	::DatabaseNodeEnterGameResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	player_database new_player;
@@ -64,9 +63,9 @@ void DbServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
 }
 
 void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-    const ::RouteMsgStringRequest* request,
-    ::RouteMsgStringResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::RouteMsgStringRequest* request,
+	::RouteMsgStringResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	if (request->route_data_list_size() >= kMaxRouteSize)
@@ -108,12 +107,11 @@ void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* con
 }
 
 void DbServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-    const ::RoutePlayerMsgStringRequest* request,
-    ::RoutePlayerMsgStringResponse* response,
-    ::google::protobuf::Closure* done)
+	const ::RoutePlayerMsgStringRequest* request,
+	::RoutePlayerMsgStringResponse* response,
+	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
-///<<<rpc end

@@ -759,6 +759,45 @@ func writeLoginMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	Md5WriteData2File(dstFileName, data)
 }
 
+// database
+
+func isDataBaseServiceHandler(methodList *RpcMethodInfos) (check bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
+	firstMethodInfo := (*methodList)[0]
+	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		return false
+	}
+	return strings.Contains(firstMethodInfo.FileBaseName(), "database")
+}
+
+func writeDataBaseMethodHandlerHeadFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+	if !isDataBaseServiceHandler(&methodList) {
+		return
+	}
+	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
+	Md5WriteData2File(config.DataBaseMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+}
+
+func writeDataBaseMethodHandlerCppFile(methodList RpcMethodInfos) {
+	defer util.Wg.Done()
+	if len(methodList) <= 0 {
+		return
+	}
+	if !isDataBaseServiceHandler(&methodList) {
+		return
+	}
+	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
+	dstFileName := config.DataBaseMethodHandleDir + fileName
+	data := getMethodHandlerCppStr(dstFileName, &methodList)
+	Md5WriteData2File(dstFileName, data)
+}
+
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
@@ -822,8 +861,11 @@ func WriteMethodFile() {
 		util.Wg.Add(1)
 		go writeLoginMethodRepliedHandlerCppFile(v)
 
-		//
-
+		//database
+		util.Wg.Add(1)
+		go writeDataBaseMethodHandlerHeadFile(v)
+		util.Wg.Add(1)
+		go writeDataBaseMethodHandlerCppFile(v)
 	}
 	//game
 	util.Wg.Add(1)

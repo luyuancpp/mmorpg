@@ -31,6 +31,7 @@ const GsName = "game_server/"
 const ControllerName = "controller_server/"
 const GateName = "gate_server/"
 const LoginName = "login_server/"
+const DataBaseName = "database_server/"
 const ClientName = "client/"
 const PlayerServiceIncludeName = "#include \"player_service.h\""
 const PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\""
@@ -108,6 +109,10 @@ const GatePrefixName = "gate"
 const LoginMethodHandleDir = ProjectDir + LoginName + HandlerDirName
 const LoginMethodRepliedHandleDir = ProjectDir + LoginName + RepliedHandlerDirName
 const LoginPrefixName = "login"
+
+const DataBaseMethodHandleDir = ProjectDir + DataBaseName + HandlerDirName
+const DataBaseMethodRepliedHandleDir = ProjectDir + DataBaseName + RepliedHandlerDirName
+const DataBasePrefixName = "database"
 
 const ClientLuaProjectRelative = "script/lua/service/"
 const ClientLuaDir = ProjectDir + "bin/" + ClientLuaProjectRelative
