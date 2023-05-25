@@ -4,16 +4,16 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 void ClientPlayerSceneServiceRepliedHandler::EnterSceneC2S(entt::entity player,
-	const ::EnterSeceneC2SRequest* request,
-	::EnterSeceneC2SResponse* response)
+	const ::EnterSceneC2SRequest* request,
+	::EnterSceneC2SResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
 void ClientPlayerSceneServiceRepliedHandler::PushEnterSceneS2C(entt::entity player,
-	const ::EnterSeceneS2C* request,
-	::EnterSeceneS2C* response)
+	const ::EnterSceneS2C* request,
+	::EnterSceneS2C* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

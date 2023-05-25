@@ -6,12 +6,12 @@ class ClientPlayerSceneServiceRepliedHandler : public ::PlayerServiceReplied
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
 	static void EnterSceneC2S(entt::entity player,
-		const ::EnterSeceneC2SRequest* request,
-		::EnterSeceneC2SResponse* response);
+		const ::EnterSceneC2SRequest* request,
+		::EnterSceneC2SResponse* response);
 
 	static void PushEnterSceneS2C(entt::entity player,
-		const ::EnterSeceneS2C* request,
-		::EnterSeceneS2C* response);
+		const ::EnterSceneS2C* request,
+		::EnterSceneS2C* response);
 
 	static void PushSceneInfoS2C(entt::entity player,
 		const ::SceneInfoS2C* request,
@@ -27,12 +27,12 @@ public:
 		case 0:
 			EnterSceneC2S(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<EnterSeceneC2SResponse*>(response));
+			::google::protobuf::internal::DownCast<EnterSceneC2SResponse*>(response));
 		break;
 		case 1:
 			PushEnterSceneS2C(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<EnterSeceneS2C*>(response));
+			::google::protobuf::internal::DownCast<EnterSceneS2C*>(response));
 		break;
 		case 2:
 			PushSceneInfoS2C(player,

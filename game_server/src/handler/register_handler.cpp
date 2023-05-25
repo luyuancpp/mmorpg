@@ -5,6 +5,6 @@ std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_
 
 void InitServiceHandler()
 {
-	g_server_service.emplace("GameSceneService", std::move(std::make_unique_for_overwrite<GameSceneServiceHandler>()));
-	g_server_service.emplace("GameService", std::move(std::make_unique_for_overwrite<GameServiceHandler>()));
+	g_server_service.emplace("GameSceneService", std::make_unique_for_overwrite<GameSceneServiceHandler>());
+	g_server_service.emplace("GameService", std::make_unique_for_overwrite<GameServiceHandler>());
 }
