@@ -20,7 +20,7 @@ using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;
 using EnterGameResponsePtr = std::shared_ptr<EnterGameResponse>;
 using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
 using MessageBodyPtr = std::shared_ptr<MessageBody>;
-using EnterSeceneS2CPtr = std::shared_ptr<EnterSeceneS2C>;
+using EnterSeceneS2CPtr = std::shared_ptr<EnterSceneS2C>;
 
 struct AutoLuaPlayer
 {

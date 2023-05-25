@@ -45,7 +45,7 @@ void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,
 		LOG_ERROR << " player not enter scene ";
 		return;
 	}
-	EnterSeceneS2C message;
+	::EnterSceneS2C message;
 	message.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(try_scene->scene_entity_));
 	Send2Player(ClientPlayerSceneServicePushEnterSceneS2CMsgId, message, player);
 ///<<< END WRITING YOUR CODE
