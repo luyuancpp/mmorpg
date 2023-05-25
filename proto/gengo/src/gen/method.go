@@ -315,7 +315,7 @@ func isGsPlayerHandler(methodList *RpcMethodInfos) (result bool) {
 	if !firstMethodInfo.IsPlayerService() {
 		return false
 	}
-	if !strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName) {
+	if !strings.Contains(firstMethodInfo.FileBaseName(), config.PlayerName) {
 		return false
 	}
 	return true
