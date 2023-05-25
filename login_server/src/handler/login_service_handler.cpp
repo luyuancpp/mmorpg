@@ -354,7 +354,6 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	}
 	break;
 	}
-	cl_tls.set_next_route_node_id(UINT32_MAX);
 	///<<< END WRITING YOUR CODE
 }
 
