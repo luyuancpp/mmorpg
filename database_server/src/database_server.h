@@ -8,7 +8,7 @@
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_server.h"
-#include "src/service/database_service_handler.h"
+#include "src/handler/database_service_handler.h"
 
 class DatabaseServer : muduo::noncopyable, public Receiver<DatabaseServer>
 {
