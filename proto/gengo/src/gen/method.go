@@ -317,6 +317,8 @@ func isGsPlayerHandler(methodList *RpcMethodInfos) (result bool) {
 	}
 	if !strings.Contains(firstMethodInfo.FileBaseName(), config.PlayerName) {
 		return false
+	} else if strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) {
+		return false
 	}
 	return true
 }
