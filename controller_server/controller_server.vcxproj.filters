@@ -63,9 +63,6 @@
     <ClCompile Include="src\handler\lobby_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\scene_client_player_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\handler\team_client_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -192,9 +189,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\lobby_scene_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\handler\scene_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\team_client_player_handler.h">
