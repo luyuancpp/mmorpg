@@ -37,7 +37,12 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		return;
 	}
 	auto& message_info = g_message_info[route_data.message_id()];
-	const google::protobuf::MethodDescriptor* method = g_login_node->login_handler().GetDescriptor()->FindMethodByName(message_info.method);
+	if (nullptr == message_info.service_impl_instance_)
+	{
+		LOG_INFO << "message_id not found " << route_data.message_id();
+		return;
+	}
+	const google::protobuf::MethodDescriptor* method = message_info.service_impl_instance_->GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
 		LOG_ERROR << "method not found" << replied->DebugString();

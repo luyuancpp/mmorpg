@@ -17,15 +17,15 @@ public:
 			case 0:
 			{
 				tls_lua_state["EnterSceneC2S"](
-				::google::protobuf::internal::DownCast<const ::EnterSeceneC2SRequest*>( request),
-				::google::protobuf::internal::DownCast<::EnterSeceneC2SResponse*>(response));
+				::google::protobuf::internal::DownCast<const ::EnterSceneC2SRequest*>( request),
+				::google::protobuf::internal::DownCast<::EnterSceneC2SResponse*>(response));
 			}
 			break;
 			case 1:
 			{
 				tls_lua_state["PushEnterSceneS2C"](
-				::google::protobuf::internal::DownCast<const ::EnterSeceneS2C*>( request),
-				::google::protobuf::internal::DownCast<::EnterSeceneS2C*>(response));
+				::google::protobuf::internal::DownCast<const ::EnterSceneS2C*>( request),
+				::google::protobuf::internal::DownCast<::EnterSceneS2C*>(response));
 			}
 			break;
 			case 2:

@@ -3,17 +3,17 @@ import "common_proto/common.proto";
 import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
 
-message EnterSeceneC2SRequest
+message EnterSceneC2SRequest
 {
   SceneInfo scene_info = 1;
 }
 
-message EnterSeceneC2SResponse
+message EnterSceneC2SResponse
 {
 	Tips error = 1;
 }
 
-message EnterSeceneS2C
+message EnterSceneS2C
 {
   SceneInfo scene_info = 1;
 }
@@ -25,7 +25,7 @@ message SceneInfoS2C
 
 service ClientPlayerSceneService 
 {
-  rpc EnterSceneC2S (EnterSeceneC2SRequest) returns (EnterSeceneC2SResponse);
-  rpc PushEnterSceneS2C (EnterSeceneS2C) returns (EnterSeceneS2C);
+  rpc EnterSceneC2S (EnterSceneC2SRequest) returns (EnterSceneC2SResponse);
+  rpc PushEnterSceneS2C (EnterSceneS2C) returns (EnterSceneS2C);
   rpc PushSceneInfoS2C (SceneInfoS2C) returns (SceneInfoS2C);
 }

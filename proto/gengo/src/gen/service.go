@@ -225,7 +225,7 @@ func writeGlobalServiceInfoFile() {
 				"\"" + rpcMethodInfo.Method + "\"," +
 				"\"" + rpcMethodInfo.Request + "\"," +
 				"\"" + rpcMethodInfo.Response + "\"," +
-				"std::make_unique<" + serviceHandlerName + ">()};\n"
+				"std::make_unique_for_overwrite<" + serviceHandlerName + ">()};\n"
 			if strings.Contains(rpcId, config.C2SMethodContainsName) {
 				initFuncData += "g_c2s_service_id.emplace(" + rpcId + ");\n"
 			}
