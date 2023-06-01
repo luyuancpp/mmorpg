@@ -11,18 +11,18 @@ void DbServiceHandler::Login(::google::protobuf::RpcController* controller,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	::account_database& db = *response->mutable_account_player();
-	auto& account = request->account();
-	g_database_node->redis_client()->Load(db, account);
+	::account_database& account_db = *response->mutable_account_player();
+	const auto& account = request->account();
+	g_database_node->redis_client()->Load(account_db, account);
 	if (response->account_player().password().empty())
 	{
-		g_database_node->player_mysql_client()->LoadOne(db,
+		g_database_node->player_mysql_client()->LoadOne(account_db,
 			std::string("account = '") + account + std::string("'"));
 	}
-	if (!db.password().empty())
+	if (!account_db.password().empty())
 	{
-		db.set_account(account);
-		g_database_node->redis_client()->Save(db, account);
+		account_db.set_account(account);
+		g_database_node->redis_client()->Save(account_db, account);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -53,7 +53,7 @@ void DbServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
 {
 ///<<< BEGIN WRITING YOUR CODE
 	player_database new_player;
-	std::string where_case = std::string("player_id = '") +
+	const std::string where_case = std::string("player_id = '") +
 		std::to_string(request->player_id()) +
 		std::string("'");
 	g_database_node->player_mysql_client()->LoadOne(new_player, where_case);
@@ -73,13 +73,13 @@ void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		LOG_ERROR << "route msg size too max:" << request->DebugString();
 		return;
 	}
-	else if (request->route_data_list_size() <= 0)
+	if (request->route_data_list().empty())
 	{
 		LOG_ERROR << "msg list empty:" << request->DebugString();
 		return;
 	}
-	auto& receive_route_data = request->route_data_list(request->route_data_list_size() - 1);
-	auto& service_method_info = g_message_info[receive_route_data.message_id()];
+	const auto& receive_route_data = request->route_data_list(request->route_data_list_size() - 1);
+	const auto& service_method_info = g_message_info.at(receive_route_data.message_id());
 	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(service_method_info.method);
 	if (nullptr == method)
 	{
@@ -87,20 +87,19 @@ void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		return;
 	}
 	//当前节点的请求信息
-	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
+	const MessagePtr current_node_request(GetRequestPrototype(method).New());
 	if (!current_node_request->ParseFromString(request->body()))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString();
 		return;
 	}
 	//当前节点的真正回复的消息
-	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
-	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
-	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
+	const MessagePtr current_node_response(GetResponsePrototype(method).New());
+	CallMethod(method, nullptr, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 	response->set_body(current_node_response->SerializeAsString());
-	for (auto& it : request->route_data_list())
+	for (const auto& data : request->route_data_list())
 	{
-		*response->add_route_data_list() = it;
+		*response->add_route_data_list() = data;
 	}
 	response->set_session_id(request->session_id());
 ///<<< END WRITING YOUR CODE
