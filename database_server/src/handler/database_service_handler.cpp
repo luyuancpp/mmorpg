@@ -60,6 +60,7 @@ void DbServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
 		std::string("'");
 	g_database_node->player_mysql_client()->LoadOne(new_player, where_case);
 	assert(new_player.player_id() > 0);
+	//todo  optimize
 	g_database_node->redis_client()->Save(new_player, new_player.player_id());
 ///<<< END WRITING YOUR CODE
 }
