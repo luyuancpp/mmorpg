@@ -4,8 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE  
 #include "muduo/base/Logging.h"
 
-#include "src/util/game_registry.h"
-#include "src/network/rpc_server.h"
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 #include "src/login_server.h"
@@ -23,8 +21,6 @@
 #include "src/pb/pbc/service.h"
 #include "src/util/defer.h"
 
-#include "login_service.pb.h"
-#include "database_service.pb.h"
 #include "controller_service.pb.h"
 
 using namespace muduo;
@@ -283,19 +279,19 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 		LOG_ERROR << "route msg size too max:" << request->DebugString();
 		return;
 	}
-	else if (request->route_data_list_size() <= 0)
+	if (request->route_data_list().empty())
 	{
 		LOG_ERROR << "msg list empty:" << request->DebugString();
 		return;
 	}
 	//当前节点收到的数据
-	auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
+	const auto& route_data = request->route_data_list(request->route_data_list_size() - 1);
 	if (route_data.message_id() >= g_message_info.size())
 	{
 		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
-	auto& message_info = g_message_info[route_data.message_id()];
+	const auto& message_info = g_message_info.at(route_data.message_id());
 	const google::protobuf::MethodDescriptor* method = GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
@@ -303,17 +299,16 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 		return;
 	}
 	//当前节点的请求信息
-	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
+	const MessagePtr current_node_request(GetRequestPrototype(method).New());
 	if (!current_node_request->ParseFromString(request->body()))
 	{
-		LOG_ERROR << "invalid  body request" << request->DebugString() ;
+		LOG_ERROR << "invalid  body request" << request->DebugString();
 		return;
 	}
 	cl_tls.set_current_session_id(request->session_id());
 	//当前节点的真正回复的消息
-	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
-	CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
-	
+	const MessagePtr current_node_response(GetResponsePrototype(method).New());
+	CallMethod(method, nullptr, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
 	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
 	if (cl_tls.next_route_node_type() == UINT32_MAX)
