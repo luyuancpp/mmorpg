@@ -209,7 +209,7 @@ func writeGlobalServiceInfoFile() {
 		}
 		includeData += methodList[0].IncludeName()
 		serviceHandlerName := key + "Impl"
-		classHandlerData += "class " + serviceHandlerName + " final :public " + key + "{};\n"
+		classHandlerData += "class " + serviceHandlerName + " final : public " + key + "{};\n"
 	}
 	initFuncData += "\n"
 	for _, key := range ServiceList {
