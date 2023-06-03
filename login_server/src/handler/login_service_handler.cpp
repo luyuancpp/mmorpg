@@ -309,26 +309,26 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	//当前节点的真正回复的消息
 	const MessagePtr current_node_response(GetResponsePrototype(method).New());
 	CallMethod(method, nullptr, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
-	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
+	auto* const mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
 	if (cl_tls.next_route_node_type() == UINT32_MAX)
 	{
 		response->set_body(current_node_response->SerializeAsString());
-		for (auto& it : request->route_data_list())
+		for (const auto& data : request->route_data_list())
 		{
-			*response->add_route_data_list() = it;
+			*response->add_route_data_list() = data;
 		}
 		response->set_session_id(request->session_id());
-        response->set_id(request->id());
+		response->set_id(request->id());
 		return;
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
-	auto send_route_data = mutable_request->add_route_data_list();
+	auto* const send_route_data = mutable_request->add_route_data_list();
 	send_route_data->CopyFrom(cl_tls.route_data());
 	send_route_data->mutable_node_info()->CopyFrom(g_login_node->node_info());
 	mutable_request->set_body(cl_tls.route_msg_body());
-    mutable_request->set_id(request->id());
+	mutable_request->set_id(request->id());
 	switch (cl_tls.next_route_node_type())
 	{
 	case kControllerNode:
@@ -336,18 +336,18 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 		//发送到下个节点
 		g_login_node->controller_node()->Route2Node(ControllerServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
-	break;
+		break;
 	case kDatabaseNode:
-	{
-		//发送到下个节点
-		g_login_node->db_node()->Route2Node(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
-	}
-	break;
+		{
+			//发送到下个节点
+			g_login_node->db_node()->Route2Node(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
+		}
+		break;
 	default:
-	{
-		LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.next_route_node_type();
-	}
-	break;
+		{
+			LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.next_route_node_type();
+		}
+		break;
 	}
 	///<<< END WRITING YOUR CODE
 }
