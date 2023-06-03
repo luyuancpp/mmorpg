@@ -2,6 +2,8 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
+#include "src/util/defer.h"
 #include "src/database_server.h"
 #include "src/pb/pbc/service.h"
 ///<<< END WRITING YOUR CODE
@@ -68,6 +70,10 @@ void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	//todo mysql 速度不够快,应该换成消息队列去处理,防止卡死mysql
+	defer(cl_tls.set_next_route_node_type(UINT32_MAX));
+	defer(cl_tls.set_next_route_node_id(UINT32_MAX));
+	defer(cl_tls.set_current_session_id(kInvalidSessionId));
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
 		LOG_ERROR << "route msg size too max:" << request->DebugString();
@@ -102,6 +108,8 @@ void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* con
 		*response->add_route_data_list() = data;
 	}
 	response->set_session_id(request->session_id());
+	response->set_id(request->id());
+	response->set_is_client(request->is_client());
 ///<<< END WRITING YOUR CODE
 }
 
