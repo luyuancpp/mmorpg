@@ -2,13 +2,13 @@
 
 #include "src/game_config/deploy_json.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/network/server_component.h"
-#include "src/network/rpc_connection_event.h"
 #include "src/network/gate_node.h"
 #include "src/network/node_info.h"
-#include "src/thread_local/login_thread_local_storage.h"
-#include "src/pb/pbc/service.h"
+#include "src/network/rpc_connection_event.h"
+#include "src/network/server_component.h"
 #include "src/pb/pbc/deploy_service_service.h"
+#include "src/pb/pbc/service.h"
+#include "src/thread_local/login_thread_local_storage.h"
 
 #include "common.pb.h"
 
