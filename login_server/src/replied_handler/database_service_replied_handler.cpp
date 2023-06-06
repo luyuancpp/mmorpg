@@ -5,6 +5,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/thread_local/login_thread_local_storage.h"
+
 void UpdateAccount(const ::account_database& a_d)
 {
 	const auto session_it = login_tls.session_list().find(cl_tls.session_id());
@@ -53,8 +54,7 @@ void OnDbServiceEnterGameRepliedHandler(const TcpConnectionPtr& conn, const std:
 	// login process
 	// check account rule: empty , errno
 	// check string rule
-	const auto session_it = login_tls.session_list().find(cl_tls.session_id());
-	if (session_it == login_tls.session_list().end())
+	if (const auto session_it = login_tls.session_list().find(cl_tls.session_id()); session_it == login_tls.session_list().end())
 	{
 		return;
 	}
