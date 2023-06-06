@@ -15,10 +15,7 @@
 #include "database_service_service.h"
 #include "gate_service_service.h"
 
-using PlayerPtr = std::shared_ptr<AccountPlayer>;
-using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
 
-extern ConnectionEntityMap sessions_;
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
@@ -86,8 +83,8 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 	// check account rule: empty , errno
 	// check string rule
     auto session_id = cl_tls.session_id();
-    auto sit = sessions_.find(session_id);
-    if (sit == sessions_.end())
+    auto sit = login_tls.session_list().find(session_id);
+    if (sit == login_tls.session_list().end())
     {
         replied->mutable_error()->set_id(kRetLoginSessionDisconnect);
         return;
@@ -122,7 +119,7 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 void OnControllerServiceLsEnterGameRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<CtrlEnterGameResponese>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    sessions_.erase(cl_tls.session_id());
+    login_tls.session_list().erase(cl_tls.session_id());
 ///<<< END WRITING YOUR CODE
 }
 
