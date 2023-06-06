@@ -37,7 +37,6 @@ public:
     virtual uint32_t EnterGame() = 0;
     // server operator
     virtual void WaitingEnterGame();
-
     virtual void OnEmptyPlayer() {}
     void OnFullPlayer();
     virtual void OnPlaying() {}

@@ -39,18 +39,6 @@ void EnterGame(Guid player_id)
 	login_tls.session_list().erase(cl_tls.session_id());
 }
 
-void UpdateAccount(const ::account_database& a_d)
-{
-	const auto session_it = login_tls.session_list().find(cl_tls.session_id());
-	//断线了
-	if (session_it == login_tls.session_list().end())
-	{
-		return;
-	}
-	session_it->second->set_account_data(a_d);
-	session_it->second->OnDbLoaded();
-}
-
 
 ///<<< END WRITING YOUR CODE
 void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,

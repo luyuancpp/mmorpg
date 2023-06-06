@@ -5,7 +5,18 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/thread_local/login_thread_local_storage.h"
-void UpdateAccount(const ::account_database& a_d);
+void UpdateAccount(const ::account_database& a_d)
+{
+	const auto session_it = login_tls.session_list().find(cl_tls.session_id());
+	//断线了
+	if (session_it == login_tls.session_list().end())
+	{
+		return;
+	}
+	session_it->second->set_account_data(a_d);
+	session_it->second->OnDbLoaded();
+}
+
 void EnterGame(Guid player_id);
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
