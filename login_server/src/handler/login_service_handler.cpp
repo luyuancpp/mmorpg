@@ -31,20 +31,15 @@ using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
 
 ConnectionEntityMap sessions_;
 
-
-void EnterGame(Guid player_id,
-	uint64_t session_id,
-	LoginNodeEnterGameResponse* response,
-	::google::protobuf::Closure* done)
+void EnterGame(Guid player_id)
 {
-	auto it = sessions_.find(session_id);
+	auto it = sessions_.find(cl_tls.session_id());
 	if (sessions_.end() == it)
 	{
-		ReturnClosureError(kRetLoginEnterGameConnectionAccountEmpty);
+		return;
 	}
 	CtrlEnterGameRequest enter_game_request;
 	enter_game_request.set_player_id(player_id);
-	enter_game_request.set_session_id(response->session_id());
 	Route2Node(kControllerNode, ControllerServiceLsEnterGameMsgId, enter_game_request);
 	sessions_.erase(cl_tls.session_id());
 }
@@ -61,27 +56,6 @@ void UpdateAccount(const ::account_database& a_d)
 	session_it->second->OnDbLoaded();
 }
 
-//只连接不登录,占用连接
-// login process
-// check account rule: empty , errno
-// check string rule
-
-using EnterGameDbRpc = std::shared_ptr<RpcString<DatabaseNodeEnterGameRequest, DatabaseNodeEnterGameResponse, LoginNodeEnterGameResponse>>;
-void EnterGameDbReplied(EnterGameDbRpc replied)
-{
-	//db 加载过程中断线了
-	
-	auto& srq = replied->s_rq_;
-	const auto session_it = sessions_.find(cl_tls.session_id());
-	if (session_it == sessions_.end())
-	{
-		return;
-	}
-	LoginNodeEnterGameResponse* response = nullptr;
-	::google::protobuf::Closure* done = nullptr;
-	replied->Move(response, done);
-	EnterGame(srq.player_id(), response->session_id(), response, done);
-}
 
 ///<<< END WRITING YOUR CODE
 void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
@@ -107,8 +81,8 @@ void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* control
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-		// login process
-		//check name rule
+	// login process
+	//check name rule
 	auto sit = sessions_.find(request->session_id());
 	if (sit == sessions_.end())
 	{
@@ -119,11 +93,7 @@ void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* control
 	DatabaseNodeCreatePlayerRequest rq;
 	rq.set_session_id(request->session_id());
 	rq.set_account(sit->second->account());
-	/*g_login_node->db_node().SendString1(
-		CreatePlayerDbReplied,
-		rpc,
-		&dbservice::DbService_Stub::CreatePlayer);*/
-		///<<< END WRITING YOUR CODE
+	Route2Node(kDatabaseNode, DbServiceCreatePlayerMsgId, rq);
 }
 
 void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
@@ -157,18 +127,13 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	if (new_player.player_id() > 0)
 	{
 		//玩家数据已经在redis里面了直接进入游戏
-		::EnterGame(player_id, session_id, response, done);
+		::EnterGame(player_id);
 		return;
 	}
 	// redis没有玩家数据去数据库取
-	auto c(std::make_shared<EnterGameDbRpc::element_type>(response, done));
-	auto& srq = c->s_rq_;
-	srq.set_player_id(player_id);
-	/*g_login_node->db_node().SendString1(
-		EnterGameDbReplied,
-		c,
-		&dbservice::DbService_Stub::EnterGame);*/
-		///<<< END WRITING YOUR CODE
+	DatabaseNodeEnterGameRequest database_enter_game_request;
+	database_enter_game_request.set_player_id(player_id);
+	Route2Node(kDatabaseNode, DbServiceEnterGameMsgId, database_enter_game_request);
 }
 
 void LoginServiceHandler::LeaveGame(::google::protobuf::RpcController* controller,

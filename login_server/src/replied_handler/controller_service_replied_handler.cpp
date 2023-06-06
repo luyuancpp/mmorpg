@@ -122,6 +122,7 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 void OnControllerServiceLsEnterGameRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<CtrlEnterGameResponese>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    sessions_.erase(cl_tls.session_id());
 ///<<< END WRITING YOUR CODE
 }
 
