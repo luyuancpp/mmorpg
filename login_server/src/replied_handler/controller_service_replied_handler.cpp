@@ -81,6 +81,10 @@ void OnControllerServiceStartLsRepliedHandler(const TcpConnectionPtr& conn, cons
 void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<CtrlLoginAccountResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	//只连接不登录,占用连接
+	// login process
+	// check account rule: empty , errno
+	// check string rule
     auto session_id = cl_tls.session_id();
     auto sit = sessions_.find(session_id);
     if (sit == sessions_.end())

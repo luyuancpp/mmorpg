@@ -31,11 +31,6 @@ using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
 
 ConnectionEntityMap sessions_;
 
-using EnterGameControllerRpc = std::shared_ptr<RpcString<CtrlEnterGameRequest, CtrlEnterGameResponese, LoginNodeEnterGameResponse>>;
-void EnterGameReplied(EnterGameControllerRpc replied)
-{
-	sessions_.erase(replied->s_rq_.session_id());
-}
 
 void EnterGame(Guid player_id,
 	uint64_t session_id,
@@ -47,88 +42,38 @@ void EnterGame(Guid player_id,
 	{
 		ReturnClosureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
-	auto rpc(std::make_shared<EnterGameControllerRpc::element_type>(response, done));
-	rpc->s_rq_.set_player_id(player_id);
-	rpc->s_rq_.set_session_id(response->session_id());/*
-	g_login_node->controller_node().CallMethodString1(
-		EnterGameReplied,
-		rpc,
-		&ControllerService::ControllerNodeService_Stub::OnLsEnterGame);*/
-
+	CtrlEnterGameRequest enter_game_request;
+	enter_game_request.set_player_id(player_id);
+	enter_game_request.set_session_id(response->session_id());
+	Route2Node(kControllerNode, ControllerServiceLsEnterGameMsgId, enter_game_request);
+	sessions_.erase(cl_tls.session_id());
 }
 
-void UpdateAccount(uint64_t session_id, const ::account_database& a_d)
+void UpdateAccount(const ::account_database& a_d)
 {
-	auto sit = sessions_.find(session_id);
-	if (sit == sessions_.end())//断线了
+	const auto session_it = sessions_.find(cl_tls.session_id());
+	//断线了
+	if (session_it == sessions_.end())
 	{
 		return;
 	}
-	sit->second->set_account_data(a_d);
-	sit->second->OnDbLoaded();
+	session_it->second->set_account_data(a_d);
+	session_it->second->OnDbLoaded();
 }
 
-using LoginAccountDbRpc = std::shared_ptr< RpcString<DatabaseNodeLoginRequest, DatabaseNodeLoginResponse, LoginNodeLoginResponse>>;
-void LoginAccountDbReplied(LoginAccountDbRpc replied)
-{
-	auto& srp = replied->s_rp_;
-	replied->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
-	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
-}
-
-using LoginAcountControllerRpc = std::shared_ptr<RpcString<CtrlLoginAccountRequest, CtrlLoginAccountResponse, LoginNodeLoginResponse>>;
-void LoginAccountControllerReplied(LoginAcountControllerRpc replied)
-{
-	//只连接不登录,占用连接
-	// login process
-	// check account rule: empty , errno
-	// check string rule
-	auto session_id = cl_tls.session_id();
-	auto sit = sessions_.find(session_id);
-	if (sit == sessions_.end())
-	{
-		replied->c_rp_->mutable_error()->set_id(kRetLoginCreatePlayerConnectionHasNotAccount);
-		return;
-	}
-	//has data
-	{
-		auto& player = sit->second;
-		auto ret = player->Login();
-		if (ret != kRetOK)
-		{
-			replied->c_rp_->mutable_error()->set_id(ret);
-			return;
-		}
-		g_login_node->redis_client()->Load(player->account_data(), replied->s_rq_.account());
-		if (!player->account_data().password().empty())
-		{
-			replied->c_rp_->mutable_account_player()->CopyFrom(player->account_data());
-			player->OnDbLoaded();
-			return;
-		}
-	}
-	// database process
-	auto rpc(std::make_shared<LoginAccountDbRpc::element_type>(*replied));
-	rpc->s_rq_.set_account(replied->s_rq_.account());
-	rpc->s_rq_.set_session_id(session_id);
-	//g_login_node->db_node().SendString1(LoginAccountDbReplied, rpc, &dbservice::DbService_Stub::Login);
-}
-
-using CreatePlayerRpc = std::shared_ptr<RpcString<DatabaseNodeCreatePlayerRequest, DatabaseNodeCreatePlayerResponse, LoginNodeCreatePlayerResponse>>;
-void CreatePlayerDbReplied(CreatePlayerRpc replied)
-{
-	auto& srp = replied->s_rp_;
-	replied->c_rp_->mutable_account_player()->CopyFrom(srp->account_player());
-	UpdateAccount(replied->s_rq_.session_id(), srp->account_player());
-}
+//只连接不登录,占用连接
+// login process
+// check account rule: empty , errno
+// check string rule
 
 using EnterGameDbRpc = std::shared_ptr<RpcString<DatabaseNodeEnterGameRequest, DatabaseNodeEnterGameResponse, LoginNodeEnterGameResponse>>;
 void EnterGameDbReplied(EnterGameDbRpc replied)
 {
 	//db 加载过程中断线了
+	
 	auto& srq = replied->s_rq_;
-	auto sit = sessions_.find(replied->c_rp_->session_id());
-	if (sit == sessions_.end())
+	const auto session_it = sessions_.find(cl_tls.session_id());
+	if (session_it == sessions_.end())
 	{
 		return;
 	}
@@ -138,8 +83,6 @@ void EnterGameDbReplied(EnterGameDbRpc replied)
 	EnterGame(srq.player_id(), response->session_id(), response, done);
 }
 
-
-
 ///<<< END WRITING YOUR CODE
 void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	const ::LoginRequest* request,
@@ -147,16 +90,14 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-
-		//测试用例连接不登录马上断线，
-		//账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
-		//登录的时候马上断开连接换了个gate应该可以登录成功
-		//login controller
-	CtrlLoginAccountRequest rq;
-	rq.set_account(request->account());
+	//todo 测试用例连接不登录马上断线，
+	//todo 账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
+	//todo 登录的时候马上断开连接换了个gate应该可以登录成功
+	//todo 在链接过程中断了，换了gate新的gate 应该是可以上线成功的，消息要发到新的gate上,老的gate正常走断开流程
+	CtrlLoginAccountRequest ctrl_login_request;
+	ctrl_login_request.set_account(request->account());
 	sessions_.emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
-	Route2Node(kControllerNode, ControllerServiceLsLoginAccountMsgId, rq);
-	//LoginAccountControllerReplied
+	Route2Node(kControllerNode, ControllerServiceLsLoginAccountMsgId, ctrl_login_request);
 ///<<< END WRITING YOUR CODE
 }
 
