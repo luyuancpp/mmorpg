@@ -2,14 +2,14 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 
 #include "login_state.h"
 
 class LoginStateMachine
 {
 public:
-	using StatePtr = std::shared_ptr<IAccountState>;
-	using StatePtrList = std::array<StatePtr, kLoginStateMax>;
+	using StatePtr = std::unique_ptr<IAccountState>;
 
 	LoginStateMachine();
 
@@ -25,6 +25,5 @@ public:
 	void OnPlaying();
 
 private:
-	StatePtrList state_list_;
 	StatePtr current_state_;
 };

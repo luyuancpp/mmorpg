@@ -3,23 +3,58 @@
 #include "src/game_logic/tips_id.h"
 #include "login_state_concrete.h"
 
-
 LoginStateMachine::LoginStateMachine()
 {
-    state_list_[kLoginNone] = std::make_shared<NoneState>(*this);
-    state_list_[kLoginAccountIngBeingProcessing] = std::make_shared<LoginState>(*this);
-    state_list_[kLoginAccountCreatePlayer] = std::make_shared<CreatePlayerState>(*this);
-    state_list_[kLoginAccountEnterGame] = std::make_shared<EnterGameState>(*this);
-    state_list_[kLoginAccountPlaying] = std::make_shared<PlayingState>(*this);
-    state_list_[kLoginWaitingEnterGame] = std::make_shared<WaitingEnterGameState>(*this);
-    state_list_[kLoginAccountNoPlayer] = std::make_shared<EmptyPlayerState>(*this);
-    state_list_[kLoginAccountFullPlayer] = std::make_shared<FullPlayerState>(*this);
     set_state(kLoginNone);
 }
 
 void LoginStateMachine::set_state(uint32_t state_enum)
 {
-    current_state_ = state_list_[state_enum];
+    switch (state_enum)
+    {
+    case kLoginNone:
+    {
+        current_state_ = std::make_unique<NoneState>(*this);
+    }
+        break;
+	case kLoginAccountIngBeingProcessing:
+	{
+        current_state_ = std::make_unique<LoginState>(*this);
+	}
+	    break;
+	case kLoginAccountCreatePlayer:
+	{
+		current_state_ = std::make_unique<CreatePlayerState>(*this);
+	}
+	    break;
+	case kLoginAccountEnterGame:
+	{
+		current_state_ = std::make_unique<EnterGameState>(*this);
+	}
+	break;
+	case kLoginAccountPlaying:
+	{
+		current_state_ = std::make_unique<PlayingState>(*this);
+	}
+	break;
+	case kLoginWaitingEnterGame:
+	{
+		current_state_ = std::make_unique<WaitingEnterGameState>(*this);
+	}
+	break;
+	case kLoginAccountNoPlayer:
+	{
+		current_state_ = std::make_unique<EmptyPlayerState>(*this);
+	}
+	break;
+	case kLoginAccountFullPlayer:
+	{
+		current_state_ = std::make_unique<FullPlayerState>(*this);
+	}
+	break;
+    default:
+        break;
+    }
 }
 
 uint32_t LoginStateMachine::Login()
