@@ -26,29 +26,24 @@
 using namespace muduo;
 using namespace muduo::net;
 
-using PlayerPtr = std::shared_ptr<AccountPlayer>;
-using ConnectionEntityMap = std::unordered_map<Guid, PlayerPtr>;
-
-ConnectionEntityMap sessions_;
-
 void EnterGame(Guid player_id)
 {
-	auto it = sessions_.find(cl_tls.session_id());
-	if (sessions_.end() == it)
+	auto it = login_tls.session_list().find(cl_tls.session_id());
+	if (login_tls.session_list().end() == it)
 	{
 		return;
 	}
 	CtrlEnterGameRequest enter_game_request;
 	enter_game_request.set_player_id(player_id);
 	Route2Node(kControllerNode, ControllerServiceLsEnterGameMsgId, enter_game_request);
-	sessions_.erase(cl_tls.session_id());
+	login_tls.session_list().erase(cl_tls.session_id());
 }
 
 void UpdateAccount(const ::account_database& a_d)
 {
-	const auto session_it = sessions_.find(cl_tls.session_id());
+	const auto session_it = login_tls.session_list().find(cl_tls.session_id());
 	//断线了
-	if (session_it == sessions_.end())
+	if (session_it == login_tls.session_list().end())
 	{
 		return;
 	}
@@ -70,7 +65,7 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	//todo 在链接过程中断了，换了gate新的gate 应该是可以上线成功的，消息要发到新的gate上,老的gate正常走断开流程
 	CtrlLoginAccountRequest ctrl_login_request;
 	ctrl_login_request.set_account(request->account());
-	sessions_.emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
+	login_tls.session_list().emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
 	Route2Node(kControllerNode, ControllerServiceLsLoginAccountMsgId, ctrl_login_request);
 ///<<< END WRITING YOUR CODE
 }
@@ -83,8 +78,8 @@ void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* control
 	///<<< BEGIN WRITING YOUR CODE
 	// login process
 	//check name rule
-	auto sit = sessions_.find(request->session_id());
-	if (sit == sessions_.end())
+	auto sit = login_tls.session_list().find(request->session_id());
+	if (sit == login_tls.session_list().end())
 	{
 		ReturnClosureError(kRetLoginCreatePlayerConnectionHasNotAccount);
 	}
@@ -104,8 +99,8 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	///<<< BEGIN WRITING YOUR CODE
 
 	auto session_id = request->session_id();
-	auto sit = sessions_.find(session_id);
-	if (sit == sessions_.end())
+	auto sit = login_tls.session_list().find(session_id);
+	if (sit == login_tls.session_list().end())
 	{
 		ReturnClosureError(kRetLoginEnterGameConnectionAccountEmpty);
 	}
@@ -142,8 +137,8 @@ void LoginServiceHandler::LeaveGame(::google::protobuf::RpcController* controlle
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	auto sit = sessions_.find(request->session_id());
-	if (sit == sessions_.end())
+	auto sit = login_tls.session_list().find(request->session_id());
+	if (sit == login_tls.session_list().end())
 	{
 		LOG_ERROR << " leave game not found connection";
 		return;
@@ -152,7 +147,7 @@ void LoginServiceHandler::LeaveGame(::google::protobuf::RpcController* controlle
 	CtrlLsLeaveGameRequest rq;
 	rq.set_session_id(request->session_id());
 	g_login_node->controller_node()->Send(ControllerServiceLsLeaveGameMsgId, rq);
-	sessions_.erase(sit);
+	login_tls.session_list().erase(sit);
 	///<<< END WRITING YOUR CODE
 }
 
@@ -163,7 +158,7 @@ void LoginServiceHandler::Disconnect(::google::protobuf::RpcController* controll
 {
 	///<<< BEGIN WRITING YOUR CODE
 		//比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
-	sessions_.erase(request->session_id());
+	login_tls.session_list().erase(request->session_id());
 	CtrlLsDisconnectRequest rq;
 	rq.set_session_id(request->session_id());
 	g_login_node->controller_node()->Send(ControllerServiceLsDisconnectMsgId, rq);
