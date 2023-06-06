@@ -23,9 +23,6 @@
 
 #include "controller_service.pb.h"
 
-using namespace muduo;
-using namespace muduo::net;
-
 void EnterGame(Guid player_id)
 {
 	auto it = login_tls.session_list().find(cl_tls.session_id());
@@ -38,7 +35,6 @@ void EnterGame(Guid player_id)
 	Route2Node(kControllerNode, ControllerServiceLsEnterGameMsgId, enter_game_request);
 	login_tls.session_list().erase(cl_tls.session_id());
 }
-
 
 ///<<< END WRITING YOUR CODE
 void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
@@ -66,17 +62,16 @@ void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* control
 	///<<< BEGIN WRITING YOUR CODE
 	// login process
 	//check name rule
-	auto sit = login_tls.session_list().find(request->session_id());
+	const auto sit = login_tls.session_list().find(request->session_id());
 	if (sit == login_tls.session_list().end())
 	{
 		ReturnClosureError(kRetLoginCreatePlayerConnectionHasNotAccount);
 	}
 	CheckReturnClosureError(sit->second->CreatePlayer());
 	// database process
-	DatabaseNodeCreatePlayerRequest rq;
-	rq.set_session_id(request->session_id());
-	rq.set_account(sit->second->account());
-	Route2Node(kDatabaseNode, DbServiceCreatePlayerMsgId, rq);
+	DatabaseNodeCreatePlayerRequest db_create_request;
+	db_create_request.set_account(sit->second->account());
+	Route2Node(kDatabaseNode, DbServiceCreatePlayerMsgId, db_create_request);
 }
 
 void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
@@ -85,9 +80,7 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-
-	auto session_id = request->session_id();
-	auto sit = login_tls.session_list().find(session_id);
+	auto sit = login_tls.session_list().find(request->session_id());
 	if (sit == login_tls.session_list().end())
 	{
 		ReturnClosureError(kRetLoginEnterGameConnectionAccountEmpty);
@@ -104,9 +97,11 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	//todo 已经在其他login
 	player_database new_player;
 	g_login_node->redis_client()->Load(new_player, player_id);
-	sit->second->Playing(player_id);//test
-	response->set_session_id(session_id);
-	response->set_player_id(player_id);//test
+	//test
+	sit->second->Playing(player_id);
+	response->set_session_id(request->session_id());
+	//test
+	response->set_player_id(player_id);
 	if (new_player.player_id() > 0)
 	{
 		//玩家数据已经在redis里面了直接进入游戏
