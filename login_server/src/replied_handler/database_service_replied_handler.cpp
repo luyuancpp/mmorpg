@@ -65,6 +65,8 @@ void OnDbServiceEnterGameRepliedHandler(const TcpConnectionPtr& conn, const std:
 void OnDbServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RouteMsgStringResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr & conn, const std::shared_ptr<RouteMsgStringResponse>&replied, Timestamp timestamp);
+	OnServiceRouteNodeStringMsgRepliedHandler(conn, replied, timestamp);
 ///<<< END WRITING YOUR CODE
 }
 

@@ -109,7 +109,7 @@ void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	{
 		*response->add_route_data_list() = data;
 	}
-	response->set_session_id(request->session_id());
+	response->set_session_id(cl_tls.session_id());
 	response->set_id(request->id());
 	response->set_is_client(request->is_client());
 ///<<< END WRITING YOUR CODE
