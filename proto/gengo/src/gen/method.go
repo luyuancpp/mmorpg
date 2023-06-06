@@ -686,7 +686,8 @@ func isLoginMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 		return false
 	}
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) ||
-		strings.Contains(firstMethodInfo.FileBaseName(), "deploy")
+		strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.DataBasePrefixName)
 }
 
 func isLoginServiceHandler(methodList *RpcMethodInfos) (check bool) {

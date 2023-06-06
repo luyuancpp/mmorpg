@@ -75,6 +75,7 @@ void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	defer(cl_tls.set_next_route_node_type(UINT32_MAX));
 	defer(cl_tls.set_next_route_node_id(UINT32_MAX));
 	defer(cl_tls.set_current_session_id(kInvalidSessionId));
+	cl_tls.set_current_session_id(request->session_id());
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
 		LOG_ERROR << "route msg size too max:" << request->DebugString();
