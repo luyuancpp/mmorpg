@@ -82,8 +82,7 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 	// login process
 	// check account rule: empty , errno
 	// check string rule
-    auto session_id = cl_tls.session_id();
-    auto sit = login_tls.session_list().find(session_id);
+    auto sit = login_tls.session_list().find(cl_tls.session_id());
     if (sit == login_tls.session_list().end())
     {
         replied->mutable_error()->set_id(kRetLoginSessionDisconnect);
@@ -110,7 +109,7 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
     // database process
     DatabaseNodeLoginRequest rq;
     rq.set_account(replied->account());
-    rq.set_session_id(session_id);
+    rq.set_session_id(cl_tls.session_id());
 
     Route2Node(kDatabaseNode, DbServiceLoginMsgId, rq);
 ///<<< END WRITING YOUR CODE

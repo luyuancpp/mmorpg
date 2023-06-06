@@ -344,7 +344,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 ///<<< BEGIN WRITING YOUR CODE
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
-    auto sit = controller_tls.gate_sessions().find(request->session_id());
+    auto sit = controller_tls.gate_sessions().find(cl_tls.session_id());
 	if (sit == controller_tls.gate_sessions().end())
 	{
 		LOG_ERROR << "connection not found " << request->session_id();
@@ -406,7 +406,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
         if (nullptr != player_session)
         {
 			GateNodeKickConnRequest message;
-            message.set_session_id(player_session->gate_session_.session_id());
+            message.set_session_id(cl_tls.session_id());
             Send2Gate(GateServiceKickConnByControllerMsgId, message, player_session->gate_node_id());
         }
 		InitPlayerGate(player, request->session_id());
@@ -634,7 +634,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		{
 			*response->add_route_data_list() = request_data_it;
 		}
-		response->set_session_id(request->session_id());
+		response->set_session_id(cl_tls.session_id());
         response->set_id(request->id());
 		return;
 	}

@@ -76,7 +76,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		}
 		auto& prev_route_data = *replied->route_data_list().rbegin();
 		mutable_replied->set_body(current_node_response->SerializeAsString());
-		mutable_replied->set_session_id(mutable_replied->session_id());
+		mutable_replied->set_session_id(cl_tls.session_id());
 		mutable_replied->set_id(mutable_replied->id());
 		switch (prev_route_data.node_info().node_type())
 		{
@@ -111,7 +111,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		{
 			*request.add_route_data_list() = request_data_it;
 		}
-		request.set_session_id(mutable_replied->session_id());
+		request.set_session_id(cl_tls.session_id());
 		request.set_id(mutable_replied->id());
 
 		auto send_route_data = request.add_route_data_list();
