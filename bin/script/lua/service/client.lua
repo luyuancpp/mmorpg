@@ -1,4 +1,4 @@
-function LoginRequest:ReadyGo() 
+function LoginRequest:ReadyGo()
 	self.account = ("luhailong"..PlayerId.player_id)
 	PlayerId.player_id = PlayerId.player_id + 1
 end
@@ -36,4 +36,8 @@ end
 function LeaveGame()
 	request = LeaveGameRequest.new()
 	player:send(request)
+end
+
+function LoginServiceLogin(request, response)
+	print(response:DebugString())
 end
