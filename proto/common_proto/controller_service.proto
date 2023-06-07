@@ -48,12 +48,10 @@ message CtrlConnectedGameRequest
 
 message GateLeaveGameRequest
 {
-  uint64 session_id = 1;
 }
 
 message GateDisconnectRequest
 {
-  uint64 session_id = 1;
 }
 
 message CtrlLoginAccountRequest
@@ -70,22 +68,18 @@ message CtrlLoginAccountResponse
 message CtrlEnterGameRequest
 {
   uint64 player_id = 1;
-  uint64 session_id = 2;
 }
 
 message CtrlEnterGameResponese
 {
-  uint64 session_id = 1;
 }
 
 message CtrlLsLeaveGameRequest
 {
-  uint64 session_id = 1;
 }
 
 message CtrlLsDisconnectRequest
 {
-  uint64 session_id = 1;
 }
 
 message CrossSceneInfo

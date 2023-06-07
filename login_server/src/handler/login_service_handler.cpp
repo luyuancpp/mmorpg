@@ -23,10 +23,9 @@
 
 #include "controller_service.pb.h"
 
-void EnterGame(Guid player_id)
+void SendCtrlEnterGame(Guid player_id)
 {
-	auto it = login_tls.session_list().find(cl_tls.session_id());
-	if (login_tls.session_list().end() == it)
+	if (const auto it = login_tls.session_list().find(cl_tls.session_id()); login_tls.session_list().end() == it)
 	{
 		return;
 	}
@@ -47,6 +46,7 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	//todo 账号登录马上在redis 里面，考虑第一天注册很多账号的时候账号内存很多，何时回收
 	//todo 登录的时候马上断开连接换了个gate应该可以登录成功
 	//todo 在链接过程中断了，换了gate新的gate 应该是可以上线成功的，消息要发到新的gate上,老的gate正常走断开流程
+	//todo gate异步同时登陆情况,老gate晚于新gate登录到controller会不会导致登录不成功了?这时候怎么处理
 	CtrlLoginAccountRequest ctrl_login_request;
 	ctrl_login_request.set_account(request->account());
 	login_tls.session_list().emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
@@ -62,7 +62,7 @@ void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* control
 	///<<< BEGIN WRITING YOUR CODE
 	// login process
 	//check name rule
-	const auto sit = login_tls.session_list().find(request->session_id());
+	const auto sit = login_tls.session_list().find(cl_tls.session_id());
 	if (sit == login_tls.session_list().end())
 	{
 		ReturnClosureError(kRetLoginCreatePlayerConnectionHasNotAccount);
@@ -80,7 +80,7 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	auto sit = login_tls.session_list().find(request->session_id());
+	const auto sit = login_tls.session_list().find(cl_tls.session_id());
 	if (sit == login_tls.session_list().end())
 	{
 		ReturnClosureError(kRetLoginEnterGameConnectionAccountEmpty);
@@ -99,19 +99,19 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	g_login_node->redis_client()->Load(new_player, player_id);
 	//test
 	sit->second->Playing(player_id);
-	response->set_session_id(request->session_id());
 	//test
 	response->set_player_id(player_id);
 	if (new_player.player_id() > 0)
 	{
 		//玩家数据已经在redis里面了直接进入游戏
-		::EnterGame(player_id);
+		::SendCtrlEnterGame(player_id);
 		return;
 	}
 	// redis没有玩家数据去数据库取
 	DatabaseNodeEnterGameRequest database_enter_game_request;
 	database_enter_game_request.set_player_id(player_id);
 	Route2Node(kDatabaseNode, DbServiceEnterGameMsgId, database_enter_game_request);
+	///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceHandler::LeaveGame(::google::protobuf::RpcController* controller,
@@ -120,19 +120,19 @@ void LoginServiceHandler::LeaveGame(::google::protobuf::RpcController* controlle
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	auto sit = login_tls.session_list().find(request->session_id());
+	const auto sit = login_tls.session_list().find(cl_tls.session_id());
 	if (sit == login_tls.session_list().end())
 	{
 		LOG_ERROR << " leave game not found connection";
 		return;
 	}
 	//连接过，登录过
-	CtrlLsLeaveGameRequest rq;
-	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->Send(ControllerServiceLsLeaveGameMsgId, rq);
+	const CtrlLsLeaveGameRequest ctrl_leave_game_request;
+	g_login_node->controller_node()->Send(ControllerServiceLsLeaveGameMsgId, ctrl_leave_game_request);
 	login_tls.session_list().erase(sit);
 	///<<< END WRITING YOUR CODE
 }
+
 
 void LoginServiceHandler::Disconnect(::google::protobuf::RpcController* controller,
 	const ::LoginNodeDisconnectRequest* request,
@@ -140,11 +140,10 @@ void LoginServiceHandler::Disconnect(::google::protobuf::RpcController* controll
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-		//比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
-	login_tls.session_list().erase(request->session_id());
-	CtrlLsDisconnectRequest rq;
-	rq.set_session_id(request->session_id());
-	g_login_node->controller_node()->Send(ControllerServiceLsDisconnectMsgId, rq);
+	//比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
+	login_tls.session_list().erase(cl_tls.session_id());
+	const CtrlLsDisconnectRequest ctrl_disconnect_request;
+	g_login_node->controller_node()->Send(ControllerServiceLsDisconnectMsgId, ctrl_disconnect_request);
 	///<<< END WRITING YOUR CODE
 }
 
@@ -154,10 +153,11 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
+	//todo 如果当前节点处理有错误会不会原路返回，会不会导致数据流一直在内存
     defer(cl_tls.set_next_route_node_type(UINT32_MAX));
     defer(cl_tls.set_next_route_node_id(UINT32_MAX));
     defer(cl_tls.set_current_session_id(kInvalidSessionId));
-
+	cl_tls.set_current_session_id(request->session_id());
 	if (request->route_data_list_size() >= kMaxRouteSize)
 	{
 		LOG_ERROR << "route msg size too max:" << request->DebugString();
@@ -189,7 +189,6 @@ void LoginServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* 
 		LOG_ERROR << "invalid  body request" << request->DebugString();
 		return;
 	}
-	cl_tls.set_current_session_id(request->session_id());
 	//当前节点的真正回复的消息
 	const MessagePtr current_node_response(GetResponsePrototype(method).New());
 	CallMethod(method, nullptr, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);

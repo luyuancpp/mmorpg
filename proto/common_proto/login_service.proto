@@ -24,7 +24,6 @@ message LoginNodeLoginResponse
 
 message CreatePlayerC2lRequest
 {
-  uint64 session_id = 1;
 }
 
 message LoginNodeCreatePlayerResponse
@@ -36,20 +35,17 @@ message LoginNodeCreatePlayerResponse
 
 message EnterGameC2LRequest
 {
-  uint64 session_id = 1;
-  uint64 player_id = 2;
+  uint64 player_id = 1;
 }
 
 message LoginNodeEnterGameResponse
 {
   Tips error = 1;
   uint64 player_id = 2;
-  uint64 session_id = 3;// for logic
 }
 
 message LoginNodeDisconnectRequest
 {
-  uint64 session_id = 1;
 }
 
 message LoginNodeDisconnectResponse
@@ -58,7 +54,6 @@ message LoginNodeDisconnectResponse
 
 message LeaveGameC2LRequest
 {
-  uint64 session_id = 1;
 }
 
 service LoginService {

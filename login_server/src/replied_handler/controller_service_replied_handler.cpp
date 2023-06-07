@@ -109,8 +109,6 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
     // database process
     DatabaseNodeLoginRequest rq;
     rq.set_account(replied->account());
-    rq.set_session_id(cl_tls.session_id());
-
     Route2Node(kDatabaseNode, DbServiceLoginMsgId, rq);
 ///<<< END WRITING YOUR CODE
 }
