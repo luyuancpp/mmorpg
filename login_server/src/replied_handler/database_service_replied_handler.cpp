@@ -1,5 +1,4 @@
 #include "database_service_replied_handler.h"
-
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE

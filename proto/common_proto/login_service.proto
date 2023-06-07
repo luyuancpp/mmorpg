@@ -46,6 +46,7 @@ message LoginNodeEnterGameResponse
 
 message LoginNodeDisconnectRequest
 {
+  uint64 session_id = 1;
 }
 
 message LoginNodeDisconnectResponse
