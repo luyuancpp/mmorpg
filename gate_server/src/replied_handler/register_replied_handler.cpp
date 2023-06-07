@@ -9,4 +9,7 @@ void InitRepliedHandler()
 	void InitGameServiceEnterGsRepliedHandler();
 	InitGameServiceEnterGsRepliedHandler();
 
+	void InitLoginServiceLoginRepliedHandler();
+	InitLoginServiceLoginRepliedHandler();
+
 }
