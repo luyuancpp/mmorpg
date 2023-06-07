@@ -35,15 +35,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 		LOG_INFO << "message_id not found " << route_data.message_id();
 		return;
 	}
-	auto& message_info = g_message_info[route_data.message_id()];
-	const google::protobuf::MethodDescriptor* method = g_gate_node->gate_service_hanlder().GetDescriptor()->FindMethodByName(message_info.method);
-	if (nullptr == method)
-	{
-		LOG_ERROR << "method not found " << replied->DebugString() ;
-		return;
-	}
 	//gate 和其他服务器不一样，直接返回消息给客户端
-
 	auto it = gate_tls.sessions().find(replied->session_id());
 	if (it == gate_tls.sessions().end())
 	{

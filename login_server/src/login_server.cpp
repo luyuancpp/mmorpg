@@ -44,6 +44,7 @@ void LoginServer::ConnectDeploy()
 
 void LoginServer::Start()
 {
+	server_->subscribe<OnBeConnectedEvent>(*this);
     server_->registerService(&handler_);
     server_->start();
 }

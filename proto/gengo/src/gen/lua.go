@@ -78,12 +78,26 @@ func getClientMethodHandlerHeadStr(methodList RpcMethodInfos) string {
 	return data
 }
 
+func isClientMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
+	if len(*methodList) <= 0 {
+		return false
+	}
+	firstMethodInfo := (*methodList)[0]
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+		return true
+	}
+	if strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
+		return strings.Contains(firstMethodInfo.FileBaseName(), config.LoginPrefixName)
+	}
+	return false
+}
+
 func writeClientMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 	if len(methodList) <= 0 {
 		return
 	}
-	if !strings.Contains(methodList[0].Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+	if !isClientMethodRepliedHandler(&methodList) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
@@ -105,7 +119,7 @@ func writeClientHandlerDefaultInstanceFile() {
 			continue
 		}
 		method1Info := methodList[0]
-		if !strings.Contains(method1Info.Path, config.ProtoDirNames[config.ClientPlayerDirIndex]) {
+		if !isClientMethodRepliedHandler(&methodList) {
 			continue
 		}
 		includeData += config.IncludeBegin + method1Info.FileBaseName() + config.HeadHandlerEx + config.IncludeEndLine
