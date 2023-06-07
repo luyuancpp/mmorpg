@@ -7,7 +7,6 @@ option cc_generic_services = true;
 message DatabaseNodeLoginRequest
 {
   string account = 1;
-  uint64 session_id = 2;
 }
 
 message DatabaseNodeLoginResponse
@@ -19,7 +18,6 @@ message DatabaseNodeLoginResponse
 message DatabaseNodeCreatePlayerRequest
 {
   string account = 1;
-  uint64 session_id = 2;
 }
 
 message DatabaseNodeCreatePlayerResponse

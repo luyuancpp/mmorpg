@@ -1,9 +1,10 @@
 #include "database_service_replied_handler.h"
 
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
+
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/thread_local/login_thread_local_storage.h"
 
 void UpdateAccount(const ::account_database& a_d)
@@ -18,7 +19,7 @@ void UpdateAccount(const ::account_database& a_d)
 	session_it->second->OnDbLoaded();
 }
 
-void EnterGame(Guid player_id);
+void SendCtrlEnterGame(Guid player_id);
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
@@ -58,7 +59,7 @@ void OnDbServiceEnterGameRepliedHandler(const TcpConnectionPtr& conn, const std:
 	{
 		return;
 	}
-	EnterGame(replied->player_id());
+	SendCtrlEnterGame(replied->player_id());
 ///<<< END WRITING YOUR CODE
 }
 
