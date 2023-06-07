@@ -16,56 +16,56 @@ public:
 		{
 			case 0:
 			{
-				tls_lua_state["Login"](
+				tls_lua_state["LoginServiceLogin"](
 				::google::protobuf::internal::DownCast<const ::LoginRequest*>( request),
 				::google::protobuf::internal::DownCast<::LoginResponse*>(response));
 			}
 			break;
 			case 1:
 			{
-				tls_lua_state["CreatPlayer"](
+				tls_lua_state["LoginServiceCreatPlayer"](
 				::google::protobuf::internal::DownCast<const ::CreatePlayerC2lRequest*>( request),
 				::google::protobuf::internal::DownCast<::LoginNodeCreatePlayerResponse*>(response));
 			}
 			break;
 			case 2:
 			{
-				tls_lua_state["EnterGame"](
+				tls_lua_state["LoginServiceEnterGame"](
 				::google::protobuf::internal::DownCast<const ::EnterGameC2LRequest*>( request),
 				::google::protobuf::internal::DownCast<::LoginNodeEnterGameResponse*>(response));
 			}
 			break;
 			case 3:
 			{
-				tls_lua_state["LeaveGame"](
+				tls_lua_state["LoginServiceLeaveGame"](
 				::google::protobuf::internal::DownCast<const ::LeaveGameC2LRequest*>( request),
 				::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
 			}
 			break;
 			case 4:
 			{
-				tls_lua_state["Disconnect"](
+				tls_lua_state["LoginServiceDisconnect"](
 				::google::protobuf::internal::DownCast<const ::LoginNodeDisconnectRequest*>( request),
 				::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
 			}
 			break;
 			case 5:
 			{
-				tls_lua_state["RouteNodeStringMsg"](
+				tls_lua_state["LoginServiceRouteNodeStringMsg"](
 				::google::protobuf::internal::DownCast<const ::RouteMsgStringRequest*>( request),
 				::google::protobuf::internal::DownCast<::RouteMsgStringResponse*>(response));
 			}
 			break;
 			case 6:
 			{
-				tls_lua_state["RoutePlayerStringMsg"](
+				tls_lua_state["LoginServiceRoutePlayerStringMsg"](
 				::google::protobuf::internal::DownCast<const ::RoutePlayerMsgStringRequest*>( request),
 				::google::protobuf::internal::DownCast<::RoutePlayerMsgStringResponse*>(response));
 			}
 			break;
 			case 7:
 			{
-				tls_lua_state["GateConnect"](
+				tls_lua_state["LoginServiceGateConnect"](
 				::google::protobuf::internal::DownCast<const ::GateConnectRequest*>( request),
 				::google::protobuf::internal::DownCast<::google::protobuf::Empty*>(response));
 			}

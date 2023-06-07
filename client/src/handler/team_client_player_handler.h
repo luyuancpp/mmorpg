@@ -16,7 +16,7 @@ public:
 		{
 			case 0:
 			{
-				tls_lua_state["TeamInfoNotify"](
+				tls_lua_state["ClientPlayerTeamServiceTeamInfoNotify"](
 				::google::protobuf::internal::DownCast<const ::TeamInfoS2CRequest*>( request),
 				::google::protobuf::internal::DownCast<::TeamInfoS2CResponse*>(response));
 			}

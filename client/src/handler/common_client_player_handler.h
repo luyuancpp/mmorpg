@@ -16,7 +16,7 @@ public:
 		{
 			case 0:
 			{
-				tls_lua_state["PushTipsS2C"](
+				tls_lua_state["ClientPlayerCommonServicePushTipsS2C"](
 				::google::protobuf::internal::DownCast<const ::TipsS2C*>( request),
 				::google::protobuf::internal::DownCast<::TipsS2C*>(response));
 			}
