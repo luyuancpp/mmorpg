@@ -134,7 +134,6 @@ void LoginServiceHandler::LeaveGame(::google::protobuf::RpcController* controlle
 	///<<< END WRITING YOUR CODE
 }
 
-
 void LoginServiceHandler::Disconnect(::google::protobuf::RpcController* controller,
 	const ::LoginNodeDisconnectRequest* request,
 	::google::protobuf::Empty* response,
