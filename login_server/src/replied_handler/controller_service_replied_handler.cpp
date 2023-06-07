@@ -95,7 +95,7 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 		return;
 	}
 	login_tls.redis().Load(player->account_data(), sit->second->account());
-	if (!player->account_data().password().empty())
+	if (player->IsValid())
 	{
 		LoginNodeLoginResponse message;
 		message.mutable_account_player()->CopyFrom(player->account_data());
