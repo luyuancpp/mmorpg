@@ -70,19 +70,19 @@ entt::entity GetPlayerByConnId(uint64_t session_id)
 
 void OnSessionEnterGame(entt::entity conn, Guid player_id)
 {
-    tls.registry.emplace<EntityPtr>(conn, ControllerPlayerSystem::GetPlayerPtr(player_id));
-    tls.registry.emplace<Guid>(conn, player_id);
+	tls.registry.emplace<EntityPtr>(conn, ControllerPlayerSystem::GetPlayerPtr(player_id));
+	tls.registry.emplace<Guid>(conn, player_id);
 }
 
-void InitPlayerGate(entt::entity player, uint64_t session_id)
+void InitPlayerGate(entt::entity player)
 {
-    auto& player_session = tls.registry.get_or_emplace<PlayerSession>(player);
-    player_session.gate_session_.set_session_id(session_id);
-    auto gate_it = controller_tls.gate_nodes().find(node_id(session_id));
-    if (gate_it == controller_tls.gate_nodes().end())
-    {
-		return;  
-    }
+	auto& player_session = tls.registry.get_or_emplace<PlayerSession>(player);
+	player_session.gate_session_.set_session_id(cl_tls.session_id());
+	const auto gate_it = controller_tls.gate_nodes().find(node_id(cl_tls.session_id()));
+	if (gate_it == controller_tls.gate_nodes().end())
+	{
+		return;
+	}
 	player_session.gate_ = gate_it->second;
 }
 
@@ -347,7 +347,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
     auto sit = controller_tls.gate_sessions().find(cl_tls.session_id());
 	if (sit == controller_tls.gate_sessions().end())
 	{
-		LOG_ERROR << "connection not found " << request->session_id();
+		LOG_ERROR << "connection not found " << cl_tls.session_id();
 		return;
 	}
 	auto session = sit->second;
@@ -377,7 +377,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 			LOG_INFO << "player " << player_id << " enter default secne";
 		} 
 
-		InitPlayerGate(player, request->session_id());
+		InitPlayerGate(player);
 		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 
         auto try_player_session = tls.registry.try_get<PlayerSession>(player);
@@ -409,7 +409,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
             message.set_session_id(cl_tls.session_id());
             Send2Gate(GateServiceKickConnByControllerMsgId, message, player_session->gate_node_id());
         }
-		InitPlayerGate(player, request->session_id());
+		InitPlayerGate(player);
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
 	}
 	if (entt::null == player)
@@ -427,9 +427,7 @@ void ControllerServiceHandler::LsLeaveGame(::google::protobuf::RpcController* co
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-
-	auto player_id = GetPlayerIdByConnId(request->session_id());
-	ControllerPlayerSystem::LeaveGame(player_id);
+	ControllerPlayerSystem::LeaveGame(GetPlayerIdByConnId(cl_tls.session_id()));
 	//todo statistics
 ///<<< END WRITING YOUR CODE
 }
@@ -440,7 +438,7 @@ void ControllerServiceHandler::LsDisconnect(::google::protobuf::RpcController* c
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto player_id = GetPlayerIdByConnId(request->session_id());
+	const auto player_id = GetPlayerIdByConnId(cl_tls.session_id());
 	ControllerPlayerSystem::LeaveGame(player_id);
 	controller_tls.gate_sessions().erase(player_id);
 ///<<< END WRITING YOUR CODE
@@ -452,8 +450,8 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto& message_extern = request->ex();
-	auto it = controller_tls.player_list().find(message_extern.player_id());
+	const NodeMessageBody& message_extern = request->ex();
+	const auto it = controller_tls.player_list().find(message_extern.player_id());
 	if (it == controller_tls.player_list().end())
 	{
 		LOG_ERROR << "player not found " << message_extern.player_id();
@@ -464,8 +462,8 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "message_id not found " << request->msg().message_id();
 		return;
 	}
-	auto& message_info = g_message_info[request->msg().message_id()];
-	auto service_it = g_player_service.find(message_info.service);
+	auto& message_info = g_message_info.at(request->msg().message_id());
+	const auto service_it = g_player_service.find(message_info.service);
 	if (service_it == g_player_service.end())
 	{
 		LOG_ERROR << "player service  not found " << request->msg().message_id();
