@@ -11,6 +11,7 @@
 #include "src/thread_local/gate_thread_local_storage.h"
 
 #include "game_service.pb.h"
+#include "login_service_service.h"
 
 GateServer* g_gate_node = nullptr; 
 
@@ -81,10 +82,10 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
         {
             return;
         }
-		if (!conn->connected())
-		{
-			return;
-		}
+        if (!conn->connected())
+        {
+            return;
+        }
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
@@ -96,20 +97,20 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
     }
     else if (IsSameAddr(conn->peerAddress(), conf_info_.controller_info()))
     {
-		if (!conn->connected())
-		{
-			return;
-		}
-		EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+        if (!conn->connected())
+        {
+            return;
+        }
+        EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
-			{
-				auto& controller_node_addr = controller_node_->local_addr();
-				GateConnectRequest rq;
-				rq.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
-				rq.mutable_rpc_client()->set_port(controller_node_addr.port());
-				rq.set_gate_node_id(gate_node_id());
-				controller_node_session()->CallMethod(ControllerServiceGateConnectMsgId, rq);
-			}
+            {
+                auto& controller_node_addr = controller_node_->local_addr();
+                GateConnectRequest rq;
+                rq.mutable_rpc_client()->set_ip(controller_node_addr.toIp());
+                rq.mutable_rpc_client()->set_port(controller_node_addr.port());
+                rq.set_gate_node_id(gate_node_id());
+                controller_node_session()->CallMethod(ControllerServiceGateConnectMsgId, rq);
+            }
         );
     }
     else
@@ -123,40 +124,45 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
             }
             if (conn->connected())
             {
-				auto& gs_node = it.second;
-				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-					[this, &gs_node, &conn]() ->void
-					{
-						GameNodeConnectRequest rq;
-						rq.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
-						rq.mutable_rpc_client()->set_port(conn->localAddress().port());
-						rq.set_gate_node_id(gate_node_id());
-						gs_node.gs_session_->CallMethod(GameServiceGateConnectGsMsgId, rq);
-					}
-				);
+                auto& gs_node = it.second;
+                EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
+                    [this, &gs_node, &conn]() ->void
+                    {
+                        GameNodeConnectRequest rq;
+                        rq.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
+                        rq.mutable_rpc_client()->set_port(conn->localAddress().port());
+                        rq.set_gate_node_id(gate_node_id());
+                        gs_node.gs_session_->CallMethod(GameServiceGateConnectGsMsgId, rq);
+                    }
+                );
             }
             else
-            { 
+            {
                 //g_gs_nodes.erase()
             }
         }
-
-        for (auto& it : gate_tls.login_nodes())
+        for (const auto& it : gate_tls.login_nodes())
         {
             LOG_INFO << it.second.login_session_->peer_addr().toIpPort() << "," << conn->peerAddress().toIpPort();
-			if (!IsSameAddr(it.second.login_session_->peer_addr(), conn->peerAddress()))
-			{
-				continue;
-			}
+            if (!IsSameAddr(it.second.login_session_->peer_addr(), conn->peerAddress()))
+            {
+                continue;
+            }
             if (conn->connected())
             {
-                
-            }
-            else
-            {
-                gate_tls.login_nodes().erase(it.first);
+                EventLoop::getEventLoopOfCurrentThread()->queueInLoop([&it, this]() -> void
+                {
+                    const auto& login_node_addr = it.second.login_session_->local_addr();
+                    GateConnectRequest connect2login_request;
+                    connect2login_request.mutable_rpc_client()->set_ip(login_node_addr.toIp());
+                    connect2login_request.mutable_rpc_client()->set_port(login_node_addr.port());
+                    connect2login_request.set_gate_node_id(gate_node_id());
+                    controller_node_session()->CallMethod(LoginServiceGateConnectMsgId, connect2login_request);
+                });
                 break;
             }
+            gate_tls.login_nodes().erase(it.first);
+            break;
         }
     }
 }

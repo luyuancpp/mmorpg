@@ -101,27 +101,27 @@ void LoginServer::receive(const OnBeConnectedEvent& es)
 	{
 		auto e = tls.registry.create();
 		tls.registry.emplace<RpcServerConnection>(e, RpcServerConnection{ conn });
+		return;
 	}
-	else
+
+	auto& peer_addr = conn->peerAddress();
+	for (auto e : tls.registry.view<RpcServerConnection>())
 	{
-		auto& peer_addr = conn->peerAddress();
-		for (auto e : tls.registry.view<RpcServerConnection>())
+		auto& local_addr = tls.registry.get<RpcServerConnection>(e).conn_->peerAddress();
+		if (local_addr.toIpPort() != peer_addr.toIpPort())
 		{
-			auto& local_addr = tls.registry.get<RpcServerConnection>(e).conn_->peerAddress();
-			if (local_addr.toIpPort() != peer_addr.toIpPort())
-			{
-				continue;
-			}
-
-			auto gate_node = tls.registry.try_get<GateNodePtr>(e);
-			if (nullptr != gate_node && (*gate_node)->node_info_.node_type() == kGateNode)
-			{
-				//todo
-                login_tls.gate_nodes().erase((*gate_node)->node_info_.node_id());
-			}
-
-			tls.registry.destroy(e);
-			break;
+			continue;
 		}
+
+		auto gate_node = tls.registry.try_get<GateNodePtr>(e);
+		if (nullptr != gate_node && (*gate_node)->node_info_.node_type() == kGateNode)
+		{
+			//todo
+            login_tls.gate_nodes().erase((*gate_node)->node_info_.node_id());
+		}
+
+		tls.registry.destroy(e);
+		break;
 	}
+
 }
