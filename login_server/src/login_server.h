@@ -1,7 +1,6 @@
 #pragma once
 
 #include "src/event/event.h"
-#include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_server.h"
 
 #include "src/handler/login_service_handler.h"
@@ -16,7 +15,6 @@ public:
 
 	LoginServer(muduo::net::EventLoop* loop);
 
-	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
 	inline RpcClientPtr& controller_node() { return controller_session_; }
 	inline RpcClientPtr& db_node() { return db_session_; }
 	uint32_t login_node_id() const { return conf_info_.id(); }
@@ -38,7 +36,6 @@ public:
 private:
 	muduo::net::EventLoop* loop_{ nullptr };
 
-	PbSyncRedisClientPtr redis_;
 	RpcServerPtr server_;
 
 	RpcClientPtr deploy_session_;

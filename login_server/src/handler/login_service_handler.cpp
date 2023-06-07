@@ -97,7 +97,7 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	}
 	//todo 已经在其他login
 	player_database new_player;
-	g_login_node->redis_client()->Load(new_player, player_id);
+	login_tls.redis().Load(new_player, player_id);
 	//test
 	sit->second->Playing(player_id);
 	//test

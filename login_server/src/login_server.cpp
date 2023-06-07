@@ -16,9 +16,7 @@ LoginServer* g_login_node = nullptr;
 
 
 LoginServer::LoginServer(muduo::net::EventLoop* loop)
-    : loop_(loop),
-      redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()),
-      handler_()
+    : loop_(loop)
 {
 }
 
@@ -69,7 +67,7 @@ void LoginServer::StartServer(const ::servers_info_data& info)
     controller_session_->connect();
     
     auto& redis_info = info.redis_info();
-    redis_->Connect(redis_info.ip(), redis_info.port(), 1, 1);
+    login_tls.redis().Connect(redis_info.ip(), redis_info.port(), 1, 1);
  
     conf_info_ = info.login_info();
     node_info_.set_node_id(conf_info_.id());

@@ -82,34 +82,31 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 	// login process
 	// check account rule: empty , errno
 	// check string rule
-    auto sit = login_tls.session_list().find(cl_tls.session_id());
-    if (sit == login_tls.session_list().end())
-    {
-        replied->mutable_error()->set_id(kRetLoginSessionDisconnect);
-        return;
-    }
-    //has data
-    {
-        auto& player = sit->second;
-        auto ret = player->Login();
-        if (ret != kRetOK)
-        {
-            replied->mutable_error()->set_id(ret);
-            return;
-        }
-        g_login_node->redis_client()->Load(player->account_data(), sit->second->account());
-        if (!player->account_data().password().empty())
-        {
-            LoginNodeLoginResponse message;
-            message.mutable_account_player()->CopyFrom(player->account_data());
-            player->OnDbLoaded();
-            return;
-        }
-    }
-    // database process
-    DatabaseNodeLoginRequest rq;
-    rq.set_account(replied->account());
-    Route2Node(kDatabaseNode, DbServiceLoginMsgId, rq);
+	const auto sit = login_tls.session_list().find(cl_tls.session_id());
+	if (sit == login_tls.session_list().end())
+	{
+		replied->mutable_error()->set_id(kRetLoginSessionDisconnect);
+		return;
+	}
+	const auto& player = sit->second;
+	if (const auto ret = player->Login(); ret != kRetOK)
+	{
+		replied->mutable_error()->set_id(ret);
+		return;
+	}
+	login_tls.redis().Load(player->account_data(), sit->second->account());
+	if (!player->account_data().password().empty())
+	{
+		LoginNodeLoginResponse message;
+		message.mutable_account_player()->CopyFrom(player->account_data());
+		player->OnDbLoaded();
+		return;
+	}
+
+	// database process
+	DatabaseNodeLoginRequest db_login_request;
+	db_login_request.set_account(replied->account());
+	Route2Node(kDatabaseNode, DbServiceLoginMsgId, db_login_request);
 ///<<< END WRITING YOUR CODE
 }
 
