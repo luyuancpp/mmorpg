@@ -606,9 +606,10 @@ func isGateMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 		return false
 	}
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) ||
-		strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
-		strings.Contains(firstMethodInfo.FileBaseName(), "lobby") ||
-		strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName)
+		strings.Contains(firstMethodInfo.FileBaseName(), config.DeployPrefixName) ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.LobbyPrefixName) ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName) ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.LoginPrefixName)
 }
 
 func isGateServiceHandler(methodList *RpcMethodInfos) (check bool) {

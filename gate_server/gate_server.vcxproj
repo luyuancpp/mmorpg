@@ -15,6 +15,7 @@
     <ClCompile Include="src\replied_handler\controller_service_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\deploy_service_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\game_service_replied_handler.cpp" />
+    <ClCompile Include="src\replied_handler\login_service_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\register_replied_handler.cpp" />
     <ClCompile Include="src\replied_handler\route_message_replied_handler.cpp" />
     <ClCompile Include="src\thread_local\gate_thread_local_storage.cpp" />
@@ -28,6 +29,7 @@
     <ClInclude Include="src\replied_handler\controller_service_replied_handler.h" />
     <ClInclude Include="src\replied_handler\deploy_service_replied_handler.h" />
     <ClInclude Include="src\replied_handler\game_service_replied_handler.h" />
+    <ClInclude Include="src\replied_handler\login_service_replied_handler.h" />
     <ClInclude Include="src\thread_local\gate_thread_local_storage.h" />
     <ClInclude Include="src\network\gs_node.h" />
     <ClInclude Include="src\network\login_node.h" />

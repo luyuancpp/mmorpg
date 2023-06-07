@@ -114,6 +114,10 @@ const DataBaseMethodHandleDir = ProjectDir + DataBaseDirName + HandlerDirName
 const DataBaseMethodRepliedHandleDir = ProjectDir + DataBaseDirName + RepliedHandlerDirName
 const DataBasePrefixName = "database"
 
+const DeployPrefixName = "deploy"
+
+const LobbyPrefixName = "lobby"
+
 const ClientLuaProjectRelative = "script/lua/service/"
 const ClientLuaDir = ProjectDir + "bin/" + ClientLuaProjectRelative
 const ClientLuaServiceFile = ProjectDir + "client/src/handler/service_lua.cpp"
