@@ -157,7 +157,7 @@ void GateServer::receive(const OnConnected2ServerEvent& es)
                     connect2login_request.mutable_rpc_client()->set_ip(login_node_addr.toIp());
                     connect2login_request.mutable_rpc_client()->set_port(login_node_addr.port());
                     connect2login_request.set_gate_node_id(gate_node_id());
-                    controller_node_session()->CallMethod(LoginServiceGateConnectMsgId, connect2login_request);
+                    it.second.login_session_->CallMethod(LoginServiceGateConnectMsgId, connect2login_request);
                 });
                 break;
             }

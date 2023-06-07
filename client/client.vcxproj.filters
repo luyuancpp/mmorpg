@@ -53,5 +53,8 @@
     <ClInclude Include="src\handler\team_client_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\handler\login_service_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

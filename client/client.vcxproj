@@ -98,6 +98,7 @@
   <ItemGroup>
     <ClInclude Include="src\client.h" />
     <ClInclude Include="src\handler\common_client_player_handler.h" />
+    <ClInclude Include="src\handler\login_service_handler.h" />
     <ClInclude Include="src\handler\scene_client_player_handler.h" />
     <ClInclude Include="src\handler\team_client_player_handler.h" />
     <ClInclude Include="src\luacpp\lua_module.h" />
