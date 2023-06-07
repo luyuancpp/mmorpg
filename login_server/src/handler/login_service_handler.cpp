@@ -72,6 +72,7 @@ void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* control
 	DatabaseNodeCreatePlayerRequest db_create_request;
 	db_create_request.set_account(sit->second->account());
 	Route2Node(kDatabaseNode, DbServiceCreatePlayerMsgId, db_create_request);
+	///<<< END WRITING YOUR CODE
 }
 
 void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
@@ -141,7 +142,7 @@ void LoginServiceHandler::Disconnect(::google::protobuf::RpcController* controll
 {
 	///<<< BEGIN WRITING YOUR CODE
 	//比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
-	login_tls.session_list().erase(cl_tls.session_id());
+	login_tls.session_list().erase(request->session_id());
 	const CtrlLsDisconnectRequest ctrl_disconnect_request;
 	g_login_node->controller_node()->Send(ControllerServiceLsDisconnectMsgId, ctrl_disconnect_request);
 	///<<< END WRITING YOUR CODE

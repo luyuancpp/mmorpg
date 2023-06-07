@@ -52,6 +52,7 @@ message GateLeaveGameRequest
 
 message GateDisconnectRequest
 {
+  uint64 session_id = 1;
 }
 
 message CtrlLoginAccountRequest
