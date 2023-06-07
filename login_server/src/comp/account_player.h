@@ -26,6 +26,10 @@ public:
         login_state_machine_.OnPlaying(); 
     }
 
+    bool IsValid()const
+    {
+        return !account_data_.account().empty();
+    }
 private:
     bool IsFullPlayer()const;
     bool EmptyPlayer()const;
