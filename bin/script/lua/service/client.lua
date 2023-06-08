@@ -33,6 +33,8 @@ function LeaveGame()
 end
 
 function LoginServiceLoginHandler(request, response)
+	print(response:DebugString())
+	print(response:players_size())
 	if response:players_size() == 1 then
 		request = CreatePlayerRequest.new()
 		player:send(LoginServiceCreatPlayerMsgId, request)

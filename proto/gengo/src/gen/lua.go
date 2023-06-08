@@ -205,14 +205,14 @@ func writeProtoSol2LuaFile(fd os.DirEntry, filePath string) {
 						data += "\"add_" + filedName + "\",\n"
 						data += "&" + className + "::add_" + filedName + ",\n"
 						data += "\"" + filedName + "\",\n"
-						data += "[](" + className + "& pb, int index) ->decltype(auto){ return pb." + filedName + "(index);},\n"
+						data += "[](const " + className + "& pb, int index) ->decltype(auto){ return pb." + filedName + "(index);},\n"
 						data += "\"set_" + filedName + "\",\n"
 						data += "[](" + className + "& pb, int index, " + typename + " value) ->decltype(auto){ return pb.set_" + filedName + "(index, value);},\n"
 					} else {
 						data += "\"add_" + filedName + "\",\n"
 						data += "&" + className + "::add_" + filedName + ",\n"
 						data += "\"" + filedName + "\",\n"
-						data += "[](" + className + "& pb, int index) ->decltype(auto){ return pb." + filedName + "(index);},\n"
+						data += "[](const " + className + "& pb, int index) ->decltype(auto){ return pb." + filedName + "(index);},\n"
 						data += "\"mutable_" + filedName + "\",\n"
 						data += "[](" + className + "& pb, int index) ->decltype(auto){ return pb.mutable_" + filedName + "(index);},\n"
 					}
