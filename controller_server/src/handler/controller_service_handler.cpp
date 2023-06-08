@@ -333,6 +333,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	{
 		login_accounts_session_.emplace(request->account(), cl_tls.session_id());
 	}
+	response->set_account(request->account());
 ///<<< END WRITING YOUR CODE
 }
 
