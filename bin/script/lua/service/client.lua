@@ -6,7 +6,6 @@ end
 function ReadyGo()
 	request = LoginRequest.new()
 	request:ReadyGo()
-	print(LoginServiceLoginMsgId)
 	player:send(LoginServiceLoginMsgId, request)
 end
 
@@ -22,15 +21,9 @@ function Example()
 	print(response:error().error_no)
 end
 
-function CreatePlayer()
-	request = CreatePlayerRequest.new()
-	player:send(request)
-end
 
 function EnterGame(player_id)
-	request = EnterGameRequest.new()
-	request.player_id = player_id
-	player:send(request)
+
 end
 
 function LeaveGame()
@@ -39,5 +32,12 @@ function LeaveGame()
 end
 
 function LoginServiceLoginHandler(request, response)
-	print(response:DebugString())
+	if response:players_size() == 1 then
+		request = CreatePlayerRequest.new()
+		player:send(LoginServiceCreatPlayerMsgId, request)
+		return
+	end
+	enter_gs_request = EnterGameRequest.new()
+	enter_gs_request.player_id = response:players(0).player_id
+	player:send(LoginServiceEnterGameMsgId, enter_gs_request)
 end
