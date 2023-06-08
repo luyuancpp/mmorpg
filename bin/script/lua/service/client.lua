@@ -7,6 +7,7 @@ function ReadyGo()
 	request = LoginRequest.new()
 	request:ReadyGo()
 	player:send(LoginServiceLoginMsgId, request)
+	print(request:DebugString())
 end
 
 function Example()
