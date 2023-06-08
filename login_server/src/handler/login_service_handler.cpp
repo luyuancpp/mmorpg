@@ -49,7 +49,13 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	//todo gate异步同时登陆情况,老gate晚于新gate登录到controller会不会导致登录不成功了?这时候怎么处理
 	CtrlLoginAccountRequest ctrl_login_request;
 	ctrl_login_request.set_account(request->account());
-	login_tls.session_list().emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
+	auto it = login_tls.session_list().emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
+	if (!it.second)
+	{
+		LOG_ERROR << "login error account " << request->account();
+		return;
+	}
+	it.first->second->account_data().set_account(request->account());
 	Route2Node(kControllerNode, ControllerServiceLsLoginAccountMsgId, ctrl_login_request);
 ///<<< END WRITING YOUR CODE
 }

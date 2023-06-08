@@ -308,7 +308,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	auto conn = cit->second;
     tls.registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
     tls.registry.emplace<AccountLoginNode>(conn, AccountLoginNode{ cl_tls.session_id() });
-	//todo 
+	//todo 队列里面有同一个人的两个链接
 	auto lit = login_accounts_session_.find(request->account());
 	if (controller_tls.player_list().size() >= kMaxPlayerSize)
 	{
