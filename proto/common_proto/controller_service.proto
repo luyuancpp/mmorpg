@@ -1,6 +1,7 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
 import "common_proto/common.proto";
+import "common_proto/c2gate.proto";
 import "common_proto/node_common.proto";
 import "component_proto/scene_comp.proto";
 import "common_proto/common_message.proto";
@@ -55,17 +56,6 @@ message GateDisconnectRequest
   uint64 session_id = 1;
 }
 
-message CtrlLoginAccountRequest
-{
-  string account = 1;
-}
-
-message CtrlLoginAccountResponse
-{ 
-  Tips error = 1;
-  string account = 2;
-}
-
 message CtrlEnterGameRequest
 {
   uint64 player_id = 1;
@@ -107,7 +97,7 @@ service ControllerService {
   rpc GatePlayerService (GateClientMessageRequest) returns (google.protobuf.Empty);
   rpc GateDisconnect (GateDisconnectRequest) returns (google.protobuf.Empty); 
   rpc StartLs (StartLsRequest) returns (StartLsResponse);
-  rpc LsLoginAccount (CtrlLoginAccountRequest) returns (CtrlLoginAccountResponse);
+  rpc LsLoginAccount (LoginRequest) returns (LoginResponse);
   rpc LsEnterGame (CtrlEnterGameRequest) returns (CtrlEnterGameResponese);
   rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (google.protobuf.Empty);
   rpc LsDisconnect (CtrlLsDisconnectRequest) returns (google.protobuf.Empty); 

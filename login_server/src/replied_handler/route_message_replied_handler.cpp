@@ -58,7 +58,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	}
 	//当前节点的真正回复的消息
 	g_response_dispatcher.onProtobufMessage(conn, current_node_response, timestamp);
-	auto mutable_replied = const_cast<::RouteMsgStringResponse*>(replied.get());
+	auto mutable_replied = replied.get();
 	//处理完以后要删除当前节点的信息
 	mutable_replied->mutable_route_data_list()->RemoveLast();
 

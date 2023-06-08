@@ -16,12 +16,6 @@ message LoginC2LRequest
   string password = 2;
 }
 
-message LoginNodeLoginResponse
-{
-  Tips error = 1;
-  account_database account_player = 2;
-}
-
 message CreatePlayerC2lRequest
 {
 }
