@@ -14,8 +14,7 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
                                                   client_(client),
                                                   dispatcher_(dispatcher)
 {
-    dispatcher_.registerMessageCallback<LoginResponse>(
-        std::bind(&ClientService::OnLoginReplied, this, _1, _2, _3));
+   
     dispatcher_.registerMessageCallback<CreatePlayerResponse>(
         std::bind(&ClientService::OnCreatePlayerReplied, this, _1, _2, _3));
     dispatcher_.registerMessageCallback<EnterGameResponse>(
@@ -46,18 +45,6 @@ void ClientService::ReadyGo()
     tls_lua_state["ReadyGo"]();
 }
 
-void ClientService::OnLoginReplied(const muduo::net::TcpConnectionPtr& conn, 
-                                   const LoginResponsePtr& message, 
-                                   muduo::Timestamp)
-{
-    if (message->players().empty())
-    {        
-        AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
-        tls_lua_state["CreatePlayer"]();
-        return;
-    }
-    EnterGs(message->players(0).player_id());   
-}
 
 void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn, 
     const CreatePlayerResponsePtr& message,
