@@ -290,8 +290,8 @@ void ControllerServiceHandler::StartLs(::google::protobuf::RpcController* contro
 }
 
 void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController* controller,
-	const ::CtrlLoginAccountRequest* request,
-	::CtrlLoginAccountResponse* response,
+	const ::LoginRequest* request,
+	::LoginResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
