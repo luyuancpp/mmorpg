@@ -2,6 +2,8 @@
 
 #include "google/protobuf/message.h"
 
+#include "src/util/defer.h"
+
 void MessageSyncRedisClient::Connect(const std::string& redis_server_addr, int32_t port, int32_t sec, int32_t usec)
 {
     struct timeval timeout = { sec, usec };
@@ -51,7 +53,7 @@ void MessageSyncRedisClient::Save(const google::protobuf::Message& message, cons
         key_len,
         message_cached_array.data(),
         message_cached_array.size());
-    freeReplyObject(reply);
+    defer(freeReplyObject(reply));
 }
 
 void MessageSyncRedisClient::Load(google::protobuf::Message& message)
@@ -78,12 +80,12 @@ void MessageSyncRedisClient::Load(google::protobuf::Message& message, const std:
     std::string format = std::string("GET ") + key;
     redisReply* reply = (redisReply*)redisCommand(context_.get(),
         format.c_str());
+    defer(freeReplyObject(reply));
     if (nullptr == reply)
     {
         return;
     }
     message.ParseFromArray(reply->str, static_cast<int32_t>(reply->len));
-    freeReplyObject(reply);
 }
 
 void MessageSyncRedisClient::OnDisconnect()
