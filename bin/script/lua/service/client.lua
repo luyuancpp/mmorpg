@@ -38,6 +38,6 @@ function LeaveGame()
 	player:send(request)
 end
 
-function LoginServiceLogin(request, response)
+function LoginServiceLoginHandler(request, response)
 	print(response:DebugString())
 end

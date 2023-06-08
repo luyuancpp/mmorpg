@@ -21,7 +21,7 @@ func getClientMethodHandlerHeadStr(methodList RpcMethodInfos) string {
 		config.Tab2 + "{\n"
 	for i := 0; i < len(methodList); i++ {
 		data += config.Tab3 + "case " + strconv.Itoa(i) + ":\n" + config.Tab3 + "{\n" +
-			config.Tab4 + "tls_lua_state[\"" + methodList[i].KeyName() + "\"](\n" +
+			config.Tab4 + "tls_lua_state[\"" + methodList[i].KeyName() + config.HandlerName + "\"](\n" +
 			config.Tab4 + "::google::protobuf::internal::DownCast<const ::" + methodList[i].Request + "*>( request),\n" +
 			config.Tab4 + "::google::protobuf::internal::DownCast<::" + methodList[i].Response + "*>(response));\n" +
 			config.Tab3 + "}\n" +
