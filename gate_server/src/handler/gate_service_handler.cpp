@@ -75,7 +75,7 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 		return;
 	}
 	it->second.gs_node_id_ = request->gs_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
-
+	response->set_session_id(request->session_id());
 	///<<< END WRITING YOUR CODE
 }
 
