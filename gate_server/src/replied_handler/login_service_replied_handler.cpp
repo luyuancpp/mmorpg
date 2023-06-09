@@ -10,7 +10,7 @@ void InitLoginServiceLoginRepliedHandler()
 {
 	g_response_dispatcher.registerMessageCallback<LoginResponse>(std::bind(&OnLoginServiceLoginRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<LoginNodeCreatePlayerResponse>(std::bind(&OnLoginServiceCreatPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<LoginNodeEnterGameResponse>(std::bind(&OnLoginServiceEnterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<EnterGameResponse>(std::bind(&OnLoginServiceEnterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<google::protobuf::Empty>(std::bind(&OnLoginServiceLeaveGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<google::protobuf::Empty>(std::bind(&OnLoginServiceDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<RouteMsgStringResponse>(std::bind(&OnLoginServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -30,7 +30,7 @@ void OnLoginServiceCreatPlayerRepliedHandler(const TcpConnectionPtr& conn, const
 ///<<< END WRITING YOUR CODE
 }
 
-void OnLoginServiceEnterGameRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<LoginNodeEnterGameResponse>& replied, Timestamp timestamp)
+void OnLoginServiceEnterGameRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<EnterGameResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

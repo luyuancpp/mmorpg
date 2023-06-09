@@ -14,8 +14,8 @@ public:
 		 ::google::protobuf::Closure* done)override;
 
 	void EnterGame(::google::protobuf::RpcController* controller,
-		const ::EnterGameC2LRequest* request,
-		::LoginNodeEnterGameResponse* response,
+		const ::EnterGameRequest* request,
+		::EnterGameResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void LeaveGame(::google::protobuf::RpcController* controller,

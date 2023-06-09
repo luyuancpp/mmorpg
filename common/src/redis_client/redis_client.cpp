@@ -78,8 +78,8 @@ void MessageSyncRedisClient::Load(google::protobuf::Message& message, const std:
         return;
     }
     std::string format = std::string("GET ") + key;
-    redisReply* reply = (redisReply*)redisCommand(context_.get(),
-        format.c_str());
+    redisReply* reply = static_cast<redisReply*>(redisCommand(context_.get(),
+                                                              format.c_str()));
     defer(freeReplyObject(reply));
     if (nullptr == reply)
     {

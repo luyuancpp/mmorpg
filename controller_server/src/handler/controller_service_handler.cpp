@@ -337,8 +337,8 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 }
 
 void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* controller,
-	const ::CtrlEnterGameRequest* request,
-	::CtrlEnterGameResponese* response,
+	const ::EnterGameRequest* request,
+	::EnterGameResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -580,7 +580,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		LOG_ERROR << "route msg size too max:" << request->DebugString();
 		return;
 	}
-	else if (request->route_data_list_size() <= 0)
+	if (request->route_data_list().empty())
 	{
 		LOG_ERROR << "msg list empty:" << request->DebugString();
 		return;
@@ -622,8 +622,8 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	//当前节点的真正回复的消息
 	std::unique_ptr<google::protobuf::Message> current_node_response(GetResponsePrototype(method).New());
 	servcie->CallMethod(method, NULL, get_pointer(current_node_request), get_pointer(current_node_response), nullptr);
-	
-	auto mutable_request = const_cast<::RouteMsgStringRequest*>(request);
+
+	auto* mutable_request = const_cast<::RouteMsgStringRequest*>(request);
 	//没有发送到下个节点就是要回复了
 	if (cl_tls.next_route_node_type() == UINT32_MAX)
 	{
@@ -633,20 +633,20 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 			*response->add_route_data_list() = request_data_it;
 		}
 		response->set_session_id(cl_tls.session_id());
-        response->set_id(request->id());
+		response->set_id(request->id());
 		return;
 	}
 	//处理,如果需要继续路由则拿到当前节点信息
 	//需要发送到下个节点
-	
-	auto next_route_data = mutable_request->add_route_data_list();
+	const auto next_route_data = mutable_request->add_route_data_list();
 	next_route_data->CopyFrom(cl_tls.route_data());
 	next_route_data->mutable_node_info()->CopyFrom(g_controller_node->node_info());
 	mutable_request->set_body(cl_tls.route_msg_body());
     mutable_request->set_id(request->id());
-	switch (cl_tls.next_route_node_type())
-	{
-	case kLoginNode:
+
+    switch (cl_tls.next_route_node_type())
+    {
+    case kLoginNode:
 	{
 		auto login_node_it = controller_tls.login_node().find(cl_tls.next_route_node_id());
 		if (login_node_it == controller_tls.login_node().end())
@@ -662,13 +662,13 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		}
 		(*try_login).session_.Route2Node(LoginServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
-	break;
-	case kDatabaseNode:
+	    break;
+    case kDatabaseNode:
 	{
 		g_controller_node->database_node()->Route2Node(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
-	break;
-	case kGateNode:
+	    break;
+    case kGateNode:
 	{
 		auto gate_it = controller_tls.gate_nodes().find(cl_tls.next_route_node_id());
 		if (gate_it == controller_tls.gate_nodes().end())
@@ -676,10 +676,10 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 			LOG_ERROR << "gate not found node id " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-        gate_it->second->session_.Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
+		gate_it->second->session_.Route2Node(GateServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	break;
-	case kGameNode:
+    case kGameNode:
 	{
 		auto controller_it = controller_tls.game_node().find(cl_tls.next_route_node_id());
 		if (controller_it == controller_tls.game_node().end())
@@ -695,13 +695,13 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 		}
 		(*try_game)->session_.Route2Node(GameServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
+	    break;
+    default:
+	    {
+		    LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.next_route_node_type();
+	    }
 	break;
-	default:
-	{
-		LOG_ERROR << "route to next node type error " << request->DebugString() << "," << cl_tls.next_route_node_type();
-	}
-	break;
-	}
+}
 
 ///<<< END WRITING YOUR CODE
 }

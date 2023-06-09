@@ -35,7 +35,7 @@ end
 function LoginServiceLoginHandler(request, response)
 	print(response:DebugString())
 	print(response:players_size())
-	if response:players_size() == 1 then
+	if response:players_size() == 0 then
 		request = CreatePlayerRequest.new()
 		player:send(LoginServiceCreatPlayerMsgId, request)
 		return
@@ -43,4 +43,8 @@ function LoginServiceLoginHandler(request, response)
 	enter_gs_request = EnterGameRequest.new()
 	enter_gs_request.player_id = response:players(0).player_id
 	player:send(LoginServiceEnterGameMsgId, enter_gs_request)
+end
+
+function LoginServiceEnterGameHandler(request, response)
+	print("LoginServiceEnterGameHandler")
 end
