@@ -94,7 +94,7 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 		replied->mutable_error()->set_id(ret);
 		return;
 	}
-	login_tls.redis().Load(player->account_data(), sit->second->account());
+	login_tls.redis().Load(player->account_data(), sit->second->login_account_name());
 	if (player->IsValid())
 	{
 		player->OnDbLoaded();
@@ -103,7 +103,7 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 
 	// database process
 	DatabaseNodeLoginRequest db_login_request;
-	db_login_request.set_account(replied->account());
+	db_login_request.set_account(sit->second->login_account_name());
 	Route2Node(kDatabaseNode, DbServiceLoginMsgId, db_login_request);
 ///<<< END WRITING YOUR CODE
 }

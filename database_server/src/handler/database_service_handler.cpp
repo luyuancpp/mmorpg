@@ -14,17 +14,16 @@ void DbServiceHandler::Login(::google::protobuf::RpcController* controller,
 {
 ///<<< BEGIN WRITING YOUR CODE
 	::account_database& account_db = *response->mutable_account_player();
-	const auto& account = request->account();
-	g_database_node->redis_client()->Load(account_db, account);
-	if (response->account_player().password().empty())
+	g_database_node->redis_client()->Load(account_db, request->account());
+	if (response->ByteSizeLong() > 0)
 	{
 		g_database_node->player_mysql_client()->LoadOne(account_db,
-			std::string("account = '") + account + std::string("'"));
+			std::string("account = '") + request->account() + std::string("'"));
 	}
-	if (!account_db.password().empty())
+	if (account_db.ByteSizeLong() > 0)
 	{
-		account_db.set_account(account);
-		g_database_node->redis_client()->Save(account_db, account);
+		account_db.set_account(request->account());
+		g_database_node->redis_client()->Save(account_db, request->account());
 	}
 ///<<< END WRITING YOUR CODE
 }

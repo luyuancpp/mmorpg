@@ -47,7 +47,13 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	//todo 登录的时候马上断开连接换了个gate应该可以登录成功
 	//todo 在链接过程中断了，换了gate新的gate 应该是可以上线成功的，消息要发到新的gate上,老的gate正常走断开流程
 	//todo gate异步同时登陆情况,老gate晚于新gate登录到controller会不会导致登录不成功了?这时候怎么处理
-	login_tls.session_list().emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
+	const auto session_it = login_tls.session_list().emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
+	if (!session_it.second)
+	{
+		LOG_ERROR << "session login " << request->DebugString();
+		return;
+	}
+	session_it.first->second->set_login_account_name(request->account());
 	Route2Node(kControllerNode, ControllerServiceLsLoginAccountMsgId, *request);
 ///<<< END WRITING YOUR CODE
 }

@@ -302,14 +302,14 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	}
 	if (cit == controller_tls.gate_sessions().end())
 	{
-        response->mutable_error()->set_id(kRetLoginUnknownError);
-        return;
+		response->mutable_error()->set_id(kRetLoginUnknownError);
+		return;
 	}
 	auto conn = cit->second;
-    tls.registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
-    tls.registry.emplace<AccountLoginNode>(conn, AccountLoginNode{ cl_tls.session_id() });
+	tls.registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
+	tls.registry.emplace<AccountLoginNode>(conn, AccountLoginNode{cl_tls.session_id()});
 	//todo 队列里面有同一个人的两个链接
-	auto lit = login_accounts_session_.find(request->account());
+	const auto lit = login_accounts_session_.find(request->account());
 	if (controller_tls.player_list().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
@@ -322,9 +322,9 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 		//如果不是同一个登录服务器,踢掉已经登录的账号
 		if (lit->second != cl_tls.session_id())
 		{
-
 		}
-		else//告诉客户端登录中
+		//告诉客户端登录中
+		else
 		{
 			response->mutable_error()->set_id(kRetLoginIng);
 		}
@@ -333,7 +333,6 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	{
 		login_accounts_session_.emplace(request->account(), cl_tls.session_id());
 	}
-	response->set_account(request->account());
 ///<<< END WRITING YOUR CODE
 }
 
