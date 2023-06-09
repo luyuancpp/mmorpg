@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "common_proto/common.proto";
 
-message RouteData
+message RouteNodeInfo
 {
   NodeInfo node_info = 1;//当前节点信息
   uint32 message_id = 2;
@@ -11,7 +11,7 @@ message RouteData
 message RouteMsgStringRequest
 {
   bytes body = 1;
-  repeated RouteData route_data_list = 2;
+  repeated RouteNodeInfo route_data_list = 2;
   uint64 session_id = 3;  
   uint64 id = 4;
   bool is_client = 5;
@@ -20,7 +20,7 @@ message RouteMsgStringRequest
 message RouteMsgStringResponse
 {
   bytes body = 1;
-  repeated RouteData route_data_list = 2;
+  repeated RouteNodeInfo route_data_list = 2;
   uint64 session_id = 3;  
   uint64 id = 4;
   bool is_client = 5;
