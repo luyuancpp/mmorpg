@@ -40,10 +40,7 @@ public:
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
     void ReadyGo();
     
-
-    void OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn,
-        const CreatePlayerResponsePtr& message,
-        muduo::Timestamp);
+    
     void OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
         const EnterGameResponsePtr& message,
         muduo::Timestamp);

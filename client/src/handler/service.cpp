@@ -14,13 +14,7 @@ ClientService::ClientService(ProtobufDispatcher& dispatcher,
                                                   client_(client),
                                                   dispatcher_(dispatcher)
 {
-   
-    dispatcher_.registerMessageCallback<CreatePlayerResponse>(
-        std::bind(&ClientService::OnCreatePlayerReplied, this, _1, _2, _3));
-    dispatcher_.registerMessageCallback<EnterGameResponse>(
-        std::bind(&ClientService::OnEnterGameReplied, this, _1, _2, _3));
-    dispatcher_.registerMessageCallback<LeaveGameResponse>(
-        std::bind(&ClientService::OnLeaveGameReplied, this, _1, _2, _3));
+
 	dispatcher_.registerMessageCallback<MessageBody>(
 		std::bind(&ClientService::OnMessageBodyReplied, this, _1, _2, _3));
 }
@@ -45,19 +39,6 @@ void ClientService::ReadyGo()
     tls_lua_state["ReadyGo"]();
 }
 
-
-void ClientService::OnCreatePlayerReplied(const muduo::net::TcpConnectionPtr& conn, 
-    const CreatePlayerResponsePtr& message,
-    muduo::Timestamp)
-{
-    EnterGs(message->players(0).player_id());
-}
-
-void ClientService::OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn, 
-    const EnterGameResponsePtr& message,
-    muduo::Timestamp)
-{
-}
 
 void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 
     const LeaveGameResponsePtr& message, 
@@ -85,12 +66,6 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
     response->ParseFromString(message->body());
     AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
     g_player_service[servcie_method_info.service]->CallMethod(method, nullptr, nullptr, response.get(), nullptr);
-}
-
-void ClientService::EnterGs(Guid guid)
-{
-    AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
-    tls_lua_state["EnterGame"](guid);
 }
 
 void ClientService::DisConnect()
