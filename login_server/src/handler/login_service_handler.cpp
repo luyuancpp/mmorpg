@@ -29,7 +29,7 @@ void SendCtrlEnterGame(Guid player_id)
 	{
 		return;
 	}
-	CtrlEnterGameRequest enter_game_request;
+	EnterGameRequest enter_game_request;
 	enter_game_request.set_player_id(player_id);
 	Route2Node(kControllerNode, ControllerServiceLsEnterGameMsgId, enter_game_request);
 	login_tls.session_list().erase(cl_tls.session_id());
@@ -80,8 +80,8 @@ void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* control
 }
 
 void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
-	const ::EnterGameC2LRequest* request,
-	::LoginNodeEnterGameResponse* response,
+	const ::EnterGameRequest* request,
+	::EnterGameResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -105,7 +105,6 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	//test
 	sit->second->Playing(player_id);
 	//test
-	response->set_player_id(player_id);
 	if (new_player.player_id() > 0)
 	{
 		//玩家数据已经在redis里面了直接进入游戏

@@ -4,7 +4,9 @@
 ///<<< BEGIN WRITING YOUR CODE
 
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
+#include "src/network/route_system.h"
 #include "src/thread_local/login_thread_local_storage.h"
+#include "src/pb/pbc/common_proto/c2gate.pb.h"
 
 void UpdateAccount(const ::account_database& a_d)
 {
@@ -36,6 +38,13 @@ void OnDbServiceLoginRepliedHandler(const TcpConnectionPtr& conn, const std::sha
 {
 ///<<< BEGIN WRITING YOUR CODE
 	UpdateAccount(replied->account_player());
+	LoginResponse response;
+	for (const auto& it : replied->account_player().simple_players().players())
+	{
+		auto* const c_player = response.mutable_players()->Add();
+		c_player->set_player_id(it.player_id());
+	}
+	SendPrevNodeResponse(response);
 ///<<< END WRITING YOUR CODE
 }
 

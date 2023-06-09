@@ -56,14 +56,6 @@ message GateDisconnectRequest
   uint64 session_id = 1;
 }
 
-message CtrlEnterGameRequest
-{
-  uint64 player_id = 1;
-}
-
-message CtrlEnterGameResponese
-{
-}
 
 message CtrlLsLeaveGameRequest
 {
@@ -98,7 +90,7 @@ service ControllerService {
   rpc GateDisconnect (GateDisconnectRequest) returns (google.protobuf.Empty); 
   rpc StartLs (StartLsRequest) returns (StartLsResponse);
   rpc LsLoginAccount (LoginRequest) returns (LoginResponse);
-  rpc LsEnterGame (CtrlEnterGameRequest) returns (CtrlEnterGameResponese);
+  rpc LsEnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (google.protobuf.Empty);
   rpc LsDisconnect (CtrlLsDisconnectRequest) returns (google.protobuf.Empty); 
   rpc GsPlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);

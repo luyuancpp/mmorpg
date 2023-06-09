@@ -31,8 +31,8 @@ public:
 			case 2:
 			{
 				tls_lua_state["LoginServiceEnterGameHandler"](
-				::google::protobuf::internal::DownCast<const ::EnterGameC2LRequest*>( request),
-				::google::protobuf::internal::DownCast<::LoginNodeEnterGameResponse*>(response));
+				::google::protobuf::internal::DownCast<const ::EnterGameRequest*>( request),
+				::google::protobuf::internal::DownCast<::EnterGameResponse*>(response));
 			}
 			break;
 			case 3:

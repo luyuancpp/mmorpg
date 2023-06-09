@@ -2,14 +2,16 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/comp/account_player.h"
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/game_logic/tips_id.h"
+
 #include "src/login_server.h"
+#include "src/comp/account_player.h"
+#include "src/game_logic/tips_id.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/network/node_info.h"
 #include "src/network/route_system.h"
 #include "src/pb/pbc/service.h"
 #include "src/thread_local/login_thread_local_storage.h"
+#include "src/util/defer.h"
 
 #include "controller_service_service.h"
 #include "database_service_service.h"
@@ -29,7 +31,7 @@ void InitControllerServiceStartGsRepliedHandler()
 	g_response_dispatcher.registerMessageCallback<google::protobuf::Empty>(std::bind(&OnControllerServiceGateDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<StartLsResponse>(std::bind(&OnControllerServiceStartLsRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<LoginResponse>(std::bind(&OnControllerServiceLsLoginAccountRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<CtrlEnterGameResponese>(std::bind(&OnControllerServiceLsEnterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<EnterGameResponse>(std::bind(&OnControllerServiceLsEnterGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<google::protobuf::Empty>(std::bind(&OnControllerServiceLsLeaveGameRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<google::protobuf::Empty>(std::bind(&OnControllerServiceLsDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<NodeServiceMessageResponse>(std::bind(&OnControllerServiceGsPlayerServiceRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -86,21 +88,29 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 	if (sit == login_tls.session_list().end())
 	{
 		replied->mutable_error()->set_id(kRetLoginSessionDisconnect);
+		SendPrevNodeResponse(*replied);
 		return;
 	}
-	const auto& player = sit->second;
-	if (const auto ret = player->Login(); ret != kRetOK)
 	{
-		replied->mutable_error()->set_id(ret);
-		return;
+		defer(SendPrevNodeResponse(*replied));
+		const auto& player = sit->second;
+		if (const auto ret = player->Login(); ret != kRetOK)
+		{
+			replied->mutable_error()->set_id(ret);
+			return;
+		}
+		login_tls.redis().Load(player->account_data(), sit->second->login_account_name());
+		if (player->IsValid())
+		{
+			for (const auto& it : sit->second->account_data().simple_players().players())
+			{
+				auto* const c_player = replied->mutable_players()->Add();
+				c_player->set_player_id(it.player_id());
+			}
+			player->OnDbLoaded();
+			return;
+		}
 	}
-	login_tls.redis().Load(player->account_data(), sit->second->login_account_name());
-	if (player->IsValid())
-	{
-		player->OnDbLoaded();
-		return;
-	}
-
 	// database process
 	DatabaseNodeLoginRequest db_login_request;
 	db_login_request.set_account(sit->second->login_account_name());
@@ -108,7 +118,7 @@ void OnControllerServiceLsLoginAccountRepliedHandler(const TcpConnectionPtr& con
 ///<<< END WRITING YOUR CODE
 }
 
-void OnControllerServiceLsEnterGameRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<CtrlEnterGameResponese>& replied, Timestamp timestamp)
+void OnControllerServiceLsEnterGameRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<EnterGameResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
     login_tls.session_list().erase(cl_tls.session_id());
