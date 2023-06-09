@@ -14,11 +14,11 @@ end
 ---<<< END WRITING YOUR CODE
 
 ---<<<rpc begin
-function EnterSceneC2SProcess(request, response)
+function ClientPlayerSceneServiceEnterSceneC2SHandler(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
 ---<<< END WRITING YOUR CODE
 end
-function PushEnterSceneS2CProcess(request, response)
+function ClientPlayerSceneServicePushEnterSceneS2CHandler(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
 	--连续切换有问题
 	LogInfo('------------------------>')
@@ -27,7 +27,7 @@ function PushEnterSceneS2CProcess(request, response)
 	LogInfo('<------------------------'..times)
 ---<<< END WRITING YOUR CODE
 end
-function PushSceneInfoS2CProcess(request, response)
+function ClientPlayerSceneServicePushSceneInfoS2CHandler(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
 	message = EnterSeceneC2SRequest.new()
 	message:mutable_scene_info().scene_id = cross_server_scene1

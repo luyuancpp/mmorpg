@@ -22,9 +22,10 @@ function Example()
 	print(response:error().error_no)
 end
 
-
 function EnterGame(player_id)
-
+	enter_gs_request = EnterGameRequest.new()
+	enter_gs_request.player_id = player_id
+	player:send(LoginServiceEnterGameMsgId, enter_gs_request)
 end
 
 function LeaveGame()
@@ -40,11 +41,13 @@ function LoginServiceLoginHandler(request, response)
 		player:send(LoginServiceCreatPlayerMsgId, request)
 		return
 	end
-	enter_gs_request = EnterGameRequest.new()
-	enter_gs_request.player_id = response:players(0).player_id
-	player:send(LoginServiceEnterGameMsgId, enter_gs_request)
+	EnterGame(response:players(0).player_id)
 end
 
 function LoginServiceEnterGameHandler(request, response)
 	print("LoginServiceEnterGameHandler")
+end
+
+function LoginServiceCreatPlayerHandler(request, response)
+	EnterGame(response:players(0).player_id)
 end
