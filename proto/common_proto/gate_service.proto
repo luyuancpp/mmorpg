@@ -30,6 +30,7 @@ message GateNodePlayerEnterGsRequest
 
 message GateNodePlayerEnterGsResponese
 {
+ uint64 session_id = 1;
 }
 
 

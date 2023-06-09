@@ -21,13 +21,13 @@ void PlayerCommonSystem::InitPlayerComponent(entt::entity player)
 
 void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
 {
-    UpdateSessionController2GsRequest message;
     auto try_player_session = tls.registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
         LOG_ERROR << "player session not valid" << tls.registry.try_get<Guid>(player);
         return;
     }
+    UpdateSessionController2GsRequest message;
     message.set_session_id(try_player_session->session_id());
     Send2GsPlayer(GamePlayerServiceUpdateSessionController2GsMsgId, message, player);
 
