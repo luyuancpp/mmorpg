@@ -9,7 +9,7 @@
 #include "src/pb/pbc/common_proto/mysql_database_table.pb.h"
 
 using PlayerDataRedisSystemPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
-using PlayerEntityPtrList = std::unordered_map<uint64_t, EntityPtr>;
+using PlayerEntityPtrList = std::unordered_map<uint64_t, entt::entity>;
 using GateSessionList = std::unordered_map<uint64_t, entt::entity>;
 
 class GameThreadLocalStorage

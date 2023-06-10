@@ -69,11 +69,6 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 	Send2PlayerViaGs(message_id, message, ControllerPlayerSystem::GetPlayer(player_id));
 }
 
-void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& player)
-{
-	Send2PlayerViaGs(message_id, message, (entt::entity)player);
-}
-
 void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
     if (!tls.registry.valid(player))

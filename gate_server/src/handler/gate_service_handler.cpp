@@ -20,6 +20,7 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 {
 	///<<< BEGIN WRITING YOUR CODE
 	InetAddress gs_addr(request->ip(), request->port());
+	entt::entity gs = entt::null;
 	for (auto e : tls.registry.view<InetAddress>())
 	{
 		auto& c = tls.registry.get<InetAddress>(e);
@@ -27,6 +28,7 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 		{
 			return;
 		}
+		gs = e;
 	}
 	GsNode gsi;
 	gsi.node_info_.set_node_id(request->gs_node_id());
@@ -34,7 +36,7 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 	gsi.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
 	gsi.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gate_node);
 	gsi.gs_session_->registerService(&g_gate_node->gate_service_hanlder());
-	tls.registry.emplace<InetAddress>(gsi.entity_id, gs_addr);
+	tls.registry.emplace<InetAddress>(gs, gs_addr);
 	gsi.gs_session_->connect();
 	gate_tls.game_nodes().emplace(request->gs_node_id(), std::move(gsi));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->gs_node_id();
@@ -85,11 +87,10 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	auto session_id = request->ex().session_id();
-	auto it = gate_tls.sessions().find(session_id);
+	const auto it = gate_tls.sessions().find(request->ex().session_id());
 	if (it == gate_tls.sessions().end())
 	{
-		LOG_ERROR << "session id not found  player id " << session_id;
+		LOG_ERROR << "session id not found  player id " << request->ex().session_id();
 		return;
 	}
 	g_gate_node->Send2Client(it->second.conn_, request->msg());

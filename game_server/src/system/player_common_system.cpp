@@ -25,7 +25,7 @@ void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& me
 		LOG_INFO << "player disconnect" << player_id;
 		return;
     }
-    auto ret = game_tls.player_list().emplace(player_id, EntityPtr());
+    auto ret = game_tls.player_list().emplace(player_id, tls.registry.create());
 	if (!ret.second)
 	{
 		LOG_ERROR << "server emplace error" << player_id;

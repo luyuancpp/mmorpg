@@ -6,18 +6,6 @@
 entt::entity error_entity();
 entt::entity op_entity();
 
-using EntityWeakPtr = std::weak_ptr<entt::entity>;
-
-class EntityPtr
-{
-public:
-	EntityPtr();
-	inline  operator entt::entity() { return *entity_.get(); }
-	EntityWeakPtr to_weak() { return entity_; }
-    bool is_null()const {return nullptr == entity_; }
-private:
-	std::shared_ptr<entt::entity> entity_;
-};
 
 class EventOwner
 {

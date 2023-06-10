@@ -54,11 +54,6 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	gate->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
 }
 
-void Send2Player(uint32_t message_id, const google::protobuf::Message& msg, EntityPtr& player)
-{
-    Send2Player(message_id, msg, (entt::entity)player);
-}
-
 void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
 	auto it = game_tls.player_list().find(player_id);
@@ -98,11 +93,6 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_session_id(try_gate_session->session_id());
 	controller_node->session_->Send(ControllerServiceGsPlayerServiceMsgId, msg_wrapper);
-}
-
-void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& player)
-{
-	Send2ControllerPlayer(message_id, message, (entt::entity)player);
 }
 
 void Send2Controller(uint32_t message_id, const google::protobuf::Message& messag, uint32_t controller_node_id)

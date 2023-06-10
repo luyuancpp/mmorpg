@@ -9,9 +9,7 @@
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
-void Send2Player(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& player);
 void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
 void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
-void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& player);
 void Send2Controller(uint32_t message_id,  const google::protobuf::Message& messag, uint32_t controller_node_id);
 void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, uint32_t gate_node_id);

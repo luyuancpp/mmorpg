@@ -5,5 +5,5 @@
 #include "src/common_type/common_type.h"
 #include "src/util/game_registry.h"
 
-using PlayerList = std::unordered_map<Guid, EntityPtr>;
+using PlayerList = std::unordered_map<Guid, entt::entity>;
 extern PlayerList*  g_players;

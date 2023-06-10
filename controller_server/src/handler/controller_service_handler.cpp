@@ -44,28 +44,22 @@ Guid GetPlayerIdByConnId(uint64_t session_id)
 	{
 		return kInvalidGuid;
 	}
-	auto p_try_player = tls.registry.try_get<EntityPtr>(cit->second);
+    auto p_try_player = tls.registry.try_get<Guid>(cit->second);
 	if (nullptr == p_try_player)
 	{
 		return kInvalidGuid;
 	}
-	auto player_id = tls.registry.get<Guid>(*p_try_player);
-	return kInvalidGuid;
+	return *p_try_player;
 }
 
 entt::entity GetPlayerByConnId(uint64_t session_id)
 {
-	auto cit = controller_tls.gate_sessions().find(session_id);
-	if (cit == controller_tls.gate_sessions().end())
+	auto player_it = controller_tls.player_list().find(GetPlayerIdByConnId(session_id));
+	if (player_it == controller_tls.player_list().end())
 	{
 		return entt::null;
 	}
-	auto p_try_player = tls.registry.try_get<EntityPtr>(cit->second);
-	if (nullptr == p_try_player)
-	{
-		return entt::null;
-	}
-	return (*p_try_player);
+	return player_it->second;
 }
 
 void InitPlayerGate(entt::entity player)
@@ -292,7 +286,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	auto session_it = controller_tls.gate_sessions().find(cl_tls.session_id());
 	if (session_it == controller_tls.gate_sessions().end())
 	{
-		session_it = controller_tls.gate_sessions().emplace(cl_tls.session_id(), EntityPtr()).first;
+		session_it = controller_tls.gate_sessions().emplace(cl_tls.session_id(), tls.registry.create()).first;
 	}
 	if (session_it == controller_tls.gate_sessions().end())
 	{
@@ -353,11 +347,12 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 	if (player_it == controller_tls.player_list().end())
 	{
 		//把旧的connection 断掉
-		auto player = controller_tls.player_list().emplace(player_id, tls.registry.create()).first->second;
-        PlayerCommonSystem::InitPlayerComponent(player);
+		auto player = tls.registry.create();
+		controller_tls.player_list().emplace(player_id, player);
 		tls.registry.emplace<Guid>(session, player_id);
 		tls.registry.emplace<Guid>(player, player_id);
 		tls.registry.emplace<PlayerAccount>(player, tls.registry.get<PlayerAccount>(session_it->second));
+        PlayerCommonSystem::InitPlayerComponent(player);	
 		
 		GetSceneParam get_scene_param;
         get_scene_param.scene_confid_ = 1;
