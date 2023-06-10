@@ -5,8 +5,8 @@
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
 
-using PlayerListMap = std::unordered_map<Guid, EntityPtr>;
-using GateSessionList = std::unordered_map<uint64_t, EntityPtr>;
+using PlayerListMap = std::unordered_map<Guid, entt::entity>;
+using GateSessionList = std::unordered_map<uint64_t, entt::entity>;
 
 class ControllerThreadLocalStorage
 {

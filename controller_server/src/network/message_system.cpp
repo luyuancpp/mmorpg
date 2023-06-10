@@ -54,14 +54,10 @@ void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message
 	NodeServiceMessageRequest msg;
 	msg.mutable_msg()->set_body(message.SerializeAsString());
 	msg.mutable_msg()->set_message_id(message_id);
-	msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
+	msg.mutable_ex()->set_session_id(try_player_session->session_id());
 	gs->session_.Send(GameServiceSend2PlayerMsgId,  message);
 }
 
-void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& player)
-{
-	Send2GsPlayer(message_id, message, (entt::entity)player);
-}
 
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
@@ -84,8 +80,12 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
     {
         return;
     }
-    auto player_session = tls.registry.get<PlayerSession>(player);
-    auto gs = player_session.gs();
+	auto try_player_session = tls.registry.try_get<PlayerSession>(player);
+	if (nullptr == try_player_session)
+	{
+		return;
+	}
+    auto gs = try_player_session->gs();
     if (nullptr == gs)
     {
         LOG_INFO << "gs not found ";
@@ -95,7 +95,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
     NodeServiceMessageRequest msg;
 	msg.mutable_msg()->set_message_id(message_id);
     msg.mutable_msg()->set_body(message.SerializeAsString());
-    msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
+	msg.mutable_ex()->set_session_id(try_player_session->session_id());
 	gs->session_.Send(message_id, message);
 }
 
@@ -139,7 +139,7 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& message, ui
     gate_it->second->session_.Send(message_id, message);
 }
 
-void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)
+void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
     if (!tls.registry.valid(player))
     {
@@ -161,9 +161,9 @@ void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& ms
     {
         return;
     }
-    NodeServiceMessageRequest rq;
-    rq.mutable_msg()->set_body(msg.SerializeAsString());
-	rq.mutable_msg()->set_message_id(message_id);
-    rq.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
-    tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(message_id, rq);
+    NodeServiceMessageRequest msg;
+    msg.mutable_msg()->set_body(message.SerializeAsString());
+	msg.mutable_msg()->set_message_id(message_id);
+	msg.mutable_ex()->set_session_id(try_player_session->session_id());
+    tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(message_id, msg);
 }

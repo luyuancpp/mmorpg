@@ -53,11 +53,11 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto it = game_tls.player_list().find(request->ex().player_id());
-    if (it == game_tls.player_list().end())
+    const auto session_it = game_tls.gate_sessions().find(request->ex().session_id());
+    if (session_it == game_tls.gate_sessions().end())
     {
-        LOG_ERROR << "PlayerService player not found " << request->ex().player_id() << ","
-            << request->descriptor()->full_name() << " msgid " << request->msg().message_id();
+        LOG_INFO << "session id not found " << request->ex().session_id() << ","
+        << " message id " << request->msg().message_id();
         return;
     }
 	if (request->msg().message_id() >= g_message_info.size())
@@ -65,15 +65,16 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
 		LOG_ERROR << "message_id not found " << request->msg().message_id();
 		return;
 	}
-	auto& message_info = g_message_info[request->msg().message_id()];
-    auto service_it = g_player_service.find(message_info.service);
+    const auto& message_info = g_message_info[request->msg().message_id()];
+    const auto service_it = g_player_service.find(message_info.service);
     if (service_it == g_player_service.end())
     {
-        LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << request->msg().message_id();
+        LOG_ERROR << "PlayerService service not found " << request->ex().session_id()
+        << "," << request->msg().message_id();
         return;
     }
-    auto& serviceimpl = service_it->second;
-    google::protobuf::Service* service = serviceimpl->service();
+    const auto& service_handler = service_it->second;
+    google::protobuf::Service* service = service_handler->service();
     const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
     if (nullptr == method)
     {
@@ -81,10 +82,10 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
         //todo client error;
         return;
     }
-    MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
+    const MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
     player_request->ParseFromString(request->msg().body());
-    MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
-    serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
+    const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
+    service_handler->CallMethod(method, session_it->second, get_pointer(player_request), get_pointer(player_response));
 
 ///<<< END WRITING YOUR CODE
 }
@@ -195,7 +196,14 @@ void GameServiceHandler::ControllerSend2PlayerViaGs(::google::protobuf::RpcContr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    ::Send2Player(request->msg().message_id(), request->msg(), request->ex().player_id());
+    const auto session_it = game_tls.gate_sessions().find(request->ex().session_id());
+    if (session_it == game_tls.gate_sessions().end())
+    {
+        LOG_INFO << "session id not found " << request->ex().session_id() << ","
+        << " message id " << request->msg().message_id();
+        return;
+    }
+    ::Send2Player(request->msg().message_id(), request->msg(), session_it->second);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -205,11 +213,11 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto it = game_tls.player_list().find(request->ex().player_id());
-    if (it == game_tls.player_list().end())
+    const auto session_it = game_tls.gate_sessions().find(request->ex().session_id());
+    if (session_it == game_tls.gate_sessions().end())
     {
-        LOG_ERROR << "PlayerService player not found " << request->ex().player_id() << ","
-            << request->descriptor()->full_name() << " msgid " << request->msg().message_id();
+        LOG_INFO << "session id not found " << request->ex().session_id() << ","
+        << " message id " << request->msg().message_id();
         return;
     }
 	if (request->msg().message_id() >= g_message_info.size())
@@ -221,7 +229,8 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
     auto service_it = g_player_service.find(message_info.service);
     if (service_it == g_player_service.end())
     {
-        LOG_ERROR << "PlayerService service not found " << request->ex().player_id() << "," << request->msg().message_id();
+        LOG_ERROR << "PlayerService service not found " << request->ex().session_id()
+        << "," << request->msg().message_id();
         return;
     }
     auto& serviceimpl = service_it->second;
@@ -237,13 +246,13 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
     MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
     player_request->ParseFromString(request->msg().body());
     MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
-    serviceimpl->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
+    serviceimpl->CallMethod(method, session_it->second, get_pointer(player_request), get_pointer(player_response));
     if (nullptr == response)
     {
         return;
     }
     response->mutable_msg()->set_body(player_response->SerializeAsString());
-    response->mutable_ex()->set_player_id(request->ex().player_id());
+    response->mutable_ex()->set_session_id(request->ex().session_id());
     response->mutable_msg()->set_message_id(request->msg().message_id());
 ///<<< END WRITING YOUR CODE
 }

@@ -38,7 +38,6 @@ private:
     Guid playing_id_{ kInvalidGuid };
 };
 
-
 struct AccountLoginNode
 {
     inline uint32_t gate_node_id() { return node_id(session_id_); };

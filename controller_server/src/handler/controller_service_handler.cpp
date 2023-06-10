@@ -68,12 +68,6 @@ entt::entity GetPlayerByConnId(uint64_t session_id)
 	return (*p_try_player);
 }
 
-void OnSessionEnterGame(entt::entity conn, Guid player_id)
-{
-	tls.registry.emplace<EntityPtr>(conn, ControllerPlayerSystem::GetPlayerPtr(player_id));
-	tls.registry.emplace<Guid>(conn, player_id);
-}
-
 void InitPlayerGate(entt::entity player)
 {
 	auto& player_session = tls.registry.get_or_emplace<PlayerSession>(player);
@@ -295,19 +289,18 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto cit = controller_tls.gate_sessions().find(cl_tls.session_id());
-	if (cit == controller_tls.gate_sessions().end())
+	auto session_it = controller_tls.gate_sessions().find(cl_tls.session_id());
+	if (session_it == controller_tls.gate_sessions().end())
 	{
-		cit = controller_tls.gate_sessions().emplace(cl_tls.session_id(), EntityPtr()).first;
+		session_it = controller_tls.gate_sessions().emplace(cl_tls.session_id(), EntityPtr()).first;
 	}
-	if (cit == controller_tls.gate_sessions().end())
+	if (session_it == controller_tls.gate_sessions().end())
 	{
 		response->mutable_error()->set_id(kRetLoginUnknownError);
 		return;
 	}
-	auto conn = cit->second;
-	tls.registry.emplace<PlayerAccount>(conn, std::make_shared<PlayerAccount::element_type>(request->account()));
-	tls.registry.emplace<AccountLoginNode>(conn, AccountLoginNode{cl_tls.session_id()});
+	tls.registry.emplace<PlayerAccount>(session_it->second, std::make_shared<PlayerAccount::element_type>(request->account()));
+	tls.registry.emplace<AccountLoginNode>(session_it->second, AccountLoginNode{cl_tls.session_id()});
 	//todo 队列里面有同一个人的两个链接
 	const auto lit = login_accounts_session_.find(request->account());
 	if (controller_tls.player_list().size() >= kMaxPlayerSize)
@@ -344,29 +337,27 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 ///<<< BEGIN WRITING YOUR CODE
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
-    auto sit = controller_tls.gate_sessions().find(cl_tls.session_id());
-	if (sit == controller_tls.gate_sessions().end())
+	const auto session_it = controller_tls.gate_sessions().find(cl_tls.session_id());
+	if (session_it == controller_tls.gate_sessions().end())
 	{
 		LOG_ERROR << "connection not found " << cl_tls.session_id();
 		return;
 	}
-	auto session = sit->second;
+	auto session = session_it->second;
 	auto player_id = request->player_id();
-	auto player = ControllerPlayerSystem::GetPlayer(player_id);
-	auto try_account = tls.registry.try_get<PlayerAccount>(session);
-	if (nullptr != try_account)
+	auto player_it = controller_tls.player_list().find(player_id);
+	if (const auto try_account = tls.registry.try_get<PlayerAccount>(session); nullptr != try_account)
 	{
 		login_accounts_session_.erase(**try_account);
 	}
-	if (entt::null == player)
+	if (player_it == controller_tls.player_list().end())
 	{
 		//把旧的connection 断掉
-		player = ControllerPlayerSystem::EnterGame(player_id);
+		auto player = controller_tls.player_list().emplace(player_id, tls.registry.create()).first->second;
         PlayerCommonSystem::InitPlayerComponent(player);
-		OnSessionEnterGame(session, player_id);
+		tls.registry.emplace<Guid>(session, player_id);
 		tls.registry.emplace<Guid>(player, player_id);
-		
-		tls.registry.emplace<PlayerAccount>(player, tls.registry.get<PlayerAccount>(sit->second));
+		tls.registry.emplace<PlayerAccount>(player, tls.registry.get<PlayerAccount>(session_it->second));
 		
 		GetSceneParam get_scene_param;
         get_scene_param.scene_confid_ = 1;
@@ -376,7 +367,6 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 			// todo default
 			LOG_INFO << "player " << player_id << " enter default secne";
 		} 
-
 		InitPlayerGate(player);
 		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 
@@ -398,9 +388,9 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 	{
 		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
-		
+		auto player = player_it->second;
 		//告诉账号被顶
-		OnSessionEnterGame(session, player_id);
+		tls.registry.emplace<Guid>(session, player_id);
         //断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
         auto player_session = tls.registry.try_get<PlayerSession>(player);
         if (nullptr != player_session)
@@ -412,11 +402,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		InitPlayerGate(player);
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
 	}
-	if (entt::null == player)
-	{
-		LOG_ERROR << "player enter game";
-		return;
-	}
+	
 	
 ///<<< END WRITING YOUR CODE
 }
@@ -450,11 +436,23 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	const auto session_it = controller_tls.gate_sessions().find(request->ex().session_id());
+	if (session_it == controller_tls.gate_sessions().end())
+	{
+		LOG_ERROR << "session not found " << request->ex().session_id();
+		return;
+	}
+	const auto try_session_player_id = tls.registry.try_get<Guid>(session_it->second);
+	if (nullptr == try_session_player_id)
+	{
+		LOG_ERROR << "session not found " << request->ex().session_id();
+		return;
+	}
 	const NodeMessageBody& message_extern = request->ex();
-	const auto it = controller_tls.player_list().find(message_extern.player_id());
+	const auto it = controller_tls.player_list().find(*try_session_player_id);
 	if (it == controller_tls.player_list().end())
 	{
-		LOG_ERROR << "player not found " << message_extern.player_id();
+		LOG_ERROR << "player not found " << *try_session_player_id;
 		return;
 	}
 	if (request->msg().message_id() >= g_message_info.size())
@@ -469,7 +467,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "player service  not found " << request->msg().message_id();
 		return;
 	}
-	auto& service_handler = service_it->second;
+	const auto& service_handler = service_it->second;
 	google::protobuf::Service* service = service_handler->service();
 	const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
 	if (nullptr == method)
@@ -478,15 +476,15 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		//todo client error;
 		return;
 	}
-	std::unique_ptr<google::protobuf::Message> player_request(service->GetRequestPrototype(method).New());
+	const MessagePtr player_request(service->GetRequestPrototype(method).New());
 	player_request->ParseFromString(request->msg().body());
-	std::unique_ptr<google::protobuf::Message> player_response(service->GetResponsePrototype(method).New());
+	const MessagePtr player_response(service->GetResponsePrototype(method).New());
 	service_handler->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
 	{
 		return;
 	}
-	response->mutable_ex()->set_player_id(request->ex().player_id());
+	response->mutable_ex()->set_session_id(request->ex().session_id());
 	response->mutable_msg()->set_body(player_response->SerializeAsString());
 	response->mutable_msg()->set_message_id(request->msg().message_id());
 ///<<< END WRITING YOUR CODE

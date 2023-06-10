@@ -89,7 +89,7 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 	auto it = gate_tls.sessions().find(session_id);
 	if (it == gate_tls.sessions().end())
 	{
-		LOG_ERROR << "conn id not found  player id " << request->ex().player_id() << "," << session_id;
+		LOG_ERROR << "session id not found  player id " << session_id;
 		return;
 	}
 	g_gate_node->Send2Client(it->second.conn_, request->msg());

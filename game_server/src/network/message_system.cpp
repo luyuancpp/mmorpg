@@ -10,8 +10,6 @@
 #include "src/pb/pbc/gate_service_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
-#include "gate_service.pb.h"
-#include "controller_service.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
@@ -31,14 +29,20 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	{
 		return;
 	}
-	auto try_gate = tls.registry.try_get<GateNodeWPtr>(player);
+	const auto try_gate = tls.registry.try_get<GateNodeWPtr>(player);
 	if (nullptr == try_gate)
 	{
 		LOG_ERROR << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
 		return;
 	}
-	auto gate = (*try_gate).lock();
+	const auto gate = (*try_gate).lock();
 	if (nullptr == gate)
+	{
+		LOG_INFO << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
+		return;
+	}
+	const auto try_gate_session = tls.registry.try_get<GateSession>(player);
+	if (nullptr == try_gate_session)
 	{
 		LOG_INFO << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
 		return;
@@ -46,7 +50,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	NodeServiceMessageRequest message_wrapper;
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
-	message_wrapper.mutable_ex()->set_session_id(tls.registry.get<GateSession>(player).session_id());
+	message_wrapper.mutable_ex()->set_session_id(try_gate_session->session_id());
 	gate->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
 }
 
@@ -83,10 +87,16 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 		LOG_ERROR << "Send2ControllerPlayer controller disconnect" << tls.registry.get<Guid>(player);
 		return;
 	}
+	const auto try_gate_session = tls.registry.try_get<GateSession>(player);
+	if (nullptr == try_gate_session)
+	{
+		LOG_INFO << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
+		return;
+	}
 	NodeServiceMessageRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_message_id(message_id);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
-	msg_wrapper.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
+	msg_wrapper.mutable_ex()->set_session_id(try_gate_session->session_id());
 	controller_node->session_->Send(ControllerServiceGsPlayerServiceMsgId, msg_wrapper);
 }
 

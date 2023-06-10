@@ -1,8 +1,6 @@
 #pragma once
 
 #include "src/network/gate_node.h"
-#include "src/game_logic/comp/scene_comp.h"
-#include "src/util/game_registry.h"
 #include "src/network/gs_node.h"
 #include "src/network/message_system.h"
 #include "src/network/session.h"
@@ -42,11 +40,7 @@ public:
 		}
 		Send2Player(message_id, message, gate, gate_session_.session_id());
 	}
-
-	void Send2Gs(::google::protobuf::Message& message)
-	{
-		//gs->.Send(message);
-	}
+	
 	GateSession gate_session_;
 	GateNodeWPtr gate_;
 private:

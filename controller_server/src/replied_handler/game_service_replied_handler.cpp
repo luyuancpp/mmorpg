@@ -7,6 +7,7 @@
 #include <muduo/base/Logging.h>
 
 #include "src/comp/player_list.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/pb/pbc/service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/thread_local/controller_thread_local_storage.h"
@@ -74,22 +75,34 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "message_id not found " << replied->msg().message_id() ;
 		return;
 	}
-	const auto& message_info = g_message_info.at(replied->msg().message_id() );
-	auto it = controller_tls.player_list().find(replied->ex().player_id());
-	if (it == controller_tls.player_list().end())
+	auto session_it = controller_tls.gate_sessions().find(replied->ex().session_id());
+	if (session_it == controller_tls.gate_sessions().end())
 	{
-		LOG_ERROR << "PlayerService player not found " << replied->ex().player_id() << ", message id"
+		LOG_ERROR << "session not found " << replied->ex().session_id();
+		return;
+	}
+	const auto try_session_player_id = tls.registry.try_get<Guid>(session_it->second);
+	if (nullptr == try_session_player_id)
+	{
+		LOG_ERROR << "session not found " << replied->ex().session_id();
+		return;
+	}
+	const auto& message_info = g_message_info.at(replied->msg().message_id() );
+	const auto player_it = controller_tls.player_list().find(*try_session_player_id);
+	if (player_it == controller_tls.player_list().end())
+	{
+		LOG_ERROR << "PlayerService player not found " << *try_session_player_id << ", message id"
 			<< replied->msg().message_id();
 		return;
 	}
 	const auto service_it = g_player_service_replied.find(message_info.service);
 	if (service_it == g_player_service_replied.end())
 	{
-		LOG_ERROR << "PlayerService service not found " << replied->ex().player_id() << ","
+		LOG_ERROR << "PlayerService service not found " << *try_session_player_id << ","
 		<< replied->msg().message_id();
 		return;
 	}
-	auto& service_impl = service_it->second;
+	const auto& service_impl = service_it->second;
 	google::protobuf::Service* service = service_impl->service();
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
 	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
@@ -101,7 +114,7 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 	}
 	const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
 	player_response->ParseFromString(replied->msg().body());
-	service_impl->CallMethod(method, it->second, nullptr, boost::get_pointer(player_response));
+	service_impl->CallMethod(method, player_it->second, nullptr, boost::get_pointer(player_response));
 ///<<< END WRITING YOUR CODE
 }
 
