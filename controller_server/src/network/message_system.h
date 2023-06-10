@@ -10,7 +10,6 @@
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message,  uint32_t gs_node_id);
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
-void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& entity);
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
 void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);//通过gs转发给客户端
 void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& player);

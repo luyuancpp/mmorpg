@@ -4,34 +4,14 @@
 
 #include "src/thread_local/controller_thread_local_storage.h"
 
-entt::entity ControllerPlayerSystem::GetPlayer(Guid guid)
+entt::entity ControllerPlayerSystem::GetPlayer(Guid player_id)
 {
-    auto it = controller_tls.player_list().find(guid);
+    const auto it = controller_tls.player_list().find(player_id);
     if (it == controller_tls.player_list().end())
     {
         return entt::null;
     }
     return it->second;
-}
-
-EntityPtr ControllerPlayerSystem::GetPlayerPtr(Guid guid)
-{
-    auto it = controller_tls.player_list().find(guid);
-    if (it == controller_tls.player_list().end())
-    {
-        return EntityPtr{};
-    }
-    return it->second;
-}
-
-EntityPtr ControllerPlayerSystem::EnterGame(Guid guid)
-{
-    auto it = controller_tls.player_list().find(guid);
-    if (it != controller_tls.player_list().end())
-    {
-        return it->second;
-    }
-    return controller_tls.player_list().emplace(guid, EntityPtr()).first->second;
 }
 
 void ControllerPlayerSystem::LeaveGame(Guid guid)
