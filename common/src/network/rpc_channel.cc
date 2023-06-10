@@ -128,7 +128,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 	  {
 		  return;
 	  }
-	  MessagePtr response(service->GetResponsePrototype(method).New());
+	  const MessagePtr response(service->GetResponsePrototype(method).New());
 	  response->ParseFromString(message.response());
 	  g_response_dispatcher.onProtobufMessage(conn, response, receiveTime);
   }

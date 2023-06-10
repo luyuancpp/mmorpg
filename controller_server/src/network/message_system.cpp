@@ -12,13 +12,9 @@
 #include "src/network/server_component.h"
 #include "src/pb/pbc/service.h"
 #include "src/pb/pbc/game_service_service.h"
-#include "src/pb/pbc/gate_service_service.h"
-#include "src/replied_handler/game_service_replied_handler.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 #include "gate_service.pb.h"
-#include "game_service.pb.h"
-
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, uint32_t node_id)
 {
@@ -57,8 +53,9 @@ void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message
 	}
 	NodeServiceMessageRequest msg;
 	msg.mutable_msg()->set_body(message.SerializeAsString());
+	msg.mutable_msg()->set_message_id(message_id);
 	msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
-	gs->session_.Send(message_id,  message);
+	gs->session_.Send(GameServiceSend2PlayerMsgId,  message);
 }
 
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, EntityPtr& player)
@@ -96,6 +93,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
     }
    
     NodeServiceMessageRequest msg;
+	msg.mutable_msg()->set_message_id(message_id);
     msg.mutable_msg()->set_body(message.SerializeAsString());
     msg.mutable_ex()->set_player_id(tls.registry.get<Guid>(player));
 	gs->session_.Send(message_id, message);
@@ -121,6 +119,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
     NodeServiceMessageRequest message_wrapper;
     message_wrapper.mutable_ex()->set_session_id(session_id);
     message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
+	message_wrapper.mutable_msg()->set_message_id(message_id);
     gate->session_.Send(message_id, message_wrapper);
 }
 

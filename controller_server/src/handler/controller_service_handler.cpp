@@ -462,7 +462,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "message_id not found " << request->msg().message_id();
 		return;
 	}
-	auto& message_info = g_message_info.at(request->msg().message_id());
+	const auto& message_info = g_message_info.at(request->msg().message_id());
 	const auto service_it = g_player_service.find(message_info.service);
 	if (service_it == g_player_service.end())
 	{
