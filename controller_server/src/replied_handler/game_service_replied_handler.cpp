@@ -69,30 +69,37 @@ void OnGameServiceControllerSend2PlayerViaGsRepliedHandler(const TcpConnectionPt
 void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<NodeServiceMessageResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	if (replied->msg().message_id() >= g_message_info.size())
+	{
+		LOG_ERROR << "message_id not found " << replied->msg().message_id() ;
+		return;
+	}
+	const auto& message_info = g_message_info.at(replied->msg().message_id() );
 	auto it = controller_tls.player_list().find(replied->ex().player_id());
 	if (it == controller_tls.player_list().end())
 	{
-		LOG_ERROR << "PlayerService player not found " << replied->ex().player_id() << ","
-			<< replied->descriptor()->full_name() << " service " << replied->msg().service();
+		LOG_ERROR << "PlayerService player not found " << replied->ex().player_id() << ", message id"
+			<< replied->msg().message_id();
 		return;
 	}
-	auto service_it = g_player_service_replied.find(replied->msg().service());
+	const auto service_it = g_player_service_replied.find(message_info.service);
 	if (service_it == g_player_service_replied.end())
 	{
-		LOG_ERROR << "PlayerService service not found " << replied->ex().player_id() << "," << replied->msg().service();
+		LOG_ERROR << "PlayerService service not found " << replied->ex().player_id() << ","
+		<< replied->msg().message_id();
 		return;
 	}
 	auto& service_impl = service_it->second;
 	google::protobuf::Service* service = service_impl->service();
 	const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
-	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(replied->msg().method());
+	const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
 	if (nullptr == method)
 	{
-		LOG_ERROR << "PlayerService method not found " << replied->msg().method();
+		LOG_ERROR << "PlayerService method not found " << message_info.method;
 		//todo client error;
 		return;
 	}
-	MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
+	const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
 	player_response->ParseFromString(replied->msg().body());
 	service_impl->CallMethod(method, it->second, nullptr, boost::get_pointer(player_response));
 ///<<< END WRITING YOUR CODE

@@ -38,8 +38,7 @@ void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, 
     MessageBody message;
     message.set_body(replied->response());
     message.set_id(replied->id());
-    message.set_service(replied->service());
-    message.set_method(replied->method());
+	message.set_message_id(replied->message_id());
     g_gate_node->codec().send(conn, message);
 ///<<< END WRITING YOUR CODE
 }

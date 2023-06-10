@@ -96,27 +96,32 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
 {
 ///<<< BEGIN WRITING YOUR CODE
    // todo player service move to gate check
-  
-    auto it = g_player_service.find(request->service());
-    if (it == g_player_service.end())
+    if (request->message_id() >= g_message_info.size())
     {
-        LOG_ERROR << "GatePlayerService service not found " << request->service();
+        LOG_ERROR << "message_id not found " << request->message_id();
         return;
     }
-    google::protobuf::Service* service = it->second->service();
-    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(request->method());
+    const auto& message_info = g_message_info.at(request->message_id());
+    const auto service_it = g_player_service.find(message_info.service);
+    if (service_it == g_player_service.end())
+    {
+        LOG_ERROR << "GatePlayerService message id not found " << request->message_id();
+        return;
+    }
+    google::protobuf::Service* service = service_it->second->service();
+    const google::protobuf::MethodDescriptor* method = service->GetDescriptor()->FindMethodByName(message_info.method);
     if (nullptr == method)
     {
-        LOG_ERROR << "GatePlayerService method not found " << request->method();
+        LOG_ERROR << "GatePlayerService message id not found " << request->message_id();
         return;
     }
-    auto cit = game_tls.gate_sessions().find(request->session_id());
-    if (cit == game_tls.gate_sessions().end())
+    auto session_it = game_tls.gate_sessions().find(request->session_id());
+    if (session_it == game_tls.gate_sessions().end())
     {
-        LOG_INFO << "GatePlayerService session not found  " << request->service() << "," << request->method() << "," << request->session_id();
+        LOG_INFO << "GatePlayerService session not found  " << request->message_id() << "," << request->session_id();
         return;
     }
-    auto try_player_id = tls.registry.try_get<Guid>(cit->second);
+    auto try_player_id = tls.registry.try_get<Guid>(session_it->second);
     if (nullptr == try_player_id)
     {
         LOG_ERROR << "GatePlayerService player not loading";
@@ -128,13 +133,12 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
         LOG_ERROR << "GatePlayerService player not found" << *try_player_id;
         return;
     }
-    MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
+    const MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
     player_request->ParseFromString(request->request());
-    MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
-    it->second->CallMethod(method, pit->second, get_pointer(player_request), get_pointer(player_response));
+    const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
+    service_it->second->CallMethod(method, pit->second, get_pointer(player_request), get_pointer(player_response));
     response->set_response(player_response->SerializeAsString());
-    response->set_service(request->service());
-    response->set_method(request->method());
+    response->set_message_id(request->message_id());
     response->set_id(request->id());
     response->set_session_id(request->session_id());
 ///<<< END WRITING YOUR CODE
