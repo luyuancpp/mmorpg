@@ -17,7 +17,7 @@ struct ControllerNode
 	inline uint32_t node_id() const { return node_info_.node_id(); }
 	NodeInfo node_info_;
 	ControllerSessionPtr session_;
-	EntityPtr controller_;
+	entt::entity controller_{entt::null};
 };
 using ControllerNodePtr = std::shared_ptr<ControllerNode>;
 using ControllerNodes = std::unordered_map<uint64_t, ControllerNodePtr>;

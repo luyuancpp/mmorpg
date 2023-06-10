@@ -43,7 +43,7 @@ void GameServer::Init()
 	node_info_.set_node_type(kGameNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
-    global_entity() = tls.registry.create();
+    global_entity();
     tls.registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
     LOG_INFO << "server type" << GameConfig::GetSingleton().config_info().server_type();
     InitMessageInfo();

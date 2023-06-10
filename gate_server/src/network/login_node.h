@@ -12,7 +12,6 @@ struct LoginNode
 {
 	RpcClientPtr login_session_;
 	NodeInfo node_info_;
-	EntityPtr entity_id;
 };
 
 using LoginNodes = std::unordered_map<uint32_t, LoginNode>;

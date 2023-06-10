@@ -35,7 +35,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
         PlayerCommonSystem::EnterGs(p_it->second, enter_info);
         return;
     }
-    auto rit = game_tls.async_player_data().emplace(player_id, EntityPtr());
+    auto rit = game_tls.async_player_data().emplace(player_id, tls.registry.create());
     if (!rit.second)
     {
         LOG_ERROR << "EnterGs emplace player not found " << player_id;

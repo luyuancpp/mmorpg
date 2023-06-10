@@ -12,7 +12,6 @@ struct GsNode
 {
 	RpcClientPtr gs_session_;
 	NodeInfo node_info_;
-	EntityPtr entity_id;
 };
 
 using GsNodes = std::unordered_map<uint32_t, GsNode>;
