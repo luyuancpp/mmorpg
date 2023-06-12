@@ -275,3 +275,12 @@ void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE
 }
 
+void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* controller,
+	const ::UpdatePlayerSessionRequest* request,
+	::google::protobuf::Empty* response,
+	 ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+

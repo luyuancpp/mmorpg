@@ -48,5 +48,10 @@ public:
 		::RoutePlayerMsgStringResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
+	void UpdateSession(::google::protobuf::RpcController* controller,
+		const ::UpdatePlayerSessionRequest* request,
+		::google::protobuf::Empty* response,
+		 ::google::protobuf::Closure* done)override;
+
 };
 
