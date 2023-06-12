@@ -39,6 +39,11 @@ message GameNodeConnectRequest
   uint32 gate_node_id = 2;
 }
 
+message UpdatePlayerSessionRequest
+{
+  uint64 session_id = 1;
+}
+
 service GameService {
   rpc EnterGs (GameNodeEnterGsRequest) returns (google.protobuf.Empty);
   rpc Send2Player (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
@@ -49,4 +54,5 @@ service GameService {
   rpc CallPlayer (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
+  rpc UpdateSession (UpdatePlayerSessionRequest) returns (google.protobuf.Empty);
 }

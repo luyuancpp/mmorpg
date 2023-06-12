@@ -21,3 +21,5 @@ void OnGameServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn,
 
 void OnGameServiceRoutePlayerStringMsgRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<RoutePlayerMsgStringResponse>& replied, Timestamp timestamp);
 
+void OnGameServiceUpdateSessionRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<google::protobuf::Empty>& replied, Timestamp timestamp);
+
