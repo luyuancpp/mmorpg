@@ -8,6 +8,7 @@
 #include "src/pb/pbc/game_server_player_service.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
+#include "src/pb/pbc/game_service_service.h"
 #include "src/system/player_change_scene.h"
 
 #include "component_proto/player_login_comp.pb.h"
@@ -24,12 +25,19 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
     auto try_player_session = tls.registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
-        LOG_ERROR << "player session not valid" << tls.registry.try_get<Guid>(player);
+        LOG_ERROR << "player session not valid";
         return;
     }
-    UpdateSessionController2GsRequest message;
+    auto player_id = tls.registry.try_get<Guid>(player);
+    if (nullptr == player_id)
+    {
+        LOG_ERROR << "player  not found ";
+        return;
+    }
+    UpdatePlayerSessionRequest message;
     message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(GamePlayerServiceUpdateSessionController2GsMsgId, message, player);
+    message.set_player_id(*player_id);
+    Send2Gs(GameServiceUpdateSessionMsgId, message, try_player_session->gs_node_id());
 
     auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
     if (nullptr != try_enter_gs)

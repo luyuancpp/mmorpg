@@ -42,6 +42,7 @@ message GameNodeConnectRequest
 message UpdatePlayerSessionRequest
 {
   uint64 session_id = 1;
+  uint64 player_id = 2;
 }
 
 service GameService {

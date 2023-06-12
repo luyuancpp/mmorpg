@@ -2,16 +2,17 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
-
-#include "src/game_logic/thread_local/thread_local_storage.h"
+///
 #include "src/game_server.h"
 #include "src/game_logic/scene/scene.h"
 #include "src/network/gate_node.h"
 #include "src/game_logic/player/player_list.h"
 #include "src/pb/pbc/service.h"
+#include "src/network/session.h"
 #include "src/handler/player_service.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"
+#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
 
 #include "component_proto/player_async_comp.pb.h"
 
@@ -281,6 +282,24 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    PlayerCommonSystem::RemovePlayerSession(request->player_id());
+    auto gate_node_id = node_id(request->session_id());
+    auto gate_it = game_tls.gate_node().find(gate_node_id);
+    if (gate_it == game_tls.gate_node().end())//test
+    {
+        LOG_ERROR << "gate not found " << gate_node_id;
+        return;
+    }
+    const auto player_it = game_tls.player_list().find(request->player_id());
+    if (player_it == game_tls.player_list().end())
+    {
+        LOG_ERROR << "player not found " << request->player_id();
+        return;
+    }
+
+    game_tls.gate_sessions().emplace(request->session_id(), player_it->second);
+    tls.registry.emplace_or_replace<GateSession>(player_it->second).set_session_id(request->session_id());//登录更新gate
+    tls.registry.emplace_or_replace<GateNodeWPtr>(player_it->second, gate_it->second);
 ///<<< END WRITING YOUR CODE
 }
 
