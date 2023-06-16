@@ -47,7 +47,7 @@ message UpdatePlayerSessionRequest
 
 message Ctlr2GsEnterSceneRequest
 {
-  uint64 session_id = 1;
+  uint64 player_id = 1;
   uint64 scene_id = 2;
 }
 

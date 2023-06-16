@@ -48,7 +48,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
     }
     Ctlr2GsEnterSceneRequest enter_scene_message;
     enter_scene_message.set_scene_id(p_scene_info->scene_id());
-    enter_scene_message.set_session_id(try_player_session->session_id());
+    enter_scene_message.set_player_id(player_id);
 
     auto gs = try_player_session->gs();
     if (nullptr == gs)
@@ -56,7 +56,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         LOG_INFO << "gs not found ";
         return;
     }
-    gs->session_.CallMethod(GameServiceEnterGsMsgId, enter_scene_message);
+    gs->session_.CallMethod(GameServiceEnterSceneMsgId, enter_scene_message);
 }
 
 

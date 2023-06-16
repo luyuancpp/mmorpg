@@ -310,14 +310,14 @@ void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controlle
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    const auto session_it = game_tls.gate_sessions().find(request->session_id());
-    if (session_it == game_tls.gate_sessions().end())
+    const auto player_it = game_tls.player_list().find(request->player_id());
+    if (player_it == game_tls.player_list().end())
     {
-        LOG_INFO << "session id not found " << request->session_id() ;
+        LOG_INFO << "player id not found " << request->player_id() ;
         return;
     }
     //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
-    PlayerSceneSystem::EnterScene(session_it->second, request->scene_id());
+    PlayerSceneSystem::EnterScene(player_it->second, request->scene_id());
 ///<<< END WRITING YOUR CODE
 }
 
