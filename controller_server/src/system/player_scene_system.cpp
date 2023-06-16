@@ -32,23 +32,31 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         LOG_ERROR << "player do not enter scene " << player_id;
         return;
     }
-    GsEnterSceneRequest enter_scene_message;
-
+ 
     auto p_scene_info = tls.registry.try_get<SceneInfo>((*p_scene).scene_entity_);
     if (nullptr == p_scene_info)
     {
         LOG_ERROR << "scene info " << player_id;
         return;
     }
-    enter_scene_message.set_scene_id(p_scene_info->scene_id());
+
     auto try_player_session = tls.registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
         LOG_ERROR << "player session not valid" << player_id;
         return;
     }
+    Ctlr2GsEnterSceneRequest enter_scene_message;
+    enter_scene_message.set_scene_id(p_scene_info->scene_id());
     enter_scene_message.set_session_id(try_player_session->session_id());
-    Send2GsPlayer(GamePlayerSceneServiceEnterSceneMsgId, enter_scene_message, player);
+
+    auto gs = try_player_session->gs();
+    if (nullptr == gs)
+    {
+        LOG_INFO << "gs not found ";
+        return;
+    }
+    gs->session_.CallMethod(GameServiceEnterGsMsgId, enter_scene_message);
 }
 
 

@@ -53,5 +53,10 @@ public:
 		::google::protobuf::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
+	void EnterScene(::google::protobuf::RpcController* controller,
+		const ::Ctlr2GsEnterSceneRequest* request,
+		::google::protobuf::Empty* response,
+		 ::google::protobuf::Closure* done)override;
+
 };
 
