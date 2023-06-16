@@ -12,6 +12,7 @@
 #include "src/handler/player_service.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"
+#include "src/system/player_scene_system.h"
 #include "src/pb/pbc/component_proto/player_network_comp.pb.h"
 
 #include "component_proto/player_async_comp.pb.h"
@@ -300,6 +301,23 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
     game_tls.gate_sessions().emplace(request->session_id(), player_it->second);
     tls.registry.emplace_or_replace<GateSession>(player_it->second).set_session_id(request->session_id());//登录更新gate
     tls.registry.emplace_or_replace<GateNodeWPtr>(player_it->second, gate_it->second);
+///<<< END WRITING YOUR CODE
+}
+
+void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controller,
+	const ::Ctlr2GsEnterSceneRequest* request,
+	::google::protobuf::Empty* response,
+	 ::google::protobuf::Closure* done)
+{
+///<<< BEGIN WRITING YOUR CODE
+    const auto session_it = game_tls.gate_sessions().find(request->session_id());
+    if (session_it == game_tls.gate_sessions().end())
+    {
+        LOG_INFO << "session id not found " << request->session_id() ;
+        return;
+    }
+    //todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
+    PlayerSceneSystem::EnterScene(session_it->second, request->scene_id());
 ///<<< END WRITING YOUR CODE
 }
 

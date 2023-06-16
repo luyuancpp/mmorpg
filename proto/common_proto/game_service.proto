@@ -45,6 +45,12 @@ message UpdatePlayerSessionRequest
   uint64 player_id = 2;
 }
 
+message Ctlr2GsEnterSceneRequest
+{
+  uint64 session_id = 1;
+  uint64 scene_id = 2;
+}
+
 service GameService {
   rpc EnterGs (GameNodeEnterGsRequest) returns (google.protobuf.Empty);
   rpc Send2Player (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
@@ -56,4 +62,5 @@ service GameService {
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
   rpc UpdateSession (UpdatePlayerSessionRequest) returns (google.protobuf.Empty);
+  rpc EnterScene (Ctlr2GsEnterSceneRequest) returns (google.protobuf.Empty);
 }
