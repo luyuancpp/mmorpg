@@ -235,8 +235,8 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
         << "," << request->msg().message_id();
         return;
     }
-    auto& serviceimpl = service_it->second;
-    google::protobuf::Service* service = serviceimpl->service();
+    auto& service_handler = service_it->second;
+    google::protobuf::Service* service = service_handler->service();
     const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
     const google::protobuf::MethodDescriptor* method = desc->FindMethodByName(message_info.method);
     if (nullptr == method)
@@ -248,7 +248,7 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
     MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
     player_request->ParseFromString(request->msg().body());
     MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
-    serviceimpl->CallMethod(method, session_it->second, get_pointer(player_request), get_pointer(player_response));
+    service_handler->CallMethod(method, session_it->second, get_pointer(player_request), get_pointer(player_response));
     if (nullptr == response)
     {
         return;

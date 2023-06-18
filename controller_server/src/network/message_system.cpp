@@ -160,5 +160,5 @@ void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& me
     message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_ex()->set_session_id(try_player_session->session_id());
-    tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(message_id, message_wrapper);
+    tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
 }
