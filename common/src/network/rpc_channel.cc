@@ -217,7 +217,7 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
     RpcMessage rpc_response;
     rpc_response.set_type(RESPONSE);
     auto byte_size = int32_t(response->ByteSizeLong());
-	rpc_response.mutable_request()->resize(byte_size);
+	rpc_response.mutable_response()->resize(byte_size);
     // FIXME: error check
     if (!response->SerializePartialToArray(rpc_response.mutable_response()->data(), byte_size))
     {
@@ -302,18 +302,13 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
         RpcMessage rpc_response;
         rpc_response.set_type(RESPONSE);
         auto byte_size = int32_t(response->ByteSizeLong());
-		std::string dt;
-		dt.resize(byte_size);
-		auto bt = rpc_response.ByteSizeLong();
+		rpc_response.mutable_response()->resize(byte_size);
         // FIXME: error check
-        if (!response->SerializePartialToArray(dt.data(), byte_size))
+        if (!response->SerializePartialToArray(rpc_response.mutable_response()->data(), byte_size))
         {
             LOG_ERROR << "message error " << this;
             return;
         }
-		rpc_response.set_response(dt);
-		bt = rpc_response.ByteSizeLong();
-		
         rpc_response.set_message_id(message.message_id());
         codec_.send(conn_, rpc_response);
     }
