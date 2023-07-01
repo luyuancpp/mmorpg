@@ -6,10 +6,10 @@ local cross_server_scene2 = 2
 local times = 0
 
 function ChangeGsScene(response, form_scene, to_scene)
-	message = EnterSeceneC2SRequest.new()
+
+	local message = EnterSceneC2SRequest.new()
 	message:mutable_scene_info().scene_id = to_scene
-	player:send(message)
-	LogInfo(response:DebugString())
+	player:send(ClientPlayerSceneServiceEnterSceneC2SMsgId, message)
 end
 ---<<< END WRITING YOUR CODE
 
@@ -21,18 +21,18 @@ end
 function ClientPlayerSceneServicePushEnterSceneS2CHandler(request, response)
 ---<<< BEGIN WRITING YOUR CODE 
 	--连续切换有问题
-	LogInfo('------------------------>')
+	LogInfo('1------------------------>')
 	ChangeGsScene(response, cross_server_scene1, cross_server_scene1)
 	times = times + 1
-	LogInfo('<------------------------'..times)
+	LogInfo('2<------------------------'..times)
 ---<<< END WRITING YOUR CODE
 end
 function ClientPlayerSceneServicePushSceneInfoS2CHandler(request, response)
 ---<<< BEGIN WRITING YOUR CODE
 	LogInfo('ClientPlayerSceneServicePushSceneInfoS2CHandler')
-	message = EnterSeceneC2SRequest.new()
+	local message = EnterSceneC2SRequest.new()
 	message:mutable_scene_info().scene_id = cross_server_scene1
-	player:send(message)
+	player:send(ClientPlayerSceneServiceEnterSceneC2SMsgId, message)
 ---<<< END WRITING YOUR CODE
 end
 ---<<<rpc end
