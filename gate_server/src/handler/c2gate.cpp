@@ -93,7 +93,11 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             //比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
 			LoginNodeDisconnectRequest rq;
 			rq.set_session_id(session_id);
-			get_login_node(session_id)->CallMethod(LoginServiceDisconnectMsgId, rq);
+            auto& session_login_node = get_login_node(session_id);
+            if (nullptr != session_login_node)
+            {
+                session_login_node->CallMethod(LoginServiceDisconnectMsgId, rq);
+            }			
         }
         // controller
         {
