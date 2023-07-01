@@ -85,7 +85,11 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
         return;
     }
     const MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
-    player_request->ParseFromArray(request->msg().body().data(), int32_t(request->msg().body().size()));
+    if (!player_request->ParsePartialFromArray(request->msg().body().data(), int32_t(request->msg().body().size())))
+    {
+        LOG_ERROR << "ParsePartialFromArray " << request->msg().message_id();
+        return;
+    }
     const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
     service_handler->CallMethod(method, session_it->second, get_pointer(player_request), get_pointer(player_response));
 
@@ -246,7 +250,11 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
         return;
     }
     MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
-    player_request->ParseFromArray(request->msg().body().data(), int32_t(request->msg().body().size()));
+    if (!player_request->ParsePartialFromArray(request->msg().body().data(), int32_t(request->msg().body().size())))
+    {
+        LOG_ERROR << "ParsePartialFromArray " << request->msg().message_id();
+        return;
+    }
     MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
     service_handler->CallMethod(method, session_it->second, get_pointer(player_request), get_pointer(player_response));
     if (nullptr == response)

@@ -101,7 +101,7 @@ void FillMessageField(::google::protobuf::Message& message, const ResultRow& row
             if (length != 0 && row[i] != NULL)
             {
                 google::protobuf::Message* sub_message = reflection->MutableMessage(&message, field_desc);//不会为null;
-                sub_message->ParseFromArray(row[i], length);
+                sub_message->ParsePartialFromArray(row[i], length);
             }
         }
         break;

@@ -95,7 +95,7 @@ void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	}
 	//当前节点的请求信息
 	const MessagePtr current_node_request(GetRequestPrototype(method).New());
-	if (!current_node_request->ParseFromArray(request->body().data(), int32_t(request->body().size())))
+	if (!current_node_request->ParsePartialFromArray(request->body().data(), int32_t(request->body().size())))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString();
 		return;

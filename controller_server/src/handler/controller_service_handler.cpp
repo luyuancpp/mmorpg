@@ -472,7 +472,12 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		return;
 	}
 	const MessagePtr player_request(service->GetRequestPrototype(method).New());
-	player_request->ParseFromArray(request->msg().body().data(), int32_t(request->msg().body().size()));
+	if (!player_request->ParsePartialFromArray(request->msg().body().data(), int32_t(request->msg().body().size())))
+	{
+        LOG_ERROR << "ParsePartialFromArray " << request->msg().message_id();
+        //todo client error;
+        return;
+	}
 	const MessagePtr player_response(service->GetResponsePrototype(method).New());
 	service_handler->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
@@ -483,7 +488,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
     auto byte_size = int32_t(response->ByteSizeLong());
 	response->mutable_msg()->mutable_body()->resize(byte_size);
     // FIXME: error check
-    if (response->SerializeToArray(response->mutable_msg()->mutable_body()->data(), byte_size))
+    if (response->SerializePartialToArray(response->mutable_msg()->mutable_body()->data(), byte_size))
     {
         LOG_ERROR << "message error " << this;
         return;
@@ -613,7 +618,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	}
 	//当前节点的请求信息
 	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
-	if (!current_node_request->ParseFromArray(request->body().data(), int32_t(request->body().size())))
+	if (!current_node_request->ParsePartialFromArray(request->body().data(), int32_t(request->body().size())))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString();
 		return;

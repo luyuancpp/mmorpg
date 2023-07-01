@@ -51,7 +51,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	}
 	//当前节点的请求信息
 	const MessagePtr current_node_response(service->GetResponsePrototype(method).New());
-	if (!current_node_response->ParseFromArray(replied->body().data(), int32_t(replied->body().size())))
+	if (!current_node_response->ParsePartialFromArray(replied->body().data(), int32_t(replied->body().size())))
 	{
 		LOG_ERROR << "invalid  body response" << replied->DebugString();
 		return;

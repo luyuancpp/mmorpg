@@ -55,7 +55,7 @@ void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message
 	NodeServiceMessageRequest message_wrapper;
 	auto byte_size = int32_t(message.ByteSizeLong());
 	message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
-	message.SerializeToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
+	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_ex()->set_session_id(try_player_session->session_id());
 	gs->session_.Send(GameServiceSend2PlayerMsgId,  message_wrapper);
@@ -93,7 +93,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
     NodeServiceMessageRequest message_wrapper;
     auto byte_size = int32_t(message.ByteSizeLong());
     message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
-    message.SerializeToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
+    message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_ex()->set_session_id(try_player_session->session_id());
 	gs->session_.Send(message_id, message_wrapper);
 }
@@ -118,7 +118,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
     NodeServiceMessageRequest message_wrapper;
     auto byte_size = int32_t(message.ByteSizeLong());
     message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
-    message.SerializeToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
+    message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
     message_wrapper.mutable_ex()->set_session_id(session_id);
 	message_wrapper.mutable_msg()->set_message_id(message_id);
     gate->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
@@ -165,7 +165,7 @@ void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& me
     NodeServiceMessageRequest message_wrapper;
     auto byte_size = int32_t(message.ByteSizeLong());
     message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
-    message.SerializeToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
+    message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_ex()->set_session_id(try_player_session->session_id());
     tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
