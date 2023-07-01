@@ -86,7 +86,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 				return;
 			}
 			std::string message_byte;
-			auto byte_size = int32_t(mutable_replied->ByteSizeLong() + 1);
+			auto byte_size = int32_t(mutable_replied->ByteSizeLong());
 			message_byte.resize(byte_size);
 			//todo check 
 			mutable_replied->SerializePartialToArray(message_byte.data(), byte_size);

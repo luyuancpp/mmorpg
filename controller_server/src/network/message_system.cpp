@@ -53,7 +53,7 @@ void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message
 	}
 
 	NodeServiceMessageRequest message_wrapper;
-	auto byte_size = int32_t(message.ByteSizeLong() + 1);
+	auto byte_size = int32_t(message.ByteSizeLong());
 	message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
 	message.SerializeToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_msg()->set_message_id(message_id);
@@ -91,7 +91,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
     }
    
     NodeServiceMessageRequest message_wrapper;
-    auto byte_size = int32_t(message.ByteSizeLong() + 1);
+    auto byte_size = int32_t(message.ByteSizeLong());
     message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
     message.SerializeToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_ex()->set_session_id(try_player_session->session_id());
@@ -116,7 +116,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id)
 {
     NodeServiceMessageRequest message_wrapper;
-    auto byte_size = int32_t(message.ByteSizeLong() + 1);
+    auto byte_size = int32_t(message.ByteSizeLong());
     message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
     message.SerializeToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
     message_wrapper.mutable_ex()->set_session_id(session_id);
@@ -163,7 +163,7 @@ void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& me
         return;
     }
     NodeServiceMessageRequest message_wrapper;
-    auto byte_size = int32_t(message.ByteSizeLong() + 1);
+    auto byte_size = int32_t(message.ByteSizeLong());
     message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
     message.SerializeToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_msg()->set_message_id(message_id);
