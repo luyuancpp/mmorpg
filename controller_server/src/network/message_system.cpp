@@ -11,10 +11,10 @@
 #include "src/network/gate_node.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/service.h"
+#include "src/pb/pbc/gate_service_service.h"
 #include "src/pb/pbc/game_service_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
-#include "gate_service.pb.h"
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, uint32_t node_id)
 {
@@ -115,7 +115,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
     message_wrapper.mutable_ex()->set_session_id(session_id);
     message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
 	message_wrapper.mutable_msg()->set_message_id(message_id);
-    gate->session_.Send(message_id, message_wrapper);
+    gate->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)

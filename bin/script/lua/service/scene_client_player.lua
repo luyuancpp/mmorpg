@@ -28,7 +28,8 @@ function ClientPlayerSceneServicePushEnterSceneS2CHandler(request, response)
 ---<<< END WRITING YOUR CODE
 end
 function ClientPlayerSceneServicePushSceneInfoS2CHandler(request, response)
----<<< BEGIN WRITING YOUR CODE 
+---<<< BEGIN WRITING YOUR CODE
+	LogInfo('ClientPlayerSceneServicePushSceneInfoS2CHandler')
 	message = EnterSeceneC2SRequest.new()
 	message:mutable_scene_info().scene_id = cross_server_scene1
 	player:send(message)
