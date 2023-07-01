@@ -25,6 +25,10 @@ void ClientService::Send(uint32_t message_id, const google::protobuf::Message& r
     message.set_id(++id_);
     message.set_message_id(message_id);
     message.set_request(request.SerializeAsString());
+    if (message.request().empty())
+    {
+        LOG_ERROR << "message error " << this;
+    }
     codec_.send(conn_, message);
 }
 

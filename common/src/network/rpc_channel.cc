@@ -66,10 +66,13 @@ void RpcChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Messa
   message.set_type(REQUEST);
   int64_t id = ++id_;
   message.set_id(id);
-  //message.set_service(method->service()->full_name());
-  //message.set_method(method->name());
   message.set_message_id(message_id);
   message.set_request(request.SerializeAsString()); // FIXME: error check
+  if (message.request().empty())
+  {
+	  LOG_ERROR << "message error " << this;
+	  return;
+  }
   codec_.send(conn_, message);
 }
 
