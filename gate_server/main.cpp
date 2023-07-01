@@ -3,7 +3,7 @@
 
 int main(int argc, char* argv[])
 {
-	muduo::Logger::setLogLevel(muduo::Logger::ERROR_);
+	//muduo::Logger::setLogLevel(muduo::Logger::ERROR_);
     EventLoop loop;
     GateServer server(&loop);
     server.Init();
