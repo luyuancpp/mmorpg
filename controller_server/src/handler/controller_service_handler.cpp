@@ -480,7 +480,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		return;
 	}
 	response->mutable_ex()->set_session_id(request->ex().session_id());
-    auto byte_size = int32_t(response->ByteSizeLong() + 1);
+    auto byte_size = int32_t(response->ByteSizeLong());
 	response->mutable_msg()->mutable_body()->resize(byte_size);
     // FIXME: error check
     if (response->SerializeToArray(response->mutable_msg()->mutable_body()->data(), byte_size))
@@ -627,7 +627,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	//没有发送到下个节点就是要回复了
 	if (cl_tls.next_route_node_type() == UINT32_MAX)
 	{
-		auto byte_size = int32_t(current_node_response->ByteSizeLong() + 1);
+		auto byte_size = int32_t(current_node_response->ByteSizeLong());
 		response->mutable_body()->resize(byte_size);
 		current_node_response->SerializePartialToArray(response->mutable_body()->data(), byte_size);
 		for (auto& request_data_it : request->route_data_list())

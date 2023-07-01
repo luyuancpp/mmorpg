@@ -24,7 +24,7 @@ void ClientService::Send(uint32_t message_id, const google::protobuf::Message& r
     ClientRequest message;
     message.set_id(++id_);
     message.set_message_id(message_id);
-    auto byte_size = int32_t(request.ByteSizeLong() + 1);
+    auto byte_size = int32_t(request.ByteSizeLong());
     message.mutable_request()->resize(byte_size);
     if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
     {

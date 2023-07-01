@@ -63,7 +63,7 @@ void RpcChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Messa
   RpcMessage message;
   message.set_type(REQUEST);
   message.set_message_id(message_id);
-  auto byte_size = int32_t(request.ByteSizeLong() + 1);
+  auto byte_size = int32_t(request.ByteSizeLong());
   message.mutable_request()->resize(byte_size);
   // FIXME: error check
   if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
@@ -85,7 +85,7 @@ void RpcChannel::Send(uint32_t message_id, const ::google::protobuf::Message& re
     RpcMessage message;    
     message.set_type(S2C_REQUEST);
     message.set_message_id(message_id);  
-	auto byte_size = int32_t(request.ByteSizeLong() + 1);
+	auto byte_size = int32_t(request.ByteSizeLong());
     message.mutable_request()->resize(byte_size);
     // FIXME: error check
     if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
@@ -162,7 +162,7 @@ void RpcChannel::Route2Node(uint32_t message_id, const ::google::protobuf::Messa
 {
     RpcMessage message;
     message.set_type(NODE_ROUTE);  
-	auto byte_size = int32_t(request.ByteSizeLong() + 1);
+	auto byte_size = int32_t(request.ByteSizeLong());
     message.mutable_request()->resize(byte_size);
     // FIXME: error check
     if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
@@ -211,7 +211,7 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
     }
     RpcMessage rpc_response;
     rpc_response.set_type(RESPONSE);
-    auto byte_size = int32_t(response->ByteSizeLong() + 1);
+    auto byte_size = int32_t(response->ByteSizeLong());
 	rpc_response.mutable_request()->resize(byte_size);
     // FIXME: error check
     if (!response->SerializeToArray(rpc_response.mutable_request()->data(), byte_size))
@@ -294,7 +294,7 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
         service->CallMethod(method, NULL, get_pointer(request), get_pointer(response), nullptr);
         RpcMessage rpc_response;
         rpc_response.set_type(RESPONSE);
-        auto byte_size = int32_t(response->ByteSizeLong() + 1);
+        auto byte_size = int32_t(response->ByteSizeLong());
         rpc_response.mutable_request()->resize(byte_size);
         // FIXME: error check
         if (!response->SerializeToArray(rpc_response.mutable_request()->data(), byte_size))
