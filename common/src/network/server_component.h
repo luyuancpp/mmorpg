@@ -42,13 +42,13 @@ struct RpcServerConnection
 
     void SendRouteResponse(uint32_t message_id,
                            uint64_t id,
-                           const std::string&& message_bytes)
+                           const std::string& message_bytes)
     {
         if (!Connected())
         {
             return;
         }
-        channel_->SendRouteResponse(message_id, id, std::move(message_bytes));
+        channel_->SendRouteResponse(message_id, id, message_bytes);
     }
 
     muduo::net::TcpConnectionPtr conn_;

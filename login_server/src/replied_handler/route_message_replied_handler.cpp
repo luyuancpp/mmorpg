@@ -51,7 +51,7 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 	}
 	//当前节点的请求信息
 	const MessagePtr current_node_response(service->GetResponsePrototype(method).New());
-	if (!current_node_response->ParseFromString(replied->body()))
+	if (!current_node_response->ParseFromArray(replied->body().data(), int32_t(replied->body().size())))
 	{
 		LOG_ERROR << "invalid  body response" << replied->DebugString();
 		return;
@@ -85,9 +85,14 @@ void OnServiceRouteNodeStringMsgRepliedHandler(const TcpConnectionPtr& conn, con
 				LOG_ERROR << "gate not found node id " << prev_route_data.node_info().node_id() << " " << replied->DebugString();
 				return;
 			}
+			std::string message_byte;
+			auto byte_size = int32_t(mutable_replied->ByteSizeLong() + 1);
+			message_byte.resize(byte_size);
+			//todo check 
+			mutable_replied->SerializePartialToArray(message_byte.data(), byte_size);
 			gate_it->second->session_.SendRouteResponse(GateServiceRouteNodeStringMsgMsgId,
 				replied->id(),
-				mutable_replied->SerializeAsString());
+				message_byte);
 		}
 			break;
 
