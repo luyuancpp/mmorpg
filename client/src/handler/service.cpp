@@ -26,7 +26,7 @@ void ClientService::Send(uint32_t message_id, const google::protobuf::Message& r
     message.set_message_id(message_id);
     auto byte_size = int32_t(request.ByteSizeLong());
     message.mutable_request()->resize(byte_size);
-    if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
+    if (!request.SerializePartialToArray(message.mutable_request()->data(), byte_size))
     {
         LOG_ERROR << "message error " << this;
     }
@@ -68,7 +68,11 @@ void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& con
     const google::protobuf::MethodDescriptor* method
         = desc->FindMethodByName(servcie_method_info.method);
     MessagePtr response(codec_.createMessage(servcie_method_info.response));
-    response->ParseFromArray(message->body().data(), int32_t(message->body().size()));
+    if (!response->ParsePartialFromArray(message->body().data(), int32_t(message->body().size())))
+    {
+        LOG_ERROR << "ParsePartialFromArray error";
+        return;
+    }
     AutoLuaPlayerPtr p(&tls_lua_state.set("player", this));
     g_player_service[servcie_method_info.service]->CallMethod(method, nullptr, nullptr, response.get(), nullptr);
 }

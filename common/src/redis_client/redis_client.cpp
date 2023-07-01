@@ -85,7 +85,7 @@ void MessageSyncRedisClient::Load(google::protobuf::Message& message, const std:
     {
         return;
     }
-    message.ParseFromArray(reply->str, static_cast<int32_t>(reply->len));
+    message.ParsePartialFromArray(reply->str, static_cast<int32_t>(reply->len));
 }
 
 void MessageSyncRedisClient::OnDisconnect()

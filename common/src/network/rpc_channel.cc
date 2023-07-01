@@ -66,7 +66,7 @@ void RpcChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Messa
   auto byte_size = int32_t(request.ByteSizeLong());
   message.mutable_request()->resize(byte_size);
   // FIXME: error check
-  if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
+  if (!request.SerializePartialToArray(message.mutable_request()->data(), byte_size))
   {
 	  LOG_ERROR << "message error " << this;
 	  return;
@@ -88,7 +88,7 @@ void RpcChannel::Send(uint32_t message_id, const ::google::protobuf::Message& re
 	auto byte_size = int32_t(request.ByteSizeLong());
     message.mutable_request()->resize(byte_size);
     // FIXME: error check
-    if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
+    if (!request.SerializePartialToArray(message.mutable_request()->data(), byte_size))
     {
         LOG_ERROR << "message error " << this;
         return;
@@ -137,7 +137,11 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 		  return;
 	  }
 	  const MessagePtr response(service->GetResponsePrototype(method).New());
-	  response->ParseFromArray(message.response().data(), int32_t(message.response().size()));
+	  if (!response->ParsePartialFromArray(message.response().data(), int32_t(message.response().size())))
+	  {
+		  LOG_ERROR << "ParsePartialFromArray error";
+		  return;
+	  }
 	  g_response_dispatcher.onProtobufMessage(conn, response, receiveTime);
   }
   else if (message.type() == REQUEST)
@@ -165,7 +169,7 @@ void RpcChannel::Route2Node(uint32_t message_id, const ::google::protobuf::Messa
 	auto byte_size = int32_t(request.ByteSizeLong());
     message.mutable_request()->resize(byte_size);
     // FIXME: error check
-    if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
+    if (!request.SerializePartialToArray(message.mutable_request()->data(), byte_size))
     {
         LOG_ERROR << "message error " << this;
         return;
@@ -198,8 +202,9 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-    if (!request->ParseFromArray(message.request().data(), int32_t(message.request().size())))
+    if (!request->ParsePartialFromArray(message.request().data(), int32_t(message.request().size() )))
     {
+		LOG_ERROR << "ParsePartialFromArray error";
         SendRpcError(message, INVALID_REQUEST);
         return;
     }
@@ -214,7 +219,7 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
     auto byte_size = int32_t(response->ByteSizeLong());
 	rpc_response.mutable_request()->resize(byte_size);
     // FIXME: error check
-    if (!response->SerializeToArray(rpc_response.mutable_request()->data(), byte_size))
+    if (!response->SerializePartialToArray(rpc_response.mutable_response()->data(), byte_size))
     {
         LOG_ERROR << "message error " << this;
         return;
@@ -247,8 +252,9 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-    if (!request->ParseFromArray(message.request().data(), int32_t(message.request().size())))
+    if (!request->ParsePartialFromArray(message.request().data(), int32_t(message.request().size())))
     {
+		LOG_ERROR << "ParsePartialFromArray error";
         SendRpcError(message, INVALID_REQUEST);
         return;
     }
@@ -279,8 +285,9 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-    if (!request->ParseFromArray(message.request().data(), int32_t(message.request().size())))
+    if (!request->ParsePartialFromArray(message.request().data(), int32_t(message.request().size())))
     {
+		LOG_ERROR << "ParsePartialFromArray error";
         SendRpcError(message, INVALID_REQUEST);
         return;
     }
@@ -295,13 +302,18 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
         RpcMessage rpc_response;
         rpc_response.set_type(RESPONSE);
         auto byte_size = int32_t(response->ByteSizeLong());
-        rpc_response.mutable_request()->resize(byte_size);
+		std::string dt;
+		dt.resize(byte_size);
+		auto bt = rpc_response.ByteSizeLong();
         // FIXME: error check
-        if (!response->SerializeToArray(rpc_response.mutable_request()->data(), byte_size))
+        if (!response->SerializePartialToArray(dt.data(), byte_size))
         {
             LOG_ERROR << "message error " << this;
             return;
         }
+		rpc_response.set_response(dt);
+		bt = rpc_response.ByteSizeLong();
+		
         rpc_response.set_message_id(message.message_id());
         codec_.send(conn_, rpc_response);
     }

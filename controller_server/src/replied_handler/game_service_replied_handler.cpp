@@ -115,7 +115,11 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		return;
 	}
 	const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
-	player_response->ParseFromArray(replied->msg().body().data(), int32_t(replied->msg().body().size()));
+	if (!player_response->ParsePartialFromArray(replied->msg().body().data(), int32_t(replied->msg().body().size())))
+	{
+        LOG_ERROR << "ParsePartialFromArray " << message_info.method;
+        return;
+	}
 	service_impl->CallMethod(method, player_it->second, nullptr, boost::get_pointer(player_response));
 ///<<< END WRITING YOUR CODE
 }
