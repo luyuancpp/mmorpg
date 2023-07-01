@@ -85,7 +85,7 @@ void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controll
         return;
     }
     const MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
-    player_request->ParseFromString(request->msg().body());
+    player_request->ParseFromArray(request->msg().body().data(), int32_t(request->msg().body().size()));
     const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
     service_handler->CallMethod(method, session_it->second, get_pointer(player_request), get_pointer(player_response));
 
@@ -137,7 +137,7 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
         return;
     }
     const MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
-    player_request->ParseFromString(request->request());
+    player_request->ParseFromArray(request->request().data(), int32_t(request->request().size()));
     const MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
     service_it->second->CallMethod(method, pit->second, get_pointer(player_request), get_pointer(player_response));
     response->set_response(player_response->SerializeAsString());
@@ -246,7 +246,7 @@ void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controlle
         return;
     }
     MessageUniquePtr player_request(service->GetRequestPrototype(method).New());
-    player_request->ParseFromString(request->msg().body());
+    player_request->ParseFromArray(request->msg().body().data(), int32_t(request->msg().body().size()));
     MessageUniquePtr player_response(service->GetResponsePrototype(method).New());
     service_handler->CallMethod(method, session_it->second, get_pointer(player_request), get_pointer(player_response));
     if (nullptr == response)

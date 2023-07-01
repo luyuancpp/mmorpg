@@ -472,7 +472,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		return;
 	}
 	const MessagePtr player_request(service->GetRequestPrototype(method).New());
-	player_request->ParseFromString(request->msg().body());
+	player_request->ParseFromArray(request->msg().body().data(), int32_t(request->msg().body().size()));
 	const MessagePtr player_response(service->GetResponsePrototype(method).New());
 	service_handler->CallMethod(method, it->second, get_pointer(player_request), get_pointer(player_response));
 	if (nullptr == response)//不需要回复
@@ -480,7 +480,14 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		return;
 	}
 	response->mutable_ex()->set_session_id(request->ex().session_id());
-	response->mutable_msg()->set_body(player_response->SerializeAsString());
+    auto byte_size = int32_t(response->ByteSizeLong() + 1);
+	response->mutable_msg()->mutable_body()->resize(byte_size);
+    // FIXME: error check
+    if (response->SerializeToArray(response->mutable_msg()->mutable_body()->data(), byte_size))
+    {
+        LOG_ERROR << "message error " << this;
+        return;
+    }
 	response->mutable_msg()->set_message_id(request->msg().message_id());
 ///<<< END WRITING YOUR CODE
 }
@@ -606,7 +613,7 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	}
 	//当前节点的请求信息
 	std::unique_ptr<google::protobuf::Message> current_node_request(GetRequestPrototype(method).New());
-	if (!current_node_request->ParseFromString(request->body()))
+	if (!current_node_request->ParseFromArray(request->body().data(), int32_t(request->body().size())))
 	{
 		LOG_ERROR << "invalid  body request" << request->DebugString();
 		return;
@@ -620,7 +627,9 @@ void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcControl
 	//没有发送到下个节点就是要回复了
 	if (cl_tls.next_route_node_type() == UINT32_MAX)
 	{
-		response->set_body(current_node_response->SerializeAsString());
+		auto byte_size = int32_t(current_node_response->ByteSizeLong() + 1);
+		response->mutable_body()->resize(byte_size);
+		current_node_response->SerializePartialToArray(response->mutable_body()->data(), byte_size);
 		for (auto& request_data_it : request->route_data_list())
 		{
 			*response->add_route_data_list() = request_data_it;

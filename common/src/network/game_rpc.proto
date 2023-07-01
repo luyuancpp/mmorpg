@@ -27,13 +27,8 @@ enum ErrorCode
 message RpcMessage
 {
   MessageType type = 1;
-  fixed64 id = 2;
-
-  bytes request = 5;
-
-  bytes response = 6;
-
-  ErrorCode error = 7;
-
-  uint32 message_id = 8;
+  bytes request = 2;
+  bytes response = 3;
+  ErrorCode error = 4;
+  uint32 message_id = 5;
 }

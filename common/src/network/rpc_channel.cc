@@ -32,7 +32,6 @@ ProtobufDispatcher g_response_dispatcher(std::bind(&OnUnknownMessage,  _1, _2, _
 
 RpcChannel::RpcChannel()
 	: codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
-	id_(0),
 	services_(NULL),
 	dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
 {
@@ -42,7 +41,6 @@ RpcChannel::RpcChannel()
 RpcChannel::RpcChannel(const TcpConnectionPtr& conn)
 	: codec_(std::bind(&RpcChannel::onRpcMessage, this, _1, _2, _3)),
 	conn_(conn),
-	id_(0),
 	services_(NULL),
 	dispatcher_(std::bind(&RpcChannel::onUnknownMessage, this, _1, _2, _3))
 {
@@ -64,11 +62,11 @@ void RpcChannel::CallMethod(uint32_t message_id, const ::google::protobuf::Messa
 {
   RpcMessage message;
   message.set_type(REQUEST);
-  int64_t id = ++id_;
-  message.set_id(id);
   message.set_message_id(message_id);
-  message.set_request(request.SerializeAsString()); // FIXME: error check
-  if (message.request().empty())
+  auto byte_size = int32_t(request.ByteSizeLong() + 1);
+  message.mutable_request()->resize(byte_size);
+  // FIXME: error check
+  if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
   {
 	  LOG_ERROR << "message error " << this;
 	  return;
@@ -86,8 +84,15 @@ void RpcChannel::Send(uint32_t message_id, const ::google::protobuf::Message& re
 
     RpcMessage message;    
     message.set_type(S2C_REQUEST);
-    message.set_message_id(message_id);
-    message.set_request(request.SerializeAsString()); // FIXME: error check
+    message.set_message_id(message_id);  
+	auto byte_size = int32_t(request.ByteSizeLong() + 1);
+    message.mutable_request()->resize(byte_size);
+    // FIXME: error check
+    if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
+    {
+        LOG_ERROR << "message error " << this;
+        return;
+    }
     codec_.send(conn_, message);
 }
 
@@ -132,7 +137,7 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 		  return;
 	  }
 	  const MessagePtr response(service->GetResponsePrototype(method).New());
-	  response->ParseFromString(message.response());
+	  response->ParseFromArray(message.response().data(), int32_t(message.response().size()));
 	  g_response_dispatcher.onProtobufMessage(conn, response, receiveTime);
   }
   else if (message.type() == REQUEST)
@@ -156,8 +161,15 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
 void RpcChannel::Route2Node(uint32_t message_id, const ::google::protobuf::Message& request)
 {
     RpcMessage message;
-    message.set_type(NODE_ROUTE);
-    message.set_request(request.SerializeAsString()); // FIXME: error check
+    message.set_type(NODE_ROUTE);  
+	auto byte_size = int32_t(request.ByteSizeLong() + 1);
+    message.mutable_request()->resize(byte_size);
+    // FIXME: error check
+    if (!request.SerializeToArray(message.mutable_request()->data(), byte_size))
+    {
+        LOG_ERROR << "message error " << this;
+        return;
+    }
     message.set_message_id(message_id);
     codec_.send(conn_, message);
 }
@@ -186,7 +198,7 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-    if (!request->ParseFromString(message.request()))
+    if (!request->ParseFromArray(message.request().data(), int32_t(message.request().size())))
     {
         SendRpcError(message, INVALID_REQUEST);
         return;
@@ -199,8 +211,14 @@ void RpcChannel::onRouteNodeMessage(const TcpConnectionPtr& conn, const RpcMessa
     }
     RpcMessage rpc_response;
     rpc_response.set_type(RESPONSE);
-    rpc_response.set_id(message.id());
-    rpc_response.set_response(response->SerializeAsString()); // FIXME: error check
+    auto byte_size = int32_t(response->ByteSizeLong() + 1);
+	rpc_response.mutable_request()->resize(byte_size);
+    // FIXME: error check
+    if (!response->SerializeToArray(rpc_response.mutable_request()->data(), byte_size))
+    {
+        LOG_ERROR << "message error " << this;
+        return;
+    }
     rpc_response.set_message_id(message.message_id());
     codec_.send(conn_, rpc_response);
 }
@@ -229,7 +247,7 @@ void RpcChannel::onS2CMessage(const TcpConnectionPtr& conn, const RpcMessage& me
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-    if (!request->ParseFromString(message.request()))
+    if (!request->ParseFromArray(message.request().data(), int32_t(message.request().size())))
     {
         SendRpcError(message, INVALID_REQUEST);
         return;
@@ -261,7 +279,7 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
 		return;
 	}
     std::unique_ptr<google::protobuf::Message> request(service->GetRequestPrototype(method).New());
-    if (!request->ParseFromString(message.request()))
+    if (!request->ParseFromArray(message.request().data(), int32_t(message.request().size())))
     {
         SendRpcError(message, INVALID_REQUEST);
         return;
@@ -276,8 +294,14 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
         service->CallMethod(method, NULL, get_pointer(request), get_pointer(response), nullptr);
         RpcMessage rpc_response;
         rpc_response.set_type(RESPONSE);
-        rpc_response.set_id(message.id());
-        rpc_response.set_response(response->SerializeAsString()); // FIXME: error check
+        auto byte_size = int32_t(response->ByteSizeLong() + 1);
+        rpc_response.mutable_request()->resize(byte_size);
+        // FIXME: error check
+        if (!response->SerializeToArray(rpc_response.mutable_request()->data(), byte_size))
+        {
+            LOG_ERROR << "message error " << this;
+            return;
+        }
         rpc_response.set_message_id(message.message_id());
         codec_.send(conn_, rpc_response);
     }
@@ -287,12 +311,11 @@ void RpcChannel::SendRpcError(const RpcMessage& message, ErrorCode error)
 {
     RpcMessage response;
     response.set_type(RESPONSE);
-    response.set_id(message.id());
     response.set_error(error);
     codec_.send(conn_, response);
 }
 
-void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::string&& message_bytes)
+void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::string& message_bytes)
 {
 	if (message_id >= g_message_info.size())
 	{
@@ -302,7 +325,6 @@ void RpcChannel::SendRouteResponse(uint32_t message_id, uint64_t id, const std::
     //todo check message id error
     RpcMessage rpc_response;
     rpc_response.set_type(RESPONSE);
-    rpc_response.set_id(id);
     rpc_response.set_response(message_bytes); // FIXME: error check
     rpc_response.set_message_id(message_id);
     codec_.send(conn_, rpc_response);

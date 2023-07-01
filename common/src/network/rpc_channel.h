@@ -119,7 +119,7 @@ namespace muduo
             //发送对应的串消息,
             void Route2Node(uint32_t message_id, const ::google::protobuf::Message& request);
             //返回串消息
-            void SendRouteResponse(uint32_t message_id, uint64_t id, const std::string&& message_bytes);
+            void SendRouteResponse(uint32_t message_id, uint64_t id, const std::string& message_bytes);
 
             void onMessage(const TcpConnectionPtr& conn,
                 Buffer* buf,
@@ -150,7 +150,6 @@ namespace muduo
 
             RpcCodec codec_;
             TcpConnectionPtr conn_;
-            uint64_t id_;
 
             const std::map<std::string, ::google::protobuf::Service*>* services_;
             ProtobufDispatcher dispatcher_;
