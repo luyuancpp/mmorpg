@@ -15,9 +15,9 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
 {
 ///<<< BEGIN WRITING YOUR CODE
         //如果是跨服副本服不能换场景
-    auto server_type = tls.registry.get<GsServerType>(global_entity());
-    if (kRoomServer == server_type.server_type_ ||
-        kRoomSceneCrossServer == server_type.server_type_)
+    if (const auto [server_type_] = tls.registry.get<GsServerType>(global_entity());
+    kRoomServer == server_type_ ||
+        kRoomSceneCrossServer == server_type_)
     {
         response->mutable_error()->set_id(kRetEnterSceneServerType);
         return;
@@ -29,11 +29,10 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
         return;
     }
     //您当前就在这个场景，无需切换
-    auto my_scene = tls.registry.try_get<SceneEntity>(player);
-    if (nullptr != my_scene)
+    if (const auto current_scene = tls.registry.try_get<SceneEntity>(player); nullptr != current_scene)
     {
-        auto try_my_scene_info = tls.registry.try_get<SceneInfo>(my_scene->scene_entity_);
-        if (nullptr != try_my_scene_info &&
+        if (const auto try_my_scene_info = tls.registry.try_get<SceneInfo>(current_scene->scene_entity_);
+            nullptr != try_my_scene_info &&
             try_my_scene_info->scene_id() == scene_info.scene_id()
             && scene_info.scene_id() > 0)
         {
