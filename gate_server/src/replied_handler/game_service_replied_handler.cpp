@@ -3,6 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/gate_server.h"
+#include "src/thread_local/gate_thread_local_storage.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
@@ -38,10 +39,16 @@ void OnGameServiceClientSend2PlayerRepliedHandler(const TcpConnectionPtr& conn, 
 {
 ///<<< BEGIN WRITING YOUR CODE
     MessageBody message;
+    const auto it = gate_tls.sessions().find(replied->session_id());
+    if (it == gate_tls.sessions().end())
+    {
+        LOG_ERROR << "session id not found  player id " << replied->session_id();
+        return;
+    }
     message.set_body(replied->response());
     message.set_id(replied->id());
-	message.set_message_id(replied->message_id());
-    g_gate_node->codec().send(conn, message);
+    message.set_message_id(replied->message_id());
+    g_gate_node->codec().send(it->second.conn_, message);
 ///<<< END WRITING YOUR CODE
 }
 
