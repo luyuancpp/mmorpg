@@ -16,7 +16,7 @@ SnowFlakeThreadSafe sf;
 guid_vetcor first_v;
 guid_vetcor second_v;
 guid_vetcor third_v;
-static const std::size_t kTestSize = 100000;
+static const std::size_t kTestSize = 1000000;
 
 void EmplaceToVector(guid_vetcor& v)
 {
