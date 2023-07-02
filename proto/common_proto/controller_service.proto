@@ -47,9 +47,7 @@ message CtrlConnectedGameRequest
   IpPort rpc_client = 1;
 }
 
-message GateLeaveGameRequest
-{
-}
+
 
 message GateDisconnectRequest
 {
@@ -85,7 +83,6 @@ message EnterGsSucceedRequest
 service ControllerService {
   rpc StartGs (CtrlStartGsRequest) returns (CtrlStartGsResponse);
   rpc GateConnect (GateConnectRequest) returns (google.protobuf.Empty);
-  rpc GateLeaveGame (GateLeaveGameRequest) returns (google.protobuf.Empty);
   rpc GatePlayerService (GateClientMessageRequest) returns (google.protobuf.Empty);
   rpc GateDisconnect (GateDisconnectRequest) returns (google.protobuf.Empty); 
   rpc StartLs (StartLsRequest) returns (StartLsResponse);

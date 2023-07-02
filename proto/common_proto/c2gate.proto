@@ -42,15 +42,6 @@ message EnterGameResponse
 	Tips error = 1;
 }
 
-message LeaveGameRequest
-{
-}
-
-message LeaveGameResponse
-{
-	Tips error = 1;
-}
-
 enum ClientMessageType
 {
   CLIENT_REQUEST = 0;
