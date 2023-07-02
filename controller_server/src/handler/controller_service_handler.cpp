@@ -182,15 +182,6 @@ void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::GateLeaveGame(::google::protobuf::RpcController* controller,
-	const ::GateLeaveGameRequest* request,
-	::google::protobuf::Empty* response,
-	 ::google::protobuf::Closure* done)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
-
 void ControllerServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,
 	const ::GateClientMessageRequest* request,
 	::google::protobuf::Empty* response,
