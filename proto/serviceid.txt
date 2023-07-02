@@ -21,7 +21,6 @@
 20=ControllerPlayerServiceTest
 21=ControllerServiceStartGs
 22=ControllerServiceGateConnect
-23=ControllerServiceGateLeaveGame
 24=ControllerServiceGatePlayerService
 25=ControllerServiceGateDisconnect
 26=ControllerServiceStartLs
