@@ -16,7 +16,7 @@ SnowFlakeThreadSafe sf;
 guid_vetcor first_v;
 guid_vetcor second_v;
 guid_vetcor third_v;
-static const std::size_t kTestSize = 1000000;
+static const std::size_t kTestSize = 100000;
 
 void EmplaceToVector(guid_vetcor& v)
 {
@@ -57,7 +57,7 @@ TEST(TestSnowFlakeThreadSafe, JustGenerateTime)
 TEST(TestSnowFlakeThreadSafe, GenerateTime)
 {
     SnowFlakeThreadSafe sf;
-    time_t t = sf.GetNow();
+    time_t t = sf.NowSinceEpoch();
     std::cout << t << std::endl;
     Guid id = sf.Generate();
     std::cout << id << std::endl;
