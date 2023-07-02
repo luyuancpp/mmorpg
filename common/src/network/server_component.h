@@ -13,7 +13,7 @@ struct RpcServerConnection
 
     bool Connected() const { return conn_->connected(); }
 
-	void CallMethod(uint32_t message_id, const ::google::protobuf::Message& request)
+	void CallMethod(uint32_t message_id, const ::google::protobuf::Message& request) const
 	{
 		if (!Connected())
 		{
@@ -22,7 +22,7 @@ struct RpcServerConnection
 		channel_->CallMethod(message_id, request);
 	}
 
-    void Send(uint32_t message_id, const ::google::protobuf::Message& message)
+    void Send(uint32_t message_id, const ::google::protobuf::Message& message) const
     {
 		if (!Connected())
 		{
@@ -31,7 +31,7 @@ struct RpcServerConnection
         channel_->Send(message_id, message);
     }
 
-    void Route2Node(uint32_t message_id, const ::google::protobuf::Message& message)
+    void Route2Node(uint32_t message_id, const ::google::protobuf::Message& message) const
     {
 		if (!Connected())
 		{
@@ -42,7 +42,7 @@ struct RpcServerConnection
 
     void SendRouteResponse(uint32_t message_id,
                            uint64_t id,
-                           const std::string& message_bytes)
+                           const std::string& message_bytes) const
     {
         if (!Connected())
         {
