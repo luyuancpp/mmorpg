@@ -13,11 +13,6 @@ public:
 		::google::protobuf::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void GateLeaveGame(::google::protobuf::RpcController* controller,
-		const ::GateLeaveGameRequest* request,
-		::google::protobuf::Empty* response,
-		 ::google::protobuf::Closure* done)override;
-
 	void GatePlayerService(::google::protobuf::RpcController* controller,
 		const ::GateClientMessageRequest* request,
 		::google::protobuf::Empty* response,

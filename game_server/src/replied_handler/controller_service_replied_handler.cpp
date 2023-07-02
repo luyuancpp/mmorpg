@@ -60,11 +60,7 @@ void OnControllerServiceGateConnectRepliedHandler(const TcpConnectionPtr& conn, 
 ///<<< END WRITING YOUR CODE
 }
 
-void OnControllerServiceGateLeaveGameRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<google::protobuf::Empty>& replied, Timestamp timestamp)
-{
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-}
+
 
 void OnControllerServiceGatePlayerServiceRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<google::protobuf::Empty>& replied, Timestamp timestamp)
 {
