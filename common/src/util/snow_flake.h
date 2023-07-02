@@ -75,7 +75,6 @@ private:
         {
             return;
         }
-        assert(step_ == 0);
         step_ = (step_ + 1) & kStepMask;
         // arrive current seconds max id ,use next time id
         ++last_time_;
