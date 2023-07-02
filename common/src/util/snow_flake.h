@@ -14,7 +14,7 @@
 //https://github.com/bwmarrin/snowflake
 //https://en.cppreference.com/w/cpp/chrono/duration second time byte
 //total bit 63 for lua 
-static constexpr uint64_t kEpoch = 1688298072000;
+static constexpr uint64_t kEpoch = 1688298072;
 static constexpr uint64_t kNodeBits = 14;
 static constexpr uint64_t kStepBits = 14;
 static constexpr uint64_t kTimeByte = 35;
