@@ -23,142 +23,49 @@ static constexpr uint64_t kTimeShift = kNodeBits + kStepBits;
 static constexpr uint64_t kNodeShift = kStepBits;
 static constexpr uint64_t kStepMask = -1 ^ (-1 << kStepBits);
 
-//Ê±ÖÓ»Øµ÷
-
-class SnowFlakeThreadSafe
-{
-public:
-    typedef std::mutex MutexLock;
-    typedef std::unique_lock<MutexLock> MutexLockGuard;
-
-    SnowFlakeThreadSafe(const SnowFlakeThreadSafe&) = delete;
-    SnowFlakeThreadSafe& operator=(const SnowFlakeThreadSafe&) = delete;
-
-    explicit SnowFlakeThreadSafe()
-        :node_id_(0),
-        node_(0)
-    {
-    }
-
-    void set_node_id(uint16_t node_id)
-    {
-        node_id_ = node_id;
-        node_ = node_id;
-        node_ = (node_ << kTimeByte) << kStepBits;
-    }
-    uint16_t node_id()const { return node_id_; }
-
-    time_t NowSinceEpoch() const
-    {
-        return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count()
-        - kEpoch;
-    }
-
-    Guid Generate()
-    {
-        uint32_t step = 0;
-        uint64_t time = 0;
-        {
-            MutexLockGuard m(mutex_);
-            const uint64_t time_now = NowSinceEpoch();
-            if (time_now > last_time_)
-            {
-                step_ = 0;
-                last_time_ = time_now;
-                Incremented();
-            }
-            else if (time_now == last_time_)
-            {
-                Incremented();
-            }
-            else
-            {
-                //log error if diff max 1 s
-                Incremented();
-            }
-            step = step_;
-            time = last_time_;
-        }
-              
-        return (time << kTimeShift) |
-                (node_ << kNodeShift) |
-                step;
-    }
-private:
-    inline void Incremented() 
-    {
-        step_ = (step_ + 1) & kStepMask;
-        if (step_ != 0)
-        {
-            return;
-        }
-        assert(step_ == 0);
-        step_ = (step_ + 1) & kStepMask;
-        // arrive current seconds max id ,use next time id
-        ++last_time_;            
-    }
-
-uint16_t node_id_{ 0 };
-uint64_t node_{ 0 };   
-uint64_t last_time_{ 0 };
-uint32_t step_{ 0 };
-mutable MutexLock mutex_;
-};
-
 class SnowFlake
 {
 public:
     SnowFlake(const SnowFlake&) = delete;
     SnowFlake& operator=(const SnowFlake&) = delete;
+    SnowFlake() {}
 
-    explicit SnowFlake()
-        :node_id_(0),
-        node_(0)
-    {
-    }
-
-    void set_node_id(uint16_t node_id)
+    inline void set_node_id(uint16_t node_id)
     {
         node_id_ = node_id;
         node_ = node_id;
         node_ = (node_ << kTimeByte) << kStepBits;
     }
-    uint16_t node_id()const { return node_id_; }
+    inline uint16_t node_id()const { return node_id_; }
 
-    time_t NowSinceEpoch() const
+    inline time_t NowSinceEpoch() const
     {
         return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count()
             - kEpoch;
     }
 
-    Guid Generate()
+    inline Guid Generate()
     {
-        uint32_t step = 0;
-        uint64_t time = 0;
+        const uint64_t time_now = NowSinceEpoch();
+        if (time_now > last_time_)
         {
-            const uint64_t time_now = NowSinceEpoch();
-            if (time_now > last_time_)
-            {
-                step_ = 0;
-                last_time_ = time_now;
-                Incremented();
-            }
-            else if (time_now == last_time_)
-            {
-                Incremented();
-            }
-            else
-            {
-                //log error if diff max 1 s
-                Incremented();
-            }
-            step = step_;
-            time = last_time_;
+            step_ = 0;
+            last_time_ = time_now;
+            Incremented();
+        }
+        else if (time_now == last_time_)
+        {
+            Incremented();
+        }
+        else
+        {
+            //log error if diff max 1 s
+            Incremented();
         }
 
-        return (time << kTimeShift) |
+        return (last_time_ << kTimeShift) |
             (node_ << kNodeShift) |
-            step;
+            step_;
     }
 private:
     inline void Incremented()
@@ -179,6 +86,26 @@ private:
     uint64_t last_time_{ 0 };
     uint32_t step_{ 0 };
 };
+
+class SnowFlakeThreadSafe : public SnowFlake
+{
+public:
+    typedef std::mutex MutexLock;
+    typedef std::unique_lock<MutexLock> MutexLockGuard;
+
+    SnowFlakeThreadSafe(const SnowFlakeThreadSafe&) = delete;
+    SnowFlakeThreadSafe& operator=(const SnowFlakeThreadSafe&) = delete;
+    SnowFlakeThreadSafe() {}
+    Guid Generate()
+    {
+        MutexLockGuard m(mutex_);
+        return SnowFlake::Generate();
+    }
+private:
+mutable MutexLock mutex_;
+};
+
+
 
 //服务器重启以后失效的
 template <size_t kNodeBit>
