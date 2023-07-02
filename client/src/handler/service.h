@@ -18,7 +18,6 @@ using namespace muduo::net;
 using LoginResponsePtr = std::shared_ptr<LoginResponse>;
 using CreatePlayerResponsePtr = std::shared_ptr<CreatePlayerResponse>;
 using EnterGameResponsePtr = std::shared_ptr<EnterGameResponse>;
-using LeaveGameResponsePtr = std::shared_ptr<LeaveGameResponse>;
 using MessageBodyPtr = std::shared_ptr<MessageBody>;
 using EnterSeceneS2CPtr = std::shared_ptr<EnterSceneS2C>;
 
@@ -40,20 +39,10 @@ public:
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
     void ReadyGo();
     
-    
-    void OnEnterGameReplied(const muduo::net::TcpConnectionPtr& conn,
-        const EnterGameResponsePtr& message,
-        muduo::Timestamp);
-
-    void OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn,
-        const LeaveGameResponsePtr& message,
-        muduo::Timestamp);
-
 	void OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& conn,
 		const MessageBodyPtr& message,
 		muduo::Timestamp);
-    
-    void EnterGs(Guid guid);
+
 
 private:
     void DisConnect();

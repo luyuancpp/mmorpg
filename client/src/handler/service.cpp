@@ -44,14 +44,6 @@ void ClientService::ReadyGo()
     tls_lua_state["ReadyGo"]();
 }
 
-
-void ClientService::OnLeaveGameReplied(const muduo::net::TcpConnectionPtr& conn, 
-    const LeaveGameResponsePtr& message, 
-    muduo::Timestamp)
-{
-    DisConnect();
-}
-
 void ClientService::OnMessageBodyReplied(const muduo::net::TcpConnectionPtr& conn,
     const MessageBodyPtr& message,
     muduo::Timestamp t)
