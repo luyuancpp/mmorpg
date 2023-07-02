@@ -53,10 +53,6 @@ public:
             last_time_ = time_now;
             Incremented();
         }
-        else if (time_now == last_time_)
-        {
-            Incremented();
-        }
         else
         {
             //log error if diff max 1 s
