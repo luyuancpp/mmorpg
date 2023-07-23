@@ -25,7 +25,9 @@
 
 void SendCtrlEnterGame(Guid player_id)
 {
-	if (const auto it = login_tls.session_list().find(cl_tls.session_id()); login_tls.session_list().end() == it)
+	//todo 不同场景异步进入
+	if (const auto it = login_tls.session_list().find(cl_tls.session_id());
+		login_tls.session_list().end() == it)
 	{
 		return;
 	}
@@ -94,12 +96,12 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	CheckReturnClosureError(sit->second->EnterGame());
 
 	// long time in login processing
-	auto player_id = request->player_id();
+	const auto player_id = request->player_id();
 	if (!sit->second->HasPlayer(player_id))
 	{
 		ReturnClosureError(kRetLoginPlayerGuidError);
 	}
-	//todo 已经在其他login
+	//todo 已经在其他login,异步问题
 	player_database new_player;
 	login_tls.redis().Load(new_player, player_id);
 	//test
