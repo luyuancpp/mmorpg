@@ -54,7 +54,7 @@ private:
         client_receiver_.OnConnection(conn);
     }
 
-    static void OnUnknownMessage(const TcpConnectionPtr& conn,
+    void OnUnknownMessage(const TcpConnectionPtr& conn,
                                  const MessagePtr& message,
                                  Timestamp)
     {
