@@ -21,8 +21,7 @@ using namespace muduo::net;
 
 RpcServer::RpcServer(EventLoop* loop,
                      const InetAddress& listenAddr)
-    : server_(loop, listenAddr, "RpcServer"),
-    emp_(EventManager::New())
+    : server_(loop, listenAddr, "RpcServer")
 {
   server_.setConnectionCallback(
       std::bind(&RpcServer::onConnection, this, _1));
@@ -59,7 +58,7 @@ void RpcServer::onConnection(const TcpConnectionPtr& conn)
     conn->setContext(RpcChannelPtr());
     // FIXME:
   }
-  emp_->emit<OnBeConnectedEvent>(conn);
+  tls.dispatcher.trigger<OnBeConnectedEvent>(conn);
 }
 
 // void RpcServer::onMessage(const TcpConnectionPtr& conn,

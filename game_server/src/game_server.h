@@ -14,13 +14,14 @@
 #include "controller_service.pb.h"
 #include "logic_proto/lobby_scene.pb.h"
 
-class GameServer : muduo::noncopyable, public Receiver<GameServer>
+class GameServer : muduo::noncopyable
 {
 public:
     using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
     GameServer(muduo::net::EventLoop* loop);
+    ~GameServer();
 
     inline RpcClientPtr& lobby_node() { return lobby_node_; }
     const ::game_server_db& gs_info() const { return gs_info_; }
@@ -41,8 +42,8 @@ public:
     void CallControllerStartGs(ControllerSessionPtr controller_session);
     void CallLobbyStartGs();
 
-    void receive(const OnConnected2ServerEvent& es);
-    void receive(const OnBeConnectedEvent& es);
+    void Receive1(const OnConnected2ServerEvent& es);
+    void Receive2(const OnBeConnectedEvent& es);
 
 private:    
     void Connect2Lobby();

@@ -19,9 +19,9 @@ class ControllerServer : muduo::noncopyable, public Receiver<ControllerServer>
 public:
 	using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
 	using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
-
-
+	
 	ControllerServer(muduo::net::EventLoop* loop);
+	~ControllerServer();
 
 	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
 	inline uint32_t controller_node_id()const { return serverinfos_.controller_info().id(); }
@@ -34,8 +34,8 @@ public:
 
     void StartServer(const ::servers_info_data& info);
 
-	void receive(const OnConnected2ServerEvent& es);
-	void receive(const OnBeConnectedEvent& es);
+	void Receive1(const OnConnected2ServerEvent& es);
+	void Receive2(const OnBeConnectedEvent& es);
 
 private:
 

@@ -21,6 +21,11 @@ void GateServer::LoadConfig()
 	DeployConfig::GetSingleton().Load("deploy.json");
 }
 
+GateServer::~GateServer()
+{
+    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GateServer::Receive1>(*this);
+}
+
 void GateServer::Init()
 {
     g_gate_node = this;
@@ -33,7 +38,7 @@ void GateServer::Init()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateServer::Receive1>(*this);
     deploy_session_->connect();
 }
 
@@ -65,14 +70,13 @@ void GateServer::StartServer()
             InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
             controller_node_ = std::make_unique<RpcClient>(loop_, controller_addr);
             controller_node_->registerService(&gate_service_handler_);
-            controller_node_->subscribe<OnConnected2ServerEvent>(*this);
             controller_node_->connect();
         }
     );
 }
 
 
-void GateServer::receive(const OnConnected2ServerEvent& es)
+void GateServer::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
     if (IsSameAddr(conn->peerAddress(), DeployConfig::GetSingleton().deploy_info()))

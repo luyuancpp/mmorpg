@@ -14,6 +14,7 @@ public:
 	using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
 	LoginServer(muduo::net::EventLoop* loop);
+	~LoginServer();
 
 	inline RpcClientPtr& controller_node() { return controller_session_; }
 	inline RpcClientPtr& db_node() { return db_session_; }
@@ -30,8 +31,8 @@ public:
 
 	void StartServer(const ::servers_info_data& info);
 
-	void receive(const OnConnected2ServerEvent& es);
-	void receive(const OnBeConnectedEvent& es);
+	void Receive1(const OnConnected2ServerEvent& es) const;
+	void Receive2(const OnBeConnectedEvent& es);
 
 private:
 	muduo::net::EventLoop* loop_{ nullptr };

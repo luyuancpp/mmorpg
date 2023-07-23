@@ -11,13 +11,14 @@
 #include "src/network/rpc_connection_event.h"
 #include "src/service/deploy_service.h"
 
-class DeployServer : public Receiver<DeployServer>
+class DeployServer
 {
 public:
     using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
     using PbSyncRedisClientPtr = std::shared_ptr<MessageSyncRedisClient>;
 
     DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAddress& listen_addr);
+	~DeployServer();
 
     MysqlClientPtr& player_mysql_client() { return db_; }
     ReuseGsId& reuse_game_id() { return reuse_id_; }
@@ -34,7 +35,7 @@ public:
     void OnDisConnected(const muduo::net::TcpConnectionPtr& conn);
     void LogReuseInfo();
    
-    void receive(const OnBeConnectedEvent& es);
+    void Receive(const OnBeConnectedEvent& es);
 private:
     void InitGroupDb();
 

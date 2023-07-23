@@ -9,6 +9,7 @@
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_server.h"
 #include "src/handler/database_service_handler.h"
+#include "src/util/defer.h"
 
 class DatabaseServer : muduo::noncopyable, public Receiver<DatabaseServer>
 {
@@ -18,6 +19,7 @@ public:
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
     DatabaseServer(muduo::net::EventLoop* loop);
+    ~DatabaseServer();
 
     inline MysqlClientPtr& player_mysql_client(){ return database_; }
     inline PbSyncRedisClientPtr& redis_client() { return redis_; }
@@ -30,10 +32,11 @@ public:
 
     void StartServer(const ::servers_info_data& info);
 
-    void receive(const OnConnected2ServerEvent& es);
+    void Receive(const OnConnected2ServerEvent& es) const;
 
 private:
     muduo::net::EventLoop* loop_{ nullptr };
+   
     MysqlClientPtr database_;
     PbSyncRedisClientPtr redis_;
     RpcServerPtr server_;

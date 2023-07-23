@@ -12,6 +12,11 @@ DatabaseServer::DatabaseServer(muduo::net::EventLoop* loop)
         database_(std::make_shared<MysqlClientPtr::element_type>()),
         redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()){}
 
+DatabaseServer::~DatabaseServer()
+{
+    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&DatabaseServer::Receive>(*this);
+}
+
 void DatabaseServer::Init()
 {
     GameConfig::GetSingleton().Load("game.json");
@@ -29,7 +34,7 @@ void DatabaseServer::ConnectDeploy()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_session_->subscribe<OnConnected2ServerEvent>(*this); 
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&DatabaseServer::Receive>(*this);
     deploy_session_->connect();
 }
 
@@ -58,7 +63,7 @@ void DatabaseServer::StartServer(const ::servers_info_data& info)
     Start();
 }
 
-void DatabaseServer::receive(const OnConnected2ServerEvent& es)
+void DatabaseServer::Receive(const OnConnected2ServerEvent& es) const
 {
     if (!es.conn_->connected())
     {

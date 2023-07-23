@@ -8,8 +8,8 @@
 #include "muduo/net/TcpClient.h"
 #include "muduo/net/TcpConnection.h"
 
-#include "src/event/event.h"
 #include "src/network/rpc_channel.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "rpc_connection_event.h"
 
 using namespace muduo;
@@ -22,8 +22,7 @@ public:
     RpcClient(EventLoop* loop,
         const InetAddress& serverAddr)
         : client_(loop, serverAddr, "RpcClient"),
-          channel_(new RpcChannel),
-          emp_(EventManager::New())
+          channel_(new RpcChannel)
     {
         client_.setConnectionCallback(
             std::bind(&RpcClient::onConnection, this, _1));
@@ -54,10 +53,7 @@ public:
 
     //bool connected()const { return nullptr != client_.connection(); }
     inline bool connected()const { return connected_; }    
-
-    template <typename E, typename Receiver>
-    void subscribe(Receiver& receiver) { emp_->subscribe<E>(receiver); }
-
+    
     void registerService(google::protobuf::Service* service)
     {
         const google::protobuf::ServiceDescriptor* desc = service->GetDescriptor();
@@ -114,14 +110,13 @@ private:
             connected_ = false;
         }
         //todo 这里如果把自己删除了怎么办
-        emp_->emit<OnConnected2ServerEvent>(conn);
+        tls.dispatcher.trigger<OnConnected2ServerEvent>(conn);
     }
 
     bool connected_{ false };
 
     TcpClient client_;
     RpcChannelPtr channel_;
-    EventManagerPtr emp_;
     std::map<std::string, ::google::protobuf::Service*> services_;
 };
 

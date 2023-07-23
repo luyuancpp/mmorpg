@@ -38,7 +38,13 @@ ControllerServer::ControllerServer(muduo::net::EventLoop* loop)
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 { 
     global_entity() = tls.registry.create();
-}    
+}
+
+ControllerServer::~ControllerServer()
+{
+	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&ControllerServer::Receive1>(*this);
+	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&ControllerServer::Receive2>(*this);
+}
 
 void ControllerServer::Init()
 {
@@ -66,7 +72,7 @@ void ControllerServer::Connect2Deploy()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&ControllerServer::Receive1>(*this);
     deploy_session_->connect();
 }
 
@@ -84,7 +90,7 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
     node_info_.set_node_id(my_node_info.id());
     InetAddress controller_addr(my_node_info.ip(), my_node_info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
-    server_->subscribe<OnBeConnectedEvent>(*this);
+    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&ControllerServer::Receive2>(*this);
     server_->registerService(&contoller_service_);
     for (auto& it : g_server_service)
     {
@@ -117,7 +123,7 @@ void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
     (*try_gate_node_ptr)->session_.Send(GateServiceStartGSMsgId, request);
 }
 
-void ControllerServer::receive(const OnConnected2ServerEvent& es)
+void ControllerServer::Receive1(const OnConnected2ServerEvent& es)
 {
 	auto& conn = es.conn_;
     if (conn->connected())
@@ -157,7 +163,7 @@ void ControllerServer::receive(const OnConnected2ServerEvent& es)
 	
 }
 
-void ControllerServer::receive(const OnBeConnectedEvent& es)
+void ControllerServer::Receive2(const OnBeConnectedEvent& es)
 {
     auto& conn = es.conn_;
     if (conn->connected())
@@ -214,7 +220,6 @@ void ControllerServer::Connect2Lobby()
 	InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
 	lobby_session_ = std::make_unique<RpcClient>(loop_, lobby_addr);
 	lobby_session_->registerService(&contoller_service_);
-	lobby_session_->subscribe<OnConnected2ServerEvent>(*this);
 	lobby_session_->connect();
 }
 

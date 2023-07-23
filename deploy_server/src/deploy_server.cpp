@@ -16,6 +16,11 @@ DeployServer::DeployServer(muduo::net::EventLoop* loop, const muduo::net::InetAd
     db_->Connect(ci);
 }
 
+DeployServer::~DeployServer()
+{
+    tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&DeployServer::Receive>(*this);
+}
+
 void DeployServer::Start()
 {
     void InitMessageInfo();
@@ -46,7 +51,7 @@ void DeployServer::Start()
     InitLobbyDb<gate_server_db>(kGateSBeginPort, kGroup);
 
     LoadGSDb();
-    server_.subscribe<OnBeConnectedEvent>(*this);
+    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&DeployServer::Receive>(*this);
     server_.start();
 }
 
@@ -93,7 +98,7 @@ void DeployServer::LoadGSDb()
     scan_over_timer_.RunAfter(kScanOverSeconds, std::bind(&ReuseGsId::ScanOver, &reuse_id_));
 }
 
-void DeployServer::receive(const OnBeConnectedEvent& es)
+void DeployServer::Receive(const OnBeConnectedEvent& es)
 {
     auto& conn = es.conn_;
     if (!conn->connected())
