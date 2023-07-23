@@ -109,10 +109,9 @@ class ServerSequence
 public:
 static const uint8_t kNodeBit = 32;
 
-void set_node_id(uint32_t node_id)
+void set_node_id(uint64_t node_id)
 {
-	node_id_ = node_id;
-    node_id_ = node_id_ << kNodeBit;
+    node_id_ = node_id << kNodeBit;
 }
 
 uint32_t node_id(Guid guid)
