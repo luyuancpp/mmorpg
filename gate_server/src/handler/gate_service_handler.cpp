@@ -21,24 +21,23 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 	///<<< BEGIN WRITING YOUR CODE
 	InetAddress gs_addr(request->ip(), request->port());
 	entt::entity gs = entt::null;
-	for (auto e : tls.registry.view<InetAddress>())
+	for (const auto e : tls.registry.view<InetAddress>())
 	{
-		auto& c = tls.registry.get<InetAddress>(e);
-		if (gs_addr.toIpPort() == c.toIpPort())// to do node id，已经连接过了
+		if (auto& c = tls.registry.get<InetAddress>(e); gs_addr.toIpPort() == c.toIpPort())// to do node id，已经连接过了
 		{
 			return;
 		}
 		gs = e;
 	}
-	GsNode gsi;
-	gsi.node_info_.set_node_id(request->gs_node_id());
-	gsi.node_info_.set_node_type(kGameNode);
-	gsi.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
-	gsi.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gate_node);
-	gsi.gs_session_->registerService(&g_gate_node->gate_service_hanlder());
+	GsNode gs_node;
+	gs_node.node_info_.set_node_id(request->gs_node_id());
+	gs_node.node_info_.set_node_type(kGameNode);
+	gs_node.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
+	gs_node.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gate_node);
+	gs_node.gs_session_->registerService(&g_gate_node->gate_service_hanlder());
 	tls.registry.emplace<InetAddress>(gs, gs_addr);
-	gsi.gs_session_->connect();
-	gate_tls.game_nodes().emplace(request->gs_node_id(), std::move(gsi));
+	gs_node.gs_session_->connect();
+	gate_tls.game_nodes().emplace(request->gs_node_id(), std::move(gs_node));
 	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->gs_node_id();
 	///<<< END WRITING YOUR CODE
 }
