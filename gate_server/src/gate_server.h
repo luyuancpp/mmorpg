@@ -12,15 +12,9 @@
 #include "src/network/codec/codec.h"
 #include "src/network/codec/dispatcher.h"
 #include "src/handler/gate_service_handler.h"
-#include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_connection_event.h"
 
 #include "deploy_service.pb.h"
-#include "controller_service.pb.h"
-
-using namespace muduo;
-using namespace muduo::net;
-
 
 class GateServer : noncopyable, public Receiver<GateServer>
 {
@@ -51,9 +45,7 @@ public:
     void Init();
     
     void StartServer();
-
-
-
+    
     void receive(const OnConnected2ServerEvent& es);
 
 private:
@@ -62,9 +54,9 @@ private:
         client_receiver_.OnConnection(conn);
     }
 
-    void OnUnknownMessage(const TcpConnectionPtr& conn,
-        const MessagePtr& message,
-        Timestamp)
+    static void OnUnknownMessage(const TcpConnectionPtr& conn,
+                                 const MessagePtr& message,
+                                 Timestamp)
     {
         LOG_INFO << "onUnknownMessage: " << message->GetTypeName();
         conn->shutdown();

@@ -6,7 +6,7 @@
 
 struct Session
 {
-	static const uint32_t kInvalidNodeId{ UINT32_MAX };
+	static constexpr uint32_t kInvalidNodeId{ UINT32_MAX };
     bool ValidLogin()const { return login_node_id_ != kInvalidNodeId; }
 	uint32_t gs_node_id_{ kInvalidNodeId };
 	uint32_t login_node_id_{ kInvalidNodeId };
