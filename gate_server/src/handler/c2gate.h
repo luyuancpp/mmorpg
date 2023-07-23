@@ -11,9 +11,6 @@
 #include "database_service.pb.h"
 #include "c2gate.pb.h"
 
-using namespace muduo;
-using namespace muduo::net;
-
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;
 
 class ClientReceiver : muduo::noncopyable
@@ -22,14 +19,13 @@ public:
 
     ClientReceiver(ProtobufCodec& codec, ProtobufDispatcher& dispatcher);
 
-    RpcClientPtr& get_login_node();
-    RpcClientPtr& get_login_node(uint64_t session_id);
-    uint32_t find_valid_login_node_id(uint64_t session_id);
-    ProtobufCodec& codec() { return codec_; };
+    static RpcClientPtr& GetLoginNode(uint64_t session_id);
+    static uint32_t FindValidLoginNodeId(uint64_t session_id);
+    ProtobufCodec& codec() const { return codec_; }
 
     void OnConnection(const muduo::net::TcpConnectionPtr& conn);
 
-    void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { codec_.send(conn, messag); }
+    void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& message) { codec_.send(conn, message); }
 
     //client to gate 
 	void OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn,
@@ -38,7 +34,7 @@ public:
 
     inline uint64_t tcp_session_id(const muduo::net::TcpConnectionPtr& conn) { return boost::any_cast<uint64_t>(conn->getContext()); }
 
-    void Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
+    static void Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id);
 private:
     ProtobufCodec& codec_;
     ProtobufDispatcher& dispatcher_;   
