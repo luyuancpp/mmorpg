@@ -60,18 +60,19 @@ void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity playe
     {
         return;
     }
-    if (change_scene_queue.front().change_gs_type() == ControllerChangeSceneInfo::eSameGs)//同一个gs切换
+    //同一个gs切换
+    if (change_scene_queue.front().change_gs_type() == ControllerChangeSceneInfo::eSameGs)
     {
         TryChangeSameGsScene(player);//就算同gs,队列有消息也不能直接切换，
         return;
     }
-    else if (change_scene_queue.front().change_gs_type() == ControllerChangeSceneInfo::eDifferentGs)
+    
+    if (change_scene_queue.front().change_gs_type() == ControllerChangeSceneInfo::eDifferentGs)
     {
         //正在切换
         //切换gs  存储完毕之后才能进入下一个场景
         //放到存储完毕切换场景的队列里面，如果等够足够时间没有存储完毕，可能就是服务器崩溃了,注意，是可能 
         ChangeDiffGsScene(player);
-        return;
     }
 }
 
@@ -114,8 +115,8 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
     {
         return kRetChangeScenePlayerQueueComponentEmpty;
     }
-    auto& change_info = change_scene_queue.front();
-    auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
+    const auto& change_info = change_scene_queue.front();
+    const auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
     if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
     {
         change_scene_queue.pop_front();//todo
@@ -143,7 +144,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
     {
         return kRetChangeScenePlayerQueueComponentEmpty;
     }
-    auto& change_info = change_scene_queue.front();
+    const auto& change_info = change_scene_queue.front();
     if (change_info.change_gs_status() == ControllerChangeSceneInfo::eLeaveGsScene)
     {
         //正在切换
@@ -155,7 +156,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
     }
     else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eEnterGsSceneSucceed)
     {
-        auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
+        const auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
         if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
         {
             change_scene_queue.pop_front();//todo
