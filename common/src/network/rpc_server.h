@@ -13,7 +13,7 @@
 
 #include "muduo/net/TcpServer.h"
 
-#include "src/event/event.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 
 namespace google {
 namespace protobuf {
@@ -42,8 +42,6 @@ class RpcServer
   void registerService(::google::protobuf::Service*);
   void start();
 
-  template <typename E, typename Receiver>
-  void subscribe(Receiver& receiver) { emp_->subscribe<E>(receiver); }
  private:
   void onConnection(const TcpConnectionPtr& conn);
 
@@ -53,7 +51,6 @@ class RpcServer
 
   TcpServer server_;
   std::map<std::string, ::google::protobuf::Service*> services_;
-  EventManagerPtr emp_;
 };
 
 }  // namespace net

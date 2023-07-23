@@ -18,6 +18,12 @@ LobbyServer* g_lobby_server = nullptr;
 
 LobbyServer::LobbyServer(muduo::net::EventLoop* loop): loop_(loop){}
 
+LobbyServer::~LobbyServer()
+{
+	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&LobbyServer::Receive1>(*this);
+	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&LobbyServer::Receive2>(*this);
+}
+
 void LobbyServer::Init()
 {
     g_lobby_server = this;
@@ -38,7 +44,7 @@ void LobbyServer::ConnectDeploy()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&LobbyServer::Receive1>(*this);
     deploy_session_->connect();
 }
 
@@ -47,12 +53,12 @@ void LobbyServer::StartServer(const ::lobby_server_db& info)
     InetAddress lobby_addr(info.ip(), info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, lobby_addr);
     server_->registerService(&impl_);
-    server_->subscribe<OnBeConnectedEvent>(*this);
+    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&LobbyServer::Receive2>(*this);
     server_->start();
 }
 
 
-void LobbyServer::receive(const OnConnected2ServerEvent& es)
+void LobbyServer::Receive1(const OnConnected2ServerEvent& es) const
 {
     // started 
     if (nullptr != server_)
@@ -75,7 +81,7 @@ void LobbyServer::receive(const OnConnected2ServerEvent& es)
       
 }
 
-void LobbyServer::receive(const OnBeConnectedEvent& es)
+void LobbyServer::Receive2(const OnBeConnectedEvent& es)const
 {
 	auto& conn = es.conn_;
     if (conn->connected())

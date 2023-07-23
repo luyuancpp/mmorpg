@@ -33,7 +33,6 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 	gs_node.node_info_.set_node_id(request->gs_node_id());
 	gs_node.node_info_.set_node_type(kGameNode);
 	gs_node.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
-	gs_node.gs_session_->subscribe<OnConnected2ServerEvent>(*g_gate_node);
 	gs_node.gs_session_->registerService(&g_gate_node->gate_service_hanlder());
 	tls.registry.emplace<InetAddress>(gs, gs_addr);
 	gs_node.gs_session_->connect();

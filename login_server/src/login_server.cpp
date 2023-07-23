@@ -20,6 +20,12 @@ LoginServer::LoginServer(muduo::net::EventLoop* loop)
 {
 }
 
+LoginServer::~LoginServer()
+{
+	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&LoginServer::Receive1>(*this);
+	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&LoginServer::Receive2>(*this);
+}
+
 void LoginServer::Init()
 {
     g_login_node = this;
@@ -38,13 +44,13 @@ void LoginServer::ConnectDeploy()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_session_->subscribe<OnConnected2ServerEvent>(*this);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&LoginServer::Receive1>(*this);
     deploy_session_->connect();
 }
 
 void LoginServer::Start()
 {
-	server_->subscribe<OnBeConnectedEvent>(*this);
+	tls.dispatcher.sink<OnBeConnectedEvent>().connect<&LoginServer::Receive2>(*this);
     server_->registerService(&handler_);
     server_->start();
 }
@@ -78,7 +84,7 @@ void LoginServer::StartServer(const ::servers_info_data& info)
     Start();
 }
 
-void LoginServer::receive(const OnConnected2ServerEvent& es)
+void LoginServer::Receive1(const OnConnected2ServerEvent& es) const
 {
     if (!es.conn_->connected())
     {
@@ -95,7 +101,7 @@ void LoginServer::receive(const OnConnected2ServerEvent& es)
 }
 
 
-void LoginServer::receive(const OnBeConnectedEvent& es)
+void LoginServer::Receive2(const OnBeConnectedEvent& es)
 {
 	auto& conn = es.conn_;
 	if (conn->connected())

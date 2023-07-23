@@ -35,6 +35,12 @@ GameServer::GameServer(muduo::net::EventLoop* loop)
     :loop_(loop),
      redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()){}
 
+GameServer::~GameServer()
+{
+	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GameServer::Receive1>(*this);
+	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&GameServer::Receive2>(*this);
+}
+
 void GameServer::Init()
 {
     g_game_node = this; 
@@ -70,7 +76,7 @@ void GameServer::InitNetwork()
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_node_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    deploy_node_->subscribe<OnConnected2ServerEvent>(*this);
+	tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameServer::Receive1>(*this);
     deploy_node_->connect();
 }
 
@@ -113,7 +119,7 @@ void GameServer::StartGsDeployReplied(const StartGSResponse& replied)
     node_info_.set_node_id(gs_info_.id());
     InetAddress node_addr(gs_info_.ip(), gs_info_.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, node_addr);
-    server_->subscribe<OnBeConnectedEvent>(*this);
+    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&GameServer::Receive2>(*this);
     server_->registerService(&gs_service_impl_);
     for (auto& it : g_server_service)
     {
@@ -140,7 +146,6 @@ void GameServer::OnAcquireLobbyInfoReplied(LobbyInfoResponse& replied)
         {
             controller_node_session->registerService(it.second.get());
         }
-		controller_node_session->subscribe<OnConnected2ServerEvent>(*this);
 		controller_node_session->connect();
 	}
 }
@@ -181,7 +186,7 @@ void GameServer::CallLobbyStartGs()
     lobby_node_->CallMethod(LobbyServiceStartCrossGsMsgId, rq);
 }
 
-void GameServer::receive(const OnConnected2ServerEvent& es)
+void GameServer::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
     if (deploy_node_->peer_addr().toIpPort() == conn->peerAddress().toIpPort())
@@ -232,7 +237,7 @@ void GameServer::receive(const OnConnected2ServerEvent& es)
   
 }
 
-void GameServer::receive(const OnBeConnectedEvent& es)
+void GameServer::Receive2(const OnBeConnectedEvent& es)
 {
     auto& conn = es.conn_;
 	if (conn->connected())
@@ -264,6 +269,5 @@ void GameServer::receive(const OnBeConnectedEvent& es)
 void GameServer::Connect2Lobby()
 {
     lobby_node_->registerService(&gs_service_impl_);
-    lobby_node_->subscribe<OnConnected2ServerEvent>(*this);
     lobby_node_->connect();
 }

@@ -175,7 +175,7 @@ class EventManager : public std::enable_shared_from_this<EventManager> {
    */
   template <typename E, typename Receiver>
   void subscribe(Receiver &receiver) {
-    void (Receiver::*receive)(const E &) = &Receiver::receive;
+    void (Receiver::*receive)(const E &) = &Receiver::Receive;
     auto family_id = Event<E>::family();
     CallbackPtr wrapper(new EventCallbackWrapper<E>(std::bind(receive, &receiver, std::placeholders::_1)));
     auto it = family_receviers_.find(family_id);

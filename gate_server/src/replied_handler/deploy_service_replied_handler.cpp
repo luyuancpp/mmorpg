@@ -76,7 +76,6 @@ void OnDeployServiceLoginNodeInfoRepliedHandler(const TcpConnectionPtr& conn, co
         InetAddress login_addr(login_info.ip(), login_info.port());
         auto& login_node = it.first->second;
         login_node.login_session_ = std::make_unique<RpcClientPtr::element_type>(g_gate_node->loop(), login_addr);
-        login_node.login_session_->subscribe<OnConnected2ServerEvent>(*g_gate_node);
         login_node.login_session_->registerService(&g_gate_node->gate_service_hanlder());
         login_node.login_session_->connect();
     }

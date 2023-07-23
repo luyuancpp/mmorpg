@@ -16,7 +16,7 @@
 
 #include "deploy_service.pb.h"
 
-class GateServer : noncopyable, public Receiver<GateServer>
+class GateServer : noncopyable
 {
 public:
     using TcpServerPtr = std::unique_ptr<TcpServer>;
@@ -27,6 +27,8 @@ public:
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         client_receiver_(codec_, dispatcher_)
     { }
+
+    ~GateServer();
 
     inline EventLoop* loop() { return loop_; }
     inline ProtobufCodec& codec() { return codec_; };
@@ -46,7 +48,7 @@ public:
     
     void StartServer();
     
-    void receive(const OnConnected2ServerEvent& es);
+    void Receive1(const OnConnected2ServerEvent& es);
 
 private:
     void OnConnection(const TcpConnectionPtr& conn)

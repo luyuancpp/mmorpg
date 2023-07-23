@@ -16,6 +16,7 @@ class LobbyServer : muduo::noncopyable, public Receiver<LobbyServer>
 public:
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
     LobbyServer(muduo::net::EventLoop* loop);
+    ~LobbyServer();
 
     void Init();
 
@@ -23,8 +24,8 @@ public:
 
     void StartServer(const ::lobby_server_db& info);
 
-    void receive(const OnConnected2ServerEvent& es);
-    void receive(const OnBeConnectedEvent& es);
+    void Receive1(const OnConnected2ServerEvent& es) const;
+    void Receive2(const OnBeConnectedEvent& es)const;
 private:
     muduo::net::EventLoop* loop_{ nullptr };
     RpcServerPtr server_;
