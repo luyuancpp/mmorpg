@@ -378,15 +378,16 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		//告诉账号被顶
 		tls.registry.emplace<Guid>(session, request->player_id());
         //断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
-        auto player_session = tls.registry.try_get<PlayerSession>(player);
-        if (nullptr != player_session)
+		if (const auto player_session = tls.registry.try_get<PlayerSession>(player);
+			nullptr != player_session)
         {
 			GateNodeKickConnRequest message;
             message.set_session_id(cl_tls.session_id());
             Send2Gate(GateServiceKickConnByControllerMsgId, message, player_session->gate_node_id());
         }
 		UpdatePlayerGate(player);
-		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
+		//连续顶几次,所以用emplace_or_replace
+		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
 	}
 	
 	
