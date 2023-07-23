@@ -62,7 +62,7 @@ entt::entity GetPlayerByConnId(uint64_t session_id)
 	return player_it->second;
 }
 
-void InitPlayerGate(entt::entity player)
+void UpdatePlayerGate(entt::entity player)
 {
 	auto& player_session = tls.registry.get_or_emplace<PlayerSession>(player);
 	player_session.gate_session_.set_session_id(cl_tls.session_id());
@@ -328,10 +328,10 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		LOG_ERROR << "connection not found " << cl_tls.session_id();
 		return;
 	}
-	auto session = session_it->second;
-	auto player_id = request->player_id();
-	auto player_it = controller_tls.player_list().find(player_id);
-	if (const auto try_account = tls.registry.try_get<PlayerAccount>(session); nullptr != try_account)
+	const auto session = session_it->second;
+	const auto player_it = controller_tls.player_list().find(request->player_id());
+	if (const auto try_account = tls.registry.try_get<PlayerAccount>(session);
+		nullptr != try_account)
 	{
 		login_accounts_session_.erase(**try_account);
 	}
@@ -339,24 +339,24 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 	{
 		//把旧的connection 断掉
 		auto player = tls.registry.create();
-		controller_tls.player_list().emplace(player_id, player);
-		tls.registry.emplace<Guid>(session, player_id);
-		tls.registry.emplace<Guid>(player, player_id);
+		controller_tls.player_list().emplace(request->player_id(), player);
+		tls.registry.emplace<Guid>(session, request->player_id());
+		tls.registry.emplace<Guid>(player, request->player_id());
 		tls.registry.emplace<PlayerAccount>(player, tls.registry.get<PlayerAccount>(session_it->second));
         PlayerCommonSystem::InitPlayerComponent(player);	
 		
 		GetSceneParam get_scene_param;
         get_scene_param.scene_confid_ = 1;
-		auto scene = ServerNodeSystem::GetMainSceneNotFull(get_scene_param);
+		const auto scene = ServerNodeSystem::GetMainSceneNotFull(get_scene_param);
 		if (scene == entt::null)//找不到上次的场景，放到默认场景里面
 		{
 			// todo default
-			LOG_INFO << "player " << player_id << " enter default secne";
+			LOG_INFO << "player " << request->player_id() << " enter default secne";
 		} 
-		InitPlayerGate(player);
+		UpdatePlayerGate(player);
 		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 
-        auto try_player_session = tls.registry.try_get<PlayerSession>(player);
+		const auto try_player_session = tls.registry.try_get<PlayerSession>(player);
         if (nullptr == try_player_session)
         {
             LOG_ERROR << "enter scene not found or destroy" << tls.registry.get<Guid>(player);
@@ -374,9 +374,9 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 	{
 		//顶号的时候已经在场景里面了,不用再进入场景了
 		//todo换场景的过程中被顶了
-		auto player = player_it->second;
+		const auto player = player_it->second;
 		//告诉账号被顶
-		tls.registry.emplace<Guid>(session, player_id);
+		tls.registry.emplace<Guid>(session, request->player_id());
         //断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
         auto player_session = tls.registry.try_get<PlayerSession>(player);
         if (nullptr != player_session)
@@ -385,7 +385,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
             message.set_session_id(cl_tls.session_id());
             Send2Gate(GateServiceKickConnByControllerMsgId, message, player_session->gate_node_id());
         }
-		InitPlayerGate(player);
+		UpdatePlayerGate(player);
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);//连续顶几次,所以用emplace_or_replace
 	}
 	
