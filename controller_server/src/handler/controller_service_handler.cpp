@@ -82,8 +82,8 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 {
 ///<<< BEGIN WRITING YOUR CODE
 	response->set_controller_node_id(controller_node_id());
-	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
-	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
+	const InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
+	const InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity gs{ entt::null };
 	for (auto e : tls.registry.view<RpcServerConnection>())
 	{
@@ -102,7 +102,7 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 	}
 
 	auto c = tls.registry.get<RpcServerConnection>(gs);
-	GsNodePtr gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
+	auto gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	gs_node_ptr->node_info_.set_node_type(kGameNode);
 	gs_node_ptr->node_inet_addr_ = service_addr;//为了停掉gs，或者gs断线用

@@ -130,7 +130,7 @@ if (nullptr != done)\
 {\
 done->Run();\
 }\
-return;
+return
 
 #define ReturnClosureOK ReturnClosureError(kRetOK);
 

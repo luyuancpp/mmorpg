@@ -114,8 +114,8 @@ void LoginServer::receive(const OnBeConnectedEvent& es)
 			continue;
 		}
 
-		auto gate_node = tls.registry.try_get<GateNodePtr>(e);
-		if (nullptr != gate_node && (*gate_node)->node_info_.node_type() == kGateNode)
+		if (const auto gate_node = tls.registry.try_get<GateNodePtr>(e);
+			nullptr != gate_node && (*gate_node)->node_info_.node_type() == kGateNode)
 		{
 			//todo
             login_tls.gate_nodes().erase((*gate_node)->node_info_.node_id());
