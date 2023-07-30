@@ -18,6 +18,6 @@ using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 
 void InitMessageInfo();
 
-extern std::array<RpcService, 75> g_message_info;
+extern std::array<RpcService, 76> g_message_info;
 
 extern std::unordered_set<uint32_t> g_c2s_service_id;
