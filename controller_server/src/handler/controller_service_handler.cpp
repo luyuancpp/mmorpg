@@ -340,6 +340,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		//把旧的connection 断掉
 		auto player = tls.registry.create();
 		controller_tls.player_list().emplace(request->player_id(), player);
+		
 		tls.registry.emplace<Guid>(session, request->player_id());
 		tls.registry.emplace<Guid>(player, request->player_id());
 		tls.registry.emplace<PlayerAccount>(player, tls.registry.get<PlayerAccount>(session_it->second));
@@ -356,6 +357,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		UpdatePlayerGate(player);
 		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 
+		//todo 回话没有了玩家还在
 		const auto try_player_session = tls.registry.try_get<PlayerSession>(player);
         if (nullptr == try_player_session)
         {

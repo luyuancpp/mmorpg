@@ -22,13 +22,13 @@ void PlayerCommonSystem::InitPlayerComponent(entt::entity player)
 
 void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
 {
-    auto try_player_session = tls.registry.try_get<PlayerSession>(player);
+    const auto try_player_session = tls.registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
         LOG_ERROR << "player session not valid";
         return;
     }
-    auto player_id = tls.registry.try_get<Guid>(player);
+    const auto player_id = tls.registry.try_get<Guid>(player);
     if (nullptr == player_id)
     {
         LOG_ERROR << "player  not found ";
@@ -39,11 +39,10 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
     message.set_player_id(*player_id);
     Send2Gs(GameServiceUpdateSessionMsgId, message, try_player_session->gs_node_id());
 
-    auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
-    if (nullptr != try_enter_gs)
+    if (const auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
+        nullptr != try_enter_gs)
     {
-        auto enter_gs_type = try_enter_gs->enter_gs_type();
-        if (enter_gs_type != LOGIN_NONE)
+        if (const auto enter_gs_type = try_enter_gs->enter_gs_type(); enter_gs_type != LOGIN_NONE)
         {
             PlayerCommonSystem::OnLogin(player);
         }
@@ -52,7 +51,7 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
 
 void PlayerCommonSystem::OnLogin(entt::entity player)
 {
-	auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
+    const auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
 	if (nullptr == try_enter_gs)
 	{
 		return;
@@ -77,7 +76,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
     //给客户端发所有场景消息
     {
         SceneInfoS2C message;
-        for (auto e : tls.registry.view<MainScene>())
+        for (const auto e : tls.registry.view<MainScene>())
         {
             message.mutable_scene_info()->Add()->CopyFrom(tls.registry.get<SceneInfo>(e));
         }
