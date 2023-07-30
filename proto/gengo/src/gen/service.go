@@ -14,6 +14,10 @@ import (
 	"sync/atomic"
 )
 
+func MessageSize() uint64 {
+	return MaxMessageId + 1
+}
+
 func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	defer util.Wg.Done()
 	f, err := os.Open(filePath + fd.Name())
@@ -198,7 +202,7 @@ func writeGlobalServiceInfoFile() {
 	includeData += "#include \"service.h\"\n"
 	var classHandlerData = ""
 	var initFuncData = "std::unordered_set<uint32_t> g_c2s_service_id;\n" +
-		"std::array<RpcService, " + strconv.FormatUint(MaxMessageId, 10) + "> g_message_info;\n\n"
+		"std::array<RpcService, " + strconv.FormatUint(MessageSize(), 10) + "> g_message_info;\n\n"
 
 	initFuncData += "void InitMessageInfo()\n{\n"
 	ServiceList := GetSortServiceList()
@@ -255,7 +259,7 @@ func writeGlobalServiceInfoHeadFile() {
 		" std::unique_ptr<::google::protobuf::Service> service_impl_instance_;\n};\n\n" +
 		"using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;\n\n" +
 		"void InitMessageInfo();\n\n" +
-		"extern std::array<RpcService, " + strconv.FormatUint(MaxMessageId, 10) + "> g_message_info;\n\n" +
+		"extern std::array<RpcService, " + strconv.FormatUint(MessageSize(), 10) + "> g_message_info;\n\n" +
 		"extern std::unordered_set<uint32_t> g_c2s_service_id;\n"
 
 	Md5WriteData2File(config.ServiceHeadFileName, data)
