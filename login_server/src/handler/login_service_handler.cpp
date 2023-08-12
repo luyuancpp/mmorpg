@@ -96,26 +96,25 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	CheckReturnClosureError(sit->second->EnterGame());
 
 	// long time in login processing
-	const auto player_id = request->player_id();
-	if (!sit->second->HasPlayer(player_id))
+	if (!sit->second->HasPlayer(request->player_id()))
 	{
 		ReturnClosureError(kRetLoginPlayerGuidError);
 	}
 	//todo 已经在其他login,异步问题
 	player_database new_player;
-	login_tls.redis().Load(new_player, player_id);
+	login_tls.redis().Load(new_player, request->player_id());
 	//test
-	sit->second->Playing(player_id);
+	sit->second->Playing(request->player_id());
 	//test
 	if (new_player.player_id() > 0)
 	{
 		//玩家数据已经在redis里面了直接进入游戏
-		::SendCtrlEnterGame(player_id);
+		::SendCtrlEnterGame(request->player_id());
 		return;
 	}
 	// redis没有玩家数据去数据库取
 	DatabaseNodeEnterGameRequest database_enter_game_request;
-	database_enter_game_request.set_player_id(player_id);
+	database_enter_game_request.set_player_id(request->player_id());
 	Route2Node(kDatabaseNode, DbServiceEnterGameMsgId, database_enter_game_request);
 	///<<< END WRITING YOUR CODE
 }
