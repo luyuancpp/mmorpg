@@ -111,10 +111,6 @@ if (ret != kRetOK)\
 if (tip_code != kRetOK)\
 {\
     response->mutable_error()->set_id(tip_code);\
-    if (nullptr != done)\
-    {\
-        done->Run();\
-    }\
     return;\
 }\
 
@@ -126,10 +122,6 @@ if (condition)\
 
 #define  ReturnClosureError(f)\
 response->mutable_error()->set_id(f);\
-if (nullptr != done)\
-{\
-done->Run();\
-}\
 return
 
 #define ReturnClosureOK ReturnClosureError(kRetOK);
