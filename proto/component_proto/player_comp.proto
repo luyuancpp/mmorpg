@@ -18,3 +18,8 @@ message CoverPlayerLogin
 message Player
 {
 }
+
+message Account
+{
+	string account = 1;
+}
