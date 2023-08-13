@@ -67,12 +67,6 @@ void UpdatePlayerGate(entt::entity player)
 {
 	auto& player_session = tls.registry.get_or_emplace<PlayerSession>(player);
 	player_session.gate_session_.set_session_id(cl_tls.session_id());
-	const auto gate_it = controller_tls.gate_nodes().find(node_id(cl_tls.session_id()));
-	if (gate_it == controller_tls.gate_nodes().end())
-	{
-		return;
-	}
-	player_session.gate_ = gate_it->second;
 }
 
 ///<<< END WRITING YOUR CODE
