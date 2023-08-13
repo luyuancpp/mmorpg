@@ -92,8 +92,6 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
     tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceEnterGsMsgId, rq);
 }
 
-
-
 //todo clear code 
 //前一个队列完成的时候才应该调用到这里去判断当前队列
 void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
