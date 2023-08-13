@@ -49,7 +49,7 @@ message LeaveGameC2LRequest
 
 service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
-  rpc CreatPlayer (CreatePlayerC2lRequest) returns (LoginNodeCreatePlayerResponse);
+  rpc CreatePlayer (CreatePlayerC2lRequest) returns (LoginNodeCreatePlayerResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc LeaveGame (LeaveGameC2LRequest) returns (google.protobuf.Empty);
   rpc Disconnect (LoginNodeDisconnectRequest) returns (google.protobuf.Empty);
