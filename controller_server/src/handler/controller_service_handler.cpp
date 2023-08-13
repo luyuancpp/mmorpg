@@ -31,6 +31,7 @@
 #include "src/util/defer.h"
 
 #include "component_proto/player_login_comp.pb.h"
+#include "component_proto/player_comp.pb.h"
 
 using AccountSessionMap = std::unordered_map<std::string, uint64_t>;
 AccountSessionMap login_accounts_session_;
@@ -332,8 +333,8 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 	}
 	const auto session = session_it->second;
 	const auto player_it = controller_tls.player_list().find(request->player_id());
-	if (const auto try_account = tls.registry.try_get<PlayerAccount>(session);
-		nullptr != try_account)
+	const auto try_account = tls.registry.try_get<PlayerAccount>(session);
+	if (nullptr != try_account)
 	{
 		login_accounts_session_.erase(**try_account);
 	}
@@ -345,7 +346,11 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		
 		tls.registry.emplace<Guid>(session, request->player_id());
 		tls.registry.emplace<Guid>(player, request->player_id());
-		tls.registry.emplace<PlayerAccount>(player, tls.registry.get<PlayerAccount>(session_it->second));
+		if (nullptr != try_account)
+		{
+			tls.registry.emplace<Account>(player).set_account(**try_account);
+		}
+		
         PlayerCommonSystem::InitPlayerComponent(player);	
 		
 		GetSceneParam get_scene_param;
@@ -359,7 +364,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		UpdatePlayerGate(player);
 		tls.registry.emplace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_FIRST);
 
-		//todo 回话没有了玩家还在
+		//todo 会话没有了玩家还在
 		const auto try_player_session = tls.registry.try_get<PlayerSession>(player);
         if (nullptr == try_player_session)
         {
