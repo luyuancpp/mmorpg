@@ -2,7 +2,6 @@
 
 #include "muduo/net/EventLoop.h"
 
-#include "src/event/event.h"
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_server.h"
@@ -11,7 +10,7 @@
 
 #include "deploy_service.pb.h"
 
-class LobbyServer : muduo::noncopyable, public Receiver<LobbyServer>
+class LobbyServer : muduo::noncopyable
 {
 public:
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;

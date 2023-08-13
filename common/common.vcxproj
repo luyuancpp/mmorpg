@@ -233,7 +233,6 @@
     <ClCompile Include="src\game_logic\login_state\login_state.cpp" />
     <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\network\codec\codec.cc" />
-    <ClCompile Include="src\event\event.cc" />
     <ClCompile Include="src\game_logic\teams\team.cpp" />
     <ClCompile Include="src\game_logic\teams\teams.cpp" />
     <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
@@ -348,7 +347,6 @@
     <ClInclude Include="src\network\codec\dispatcher_lite.h" />
     <ClInclude Include="src\common_type\common_type.h" />
     <ClInclude Include="src\game_logic\config_expression\config_expression.h" />
-    <ClInclude Include="src\event\event.h" />
     <ClInclude Include="src\game_logic\exprtk\exprtk.hpp" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\game_logic\teams\team.h" />

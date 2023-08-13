@@ -2,7 +2,6 @@
 
 #include "entt/src/entt/entity/registry.hpp"
 
-#include "src/event/event.h"
 #include "src/handler/controller_service_handler.h"
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_client.h"
@@ -14,7 +13,7 @@
 #include "database_service.pb.h"
 #include "logic_proto/lobby_scene.pb.h"
 
-class ControllerServer : muduo::noncopyable, public Receiver<ControllerServer>
+class ControllerServer : muduo::noncopyable
 {
 public:
 	using PbSyncRedisClientPtr = PbSyncRedisClientPtr;

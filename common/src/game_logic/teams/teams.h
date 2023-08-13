@@ -9,7 +9,7 @@
 
 #include "team.h"
 
-class Teams : public Receiver<Teams>
+class Teams
 {
 public:
     static const std::size_t kMaxTeamSize = 10000;

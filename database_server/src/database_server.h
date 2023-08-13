@@ -2,7 +2,6 @@
 
 #include "muduo/net/EventLoop.h"
 
-#include "src/event/event.h"
 #include "src/mysql_wrapper/mysql_database.h"
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_client.h"
@@ -11,7 +10,7 @@
 #include "src/handler/database_service_handler.h"
 #include "src/util/defer.h"
 
-class DatabaseServer : muduo::noncopyable, public Receiver<DatabaseServer>
+class DatabaseServer : muduo::noncopyable
 {
 public:
     using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
