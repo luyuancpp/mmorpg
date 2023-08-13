@@ -35,6 +35,7 @@
 34=ControllerServiceRouteNodeStringMsg
 35=ControllerServiceRoutePlayerStringMsg
 36=LoginServiceLogin
+37=ClientPlayerCommonServiceBeKick
 38=LoginServiceEnterGame
 39=LoginServiceLeaveGame
 40=LoginServiceDisconnect
