@@ -113,13 +113,12 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
     change_scene_info.set_processing(true);
-    auto& scene_info = change_scene_info.scene_info();
-    auto to_scene_id = scene_info.scene_id();
+    auto to_scene_id = change_scene_info.scene_info().scene_id();
     entt::entity to_scene = entt::null;
     if (to_scene_id <= 0)//用scene_config id 去换本服的controller
     {
         GetSceneParam getp;
-        getp.scene_confid_ = scene_info.scene_confid();
+        getp.scene_confid_ = change_scene_info.scene_info().scene_confid();
         to_scene = ServerNodeSystem::GetWeightRoundRobinMainScene(getp);
         if (entt::null == to_scene)
         {
@@ -139,7 +138,6 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             return;
         }
     }
-
     auto try_from_scene_gs = tls.registry.try_get<GsNodePtr>(try_from_scene->scene_entity_);
     auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
     if (nullptr == try_from_scene_gs || nullptr == try_to_scene_gs)
@@ -153,6 +151,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     if (to_scene_id == from_scene_id)
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
+        PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }
 
@@ -160,6 +159,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     auto to_gs_it = controller_tls.game_node().find((*try_to_scene_gs)->node_id());
     if (from_gs_it == controller_tls.game_node().end() || to_gs_it == controller_tls.game_node().end())
     {
+        //服务器已经崩溃了
         LOG_ERROR << " gs not found  : " <<
             (*try_from_scene_gs)->node_id() <<
             " " << (*try_to_scene_gs)->node_id();
