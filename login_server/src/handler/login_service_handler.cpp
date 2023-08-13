@@ -52,7 +52,7 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	const auto session_it = login_tls.session_list().emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
 	if (!session_it.second)
 	{
-		LOG_ERROR << "session login " << request->DebugString();
+		LOG_ERROR << "session nout found " << request->DebugString();
 		return;
 	}
 	session_it.first->second->set_login_account_name(request->account());
@@ -60,7 +60,7 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE
 }
 
-void LoginServiceHandler::CreatPlayer(::google::protobuf::RpcController* controller,
+void LoginServiceHandler::CreatePlayer(::google::protobuf::RpcController* controller,
 	const ::CreatePlayerC2lRequest* request,
 	::LoginNodeCreatePlayerResponse* response,
 	 ::google::protobuf::Closure* done)

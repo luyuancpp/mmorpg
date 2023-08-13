@@ -8,7 +8,7 @@ public:
 		::LoginResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void CreatPlayer(::google::protobuf::RpcController* controller,
+	void CreatePlayer(::google::protobuf::RpcController* controller,
 		const ::CreatePlayerC2lRequest* request,
 		::LoginNodeCreatePlayerResponse* response,
 		 ::google::protobuf::Closure* done)override;
