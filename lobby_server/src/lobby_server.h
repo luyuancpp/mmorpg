@@ -28,9 +28,7 @@ public:
 private:
     muduo::net::EventLoop* loop_{ nullptr };
     RpcServerPtr server_;
-
     RpcClientPtr deploy_session_;
-
     LobbyServiceImpl impl_;
 };
 extern LobbyServer* g_lobby_server;
