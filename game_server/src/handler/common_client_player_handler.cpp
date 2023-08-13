@@ -11,3 +11,11 @@ void ClientPlayerCommonServiceHandler::PushTipsS2C(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
+void ClientPlayerCommonServiceHandler::BeKick(entt::entity player,
+	const ::TipsS2C* request,
+	::TipsS2C* response)
+{
+///<<< BEGIN WRITING YOUR CODE
+///<<< END WRITING YOUR CODE
+}
+

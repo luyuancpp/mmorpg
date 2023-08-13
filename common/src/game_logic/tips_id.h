@@ -31,6 +31,7 @@ enum  EnumCode : uint32_t
     kRetLoginEnterGameConnectionAccountEmpty = 1014,
     kRetLoginUnknownError = 1015,
     kRetLoginSessionDisconnect = 1016,
+    kRetLoginBeKickByAnOtherAccount = 1017,//在别的地方登录
 
     //Scene
     kRetEnterSceneNotFound = 4000,

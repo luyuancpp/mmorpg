@@ -320,6 +320,8 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		return;
 	}
 	const auto session = session_it->second;
+	tls.registry.emplace<Guid>(session, request->player_id());
+
 	const auto player_it = controller_tls.player_list().find(request->player_id());
 	const auto try_account = tls.registry.try_get<PlayerAccount>(session);
 	if (nullptr != try_account)
@@ -332,7 +334,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		auto player = tls.registry.create();
 		controller_tls.player_list().emplace(request->player_id(), player);
 		
-		tls.registry.emplace<Guid>(session, request->player_id());
+		
 		tls.registry.emplace<Guid>(player, request->player_id());
 		if (nullptr != try_account)
 		{
@@ -369,11 +371,14 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		//todo换场景的过程中被顶了
 		const auto player = player_it->second;
 		//告诉账号被顶
-		tls.registry.emplace<Guid>(session, request->player_id());
         //断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 		const auto player_session = tls.registry.try_get<PlayerSession>(player);
 		if (nullptr != player_session)
         {
+			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
+			TipsS2C beKickTips;
+			beKickTips.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
+			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTips, request->player_id());
 			//删除老会话
 			controller_tls.gate_sessions().erase(player_session->session_id());
 			GateNodeKickConnRequest message;

@@ -21,6 +21,13 @@ public:
 				::google::protobuf::internal::DownCast<::TipsS2C*>(response));
 			}
 			break;
+			case 1:
+			{
+				tls_lua_state["ClientPlayerCommonServiceBeKickHandler"](
+				::google::protobuf::internal::DownCast<const ::TipsS2C*>( request),
+				::google::protobuf::internal::DownCast<::TipsS2C*>(response));
+			}
+			break;
 			default:
 				GOOGLE_LOG(FATAL) << "Bad method index; this should never happen."
 ;			break;

@@ -9,6 +9,10 @@ public:
 		const ::TipsS2C* request,
 		::TipsS2C* response);
 
+	static void BeKick(entt::entity player,
+		const ::TipsS2C* request,
+		::TipsS2C* response);
+
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
    entt::entity player,
     const ::google::protobuf::Message* request,
@@ -18,6 +22,11 @@ public:
 		{
 		case 0:
 			PushTipsS2C(player,
+			nullptr,
+			::google::protobuf::internal::DownCast<TipsS2C*>(response));
+		break;
+		case 1:
+			BeKick(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<TipsS2C*>(response));
 		break;
