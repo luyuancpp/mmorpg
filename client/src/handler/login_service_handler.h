@@ -23,7 +23,7 @@ public:
 			break;
 			case 1:
 			{
-				tls_lua_state["LoginServiceCreatPlayerHandler"](
+				tls_lua_state["LoginServiceCreatePlayerHandler"](
 				::google::protobuf::internal::DownCast<const ::CreatePlayerC2lRequest*>( request),
 				::google::protobuf::internal::DownCast<::LoginNodeCreatePlayerResponse*>(response));
 			}

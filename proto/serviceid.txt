@@ -21,6 +21,7 @@
 20=ControllerPlayerServiceTest
 21=ControllerServiceStartGs
 22=ControllerServiceGateConnect
+23=LoginServiceCreatePlayer
 24=ControllerServiceGatePlayerService
 25=ControllerServiceGateDisconnect
 26=ControllerServiceStartLs
@@ -34,7 +35,6 @@
 34=ControllerServiceRouteNodeStringMsg
 35=ControllerServiceRoutePlayerStringMsg
 36=LoginServiceLogin
-37=LoginServiceCreatPlayer
 38=LoginServiceEnterGame
 39=LoginServiceLeaveGame
 40=LoginServiceDisconnect

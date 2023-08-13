@@ -304,6 +304,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 		//告诉客户端登录中
 		else
 		{
+			//能返回去吗?
 			response->mutable_error()->set_id(kRetLoginIng);
 		}
 	}
@@ -322,6 +323,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 ///<<< BEGIN WRITING YOUR CODE
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
+	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
 	const auto session_it = controller_tls.gate_sessions().find(cl_tls.session_id());
 	if (session_it == controller_tls.gate_sessions().end())
 	{
