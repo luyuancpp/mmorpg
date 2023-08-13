@@ -28,6 +28,11 @@ public:
 		return node_id(gate_session_.session_id());
 	}
 
+    inline void set_session_id(uint64_t session_id)
+    {
+		return gate_session_.set_session_id(session_id);
+    }
+
 	inline decltype(auto) session_id()const { return gate_session_.session_id(); }
 	inline void set_gs(GsNodePtr& gs) { gs_ = gs; }
 	inline GsNodePtr& gs(){ return gs_; }
