@@ -6,6 +6,7 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
+#include "src/network/session.h"
 #include "src/pb/pbc/controller_service_service.h"
 #include "src/pb/pbc/gate_service_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
@@ -29,29 +30,23 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	{
 		return;
 	}
-	const auto try_gate = tls.registry.try_get<GateNodeWPtr>(player);
-	if (nullptr == try_gate)
-	{
-		LOG_ERROR << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
-		return;
-	}
-	const auto gate = (*try_gate).lock();
-	if (nullptr == gate)
-	{
-		LOG_INFO << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
-		return;
-	}
 	const auto try_gate_session = tls.registry.try_get<GateSession>(player);
 	if (nullptr == try_gate_session)
 	{
-		LOG_INFO << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
+		LOG_INFO << "player gate session not found " << tls.registry.get<Guid>(player);
+		return;
+	}
+	const auto gate_it = game_tls.gate_node().find(node_id((*try_gate_session).session_id()));
+	if (game_tls.gate_node().end() == gate_it)
+	{
+		LOG_INFO << "gate not found " << node_id((*try_gate_session).session_id());
 		return;
 	}
 	NodeServiceMessageRequest message_wrapper;
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
-	message_wrapper.mutable_ex()->set_session_id(try_gate_session->session_id());
-	gate->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
+	message_wrapper.mutable_ex()->set_session_id((*try_gate_session).session_id());
+	gate_it->second->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
 }
 
 void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
