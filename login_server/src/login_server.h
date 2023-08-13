@@ -1,6 +1,5 @@
 #pragma once
 
-#include "src/event/event.h"
 #include "src/network/rpc_server.h"
 
 #include "src/handler/login_service_handler.h"
@@ -8,7 +7,7 @@
 #include "src/network/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
 
-class LoginServer : muduo::noncopyable, public Receiver<LoginServer>
+class LoginServer : muduo::noncopyable
 {
 public:
 	using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
