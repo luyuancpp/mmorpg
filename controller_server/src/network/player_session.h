@@ -4,6 +4,7 @@
 #include "src/network/gs_node.h"
 #include "src/network/message_system.h"
 #include "src/network/session.h"
+#include "src/thread_local/controller_thread_local_storage.h"
 
 #include "component_proto/player_network_comp.pb.h"
 
@@ -33,16 +34,15 @@ public:
 
 	inline void Send(uint32_t message_id, const ::google::protobuf::Message& message)
 	{
-		GateNodePtr gate = gate_.lock();
-		if (nullptr == gate)
+		const auto gate_it = controller_tls.gate_nodes().find(gate_node_id());
+		if (gate_it == controller_tls.gate_nodes().end())
 		{
 			return;
 		}
-		Send2Player(message_id, message, gate, gate_session_.session_id());
+		Send2Player(message_id, message, gate_it->second, gate_session_.session_id());
 	}
 	
 	GateSession gate_session_;
-	GateNodeWPtr gate_;
 private:
 	GsNodePtr gs_;
 };

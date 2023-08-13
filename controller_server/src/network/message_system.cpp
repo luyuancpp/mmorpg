@@ -104,13 +104,19 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	{
 		return;
 	}
-	auto player_session = tls.registry.get<PlayerSession>(player);
-	auto gate = player_session.gate_.lock();
-	if (nullptr == gate)
+	const auto try_player_session = tls.registry.try_get<PlayerSession>(player);
+	if (nullptr == try_player_session)
 	{
+		LOG_DEBUG << "session not found ";
 		return;
-	}
-	Send2Player(message_id, message, gate, player_session.gate_session_.session_id());
+	}	
+    const auto gate_it = controller_tls.gate_nodes().find((*try_player_session).gate_node_id());
+    if (gate_it == controller_tls.gate_nodes().end())
+    {
+		LOG_ERROR << "gate not found ";
+        return;
+    }
+	Send2Player(message_id, message, gate_it->second, (*try_player_session).gate_session_.session_id());
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, GateNodePtr& gate, uint64_t session_id)
