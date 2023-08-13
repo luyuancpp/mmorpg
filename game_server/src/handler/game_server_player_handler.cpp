@@ -29,7 +29,6 @@ void GamePlayerServiceHandler::UpdateSessionController2Gs(entt::entity player,
 	}
 	game_tls.gate_sessions().emplace(request->session_id(), player);
 	tls.registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//登录更新gate
-	tls.registry.emplace_or_replace<GateNodeWPtr>(player, gate_it->second);
 	///<<< END WRITING YOUR CODE
 }
 
