@@ -48,6 +48,17 @@ void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, ControllerC
     change_scene_queue.front().set_change_gs_status(s);
 }
 
+
+void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, ControllerChangeSceneInfo::eChangeCrossServerStatus s)
+{
+    GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
+    if (change_scene_queue.empty())
+    {
+        return;
+    }
+    change_scene_queue.front().set_change_cross_server_status(s);
+}
+
 void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity player)
 {
     GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);

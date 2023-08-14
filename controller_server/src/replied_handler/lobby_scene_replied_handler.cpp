@@ -50,11 +50,6 @@ void OnLobbyServiceEnterCrossMainSceneRepliedHandler(const TcpConnectionPtr& con
         LOG_ERROR << "player not found" << replied->player_id();
         return;
     }
-    GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
-    if (change_scene_queue.empty())
-    {
-        return;
-    }
     auto scene = ScenesSystem::get_scene(replied->scene_id());
     if (entt::null == scene)
     {
@@ -62,8 +57,7 @@ void OnLobbyServiceEnterCrossMainSceneRepliedHandler(const TcpConnectionPtr& con
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }
-    auto& change_scene_info = change_scene_queue.front();
-    change_scene_info.set_change_cross_server_status(ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
+    PlayerChangeSceneSystem::SetChangeCrossServerSatus(player, ControllerChangeSceneInfo::eEnterCrossServerSceneSucceed);
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE
 }

@@ -12,6 +12,7 @@ public:
 	static void TryProcessChangeSceneQueue(entt::entity player);
 	static void PopFrontChangeSceneQueue(entt::entity player);
 	static void SetChangeGsStatus(entt::entity player, ControllerChangeSceneInfo::eChangeGsStatus s);
+	static void SetChangeCrossServerSatus(entt::entity player, ControllerChangeSceneInfo::eChangeCrossServerStatus s);
 private:
 	static void TryProcessZoneServerChangeScene(entt::entity player);//处理本服务器的切换,不跨服
 	static void TryProcessViaCrossServerChangeScene(entt::entity player);//处理通过跨服消息的换场景
