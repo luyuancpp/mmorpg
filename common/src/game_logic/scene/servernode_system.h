@@ -11,7 +11,11 @@ static const std::size_t kMaxScenePlayerSize = 1000;
 struct GetSceneParam
 {
 	uint32_t scene_confid_{ 0 };
-	ServerState server_state_{ ServerState::kNormal };
+};
+
+struct GetSceneFilterParam
+{
+	ServerPressureState server_pressure_state_{ ServerPressureState::kNoPressure };
 };
 
 struct ServerPressureParam
