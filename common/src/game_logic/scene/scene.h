@@ -4,9 +4,16 @@
 #include "src/util/snow_flake.h"
 #include "src/game_logic/scene/servernode_system.h"
 
-#include "src/game_logic/comp/scene_comp.h"
+#include "src/game_logic/comp/server_comp.h"
 
 #include "component_proto/scene_comp.pb.h"
+
+struct MainScene {};
+
+struct SceneEntity
+{
+	entt::entity scene_entity_{ entt::null };
+};
 
 struct EnterSceneParam
 {
@@ -117,5 +124,6 @@ public:
 private:
 	static SceneList scene_list_;
 	static ServerSequence24 server_sequence_;
+    static ServerComp server_comp_;
 };
 

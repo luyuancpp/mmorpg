@@ -18,7 +18,7 @@ void AddMainSceneNodeComponent(entt::entity server)
     tls.registry.emplace<MainSceneServer>(server);
     tls.registry.emplace<GSNormal>(server);
     tls.registry.emplace<NoPressure>(server);
-    tls.registry.emplace<ConfigSceneMap>(server);
+    tls.registry.emplace<ServerComp>(server);
     tls.registry.emplace<GsNodePlayerInfoPtr>(server, std::make_shared<GsNodePlayerInfoPtr::element_type>());
 }
 
@@ -94,7 +94,7 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 		tls.registry.emplace<GsNodePlayerInfoPtr>(scene, *try_server_player_info);
 	}
 
-	auto& server_scenes = tls.registry.get<ConfigSceneMap>(param.node_);
+	auto& server_scenes = tls.registry.get<ServerComp>(param.node_);
 	server_scenes.AddScene(tls.registry.get<SceneInfo>(scene).scene_confid(), scene);
     
     return scene;
@@ -111,7 +111,7 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 	auto& si = tls.registry.get<SceneInfo>(param.scene_);
 	scene_list_.erase(si.scene_id());
 	tls.registry.destroy(param.scene_);
-	auto& server_scene = tls.registry.get<ConfigSceneMap>(param.node_);
+	auto& server_scene = tls.registry.get<ServerComp>(param.node_);
 	server_scene.RemoveScene(si.scene_confid(), param.scene_);
 }
 
@@ -124,7 +124,7 @@ void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 	}
     // todo 人得换场景
 	EntitySet server_scenes_set;
-	for (auto& it : tls.registry.get<ConfigSceneMap>(param.node_).confid_sceneslist())
+	for (auto& it : tls.registry.get<ServerComp>(param.node_).confid_sceneslist())
 	{
 		for (auto& ji : it.second)
 		{
@@ -148,8 +148,8 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
 		LOG_ERROR << "entity null";
 		return;
 	}
-    auto& from_server_config_scenes_map = tls.registry.get<ConfigSceneMap>(param.from_node_).confid_sceneslist();
-    auto& to_server_config_scenes_map = tls.registry.get<ConfigSceneMap>(param.to_node_);
+    auto& from_server_config_scenes_map = tls.registry.get<ServerComp>(param.from_node_).confid_sceneslist();
+    auto& to_server_config_scenes_map = tls.registry.get<ServerComp>(param.to_node_);
     auto p_to_server_data = tls.registry.try_get<GsNodePlayerInfoPtr>(param.to_node_);
     if (nullptr == p_to_server_data)
     {
@@ -163,7 +163,7 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
             to_server_config_scenes_map.AddScene(it.first, ji);
         }
     }
-    tls.registry.emplace_or_replace<ConfigSceneMap>(param.from_node_);//todo 如果原来server 还有场景呢
+    tls.registry.emplace_or_replace<ServerComp>(param.from_node_);//todo 如果原来server 还有场景呢
 }
 
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
@@ -251,7 +251,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 
 void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 {
-    auto& new_server_scene = tls.registry.get<ConfigSceneMap>(param.new_server_);
+    auto& new_server_scene = tls.registry.get<ServerComp>(param.new_server_);
     entt::entity server_scene_enitity = entt::null;
     if (!new_server_scene.HasConfig(param.scene_confid_))
     {
