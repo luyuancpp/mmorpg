@@ -16,7 +16,6 @@ void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_se
 void AddMainSceneNodeComponent(entt::entity server)
 {
     tls.registry.emplace<MainSceneServer>(server);
-    tls.registry.emplace<GSNormal>(server);
     tls.registry.emplace<NoPressure>(server);
     tls.registry.emplace<ServerComp>(server);
     tls.registry.emplace<GsNodePlayerInfoPtr>(server, std::make_shared<GsNodePlayerInfoPtr::element_type>());

@@ -2,8 +2,9 @@
 
 #include <memory>
 
-#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/common_type/common_type.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/game_logic/enum/server_enum.h"
 
 #include "component_proto/gs_node_comp.pb.h"
 
@@ -16,9 +17,6 @@ struct CrossMainSceneServer {};
 struct RoomSceneServer {};
 struct CrossRoomSceneServer {};
 
-struct GSNormal {};//game server 正常状态
-struct GSMainTain {};//game server 维护状态
-struct GSCrash {};//崩溃状态
 
 struct NoPressure {};//
 struct Pressure {};//
@@ -54,6 +52,10 @@ public:
 		return *it->second.begin();
 	}
 
+	inline void set_sever_state(ServerState state) { server_state_ = state;  }
+	inline auto get_server_state() const { return server_state_; }
+	inline auto is_state_normal()const { return server_state_ == ServerState::kNormal;	}
+
 	inline std::size_t scenes_size() const {
 		std::size_t s = 0;
 		for (auto& it : confid_scenelist_)
@@ -79,6 +81,9 @@ public:
 	{
 		confid_scenelist_[scene_config_id].erase(scene_entity);
 	}
+
+	
 private:
-	Uint32KeyEntitySetValue confid_scenelist_;
+	Uint32KeyEntitySetValue confid_scenelist_;//配置表对应的场景列表
+	ServerState server_state_{ ServerState::kNormal };
 };

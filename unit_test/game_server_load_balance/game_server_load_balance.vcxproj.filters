@@ -62,5 +62,8 @@
     <ClInclude Include="..\..\common\src\game_logic\comp\server_comp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\enum\server_enum.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -327,9 +327,10 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
         }
     }
 
-    MaintainServerParam maintain;
-    maintain.maintain_server_ = *server_entities.begin();
-    snsys.ServerMaintain(maintain);
+    ServerStateParam maintain;
+    maintain.node_entity_ = *server_entities.begin();
+    maintain.server_state_ = ServerState::kMainTain;
+    snsys.set_server_state(maintain);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -444,9 +445,10 @@ TEST(GS, CrashWeightRoundRobinMainScene)
         }
     }
 
-    ServerCrashParam crash1;
-    crash1.crash_server_ = *server_entities.begin();
-    snsys.ServerCrashed(crash1);
+    ServerStateParam crash1;
+    crash1.node_entity_ = *server_entities.begin();
+    crash1.server_state_ = ServerState::kCrash;
+    snsys.set_server_state(crash1);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -507,9 +509,10 @@ TEST(GS, CrashMovePlayer2NewServer)
         sm.EnterScene(enter_param1);
     }
 
-    ServerCrashParam crash1;
-    crash1.crash_server_ = *server_entities.begin();
-    snsys.ServerCrashed(crash1);
+    ServerStateParam crash1;
+    crash1.node_entity_ = *server_entities.begin();
+    crash1.server_state_ = ServerState::kCrash;
+    snsys.set_server_state(crash1);
 
     ReplaceCrashServerParam replace_crash;
     replace_crash.cransh_server_ = *server_entities.begin();
