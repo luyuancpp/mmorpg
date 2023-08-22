@@ -59,5 +59,8 @@
     <ClInclude Include="..\..\common\src\game_logic\thread_local\thread_local_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\comp\server_comp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

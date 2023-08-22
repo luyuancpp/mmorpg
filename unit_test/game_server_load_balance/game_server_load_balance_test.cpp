@@ -54,9 +54,9 @@ TEST(GS, CreateScene2Sever )
     sm.CreateScene2Gs(server1_param);
     sm.CreateScene2Gs(server2_param);
 
-    auto& scenes_id1 = tls.registry.get<ConfigSceneMap>(server_entity1);
+    auto& scenes_id1 = tls.registry.get<ServerComp>(server_entity1);
  
-    auto& scenes_id2 = tls.registry.get<ConfigSceneMap>(server_entity2);
+    auto& scenes_id2 = tls.registry.get<ServerComp>(server_entity2);
 
     EXPECT_EQ(1, scenes_id1.scenes_size());
 
@@ -83,7 +83,7 @@ TEST(GS, DestroyScene)
     EXPECT_EQ(1, sm.scenes_size(cparam.scene_confid_));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 
-    auto& server_scenes = tls.registry.get<ConfigSceneMap>(server_entity1);
+    auto& server_scenes = tls.registry.get<ServerComp>(server_entity1);
     EXPECT_EQ(1, server_scenes.scenes_size());
 
     DestroySceneParam dparam;
@@ -115,8 +115,8 @@ TEST(GS, DestroySever)
     auto scene_id1 = sm.CreateScene2Gs(server1_param);
     auto scene_id2 = sm.CreateScene2Gs(server2_param);
 
-    EXPECT_EQ(1, tls.registry.get<ConfigSceneMap>(server_entity1).scenes_size());
-    EXPECT_EQ(1, tls.registry.get<ConfigSceneMap>(server_entity2).scenes_size());
+    EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity1).scenes_size());
+    EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).scenes_size());
 
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
@@ -130,7 +130,7 @@ TEST(GS, DestroySever)
     EXPECT_TRUE(tls.registry.valid(server_entity2));
     EXPECT_TRUE(tls.registry.valid(scene_id2));
 
-    EXPECT_EQ(1, tls.registry.get<ConfigSceneMap>(server_entity2).scenes_size());
+    EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).scenes_size());
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(0, sm.scenes_size(server1_param.scene_confid_));
     EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
@@ -167,9 +167,9 @@ TEST(GS, ServerScene2Sever)
 
     auto scene_id1 = sm.CreateScene2Gs(server1_param);
     auto scene_id2 = sm.CreateScene2Gs(server2_param);
-    EXPECT_EQ(1, tls.registry.get<ConfigSceneMap>(server_entity1).scenes_size());
+    EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity1).scenes_size());
 
-    EXPECT_EQ(1, tls.registry.get<ConfigSceneMap>(server_entity2).scenes_size());
+    EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).scenes_size());
 
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
@@ -184,8 +184,8 @@ TEST(GS, ServerScene2Sever)
     EXPECT_TRUE(tls.registry.valid(server_entity2));
     EXPECT_TRUE(tls.registry.valid(scene_id2));
 
-    EXPECT_EQ(0, tls.registry.get<ConfigSceneMap>(server_entity1).scenes_size());
-    EXPECT_EQ(2, tls.registry.get<ConfigSceneMap>(server_entity2).scenes_size());
+    EXPECT_EQ(0, tls.registry.get<ServerComp>(server_entity1).scenes_size());
+    EXPECT_EQ(2, tls.registry.get<ServerComp>(server_entity2).scenes_size());
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(1, sm.scenes_size(server1_param.scene_confid_));
     EXPECT_EQ(1, sm.scenes_size(server2_param.scene_confid_));
@@ -520,7 +520,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     server_entities.erase(replace_crash.cransh_server_);
     for (auto& it : server_entities)
     {
-        auto& server_scene =  tls.registry.get<ConfigSceneMap>(it);
+        auto& server_scene =  tls.registry.get<ServerComp>(it);
         EXPECT_EQ(server_scene.scenes_size(), scene_entities.size());
     }
     

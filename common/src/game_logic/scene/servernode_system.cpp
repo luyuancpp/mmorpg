@@ -1,6 +1,6 @@
 #include "servernode_system.h"
 
-#include "src/game_logic/comp/scene_comp.h"
+#include "src/game_logic/comp/server_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
 //从当前符服务器中找到一个对应场景人数最少的
@@ -14,7 +14,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     {
         //如果最少人数的服务器没有这个场景咋办
         //所以优先判断有没有场景
-        if (!tls.registry.get<ConfigSceneMap>(e).HasConfig(scene_confid))
+        if (!tls.registry.get<ServerComp>(e).HasConfig(scene_confid))
         {
             continue;
         }
@@ -31,7 +31,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param)
     {
         return scene;
     }
-    auto& scenes = tls.registry.get<ConfigSceneMap>(server);
+    auto& scenes = tls.registry.get<ServerComp>(server);
     std::size_t min_scene_player_size = UINT64_MAX;
     auto& server_scenes = scenes.get_sceneslist_by_config(scene_confid);
     for (auto& ji : server_scenes)
@@ -55,7 +55,7 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param)
 	entt::entity server{ entt::null };
 	for (auto e : tls.registry.view<ServerType, ServerStatus, ServerPressure>())
 	{
-		if (!tls.registry.get<ConfigSceneMap>(e).HasConfig(scene_config_id))
+		if (!tls.registry.get<ServerComp>(e).HasConfig(scene_config_id))
 		{
 			continue;
 		}
@@ -72,7 +72,7 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param)
 	{
 		return scene;
 	}
-	auto& scenes = tls.registry.get<ConfigSceneMap>(server);
+	auto& scenes = tls.registry.get<ServerComp>(server);
 	auto& server_scenes = scenes.get_sceneslist_by_config(scene_config_id);
 	for (auto& ji : server_scenes)
 	{
