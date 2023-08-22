@@ -52,9 +52,14 @@ public:
 		return *it->second.begin();
 	}
 
-	inline void set_sever_state(ServerState state) { server_state_ = state;  }
+	inline void set_server_state(ServerState state) { server_state_ = state;  }
 	inline auto get_server_state() const { return server_state_; }
 	inline auto is_state_normal()const { return server_state_ == ServerState::kNormal;	}
+
+	inline void set_server_pressure_state(ServerPressureState state) { server_pressure_state_ = state; }
+	inline auto get_server_pressure_state() const { return server_pressure_state_; }
+	inline auto is_server_no_pressure()const { return server_pressure_state_ == ServerPressureState::kNoPressure; }
+	inline auto is_server_pressure()const { return server_pressure_state_ == ServerPressureState::kPressure; }
 
 	inline std::size_t scenes_size() const {
 		std::size_t s = 0;
@@ -86,4 +91,5 @@ public:
 private:
 	Uint32KeyEntitySetValue confid_scenelist_;//配置表对应的场景列表
 	ServerState server_state_{ ServerState::kNormal };
+	ServerPressureState server_pressure_state_{ ServerPressureState::kNoPressure};
 };
