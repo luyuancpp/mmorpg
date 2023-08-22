@@ -124,6 +124,5 @@ public:
 private:
 	static SceneList scene_list_;
 	static ServerSequence24 server_sequence_;
-    static ServerComp server_comp_;
 };
 
