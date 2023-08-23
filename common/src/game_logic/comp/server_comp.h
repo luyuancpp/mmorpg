@@ -58,9 +58,19 @@ public:
 
 	inline void set_server_pressure_state(ServerPressureState state) { server_pressure_state_ = state; }
 	inline auto get_server_pressure_state() const { return server_pressure_state_; }
-	inline auto is_server_no_pressure()const { return server_pressure_state_ == ServerPressureState::kNoPressure; }
-	inline auto is_server_pressure()const { return server_pressure_state_ == ServerPressureState::kPressure; }
+	inline auto is_server_no_pressure() const { return server_pressure_state_ == ServerPressureState::kNoPressure; }
+	inline auto is_server_pressure() const { return server_pressure_state_ == ServerPressureState::kPressure; }
 
+	[[nodiscard]] ServerSceneType GetServerSceneType() const
+	{
+		return server_scene_type_;
+	}
+
+	void SetServerSceneType(const ServerSceneType server_scene_type)
+	{
+		server_scene_type_ = server_scene_type;
+	}
+	
 	inline std::size_t scenes_size() const {
 		std::size_t s = 0;
 		for (auto& it : conf_id_scene_list_)
@@ -92,4 +102,5 @@ private:
 	ServerState server_state_{ServerState::kNormal};
 	ServerPressureState server_pressure_state_{ServerPressureState::kNoPressure};
 	ServerSceneType server_scene_type_{ServerSceneType::kMainSceneServer};
+	
 };
