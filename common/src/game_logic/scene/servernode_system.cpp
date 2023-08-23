@@ -4,13 +4,13 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
 //从当前符服务器中找到一个对应场景人数最少的
-template<typename ServerType,typename ServerPressure>
+template<typename ServerType>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
     auto scene_config_id = param.scene_confid_;
     entt::entity server{ entt::null };
     std::size_t min_server_player_size = UINT64_MAX;
-    for (auto e : tls.registry.view<ServerType,  ServerPressure>())
+    for (auto e : tls.registry.view<ServerType>())
     {
         //如果最少人数的服务器没有这个场景咋办
         //所以优先判断有没有场景
@@ -51,12 +51,12 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param, const GetScen
 }
 
 //选择不满人的服务器场景
-template<typename ServerType, typename ServerPressure>
+template<typename ServerType>
 entt::entity GetMainSceneNotFullT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
 	auto scene_config_id = param.scene_confid_;
 	entt::entity server{ entt::null };
-	for (auto e : tls.registry.view<ServerType, ServerPressure>())
+	for (auto e : tls.registry.view<ServerType>())
 	{
 		const auto& try_server_comp = tls.registry.get<ServerComp>(e);
 		if (!try_server_comp.is_state_normal() ||
@@ -96,36 +96,36 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param, const GetSceneFilt
 entt::entity ServerNodeSystem::GetWeightRoundRobinMainScene(const GetSceneParam& param)
 {
     GetSceneFilterParam get_scene_filter_param;
-    auto scene = GetWeightRoundRobinSceneT<MainSceneServer, NoPressure>( param, get_scene_filter_param);
+    auto scene = GetWeightRoundRobinSceneT<MainSceneServer>( param, get_scene_filter_param);
     if (entt::null != scene)
     {
         return scene;
     }
-    return GetWeightRoundRobinSceneT<MainSceneServer,  Pressure>( param, get_scene_filter_param);
+    return GetWeightRoundRobinSceneT<MainSceneServer>( param, get_scene_filter_param);
 }
 
 entt::entity ServerNodeSystem::GetWeightRoundRobinRoomScene(const GetSceneParam& param)
 {
     GetSceneFilterParam get_scene_filter_param;
-    auto scene_entity = GetWeightRoundRobinSceneT<RoomSceneServer, NoPressure>( param, get_scene_filter_param);
+    auto scene_entity = GetWeightRoundRobinSceneT<RoomSceneServer>( param, get_scene_filter_param);
     if (entt::null != scene_entity)
     {
         return scene_entity;
     }
     get_scene_filter_param.server_pressure_state_ = ServerPressureState::kPressure;
-    return GetWeightRoundRobinSceneT<RoomSceneServer, Pressure>(param, get_scene_filter_param);
+    return GetWeightRoundRobinSceneT<RoomSceneServer>(param, get_scene_filter_param);
 }
 
 entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 {
     GetSceneFilterParam get_scene_filter_param;
-	auto scene_entity = GetMainSceneNotFullT<MainSceneServer, NoPressure>(param, get_scene_filter_param);
+	auto scene_entity = GetMainSceneNotFullT<MainSceneServer>(param, get_scene_filter_param);
 	if (entt::null != scene_entity)
 	{
 		return scene_entity;
 	}
     get_scene_filter_param.server_pressure_state_ = ServerPressureState::kPressure;
-	return GetMainSceneNotFullT<MainSceneServer,  Pressure>(param, get_scene_filter_param);
+	return GetMainSceneNotFullT<MainSceneServer>(param, get_scene_filter_param);
 }
 
 void ServerNodeSystem::ServerEnterPressure(const ServerPressureParam& param)
