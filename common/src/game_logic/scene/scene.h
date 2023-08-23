@@ -1,12 +1,13 @@
-#pragma once
+#ifndef D:_OTHER_TURN_BASED_GAME_COMMON_SRC_GAME_LOGIC_SCENE_SCENE_H
+#define D:_OTHER_TURN_BASED_GAME_COMMON_SRC_GAME_LOGIC_SCENE_SCENE_H
 
-#include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/util/snow_flake.h"
-#include "src/game_logic/scene/servernode_system.h"
+#pragma once
 
 #include "src/game_logic/comp/server_comp.h"
 
-#include "component_proto/scene_comp.pb.h"
+#include "src/game_logic/scene/servernode_system.h"
+#include "src/util/snow_flake.h"
+#include <component_proto/scene_comp.pb.h>
 
 struct MainScene {};
 
@@ -126,3 +127,5 @@ private:
 	static ServerSequence24 server_sequence_;
 };
 
+
+#endif
