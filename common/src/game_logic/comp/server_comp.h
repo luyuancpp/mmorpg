@@ -26,11 +26,11 @@ using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 class ServerComp 
 {
 public:
-	const Uint32KeyEntitySetValue& confid_sceneslist() const { return confid_scenelist_; }
+	const Uint32KeyEntitySetValue& confid_sceneslist() const { return conf_id_scene_list_; }
 	const EntitySet& get_sceneslist_by_config(uint32_t scene_config_id) const
 	{
-		auto it = confid_scenelist_.find(scene_config_id);
-		if (it == confid_scenelist_.end())
+		auto it = conf_id_scene_list_.find(scene_config_id);
+		if (it == conf_id_scene_list_.end())
 		{
 			static EntitySet s;
 			return s;
@@ -40,8 +40,8 @@ public:
 
 	entt::entity get_firstscene_by_configid(uint32_t scene_config_id)const
 	{
-		auto it = confid_scenelist_.find(scene_config_id);
-		if (it == confid_scenelist_.end())
+		auto it = conf_id_scene_list_.find(scene_config_id);
+		if (it == conf_id_scene_list_.end())
 		{
 			return entt::null;
 		}
@@ -63,7 +63,7 @@ public:
 
 	inline std::size_t scenes_size() const {
 		std::size_t s = 0;
-		for (auto& it : confid_scenelist_)
+		for (auto& it : conf_id_scene_list_)
 		{
 			s += it.second.size();
 		}
@@ -75,21 +75,21 @@ public:
 		return scenes_size() == 0;
 	}
 
-	inline bool HasConfig(uint32_t scene_config_id)const { return confid_scenelist_.find(scene_config_id) != confid_scenelist_.end(); }
+	inline bool HasConfig(uint32_t scene_config_id)const { return conf_id_scene_list_.find(scene_config_id) != conf_id_scene_list_.end(); }
 
 	void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
 	{
-		confid_scenelist_[scene_config_id].emplace(scene_entity);
+		conf_id_scene_list_[scene_config_id].emplace(scene_entity);
 	}
 
 	void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
 	{
-		confid_scenelist_[scene_config_id].erase(scene_entity);
+		conf_id_scene_list_[scene_config_id].erase(scene_entity);
 	}
 
-	
 private:
-	Uint32KeyEntitySetValue confid_scenelist_;//配置表对应的场景列表
-	ServerState server_state_{ ServerState::kNormal };
-	ServerPressureState server_pressure_state_{ ServerPressureState::kNoPressure};
+	Uint32KeyEntitySetValue conf_id_scene_list_; //配置表对应的场景列表
+	ServerState server_state_{ServerState::kNormal};
+	ServerPressureState server_pressure_state_{ServerPressureState::kNoPressure};
+	ServerSceneType server_scene_type_{ServerSceneType::kMainSceneServer};
 };
