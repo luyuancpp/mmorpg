@@ -9,19 +9,18 @@ namespace common
 //http://www.cplusplus.com/reference/istream/istream/read/
 std::string File2String(const std::string& filename)
 {
-    std::ifstream is(filename, std::ifstream::binary);
-    std::string json_buffer;
-    if (is)
+    std::ifstream if_stream(filename, std::ifstream::binary);
+    std::string result;
+    if (if_stream)
     {
         // get length of file:
-        is.seekg(0, is.end);
-        int length = (int)is.tellg();
-        length = length + 1;
-        json_buffer.resize(length);
-        is.seekg(0, is.beg);
+        if_stream.seekg(0, std::ifstream::end);
+        const auto length = if_stream.tellg();
+        result.resize(static_cast<std::string::size_type>(length) + 1);
+        if_stream.seekg(0, std::ifstream::beg);
         // read data as a block:
-        is.read(json_buffer.data(), length);
-        is.close();
+        if_stream.read(result.data(), length);
+        if_stream.close();
         // ...buffer contains the entire file...
         //json_buffer.erase(remove_if(json_buffer.begin(), json_buffer.end(), iscntrl), json_buffer.end());
         //json_buffer.erase(remove_if(json_buffer.begin(), json_buffer.end(), isspace), json_buffer.end());
@@ -30,7 +29,7 @@ std::string File2String(const std::string& filename)
     {
         LOG_FATAL << " No such file or directory " << filename;
     }
-    return json_buffer;
+    return result;
 }
 
 }//namespace common
