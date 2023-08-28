@@ -15,7 +15,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param, const GetScen
         //如果最少人数的服务器没有这个场景咋办
         //所以优先判断有没有场景
 		const auto& try_server_comp = tls.registry.get<ServerComp>(e);
-		if (!try_server_comp.is_state_normal() ||
+		if (!try_server_comp.IsStateNormal() ||
 			!try_server_comp.HasConfig(scene_config_id || 
             try_server_comp.get_server_pressure_state() != filter_state_param.server_pressure_state_))
 		{
@@ -59,7 +59,7 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param, const GetSceneFilt
 	for (auto e : tls.registry.view<ServerType>())
 	{
 		const auto& try_server_comp = tls.registry.get<ServerComp>(e);
-		if (!try_server_comp.is_state_normal() ||
+		if (!try_server_comp.IsStateNormal() ||
 			!try_server_comp.HasConfig(scene_config_id ||
 			try_server_comp.get_server_pressure_state() != filter_state_param.server_pressure_state_))
 		{
@@ -135,7 +135,7 @@ void ServerNodeSystem::ServerEnterPressure(const ServerPressureParam& param)
 	{
 		return;
 	}
-	try_server_copm->set_server_pressure_state(ServerPressureState::kPressure);
+	try_server_copm->SetServerPressureState(ServerPressureState::kPressure);
 }
 
 void ServerNodeSystem::ServerEnterNoPressure( const ServerPressureParam& param)
@@ -145,7 +145,7 @@ void ServerNodeSystem::ServerEnterNoPressure( const ServerPressureParam& param)
 	{
 		return;
 	}
-	try_server_copm->set_server_pressure_state(ServerPressureState::kNoPressure);
+	try_server_copm->SetServerPressureState(ServerPressureState::kNoPressure);
 }
 
 void ServerNodeSystem::set_server_state( const ServerStateParam& param)
@@ -155,6 +155,6 @@ void ServerNodeSystem::set_server_state( const ServerStateParam& param)
     {
         return;
     }
-    try_server_copm->set_server_state(param.server_state_);
+    try_server_copm->SetServerState(param.server_state_);
 }
 

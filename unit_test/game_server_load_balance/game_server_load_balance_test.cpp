@@ -92,7 +92,7 @@ TEST(GS, DestroyScene)
     sm.DestroyScene(dparam);
     EXPECT_TRUE(sm.Empty());
     EXPECT_FALSE(sm.HasScene(cparam.scene_confid_));
-    EXPECT_TRUE(server_scenes.scenes_empty());
+    EXPECT_TRUE(server_scenes.IsSceneEmpty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
     EXPECT_FALSE(tls.registry.valid(scene_entity));
 }
