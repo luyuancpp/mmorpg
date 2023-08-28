@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <ranges>
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
@@ -52,14 +53,14 @@ public:
 		return *it->second.begin();
 	}
 
-	inline void set_server_state(ServerState state) { server_state_ = state;  }
-	inline auto get_server_state() const { return server_state_; }
-	inline auto is_state_normal()const { return server_state_ == ServerState::kNormal;	}
+	inline void SetServerState(ServerState state) { server_state_ = state; }
+	[[nodiscard]] ServerState GetServerState() const { return server_state_; }
+	inline bool IsStateNormal() const { return server_state_ == ServerState::kNormal; }
 
-	inline void set_server_pressure_state(ServerPressureState state) { server_pressure_state_ = state; }
-	inline auto get_server_pressure_state() const { return server_pressure_state_; }
-	inline auto is_server_no_pressure() const { return server_pressure_state_ == ServerPressureState::kNoPressure; }
-	inline auto is_server_pressure() const { return server_pressure_state_ == ServerPressureState::kPressure; }
+	inline void SetServerPressureState(const ServerPressureState state) { server_pressure_state_ = state; }
+	[[nodiscard]] ServerPressureState get_server_pressure_state() const { return server_pressure_state_; }
+	inline bool IsServerNoPressure() const { return server_pressure_state_ == ServerPressureState::kNoPressure; }
+	inline bool IsServerPressure() const { return server_pressure_state_ == ServerPressureState::kPressure; }
 
 	[[nodiscard]] ServerSceneType GetServerSceneType() const
 	{
@@ -70,22 +71,23 @@ public:
 	{
 		server_scene_type_ = server_scene_type;
 	}
-	
-	inline std::size_t scenes_size() const {
-		std::size_t s = 0;
-		for (auto& it : conf_id_scene_list_)
+
+	inline std::size_t scenes_size() const
+	{
+		std::size_t scene_size = 0;
+		for (const auto& val : conf_id_scene_list_ | std::views::values)
 		{
-			s += it.second.size();
+			scene_size += val.size();
 		}
-		return s;
+		return scene_size;
 	}
 
-	inline bool scenes_empty() const
+	inline bool IsSceneEmpty() const
 	{
 		return scenes_size() == 0;
 	}
 
-	inline bool HasConfig(uint32_t scene_config_id)const { return conf_id_scene_list_.find(scene_config_id) != conf_id_scene_list_.end(); }
+	inline bool HasConfig(uint32_t scene_config_id) const { return conf_id_scene_list_.find(scene_config_id) != conf_id_scene_list_.end(); }
 
 	void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
 	{
@@ -102,5 +104,4 @@ private:
 	ServerState server_state_{ServerState::kNormal};
 	ServerPressureState server_pressure_state_{ServerPressureState::kNoPressure};
 	ServerSceneType server_scene_type_{ServerSceneType::kMainSceneServer};
-	
 };
