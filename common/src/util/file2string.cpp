@@ -11,22 +11,20 @@ std::string File2String(const std::string& filename)
 {
     std::ifstream is(filename, std::ifstream::binary);
     std::string json_buffer;
-    if (is) {
+    if (is)
+    {
         // get length of file:
         is.seekg(0, is.end);
         int length = (int)is.tellg();
         length = length + 1;
+        json_buffer.resize(length);
         is.seekg(0, is.beg);
-        char* buffer = new char[length];
-        memset(buffer, 0, length);
         // read data as a block:
-        is.read(buffer, length);
+        is.read(json_buffer.data(), length);
         is.close();
         // ...buffer contains the entire file...
-        json_buffer = buffer;
         //json_buffer.erase(remove_if(json_buffer.begin(), json_buffer.end(), iscntrl), json_buffer.end());
         //json_buffer.erase(remove_if(json_buffer.begin(), json_buffer.end(), isspace), json_buffer.end());
-        delete[] buffer;
     }
     else
     {
