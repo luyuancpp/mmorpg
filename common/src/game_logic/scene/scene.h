@@ -99,7 +99,7 @@ public:
     static inline std::size_t scenes_map_size()  { return scene_list_.size(); }
     static void set_server_sequence_node_id(uint32_t node_id) { server_sequence_.set_node_id(node_id); }
 
-    static entt::entity get_scene(Guid scene_id);
+    static entt::entity GetSceneBySceneId(Guid scene_id);
 
     static bool HasScene(uint32_t scene_config_id);
     static bool IsSceneEmpty() { return scene_list_.empty(); }
