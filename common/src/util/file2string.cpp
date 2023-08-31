@@ -32,4 +32,4 @@ std::string File2String(const std::string& filename)
     return result;
 }
 
-}//namespace common
+} // namespace common
