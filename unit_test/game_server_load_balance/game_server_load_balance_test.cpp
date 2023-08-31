@@ -93,7 +93,7 @@ TEST(GS, DestroyScene)
     destroy_scene_param.scene_ = scene_entity;
     sm.DestroyScene(destroy_scene_param);
     EXPECT_TRUE(sm.IsSceneEmpty());
-    EXPECT_FALSE(sm.HasScene(create_gs_scene_param1.scene_confid_));
+    EXPECT_FALSE(sm.HasConfigScene(create_gs_scene_param1.scene_confid_));
     EXPECT_TRUE(server_comp.IsSceneEmpty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
     EXPECT_FALSE(tls.registry.valid(scene_entity));

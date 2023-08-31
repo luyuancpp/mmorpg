@@ -22,39 +22,53 @@ void AddMainSceneNodeComponent(const entt::entity server)
 
 ScenesSystem::~ScenesSystem()
 {
-	scene_list_.clear();
+	for (const auto server_entity : tls.registry.view<ServerComp>())
+	{
+		tls.registry.destroy(server_entity);
+	}
 }
 
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 {
 	std::size_t scene_size = 0;
-	//todo  auto
-	for (const auto& val : scene_list_ | std::views::values)
+	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
-		if (tls.registry.get<SceneInfo>(val).scene_confid() != scene_config_id)
-		{
-			continue;
-		}
-		++scene_size;
+		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
+		scene_size += server_comp.ConfigSceneSize(scene_config_id);
 	}
 	return scene_size;
 }
 
-entt::entity ScenesSystem::GetSceneBySceneId(const Guid scene_id)
+std::size_t ScenesSystem::scenes_size()
 {
-	const auto scene_it = scene_list_.find(scene_id);
-	if (scene_it == scene_list_.end())
+	std::size_t scene_size = 0;
+	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
-		return entt::null;
+		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
+		scene_size += server_comp.GetScenesSize();
 	}
-	return scene_it->second;
+	return scene_size;
 }
 
-bool ScenesSystem::HasScene(const uint32_t scene_config_id)
+bool ScenesSystem::IsSceneEmpty()
 {
-	for (const auto& val : scene_list_ | std::views::values)
+	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
-		if (tls.registry.get<SceneInfo>(val).scene_confid() == scene_config_id)
+		if (auto& server_comp = tls.registry.get<ServerComp>(server_entity);
+			!server_comp.IsSceneEmpty())
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+bool ScenesSystem::HasConfigScene(const uint32_t scene_config_id)
+{
+	for (const auto server_entity : tls.registry.view<ServerComp>())
+	{
+		if (auto& server_comp = tls.registry.get<ServerComp>(server_entity);
+			server_comp.HasConfigScene(scene_config_id))
 		{
 			return true;
 		}
@@ -67,11 +81,6 @@ entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& para
 	auto entity = tls.registry.create();
 	const auto& scene_info = tls.registry.emplace<SceneInfo>(entity, param.scene_info_);
 	tls.registry.emplace<ScenePlayers>(entity);
-	if (const auto [fst, snd] = scene_list_.emplace(scene_info.scene_id(), entity);
-		!snd)
-	{
-		LOG_ERROR << "already has scene" << scene_info.scene_id();
-	}
 	return entity;
 }
 
@@ -108,10 +117,10 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 	}
 	// todo 人得换场景
 	const auto& scene_info = tls.registry.get<SceneInfo>(param.scene_);
-	scene_list_.erase(scene_info.scene_id());
-	tls.registry.destroy(param.scene_);
 	auto& server_scene = tls.registry.get<ServerComp>(param.node_);
 	server_scene.RemoveScene(scene_info.scene_confid(), param.scene_);
+	
+	tls.registry.destroy(param.scene_);
 }
 
 void ScenesSystem::DestroyServer(const DestroyServerParam& param)
