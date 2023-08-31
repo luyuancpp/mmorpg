@@ -68,7 +68,7 @@ TEST(GS, CreateScene2Sever)
 
     EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_confid_));
     EXPECT_EQ(2, sm.scenes_size());
-    EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
+    EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 }
 
 TEST(GS, DestroyScene)
@@ -83,7 +83,7 @@ TEST(GS, DestroyScene)
 
     EXPECT_EQ(1, sm.scenes_size());
     EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_confid_));
-    EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
+    EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 
     const auto& server_comp = tls.registry.get<ServerComp>(server_entity1);
     EXPECT_EQ(1, server_comp.GetScenesSize());
@@ -95,7 +95,7 @@ TEST(GS, DestroyScene)
     EXPECT_TRUE(sm.IsSceneEmpty());
     EXPECT_FALSE(sm.HasConfigScene(create_gs_scene_param1.scene_confid_));
     EXPECT_TRUE(server_comp.IsSceneEmpty());
-    EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
+    EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
     EXPECT_FALSE(tls.registry.valid(scene_entity));
 }
 
@@ -121,7 +121,7 @@ TEST(GS, DestroySever)
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).GetScenesSize());
 
     EXPECT_EQ(2, sm.scenes_size());
-    EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
+    EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 
     DestroyServerParam destroy_server_param;
     destroy_server_param.node_ = server_entity1;
@@ -148,7 +148,7 @@ TEST(GS, DestroySever)
 
     EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_confid_));
     EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param2.scene_confid_));
-    EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
+    EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 }
 
 TEST(GS, ServerScene2Sever)
@@ -174,7 +174,7 @@ TEST(GS, ServerScene2Sever)
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).GetScenesSize());
 
     EXPECT_EQ(2, sm.scenes_size());
-    EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
+    EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 
     MoveServerScene2ServerSceneP move_scene_param;
     move_scene_param.src_node_ = server_entity1;
