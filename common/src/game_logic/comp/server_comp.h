@@ -80,6 +80,26 @@ public:
 
 	inline bool HasConfig(uint32_t scene_config_id) const { return conf_id_scene_list_.find(scene_config_id) != conf_id_scene_list_.end(); }
 
+	[[nodiscard]] bool HasConfigScene(uint32_t scene_config_id) const
+	{
+		const auto scene_it = conf_id_scene_list_.find(scene_config_id);
+		if (scene_it == conf_id_scene_list_.end())
+		{
+			return false;
+		}
+		return !scene_it->second.empty();
+	}
+
+	[[nodiscard]] std::size_t ConfigSceneSize(uint32_t scene_config_id) const
+	{
+		const auto scene_it = conf_id_scene_list_.find(scene_config_id);
+		if (scene_it == conf_id_scene_list_.end())
+		{
+			return 0;
+		}
+		return scene_it->second.size();
+	}
+
 	void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
 	{
 		conf_id_scene_list_[scene_config_id].emplace(scene_entity);

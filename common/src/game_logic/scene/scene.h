@@ -95,14 +95,12 @@ public:
     ~ScenesSystem();//just for test clear 
 
     static std::size_t scenes_size(uint32_t scene_config_id);
-    static inline std::size_t scenes_size()  { return scene_list_.size(); }
-    static inline std::size_t scenes_map_size()  { return scene_list_.size(); }
+    static std::size_t scenes_size();
+    static inline std::size_t scenes_map_size() {return scenes_size();}
     static void set_server_sequence_node_id(uint32_t node_id) { server_sequence_.set_node_id(node_id); }
-
-    static entt::entity GetSceneBySceneId(Guid scene_id);
-
-    static bool HasScene(uint32_t scene_config_id);
-    static bool IsSceneEmpty() { return scene_list_.empty(); }
+	
+    static bool HasConfigScene(uint32_t scene_config_id);
+    static bool IsSceneEmpty();
 
     static uint32_t CheckScenePlayerSize(entt::entity scene);
 
@@ -123,6 +121,5 @@ public:
     static void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 
 private:
-	static inline SceneList scene_list_;
 	static inline ServerSequence24 server_sequence_;
 };
