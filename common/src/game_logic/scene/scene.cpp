@@ -5,8 +5,11 @@
 #include "src/game_logic/tips_id.h"
 
 #include "event_proto/scene_event.pb.h"
+#include "component_proto/gs_node_comp.pb.h"
 
 static constexpr std::size_t kMaxMainScenePlayer = 1000;
+
+using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
 void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_sequence_node_id(node_id); }
 
@@ -74,15 +77,17 @@ entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& para
 
 entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 {
+	if (param.IsNull())
+	{
+		LOG_ERROR << "server id error" << param.scene_confid_;
+		return entt::null;
+	}
+
 	CreateSceneBySceneInfoP create_by_guid_param;
 	create_by_guid_param.scene_info_.set_scene_confid(param.scene_confid_);
 	create_by_guid_param.scene_info_.set_scene_id(server_sequence_.Generate());
 	const auto scene_entity = CreateSceneByGuid(create_by_guid_param);
-	if (param.IsNull())
-	{
-		LOG_ERROR << "server id error" << param.scene_confid_;
-		return scene_entity;
-	}
+
 	if (auto* try_server_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.node_))
 	{
 		tls.registry.emplace<GsNodePlayerInfoPtr>(scene_entity, *try_server_player_info);
