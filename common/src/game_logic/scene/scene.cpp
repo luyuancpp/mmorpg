@@ -40,7 +40,7 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 	return scene_size;
 }
 
-entt::entity ScenesSystem::get_scene(Guid scene_id)
+entt::entity ScenesSystem::GetSceneBySceneId(const Guid scene_id)
 {
 	const auto scene_it = scene_list_.find(scene_id);
 	if (scene_it == scene_list_.end())
@@ -50,7 +50,7 @@ entt::entity ScenesSystem::get_scene(Guid scene_id)
 	return scene_it->second;
 }
 
-bool ScenesSystem::HasScene(uint32_t scene_config_id)
+bool ScenesSystem::HasScene(const uint32_t scene_config_id)
 {
 	for (const auto& val : scene_list_ | std::views::values)
 	{
@@ -107,11 +107,11 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 		return;
 	}
 	// todo 人得换场景
-	auto& si = tls.registry.get<SceneInfo>(param.scene_);
-	scene_list_.erase(si.scene_id());
+	const auto& scene_info = tls.registry.get<SceneInfo>(param.scene_);
+	scene_list_.erase(scene_info.scene_id());
 	tls.registry.destroy(param.scene_);
 	auto& server_scene = tls.registry.get<ServerComp>(param.node_);
-	server_scene.RemoveScene(si.scene_confid(), param.scene_);
+	server_scene.RemoveScene(scene_info.scene_confid(), param.scene_);
 }
 
 void ScenesSystem::DestroyServer(const DestroyServerParam& param)
@@ -121,23 +121,23 @@ void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 		LOG_ERROR << "entity null";
 		return;
 	}
-    // todo 人得换场景
+	// todo 人得换场景
 	EntitySet server_scenes_set;
-	for (auto& it : tls.registry.get<ServerComp>(param.node_).GetConfidScenesList())
+	for (const auto& val : tls.registry.get<ServerComp>(param.node_).GetConfidScenesList() | std::views::values)
 	{
-		for (auto& ji : it.second)
+		for (const auto& ji : val)
 		{
-            server_scenes_set.emplace(ji);
+			server_scenes_set.emplace(ji);
 		}
 	}
-    DestroySceneParam dp;
-    dp.node_ = param.node_;
-    for (auto& it : server_scenes_set)
-    {
-        dp.scene_ = it;
-        DestroyScene(dp);
-    }
-    tls.registry.destroy(param.node_);
+	DestroySceneParam destroy_scene_param;
+	destroy_scene_param.node_ = param.node_;
+	for (auto& it : server_scenes_set)
+	{
+		destroy_scene_param.scene_ = it;
+		DestroyScene(destroy_scene_param);
+	}
+	tls.registry.destroy(param.node_);
 }
 
 void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param)
@@ -162,55 +162,53 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
 			dest_server_comp.AddScene(fst, ji);
 		}
 	}
-	tls.registry.emplace_or_replace<ServerComp>(param.src_node_);//todo 如果原来server 还有场景呢
+	tls.registry.emplace_or_replace<ServerComp>(param.src_node_); //todo 如果原来server 还有场景呢
 }
 
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
 {
-    //todo weak ptr ?
-    if (tls.registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
-    {
-        return kRetEnterSceneNotFull;
-    }
-    auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
-    if (nullptr == try_gs_player_info)
-    {
-        LOG_ERROR << " gs null";
-        return kRetEnterSceneGsInfoNull;
-    }
-    if ((*try_gs_player_info)->player_size() >= kMaxServerPlayerSize)
-    {
-        return kRetEnterSceneGsFull;
-    }
-    return kRetOK;
+	//todo weak ptr ?
+	if (tls.registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
+	{
+		return kRetEnterSceneNotFull;
+	}
+	const auto* const try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
+	if (nullptr == try_gs_player_info)
+	{
+		LOG_ERROR << " gs null";
+		return kRetEnterSceneGsInfoNull;
+	}
+	if ((*try_gs_player_info)->player_size() >= kMaxServerPlayerSize)
+	{
+		return kRetEnterSceneGsFull;
+	}
+	return kRetOK;
 }
 
 void ScenesSystem::EnterScene(const EnterSceneParam& param)
 {
-    if (param.IsNull())
-    {
-        LOG_INFO << "param null error";
-        return;
-    }
-    {
-        BeforeEnterScene before_enter_scene_event;
-        before_enter_scene_event.set_entity(entt::to_integral(param.enterer_));
-        tls.dispatcher.trigger(before_enter_scene_event);
-    }
-    
-    //todo gs 只要人数更改
-    tls.registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
-    tls.registry.emplace<SceneEntity>(param.enterer_, param.scene_);
-	// todo weak_ptr ?
-	if (auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.scene_))
+	if (param.IsNull())
 	{
-        (*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() + 1);
-	}	
-    {
-        OnEnterScene on_enter_scene_event;
-        on_enter_scene_event.set_entity(entt::to_integral(param.enterer_));
-        tls.dispatcher.trigger(on_enter_scene_event);
-    }    
+		LOG_INFO << "param null error";
+		return;
+	}
+
+	BeforeEnterScene before_enter_scene_event;
+	before_enter_scene_event.set_entity(entt::to_integral(param.enterer_));
+	tls.dispatcher.trigger(before_enter_scene_event);
+
+	tls.registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
+	tls.registry.emplace<SceneEntity>(param.enterer_, param.scene_);
+	// todo weak_ptr ?
+	if (const auto* const try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.scene_))
+	{
+		(*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() + 1);
+	}
+
+	OnEnterScene on_enter_scene_event;
+	on_enter_scene_event.set_entity(entt::to_integral(param.enterer_));
+	tls.dispatcher.trigger(on_enter_scene_event);
+
 }
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
@@ -220,77 +218,74 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 		LOG_ERROR << "entity null";
 		return;
 	}
-    auto leaver = param.leaver_;
-    if (nullptr == tls.registry.try_get<SceneEntity>(leaver))
-    {
-        LOG_ERROR << "leave scene empty";
-        return;
-    }
-    auto& player_scene = tls.registry.get<SceneEntity>(leaver);
-    auto scene = player_scene.scene_entity_;
-    {
-        BeforeLeaveScene before_leave_scene_event;
-        before_leave_scene_event.set_entity(entt::to_integral(leaver));
-        tls.dispatcher.trigger(before_leave_scene_event);
-    }
-    
-    tls.registry.get<ScenePlayers>(scene).erase(leaver);
-    tls.registry.remove<SceneEntity>(leaver);
-   
-    if (auto try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene))
-    {
-        (*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() - 1);
-    }
-    {
-        OnLeaveScene on_leave_scene_event;
-        on_leave_scene_event.set_entity(entt::to_integral(leaver));
-        tls.dispatcher.trigger(on_leave_scene_event);
-    }    
+	if (nullptr == tls.registry.try_get<SceneEntity>(param.leaver_))
+	{
+		LOG_ERROR << "leave scene empty";
+		return;
+	}
+
+	const auto scene = tls.registry.get<SceneEntity>(param.leaver_).scene_entity_;
+
+	BeforeLeaveScene before_leave_scene_event;
+	before_leave_scene_event.set_entity(entt::to_integral(param.leaver_));
+	tls.dispatcher.trigger(before_leave_scene_event);
+
+	tls.registry.get<ScenePlayers>(scene).erase(param.leaver_);
+	tls.registry.remove<SceneEntity>(param.leaver_);
+
+	if (const auto* const try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene))
+	{
+		(*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() - 1);
+	}
+
+	OnLeaveScene on_leave_scene_event;
+	on_leave_scene_event.set_entity(entt::to_integral(param.leaver_));
+	tls.dispatcher.trigger(on_leave_scene_event);
 }
 
 void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 {
-    auto& new_server_scene = tls.registry.get<ServerComp>(param.new_server_);
-    entt::entity server_scene_enitity = entt::null;
-    if (!new_server_scene.HasConfig(param.scene_confid_))
-    {
-        CreateGsSceneP create_gs_scene_param;
-        create_gs_scene_param.scene_confid_ = param.scene_confid_;
-        create_gs_scene_param.node_ = param.new_server_;
-        server_scene_enitity = CreateScene2Gs(create_gs_scene_param);
-    }
+	const auto& new_server_scene = tls.registry.get<ServerComp>(param.new_server_);
+	entt::entity scene_entity{entt::null};
+	if (!new_server_scene.HasConfig(param.scene_confid_))
+	{
+		CreateGsSceneP create_gs_scene_param;
+		create_gs_scene_param.scene_confid_ = param.scene_confid_;
+		create_gs_scene_param.node_ = param.new_server_;
+		 scene_entity = CreateScene2Gs(create_gs_scene_param);
+	}
 	else
 	{
-        //todo 第一个 场景压力会特别大
-		server_scene_enitity = new_server_scene.GetFirstSceneByConfigId(param.scene_confid_);
+		//todo 第一个 场景压力会特别大
+		 scene_entity = new_server_scene.GetFirstSceneByConfigId(param.scene_confid_);
 	}
 
-    if (entt::null == server_scene_enitity)
-    {
-        //todo 
-        return;
-    }
+	if (entt::null == scene_entity)
+	{
+		//todo 回到默认场景
+		return;
+	}
 
-    LeaveSceneParam leave_param;
-    leave_param.leaver_ = param.player_;
-    LeaveScene(leave_param);
+	LeaveSceneParam leave_param;
+	leave_param.leaver_ = param.player_;
+	LeaveScene(leave_param);
 
-    EnterSceneParam enter_param;
-    enter_param.enterer_ = param.player_;
-    enter_param.scene_ = server_scene_enitity;
-    EnterScene(enter_param);
+	EnterSceneParam enter_param;
+	enter_param.enterer_ = param.player_;
+	enter_param.scene_ = scene_entity;
+	EnterScene(enter_param);
 }
 
 void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
 {
-    if (param.IsNull())
-    {
-        return;
-    }
-    MoveServerScene2ServerSceneP move_param;
-    move_param.src_node_ = param.cransh_server_;
-    move_param.dest_node_ = param.replace_server_;
-    MoveServerScene2ServerScene(move_param);
-    tls.registry.destroy(move_param.src_node_);
+	if (param.IsNull())
+	{
+		return;
+	}
+	MoveServerScene2ServerSceneP move_scene_param;
+	move_scene_param.src_node_ = param.cransh_server_;
+	move_scene_param.dest_node_ = param.replace_server_;
+	MoveServerScene2ServerScene(move_scene_param);
+	tls.registry.destroy(move_scene_param.src_node_);
 }
 
