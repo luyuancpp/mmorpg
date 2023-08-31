@@ -3,24 +3,30 @@
 #include <memory>
 #include <ranges>
 
-#include "src/common_type/common_type.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/game_logic/enum/server_enum.h"
-
 #include "component_proto/gs_node_comp.pb.h"
+#include "src/common_type/common_type.h"
+#include "src/game_logic/enum/server_enum.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
 
 using SceneList = std::unordered_map<Guid, entt::entity>;
 using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
-using ScenePlayers = EntitySet;//弱引用，要解除玩家和场景的耦合
+using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
 
-struct MainSceneServer {};
-struct CrossMainSceneServer {};
-struct RoomSceneServer {};
-struct CrossRoomSceneServer {};
+struct MainSceneServer
+{
+};
 
+struct CrossMainSceneServer
+{
+};
 
-struct NoPressure {};//
-struct Pressure {};//
+struct RoomSceneServer
+{
+};
+
+struct CrossRoomSceneServer
+{
+};
 
 using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
