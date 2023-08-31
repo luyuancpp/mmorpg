@@ -3,6 +3,10 @@
 #include "src/game_logic/comp/server_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
+#include "component_proto/gs_node_comp.pb.h"
+
+using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
+
 //从当前符服务器中找到一个对应场景人数最少的
 template<typename ServerType>
 entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)

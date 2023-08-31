@@ -1,9 +1,7 @@
 #pragma once
 
-#include <memory>
 #include <ranges>
 
-#include "component_proto/gs_node_comp.pb.h"
 #include "src/common_type/common_type.h"
 #include "src/game_logic/enum/server_enum.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
@@ -27,8 +25,6 @@ struct RoomSceneServer
 struct CrossRoomSceneServer
 {
 };
-
-using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
 class ServerComp 
 {
@@ -67,7 +63,7 @@ public:
 		server_scene_type_ = server_scene_type;
 	}
 
-	inline std::size_t scenes_size() const
+	inline std::size_t GetScenesSize() const
 	{
 		std::size_t scene_size = 0;
 		for (const auto& val : conf_id_scene_list_ | std::views::values)
@@ -79,7 +75,7 @@ public:
 
 	inline bool IsSceneEmpty() const
 	{
-		return scenes_size() == 0;
+		return GetScenesSize() == 0;
 	}
 
 	inline bool HasConfig(uint32_t scene_config_id) const { return conf_id_scene_list_.find(scene_config_id) != conf_id_scene_list_.end(); }

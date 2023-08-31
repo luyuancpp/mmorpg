@@ -102,7 +102,7 @@ public:
     static entt::entity get_scene(Guid scene_id);
 
     static bool HasScene(uint32_t scene_config_id);
-    static bool Empty() { return scene_list_.empty(); }
+    static bool IsSceneEmpty() { return scene_list_.empty(); }
 
     static uint32_t CheckScenePlayerSize(entt::entity scene);
 
