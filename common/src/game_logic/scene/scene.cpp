@@ -4,8 +4,8 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 
-#include "event_proto/scene_event.pb.h"
 #include "component_proto/gs_node_comp.pb.h"
+#include "event_proto/scene_event.pb.h"
 
 static constexpr std::size_t kMaxMainScenePlayer = 1000;
 
@@ -147,22 +147,22 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
 		LOG_ERROR << "entity null";
 		return;
 	}
-    auto& from_server_config_scenes_map = tls.registry.get<ServerComp>(param.src_node_).GetConfidScenesList();
-    auto& to_server_config_scenes_map = tls.registry.get<ServerComp>(param.dest_node_);
-    auto p_to_server_data = tls.registry.try_get<GsNodePlayerInfoPtr>(param.dest_node_);
-    if (nullptr == p_to_server_data)
-    {
-        return;
-    }
-    for (auto& it : from_server_config_scenes_map)
-    {
-        for (auto& ji : it.second)
-        {
-            tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, *p_to_server_data);//todo 人数计算错误,没有加上原来场景的人数
-            to_server_config_scenes_map.AddScene(it.first, ji);
-        }
-    }
-    tls.registry.emplace_or_replace<ServerComp>(param.src_node_);//todo 如果原来server 还有场景呢
+	const auto& src_server_comp = tls.registry.get<ServerComp>(param.src_node_).GetConfidScenesList();
+	auto& dest_server_comp = tls.registry.get<ServerComp>(param.dest_node_);
+	auto* const p_to_server_data = tls.registry.try_get<GsNodePlayerInfoPtr>(param.dest_node_);
+	if (nullptr == p_to_server_data)
+	{
+		return;
+	}
+	for (const auto& [fst, snd] : src_server_comp)
+	{
+		for (const auto& ji : snd)
+		{
+			tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, *p_to_server_data); //todo 人数计算错误,没有加上原来场景的人数
+			dest_server_comp.AddScene(fst, ji);
+		}
+	}
+	tls.registry.emplace_or_replace<ServerComp>(param.src_node_);//todo 如果原来server 还有场景呢
 }
 
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
