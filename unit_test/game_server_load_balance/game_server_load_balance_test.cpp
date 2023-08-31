@@ -175,8 +175,8 @@ TEST(GS, ServerScene2Sever)
     EXPECT_EQ(sm.scenes_size(), sm.scenes_map_size());
 
     MoveServerScene2ServerSceneP move_scene_param;
-    move_scene_param.from_node_ = server_entity1;
-    move_scene_param.to_node_ = server_entity2;
+    move_scene_param.src_node_ = server_entity1;
+    move_scene_param.dest_node_ = server_entity2;
     sm.MoveServerScene2ServerScene(move_scene_param);
 
     EXPECT_TRUE(tls.registry.valid(server_entity1));

@@ -36,7 +36,7 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param, const GetScen
     }
     auto& scenes = tls.registry.get<ServerComp>(server);
     std::size_t min_scene_player_size = UINT64_MAX;
-    const auto& server_scenes = scenes.get_sceneslist_by_config(scene_config_id);
+    const auto& server_scenes = scenes.GetScenesListByConfig(scene_config_id);
     for (auto& ji : server_scenes)
     {
         std::size_t scene_player_size = tls.registry.get<ScenePlayers>(ji).size();
@@ -79,7 +79,7 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param, const GetSceneFilt
 		return scene;
 	}
 	auto& scenes = tls.registry.get<ServerComp>(server);
-	auto& server_scenes = scenes.get_sceneslist_by_config(scene_config_id);
+	auto& server_scenes = scenes.GetScenesListByConfig(scene_config_id);
 	for (auto& ji : server_scenes)
 	{
 		std::size_t scene_player_size = tls.registry.get<ScenePlayers>(ji).size();

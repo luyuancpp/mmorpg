@@ -1,6 +1,3 @@
-#ifndef _OTHER_TURN_BASED_GAME_COMMON_SRC_GAME_LOGIC_SCENE_SCENE_H
-#define _OTHER_TURN_BASED_GAME_COMMON_SRC_GAME_LOGIC_SCENE_SCENE_H
-
 #pragma once
 
 #include "src/game_logic/comp/server_comp.h"
@@ -9,40 +6,40 @@
 #include "src/util/snow_flake.h"
 #include <component_proto/scene_comp.pb.h>
 
-struct MainScene {};
-
 struct SceneEntity
 {
-	entt::entity scene_entity_{ entt::null };
+	entt::entity scene_entity_{entt::null };
 };
 
 struct EnterSceneParam
 {
-    inline bool IsNull() const
-    {
-        return scene_ == entt::null || enterer_ == entt::null;
-    }
-	entt::entity scene_{ entt::null };
-	entt::entity enterer_{ entt::null };
+	inline bool IsNull() const
+	{
+		return scene_ == entt::null || enterer_ == entt::null;
+	}
+
+	entt::entity scene_{entt::null};
+	entt::entity enterer_{entt::null};
 };
 
 struct LeaveSceneParam
 {
 	inline bool IsNull() const
 	{
-        return leaver_ == entt::null;
+		return leaver_ == entt::null;
 	}
-	entt::entity leaver_{ entt::null };
+
+	entt::entity leaver_{entt::null};
 };
 
 struct CreateSceneP
 {
-    uint32_t scene_confid_{ 0 };
+	uint32_t scene_confid_{0};
 };
 
 struct CreateSceneBySceneInfoP
 {
-    SceneInfo scene_info_;
+	SceneInfo scene_info_;
 };
 
 struct CreateGsSceneP
@@ -51,18 +48,20 @@ struct CreateGsSceneP
 	{
 		return node_ == entt::null;
 	}
-    entt::entity node_{ entt::null };
-    uint32_t scene_confid_{ 0 };
+
+	entt::entity node_{entt::null};
+	uint32_t scene_confid_{0};
 };
 
 struct MoveServerScene2ServerSceneP
 {
 	inline bool IsNull() const
 	{
-		return from_node_ == entt::null || to_node_ == entt::null;
+		return src_node_ == entt::null || dest_node_ == entt::null;
 	}
-    entt::entity from_node_{ entt::null };
-    entt::entity to_node_{ entt::null };
+
+	entt::entity src_node_{entt::null};
+	entt::entity dest_node_{entt::null};
 };
 
 struct DestroySceneParam
@@ -71,8 +70,9 @@ struct DestroySceneParam
 	{
 		return scene_ == entt::null || node_ == entt::null;
 	}
-    entt::entity scene_{ entt::null };
-    entt::entity node_{ entt::null };
+
+	entt::entity scene_{entt::null};
+	entt::entity node_{entt::null};
 };
 
 struct DestroyServerParam
@@ -102,7 +102,7 @@ public:
     static entt::entity get_scene(Guid scene_id);
 
     static bool HasScene(uint32_t scene_config_id);
-    static bool Empty()  { return scene_list_.empty(); }
+    static bool Empty() { return scene_list_.empty(); }
 
     static uint32_t CheckScenePlayerSize(entt::entity scene);
 
@@ -123,9 +123,6 @@ public:
     static void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 
 private:
-	static SceneList scene_list_;
-	static ServerSequence24 server_sequence_;
+	static inline SceneList scene_list_;
+	static inline ServerSequence24 server_sequence_;
 };
-
-
-#endif

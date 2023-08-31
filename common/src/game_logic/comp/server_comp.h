@@ -27,31 +27,20 @@ using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 class ServerComp 
 {
 public:
-	const Uint32KeyEntitySetValue& confid_sceneslist() const { return conf_id_scene_list_; }
-	const EntitySet& get_sceneslist_by_config(uint32_t scene_config_id) const
+	const Uint32KeyEntitySetValue& GetConfidScenesList() const;
+
+	[[nodiscard]] const EntitySet& GetScenesListByConfig(uint32_t scene_config_id) const
 	{
-		auto it = conf_id_scene_list_.find(scene_config_id);
-		if (it == conf_id_scene_list_.end())
+		const auto list_const_iterator = conf_id_scene_list_.find(scene_config_id);
+		if (list_const_iterator == conf_id_scene_list_.end())
 		{
-			static EntitySet s;
-			return s;
+			static const EntitySet empty_result;
+			return empty_result;
 		}
-		return it->second;
+		return list_const_iterator->second;
 	}
 
-	entt::entity get_firstscene_by_configid(uint32_t scene_config_id)const
-	{
-		auto it = conf_id_scene_list_.find(scene_config_id);
-		if (it == conf_id_scene_list_.end())
-		{
-			return entt::null;
-		}
-		if (it->second.empty())
-		{
-			return entt::null;
-		}
-		return *it->second.begin();
-	}
+	[[nodiscard]] entt::entity GetFirstSceneByConfigId(uint32_t scene_config_id) const;
 
 	inline void SetServerState(ServerState state) { server_state_ = state; }
 	[[nodiscard]] ServerState GetServerState() const { return server_state_; }
@@ -105,3 +94,22 @@ private:
 	ServerPressureState server_pressure_state_{ServerPressureState::kNoPressure};
 	ServerSceneType server_scene_type_{ServerSceneType::kMainSceneServer};
 };
+
+inline const Uint32KeyEntitySetValue& ServerComp::GetConfidScenesList() const
+{
+	return conf_id_scene_list_;
+}
+
+inline entt::entity ServerComp::GetFirstSceneByConfigId(uint32_t scene_config_id) const
+{
+	auto it = conf_id_scene_list_.find(scene_config_id);
+	if (it == conf_id_scene_list_.end())
+	{
+		return entt::null;
+	}
+	if (it->second.empty())
+	{
+		return entt::null;
+	}
+	return *it->second.begin();
+}
