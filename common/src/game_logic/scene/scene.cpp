@@ -45,7 +45,7 @@ std::size_t ScenesSystem::scenes_size()
 	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
 		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
-		scene_size += server_comp.GetScenesSize();
+		scene_size += server_comp.GetSceneSize();
 	}
 	return scene_size;
 }
@@ -78,8 +78,8 @@ bool ScenesSystem::HasConfigScene(const uint32_t scene_config_id)
 
 entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& param)
 {
-	auto entity = tls.registry.create();
-	const auto& scene_info = tls.registry.emplace<SceneInfo>(entity, param.scene_info_);
+	const auto entity = tls.registry.create();
+	tls.registry.emplace<SceneInfo>(entity, std::move(param.scene_info_));
 	tls.registry.emplace<ScenePlayers>(entity);
 	return entity;
 }

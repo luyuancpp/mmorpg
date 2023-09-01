@@ -63,7 +63,7 @@ public:
 		server_scene_type_ = server_scene_type;
 	}
 
-	inline std::size_t GetScenesSize() const
+	inline std::size_t GetSceneSize() const
 	{
 		std::size_t scene_size = 0;
 		for (const auto& val : conf_id_scene_list_ | std::views::values)
@@ -75,7 +75,7 @@ public:
 
 	inline bool IsSceneEmpty() const
 	{
-		return GetScenesSize() == 0;
+		return GetSceneSize() == 0;
 	}
 
 	inline bool HasConfig(uint32_t scene_config_id) const { return conf_id_scene_list_.find(scene_config_id) != conf_id_scene_list_.end(); }
