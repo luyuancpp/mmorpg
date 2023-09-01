@@ -315,28 +315,33 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     std::unordered_map<entt::entity, entt::entity> player_scene1;
 
     EnterSceneParam enter_param1;
-
+    //todo
+    // 进入第一个场景 
     for (uint32_t i = 0; i < player_size; ++i)
     {
-        for (auto player_entity : scene_entities)
+        for (const auto scene_entity : scene_entities)
         {
-            auto p_e = tls.registry.create();
-            enter_param1.enterer_ = p_e;
-            enter_param1.scene_ = player_entity;
+            enter_param1.enterer_ = tls.registry.create();
+            enter_param1.scene_ = scene_entity;
             player_scene1.emplace(enter_param1.enterer_, enter_param1.scene_);
             sm.EnterScene(enter_param1);
         }
     }
 
-    ServerStateParam maintain;
-    maintain.node_entity_ = *server_entities.begin();
-    maintain.server_state_ = ServerState::kMainTain;
-    node_system.set_server_state(maintain);
-
-    uint32_t scene_config_id0 = 0;
-    uint32_t scene_config_id1 = 1;
+    ServerStateParam maintain_param;
+    maintain_param.node_entity_ = *server_entities.begin();
+    maintain_param.server_state_ = ServerState::kMainTain;
+    node_system.set_server_state(maintain_param);
+    
     GetSceneParam weight_round_robin_scene;
-    weight_round_robin_scene.scene_confid_ = scene_config_id0;
+    weight_round_robin_scene.scene_confid_ = 0;
+    for (uint32_t i = 0; i < player_size; ++i)
+    {
+        auto can_enter = node_system.GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        EXPECT_TRUE(can_enter != entt::null);
+    }
+
+    weight_round_robin_scene.scene_confid_ = 1;
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto can_enter = node_system.GetWeightRoundRobinMainScene(weight_round_robin_scene);
@@ -360,8 +365,8 @@ TEST(GS, CompelToChangeScene)
     server2_param.scene_confid_ = 2;
     server2_param.node_ = server_entity2;
 
-    auto scene_id1 = sm.CreateScene2Gs(server1_param);
-    auto scene_id2 = sm.CreateScene2Gs(server2_param);
+    const auto scene_id1 = sm.CreateScene2Gs(server1_param);
+    const auto scene_id2 = sm.CreateScene2Gs(server2_param);
 
     EnterSceneParam enter_param1;
     enter_param1.scene_ = scene_id1;
@@ -369,9 +374,8 @@ TEST(GS, CompelToChangeScene)
     EnterSceneParam enter_param2;
     enter_param2.scene_ = scene_id2;
 
-    uint32_t player_size = 100;
+    constexpr uint32_t player_size = 100;
     EntitySet player_entities_set1;
-    EntitySet player_entities_set2;
     for (uint32_t i = 0; i < player_size; ++i)
     {
         auto pe = tls.registry.create();
