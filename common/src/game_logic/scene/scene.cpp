@@ -77,10 +77,10 @@ bool ScenesSystem::HasConfigScene(const uint32_t scene_config_id)
 	return false;
 }
 
-entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoParam& param)
+entt::entity ScenesSystem::CreateScene(const SceneInfo& scene_info)
 {
 	const auto entity = tls.registry.create();
-	tls.registry.emplace<SceneInfo>(entity, std::move(param.scene_info_));
+	tls.registry.emplace<SceneInfo>(entity, scene_info);
 	tls.registry.emplace<ScenePlayers>(entity);
 	return entity;
 }
@@ -93,10 +93,10 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 		return entt::null;
 	}
 
-	CreateSceneBySceneInfoParam create_by_guid_param;
-	create_by_guid_param.scene_info_.set_scene_confid(param.scene_confid_);
-	create_by_guid_param.scene_info_.set_scene_id(server_sequence_.Generate());
-	const auto scene_entity = CreateSceneByGuid(create_by_guid_param);
+	SceneInfo scene_info;
+	scene_info.set_scene_confid(param.scene_confid_);
+	scene_info.set_scene_id(server_sequence_.Generate());
+	const auto scene_entity = CreateScene(scene_info);
 
 	if (auto* try_server_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.node_))
 	{
@@ -216,7 +216,7 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 	tls.dispatcher.trigger(on_leave_scene_event);
 }
 
-void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
+void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 {
 	const auto& dest_node_scene = tls.registry.get<ServerComp>(param.dest_node_);
 	entt::entity scene_entity{entt::null};

@@ -342,7 +342,7 @@ TEST(GS, CompelToChangeScene)
     for (auto& it : player_entities_set1)
     {
         compel_change_param1.player_ = it;
-        sm.CompelToChangeScene(compel_change_param1);
+        sm.CompelPlayerChangeScene(compel_change_param1);
         EXPECT_TRUE(tls.registry.try_get<SceneEntity>(it)->scene_entity_ == scene_id2);
     }
     EXPECT_EQ(tls.registry.get<GsNodePlayerInfoPtr>(server_entity1)->player_size(), 0);
