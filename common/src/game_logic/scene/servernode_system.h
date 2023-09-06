@@ -1,12 +1,8 @@
 #pragma once
 
-#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/constants/server_constants.h"
 
 #include "src/common_type/common_type.h"
-
-inline static constexpr std::size_t kMaxServerPlayerSize = 2000;
-inline static constexpr std::size_t kMaxScenePlayerSize = 1000;
 
 struct GetSceneParam
 {
