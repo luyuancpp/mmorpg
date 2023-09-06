@@ -142,13 +142,13 @@ void ServerNodeSystem::ServerEnterNoPressure(entt::entity node)
 	try_server_comp->SetNodePressureState(NodePressureState::kNoPressure);
 }
 
-void ServerNodeSystem::set_server_state(const ServerStateParam& param)
+void ServerNodeSystem::SetServerState(entt::entity node, NodeState node_state)
 {
-	auto* const try_server_comp = tls.registry.try_get<ServerComp>(param.node_entity_);
+	auto* const try_server_comp = tls.registry.try_get<ServerComp>(node);
 	if (nullptr == try_server_comp)
 	{
 		return;
 	}
-	try_server_comp->SetNodeState(param.node_state_);
+	try_server_comp->SetNodeState(node_state);
 }
 

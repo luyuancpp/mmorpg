@@ -279,11 +279,8 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
             sm.EnterScene(enter_param1);
         }
     }
-
-    ServerStateParam maintain_param;
-    maintain_param.node_entity_ = *server_entities.begin();
-    maintain_param.node_state_ = NodeState::kMainTain;
-    node_system.set_server_state(maintain_param);
+    ;
+    node_system.SetServerState(*server_entities.begin(), NodeState::kMainTain);
     
     GetSceneParam weight_round_robin_scene;
     weight_round_robin_scene.scene_conf_id_ = 0;
@@ -402,10 +399,8 @@ TEST(GS, CrashWeightRoundRobinMainScene)
         }
     }
 
-    ServerStateParam crash1;
-    crash1.node_entity_ = *server_entities.begin();
-    crash1.node_state_ = NodeState::kCrash;
-    snsys.set_server_state(crash1);
+
+    snsys.SetServerState(*server_entities.begin(), NodeState::kCrash);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -465,11 +460,8 @@ TEST(GS, CrashMovePlayer2NewServer)
         player_scene1.emplace(enter_param1.enterer_, enter_param1.scene_);
         sm.EnterScene(enter_param1);
     }
-
-    ServerStateParam crash1;
-    crash1.node_entity_ = *server_entities.begin();
-    crash1.node_state_ = NodeState::kCrash;
-    snsys.set_server_state(crash1);
+    
+    snsys.SetServerState(*server_entities.begin(), NodeState::kCrash);
 
     ReplaceCrashServerParam replace_crash;
     replace_crash.cransh_node_ = *server_entities.begin();
@@ -672,8 +664,6 @@ TEST(GS, ServerEnterLeavePressure)
         player_scene2.emplace(enter_param1.enterer_, enter_param1.scene_);
         sm.EnterScene(enter_param1);
     }
-
-    
 }
 
 struct TestNodeId
