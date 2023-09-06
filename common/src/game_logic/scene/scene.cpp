@@ -124,7 +124,7 @@ void ScenesSystem::DestroyScene(const DestroySceneParam& param)
 	tls.registry.destroy(param.scene_);
 }
 
-void ScenesSystem::DestroyServer(const DestroyServerParam& param)
+void ScenesSystem::OnDestroyServer(const DestroyServerParam& param)
 {
 	if (param.IsNull())
 	{

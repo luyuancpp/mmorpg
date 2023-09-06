@@ -96,7 +96,7 @@ public:
 	static entt::entity CreateScene2Gs(const CreateGsSceneParam& param);
 
 	static void DestroyScene(const DestroySceneParam& param);
-	static void DestroyServer(const DestroyServerParam& param);
+	static void OnDestroyServer(const DestroyServerParam& param);
 
 	static void EnterScene(const EnterSceneParam& param);
 
