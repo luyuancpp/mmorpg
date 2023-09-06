@@ -227,21 +227,45 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 	tls.dispatcher.trigger(on_leave_scene_event);
 }
 
+
+[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(const ServerComp& scene_comp, uint32_t scene_config_id)
+{
+	const auto& scene_list = scene_comp.GetScenesListByConfig(scene_config_id);
+	if (scene_list.empty())
+	{
+		return entt::null;
+	}
+	entt::entity scene{entt::null};
+	std::size_t min_scene_player_size = UINT64_MAX;
+	for (const auto& scene_it : scene_list)
+	{
+		const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
+		if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
+		{
+			continue;
+		}
+		min_scene_player_size = scene_player_size;
+		scene = scene_it;
+	}
+	return scene;
+}
+
+
 void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 {
-	const auto& new_server_scene = tls.registry.get<ServerComp>(param.new_server_);
+	const auto& dest_node_scene = tls.registry.get<ServerComp>(param.dest_node_);
 	entt::entity scene_entity{entt::null};
-	if (!new_server_scene.HasConfig(param.scene_confid_))
+	if (!dest_node_scene.HasConfig(param.scene_confid_))
 	{
 		CreateGsSceneP create_gs_scene_param;
 		create_gs_scene_param.scene_confid_ = param.scene_confid_;
-		create_gs_scene_param.node_ = param.new_server_;
-		 scene_entity = CreateScene2Gs(create_gs_scene_param);
+		create_gs_scene_param.node_ = param.dest_node_;
+		scene_entity = CreateScene2Gs(create_gs_scene_param);
 	}
 	else
 	{
 		//todo 第一个 场景压力会特别大
-		 scene_entity = new_server_scene.GetFirstSceneByConfigId(param.scene_confid_);
+		 scene_entity = GetMinPlayerSizeSceneByConfigId(dest_node_scene, param.scene_confid_);
 	}
 
 	if (entt::null == scene_entity)
@@ -266,8 +290,6 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
 	{
 		return;
 	}
-	auto& dest_server_data = tls.registry.get<GsNodePlayerInfoPtr>(param.replace_server_);
-	auto& dest_server_comp = tls.registry.get<ServerComp>(param.replace_server_);
 	for (const auto& src_server_scene = tls.registry.get<ServerComp>(param.cransh_server_).GetConfidScenesList();
 		const auto& [fst, snd] : src_server_scene)
 	{

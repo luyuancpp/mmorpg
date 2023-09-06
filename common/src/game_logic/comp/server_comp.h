@@ -42,8 +42,6 @@ public:
 		return list_const_iterator->second;
 	}
 
-	[[nodiscard]] entt::entity GetFirstSceneByConfigId(uint32_t scene_config_id) const;
-
 	inline void SetServerState(ServerState state) { server_state_ = state; }
 	[[nodiscard]] ServerState GetServerState() const { return server_state_; }
 	inline bool IsStateNormal() const { return server_state_ == ServerState::kNormal; }
@@ -122,16 +120,3 @@ inline const Uint32KeyEntitySetValue& ServerComp::GetConfidScenesList() const
 	return conf_id_scene_list_;
 }
 
-inline entt::entity ServerComp::GetFirstSceneByConfigId(uint32_t scene_config_id) const
-{
-	auto it = conf_id_scene_list_.find(scene_config_id);
-	if (it == conf_id_scene_list_.end())
-	{
-		return entt::null;
-	}
-	if (it->second.empty())
-	{
-		return entt::null;
-	}
-	return *it->second.begin();
-}

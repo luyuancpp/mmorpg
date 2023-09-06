@@ -5,8 +5,8 @@
 
 #include "src/common_type/common_type.h"
 
-static const std::size_t kMaxServerPlayerSize = 2000;
-static const std::size_t kMaxScenePlayerSize = 1000;
+inline static constexpr std::size_t kMaxServerPlayerSize = 2000;
+inline static constexpr std::size_t kMaxScenePlayerSize = 1000;
 
 struct GetSceneParam
 {
@@ -51,10 +51,10 @@ struct CompelChangeSceneParam
 {
 	inline bool IsNull() const
 	{
-		return player_ == entt::null || new_server_ == entt::null;
+		return player_ == entt::null || dest_node_ == entt::null;
 	}
     entt::entity player_{ entt::null };
-    entt::entity new_server_{ entt::null };
+    entt::entity dest_node_{ entt::null };
     uint32_t scene_confid_{0};
 };
 
@@ -62,9 +62,11 @@ class ServerNodeSystem
 {
 public:
 
-	static entt::entity GetWeightRoundRobinMainScene(const GetSceneParam& param);
-	
-    static  entt::entity GetMainSceneNotFull(const GetSceneParam& param);
+	//得到有该场景的人数最少的服务器
+	static entt::entity GetMinPlayerSizeServerScene(const GetSceneParam& param);
+
+	//得到有该场景的人数不满的服务器
+    static  entt::entity GetSceneServerNotFull(const GetSceneParam& param);
 
     static  void ServerEnterPressure(const ServerPressureParam& param);
 

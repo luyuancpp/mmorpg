@@ -294,14 +294,14 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
     weight_round_robin_scene.scene_confid_ = 0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
-        auto can_enter = node_system.GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        auto can_enter = node_system.GetMinPlayerSizeServerScene(weight_round_robin_scene);
         EXPECT_TRUE(can_enter != entt::null);
     }
 
     weight_round_robin_scene.scene_confid_ = 1;
     for (uint32_t i = 0; i < player_size; ++i)
     {
-        auto can_enter = node_system.GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        auto can_enter = node_system.GetMinPlayerSizeServerScene(weight_round_robin_scene);
         EXPECT_TRUE(can_enter != entt::null);
     }
 }
@@ -342,7 +342,7 @@ TEST(GS, CompelToChangeScene)
     }
 
     CompelChangeSceneParam compel_change_param1;
-    compel_change_param1.new_server_ = server_entity2;
+    compel_change_param1.dest_node_ = server_entity2;
     compel_change_param1.scene_confid_ = server2_param.scene_confid_;
     for (auto& it : player_entities_set1)
     {
@@ -418,7 +418,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     weight_round_robin_scene.scene_confid_ = scene_config_id0;
     for (uint32_t i = 0; i < player_size; ++i)
     {
-        auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        auto can_enter = snsys.GetMinPlayerSizeServerScene(weight_round_robin_scene);
         EXPECT_TRUE(can_enter != entt::null);
     }
 
@@ -533,7 +533,7 @@ TEST(GS, WeightRoundRobinMainScene)
 
         for (uint32_t i = 0; i < player_size; ++i)
         {
-            auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
+            auto can_enter = snsys.GetMinPlayerSizeServerScene(weight_round_robin_scene);
             auto p_e = tls.registry.create();
             enter_param1.enterer_ = p_e;
             enter_param1.scene_ = can_enter;
@@ -554,7 +554,7 @@ TEST(GS, WeightRoundRobinMainScene)
         weight_round_robin_scene.scene_confid_ = scene_config_id1;
         for (uint32_t i = 0; i < player_size; ++i)
         {
-            auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
+            auto can_enter = snsys.GetMinPlayerSizeServerScene(weight_round_robin_scene);
             auto p_e = tls.registry.create();
             enter_param1.enterer_ = p_e;
             enter_param1.scene_ = can_enter;
@@ -656,7 +656,7 @@ TEST(GS, ServerEnterLeavePressure)
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        auto can_enter = snsys.GetMinPlayerSizeServerScene(weight_round_robin_scene);
         auto p_e = tls.registry.create();
         enter_param1.enterer_ = p_e;
         enter_param1.scene_ = can_enter;
@@ -672,7 +672,7 @@ TEST(GS, ServerEnterLeavePressure)
     weight_round_robin_scene.scene_confid_ = scene_config_id1;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        auto can_enter = snsys.GetWeightRoundRobinMainScene(weight_round_robin_scene);
+        auto can_enter = snsys.GetMinPlayerSizeServerScene(weight_round_robin_scene);
         auto p_e = tls.registry.create();
         enter_param1.enterer_ = p_e;
         enter_param1.scene_ = can_enter;
@@ -735,7 +735,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 
 		for (uint32_t i = 0; i < player_size; ++i)
 		{
-			auto can_enter = snsys.GetMainSceneNotFull(weight_round_robin_scene);
+			auto can_enter = snsys.GetSceneServerNotFull(weight_round_robin_scene);
             if (can_enter == entt::null)
             {
                 continue;
@@ -760,7 +760,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 		weight_round_robin_scene.scene_confid_ = scene_config_id1;
 		for (uint32_t i = 0; i < player_size; ++i)
 		{
-			auto can_enter = snsys.GetMainSceneNotFull(weight_round_robin_scene);
+			auto can_enter = snsys.GetSceneServerNotFull(weight_round_robin_scene);
 			auto p_e = tls.registry.create();
 			enter_param1.enterer_ = p_e;
 			enter_param1.scene_ = can_enter;
