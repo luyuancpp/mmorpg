@@ -59,10 +59,10 @@ class ServerNodeSystem
 public:
 
 	//得到有该场景的人数最少的服务器
-	static entt::entity GetMinPlayerSizeServerScene(const GetSceneParam& param);
+	static entt::entity GetSceneOnMinPlayerSizeNode(const GetSceneParam& param);
 
 	//得到有该场景的人数不满的服务器
-    static  entt::entity GetSceneServerNotFull(const GetSceneParam& param);
+    static  entt::entity GetSceneOnNotFullNode(const GetSceneParam& param);
 
     static  void ServerEnterPressure(const ServerPressureParam& param);
 

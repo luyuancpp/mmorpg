@@ -9,7 +9,7 @@ using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
 //从当前服务器中找到一个对应场景人数最少的
 template <typename ServerType>
-entt::entity GetMinPlayerSizeServerSceneT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
+entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
 	auto scene_config_id = param.scene_confid_;
 	entt::entity server{entt::null};
@@ -58,7 +58,7 @@ entt::entity GetMinPlayerSizeServerSceneT(const GetSceneParam& param, const GetS
 
 //选择不满人的服务器场景
 template <typename ServerType>
-entt::entity GetSceneServerNotFullT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
+entt::entity GetSceneOnNotFullNodeT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
 	auto scene_config_id = param.scene_confid_;
 	entt::entity server{entt::null};
@@ -101,25 +101,25 @@ entt::entity GetSceneServerNotFullT(const GetSceneParam& param, const GetSceneFi
 	return scene;
 }
 
-entt::entity ServerNodeSystem::GetMinPlayerSizeServerScene(const GetSceneParam& param)
+entt::entity ServerNodeSystem::GetSceneOnMinPlayerSizeNode(const GetSceneParam& param)
 {
 	constexpr GetSceneFilterParam get_scene_filter_param;
-	if (const auto scene = GetMinPlayerSizeServerSceneT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene)
+	if (const auto scene = GetSceneOnMinPlayerSizeNodeT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene)
 	{
 		return scene;
 	}
-	return GetMinPlayerSizeServerSceneT<MainSceneServer>(param, get_scene_filter_param);
+	return GetSceneOnMinPlayerSizeNodeT<MainSceneServer>(param, get_scene_filter_param);
 }
 
-entt::entity ServerNodeSystem::GetSceneServerNotFull(const GetSceneParam& param)
+entt::entity ServerNodeSystem::GetSceneOnNotFullNode(const GetSceneParam& param)
 {
 	GetSceneFilterParam get_scene_filter_param;
-	if (const auto scene_entity = GetSceneServerNotFullT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene_entity)
+	if (const auto scene_entity = GetSceneOnNotFullNodeT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene_entity)
 	{
 		return scene_entity;
 	}
 	get_scene_filter_param.server_pressure_state_ = ServerPressureState::kPressure;
-	return GetSceneServerNotFullT<MainSceneServer>(param, get_scene_filter_param);
+	return GetSceneOnNotFullNodeT<MainSceneServer>(param, get_scene_filter_param);
 }
 
 void ServerNodeSystem::ServerEnterPressure(const ServerPressureParam& param)
