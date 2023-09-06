@@ -79,7 +79,7 @@ public:
 
 	static void CompelPlayerChangeScene(const CompelChangeSceneParam& param);
 
-	static void ReplaceCrashServer(const ReplaceCrashServerParam& param);
+	static void ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node);
 
 private:
 	static inline ServerSequence24 server_sequence_;

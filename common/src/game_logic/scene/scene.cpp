@@ -255,24 +255,21 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 	EnterScene(enter_param);
 }
 
-void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
+void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node)
 {
-	if (param.IsNull())
-	{
-		return;
-	}
-	for (const auto& src_server_scene = tls.registry.get<ServerComp>(param.cransh_node_).GetConfIdScenesList();
+
+	for (const auto& src_server_scene = tls.registry.get<ServerComp>(crash_node).GetConfIdScenesList();
 		const auto& [fst, snd] : src_server_scene)
 	{
 		for (const auto& ji : snd)
 		{
 			CreateGsSceneParam create_gs_scene_param;
 			create_gs_scene_param.scene_confid_ = fst;
-			create_gs_scene_param.node_ = param.replace_node_;
+			create_gs_scene_param.node_ = dest_node;
 			CreateScene2Gs(create_gs_scene_param);
 		}
 	}
 
-	tls.registry.destroy(param.cransh_node_);
+	tls.registry.destroy(crash_node);
 }
 
