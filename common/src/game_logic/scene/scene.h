@@ -55,7 +55,8 @@ void AddMainSceneNodeComponent(entt::entity server);
 class ScenesSystem 
 {
 public:
-	~ScenesSystem();//just for test clear 
+	//just for test clear
+	~ScenesSystem();
 
 	static std::size_t scenes_size(uint32_t scene_config_id);
 	static std::size_t scenes_size();
