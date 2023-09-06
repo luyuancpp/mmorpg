@@ -109,45 +109,33 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 	return scene_entity;
 }
 
-void ScenesSystem::DestroyScene(const DestroySceneParam& param)
+void ScenesSystem::DestroyScene(entt::entity node, entt::entity scene)
 {
-	if (param.IsNull())
-	{
-		LOG_ERROR << "entity null";
-		return;
-	}
 	// todo 人得换场景
-	const auto& scene_info = tls.registry.get<SceneInfo>(param.scene_);
-	auto& server_scene = tls.registry.get<ServerComp>(param.node_);
-	server_scene.RemoveScene(scene_info.scene_confid(), param.scene_);
+	const auto& scene_info = tls.registry.get<SceneInfo>(node);
+	auto& server_scene = tls.registry.get<ServerComp>(node);
+	server_scene.RemoveScene(scene_info.scene_confid(), scene);
 	
-	tls.registry.destroy(param.scene_);
+	tls.registry.destroy(scene);
 }
 
-void ScenesSystem::OnDestroyServer(const DestroyServerParam& param)
+void ScenesSystem::OnDestroyServer(entt::entity node)
 {
-	if (param.IsNull())
-	{
-		LOG_ERROR << "entity null";
-		return;
-	}
 	// todo 人得换场景
 	EntitySet server_scenes_set;
-	for (const auto& val : tls.registry.get<ServerComp>(param.node_).GetConfidScenesList() | std::views::values)
+	for (const auto& val : tls.registry.get<ServerComp>(node).GetConfIdScenesList() | std::views::values)
 	{
 		for (const auto& ji : val)
 		{
 			server_scenes_set.emplace(ji);
 		}
 	}
-	DestroySceneParam destroy_scene_param;
-	destroy_scene_param.node_ = param.node_;
-	for (auto& it : server_scenes_set)
+
+	for (const auto& scene : server_scenes_set)
 	{
-		destroy_scene_param.scene_ = it;
-		DestroyScene(destroy_scene_param);
+		DestroyScene(node, scene);
 	}
-	tls.registry.destroy(param.node_);
+	tls.registry.destroy(node);
 }
 
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
@@ -232,17 +220,17 @@ void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 {
 	const auto& dest_node_scene = tls.registry.get<ServerComp>(param.dest_node_);
 	entt::entity scene_entity{entt::null};
-	if (!dest_node_scene.HasConfig(param.scene_confid_))
+	if (!dest_node_scene.HasConfig(param.scene_conf_id_))
 	{
 		CreateGsSceneParam create_gs_scene_param;
-		create_gs_scene_param.scene_confid_ = param.scene_confid_;
+		create_gs_scene_param.scene_confid_ = param.scene_conf_id_;
 		create_gs_scene_param.node_ = param.dest_node_;
 		scene_entity = CreateScene2Gs(create_gs_scene_param);
 	}
 	else
 	{
 		//todo 第一个 场景压力会特别大
-		 scene_entity = dest_node_scene.GetMinPlayerSizeSceneByConfigId(param.scene_confid_);
+		 scene_entity = dest_node_scene.GetMinPlayerSizeSceneByConfigId(param.scene_conf_id_);
 	}
 
 	if (entt::null == scene_entity)
@@ -267,18 +255,18 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
 	{
 		return;
 	}
-	for (const auto& src_server_scene = tls.registry.get<ServerComp>(param.cransh_server_).GetConfidScenesList();
+	for (const auto& src_server_scene = tls.registry.get<ServerComp>(param.cransh_node_).GetConfIdScenesList();
 		const auto& [fst, snd] : src_server_scene)
 	{
 		for (const auto& ji : snd)
 		{
 			CreateGsSceneParam create_gs_scene_param;
 			create_gs_scene_param.scene_confid_ = fst;
-			create_gs_scene_param.node_ = param.replace_server_;
+			create_gs_scene_param.node_ = param.replace_node_;
 			CreateScene2Gs(create_gs_scene_param);
 		}
 	}
 
-	tls.registry.destroy(param.cransh_server_);
+	tls.registry.destroy(param.cransh_node_);
 }
 

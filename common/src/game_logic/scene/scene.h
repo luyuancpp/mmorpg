@@ -53,27 +53,6 @@ struct CreateGsSceneParam
 	uint32_t scene_confid_{0};
 };
 
-struct DestroySceneParam
-{
-	inline bool IsNull() const
-	{
-		return scene_ == entt::null || node_ == entt::null;
-	}
-
-	entt::entity scene_{entt::null};
-	entt::entity node_{entt::null};
-};
-
-struct DestroyServerParam
-{
-	inline bool IsNull() const
-	{
-		return node_ == entt::null;
-	}
-
-	entt::entity node_{ entt::null };
-};
-
 void AddMainSceneNodeComponent(entt::entity server);
 
 
@@ -95,8 +74,8 @@ public:
 	static entt::entity CreateSceneByGuid(const CreateSceneBySceneInfoParam& param);
 	static entt::entity CreateScene2Gs(const CreateGsSceneParam& param);
 
-	static void DestroyScene(const DestroySceneParam& param);
-	static void OnDestroyServer(const DestroyServerParam& param);
+	static void DestroyScene(entt::entity node, entt::entity scene);
+	static void OnDestroyServer(entt::entity node);
 
 	static void EnterScene(const EnterSceneParam& param);
 
