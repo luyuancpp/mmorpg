@@ -14,28 +14,6 @@ struct GetSceneFilterParam
 	NodePressureState server_pressure_state_{NodePressureState::kNoPressure};
 };
 
-struct ServerStateParam
-{
-	inline bool IsNull() const
-	{
-		return node_entity_ == entt::null;
-	}
-
-	entt::entity node_entity_{entt::null};
-	NodeState node_state_{NodeState::kNormal};
-};
-
-struct ReplaceCrashServerParam
-{
-	inline bool IsNull() const
-	{
-		return cransh_node_ == entt::null || replace_node_ == entt::null;
-	}
-
-	entt::entity cransh_node_{entt::null};
-	entt::entity replace_node_{entt::null};
-};
-
 struct CompelChangeSceneParam
 {
 	inline bool IsNull() const

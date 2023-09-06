@@ -463,13 +463,13 @@ TEST(GS, CrashMovePlayer2NewServer)
     
     snsys.SetServerState(*server_entities.begin(), NodeState::kCrash);
 
-    ReplaceCrashServerParam replace_crash;
-    replace_crash.cransh_node_ = *server_entities.begin();
-    replace_crash.replace_node_ = *(++server_entities.begin());
-    sm.ReplaceCrashServer(replace_crash);
+   
+    entt::entity cransh_node = *server_entities.begin();
+     entt::entity replace_node = *(++server_entities.begin());
+    sm.ReplaceCrashServer(cransh_node, replace_node);
 
-    EXPECT_FALSE(tls.registry.valid(replace_crash.cransh_node_));
-    server_entities.erase(replace_crash.cransh_node_);
+    EXPECT_FALSE(tls.registry.valid(cransh_node));
+    server_entities.erase(cransh_node);
     for (auto& it : server_entities)
     {
         auto& server_scene =  tls.registry.get<ServerComp>(it);
