@@ -156,22 +156,23 @@ void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerScene
 		LOG_ERROR << "entity null";
 		return;
 	}
-	const auto& src_server_comp = tls.registry.get<ServerComp>(param.src_node_).GetConfidScenesList();
+
+	auto& dest_server_data = tls.registry.get<GsNodePlayerInfoPtr>(param.dest_node_);
+	const auto& src_server_data = tls.registry.get<GsNodePlayerInfoPtr>(param.src_node_);
+	dest_server_data->set_player_size(dest_server_data->player_size() + src_server_data->player_size());
+
 	auto& dest_server_comp = tls.registry.get<ServerComp>(param.dest_node_);
-	auto* const p_to_server_data = tls.registry.try_get<GsNodePlayerInfoPtr>(param.dest_node_);
-	if (nullptr == p_to_server_data)
-	{
-		return;
-	}
-	for (const auto& [fst, snd] : src_server_comp)
+	for (const auto& src_server_scene = tls.registry.get<ServerComp>(param.src_node_).GetConfidScenesList();
+		const auto& [fst, snd] : src_server_scene)
 	{
 		for (const auto& ji : snd)
 		{
-			tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, *p_to_server_data); //todo 人数计算错误,没有加上原来场景的人数
+			tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, dest_server_data);
 			dest_server_comp.AddScene(fst, ji);
 		}
 	}
 	tls.registry.emplace_or_replace<ServerComp>(param.src_node_); //todo 如果原来server 还有场景呢
+	tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(param.src_node_, dest_server_data);
 }
 
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
