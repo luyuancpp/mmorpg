@@ -6,10 +6,6 @@
 #include "src/util/snow_flake.h"
 #include <component_proto/scene_comp.pb.h>
 
-struct SceneEntity
-{
-	entt::entity scene_entity_{entt::null };
-};
 
 struct EnterSceneParam
 {
@@ -57,6 +53,8 @@ public:
 	static std::size_t scenes_size(uint32_t scene_config_id);
 	static std::size_t scenes_size();
 	static void set_server_sequence_node_id(uint32_t node_id) { server_sequence_.set_node_id(node_id); }
+
+	static entt::entity GetSceneByGuid(Guid guid);
 
 	static bool HasConfigScene(uint32_t scene_config_id);
 	static bool IsSceneEmpty();

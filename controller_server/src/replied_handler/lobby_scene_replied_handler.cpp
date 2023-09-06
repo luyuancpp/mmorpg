@@ -50,7 +50,7 @@ void OnLobbyServiceEnterCrossMainSceneRepliedHandler(const TcpConnectionPtr& con
         LOG_ERROR << "player not found" << replied->player_id();
         return;
     }
-    auto scene = ScenesSystem::get_scene(replied->scene_id());
+    auto scene = ScenesSystem::GetSceneByGuid(replied->scene_id());
     if (entt::null == scene)
     {
         LOG_ERROR << "scene not found" << replied->scene_id();
