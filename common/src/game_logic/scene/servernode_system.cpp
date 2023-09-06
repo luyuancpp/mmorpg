@@ -11,7 +11,7 @@ using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 template <typename ServerType>
 entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
-	auto scene_config_id = param.scene_confid_;
+	auto scene_config_id = param.scene_conf_id_;
 	entt::entity server{entt::null};
 	std::size_t min_server_player_size = UINT64_MAX;
 	for (auto entity : tls.registry.view<ServerType>())
@@ -58,9 +58,9 @@ entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetS
 
 //选择不满人的服务器场景
 template <typename ServerType>
-entt::entity GetSceneOnNotFullNodeT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
+entt::entity GetNotFullSceneT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
-	auto scene_config_id = param.scene_confid_;
+	auto scene_config_id = param.scene_conf_id_;
 	entt::entity server{entt::null};
 	for (auto entity : tls.registry.view<ServerType>())
 	{
@@ -111,15 +111,15 @@ entt::entity ServerNodeSystem::GetSceneOnMinPlayerSizeNode(const GetSceneParam& 
 	return GetSceneOnMinPlayerSizeNodeT<MainSceneServer>(param, get_scene_filter_param);
 }
 
-entt::entity ServerNodeSystem::GetSceneOnNotFullNode(const GetSceneParam& param)
+entt::entity ServerNodeSystem::GetNotFullScene(const GetSceneParam& param)
 {
 	GetSceneFilterParam get_scene_filter_param;
-	if (const auto scene_entity = GetSceneOnNotFullNodeT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene_entity)
+	if (const auto scene_entity = GetNotFullSceneT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene_entity)
 	{
 		return scene_entity;
 	}
-	get_scene_filter_param.server_pressure_state_ = ServerPressureState::kPressure;
-	return GetSceneOnNotFullNodeT<MainSceneServer>(param, get_scene_filter_param);
+	get_scene_filter_param.server_pressure_state_ = NodePressureState::kPressure;
+	return GetNotFullSceneT<MainSceneServer>(param, get_scene_filter_param);
 }
 
 void ServerNodeSystem::ServerEnterPressure(const ServerPressureParam& param)
@@ -129,7 +129,7 @@ void ServerNodeSystem::ServerEnterPressure(const ServerPressureParam& param)
 	{
 		return;
 	}
-	try_server_comp->SetServerPressureState(ServerPressureState::kPressure);
+	try_server_comp->SetNodePressureState(NodePressureState::kPressure);
 }
 
 void ServerNodeSystem::ServerEnterNoPressure(const ServerPressureParam& param)
@@ -139,7 +139,7 @@ void ServerNodeSystem::ServerEnterNoPressure(const ServerPressureParam& param)
 	{
 		return;
 	}
-	try_server_comp->SetServerPressureState(ServerPressureState::kNoPressure);
+	try_server_comp->SetNodePressureState(NodePressureState::kNoPressure);
 }
 
 void ServerNodeSystem::set_server_state(const ServerStateParam& param)
@@ -149,6 +149,6 @@ void ServerNodeSystem::set_server_state(const ServerStateParam& param)
 	{
 		return;
 	}
-	try_server_comp->SetServerState(param.server_state_);
+	try_server_comp->SetNodeState(param.node_state_);
 }
 

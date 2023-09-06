@@ -26,10 +26,10 @@ struct CrossRoomSceneServer
 {
 };
 
-class ServerComp 
+class ServerComp
 {
 public:
-	const Uint32KeyEntitySetValue& GetConfidScenesList() const;
+	const Uint32KeyEntitySetValue& GetConfIdScenesList() const;
 
 	[[nodiscard]] const EntitySet& GetScenesListByConfig(uint32_t scene_config_id) const
 	{
@@ -42,23 +42,23 @@ public:
 		return list_const_iterator->second;
 	}
 
-	inline void SetServerState(ServerState state) { server_state_ = state; }
-	[[nodiscard]] ServerState GetServerState() const { return server_state_; }
-	inline bool IsStateNormal() const { return server_state_ == ServerState::kNormal; }
+	inline void SetNodeState(const NodeState state) { node_state_ = state; }
+	[[nodiscard]] NodeState GetNodeState() const { return node_state_; }
+	inline bool IsStateNormal() const { return node_state_ == NodeState::kNormal; }
 
-	inline void SetServerPressureState(const ServerPressureState state) { server_pressure_state_ = state; }
-	[[nodiscard]] ServerPressureState get_server_pressure_state() const { return server_pressure_state_; }
-	inline bool IsServerNoPressure() const { return server_pressure_state_ == ServerPressureState::kNoPressure; }
-	inline bool IsServerPressure() const { return server_pressure_state_ == ServerPressureState::kPressure; }
+	inline void SetNodePressureState(const NodePressureState state) { node_pressure_state_ = state; }
+	[[nodiscard]] NodePressureState get_server_pressure_state() const { return node_pressure_state_; }
+	inline bool IsNodeNoPressure() const { return node_pressure_state_ == NodePressureState::kNoPressure; }
+	inline bool IsNodePressure() const { return node_pressure_state_ == NodePressureState::kPressure; }
 
 	[[nodiscard]] ServerSceneType GetServerSceneType() const
 	{
-		return server_scene_type_;
+		return node_scene_type_;
 	}
 
-	void SetServerSceneType(const ServerSceneType server_scene_type)
+	void SetNodeSceneType(const ServerSceneType server_scene_type)
 	{
-		server_scene_type_ = server_scene_type;
+		node_scene_type_ = server_scene_type;
 	}
 
 	inline std::size_t GetSceneSize() const
@@ -111,12 +111,12 @@ public:
 	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(uint32_t scene_config_id) const;
 private:
 	Uint32KeyEntitySetValue conf_id_scene_list_; //配置表对应的场景列表
-	ServerState server_state_{ServerState::kNormal};
-	ServerPressureState server_pressure_state_{ServerPressureState::kNoPressure};
-	ServerSceneType server_scene_type_{ServerSceneType::kMainSceneServer};
+	NodeState node_state_{NodeState::kNormal};
+	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};
+	ServerSceneType node_scene_type_{ServerSceneType::kMainSceneServer};
 };
 
-inline const Uint32KeyEntitySetValue& ServerComp::GetConfidScenesList() const
+inline const Uint32KeyEntitySetValue& ServerComp::GetConfIdScenesList() const
 {
 	return conf_id_scene_list_;
 }
