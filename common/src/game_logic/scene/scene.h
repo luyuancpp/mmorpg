@@ -37,11 +37,6 @@ struct CreateSceneParam
 	uint32_t scene_conf_id_{0};
 };
 
-struct CreateSceneBySceneInfoParam
-{
-	SceneInfo scene_info_;
-};
-
 struct CreateGsSceneParam
 {
 	inline bool IsNull() const
@@ -71,7 +66,7 @@ public:
 
 	static uint32_t CheckScenePlayerSize(entt::entity scene);
 
-	static entt::entity CreateSceneByGuid(const CreateSceneBySceneInfoParam& param);
+	static entt::entity CreateScene(const SceneInfo& scene_info);
 	static entt::entity CreateScene2Gs(const CreateGsSceneParam& param);
 
 	static void DestroyScene(entt::entity node, entt::entity scene);
@@ -81,7 +76,7 @@ public:
 
 	static void LeaveScene(const LeaveSceneParam& param);
 
-	static void CompelToChangeScene(const CompelChangeSceneParam& param);
+	static void CompelPlayerChangeScene(const CompelChangeSceneParam& param);
 
 	static void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 
