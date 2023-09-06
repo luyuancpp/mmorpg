@@ -22,7 +22,7 @@ entt::entity CreateMainSceneNode()
 TEST(GS, CreateMainScene)
 {
     const ScenesSystem sm;
-    CreateGsSceneP create_gs_scene_param;
+    CreateGsSceneParam create_gs_scene_param;
     const auto server_entity1 = CreateMainSceneNode();
     create_gs_scene_param.node_ = server_entity1;
     for (uint32_t i = 0; i < confid_scenelist_size; ++i)
@@ -44,8 +44,8 @@ TEST(GS, CreateScene2Sever)
     const auto server_entity1 = CreateMainSceneNode();
     const auto server_entity2 = CreateMainSceneNode();
 
-    CreateGsSceneP create_gs_scene_param1;
-    CreateGsSceneP create_gs_scene_param2;
+    CreateGsSceneParam create_gs_scene_param1;
+    CreateGsSceneParam create_gs_scene_param2;
 
     create_gs_scene_param1.scene_confid_ = 2;
     create_gs_scene_param1.node_ = server_entity1;
@@ -77,7 +77,7 @@ TEST(GS, DestroyScene)
 
     const auto server_entity1 = CreateMainSceneNode();
 
-    CreateGsSceneP create_gs_scene_param1;
+    CreateGsSceneParam create_gs_scene_param1;
     create_gs_scene_param1.node_ = server_entity1;
     const auto scene_entity = sm.CreateScene2Gs(create_gs_scene_param1);
 
@@ -106,8 +106,8 @@ TEST(GS, DestroySever)
     auto server_entity1 = CreateMainSceneNode();
     auto server_entity2 = CreateMainSceneNode();
 
-    CreateGsSceneP create_gs_scene_param1;
-    CreateGsSceneP create_gs_scene_param2;
+    CreateGsSceneParam create_gs_scene_param1;
+    CreateGsSceneParam create_gs_scene_param2;
     create_gs_scene_param1.scene_confid_ = 3;
     create_gs_scene_param1.node_ = server_entity1;
 
@@ -158,8 +158,8 @@ TEST(GS, PlayerLeaveEnterScene)
     auto server_entity1 = CreateMainSceneNode();
     auto server_entity2 = CreateMainSceneNode();
 
-    CreateGsSceneP create_gs_scene_param1;
-    CreateGsSceneP create_gs_scene_param2;
+    CreateGsSceneParam create_gs_scene_param1;
+    CreateGsSceneParam create_gs_scene_param2;
 
     create_gs_scene_param1.scene_confid_ = 3;
     create_gs_scene_param1.node_ = server_entity1;
@@ -252,7 +252,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
         server_entities.emplace(CreateMainSceneNode());
     }
 
-    CreateGsSceneP create_server_scene_param;
+    CreateGsSceneParam create_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         create_server_scene_param.scene_confid_ = i;
@@ -313,8 +313,8 @@ TEST(GS, CompelToChangeScene)
     auto server_entity1 = CreateMainSceneNode();
     auto server_entity2 = CreateMainSceneNode();
 
-    CreateGsSceneP server1_param;
-    CreateGsSceneP server2_param;
+    CreateGsSceneParam server1_param;
+    CreateGsSceneParam server2_param;
 
     server1_param.scene_confid_ = 2;
     server1_param.node_ = server_entity1;
@@ -374,7 +374,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
         server_entities.emplace(CreateMainSceneNode( ));
     }
 
-    CreateGsSceneP create_server_scene_param;
+    CreateGsSceneParam create_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         create_server_scene_param.scene_confid_ = i;
@@ -440,7 +440,7 @@ TEST(GS, CrashMovePlayer2NewServer)
         server_entities.emplace(CreateMainSceneNode());
     }
 
-    CreateGsSceneP create_server_scene_param;
+    CreateGsSceneParam create_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
         create_server_scene_param.scene_confid_ = i;
@@ -505,7 +505,7 @@ TEST(GS, WeightRoundRobinMainScene)
         server_entities.emplace(CreateMainSceneNode());
     }
 
-    CreateGsSceneP create_server_scene_param;
+    CreateGsSceneParam create_server_scene_param;
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
@@ -628,7 +628,7 @@ TEST(GS, ServerEnterLeavePressure)
         server_entities.emplace(CreateMainSceneNode());
     }
 
-    CreateGsSceneP create_server_scene_param;
+    CreateGsSceneParam create_server_scene_param;
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
@@ -704,7 +704,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
         tls.registry.emplace<TestNodeId>(server).node_id_ = i;
 	}
 
-	CreateGsSceneP create_server_scene_param;
+	CreateGsSceneParam create_server_scene_param;
 
 	for (uint32_t i = 0; i < per_server_scene; ++i)
 	{
