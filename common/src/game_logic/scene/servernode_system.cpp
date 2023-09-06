@@ -7,20 +7,20 @@
 
 using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
-//从当前符服务器中找到一个对应场景人数最少的
-template<typename ServerType>
-entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
+//从当前服务器中找到一个对应场景人数最少的
+template <typename ServerType>
+entt::entity GetMinPlayerSizeServerScene(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
 	auto scene_config_id = param.scene_confid_;
-	entt::entity server{ entt::null };
+	entt::entity server{entt::null};
 	std::size_t min_server_player_size = UINT64_MAX;
 	for (auto entity : tls.registry.view<ServerType>())
 	{
 		//如果最少人数的服务器没有这个场景咋办
 		//所以优先判断有没有场景
-		const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
-		if (!try_server_comp.IsStateNormal() ||
-			!try_server_comp.HasConfig(scene_config_id || 
+		if (const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
+			!try_server_comp.IsStateNormal() ||
+			!try_server_comp.HasConfig(scene_config_id ||
 				try_server_comp.get_server_pressure_state() != filter_state_param.server_pressure_state_))
 		{
 			continue;
@@ -33,37 +33,39 @@ entt::entity GetWeightRoundRobinSceneT(const GetSceneParam& param, const GetScen
 		server = entity;
 		min_server_player_size = server_player_size;
 	}
-	entt::entity scene{entt::null};
+
 	if (entt::null == server)
 	{
-		return scene;
+		return entt::null;
 	}
-	const auto& scenes = tls.registry.get<ServerComp>(server);
+
+	entt::entity scene{entt::null};
+	const auto& server_comps = tls.registry.get<ServerComp>(server);
 	std::size_t min_scene_player_size = UINT64_MAX;
-	const auto& server_scenes = scenes.GetScenesListByConfig(scene_config_id);
-	for (auto& ji : server_scenes)
+	for (const auto& server_scenes = server_comps.GetScenesListByConfig(scene_config_id);
+		const auto& scene_it : server_scenes)
 	{
-		const auto scene_player_size = tls.registry.get<ScenePlayers>(ji).size();
+		const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
 		if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
 		{
 			continue;
 		}
 		min_scene_player_size = scene_player_size;
-		scene = ji;
+		scene = scene_it;
 	}
 	return scene;
 }
 
 //选择不满人的服务器场景
-template<typename ServerType>
-entt::entity GetMainSceneNotFullT(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
+template <typename ServerType>
+entt::entity GetSceneServerNotFull(const GetSceneParam& param, const GetSceneFilterParam& filter_state_param)
 {
 	auto scene_config_id = param.scene_confid_;
 	entt::entity server{entt::null};
 	for (auto entity : tls.registry.view<ServerType>())
 	{
-		const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
-		if (!try_server_comp.IsStateNormal() ||
+		if (const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
+			!try_server_comp.IsStateNormal() ||
 			!try_server_comp.HasConfig(scene_config_id ||
 				try_server_comp.get_server_pressure_state() != filter_state_param.server_pressure_state_))
 		{
@@ -77,21 +79,23 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param, const GetSceneFilt
 		server = entity;
 		break;
 	}
-	entt::entity scene{ entt::null };
+
 	if (entt::null == server)
 	{
-		return scene;
+		return entt::null;
 	}
-	const auto& scenes = tls.registry.get<ServerComp>(server);
-	const auto& server_scenes = scenes.GetScenesListByConfig(scene_config_id);
-	for (auto& ji : server_scenes)
+
+	entt::entity scene{entt::null};
+	const auto& server_comps = tls.registry.get<ServerComp>(server);
+	for (const auto& server_scenes = server_comps.GetScenesListByConfig(scene_config_id);
+	     const auto& scene_it : server_scenes)
 	{
-		auto scene_player_size = tls.registry.get<ScenePlayers>(ji).size();
-		if (scene_player_size >= kMaxScenePlayerSize)
+		if (const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
+			scene_player_size >= kMaxScenePlayerSize)
 		{
 			continue;
 		}
-		scene = ji;
+		scene = scene_it;
 		break;
 	}
 	return scene;
@@ -100,33 +104,22 @@ entt::entity GetMainSceneNotFullT(const GetSceneParam& param, const GetSceneFilt
 entt::entity ServerNodeSystem::GetWeightRoundRobinMainScene(const GetSceneParam& param)
 {
 	constexpr GetSceneFilterParam get_scene_filter_param;
-	if (const auto scene = GetWeightRoundRobinSceneT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene)
+	if (const auto scene = GetMinPlayerSizeServerScene<MainSceneServer>(param, get_scene_filter_param); entt::null != scene)
 	{
 		return scene;
 	}
-	return GetWeightRoundRobinSceneT<MainSceneServer>(param, get_scene_filter_param);
-}
-
-entt::entity ServerNodeSystem::GetWeightRoundRobinRoomScene(const GetSceneParam& param)
-{
-	GetSceneFilterParam get_scene_filter_param;
-	if (const auto scene_entity = GetWeightRoundRobinSceneT<RoomSceneServer>(param, get_scene_filter_param); entt::null != scene_entity)
-	{
-		return scene_entity;
-	}
-	get_scene_filter_param.server_pressure_state_ = ServerPressureState::kPressure;
-	return GetWeightRoundRobinSceneT<RoomSceneServer>(param, get_scene_filter_param);
+	return GetMinPlayerSizeServerScene<MainSceneServer>(param, get_scene_filter_param);
 }
 
 entt::entity ServerNodeSystem::GetMainSceneNotFull(const GetSceneParam& param)
 {
 	GetSceneFilterParam get_scene_filter_param;
-	if (const auto scene_entity = GetMainSceneNotFullT<MainSceneServer>(param, get_scene_filter_param); entt::null != scene_entity)
+	if (const auto scene_entity = GetSceneServerNotFull<MainSceneServer>(param, get_scene_filter_param); entt::null != scene_entity)
 	{
 		return scene_entity;
 	}
 	get_scene_filter_param.server_pressure_state_ = ServerPressureState::kPressure;
-	return GetMainSceneNotFullT<MainSceneServer>(param, get_scene_filter_param);
+	return GetSceneServerNotFull<MainSceneServer>(param, get_scene_filter_param);
 }
 
 void ServerNodeSystem::ServerEnterPressure(const ServerPressureParam& param)

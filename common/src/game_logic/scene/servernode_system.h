@@ -63,9 +63,7 @@ class ServerNodeSystem
 public:
 
 	static entt::entity GetWeightRoundRobinMainScene(const GetSceneParam& param);
-
-    static  entt::entity GetWeightRoundRobinRoomScene(const GetSceneParam& param);
-
+	
     static  entt::entity GetMainSceneNotFull(const GetSceneParam& param);
 
     static  void ServerEnterPressure(const ServerPressureParam& param);
