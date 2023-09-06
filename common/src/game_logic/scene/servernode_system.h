@@ -14,16 +14,6 @@ struct GetSceneFilterParam
 	NodePressureState server_pressure_state_{NodePressureState::kNoPressure};
 };
 
-struct ServerPressureParam
-{
-	inline bool IsNull() const
-	{
-		return server_ == entt::null;
-	}
-
-	entt::entity server_{entt::null};
-};
-
 struct ServerStateParam
 {
 	inline bool IsNull() const
@@ -67,9 +57,9 @@ public:
 	//得到有该场景的人数不满的服务器
 	static entt::entity GetNotFullScene(const GetSceneParam& param);
 
-	static void ServerEnterPressure(const ServerPressureParam& param);
+	static void ServerEnterPressure(entt::entity node);
 
-	static void ServerEnterNoPressure(const ServerPressureParam& param);
+	static void ServerEnterNoPressure(entt::entity node);
 
 	static void set_server_state(const ServerStateParam& param);
 

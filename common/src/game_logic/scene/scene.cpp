@@ -111,11 +111,18 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 
 void ScenesSystem::DestroyScene(entt::entity node, entt::entity scene)
 {
+	const auto* p_scene_info = tls.registry.try_get<SceneInfo>(scene);
+	if (nullptr == p_scene_info)
+	{
+		return;
+	}
 	// todo 人得换场景
-	const auto& scene_info = tls.registry.get<SceneInfo>(node);
-	auto& server_scene = tls.registry.get<ServerComp>(node);
-	server_scene.RemoveScene(scene_info.scene_confid(), scene);
-	
+	if (auto* p_server_comp = tls.registry.try_get<ServerComp>(node);
+		nullptr != p_server_comp)
+	{
+		p_server_comp->RemoveScene(p_scene_info->scene_confid(), scene);
+	}
+
 	tls.registry.destroy(scene);
 }
 
@@ -229,7 +236,6 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 	}
 	else
 	{
-		//todo 第一个 场景压力会特别大
 		 scene_entity = dest_node_scene.GetMinPlayerSizeSceneByConfigId(param.scene_conf_id_);
 	}
 

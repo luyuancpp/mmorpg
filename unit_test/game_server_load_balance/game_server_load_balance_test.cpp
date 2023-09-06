@@ -634,10 +634,8 @@ TEST(GS, ServerEnterLeavePressure)
             sm.CreateScene2Gs(create_server_scene_param);
         }
     }
-    ServerPressureParam pressure1;
-    pressure1.server_ = *server_entities.begin();
-    snsys.ServerEnterPressure( pressure1);
-    
+
+    snsys.ServerEnterPressure(*server_entities.begin());
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -661,7 +659,7 @@ TEST(GS, ServerEnterLeavePressure)
 
     uint32_t player_scene_id = 0;
 
-    snsys.ServerEnterNoPressure( pressure1);
+    snsys.ServerEnterNoPressure(*server_entities.begin());
 
     std::unordered_map<entt::entity, entt::entity> player_scene2;
     weight_round_robin_scene.scene_conf_id_ = scene_config_id1;
