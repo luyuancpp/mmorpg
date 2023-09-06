@@ -32,17 +32,17 @@ struct LeaveSceneParam
 	entt::entity leaver_{entt::null};
 };
 
-struct CreateSceneP
+struct CreateSceneParam
 {
-	uint32_t scene_confid_{0};
+	uint32_t scene_conf_id_{0};
 };
 
-struct CreateSceneBySceneInfoP
+struct CreateSceneBySceneInfoParam
 {
 	SceneInfo scene_info_;
 };
 
-struct CreateGsSceneP
+struct CreateGsSceneParam
 {
 	inline bool IsNull() const
 	{
@@ -70,7 +70,8 @@ struct DestroyServerParam
 	{
 		return node_ == entt::null;
 	}
-    entt::entity node_{ entt::null };
+
+	entt::entity node_{ entt::null };
 };
 
 void AddMainSceneNodeComponent(entt::entity server);
@@ -82,28 +83,28 @@ class ScenesSystem
 public:
 	~ScenesSystem();//just for test clear 
 
-    static std::size_t scenes_size(uint32_t scene_config_id);
-    static std::size_t scenes_size();
-    static void set_server_sequence_node_id(uint32_t node_id) { server_sequence_.set_node_id(node_id); }
+	static std::size_t scenes_size(uint32_t scene_config_id);
+	static std::size_t scenes_size();
+	static void set_server_sequence_node_id(uint32_t node_id) { server_sequence_.set_node_id(node_id); }
 
-    static bool HasConfigScene(uint32_t scene_config_id);
-    static bool IsSceneEmpty();
+	static bool HasConfigScene(uint32_t scene_config_id);
+	static bool IsSceneEmpty();
 
-    static uint32_t CheckScenePlayerSize(entt::entity scene);
+	static uint32_t CheckScenePlayerSize(entt::entity scene);
 
-    static entt::entity CreateSceneByGuid(const CreateSceneBySceneInfoP& param);
-    static entt::entity CreateScene2Gs(const CreateGsSceneP& param);
+	static entt::entity CreateSceneByGuid(const CreateSceneBySceneInfoParam& param);
+	static entt::entity CreateScene2Gs(const CreateGsSceneParam& param);
 
-    static void DestroyScene(const DestroySceneParam& param);
-    static void DestroyServer(const DestroyServerParam& param);
-	
-    static void EnterScene(const EnterSceneParam& param);
+	static void DestroyScene(const DestroySceneParam& param);
+	static void DestroyServer(const DestroyServerParam& param);
 
-    static void LeaveScene(const LeaveSceneParam& param);
+	static void EnterScene(const EnterSceneParam& param);
 
-    static void CompelToChangeScene(const CompelChangeSceneParam& param);
+	static void LeaveScene(const LeaveSceneParam& param);
 
-    static void ReplaceCrashServer(const ReplaceCrashServerParam& param);
+	static void CompelToChangeScene(const CompelChangeSceneParam& param);
+
+	static void ReplaceCrashServer(const ReplaceCrashServerParam& param);
 
 private:
 	static inline ServerSequence24 server_sequence_;

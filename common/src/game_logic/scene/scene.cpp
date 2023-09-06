@@ -77,7 +77,7 @@ bool ScenesSystem::HasConfigScene(const uint32_t scene_config_id)
 	return false;
 }
 
-entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& param)
+entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoParam& param)
 {
 	const auto entity = tls.registry.create();
 	tls.registry.emplace<SceneInfo>(entity, std::move(param.scene_info_));
@@ -85,7 +85,7 @@ entt::entity ScenesSystem::CreateSceneByGuid(const CreateSceneBySceneInfoP& para
 	return entity;
 }
 
-entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
+entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 {
 	if (param.IsNull())
 	{
@@ -93,7 +93,7 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneP& param)
 		return entt::null;
 	}
 
-	CreateSceneBySceneInfoP create_by_guid_param;
+	CreateSceneBySceneInfoParam create_by_guid_param;
 	create_by_guid_param.scene_info_.set_scene_confid(param.scene_confid_);
 	create_by_guid_param.scene_info_.set_scene_id(server_sequence_.Generate());
 	const auto scene_entity = CreateSceneByGuid(create_by_guid_param);
@@ -228,37 +228,13 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 	tls.dispatcher.trigger(on_leave_scene_event);
 }
 
-
-[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(const ServerComp& scene_comp, uint32_t scene_config_id)
-{
-	const auto& scene_list = scene_comp.GetScenesListByConfig(scene_config_id);
-	if (scene_list.empty())
-	{
-		return entt::null;
-	}
-	entt::entity scene{entt::null};
-	std::size_t min_scene_player_size = UINT64_MAX;
-	for (const auto& scene_it : scene_list)
-	{
-		const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
-		if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
-		{
-			continue;
-		}
-		min_scene_player_size = scene_player_size;
-		scene = scene_it;
-	}
-	return scene;
-}
-
-
 void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 {
 	const auto& dest_node_scene = tls.registry.get<ServerComp>(param.dest_node_);
 	entt::entity scene_entity{entt::null};
 	if (!dest_node_scene.HasConfig(param.scene_confid_))
 	{
-		CreateGsSceneP create_gs_scene_param;
+		CreateGsSceneParam create_gs_scene_param;
 		create_gs_scene_param.scene_confid_ = param.scene_confid_;
 		create_gs_scene_param.node_ = param.dest_node_;
 		scene_entity = CreateScene2Gs(create_gs_scene_param);
@@ -266,7 +242,7 @@ void ScenesSystem::CompelToChangeScene(const CompelChangeSceneParam& param)
 	else
 	{
 		//todo 第一个 场景压力会特别大
-		 scene_entity = GetMinPlayerSizeSceneByConfigId(dest_node_scene, param.scene_confid_);
+		 scene_entity = dest_node_scene.GetMinPlayerSizeSceneByConfigId(param.scene_confid_);
 	}
 
 	if (entt::null == scene_entity)
@@ -296,7 +272,7 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
 	{
 		for (const auto& ji : snd)
 		{
-			CreateGsSceneP create_gs_scene_param;
+			CreateGsSceneParam create_gs_scene_param;
 			create_gs_scene_param.scene_confid_ = fst;
 			create_gs_scene_param.node_ = param.replace_server_;
 			CreateScene2Gs(create_gs_scene_param);

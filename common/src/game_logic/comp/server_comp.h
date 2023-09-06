@@ -108,6 +108,7 @@ public:
 		conf_id_scene_list_[scene_config_id].erase(scene_entity);
 	}
 
+	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(uint32_t scene_config_id) const;
 private:
 	Uint32KeyEntitySetValue conf_id_scene_list_; //配置表对应的场景列表
 	ServerState server_state_{ServerState::kNormal};
@@ -120,3 +121,25 @@ inline const Uint32KeyEntitySetValue& ServerComp::GetConfidScenesList() const
 	return conf_id_scene_list_;
 }
 
+
+[[nodiscard]] inline entt::entity ServerComp::GetMinPlayerSizeSceneByConfigId(uint32_t scene_conf_id) const
+{
+	const auto& scene_list = GetScenesListByConfig(scene_conf_id);
+	if (scene_list.empty())
+	{
+		return entt::null;
+	}
+	entt::entity scene{entt::null};
+	std::size_t min_scene_player_size = UINT64_MAX;
+	for (const auto& scene_it : scene_list)
+	{
+		const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
+		if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
+		{
+			continue;
+		}
+		min_scene_player_size = scene_player_size;
+		scene = scene_it;
+	}
+	return scene;
+}
