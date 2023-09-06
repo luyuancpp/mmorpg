@@ -61,7 +61,7 @@ public:
 
 	static void ServerEnterNoPressure(entt::entity node);
 
-	static void set_server_state(const ServerStateParam& param);
+	static void SetServerState(entt::entity node, NodeState node_state);
 
 };
 
