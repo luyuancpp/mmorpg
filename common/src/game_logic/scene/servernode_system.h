@@ -1,7 +1,7 @@
 #pragma once
 
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/game_logic/enum/server_enum.h"
+#include "src/game_logic/constants/server_constants.h"
 
 #include "src/common_type/common_type.h"
 
