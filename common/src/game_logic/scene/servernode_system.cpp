@@ -21,7 +21,7 @@ entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetS
 		if (const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
 			!try_server_comp.IsStateNormal() ||
 			!try_server_comp.HasConfig(scene_config_id ||
-				try_server_comp.get_server_pressure_state() != filter_state_param.server_pressure_state_))
+				try_server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_))
 		{
 			continue;
 		}
@@ -67,7 +67,7 @@ entt::entity GetNotFullSceneT(const GetSceneParam& param, const GetSceneFilterPa
 		if (const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
 			!try_server_comp.IsStateNormal() ||
 			!try_server_comp.HasConfig(scene_config_id ||
-				try_server_comp.get_server_pressure_state() != filter_state_param.server_pressure_state_))
+				try_server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_))
 		{
 			continue;
 		}
@@ -118,11 +118,11 @@ entt::entity ServerNodeSystem::GetNotFullScene(const GetSceneParam& param)
 	{
 		return scene_entity;
 	}
-	get_scene_filter_param.server_pressure_state_ = NodePressureState::kPressure;
+	get_scene_filter_param.node_pressure_state_ = NodePressureState::kPressure;
 	return GetNotFullSceneT<MainSceneServer>(param, get_scene_filter_param);
 }
 
-void ServerNodeSystem::ServerEnterPressure(entt::entity node)
+void ServerNodeSystem::NodeEnterPressure(entt::entity node)
 {
 	auto* const try_server_comp = tls.registry.try_get<ServerComp>(node);
 	if (nullptr == try_server_comp)
@@ -132,7 +132,7 @@ void ServerNodeSystem::ServerEnterPressure(entt::entity node)
 	try_server_comp->SetNodePressureState(NodePressureState::kPressure);
 }
 
-void ServerNodeSystem::ServerEnterNoPressure(entt::entity node)
+void ServerNodeSystem::NodeEnterNoPressure(entt::entity node)
 {
 	auto* const try_server_comp = tls.registry.try_get<ServerComp>(node);
 	if (nullptr == try_server_comp)
@@ -142,7 +142,7 @@ void ServerNodeSystem::ServerEnterNoPressure(entt::entity node)
 	try_server_comp->SetNodePressureState(NodePressureState::kNoPressure);
 }
 
-void ServerNodeSystem::SetServerState(entt::entity node, NodeState node_state)
+void ServerNodeSystem::SetNodeState(entt::entity node, NodeState node_state)
 {
 	auto* const try_server_comp = tls.registry.try_get<ServerComp>(node);
 	if (nullptr == try_server_comp)
