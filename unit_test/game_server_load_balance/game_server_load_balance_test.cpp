@@ -280,7 +280,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
         }
     }
     ;
-    node_system.SetServerState(*server_entities.begin(), NodeState::kMainTain);
+    node_system.SetNodeState(*server_entities.begin(), NodeState::kMainTain);
     
     GetSceneParam weight_round_robin_scene;
     weight_round_robin_scene.scene_conf_id_ = 0;
@@ -400,7 +400,7 @@ TEST(GS, CrashWeightRoundRobinMainScene)
     }
 
 
-    snsys.SetServerState(*server_entities.begin(), NodeState::kCrash);
+    snsys.SetNodeState(*server_entities.begin(), NodeState::kCrash);
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -461,7 +461,7 @@ TEST(GS, CrashMovePlayer2NewServer)
         sm.EnterScene(enter_param1);
     }
     
-    snsys.SetServerState(*server_entities.begin(), NodeState::kCrash);
+    snsys.SetNodeState(*server_entities.begin(), NodeState::kCrash);
 
    
     entt::entity cransh_node = *server_entities.begin();
@@ -627,7 +627,7 @@ TEST(GS, ServerEnterLeavePressure)
         }
     }
 
-    snsys.ServerEnterPressure(*server_entities.begin());
+    snsys.NodeEnterPressure(*server_entities.begin());
 
     uint32_t scene_config_id0 = 0;
     uint32_t scene_config_id1 = 1;
@@ -651,7 +651,7 @@ TEST(GS, ServerEnterLeavePressure)
 
     uint32_t player_scene_id = 0;
 
-    snsys.ServerEnterNoPressure(*server_entities.begin());
+    snsys.NodeEnterNoPressure(*server_entities.begin());
 
     std::unordered_map<entt::entity, entt::entity> player_scene2;
     weight_round_robin_scene.scene_conf_id_ = scene_config_id1;

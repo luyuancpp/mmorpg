@@ -11,7 +11,7 @@ struct GetSceneParam
 
 struct GetSceneFilterParam
 {
-	NodePressureState server_pressure_state_{NodePressureState::kNoPressure};
+	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};
 };
 
 struct CompelChangeSceneParam
@@ -35,11 +35,11 @@ public:
 	//得到有该场景的人数不满的服务器
 	static entt::entity GetNotFullScene(const GetSceneParam& param);
 
-	static void ServerEnterPressure(entt::entity node);
+	static void NodeEnterPressure(entt::entity node);
 
-	static void ServerEnterNoPressure(entt::entity node);
+	static void NodeEnterNoPressure(entt::entity node);
 
-	static void SetServerState(entt::entity node, NodeState node_state);
+	static void SetNodeState(entt::entity node, NodeState node_state);
 
 };
 

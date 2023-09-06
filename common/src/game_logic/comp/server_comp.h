@@ -54,12 +54,12 @@ public:
 	inline bool IsNodeNoPressure() const { return node_pressure_state_ == NodePressureState::kNoPressure; }
 	inline bool IsNodePressure() const { return node_pressure_state_ == NodePressureState::kPressure; }
 
-	[[nodiscard]] ServerSceneType GetServerSceneType() const
+	inline [[nodiscard]] ServerSceneType GetServerSceneType() const
 	{
 		return node_scene_type_;
 	}
 
-	void SetNodeSceneType(const ServerSceneType server_scene_type)
+	inline void SetNodeSceneType(const ServerSceneType server_scene_type)
 	{
 		node_scene_type_ = server_scene_type;
 	}
@@ -79,7 +79,7 @@ public:
 		return GetSceneSize() == 0;
 	}
 
-	inline bool HasConfig(uint32_t scene_config_id) const { return conf_id_scene_list_.find(scene_config_id) != conf_id_scene_list_.end(); }
+	inline bool HasConfig(const uint32_t scene_config_id) const { return conf_id_scene_list_.find(scene_config_id) != conf_id_scene_list_.end(); }
 
 	[[nodiscard]] bool HasConfigScene(uint32_t scene_config_id) const
 	{
@@ -101,12 +101,12 @@ public:
 		return scene_it->second.size();
 	}
 
-	void AddScene(const uint32_t scene_config_id, entt::entity scene)
+	inline void AddScene(const uint32_t scene_config_id, entt::entity scene)
 	{
 		conf_id_scene_list_[scene_config_id].emplace(scene);
 	}
 
-	void RemoveScene(const uint32_t scene_config_id, const entt::entity scene)
+	inline void RemoveScene(const uint32_t scene_config_id, const entt::entity scene)
 	{
 		const auto scene_it = conf_id_scene_list_.find(scene_config_id);
 		if (scene_it == conf_id_scene_list_.end())

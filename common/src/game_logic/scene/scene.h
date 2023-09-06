@@ -40,6 +40,7 @@ struct CreateGsSceneParam
 	}
 
 	entt::entity node_{entt::null};
+	SceneInfo scene_info;
 	uint32_t scene_confid_{0};
 };
 
@@ -62,7 +63,6 @@ public:
 
 	static uint32_t CheckScenePlayerSize(entt::entity scene);
 
-	static entt::entity CreateScene(const SceneInfo& scene_info);
 	static entt::entity CreateScene2Gs(const CreateGsSceneParam& param);
 
 	static void DestroyScene(entt::entity node, entt::entity scene);
