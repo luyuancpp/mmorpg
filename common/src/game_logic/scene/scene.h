@@ -53,17 +53,6 @@ struct CreateGsSceneP
 	uint32_t scene_confid_{0};
 };
 
-struct MoveServerScene2ServerSceneP
-{
-	inline bool IsNull() const
-	{
-		return src_node_ == entt::null || dest_node_ == entt::null;
-	}
-
-	entt::entity src_node_{entt::null};
-	entt::entity dest_node_{entt::null};
-};
-
 struct DestroySceneParam
 {
 	inline bool IsNull() const
@@ -107,9 +96,7 @@ public:
 
     static void DestroyScene(const DestroySceneParam& param);
     static void DestroyServer(const DestroyServerParam& param);
-
-    static void MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param);
-
+	
     static void EnterScene(const EnterSceneParam& param);
 
     static void LeaveScene(const LeaveSceneParam& param);

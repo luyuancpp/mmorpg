@@ -149,32 +149,6 @@ void ScenesSystem::DestroyServer(const DestroyServerParam& param)
 	tls.registry.destroy(param.node_);
 }
 
-void ScenesSystem::MoveServerScene2ServerScene(const MoveServerScene2ServerSceneP& param)
-{
-	if (param.IsNull())
-	{
-		LOG_ERROR << "entity null";
-		return;
-	}
-
-	auto& dest_server_data = tls.registry.get<GsNodePlayerInfoPtr>(param.dest_node_);
-	const auto& src_server_data = tls.registry.get<GsNodePlayerInfoPtr>(param.src_node_);
-	dest_server_data->set_player_size(dest_server_data->player_size() + src_server_data->player_size());
-
-	auto& dest_server_comp = tls.registry.get<ServerComp>(param.dest_node_);
-	for (const auto& src_server_scene = tls.registry.get<ServerComp>(param.src_node_).GetConfidScenesList();
-		const auto& [fst, snd] : src_server_scene)
-	{
-		for (const auto& ji : snd)
-		{
-			tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(ji, dest_server_data);
-			dest_server_comp.AddScene(fst, ji);
-		}
-	}
-	tls.registry.emplace_or_replace<ServerComp>(param.src_node_); //todo 如果原来server 还有场景呢
-	tls.registry.emplace_or_replace<GsNodePlayerInfoPtr>(param.src_node_, dest_server_data);
-}
-
 uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
 {
 	//todo weak ptr ?
@@ -292,10 +266,20 @@ void ScenesSystem::ReplaceCrashServer(const ReplaceCrashServerParam& param)
 	{
 		return;
 	}
-	MoveServerScene2ServerSceneP move_scene_param;
-	move_scene_param.src_node_ = param.cransh_server_;
-	move_scene_param.dest_node_ = param.replace_server_;
-	MoveServerScene2ServerScene(move_scene_param);
-	tls.registry.destroy(move_scene_param.src_node_);
+	auto& dest_server_data = tls.registry.get<GsNodePlayerInfoPtr>(param.replace_server_);
+	auto& dest_server_comp = tls.registry.get<ServerComp>(param.replace_server_);
+	for (const auto& src_server_scene = tls.registry.get<ServerComp>(param.cransh_server_).GetConfidScenesList();
+		const auto& [fst, snd] : src_server_scene)
+	{
+		for (const auto& ji : snd)
+		{
+			CreateGsSceneP create_gs_scene_param;
+			create_gs_scene_param.scene_confid_ = fst;
+			create_gs_scene_param.node_ = param.replace_server_;
+			CreateScene2Gs(create_gs_scene_param);
+		}
+	}
+
+	tls.registry.destroy(param.cransh_server_);
 }
 

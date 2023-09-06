@@ -151,49 +151,6 @@ TEST(GS, DestroySever)
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 }
 
-TEST(GS, ServerScene2Sever)
-{
-    ScenesSystem sm;
-
-    const auto server_entity1 = CreateMainSceneNode();
-
-    const auto server_entity2 = CreateMainSceneNode();
-    CreateGsSceneP create_gs_scene_param1;
-    CreateGsSceneP create_gs_scene_param2;
-
-    create_gs_scene_param1.scene_confid_ = 3;
-    create_gs_scene_param1.node_ = server_entity1;
-
-    create_gs_scene_param2.scene_confid_ = 2;
-    create_gs_scene_param2.node_ = server_entity2;
-
-    const auto scene_entity1 = sm.CreateScene2Gs(create_gs_scene_param1);
-    const auto scene_entity2 = sm.CreateScene2Gs(create_gs_scene_param2);
-    EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity1).GetSceneSize());
-
-    EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).GetSceneSize());
-
-    EXPECT_EQ(2, sm.scenes_size());
-    EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
-
-    MoveServerScene2ServerSceneP move_scene_param;
-    move_scene_param.src_node_ = server_entity1;
-    move_scene_param.dest_node_ = server_entity2;
-    sm.MoveServerScene2ServerScene(move_scene_param);
-
-    EXPECT_TRUE(tls.registry.valid(server_entity1));
-    EXPECT_TRUE(tls.registry.valid(scene_entity1));
-    EXPECT_TRUE(tls.registry.valid(server_entity2));
-    EXPECT_TRUE(tls.registry.valid(scene_entity2));
-
-    EXPECT_EQ(0, tls.registry.get<ServerComp>(server_entity1).GetSceneSize());
-    EXPECT_EQ(2, tls.registry.get<ServerComp>(server_entity2).GetSceneSize());
-    EXPECT_EQ(2, sm.scenes_size());
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_confid_));
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_confid_));
-
-}
-
 TEST(GS, PlayerLeaveEnterScene)
 {
     const ScenesSystem sm;
