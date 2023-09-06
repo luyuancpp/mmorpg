@@ -32,11 +32,6 @@ struct LeaveSceneParam
 	entt::entity leaver_{entt::null};
 };
 
-struct CreateSceneParam
-{
-	uint32_t scene_conf_id_{0};
-};
-
 struct CreateGsSceneParam
 {
 	inline bool IsNull() const
