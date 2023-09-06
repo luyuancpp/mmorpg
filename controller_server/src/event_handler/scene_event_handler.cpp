@@ -72,7 +72,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 		return;
 	}
 	auto& change_scene_info = change_scene_queue.front();
-	auto to_scene = ScenesSystem::get_scene(change_scene_info.scene_info().scene_id());
+	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().scene_id());
     GsLeaveSceneRequest leave_scene_message;
 	auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
 	auto p_player_gs = tls.registry.try_get<PlayerSession>(player);

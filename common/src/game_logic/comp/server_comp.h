@@ -6,6 +6,8 @@
 #include "src/game_logic/constants/server_constants.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
+#include "src/pb/pbc/component_proto/scene_comp.pb.h"
+
 using SceneList = std::unordered_map<Guid, entt::entity>;
 using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
 using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
@@ -43,6 +45,16 @@ public:
 			return empty_result;
 		}
 		return list_const_iterator->second;
+	}
+
+	[[nodiscard]] entt::entity GetScenesListByGuid(Guid guid) const
+	{
+		const auto scene_it = scene_list_.find(guid);
+		if (scene_it == scene_list_.end())
+		{
+			return entt::null;
+		}
+		return scene_it->second;
 	}
 
 	inline void SetNodeState(const NodeState state) { node_state_ = state; }
@@ -101,14 +113,18 @@ public:
 		return scene_it->second.size();
 	}
 
-	inline void AddScene(const uint32_t scene_config_id, entt::entity scene)
+	inline void AddScene(entt::entity scene)
 	{
-		conf_id_scene_list_[scene_config_id].emplace(scene);
+		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
+		scene_list_.emplace(scene_info.scene_id(), scene);
+		conf_id_scene_list_[scene_info.scene_confid()].emplace(scene);
 	}
 
-	inline void RemoveScene(const uint32_t scene_config_id, const entt::entity scene)
+	inline void RemoveScene( const entt::entity scene)
 	{
-		const auto scene_it = conf_id_scene_list_.find(scene_config_id);
+		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
+		scene_list_.erase(scene_info.scene_id());
+		const auto scene_it = conf_id_scene_list_.find(scene_info.scene_confid());
 		if (scene_it == conf_id_scene_list_.end())
 		{
 			return;
@@ -118,6 +134,7 @@ public:
 
 	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(uint32_t scene_config_id) const;
 private:
+	SceneList scene_list_;
 	Uint32KeyEntitySetValue conf_id_scene_list_; //配置表对应的场景列表
 	NodeState node_state_{NodeState::kNormal};
 	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};

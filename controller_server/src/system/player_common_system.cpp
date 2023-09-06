@@ -76,7 +76,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
     //给客户端发所有场景消息
     {
         SceneInfoS2C message;
-        for (const auto e : tls.registry.view<MainScene>())
+        for (const auto e : tls.registry.view<SceneInfo>())
         {
             message.mutable_scene_info()->Add()->CopyFrom(tls.registry.get<SceneInfo>(e));
         }

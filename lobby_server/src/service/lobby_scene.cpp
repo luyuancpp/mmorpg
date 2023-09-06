@@ -33,7 +33,7 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
 		return;
 	}
     AddCrossServerSceneRequest rq;
-    for (auto e : tls.registry.view<MainScene>())
+    for (auto e : tls.registry.view<SceneInfo>())
     {
         auto p_cross_scene_info = rq.mutable_cross_scenes_info()->Add();
         p_cross_scene_info->mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(e));
@@ -92,7 +92,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
         tls.registry.emplace<CrossMainSceneServer>(gs);
 
 		auto& config_all = mainscene_config::GetSingleton().all();
-		CreateGsSceneP create_scene_param;
+		CreateGsSceneParam create_scene_param;
 		create_scene_param.node_ = gs;
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
@@ -156,7 +156,7 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
     ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto scene = ScenesSystem::get_scene(request->scene_id());
+	auto scene = ScenesSystem::GetSceneByGuid(request->scene_id());
 	if (entt::null == scene)
 	{
 		response->mutable_error()->set_id(kRetEnterSceneWeightRoundRobinMainScene);
@@ -216,8 +216,8 @@ void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::R
 {
 ///<<< BEGIN WRITING YOUR CODE
 	GetSceneParam weight_round_robin_scene;
-	weight_round_robin_scene.scene_confid_ = request->scene_confid();
-	auto scene = ServerNodeSystem::GetSingleton().GetWeightRoundRobinMainScene(weight_round_robin_scene);
+	weight_round_robin_scene.scene_conf_id_ = request->scene_confid();
+	auto scene = ServerNodeSystem::GetSceneOnMinPlayerSizeNode(weight_round_robin_scene);
 	if (entt::null == scene)
 	{
 		response->mutable_error()->set_id(kRetEnterSceneWeightRoundRobinMainScene);

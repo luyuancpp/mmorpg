@@ -8,12 +8,12 @@
 #include "src/network/message_system.h"
 #include "src/system/gs_scene_system.h"
 
-void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t scene_id)
+void PlayerSceneSystem::EnterScene(entt::entity player, uint64_t guid)
 {
-	auto scene = ScenesSystem::get_scene(scene_id);
+	auto scene = ScenesSystem::GetSceneByGuid(guid);
 	if (scene == entt::null)
 	{
-		LOG_ERROR << "scene not found " << scene_id;
+		LOG_ERROR << "scene not found " << guid;
 		return;
 	}
 	EnterSceneParam ep;

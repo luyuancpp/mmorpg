@@ -127,7 +127,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
         return kRetChangeScenePlayerQueueComponentEmpty;
     }
     const auto& change_info = change_scene_queue.front();
-    const auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
+    const auto to_scene = ScenesSystem::GetSceneByGuid(change_info.scene_info().scene_id());
     if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
     {
         change_scene_queue.pop_front();//todo
@@ -167,7 +167,7 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
     }
     else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eEnterGsSceneSucceed)
     {
-        const auto to_scene = ScenesSystem::get_scene(change_info.scene_info().scene_id());
+        const auto to_scene = ScenesSystem::GetSceneByGuid(change_info.scene_info().scene_id());
         if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
         {
             change_scene_queue.pop_front();//todo

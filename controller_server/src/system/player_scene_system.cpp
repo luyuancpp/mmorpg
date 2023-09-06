@@ -118,8 +118,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     if (to_scene_id <= 0)//用scene_config id 去换本服的controller
     {
         GetSceneParam getp;
-        getp.scene_confid_ = change_scene_info.scene_info().scene_confid();
-        to_scene = ServerNodeSystem::GetWeightRoundRobinMainScene(getp);
+        getp.scene_conf_id_ = change_scene_info.scene_info().scene_confid();
+        to_scene = ServerNodeSystem::GetSceneOnMinPlayerSizeNode(getp);
         if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneFull, {});
@@ -130,7 +130,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     }
     else
     {
-        to_scene = ScenesSystem::get_scene(to_scene_id);
+        to_scene = ScenesSystem::GetSceneByGuid(to_scene_id);
         if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});

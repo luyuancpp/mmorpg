@@ -1,6 +1,8 @@
 #include "src/game_logic/scene/scene.h"
 
 #include "muduo/base/Logging.h"
+
+#include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/constants/server_constants.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
@@ -64,6 +66,20 @@ bool ScenesSystem::IsSceneEmpty()
 	return true;
 }
 
+entt::entity ScenesSystem::GetSceneByGuid(Guid guid)
+{
+	for (const auto server_entity : tls.registry.view<ServerComp>())
+	{
+		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
+		const entt::entity scene = server_comp.GetScenesListByGuid(guid);
+		if (scene != entt::null)
+		{
+			return scene;
+		}
+	}
+	return entt::null;
+}
+
 bool ScenesSystem::HasConfigScene(const uint32_t scene_config_id)
 {
 	for (const auto server_entity : tls.registry.view<ServerComp>())
@@ -101,7 +117,7 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 	}
 
 	auto& server_scenes = tls.registry.get<ServerComp>(param.node_);
-	server_scenes.AddScene(tls.registry.get<SceneInfo>(scene_entity).scene_confid(), scene_entity);
+	server_scenes.AddScene(scene_entity);
 
 	return scene_entity;
 }
@@ -117,7 +133,7 @@ void ScenesSystem::DestroyScene(entt::entity node, entt::entity scene)
 	if (auto* p_server_comp = tls.registry.try_get<ServerComp>(node);
 		nullptr != p_server_comp)
 	{
-		p_server_comp->RemoveScene(p_scene_info->scene_confid(), scene);
+		p_server_comp->RemoveScene(scene);
 	}
 
 	tls.registry.destroy(scene);
@@ -134,7 +150,7 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 			DestroyScene(node, scene);
 		}
 	}
-	
+
 	tls.registry.destroy(node);
 }
 

@@ -101,7 +101,7 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 	if (request->server_type() == kMainSceneServer)
 	{
 		auto& config_all = mainscene_config::GetSingleton().all();
-		CreateGsSceneP create_scene_param;
+		CreateGsSceneParam create_scene_param;
 		create_scene_param.node_ = gs;
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
@@ -346,8 +346,8 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
         PlayerCommonSystem::InitPlayerComponent(player);	
 		
 		GetSceneParam get_scene_param;
-        get_scene_param.scene_confid_ = 1;
-		const auto scene = ServerNodeSystem::GetMainSceneNotFull(get_scene_param);
+        get_scene_param.scene_conf_id_ = 1;
+		const auto scene = ServerNodeSystem::GetNotFullScene(get_scene_param);
 		if (scene == entt::null)//找不到上次的场景，放到默认场景里面
 		{
 			// todo default
@@ -502,7 +502,7 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    CreateSceneBySceneInfoP create_scene_param;
+	CreateGsSceneParam create_scene_param;
 	for (auto& it : request->cross_scenes_info())
 	{
 		auto git = controller_tls.game_node().find(it.gs_node_id());
@@ -517,8 +517,8 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
             LOG_ERROR << "gs not found ";
             continue;
 		}
-		create_scene_param.scene_info_ = it.scene_info();
-        auto scene = ScenesSystem::CreateSceneByGuid(create_scene_param);
+		create_scene_param.scene_info = it.scene_info();
+        auto scene = ScenesSystem::CreateScene2Gs(create_scene_param);
 		tls.registry.emplace<GsNodePtr>(scene, *try_gs_node_ptr);
 	}
 ///<<< END WRITING YOUR CODE
