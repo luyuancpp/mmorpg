@@ -29,7 +29,10 @@ struct CrossRoomSceneServer
 class ServerComp
 {
 public:
-	const Uint32KeyEntitySetValue& GetConfIdScenesList() const;
+	const Uint32KeyEntitySetValue& GetConfIdScenesList() const
+	{
+		return conf_id_scene_list_;
+	}
 
 	[[nodiscard]] const EntitySet& GetScenesListByConfig(uint32_t scene_config_id) const
 	{
@@ -98,14 +101,19 @@ public:
 		return scene_it->second.size();
 	}
 
-	void AddScene(uint32_t scene_config_id, entt::entity scene_entity)
+	void AddScene(const uint32_t scene_config_id, entt::entity scene)
 	{
-		conf_id_scene_list_[scene_config_id].emplace(scene_entity);
+		conf_id_scene_list_[scene_config_id].emplace(scene);
 	}
 
-	void RemoveScene(uint32_t scene_config_id, entt::entity scene_entity)
+	void RemoveScene(const uint32_t scene_config_id, const entt::entity scene)
 	{
-		conf_id_scene_list_[scene_config_id].erase(scene_entity);
+		const auto scene_it = conf_id_scene_list_.find(scene_config_id);
+		if (scene_it == conf_id_scene_list_.end())
+		{
+			return;
+		}
+		scene_it->second.erase(scene);
 	}
 
 	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(uint32_t scene_config_id) const;
@@ -115,11 +123,6 @@ private:
 	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};
 	ServerSceneType node_scene_type_{ServerSceneType::kMainSceneServer};
 };
-
-inline const Uint32KeyEntitySetValue& ServerComp::GetConfIdScenesList() const
-{
-	return conf_id_scene_list_;
-}
 
 
 [[nodiscard]] inline entt::entity ServerComp::GetMinPlayerSizeSceneByConfigId(uint32_t scene_conf_id) const
