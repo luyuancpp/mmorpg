@@ -125,7 +125,7 @@ TEST(GS, DestroySever)
 
     DestroyServerParam destroy_server_param;
     destroy_server_param.node_ = server_entity1;
-    sm.DestroyServer(destroy_server_param);
+    sm.OnDestroyServer(destroy_server_param);
 
     EXPECT_FALSE(tls.registry.valid(server_entity1));
     EXPECT_FALSE(tls.registry.valid(scene_id1));
@@ -138,7 +138,7 @@ TEST(GS, DestroySever)
     EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_confid_));
 
     destroy_server_param.node_ = server_entity2;
-    sm.DestroyServer(destroy_server_param);
+    sm.OnDestroyServer(destroy_server_param);
 
     EXPECT_EQ(0, sm.scenes_size());
     EXPECT_FALSE(tls.registry.valid(server_entity1));
