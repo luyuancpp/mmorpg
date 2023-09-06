@@ -1,6 +1,7 @@
 #include "src/game_logic/scene/scene.h"
 
 #include "muduo/base/Logging.h"
+#include "src/game_logic/constants/server_constants.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 

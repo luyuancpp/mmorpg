@@ -1,5 +1,11 @@
 #pragma once
 
+#include <cstdint>
+#include <cstddef>
+
+inline static constexpr std::size_t kMaxServerPlayerSize = 2000;
+inline static constexpr std::size_t kMaxScenePlayerSize = 1000;
+
 enum class ServerState : uint8_t
 {
 	kNormal,//game server 正常状态
