@@ -1,5 +1,7 @@
 #include "src/game_logic/scene/scene.h"
 
+#include <ranges>
+
 #include "muduo/base/Logging.h"
 
 #include "src/game_logic/comp/scene_comp.h"

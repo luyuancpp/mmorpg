@@ -1,7 +1,5 @@
 #pragma once
 
-#include <ranges>
-
 #include "src/common_type/common_type.h"
 #include "src/game_logic/constants/server_constants.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
@@ -31,20 +29,9 @@ struct CrossRoomSceneServer
 class ServerComp
 {
 public:
-	[[nodiscard]] const auto& GetScenesList() const
-	{
-		return scene_list_;
-	}
-
-	inline std::size_t GetSceneSize() const
-	{
-		return scene_list_.size();
-	}
-	
-	inline bool IsSceneEmpty() const
-	{
-		return scene_list_.empty();
-	}
+	[[nodiscard]] const SceneList& GetScenesList() const { return scene_list_; }
+	inline std::size_t GetSceneSize() const { return scene_list_.size(); }
+	inline bool IsSceneEmpty() const { return scene_list_.empty(); }
 
 	[[nodiscard]] const EntitySet& GetScenesListByConfig(uint32_t scene_config_id) const
 	{
@@ -99,10 +86,7 @@ public:
 
 	inline [[nodiscard]] ServerSceneType GetServerSceneType() const { return node_scene_type_; }
 
-	inline void SetNodeSceneType(const ServerSceneType server_scene_type)
-	{
-		node_scene_type_ = server_scene_type;
-	}
+	inline void SetNodeSceneType(const ServerSceneType server_scene_type) { node_scene_type_ = server_scene_type; }
 
 private:
 	SceneList scene_list_;
