@@ -36,6 +36,16 @@ public:
 		return scene_list_;
 	}
 
+	inline std::size_t GetSceneSize() const
+	{
+		return scene_list_.size();
+	}
+	
+	inline bool IsSceneEmpty() const
+	{
+		return scene_list_.empty();
+	}
+
 	[[nodiscard]] const EntitySet& GetScenesListByConfig(uint32_t scene_config_id) const
 	{
 		const auto list_const_iterator = conf_id_scene_list_.find(scene_config_id);
@@ -57,58 +67,7 @@ public:
 		return scene_it->second;
 	}
 
-	inline void SetNodeState(const NodeState state) { node_state_ = state; }
-	[[nodiscard]] NodeState GetNodeState() const { return node_state_; }
-	inline bool IsStateNormal() const { return node_state_ == NodeState::kNormal; }
-
-	inline void SetNodePressureState(const NodePressureState state) { node_pressure_state_ = state; }
-	[[nodiscard]] NodePressureState get_server_pressure_state() const { return node_pressure_state_; }
-	inline bool IsNodeNoPressure() const { return node_pressure_state_ == NodePressureState::kNoPressure; }
-	inline bool IsNodePressure() const { return node_pressure_state_ == NodePressureState::kPressure; }
-
-	inline [[nodiscard]] ServerSceneType GetServerSceneType() const { return node_scene_type_; }
-
-	inline void SetNodeSceneType(const ServerSceneType server_scene_type)
-	{
-		node_scene_type_ = server_scene_type;
-	}
-
-	inline std::size_t GetSceneSize() const
-	{
-		std::size_t scene_size = 0;
-		for (const auto& val : conf_id_scene_list_ | std::views::values)
-		{
-			scene_size += val.size();
-		}
-		return scene_size;
-	}
-
-	inline bool IsSceneEmpty() const
-	{
-		return GetSceneSize() == 0;
-	}
-
-	[[nodiscard]] bool ConfigSceneListEmpty(const uint32_t scene_config_id) const
-	{
-		const auto scene_it = conf_id_scene_list_.find(scene_config_id);
-		if (scene_it == conf_id_scene_list_.end())
-		{
-			return true;
-		}
-		return scene_it->second.empty();
-	}
-
-	[[nodiscard]] std::size_t ConfigSceneSize(const uint32_t scene_config_id) const
-	{
-		const auto scene_it = conf_id_scene_list_.find(scene_config_id);
-		if (scene_it == conf_id_scene_list_.end())
-		{
-			return 0;
-		}
-		return scene_it->second.size();
-	}
-
-	inline void AddScene(entt::entity scene)
+	void AddScene(entt::entity scene)
 	{
 		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
 		scene_list_.emplace(scene_info.scene_id(), scene);
@@ -128,6 +87,23 @@ public:
 	}
 
 	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(uint32_t scene_config_id) const;
+
+	inline void SetNodeState(const NodeState state) { node_state_ = state; }
+	[[nodiscard]] NodeState GetNodeState() const { return node_state_; }
+	inline bool IsStateNormal() const { return node_state_ == NodeState::kNormal; }
+
+	inline void SetNodePressureState(const NodePressureState state) { node_pressure_state_ = state; }
+	[[nodiscard]] NodePressureState get_server_pressure_state() const { return node_pressure_state_; }
+	inline bool IsNodeNoPressure() const { return node_pressure_state_ == NodePressureState::kNoPressure; }
+	inline bool IsNodePressure() const { return node_pressure_state_ == NodePressureState::kPressure; }
+
+	inline [[nodiscard]] ServerSceneType GetServerSceneType() const { return node_scene_type_; }
+
+	inline void SetNodeSceneType(const ServerSceneType server_scene_type)
+	{
+		node_scene_type_ = server_scene_type;
+	}
+
 private:
 	SceneList scene_list_;
 	Uint32KeyEntitySetValue conf_id_scene_list_; //配置表对应的场景列表

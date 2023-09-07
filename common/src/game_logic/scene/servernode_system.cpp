@@ -20,7 +20,7 @@ entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetS
 		//所以优先判断有没有场景
 		if (const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
 			!try_server_comp.IsStateNormal() ||
-			try_server_comp.ConfigSceneListEmpty(scene_config_id) ||
+			try_server_comp.GetScenesListByConfig(scene_config_id).empty() ||
 				try_server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_)
 		{
 			continue;
@@ -66,7 +66,7 @@ entt::entity GetNotFullSceneT(const GetSceneParam& param, const GetSceneFilterPa
 	{
 		if (const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
 			!try_server_comp.IsStateNormal() ||
-			try_server_comp.ConfigSceneListEmpty(scene_config_id) ||
+			try_server_comp.GetScenesListByConfig(scene_config_id).empty() ||
 				try_server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_)
 		{
 			continue;

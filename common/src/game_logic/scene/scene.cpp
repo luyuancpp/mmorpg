@@ -37,7 +37,7 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
 		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
-		scene_size += server_comp.ConfigSceneSize(scene_config_id);
+		scene_size += server_comp.GetScenesListByConfig(scene_config_id).size();
 	}
 	return scene_size;
 }
@@ -85,7 +85,7 @@ bool ScenesSystem::ConfigSceneListNotEmpty(const uint32_t scene_config_id)
 	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
 		if (auto& server_comp = tls.registry.get<ServerComp>(server_entity);
-			!server_comp.ConfigSceneListEmpty(scene_config_id))
+			!server_comp.GetScenesListByConfig(scene_config_id).empty())
 		{
 			return true;
 		}
