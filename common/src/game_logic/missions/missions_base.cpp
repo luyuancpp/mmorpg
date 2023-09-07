@@ -1,22 +1,24 @@
 #include "missions_base.h"
+
+#include <ranges>
+
 #include "muduo/base/Logging.h"
 
 #include "src/game_config/condition_config.h"
 #include "src/game_logic/constants/mission_constants.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
-#include "src/util/random.h"
 
 #include "component_proto/mission_comp.pb.h"
 #include "event_proto/mission_event.pb.h"
 
-static std::vector<std::function<bool(int32_t, int32_t)>> function_compare{
-	{[](const int32_t a, const int32_t b) { return a >= b; }},
-	{[](const int32_t a, const int32_t b) { return a > b; }},
-	{[](const int32_t a, const int32_t b) { return a <= b; }},
-	{[](const int32_t a, const int32_t b) { return a < b; }},
-	{[](const int32_t a, const int32_t b) { return a == b; }},
-};
+std::array<std::function<bool(uint32_t, uint32_t)>, 5> function_compare({
+	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value >= conf_value; }},
+	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value > conf_value; }},
+	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value <= conf_value; }},
+	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value < conf_value; }},
+	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value == conf_value; }},
+});
 
 MissionsComp::MissionsComp()
 	: mission_config_(&MissionConfig::GetSingleton()),
@@ -38,315 +40,320 @@ std::size_t MissionsComp::can_reward_size() const
 	return static_cast<std::size_t>(try_mission_reward->can_reward_mission_id_size());
 }
 
-bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
+bool MissionsComp::IsConditionCompleted(uint32_t condition_id, const uint32_t progress_value)
 {
-	auto p = condition_config::GetSingleton().get(condition_id);
-	if (nullptr == p)
+	const auto* p_condition_row = condition_config::GetSingleton().get(condition_id);
+	if (nullptr == p_condition_row)
 	{
 		return false;
 	}
-	std::size_t operator_id = std::size_t(p->operation());
-	if (!(operator_id >= 0 && operator_id < function_compare.size()))
+
+	if (p_condition_row->operation() >= function_compare.size())
 	{
-		operator_id = 0;
+		return function_compare[0](progress_value, p_condition_row->amount());
 	}
-    return function_compare[operator_id](progress_value, p->amount());
+	return function_compare.at(p_condition_row->operation())(progress_value, p_condition_row->amount());
 }
 
-uint32_t MissionsComp::IsUnAccepted(uint32_t mission_id)const
+uint32_t MissionsComp::IsUnAccepted(uint32_t mission_id) const
 {
 	if (missions_comp_.missions().find(mission_id) != missions_comp_.missions().end())
-    {
+	{
 		return kRetMissionIdRepeated;
 	}
-    return kRetOK;
+	return kRetOK;
 }
 
-uint32_t MissionsComp::IsUnCompleted(uint32_t mission_id)const
+uint32_t MissionsComp::IsUnCompleted(const uint32_t mission_id) const
 {
-	if (missions_comp_.complete_missions().count(mission_id) > 0)//已经完成
+	if (missions_comp_.complete_missions().count(mission_id) > 0) //已经完成
 	{
 		return kRetMissionComplete;
 	}
-    return kRetOK;
+	return kRetOK;
 }
 
-uint32_t MissionsComp::GetReward(uint32_t mission_id)
+uint32_t MissionsComp::GetReward(const uint32_t mission_id) const
 {
-	const auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
+	auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr == try_mission_reward)
 	{
 		return kRetMissionPlayerMissionCompNotFound;
 	}
-	google::protobuf::Map<uint32_t, bool>* rmid = try_mission_reward->mutable_can_reward_mission_id();
-    auto it = try_mission_reward->mutable_can_reward_mission_id()->find(mission_id);
-    if (it == rmid->end())
-    {
-        return kRetMissionGetRewardNoMissionId;
-    }
-    rmid->erase(mission_id);
-    return kRetOK;
+	google::protobuf::Map<uint32_t, bool>* reward_mission_id = try_mission_reward->mutable_can_reward_mission_id();
+	if (const auto mission_reward_it = reward_mission_id->find(mission_id);
+		mission_reward_it == reward_mission_id->end())
+	{
+		return kRetMissionGetRewardNoMissionId;
+	}
+	reward_mission_id->erase(mission_id);
+	return kRetOK;
 }
 
 uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 {
-    //check 
-    RET_CHECK_RET(IsUnAccepted(accept_event.mission_id()));//已经接受过
-    RET_CHECK_RET(IsUnCompleted(accept_event.mission_id()));//已经完成
-    CheckCondition(!mission_config_->HasKey(accept_event.mission_id()), kRetTableId);
+	//check
+	RET_CHECK_RET(IsUnAccepted(accept_event.mission_id())) //已经接受过
+	RET_CHECK_RET(IsUnCompleted(accept_event.mission_id())) //已经完成
+	CheckCondition(!mission_config_->HasKey(accept_event.mission_id()), kRetTableId)
 
-    auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
-    auto mission_type = mission_config_->mission_type(accept_event.mission_id());
-    if (check_mission_type_repeated_)
-    {
-        UInt32PairSet::value_type p(mission_type, mission_sub_type);
-        CheckCondition(type_filter_.find(p) != type_filter_.end(), kRetMissionTypeRepeated);
-    }
-    MissionPbComp misison;
-    misison.set_id(accept_event.mission_id());
-    const auto& conditionids = mission_config_->condition_id(accept_event.mission_id());
-    for (int32_t i = 0; i < conditionids.size(); ++i)
-    {
-        auto cid = conditionids[i];
-        auto p = condition_config::GetSingleton().get(cid);
-        if (nullptr == p)
-        {
-            LOG_ERROR << "has not condtion" << cid;
-            continue;
-        }
-        //表的条件怎么改都无所谓,只有条件和表对应上就加进度
-        misison.add_progress(0);
-        event_missions_classify_[p->condition_type()].emplace(accept_event.mission_id());
-    }
-    missions_comp_.mutable_missions()->insert({ accept_event.mission_id(), std::move(misison) });
-    if (check_mission_type_repeated_)
-    {
-        UInt32PairSet::value_type p(mission_type, mission_sub_type);
-        type_filter_.emplace(p);
-    }
+	auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
+	auto mission_type = mission_config_->mission_type(accept_event.mission_id());
+	if (check_mission_type_repeated_)
+	{
+		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
+		CheckCondition(type_filter_.find(mission_and_mission_subtype_pair) != type_filter_.end(), kRetMissionTypeRepeated)
+	}
+	MissionPbComp mission_pb;
+	mission_pb.set_id(accept_event.mission_id());
+	for (const auto& condition_ids = mission_config_->condition_id(accept_event.mission_id());
+		const auto condition_id : condition_ids)
+	{
+		const auto* const condition_row = condition_config::GetSingleton().get(condition_id);
+		if (nullptr == condition_row)
+		{
+			LOG_ERROR << "has not condition" << condition_id;
+			continue;
+		}
+		//表的条件怎么改都无所谓,只有条件和表对应上就加进度
+		mission_pb.add_progress(0);
+		event_missions_classify_[condition_row->condition_type()].emplace(accept_event.mission_id());
+	}
+	missions_comp_.mutable_missions()->insert({accept_event.mission_id(), std::move(mission_pb)});
+	if (check_mission_type_repeated_)
+	{
+		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
+		type_filter_.emplace(mission_and_mission_subtype_pair);
+	}
 
-    //todo 
-    {
-        OnAcceptedMissionEvent on_accepted_mission_event;
-        on_accepted_mission_event.set_entity(entt::to_integral(event_owner()));
-        on_accepted_mission_event.set_mission_id(accept_event.mission_id());
-        tls.dispatcher.enqueue(on_accepted_mission_event);
-    }
-    return kRetOK;
+	//todo
+	{
+		OnAcceptedMissionEvent on_accepted_mission_event;
+		on_accepted_mission_event.set_entity(entt::to_integral(event_owner()));
+		on_accepted_mission_event.set_mission_id(accept_event.mission_id());
+		tls.dispatcher.enqueue(on_accepted_mission_event);
+	}
+	return kRetOK;
 }
 
-uint32_t MissionsComp::Abandon(uint32_t mission_id)
+uint32_t MissionsComp::Abandon(const uint32_t mission_id)
 {
-    RET_CHECK_RET(IsUnCompleted(mission_id));//已经完成
-	auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
+	//已经完成
+	RET_CHECK_RET(IsUnCompleted(mission_id))
+	auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr != try_mission_reward)
 	{
-        try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
+		try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
 	}
-    missions_comp_.mutable_missions()->erase(mission_id);
-    missions_comp_.mutable_complete_missions()->erase(mission_id);
-    missions_comp_.mutable_mission_begin_time()->erase(mission_id);
-    DeleteMissionClassify(mission_id);
-    return kRetOK;
+	missions_comp_.mutable_missions()->erase(mission_id);
+	missions_comp_.mutable_complete_missions()->erase(mission_id);
+	missions_comp_.mutable_mission_begin_time()->erase(mission_id);
+	DeleteMissionClassify(mission_id);
+	return kRetOK;
 }
 
 void MissionsComp::CompleteAllMission()
 {
-    for (auto& meit : missions_comp_.missions())
-    {
-        missions_comp_.mutable_complete_missions()->insert({ meit.first, false });
-    }
-    missions_comp_.mutable_missions()->clear();
+	for (const auto& key : missions_comp_.missions() | std::views::keys)
+	{
+		missions_comp_.mutable_complete_missions()->insert({key, false});
+	}
+	missions_comp_.mutable_missions()->clear();
 }
 
 void MissionsComp::Receive(const MissionConditionEvent& condition_event)
 {
-    if (condition_event.condtion_ids().empty())
-    {
-        return;
-    }
-    auto it =  event_missions_classify_.find(condition_event.type());
-    if (it ==  event_missions_classify_.end())
-    {
-        return;
-    }
-    UInt32Set temp_complete;
-    auto& classify_missions = it->second;//根据事件触发类型分类的任务
-    //todo 同步异步事件
-    for (auto lit : classify_missions)
-    {
-        auto mit = missions_comp_.mutable_missions()->find(lit);
-        if (mit == missions_comp_.mutable_missions()->end())
-        {
-            continue;
-        }
-        auto& mission = mit->second;
-        if (!UpdateMissionByCompareCondition(condition_event, mission))
-        {
-            continue;
-        }
-        const auto& conditions = mission_config_->condition_id(mission.id());
-        bool is_all_condition_complete = true;
-        for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i)
-        {
-            if (IsConditionCompleted(conditions[i], mission.progress(i)))
-            {
-                continue;
-            }
-            is_all_condition_complete = false;
-            break;
-        }
-        if (!is_all_condition_complete)
-        {
-            continue;
-        }
-        mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
-        // to client
-        temp_complete.emplace(mission.id());
-        missions_comp_.mutable_missions()->erase(mit);
-    }
+	if (condition_event.condtion_ids().empty())
+	{
+		return;
+	}
+	const auto classify_mission_it = event_missions_classify_.find(condition_event.type());
+	if (classify_mission_it == event_missions_classify_.end())
+	{
+		return;
+	}
+	UInt32Set temp_complete;
+	//根据事件触发类型分类的任务
+	//todo 同步异步事件
+	for (const auto& classify_missions = classify_mission_it->second;
+		auto lit : classify_missions)
+	{
+		auto mit = missions_comp_.mutable_missions()->find(lit);
+		if (mit == missions_comp_.mutable_missions()->end())
+		{
+			continue;
+		}
+		auto& mission = mit->second;
+		if (!UpdateMission(condition_event, mission))
+		{
+			continue;
+		}
+		const auto& conditions = mission_config_->condition_id(mission.id());
+		bool is_all_condition_complete = true;
+		for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i)
+		{
+			if (IsConditionCompleted(conditions[i], mission.progress(i)))
+			{
+				continue;
+			}
+			is_all_condition_complete = false;
+			break;
+		}
+		if (!is_all_condition_complete)
+		{
+			continue;
+		}
+		mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
+		// to client
+		temp_complete.emplace(mission.id());
+		missions_comp_.mutable_missions()->erase(mit);
+	}
 
-    OnMissionComplete(temp_complete);
+	OnMissionComplete(temp_complete);
 }
 
 void MissionsComp::DeleteMissionClassify(uint32_t mission_id)
 {
-    auto& config_conditions = mission_config_->condition_id(mission_id);
-    for (int32_t i = 0; i < config_conditions.size(); ++i)
-    {
-        auto condition_row = condition_config::GetSingleton().get(config_conditions.Get(i));
-        if (nullptr == condition_row)
-        {
-            continue;
-        }
-        event_missions_classify_[condition_row->condition_type()].erase(mission_id);
-    }
-    auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
-    if (mission_sub_type > 0 && check_mission_type_repeated_)
-    {
-		UInt32PairSet::value_type p(mission_config_->mission_type(mission_id), mission_sub_type);
-		type_filter_.erase(p);
-    }
+	const auto& config_conditions = mission_config_->condition_id(mission_id);
+	for (int32_t i = 0; i < config_conditions.size(); ++i)
+	{
+		const auto* const condition_row = condition_config::GetSingleton().get(config_conditions.Get(i));
+		if (nullptr == condition_row)
+		{
+			continue;
+		}
+		event_missions_classify_[condition_row->condition_type()].erase(mission_id);
+	}
+	if (auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
+		mission_sub_type > 0 &&
+		check_mission_type_repeated_)
+	{
+		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_config_->mission_type(mission_id), mission_sub_type);
+		type_filter_.erase(mission_and_mission_subtype_pair);
+	}
 }
 
-bool MissionsComp::UpdateMissionByCompareCondition(const MissionConditionEvent& condition_event, MissionPbComp& mission)
+bool MissionsComp::UpdateMission(const MissionConditionEvent& condition_event,
+                                                   MissionPbComp& mission) const
 {
-    //todo 活跃度减少超
-    if (condition_event.condtion_ids().empty())
-    {
-        return false;
-    }
-    bool mission_updated = false;
-    //如果我删除了某个条件，老玩家数据会不会错?正常任务是不能删除的，但是可以考虑删除条件
-    auto& mission_conditions = mission_config_->condition_id(mission.id());
-    for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i)
-    {
-        auto condition_row = condition_config::GetSingleton().get(mission_conditions.at(i));
-        if (nullptr == condition_row)
-        {
-            continue;
-        }
-        auto old_progress = mission.progress(i);
+	//todo 活跃度减少超
+	if (condition_event.condtion_ids().empty())
+	{
+		return false;
+	}
+	bool mission_updated = false;
+	//如果我删除了某个条件，老玩家数据会不会错?正常任务是不能删除的，但是可以考虑删除条件
+	const auto& mission_conditions = mission_config_->condition_id(mission.id());
+	for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i)
+	{
+		const auto* const condition_row = condition_config::GetSingleton().get(mission_conditions.at(i));
+		if (nullptr == condition_row)
+		{
+			continue;
+		}
+		const auto old_progress = mission.progress(i);
 		if (IsConditionCompleted(condition_row->id(), old_progress))
 		{
 			continue;
 		}
-        if (condition_event.type() != condition_row->condition_type())
-        {
-            continue;
-        }
-        //表检测至少有一个condition
-        std::size_t valid_config_condition_size = 0;
-        std::size_t equal_condition_size = 0;
-        auto calc_equal_condition_size = [&equal_condition_size, &condition_event, &valid_config_condition_size](int32_t index, const auto& config_conditions)
-        {
+		if (condition_event.type() != condition_row->condition_type())
+		{
+			continue;
+		}
+		//表检测至少有一个condition
+		std::size_t valid_config_condition_size = 0;
+		std::size_t equal_condition_size = 0;
+		auto calc_equal_condition_size = [&equal_condition_size, &condition_event, &valid_config_condition_size
+			](const int32_t index, const auto& config_conditions)
+		{
 			if (config_conditions.size() > 0)
 			{
 				++valid_config_condition_size;
 			}
-            if (condition_event.condtion_ids().size() <= index)
-            {
-                return;
-            }           
-            //验证条件和表里面的每列的多个条件是否有一项匹配
+			if (condition_event.condtion_ids().size() <= index)
+			{
+				return;
+			}
+			//验证条件和表里面的每列的多个条件是否有一项匹配
 			for (int32_t ci = 0; ci < config_conditions.size(); ++ci)
 			{
 				if (condition_event.condtion_ids(index) != config_conditions.Get(ci))
 				{
 					continue;
 				}
-                //在这列中有一项匹配
+				//在这列中有一项匹配
 				++equal_condition_size;
 				break;
 			}
-        };
-        calc_equal_condition_size(0, condition_row->condition1());
-        calc_equal_condition_size(1, condition_row->condition2());
-        calc_equal_condition_size(2, condition_row->condition3());
-        calc_equal_condition_size(3, condition_row->condition4());
-        //有效列中的条件列表都匹配了
-        if (valid_config_condition_size == 0 || equal_condition_size != valid_config_condition_size)
-        {
-            continue;
-        }
-        mission_updated = true;
-        mission.set_progress(i , condition_event.amount() + old_progress);
-        auto new_progress = mission.progress(i);
-        if (!IsConditionCompleted(condition_row->id(), new_progress))
-        {
-            continue;
-        }
-        // to client
-        mission.set_progress(i, std::min(new_progress, condition_row->amount()));
-        // to client
-    }
-    return mission_updated;
+		};
+		calc_equal_condition_size(0, condition_row->condition1());
+		calc_equal_condition_size(1, condition_row->condition2());
+		calc_equal_condition_size(2, condition_row->condition3());
+		calc_equal_condition_size(3, condition_row->condition4());
+		//有效列中的条件列表都匹配了
+		if (valid_config_condition_size == 0 || equal_condition_size != valid_config_condition_size)
+		{
+			continue;
+		}
+		mission_updated = true;
+		mission.set_progress(i, condition_event.amount() + old_progress);
+		auto new_progress = mission.progress(i);
+		if (!IsConditionCompleted(condition_row->id(), new_progress))
+		{
+			continue;
+		}
+		// to client
+		mission.set_progress(i, std::min(new_progress, condition_row->amount()));
+		// to client
+	}
+	return mission_updated;
 }
 
 void MissionsComp::OnMissionComplete(const UInt32Set& completed_missions_this_time)
 {
-    if (completed_missions_this_time.empty())
-    {
-        return;
-    }
-    for (auto& mission_id : completed_missions_this_time)
-    {
-        DeleteMissionClassify(mission_id);        
-    }
-    //处理异步的
-    auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
+	if (completed_missions_this_time.empty())
+	{
+		return;
+	}
+	for (const auto& mission_id : completed_missions_this_time)
+	{
+		DeleteMissionClassify(mission_id);
+	}
+	//处理异步的
+	auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	MissionConditionEvent mission_condition_event;
 	mission_condition_event.set_entity(entt::to_integral(event_owner()));
 	mission_condition_event.set_type(kConditionCompleteMission);
 	mission_condition_event.set_amount(1);
-	for (auto& mission_id : completed_missions_this_time)
+	for (const auto& mission_id : completed_missions_this_time)
 	{
-		missions_comp_.mutable_complete_missions()->insert({ mission_id, true });
+		missions_comp_.mutable_complete_missions()->insert({mission_id, true});
 		//自动领奖,给经验，为什么发事件？因为给经验升级了会马上接任务，或者触发一些任务的东西,
 		//但是我需要不影响当前任务逻辑流程,也可以马上触发，看情况而定
 		if (mission_config_->reward_id(mission_id) > 0 && mission_config_->auto_reward(mission_id))
 		{
 			OnMissionAwardEvent mission_award_event;
-            mission_award_event.set_entity(entt::to_integral(event_owner()));
-            mission_award_event.set_mission_id(mission_id);
+			mission_award_event.set_entity(entt::to_integral(event_owner()));
+			mission_award_event.set_mission_id(mission_id);
 			tls.dispatcher.enqueue(mission_award_event);
 		}
 		else if (nullptr != try_mission_reward && mission_config_->reward_id(mission_id) > 0)
 		{
-			try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });//手动领奖
+			//手动领奖
+			try_mission_reward->mutable_can_reward_mission_id()->insert({mission_id, false});
 		}
 
 		//todo 如果是活动不用走,让活动去接,这里应该是属于主任务系统的逻辑，想想怎么改方便，活动和任务逻辑分开，互不影响
 		AcceptMissionEvent accept_mission_event;
 		accept_mission_event.set_entity(entt::to_integral(event_owner()));
-		auto& next_missions = mission_config_->next_mission_id(mission_id);
+		const auto& next_missions = mission_config_->next_mission_id(mission_id);
 		for (int32_t i = 0; i < next_missions.size(); ++i)
 		{
 			accept_mission_event.set_mission_id(next_missions.Get(i));
-            tls.dispatcher.enqueue(accept_mission_event);
+			tls.dispatcher.enqueue(accept_mission_event);
 		}
 		mission_condition_event.clear_condtion_ids();
 		mission_condition_event.mutable_condtion_ids()->Add(mission_id);
-        tls.dispatcher.enqueue(mission_condition_event);
+		tls.dispatcher.enqueue(mission_condition_event);
 	}
 }
