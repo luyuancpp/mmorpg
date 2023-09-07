@@ -39,6 +39,9 @@
     <ClCompile Include="..\..\common\src\util\game_registry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h">
@@ -66,6 +69,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\scene\scene_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

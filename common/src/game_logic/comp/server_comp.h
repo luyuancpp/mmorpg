@@ -4,12 +4,12 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/constants/server_constants.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/pb/pbc/component_proto/scene_comp.pb.h"
 #include "src/util/defer.h"
 
-#include "src/pb/pbc/component_proto/scene_comp.pb.h"
 
-using SceneList = std::unordered_map<Guid, entt::entity>;
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
 using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
 
@@ -34,7 +34,7 @@ struct CrossRoomSceneServer
 class ServerComp
 {
 public:
-	[[nodiscard]] const auto& GetScenesList() const
+	[[nodiscard]] const ConfigSceneListType& GetScenesList() const
 	{
 		return conf_id_scene_list_;
 	}
@@ -62,8 +62,8 @@ public:
 
 	[[nodiscard]] entt::entity GetScenesListByGuid(Guid guid) const
 	{
-		const auto scene_it = tls.registry.get<SceneList>(global_entity()).find(guid);
-		if (scene_it == tls.registry.get<SceneList>(global_entity()).end())
+		const auto scene_it = cl_tls.scene_list().find(guid);
+		if (scene_it == cl_tls.scene_list().end())
 		{
 			return entt::null;
 		}
@@ -73,7 +73,7 @@ public:
 	void AddScene(entt::entity scene)
 	{
 		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
-		tls.registry.get<SceneList>(global_entity()).emplace(scene_info.guid(), scene);
+		cl_tls.scene_list().emplace(scene_info.guid(), scene);
 		conf_id_scene_list_[scene_info.scene_confid()].emplace(scene_info.guid(), scene);
 	}
 
@@ -81,7 +81,7 @@ public:
 	{
 		defer(tls.registry.destroy(scene));
 		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
-		tls.registry.get<SceneList>(global_entity()).erase(scene_info.guid());
+		cl_tls.scene_list().erase(scene_info.guid());
 		conf_id_scene_list_[scene_info.scene_confid()].erase(scene_info.guid());
 	}
 

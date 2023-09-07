@@ -101,7 +101,7 @@ TEST(GS, DestroyScene)
     sm.DestroyScene(server_entity1, scene_entity);
     EXPECT_TRUE(sm.IsSceneEmpty());
     EXPECT_FALSE(sm.ConfigSceneListNotEmpty(create_gs_scene_param1.scene_confid_));
-    EXPECT_TRUE(tls.registry.get<SceneList>(global_entity()).empty());
+    EXPECT_TRUE(cl_tls.scene_list().empty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
     EXPECT_FALSE(tls.registry.valid(scene_entity));
 }
