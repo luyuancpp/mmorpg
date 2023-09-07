@@ -370,8 +370,8 @@ TEST(MissionsComp, MissionRewardList)
     ms.Receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
-    EXPECT_EQ(kRetOK, ms.GetReward(mid));
-    EXPECT_EQ(kRetMissionGetRewardNoMissionId, ms.GetReward(mid));
+    EXPECT_EQ(kRetOK, MissionSystem::GetReward(param));
+    EXPECT_EQ(kRetMissionGetRewardNoMissionId, MissionSystem::GetReward(param));
     EXPECT_EQ(0, ms.can_reward_size());
 }
 

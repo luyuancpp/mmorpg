@@ -67,23 +67,6 @@ uint32_t MissionsComp::IsUnCompleted(const uint32_t mission_id) const
 	return kRetOK;
 }
 
-uint32_t MissionsComp::GetReward(const uint32_t mission_id) const
-{
-	auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
-	if (nullptr == try_mission_reward)
-	{
-		return kRetMissionPlayerMissionCompNotFound;
-	}
-	google::protobuf::Map<uint32_t, bool>* reward_mission_id = try_mission_reward->mutable_can_reward_mission_id();
-	if (const auto mission_reward_it = reward_mission_id->find(mission_id);
-		mission_reward_it == reward_mission_id->end())
-	{
-		return kRetMissionGetRewardNoMissionId;
-	}
-	reward_mission_id->erase(mission_id);
-	return kRetOK;
-}
-
 uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 {
 	//check
