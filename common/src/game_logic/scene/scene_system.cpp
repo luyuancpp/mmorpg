@@ -25,8 +25,14 @@ void AddMainSceneNodeComponent(const entt::entity server)
 	tls.registry.emplace<GsNodePlayerInfoPtr>(server, std::make_shared<GsNodePlayerInfoPtr::element_type>());
 }
 
+ScenesSystem::ScenesSystem()
+{
+	tls.registry.emplace_or_replace<SceneList>(global_entity());
+}
+
 ScenesSystem::~ScenesSystem()
 {
+	tls.registry.clear();
 	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
 		tls.registry.destroy(server_entity);
@@ -57,15 +63,7 @@ std::size_t ScenesSystem::scenes_size()
 
 bool ScenesSystem::IsSceneEmpty()
 {
-	for (const auto server_entity : tls.registry.view<ServerComp>())
-	{
-		if (auto& server_comp = tls.registry.get<ServerComp>(server_entity);
-			!server_comp.IsSceneEmpty())
-		{
-			return false;
-		}
-	}
-	return true;
+	return tls.registry.get<SceneList>(global_entity()).empty();
 }
 
 entt::entity ScenesSystem::GetSceneByGuid(Guid guid)
@@ -145,10 +143,12 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 {
 	// todo 人得换场景
 	//需要拷贝，否则迭代器失效
-	auto scene_list = tls.registry.get<ServerComp>(node).GetScenesList();
-	for (const auto scene : scene_list | std::views::values)
+	for (const auto scene_list : tls.registry.get<ServerComp>(node).GetScenesList() | std::views::values)
 	{
-		DestroyScene(node, scene);
+		for (const auto scene : scene_list | std::views::values)
+		{
+			DestroyScene(node, scene);
+		}
 	}
 
 	tls.registry.destroy(node);
@@ -262,18 +262,21 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 
 void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node)
 {
-	auto& src_server_scene_list = tls.registry.get<ServerComp>(crash_node).GetScenesList();
-	for (const auto& scene : src_server_scene_list)
+	for (const auto& scene_list : tls.registry.get<ServerComp>(crash_node).GetScenesList() |
+		std::views::values)
 	{
-		auto* p_scene_info = tls.registry.try_get<SceneInfo>(scene.second);
-		if (nullptr == p_scene_info)
+		for (const auto scene : scene_list | std::views::values)
 		{
-			continue;
+			auto* p_scene_info = tls.registry.try_get<SceneInfo>(scene);
+			if (nullptr == p_scene_info)
+			{
+				continue;
+			}
+			CreateGsSceneParam create_gs_scene_param;
+			create_gs_scene_param.scene_confid_ = p_scene_info->scene_confid();
+			create_gs_scene_param.node_ = dest_node;
+			CreateScene2Gs(create_gs_scene_param);
 		}
-		CreateGsSceneParam create_gs_scene_param;
-		create_gs_scene_param.scene_confid_ = p_scene_info->scene_confid();
-		create_gs_scene_param.node_ = dest_node;
-		CreateScene2Gs(create_gs_scene_param);
 	}
 
 	tls.registry.destroy(crash_node);

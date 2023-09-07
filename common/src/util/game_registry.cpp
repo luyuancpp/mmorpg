@@ -24,7 +24,7 @@ entt::entity op_entity()
     return tls.op_entity;
 }
 
-entt::entity& global_entity()
+entt::entity global_entity()
 {
     if (tls.global_entity == entt::null)
     {

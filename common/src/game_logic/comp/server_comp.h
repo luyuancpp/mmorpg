@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ranges>
+
 #include "src/common_type/common_type.h"
 #include "src/game_logic/constants/server_constants.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
@@ -7,8 +9,10 @@
 #include "src/pb/pbc/component_proto/scene_comp.pb.h"
 
 using SceneList = std::unordered_map<Guid, entt::entity>;
-using Uint32KeyEntitySetValue = std::unordered_map<uint32_t, EntitySet>;
+using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
 using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
+
+entt::entity global_entity();
 
 struct MainSceneServer
 {
@@ -29,16 +33,27 @@ struct CrossRoomSceneServer
 class ServerComp
 {
 public:
-	[[nodiscard]] const SceneList& GetScenesList() const { return scene_list_; }
-	inline std::size_t GetSceneSize() const { return scene_list_.size(); }
-	inline bool IsSceneEmpty() const { return scene_list_.empty(); }
+	[[nodiscard]] const ConfigSceneListType& GetScenesList() const
+	{
+		return conf_id_scene_list_;
+	}
 
-	[[nodiscard]] const EntitySet& GetScenesListByConfig(uint32_t scene_config_id) const
+	inline std::size_t GetSceneSize() const
+	{
+		std::size_t size = 0;
+		for (const auto& val : conf_id_scene_list_ | std::views::values)
+		{
+			size += val.size();
+		}
+		return size;
+	}
+
+	[[nodiscard]] const SceneList& GetScenesListByConfig(uint32_t scene_config_id) const
 	{
 		const auto list_const_iterator = conf_id_scene_list_.find(scene_config_id);
 		if (list_const_iterator == conf_id_scene_list_.end())
 		{
-			static const EntitySet empty_result;
+			static const SceneList empty_result;
 			return empty_result;
 		}
 		return list_const_iterator->second;
@@ -46,8 +61,8 @@ public:
 
 	[[nodiscard]] entt::entity GetScenesListByGuid(Guid guid) const
 	{
-		const auto scene_it = scene_list_.find(guid);
-		if (scene_it == scene_list_.end())
+		const auto scene_it = tls.registry.get<SceneList>(global_entity()).find(guid);
+		if (scene_it == tls.registry.get<SceneList>(global_entity()).end())
 		{
 			return entt::null;
 		}
@@ -57,20 +72,20 @@ public:
 	void AddScene(entt::entity scene)
 	{
 		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
-		scene_list_.emplace(scene_info.guid(), scene);
-		conf_id_scene_list_[scene_info.scene_confid()].emplace(scene);
+		tls.registry.get<SceneList>(global_entity()).emplace(scene_info.guid(), scene);
+		conf_id_scene_list_[scene_info.scene_confid()].emplace(scene_info.guid(), scene);
 	}
 
 	inline void RemoveScene(const entt::entity scene)
 	{
 		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
-		scene_list_.erase(scene_info.guid());
+		tls.registry.get<SceneList>(global_entity()).erase(scene_info.guid());
 		const auto scene_it = conf_id_scene_list_.find(scene_info.scene_confid());
 		if (scene_it == conf_id_scene_list_.end())
 		{
 			return;
 		}
-		scene_it->second.erase(scene);
+		scene_it->second.erase(scene_info.guid());
 	}
 
 	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(uint32_t scene_config_id) const;
@@ -89,8 +104,7 @@ public:
 	inline void SetNodeSceneType(const ServerSceneType server_scene_type) { node_scene_type_ = server_scene_type; }
 
 private:
-	SceneList scene_list_;
-	Uint32KeyEntitySetValue conf_id_scene_list_; //配置表对应的场景列表,不要对它进行任何操作了,只是用来优化性能用
+	ConfigSceneListType conf_id_scene_list_; //配置表对应的场景列表,不要对它进行任何操作了,只是用来优化性能用
 	NodeState node_state_{NodeState::kNormal};
 	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};
 	ServerSceneType node_scene_type_{ServerSceneType::kMainSceneServer};
@@ -106,7 +120,7 @@ private:
 	}
 	entt::entity scene{entt::null};
 	std::size_t min_scene_player_size = UINT64_MAX;
-	for (const auto& scene_it : scene_list)
+	for (const auto& scene_it : scene_list | std::views::values)
 	{
 		const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
 		if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)

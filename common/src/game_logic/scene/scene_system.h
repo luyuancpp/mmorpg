@@ -48,6 +48,7 @@ class ScenesSystem
 {
 public:
 	//just for test clear
+	ScenesSystem();
 	~ScenesSystem();
 
 	static std::size_t scenes_size(uint32_t scene_config_id);

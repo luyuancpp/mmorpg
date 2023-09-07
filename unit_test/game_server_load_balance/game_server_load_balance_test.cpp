@@ -93,7 +93,7 @@ TEST(GS, DestroyScene)
     sm.DestroyScene(server_entity1, scene_entity);
     EXPECT_TRUE(sm.IsSceneEmpty());
     EXPECT_FALSE(sm.ConfigSceneListNotEmpty(create_gs_scene_param1.scene_confid_));
-    EXPECT_TRUE(server_comp.IsSceneEmpty());
+    EXPECT_TRUE(tls.registry.get<SceneList>(global_entity()).empty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
     EXPECT_FALSE(tls.registry.valid(scene_entity));
 }
@@ -113,8 +113,8 @@ TEST(GS, DestroySever)
     create_gs_scene_param2.scene_confid_ = 2;
     create_gs_scene_param2.node_ = server_entity2;
 
-    auto scene_guid1 = sm.CreateScene2Gs(create_gs_scene_param1);
-    auto scene_guid2 = sm.CreateScene2Gs(create_gs_scene_param2);
+    auto scene_entity1 = sm.CreateScene2Gs(create_gs_scene_param1);
+    auto scene_entity2 = sm.CreateScene2Gs(create_gs_scene_param2);
 
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity1).GetSceneSize());
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).GetSceneSize());
@@ -125,9 +125,9 @@ TEST(GS, DestroySever)
     sm.OnDestroyServer(server_entity1);
 
     EXPECT_FALSE(tls.registry.valid(server_entity1));
-    EXPECT_FALSE(tls.registry.valid(scene_guid1));
+    EXPECT_FALSE(tls.registry.valid(scene_entity1));
     EXPECT_TRUE(tls.registry.valid(server_entity2));
-    EXPECT_TRUE(tls.registry.valid(scene_guid2));
+    EXPECT_TRUE(tls.registry.valid(scene_entity2));
 
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).GetSceneSize());
     EXPECT_EQ(1, sm.scenes_size());
@@ -138,9 +138,9 @@ TEST(GS, DestroySever)
 
     EXPECT_EQ(0, sm.scenes_size());
     EXPECT_FALSE(tls.registry.valid(server_entity1));
-    EXPECT_FALSE(tls.registry.valid(scene_guid1));
+    EXPECT_FALSE(tls.registry.valid(scene_entity1));
     EXPECT_FALSE(tls.registry.valid(server_entity2));
-    EXPECT_FALSE(tls.registry.valid(scene_guid2));
+    EXPECT_FALSE(tls.registry.valid(scene_entity2));
 
     EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_confid_));
     EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param2.scene_confid_));
