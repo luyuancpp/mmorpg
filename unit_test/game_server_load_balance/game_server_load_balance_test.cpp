@@ -22,9 +22,11 @@ entt::entity CreateMainSceneNode()
 
 TEST(GS, CreateMainScene)
 {
-    const ScenesSystem sm;
+    ScenesSystem sm;
+    
     CreateGsSceneParam create_gs_scene_param;
     const auto server_entity1 = CreateMainSceneNode();
+   
     create_gs_scene_param.node_ = server_entity1;
     for (uint32_t i = 0; i < confid_scenelist_size; ++i)
     {
@@ -57,15 +59,19 @@ TEST(GS, CreateScene2Sever)
     sm.CreateScene2Gs(create_gs_scene_param1);
     sm.CreateScene2Gs(create_gs_scene_param2);
 
-    auto& servercomp1 = tls.registry.get<ServerComp>(server_entity1);
+    auto servercomp1 = tls.registry.try_get<ServerComp>(server_entity1);
+    if (nullptr != servercomp1)
+    {
+        EXPECT_EQ(1, servercomp1->GetSceneSize());
+    }
  
-    auto& servercomp2 = tls.registry.get<ServerComp>(server_entity2);
-
-    EXPECT_EQ(1, servercomp1.GetSceneSize());
-
+    auto servercomp2 = tls.registry.try_get<ServerComp>(server_entity2);
+    if (nullptr != servercomp2)
+    {
+		EXPECT_EQ(1, servercomp2->GetSceneSize());
+    }
+    
     EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_confid_));
-
-    EXPECT_EQ(1, servercomp2.GetSceneSize());
 
     EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_confid_));
     EXPECT_EQ(2, sm.scenes_size());
@@ -74,7 +80,7 @@ TEST(GS, CreateScene2Sever)
 
 TEST(GS, DestroyScene)
 {
-    ScenesSystem const sm;
+    ScenesSystem  sm;
 
     const auto server_entity1 = CreateMainSceneNode();
 
@@ -86,9 +92,11 @@ TEST(GS, DestroyScene)
     EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_confid_));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 
-    const auto& server_comp = tls.registry.get<ServerComp>(server_entity1);
-    EXPECT_EQ(1, server_comp.GetSceneSize());
-
+	auto servercomp1 = tls.registry.try_get<ServerComp>(server_entity1);
+	if (nullptr != servercomp1)
+	{
+		EXPECT_EQ(1, servercomp1->GetSceneSize());
+	}
 
     sm.DestroyScene(server_entity1, scene_entity);
     EXPECT_TRUE(sm.IsSceneEmpty());

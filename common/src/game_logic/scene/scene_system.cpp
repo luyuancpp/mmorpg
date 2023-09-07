@@ -32,11 +32,7 @@ ScenesSystem::ScenesSystem()
 
 ScenesSystem::~ScenesSystem()
 {
-	tls.registry.clear();
-	for (const auto server_entity : tls.registry.view<ServerComp>())
-	{
-		tls.registry.destroy(server_entity);
-	}
+	tls.ClearForTest();
 }
 
 std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
@@ -52,13 +48,7 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 
 std::size_t ScenesSystem::scenes_size()
 {
-	std::size_t scene_size = 0;
-	for (const auto server_entity : tls.registry.view<ServerComp>())
-	{
-		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
-		scene_size += server_comp.GetSceneSize();
-	}
-	return scene_size;
+	return tls.registry.get<SceneList>(global_entity()).size();
 }
 
 bool ScenesSystem::IsSceneEmpty()
@@ -116,38 +106,36 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 		tls.registry.emplace<GsNodePlayerInfoPtr>(scene_entity, *try_server_player_info);
 	}
 
-	auto& server_scenes = tls.registry.get<ServerComp>(param.node_);
-	server_scenes.AddScene(scene_entity);
+	auto* p_server_comp = tls.registry.try_get<ServerComp>(param.node_);
+	if (nullptr != p_server_comp)
+	{
+		p_server_comp->AddScene(scene_entity);
+	}
 
 	return scene_entity;
 }
 
 void ScenesSystem::DestroyScene(entt::entity node, entt::entity scene)
 {
-	const auto* p_scene_info = tls.registry.try_get<SceneInfo>(scene);
-	if (nullptr == p_scene_info)
+	// todo 人得换场景
+	auto* p_server_comp = tls.registry.try_get<ServerComp>(node);
+	if (nullptr == p_server_comp)
 	{
 		return;
 	}
-	// todo 人得换场景
-	if (auto* p_server_comp = tls.registry.try_get<ServerComp>(node);
-		nullptr != p_server_comp)
-	{
-		p_server_comp->RemoveScene(scene);
-	}
-
-	tls.registry.destroy(scene);
+	p_server_comp->RemoveScene(scene);
 }
 
 void ScenesSystem::OnDestroyServer(entt::entity node)
 {
 	// todo 人得换场景
 	//需要拷贝，否则迭代器失效
-	for (const auto scene_list : tls.registry.get<ServerComp>(node).GetScenesList() | std::views::values)
+	const auto& conf_id_scene_list = tls.registry.get<ServerComp>(node).GetScenesList();
+	for (auto scene_list : conf_id_scene_list)
 	{
-		for (const auto scene : scene_list | std::views::values)
+		for (const auto scene : scene_list.second)
 		{
-			DestroyScene(node, scene);
+			DestroyScene(node, scene.second);
 		}
 	}
 
