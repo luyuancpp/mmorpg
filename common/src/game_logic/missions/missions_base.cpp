@@ -22,7 +22,7 @@ std::array<std::function<bool(uint32_t, uint32_t)>, 5> function_compare({
 
 MissionsComp::MissionsComp()
 	: mission_config_(&MissionConfig::GetSingleton()),
-	  check_mission_type_repeated_(mission_config_->CheckTypeRepeated())
+	  mission_type_not_repeated_(mission_config_->CheckTypeRepeated())
 {
 	for (uint32_t i = kConditionKillMonster; i < kConditionTypeMax; ++i)
 	{
@@ -55,7 +55,7 @@ bool MissionsComp::IsConditionCompleted(uint32_t condition_id, const uint32_t pr
 	return function_compare.at(p_condition_row->operation())(progress_value, p_condition_row->amount());
 }
 
-uint32_t MissionsComp::IsUnAccepted(uint32_t mission_id) const
+uint32_t MissionsComp::IsUnAccepted(const uint32_t mission_id) const
 {
 	if (missions_comp_.missions().find(mission_id) != missions_comp_.missions().end())
 	{
@@ -99,7 +99,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 
 	auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
 	auto mission_type = mission_config_->mission_type(accept_event.mission_id());
-	if (check_mission_type_repeated_)
+	if (mission_type_not_repeated_)
 	{
 		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
 		CheckCondition(type_filter_.find(mission_and_mission_subtype_pair) != type_filter_.end(), kRetMissionTypeRepeated)
@@ -120,7 +120,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 		event_missions_classify_[condition_row->condition_type()].emplace(accept_event.mission_id());
 	}
 	missions_comp_.mutable_missions()->insert({accept_event.mission_id(), std::move(mission_pb)});
-	if (check_mission_type_repeated_)
+	if (mission_type_not_repeated_)
 	{
 		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
 		type_filter_.emplace(mission_and_mission_subtype_pair);
@@ -226,7 +226,7 @@ void MissionsComp::DeleteMissionClassify(uint32_t mission_id)
 	}
 	if (auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
 		mission_sub_type > 0 &&
-		check_mission_type_repeated_)
+		mission_type_not_repeated_)
 	{
 		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_config_->mission_type(mission_id), mission_sub_type);
 		type_filter_.erase(mission_and_mission_subtype_pair);
