@@ -35,8 +35,6 @@ public:
     uint32_t IsUnCompleted(uint32_t mission_id) const;
 
     uint32_t Accept(const AcceptMissionEvent& accept_event);
-    uint32_t Abandon(uint32_t mission_id);
-    void CompleteAllMission();
 
     void Receive(const MissionConditionEvent& condition_event);
 

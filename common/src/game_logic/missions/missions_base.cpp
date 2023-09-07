@@ -113,31 +113,6 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 	return kRetOK;
 }
 
-uint32_t MissionsComp::Abandon(const uint32_t mission_id)
-{
-	//已经完成
-	RET_CHECK_RET(IsUnCompleted(mission_id))
-	auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
-	if (nullptr != try_mission_reward)
-	{
-		try_mission_reward->mutable_can_reward_mission_id()->erase(mission_id);
-	}
-	missions_comp_.mutable_missions()->erase(mission_id);
-	missions_comp_.mutable_complete_missions()->erase(mission_id);
-	missions_comp_.mutable_mission_begin_time()->erase(mission_id);
-	DeleteMissionClassify(mission_id);
-	return kRetOK;
-}
-
-void MissionsComp::CompleteAllMission()
-{
-	for (const auto& key : missions_comp_.missions() | std::views::keys)
-	{
-		missions_comp_.mutable_complete_missions()->insert({key, false});
-	}
-	missions_comp_.mutable_missions()->clear();
-}
-
 void MissionsComp::Receive(const MissionConditionEvent& condition_event)
 {
 	if (condition_event.condtion_ids().empty())
