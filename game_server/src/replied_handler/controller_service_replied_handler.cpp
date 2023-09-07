@@ -5,7 +5,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 #include "src/pb/pbc/lobby_scene_service.h"
 #include "src/system/gs_scene_system.h"
 #include "src/game_config/deploy_json.h"

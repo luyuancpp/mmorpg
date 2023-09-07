@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/gs_node.h"
 #include "src/network/player_session.h"

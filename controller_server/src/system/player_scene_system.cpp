@@ -5,7 +5,7 @@
 #include "src/comp/player_list.h"
 #include "src/controller_server.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 
 #include "src/game_logic/tips_id.h"
 #include "src/network/message_system.h"

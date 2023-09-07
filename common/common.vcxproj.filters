@@ -16,7 +16,7 @@
     <ClCompile Include="src\network\rpc_channel.cc" />
     <ClCompile Include="src\network\rpc_server.cc" />
     <ClCompile Include="src\game_logic\scene\servernode_system.cpp" />
-    <ClCompile Include="src\game_logic\scene\scene.cpp" />
+    <ClCompile Include="src\game_logic\scene\scene_system.cpp" />
     <ClCompile Include="src\network\session.cpp" />
     <ClCompile Include="src\game_logic\player\player_list.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
@@ -194,7 +194,7 @@
     <ClInclude Include="src\network\rpc_client.h" />
     <ClInclude Include="src\util\snow_flake.h" />
     <ClInclude Include="src\game_logic\scene\servernode_system.h" />
-    <ClInclude Include="src\game_logic\scene\scene.h" />
+    <ClInclude Include="src\game_logic\scene\scene_system.h" />
     <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\util\random.h" />
     <ClInclude Include="src\game_logic\player\player_list.h" />

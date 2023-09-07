@@ -11,7 +11,7 @@
 #include "src/comp/player_list.h"
 #include "src/game_logic/comp/account_comp.h"
 #include "src/game_logic/tips_id.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
