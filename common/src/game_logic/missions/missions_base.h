@@ -33,16 +33,16 @@ public:
     uint32_t IsUnAccepted(uint32_t mission_id) const;
     uint32_t IsUnCompleted(uint32_t mission_id) const;
 
-    uint32_t GetReward(uint32_t mission_id);
+    uint32_t GetReward(uint32_t mission_id) const;
     uint32_t Accept(const AcceptMissionEvent& accept_event);
     uint32_t Abandon(uint32_t mission_id);
     void CompleteAllMission();
 
-    void Receive(const MissionConditionEvent& c);
+    void Receive(const MissionConditionEvent& condition_event);
 
 private:
     void DeleteMissionClassify(uint32_t mission_id);
-    bool UpdateMissionByCompareCondition(const MissionConditionEvent& c, MissionPbComp& mission);
+    bool UpdateMission(const MissionConditionEvent& condition_event, MissionPbComp& mission) const;
     void OnMissionComplete(const UInt32Set& completed_missions);
 
     const IMissionConfig* mission_config_{ nullptr };
