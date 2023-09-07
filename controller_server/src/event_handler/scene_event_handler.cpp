@@ -52,7 +52,7 @@ void SceneEventHandler::OnEnterSceneHandler(const OnEnterScene& message)
     }
     PlayerSceneSystem::Send2GsEnterScene(player);
     LOG_INFO << "player enter scene " << *try_player_id << " "
-        << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).scene_id();
+        << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).guid();
 ///<<< END WRITING YOUR CODE
 }
 
@@ -72,7 +72,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 		return;
 	}
 	auto& change_scene_info = change_scene_queue.front();
-	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().scene_id());
+	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
     GsLeaveSceneRequest leave_scene_message;
 	auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
 	auto p_player_gs = tls.registry.try_get<PlayerSession>(player);

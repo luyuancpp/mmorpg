@@ -47,7 +47,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
         return;
     }
     Ctlr2GsEnterSceneRequest enter_scene_message;
-    enter_scene_message.set_scene_id(p_scene_info->scene_id());
+    enter_scene_message.set_scene_id(p_scene_info->guid());
     enter_scene_message.set_player_id(player_id);
 
     auto gs = try_player_session->gs();
@@ -113,9 +113,9 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
     change_scene_info.set_processing(true);
-    auto to_scene_id = change_scene_info.scene_info().scene_id();
+    auto to_scene_guid = change_scene_info.scene_info().guid();
     entt::entity to_scene = entt::null;
-    if (to_scene_id <= 0)//用scene_config id 去换本服的controller
+    if (to_scene_guid <= 0)//用scene_config id 去换本服的controller
     {
         GetSceneParam getp;
         getp.scene_conf_id_ = change_scene_info.scene_info().scene_confid();
@@ -126,11 +126,11 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
             return;
         }
-        to_scene_id = tls.registry.get<SceneInfo>(to_scene).scene_id();
+        to_scene_guid = tls.registry.get<SceneInfo>(to_scene).guid();
     }
     else
     {
-        to_scene = ScenesSystem::GetSceneByGuid(to_scene_id);
+        to_scene = ScenesSystem::GetSceneByGuid(to_scene_guid);
         if (entt::null == to_scene)
         {
             PlayerTipSystem::Tip(player, kRetEnterSceneSceneNotFound, {});
@@ -147,8 +147,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    auto from_scene_id = tls.registry.get<SceneInfo>(try_from_scene->scene_entity_).scene_id();
-    if (to_scene_id == from_scene_id)
+    auto from_scene_id = tls.registry.get<SceneInfo>(try_from_scene->scene_entity_).guid();
+    if (to_scene_guid == from_scene_id)
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
@@ -217,7 +217,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         {
             //注意虽然一个逻辑，但是不一定是在leave后面处理
             EnterCrossMainSceneRequest rq;
-            rq.set_scene_id(to_scene_id);
+            rq.set_scene_id(to_scene_guid);
             rq.set_player_id(tls.registry.get<Guid>(player));
             g_controller_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMsgId, rq);
             return;
