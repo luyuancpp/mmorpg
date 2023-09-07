@@ -7,43 +7,35 @@
 #include "src/game_logic/tips_id.h"
 #include "src/util/random.h"
 
-#include "event_proto/mission_event.pb.h"
 #include "component_proto/mission_comp.pb.h"
+#include "event_proto/mission_event.pb.h"
 
 static std::vector<std::function<bool(int32_t, int32_t)>> function_compare{
-	{[](int32_t a, int32_t b) {return a >= b; }},
-	{[](int32_t a, int32_t b) {return a > b; }},
-	{[](int32_t a, int32_t b) {return a <= b; }},
-	{[](int32_t a, int32_t b) {return a < b; }},
-	{[](int32_t a, int32_t b) {return a == b; }},
+	{[](const int32_t a, const int32_t b) { return a >= b; }},
+	{[](const int32_t a, const int32_t b) { return a > b; }},
+	{[](const int32_t a, const int32_t b) { return a <= b; }},
+	{[](const int32_t a, const int32_t b) { return a < b; }},
+	{[](const int32_t a, const int32_t b) { return a == b; }},
 };
 
 MissionsComp::MissionsComp()
-    : mission_config_(&MissionConfig::GetSingleton())
-{
-}
-
-std::size_t MissionsComp::can_reward_size()
-{
-    auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
-    if (nullptr == try_mission_reward)
-    {
-        return 0;
-    }
-    return try_mission_reward->can_reward_mission_id_size();
-}
-
-void MissionsComp::Init()
+	: mission_config_(&MissionConfig::GetSingleton()),
+	  check_mission_type_repeated_(mission_config_->CheckTypeRepeated())
 {
 	for (uint32_t i = kConditionKillMonster; i < kConditionTypeMax; ++i)
 	{
 		event_missions_classify_.emplace(i, UInt32Set{});
 	}
-	if (mission_config_->CheckTypeRepeated())
+}
+
+std::size_t MissionsComp::can_reward_size() const
+{
+	const auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
+	if (nullptr == try_mission_reward)
 	{
-		tls.registry.emplace<CheckTypeRepeated>(event_owner());
+		return 0;
 	}
-    
+	return static_cast<std::size_t>(try_mission_reward->can_reward_mission_id_size());
 }
 
 bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress_value)
@@ -51,7 +43,7 @@ bool MissionsComp::IsConditionCompleted(uint32_t condition_id, uint32_t progress
 	auto p = condition_config::GetSingleton().get(condition_id);
 	if (nullptr == p)
 	{
-        return false;
+		return false;
 	}
 	std::size_t operator_id = std::size_t(p->operation());
 	if (!(operator_id >= 0 && operator_id < function_compare.size()))
@@ -79,20 +71,20 @@ uint32_t MissionsComp::IsUnCompleted(uint32_t mission_id)const
     return kRetOK;
 }
 
-uint32_t MissionsComp::GetReward(uint32_t missin_id)
+uint32_t MissionsComp::GetReward(uint32_t mission_id)
 {
-	auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
+	const auto try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr == try_mission_reward)
 	{
 		return kRetMissionPlayerMissionCompNotFound;
 	}
-    auto rmid = try_mission_reward->mutable_can_reward_mission_id();
-    auto it = try_mission_reward->mutable_can_reward_mission_id()->find(missin_id);
+	google::protobuf::Map<uint32_t, bool>* rmid = try_mission_reward->mutable_can_reward_mission_id();
+    auto it = try_mission_reward->mutable_can_reward_mission_id()->find(mission_id);
     if (it == rmid->end())
     {
         return kRetMissionGetRewardNoMissionId;
     }
-    rmid->erase(missin_id);
+    rmid->erase(mission_id);
     return kRetOK;
 }
 
@@ -105,8 +97,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
 
     auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
     auto mission_type = mission_config_->mission_type(accept_event.mission_id());
-    bool check_type_repeated =  mission_sub_type > 0 && tls.registry.any_of<CheckTypeRepeated>(event_owner());
-    if (check_type_repeated)
+    if (check_mission_type_repeated_)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
         CheckCondition(type_filter_.find(p) != type_filter_.end(), kRetMissionTypeRepeated);
@@ -128,7 +119,7 @@ uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
         event_missions_classify_[p->condition_type()].emplace(accept_event.mission_id());
     }
     missions_comp_.mutable_missions()->insert({ accept_event.mission_id(), std::move(misison) });
-    if (check_type_repeated)
+    if (check_mission_type_repeated_)
     {
         UInt32PairSet::value_type p(mission_type, mission_sub_type);
         type_filter_.emplace(p);
@@ -231,8 +222,7 @@ void MissionsComp::DeleteMissionClassify(uint32_t mission_id)
         event_missions_classify_[condition_row->condition_type()].erase(mission_id);
     }
     auto mission_sub_type = mission_config_->mission_sub_type(mission_id);
-    if (mission_sub_type > 0 && 
-        tls.registry.any_of<CheckTypeRepeated>(event_owner()))
+    if (mission_sub_type > 0 && check_mission_type_repeated_)
     {
 		UInt32PairSet::value_type p(mission_config_->mission_type(mission_id), mission_sub_type);
 		type_filter_.erase(p);

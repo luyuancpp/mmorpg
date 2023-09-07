@@ -180,7 +180,6 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 	OnEnterScene on_enter_scene_event;
 	on_enter_scene_event.set_entity(entt::to_integral(param.enterer_));
 	tls.dispatcher.trigger(on_enter_scene_event);
-
 }
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)

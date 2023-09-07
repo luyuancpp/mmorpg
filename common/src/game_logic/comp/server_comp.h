@@ -83,7 +83,27 @@ public:
 		tls.registry.destroy(scene);
 	}
 
-	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(uint32_t scene_config_id) const;
+	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(const uint32_t scene_config_id) const
+	{
+		const auto& scene_list = GetScenesListByConfig(scene_config_id);
+		if (scene_list.empty())
+		{
+			return entt::null;
+		}
+		entt::entity scene{entt::null};
+		std::size_t min_scene_player_size = UINT64_MAX;
+		for (const auto& scene_it : scene_list | std::views::values)
+		{
+			const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
+			if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
+			{
+				continue;
+			}
+			min_scene_player_size = scene_player_size;
+			scene = scene_it;
+		}
+		return scene;
+	}
 
 	inline void SetNodeState(const NodeState state) { node_state_ = state; }
 	[[nodiscard]] NodeState GetNodeState() const { return node_state_; }
@@ -104,26 +124,3 @@ private:
 	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};
 	ServerSceneType node_scene_type_{ServerSceneType::kMainSceneServer};
 };
-
-
-[[nodiscard]] inline entt::entity ServerComp::GetMinPlayerSizeSceneByConfigId(const uint32_t scene_conf_id) const
-{
-	const auto& scene_list = GetScenesListByConfig(scene_conf_id);
-	if (scene_list.empty())
-	{
-		return entt::null;
-	}
-	entt::entity scene{entt::null};
-	std::size_t min_scene_player_size = UINT64_MAX;
-	for (const auto& scene_it : scene_list | std::views::values)
-	{
-		const auto scene_player_size = tls.registry.get<ScenePlayers>(scene_it).size();
-		if (scene_player_size >= min_scene_player_size || scene_player_size >= kMaxScenePlayerSize)
-		{
-			continue;
-		}
-		min_scene_player_size = scene_player_size;
-		scene = scene_it;
-	}
-	return scene;
-}

@@ -18,8 +18,7 @@ decltype(auto) CreateMission()
 	auto player = tls.registry.create();
 	auto& ms = tls.registry.emplace<MissionsComp>(player);
     ms.set_event_owner(player);
-    ms.Init();	
-    MissionEventHandler::Register(tls.dispatcher);
+    MissionEventHandler::Register();
     return &ms;
 }
 
@@ -27,7 +26,7 @@ TEST(MissionsComp, AcceptMission)
 {
     uint32_t mid = 1;
     auto& ms = *CreateMission();
-    tls.registry.remove<CheckTypeRepeated>(ms);
+	ms.set_check_mission_type_repeated(false);
     AcceptMissionEvent accept_mission_event;
     accept_mission_event.set_mission_id(mid);
     auto& data = mission_config::GetSingleton().all();

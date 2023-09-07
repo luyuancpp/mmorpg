@@ -288,7 +288,7 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
             sm.EnterScene(enter_param1);
         }
     }
-    ServerNodeSystem::SetNodeState(*server_entities.begin(), NodeState::kMainTain);
+    ServerNodeSystem::SetNodeState(*server_entities.begin(), NodeState::kMaintain);
 
     GetSceneParam weight_round_robin_scene;
     weight_round_robin_scene.scene_conf_id_ = 0;
