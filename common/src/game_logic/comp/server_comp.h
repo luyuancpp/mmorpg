@@ -90,7 +90,7 @@ public:
 
 private:
 	SceneList scene_list_;
-	Uint32KeyEntitySetValue conf_id_scene_list_; //配置表对应的场景列表
+	Uint32KeyEntitySetValue conf_id_scene_list_; //配置表对应的场景列表,不要对它进行任何操作了,只是用来优化性能用
 	NodeState node_state_{NodeState::kNormal};
 	NodePressureState node_pressure_state_{NodePressureState::kNoPressure};
 	ServerSceneType node_scene_type_{ServerSceneType::kMainSceneServer};
