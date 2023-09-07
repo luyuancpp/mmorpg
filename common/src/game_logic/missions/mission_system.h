@@ -33,27 +33,22 @@ struct CompleteMissionParam
 class AcceptMissionEvent;
 class MissionConditionEvent;
 
-class MissionSystem : public EventOwner
+class MissionSystem
 {
 public:
 	using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
 
-
-	static bool IsConditionCompleted(uint32_t condition_id, uint32_t progress_value);
-	uint32_t IsUnAccepted(uint32_t mission_id) const;
-	uint32_t IsUnCompleted(uint32_t mission_id) const;
-
-	uint32_t GetReward(const GetRewardParam& param) const;
-	uint32_t Accept(const AcceptMissionEvent& accept_event);
-	uint32_t Abandon(const AbandonParam& param);
-	void CompleteAllMission(entt::entity player, uint32_t op);
+	static uint32_t GetReward(const GetRewardParam& param);
+	static uint32_t Accept(const AcceptMissionEvent& accept_event);
+	static uint32_t Abandon(const AbandonParam& param);
+	static void CompleteAllMission(entt::entity player, uint32_t op);
 
 	void Receive(const MissionConditionEvent& condition_event);
 
 private:
-	void DeleteMissionClassify(entt::entity player, uint32_t mission_id);
-	bool UpdateMission(const MissionConditionEvent& condition_event, MissionPbComp& mission) const;
-	void OnMissionComplete(entt::entity player, const UInt32Set& completed_missions);
+	static void DeleteMissionClassify(entt::entity player, uint32_t mission_id);
+	static bool UpdateMission(const MissionConditionEvent& condition_event, MissionPbComp& mission);
+	static void OnMissionComplete(entt::entity player, const UInt32Set& completed_missions);
 
 };
 

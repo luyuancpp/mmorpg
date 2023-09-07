@@ -4,6 +4,7 @@
 #include "src/game_config/mission_config.h"
 #include "src/game_logic/constants/mission_constants.h"
 #include "src/game_logic/missions/missions_base.h"
+#include "src/game_logic/missions/mission_system.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/missions/missions_base.h"
 #include "src/event_handler/mission_event_handler.h"
@@ -20,6 +21,15 @@ decltype(auto) CreateMission()
     ms.set_event_owner(player);
     MissionEventHandler::Register();
     return &ms;
+}
+
+decltype(auto) CreatePlayerMission()
+{
+	auto player = tls.registry.create();
+	auto& ms = tls.registry.emplace<MissionsComp>(player);
+	ms.set_event_owner(player);
+	MissionEventHandler::Register();
+	return player;
 }
 
 TEST(MissionsComp, AcceptMission)
@@ -337,15 +347,19 @@ TEST(MissionsComp, ConditionAmount)
 
 TEST(MissionsComp, MissionRewardList)
 {
-    auto& ms = *CreateMission();
-    tls.registry.emplace<MissionRewardPbComp>(ms);
+    auto player = CreatePlayerMission();
+    auto& ms = tls.registry.get<MissionsComp>(player);
+    tls.registry.emplace<MissionRewardPbComp>(player);
 
     uint32_t mid = 12;
 
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
 	EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
-    EXPECT_EQ(kRetMissionGetRewardNoMissionId, ms.GetReward(mid));
+    GetRewardParam param;
+    param.mission_id_ = mid;
+    param.player_ = player;
+    EXPECT_EQ(kRetMissionGetRewardNoMissionId, MissionSystem::GetReward(param));
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
 	MissionConditionEvent ce;
