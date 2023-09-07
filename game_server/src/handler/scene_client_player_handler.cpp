@@ -23,7 +23,7 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
         return;
     }
     auto& scene_info = request->scene_info();
-    if (scene_info.scene_confid() <= 0 && scene_info.scene_id() <= 0)
+    if (scene_info.scene_confid() <= 0 && scene_info.guid() <= 0)
     {
         response->mutable_error()->set_id(kRetEnterSceneParamError);
         return;
@@ -33,8 +33,8 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
     {
         if (const auto try_my_scene_info = tls.registry.try_get<SceneInfo>(current_scene->scene_entity_);
             nullptr != try_my_scene_info &&
-            try_my_scene_info->scene_id() == scene_info.scene_id()
-            && scene_info.scene_id() > 0)
+            try_my_scene_info->guid() == scene_info.guid()
+            && scene_info.guid() > 0)
         {
             response->mutable_error()->set_id(kRetEnterSceneYouInCurrentScene);
             return;

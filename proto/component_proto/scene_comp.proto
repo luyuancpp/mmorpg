@@ -3,7 +3,7 @@ syntax = "proto3";
 message SceneInfo
 {
   uint32 scene_confid = 1;
-  uint64 scene_id = 2;
+  uint64 guid = 2;
 }
 
 message ControllerChangeSceneInfo

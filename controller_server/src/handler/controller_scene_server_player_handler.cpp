@@ -52,7 +52,7 @@ void ControllerScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt
 		}
 	auto& change_scene_info = change_scene_queue.front();
 	LOG_DEBUG << "Gs2ControllerLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
-	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().scene_id());
+	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
 	//todo异步加载完场景已经不在了scene了
 
 	if (entt::null == to_scene)//todo 场景崩溃了要去新的场景

@@ -105,9 +105,9 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 
 	SceneInfo scene_info(param.scene_info);
 	scene_info.set_scene_confid(param.scene_confid_);
-	if (scene_info.scene_id() <= 0)
+	if (scene_info.guid() <= 0)
 	{
-		scene_info.set_scene_id(server_sequence_.Generate());
+		scene_info.set_guid(server_sequence_.Generate());
 	}
 	const auto scene_entity = tls.registry.create();
 	tls.registry.emplace<SceneInfo>(scene_entity, scene_info);
