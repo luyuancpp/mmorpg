@@ -5,6 +5,7 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/constants/server_constants.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/util/defer.h"
 
 #include "src/pb/pbc/component_proto/scene_comp.pb.h"
 
@@ -33,7 +34,7 @@ struct CrossRoomSceneServer
 class ServerComp
 {
 public:
-	[[nodiscard]] const ConfigSceneListType& GetScenesList() const
+	[[nodiscard]] const auto& GetScenesList() const
 	{
 		return conf_id_scene_list_;
 	}
@@ -78,14 +79,10 @@ public:
 
 	inline void RemoveScene(const entt::entity scene)
 	{
+		defer(tls.registry.destroy(scene));
 		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
 		tls.registry.get<SceneList>(global_entity()).erase(scene_info.guid());
-		const auto scene_it = conf_id_scene_list_.find(scene_info.scene_confid());
-		if (scene_it == conf_id_scene_list_.end())
-		{
-			return;
-		}
-		scene_it->second.erase(scene_info.guid());
+		conf_id_scene_list_[scene_info.scene_confid()].erase(scene_info.guid());
 	}
 
 	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(uint32_t scene_config_id) const;
