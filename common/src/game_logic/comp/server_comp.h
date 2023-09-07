@@ -7,8 +7,6 @@
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/pb/pbc/component_proto/scene_comp.pb.h"
-#include "src/util/defer.h"
-
 
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
 using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
@@ -60,7 +58,7 @@ public:
 		return list_const_iterator->second;
 	}
 
-	[[nodiscard]] entt::entity GetScenesListByGuid(Guid guid) const
+	[[nodiscard]] static entt::entity GetScenesListByGuid(const Guid guid)
 	{
 		const auto scene_it = cl_tls.scene_list().find(guid);
 		if (scene_it == cl_tls.scene_list().end())
@@ -79,10 +77,10 @@ public:
 
 	inline void RemoveScene(const entt::entity scene)
 	{
-		defer(tls.registry.destroy(scene));
 		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
 		cl_tls.scene_list().erase(scene_info.guid());
 		conf_id_scene_list_[scene_info.scene_confid()].erase(scene_info.guid());
+		tls.registry.destroy(scene);
 	}
 
 	[[nodiscard]] entt::entity GetMinPlayerSizeSceneByConfigId(uint32_t scene_config_id) const;
