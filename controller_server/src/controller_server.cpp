@@ -37,7 +37,6 @@ ControllerServer::ControllerServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 { 
-    global_entity() = tls.registry.create();
 }
 
 ControllerServer::~ControllerServer()
