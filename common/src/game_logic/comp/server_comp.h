@@ -108,7 +108,7 @@ private:
 };
 
 
-[[nodiscard]] inline entt::entity ServerComp::GetMinPlayerSizeSceneByConfigId(uint32_t scene_conf_id) const
+[[nodiscard]] inline entt::entity ServerComp::GetMinPlayerSizeSceneByConfigId(const uint32_t scene_conf_id) const
 {
 	const auto& scene_list = GetScenesListByConfig(scene_conf_id);
 	if (scene_list.empty())
