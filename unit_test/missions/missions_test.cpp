@@ -35,7 +35,8 @@ decltype(auto) CreatePlayerMission()
 TEST(MissionsComp, AcceptMission)
 {
     uint32_t mid = 1;
-    auto& ms = *CreateMission();
+	auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
 	ms.set_check_mission_type_repeated(false);
     AcceptMissionEvent accept_mission_event;
     accept_mission_event.set_mission_id(mid);
@@ -49,7 +50,7 @@ TEST(MissionsComp, AcceptMission)
     }
     EXPECT_EQ(sz, ms.mission_size());
     EXPECT_EQ(0, ms.complete_size());
-    ms.CompleteAllMission();
+    MissionSystem::CompleteAllMission(player, 0);
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(sz, ms.complete_size());
 }
