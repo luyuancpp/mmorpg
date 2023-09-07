@@ -375,9 +375,10 @@ TEST(MissionsComp, MissionRewardList)
     EXPECT_EQ(0, ms.can_reward_size());
 }
 
-TEST(MissionsComp, RemoveMission)
+TEST(MissionsComp, AbandonMission)
 {
-    auto& ms = *CreateMission();
+	auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
     uint32_t mid = 12;
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
@@ -390,7 +391,11 @@ TEST(MissionsComp, RemoveMission)
 
     EXPECT_EQ(1, type_missions.find(kConditionKillMonster)->second.size());
     tls.registry.emplace_or_replace<MissionRewardPbComp>(ms).mutable_can_reward_mission_id()->insert({ mid, true });
-    ms.Abandon(mid);
+    AbandonParam param;
+	param.mission_id_ = mid;
+	param.player_ = player;
+    
+    MissionSystem::Abandon(param);
 
     EXPECT_EQ(0, ms.mission_size());
     EXPECT_EQ(0, ms.can_reward_size());
