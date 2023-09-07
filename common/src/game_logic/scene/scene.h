@@ -56,7 +56,7 @@ public:
 
 	static entt::entity GetSceneByGuid(Guid guid);
 
-	static bool HasConfigScene(uint32_t scene_config_id);
+	static bool ConfigSceneListNotEmpty(uint32_t scene_config_id);
 	static bool IsSceneEmpty();
 
 	static uint32_t CheckScenePlayerSize(entt::entity scene);

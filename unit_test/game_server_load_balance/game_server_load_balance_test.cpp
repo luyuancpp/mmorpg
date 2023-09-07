@@ -2,6 +2,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/scene/scene.h"
+#include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
 #include "component_proto/gs_node_comp.pb.h"
@@ -91,7 +92,7 @@ TEST(GS, DestroyScene)
 
     sm.DestroyScene(server_entity1, scene_entity);
     EXPECT_TRUE(sm.IsSceneEmpty());
-    EXPECT_FALSE(sm.HasConfigScene(create_gs_scene_param1.scene_confid_));
+    EXPECT_FALSE(sm.ConfigSceneListNotEmpty(create_gs_scene_param1.scene_confid_));
     EXPECT_TRUE(server_comp.IsSceneEmpty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
     EXPECT_FALSE(tls.registry.valid(scene_entity));
@@ -279,9 +280,8 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
             sm.EnterScene(enter_param1);
         }
     }
-    ;
-    node_system.SetNodeState(*server_entities.begin(), NodeState::kMainTain);
-    
+    ServerNodeSystem::SetNodeState(*server_entities.begin(), NodeState::kMainTain);
+
     GetSceneParam weight_round_robin_scene;
     weight_round_robin_scene.scene_conf_id_ = 0;
     for (uint32_t i = 0; i < player_size; ++i)
