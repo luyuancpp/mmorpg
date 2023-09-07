@@ -58,16 +58,12 @@ bool ScenesSystem::IsSceneEmpty()
 
 entt::entity ScenesSystem::GetSceneByGuid(Guid guid)
 {
-	for (const auto server_entity : tls.registry.view<ServerComp>())
+	const auto scene_it = cl_tls.scene_list().find(guid);
+	if (scene_it == cl_tls.scene_list().end())
 	{
-		auto& server_comp = tls.registry.get<ServerComp>(server_entity);
-		const entt::entity scene = server_comp.GetScenesListByGuid(guid);
-		if (scene != entt::null)
-		{
-			return scene;
-		}
+		return entt::null;
 	}
-	return entt::null;
+	return scene_it->second;
 }
 
 bool ScenesSystem::ConfigSceneListNotEmpty(const uint32_t scene_config_id)
@@ -130,15 +126,14 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 {
 	// todo 人得换场景
 	//需要拷贝，否则迭代器失效
-	const auto& conf_id_scene_list = tls.registry.get<ServerComp>(node).GetScenesList();
-	for (auto scene_list : conf_id_scene_list)
+	for (const auto& conf_id_scene_list = tls.registry.get<ServerComp>(node).GetScenesList();
+		auto val : conf_id_scene_list | std::views::values)
 	{
-		for (const auto scene : scene_list.second)
+		for (const auto scene : val | std::views::values)
 		{
-			DestroyScene(node, scene.second);
+			DestroyScene(node, scene);
 		}
 	}
-
 	tls.registry.destroy(node);
 }
 
@@ -255,7 +250,7 @@ void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest
 	{
 		for (const auto scene : scene_list | std::views::values)
 		{
-			auto* p_scene_info = tls.registry.try_get<SceneInfo>(scene);
+			const auto* p_scene_info = tls.registry.try_get<SceneInfo>(scene);
 			if (nullptr == p_scene_info)
 			{
 				continue;
