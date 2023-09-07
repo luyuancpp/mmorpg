@@ -25,6 +25,7 @@
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\event_proto\scene_event.pb.cc" />
+    <ClCompile Include="..\..\common\src\util\game_registry.cpp" />
     <ClCompile Include="game_server_load_balance_test.cpp" />
   </ItemGroup>
   <ItemGroup>
