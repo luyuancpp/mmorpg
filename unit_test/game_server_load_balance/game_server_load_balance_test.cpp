@@ -113,8 +113,8 @@ TEST(GS, DestroySever)
     create_gs_scene_param2.scene_confid_ = 2;
     create_gs_scene_param2.node_ = server_entity2;
 
-    auto scene_id1 = sm.CreateScene2Gs(create_gs_scene_param1);
-    auto scene_id2 = sm.CreateScene2Gs(create_gs_scene_param2);
+    auto scene_guid1 = sm.CreateScene2Gs(create_gs_scene_param1);
+    auto scene_guid2 = sm.CreateScene2Gs(create_gs_scene_param2);
 
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity1).GetSceneSize());
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).GetSceneSize());
@@ -125,9 +125,9 @@ TEST(GS, DestroySever)
     sm.OnDestroyServer(server_entity1);
 
     EXPECT_FALSE(tls.registry.valid(server_entity1));
-    EXPECT_FALSE(tls.registry.valid(scene_id1));
+    EXPECT_FALSE(tls.registry.valid(scene_guid1));
     EXPECT_TRUE(tls.registry.valid(server_entity2));
-    EXPECT_TRUE(tls.registry.valid(scene_id2));
+    EXPECT_TRUE(tls.registry.valid(scene_guid2));
 
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).GetSceneSize());
     EXPECT_EQ(1, sm.scenes_size());
@@ -138,9 +138,9 @@ TEST(GS, DestroySever)
 
     EXPECT_EQ(0, sm.scenes_size());
     EXPECT_FALSE(tls.registry.valid(server_entity1));
-    EXPECT_FALSE(tls.registry.valid(scene_id1));
+    EXPECT_FALSE(tls.registry.valid(scene_guid1));
     EXPECT_FALSE(tls.registry.valid(server_entity2));
-    EXPECT_FALSE(tls.registry.valid(scene_id2));
+    EXPECT_FALSE(tls.registry.valid(scene_guid2));
 
     EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_confid_));
     EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param2.scene_confid_));
@@ -163,14 +163,14 @@ TEST(GS, PlayerLeaveEnterScene)
     create_gs_scene_param2.scene_confid_ = 2;
     create_gs_scene_param2.node_ = server_entity2;
 
-    auto scene_id1 = sm.CreateScene2Gs(create_gs_scene_param1);
-    auto scene_id2 = sm.CreateScene2Gs(create_gs_scene_param2);
+    auto scene_guid1 = sm.CreateScene2Gs(create_gs_scene_param1);
+    auto scene_guid2 = sm.CreateScene2Gs(create_gs_scene_param2);
 
     EnterSceneParam enter_param1;
-    enter_param1.scene_ = scene_id1;
+    enter_param1.scene_ = scene_guid1;
 
     EnterSceneParam enter_param2;
-    enter_param2.scene_ = scene_id2;
+    enter_param2.scene_ = scene_guid2;
 
     uint32_t player_size = 100;
     EntitySet player_entity_set1;
@@ -193,17 +193,17 @@ TEST(GS, PlayerLeaveEnterScene)
         }
     }
 
-    const auto& scenes_players1 = tls.registry.get<ScenePlayers>(scene_id1);
-    const auto& scenes_players2 = tls.registry.get<ScenePlayers>(scene_id2);
+    const auto& scenes_players1 = tls.registry.get<ScenePlayers>(scene_guid1);
+    const auto& scenes_players2 = tls.registry.get<ScenePlayers>(scene_guid2);
     for (const auto& player_entity : player_entity_set1)
     {
         EXPECT_TRUE(scenes_players1.find(player_entity) != scenes_players1.end());
-        EXPECT_TRUE(tls.registry.get<SceneEntity>(player_entity).scene_entity_ == scene_id1);
+        EXPECT_TRUE(tls.registry.get<SceneEntity>(player_entity).scene_entity_ == scene_guid1);
     }
     for (const auto& player_entity : player_entities_set2)
     {
         EXPECT_TRUE(scenes_players2.find(player_entity) != scenes_players2.end());
-        EXPECT_TRUE(tls.registry.get<SceneEntity>(player_entity).scene_entity_ == scene_id2);
+        EXPECT_TRUE(tls.registry.get<SceneEntity>(player_entity).scene_entity_ == scene_guid2);
     }
     EXPECT_EQ(tls.registry.get<GsNodePlayerInfoPtr>(server_entity1)->player_size(), player_size / 2);
     EXPECT_EQ(tls.registry.get<GsNodePlayerInfoPtr>(server_entity2)->player_size(), player_size / 2);
@@ -227,8 +227,8 @@ TEST(GS, PlayerLeaveEnterScene)
     }
 
     EXPECT_EQ(tls.registry.get<GsNodePlayerInfoPtr>(server_entity2)->player_size(), 0);
-    auto& scenes_players11 = tls.registry.get<ScenePlayers>(scene_id1);
-    auto& scenes_players22 = tls.registry.get<ScenePlayers>(scene_id2);
+    auto& scenes_players11 = tls.registry.get<ScenePlayers>(scene_guid1);
+    auto& scenes_players22 = tls.registry.get<ScenePlayers>(scene_guid2);
     EXPECT_TRUE(scenes_players11.empty());
     EXPECT_TRUE(scenes_players22.empty());
 }
@@ -314,14 +314,14 @@ TEST(GS, CompelToChangeScene)
     server2_param.scene_confid_ = 2;
     server2_param.node_ = server_entity2;
 
-    const auto scene_id1 = sm.CreateScene2Gs(server1_param);
-    const auto scene_id2 = sm.CreateScene2Gs(server2_param);
+    const auto scene_guid1 = sm.CreateScene2Gs(server1_param);
+    const auto scene_guid2 = sm.CreateScene2Gs(server2_param);
 
     EnterSceneParam enter_param1;
-    enter_param1.scene_ = scene_id1;
+    enter_param1.scene_ = scene_guid1;
 
     EnterSceneParam enter_param2;
-    enter_param2.scene_ = scene_id2;
+    enter_param2.scene_ = scene_guid2;
 
     constexpr uint32_t player_size = 100;
     EntitySet player_entities_set1;
@@ -340,12 +340,12 @@ TEST(GS, CompelToChangeScene)
     {
         compel_change_param1.player_ = it;
         sm.CompelPlayerChangeScene(compel_change_param1);
-        EXPECT_TRUE(tls.registry.try_get<SceneEntity>(it)->scene_entity_ == scene_id2);
+        EXPECT_TRUE(tls.registry.try_get<SceneEntity>(it)->scene_entity_ == scene_guid2);
     }
     EXPECT_EQ(tls.registry.get<GsNodePlayerInfoPtr>(server_entity1)->player_size(), 0);
     EXPECT_EQ(tls.registry.get<GsNodePlayerInfoPtr>(server_entity2)->player_size(), player_entities_set1.size());
-    auto& scenes_players11 = tls.registry.get<ScenePlayers>(scene_id1);
-    auto& scenes_players22 = tls.registry.get<ScenePlayers>(scene_id2);
+    auto& scenes_players11 = tls.registry.get<ScenePlayers>(scene_guid1);
+    auto& scenes_players22 = tls.registry.get<ScenePlayers>(scene_guid2);
     EXPECT_TRUE(scenes_players11.empty());
     EXPECT_EQ(scenes_players22.size(), player_entities_set1.size());
 }
@@ -423,7 +423,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     uint32_t server_size = 2;
     uint32_t per_server_scene = 2;
     EntitySet scene_entities;
-    entt::entity first_scene_id = entt::null;
+    entt::entity first_scene_guid = entt::null;
 
     for (uint32_t i = 0; i < server_size; ++i)
     {
@@ -439,9 +439,9 @@ TEST(GS, CrashMovePlayer2NewServer)
             create_server_scene_param.node_ = it;
             auto e = sm.CreateScene2Gs(create_server_scene_param);
             scene_entities.emplace(e);
-            if (first_scene_id == entt::null)
+            if (first_scene_guid == entt::null)
             {
-                first_scene_id = e;
+                first_scene_guid = e;
             }
         }
     }
@@ -456,7 +456,7 @@ TEST(GS, CrashMovePlayer2NewServer)
     {
         auto p_e = tls.registry.create();
         enter_param1.enterer_ = p_e;
-        enter_param1.scene_ = first_scene_id;
+        enter_param1.scene_ = first_scene_guid;
         player_scene1.emplace(enter_param1.enterer_, enter_param1.scene_);
         sm.EnterScene(enter_param1);
     }
@@ -529,7 +529,7 @@ TEST(GS, WeightRoundRobinMainScene)
             sm.EnterScene(enter_param1);
         }
 
-        uint32_t player_scene_id = 0;
+        uint32_t player_scene_guid = 0;
         for (auto& it : player_scene1)
         {
             auto& pse = tls.registry.get<SceneEntity>(it.first);
@@ -549,7 +549,7 @@ TEST(GS, WeightRoundRobinMainScene)
             scene_sets.emplace(can_enter);
             sm.EnterScene(enter_param1);
         }
-        player_scene_id = 0;
+        player_scene_guid = 0;
         for (auto& it : player_scene2)
         {
             auto& pse = tls.registry.get<SceneEntity>(it.first);
@@ -649,7 +649,7 @@ TEST(GS, ServerEnterLeavePressure)
         sm.EnterScene(enter_param1);
     }
 
-    uint32_t player_scene_id = 0;
+    uint32_t player_scene_guid = 0;
 
     snsys.NodeEnterNoPressure(*server_entities.begin());
 
@@ -731,7 +731,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 			sm.EnterScene(enter_param1);
 		}
 
-		uint32_t player_scene_id = 0;
+		uint32_t player_scene_guid = 0;
 		for (auto& it : player_scene1)
 		{
 			auto& pse = tls.registry.get<SceneEntity>(it.first);
@@ -751,7 +751,7 @@ TEST(GS, GetNotFullMainSceneSceneFull)
 			scene_sets.emplace(can_enter);
 			sm.EnterScene(enter_param1);
 		}
-		player_scene_id = 0;
+		player_scene_guid = 0;
 		for (auto& it : player_scene2)
 		{
 			auto& pse = tls.registry.get<SceneEntity>(it.first);
