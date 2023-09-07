@@ -11,7 +11,7 @@ enum class NodeState : uint8_t
 	//game server 正常状态
 	kNormal,
 	//game server 维护状态
-	kMainTain,
+	kMaintain,
 	//崩溃状态
 	kCrash
 };

@@ -32,7 +32,7 @@ public:
 	//得到有该场景的人数最少的服务器
 	static entt::entity GetSceneOnMinPlayerSizeNode(const GetSceneParam& param);
 
-	//得到有该场景的人数不满的服务器
+	//得到有该场景的人数不满的服务器,效率比上面函数高一点点
 	static entt::entity GetNotFullScene(const GetSceneParam& param);
 
 	static void NodeEnterPressure(entt::entity node);
@@ -40,6 +40,5 @@ public:
 	static void NodeEnterNoPressure(entt::entity node);
 
 	static void SetNodeState(entt::entity node, NodeState node_state);
-
 };
 

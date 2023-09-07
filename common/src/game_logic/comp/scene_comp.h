@@ -6,5 +6,5 @@
 
 struct SceneEntity
 {
-	entt::entity scene_entity_{ entt::null };
+	entt::entity scene_entity_{entt::null};
 };
