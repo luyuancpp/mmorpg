@@ -80,12 +80,12 @@ entt::entity ScenesSystem::GetSceneByGuid(Guid guid)
 	return entt::null;
 }
 
-bool ScenesSystem::HasConfigScene(const uint32_t scene_config_id)
+bool ScenesSystem::ConfigSceneListNotEmpty(const uint32_t scene_config_id)
 {
 	for (const auto server_entity : tls.registry.view<ServerComp>())
 	{
 		if (auto& server_comp = tls.registry.get<ServerComp>(server_entity);
-			server_comp.HasConfigScene(scene_config_id))
+			!server_comp.ConfigSceneListEmpty(scene_config_id))
 		{
 			return true;
 		}
@@ -101,7 +101,7 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 		return entt::null;
 	}
 
-	SceneInfo scene_info(std::move(param.scene_info));
+	SceneInfo scene_info(param.scene_info);
 	scene_info.set_scene_confid(param.scene_confid_);
 	if (scene_info.scene_id() <= 0)
 	{
