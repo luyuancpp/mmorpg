@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\common\src\game_logic\scene\scene_system.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\scene\servernode_system.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\thread_local\thread_local_storage.cpp" />
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.cc" />
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.cc" />
@@ -34,6 +35,7 @@
     <ClInclude Include="..\..\common\src\game_logic\constants\server_constants.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\scene_system.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\servernode_system.h" />
+    <ClInclude Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.h" />
     <ClInclude Include="..\..\common\src\game_logic\thread_local\thread_local_storage.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\scene_comp.pb.h" />

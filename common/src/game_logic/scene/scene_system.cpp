@@ -27,7 +27,7 @@ void AddMainSceneNodeComponent(const entt::entity server)
 
 ScenesSystem::ScenesSystem()
 {
-	tls.registry.emplace_or_replace<SceneList>(global_entity());
+	cl_tls.scene_list().clear();
 }
 
 ScenesSystem::~ScenesSystem()
@@ -48,12 +48,12 @@ std::size_t ScenesSystem::scenes_size(uint32_t scene_config_id)
 
 std::size_t ScenesSystem::scenes_size()
 {
-	return tls.registry.get<SceneList>(global_entity()).size();
+	return cl_tls.scene_list().size();
 }
 
 bool ScenesSystem::IsSceneEmpty()
 {
-	return tls.registry.get<SceneList>(global_entity()).empty();
+	return cl_tls.scene_list().empty();
 }
 
 entt::entity ScenesSystem::GetSceneByGuid(Guid guid)
