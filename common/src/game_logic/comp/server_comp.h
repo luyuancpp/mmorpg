@@ -31,9 +31,9 @@ struct CrossRoomSceneServer
 class ServerComp
 {
 public:
-	const Uint32KeyEntitySetValue& GetConfIdScenesList() const
+	[[nodiscard]] const auto& GetScenesList() const
 	{
-		return conf_id_scene_list_;
+		return scene_list_;
 	}
 
 	[[nodiscard]] const EntitySet& GetScenesListByConfig(uint32_t scene_config_id) const
@@ -66,10 +66,7 @@ public:
 	inline bool IsNodeNoPressure() const { return node_pressure_state_ == NodePressureState::kNoPressure; }
 	inline bool IsNodePressure() const { return node_pressure_state_ == NodePressureState::kPressure; }
 
-	inline [[nodiscard]] ServerSceneType GetServerSceneType() const
-	{
-		return node_scene_type_;
-	}
+	inline [[nodiscard]] ServerSceneType GetServerSceneType() const { return node_scene_type_; }
 
 	inline void SetNodeSceneType(const ServerSceneType server_scene_type)
 	{
@@ -101,7 +98,7 @@ public:
 		return scene_it->second.empty();
 	}
 
-	[[nodiscard]] std::size_t ConfigSceneSize(uint32_t scene_config_id) const
+	[[nodiscard]] std::size_t ConfigSceneSize(const uint32_t scene_config_id) const
 	{
 		const auto scene_it = conf_id_scene_list_.find(scene_config_id);
 		if (scene_it == conf_id_scene_list_.end())
@@ -118,7 +115,7 @@ public:
 		conf_id_scene_list_[scene_info.scene_confid()].emplace(scene);
 	}
 
-	inline void RemoveScene( const entt::entity scene)
+	inline void RemoveScene(const entt::entity scene)
 	{
 		const auto& scene_info = tls.registry.get<SceneInfo>(scene);
 		scene_list_.erase(scene_info.scene_id());

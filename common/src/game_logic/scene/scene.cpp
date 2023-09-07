@@ -143,12 +143,10 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 {
 	// todo 人得换场景
 	//需要拷贝，否则迭代器失效
-	for (const auto val : tls.registry.get<ServerComp>(node).GetConfIdScenesList() | std::views::values)
+	auto scene_list = tls.registry.get<ServerComp>(node).GetScenesList();
+	for (const auto scene : scene_list | std::views::values)
 	{
-		for (const auto scene : val)
-		{
-			DestroyScene(node, scene);
-		}
+		DestroyScene(node, scene);
 	}
 
 	tls.registry.destroy(node);
@@ -262,16 +260,18 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 
 void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node)
 {
-	for (const auto& src_server_scene = tls.registry.get<ServerComp>(crash_node).GetConfIdScenesList();
-		const auto& [fst, snd] : src_server_scene)
+	auto& src_server_scene_list = tls.registry.get<ServerComp>(crash_node).GetScenesList();
+	for (const auto& scene : src_server_scene_list)
 	{
-		for (std::size_t i = 0; i < snd.size(); ++i)
+		auto* p_scene_info = tls.registry.try_get<SceneInfo>(scene.second);
+		if (nullptr == p_scene_info)
 		{
-			CreateGsSceneParam create_gs_scene_param;
-			create_gs_scene_param.scene_confid_ = fst;
-			create_gs_scene_param.node_ = dest_node;
-			CreateScene2Gs(create_gs_scene_param);
+			continue;
 		}
+		CreateGsSceneParam create_gs_scene_param;
+		create_gs_scene_param.scene_confid_ = p_scene_info->scene_confid();
+		create_gs_scene_param.node_ = dest_node;
+		CreateScene2Gs(create_gs_scene_param);
 	}
 
 	tls.registry.destroy(crash_node);
