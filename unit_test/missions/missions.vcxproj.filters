@@ -48,6 +48,9 @@
     <ClCompile Include="..\..\game_server\src\event_handler\mission_event_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\src\game_logic\missions\mission_system.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h">
@@ -69,6 +72,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\game_server\src\event_handler\mission_event_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\game_logic\missions\mission_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -22,8 +22,7 @@ std::array<std::function<bool(uint32_t, uint32_t)>, 5> function_compare({
 	});
 
 
-
-uint32_t MissionSystem::GetReward(const GetRewardParam& param) const
+uint32_t MissionSystem::GetReward(const GetRewardParam& param)
 {
 	if (!tls.registry.valid(param.player_))
 	{
@@ -133,6 +132,22 @@ void MissionSystem::CompleteAllMission(entt::entity player, uint32_t op)
 	missions_comp_.mutable_missions()->clear();
 }
 
+bool IsConditionCompleted(uint32_t condition_id, const uint32_t progress_value)
+{
+	const auto* p_condition_row = condition_config::GetSingleton().get(condition_id);
+	if (nullptr == p_condition_row)
+	{
+		return false;
+	}
+
+	if (p_condition_row->operation() >= function_compare.size())
+	{
+		return function_compare[0](progress_value, p_condition_row->amount());
+	}
+	return function_compare.at(p_condition_row->operation())(progress_value, p_condition_row->amount());
+}
+
+
 void MissionSystem::Receive(const MissionConditionEvent& condition_event)
 {
 	if (condition_event.condtion_ids().empty())
@@ -216,8 +231,7 @@ void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_
 	}
 }
 
-bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,
-	MissionPbComp& mission) const
+bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,	MissionPbComp& mission)
 {
 	//todo 活跃度减少超
 	if (condition_event.condtion_ids().empty())
@@ -314,9 +328,9 @@ void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& comp
 		DeleteMissionClassify(player, mission_id);
 	}	
 	//处理异步的
-	auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
+	auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(player);
 	MissionConditionEvent mission_condition_event;
-	mission_condition_event.set_entity(entt::to_integral(event_owner()));
+	mission_condition_event.set_entity(entt::to_integral(player));
 	mission_condition_event.set_type(kConditionCompleteMission);
 	mission_condition_event.set_amount(1);
 	for (const auto& mission_id : completed_missions_this_time)
@@ -327,7 +341,7 @@ void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& comp
 		if (try_mission_comp->mission_config_->reward_id(mission_id) > 0 && try_mission_comp->mission_config_->auto_reward(mission_id))
 		{
 			OnMissionAwardEvent mission_award_event;
-			mission_award_event.set_entity(entt::to_integral(event_owner()));
+			mission_award_event.set_entity(entt::to_integral(player));
 			mission_award_event.set_mission_id(mission_id);
 			tls.dispatcher.enqueue(mission_award_event);
 		}
@@ -339,7 +353,7 @@ void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& comp
 
 		//todo 如果是活动不用走,让活动去接,这里应该是属于主任务系统的逻辑，想想怎么改方便，活动和任务逻辑分开，互不影响
 		AcceptMissionEvent accept_mission_event;
-		accept_mission_event.set_entity(entt::to_integral(event_owner()));
+		accept_mission_event.set_entity(entt::to_integral(player));
 		const auto& next_missions = try_mission_comp->mission_config_->next_mission_id(mission_id);
 		for (int32_t i = 0; i < next_missions.size(); ++i)
 		{

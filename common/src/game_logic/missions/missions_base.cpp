@@ -12,13 +12,7 @@
 #include "component_proto/mission_comp.pb.h"
 #include "event_proto/mission_event.pb.h"
 
-std::array<std::function<bool(uint32_t, uint32_t)>, 5> function_compare({
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value >= conf_value; }},
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value > conf_value; }},
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value <= conf_value; }},
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value < conf_value; }},
-	{[](const uint32_t real_value, const uint32_t conf_value) { return real_value == conf_value; }},
-});
+extern std::array<std::function<bool(uint32_t, uint32_t)>, 5> function_compare;
 
 MissionsComp::MissionsComp()
 	: mission_config_(&MissionConfig::GetSingleton()),
