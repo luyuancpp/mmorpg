@@ -1,6 +1,6 @@
 #include "player_list.h"
 
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 

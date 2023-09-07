@@ -7,7 +7,7 @@
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/tips_id.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/pb/pbc/game_scene_server_player_service.h"
 #include "src/system/player_scene_system.h"

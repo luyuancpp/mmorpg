@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 ///
 #include "src/game_server.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 #include "src/network/gate_node.h"
 #include "src/game_logic/player/player_list.h"
 #include "src/pb/pbc/service.h"

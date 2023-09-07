@@ -1,4 +1,4 @@
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 
 #include <ranges>
 

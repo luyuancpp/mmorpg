@@ -1,7 +1,7 @@
 #include "player_change_scene.h"
 
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 #include "src/game_logic/tips_id.h"
 #include "src/system/player_scene_system.h"
 
