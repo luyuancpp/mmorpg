@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "src/common_type/common_type.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
