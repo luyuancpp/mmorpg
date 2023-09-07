@@ -12,6 +12,7 @@ enum  EnumCode : uint32_t
     kRetEnttNull = 4,
     kRetServiceNotOpen = 5, //改功能暂时关闭gate 用,gate写死了
     kRetServerCrush = 6,//服务器关闭请重新登录 gate 用,gate写死了
+    kInvalidParam = 7,//未知参数
 
     //login server 
     kRetLoginCantFindAccount = 1000,//找不到

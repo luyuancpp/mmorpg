@@ -159,6 +159,7 @@
     <ClCompile Include="src\pb\pbc\lua\scene_client_player_service_lua.cpp" />
     <ClCompile Include="src\pb\pbc\common_proto\common_message.pb.cc" />
     <ClCompile Include="src\pb\pbc\lua\common_message_sol2.cpp" />
+    <ClCompile Include="src\game_logic\missions\mission_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -285,5 +286,6 @@
     <ClInclude Include="src\pb\pbc\server_player_proto\game_server_player.pb.h" />
     <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\pb\pbc\common_proto\common_message.pb.h" />
+    <ClInclude Include="src\game_logic\missions\mission_system.h" />
   </ItemGroup>
 </Project>
