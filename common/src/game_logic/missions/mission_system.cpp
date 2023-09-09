@@ -55,19 +55,19 @@ uint32_t MissionSystem::Accept(const AcceptMissionEvent& accept_event)
 	//check
 	RET_CHECK_RET(try_mission_comp->IsUnAccepted(accept_event.mission_id())) //已经接受过
 	RET_CHECK_RET(try_mission_comp->IsUnCompleted(accept_event.mission_id())) //已经完成
-	CheckCondition(!try_mission_comp->GetMission_Config()->HasKey(accept_event.mission_id()), kRetTableId)
+	CheckCondition(!try_mission_comp->GetMissionConfig()->HasKey(accept_event.mission_id()), kRetTableId)
 
-	auto mission_sub_type = try_mission_comp->GetMission_Config()->mission_sub_type(accept_event.mission_id());
-	auto mission_type = try_mission_comp->GetMission_Config()->mission_type(accept_event.mission_id());
-	if (try_mission_comp->IsMission_Type_Not_Repeated())
+	auto mission_sub_type = try_mission_comp->GetMissionConfig()->mission_sub_type(accept_event.mission_id());
+	auto mission_type = try_mission_comp->GetMissionConfig()->mission_type(accept_event.mission_id());
+	if (try_mission_comp->IsMissionTypeNotRepeated())
 	{
 		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
-		CheckCondition(try_mission_comp->GetType_Filter().find(mission_and_mission_subtype_pair)
-			!= try_mission_comp->GetType_Filter().end(), kRetMissionTypeRepeated)
+		CheckCondition(try_mission_comp->GetTypeFilter().find(mission_and_mission_subtype_pair)
+			!= try_mission_comp->GetTypeFilter().end(), kRetMissionTypeRepeated)
 	}
 	MissionPbComp mission_pb;
 	mission_pb.set_id(accept_event.mission_id());
-	for (const auto& condition_ids = try_mission_comp->GetMission_Config()->condition_id(accept_event.mission_id());
+	for (const auto& condition_ids = try_mission_comp->GetMissionConfig()->condition_id(accept_event.mission_id());
 		const auto condition_id : condition_ids)
 	{
 		const auto* const condition_row = condition_config::GetSingleton().get(condition_id);
@@ -78,13 +78,13 @@ uint32_t MissionSystem::Accept(const AcceptMissionEvent& accept_event)
 		}
 		//表的条件怎么改都无所谓,只有条件和表对应上就加进度
 		mission_pb.add_progress(0);
-		try_mission_comp->GetEvent_Missions_Classify()[condition_row->condition_type()].emplace(accept_event.mission_id());
+		try_mission_comp->GetEventMissionsClassify()[condition_row->condition_type()].emplace(accept_event.mission_id());
 	}
-	try_mission_comp->GetMissions_Comp().mutable_missions()->insert({ accept_event.mission_id(), std::move(mission_pb) });
-	if (try_mission_comp->IsMission_Type_Not_Repeated())
+	try_mission_comp->GetMissionsComp().mutable_missions()->insert({ accept_event.mission_id(), std::move(mission_pb) });
+	if (try_mission_comp->IsMissionTypeNotRepeated())
 	{
 		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
-		try_mission_comp->GetType_Filter().emplace(mission_and_mission_subtype_pair);
+		try_mission_comp->GetTypeFilter().emplace(mission_and_mission_subtype_pair);
 	}
 
 	//todo
@@ -111,9 +111,9 @@ uint32_t MissionSystem::Abandon(const AbandonParam& param)
 	{
 		try_mission_reward->mutable_can_reward_mission_id()->erase(param.mission_id_);
 	}
-	try_mission_comp->GetMissions_Comp().mutable_missions()->erase(param.mission_id_);
-	try_mission_comp->GetMissions_Comp().mutable_complete_missions()->erase(param.mission_id_);
-	try_mission_comp->GetMissions_Comp().mutable_mission_begin_time()->erase(param.mission_id_);
+	try_mission_comp->GetMissionsComp().mutable_missions()->erase(param.mission_id_);
+	try_mission_comp->GetMissionsComp().mutable_complete_missions()->erase(param.mission_id_);
+	try_mission_comp->GetMissionsComp().mutable_mission_begin_time()->erase(param.mission_id_);
 	DeleteMissionClassify(param.player_, param.mission_id_);
 	return kRetOK;
 }
@@ -125,11 +125,11 @@ void MissionSystem::CompleteAllMission(entt::entity player, uint32_t op)
 	{
 		return;
 	}
-	for (const auto& key : try_mission_comp->GetMissions_Comp().missions() | std::views::keys)
+	for (const auto& key : try_mission_comp->GetMissionsComp().missions() | std::views::keys)
 	{
-		try_mission_comp->GetMissions_Comp().mutable_complete_missions()->insert({ key, false });
+		try_mission_comp->GetMissionsComp().mutable_complete_missions()->insert({ key, false });
 	}
-	try_mission_comp->GetMissions_Comp().mutable_missions()->clear();
+	try_mission_comp->GetMissionsComp().mutable_missions()->clear();
 }
 
 bool IsConditionCompleted(uint32_t condition_id, const uint32_t progress_value)
@@ -160,8 +160,8 @@ void MissionSystem::Receive(const MissionConditionEvent& condition_event)
 	{
 		return;
 	}
-	const auto classify_mission_it = try_mission_comp->GetEvent_Missions_Classify().find(condition_event.type());
-	if (classify_mission_it == try_mission_comp->GetEvent_Missions_Classify().end())
+	const auto classify_mission_it = try_mission_comp->GetEventMissionsClassify().find(condition_event.type());
+	if (classify_mission_it == try_mission_comp->GetEventMissionsClassify().end())
 	{
 		return;
 	}
@@ -171,8 +171,8 @@ void MissionSystem::Receive(const MissionConditionEvent& condition_event)
 	for (const auto& classify_missions = classify_mission_it->second;
 		auto lit : classify_missions)
 	{
-		auto mit = try_mission_comp->GetMissions_Comp().mutable_missions()->find(lit);
-		if (mit == try_mission_comp->GetMissions_Comp().mutable_missions()->end())
+		auto mit = try_mission_comp->GetMissionsComp().mutable_missions()->find(lit);
+		if (mit == try_mission_comp->GetMissionsComp().mutable_missions()->end())
 		{
 			continue;
 		}
@@ -181,7 +181,7 @@ void MissionSystem::Receive(const MissionConditionEvent& condition_event)
 		{
 			continue;
 		}
-		const auto& conditions = try_mission_comp->GetMission_Config()->condition_id(mission.id());
+		const auto& conditions = try_mission_comp->GetMissionConfig()->condition_id(mission.id());
 		bool is_all_condition_complete = true;
 		for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i)
 		{
@@ -199,7 +199,7 @@ void MissionSystem::Receive(const MissionConditionEvent& condition_event)
 		mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
 		// to client
 		temp_complete.emplace(mission.id());
-		try_mission_comp->GetMissions_Comp().mutable_missions()->erase(mit);
+		try_mission_comp->GetMissionsComp().mutable_missions()->erase(mit);
 	}
 
 	OnMissionComplete(player, temp_complete);
@@ -212,7 +212,7 @@ void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_
 	{
 		return;
 	}
-	const auto& config_conditions = try_mission_comp->GetMission_Config()->condition_id(mission_id);
+	const auto& config_conditions = try_mission_comp->GetMissionConfig()->condition_id(mission_id);
 	for (int32_t i = 0; i < config_conditions.size(); ++i)
 	{
 		const auto* const condition_row = condition_config::GetSingleton().get(config_conditions.Get(i));
@@ -220,14 +220,14 @@ void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_
 		{
 			continue;
 		}
-		try_mission_comp->GetEvent_Missions_Classify()[condition_row->condition_type()].erase(mission_id);
+		try_mission_comp->GetEventMissionsClassify()[condition_row->condition_type()].erase(mission_id);
 	}
-	if (auto mission_sub_type = try_mission_comp->GetMission_Config()->mission_sub_type(mission_id);
+	if (auto mission_sub_type = try_mission_comp->GetMissionConfig()->mission_sub_type(mission_id);
 		mission_sub_type > 0 &&
-		try_mission_comp->IsMission_Type_Not_Repeated())
+		try_mission_comp->IsMissionTypeNotRepeated())
 	{
-		const UInt32PairSet::value_type mission_and_mission_subtype_pair(try_mission_comp->GetMission_Config()->mission_type(mission_id), mission_sub_type);
-		try_mission_comp->GetType_Filter().erase(mission_and_mission_subtype_pair);
+		const UInt32PairSet::value_type mission_and_mission_subtype_pair(try_mission_comp->GetMissionConfig()->mission_type(mission_id), mission_sub_type);
+		try_mission_comp->GetTypeFilter().erase(mission_and_mission_subtype_pair);
 	}
 }
 
@@ -246,7 +246,7 @@ bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,	
 	}
 	bool mission_updated = false;
 	//如果我删除了某个条件，老玩家数据会不会错?正常任务是不能删除的，但是可以考虑删除条件
-	const auto& mission_conditions = try_mission_comp->GetMission_Config()->condition_id(mission.id());
+	const auto& mission_conditions = try_mission_comp->GetMissionConfig()->condition_id(mission.id());
 	for (int32_t i = 0; i < mission.progress_size() && i < mission_conditions.size(); ++i)
 	{
 		const auto* const condition_row = condition_config::GetSingleton().get(mission_conditions.at(i));
@@ -335,17 +335,17 @@ void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& comp
 	mission_condition_event.set_amount(1);
 	for (const auto& mission_id : completed_missions_this_time)
 	{
-		try_mission_comp->GetMissions_Comp().mutable_complete_missions()->insert({ mission_id, true });
+		try_mission_comp->GetMissionsComp().mutable_complete_missions()->insert({ mission_id, true });
 		//自动领奖,给经验，为什么发事件？因为给经验升级了会马上接任务，或者触发一些任务的东西,
 		//但是我需要不影响当前任务逻辑流程,也可以马上触发，看情况而定
-		if (try_mission_comp->GetMission_Config()->reward_id(mission_id) > 0 && try_mission_comp->GetMission_Config()->auto_reward(mission_id))
+		if (try_mission_comp->GetMissionConfig()->reward_id(mission_id) > 0 && try_mission_comp->GetMissionConfig()->auto_reward(mission_id))
 		{
 			OnMissionAwardEvent mission_award_event;
 			mission_award_event.set_entity(entt::to_integral(player));
 			mission_award_event.set_mission_id(mission_id);
 			tls.dispatcher.enqueue(mission_award_event);
 		}
-		else if (nullptr != try_mission_reward && try_mission_comp->GetMission_Config()->reward_id(mission_id) > 0)
+		else if (nullptr != try_mission_reward && try_mission_comp->GetMissionConfig()->reward_id(mission_id) > 0)
 		{
 			//手动领奖
 			try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });
@@ -354,7 +354,7 @@ void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& comp
 		//todo 如果是活动不用走,让活动去接,这里应该是属于主任务系统的逻辑，想想怎么改方便，活动和任务逻辑分开，互不影响
 		AcceptMissionEvent accept_mission_event;
 		accept_mission_event.set_entity(entt::to_integral(player));
-		const auto& next_missions = try_mission_comp->GetMission_Config()->next_mission_id(mission_id);
+		const auto& next_missions = try_mission_comp->GetMissionConfig()->next_mission_id(mission_id);
 		for (int32_t i = 0; i < next_missions.size(); ++i)
 		{
 			accept_mission_event.set_mission_id(next_missions.Get(i));

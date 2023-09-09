@@ -24,7 +24,7 @@ MissionsComp::MissionsComp()
 	}
 }
 
-std::size_t MissionsComp::can_reward_size() const
+std::size_t MissionsComp::CanGetRewardSize() const
 {
 	const auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
 	if (nullptr == try_mission_reward)
