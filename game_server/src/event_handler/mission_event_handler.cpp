@@ -3,6 +3,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/missions/missions_base.h"
+#include "src/game_logic/missions/mission_system.h"
 ///<<< END WRITING YOUR CODE
 void MissionEventHandler::Register()
 {
@@ -23,8 +24,7 @@ void MissionEventHandler::UnRegister()
 void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto entity = entt::to_entity(message.entity());
-    tls.registry.get<MissionsComp>(entity).Accept(message);
+	MissionSystem::Accept(message);
 ///<<< END WRITING YOUR CODE
 }
 

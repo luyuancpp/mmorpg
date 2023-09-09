@@ -40,12 +40,13 @@ TEST(MissionsComp, AcceptMission)
 	ms.set_check_mission_type_repeated(false);
     AcceptMissionEvent accept_mission_event;
     accept_mission_event.set_mission_id(mid);
+	accept_mission_event.set_entity(entt::to_integral(player));
     auto& data = mission_config::GetSingleton().all();
     std::size_t sz = 0;
     for (int32_t i = 0; i < data.data_size(); ++i)
     {
         accept_mission_event.set_mission_id(data.data(i).id());
-        auto m = ms.Accept(accept_mission_event);
+        auto m = MissionSystem::Accept(accept_mission_event);
         ++sz;
     }
     EXPECT_EQ(sz, ms.mission_size());
@@ -57,33 +58,38 @@ TEST(MissionsComp, AcceptMission)
 
 TEST(MissionsComp, RepeatedMission)
 {
-    auto& ms = *CreateMission();
+	auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
     {
         uint32_t mid = 1;
 		AcceptMissionEvent accept_mission_event;
+    	accept_mission_event.set_entity(entt::to_integral(player));
 		accept_mission_event.set_mission_id(mid);
-        EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
-        EXPECT_EQ(kRetMissionIdRepeated, ms.Accept(accept_mission_event));
+        EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
+        EXPECT_EQ(kRetMissionIdRepeated, MissionSystem::Accept(accept_mission_event));
     }
 
     {
 		AcceptMissionEvent accept_mission_event1;
+    	accept_mission_event1.set_entity(entt::to_integral(player));
         accept_mission_event1.set_mission_id(3);
 		AcceptMissionEvent accept_mission_event2;
+    	accept_mission_event2.set_entity(entt::to_integral(player));
         accept_mission_event2.set_mission_id(2);
-		EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event1));
-		EXPECT_EQ(kRetMissionTypeRepeated, ms.Accept(accept_mission_event2));
+		EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event1));
+		EXPECT_EQ(kRetMissionTypeRepeated, MissionSystem::Accept(accept_mission_event2));
     }
 }
 
 TEST(MissionsComp, TriggerCondition)
 {
-    auto& ms = *CreateMission();
+	auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
     uint32_t mid = 1;
-    //auto mrow = mission_config::GetSingleton().get(mid);
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
-    EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
     EXPECT_EQ(1, ms.type_set_size());
     MissionConditionEvent ce;
     ce.set_entity(ms);
@@ -116,13 +122,14 @@ TEST(MissionsComp, TriggerCondition)
 
 TEST(MissionsComp, TypeSize)
 {
-    auto& ms = *CreateMission();
+	auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
 	tls.dispatcher.update<AcceptMissionEvent>();
     uint32_t mid = 6;
-    //auto mrow = mission_config::GetSingleton().get(mid);
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
-    EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
     for (uint32_t i = kConditionKillMonster; i < kConditionCustom; ++i)
@@ -181,12 +188,13 @@ TEST(MissionsComp, TypeSize)
 
 TEST(MissionsComp, CompleteAcceptMission)
 {
-    auto& ms = *CreateMission();
+	auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
     uint32_t mid = 4;
-    //auto mrow = mission_config::GetSingleton().get(mid);
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
-    EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
     EXPECT_EQ(1, ms.type_set_size());
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
@@ -196,19 +204,21 @@ TEST(MissionsComp, CompleteAcceptMission)
     ms.Receive(ce);
     EXPECT_FALSE(ms.IsAccepted(mid));
     EXPECT_TRUE(ms.IsComplete(mid));
-    EXPECT_EQ(kRetMissionComplete, ms.Accept(accept_mission_event));
+    EXPECT_EQ(kRetMissionComplete, MissionSystem::Accept(accept_mission_event));
 }
 
 TEST(MissionsComp, EventTriggerMutableMission)
 {
-    auto& ms = *CreateMission();
+	const auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
 	AcceptMissionEvent accept_mission_event;
     uint32_t misid1 = 1;
     uint32_t misid2 = 2;
 	accept_mission_event.set_mission_id(misid1);
-	EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
 	accept_mission_event.set_mission_id(misid2);
-	EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
 
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
@@ -232,11 +242,13 @@ TEST(MissionsComp, EventTriggerMutableMission)
 
 TEST(MissionsComp, OnCompleteMission)
 {
-    auto& ms = *CreateMission();
+	const auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
     uint32_t mid = 7;
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
-    EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
     EXPECT_EQ(1, ms.type_set_size());
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
@@ -267,11 +279,13 @@ TEST(MissionsComp, OnCompleteMission)
 
 TEST(MissionsComp, AcceptNextMirroMission)
 {
-    auto& ms = *CreateMission();
+	const auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
 	uint32_t mid = 7;
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
-	EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
 	EXPECT_EQ(1, ms.type_set_size());
 	MissionConditionEvent ce;
 	ce.set_entity(ms);
@@ -289,20 +303,23 @@ TEST(MissionsComp, AcceptNextMirroMission)
 
 TEST(MissionsComp, MissionCondition)
 {
-    auto& ms = *CreateMission();
-
+	const auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
     uint32_t mid = 14;
     uint32_t mid1 = 15;
     uint32_t mid2 = 16;
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
-    EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
 	AcceptMissionEvent accept_mission_event1;
 	accept_mission_event1.set_mission_id(mid1);
-    EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event1));
+	accept_mission_event1.set_entity(entt::to_integral(player));
+    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event1));
 	AcceptMissionEvent accept_mission_event2;
 	accept_mission_event2.set_mission_id(mid2);
-    EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event2));
+	accept_mission_event2.set_entity(entt::to_integral(player));
+    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event2));
 
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
@@ -324,12 +341,14 @@ TEST(MissionsComp, MissionCondition)
 
 TEST(MissionsComp, ConditionAmount)
 {
-    auto& ms = *CreateMission();
+	const auto player = CreatePlayerMission();
+	auto& ms = tls.registry.get<MissionsComp>(player);
     uint32_t mid = 13;
 
     AcceptMissionEvent accept_mission_event;
     accept_mission_event.set_mission_id(mid);
-    EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+    EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
 
     EXPECT_TRUE(ms.IsAccepted(mid));
     EXPECT_FALSE(ms.IsComplete(mid));
@@ -356,7 +375,8 @@ TEST(MissionsComp, MissionRewardList)
 
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
-	EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
     GetRewardParam param;
     param.mission_id_ = mid;
     param.player_ = player;
@@ -383,7 +403,8 @@ TEST(MissionsComp, AbandonMission)
     uint32_t mid = 12;
 	AcceptMissionEvent accept_mission_event;
 	accept_mission_event.set_mission_id(mid);
-	EXPECT_EQ(kRetOK, ms.Accept(accept_mission_event));
+	accept_mission_event.set_entity(entt::to_integral(player));
+	EXPECT_EQ(kRetOK, MissionSystem::Accept(accept_mission_event));
 
     EXPECT_EQ(1, ms.mission_size());
     EXPECT_EQ(0, ms.can_reward_size());
