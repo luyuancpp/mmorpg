@@ -17,66 +17,50 @@ public:
     using event_mission_classify_type = std::unordered_map<uint32_t, UInt32Set>;
     MissionsComp();
 	
-    const auto& classify_for_unittest() const { return event_missions_classify_; }
-    const MissionsPbComp& missions() { return missions_comp_; }
-    std::size_t mission_size() const { return missions_comp_.missions().size(); }
-    std::size_t complete_size() const { return static_cast<std::size_t>(missions_comp_.complete_missions_size()); }
-    std::size_t type_set_size() const { return type_filter_.size(); }
-    std::size_t can_reward_size() const;
-    void set_check_mission_type_repeated(const bool repeated) { mission_type_not_repeated_ = repeated; }
+    [[nodiscard]] const auto& classify_for_unittest() const { return event_missions_classify_; }
+    [[nodiscard]] const MissionsPbComp& GetMissionsComp() const { return missions_comp_; }
+    [[nodiscard]] std::size_t MissionSize() const { return missions_comp_.missions().size(); }
+    [[nodiscard]] std::size_t CompleteSize() const { return static_cast<std::size_t>(missions_comp_.complete_missions_size()); }
+    [[nodiscard]] std::size_t TypeSetSize() const { return type_filter_.size(); }
+    [[nodiscard]] std::size_t CanGetRewardSize() const;
 
-    bool IsAccepted(const uint32_t mission_id) const { return missions_comp_.missions().find(mission_id) != missions_comp_.missions().end(); }
-    bool IsComplete(const uint32_t mission_id) const { return missions_comp_.complete_missions().find(mission_id) != missions_comp_.complete_missions().end(); }
-    static bool IsConditionCompleted(uint32_t condition_id, uint32_t progress_value);
-    uint32_t IsUnAccepted(uint32_t mission_id) const;
-    uint32_t IsUnCompleted(uint32_t mission_id) const;
+    [[nodiscard]] bool IsAccepted(const uint32_t mission_id) const { return missions_comp_.missions().find(mission_id) != missions_comp_.missions().end(); }
+    [[nodiscard]] bool IsComplete(const uint32_t mission_id) const { return missions_comp_.complete_missions().find(mission_id) != missions_comp_.complete_missions().end(); }
+    [[nodiscard]] static bool IsConditionCompleted(uint32_t condition_id, uint32_t progress_value);
+    [[nodiscard]] uint32_t IsUnAccepted(uint32_t mission_id) const;
+    [[nodiscard]] uint32_t IsUnCompleted(uint32_t mission_id) const;
 	
-    [[nodiscard]] const IMissionConfig* GetMission_Config() const
+    [[nodiscard]] const IMissionConfig* GetMissionConfig() const
     {
 	    return mission_config_;
     }
 
-    void SetMission_Config(const IMissionConfig* const mission_config)
+    void SetMissionConfig(const IMissionConfig* const mission_config)
     {
 	    mission_config_ = mission_config;
     }
 
-    [[nodiscard]] MissionsPbComp& GetMissions_Comp()
+    [[nodiscard]] MissionsPbComp& GetMissionsComp()
     {
 	    return missions_comp_;
     }
-
-    void SetMissions_Comp(const MissionsPbComp& missions_comp)
-    {
-	    missions_comp_ = missions_comp;
-    }
-
-    [[nodiscard]] event_mission_classify_type& GetEvent_Missions_Classify()
+	
+    [[nodiscard]] event_mission_classify_type& GetEventMissionsClassify()
     {
 	    return event_missions_classify_;
     }
-
-    void SetEvent_Missions_Classify(const event_mission_classify_type& event_missions_classify)
-    {
-	    event_missions_classify_ = event_missions_classify;
-    }
-
-    [[nodiscard]] UInt32PairSet& GetType_Filter()
+	
+    [[nodiscard]] UInt32PairSet& GetTypeFilter()
     {
 	    return type_filter_;
     }
-
-    void SetType_Filter(const UInt32PairSet& type_filter)
-    {
-	    type_filter_ = type_filter;
-    }
-
-    [[nodiscard]] bool IsMission_Type_Not_Repeated() const
+	
+    [[nodiscard]] bool IsMissionTypeNotRepeated() const
     {
 	    return mission_type_not_repeated_;
     }
 
-    void SetMission_Type_Not_Repeated(const bool mission_type_not_repeated)
+    void SetMissionTypeNotRepeated(const bool mission_type_not_repeated)
     {
 	    mission_type_not_repeated_ = mission_type_not_repeated;
     }
