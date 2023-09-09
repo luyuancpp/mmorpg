@@ -26,7 +26,7 @@
     <ClCompile Include="src\game_config\mission_config.cpp" />
     <ClCompile Include="src\game_config\lobby_config.cpp" />
     <ClCompile Include="src\game_config\scene_config.cpp" />
-    <ClCompile Include="src\game_logic\missions\missions_base.cpp" />
+    <ClCompile Include="src\game_logic\comp\mission_comp.cpp" />
     <ClCompile Include="src\game_logic\bag\bag.cpp" />
     <ClCompile Include="src\game_logic\bag\item.cpp" />
     <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
@@ -158,7 +158,7 @@
     <ClCompile Include="src\pb\pbc\lua\scene_client_player_service_lua.cpp" />
     <ClCompile Include="src\pb\pbc\common_proto\common_message.pb.cc" />
     <ClCompile Include="src\pb\pbc\lua\common_message_sol2.cpp" />
-    <ClCompile Include="src\game_logic\missions\mission_system.cpp" />
+    <ClCompile Include="src\game_logic\mission\mission_system.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -207,8 +207,8 @@
     <ClInclude Include="src\game_config\lobby_config.h" />
     <ClInclude Include="src\game_config\scene_config.h" />
     <ClInclude Include="src\game_logic\comp\player_comp.h" />
-    <ClInclude Include="src\game_logic\missions\missions_base.h" />
-    <ClInclude Include="src\game_logic\missions\missions_config_template.h" />
+    <ClInclude Include="src\game_logic\comp\mission_comp.h" />
+    <ClInclude Include="src\game_logic\mission\missions_config_template.h" />
     <ClInclude Include="src\game_logic\bag\bag.h" />
     <ClInclude Include="src\game_logic\bag\item.h" />
     <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
@@ -284,6 +284,6 @@
     <ClInclude Include="src\pb\pbc\server_player_proto\game_server_player.pb.h" />
     <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\pb\pbc\common_proto\common_message.pb.h" />
-    <ClInclude Include="src\game_logic\missions\mission_system.h" />
+    <ClInclude Include="src\game_logic\mission\mission_system.h" />
   </ItemGroup>
 </Project>

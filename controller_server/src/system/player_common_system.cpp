@@ -62,9 +62,9 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
 	else if (try_enter_gs->enter_gs_type() == LOGIN_REPLACE)//顶号
 	{
 	}
-	else if (try_enter_gs->enter_gs_type() == LOGIN_RECONNET)//重连
-	{
-	}
+    else if (try_enter_gs->enter_gs_type() == LOGIN_RECONNET)//重连
+    {
+    }
 
     {
         Controller2GsLoginRequest message;
@@ -72,7 +72,7 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
         tls.registry.remove<EnterGsFlag>(player);
         Send2GsPlayer(GamePlayerServiceController2GsLoginMsgId, message, player);
     }
-   
+
     //给客户端发所有场景消息
     {
         SceneInfoS2C message;
@@ -81,5 +81,5 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
             message.mutable_scene_info()->Add()->CopyFrom(tls.registry.get<SceneInfo>(e));
         }
         Send2Player(ClientPlayerSceneServicePushSceneInfoS2CMsgId, message, player);
-    }    
+    }
 }
