@@ -12,6 +12,7 @@
 #include "muduo/base/Types.h"
 #include "muduo/net/Channel.h"
 
+#include <algorithm>
 #include <assert.h>
 #include <errno.h>
 #ifdef __linux__
