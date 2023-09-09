@@ -33,9 +33,7 @@ public:
     static bool IsConditionCompleted(uint32_t condition_id, uint32_t progress_value);
     uint32_t IsUnAccepted(uint32_t mission_id) const;
     uint32_t IsUnCompleted(uint32_t mission_id) const;
-
-    uint32_t Accept(const AcceptMissionEvent& accept_event);
-
+	
     void Receive(const MissionConditionEvent& condition_event);
 
 	const IMissionConfig* mission_config_{ nullptr };

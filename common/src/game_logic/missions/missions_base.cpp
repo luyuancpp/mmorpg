@@ -67,52 +67,6 @@ uint32_t MissionsComp::IsUnCompleted(const uint32_t mission_id) const
 	return kRetOK;
 }
 
-uint32_t MissionsComp::Accept(const AcceptMissionEvent& accept_event)
-{
-	//check
-	RET_CHECK_RET(IsUnAccepted(accept_event.mission_id())) //已经接受过
-	RET_CHECK_RET(IsUnCompleted(accept_event.mission_id())) //已经完成
-	CheckCondition(!mission_config_->HasKey(accept_event.mission_id()), kRetTableId)
-
-	auto mission_sub_type = mission_config_->mission_sub_type(accept_event.mission_id());
-	auto mission_type = mission_config_->mission_type(accept_event.mission_id());
-	if (mission_type_not_repeated_)
-	{
-		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
-		CheckCondition(type_filter_.find(mission_and_mission_subtype_pair) != type_filter_.end(), kRetMissionTypeRepeated)
-	}
-	MissionPbComp mission_pb;
-	mission_pb.set_id(accept_event.mission_id());
-	for (const auto& condition_ids = mission_config_->condition_id(accept_event.mission_id());
-		const auto condition_id : condition_ids)
-	{
-		const auto* const condition_row = condition_config::GetSingleton().get(condition_id);
-		if (nullptr == condition_row)
-		{
-			LOG_ERROR << "has not condition" << condition_id;
-			continue;
-		}
-		//表的条件怎么改都无所谓,只有条件和表对应上就加进度
-		mission_pb.add_progress(0);
-		event_missions_classify_[condition_row->condition_type()].emplace(accept_event.mission_id());
-	}
-	missions_comp_.mutable_missions()->insert({accept_event.mission_id(), std::move(mission_pb)});
-	if (mission_type_not_repeated_)
-	{
-		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
-		type_filter_.emplace(mission_and_mission_subtype_pair);
-	}
-
-	//todo
-	{
-		OnAcceptedMissionEvent on_accepted_mission_event;
-		on_accepted_mission_event.set_entity(entt::to_integral(event_owner()));
-		on_accepted_mission_event.set_mission_id(accept_event.mission_id());
-		tls.dispatcher.enqueue(on_accepted_mission_event);
-	}
-	return kRetOK;
-}
-
 void MissionsComp::Receive(const MissionConditionEvent& condition_event)
 {
 	if (condition_event.condtion_ids().empty())
