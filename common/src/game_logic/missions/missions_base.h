@@ -24,12 +24,6 @@ public:
     [[nodiscard]] std::size_t TypeSetSize() const { return type_filter_.size(); }
     [[nodiscard]] std::size_t CanGetRewardSize() const;
 
-    [[nodiscard]] bool IsAccepted(const uint32_t mission_id) const { return missions_comp_.missions().find(mission_id) != missions_comp_.missions().end(); }
-    [[nodiscard]] bool IsComplete(const uint32_t mission_id) const { return missions_comp_.complete_missions().find(mission_id) != missions_comp_.complete_missions().end(); }
-    [[nodiscard]] static bool IsConditionCompleted(uint32_t condition_id, uint32_t progress_value);
-    [[nodiscard]] uint32_t IsUnAccepted(uint32_t mission_id) const;
-    [[nodiscard]] uint32_t IsUnCompleted(uint32_t mission_id) const;
-	
     [[nodiscard]] const IMissionConfig* GetMissionConfig() const
     {
 	    return mission_config_;
@@ -65,6 +59,13 @@ public:
 	    mission_type_not_repeated_ = mission_type_not_repeated;
     }
 
+	[[nodiscard]] bool IsAccepted(const uint32_t mission_id) const
+    { return missions_comp_.missions().find(mission_id) != missions_comp_.missions().end(); }
+	[[nodiscard]] bool IsComplete(const uint32_t mission_id) const
+    { return missions_comp_.complete_missions().find(mission_id) != missions_comp_.complete_missions().end(); }
+	[[nodiscard]] uint32_t IsUnAccepted(uint32_t mission_id) const;
+	[[nodiscard]] uint32_t IsUnCompleted(uint32_t mission_id) const;
+	
 private:
 	const IMissionConfig* mission_config_{ nullptr };
 	MissionsPbComp missions_comp_;
