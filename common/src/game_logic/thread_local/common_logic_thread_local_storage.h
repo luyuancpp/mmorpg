@@ -4,6 +4,7 @@
 #include "src/common_type/common_type.h"
 
 using SceneList = std::unordered_map<Guid, entt::entity>;
+using PlayerList = std::unordered_map<Guid, entt::entity>;
 
 class CommonLogicThreadLocalStorage
 {
@@ -18,6 +19,8 @@ public:
     uint64_t session_id() const { return current_session_id_; }
     SceneList& scene_list() { return scene_list_; }
     const SceneList& scene_list() const { return scene_list_; }
+    PlayerList& player_list() { return players_; }
+    const PlayerList& player_list() const { return players_; }
 private:
     RouteNodeInfo route_data_;
     std::string route_msg_body_;
@@ -26,6 +29,7 @@ private:
     uint64_t current_session_id_{kInvalidSessionId};
     std::string prev_node_replied_;
     SceneList scene_list_;
+    PlayerList players_;
 };
 
 extern thread_local CommonLogicThreadLocalStorage cl_tls;

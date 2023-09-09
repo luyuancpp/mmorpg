@@ -3,8 +3,7 @@
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/teams/team_event.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-
-#include "src/game_logic/player/player_list.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 
 #include "component_proto/team_comp.pb.h"
 
@@ -153,8 +152,8 @@ uint32_t Team::DelApplicant(Guid applicant_id)
 
 bool Team::HasTeam(Guid guid) const
 {
-    auto pit = g_players->find(guid);
-    if (pit == g_players->end())
+    auto pit = cl_tls.player_list().find(guid);
+    if (pit == cl_tls.player_list().end())
     {
         return false;
     }
@@ -163,8 +162,8 @@ bool Team::HasTeam(Guid guid) const
 
 void Team::AddMemeber(Guid guid)
 {
-    auto pit = g_players->find(guid);
-    if (pit == g_players->end())
+    auto pit = cl_tls.player_list().find(guid);
+    if (pit == cl_tls.player_list().end())
     {
         return;
     }
@@ -175,8 +174,8 @@ void Team::AddMemeber(Guid guid)
 void Team::DelMember(Guid guid)
 {
     members_.erase(std::find(members_.begin(), members_.end(), guid));
-    auto pit = g_players->find(guid);
-    if (pit == g_players->end())
+    auto pit = cl_tls.player_list().find(guid);
+    if (pit == cl_tls.player_list().end())
     {
         return;
     }

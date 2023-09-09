@@ -18,7 +18,6 @@
     <ClCompile Include="src\game_logic\scene\servernode_system.cpp" />
     <ClCompile Include="src\game_logic\scene\scene_system.cpp" />
     <ClCompile Include="src\network\session.cpp" />
-    <ClCompile Include="src\game_logic\player\player_list.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
     <ClCompile Include="src\game_config\condition_config.cpp" />
     <ClCompile Include="src\game_config\deploy_json.cpp" />
@@ -198,7 +197,6 @@
     <ClInclude Include="src\game_logic\scene\scene_system.h" />
     <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\util\random.h" />
-    <ClInclude Include="src\game_logic\player\player_list.h" />
     <ClInclude Include="src\game_config\all_config.h" />
     <ClInclude Include="src\game_config\condition_config.h" />
     <ClInclude Include="src\game_config\deploy_json.h" />

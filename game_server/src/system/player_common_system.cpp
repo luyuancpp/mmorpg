@@ -1,6 +1,6 @@
 #include "player_common_system.h"
 
-#include "src/game_logic/player/player_list.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"

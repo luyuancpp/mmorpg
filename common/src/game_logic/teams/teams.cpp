@@ -1,8 +1,9 @@
 #include "teams.h"
 
+#include "src/util/game_registry.h"
 #include "src/game_logic/tips_id.h"
-
-#include "src/game_logic/player/player_list.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 
 #include "component_proto/team_comp.pb.h"
 
@@ -64,7 +65,7 @@ Teams::Teams()
 
 Teams::~Teams()
 {
-    for (auto& it : *g_players)
+    for (auto& it : cl_tls.player_list())
     {
         LeaveTeam(it.first);
     }
@@ -95,8 +96,8 @@ std::size_t Teams::players_size()const
 
 Guid Teams::GetTeamId(Guid guid)const
 {
-    auto pit = g_players->find(guid);
-    if (pit == g_players->end())
+    auto pit = cl_tls.player_list().find(guid);
+    if (pit == cl_tls.player_list().end())
     {
         return entt::null_t();
     }
@@ -140,8 +141,8 @@ bool Teams::HasMember(Guid team_id, Guid guid)
 
 bool Teams::HasTeam(Guid guid) const
 {
-    auto pit = g_players->find(guid);
-    if (pit == g_players->end())
+    auto pit = cl_tls.player_list().find(guid);
+    if (pit == cl_tls.player_list().end())
     {
         return false;
     }
