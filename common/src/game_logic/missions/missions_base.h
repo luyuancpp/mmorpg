@@ -39,10 +39,7 @@ public:
 	event_mission_classify_type event_missions_classify_; //key : classify mission by event type  , value :  mission list
 	UInt32PairSet type_filter_;
 	bool mission_type_not_repeated_{ true }; //任务类型不能重复
-private:
-    void DeleteMissionClassify(uint32_t mission_id);
-    bool UpdateMission(const MissionConditionEvent& condition_event, MissionPbComp& mission) const;
-    void OnMissionComplete(const UInt32Set& completed_missions);
+
 };
 
 using PlayerMissionList = std::array<MissionsComp, MissionsPbComp::kPlayerMissionSize>;
