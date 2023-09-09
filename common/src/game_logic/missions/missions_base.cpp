@@ -67,57 +67,6 @@ uint32_t MissionsComp::IsUnCompleted(const uint32_t mission_id) const
 	return kRetOK;
 }
 
-void MissionsComp::Receive(const MissionConditionEvent& condition_event)
-{
-	if (condition_event.condtion_ids().empty())
-	{
-		return;
-	}
-	const auto classify_mission_it = event_missions_classify_.find(condition_event.type());
-	if (classify_mission_it == event_missions_classify_.end())
-	{
-		return;
-	}
-	UInt32Set temp_complete;
-	//根据事件触发类型分类的任务
-	//todo 同步异步事件
-	for (const auto& classify_missions = classify_mission_it->second;
-		auto lit : classify_missions)
-	{
-		auto mit = missions_comp_.mutable_missions()->find(lit);
-		if (mit == missions_comp_.mutable_missions()->end())
-		{
-			continue;
-		}
-		auto& mission = mit->second;
-		if (!UpdateMission(condition_event, mission))
-		{
-			continue;
-		}
-		const auto& conditions = mission_config_->condition_id(mission.id());
-		bool is_all_condition_complete = true;
-		for (int32_t i = 0; i < mission.progress_size() && i < conditions.size(); ++i)
-		{
-			if (IsConditionCompleted(conditions[i], mission.progress(i)))
-			{
-				continue;
-			}
-			is_all_condition_complete = false;
-			break;
-		}
-		if (!is_all_condition_complete)
-		{
-			continue;
-		}
-		mission.set_status(MissionPbComp::E_MISSION_COMPLETE);
-		// to client
-		temp_complete.emplace(mission.id());
-		missions_comp_.mutable_missions()->erase(mit);
-	}
-
-	OnMissionComplete(temp_complete);
-}
-
 void MissionsComp::DeleteMissionClassify(uint32_t mission_id)
 {
 	const auto& config_conditions = mission_config_->condition_id(mission_id);

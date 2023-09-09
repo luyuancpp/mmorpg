@@ -43,7 +43,7 @@ public:
 	static uint32_t Abandon(const AbandonParam& param);
 	static void CompleteAllMission(entt::entity player, uint32_t op);
 
-	void Receive(const MissionConditionEvent& condition_event);
+	static void Receive(const MissionConditionEvent& condition_event);
 
 private:
 	static void DeleteMissionClassify(entt::entity player, uint32_t mission_id);

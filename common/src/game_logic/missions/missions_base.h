@@ -34,8 +34,6 @@ public:
     uint32_t IsUnAccepted(uint32_t mission_id) const;
     uint32_t IsUnCompleted(uint32_t mission_id) const;
 	
-    void Receive(const MissionConditionEvent& condition_event);
-
 	const IMissionConfig* mission_config_{ nullptr };
 	MissionsPbComp missions_comp_;
 	event_mission_classify_type event_missions_classify_; //key : classify mission by event type  , value :  mission list
