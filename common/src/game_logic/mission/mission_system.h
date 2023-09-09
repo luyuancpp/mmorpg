@@ -5,7 +5,7 @@
 
 #include "component_proto/mission_comp.pb.h"
 #include "src/common_type/common_type.h"
-#include "src/game_logic/missions/missions_config_template.h"
+#include "src/game_logic/mission/missions_config_template.h"
 #include "src/util/game_registry.h"
 
 

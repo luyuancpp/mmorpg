@@ -2,8 +2,8 @@
 #include "event_proto/mission_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/game_logic/missions/missions_base.h"
-#include "src/game_logic/missions/mission_system.h"
+#include "src/game_logic/comp/mission_comp.h"
+#include "src/game_logic/mission/mission_system.h"
 ///<<< END WRITING YOUR CODE
 void MissionEventHandler::Register()
 {

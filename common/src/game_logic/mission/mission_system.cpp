@@ -6,7 +6,7 @@
 
 #include "src/game_config/condition_config.h"
 #include "src/game_logic/constants/mission_constants.h"
-#include "src/game_logic/missions/missions_base.h"
+#include "src/game_logic/comp/mission_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 
