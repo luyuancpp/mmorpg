@@ -16,7 +16,7 @@
 
 decltype(auto) CreateMission()
 {
-	auto player = tls.registry.create();
+	const auto player = tls.registry.create();
 	auto& ms = tls.registry.emplace<MissionsComp>(player);
     ms.set_event_owner(player);
     MissionEventHandler::Register();
@@ -25,7 +25,7 @@ decltype(auto) CreateMission()
 
 decltype(auto) CreatePlayerMission()
 {
-	auto player = tls.registry.create();
+	const auto player = tls.registry.create();
 	auto& ms = tls.registry.emplace<MissionsComp>(player);
 	ms.set_event_owner(player);
 	MissionEventHandler::Register();
@@ -35,7 +35,7 @@ decltype(auto) CreatePlayerMission()
 TEST(MissionsComp, AcceptMission)
 {
     uint32_t mid = 1;
-	auto player = CreatePlayerMission();
+    const auto player = CreatePlayerMission();
 	auto& ms = tls.registry.get<MissionsComp>(player);
 	ms.SetMissionTypeNotRepeated(false);
     AcceptMissionEvent accept_mission_event;
@@ -58,10 +58,10 @@ TEST(MissionsComp, AcceptMission)
 
 TEST(MissionsComp, RepeatedMission)
 {
-	auto player = CreatePlayerMission();
+	const auto player = CreatePlayerMission();
 	auto& ms = tls.registry.get<MissionsComp>(player);
     {
-        uint32_t mid = 1;
+	    const uint32_t mid = 1;
 		AcceptMissionEvent accept_mission_event;
     	accept_mission_event.set_entity(entt::to_integral(player));
 		accept_mission_event.set_mission_id(mid);

@@ -2,8 +2,6 @@
 
 #include <ranges>
 
-#include "muduo/base/Logging.h"
-
 #include "src/game_config/condition_config.h"
 #include "src/game_logic/constants/mission_constants.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
@@ -11,8 +9,6 @@
 
 #include "component_proto/mission_comp.pb.h"
 #include "event_proto/mission_event.pb.h"
-
-extern std::array<std::function<bool(uint32_t, uint32_t)>, 5> function_compare;
 
 MissionsComp::MissionsComp()
 	: mission_config_(&MissionConfig::GetSingleton()),
@@ -32,21 +28,6 @@ std::size_t MissionsComp::CanGetRewardSize() const
 		return 0;
 	}
 	return static_cast<std::size_t>(try_mission_reward->can_reward_mission_id_size());
-}
-
-bool MissionsComp::IsConditionCompleted(uint32_t condition_id, const uint32_t progress_value)
-{
-	const auto* p_condition_row = condition_config::GetSingleton().get(condition_id);
-	if (nullptr == p_condition_row)
-	{
-		return false;
-	}
-
-	if (p_condition_row->operation() >= function_compare.size())
-	{
-		return function_compare[0](progress_value, p_condition_row->amount());
-	}
-	return function_compare.at(p_condition_row->operation())(progress_value, p_condition_row->amount());
 }
 
 uint32_t MissionsComp::IsUnAccepted(const uint32_t mission_id) const

@@ -57,8 +57,8 @@ uint32_t MissionSystem::Accept(const AcceptMissionEvent& accept_event)
 	RET_CHECK_RET(try_mission_comp->IsUnCompleted(accept_event.mission_id())) //已经完成
 	CheckCondition(!try_mission_comp->GetMissionConfig()->HasKey(accept_event.mission_id()), kRetTableId)
 
-	auto mission_sub_type = try_mission_comp->GetMissionConfig()->mission_sub_type(accept_event.mission_id());
-	auto mission_type = try_mission_comp->GetMissionConfig()->mission_type(accept_event.mission_id());
+	auto mission_sub_type = try_mission_comp->GetMissionConfig()->GetMissionSubType(accept_event.mission_id());
+	auto mission_type = try_mission_comp->GetMissionConfig()->GetMissionType(accept_event.mission_id());
 	if (try_mission_comp->IsMissionTypeNotRepeated())
 	{
 		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
@@ -222,11 +222,11 @@ void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_
 		}
 		try_mission_comp->GetEventMissionsClassify()[condition_row->condition_type()].erase(mission_id);
 	}
-	if (auto mission_sub_type = try_mission_comp->GetMissionConfig()->mission_sub_type(mission_id);
+	if (auto mission_sub_type = try_mission_comp->GetMissionConfig()->GetMissionSubType(mission_id);
 		mission_sub_type > 0 &&
 		try_mission_comp->IsMissionTypeNotRepeated())
 	{
-		const UInt32PairSet::value_type mission_and_mission_subtype_pair(try_mission_comp->GetMissionConfig()->mission_type(mission_id), mission_sub_type);
+		const UInt32PairSet::value_type mission_and_mission_subtype_pair(try_mission_comp->GetMissionConfig()->GetMissionType(mission_id), mission_sub_type);
 		try_mission_comp->GetTypeFilter().erase(mission_and_mission_subtype_pair);
 	}
 }
