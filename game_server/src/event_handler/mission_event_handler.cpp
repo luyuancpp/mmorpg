@@ -31,8 +31,7 @@ void MissionEventHandler::AcceptMissionEventHandler(const AcceptMissionEvent& me
 void MissionEventHandler::MissionConditionEventHandler(const MissionConditionEvent& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    auto entity = entt::to_entity(message.entity());
-    tls.registry.get<MissionsComp>(entity).Receive(message);
+    MissionSystem::Receive(message);
 ///<<< END WRITING YOUR CODE
 }
 
