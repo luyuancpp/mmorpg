@@ -6,7 +6,7 @@
 #include "src/game_server.h"
 #include "src/game_logic/scene/scene_system.h"
 #include "src/network/gate_node.h"
-#include "src/game_logic/player/player_list.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/pb/pbc/service.h"
 #include "src/network/session.h"
 #include "src/handler/player_service.h"

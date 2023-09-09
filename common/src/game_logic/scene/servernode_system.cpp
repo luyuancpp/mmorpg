@@ -1,5 +1,7 @@
 #include "servernode_system.h"
 
+#include <ranges>
+
 #include "src/game_logic/comp/server_comp.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 
