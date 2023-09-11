@@ -10,16 +10,21 @@
 //todo 各种服务器崩溃
 void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
 {
-	tls.registry.emplace<PlayerControllerChangeSceneQueue>(player);
+    tls.registry.emplace<PlayerControllerChangeSceneQueue>(player);
 }
 
 uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const ControllerChangeSceneInfo& change_info)
 {
-	GetPlayerComponentMemberReturnError(change_scene_queue, PlayerControllerChangeSceneQueue, kRetChangeScenePlayerQueueComponentNull);
-	CheckCondition(change_scene_queue.full(), kRetEnterSceneChangingGs);
-	change_scene_queue.push_back(change_info);
-    change_scene_queue.front().set_change_time(muduo::Timestamp::now().secondsSinceEpoch());//todo
-	return kRetOK;
+    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == try_change_scene_queue)
+    {
+        return kRetChangeScenePlayerQueueComponentNull;
+    }
+    CheckCondition(try_change_scene_queue->change_scene_queue_.full(), kRetEnterSceneChangingGs)
+    try_change_scene_queue->change_scene_queue_.push_back(change_info);
+    //todo
+    try_change_scene_queue->change_scene_queue_.front().set_change_time(muduo::Timestamp::now().secondsSinceEpoch());
+    return kRetOK;
 }
 
 void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
@@ -30,33 +35,44 @@ void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
 
 void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)
 {
-    GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
-    if (change_scene_queue.empty())
+    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == try_change_scene_queue)
     {
         return;
     }
-    change_scene_queue.pop_front();
+    if (try_change_scene_queue->change_scene_queue_.empty())
+    {
+        return;
+    }
+    try_change_scene_queue->change_scene_queue_.pop_front();
 }
 
 void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, ControllerChangeSceneInfo::eChangeGsStatus s)
 {
-	GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
-	if (change_scene_queue.empty())
-	{
-		return;
-	}
-    change_scene_queue.front().set_change_gs_status(s);
-}
-
-
-void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, ControllerChangeSceneInfo::eChangeCrossServerStatus s)
-{
-    GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
-    if (change_scene_queue.empty())
+    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == try_change_scene_queue)
     {
         return;
     }
-    change_scene_queue.front().set_change_cross_server_status(s);
+    if (try_change_scene_queue->change_scene_queue_.empty())
+    {
+        return;
+    }
+    try_change_scene_queue->change_scene_queue_.front().set_change_gs_status(s);
+}
+
+void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, ControllerChangeSceneInfo::eChangeCrossServerStatus s)
+{
+    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == try_change_scene_queue)
+    {
+        return;
+    }
+    if (try_change_scene_queue->change_scene_queue_.empty())
+    {
+        return;
+    }
+    try_change_scene_queue->change_scene_queue_.front().set_change_cross_server_status(s);
 }
 
 void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity player)

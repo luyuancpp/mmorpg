@@ -3,5 +3,7 @@
 #include <memory>
 #include <string>
 
-using PlayerAccount = std::shared_ptr<std::string>;
+#include "src/pb/pbc/component_proto/player_comp.pb.h"
+
+using PlayerAccount = std::shared_ptr<Account>;
 

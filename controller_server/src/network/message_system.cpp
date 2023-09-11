@@ -176,3 +176,14 @@ void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& me
 	message_wrapper.mutable_ex()->set_session_id(try_player_session->session_id());
     tls.registry.get<GsNodePtr>(gs_it->second)->session_.CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
 }
+
+bool CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
+{
+	const auto it = controller_tls.game_node().find(node_id);
+	if (it == controller_tls.game_node().end())
+	{
+		return false;
+	}
+	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(message_id, message);
+	return true;
+}
