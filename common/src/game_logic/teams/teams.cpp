@@ -1,9 +1,9 @@
 #include "teams.h"
 
-#include "src/util/game_registry.h"
-#include "src/game_logic/tips_id.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/game_logic/tips_id.h"
+#include "src/util/game_registry.h"
 
 #include "component_proto/team_comp.pb.h"
 
@@ -30,20 +30,20 @@ std::size_t Teams::member_size(const Guid team_id)
 	return try_team->member_size();
 }
 
-std::size_t Teams::applicant_size_by_player_id(const Guid guid) const
+std::size_t Teams::applicant_size_by_player_id(const Guid guid)
 {
 	const auto team_id = GetTeamId(guid);
 	return applicant_size_by_team_id(team_id);
 }
 
-std::size_t Teams::applicant_size_by_team_id(const Guid team_id) const
+std::size_t Teams::applicant_size_by_team_id(const Guid team_id)
 {
-	const auto team = entt::to_entity(team_id);
-	if (!tls.registry.valid(team))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return 0;
 	}
-	const auto* const try_team = tls.registry.try_get<Team>(team);
+	const auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return 0;
@@ -58,7 +58,7 @@ std::size_t Teams::players_size()
 
 Guid Teams::GetTeamId(const Guid guid)
 {
-	auto pit = cl_tls.player_list().find(guid);
+	const auto pit = cl_tls.player_list().find(guid);
 	if (pit == cl_tls.player_list().end())
 	{
 		return entt::null_t();
@@ -73,12 +73,12 @@ Guid Teams::GetTeamId(const Guid guid)
 
 Guid Teams::get_leader_id_by_teamid(const Guid team_id)
 {
-	const auto team = entt::to_entity(team_id);
-	if (!tls.registry.valid(team))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kInvalidGuid;
 	}
-	const auto* const try_team = tls.registry.try_get<Team>(team);
+	const auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kInvalidGuid;
@@ -93,12 +93,12 @@ Guid Teams::get_leader_id_by_player_id(const Guid guid)
 
 Guid Teams::first_applicant(const Guid team_id)
 {
-	const auto team = entt::to_entity(team_id);
-	if (!tls.registry.valid(team))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kInvalidGuid;
 	}
-	const auto* const try_team = tls.registry.try_get<Team>(team);
+	const auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kInvalidGuid;
@@ -112,12 +112,12 @@ Guid Teams::first_applicant(const Guid team_id)
 
 bool Teams::IsTeamFull(const Guid team_id)
 {
-	const auto team = entt::to_entity(team_id);
-	if (!tls.registry.valid(team))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return false;
 	}
-	const auto* const try_team = tls.registry.try_get<Team>(team);
+	const auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return false;
@@ -127,12 +127,12 @@ bool Teams::IsTeamFull(const Guid team_id)
 
 bool Teams::HasMember(const Guid team_id, const Guid guid)
 {
-	const auto team = entt::to_entity(team_id);
-	if (!tls.registry.valid(team))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return false;
 	}
-	const auto* const try_team = tls.registry.try_get<Team>(team);
+	const auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return false;
@@ -150,14 +150,14 @@ bool Teams::HasTeam(const Guid guid)
 	return tls.registry.any_of<TeamId>(pit->second);
 }
 
-bool Teams::IsApplicant(const Guid team_id, Guid guid)
+bool Teams::IsApplicant(const Guid team_id, const Guid guid)
 {
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return false;
 	}
-	const auto* const try_team = tls.registry.try_get<Team>(e);
+	const auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return false;
@@ -320,7 +320,7 @@ uint32_t Teams::KickMember(const Guid team_id, const Guid current_leader_id, con
 	return kRetOK;
 }
 
-uint32_t Teams::Disbanded(Guid team_id, Guid current_leader_id)
+uint32_t Teams::Disbanded(const Guid team_id, const Guid current_leader_id)
 {
 	const auto team_entity = entt::to_entity(team_id);
 	if (!tls.registry.valid(team_entity))
@@ -345,7 +345,7 @@ uint32_t Teams::Disbanded(Guid team_id, Guid current_leader_id)
 	return kRetOK;
 }
 
-uint32_t Teams::DisbandedTeamNoLeader(Guid team_id)
+uint32_t Teams::DisbandedTeamNoLeader(const Guid team_id)
 {
 	const auto team_entity = entt::to_entity(team_id);
 	if (!tls.registry.valid(team_entity))
@@ -428,10 +428,10 @@ uint32_t Teams::DelApplicant(Guid team_id, Guid guid)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto it = std::find(try_team->applicants_.begin(), try_team->applicants_.end(), guid);
-	if (it != try_team->applicants_.end())
+	if (const auto app_it = std::find(try_team->applicants_.begin(), try_team->applicants_.end(), guid);
+		app_it != try_team->applicants_.end())
 	{
-		try_team->applicants_.erase(it);
+		try_team->applicants_.erase(app_it);
 	}
 	return kRetOK;
 }
