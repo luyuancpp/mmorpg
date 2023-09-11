@@ -17,40 +17,6 @@ Team::Team(const CreateTeamP& param, const entt::entity teamid)
     }
 }
 
-uint32_t Team::JoinTeam(const Guid guid)
-{
-    if (HasTeam(guid))
-    {
-        return kRetTeamMemberInTeam;
-    }
-    if (IsFull())
-    {
-        return kRetTeamMembersFull;
-    }
-    if (const auto applicant_it = std::find(applicants_.begin(), applicants_.end(), guid);
-        applicant_it != applicants_.end())
-    {
-        applicants_.erase(applicant_it);
-    }
-    AddMemeber(guid);
-    return kRetOK;
-}
-
-uint32_t Team::LeaveTeam(Guid guid)
-{
-    if (!IsMember(guid))
-    {
-        return kRetTeamMemberNotInTeam;
-    }
-    bool is_leader_leave = IsLeader(guid);
-    DelMember(guid);
-    if (!members_.empty() && is_leader_leave)
-    {
-        OnAppointLeader(*members_.begin());
-    }           
-    return kRetOK;
-}
-
 uint32_t Team::AppointLeader(Guid current_leader, Guid new_leader)
 {
     if (leader_id_ == new_leader)
@@ -72,20 +38,6 @@ uint32_t Team::AppointLeader(Guid current_leader, Guid new_leader)
 void Team::OnAppointLeader(Guid guid)
 {
     leader_id_ = guid;
-}
-
-uint32_t Team::Disbanded(Guid current_leader_id)
-{
-    if (leader_id() != current_leader_id)
-    {
-        return kRetTeamDismissNotLeader;
-    }
-    auto temp_memebers = members_;
-    for (auto& it : temp_memebers)
-    {
-        DelMember(it);
-    }
-    return kRetOK;
 }
 
 bool Team::HasTeam(const Guid guid)

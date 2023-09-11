@@ -42,15 +42,11 @@ public:
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
     inline bool IsLeader(Guid guid)const { return leader_id_ == guid; }
     inline bool IsMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
-   
-    uint32_t JoinTeam(Guid  guid);
-    uint32_t LeaveTeam(Guid guid);
+
     uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
-    uint32_t Disbanded(Guid current_leader_id);
-    
+
     static bool HasTeam(Guid guid);
-public:
-    
+
     void AddMemeber(Guid guid);
     void DelMember(Guid guid);
     void OnAppointLeader(Guid  new_leader_guid);
