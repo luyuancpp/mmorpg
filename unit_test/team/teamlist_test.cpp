@@ -1,21 +1,21 @@
 #include <gtest/gtest.h>
 
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/game_logic/teams/teams.h"
 #include "src/game_logic/tips_id.h"
+#include "src/game_logic/teams/TeamSystem.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 
 TEST(TeamManger, CreateFullDismiss)
 {
-	Teams team_list;
+	TeamSystem team_list;
 
 	typedef std::vector<Guid> PlayerIdsV;
-	PlayerIdsV teamidlist;
-	Guid player_id = 1;	
-	for (int32_t i = 0; i < Teams::kMaxTeamSize; ++i)
-	{	
-		CreateTeamP p{ player_id, UInt64Set{player_id}};
+	PlayerIdsV team_idl_ist;
+	Guid player_id = 1;
+	for (int32_t i = 0; i < kMaxTeamSize; ++i)
+	{
+		const CreateTeamP p{player_id, UInt64Set{player_id}};
 		EXPECT_EQ(kRetOK, team_list.CreateTeam(p));
-		teamidlist.push_back(team_list.last_team_id());
+		team_idl_ist.push_back(team_list.last_team_id());
 		++player_id;
 	}
 
@@ -23,12 +23,11 @@ TEST(TeamManger, CreateFullDismiss)
 	player_id++;
 	EXPECT_EQ(kRetTeamListMaxSize, team_list.CreateTeam({ player_id, UInt64Set{player_id}}));
 
-	EXPECT_EQ(Teams::kMaxTeamSize, team_list.team_size());
+	EXPECT_EQ(kMaxTeamSize, team_list.team_size());
 
-	for (auto it = teamidlist.begin(); it != teamidlist.end(); ++it)
+	for (auto it = team_idl_ist.begin(); it != team_idl_ist.end(); ++it)
 	{
-		auto leader_player_id = team_list.get_leader_id_by_team_id(*it);
-		EXPECT_EQ(kRetOK, team_list.Disbanded(*it, leader_player_id));
+		EXPECT_EQ(kRetOK, team_list.Disbanded(*it, TeamSystem::get_leader_id_by_team_id(*it)));
 	}
 	EXPECT_EQ(0, team_list.team_size());
 	EXPECT_EQ(0, team_list.players_size());
@@ -36,42 +35,42 @@ TEST(TeamManger, CreateFullDismiss)
 
 TEST(TeamManger, TeamSizeTest)
 {
-	Teams  team_list;	
-	Guid m = 100;
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-	EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), m));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), m));
+	TeamSystem team_list;
+	Guid member_id = 100;
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), member_id));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), member_id));
 	EXPECT_EQ(1, team_list.member_size(team_list.last_team_id()));
 
 	for (std::size_t i = 1; i < kFiveMemberMaxSize; ++i)
 	{
-		m = m + i;
-		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
+		member_id = member_id + i;
+		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), member_id));
 		EXPECT_EQ(1 + i, team_list.member_size(team_list.last_team_id()));
 	}
-	++m;
-	EXPECT_EQ(kRetTeamMembersFull, team_list.JoinTeam(team_list.last_team_id(), m));
+	++member_id;
+	EXPECT_EQ(kRetTeamMembersFull, team_list.JoinTeam(team_list.last_team_id(), member_id));
 	EXPECT_EQ(kFiveMemberMaxSize, team_list.member_size(team_list.last_team_id()));
 }
 
 TEST(TeamManger, LeaveTeam)
 {
-	Teams  team_list;
-	Guid m = 100;
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-	EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), m));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), m));
+	TeamSystem team_list;
+	constexpr Guid member_id = 100;
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), member_id));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), member_id));
 	EXPECT_EQ(1, team_list.member_size(team_list.last_team_id()));
 
-	team_list.LeaveTeam(m );
-    EXPECT_FALSE(team_list.HasMember(team_list.last_team_id(), m));
+	TeamSystem::LeaveTeam(member_id);
+    EXPECT_FALSE(team_list.HasMember(team_list.last_team_id(), member_id));
 	EXPECT_EQ(0, team_list.member_size(team_list.last_team_id()));
-	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.JoinTeam(team_list.last_team_id(), m));
+	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.JoinTeam(team_list.last_team_id(), member_id));
 	EXPECT_EQ(0, team_list.member_size(team_list.last_team_id()));
 
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
-	Guid player_id = m;
+	Guid player_id = member_id;
 	for (std::size_t i = 1; i < kFiveMemberMaxSize; ++i)
 	{
 		player_id = player_id + i;
@@ -79,18 +78,17 @@ TEST(TeamManger, LeaveTeam)
 		EXPECT_EQ(1 + i, team_list.member_size(team_list.last_team_id()));
 	}
 
-	player_id = m;
+	player_id = member_id;
 	for (std::size_t i = 0; i < kFiveMemberMaxSize; ++i)
 	{
 		player_id = player_id + i;
-		team_list.LeaveTeam(player_id);
+		TeamSystem::LeaveTeam(player_id);
         EXPECT_FALSE(team_list.HasMember(team_list.last_team_id(), player_id));
 		if (i < 4)
 		{
 			EXPECT_EQ(player_id + i + 1, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 			EXPECT_EQ(kFiveMemberMaxSize - i - 1, team_list.member_size(team_list.last_team_id()));
 		}
-		
 		EXPECT_EQ(kFiveMemberMaxSize - i - 1 , team_list.member_size(team_list.last_team_id()));
 	}
     EXPECT_EQ(0, team_list.team_size());
@@ -100,27 +98,27 @@ TEST(TeamManger, LeaveTeam)
 
 TEST(TeamManger, KickTeaamMember)
 {
-	Teams team_list ;
-	Guid m = 100;
-	Guid leader_plaeyr_id = 100;
+	TeamSystem team_list;
+	Guid member_id = 100;
+	constexpr Guid leader_player_id = 100;
 
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
-	EXPECT_EQ(kRetTeamKickSelf, team_list.KickMember(team_list.last_team_id(), m, m));
+	EXPECT_EQ(kRetTeamKickSelf, team_list.KickMember(team_list.last_team_id(), member_id, member_id));
 	EXPECT_EQ(kRetTeamKickNotLeader, team_list.KickMember(team_list.last_team_id(),99, 99));
 
-	m = (m + 1);
-	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
-	EXPECT_EQ(kRetTeamKickSelf, team_list.KickMember(team_list.last_team_id(), leader_plaeyr_id, leader_plaeyr_id));
-	EXPECT_EQ(leader_plaeyr_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
-	EXPECT_EQ(kRetTeamKickNotLeader, team_list.KickMember(team_list.last_team_id(), m, leader_plaeyr_id));
-	EXPECT_EQ(leader_plaeyr_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
-	EXPECT_EQ(kRetTeamKickNotLeader, team_list.KickMember(team_list.last_team_id(), m, m));
-	EXPECT_EQ(leader_plaeyr_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
-	EXPECT_EQ(kRetTeamMemberNotInTeam, team_list.KickMember(team_list.last_team_id(), leader_plaeyr_id, 88));
-	EXPECT_EQ(leader_plaeyr_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
-	EXPECT_EQ(kRetOK, team_list.KickMember(team_list.last_team_id(), leader_plaeyr_id, m));
-	EXPECT_EQ(leader_plaeyr_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
+	member_id = (member_id + 1);
+	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), member_id));
+	EXPECT_EQ(kRetTeamKickSelf, team_list.KickMember(team_list.last_team_id(), leader_player_id, leader_player_id));
+	EXPECT_EQ(leader_player_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
+	EXPECT_EQ(kRetTeamKickNotLeader, team_list.KickMember(team_list.last_team_id(), member_id, leader_player_id));
+	EXPECT_EQ(leader_player_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
+	EXPECT_EQ(kRetTeamKickNotLeader, team_list.KickMember(team_list.last_team_id(), member_id, member_id));
+	EXPECT_EQ(leader_player_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
+	EXPECT_EQ(kRetTeamMemberNotInTeam, team_list.KickMember(team_list.last_team_id(), leader_player_id, 88));
+	EXPECT_EQ(leader_player_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
+	EXPECT_EQ(kRetOK, team_list.KickMember(team_list.last_team_id(), leader_player_id, member_id));
+	EXPECT_EQ(leader_player_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
     EXPECT_EQ(1, team_list.team_size());
     EXPECT_EQ(1, team_list.players_size());
@@ -129,18 +127,17 @@ TEST(TeamManger, KickTeaamMember)
 
 TEST(TeamManger, AppointLaderAndLeaveTeam1)
 {
-	Teams team_list;
-    Guid m = 100;
-    Guid leader_player_id = 100;
+	TeamSystem team_list;
+	Guid member_id = 100;
+	Guid leader_player_id = 100;
 
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-
-	Guid player_id = m;
+	Guid player_id = member_id;
 	for (std::size_t i = 1; i < kFiveMemberMaxSize; ++i)
 	{
-		m = (player_id + i);
-		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
+		member_id = (player_id + i);
+		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), member_id));
 		EXPECT_EQ(1 + i, team_list.member_size(team_list.last_team_id()));
 	}
 
@@ -154,7 +151,7 @@ TEST(TeamManger, AppointLaderAndLeaveTeam1)
 	EXPECT_EQ(kRetOK, team_list.AppointLeader(team_list.last_team_id(), 100, 101));
 	EXPECT_EQ(101, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
-	team_list.LeaveTeam(101);
+	TeamSystem::LeaveTeam(101);
 
 	EXPECT_EQ(leader_player_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
@@ -163,56 +160,55 @@ TEST(TeamManger, AppointLaderAndLeaveTeam1)
 	EXPECT_EQ(kRetOK, team_list.AppointLeader(team_list.last_team_id(), 100, 102));
 	EXPECT_EQ(leader_player_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
-	team_list.LeaveTeam(102);
+	TeamSystem::LeaveTeam(102);
 	leader_player_id = 100;
 	EXPECT_EQ(leader_player_id, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
 	EXPECT_EQ(kRetOK, team_list.AppointLeader(team_list.last_team_id(), 100, 103));
 	EXPECT_EQ(103, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
-	team_list.LeaveTeam(103);
+	TeamSystem::LeaveTeam(103);
 	EXPECT_EQ(100, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
 	EXPECT_EQ(kRetOK, team_list.AppointLeader(team_list.last_team_id(), 100, 104));
 	EXPECT_EQ(104, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
-	team_list.LeaveTeam(104);
+	TeamSystem::LeaveTeam(104);
 	EXPECT_EQ(100, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
-	team_list.LeaveTeam(100);
+	TeamSystem::LeaveTeam(100);
 	EXPECT_FALSE(team_list.HasTeam(100));
 }
 
 TEST(TeamManger, AppointLaderAndLeaveTeam2)
 {
-	Teams  team_list;
-	Guid m = 100;
+	TeamSystem team_list;
+	Guid member_id = 100;
 
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
-	m = 104;
-	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
+	member_id = 104;
+	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), member_id));
 
 	EXPECT_EQ(kRetOK, team_list.AppointLeader(team_list.last_team_id(), 100, 104));
 	EXPECT_EQ(104, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
-	team_list.LeaveTeam(100);
+	TeamSystem::LeaveTeam(100);
 	EXPECT_EQ(104, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
-	team_list.LeaveTeam(104 );
+	TeamSystem::LeaveTeam(104 );
 	EXPECT_FALSE(team_list.HasTeam(104));
 }
 
 
 TEST(TeamManger, DismissTeam)
 {
-	Teams  team_list;
-	Guid m;
-	m = (100);
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
+	TeamSystem team_list;
+	Guid member_id = 100;
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
-	m = (104);
-	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
+	member_id = 104;
+	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), member_id));
 
 	EXPECT_EQ(kRetTeamDismissNotLeader, team_list.Disbanded(team_list.last_team_id(), 104));
 	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.Disbanded(111, 104));
@@ -222,18 +218,16 @@ TEST(TeamManger, DismissTeam)
 
 TEST(TeamManger, ApplyFull)
 {
-	Teams  team_list;
-	Guid m =1001;
+	TeamSystem  team_list;
+	constexpr Guid member_id =1001;
 
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
-	Guid a;
-
-	Guid nMax = kMaxApplicantSize * 2;
+	constexpr Guid nMax = kMaxApplicantSize * 2;
 	for (Guid i = 0; i < nMax; ++i)
 	{
-		a = i;
-		EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(),  a));
+		const Guid app = i;
+		EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), app));
 		if (i < kMaxApplicantSize)
 		{
 			EXPECT_EQ(i + 1, team_list.applicant_size_by_team_id(team_list.last_team_id()));
@@ -258,45 +252,45 @@ TEST(TeamManger, ApplyFull)
 
 TEST(TeamManger, ApplicantOrder)
 {
-    Teams  team_list;
-    Guid m;
-    m = (1001);
-    EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-    Guid a;
+	TeamSystem team_list;
+	Guid member_id;
+	member_id = (1001);
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	Guid a;
 
-	Guid nMax = kMaxApplicantSize;
-    for (Guid i = 0; i < nMax; ++i)
-    {
-        a = (i);
-        EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), a));
-    }
-    EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant(team_list.last_team_id()));
+	constexpr Guid nMax = kMaxApplicantSize;
+	for (Guid i = 0; i < nMax; ++i)
+	{
+		a = (i);
+		EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), a));
+	}
+	EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant(team_list.last_team_id()));
 
-    for (Guid i = 0; i < nMax; ++i)
-    {
-        a = (i);
-        EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), a));
-    }
+	for (Guid i = 0; i < nMax; ++i)
+	{
+		a = (i);
+		EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), a));
+	}
 
-    EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant(team_list.last_team_id()));
+	EXPECT_EQ(nMax - kMaxApplicantSize, team_list.first_applicant(team_list.last_team_id()));
 }
 
 TEST(TeamManger, InTeamApplyForTeam)
 {
-	Teams  team_list;
-	Guid m;
-	m = (1001);
+	TeamSystem team_list;
+	Guid member_id;
+	member_id = (1001);
 
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
 	Guid a;
 
-	Guid nMax = kMaxApplicantSize;
-    for (Guid i = 1; i < nMax; ++i)
-    {
-        a = (i);
-        EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), a));
-    }
+	constexpr Guid nMax = kMaxApplicantSize;
+	for (Guid i = 1; i < nMax; ++i)
+	{
+		a = (i);
+		EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), a));
+	}
 	for (Guid i = 1; i < nMax; ++i)
 	{
 		if (i < kFiveMemberMaxSize)
@@ -310,40 +304,38 @@ TEST(TeamManger, InTeamApplyForTeam)
 			EXPECT_TRUE(team_list.IsApplicant(team_list.last_team_id(), i));
 		}
 	}
-    a = (6666);
-    EXPECT_EQ(kRetTeamMembersFull, team_list.ApplyToTeam(team_list.last_team_id(), a));
+	a = (6666);
+	EXPECT_EQ(kRetTeamMembersFull, team_list.ApplyToTeam(team_list.last_team_id(), a));
 
-    EXPECT_EQ(kRetOK, team_list.LeaveTeam(2));
+	EXPECT_EQ(kRetOK, team_list.LeaveTeam(2));
 
-    m = (2);
-    EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), m));
-    EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-    EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), 2));
-    EXPECT_FALSE(team_list.IsApplicant(team_list.last_team_id(), 2));
+	member_id = (2);
+	EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), member_id));
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), 2));
+	EXPECT_FALSE(team_list.IsApplicant(team_list.last_team_id(), 2));
 }
 
 
 TEST(TeamManger, RemoveApplicant)
 {
-	Teams  team_list;
-	Guid m;
-	m = (1001);
+	TeamSystem team_list;
+	constexpr Guid member_id = 1001;
 
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-	Guid a;
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
-	Guid nMax = kFiveMemberMaxSize;
+	constexpr Guid nMax = kFiveMemberMaxSize;
 
 	Guid player_id = 1;
 	for (Guid i = 0; i < nMax; ++i)
 	{
-		a = (player_id++);
-		EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), a));
+		Guid app = (player_id++);
+		EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), app));
 		if (i % 2 == 0)
 		{
-			EXPECT_EQ(kRetOK, team_list.DelApplicant(team_list.last_team_id(), a));
+			EXPECT_EQ(kRetOK, team_list.DelApplicant(team_list.last_team_id(), app));
 		}
-		
+
 		if (i >= 19 && i % 2 != 0)
 		{
 			EXPECT_EQ(10, team_list.applicant_size_by_team_id(team_list.last_team_id()));
@@ -355,160 +347,153 @@ TEST(TeamManger, RemoveApplicant)
 
 TEST(TeamManger, AgreeApplicant)
 {
-	Teams  team_list;
-	Guid m;
-	m = (1001);
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
+	TeamSystem team_list;
+	Guid member_id;
+	member_id = (1001);
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
-	Guid a;
+	Guid app = 0;
 
-	int32_t nMax = kMaxApplicantSize ;
+	constexpr int32_t nMax = kMaxApplicantSize;
 
 	Guid player_id = 1;
-    
-    for (int32_t i = 0; i < nMax; ++i)
-    {
-        a = (i);
-        EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), a));
-        if (i > kMaxApplicantSize)
-        {
-            EXPECT_EQ(kMaxApplicantSize, team_list.applicant_size_by_team_id(team_list.last_team_id()));
-            EXPECT_EQ(i - kMaxApplicantSize + 1, team_list.first_applicant(team_list.last_team_id()));
-        }
-    }
-    player_id = 0;
-    Guid nBegiplayer_id = 1;
+
 	for (int32_t i = 0; i < nMax; ++i)
 	{
-		a = (player_id++);
-		
+		app = (i);
+		EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), app));
+		if (i > kMaxApplicantSize)
+		{
+			EXPECT_EQ(kMaxApplicantSize, team_list.applicant_size_by_team_id(team_list.last_team_id()));
+			EXPECT_EQ(i - kMaxApplicantSize + 1, team_list.first_applicant(team_list.last_team_id()));
+		}
+	}
+	player_id = 0;
+	Guid begin_player_id = 1;
+	for (int32_t i = 0; i < nMax; ++i)
+	{
+		app = (player_id++);
 		if (i > (nMax - kFiveMemberMaxSize ))
 		{
-			EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), a));
-			EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), a));
-            if (nBegiplayer_id == 1)
-            {
-                nBegiplayer_id = a;
-            }
-            
+			EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), app));
+			EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), app));
+			if (begin_player_id == 1)
+			{
+				begin_player_id = app;
+			}
 		}
 		else
 		{
-			EXPECT_FALSE(team_list.HasMember(team_list.last_team_id(), a));
+			EXPECT_FALSE(team_list.HasMember(team_list.last_team_id(), app));
 		}
 	}
 
-	for (uint64_t i = nBegiplayer_id; i < nMax; ++i )
+	for (uint64_t i = begin_player_id; i < nMax; ++i )
 	{
 		EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), i));
 	}
-
 }
 
 TEST(TeamManger, PlayerTeamId)
 {
+	TeamSystem team_list;
+	Guid member_id;
+	member_id = (1);
 
-	Teams  team_list;
-	Guid m;
-	m = (1);
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	EXPECT_TRUE(team_list.HasTeam(member_id));
+	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(member_id));
 
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-	EXPECT_TRUE(team_list.HasTeam(m));
-	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(m));
+	member_id = (2);
+	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), member_id));
+	EXPECT_TRUE(team_list.HasTeam(member_id));
+	EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), member_id));
+	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(member_id));
 
-	m = (2);
-	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
-	EXPECT_TRUE(team_list.HasTeam(m));
-	EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), m));
-	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(m));
+	member_id = (3);
+	EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), member_id));
+	EXPECT_FALSE(team_list.HasTeam(member_id));
+	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(member_id));
 
-	m = (3);
-	EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(), m));
-	EXPECT_FALSE(team_list.HasTeam(m));
-	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
-
-	EXPECT_EQ(kRetOK, team_list.DelApplicant(team_list.last_team_id(), m));
-	EXPECT_FALSE(team_list.HasTeam(m));
-	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
+	EXPECT_EQ(kRetOK, team_list.DelApplicant(team_list.last_team_id(), member_id));
+	EXPECT_FALSE(team_list.HasTeam(member_id));
+	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(member_id));
 
 
-	EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(),  m));
-	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
-	EXPECT_TRUE(team_list.HasTeam(m));
-	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(m));
+	EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_list.last_team_id(),  member_id));
+	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), member_id));
+	EXPECT_TRUE(team_list.HasTeam(member_id));
+	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(member_id));
 
 
 	for (std::size_t i = 4; i <= kFiveMemberMaxSize; ++i)
 	{
-		m = (i);
-		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
-		EXPECT_TRUE(team_list.HasTeam(m));
-		EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(m));
+		member_id = (i);
+		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), member_id));
+		EXPECT_TRUE(team_list.HasTeam(member_id));
+		EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(member_id));
 	}
 
-	m = (1);
-	EXPECT_EQ(kRetOK, team_list.LeaveTeam(m));
-	EXPECT_FALSE(team_list.HasTeam(m));
-	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
-	
+	member_id = (1);
+	EXPECT_EQ(kRetOK, team_list.LeaveTeam(member_id));
+	EXPECT_FALSE(team_list.HasTeam(member_id));
+	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(member_id));
+
 	EXPECT_EQ(2, team_list.get_leader_id_by_team_id(team_list.last_team_id()));
 
-	m = (3);
-	EXPECT_EQ(kRetOK, team_list.KickMember(team_list.last_team_id(), 2, m));
-	EXPECT_FALSE(team_list.HasTeam(m));
-	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
-	
+	member_id = (3);
+	EXPECT_EQ(kRetOK, team_list.KickMember(team_list.last_team_id(), 2, member_id));
+	EXPECT_FALSE(team_list.HasTeam(member_id));
+	EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(member_id));
 
 	EXPECT_EQ(kRetOK, team_list.Disbanded(team_list.last_team_id(), 2));
 	for (std::size_t i = 4; i <= kFiveMemberMaxSize; ++i)
 	{
-		EXPECT_FALSE(team_list.HasTeam(m));
-		EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
+		EXPECT_FALSE(team_list.HasTeam(member_id));
+		EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(member_id));
 	}
 
 
-    EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
+    EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 
     for (std::size_t i = 4; i < kFiveMemberMaxSize; ++i)
     {
-        m = (i);
-        EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
-        EXPECT_TRUE(team_list.HasTeam(m));
-        EXPECT_EQ(kRetOK, team_list.LeaveTeam(m));
-        EXPECT_FALSE(team_list.HasTeam(m));
+	    member_id = (i);
+	    EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), member_id));
+	    EXPECT_TRUE(team_list.HasTeam(member_id));
+	    EXPECT_EQ(kRetOK, team_list.LeaveTeam(member_id));
+	    EXPECT_FALSE(team_list.HasTeam(member_id));
     }
 }
 
 TEST(TeamManger, PlayerInTeam)
 {
+	TeamSystem team_list;
+	Guid member_id = (1);
 
-	Teams  team_list;
-	Guid m;
-	m = (1);
-	
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.CreateTeam({ m, UInt64Set{m}}));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), m));
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), member_id));
 	auto team_id1 = team_list.last_team_id();
 
-	m = (2);
-	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, m));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.ApplyToTeam(team_id1, m));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, m));
+	member_id = (2);
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.ApplyToTeam(team_id1, member_id));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
 	auto team_id2 = team_list.last_team_id();
 
 	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.LeaveTeam(kInvalidGuid));
-	EXPECT_EQ(kRetOK, team_list.LeaveTeam(m));
-	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_id1, m));
+	EXPECT_EQ(kRetOK, team_list.LeaveTeam(member_id));
+	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_id1, member_id));
 
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.ApplyToTeam(team_id1, m));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, m));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.ApplyToTeam(team_id1, member_id));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
 
-	EXPECT_EQ(kRetOK, team_list.LeaveTeam( m));
-	EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_id1, m));
-	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_id1, m));
-	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, m));
+	EXPECT_EQ(kRetOK, team_list.LeaveTeam( member_id));
+	EXPECT_EQ(kRetOK, team_list.ApplyToTeam(team_id1, member_id));
+	EXPECT_EQ(kRetOK, team_list.JoinTeam(team_id1, member_id));
+	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
 
 	//invite
 	/*EXPECT_EQ(kRetOK, team_list.LeaveTeam(m));
@@ -520,18 +505,17 @@ TEST(TeamManger, PlayerInTeam)
 
 TEST(TeamManger, AppointLeaderNotInTeam)
 {
-    Teams  team_list;
-    Guid m;
-    m = (1);
-    Guid leader_player_id = 1;
-    EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
-    for (Guid i = leader_player_id + 1; i < 10; i++)
-    {
-        EXPECT_EQ(kRetTeamHasNotTeamId, team_list.AppointLeader(team_list.last_team_id(), leader_player_id, i));
-    }
+	TeamSystem team_list;
+	constexpr Guid member_id = (1);
+	constexpr Guid leader_player_id = 1;
+	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
+	for (Guid i = leader_player_id + 1; i < 10; i++)
+	{
+		EXPECT_EQ(kRetTeamHasNotTeamId, team_list.AppointLeader(team_list.last_team_id(), leader_player_id, i));
+	}
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
 	for (size_t i = 0; i < 2000; ++i)
 	{
@@ -539,9 +523,9 @@ int main(int argc, char **argv)
 	}
 	testing::InitGoogleTest(&argc, argv);
 
-    /*while (true)
-    {
-        RUN_ALL_TESTS();
-    }*/
+	/*while (true)
+	{
+	    RUN_ALL_TESTS();
+	}*/
 	return RUN_ALL_TESTS();
 }

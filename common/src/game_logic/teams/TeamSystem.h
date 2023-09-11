@@ -1,5 +1,4 @@
 #pragma once
-#include <unordered_map>
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
@@ -7,25 +6,25 @@
 
 #include "team.h"
 
-class Teams
+static constexpr std::size_t kMaxTeamSize = 10000;
+
+class TeamSystem final
 {
 public:
-    static constexpr std::size_t kMaxTeamSize = 10000;
+    ~TeamSystem();
 
-    ~Teams();
-
-    static std::size_t team_size() { return tls.registry.storage<Team>().size(); }
+    static std::size_t team_size();
     static std::size_t member_size(Guid team_id);
     static std::size_t applicant_size_by_player_id(Guid guid);
     static std::size_t applicant_size_by_team_id(Guid team_id);
     static std::size_t players_size();
     static Guid GetTeamId(Guid guid);
-    Guid last_team_id() const { return last_team_id_; }
+    Guid last_team_id() const;
     static Guid get_leader_id_by_team_id(Guid team_id);
     static Guid get_leader_id_by_player_id(Guid guid);
     static Guid first_applicant(Guid team_id);
 
-    [[nodiscard]] static bool IsTeamListMax() { return team_size() >= kMaxTeamSize; }
+    [[nodiscard]] static bool IsTeamListMax();
     static bool IsTeamFull(Guid team_id);
     static bool HasMember(Guid team_id, Guid guid);
     static bool HasTeam(Guid guid);
