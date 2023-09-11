@@ -134,7 +134,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\common\src\game_logic\scene\scene.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\scene\scene_system.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\scene\servernode_system.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\thread_local\thread_local_storage.cpp" />
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.cc" />
@@ -145,7 +145,7 @@
     <ClCompile Include="change_scene_test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\game_logic\scene\scene.h" />
+    <ClInclude Include="..\..\common\src\game_logic\scene\scene_system.h" />
     <ClInclude Include="..\..\common\src\game_logic\scene\servernode_system.h" />
     <ClInclude Include="..\..\common\src\game_logic\thread_local\thread_local_storage.h" />
     <ClInclude Include="..\..\common\src\pb\pbc\component_proto\gs_node_comp.pb.h" />

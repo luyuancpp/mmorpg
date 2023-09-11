@@ -77,7 +77,12 @@ void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, Con
 
 void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity player)
 {
-    GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
+	auto try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	if (nullptr == try_change_scene_queue)
+	{
+		return;
+	}
+    auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
     if (change_scene_queue.empty())
     {
         return;
@@ -105,7 +110,12 @@ void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity playe
 
 void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity player)
 {
-    GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
+	auto try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	if (nullptr == try_change_scene_queue)
+	{
+		return;
+	}
+	auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
     if (change_scene_queue.empty())
     {
         return;
@@ -136,7 +146,11 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
 
 uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 {
-    GetPlayerComponentReturnError(try_change_scene_queue, PlayerControllerChangeSceneQueue, kRetChangeScenePlayerQueueComponentNull);
+	auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	if (nullptr == try_change_scene_queue)
+	{
+		return kRetChangeScenePlayerQueueComponentNull;
+	}
     auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
     if (change_scene_queue.empty())
     {
@@ -165,7 +179,11 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 
 uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
 {
-    GetPlayerComponentReturnError(try_change_scene_queue, PlayerControllerChangeSceneQueue, kRetChangeScenePlayerQueueComponentNull);
+	auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	if (nullptr == try_change_scene_queue)
+	{
+		return kRetChangeScenePlayerQueueComponentNull;
+	}
     auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
     if (change_scene_queue.empty())
     {

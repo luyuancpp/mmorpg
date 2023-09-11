@@ -8,10 +8,17 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/tips_id.h"
 #include "src/system/player_change_scene.h"
-#include "src/game_logic/scene/scene.h"
+#include "src/game_logic/scene/scene_system.h"
 
 ScenesSystem sm;
 EntityVector scene_list;
+
+entt::entity CreateMainSceneNode()
+{
+	const auto scene_entity = tls.registry.create();
+	AddMainSceneNodeComponent(scene_entity);
+	return scene_entity;
+}
 
 entt::entity CreatePlayer()
 {
@@ -27,13 +34,15 @@ ControllerChangeSceneInfo& GetPlayerFrontChangeSceneInfo(entt::entity player)
 
 TEST(PlayerChangeScene, CreateMainScene)
 {
-    CreateSceneP param;
+    auto node_id = CreateMainSceneNode();
+    CreateGsSceneParam param;
+    param.node_ = node_id;
     for (uint32_t i = 0; i < 10; ++i)
     {
         param.scene_confid_ = i;
         for (uint32_t j = 0; j < 2; ++j)
         {
-            scene_list.push_back(sm.CreateScene(param));
+            scene_list.push_back(sm.CreateScene2Gs(param));
         }
     }
 }
@@ -54,14 +63,14 @@ TEST(PlayerChangeScene, QueueFull)
 TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 {
     auto player = CreatePlayer();
-    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
+    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).guid();
     EnterSceneParam ep;
     ep.enterer_ = player;
-    auto from_scene = ScenesSystem::get_scene(scene_id);
+    auto from_scene = ScenesSystem::GetSceneByGuid(scene_id);
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
     ControllerChangeSceneInfo change_info;
-    change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.mutable_scene_info()->set_guid(scene_id);
     change_info.set_change_gs_type(ControllerChangeSceneInfo::eSameGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));    
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
@@ -71,14 +80,14 @@ TEST(PlayerChangeScene, ChangeSameGsSceneNotEnqueue)
 TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 {
     auto player = CreatePlayer();
-    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
+    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).guid();
     EnterSceneParam ep;
     ep.enterer_ = player;
-    auto from_scene = ScenesSystem::get_scene(scene_id);
+    auto from_scene = ScenesSystem::GetSceneByGuid(scene_id);
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
     ControllerChangeSceneInfo change_info;
-    change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.mutable_scene_info()->set_guid(scene_id);
     change_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);//todo scene logic
     change_info.set_change_gs_status(ControllerChangeSceneInfo::eLeaveGsScene);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
@@ -95,15 +104,15 @@ TEST(PlayerChangeScene, Gs1SceneToGs2SceneInZoneServer)
 TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
 {
     auto player = CreatePlayer();
-    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
+    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).guid();
     EnterSceneParam ep;
     ep.enterer_ = player;
-    auto from_scene = ScenesSystem::get_scene(scene_id);
+    auto from_scene = ScenesSystem::GetSceneByGuid(scene_id);
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
     ControllerChangeSceneInfo change_info;
-    change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.mutable_scene_info()->set_guid(scene_id);
     change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
@@ -121,15 +130,15 @@ TEST(PlayerChangeScene, NormalServerGs2CrossServerGs)
 TEST(PlayerChangeScene, CrossServerSameGs)
 {
     auto player = CreatePlayer();
-    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
+    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).guid();
     EnterSceneParam ep;
     ep.enterer_ = player;
-    auto from_scene = ScenesSystem::get_scene(scene_id);
+    auto from_scene = ScenesSystem::GetSceneByGuid(scene_id);
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
     ControllerChangeSceneInfo change_info;
-    change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.mutable_scene_info()->set_guid(scene_id);
     change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
     change_info.set_change_gs_type(ControllerChangeSceneInfo::eSameGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));    
@@ -143,15 +152,15 @@ TEST(PlayerChangeScene, CrossServerSameGs)
 TEST(PlayerChangeScene, CrossServerDiffGs)
 {
     auto player = CreatePlayer();
-    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
+    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).guid();
     EnterSceneParam ep;
     ep.enterer_ = player;
-    auto from_scene = ScenesSystem::get_scene(scene_id);
+    auto from_scene = ScenesSystem::GetSceneByGuid(scene_id);
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
     ControllerChangeSceneInfo change_info;
-    change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.mutable_scene_info()->set_guid(scene_id);
     change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
     change_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
@@ -168,15 +177,15 @@ TEST(PlayerChangeScene, CrossServerDiffGs)
 TEST(PlayerChangeScene, CrossServerGs2NormalServerGs)
 {
     auto player = CreatePlayer();
-    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
+    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).guid();
     EnterSceneParam ep;
     ep.enterer_ = player;
-    auto from_scene = ScenesSystem::get_scene(scene_id);
+    auto from_scene = ScenesSystem::GetSceneByGuid(scene_id);
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
     ControllerChangeSceneInfo change_info;
-    change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.mutable_scene_info()->set_guid(scene_id);
     change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));
     PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
@@ -195,15 +204,15 @@ TEST(PlayerChangeScene, CrossServerGs2NormalServerGs)
 TEST(PlayerChangeScene, ServerCrush)
 {
     auto player = CreatePlayer();
-    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).scene_id();
+    auto scene_id = tls.registry.get<SceneInfo>(*(scene_list.begin()++)).guid();
     EnterSceneParam ep;
     ep.enterer_ = player;
-    auto from_scene = ScenesSystem::get_scene(scene_id);
+    auto from_scene = ScenesSystem::GetSceneByGuid(scene_id);
     ep.scene_ = from_scene;
     ScenesSystem::EnterScene(ep);
 
     ControllerChangeSceneInfo change_info;
-    change_info.mutable_scene_info()->set_scene_id(scene_id);
+    change_info.mutable_scene_info()->set_guid(scene_id);
     change_info.set_change_cross_server_type(ControllerChangeSceneInfo::eCrossServer);
     change_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);//todo scene logic
     EXPECT_EQ(kRetOK, PlayerChangeSceneSystem::PushChangeSceneInfo(player, change_info));

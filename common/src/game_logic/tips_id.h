@@ -137,43 +137,4 @@ if (tip_code != kRetOK)\
     return;\
 }\
 
-#define  GetPlayerComponentReturnError(component_name, component, tip_code)\
-auto component_name = tls.registry.try_get<component>(player);\
-if (nullptr == component_name)\
-{\
-	return tip_code;\
-}
-
-#define  GetPlayerComponentMemberReturnError(member_name, component, tip_code)\
-auto component_name = tls.registry.try_get<component>(player);\
-if (nullptr == component_name)\
-{\
-	return tip_code;\
-}\
-auto& member_name = component_name->member_name##_;
-
-#define  GetPlayerComponentMemberNullReturnFalse(member_name, component)\
-auto component_name = tls.registry.try_get<component>(player);\
-if (nullptr == component_name)\
-{\
-	return false;\
-}\
-auto& member_name = component_name->member_name##_;
-
-#define  GetPlayerComponentMemberNullReturnTrue(member_name, component)\
-auto component_name = tls.registry.try_get<component>(player);\
-if (nullptr == component_name)\
-{\
-	return true;\
-}\
-auto& member_name = comp_name->menber_name##_;
-
-#define  GetPlayerComponentMemberReturnVoid(member_name, component)\
-auto component_name = tls.registry.try_get<component>(player);\
-if (nullptr == component_name)\
-{\
-	return;\
-}\
-auto& member_name = component_name->member_name##_;
-
 #endif // !COMMON_SRC_tip_code_ERROR_CODE
