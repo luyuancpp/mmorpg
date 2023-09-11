@@ -51,28 +51,6 @@ uint32_t Team::LeaveTeam(Guid guid)
     return kRetOK;
 }
 
-uint32_t Team::KickMember(Guid current_leader, Guid  be_kick_guid)
-{
-    if (leader_id_ != current_leader)
-    {
-        return kRetTeamKickNotLeader;
-    }
-    if (leader_id_ == be_kick_guid)
-    {
-        return kRetTeamKickSelf;
-    }
-    if (current_leader == be_kick_guid)
-    {
-        return kRetTeamKickSelf;
-    }
-    if (!IsMember(be_kick_guid))
-    {
-        return kRetTeamMemberNotInTeam;
-    }
-    DelMember(be_kick_guid);
-    return kRetOK;
-}
-
 uint32_t Team::AppointLeader(Guid current_leader, Guid new_leader)
 {
     if (leader_id_ == new_leader)

@@ -258,7 +258,7 @@ uint32_t Teams::LeaveTeam(Guid guid)
     return kRetOK;
 }
 
-uint32_t Teams::KickMember(Guid team_id, Guid current_leader, Guid  kick_guid)
+uint32_t Teams::KickMember(Guid team_id, Guid current_leader, Guid be_kick_guid)
 {
 	auto e = entt::to_entity(team_id);
 	if (!tls.registry.valid(e))
@@ -270,8 +270,23 @@ uint32_t Teams::KickMember(Guid team_id, Guid current_leader, Guid  kick_guid)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto& team = *try_team;
-    RET_CHECK_RET(team.KickMember(current_leader, kick_guid));
+	if (try_team->leader_id_ != current_leader)
+	{
+		return kRetTeamKickNotLeader;
+	}
+	if (try_team->leader_id_ == be_kick_guid)
+	{
+		return kRetTeamKickSelf;
+	}
+	if (current_leader == be_kick_guid)
+	{
+		return kRetTeamKickSelf;
+	}
+	if (!try_team->IsMember(be_kick_guid))
+	{
+		return kRetTeamMemberNotInTeam;
+	}
+	try_team->DelMember(be_kick_guid);
     return kRetOK;
 }
 
