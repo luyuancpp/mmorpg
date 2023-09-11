@@ -1,33 +1,23 @@
 #include "team.h"
 
-#include "src/game_logic/tips_id.h"
 #include "src/game_logic/teams/team_event.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
+#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/game_logic/tips_id.h"
 
 #include "component_proto/team_comp.pb.h"
 
-Team::Team(const CreateTeamP& param, entt::entity teamid)
-    : teamid_(teamid),
-      leader_id_(param.leader_id_)
+Team::Team(const CreateTeamP& param, const entt::entity teamid)
+    : leader_id_(param.leader_id_),
+      teamid_(teamid)
 {
-    for (auto& it : param.members)
+    for (const auto& member_it : param.members)
     {
-        AddMemeber(it);
+        AddMemeber(member_it);
     }
 }
 
-Guid Team::first_applicant() const
-{
-    if (applicants_.empty())
-    {
-        return kInvalidGuid;
-    }
-    return *applicants_.begin();
-}
-
-
-uint32_t Team::JoinTeam(Guid  guid)
+uint32_t Team::JoinTeam(const Guid guid)
 {
     if (HasTeam(guid))
     {
@@ -37,7 +27,11 @@ uint32_t Team::JoinTeam(Guid  guid)
     {
         return kRetTeamMembersFull;
     }
-    DelApplicant(guid);
+    if (const auto applicant_it = std::find(applicants_.begin(), applicants_.end(), guid);
+        applicant_it != applicants_.end())
+    {
+        applicants_.erase(applicant_it);
+    }
     AddMemeber(guid);
     return kRetOK;
 }
@@ -123,20 +117,20 @@ void Team::ClearApplyList()
 
 uint32_t Team::ApplyToTeam(Guid guid)
 {
-	if (HasTeam(guid))
-	{
-		return kRetTeamMemberInTeam;
-	}
-	if (IsFull())
-	{
-		return kRetTeamMembersFull;
-	}
-	if (applicants_.size() >= kMaxApplicantSize)
-	{
-		applicants_.erase(applicants_.begin());
-	}
-	applicants_.emplace_back(guid);
-	return kRetOK;
+    if (HasTeam(guid))
+    {
+        return kRetTeamMemberInTeam;
+    }
+    if (IsFull())
+    {
+        return kRetTeamMembersFull;
+    }
+    if (applicants_.size() >= kMaxApplicantSize)
+    {
+        applicants_.erase(applicants_.begin());
+    }
+    applicants_.emplace_back(guid);
+    return kRetOK;
 }
 
 
@@ -150,14 +144,14 @@ uint32_t Team::DelApplicant(Guid applicant_id)
     return kRetOK;
 }
 
-bool Team::HasTeam(Guid guid) const
+bool Team::HasTeam(const Guid guid)
 {
-    auto pit = cl_tls.player_list().find(guid);
-    if (pit == cl_tls.player_list().end())
+    const auto player_it = cl_tls.player_list().find(guid);
+    if (player_it == cl_tls.player_list().end())
     {
         return false;
     }
-    return tls.registry.any_of<TeamId>(pit->second);
+    return tls.registry.any_of<TeamId>(player_it->second);
 }
 
 void Team::AddMemeber(Guid guid)

@@ -35,7 +35,6 @@ public:
     inline std::size_t member_size()const { return members_.size(); }
     inline bool empty()const { return members_.empty(); }
     inline std::size_t applicant_size()const{  return applicants_.size();}
-    Guid first_applicant()const;
     inline const GuidVector& members()const { return members_; }
 
     inline bool IsApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
@@ -53,12 +52,13 @@ public:
     uint32_t ApplyToTeam(Guid guid);
     uint32_t DelApplicant(Guid applicant_id);
     
+    static bool HasTeam(Guid guid);
 public:
-    inline bool HasTeam(Guid guid) const;
+    
     void AddMemeber(Guid guid);
     void DelMember(Guid guid);
     void OnAppointLeader(Guid  new_leader_guid);
-   
+
     Guid leader_id_{};
     entt::entity teamid_{};
     GuidVector members_;

@@ -109,7 +109,11 @@ Guid Teams::first_applicant(Guid team_id) const
 	{
 		return kInvalidGuid;
 	};
-    return try_team->first_applicant();
+	if (try_team->applicants_.empty())
+	{
+		return kInvalidGuid;
+	}
+	return *try_team->applicants_.begin();
 }
 
 bool Teams::IsTeamFull(Guid team_id)
@@ -163,7 +167,7 @@ bool Teams::IsApplicant(Guid team_id, Guid guid) const
 	if (nullptr == try_team)
 	{
 		return false;
-	};
+	}
     return try_team->IsApplicant(guid);
 }
 
@@ -345,7 +349,12 @@ uint32_t Teams::DelApplicant(Guid team_id, Guid guid)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-    return try_team->DelApplicant(guid);
+	auto it = std::find(try_team->applicants_.begin(), try_team->applicants_.end(), guid);
+	if (it != try_team->applicants_.end())
+	{
+		try_team->applicants_.erase(it);
+	}
+    return kRetOK;
 }
 
 void Teams::ClearApplyList(Guid team_id)
