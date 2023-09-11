@@ -28,23 +28,17 @@ struct CreateTeamP
 class Team
 {
 public:
+    inline entt::entity to_entity_id() const { return team_id_; }
+    inline Guid leader_id() const { return leader_id_; }
+    inline std::size_t max_member_size() const { return team_type_size_; }
+    inline std::size_t member_size() const { return members_.size(); }
+    inline bool empty() const { return members_.empty(); }
+    inline std::size_t applicant_size() const { return applicants_.size(); }
 
-    inline Guid team_id()const { return entt::to_integral(team_id_); }
-    inline entt::entity to_entityid()const { return team_id_; }
-    inline Guid leader_id()const { return leader_id_; }
-	inline std::size_t max_member_size()const {
-		return team_type_size_;
-	}
-    inline std::size_t member_size()const { return members_.size(); }
-    inline bool empty()const { return members_.empty(); }
-    inline std::size_t applicant_size()const{  return applicants_.size();}
-    inline const GuidVector& members()const { return members_; }
-
-    inline bool IsApplicant(Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end();}
-    inline bool IsApplicantEmpty()const { return !applicants_.empty(); }
-    inline bool IsFull()const { return members_.size() >= max_member_size(); }
-    inline bool IsLeader(Guid guid)const { return leader_id_ == guid; }
-    inline bool HasMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
+    inline bool IsApplicant(const Guid guid) const { return std::find(applicants_.begin(), applicants_.end(), guid) != applicants_.end(); }
+    inline bool IsFull() const { return members_.size() >= max_member_size(); }
+    inline bool IsLeader(const Guid guid) const { return leader_id_ == guid; }
+    inline bool HasMember(const Guid guid) const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
 
     static bool HasTeam(Guid guid);
 

@@ -150,7 +150,7 @@ bool Teams::HasTeam(Guid guid)
 	return tls.registry.any_of<TeamId>(pit->second);
 }
 
-bool Teams::IsApplicant(Guid team_id, Guid guid)
+bool Teams::IsApplicant(const Guid team_id, Guid guid)
 {
 	auto e = entt::to_entity(team_id);
 	if (!tls.registry.valid(e))
@@ -199,7 +199,7 @@ uint32_t Teams::JoinTeam(Guid team_id, Guid guid)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	const auto try_team = tls.registry.try_get<Team>(e);
+	auto* const try_team = tls.registry.try_get<Team>(e);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
@@ -283,7 +283,7 @@ uint32_t Teams::LeaveTeam(Guid guid)
 	}          
     if (try_team->empty())
     {
-        EraseTeam(try_team->to_entityid());
+        EraseTeam(try_team->to_entity_id());
     }
     return kRetOK;
 }
