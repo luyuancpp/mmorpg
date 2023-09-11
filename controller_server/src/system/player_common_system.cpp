@@ -14,21 +14,23 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 
-void PlayerCommonSystem::InitPlayerComponent(entt::entity player)
+void PlayerCommonSystem::InitPlayerComponent(entt::entity player, Guid player_id)
 {
-    PlayerChangeSceneSystem::InitChangeSceneQueue(player);
+    controller_tls.player_list().emplace(player_id, player);
+    tls.registry.emplace<Guid>(player, player_id);
     tls.registry.emplace<Player>(player);
+    PlayerChangeSceneSystem::InitChangeSceneQueue(player);
 }
 
 void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
 {
-    const auto try_player_session = tls.registry.try_get<PlayerSession>(player);
+    const auto* const try_player_session = tls.registry.try_get<PlayerSession>(player);
     if (nullptr == try_player_session)
     {
         LOG_ERROR << "player session not valid";
         return;
     }
-    const auto player_id = tls.registry.try_get<Guid>(player);
+    const auto* const player_id = tls.registry.try_get<Guid>(player);
     if (nullptr == player_id)
     {
         LOG_ERROR << "player  not found ";
@@ -39,7 +41,7 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
     message.set_player_id(*player_id);
     Send2Gs(GameServiceUpdateSessionMsgId, message, try_player_session->gs_node_id());
 
-    if (const auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
+    if (const auto* const try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
         nullptr != try_enter_gs)
     {
         if (const auto enter_gs_type = try_enter_gs->enter_gs_type(); enter_gs_type != LOGIN_NONE)

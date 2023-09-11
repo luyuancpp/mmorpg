@@ -66,10 +66,11 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
     CallGsPlayerMethod(GamePlayerSceneServiceEnterSceneS2CMsgId, msg, player);
 }
 
-NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
+NodeId PlayerSceneSystem::GetGsNodeIdByScene(const entt::entity scene)
 {
-    auto* p_gs_data = tls.registry.try_get<GsNodePtr>(scene);
-    if (nullptr == p_gs_data)//找不到gs了，放到好的gs里面
+    const auto* p_gs_data = tls.registry.try_get<GsNodePtr>(scene);
+    //找不到gs了，放到好的gs里面
+    if (nullptr == p_gs_data)
     {
         return kInvalidU32Id;
     }
@@ -80,16 +81,11 @@ NodeId PlayerSceneSystem::GetGsNodeIdByScene(entt::entity scene)
 void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, SessionId session_id)
 {
     //todo gs崩溃
-	auto it = controller_tls.game_node().find(node_id);
-	if (it == controller_tls.game_node().end())
-	{
-        return;
-    }
-    GameNodeEnterGsRequest rq;
-    rq.set_player_id(tls.registry.get<Guid>(player));
-    rq.set_session_id(session_id);
-    rq.set_controller_node_id(controller_node_id());
-    tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceEnterGsMsgId, rq);
+    GameNodeEnterGsRequest req;
+    req.set_player_id(tls.registry.get<Guid>(player));
+    req.set_session_id(session_id);
+    req.set_controller_node_id(controller_node_id());
+    CallGameNodeMethod(GameServiceEnterGsMsgId, req, node_id);
 }
 
 //todo clear code 
