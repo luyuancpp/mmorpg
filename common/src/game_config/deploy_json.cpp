@@ -6,8 +6,6 @@
 
 #include "src/util/file2string.h"
 
-using namespace common;
-
 void GameConfig::Load(const std::string& filename)
 {
     auto contents = File2String(filename);

@@ -37,7 +37,7 @@ func WriteLoadClientLuaFile() {
 			if !util.IsLuaFile(fd) {
 				continue
 			}
-			data += config.Tab + "contents = common::File2String(\"" + config.ClientLuaProjectRelative + fd.Name() + "\");\n"
+			data += config.Tab + "contents = File2String(\"" + config.ClientLuaProjectRelative + fd.Name() + "\");\n"
 			data += config.Tab + "{\n"
 			data += config.Tab2 + "auto r = tls_lua_state.script(contents);\n"
 			data += config.Tab2 + "if (!r.valid())\n"

@@ -19,7 +19,7 @@ public:
     static std::size_t applicant_size_by_team_id(Guid team_id);
     static std::size_t players_size();
     static Guid GetTeamId(Guid guid);
-    Guid last_team_id() const;
+    [[nodiscard]] Guid last_team_id() const;
     static Guid get_leader_id_by_team_id(Guid team_id);
     static Guid get_leader_id_by_player_id(Guid guid);
     static Guid first_applicant(Guid team_id);
