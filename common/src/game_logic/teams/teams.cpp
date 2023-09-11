@@ -71,7 +71,7 @@ Guid Teams::GetTeamId(const Guid guid)
 	return try_team_id->team_id();
 }
 
-Guid Teams::get_leader_id_by_teamid(const Guid team_id)
+Guid Teams::get_leader_id_by_team_id(const Guid team_id)
 {
 	const auto team_entity = entt::to_entity(team_id);
 	if (!tls.registry.valid(team_entity))
@@ -88,7 +88,7 @@ Guid Teams::get_leader_id_by_teamid(const Guid team_id)
 
 Guid Teams::get_leader_id_by_player_id(const Guid guid)
 {
-	return get_leader_id_by_teamid(GetTeamId(guid));
+	return get_leader_id_by_team_id(GetTeamId(guid));
 }
 
 Guid Teams::first_applicant(const Guid team_id)
@@ -436,9 +436,9 @@ uint32_t Teams::DelApplicant(Guid team_id, Guid guid)
 	return kRetOK;
 }
 
-void Teams::ClearApplyList(Guid team_id)
+void Teams::ClearApplyList(const Guid team_id)
 {
-	const auto team_entity = entt::to_entity(team_id); 
+	const auto team_entity = entt::to_entity(team_id);
 	if (!tls.registry.valid(team_entity))
 	{
 		return;
