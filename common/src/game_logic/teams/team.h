@@ -48,9 +48,6 @@ public:
     uint32_t KickMember(Guid current_leader, Guid  nKickplayerid);
     uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
     uint32_t Disbanded(Guid current_leader_id);
-    void ClearApplyList();
-    uint32_t ApplyToTeam(Guid guid);
-    uint32_t DelApplicant(Guid applicant_id);
     
     static bool HasTeam(Guid guid);
 public:
