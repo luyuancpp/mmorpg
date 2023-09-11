@@ -388,7 +388,7 @@ TEST(TeamManger, AgreeApplicant)
 		}
 	}
 
-	for (uint64_t i = begin_player_id; i < nMax; ++i )
+	for (uint64_t i = begin_player_id; i < nMax; ++i)
 	{
 		EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), i));
 	}
