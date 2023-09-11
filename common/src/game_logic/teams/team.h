@@ -22,6 +22,7 @@ struct CreateTeamP
 {
     Guid leader_id_{0};
     const UInt64Set member_list;
+    std::size_t team_type_size_{kFiveMemberMaxSize};
 };
 
 class Team
@@ -43,7 +44,7 @@ public:
     inline bool IsApplicantEmpty()const { return !applicants_.empty(); }
     inline bool IsFull()const { return members_.size() >= max_member_size(); }
     inline bool IsLeader(Guid guid)const { return leader_id_ == guid; }
-    inline bool IsMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
+    inline bool HasMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
 
     static bool HasTeam(Guid guid);
 
