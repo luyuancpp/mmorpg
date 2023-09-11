@@ -53,7 +53,7 @@ public:
     uint32_t ApplyToTeam(Guid guid);
     uint32_t DelApplicant(Guid applicant_id);
     
-private:
+public:
     inline bool HasTeam(Guid guid) const;
     void AddMemeber(Guid guid);
     void DelMember(Guid guid);
