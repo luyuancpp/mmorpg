@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "src/game_logic/player/player_list.h"
+#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/game_logic/teams/teams.h"
 #include "src/game_logic/tips_id.h"
 
@@ -533,12 +533,10 @@ TEST(TeamManger, AppointLeaderNotInTeam)
 
 int main(int argc, char **argv)
 {
-	PlayerList players;
 	for (size_t i = 0; i < 2000; ++i)
 	{
-		players.emplace(i, EntityPtr());
+		cl_tls.player_list().emplace(i, tls.registry.create());
 	}
-	g_players = &players;
 	testing::InitGoogleTest(&argc, argv);
 
     /*while (true)
