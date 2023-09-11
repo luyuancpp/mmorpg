@@ -17,24 +17,6 @@ Team::Team(const CreateTeamP& param, const entt::entity teamid)
     }
 }
 
-uint32_t Team::AppointLeader(Guid current_leader, Guid new_leader)
-{
-    if (leader_id_ == new_leader)
-    {
-        return kRetTeamAppointSelf;
-    }
-    if (!IsMember(new_leader))
-    {
-        return kRetTeamHasNotTeamId;
-    }
-    if (leader_id_ != current_leader)
-    {
-        return kRetTeamAppointSelf;
-    }
-    OnAppointLeader(new_leader);
-    return kRetOK;
-}
-
 void Team::OnAppointLeader(Guid guid)
 {
     leader_id_ = guid;

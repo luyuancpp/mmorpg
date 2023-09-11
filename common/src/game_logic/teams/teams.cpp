@@ -368,7 +368,20 @@ uint32_t Teams::AppointLeader(Guid team_id, Guid current_leader, Guid  new_leade
 	{
 		return kRetTeamHasNotTeamId;
 	}
-    return try_team->AppointLeader(current_leader, new_leader);
+	if (try_team->leader_id_ == new_leader)
+	{
+		return kRetTeamAppointSelf;
+	}
+	if (!try_team->IsMember(new_leader))
+	{
+		return kRetTeamHasNotTeamId;
+	}
+	if (try_team->leader_id_ != current_leader)
+	{
+		return kRetTeamAppointSelf;
+	}
+	try_team->OnAppointLeader(new_leader);
+    return kRetOK;
 }
 
 uint32_t Teams::ApplyToTeam(Guid team_id, Guid guid)
