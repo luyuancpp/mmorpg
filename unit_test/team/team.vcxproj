@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\src\game_logic\teams\team.cpp" />
-    <ClCompile Include="..\..\common\src\game_logic\teams\teams.cpp" />
+    <ClCompile Include="..\..\common\src\game_logic\teams\TeamSystem.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.cpp" />
     <ClCompile Include="..\..\common\src\game_logic\thread_local\thread_local_storage.cpp" />
     <ClCompile Include="..\..\common\src\pb\pbc\common_proto\common.pb.cc" />
@@ -33,7 +33,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\common\src\game_ecs\entity_cast.h" />
     <ClInclude Include="..\..\common\src\game_logic\teams\team.h" />
-    <ClInclude Include="..\..\common\src\game_logic\teams\teams.h" />
+    <ClInclude Include="..\..\common\src\game_logic\teams\TeamSystem.h" />
     <ClInclude Include="..\..\common\src\game_logic\teams\team_event.h" />
     <ClInclude Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.h" />
     <ClInclude Include="..\..\common\src\game_logic\thread_local\thread_local_storage.h" />
