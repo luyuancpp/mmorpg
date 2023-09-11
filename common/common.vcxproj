@@ -87,6 +87,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\game_logic\mission\mission_system.cpp" />
+    <ClCompile Include="src\game_logic\teams\TeamSystem.cpp" />
     <ClCompile Include="src\game_logic\thread_local\common_logic_thread_local_storage.cpp" />
     <ClCompile Include="src\game_config\all_config.cpp" />
     <ClCompile Include="src\game_config\condition_config.cpp" />
@@ -234,7 +235,6 @@
     <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp" />
     <ClCompile Include="src\network\codec\codec.cc" />
     <ClCompile Include="src\game_logic\teams\team.cpp" />
-    <ClCompile Include="src\game_logic\teams\teams.cpp" />
     <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
     <ClCompile Include="src\mysql_wrapper\mysql_client.cpp" />
     <ClCompile Include="src\mysql_wrapper\mysql_database.cpp" />
@@ -247,6 +247,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\mission\mission_system.h" />
+    <ClInclude Include="src\game_logic\teams\TeamSystem.h" />
     <ClInclude Include="src\game_logic\thread_local\common_logic_thread_local_storage.h" />
     <ClInclude Include="src\game_config\all_config.h" />
     <ClInclude Include="src\game_config\condition_config.h" />
@@ -350,7 +351,6 @@
     <ClInclude Include="src\game_logic\exprtk\exprtk.hpp" />
     <ClInclude Include="src\util\file2string.h" />
     <ClInclude Include="src\game_logic\teams\team.h" />
-    <ClInclude Include="src\game_logic\teams\teams.h" />
     <ClInclude Include="src\game_logic\teams\team_event.h" />
     <ClInclude Include="src\jsoncpp\json.h" />
     <ClInclude Include="src\mysql_wrapper\mysql_client.h" />

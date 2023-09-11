@@ -80,13 +80,11 @@ def getcpph(datastring, sheetname):
 def getcpp(datastring, sheetname):
         s = '#include "google/protobuf/util/json_util.h"\n'
         s += '#include "src/util/file2string.h"\n'
-        s += '#include "%s_config.h" \n' % (sheetname)
-        s += 'using namespace common;\n' 
-        s += 'using namespace std;\n'
+        s += '#include "%s_config.h"\n\n' % (sheetname)
         s += 'void %s_config::load()\n{\n data_.Clear();\n' % (sheetname)
-        s += ' auto contents = File2String("config/json/%s.json");\n' % (sheetname)
-        s += ' auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_);\n'
-        s += ' if (!result.ok()){cout << "%s " << result.message().data() << endl;}\n' % (sheetname)
+        s += ' const auto contents = File2String("config/json/%s.json");\n' % (sheetname)
+        s += ' if (const auto result = google::protobuf::util::JsonStringToMessage(contents.data(), &data_);\n'
+        s += '    !result.ok())\n {\n  std::cout << "%s " << result.message().data() << std::endl;\n }\n' % (sheetname)
         s += ' for (int32_t i = 0; i < data_.data_size(); ++i)\n {\n'
         counter = 0
         for d in datastring:
@@ -97,27 +95,27 @@ def getcpp(datastring, sheetname):
                 s += ' }\n'
 
         s += ' for (int32_t i = 0; i < data_.data_size(); ++i)\n {\n'
-        s += '   auto& d = data_.data(i);\n'
+        s += '  const auto& row_data = data_.data(i);\n'
         counter = 0
         for d in datastring:
-                s += '   key_data_.emplace(d.id(), &d);\n'
+                s += '   key_data_.emplace(row_data.id(), &row_data);\n'
                 for v in d.values(): 
-                        s += '   key_data_%s_.emplace(d.%s(), &d);\n' % (counter,v) 
+                        s += '   key_data_%s_.emplace(row_data.%s(), &row_data);\n' % (counter,v) 
                         counter += 1
                 s += ' }\n'
-        s += '}\n'
+        s += '}\n\n'
         
       
-        s += ' const %s_row* %s_config::get(uint32_t keyid)\n{\n' % (sheetname,sheetname)
-        s += '  auto it = key_data_.find(keyid);\n  return it == key_data_.end() ? nullptr : it->second;\n}\n'
+        s += 'const %s_row* %s_config::get(uint32_t keyid)\n{\n' % (sheetname,sheetname)
+        s += '  const auto it = key_data_.find(keyid);\n  return it == key_data_.end() ? nullptr : it->second;\n}\n'
 
         counter = 0
         for d in datastring:
                 for v in d.values(): 
                         s += 'const %s_row* %s_config::key_%s(uint32_t keyid)const\n{\n' % (sheetname,sheetname,v)
-                        s += '  auto it = key_data_%s_.find(keyid);\n  return it == key_data_%s_.end() ? nullptr : it->second;\n}\n'% (counter,counter) 
+                        s += '  const auto it = key_data_%s_.find(keyid);\n  return it == key_data_%s_.end() ? nullptr : it->second;\n}\n'% (counter,counter) 
                         counter += 1
-        s +=  ' const %s_config::row_type get_%s_conf(uint32_t keyid){ return %s_config::GetSingleton().get(keyid);}\n' % (sheetname,sheetname, sheetname)
+        s +=  '\nconst %s_config::row_type get_%s_conf(uint32_t keyid) { return %s_config::GetSingleton().get(keyid); }\n' % (sheetname,sheetname, sheetname)
         return s;
 
 def getallconfig():

@@ -55,8 +55,6 @@ set(no_group_source_files
     "src/game_logic/teams/team.cpp"
     "src/game_logic/teams/team.h"
     "src/game_logic/teams/team_event.h"
-    "src/game_logic/teams/teams.cpp"
-    "src/game_logic/teams/teams.h"
     "src/game_logic/thread_local/common_logic_thread_local_storage.cpp"
     "src/game_logic/thread_local/common_logic_thread_local_storage.h"
     "src/game_logic/thread_local/thread_local_storage.cpp"

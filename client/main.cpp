@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
         gAllFinish = tls.registry.create();
         tls.registry.emplace<uint32_t>(gAllFinish, nClients);
 
-        auto contents = common::File2String("client.json");
+        auto contents = File2String("client.json");
         absl::string_view sv(contents.data(), contents.size());
         ConnetionParamJsonFormat connetion_param_;
         auto result =  google::protobuf::util::JsonStringToMessage(sv, &connetion_param_);
