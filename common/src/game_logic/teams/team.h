@@ -43,8 +43,6 @@ public:
     inline bool IsLeader(Guid guid)const { return leader_id_ == guid; }
     inline bool IsMember(Guid guid)const { return std::find(members_.begin(), members_.end(), guid) != members_.end(); }
 
-    uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
-
     static bool HasTeam(Guid guid);
 
     void AddMemeber(Guid guid);
