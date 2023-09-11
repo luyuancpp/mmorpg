@@ -43,7 +43,7 @@ TEST(TeamManger, TeamSizeTest)
 	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), m));
 	EXPECT_EQ(1, team_list.member_size(team_list.last_team_id()));
 
-	for (std::size_t i = 1; i < kMaxMemberSize; ++i)
+	for (std::size_t i = 1; i < kFiveMemberMaxSize; ++i)
 	{
 		m = m + i;
 		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
@@ -51,7 +51,7 @@ TEST(TeamManger, TeamSizeTest)
 	}
 	++m;
 	EXPECT_EQ(kRetTeamMembersFull, team_list.JoinTeam(team_list.last_team_id(), m));
-	EXPECT_EQ(kMaxMemberSize, team_list.member_size(team_list.last_team_id()));
+	EXPECT_EQ(kFiveMemberMaxSize, team_list.member_size(team_list.last_team_id()));
 }
 
 TEST(TeamManger, LeaveTeam)
@@ -72,7 +72,7 @@ TEST(TeamManger, LeaveTeam)
 	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	Guid player_id = m;
-	for (std::size_t i = 1; i < kMaxMemberSize; ++i)
+	for (std::size_t i = 1; i < kFiveMemberMaxSize; ++i)
 	{
 		player_id = player_id + i;
 		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), player_id));
@@ -80,7 +80,7 @@ TEST(TeamManger, LeaveTeam)
 	}
 
 	player_id = m;
-	for (std::size_t i = 0; i < kMaxMemberSize; ++i)
+	for (std::size_t i = 0; i < kFiveMemberMaxSize; ++i)
 	{
 		player_id = player_id + i;
 		team_list.LeaveTeam(player_id);
@@ -88,10 +88,10 @@ TEST(TeamManger, LeaveTeam)
 		if (i < 4)
 		{
 			EXPECT_EQ(player_id + i + 1, team_list.get_leader_id_by_teamid(team_list.last_team_id()));
-			EXPECT_EQ(kMaxMemberSize - i - 1, team_list.member_size(team_list.last_team_id()));
+			EXPECT_EQ(kFiveMemberMaxSize - i - 1, team_list.member_size(team_list.last_team_id()));
 		}
 		
-		EXPECT_EQ(kMaxMemberSize - i - 1 , team_list.member_size(team_list.last_team_id()));
+		EXPECT_EQ(kFiveMemberMaxSize - i - 1 , team_list.member_size(team_list.last_team_id()));
 	}
     EXPECT_EQ(0, team_list.team_size());
     EXPECT_EQ(0, team_list.players_size());
@@ -137,7 +137,7 @@ TEST(TeamManger, AppointLaderAndLeaveTeam1)
 	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
 	Guid player_id = m;
-	for (std::size_t i = 1; i < kMaxMemberSize; ++i)
+	for (std::size_t i = 1; i < kFiveMemberMaxSize; ++i)
 	{
 		m = (player_id + i);
 		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
@@ -299,7 +299,7 @@ TEST(TeamManger, InTeamApplyForTeam)
     }
 	for (Guid i = 1; i < nMax; ++i)
 	{
-		if (i < kMaxMemberSize)
+		if (i < kFiveMemberMaxSize)
 		{
 			EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), i));
 			EXPECT_FALSE(team_list.IsApplicant(team_list.last_team_id(), i));
@@ -332,7 +332,7 @@ TEST(TeamManger, RemoveApplicant)
 	EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
 	Guid a;
 
-	Guid nMax = kMaxMemberSize;
+	Guid nMax = kFiveMemberMaxSize;
 
 	Guid player_id = 1;
 	for (Guid i = 0; i < nMax; ++i)
@@ -382,7 +382,7 @@ TEST(TeamManger, AgreeApplicant)
 	{
 		a = (player_id++);
 		
-		if (i > (nMax - kMaxMemberSize ))
+		if (i > (nMax - kFiveMemberMaxSize ))
 		{
 			EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), a));
 			EXPECT_TRUE(team_list.HasMember(team_list.last_team_id(), a));
@@ -438,7 +438,7 @@ TEST(TeamManger, PlayerTeamId)
 	EXPECT_EQ(team_list.last_team_id(), team_list.GetTeamId(m));
 
 
-	for (std::size_t i = 4; i <= kMaxMemberSize; ++i)
+	for (std::size_t i = 4; i <= kFiveMemberMaxSize; ++i)
 	{
 		m = (i);
 		EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));
@@ -460,7 +460,7 @@ TEST(TeamManger, PlayerTeamId)
 	
 
 	EXPECT_EQ(kRetOK, team_list.Disbanded(team_list.last_team_id(), 2));
-	for (std::size_t i = 4; i <= kMaxMemberSize; ++i)
+	for (std::size_t i = 4; i <= kFiveMemberMaxSize; ++i)
 	{
 		EXPECT_FALSE(team_list.HasTeam(m));
 		EXPECT_EQ(kInvalidGuid, team_list.GetTeamId(m));
@@ -469,7 +469,7 @@ TEST(TeamManger, PlayerTeamId)
 
     EXPECT_EQ(kRetOK, team_list.CreateTeam({ m, UInt64Set{m}}));
 
-    for (std::size_t i = 4; i < kMaxMemberSize; ++i)
+    for (std::size_t i = 4; i < kFiveMemberMaxSize; ++i)
     {
         m = (i);
         EXPECT_EQ(kRetOK, team_list.JoinTeam(team_list.last_team_id(), m));

@@ -36,6 +36,15 @@
     <ClCompile Include="..\..\common\src\game_logic\thread_local\common_logic_thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\node_comp.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\node_common.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\common.pb.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\src\return_code\return_notice_code.h">
@@ -63,6 +72,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\thread_local\thread_local_storage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\node_comp.pb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\node_common.pb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\common.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
