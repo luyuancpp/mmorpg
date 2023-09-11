@@ -45,7 +45,6 @@ public:
    
     uint32_t JoinTeam(Guid  guid);
     uint32_t LeaveTeam(Guid guid);
-    uint32_t KickMember(Guid current_leader, Guid  nKickplayerid);
     uint32_t AppointLeader(Guid current_leader, Guid  new_leader_guid);
     uint32_t Disbanded(Guid current_leader_id);
     
