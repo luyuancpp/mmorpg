@@ -110,40 +110,6 @@ uint32_t Team::Disbanded(Guid current_leader_id)
     return kRetOK;
 }
 
-void Team::ClearApplyList()
-{
-    applicants_.clear();      
-}
-
-uint32_t Team::ApplyToTeam(Guid guid)
-{
-    if (HasTeam(guid))
-    {
-        return kRetTeamMemberInTeam;
-    }
-    if (IsFull())
-    {
-        return kRetTeamMembersFull;
-    }
-    if (applicants_.size() >= kMaxApplicantSize)
-    {
-        applicants_.erase(applicants_.begin());
-    }
-    applicants_.emplace_back(guid);
-    return kRetOK;
-}
-
-
-uint32_t Team::DelApplicant(Guid applicant_id)
-{
-    auto it = std::find(applicants_.begin(), applicants_.end(), applicant_id);
-    if (it != applicants_.end())
-    {
-        applicants_.erase(it);
-    }
-    return kRetOK;
-}
-
 bool Team::HasTeam(const Guid guid)
 {
     const auto player_it = cl_tls.player_list().find(guid);

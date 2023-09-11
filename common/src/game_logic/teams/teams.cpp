@@ -334,7 +334,20 @@ uint32_t Teams::ApplyToTeam(Guid team_id, Guid guid)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-    return try_team->ApplyToTeam(guid);
+	if (try_team->HasTeam(guid))
+	{
+		return kRetTeamMemberInTeam;
+	}
+	if (try_team->IsFull())
+	{
+		return kRetTeamMembersFull;
+	}
+	if (try_team->applicants_.size() >= kMaxApplicantSize)
+	{
+		try_team->applicants_.erase(try_team->applicants_.begin());
+	}
+	try_team->applicants_.emplace_back(guid);
+	return kRetOK;
 }
 
 uint32_t Teams::DelApplicant(Guid team_id, Guid guid)
@@ -369,7 +382,7 @@ void Teams::ClearApplyList(Guid team_id)
 	{
 		return;
 	}
-	try_team->ClearApplyList();
+	try_team->applicants_.clear();
 }
 
 void Teams::EraseTeam(entt::entity team_id)
