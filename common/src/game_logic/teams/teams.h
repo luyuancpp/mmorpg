@@ -15,9 +15,9 @@ public:
     ~Teams();
 
     std::size_t team_size()const { return tls.registry.storage<Team>().size(); }
-    std::size_t member_size(Guid team_id);
-    std::size_t applicant_size_by_player_id(Guid guid)const;
-    std::size_t applicant_size_by_team_id(Guid team_id)const;
+    static std::size_t member_size(Guid team_id);
+    static std::size_t applicant_size_by_player_id(Guid guid);
+    static std::size_t applicant_size_by_team_id(Guid team_id);
     static std::size_t players_size();
     static Guid GetTeamId(Guid guid);
     Guid last_team_id() const { return last_team_id_; }
@@ -37,7 +37,7 @@ public:
     static uint32_t LeaveTeam(Guid guid);
     static uint32_t KickMember(Guid team_id, Guid current_leader_id, Guid kick_guid);
     static uint32_t Disbanded(Guid team_id, Guid current_leader_id);
-    uint32_t DisbandedTeamNoLeader(Guid team_id);
+    static uint32_t DisbandedTeamNoLeader(Guid team_id);
     static uint32_t AppointLeader(Guid team_id, Guid current_leader_id, Guid new_leader_id);
     static uint32_t ApplyToTeam(Guid team_id, Guid guid);
     static uint32_t DelApplicant(Guid team_id, Guid apply_guid);
