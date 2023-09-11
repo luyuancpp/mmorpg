@@ -3,9 +3,7 @@
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "entt/src/entt/entity/entity.hpp"
 #include "src/util/snow_flake.h"
-#include "src/game_logic/teams/team_event.h"
 
 #include "team.h"
 

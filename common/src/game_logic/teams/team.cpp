@@ -7,16 +7,6 @@
 
 #include "component_proto/team_comp.pb.h"
 
-Team::Team(const CreateTeamP& param, const entt::entity teamid)
-    : leader_id_(param.leader_id_),
-      teamid_(teamid)
-{
-    for (const auto& member_it : param.members)
-    {
-        AddMemeber(member_it);
-    }
-}
-
 void Team::OnAppointLeader(Guid guid)
 {
     leader_id_ = guid;
@@ -32,7 +22,7 @@ bool Team::HasTeam(const Guid guid)
     return tls.registry.any_of<TeamId>(player_it->second);
 }
 
-void Team::AddMemeber(Guid guid)
+void Team::AddMember(Guid guid)
 {
     auto pit = cl_tls.player_list().find(guid);
     if (pit == cl_tls.player_list().end())
@@ -40,7 +30,7 @@ void Team::AddMemeber(Guid guid)
         return;
     }
     members_.emplace_back(guid);
-    tls.registry.emplace<TeamId>(pit->second).set_team_id(entt::to_integral(teamid_));
+    tls.registry.emplace<TeamId>(pit->second).set_team_id(entt::to_integral(team_id_));
 }
 
 void Team::DelMember(Guid guid)

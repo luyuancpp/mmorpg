@@ -173,19 +173,25 @@ bool Teams::IsApplicant(Guid team_id, Guid guid) const
 
 uint32_t Teams::CreateTeam(const CreateTeamP& param)
 {
-    if (IsTeamListMax())
-    {
-        return kRetTeamListMaxSize;
-    }
-    if (HasTeam(param.leader_id_))
-    {
-        return kRetTeamMemberInTeam;
-    }
-    RET_CHECK_RET(CheckMemberInTeam(param.members));
-    auto e = tls.registry.create();
-    tls.registry.emplace<Team>(e, param, e);
-    last_team_id_ = entt::to_integral(e);//for test
-    return kRetOK;
+	if (IsTeamListMax())
+	{
+		return kRetTeamListMaxSize;
+	}
+	if (HasTeam(param.leader_id_))
+	{
+		return kRetTeamMemberInTeam;
+	}
+	RET_CHECK_RET(CheckMemberInTeam(param.member_list))
+	auto e = tls.registry.create();
+	auto& team = tls.registry.emplace<Team>(e);
+	team.leader_id_ = param.leader_id_;
+	team.team_id_ = e;
+	for (const auto& member_it : param.member_list)
+	{
+		team.AddMember(member_it);
+	}
+	last_team_id_ = entt::to_integral(e);//for test
+	return kRetOK;
 }
 
 uint32_t Teams::JoinTeam(Guid team_id, Guid guid)
@@ -213,7 +219,7 @@ uint32_t Teams::JoinTeam(Guid team_id, Guid guid)
 	{
 		try_team->applicants_.erase(applicant_it);
 	}
-	try_team->AddMemeber(guid);
+	try_team->AddMember(guid);
 	return kRetOK;
 }
 
