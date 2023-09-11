@@ -71,7 +71,7 @@ Guid Teams::GetTeamId(const Guid guid)
 	return try_team_id->team_id();
 }
 
-Guid Teams::get_leader_id_by_teamid(Guid team_id) const
+Guid Teams::get_leader_id_by_teamid(const Guid team_id)
 {
 	const auto team = entt::to_entity(team_id);
 	if (!tls.registry.valid(team))
@@ -86,12 +86,12 @@ Guid Teams::get_leader_id_by_teamid(Guid team_id) const
 	return try_team->leader_id();
 }
 
-Guid Teams::get_leader_id_by_player_id(Guid guid) const
+Guid Teams::get_leader_id_by_player_id(const Guid guid)
 {
 	return get_leader_id_by_teamid(GetTeamId(guid));
 }
 
-Guid Teams::first_applicant(Guid team_id)
+Guid Teams::first_applicant(const Guid team_id)
 {
 	const auto team = entt::to_entity(team_id);
 	if (!tls.registry.valid(team))
@@ -110,7 +110,7 @@ Guid Teams::first_applicant(Guid team_id)
 	return *try_team->applicants_.begin();
 }
 
-bool Teams::IsTeamFull(Guid team_id)
+bool Teams::IsTeamFull(const Guid team_id)
 {
 	const auto team = entt::to_entity(team_id);
 	if (!tls.registry.valid(team))
@@ -140,7 +140,7 @@ bool Teams::HasMember(const Guid team_id, const Guid guid)
 	return try_team->HasMember(guid);
 }
 
-bool Teams::HasTeam(Guid guid)
+bool Teams::HasTeam(const Guid guid)
 {
 	const auto pit = cl_tls.player_list().find(guid);
 	if (pit == cl_tls.player_list().end())
@@ -180,31 +180,31 @@ uint32_t Teams::CreateTeam(const CreateTeamP& param)
 		return kRetTeamCreateTeamMaxMemberSize;
 	}
 	RET_CHECK_RET(CheckMemberInTeam(param.member_list))
-	const auto e = tls.registry.create();
-	auto& team = tls.registry.emplace<Team>(e);
+	const auto team_entity = tls.registry.create();
+	auto& team = tls.registry.emplace<Team>(team_entity);
 	team.leader_id_ = param.leader_id_;
-	team.team_id_ = e;
+	team.team_id_ = team_entity;
 	for (const auto& member_it : param.member_list)
 	{
 		team.AddMember(member_it);
 	}
-	last_team_id_ = entt::to_integral(e);
+	last_team_id_ = entt::to_integral(team_entity);
 	return kRetOK;
 }
 
-uint32_t Teams::JoinTeam(Guid team_id, Guid guid)
+uint32_t Teams::JoinTeam(const Guid team_id, const Guid guid)
 {
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto* const try_team = tls.registry.try_get<Team>(e);
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	if (Team::HasTeam(guid))
+	if (HasTeam(guid))
 	{
 		return kRetTeamMemberInTeam;
 	}
@@ -223,12 +223,12 @@ uint32_t Teams::JoinTeam(Guid team_id, Guid guid)
 
 uint32_t Teams::JoinTeam(const UInt64Set& member_list, const Guid team_id)
 {
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	const auto* const try_team = tls.registry.try_get<Team>(e);
+	const auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
@@ -246,7 +246,7 @@ uint32_t Teams::JoinTeam(const UInt64Set& member_list, const Guid team_id)
 	return kRetOK;
 }
 
-uint32_t Teams::CheckMemberInTeam(const UInt64Set& member_list) const
+uint32_t Teams::CheckMemberInTeam(const UInt64Set& member_list)
 {
 	for (const auto& member_it : member_list)
 	{
@@ -258,15 +258,15 @@ uint32_t Teams::CheckMemberInTeam(const UInt64Set& member_list) const
 	return kRetOK;
 }
 
-uint32_t Teams::LeaveTeam(Guid guid)
+uint32_t Teams::LeaveTeam(const Guid guid)
 {
-    auto team_id = GetTeamId(guid);
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_id = GetTeamId(guid);
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto try_team = tls.registry.try_get<Team>(e);
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
@@ -275,59 +275,59 @@ uint32_t Teams::LeaveTeam(Guid guid)
 	{
 		return kRetTeamMemberNotInTeam;
 	}
-	bool is_leader_leave = try_team->IsLeader(guid);
+	const bool is_leader_leave = try_team->IsLeader(guid);
 	try_team->DelMember(guid);
 	if (!try_team->members_.empty() && is_leader_leave)
 	{
 		try_team->OnAppointLeader(*try_team->members_.begin());
-	}          
-    if (try_team->empty())
-    {
-        EraseTeam(try_team->to_entity_id());
-    }
-    return kRetOK;
+	}
+	if (try_team->empty())
+	{
+		EraseTeam(try_team->to_entity_id());
+	}
+	return kRetOK;
 }
 
-uint32_t Teams::KickMember(Guid team_id, Guid current_leader, Guid be_kick_guid)
+uint32_t Teams::KickMember(const Guid team_id, const Guid current_leader_id, const Guid be_kick_id)
 {
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto try_team = tls.registry.try_get<Team>(e);
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	if (try_team->leader_id_ != current_leader)
+	if (try_team->leader_id_ != current_leader_id)
 	{
 		return kRetTeamKickNotLeader;
 	}
-	if (try_team->leader_id_ == be_kick_guid)
+	if (try_team->leader_id_ == be_kick_id)
 	{
 		return kRetTeamKickSelf;
 	}
-	if (current_leader == be_kick_guid)
+	if (current_leader_id == be_kick_id)
 	{
 		return kRetTeamKickSelf;
 	}
-	if (!try_team->HasMember(be_kick_guid))
+	if (!try_team->HasMember(be_kick_id))
 	{
 		return kRetTeamMemberNotInTeam;
 	}
-	try_team->DelMember(be_kick_guid);
-    return kRetOK;
+	try_team->DelMember(be_kick_id);
+	return kRetOK;
 }
 
 uint32_t Teams::Disbanded(Guid team_id, Guid current_leader_id)
 {
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto try_team = tls.registry.try_get<Team>(e);
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
@@ -337,70 +337,70 @@ uint32_t Teams::Disbanded(Guid team_id, Guid current_leader_id)
 		return kRetTeamDismissNotLeader;
 	}
 	const auto temp_member = try_team->members_;
-	for (auto& it : temp_member)
+	for (const auto& member_it : temp_member)
 	{
-		try_team->DelMember(it);
+		try_team->DelMember(member_it);
 	}
-    EraseTeam(e);
-    return kRetOK;
+	EraseTeam(team_entity);
+	return kRetOK;
 }
 
 uint32_t Teams::DisbandedTeamNoLeader(Guid team_id)
 {
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto try_team = tls.registry.try_get<Team>(e);
+	const auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-    return Disbanded(team_id, try_team->leader_id());
+	return Disbanded(team_id, try_team->leader_id());
 }
 
-uint32_t Teams::AppointLeader(Guid team_id, Guid current_leader, Guid  new_leader)
+uint32_t Teams::AppointLeader(const Guid team_id, const Guid current_leader_id, const Guid new_leader_id)
 {
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto try_team = tls.registry.try_get<Team>(e);
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	if (try_team->leader_id_ == new_leader)
+	if (try_team->leader_id_ == new_leader_id)
 	{
 		return kRetTeamAppointSelf;
 	}
-	if (!try_team->HasMember(new_leader))
+	if (!try_team->HasMember(new_leader_id))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	if (try_team->leader_id_ != current_leader)
+	if (try_team->leader_id_ != current_leader_id)
 	{
 		return kRetTeamAppointSelf;
 	}
-	try_team->OnAppointLeader(new_leader);
-    return kRetOK;
+	try_team->OnAppointLeader(new_leader_id);
+	return kRetOK;
 }
 
 uint32_t Teams::ApplyToTeam(Guid team_id, Guid guid)
 {
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto try_team = tls.registry.try_get<Team>(e);
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	if (try_team->HasTeam(guid))
+	if (HasTeam(guid))
 	{
 		return kRetTeamMemberInTeam;
 	}
@@ -418,12 +418,12 @@ uint32_t Teams::ApplyToTeam(Guid team_id, Guid guid)
 
 uint32_t Teams::DelApplicant(Guid team_id, Guid guid)
 {
-	auto e = entt::to_entity(team_id);
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id);
+	if (!tls.registry.valid(team_entity))
 	{
 		return kRetTeamHasNotTeamId;
 	}
-	auto try_team = tls.registry.try_get<Team>(e);
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return kRetTeamHasNotTeamId;
@@ -433,17 +433,17 @@ uint32_t Teams::DelApplicant(Guid team_id, Guid guid)
 	{
 		try_team->applicants_.erase(it);
 	}
-    return kRetOK;
+	return kRetOK;
 }
 
 void Teams::ClearApplyList(Guid team_id)
 {
-	auto e = entt::to_entity(team_id); 
-	if (!tls.registry.valid(e))
+	const auto team_entity = entt::to_entity(team_id); 
+	if (!tls.registry.valid(team_entity))
 	{
 		return;
 	}
-	auto try_team = tls.registry.try_get<Team>(e);
+	auto* const try_team = tls.registry.try_get<Team>(team_entity);
 	if (nullptr == try_team)
 	{
 		return;
@@ -453,6 +453,6 @@ void Teams::ClearApplyList(Guid team_id)
 
 void Teams::EraseTeam(entt::entity team_id)
 {
-    tls.registry.destroy(team_id);
+	tls.registry.destroy(team_id);
 }
 

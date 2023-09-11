@@ -21,8 +21,8 @@ public:
     static std::size_t players_size();
     static Guid GetTeamId(Guid guid);
     Guid last_team_id() const { return last_team_id_; }
-    Guid get_leader_id_by_teamid(Guid team_id)const;
-    Guid get_leader_id_by_player_id(Guid guid)const;
+    static Guid get_leader_id_by_teamid(Guid team_id);
+    static Guid get_leader_id_by_player_id(Guid guid);
     static Guid first_applicant(Guid team_id);
 
     bool IsTeamListMax() const{ return team_size() >= kMaxTeamSize; }
@@ -32,20 +32,20 @@ public:
     static bool IsApplicant(Guid team_id, Guid guid);
 
     uint32_t CreateTeam(const CreateTeamP& param);
-    uint32_t JoinTeam(Guid team_id, Guid guid);
-    uint32_t JoinTeam(const UInt64Set& member_list, Guid  team_id);
-    uint32_t LeaveTeam(Guid guid);
-    uint32_t KickMember(Guid team_id, Guid current_leader_id, Guid kick_guid);
-    uint32_t Disbanded(Guid team_id, Guid current_leader_id);
+    static uint32_t JoinTeam(Guid team_id, Guid guid);
+    static uint32_t JoinTeam(const UInt64Set& member_list, Guid  team_id);
+    static uint32_t LeaveTeam(Guid guid);
+    static uint32_t KickMember(Guid team_id, Guid current_leader_id, Guid kick_guid);
+    static uint32_t Disbanded(Guid team_id, Guid current_leader_id);
     uint32_t DisbandedTeamNoLeader(Guid team_id);
-    uint32_t AppointLeader(Guid team_id, Guid current_leader_id, Guid nNewLeaderPlayerId);
-    uint32_t ApplyToTeam(Guid team_id, Guid guid);
-    uint32_t DelApplicant(Guid team_id, Guid apply_guid);
-    void ClearApplyList(Guid team_id);
+    static uint32_t AppointLeader(Guid team_id, Guid current_leader_id, Guid new_leader_id);
+    static uint32_t ApplyToTeam(Guid team_id, Guid guid);
+    static uint32_t DelApplicant(Guid team_id, Guid apply_guid);
+    static void ClearApplyList(Guid team_id);
 
 private:
-    [[nodiscard]] uint32_t CheckMemberInTeam(const UInt64Set& member_list) const;
-    void EraseTeam(entt::entity team_id);
+    [[nodiscard]] static uint32_t CheckMemberInTeam(const UInt64Set& member_list);
+    static void EraseTeam(entt::entity team_id);
 
     Guid last_team_id_{0}; //for test
 };
