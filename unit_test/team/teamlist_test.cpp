@@ -474,14 +474,13 @@ TEST(TeamManger, PlayerInTeam)
 	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 	EXPECT_EQ(kRetTeamMemberInTeam, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_list.last_team_id(), member_id));
-	auto team_id1 = team_list.last_team_id();
+	const auto team_id1 = team_list.last_team_id();
 
 	member_id = (2);
 	EXPECT_EQ(kRetOK, team_list.CreateTeam({ member_id, UInt64Set{member_id}}));
 	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
 	EXPECT_EQ(kRetTeamMemberInTeam, team_list.ApplyToTeam(team_id1, member_id));
 	EXPECT_EQ(kRetTeamMemberInTeam, team_list.JoinTeam(team_id1, member_id));
-	auto team_id2 = team_list.last_team_id();
 
 	EXPECT_EQ(kRetTeamHasNotTeamId, team_list.LeaveTeam(kInvalidGuid));
 	EXPECT_EQ(kRetOK, team_list.LeaveTeam(member_id));
