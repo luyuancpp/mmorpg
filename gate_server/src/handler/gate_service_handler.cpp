@@ -68,7 +68,7 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 {
 	///<<< BEGIN WRITING YOUR CODE
 
-	auto it = gate_tls.sessions().find(request->session_id());
+	const auto it = gate_tls.sessions().find(request->session_id());
 	if (it == gate_tls.sessions().end())
 	{
 		LOG_INFO << "conn id not found   " << request->session_id();

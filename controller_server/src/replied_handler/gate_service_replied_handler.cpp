@@ -38,8 +38,8 @@ void OnGateServiceStopGSRepliedHandler(const TcpConnectionPtr& conn, const std::
 void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<GateNodePlayerEnterGsResponese>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-///gate 更新gs,相应的gs可以往那个gate上发消息了
-///todo 中间返回是断开了
+	///gate 更新gs,相应的gs可以往那个gate上发消息了
+	///todo 中间返回是断开了
 	entt::entity GetPlayerByConnId(uint64_t session_id);
 	const auto player = GetPlayerByConnId(replied->session_id());
 	if (entt::null == player)
@@ -49,7 +49,6 @@ void OnGateServicePlayerEnterGsRepliedHandler(const TcpConnectionPtr& conn, cons
 	}
 
 	PlayerCommonSystem::OnEnterGateSucceed(player);
-
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eGateEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
 ///<<< END WRITING YOUR CODE

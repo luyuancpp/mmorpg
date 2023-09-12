@@ -7,13 +7,13 @@
 #include "src/thread_local/controller_thread_local_storage.h"
 
 #include "component_proto/player_network_comp.pb.h"
+#include "src/game_logic/comp/player_comp.h"
 
 uint32_t controller_node_id();
 
 class PlayerSession
 {
 public:
-
 	uint32_t gs_node_id()const
 	{
 		if (nullptr == gs_)
@@ -28,10 +28,10 @@ public:
 		return node_id(gate_session_.session_id());
 	}
 
-    inline void set_session_id(uint64_t session_id)
-    {
+	inline void set_session_id(uint64_t session_id)
+	{
 		return gate_session_.set_session_id(session_id);
-    }
+	}
 
 	inline decltype(auto) session_id()const { return gate_session_.session_id(); }
 	inline void set_gs(GsNodePtr& gs) { gs_ = gs; }
@@ -46,9 +46,10 @@ public:
 		}
 		Send2Player(message_id, message, gate_it->second, gate_session_.session_id());
 	}
-	
+
 	GateSession gate_session_;
 private:
 	GsNodePtr gs_;
+	PlayerNodeInfo player_node_info_;
 };
 

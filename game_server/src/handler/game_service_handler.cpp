@@ -37,14 +37,15 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
         PlayerCommonSystem::EnterGs(player_it->second, enter_info);
         return;
     }
-    auto rit = game_tls.async_player_data().emplace(request->player_id(), tls.registry.create());
-    if (!rit.second)
+    const auto player_it = game_tls.async_player_data().emplace(request->player_id(), tls.registry.create());
+    if (!player_it.second)
     {
-        LOG_ERROR << "EnterGs emplace player not found " << request->player_id();
+        LOG_ERROR << "EnterGs emplace player  " << request->player_id();
         return;
     }
-    tls.registry.emplace<EnterGsInfo>(rit.first->second).set_controller_node_id(request->controller_node_id());
-    game_tls.player_data_redis_system()->AsyncLoad(request->player_id());//异步加载过程中断开了，怎么处理？
+    tls.registry.emplace<EnterGsInfo>(player_it.first->second).set_controller_node_id(request->controller_node_id());
+    //异步加载过程中断开了，怎么处理？
+    game_tls.player_data_redis_system()->AsyncLoad(request->player_id());
 
 ///<<< END WRITING YOUR CODE
 }

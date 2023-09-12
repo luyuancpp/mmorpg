@@ -25,38 +25,31 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 		LOG_ERROR << "player is null ";
 		return;
     }
-    auto p_scene = tls.registry.try_get<SceneEntity>(player);
-    auto player_id = tls.registry.get<Guid>(player);
+    const auto p_scene = tls.registry.try_get<SceneEntity>(player);
+    const auto player_id = tls.registry.get<Guid>(player);
     if (nullptr == p_scene)
     {
         LOG_ERROR << "player do not enter scene " << player_id;
         return;
     }
- 
-    auto p_scene_info = tls.registry.try_get<SceneInfo>((*p_scene).scene_entity_);
-    if (nullptr == p_scene_info)
+
+    const auto scene_info = tls.registry.try_get<SceneInfo>((*p_scene).scene_entity_);
+    if (nullptr == scene_info)
     {
         LOG_ERROR << "scene info " << player_id;
         return;
     }
 
-    auto try_player_session = tls.registry.try_get<PlayerSession>(player);
-    if (nullptr == try_player_session)
+    const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+    if (nullptr == player_node_info)
     {
         LOG_ERROR << "player session not valid" << player_id;
         return;
     }
     Ctlr2GsEnterSceneRequest enter_scene_message;
-    enter_scene_message.set_scene_id(p_scene_info->guid());
+    enter_scene_message.set_scene_id(scene_info->guid());
     enter_scene_message.set_player_id(player_id);
-
-    auto gs = try_player_session->gs();
-    if (nullptr == gs)
-    {
-        LOG_INFO << "gs not found ";
-        return;
-    }
-    gs->session_.CallMethod(GameServiceEnterSceneMsgId, enter_scene_message);
+    CallGameNodeMethod(GameServiceEnterSceneMsgId, enter_scene_message, player_node_info->game_node_id_);
 }
 
 

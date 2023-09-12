@@ -24,8 +24,8 @@ void PlayerCommonSystem::InitPlayerComponent(entt::entity player, Guid player_id
 
 void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
 {
-    const auto* const try_player_session = tls.registry.try_get<PlayerSession>(player);
-    if (nullptr == try_player_session)
+    const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+    if (nullptr == player_node_info)
     {
         LOG_ERROR << "player session not valid";
         return;
@@ -37,9 +37,9 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
         return;
     }
     UpdatePlayerSessionRequest message;
-    message.set_session_id(try_player_session->session_id());
+    message.set_session_id(player_node_info->gate_session_id_);
     message.set_player_id(*player_id);
-    Send2Gs(GameServiceUpdateSessionMsgId, message, try_player_session->gs_node_id());
+    Send2Gs(GameServiceUpdateSessionMsgId, message, player_node_info->game_node_id_);
 
     if (const auto* const try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
         nullptr != try_enter_gs)

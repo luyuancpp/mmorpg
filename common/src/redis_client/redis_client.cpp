@@ -4,9 +4,14 @@
 
 #include "src/util/defer.h"
 
+void SyncRedisContext_Deleter::operator()(redisContext* res)
+{
+    redisFree(res);
+}
+
 void MessageSyncRedisClient::Connect(const std::string& redis_server_addr, int32_t port, int32_t sec, int32_t usec)
 {
-    struct timeval timeout = { sec, usec };
+    timeval timeout = { sec, usec };
     context_.reset(redisConnectWithTimeout(redis_server_addr.c_str(), port, timeout));
     if (nullptr == context_)
     {

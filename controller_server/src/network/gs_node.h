@@ -11,10 +11,10 @@
 class GsNode
 {
 public:
-	GsNode(const muduo::net::TcpConnectionPtr& conn) : session_(conn)
+	explicit GsNode(const muduo::net::TcpConnectionPtr& conn) : session_(conn)
 	{
-
 	}
+
 	decltype(auto) node_id() const { return node_info_.node_id(); }
 	NodeInfo node_info_;
 	RpcServerConnection session_;
@@ -23,7 +23,7 @@ public:
 };
 
 using GsNodePtr = std::shared_ptr<GsNode>;
-using GsNodeWPtr = std::weak_ptr<GsNode>;//todo
+using GsNodeWPtr = std::weak_ptr<GsNode>; //todo
 using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
 using GsNodes = std::unordered_map<uint32_t, entt::entity>;

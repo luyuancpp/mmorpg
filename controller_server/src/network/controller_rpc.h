@@ -15,7 +15,7 @@ void CallGsPlayerMethod(entt::entity player, RepliedCallback callback, MethodPar
     {
         return;
     }
-    auto try_player_session = tls.registry.try_get<PlayerSession>(player);
+    auto try_player_session = tls.registry.try_get<PlayerNodeInfo>(player);
     if (nullptr == try_player_session)
     {
         return;
