@@ -10,8 +10,7 @@ public:
     using HiredisPtr = std::unique_ptr<hiredis::Hiredis>;
     void Init(muduo::net::InetAddress& server_addr);
 private:
-    
-    HiredisPtr hiredis_;
+    HiredisPtr muduo_hiredis_;
 };
 
 

@@ -9,4 +9,6 @@ struct PlayerNodeInfo
     NodeId controller_node_id_{kInvalidNodeId};
     NodeId game_node_id_{kInvalidNodeId};
     NodeId lobby_node_id_{kInvalidNodeId};
+    NodeId gate_node_id_{kInvalidNodeId};
+    SessionId gate_session_id_{kInvalidSessionId};
 };

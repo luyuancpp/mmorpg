@@ -6,10 +6,10 @@
 
 #include "src/comp/account_player.h"
 #include "src/controller_server.h"
-#include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/comp/player_list.h"
 #include "src/game_logic/comp/account_comp.h"
+#include "src/game_logic/comp/player_comp.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene_system.h"
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
@@ -187,36 +187,38 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 ///<<< BEGIN WRITING YOUR CODE
 
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
-	auto player = GetPlayerByConnId(request->session_id());
+	//考虑a 断 b 断 a 断 b 断.....(中间不断重连)
+	const auto player = GetPlayerByConnId(request->session_id());
 	if (entt::null == player)
 	{
 		return;
 	}
-	auto try_account = tls.registry.try_get<PlayerAccount>(player);
-	if (nullptr != try_account)
+	if (const auto* const player_account = tls.registry.try_get<PlayerAccount>(player);
+	nullptr != player_account)
 	{
-		tls_login_accounts_session.erase((*try_account)->account());
-	}	
-	auto try_player_session = tls.registry.try_get<PlayerSession>(player);
-	if (nullptr == try_player_session)//玩家已经断开连接了
+		tls_login_accounts_session.erase((*player_account)->account());
+	}
+	const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	//玩家已经断开连接了
+	if (nullptr == player_node_info)
 	{
 		return;
 	}
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
-	if (try_player_session->session_id() != request->session_id())
+	if (player_node_info->gate_session_id_ != request->session_id())
 	{
 		return;
 	}
-	auto it = controller_tls.game_node().find(try_player_session->gs_node_id());
-	if (it == controller_tls.game_node().end())
+	const auto game_node_it = controller_tls.game_node().find(player_node_info->game_node_id_);
+	if (game_node_it == controller_tls.game_node().end())
 	{
 		return;
 	}
-	auto player_id = tls.registry.get<Guid>(player);
+	const auto player_id = tls.registry.get<Guid>(player);
 	controller_tls.gate_sessions().erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
-	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
+	tls.registry.get<GsNodePtr>(game_node_it->second)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
 	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
@@ -334,7 +336,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		{
 			tls.registry.emplace<PlayerAccount>(player, *try_account);
 		}
-		tls.registry.emplace_or_replace<PlayerSession>(player).set_session_id(cl_tls.session_id());
+		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).gate_session_id_ = cl_tls.session_id();
 
 		PlayerCommonSystem::InitPlayerComponent(player, request->player_id());
 
@@ -366,33 +368,29 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		//todo换场景的过程中被顶了
 		const auto player = player_it->second;
 		//告诉账号被顶
-        //断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
-		const auto player_session = tls.registry.try_get<PlayerSession>(player);
-		if (nullptr != player_session)
-        {
+		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
+		const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+		if (nullptr != player_node_info)
+		{
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipsS2C beKickTips;
 			beKickTips.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
 			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTips, request->player_id());
 			//删除老会话
-			controller_tls.gate_sessions().erase(player_session->session_id());
+			controller_tls.gate_sessions().erase(player_node_info->gate_session_id_);
 			GateNodeKickConnRequest message;
-            message.set_session_id(cl_tls.session_id());
-            Send2Gate(GateServiceKickConnByControllerMsgId, message, player_session->gate_node_id());
+			message.set_session_id(cl_tls.session_id());
+			Send2Gate(GateServiceKickConnByControllerMsgId, message, player_node_info->gate_node_id_);
 
-			(*player_session).set_session_id(cl_tls.session_id());
-        }
+			player_node_info->gate_session_id_ = cl_tls.session_id();
+		}
 		else
 		{
-			auto& player_session = tls.registry.emplace_or_replace<PlayerSession>(player);
-            player_session.set_session_id(cl_tls.session_id());
+			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).gate_session_id_ = cl_tls.session_id();
 		}
-		
 		//连续顶几次,所以用emplace_or_replace
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
 	}
-	
-	
 ///<<< END WRITING YOUR CODE
 }
 
@@ -525,35 +523,41 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto player = ControllerPlayerSystem::GetPlayer(request->player_id());
-	if (entt::null == player)
+	const auto it = controller_tls.player_list().find(request->player_id());
+	if (it == controller_tls.player_list().end())
 	{
+		LOG_ERROR << "player not found" << request->player_id();
 		return;
 	}
-	auto& player_session = tls.registry.get<PlayerSession>(player);
-	auto gate_it = controller_tls.gate_nodes().find(player_session.gate_node_id());
+	const auto player = it->second;
+	auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (nullptr == player_node_info)
+	{
+		LOG_ERROR << "player session not found" << request->player_id();
+		return;
+	}
+	const auto gate_it = controller_tls.gate_nodes().find(player_node_info->gate_node_id_);
 	if (gate_it == controller_tls.gate_nodes().end())
 	{
-		LOG_ERROR << "gate crash" << player_session.gate_node_id();
+		LOG_ERROR << "gate crash" << player_node_info->gate_node_id_;
 		return;
 	}
-	
-	auto game_it = controller_tls.game_node().find(request->game_node_id());
+	const auto game_it = controller_tls.game_node().find(request->game_node_id());
 	if (game_it == controller_tls.game_node().end())
 	{
         LOG_ERROR << "game crash" << request->game_node_id();
         return;
 	}
-	auto try_gs = tls.registry.try_get<GsNodePtr>(game_it->second);
-	if (nullptr == try_gs)
+	auto* const try_game_node = tls.registry.try_get<GsNodePtr>(game_it->second);
+	if (nullptr == try_game_node)
 	{
 		LOG_ERROR << "game crash" << request->game_node_id();
 		return;
 	}
-	player_session.set_gs(*try_gs);
+	player_node_info->game_node_id_ = request->game_node_id();
 	GateNodePlayerEnterGsRequest rq;
-	rq.set_session_id(player_session.session_id());
-	rq.set_gs_node_id(player_session.gs_node_id());
+	rq.set_session_id(player_node_info->gate_session_id_);
+	rq.set_gs_node_id(player_node_info->game_node_id_);
 	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMsgId, rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
