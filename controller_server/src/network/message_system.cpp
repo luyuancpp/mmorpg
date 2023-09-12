@@ -141,7 +141,7 @@ void Send2Gate(const uint32_t message_id, const google::protobuf::Message& messa
 	gate_it->second->session_.Send(message_id, message);
 }
 
-void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
+void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
