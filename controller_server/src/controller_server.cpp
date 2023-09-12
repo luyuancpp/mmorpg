@@ -102,24 +102,24 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
 
 void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
-    auto try_gs_node_ptr = tls.registry.try_get<GsNodePtr>(gs);
-    if (nullptr == try_gs_node_ptr)
+    auto game_node_ptr = tls.registry.try_get<GsNodePtr>(gs);
+    if (nullptr == game_node_ptr)
     {
         LOG_ERROR << "gs not found ";
         return;
     }
-	auto try_gate_node_ptr = tls.registry.try_get<GateNodePtr>(gate);
-	if (nullptr == try_gate_node_ptr)
+	auto gate_node_ptr = tls.registry.try_get<GateNodePtr>(gate);
+	if (nullptr == gate_node_ptr)
 	{
 		LOG_ERROR << "gate not found ";
 		return;
 	}
-    auto& gs_node_ptr = *try_gs_node_ptr;
+    auto& gs_node_ptr = *game_node_ptr;
     GateNodeStartGSRequest request;
     request.set_ip(gs_node_ptr->node_inet_addr_.toIp());
     request.set_port(gs_node_ptr->node_inet_addr_.port());
     request.set_game_node_id(gs_node_ptr->node_id());
-    (*try_gate_node_ptr)->session_.Send(GateServiceStartGSMsgId, request);
+    (*gate_node_ptr)->session_.Send(GateServiceStartGSMsgId, request);
 }
 
 void ControllerServer::Receive1(const OnConnected2ServerEvent& es)
@@ -193,11 +193,11 @@ void ControllerServer::Receive2(const OnBeConnectedEvent& es)
 				//todo
                 controller_tls.gate_nodes().erase((*gatenode)->node_info_.node_id());
 			}
-			auto try_login_node = tls.registry.try_get<LoginNode>(e);
-			if (nullptr != try_login_node && (*try_login_node).node_info_.node_type() == kLoginNode)
+			auto login_node = tls.registry.try_get<LoginNode>(e);
+			if (nullptr != login_node && (*login_node).node_info_.node_type() == kLoginNode)
 			{
 				//todo
-				controller_tls.login_node().erase((*try_login_node).node_info_.node_id());
+				controller_tls.login_node().erase((*login_node).node_info_.node_id());
 			}
 			tls.registry.destroy(e);
 			break;

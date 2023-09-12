@@ -106,7 +106,7 @@ uint32_t MissionSystem::Abandon(const AbandonParam& param)
 	}
 	//已经完成
 	RET_CHECK_RET( mission_comp->IsUnCompleted(param.mission_id_))
-		auto* const mission_reward = tls.registry.try_get<MissionRewardPbComp>(param.player_);
+	auto* const mission_reward = tls.registry.try_get<MissionRewardPbComp>(param.player_);
 	if (nullptr != mission_reward)
 	{
 		mission_reward->mutable_can_reward_mission_id()->erase(param.mission_id_);
