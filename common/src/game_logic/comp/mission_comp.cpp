@@ -22,12 +22,12 @@ MissionsComp::MissionsComp()
 
 std::size_t MissionsComp::CanGetRewardSize() const
 {
-	const auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
-	if (nullptr == try_mission_reward)
+	const auto* const mission_reward = tls.registry.try_get<MissionRewardPbComp>(event_owner());
+	if (nullptr == mission_reward)
 	{
 		return 0;
 	}
-	return static_cast<std::size_t>(try_mission_reward->can_reward_mission_id_size());
+	return static_cast<std::size_t>(mission_reward->can_reward_mission_id_size());
 }
 
 uint32_t MissionsComp::IsUnAccepted(const uint32_t mission_id) const
