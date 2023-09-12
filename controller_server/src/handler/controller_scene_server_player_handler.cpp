@@ -12,6 +12,7 @@
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
+#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 void ControllerScenePlayerServiceHandler::EnterScene(entt::entity player,
 	const ::ControllerEnterSceneRequest* request,
@@ -55,29 +56,26 @@ void ControllerScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt
 	{
 		return;
 	}
-	auto& change_scene_info = change_scene_queue.front();
+	const auto& change_scene_info = change_scene_queue.front();
 	LOG_DEBUG << "Gs2ControllerLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
-	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
+	const auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
 	//todo异步加载完场景已经不在了scene了
-
-	if (entt::null == to_scene)//todo 场景崩溃了要去新的场景
+	//todo 场景崩溃了要去新的场景
+	if (entt::null == to_scene)
 	{
 		LOG_ERROR << "change gs scene scene not found or destroy" << tls.registry.get<Guid>(player);
 		return;
 	}
-	auto try_player_session = tls.registry.try_get<PlayerSession>(player);
-	if (nullptr == try_player_session)
+	const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (nullptr == player_node_info)
 	{
 		LOG_ERROR << "change gs scene scene not found or destroy" << tls.registry.get<Guid>(player);
 		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return;
-
 	}
+	player_node_info->set_game_node_id(kInvalidNodeId);
 
-	GsNodePtr null_gs;
-	try_player_session->set_gs(null_gs);
-
-	PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(to_scene), try_player_session->session_id());
+	PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(to_scene), player_node_info->gate_session_id());
 ///<<< END WRITING YOUR CODE
 }
 

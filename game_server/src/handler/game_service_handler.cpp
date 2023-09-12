@@ -308,7 +308,16 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
     }
 
     game_tls.gate_sessions().emplace(request->session_id(), player_it->second);
-    tls.registry.emplace_or_replace<GateSession>(player_it->second).set_session_id(request->session_id());//登录更新gate
+    auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player_it->second);
+    if (nullptr == player_node_info)
+    {
+        //登录更新gate
+        tls.registry.emplace_or_replace<PlayerNodeInfo>(player_it->second).set_gate_session_id(request->session_id());
+    }
+    else
+    {
+        player_node_info->set_gate_session_id(request->session_id());
+    }
 ///<<< END WRITING YOUR CODE
 }
 
