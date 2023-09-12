@@ -45,11 +45,16 @@ void ControllerScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt
 {
 ///<<< BEGIN WRITING YOUR CODE
 	 //异步切换考虑消息队列
-	GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue)
-		if (change_scene_queue.empty())
-		{
-			return;
-		}
+	auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	if (nullptr == try_change_scene_queue)
+	{
+		return;
+	}
+	auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
+	if (change_scene_queue.empty())
+	{
+		return;
+	}
 	auto& change_scene_info = change_scene_queue.front();
 	LOG_DEBUG << "Gs2ControllerLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
 	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
