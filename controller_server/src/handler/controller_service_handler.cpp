@@ -15,7 +15,6 @@
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/network/gs_node.h"
 #include "src/network/login_node.h"
-#include "src/network/player_session.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/pb/pbc/gate_service_service.h"
 #include "src/pb/pbc/game_service_service.h"

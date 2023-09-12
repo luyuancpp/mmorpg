@@ -129,16 +129,16 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
         LOG_INFO << "GatePlayerService session not found  " << request->message_id() << "," << request->session_id();
         return;
     }
-    auto try_player_id = tls.registry.try_get<Guid>(session_it->second);
-    if (nullptr == try_player_id)
+    auto session_player_id = tls.registry.try_get<Guid>(session_it->second);
+    if (nullptr == session_player_id)
     {
         LOG_ERROR << "GatePlayerService player not loading";
         return;
     }
-    auto pit = game_tls.player_list().find(*try_player_id);
+    auto pit = game_tls.player_list().find(*session_player_id);
     if (pit == game_tls.player_list().end())
     {
-        LOG_ERROR << "GatePlayerService player not found" << *try_player_id;
+        LOG_ERROR << "GatePlayerService player not found" << *session_player_id;
         return;
     }
     const MessageUniquePtr player_request(service->GetRequestPrototype(method).New());

@@ -68,13 +68,13 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 //考虑: 没load 完再次进入别的gs
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
-	auto try_player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-	if (nullptr == try_player_node_info)
+	auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (nullptr == player_node_info)
 	{
 		LOG_ERROR << "player node info  not found" << enter_info.controller_node_id();
-		try_player_node_info = &tls.registry.emplace<PlayerNodeInfo>(player);
+		player_node_info = &tls.registry.emplace<PlayerNodeInfo>(player);
 	}
-	try_player_node_info->set_controller_node_id(enter_info.controller_node_id());
+	player_node_info->set_controller_node_id(enter_info.controller_node_id());
 	//todo controller 重新启动以后
 	EnterGsSucceedRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));

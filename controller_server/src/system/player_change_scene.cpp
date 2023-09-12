@@ -15,15 +15,15 @@ void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
 
 uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const ControllerChangeSceneInfo& change_info)
 {
-    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
-    if (nullptr == try_change_scene_queue)
+    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == change_scene_queue)
     {
         return kRetChangeScenePlayerQueueComponentNull;
     }
-    CheckCondition(try_change_scene_queue->change_scene_queue_.full(), kRetEnterSceneChangingGs)
-    try_change_scene_queue->change_scene_queue_.push_back(change_info);
+    CheckCondition(change_scene_queue->change_scene_queue_.full(), kRetEnterSceneChangingGs)
+    change_scene_queue->change_scene_queue_.push_back(change_info);
     //todo
-    try_change_scene_queue->change_scene_queue_.front().set_change_time(muduo::Timestamp::now().secondsSinceEpoch());
+    change_scene_queue->change_scene_queue_.front().set_change_time(muduo::Timestamp::now().secondsSinceEpoch());
     return kRetOK;
 }
 
@@ -49,16 +49,16 @@ void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)
 
 void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, ControllerChangeSceneInfo::eChangeGsStatus s)
 {
-    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
-    if (nullptr == try_change_scene_queue)
+    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == change_scene_queue)
     {
         return;
     }
-    if (try_change_scene_queue->change_scene_queue_.empty())
+    if (change_scene_queue->change_scene_queue_.empty())
     {
         return;
     }
-    try_change_scene_queue->change_scene_queue_.front().set_change_gs_status(s);
+    change_scene_queue->change_scene_queue_.front().set_change_gs_status(s);
 }
 
 void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, ControllerChangeSceneInfo::eChangeCrossServerStatus s)
@@ -146,21 +146,20 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
 
 uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 {
-	auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
-	if (nullptr == try_change_scene_queue)
+	auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	if (nullptr == change_scene_queue)
 	{
 		return kRetChangeScenePlayerQueueComponentNull;
 	}
-    auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
-    if (change_scene_queue.empty())
+    if (change_scene_queue->change_scene_queue_.empty())
     {
         return kRetChangeScenePlayerQueueComponentEmpty;
     }
-    const auto& change_info = change_scene_queue.front();
+    const auto& change_info = change_scene_queue->change_scene_queue_.front();
     const auto to_scene = ScenesSystem::GetSceneByGuid(change_info.scene_info().guid());
     if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
     {
-        change_scene_queue.pop_front();//todo
+        change_scene_queue->change_scene_queue_.pop_front();//todo
         return kRetEnterSceneSceneNotFound;
     }
     LeaveSceneParam lp;
@@ -171,7 +170,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
     ep.enterer_ = player;
     ep.scene_ = to_scene;
     ScenesSystem::EnterScene(ep);
-    change_scene_queue.pop_front();//切换成功消息删除
+    change_scene_queue->change_scene_queue_.pop_front();//切换成功消息删除
 
     OnEnterSceneOk(player);
     return kRetOK;
