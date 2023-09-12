@@ -15,32 +15,33 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 #include "controller_service.pb.h"
+#include "src/game_logic/comp/player_comp.h"
 
 
 void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& message)
 {
-    auto async_it = game_tls.async_player_data().find(player_id);
-    if (async_it == game_tls.async_player_data().end())
-    {
+	auto async_it = game_tls.async_player_data().find(player_id);
+	if (async_it == game_tls.async_player_data().end())
+	{
 		LOG_INFO << "player disconnect" << player_id;
 		return;
-    }
-    auto ret = game_tls.player_list().emplace(player_id, tls.registry.create());
+	}
+	auto ret = game_tls.player_list().emplace(player_id, tls.registry.create());
 	if (!ret.second)
 	{
 		LOG_ERROR << "server emplace error" << player_id;
 		game_tls.async_player_data().erase(async_it);
 		return;
 	}
-    // on loaded db
-    entt::entity player = ret.first->second;
+	// on loaded db
+	entt::entity player = ret.first->second;
 	tls.registry.emplace<Player>(player);
-    tls.registry.emplace<Guid>(player, player_id);
-    tls.registry.emplace<Vector3>(player, message.pos());
-   	
-    // on load db complete
+	tls.registry.emplace<Guid>(player, player_id);
+	tls.registry.emplace<Vector3>(player, message.pos());
+	tls.registry.emplace<PlayerNodeInfo>(player);
+	// on load db complete
 
-    EnterGs(player, tls.registry.get<EnterGsInfo>(async_it->second));
+	EnterGs(player, tls.registry.get<EnterGsInfo>(async_it->second));
 	game_tls.async_player_data().erase(async_it);
 }
 
@@ -67,23 +68,23 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 //考虑: 没load 完再次进入别的gs
 void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
 {
-	auto controller_it = game_tls.controller_node().find(enter_info.controller_node_id());
-	if (controller_it == game_tls.controller_node().end())
+	auto try_player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (nullptr == try_player_node_info)
 	{
-		LOG_ERROR << "EnterGs controller not found" << enter_info.controller_node_id();
-		return;
+		LOG_ERROR << "player node info  not found" << enter_info.controller_node_id();
+		try_player_node_info = &tls.registry.emplace<PlayerNodeInfo>(player);
 	}
-	tls.registry.emplace_or_replace<ControllerNodePtr>(player, controller_it->second);//todo controller 重新启动以后
-	EnterGsSucceedRequest rq;
-	rq.set_player_id(tls.registry.get<Guid>(player));
-	rq.set_game_node_id(node_id());
-	controller_it->second->session_->CallMethod(ControllerServiceEnterGsSucceedMsgId, rq);
+	try_player_node_info->controller_node_id_ = enter_info.controller_node_id();
+	//todo controller 重新启动以后
+	EnterGsSucceedRequest request;
+	request.set_player_id(tls.registry.get<Guid>(player));
+	request.set_game_node_id(node_id());
+	CallGameNodeMethod(ControllerServiceEnterGsSucceedMsgId, request, enter_info.controller_node_id());
 	//todo进入了gate 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，进入a, 再进入b gs到达客户端消息的顺序不一样
 }
 
 void PlayerCommonSystem::LeaveGs(entt::entity player)
 {
-
 }
 
 void PlayerCommonSystem::OnPlayerLogin(entt::entity player, uint32_t enter_gs_type)
@@ -92,7 +93,7 @@ void PlayerCommonSystem::OnPlayerLogin(entt::entity player, uint32_t enter_gs_ty
 	if (enter_gs_type == LOGIN_FIRST)
 	{
 	}
-	else if (enter_gs_type == LOGIN_REPLACE)//顶号
+	else if (enter_gs_type == LOGIN_REPLACE)
 	{
 	}
 	else if (enter_gs_type == LOGIN_RECONNET)//重连

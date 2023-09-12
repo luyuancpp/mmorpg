@@ -3,5 +3,5 @@ syntax = "proto3";
 
 message EnterGsInfo
 {
-  uint64 controller_node_id = 1;
+  uint32 controller_node_id = 1;
 }
