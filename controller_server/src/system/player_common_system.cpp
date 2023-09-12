@@ -10,9 +10,10 @@
 #include "src/network/player_session.h"
 #include "src/pb/pbc/game_service_service.h"
 #include "src/system/player_change_scene.h"
-
+#include "src/thread_local/controller_thread_local_storage.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 
 void PlayerCommonSystem::InitPlayerComponent(entt::entity player, Guid player_id)
 {
@@ -37,9 +38,9 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
         return;
     }
     UpdatePlayerSessionRequest message;
-    message.set_session_id(player_node_info->gate_session_id_);
+    message.set_session_id(player_node_info->gate_session_id());
     message.set_player_id(*player_id);
-    Send2Gs(GameServiceUpdateSessionMsgId, message, player_node_info->game_node_id_);
+    Send2Gs(GameServiceUpdateSessionMsgId, message, player_node_info->game_node_id());
 
     if (const auto* const try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
         nullptr != try_enter_gs)

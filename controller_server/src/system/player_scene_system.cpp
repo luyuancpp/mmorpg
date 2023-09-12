@@ -16,7 +16,9 @@
 #include "src/pb/pbc/game_service_service.h"
 #include "src/pb/pbc/game_scene_server_player_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
+#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
 
+NodeId controller_node_id();
 
 void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 {
@@ -49,7 +51,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
     Ctlr2GsEnterSceneRequest enter_scene_message;
     enter_scene_message.set_scene_id(scene_info->guid());
     enter_scene_message.set_player_id(player_id);
-    CallGameNodeMethod(GameServiceEnterSceneMsgId, enter_scene_message, player_node_info->game_node_id_);
+    CallGameNodeMethod(GameServiceEnterSceneMsgId, enter_scene_message, player_node_info->game_node_id());
 }
 
 

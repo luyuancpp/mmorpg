@@ -28,7 +28,7 @@ ControllerServer* g_controller_node = nullptr;
 void set_server_sequence_node_id(uint32_t node_id);
 void InitRepliedHandler();
 
-uint32_t controller_node_id()
+NodeId controller_node_id()
 {
 	return g_controller_node->controller_node_id();
 }

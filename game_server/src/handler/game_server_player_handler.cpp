@@ -6,7 +6,6 @@
 #include "muduo/base/Logging.h"
 
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/network/gate_node.h"
 #include "src/network/session.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"
@@ -22,13 +21,15 @@ void GamePlayerServiceHandler::UpdateSessionController2Gs(entt::entity player,
 	PlayerCommonSystem::RemovePlayerSession(tls.registry.get<Guid>(player));
 	auto gate_node_id = node_id(request->session_id());
 	auto gate_it = game_tls.gate_node().find(gate_node_id);
-	if (gate_it == game_tls.gate_node().end())//test
+	//test
+	if (gate_it == game_tls.gate_node().end())
 	{
 		LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
 		return;
 	}
 	game_tls.gate_sessions().emplace(request->session_id(), player);
-	tls.registry.emplace_or_replace<GateSession>(player).set_session_id(request->session_id());//登录更新gate
+	//登录更新gate
+	tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(request->session_id());
 	///<<< END WRITING YOUR CODE
 }
 

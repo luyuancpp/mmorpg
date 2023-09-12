@@ -74,7 +74,7 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 		LOG_ERROR << "player node info  not found" << enter_info.controller_node_id();
 		try_player_node_info = &tls.registry.emplace<PlayerNodeInfo>(player);
 	}
-	try_player_node_info->controller_node_id_ = enter_info.controller_node_id();
+	try_player_node_info->set_controller_node_id(enter_info.controller_node_id());
 	//todo controller 重新启动以后
 	EnterGsSucceedRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
@@ -110,22 +110,22 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
 }
 
 //todo 检测
-void PlayerCommonSystem::RemovePlayerSession(Guid player_id)
+void PlayerCommonSystem::RemovePlayerSession(const Guid player_id)
 {
-    auto p_it = game_tls.player_list().find(player_id);
-    if (p_it == game_tls.player_list().end())//已经在线，直接进入
-    {
-        return;
-    }
-	RemovePlayerSession(p_it->second);
+	const auto player_it = game_tls.player_list().find(player_id);
+	if (player_it == game_tls.player_list().end())
+	{
+		return;
+	}
+	RemovePlayerSession(player_it->second);
 }
 
 void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 {
-    auto try_get_session = tls.registry.try_get<GateSession>(player);
-    if (nullptr == try_get_session)
-    {
-        return;
-    }
-    game_tls.gate_sessions().erase(try_get_session->session_id());
+	const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (nullptr == player_node_info)
+	{
+		return;
+	}
+	game_tls.gate_sessions().erase(player_node_info->gate_session_id());
 }

@@ -2,11 +2,11 @@
 #include "event_proto/scene_event.pb.h"
 ///<<< BEGIN WRITING YOUR CODE 
 
+#include "component_proto/player_network_comp.pb.h"
 #include "muduo/base/Logging.h"
 
 #include "src/common_type/common_type.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/game_logic/tips_id.h"
 #include "src/game_logic/scene/scene_system.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/pb/pbc/game_scene_server_player_service.h"
@@ -14,6 +14,7 @@
 #include "src/system/player_change_scene.h"
 #include "src/network/message_system.h"
 #include "src/network/player_session.h"
+#include "src/network/gs_node.h"
 
 #include "component_proto/scene_comp.pb.h"
 ///<<< END WRITING YOUR CODE
@@ -59,12 +60,7 @@ void SceneEventHandler::OnEnterSceneHandler(const OnEnterScene& message)
 void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    entt::entity player = entt::to_entity(message.entity());
-    auto try_player_id = tls.registry.try_get<Guid>(player);
-    if (nullptr == try_player_id)
-    {
-        return;
-    }
+	auto player = entt::to_entity(message.entity());
     //LOG_INFO << "player leave scene " << *try_player_id << " " << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).scene_id();
 	auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
 	if (nullptr == try_change_scene_queue)
@@ -76,18 +72,18 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 	{
 		return;
 	}
-	auto& change_scene_info = change_scene_queue.front();
+	const auto& change_scene_info = change_scene_queue.front();
 	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
     GsLeaveSceneRequest leave_scene_message;
-	auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
-	auto p_player_gs = tls.registry.try_get<PlayerSession>(player);
+	const auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
+	const auto p_player_gs = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == try_to_scene_gs || nullptr == p_player_gs)
 	{
 		LOG_ERROR << " scene null : " << (nullptr == try_to_scene_gs) << " " << (nullptr == p_player_gs);
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return ;
 	}
-    leave_scene_message.set_change_gs(p_player_gs->gs_node_id() != (*try_to_scene_gs)->node_id());
+    leave_scene_message.set_change_gs(p_player_gs->game_node_id() != (*try_to_scene_gs)->node_id());
     Send2GsPlayer(GamePlayerSceneServiceLeaveSceneMsgId, leave_scene_message, player);
 ///<<< END WRITING YOUR CODE
 }

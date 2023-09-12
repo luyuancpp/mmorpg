@@ -32,10 +32,13 @@
 
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
+#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
 
 thread_local std::unordered_map<std::string, uint64_t> tls_login_accounts_session;
 
 constexpr std::size_t kMaxPlayerSize{1000};
+
+NodeId controller_node_id();
 
 Guid GetPlayerIdByConnId(const uint64_t session_id)
 {
@@ -205,11 +208,11 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 		return;
 	}
 	//notice 异步过程 gate 先重连过来，然后断开才收到，也就是会把新来的连接又断了，极端情况，也要测试如果这段代码过去了，会有什么问题
-	if (player_node_info->gate_session_id_ != request->session_id())
+	if (player_node_info->gate_session_id() != request->session_id())
 	{
 		return;
 	}
-	const auto game_node_it = controller_tls.game_node().find(player_node_info->game_node_id_);
+	const auto game_node_it = controller_tls.game_node().find(player_node_info->game_node_id());
 	if (game_node_it == controller_tls.game_node().end())
 	{
 		return;
@@ -336,7 +339,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		{
 			tls.registry.emplace<PlayerAccount>(player, *try_account);
 		}
-		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).gate_session_id_ = cl_tls.session_id();
+		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(cl_tls.session_id());
 
 		PlayerCommonSystem::InitPlayerComponent(player, request->player_id());
 
@@ -377,16 +380,16 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 			beKickTips.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
 			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTips, request->player_id());
 			//删除老会话
-			controller_tls.gate_sessions().erase(player_node_info->gate_session_id_);
+			controller_tls.gate_sessions().erase(player_node_info->gate_session_id());
 			GateNodeKickConnRequest message;
 			message.set_session_id(cl_tls.session_id());
-			Send2Gate(GateServiceKickConnByControllerMsgId, message, player_node_info->gate_node_id_);
+			Send2Gate(GateServiceKickConnByControllerMsgId, message, node_id(player_node_info->gate_session_id()));
 
-			player_node_info->gate_session_id_ = cl_tls.session_id();
+			player_node_info->set_gate_session_id(cl_tls.session_id());
 		}
 		else
 		{
-			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).gate_session_id_ = cl_tls.session_id();
+			tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(cl_tls.session_id());
 		}
 		//连续顶几次,所以用emplace_or_replace
 		tls.registry.emplace_or_replace<EnterGsFlag>(player).set_enter_gs_type(LOGIN_REPLACE);
@@ -536,10 +539,10 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 		LOG_ERROR << "player session not found" << request->player_id();
 		return;
 	}
-	const auto gate_it = controller_tls.gate_nodes().find(player_node_info->gate_node_id_);
+	const auto gate_it = controller_tls.gate_nodes().find(node_id(player_node_info->gate_session_id()));
 	if (gate_it == controller_tls.gate_nodes().end())
 	{
-		LOG_ERROR << "gate crash" << player_node_info->gate_node_id_;
+		LOG_ERROR << "gate crash" << node_id(player_node_info->gate_session_id());
 		return;
 	}
 	const auto game_it = controller_tls.game_node().find(request->game_node_id());
@@ -554,10 +557,10 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 		LOG_ERROR << "game crash" << request->game_node_id();
 		return;
 	}
-	player_node_info->game_node_id_ = request->game_node_id();
+	player_node_info->set_game_node_id(request->game_node_id());
 	GateNodePlayerEnterGsRequest rq;
-	rq.set_session_id(player_node_info->gate_session_id_);
-	rq.set_gs_node_id(player_node_info->game_node_id_);
+	rq.set_session_id(player_node_info->gate_session_id());
+	rq.set_gs_node_id(player_node_info->game_node_id());
 	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMsgId, rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
