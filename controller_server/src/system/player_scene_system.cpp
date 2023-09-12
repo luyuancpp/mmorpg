@@ -58,7 +58,7 @@ void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 {
     EnterSceneS2CRequest msg;
-    CallGsPlayerMethod(GamePlayerSceneServiceEnterSceneS2CMsgId, msg, player);
+    CallGamePlayerMethod(GamePlayerSceneServiceEnterSceneS2CMsgId, msg, player);
 }
 
 NodeId PlayerSceneSystem::GetGsNodeIdByScene(const entt::entity scene)

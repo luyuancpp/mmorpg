@@ -113,7 +113,7 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, uin
 	gate_it->second->session_.Send(GateServicePlayerMessageMsgId, messag);
 }
 
-bool CallGameNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
+bool CallControllerNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
 {
 	const auto controller_it = game_tls.controller_node().find(node_id);
 	if (controller_it == game_tls.controller_node().end())

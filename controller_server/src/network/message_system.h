@@ -24,5 +24,5 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 void Send2Gate(uint32_t message_id, const google::protobuf::Message& message, uint32_t gate_id);
 
 
-void CallGsPlayerMethod(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
+void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
 bool CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id);

@@ -164,9 +164,6 @@
     <ClInclude Include="src\handler\register_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\controller_rpc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\replied_handler\player_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
