@@ -12,6 +12,7 @@
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_network_comp.pb.h"
+#include "src/game_logic/comp/player_comp.h"
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
@@ -66,18 +67,24 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 	{
 		return;
 	}
-	auto controller_node = tls.registry.get<ControllerNodePtr>(player);
-	if (nullptr == controller_node)
+	const auto* const try_player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (nullptr == try_player_node_info)
 	{
-		LOG_ERROR << "Send2ControllerPlayer player controller not found " << tls.registry.get<Guid>(player);
+		LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 		return;
 	}
-	if (!controller_node->session_->connected())
+	const auto controller_it = game_tls.controller_node().find(try_player_node_info->controller_node_id_);
+	if (controller_it == game_tls.controller_node().end())
+	{
+		LOG_ERROR << "controller not found" << try_player_node_info->controller_node_id_;
+		return;
+	}
+	if (!controller_it->second->session_->connected())
 	{
 		LOG_ERROR << "Send2ControllerPlayer controller disconnect" << tls.registry.get<Guid>(player);
 		return;
 	}
-	const auto try_gate_session = tls.registry.try_get<GateSession>(player);
+	const auto* const try_gate_session = tls.registry.try_get<GateSession>(player);
 	if (nullptr == try_gate_session)
 	{
 		LOG_INFO << "Send2Player player gate not found " << tls.registry.get<Guid>(player);
@@ -87,12 +94,12 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 	msg_wrapper.mutable_msg()->set_message_id(message_id);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_session_id(try_gate_session->session_id());
-	controller_node->session_->Send(ControllerServiceGsPlayerServiceMsgId, msg_wrapper);
+	controller_it->second->session_->Send(ControllerServiceGsPlayerServiceMsgId, msg_wrapper);
 }
 
-void Send2Controller(uint32_t message_id, const google::protobuf::Message& messag, uint32_t controller_node_id)
+void Send2Controller(const uint32_t message_id, const google::protobuf::Message& messag, uint32_t controller_node_id)
 {
-	auto controller_it = game_tls.controller_node().find(controller_node_id);
+	const auto controller_it = game_tls.controller_node().find(controller_node_id);
 	if (controller_it == game_tls.controller_node().end())
 	{
 		LOG_ERROR << "Send2ControllerPlayer controller not found" << controller_node_id;
@@ -112,3 +119,14 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, uin
 	gate_it->second->session_.Send(GateServicePlayerMessageMsgId, messag);
 }
 
+bool CallGameNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
+{
+	const auto controller_it = game_tls.controller_node().find(node_id);
+	if (controller_it == game_tls.controller_node().end())
+	{
+		LOG_ERROR << "controller not found" << node_id;
+		return false;
+	}
+	controller_it->second->session_->CallMethod(message_id, message);
+	return true;
+}

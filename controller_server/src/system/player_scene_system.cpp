@@ -88,7 +88,6 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
     CallGameNodeMethod(GameServiceEnterGsMsgId, req, node_id);
 }
 
-//todo clear code 
 //前一个队列完成的时候才应该调用到这里去判断当前队列
 void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 {
@@ -98,7 +97,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
     auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
-    auto try_from_scene = tls.registry.try_get<SceneEntity>(player);
+    auto* const try_from_scene = tls.registry.try_get<SceneEntity>(player);
     if (nullptr == try_from_scene)
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});// todo 
@@ -112,7 +111,8 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     change_scene_info.set_processing(true);
     auto to_scene_guid = change_scene_info.scene_info().guid();
     entt::entity to_scene = entt::null;
-    if (to_scene_guid <= 0)//用scene_config id 去换本服的controller
+    //用scene_config id 去换本服的controller
+    if (to_scene_guid <= 0)
     {
         GetSceneParam getp;
         getp.scene_conf_id_ = change_scene_info.scene_info().scene_confid();

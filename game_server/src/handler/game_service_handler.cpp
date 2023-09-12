@@ -27,24 +27,24 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 {
 ///<<< BEGIN WRITING YOUR CODE
     //连续顶号进入，还在加载中的话继续加载
-    auto player_id = request->player_id();
-    PlayerCommonSystem::RemovePlayerSession(player_id);
-    auto p_it = game_tls.player_list().find(player_id);
-    if (p_it != game_tls.player_list().end())//已经在线，直接进入,判断是需要发送哪些信息
+    PlayerCommonSystem::RemovePlayerSession(request->player_id());
+    //已经在线，直接进入,判断是需要发送哪些信息
+    if (const auto player_it = game_tls.player_list().find(request->player_id());
+        player_it != game_tls.player_list().end())
     {
         EnterGsInfo enter_info;
         enter_info.set_controller_node_id(request->controller_node_id());
-        PlayerCommonSystem::EnterGs(p_it->second, enter_info);
+        PlayerCommonSystem::EnterGs(player_it->second, enter_info);
         return;
     }
-    auto rit = game_tls.async_player_data().emplace(player_id, tls.registry.create());
+    auto rit = game_tls.async_player_data().emplace(request->player_id(), tls.registry.create());
     if (!rit.second)
     {
-        LOG_ERROR << "EnterGs emplace player not found " << player_id;
+        LOG_ERROR << "EnterGs emplace player not found " << request->player_id();
         return;
     }
     tls.registry.emplace<EnterGsInfo>(rit.first->second).set_controller_node_id(request->controller_node_id());
-    game_tls.player_data_redis_system()->AsyncLoad(player_id);//异步加载过程中断开了，怎么处理？
+    game_tls.player_data_redis_system()->AsyncLoad(request->player_id());//异步加载过程中断开了，怎么处理？
 
 ///<<< END WRITING YOUR CODE
 }
