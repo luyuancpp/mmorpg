@@ -9,7 +9,6 @@
 
 #include "src/game_logic/tips_id.h"
 #include "src/network/message_system.h"
-#include "src/network/player_session.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
 #include "src/pb/pbc/lobby_scene_service.h"
@@ -86,19 +85,18 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
 //前一个队列完成的时候才应该调用到这里去判断当前队列
 void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 {
-    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
-    if (nullptr == try_change_scene_queue)
+    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == change_scene_queue)
     {
         return;
     }
-    auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
-    auto* const try_from_scene = tls.registry.try_get<SceneEntity>(player);
-    if (nullptr == try_from_scene)
+    auto* const from_scene = tls.registry.try_get<SceneEntity>(player);
+    if (nullptr == from_scene)
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYourSceneIsNull, {});// todo 
         return;
     }
-    auto& change_scene_info = change_scene_queue.front();
+    auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
     if (change_scene_info.processing())
     {
         return;
@@ -130,16 +128,16 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             return;
         }
     }
-    auto try_from_scene_gs = tls.registry.try_get<GsNodePtr>(try_from_scene->scene_entity_);
+    auto from_scene_game_node = tls.registry.try_get<GsNodePtr>(from_scene->scene_entity_);
     auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
-    if (nullptr == try_from_scene_gs || nullptr == try_to_scene_gs)
+    if (nullptr == from_scene_game_node || nullptr == try_to_scene_gs)
     {
-        LOG_ERROR << " gs component null : " << (nullptr == try_from_scene_gs) << " " << (nullptr == try_to_scene_gs);
+        LOG_ERROR << " gs component null : " << (nullptr == from_scene_game_node) << " " << (nullptr == try_to_scene_gs);
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }
 
-    auto from_scene_id = tls.registry.get<SceneInfo>(try_from_scene->scene_entity_).guid();
+    auto from_scene_id = tls.registry.get<SceneInfo>(from_scene->scene_entity_).guid();
     if (to_scene_guid == from_scene_id)
     {
         PlayerTipSystem::Tip(player, kRetEnterSceneYouInCurrentScene, {});
@@ -147,13 +145,13 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    auto from_gs_it = controller_tls.game_node().find((*try_from_scene_gs)->node_id());
+    auto from_gs_it = controller_tls.game_node().find((*from_scene_game_node)->node_id());
     auto to_gs_it = controller_tls.game_node().find((*try_to_scene_gs)->node_id());
     if (from_gs_it == controller_tls.game_node().end() || to_gs_it == controller_tls.game_node().end())
     {
         //服务器已经崩溃了
         LOG_ERROR << " gs not found  : " <<
-            (*try_from_scene_gs)->node_id() <<
+            (*from_scene_game_node)->node_id() <<
             " " << (*try_to_scene_gs)->node_id();
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;

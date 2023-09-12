@@ -7,7 +7,7 @@
 
 #include "component_proto/gs_node_comp.pb.h"
 
-using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
+using GameNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
 //从当前服务器中找到一个对应场景人数最少的
 template <typename ServerType>
@@ -27,7 +27,7 @@ entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetS
 		{
 			continue;
 		}
-		auto server_player_size = (*tls.registry.get<GsNodePlayerInfoPtr>(entity)).player_size();
+		auto server_player_size = (*tls.registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
 		if (server_player_size >= min_server_player_size || server_player_size >= kMaxServerPlayerSize)
 		{
 			continue;
@@ -66,14 +66,14 @@ entt::entity GetNotFullSceneT(const GetSceneParam& param, const GetSceneFilterPa
 	entt::entity server{entt::null};
 	for (auto entity : tls.registry.view<ServerType>())
 	{
-		if (const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
-			!try_server_comp.IsStateNormal() ||
-			try_server_comp.GetScenesListByConfig(scene_config_id).empty() ||
-				try_server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_)
+		if (const auto& server_comp = tls.registry.get<ServerComp>(entity);
+			!server_comp.IsStateNormal() ||
+			server_comp.GetScenesListByConfig(scene_config_id).empty() ||
+				server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_)
 		{
 			continue;
 		}
-		auto server_player_size = (*tls.registry.get<GsNodePlayerInfoPtr>(entity)).player_size();
+		auto server_player_size = (*tls.registry.get<GameNodePlayerInfoPtr>(entity)).player_size();
 		if (server_player_size >= kMaxServerPlayerSize)
 		{
 			continue;

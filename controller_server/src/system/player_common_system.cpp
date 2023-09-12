@@ -41,10 +41,10 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
     message.set_player_id(*player_id);
     Send2Gs(GameServiceUpdateSessionMsgId, message, player_node_info->game_node_id());
 
-    if (const auto* const try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
-        nullptr != try_enter_gs)
+    if (const auto* const enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
+        nullptr != enter_game_node_flag)
     {
-        if (const auto enter_gs_type = try_enter_gs->enter_gs_type(); enter_gs_type != LOGIN_NONE)
+        if (const auto enter_gs_type = enter_game_node_flag->enter_gs_type(); enter_gs_type != LOGIN_NONE)
         {
             PlayerCommonSystem::OnLogin(player);
         }

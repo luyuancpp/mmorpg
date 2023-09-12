@@ -14,7 +14,7 @@
 
 static constexpr std::size_t kMaxMainScenePlayer = 1000;
 
-using GsNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
+using GameNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
 void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_sequence_node_id(node_id); }
 
@@ -22,7 +22,7 @@ void AddMainSceneNodeComponent(const entt::entity server)
 {
 	tls.registry.emplace<MainSceneServer>(server);
 	tls.registry.emplace<ServerComp>(server);
-	tls.registry.emplace<GsNodePlayerInfoPtr>(server, std::make_shared<GsNodePlayerInfoPtr::element_type>());
+	tls.registry.emplace<GameNodePlayerInfoPtr>(server, std::make_shared<GameNodePlayerInfoPtr::element_type>());
 }
 
 ScenesSystem::ScenesSystem()
@@ -97,9 +97,9 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 	tls.registry.emplace<SceneInfo>(scene_entity, scene_info);
 	tls.registry.emplace<ScenePlayers>(scene_entity);
 
-	if (auto* try_server_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.node_))
+	if (auto* try_server_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.node_))
 	{
-		tls.registry.emplace<GsNodePlayerInfoPtr>(scene_entity, *try_server_player_info);
+		tls.registry.emplace<GameNodePlayerInfoPtr>(scene_entity, *try_server_player_info);
 	}
 
 	auto* p_server_comp = tls.registry.try_get<ServerComp>(param.node_);
@@ -144,7 +144,7 @@ uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
 	{
 		return kRetEnterSceneNotFull;
 	}
-	const auto* const gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
+	const auto* const gs_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(scene);
 	if (nullptr == gs_player_info)
 	{
 		LOG_ERROR << " gs null";
@@ -172,7 +172,7 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 	tls.registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
 	tls.registry.emplace<SceneEntity>(param.enterer_, param.scene_);
 	// todo weak_ptr ?
-	if (const auto* const try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(param.scene_))
+	if (const auto* const try_gs_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.scene_))
 	{
 		(*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() + 1);
 	}
@@ -204,9 +204,9 @@ void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
 	tls.registry.get<ScenePlayers>(scene).erase(param.leaver_);
 	tls.registry.remove<SceneEntity>(param.leaver_);
 
-	if (const auto* const try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene))
+	if (const auto* const game_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(scene))
 	{
-		(*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() - 1);
+		(*game_player_info)->set_player_size((*game_player_info)->player_size() - 1);
 	}
 
 	OnLeaveScene on_leave_scene_event;
