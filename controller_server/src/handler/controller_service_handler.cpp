@@ -372,8 +372,8 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 		const auto player = player_it->second;
 		//告诉账号被顶
 		//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
-		const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-		if (nullptr != player_node_info)
+		if (auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+			nullptr != player_node_info)
 		{
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
 			TipsS2C beKickTips;
