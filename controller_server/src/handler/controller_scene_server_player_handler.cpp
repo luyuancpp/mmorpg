@@ -45,17 +45,16 @@ void ControllerScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt
 {
 ///<<< BEGIN WRITING YOUR CODE
 	 //异步切换考虑消息队列
-	auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
-	if (nullptr == try_change_scene_queue)
+	auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	if (nullptr == change_scene_queue)
 	{
 		return;
 	}
-	auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
-	if (change_scene_queue.empty())
+	if (change_scene_queue->change_scene_queue_.empty())
 	{
 		return;
 	}
-	const auto& change_scene_info = change_scene_queue.front();
+	const auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
 	LOG_DEBUG << "Gs2ControllerLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
 	const auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
 	//todo异步加载完场景已经不在了scene了

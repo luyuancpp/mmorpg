@@ -39,14 +39,14 @@ void GamePlayerSceneServiceHandler::EnterSceneS2C(entt::entity player,
 	::EnterScenerS2CResponse* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto try_scene = tls.registry.try_get<SceneEntity>(player);
-	if (nullptr == try_scene)
+	auto scene_entity = tls.registry.try_get<SceneEntity>(player);
+	if (nullptr == scene_entity)
 	{
 		LOG_ERROR << " player not enter scene ";
 		return;
 	}
 	::EnterSceneS2C message;
-	message.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(try_scene->scene_entity_));
+	message.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(scene_entity->scene_entity_));
 	Send2Player(ClientPlayerSceneServicePushEnterSceneS2CMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
