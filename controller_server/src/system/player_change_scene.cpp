@@ -179,11 +179,11 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 
 uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
 {
-	auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
-	if (nullptr == try_change_scene_queue)
-	{
-		return kRetChangeScenePlayerQueueComponentNull;
-	}
+    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == try_change_scene_queue)
+    {
+        return kRetChangeScenePlayerQueueComponentNull;
+    }
     auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
     if (change_scene_queue.empty())
     {

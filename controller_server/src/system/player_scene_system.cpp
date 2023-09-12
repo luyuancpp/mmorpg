@@ -92,11 +92,12 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
 //前一个队列完成的时候才应该调用到这里去判断当前队列
 void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 {
-    GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
-    if (change_scene_queue.empty())
+    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == try_change_scene_queue)
     {
         return;
     }
+    auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
     auto try_from_scene = tls.registry.try_get<SceneEntity>(player);
     if (nullptr == try_from_scene)
     {

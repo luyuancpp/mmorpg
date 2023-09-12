@@ -66,7 +66,12 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
         return;
     }
     //LOG_INFO << "player leave scene " << *try_player_id << " " << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).scene_id();
-	GetPlayerComponentMemberReturnVoid(change_scene_queue, PlayerControllerChangeSceneQueue);
+	auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	if (nullptr == try_change_scene_queue)
+	{
+		return;
+	}
+	auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
 	if (change_scene_queue.empty())
 	{
 		return;
