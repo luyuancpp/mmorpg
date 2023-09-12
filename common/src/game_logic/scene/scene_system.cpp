@@ -144,13 +144,13 @@ uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
 	{
 		return kRetEnterSceneNotFull;
 	}
-	const auto* const try_gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
-	if (nullptr == try_gs_player_info)
+	const auto* const gs_player_info = tls.registry.try_get<GsNodePlayerInfoPtr>(scene);
+	if (nullptr == gs_player_info)
 	{
 		LOG_ERROR << " gs null";
 		return kRetEnterSceneGsInfoNull;
 	}
-	if ((*try_gs_player_info)->player_size() >= kMaxServerPlayerSize)
+	if ((*gs_player_info)->player_size() >= kMaxServerPlayerSize)
 	{
 		return kRetEnterSceneGsFull;
 	}

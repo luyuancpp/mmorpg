@@ -328,7 +328,7 @@ void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& comp
 		DeleteMissionClassify(player, mission_id);
 	}	
 	//处理异步的
-	auto* const try_mission_reward = tls.registry.try_get<MissionRewardPbComp>(player);
+	auto* const mission_reward = tls.registry.try_get<MissionRewardPbComp>(player);
 	MissionConditionEvent mission_condition_event;
 	mission_condition_event.set_entity(entt::to_integral(player));
 	mission_condition_event.set_type(kConditionCompleteMission);
@@ -345,10 +345,10 @@ void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& comp
 			mission_award_event.set_mission_id(mission_id);
 			tls.dispatcher.enqueue(mission_award_event);
 		}
-		else if (nullptr != try_mission_reward && try_mission_comp->GetMissionConfig()->reward_id(mission_id) > 0)
+		else if (nullptr != mission_reward && try_mission_comp->GetMissionConfig()->reward_id(mission_id) > 0)
 		{
 			//手动领奖
-			try_mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });
+			mission_reward->mutable_can_reward_mission_id()->insert({ mission_id, false });
 		}
 
 		//todo 如果是活动不用走,让活动去接,这里应该是属于主任务系统的逻辑，想想怎么改方便，活动和任务逻辑分开，互不影响
