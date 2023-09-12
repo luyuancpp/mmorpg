@@ -35,14 +35,14 @@ void AddCrossScene2Controller(uint32_t controller_node_id)
     AddCrossServerSceneRequest rq;
     for (auto e : tls.registry.view<SceneInfo>())
     {
-        auto p_cross_scene_info = rq.mutable_cross_scenes_info()->Add();
-        p_cross_scene_info->mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(e));
-        auto try_gs_node_ptr = tls.registry.try_get<GsNodePtr>(e);
-        if (nullptr == try_gs_node_ptr)
+        auto cross_scene_info = rq.mutable_cross_scenes_info()->Add();
+        cross_scene_info->mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(e));
+        auto game_node_ptr = tls.registry.try_get<GsNodePtr>(e);
+        if (nullptr == game_node_ptr)
         {
             continue;
         }
-        p_cross_scene_info->set_gs_node_id((*try_gs_node_ptr)->node_id());
+        cross_scene_info->set_gs_node_id((*game_node_ptr)->node_id());
     }
 	controller_node_it->second->session_.Send(ControllerServiceAddCrossServerSceneMsgId, rq);
 	LOG_DEBUG << rq.DebugString();

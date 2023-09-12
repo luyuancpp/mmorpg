@@ -83,24 +83,24 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "session not found " << replied->ex().session_id();
 		return;
 	}
-	const auto try_session_player_id = tls.registry.try_get<Guid>(session_it->second);
-	if (nullptr == try_session_player_id)
+	const auto session_player_id = tls.registry.try_get<Guid>(session_it->second);
+	if (nullptr == session_player_id)
 	{
 		LOG_ERROR << "session not found " << replied->ex().session_id();
 		return;
 	}
 	const auto& message_info = g_message_info.at(replied->msg().message_id() );
-	const auto player_it = controller_tls.player_list().find(*try_session_player_id);
+	const auto player_it = controller_tls.player_list().find(*session_player_id);
 	if (player_it == controller_tls.player_list().end())
 	{
-		LOG_ERROR << "PlayerService player not found " << *try_session_player_id << ", message id"
+		LOG_ERROR << "PlayerService player not found " << *session_player_id << ", message id"
 			<< replied->msg().message_id();
 		return;
 	}
 	const auto service_it = g_player_service_replied.find(message_info.service);
 	if (service_it == g_player_service_replied.end())
 	{
-		LOG_ERROR << "PlayerService service not found " << *try_session_player_id << ","
+		LOG_ERROR << "PlayerService service not found " << *session_player_id << ","
 		<< replied->msg().message_id();
 		return;
 	}
