@@ -20,10 +20,10 @@ entt::entity GetSceneOnMinPlayerSizeNodeT(const GetSceneParam& param, const GetS
 	{
 		//如果最少人数的服务器没有这个场景咋办
 		//所以优先判断有没有场景
-		if (const auto& try_server_comp = tls.registry.get<ServerComp>(entity);
-			!try_server_comp.IsStateNormal() ||
-			try_server_comp.GetScenesListByConfig(scene_config_id).empty() ||
-				try_server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_)
+		if (const auto& server_comp = tls.registry.get<ServerComp>(entity);
+			!server_comp.IsStateNormal() ||
+			server_comp.GetScenesListByConfig(scene_config_id).empty() ||
+				server_comp.get_server_pressure_state() != filter_state_param.node_pressure_state_)
 		{
 			continue;
 		}
