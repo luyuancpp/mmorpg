@@ -560,7 +560,7 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 	player_node_info->set_game_node_id(request->game_node_id());
 	GateNodePlayerEnterGsRequest rq;
 	rq.set_session_id(player_node_info->gate_session_id());
-	rq.set_gs_node_id(player_node_info->game_node_id());
+	rq.set_game_node_id(player_node_info->game_node_id());
 	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMsgId, rq);
 	PlayerChangeSceneSystem::SetChangeGsStatus(player, ControllerChangeSceneInfo::eEnterGsSceneSucceed);
 	PlayerChangeSceneSystem::TryProcessChangeSceneQueue(player);
