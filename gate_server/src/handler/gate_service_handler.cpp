@@ -29,15 +29,15 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 		}
 		gs = e;
 	}
-	GsNode gs_node;
-	gs_node.node_info_.set_node_id(request->gs_node_id());
-	gs_node.node_info_.set_node_type(kGameNode);
-	gs_node.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
-	gs_node.gs_session_->registerService(&g_gate_node->gate_service_hanlder());
+	GsNode game_node;
+	game_node.node_info_.set_node_id(request->game_node_id());
+	game_node.node_info_.set_node_type(kGameNode);
+	game_node.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);
+	game_node.gs_session_->registerService(&g_gate_node->gate_service_hanlder());
 	tls.registry.emplace<InetAddress>(gs, gs_addr);
-	gs_node.gs_session_->connect();
-	gate_tls.game_nodes().emplace(request->gs_node_id(), std::move(gs_node));
-	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->gs_node_id();
+	game_node.gs_session_->connect();
+	gate_tls.game_nodes().emplace(request->game_node_id(), std::move(game_node));
+	LOG_INFO << "connect to game server " << gs_addr.toIpPort() << " server id " << request->game_node_id();
 	///<<< END WRITING YOUR CODE
 }
 
@@ -74,7 +74,7 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 		LOG_INFO << "conn id not found   " << request->session_id();
 		return;
 	}
-	it->second.gs_node_id_ = request->gs_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
+	it->second.game_node_id_ = request->game_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
 	response->set_session_id(request->session_id());
 	///<<< END WRITING YOUR CODE
 }

@@ -131,9 +131,6 @@
     <ClInclude Include="src\comp\player_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\player_session.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\handler\controller_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>

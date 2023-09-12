@@ -120,7 +120,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
     if (g_c2s_service_id.contains(request->message_id()))
     {
 		//检测玩家可以不可以发这个消息id过来给服务器
-		auto gs = gate_tls.game_nodes().find(it->second.gs_node_id_);
+		auto gs = gate_tls.game_nodes().find(it->second.game_node_id_);
 		if (gate_tls.game_nodes().end() == gs)
 		{
             Tip(conn, 6);
