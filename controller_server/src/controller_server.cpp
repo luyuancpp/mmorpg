@@ -118,7 +118,7 @@ void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
     GateNodeStartGSRequest request;
     request.set_ip(gs_node_ptr->node_inet_addr_.toIp());
     request.set_port(gs_node_ptr->node_inet_addr_.port());
-    request.set_gs_node_id(gs_node_ptr->node_id());
+    request.set_game_node_id(gs_node_ptr->node_id());
     (*try_gate_node_ptr)->session_.Send(GateServiceStartGSMsgId, request);
 }
 

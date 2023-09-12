@@ -7,7 +7,6 @@
 #include "src/pb/pbc/scene_client_player_service.h"
 #include "src/pb/pbc/game_server_player_service.h"
 #include "src/network/message_system.h"
-#include "src/network/player_session.h"
 #include "src/pb/pbc/game_service_service.h"
 #include "src/system/player_change_scene.h"
 #include "src/thread_local/controller_thread_local_storage.h"

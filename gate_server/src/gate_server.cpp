@@ -128,21 +128,21 @@ void GateServer::Receive1(const OnConnected2ServerEvent& es)
             }
             if (conn->connected())
             {
-                auto& gs_node = it.second;
+                auto& game_node = it.second;
                 EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-                    [this, &gs_node, &conn]() ->void
+                    [this, &game_node, &conn]() ->void
                     {
                         GameNodeConnectRequest rq;
                         rq.mutable_rpc_client()->set_ip(conn->localAddress().toIp());
                         rq.mutable_rpc_client()->set_port(conn->localAddress().port());
                         rq.set_gate_node_id(gate_node_id());
-                        gs_node.gs_session_->CallMethod(GameServiceGateConnectGsMsgId, rq);
+                        game_node.gs_session_->CallMethod(GameServiceGateConnectGsMsgId, rq);
                     }
                 );
             }
             else
             {
-                //g_gs_nodes.erase()
+                //g_game_nodes.erase()
             }
         }
         for (const auto& it : gate_tls.login_nodes())

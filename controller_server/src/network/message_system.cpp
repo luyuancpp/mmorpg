@@ -8,7 +8,6 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/comp/player_list.h"
 #include "src/network/gs_node.h"
-#include "src/network/player_session.h"
 #include "src/network/gate_node.h"
 #include "src/network/server_component.h"
 #include "src/pb/pbc/service.h"
