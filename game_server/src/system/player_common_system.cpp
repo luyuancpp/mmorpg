@@ -122,7 +122,7 @@ void PlayerCommonSystem::RemovePlayerSession(const Guid player_id)
 
 void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 {
-	const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == player_node_info)
 	{
 		return;
