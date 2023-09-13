@@ -7,7 +7,7 @@
 
 #include "component_proto/gs_node_comp.pb.h"
 
-using GameNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
+using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
 //从当前服务器中找到一个对应场景人数最少的
 template <typename ServerType>

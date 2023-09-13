@@ -73,7 +73,7 @@ void ControllerScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt
 	}
 	player_node_info->set_game_node_id(kInvalidNodeId);
 
-	PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(to_scene), player_node_info->gate_session_id());
+	PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGameNodeIdByScene(to_scene), player_node_info->gate_session_id());
 ///<<< END WRITING YOUR CODE
 }
 

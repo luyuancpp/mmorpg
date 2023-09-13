@@ -356,7 +356,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 
 		//todo 会话没有了玩家还在
 
-		PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGsNodeIdByScene(scene), cl_tls.session_id());
+		PlayerSceneSystem::CallPlayerEnterGs(player, PlayerSceneSystem::GetGameNodeIdByScene(scene), cl_tls.session_id());
 		ControllerChangeSceneInfo change_scene_info;
 		change_scene_info.mutable_scene_info()->CopyFrom(tls.registry.get<SceneInfo>(scene));
 		change_scene_info.set_change_gs_type(ControllerChangeSceneInfo::eDifferentGs);

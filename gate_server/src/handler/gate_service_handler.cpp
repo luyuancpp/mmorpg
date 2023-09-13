@@ -29,7 +29,7 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 		}
 		gs = e;
 	}
-	GsNode game_node;
+	GameNode game_node;
 	game_node.node_info_.set_node_id(request->game_node_id());
 	game_node.node_info_.set_node_type(kGameNode);
 	game_node.gs_session_ = std::make_unique<RpcClient>(EventLoop::getEventLoopOfCurrentThread(), gs_addr);

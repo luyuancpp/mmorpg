@@ -14,7 +14,7 @@
 
 static constexpr std::size_t kMaxMainScenePlayer = 1000;
 
-using GameNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
+using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
 void set_server_sequence_node_id(uint32_t node_id) { ScenesSystem::set_server_sequence_node_id(node_id); }
 
