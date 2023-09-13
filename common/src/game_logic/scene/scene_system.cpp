@@ -97,9 +97,9 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 	tls.registry.emplace<SceneInfo>(scene_entity, scene_info);
 	tls.registry.emplace<ScenePlayers>(scene_entity);
 
-	if (auto* try_server_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.node_))
+	if (auto* server_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.node_))
 	{
-		tls.registry.emplace<GameNodePlayerInfoPtr>(scene_entity, *try_server_player_info);
+		tls.registry.emplace<GameNodePlayerInfoPtr>(scene_entity, *server_player_info);
 	}
 
 	auto* p_server_comp = tls.registry.try_get<ServerComp>(param.node_);
@@ -172,9 +172,9 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 	tls.registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
 	tls.registry.emplace<SceneEntity>(param.enterer_, param.scene_);
 	// todo weak_ptr ?
-	if (const auto* const try_gs_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.scene_))
+	if (const auto* const game_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.scene_))
 	{
-		(*try_gs_player_info)->set_player_size((*try_gs_player_info)->player_size() + 1);
+		(*game_player_info)->set_player_size((*game_player_info)->player_size() + 1);
 	}
 
 	OnEnterScene on_enter_scene_event;

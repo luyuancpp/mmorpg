@@ -53,24 +53,24 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
 
 void PlayerCommonSystem::OnLogin(entt::entity player)
 {
-    const auto try_enter_gs = tls.registry.try_get<EnterGsFlag>(player);
-	if (nullptr == try_enter_gs)
+    const auto enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
+	if (nullptr == enter_game_node_flag)
 	{
 		return;
 	}
-	if (try_enter_gs->enter_gs_type() == LOGIN_FIRST)
+	if (enter_game_node_flag->enter_gs_type() == LOGIN_FIRST)
 	{
 	}
-	else if (try_enter_gs->enter_gs_type() == LOGIN_REPLACE)//顶号
+	else if (enter_game_node_flag->enter_gs_type() == LOGIN_REPLACE)//顶号
 	{
 	}
-    else if (try_enter_gs->enter_gs_type() == LOGIN_RECONNET)//重连
+    else if (enter_game_node_flag->enter_gs_type() == LOGIN_RECONNET)//重连
     {
     }
 
     {
         Controller2GsLoginRequest message;
-        message.set_enter_gs_type((*try_enter_gs).enter_gs_type());
+        message.set_enter_gs_type((*enter_game_node_flag).enter_gs_type());
         tls.registry.remove<EnterGsFlag>(player);
         Send2GsPlayer(GamePlayerServiceController2GsLoginMsgId, message, player);
     }

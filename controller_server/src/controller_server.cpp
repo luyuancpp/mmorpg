@@ -102,7 +102,7 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
 
 void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
-    auto game_node_ptr = tls.registry.try_get<GsNodePtr>(gs);
+    auto game_node_ptr = tls.registry.try_get<GameNodePtr>(gs);
     if (nullptr == game_node_ptr)
     {
         LOG_ERROR << "gs not found ";
@@ -180,7 +180,7 @@ void ControllerServer::Receive2(const OnBeConnectedEvent& es)
 			{
 				continue;
 			}
-            auto gsnode = tls.registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+            auto gsnode = tls.registry.try_get<GameNodePtr>(e);//如果是游戏逻辑服则删除
             if (nullptr != gsnode && (*gsnode)->node_info_.node_type() == kGameNode)
             {
                 //remove AfterChangeGsEnterScene

@@ -73,7 +73,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 	const auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
 	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
 	GsLeaveSceneRequest leave_scene_message;
-	const auto to_scene_game_node = tls.registry.try_get<GsNodePtr>(to_scene);
+	const auto to_scene_game_node = tls.registry.try_get<GameNodePtr>(to_scene);
 	const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == to_scene_game_node || nullptr == player_node_info)
 	{

@@ -99,7 +99,7 @@ void LobbyServer::Receive2(const OnBeConnectedEvent& es)const
 			{
 				continue;
 			}
-			auto gs_node = tls.registry.try_get<GsNodePtr>(e);//如果是游戏逻辑服则删除
+			auto gs_node = tls.registry.try_get<GameNodePtr>(e);//如果是游戏逻辑服则删除
 			if (nullptr != gs_node && (*gs_node)->node_info_.node_type() == kGameNode)
 			{
 				lobby_tls.gs_node().erase((*gs_node)->node_info_.node_id());

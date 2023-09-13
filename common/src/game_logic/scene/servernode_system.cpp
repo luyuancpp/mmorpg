@@ -126,22 +126,22 @@ entt::entity ServerNodeSystem::GetNotFullScene(const GetSceneParam& param)
 
 void ServerNodeSystem::NodeEnterPressure(entt::entity node)
 {
-	auto* const try_server_comp = tls.registry.try_get<ServerComp>(node);
-	if (nullptr == try_server_comp)
+	auto* const server_comp = tls.registry.try_get<ServerComp>(node);
+	if (nullptr == server_comp)
 	{
 		return;
 	}
-	try_server_comp->SetNodePressureState(NodePressureState::kPressure);
+	server_comp->SetNodePressureState(NodePressureState::kPressure);
 }
 
 void ServerNodeSystem::NodeEnterNoPressure(entt::entity node)
 {
-	auto* const try_server_comp = tls.registry.try_get<ServerComp>(node);
-	if (nullptr == try_server_comp)
+	auto* const server_comp = tls.registry.try_get<ServerComp>(node);
+	if (nullptr == server_comp)
 	{
 		return;
 	}
-	try_server_comp->SetNodePressureState(NodePressureState::kNoPressure);
+	server_comp->SetNodePressureState(NodePressureState::kNoPressure);
 }
 
 void ServerNodeSystem::SetNodeState(entt::entity node, NodeState node_state)
