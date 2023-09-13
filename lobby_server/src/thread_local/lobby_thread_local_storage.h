@@ -7,10 +7,10 @@ class LobbyThreadLocalStorage
 {
 public:
 	ControllerNodes& controller_nodes() { return controller_nodes_; }
-	GameNodeList& gs_node() { return gs_node_; }
+	GameNodeList& game_node_list() { return game_node_list_; }
 private:
 	ControllerNodes controller_nodes_;
-	GameNodeList gs_node_;
+	GameNodeList game_node_list_;
 };
 
 extern thread_local LobbyThreadLocalStorage lobby_tls;

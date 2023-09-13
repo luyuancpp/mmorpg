@@ -80,12 +80,12 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 	}
 
 	auto c = tls.registry.get<RpcServerConnection>(gs);
-	GameNodePtr gs_node_ptr = std::make_shared<GameNodePtr::element_type>(c.conn_);
-	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
-	gs_node_ptr->node_info_.set_node_type(kGameNode);
+	GameNodePtr game_node_ptr = std::make_shared<GameNodePtr::element_type>(c.conn_);
+	game_node_ptr->node_info_.set_node_id(request->gs_node_id());
+	game_node_ptr->node_info_.set_node_type(kGameNode);
     AddMainSceneNodeComponent(gs);
 	tls.registry.emplace<InetAddress>(gs, service_addr);
-	tls.registry.emplace<GameNodePtr>(gs, gs_node_ptr);
+	tls.registry.emplace<GameNodePtr>(gs, game_node_ptr);
 	if (request->server_type() == kMainSceneCrossServer)
 	{
         tls.registry.remove<MainSceneServer>(gs);
@@ -98,7 +98,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
 			auto scene = ScenesSystem::CreateScene2Gs(create_scene_param);
-			tls.registry.emplace<GameNodePtr>(scene, gs_node_ptr);
+			tls.registry.emplace<GameNodePtr>(scene, game_node_ptr);
 			response->add_scenes_info()->CopyFrom(tls.registry.get<SceneInfo>(scene));
 		}
 	}
@@ -107,7 +107,7 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 		tls.registry.remove<MainSceneServer>(gs);
 		tls.registry.emplace<CrossRoomSceneServer>(gs);
 	}
-	lobby_tls.gs_node().emplace(request->gs_node_id(), gs);
+	lobby_tls.game_node_list().emplace(request->gs_node_id(), gs);
 
 	LOG_INFO << "game node connected " << response->DebugString();
 ///<<< END WRITING YOUR CODE

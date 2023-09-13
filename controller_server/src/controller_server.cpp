@@ -114,11 +114,11 @@ void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 		LOG_ERROR << "gate not found ";
 		return;
 	}
-    auto& gs_node_ptr = *game_node_ptr;
+    auto& game_node = *game_node_ptr;
     GateNodeStartGSRequest request;
-    request.set_ip(gs_node_ptr->node_inet_addr_.toIp());
-    request.set_port(gs_node_ptr->node_inet_addr_.port());
-    request.set_game_node_id(gs_node_ptr->node_id());
+    request.set_ip(game_node->node_inet_addr_.toIp());
+    request.set_port(game_node->node_inet_addr_.port());
+    request.set_game_node_id(game_node->node_id());
     (*gate_node_ptr)->session_.Send(GateServiceStartGSMsgId, request);
 }
 

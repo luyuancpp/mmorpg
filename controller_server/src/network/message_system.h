@@ -8,7 +8,7 @@
 #include "src/util/game_registry.h"
 #include "src/network/gate_node.h"
 
-void Send2Gs(uint32_t message_id, const google::protobuf::Message& message,  uint32_t gs_node_id);
+void Send2Gs(uint32_t message_id, const google::protobuf::Message& message,  uint32_t game_node_id);
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
 void Send2GsPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
 void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);//通过gs转发给客户端

@@ -92,13 +92,13 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 	}
 
 	auto c = tls.registry.get<RpcServerConnection>(game_node);
-	auto gs_node_ptr = std::make_shared<GameNodePtr::element_type>(c.conn_);
-	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
-	gs_node_ptr->node_info_.set_node_type(kGameNode);
-	gs_node_ptr->node_inet_addr_ = service_addr; //为了停掉gs，或者gs断线用
-	gs_node_ptr->server_entity_ = game_node;
+	auto game_node_ptr = std::make_shared<GameNodePtr::element_type>(c.conn_);
+	game_node_ptr->node_info_.set_node_id(request->gs_node_id());
+	game_node_ptr->node_info_.set_node_type(kGameNode);
+	game_node_ptr->node_inet_addr_ = service_addr; //为了停掉gs，或者gs断线用
+	game_node_ptr->server_entity_ = game_node;
 	AddMainSceneNodeComponent(game_node);
-	tls.registry.emplace<GameNodePtr>(game_node, gs_node_ptr);
+	tls.registry.emplace<GameNodePtr>(game_node, game_node_ptr);
 	if (request->server_type() == kMainSceneServer)
 	{
 		const auto& config_all = mainscene_config::GetSingleton().all();
@@ -108,7 +108,7 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
 			auto scene_entity = ScenesSystem::CreateScene2Gs(create_scene_param);
-			tls.registry.emplace<GameNodePtr>(scene_entity, gs_node_ptr);
+			tls.registry.emplace<GameNodePtr>(scene_entity, game_node_ptr);
 			response->add_scenes_info()->CopyFrom(tls.registry.get<SceneInfo>(scene_entity));
 		}
 	}
@@ -506,15 +506,15 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 			continue;
 		}
 		auto gs = git->second;
-		auto gs_node_ptr = tls.registry.try_get<GameNodePtr>(gs);
-		if (nullptr == gs_node_ptr)
+		auto game_node = tls.registry.try_get<GameNodePtr>(gs);
+		if (nullptr == game_node)
 		{
             LOG_ERROR << "gs not found ";
             continue;
 		}
 		create_scene_param.scene_info = it.scene_info();
 		auto scene = ScenesSystem::CreateScene2Gs(create_scene_param);
-		tls.registry.emplace<GameNodePtr>(scene, *gs_node_ptr);
+		tls.registry.emplace<GameNodePtr>(scene, *game_node);
 	}
 ///<<< END WRITING YOUR CODE
 }
