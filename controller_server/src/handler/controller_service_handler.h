@@ -59,7 +59,7 @@ public:
 		 ::google::protobuf::Closure* done)override;
 
 	void EnterGsSucceed(::google::protobuf::RpcController* controller,
-		const ::EnterGsSucceedRequest* request,
+		const ::EnterGameNodeSucceedRequest* request,
 		::google::protobuf::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
