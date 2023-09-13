@@ -8,7 +8,7 @@
 
 #include "src/event_handler/event_handler.h"
 #include "src/network/gate_node.h"
-#include "src/network/gs_node.h"
+#include "src/network/game_node.h"
 
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"

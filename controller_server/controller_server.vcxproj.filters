@@ -146,7 +146,7 @@
     <ClInclude Include="src\system\player_tip_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\gs_node.h">
+    <ClInclude Include="src\network\game_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\event_handler\scene_event_handler.h">

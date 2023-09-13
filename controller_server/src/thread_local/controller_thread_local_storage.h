@@ -2,7 +2,7 @@
 
 #include "src/comp/player_list.h"
 #include "src/network/gate_node.h"
-#include "src/network/gs_node.h"
+#include "src/network/game_node.h"
 #include "src/network/login_node.h"
 
 using PlayerListMap = std::unordered_map<Guid, entt::entity>;

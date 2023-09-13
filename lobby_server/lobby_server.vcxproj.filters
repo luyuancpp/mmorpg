@@ -35,7 +35,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\network\gs_node.h">
+    <ClInclude Include="src\network\game_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\service\lobby_scene.h">

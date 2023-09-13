@@ -6,7 +6,7 @@
 
 #include "src/gate_server.h"
 #include "src/util/game_registry.h"
-#include "src/network/gs_node.h"
+#include "src/network/game_node.h"
 #include "src/network/login_node.h"
 #include "src/pb/pbc/controller_service_service.h"
 #include "src/pb/pbc/game_service_service.h"

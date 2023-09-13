@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/network/gs_node.h"
+#include "src/network/game_node.h"
 #include "src/network/controller_node.h"
 
 class LobbyThreadLocalStorage

@@ -62,7 +62,7 @@
     <ClInclude Include="src\network\login_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\gs_node.h">
+    <ClInclude Include="src\network\game_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\thread_local\gate_thread_local_storage.h">

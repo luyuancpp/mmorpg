@@ -7,7 +7,7 @@
 #include "src/game_config/lobby_config.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/server_component.h"
-#include "src/network/gs_node.h"
+#include "src/network/game_node.h"
 #include "src/pb/pbc/deploy_service_service.h"
 #include "src/service/replied_dispathcer.h"
 #include "src/thread_local/lobby_thread_local_storage.h"
