@@ -14,8 +14,8 @@ public:
 		 ::google::protobuf::Closure* done)override;
 
 	void PlayerEnterGs(::google::protobuf::RpcController* controller,
-		const ::GateNodePlayerEnterGsRequest* request,
-		::GateNodePlayerEnterGsResponese* response,
+		const ::GateNodeUpdateGameNodeRequest* request,
+		::GateNodePlayerUpdateGameNodeResponese* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void PlayerMessage(::google::protobuf::RpcController* controller,

@@ -22,13 +22,13 @@ message GateNodeStopGSRequest
   uint32 port = 2;
 }
 
-message GateNodePlayerEnterGsRequest
+message GateNodeUpdateGameNodeRequest
 {
   uint64 session_id = 1;
   uint32 game_node_id = 2;
 }
 
-message GateNodePlayerEnterGsResponese
+message GateNodePlayerUpdateGameNodeResponese
 {
  uint64 session_id = 1;
 }
@@ -42,7 +42,7 @@ message GateNodeKickConnRequest
 service GateService {
   rpc StartGS (GateNodeStartGSRequest) returns (google.protobuf.Empty);
   rpc StopGS (GateNodeStopGSRequest) returns (google.protobuf.Empty);
-  rpc PlayerEnterGs (GateNodePlayerEnterGsRequest) returns (GateNodePlayerEnterGsResponese);
+  rpc PlayerEnterGs (GateNodeUpdateGameNodeRequest) returns (GateNodePlayerUpdateGameNodeResponese);
   rpc PlayerMessage (NodeServiceMessageRequest) returns (google.protobuf.Empty);
   rpc KickConnByController (GateNodeKickConnRequest) returns (google.protobuf.Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);

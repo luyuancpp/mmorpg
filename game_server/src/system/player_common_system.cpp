@@ -104,7 +104,7 @@ void PlayerCommonSystem::OnPlayerLogin(entt::entity player, uint32_t enter_gs_ty
 	}
 }
 
-void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
+void PlayerCommonSystem::OnEnterGateUpdateGameNodeSucceed(entt::entity player)
 {
 
 }
@@ -122,10 +122,11 @@ void PlayerCommonSystem::RemovePlayerSession(const Guid player_id)
 
 void PlayerCommonSystem::RemovePlayerSession(entt::entity player)
 {
-	const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == player_node_info)
 	{
 		return;
 	}
+	player_node_info->set_gate_session_id(kInvalidSessionId);
 	game_tls.gate_sessions().erase(player_node_info->gate_session_id());
 }

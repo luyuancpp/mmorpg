@@ -6,10 +6,10 @@
 
 struct Session
 {
-	static constexpr uint32_t kInvalidNodeId{ UINT32_MAX };
-    bool ValidLogin()const { return login_node_id_ != kInvalidNodeId; }
-	uint32_t game_node_id_{ kInvalidNodeId };
-	uint32_t login_node_id_{ kInvalidNodeId };
+	bool ValidLogin() const { return login_node_id_ != kInvalidNodeId; }
+	NodeId game_node_id_{kInvalidNodeId};
+	NodeId login_node_id_{kInvalidNodeId};
+	NodeId controller_id_{kInvalidNodeId};
 	muduo::net::TcpConnectionPtr conn_;
 };
 

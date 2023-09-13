@@ -22,7 +22,7 @@ void PlayerCommonSystem::InitPlayerComponent(entt::entity player, Guid player_id
     PlayerChangeSceneSystem::InitChangeSceneQueue(player);
 }
 
-void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
+void PlayerCommonSystem::OnEnterGateUpdateGameNodeSucceed(entt::entity player)
 {
     const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
     if (nullptr == player_node_info)
@@ -44,7 +44,8 @@ void PlayerCommonSystem::OnEnterGateSucceed(entt::entity player)
     if (const auto* const enter_game_node_flag = tls.registry.try_get<EnterGsFlag>(player);
         nullptr != enter_game_node_flag)
     {
-        if (const auto enter_gs_type = enter_game_node_flag->enter_gs_type(); enter_gs_type != LOGIN_NONE)
+        if (const auto enter_gs_type = enter_game_node_flag->enter_gs_type();
+            enter_gs_type != LOGIN_NONE)
         {
             PlayerCommonSystem::OnLogin(player);
         }
