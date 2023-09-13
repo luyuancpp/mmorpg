@@ -31,7 +31,7 @@
     <ClInclude Include="src\replied_handler\game_service_replied_handler.h" />
     <ClInclude Include="src\replied_handler\login_service_replied_handler.h" />
     <ClInclude Include="src\thread_local\gate_thread_local_storage.h" />
-    <ClInclude Include="src\network\gs_node.h" />
+    <ClInclude Include="src\network\game_node.h" />
     <ClInclude Include="src\network\login_node.h" />
     <ClInclude Include="src\network\gate_player_list.h" />
     <ClInclude Include="src\gate_server.h" />

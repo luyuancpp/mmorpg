@@ -4,7 +4,7 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
 
-#include "src/network/gs_node.h"
+#include "src/network/game_node.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/gate_server.h"
 #include "src/game_logic/tips_id.h"

@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "src/network/gate_player_list.h"
-#include "src/network/gs_node.h"
+#include "src/network/game_node.h"
 #include "src/network/login_node.h"
 
 class GateThreadLocalStorage

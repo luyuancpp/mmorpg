@@ -13,7 +13,7 @@
 #include "src/system/player_scene_system.h"
 #include "src/system/player_change_scene.h"
 #include "src/network/message_system.h"
-#include "src/network/gs_node.h"
+#include "src/network/game_node.h"
 
 #include "component_proto/scene_comp.pb.h"
 ///<<< END WRITING YOUR CODE
