@@ -40,7 +40,7 @@ private:
 
 struct AccountLoginNode
 {
-    inline uint32_t gate_node_id() { return node_id(session_id_); };
+    inline uint32_t gate_node_id() { return get_gate_node_id(session_id_); };
     uint64_t session_id_{ UINT64_MAX };
 };
 

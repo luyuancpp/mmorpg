@@ -62,13 +62,13 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 
 NodeId PlayerSceneSystem::GetGameNodeIdByScene(const entt::entity scene)
 {
-    const auto* p_gs_data = tls.registry.try_get<GameNodePtr>(scene);
+    const auto* game_node_info = tls.registry.try_get<GameNodePtr>(scene);
     //找不到gs了，放到好的gs里面
-    if (nullptr == p_gs_data)
+    if (nullptr == game_node_info)
     {
         return kInvalidU32Id;
     }
-    return (*p_gs_data)->node_id();
+    return (*game_node_info)->node_id();
 }
 
 

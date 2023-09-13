@@ -2,7 +2,7 @@
 
 #include "src/util/snow_flake.h"
 
-NodeId node_id(Guid session_id)
+NodeId get_gate_node_id(Guid session_id)
 {
     return session_id >> ServerSequence32::kNodeBit;
 }

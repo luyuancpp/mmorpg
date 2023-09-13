@@ -19,7 +19,7 @@ void GamePlayerServiceHandler::UpdateSessionController2Gs(entt::entity player,
 {
 	///<<< BEGIN WRITING YOUR CODE
 	PlayerCommonSystem::RemovePlayerSession(tls.registry.get<Guid>(player));
-	auto gate_node_id = node_id(request->session_id());
+	auto gate_node_id = get_gate_node_id(request->session_id());
 	auto gate_it = game_tls.gate_node().find(gate_node_id);
 	//test
 	if (gate_it == game_tls.gate_node().end())

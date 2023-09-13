@@ -24,7 +24,7 @@
 
 GameServer* g_game_node = nullptr;
 
-NodeId node_id()
+NodeId get_gate_node_id()
 {
     return g_game_node->gs_info().id();
 }

@@ -382,7 +382,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 			controller_tls.gate_sessions().erase(player_node_info->gate_session_id());
 			GateNodeKickConnRequest message;
 			message.set_session_id(cl_tls.session_id());
-			Send2Gate(GateServiceKickConnByControllerMsgId, message, node_id(player_node_info->gate_session_id()));
+			Send2Gate(GateServiceKickConnByControllerMsgId, message, get_gate_node_id(player_node_info->gate_session_id()));
 
 			player_node_info->set_gate_session_id(cl_tls.session_id());
 		}
@@ -538,10 +538,10 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 		LOG_ERROR << "player session not found" << request->player_id();
 		return;
 	}
-	const auto gate_it = controller_tls.gate_nodes().find(node_id(player_node_info->gate_session_id()));
+	const auto gate_it = controller_tls.gate_nodes().find(get_gate_node_id(player_node_info->gate_session_id()));
 	if (gate_it == controller_tls.gate_nodes().end())
 	{
-		LOG_ERROR << "gate crash" << node_id(player_node_info->gate_session_id());
+		LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
 	const auto game_it = controller_tls.game_node().find(request->game_node_id());
@@ -550,8 +550,8 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
         LOG_ERROR << "game crash" << request->game_node_id();
         return;
 	}
-	auto* const game_node = tls.registry.try_get<GameNodePtr>(game_it->second);
-	if (nullptr == game_node)
+	if (const auto* const game_node = tls.registry.try_get<GameNodePtr>(game_it->second);
+	nullptr == game_node)
 	{
 		LOG_ERROR << "game crash" << request->game_node_id();
 		return;

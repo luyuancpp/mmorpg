@@ -105,7 +105,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	{
 		return;
 	}
-	const auto gate_it = controller_tls.gate_nodes().find(node_id(player_node_info->gate_session_id()));
+	const auto gate_it = controller_tls.gate_nodes().find(get_gate_node_id(player_node_info->gate_session_id()));
 	if (gate_it == controller_tls.gate_nodes().end())
 	{
 		LOG_ERROR << "gate not found ";
