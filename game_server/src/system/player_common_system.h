@@ -20,7 +20,7 @@ public:
 
 	static void SavePlayer(entt::entity player);
 
-	static void EnterGs(entt::entity player, const EnterGsInfo& enter_info);
+	static void EnterGs(const entt::entity player, const EnterGsInfo& enter_info);
 
 	static void LeaveGs(entt::entity player);
 

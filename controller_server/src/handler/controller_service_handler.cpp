@@ -520,7 +520,7 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 }
 
 void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
-	const ::EnterGsSucceedRequest* request,
+	const ::EnterGameNodeSucceedRequest* request,
 	::google::protobuf::Empty* response,
 	 ::google::protobuf::Closure* done)
 {

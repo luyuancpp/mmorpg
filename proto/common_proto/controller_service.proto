@@ -74,7 +74,7 @@ message AddCrossServerSceneRequest
   repeated CrossSceneInfo cross_scenes_info = 1;
 }
 
-message EnterGsSucceedRequest
+message EnterGameNodeSucceedRequest
 {
   uint64 player_id = 1;
   uint32 game_node_id = 2;
@@ -92,7 +92,7 @@ service ControllerService {
   rpc LsDisconnect (CtrlLsDisconnectRequest) returns (google.protobuf.Empty); 
   rpc GsPlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
   rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (google.protobuf.Empty);
-  rpc EnterGsSucceed (EnterGsSucceedRequest) returns (google.protobuf.Empty);
+  rpc EnterGsSucceed (EnterGameNodeSucceedRequest) returns (google.protobuf.Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
 }

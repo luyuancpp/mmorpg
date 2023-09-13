@@ -66,9 +66,9 @@ void PlayerCommonSystem::SavePlayer(entt::entity player)
 }
 
 //考虑: 没load 完再次进入别的gs
-void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_info)
+void PlayerCommonSystem::EnterGs(const entt::entity player, const EnterGsInfo& enter_info)
 {
-	auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == player_node_info)
 	{
 		LOG_ERROR << "player node info  not found" << enter_info.controller_node_id();
@@ -76,7 +76,7 @@ void PlayerCommonSystem::EnterGs(entt::entity player, const EnterGsInfo& enter_i
 	}
 	player_node_info->set_controller_node_id(enter_info.controller_node_id());
 	//todo controller 重新启动以后
-	EnterGsSucceedRequest request;
+	EnterGameNodeSucceedRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
 	request.set_game_node_id(node_id());
 	CallControllerNodeMethod(ControllerServiceEnterGsSucceedMsgId, request, enter_info.controller_node_id());

@@ -130,23 +130,22 @@ void GameServer::StartGsDeployReplied(const StartGSResponse& replied)
 
 void GameServer::OnAcquireLobbyInfoReplied(LobbyInfoResponse& replied)
 {
-    //connect controller
-	auto& lobby_controllers = replied.lobby_controllers();
+	//connect controller
+	const auto& lobby_controllers = replied.lobby_controllers();
 	for (int32_t i = 0; i < lobby_controllers.controllers_size(); ++i)
 	{
-		auto& controller_node_info = lobby_controllers.controllers(i);
+		const auto& controller_node_info = lobby_controllers.controllers(i);
 		InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
-		auto it = game_tls.controller_node().emplace(controller_node_info.id(), std::make_shared<ControllerNode>());
-		auto& controller_node = *it.first->second;
-		controller_node.session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, controller_addr);
-		controller_node.node_info_.set_node_id(controller_node_info.id());
-		auto& controller_node_session = controller_node.session_;
-		controller_node_session->registerService(&gs_service_impl_);
-        for (auto& it : g_server_service)
-        {
-            controller_node_session->registerService(it.second.get());
-        }
-		controller_node_session->connect();
+		const auto [fst, snd] = game_tls.controller_node().emplace(controller_node_info.id(), std::make_shared<ControllerNode>());
+		auto& [node_info_, session_] = *fst->second;
+		session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, controller_addr);
+		node_info_.set_node_id(controller_node_info.id());
+		session_->registerService(&gs_service_impl_);
+		for (auto& it : g_server_service)
+		{
+			session_->registerService(it.second.get());
+		}
+		session_->connect();
 	}
 }
 
