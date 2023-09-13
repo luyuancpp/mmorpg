@@ -19,18 +19,18 @@ void GamePlayerServiceHandler::UpdateSessionController2Gs(entt::entity player,
 {
 	///<<< BEGIN WRITING YOUR CODE
 	PlayerCommonSystem::RemovePlayerSession(tls.registry.get<Guid>(player));
-	auto gate_node_id = get_gate_node_id(request->session_id());
-	auto gate_it = game_tls.gate_node().find(gate_node_id);
+	const auto gate_node_id = get_gate_node_id(request->session_id());
 	//test
-	if (gate_it == game_tls.gate_node().end())
+	if (const auto gate_it = game_tls.gate_node().find(gate_node_id);
+		gate_it == game_tls.gate_node().end())
 	{
 		LOG_ERROR << "EnterSceneMs2Gs gate not found " << gate_node_id;
 		return;
 	}
 	game_tls.gate_sessions().emplace(request->session_id(), player);
 	//登录更新gate
-	auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-	if (nullptr == player_node_info)
+	if (auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+		nullptr == player_node_info)
 	{
 		//登录更新gate
 		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(request->session_id());
