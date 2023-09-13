@@ -37,10 +37,10 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 		return;
 	}
-	const auto gate_it = game_tls.gate_node().find(node_id(player_node_info->gate_session_id()));
+	const auto gate_it = game_tls.gate_node().find(get_gate_node_id(player_node_info->gate_session_id()));
 	if (game_tls.gate_node().end() == gate_it)
 	{
-		LOG_INFO << "gate not found " << node_id(player_node_info->gate_session_id());
+		LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
 	NodeServiceMessageRequest message_wrapper;
