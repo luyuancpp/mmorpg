@@ -25,7 +25,7 @@ void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, uint
         LOG_ERROR << "gs not found ->" << node_id;
 		return;
 	}
-	auto node =  tls.registry.try_get<GsNodePtr>(it->second);
+	auto node =  tls.registry.try_get<GameNodePtr>(it->second);
 	if (nullptr == node)
 	{
 		LOG_ERROR << "gs not found ->" << node_id;
@@ -56,7 +56,7 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), static_cast<int32_t>(message.ByteSizeLong()));
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	tls.registry.get<GsNodePtr>(game_node_it->second)->session_.Send(GameServiceSend2PlayerMsgId, message_wrapper);
+	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.Send(GameServiceSend2PlayerMsgId, message_wrapper);
 }
 
 
@@ -91,7 +91,7 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 	message_wrapper.mutable_msg()->mutable_body()->resize(byte_size);
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	tls.registry.get<GsNodePtr>(game_node_it->second)->session_.Send(message_id, message_wrapper);
+	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.Send(message_id, message_wrapper);
 }
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player)
@@ -163,7 +163,7 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 	message.SerializePartialToArray(message_wrapper.mutable_msg()->mutable_body()->data(), byte_size);
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	tls.registry.get<GsNodePtr>(game_node_it->second)->session_.CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
+	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.CallMethod(GameServiceCallPlayerMsgId, message_wrapper);
 }
 
 bool CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
@@ -173,6 +173,6 @@ bool CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& me
 	{
 		return false;
 	}
-	tls.registry.get<GsNodePtr>(it->second)->session_.CallMethod(message_id, message);
+	tls.registry.get<GameNodePtr>(it->second)->session_.CallMethod(message_id, message);
 	return true;
 }

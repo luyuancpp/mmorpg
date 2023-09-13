@@ -62,7 +62,7 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
 
 NodeId PlayerSceneSystem::GetGsNodeIdByScene(const entt::entity scene)
 {
-    const auto* p_gs_data = tls.registry.try_get<GsNodePtr>(scene);
+    const auto* p_gs_data = tls.registry.try_get<GameNodePtr>(scene);
     //找不到gs了，放到好的gs里面
     if (nullptr == p_gs_data)
     {
@@ -128,11 +128,11 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             return;
         }
     }
-    auto from_scene_game_node = tls.registry.try_get<GsNodePtr>(from_scene->scene_entity_);
-    auto try_to_scene_gs = tls.registry.try_get<GsNodePtr>(to_scene);
-    if (nullptr == from_scene_game_node || nullptr == try_to_scene_gs)
+    auto from_scene_game_node = tls.registry.try_get<GameNodePtr>(from_scene->scene_entity_);
+    auto game_node = tls.registry.try_get<GameNodePtr>(to_scene);
+    if (nullptr == from_scene_game_node || nullptr == game_node)
     {
-        LOG_ERROR << " gs component null : " << (nullptr == from_scene_game_node) << " " << (nullptr == try_to_scene_gs);
+        LOG_ERROR << " gs component null : " << (nullptr == from_scene_game_node) << " " << (nullptr == game_node);
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }
@@ -146,13 +146,13 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
     }
 
     auto from_gs_it = controller_tls.game_node().find((*from_scene_game_node)->node_id());
-    auto to_gs_it = controller_tls.game_node().find((*try_to_scene_gs)->node_id());
+    auto to_gs_it = controller_tls.game_node().find((*game_node)->node_id());
     if (from_gs_it == controller_tls.game_node().end() || to_gs_it == controller_tls.game_node().end())
     {
         //服务器已经崩溃了
         LOG_ERROR << " gs not found  : " <<
             (*from_scene_game_node)->node_id() <<
-            " " << (*try_to_scene_gs)->node_id();
+            " " << (*game_node)->node_id();
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
         return;
     }

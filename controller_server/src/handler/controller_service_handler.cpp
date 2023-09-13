@@ -92,13 +92,13 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 	}
 
 	auto c = tls.registry.get<RpcServerConnection>(game_node);
-	auto gs_node_ptr = std::make_shared<GsNodePtr::element_type>(c.conn_);
+	auto gs_node_ptr = std::make_shared<GameNodePtr::element_type>(c.conn_);
 	gs_node_ptr->node_info_.set_node_id(request->gs_node_id());
 	gs_node_ptr->node_info_.set_node_type(kGameNode);
 	gs_node_ptr->node_inet_addr_ = service_addr; //为了停掉gs，或者gs断线用
 	gs_node_ptr->server_entity_ = game_node;
 	AddMainSceneNodeComponent(game_node);
-	tls.registry.emplace<GsNodePtr>(game_node, gs_node_ptr);
+	tls.registry.emplace<GameNodePtr>(game_node, gs_node_ptr);
 	if (request->server_type() == kMainSceneServer)
 	{
 		const auto& config_all = mainscene_config::GetSingleton().all();
@@ -108,7 +108,7 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 		{
 			create_scene_param.scene_confid_ = config_all.data(i).id();
 			auto scene_entity = ScenesSystem::CreateScene2Gs(create_scene_param);
-			tls.registry.emplace<GsNodePtr>(scene_entity, gs_node_ptr);
+			tls.registry.emplace<GameNodePtr>(scene_entity, gs_node_ptr);
 			response->add_scenes_info()->CopyFrom(tls.registry.get<SceneInfo>(scene_entity));
 		}
 	}
@@ -165,7 +165,7 @@ void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* co
 		return;
 	}
 	tls.registry.emplace<InetAddress>(gate, session_addr);
-	for (auto e : tls.registry.view<GsNodePtr>())
+	for (auto e : tls.registry.view<GameNodePtr>())
 	{
 		g_controller_node->LetGateConnect2Gs(e, gate);
 	}
@@ -220,7 +220,7 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 	controller_tls.gate_sessions().erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
-	tls.registry.get<GsNodePtr>(game_node_it->second)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
+	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
 	ControllerPlayerSystem::LeaveGame(player_id);
 ///<<< END WRITING YOUR CODE
 }
@@ -506,7 +506,7 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 			continue;
 		}
 		auto gs = git->second;
-		auto gs_node_ptr = tls.registry.try_get<GsNodePtr>(gs);
+		auto gs_node_ptr = tls.registry.try_get<GameNodePtr>(gs);
 		if (nullptr == gs_node_ptr)
 		{
             LOG_ERROR << "gs not found ";
@@ -514,7 +514,7 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 		}
 		create_scene_param.scene_info = it.scene_info();
 		auto scene = ScenesSystem::CreateScene2Gs(create_scene_param);
-		tls.registry.emplace<GsNodePtr>(scene, *gs_node_ptr);
+		tls.registry.emplace<GameNodePtr>(scene, *gs_node_ptr);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -550,7 +550,7 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
         LOG_ERROR << "game crash" << request->game_node_id();
         return;
 	}
-	auto* const game_node = tls.registry.try_get<GsNodePtr>(game_it->second);
+	auto* const game_node = tls.registry.try_get<GameNodePtr>(game_it->second);
 	if (nullptr == game_node)
 	{
 		LOG_ERROR << "game crash" << request->game_node_id();
@@ -694,7 +694,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
 			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		auto game = tls.registry.try_get<GsNodePtr>(controller_it->second);
+		auto game = tls.registry.try_get<GameNodePtr>(controller_it->second);
 		if (nullptr == game)
 		{
 			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();

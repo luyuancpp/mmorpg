@@ -22,7 +22,7 @@ public:
 	entt::entity server_entity_{entt::null};
 };
 
-using GsNodePtr = std::shared_ptr<GsNode>;
+using GameNodePtr = std::shared_ptr<GsNode>;
 using GsNodeWPtr = std::weak_ptr<GsNode>; //todo
 using GameNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
 
