@@ -60,7 +60,7 @@ void PlayerSceneSystem::EnterSceneS2C(entt::entity player)
     CallGamePlayerMethod(GamePlayerSceneServiceEnterSceneS2CMsgId, msg, player);
 }
 
-NodeId PlayerSceneSystem::GetGsNodeIdByScene(const entt::entity scene)
+NodeId PlayerSceneSystem::GetGameNodeIdByScene(const entt::entity scene)
 {
     const auto* p_gs_data = tls.registry.try_get<GameNodePtr>(scene);
     //找不到gs了，放到好的gs里面

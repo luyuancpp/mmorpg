@@ -8,10 +8,10 @@
 #include "common.pb.h"
 #include "component_proto/gs_node_comp.pb.h"
 
-class GsNode
+class GameNode
 {
 public:
-	explicit GsNode(const muduo::net::TcpConnectionPtr& conn) : session_(conn)
+	explicit GameNode(const muduo::net::TcpConnectionPtr& conn) : session_(conn)
 	{
 	}
 
@@ -22,10 +22,10 @@ public:
 	entt::entity server_entity_{entt::null};
 };
 
-using GameNodePtr = std::shared_ptr<GsNode>;
-using GsNodeWPtr = std::weak_ptr<GsNode>; //todo
-using GameNodePlayerInfoPtr = std::shared_ptr<GsNodePlayerInfo>;
+using GameNodePtr = std::shared_ptr<GameNode>;
+using GsNodeWPtr = std::weak_ptr<GameNode>; //todo
+using GameNodePlayerInfoPtr = std::shared_ptr<GameNodeInfo>;
 
-using GsNodes = std::unordered_map<uint32_t, entt::entity>;
+using GameNodeList = std::unordered_map<uint32_t, entt::entity>;
 
 

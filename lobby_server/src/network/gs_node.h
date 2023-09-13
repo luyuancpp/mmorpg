@@ -8,9 +8,9 @@
 
 #include "common.pb.h"
 
-struct GsNode
+struct GameNode
 {
-	GsNode(const muduo::net::TcpConnectionPtr& conn)
+	GameNode(const muduo::net::TcpConnectionPtr& conn)
 		: session_(conn){}
 	
 	decltype(auto) node_id() const { return node_info_.node_id(); }
@@ -19,7 +19,7 @@ struct GsNode
 	RpcServerConnection session_;
 };
 
-using GameNodePtr = std::shared_ptr<GsNode>;
+using GameNodePtr = std::shared_ptr<GameNode>;
 
-using GsNodes = std::unordered_map<uint32_t, entt::entity>;
+using GameNodeList = std::unordered_map<uint32_t, entt::entity>;
 
