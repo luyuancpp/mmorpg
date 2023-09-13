@@ -99,10 +99,10 @@ void LobbyServer::Receive2(const OnBeConnectedEvent& es)const
 			{
 				continue;
 			}
-			auto gs_node = tls.registry.try_get<GameNodePtr>(e);//如果是游戏逻辑服则删除
-			if (nullptr != gs_node && (*gs_node)->node_info_.node_type() == kGameNode)
+			auto game_node = tls.registry.try_get<GameNodePtr>(e);//如果是游戏逻辑服则删除
+			if (nullptr != game_node && (*game_node)->node_info_.node_type() == kGameNode)
 			{
-				lobby_tls.gs_node().erase((*gs_node)->node_info_.node_id());
+				lobby_tls.game_node_list().erase((*game_node)->node_info_.node_id());
 			}
             // controller 不动态扩展，所以不删除
 			tls.registry.destroy(e);
