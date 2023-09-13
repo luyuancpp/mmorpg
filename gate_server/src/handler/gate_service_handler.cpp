@@ -62,7 +62,7 @@ void GateServiceHandler::StopGS(::google::protobuf::RpcController* controller,
 }
 
 void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,
-	const ::GateNodeUpdateGameNodeRequest* request,
+	const ::GateNodePlayerUpdateGameNodeRequest* request,
 	::GateNodePlayerUpdateGameNodeResponese* response,
 	 ::google::protobuf::Closure* done)
 {

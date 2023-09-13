@@ -557,7 +557,7 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 		return;
 	}
 	player_node_info->set_game_node_id(request->game_node_id());
-	GateNodeUpdateGameNodeRequest rq;
+	GateNodePlayerUpdateGameNodeRequest rq;
 	rq.set_session_id(player_node_info->gate_session_id());
 	rq.set_game_node_id(player_node_info->game_node_id());
 	gate_it->second->session_.CallMethod(GateServicePlayerEnterGsMsgId, rq);
