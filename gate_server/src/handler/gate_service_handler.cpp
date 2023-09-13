@@ -62,19 +62,19 @@ void GateServiceHandler::StopGS(::google::protobuf::RpcController* controller,
 }
 
 void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* controller,
-	const ::GateNodePlayerEnterGsRequest* request,
-	::GateNodePlayerEnterGsResponese* response,
+	const ::GateNodeUpdateGameNodeRequest* request,
+	::GateNodePlayerUpdateGameNodeResponese* response,
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
-
 	const auto it = gate_tls.sessions().find(request->session_id());
 	if (it == gate_tls.sessions().end())
 	{
-		LOG_INFO << "conn id not found   " << request->session_id();
+		LOG_ERROR << "conn id not found   " << request->session_id();
 		return;
 	}
-	it->second.game_node_id_ = request->game_node_id();//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉ms 让ms去通知gs去发送信息
+	//注意这里gs发过来的时候可能有异步问题，所以gate更新完gs以后才能告诉controller 让ms去通知gs去发送信息
+	it->second.game_node_id_ = request->game_node_id();
 	response->set_session_id(request->session_id());
 	///<<< END WRITING YOUR CODE
 }

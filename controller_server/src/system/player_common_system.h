@@ -7,6 +7,6 @@ class PlayerCommonSystem
 {
 public:
     static void InitPlayerComponent(entt::entity player, Guid player_id);
-    static void OnEnterGateSucceed(entt::entity player);
+    static void OnEnterGateUpdateGameNodeSucceed(entt::entity player);
     static void OnLogin(entt::entity player);
 };

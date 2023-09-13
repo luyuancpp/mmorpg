@@ -62,7 +62,7 @@ uint32_t ClientReceiver::FindValidLoginNodeId(uint64_t session_id)
 		}
 		return key;
 	}
-    return Session::kInvalidNodeId;
+    return kInvalidNodeId;
 }
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)

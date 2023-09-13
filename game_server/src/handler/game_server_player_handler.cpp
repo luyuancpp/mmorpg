@@ -60,7 +60,7 @@ void GamePlayerServiceHandler::OnControllerEnterGateSucceed(entt::entity player,
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	PlayerCommonSystem::OnEnterGateSucceed(player);
+	PlayerCommonSystem::OnEnterGateUpdateGameNodeSucceed(player);
 	///<<< END WRITING YOUR CODE
 }
 
