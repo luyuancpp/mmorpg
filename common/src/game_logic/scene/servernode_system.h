@@ -4,9 +4,11 @@
 
 #include "src/common_type/common_type.h"
 
+constexpr uint32_t kDefaultSceneId = 1;
+
 struct GetSceneParam
 {
-	uint32_t scene_conf_id_{0};
+	uint32_t scene_conf_id_{kDefaultSceneId};
 };
 
 struct GetSceneFilterParam

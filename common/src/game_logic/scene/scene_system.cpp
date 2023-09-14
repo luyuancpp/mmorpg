@@ -166,11 +166,11 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 	}
 
 	BeforeEnterScene before_enter_scene_event;
-	before_enter_scene_event.set_entity(entt::to_integral(param.enterer_));
+	before_enter_scene_event.set_entity(entt::to_integral(param.player_));
 	tls.dispatcher.trigger(before_enter_scene_event);
 
-	tls.registry.get<ScenePlayers>(param.scene_).emplace(param.enterer_);
-	tls.registry.emplace<SceneEntity>(param.enterer_, param.scene_);
+	tls.registry.get<ScenePlayers>(param.scene_).emplace(param.player_);
+	tls.registry.emplace<SceneEntity>(param.player_, param.scene_);
 	// todo weak_ptr ?
 	if (const auto* const game_player_info = tls.registry.try_get<GameNodePlayerInfoPtr>(param.scene_))
 	{
@@ -178,8 +178,21 @@ void ScenesSystem::EnterScene(const EnterSceneParam& param)
 	}
 
 	OnEnterScene on_enter_scene_event;
-	on_enter_scene_event.set_entity(entt::to_integral(param.enterer_));
+	on_enter_scene_event.set_entity(entt::to_integral(param.player_));
 	tls.dispatcher.trigger(on_enter_scene_event);
+}
+
+void ScenesSystem::EnterDefaultScene(const EnterDefaultSceneParam& param)
+{
+	if (param.IsNull())
+	{
+		LOG_INFO << "param null error";
+		return;
+	}
+	constexpr GetSceneParam get_scene_param;
+	const auto default_scene = ServerNodeSystem::GetNotFullScene(get_scene_param);
+	const EnterSceneParam enter_scene_param{default_scene, param.player_};
+	EnterScene(enter_scene_param);
 }
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
@@ -237,7 +250,7 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 	LeaveScene(leave_param);
 
 	EnterSceneParam enter_param;
-	enter_param.enterer_ = param.player_;
+	enter_param.player_ = param.player_;
 	enter_param.scene_ = scene_entity;
 	EnterScene(enter_param);
 }
