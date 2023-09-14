@@ -43,16 +43,13 @@ void GsSceneSystem::CreateSceneByGuid(CreateGsSceneParam& param)
 
 void GsSceneSystem::EnterScene(const EnterSceneParam& param)
 {
-    auto enter_ = param.enterer_;
     ScenesSystem::EnterScene(param);
-
-    if (tls.registry.any_of<Player>(enter_))
+    if (tls.registry.any_of<Player>(param.player_))
     {
-        PlayerSceneSystem::OnEnterScene(enter_, param.scene_);
-    }    
+        PlayerSceneSystem::OnEnterScene(param.player_, param.scene_);
+    }
     else
     {
-
     }
 }
 
