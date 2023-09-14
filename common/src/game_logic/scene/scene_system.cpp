@@ -79,16 +79,16 @@ bool ScenesSystem::ConfigSceneListNotEmpty(const uint32_t scene_config_id)
 	return false;
 }
 
-entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
+entt::entity ScenesSystem::CreateScene2GameNode(const CreateGameNodeSceneParam& param)
 {
 	if (param.IsNull())
 	{
-		LOG_ERROR << "server id error" << param.scene_confid_;
+		LOG_ERROR << "server id error" << param.scene_config_id_;
 		return entt::null;
 	}
 
 	SceneInfo scene_info(param.scene_info);
-	scene_info.set_scene_confid(param.scene_confid_);
+	scene_info.set_scene_confid(param.scene_config_id_);
 	if (scene_info.guid() <= 0)
 	{
 		scene_info.set_guid(server_sequence_.Generate());
@@ -102,8 +102,8 @@ entt::entity ScenesSystem::CreateScene2Gs(const CreateGsSceneParam& param)
 		tls.registry.emplace<GameNodePlayerInfoPtr>(scene_entity, *server_player_info);
 	}
 
-	auto* p_server_comp = tls.registry.try_get<ServerComp>(param.node_);
-	if (nullptr != p_server_comp)
+	if (auto* p_server_comp = tls.registry.try_get<ServerComp>(param.node_);
+		nullptr != p_server_comp)
 	{
 		p_server_comp->AddScene(scene_entity);
 	}
@@ -137,7 +137,7 @@ void ScenesSystem::OnDestroyServer(entt::entity node)
 	tls.registry.destroy(node);
 }
 
-uint32_t ScenesSystem::CheckScenePlayerSize(entt::entity scene)
+uint32_t ScenesSystem::CheckScenePlayerSize(const entt::entity scene)
 {
 	//todo weak ptr ?
 	if (tls.registry.get<ScenePlayers>(scene).size() >= kMaxMainScenePlayer)
@@ -189,10 +189,8 @@ void ScenesSystem::EnterDefaultScene(const EnterDefaultSceneParam& param)
 		LOG_INFO << "param null error";
 		return;
 	}
-	constexpr GetSceneParam get_scene_param;
-	const auto default_scene = ServerNodeSystem::GetNotFullScene(get_scene_param);
-	const EnterSceneParam enter_scene_param{default_scene, param.player_};
-	EnterScene(enter_scene_param);
+	const auto default_scene = ServerNodeSystem::GetNotFullScene({});
+	EnterScene({default_scene, param.player_});
 }
 
 void ScenesSystem::LeaveScene(const LeaveSceneParam& param)
@@ -233,26 +231,19 @@ void ScenesSystem::CompelPlayerChangeScene(const CompelChangeSceneParam& param)
 	entt::entity scene_entity = dest_node_scene.GetMinPlayerSizeSceneByConfigId(param.scene_conf_id_);
 	if (entt::null == scene_entity)
 	{
-		CreateGsSceneParam create_gs_scene_param;
-		create_gs_scene_param.scene_confid_ = param.scene_conf_id_;
-		create_gs_scene_param.node_ = param.dest_node_;
-		scene_entity = CreateScene2Gs(create_gs_scene_param);
+		scene_entity = CreateScene2GameNode(
+			{
+				.node_ = param.dest_node_,
+					 .scene_config_id_ = param.scene_conf_id_
+			});
 	}
-
+	LeaveScene({param.player_});
 	if (entt::null == scene_entity)
 	{
-		//todo 回到默认场景
+		EnterDefaultScene({param.player_});
 		return;
 	}
-
-	LeaveSceneParam leave_param;
-	leave_param.leaver_ = param.player_;
-	LeaveScene(leave_param);
-
-	EnterSceneParam enter_param;
-	enter_param.player_ = param.player_;
-	enter_param.scene_ = scene_entity;
-	EnterScene(enter_param);
+	EnterScene({scene_entity, param.player_});
 }
 
 void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node)
@@ -267,13 +258,9 @@ void ScenesSystem::ReplaceCrashServer(entt::entity crash_node, entt::entity dest
 			{
 				continue;
 			}
-			CreateGsSceneParam create_gs_scene_param;
-			create_gs_scene_param.scene_confid_ = p_scene_info->scene_confid();
-			create_gs_scene_param.node_ = dest_node;
-			CreateScene2Gs(create_gs_scene_param);
+			CreateScene2GameNode({.node_ = dest_node, .scene_config_id_ = p_scene_info->scene_confid()});
 		}
 	}
-
 	tls.registry.destroy(crash_node);
 }
 
