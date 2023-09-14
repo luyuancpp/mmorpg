@@ -46,7 +46,7 @@ uint32_t MissionSystem::GetReward(const GetRewardParam& param)
 
 uint32_t MissionSystem::Accept(const AcceptMissionEvent& accept_event)
 {
-	entt::entity player = entt::to_entity(accept_event.entity());
+	const entt::entity player = entt::to_entity(accept_event.entity());
 	auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
 	if (nullptr == mission_comp)
 	{
@@ -80,7 +80,7 @@ uint32_t MissionSystem::Accept(const AcceptMissionEvent& accept_event)
 		mission_pb.add_progress(0);
 		 mission_comp->GetEventMissionsClassify()[condition_row->condition_type()].emplace(accept_event.mission_id());
 	}
-	 mission_comp->GetMissionsComp().mutable_missions()->insert({ accept_event.mission_id(), std::move(mission_pb) });
+	mission_comp->GetMissionsComp().mutable_missions()->insert({ accept_event.mission_id(), std::move(mission_pb) });
 	if ( mission_comp->IsMissionTypeNotRepeated())
 	{
 		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
@@ -111,9 +111,9 @@ uint32_t MissionSystem::Abandon(const AbandonParam& param)
 	{
 		mission_reward->mutable_can_reward_mission_id()->erase(param.mission_id_);
 	}
-	 mission_comp->GetMissionsComp().mutable_missions()->erase(param.mission_id_);
-	 mission_comp->GetMissionsComp().mutable_complete_missions()->erase(param.mission_id_);
-	 mission_comp->GetMissionsComp().mutable_mission_begin_time()->erase(param.mission_id_);
+	mission_comp->GetMissionsComp().mutable_missions()->erase(param.mission_id_);
+	mission_comp->GetMissionsComp().mutable_complete_missions()->erase(param.mission_id_);
+	mission_comp->GetMissionsComp().mutable_mission_begin_time()->erase(param.mission_id_);
 	DeleteMissionClassify(param.player_, param.mission_id_);
 	return kRetOK;
 }
@@ -129,7 +129,7 @@ void MissionSystem::CompleteAllMission(entt::entity player, uint32_t op)
 	{
 		 mission_comp->GetMissionsComp().mutable_complete_missions()->insert({ key, false });
 	}
-	 mission_comp->GetMissionsComp().mutable_missions()->clear();
+	mission_comp->GetMissionsComp().mutable_missions()->clear();
 }
 
 bool IsConditionCompleted(uint32_t condition_id, const uint32_t progress_value)
@@ -154,7 +154,7 @@ void MissionSystem::Receive(const MissionConditionEvent& condition_event)
 	{
 		return;
 	}
-	entt::entity player = entt::to_entity(condition_event.entity());
+	const entt::entity player = entt::to_entity(condition_event.entity());
 	auto* const mission_comp = tls.registry.try_get<MissionsComp>(player);
 	if (nullptr == mission_comp)
 	{
@@ -220,7 +220,7 @@ void MissionSystem::DeleteMissionClassify(entt::entity player, uint32_t mission_
 		{
 			continue;
 		}
-		 mission_comp->GetEventMissionsClassify()[condition_row->condition_type()].erase(mission_id);
+		mission_comp->GetEventMissionsClassify()[condition_row->condition_type()].erase(mission_id);
 	}
 	if (auto mission_sub_type = mission_comp->GetMissionConfig()->GetMissionSubType(mission_id);
 		mission_sub_type > 0 &&
