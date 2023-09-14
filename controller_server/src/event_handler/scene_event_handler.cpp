@@ -59,8 +59,8 @@ void SceneEventHandler::OnEnterSceneHandler(const OnEnterScene& message)
 void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto player = entt::to_entity(message.entity());
-    //LOG_INFO << "player leave scene " << *try_player_id << " " << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).scene_id();
+	const auto player = entt::to_entity(message.entity());
+	//LOG_INFO << "player leave scene " << *try_player_id << " " << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).scene_id();
 	auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
 	if (nullptr == change_scene_queue)
 	{
@@ -71,17 +71,18 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 		return;
 	}
 	const auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
-	auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
-	GsLeaveSceneRequest leave_scene_message;
-	const auto to_scene_game_node = tls.registry.try_get<GameNodePtr>(to_scene);
-	const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
-	if (nullptr == to_scene_game_node || nullptr == player_node_info)
+	const auto dest_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
+	const auto* const dest_game_node = tls.registry.try_get<GameNodePtr>(dest_scene);
+	const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	if (nullptr == dest_game_node || nullptr == player_node_info)
 	{
-		LOG_ERROR << " scene null : " << (nullptr == to_scene_game_node) << " " << (nullptr == player_node_info);
+		//todo
+		LOG_ERROR << " scene null : " << (nullptr == dest_game_node) << " " << (nullptr == player_node_info);
 		PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);
 		return;
 	}
-	leave_scene_message.set_change_gs(player_node_info->game_node_id() != (*to_scene_game_node)->node_id());
+	GsLeaveSceneRequest leave_scene_message;
+	leave_scene_message.set_change_gs(player_node_info->game_node_id() != (*dest_game_node)->node_id());
 	Send2GsPlayer(GamePlayerSceneServiceLeaveSceneMsgId, leave_scene_message, player);
 ///<<< END WRITING YOUR CODE
 }
