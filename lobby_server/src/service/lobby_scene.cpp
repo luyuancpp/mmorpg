@@ -198,11 +198,8 @@ void LobbyServiceImpl::EnterCrossMainScene(::google::protobuf::RpcController* co
     LeaveSceneParam lsp;
     lsp.leaver_ = player;
     ScenesSystem::LeaveScene(lsp);
-
-	EnterSceneParam esp;
-	esp.scene_ = scene;
-	esp.enterer_ = player;
-	ScenesSystem::EnterScene(esp);
+	
+	ScenesSystem::EnterScene({scene, player});
 
 	response->set_player_id(request->player_id());
 	response->set_scene_id(request->scene_id());
@@ -235,14 +232,8 @@ void LobbyServiceImpl::EnterCrossMainSceneWeightRoundRobin(::google::protobuf::R
 	auto player = it.first->second;
 
 	//todo error
-    LeaveSceneParam lsp;
-    lsp.leaver_ = player;
-    ScenesSystem::LeaveScene(lsp);
-
-	EnterSceneParam esp;
-	esp.scene_ = scene;
-	esp.enterer_ = player;
-	ScenesSystem::EnterScene(esp);
+ScenesSystem::LeaveScene({player});
+	ScenesSystem::EnterScene({scene, player});
 ///<<< END WRITING YOUR CODE
 }
 

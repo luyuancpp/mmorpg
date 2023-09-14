@@ -163,10 +163,8 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
     lp.leaver_ = player;
     ScenesSystem::LeaveScene(lp);
 
-    EnterSceneParam ep;
-    ep.enterer_ = player;
-    ep.scene_ = to_scene;
-    ScenesSystem::EnterScene(ep);
+    const EnterSceneParam enter_scene_param{to_scene, player};
+    ScenesSystem::EnterScene(enter_scene_param);
     change_scene_queue->change_scene_queue_.pop_front();
 
     OnEnterSceneOk(player);
@@ -196,19 +194,19 @@ uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
     }
     else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eEnterGsSceneSucceed)
     {
-        const auto to_scene = ScenesSystem::GetSceneByGuid(change_info.scene_info().guid());
+        const auto dest_scene = ScenesSystem::GetSceneByGuid(change_info.scene_info().guid());
         //场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
-        if (entt::null == to_scene)
+        if (entt::null == dest_scene)
         {
             //todo 考虑直接删除了会不会有异常
             //这时候gate已经更新了新的game node id 又进不去新场景,那我应该让他回到老场景
             change_scene_queue->change_scene_queue_.pop_front();
+            const EnterDefaultSceneParam param{player};
+            ScenesSystem::EnterDefaultScene(param);
             return kRetEnterSceneSceneNotFound;
         }
-        EnterSceneParam ep;
-        ep.enterer_ = player;
-        ep.scene_ = to_scene;
-        ScenesSystem::EnterScene(ep);
+        const EnterSceneParam param{dest_scene, player};
+        ScenesSystem::EnterScene(param);
     }
     else if (change_info.change_gs_status() == ControllerChangeSceneInfo::eGateEnterGsSceneSucceed)
     {
