@@ -5,10 +5,6 @@ class GamePlayerServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
-	static void UpdateSessionController2Gs(entt::entity player,
-		const ::UpdateSessionController2GsRequest* request,
-		::google::protobuf::Empty* response);
-
 	static void Controller2GsLogin(entt::entity player,
 		const ::Controller2GsLoginRequest* request,
 		::google::protobuf::Empty* response);
@@ -25,16 +21,11 @@ public:
         switch(method->index())
 		{
 		case 0:
-			UpdateSessionController2Gs(player,
-			nullptr,
-			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
-		break;
-		case 1:
 			Controller2GsLogin(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
-		case 2:
+		case 1:
 			OnControllerEnterGateSucceed(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
