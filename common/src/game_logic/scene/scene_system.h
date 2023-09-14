@@ -6,16 +6,25 @@
 #include "src/util/snow_flake.h"
 #include <component_proto/scene_comp.pb.h>
 
-
 struct EnterSceneParam
 {
 	inline bool IsNull() const
 	{
-		return scene_ == entt::null || enterer_ == entt::null;
+		return scene_ == entt::null || player_ == entt::null;
 	}
 
 	entt::entity scene_{entt::null};
-	entt::entity enterer_{entt::null};
+	entt::entity player_{entt::null};
+};
+
+struct EnterDefaultSceneParam
+{
+	inline bool IsNull() const
+	{
+		return player_ == entt::null;
+	}
+
+	entt::entity player_{entt::null};
 };
 
 struct LeaveSceneParam
@@ -53,7 +62,7 @@ public:
 
 	static std::size_t scenes_size(uint32_t scene_config_id);
 	static std::size_t scenes_size();
-	static void set_server_sequence_node_id(uint32_t node_id) { server_sequence_.set_node_id(node_id); }
+	static void set_server_sequence_node_id(const uint32_t node_id) { server_sequence_.set_node_id(node_id); }
 
 	static entt::entity GetSceneByGuid(Guid guid);
 
@@ -68,6 +77,7 @@ public:
 	static void OnDestroyServer(entt::entity node);
 
 	static void EnterScene(const EnterSceneParam& param);
+	static void EnterDefaultScene(const EnterDefaultSceneParam& param);
 
 	static void LeaveScene(const LeaveSceneParam& param);
 
@@ -76,5 +86,5 @@ public:
 	static void ReplaceCrashServer(entt::entity crash_node, entt::entity dest_node);
 
 private:
-	static inline ServerSequence24 server_sequence_;
+	inline static ServerSequence24 server_sequence_;
 };
