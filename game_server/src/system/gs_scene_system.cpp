@@ -29,11 +29,11 @@ void GsSceneSystem::LoadAllMainSceneNavBin()
     }    
 }
 
-void GsSceneSystem::CreateSceneByGuid(CreateGameNodeSceneParam& param)
+void GsSceneSystem::CreateScene(CreateGameNodeSceneParam& param)
 {
-    auto scene = ScenesSystem::CreateScene2GameNode(param);
+    ScenesSystem::CreateScene2GameNode(param);
     //init scene 
-    auto p_scene_row = get_scene_conf(param.scene_info.scene_confid());
+    const auto p_scene_row = get_scene_conf(param.scene_info.scene_confid());
     if (nullptr == p_scene_row)
     {
         LOG_ERROR << "scene config null" << param.scene_info.scene_confid();

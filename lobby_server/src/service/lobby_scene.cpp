@@ -88,16 +88,12 @@ void LobbyServiceImpl::StartCrossGs(::google::protobuf::RpcController* controlle
 	tls.registry.emplace<GameNodePtr>(gs, game_node_ptr);
 	if (request->server_type() == kMainSceneCrossServer)
 	{
-        tls.registry.remove<MainSceneServer>(gs);
-        tls.registry.emplace<CrossMainSceneServer>(gs);
-
-		auto& config_all = mainscene_config::GetSingleton().all();
-		CreateGameNodeSceneParam create_scene_param;
-		create_scene_param.node_ = gs;
+		tls.registry.remove<MainSceneServer>(gs);
+		tls.registry.emplace<CrossMainSceneServer>(gs);
+		const auto& config_all = mainscene_config::GetSingleton().all();
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
-			create_scene_param.scene_config_id_ = config_all.data(i).id();
-			auto scene = ScenesSystem::CreateScene2GameNode(create_scene_param);
+			const auto scene = ScenesSystem::CreateScene2GameNode({.node_ = gs, .scene_config_id_ = config_all.data(i).id()});
 			tls.registry.emplace<GameNodePtr>(scene, game_node_ptr);
 			response->add_scenes_info()->CopyFrom(tls.registry.get<SceneInfo>(scene));
 		}
