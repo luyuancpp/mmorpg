@@ -77,11 +77,11 @@ void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, Con
 
 void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity player)
 {
-	auto try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
-	if (nullptr == try_change_scene_queue)
-	{
-		return;
-	}
+    const auto try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == try_change_scene_queue)
+    {
+        return;
+    }
     auto& change_scene_queue = try_change_scene_queue->change_scene_queue_;
     if (change_scene_queue.empty())
     {
@@ -95,10 +95,10 @@ void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity playe
     //同一个gs切换
     if (change_scene_queue.front().change_gs_type() == ControllerChangeSceneInfo::eSameGs)
     {
-        TryChangeSameGsScene(player);//就算同gs,队列有消息也不能直接切换，
+        //就算同gs,队列有消息也不能直接切换，
+        TryChangeSameGsScene(player);
         return;
     }
-    
     if (change_scene_queue.front().change_gs_type() == ControllerChangeSceneInfo::eDifferentGs)
     {
         //正在切换
@@ -141,20 +141,22 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
 
 uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 {
-	auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
-	if (nullptr == change_scene_queue)
-	{
-		return kRetChangeScenePlayerQueueComponentNull;
-	}
+    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    if (nullptr == change_scene_queue)
+    {
+        return kRetChangeScenePlayerQueueComponentNull;
+    }
     if (change_scene_queue->change_scene_queue_.empty())
     {
         return kRetChangeScenePlayerQueueComponentEmpty;
     }
     const auto& change_info = change_scene_queue->change_scene_queue_.front();
     const auto to_scene = ScenesSystem::GetSceneByGuid(change_info.scene_info().guid());
-    if (entt::null == to_scene)//场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
+    //场景不存在了把消息删除,这个文件一定要注意这个队列各种异常情况
+    if (entt::null == to_scene)
     {
-        change_scene_queue->change_scene_queue_.pop_front();//todo
+        //todo
+        change_scene_queue->change_scene_queue_.pop_front();
         return kRetEnterSceneSceneNotFound;
     }
     LeaveSceneParam lp;
@@ -165,7 +167,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
     ep.enterer_ = player;
     ep.scene_ = to_scene;
     ScenesSystem::EnterScene(ep);
-    change_scene_queue->change_scene_queue_.pop_front();//切换成功消息删除
+    change_scene_queue->change_scene_queue_.pop_front();
 
     OnEnterSceneOk(player);
     return kRetOK;

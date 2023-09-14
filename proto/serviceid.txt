@@ -4,7 +4,6 @@
 3=DbServiceEnterGame
 4=DbServiceRouteNodeStringMsg
 5=DbServiceRoutePlayerStringMsg
-6=GamePlayerServiceUpdateSessionController2Gs
 7=ControllerScenePlayerServiceLeaveScene
 8=ControllerScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
 9=GateServiceStartGS
