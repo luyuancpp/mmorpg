@@ -39,7 +39,7 @@ void OnControllerServiceStartGsRepliedHandler(const TcpConnectionPtr& conn, cons
 	{
 		for (int32_t i = 0; i < replied->scenes_info_size(); ++i)
 		{
-			CreateGsSceneParam param;
+			CreateGameNodeSceneParam param;
 			param.scene_info = replied->scenes_info(i);
 			GsSceneSystem::CreateSceneByGuid(param);
 		}

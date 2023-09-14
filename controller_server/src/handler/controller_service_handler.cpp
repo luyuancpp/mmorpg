@@ -102,12 +102,9 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 	if (request->server_type() == kMainSceneServer)
 	{
 		const auto& config_all = mainscene_config::GetSingleton().all();
-		CreateGsSceneParam create_scene_param;
-		create_scene_param.node_ = game_node;
 		for (int32_t i = 0; i < config_all.data_size(); ++i)
 		{
-			create_scene_param.scene_confid_ = config_all.data(i).id();
-			auto scene_entity = ScenesSystem::CreateScene2Gs(create_scene_param);
+			auto scene_entity = ScenesSystem::CreateScene2GameNode({.node_ = game_node, .scene_config_id_ = config_all.data(i).id()});
 			tls.registry.emplace<GameNodePtr>(scene_entity, game_node_ptr);
 			response->add_scenes_info()->CopyFrom(tls.registry.get<SceneInfo>(scene_entity));
 		}
@@ -497,7 +494,7 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	CreateGsSceneParam create_scene_param;
+	CreateGameNodeSceneParam create_scene_param;
 	for (auto& it : request->cross_scenes_info())
 	{
 		auto git = controller_tls.game_node().find(it.gs_node_id());
@@ -513,7 +510,7 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
             continue;
 		}
 		create_scene_param.scene_info = it.scene_info();
-		auto scene = ScenesSystem::CreateScene2Gs(create_scene_param);
+		auto scene = ScenesSystem::CreateScene2GameNode(create_scene_param);
 		tls.registry.emplace<GameNodePtr>(scene, *game_node);
 	}
 ///<<< END WRITING YOUR CODE

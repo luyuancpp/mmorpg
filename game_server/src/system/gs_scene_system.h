@@ -5,13 +5,13 @@
 #include "src/comp/gs_scene_comp.h"
 
 struct EnterSceneParam;
-struct CreateGsSceneParam;
+struct CreateGameNodeSceneParam;
 
 class GsSceneSystem
 {
 public:
     static void LoadAllMainSceneNavBin();
-	static void CreateSceneByGuid(CreateGsSceneParam& param);
+	static void CreateSceneByGuid(CreateGameNodeSceneParam& param);
     static void EnterScene(const EnterSceneParam& param);
     static void LeaveScene(entt::entity ent);
 };
