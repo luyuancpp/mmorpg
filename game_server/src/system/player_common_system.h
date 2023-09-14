@@ -25,7 +25,7 @@ public:
 	static void LeaveGs(entt::entity player);
 
 	static void OnPlayerLogin(entt::entity player, uint32_t enter_gs_type);
-	static void OnEnterGateUpdateGameNodeSucceed(entt::entity player);
+	static void OnGateUpdateGameNodeSucceed(entt::entity player);
 
 
 	static void RemovePlayerSession(Guid player_id);

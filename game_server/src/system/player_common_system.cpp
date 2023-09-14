@@ -104,7 +104,7 @@ void PlayerCommonSystem::OnPlayerLogin(entt::entity player, uint32_t enter_gs_ty
 	}
 }
 
-void PlayerCommonSystem::OnEnterGateUpdateGameNodeSucceed(entt::entity player)
+void PlayerCommonSystem::OnGateUpdateGameNodeSucceed(entt::entity player)
 {
 
 }

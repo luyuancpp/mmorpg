@@ -31,7 +31,7 @@ void GamePlayerServiceHandler::OnControllerEnterGateSucceed(entt::entity player,
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
-	PlayerCommonSystem::OnEnterGateUpdateGameNodeSucceed(player);
+	PlayerCommonSystem::OnGateUpdateGameNodeSucceed(player);
 	///<<< END WRITING YOUR CODE
 }
 

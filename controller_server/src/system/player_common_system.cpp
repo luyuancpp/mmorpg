@@ -22,7 +22,7 @@ void PlayerCommonSystem::InitPlayerComponent(entt::entity player, Guid player_id
     PlayerChangeSceneSystem::InitChangeSceneQueue(player);
 }
 
-void PlayerCommonSystem::OnEnterGateUpdateGameNodeSucceed(entt::entity player)
+void PlayerCommonSystem::OnGateUpdateGameNodeSucceed(entt::entity player)
 {
     const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
     if (nullptr == player_node_info)
