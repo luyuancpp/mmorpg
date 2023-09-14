@@ -37,7 +37,7 @@ struct LeaveSceneParam
 	entt::entity leaver_{entt::null};
 };
 
-struct CreateGsSceneParam
+struct CreateGameNodeSceneParam
 {
 	inline bool IsNull() const
 	{
@@ -46,7 +46,7 @@ struct CreateGsSceneParam
 
 	entt::entity node_{entt::null};
 	SceneInfo scene_info;
-	uint32_t scene_confid_{0};
+	uint32_t scene_config_id_{0};
 };
 
 void AddMainSceneNodeComponent(entt::entity server);
@@ -71,7 +71,7 @@ public:
 
 	static uint32_t CheckScenePlayerSize(entt::entity scene);
 
-	static entt::entity CreateScene2Gs(const CreateGsSceneParam& param);
+	static entt::entity CreateScene2GameNode(const CreateGameNodeSceneParam& param);
 
 	static void DestroyScene(entt::entity node, entt::entity scene);
 	static void OnDestroyServer(entt::entity node);

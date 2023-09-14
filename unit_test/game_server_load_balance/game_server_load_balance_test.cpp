@@ -24,16 +24,16 @@ TEST(GS, CreateMainScene)
 {
     const ScenesSystem sm;
 
-    CreateGsSceneParam create_gs_scene_param;
+    CreateGameNodeSceneParam create_gs_scene_param;
     const auto server_entity1 = CreateMainSceneNode();
 
     create_gs_scene_param.node_ = server_entity1;
     for (uint32_t i = 0; i < kConfigSceneListSize; ++i)
     {
-        create_gs_scene_param.scene_confid_ = i;
+        create_gs_scene_param.scene_config_id_ = i;
         for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
         {
-            sm.CreateScene2Gs(create_gs_scene_param);
+            sm.CreateScene2GameNode(create_gs_scene_param);
         }
         EXPECT_EQ(sm.scenes_size(i), kPerSceneConfigSize);
     }
@@ -47,17 +47,17 @@ TEST(GS, CreateScene2Sever)
     const auto server_entity1 = CreateMainSceneNode();
     const auto server_entity2 = CreateMainSceneNode();
 
-    CreateGsSceneParam create_gs_scene_param1;
-    CreateGsSceneParam create_gs_scene_param2;
+    CreateGameNodeSceneParam create_gs_scene_param1;
+    CreateGameNodeSceneParam create_gs_scene_param2;
 
-    create_gs_scene_param1.scene_confid_ = 2;
+    create_gs_scene_param1.scene_config_id_ = 2;
     create_gs_scene_param1.node_ = server_entity1;
 
-    create_gs_scene_param2.scene_confid_ = 3;
+    create_gs_scene_param2.scene_config_id_ = 3;
     create_gs_scene_param2.node_ = server_entity2;
 
-    sm.CreateScene2Gs(create_gs_scene_param1);
-    sm.CreateScene2Gs(create_gs_scene_param2);
+    sm.CreateScene2GameNode(create_gs_scene_param1);
+    sm.CreateScene2GameNode(create_gs_scene_param2);
 
     const auto servercomp1 = tls.registry.try_get<ServerComp>(server_entity1);
     if (nullptr != servercomp1)
@@ -71,9 +71,9 @@ TEST(GS, CreateScene2Sever)
 		EXPECT_EQ(1, servercomp2->GetSceneSize());
     }
 
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_confid_));
+    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_config_id_));
 
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_confid_));
+    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_config_id_));
     EXPECT_EQ(2, sm.scenes_size());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 }
@@ -84,12 +84,12 @@ TEST(GS, DestroyScene)
 
     const auto server_entity1 = CreateMainSceneNode();
 
-    CreateGsSceneParam create_gs_scene_param1;
+    CreateGameNodeSceneParam create_gs_scene_param1;
     create_gs_scene_param1.node_ = server_entity1;
-    const auto scene_entity = sm.CreateScene2Gs(create_gs_scene_param1);
+    const auto scene_entity = sm.CreateScene2GameNode(create_gs_scene_param1);
 
     EXPECT_EQ(1, sm.scenes_size());
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_confid_));
+    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param1.scene_config_id_));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 
 	auto servercomp1 = tls.registry.try_get<ServerComp>(server_entity1);
@@ -100,7 +100,7 @@ TEST(GS, DestroyScene)
 
     sm.DestroyScene(server_entity1, scene_entity);
     EXPECT_TRUE(sm.IsSceneEmpty());
-    EXPECT_FALSE(sm.ConfigSceneListNotEmpty(create_gs_scene_param1.scene_confid_));
+    EXPECT_FALSE(sm.ConfigSceneListNotEmpty(create_gs_scene_param1.scene_config_id_));
     EXPECT_TRUE(cl_tls.scene_list().empty());
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
     EXPECT_FALSE(tls.registry.valid(scene_entity));
@@ -113,16 +113,16 @@ TEST(GS, DestroySever)
     auto server_entity1 = CreateMainSceneNode();
     auto server_entity2 = CreateMainSceneNode();
 
-    CreateGsSceneParam create_gs_scene_param1;
-    CreateGsSceneParam create_gs_scene_param2;
-    create_gs_scene_param1.scene_confid_ = 3;
+    CreateGameNodeSceneParam create_gs_scene_param1;
+    CreateGameNodeSceneParam create_gs_scene_param2;
+    create_gs_scene_param1.scene_config_id_ = 3;
     create_gs_scene_param1.node_ = server_entity1;
 
-    create_gs_scene_param2.scene_confid_ = 2;
+    create_gs_scene_param2.scene_config_id_ = 2;
     create_gs_scene_param2.node_ = server_entity2;
 
-    auto scene_entity1 = sm.CreateScene2Gs(create_gs_scene_param1);
-    auto scene_entity2 = sm.CreateScene2Gs(create_gs_scene_param2);
+    auto scene_entity1 = sm.CreateScene2GameNode(create_gs_scene_param1);
+    auto scene_entity2 = sm.CreateScene2GameNode(create_gs_scene_param2);
 
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity1).GetSceneSize());
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).GetSceneSize());
@@ -139,8 +139,8 @@ TEST(GS, DestroySever)
 
     EXPECT_EQ(1, tls.registry.get<ServerComp>(server_entity2).GetSceneSize());
     EXPECT_EQ(1, sm.scenes_size());
-    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_confid_));
-    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_confid_));
+    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_config_id_));
+    EXPECT_EQ(1, sm.scenes_size(create_gs_scene_param2.scene_config_id_));
 
     sm.OnDestroyServer(server_entity2);
 
@@ -150,8 +150,8 @@ TEST(GS, DestroySever)
     EXPECT_FALSE(tls.registry.valid(server_entity2));
     EXPECT_FALSE(tls.registry.valid(scene_entity2));
 
-    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_confid_));
-    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param2.scene_confid_));
+    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param1.scene_config_id_));
+    EXPECT_EQ(0, sm.scenes_size(create_gs_scene_param2.scene_config_id_));
     EXPECT_EQ(sm.scenes_size(), sm.scenes_size());
 }
 
@@ -162,17 +162,17 @@ TEST(GS, PlayerLeaveEnterScene)
     auto server_entity1 = CreateMainSceneNode();
     auto server_entity2 = CreateMainSceneNode();
 
-    CreateGsSceneParam create_gs_scene_param1;
-    CreateGsSceneParam create_gs_scene_param2;
+    CreateGameNodeSceneParam create_gs_scene_param1;
+    CreateGameNodeSceneParam create_gs_scene_param2;
 
-    create_gs_scene_param1.scene_confid_ = 3;
+    create_gs_scene_param1.scene_config_id_ = 3;
     create_gs_scene_param1.node_ = server_entity1;
 
-    create_gs_scene_param2.scene_confid_ = 2;
+    create_gs_scene_param2.scene_config_id_ = 2;
     create_gs_scene_param2.node_ = server_entity2;
 
-    auto scene_guid1 = sm.CreateScene2Gs(create_gs_scene_param1);
-    auto scene_guid2 = sm.CreateScene2Gs(create_gs_scene_param2);
+    auto scene_guid1 = sm.CreateScene2GameNode(create_gs_scene_param1);
+    auto scene_guid2 = sm.CreateScene2GameNode(create_gs_scene_param2);
 
     EnterSceneParam enter_param1;
     enter_param1.scene_ = scene_guid1;
@@ -256,14 +256,14 @@ TEST(GS, MainTainWeightRoundRobinMainScene)
         server_entities.emplace(CreateMainSceneNode());
     }
 
-    CreateGsSceneParam create_server_scene_param;
+    CreateGameNodeSceneParam create_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        create_server_scene_param.scene_confid_ = i;
+        create_server_scene_param.scene_config_id_ = i;
         for (auto& it : server_entities)
         {
             create_server_scene_param.node_ = it;
-            auto scene_entity = sm.CreateScene2Gs(create_server_scene_param);
+            auto scene_entity = sm.CreateScene2GameNode(create_server_scene_param);
             if (scene_entities.empty())
             {
                 scene_entities.emplace(scene_entity);
@@ -313,17 +313,17 @@ TEST(GS, CompelToChangeScene)
     auto server_entity1 = CreateMainSceneNode();
     auto server_entity2 = CreateMainSceneNode();
 
-    CreateGsSceneParam server1_param;
-    CreateGsSceneParam server2_param;
+    CreateGameNodeSceneParam server1_param;
+    CreateGameNodeSceneParam server2_param;
 
-    server1_param.scene_confid_ = 2;
+    server1_param.scene_config_id_ = 2;
     server1_param.node_ = server_entity1;
 
-    server2_param.scene_confid_ = 2;
+    server2_param.scene_config_id_ = 2;
     server2_param.node_ = server_entity2;
 
-    const auto scene_guid1 = sm.CreateScene2Gs(server1_param);
-    const auto scene_guid2 = sm.CreateScene2Gs(server2_param);
+    const auto scene_guid1 = sm.CreateScene2GameNode(server1_param);
+    const auto scene_guid2 = sm.CreateScene2GameNode(server2_param);
 
     EnterSceneParam enter_param1;
     enter_param1.scene_ = scene_guid1;
@@ -343,7 +343,7 @@ TEST(GS, CompelToChangeScene)
 
     CompelChangeSceneParam compel_change_param1;
     compel_change_param1.dest_node_ = server_entity2;
-    compel_change_param1.scene_conf_id_ = server2_param.scene_confid_;
+    compel_change_param1.scene_conf_id_ = server2_param.scene_config_id_;
     for (auto& it : player_entities_set1)
     {
         compel_change_param1.player_ = it;
@@ -374,14 +374,14 @@ TEST(GS, CrashWeightRoundRobinMainScene)
         server_entities.emplace(CreateMainSceneNode( ));
     }
 
-    CreateGsSceneParam create_server_scene_param;
+    CreateGameNodeSceneParam create_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        create_server_scene_param.scene_confid_ = i;
+        create_server_scene_param.scene_config_id_ = i;
         for (auto& it : server_entities)
         {
             create_server_scene_param.node_ = it;
-            auto e = sm.CreateScene2Gs(create_server_scene_param);
+            auto e = sm.CreateScene2GameNode(create_server_scene_param);
             if (scene_entities.empty())
             {
                 scene_entities.emplace(e);
@@ -438,14 +438,14 @@ TEST(GS, CrashMovePlayer2NewServer)
         server_entities.emplace(CreateMainSceneNode());
     }
 
-    CreateGsSceneParam create_server_scene_param;
+    CreateGameNodeSceneParam create_server_scene_param;
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        create_server_scene_param.scene_confid_ = i;
+        create_server_scene_param.scene_config_id_ = i;
         for (auto& it : server_entities)
         {
             create_server_scene_param.node_ = it;
-            auto e = sm.CreateScene2Gs(create_server_scene_param);
+            auto e = sm.CreateScene2GameNode(create_server_scene_param);
             scene_entities.emplace(e);
             if (first_scene_guid == entt::null)
             {
@@ -500,15 +500,15 @@ TEST(GS, WeightRoundRobinMainScene)
         server_entities.emplace(CreateMainSceneNode());
     }
 
-    CreateGsSceneParam create_server_scene_param;
+    CreateGameNodeSceneParam create_server_scene_param;
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        create_server_scene_param.scene_confid_ = i;
+        create_server_scene_param.scene_config_id_ = i;
         for (auto& it :server_entities)
         {
             create_server_scene_param.node_ = it;
-            sm.CreateScene2Gs(create_server_scene_param);
+            sm.CreateScene2GameNode(create_server_scene_param);
         }        
     }
 
@@ -623,15 +623,15 @@ TEST(GS, ServerEnterLeavePressure)
         server_entities.emplace(CreateMainSceneNode());
     }
 
-    CreateGsSceneParam create_server_scene_param;
+    CreateGameNodeSceneParam create_server_scene_param;
 
     for (uint32_t i = 0; i < per_server_scene; ++i)
     {
-        create_server_scene_param.scene_confid_ = i;
+        create_server_scene_param.scene_config_id_ = i;
         for (auto& it : server_entities)
         {
             create_server_scene_param.node_ = it;
-            sm.CreateScene2Gs(create_server_scene_param);
+            sm.CreateScene2GameNode(create_server_scene_param);
         }
     }
 
@@ -677,13 +677,13 @@ TEST(GS, ServerEnterLeavePressure)
 TEST(GS, EnterDefaultScene)
 {
     const auto game_node = CreateMainSceneNode();
-    CreateGsSceneParam create_gs_scene_param{game_node};
+    CreateGameNodeSceneParam create_gs_scene_param{game_node};
     for (uint32_t i = 1; i < kConfigSceneListSize; ++i)
     {
-        create_gs_scene_param.scene_confid_ = i;
+        create_gs_scene_param.scene_config_id_ = i;
         for (uint32_t j = 0; j < kPerSceneConfigSize; ++j)
         {
-            ScenesSystem::CreateScene2Gs(create_gs_scene_param);
+            ScenesSystem::CreateScene2GameNode(create_gs_scene_param);
         }
     }
     const auto player = tls.registry.create();
@@ -715,17 +715,17 @@ TEST(GS, GetNotFullMainSceneSceneFull)
         tls.registry.emplace<TestNodeId>(server).node_id_ = i;
 	}
 
-	CreateGsSceneParam create_server_scene_param;
+	CreateGameNodeSceneParam create_server_scene_param;
 
 	for (uint32_t i = 0; i < per_server_scene; ++i)
 	{
-		create_server_scene_param.scene_confid_ = i;
+		create_server_scene_param.scene_config_id_ = i;
 		for (auto& it : server_entities)
 		{
 			create_server_scene_param.node_ = it;
-			auto s1 = sm.CreateScene2Gs(create_server_scene_param);
+			auto s1 = sm.CreateScene2GameNode(create_server_scene_param);
             tls.registry.emplace<TestNodeId>(s1, tls.registry.get<TestNodeId>(it));
-            auto s2 = sm.CreateScene2Gs(create_server_scene_param);
+            auto s2 = sm.CreateScene2GameNode(create_server_scene_param);
             tls.registry.emplace<TestNodeId>(s2, tls.registry.get<TestNodeId>(it));    
 		}
 	}
