@@ -14,7 +14,7 @@ MissionsComp::MissionsComp()
 	: mission_config_(&MissionConfig::GetSingleton()),
 	  mission_type_not_repeated_(mission_config_->CheckTypeRepeated())
 {
-	for (uint32_t i = kConditionKillMonster; i < kConditionTypeMax; ++i)
+	for (uint32_t i = static_cast<uint32_t>(eCondtionType::kConditionKillMonster); i < static_cast<uint32_t>(eCondtionType::kConditionTypeMax); ++i)
 	{
 		event_missions_classify_.emplace(i, UInt32Set{});
 	}
