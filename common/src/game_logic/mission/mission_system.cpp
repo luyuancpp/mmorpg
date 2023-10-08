@@ -1,4 +1,4 @@
-#include "mission_system.h"
+﻿#include "mission_system.h"
 
 #include <ranges>
 
@@ -331,7 +331,7 @@ void MissionSystem::OnMissionComplete(entt::entity player, const UInt32Set& comp
 	auto* const mission_reward = tls.registry.try_get<MissionRewardPbComp>(player);
 	MissionConditionEvent mission_condition_event;
 	mission_condition_event.set_entity(entt::to_integral(player));
-	mission_condition_event.set_type(kConditionCompleteMission);
+	mission_condition_event.set_type(static_cast<uint32_t>(eCondtionType::kConditionCompleteMission));
 	mission_condition_event.set_amount(1);
 	for (const auto& mission_id : completed_missions_this_time)
 	{

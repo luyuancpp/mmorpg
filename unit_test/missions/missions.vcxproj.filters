@@ -53,9 +53,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\game_logic\missions\missions_config_template.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\src\game_logic\constants\mission_constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
