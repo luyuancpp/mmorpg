@@ -44,14 +44,14 @@ void OnLobbyServiceEnterCrossMainSceneRepliedHandler(const TcpConnectionPtr& con
     // todo 跨服切换不行，return error
     //切跨到b服过程中，跨服没返回又切到c，跨服回来再到c目前就不考虑这种情况了，考虑的话写代码麻烦
     //todo 异步跨服返回来之前又去切换场景，导致已经切换到别的场景了，再切的话可能就不对了，不考虑这种情况了，正常人不会切那么快
-    auto player = ControllerPlayerSystem::GetPlayer(replied->player_id());
+	const auto player = ControllerPlayerSystem::GetPlayer(replied->player_id());
     if (entt::null == player)
     {
         LOG_ERROR << "player not found" << replied->player_id();
         return;
     }
-    auto scene = ScenesSystem::GetSceneByGuid(replied->scene_id());
-    if (entt::null == scene)
+    if (const auto scene = ScenesSystem::GetSceneByGuid(replied->scene_id());
+	    entt::null == scene)
     {
         LOG_ERROR << "scene not found" << replied->scene_id();
         PlayerChangeSceneSystem::PopFrontChangeSceneQueue(player);

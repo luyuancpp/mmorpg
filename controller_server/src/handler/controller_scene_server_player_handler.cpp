@@ -64,7 +64,7 @@ void ControllerScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt
 		LOG_ERROR << "change gs scene scene not found or destroy" << tls.registry.get<Guid>(player);
 		return;
 	}
-	const auto player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
+	auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == player_node_info)
 	{
 		LOG_ERROR << "change gs scene scene not found or destroy" << tls.registry.get<Guid>(player);
