@@ -264,14 +264,14 @@ bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,	
 			continue;
 		}
 		//表检测至少有一个condition
-		std::size_t valid_config_condition_size = 0;
-		std::size_t equal_condition_size = 0;
-		auto calc_equal_condition_size = [&equal_condition_size, &condition_event, &valid_config_condition_size
+		std::size_t config_condition_size = 0;
+		std::size_t match_condition_size = 0;
+		auto calc_match_condition_size = [&match_condition_size, &condition_event, &config_condition_size
 		](const int32_t index, const auto& config_conditions)
 		{
 			if (config_conditions.size() > 0)
 			{
-				++valid_config_condition_size;
+				++config_condition_size;
 			}
 			if (condition_event.condtion_ids().size() <= index)
 			{
@@ -285,16 +285,16 @@ bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,	
 					continue;
 				}
 				//在这列中有一项匹配
-				++equal_condition_size;
+				++match_condition_size;
 				break;
 			}
 		};
-		calc_equal_condition_size(0, condition_row->condition1());
-		calc_equal_condition_size(1, condition_row->condition2());
-		calc_equal_condition_size(2, condition_row->condition3());
-		calc_equal_condition_size(3, condition_row->condition4());
+		calc_match_condition_size(0, condition_row->condition1());
+		calc_match_condition_size(1, condition_row->condition2());
+		calc_match_condition_size(2, condition_row->condition3());
+		calc_match_condition_size(3, condition_row->condition4());
 		//有效列中的条件列表都匹配了
-		if (valid_config_condition_size == 0 || equal_condition_size != valid_config_condition_size)
+		if (config_condition_size == 0 || match_condition_size != config_condition_size)
 		{
 			continue;
 		}
@@ -305,9 +305,9 @@ bool MissionSystem::UpdateMission(const MissionConditionEvent& condition_event,	
 		{
 			continue;
 		}
-		// to client
+		// todo send to client
 		mission.set_progress(i, std::min(new_progress, condition_row->amount()));
-		// to client
+		// todo  send to client
 	}
 	return mission_updated;
 }
