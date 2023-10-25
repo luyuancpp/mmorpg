@@ -46,7 +46,7 @@ TEST(PlayerChangeScene, CreateMainScene)
 
 TEST(PlayerChangeScene, QueueFull)
 {
-    auto player = CreatePlayer();
+    const auto player = CreatePlayer();
     for (uint8_t i = 0; i < PlayerControllerChangeSceneQueue::kMaxChangeSceneQueue; ++i)
     {
         ControllerChangeSceneInfo info;
