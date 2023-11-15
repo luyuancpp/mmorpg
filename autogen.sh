@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python vcxproj2cmake.py
+python3 vcxproj2cmake.py
 
 cat /proc/cpuinfo  | grep "processor" | wc -l
 cat=$1
