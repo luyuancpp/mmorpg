@@ -1,11 +1,11 @@
 #!/bin/bash
 
-python3 vcxproj2cmake.py
+python vcxproj2cmake.py
 
 cat /proc/cpuinfo  | grep "processor" | wc -l
 cat=$1
 
-cd bin/config && python build.py
+cd bin/config && python gen.py
 if test $? -ne 0; then 
    exit 
 fi
