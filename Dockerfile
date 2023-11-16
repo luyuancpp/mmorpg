@@ -4,6 +4,7 @@ RUN mkdir /usr/src/turn-based-game
 
 COPY . /usr/src/turn-based-game
 
+COPY ./protoc /usr/bin
 
 WORKDIR /usr/src/turn-based-game
 
