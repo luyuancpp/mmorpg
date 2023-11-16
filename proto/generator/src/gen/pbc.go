@@ -34,7 +34,7 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 				util.FileExists(dstFileName) {
 				return
 			}
-			cmd := exec.Command("../../../tools/protoc",
+			cmd := exec.Command("protoc",
 				"--cpp_out="+config.PbcOutDir,
 				fileName,
 				"-I="+config.ProtoDir,
