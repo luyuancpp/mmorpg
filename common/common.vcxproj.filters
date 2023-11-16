@@ -91,7 +91,6 @@
     <ClCompile Include="src\pb\pbc\component_proto\item_base_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\item_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\mission_comp.pb.cc" />
-    <ClCompile Include="src\pb\pbc\component_proto\node_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\player_async_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\player_comp.pb.cc" />
     <ClCompile Include="src\pb\pbc\component_proto\player_login_comp.pb.cc" />
@@ -243,7 +242,6 @@
     <ClInclude Include="src\pb\pbc\component_proto\item_base_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\item_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\mission_comp.pb.h" />
-    <ClInclude Include="src\pb\pbc\component_proto\node_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\player_async_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\player_comp.pb.h" />
     <ClInclude Include="src\pb\pbc\component_proto\player_login_comp.pb.h" />
