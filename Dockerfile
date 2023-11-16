@@ -16,6 +16,8 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
     gdb \
     wget \ 
     make \
-    libboost-dev
+    libboost-dev \
+    vim \
+    golang
 
 CMD ["bash", "-c", "while true; do echo Hello Docker; sleep 1; done"]
