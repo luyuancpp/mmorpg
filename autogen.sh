@@ -9,20 +9,20 @@ cd bin/config && python gen.py
 if test $? -ne 0; then 
    exit 
 fi
-cd ../..
+cd ../../
 
 cd  proto/generator/src && go build -o genproto && ./genproto
 if test $? -ne 0; then 
    exit 
 fi
 
-cd ../../..
-cd third_party && rm -rf muduo && cp -rf muduo-linux muduo && cmake . && make -j$cpu
+cd ../../../
+cd third_party && rm -rf muduo && cp -rf muduo-linux muduo && cd muduo && ./build.sh
 if test $? -ne 0; then 
     exit 
 fi
 
-cd ..
+cd ../../
 cd common && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
