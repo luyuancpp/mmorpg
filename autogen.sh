@@ -11,12 +11,12 @@ if test $? -ne 0; then
 fi
 cd ../..
 
-cd  proto/generator/src && go mod init && go tidy
+cd  proto/generator/src && go build -o genproto && ./genproto
 if test $? -ne 0; then 
    exit 
 fi
 
-cd ..
+cd ../../..
 cd third_party && \cp -rf muduo-linux/* muduo/ && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
