@@ -11,7 +11,7 @@ if test $? -ne 0; then
 fi
 cd ../..
 
-cd common/src/pb/proto && python build.py
+cd  proto/generator/src && go mod init && go tidy
 if test $? -ne 0; then 
    exit 
 fi
