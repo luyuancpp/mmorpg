@@ -23,6 +23,12 @@ if test $? -ne 0; then
 fi
 
 cd ../../
+cd common/src/network && ./autogen.sh
+if test $? -ne 0; then 
+    exit 
+fi
+
+cd ../../../
 cd common && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
