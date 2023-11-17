@@ -107,7 +107,6 @@ template <size_t kNodeBit>
 class ServerSequence
 {
 public:
-static const uint8_t kNodeBit = 32;
 
 void set_node_id(uint64_t node_id)
 {
