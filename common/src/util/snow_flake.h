@@ -21,7 +21,7 @@ static constexpr uint64_t kTimeByte = 35;
 static constexpr uint64_t kMaxIncremented = UINT16_MAX;
 static constexpr uint64_t kTimeShift = kNodeBits + kStepBits;
 static constexpr uint64_t kNodeShift = kStepBits;
-static constexpr uint64_t kStepMask = -1 ^ (-1 << kStepBits);
+static constexpr uint64_t kStepMask = UINT64_MAX ^ (UINT64_MAX << kStepBits);
 
 class SnowFlake
 {
