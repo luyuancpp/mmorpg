@@ -279,7 +279,7 @@ func writeLuaServiceMethodCppFile(methodList RpcMethodInfos) {
 	if len(methodList) <= 0 {
 		return
 	}
-	var data = "#pragma once\n#include <cstdint>\n\n"
+	var data = "#include <cstdint>\n\n"
 	data += "#include \"src/game_logic/thread_local/thread_local_storage_lua.h\"\n"
 	data += methodList[0].IncludeName() + "\n\n"
 
