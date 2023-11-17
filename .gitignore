@@ -32,8 +32,8 @@ bin/zlib*
 common/src/game_config/
 bin/config/
 proto/md5/
-proto/gengo/.idea/
-proto/gengo/bin/
+proto/generator/.idea/
+proto/generator/bin/
 common/src/pb/pb2sol2/
 build/
 Cmake/
