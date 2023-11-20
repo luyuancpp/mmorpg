@@ -107,7 +107,8 @@ template <size_t kNodeBit>
 class ServerSequence
 {
 public:
-
+    static size_t node_bit() { return kNodeBit; }
+    
 void set_node_id(uint64_t node_id)
 {
     node_id_ = node_id << kNodeBit;
