@@ -17,13 +17,12 @@ if test $? -ne 0; then
 fi
 
 cd ../../../
-cd third_party && rm -rf muduo && cp -rf muduo-linux muduo && cd muduo && \
- touch muduo/base/CrossPlatformAdapterFunction.h && \
- cp -f ../../common/src/muduowindow/TimerId.h  muduo/net/ && \
- ./build.sh
-if test $? -ne 0; then 
-    exit 
-fi
+cd third_party && rm -rf muduo 
+cp -rf muduo-linux muduo 
+cd muduo
+touch muduo/base/CrossPlatformAdapterFunction.h
+cp -f ../../common/src/muduowindow/TimerId.h  muduo/net/ 
+./build.sh
 
 cd ../../
 cd common/src/network && ./autogen.sh
