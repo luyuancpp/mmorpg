@@ -118,7 +118,6 @@ uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items)
 			ji.second -= remain_stack_size;//扣除可以叠加，剩下的个数继续判断
 		}		
 	}
-	std::size_t need_grid_size = 0;
 	//剩下的没叠加成功的
 	for (auto& it : need_stack_sizes)
 	{
