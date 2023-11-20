@@ -70,7 +70,7 @@ private:
 	inline std::size_t empty_grid_size() const { sizeassert(); return size() - items_.size(); }
 	std::size_t calc_item_need_grid_size(std::size_t item_size, std::size_t stack_size);
 	void sizeassert() const { assert(size() >= items_.size()); }
-	void OnNewGrid(const Item& item);
+	uint32_t OnNewGrid(const Item& item);
 	bool CanStack(const Item& litem, const Item& ritem);
 	
 	BagEntity entity_;

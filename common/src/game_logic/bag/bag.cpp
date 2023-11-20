@@ -525,19 +525,19 @@ std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t sta
 	return stack_grid_size;
 }
 
-void Bag::OnNewGrid(const Item& item)
+uint32_t Bag::OnNewGrid(const Item& item)
 {
-	uint32_t add_pos = 0;
-	uint32_t sz = uint32_t(size());
-	for (uint32_t i = 0; i < sz; ++i)
+	const auto grid_size = size();
+	for (uint32_t i = 0; i < grid_size; ++i)
 	{
-		if (pos_.find(i) != pos_.end())
+		if (pos_.contains(i))
 		{
 			continue;
 		}
 		pos_.emplace(i, item.guid());
-		break;
+		return i;
 	}
+	return kInvalidU32Id;
 }
 
 bool Bag::CanStack(const Item& litem, const Item& ritem)
