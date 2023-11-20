@@ -30,13 +30,13 @@ TEST(BagTest, AddNewGridItem)
     EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByGuid(g_bag_server_sequence.LastId())->guid());
 }
 
-//Ò»¸öÒ»¸ö¸ñ×ÓÌí¼Ó
+//Ò»ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 TEST(BagTest, AddNewGridItemFull)
 {
     Bag bag;
     CreateItemParam p;
     p.item_base_db.set_config_id(1);
-    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         auto item = CreateItem(p);
         EXPECT_EQ(kRetOK, bag.AddItem(item));
@@ -52,17 +52,17 @@ TEST(BagTest, AddNewGridItemFull)
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByBos(i)->guid());
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByGuid(g_bag_server_sequence.LastId())->guid());
     }   
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.pos_size());
 
     auto item = CreateItem(p);
     EXPECT_EQ(kRetBagAddItemBagFull, bag.AddItem(item));
-    bag.Unlock(BagCapacity::kDefualtCapacity);
-    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
+    bag.Unlock(BagCapacity::kDefaultCapacity);
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         auto item = CreateItem(p);
         EXPECT_EQ(kRetOK, bag.AddItem(item));
-        uint32_t newindex = i + (uint32_t)BagCapacity::kDefualtCapacity;
+        uint32_t newindex = i + (uint32_t)BagCapacity::kDefaultCapacity;
         EXPECT_EQ(newindex + 1 , bag.item_size());
         EXPECT_EQ(newindex + 1, bag.pos_size());
         EXPECT_EQ(bag.GetItemByBos(newindex)->config_id(), p.item_base_db.config_id());
@@ -75,37 +75,37 @@ TEST(BagTest, AddNewGridItemFull)
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByBos(newindex)->guid());
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByGuid(g_bag_server_sequence.LastId())->guid());
     }
-    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.pos_size());
 }
 
-//Ò»¸öÒ»¸ö¸ñ×ÓÌí¼Ó
+//Ò»ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 TEST(BagTest, Add10CanStack10CanNotStack)
 {
     Bag bag;
-    bag.Unlock(BagCapacity::kDefualtCapacity);
+    bag.Unlock(BagCapacity::kDefaultCapacity);
     CreateItemParam p;
     uint32_t config_id10 = 10;
     uint32_t config_id1 = 1;
     p.item_base_db.set_config_id(config_id1);
-    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);
     auto item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
     p.item_base_db.set_config_id(config_id10);
-    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);
     item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.pos_size());
 }
 
-//Ìí¼Ó¿Éµþ¼Ó²âÊÔ1
+//ï¿½ï¿½Ó¿Éµï¿½ï¿½Ó²ï¿½ï¿½ï¿½1
 TEST(BagTest, AddStackItemHalfAdd)
 {
     Bag bag;
     CreateItemParam p;
     p.item_base_db.set_config_id(10);
-    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity * 2; i++)
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity * 2; i++)
     {
         if (i % 2 == 0)
         {
@@ -137,18 +137,18 @@ TEST(BagTest, AddStackItemHalfAdd)
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByBos(index)->guid());
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByGuid(g_bag_server_sequence.LastId())->guid());
     }
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.pos_size());
 }
 
-//½âËø¿ÉÒÔ¼ÌÐøµþ¼Ó
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 TEST(BagTest, AddStackItemUnlock)
 {
     Bag bag;
     CreateItemParam p;
     p.item_base_db.set_config_id(10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
-    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         auto item = CreateItem(p);
         EXPECT_EQ(kRetOK, bag.AddItem(item));
@@ -164,17 +164,17 @@ TEST(BagTest, AddStackItemUnlock)
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByBos(i)->guid());
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByGuid(g_bag_server_sequence.LastId())->guid());
     }
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.pos_size());
 
     auto item = CreateItem(p);
     EXPECT_EQ(kRetBagAddItemBagFull, bag.AddItem(item));
-    bag.Unlock(BagCapacity::kDefualtCapacity);
-    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; i++)
+    bag.Unlock(BagCapacity::kDefaultCapacity);
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; i++)
     {
         auto item = CreateItem(p);
         EXPECT_EQ(kRetOK, bag.AddItem(item));
-        uint32_t newindex = i + (uint32_t)BagCapacity::kDefualtCapacity;
+        uint32_t newindex = i + (uint32_t)BagCapacity::kDefaultCapacity;
         EXPECT_EQ(newindex + 1, bag.item_size());
         EXPECT_EQ(newindex + 1, bag.pos_size());
         EXPECT_EQ(bag.GetItemByBos(newindex)->config_id(), p.item_base_db.config_id());
@@ -187,63 +187,63 @@ TEST(BagTest, AddStackItemUnlock)
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByBos(newindex)->guid());
         EXPECT_EQ(g_bag_server_sequence.LastId(), bag.GetItemByGuid(g_bag_server_sequence.LastId())->guid());
     }
-    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefualtCapacity * 2, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity * 2, bag.pos_size());
 }
 
-//²»¿Éµþ¼ÓÎïÆ·
+//ï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½ï¿½ï¿½Æ·
 TEST(BagTest, AdequateSizeAddItemCannotStackItemFull)
 {
     uint32_t config_id = 1;
     Bag bag;
-    UInt32UInt32UnorderedMap adequate_add{ {config_id, (uint32_t)BagCapacity::kDefualtCapacity + 1 } };
+    UInt32UInt32UnorderedMap adequate_add{ {config_id, (uint32_t)BagCapacity::kDefaultCapacity + 1 } };
     EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));
-    adequate_add[config_id] = (uint32_t)BagCapacity::kDefualtCapacity;
+    adequate_add[config_id] = (uint32_t)BagCapacity::kDefaultCapacity;
     EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
 }
 
-//¿Éµþ¼Ó»ìºÏ,²âÊÔÎïÆ·ÀïÃæÈ«ÂúµÄÇé¿ö£¬Èç999
+//ï¿½Éµï¿½ï¿½Ó»ï¿½ï¿½,ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ·ï¿½ï¿½ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½999
 TEST(BagTest, AdequateSizeAddItemmixtureFull)
 {
-    uint32_t cannot_stack_config_id = 1;//²»¿ÉÒÔµþ¼ÓµÄÎïÆ·id
-    uint32_t stack_config_id = 10;//¿ÉÒÔµþ¼ÓµÄÎïÆ·id
+    uint32_t cannot_stack_config_id = 1;//ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½ï¿½ï¿½Æ·id
+    uint32_t stack_config_id = 10;//ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½ï¿½ï¿½Æ·id
     Bag bag;
-    //Ò»¸ö²»¿Éµþ¼Ó£¬10¸ö¿ÉÒÔµþ¼Ó
+    //Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½Ó£ï¿½10ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½ï¿½
     UInt32UInt32UnorderedMap adequate_add{ {cannot_stack_config_id, 1 },
-        {stack_config_id, get_item_conf(stack_config_id)->max_statck_size() * (uint32_t)BagCapacity::kDefualtCapacity} };
+        {stack_config_id, get_item_conf(stack_config_id)->max_statck_size() * (uint32_t)BagCapacity::kDefaultCapacity} };
     EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));
-    //¸Ä³ÉÒ»¸ö²»¿Éµþ¼Ó£¬¾Å¸ö¿ÉÒÔµþ¼Ó
-    adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefualtCapacity - 1) * get_item_conf(stack_config_id)->max_statck_size();
+    //ï¿½Ä³ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½Ó£ï¿½ï¿½Å¸ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½ï¿½
+    adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefaultCapacity - 1) * get_item_conf(stack_config_id)->max_statck_size();
     EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
 
-    //Ìí¼ÓÒ»¸ö¸ñ×ÓÒÔºó²»¿ÉÒÔµþ¼ÓÁË£¬Ìí¼ÓÒ»¸ö¿ÉÒÔµþ¼ÓµÄÎïÆ·
+    //ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôºó²»¿ï¿½ï¿½Ôµï¿½ï¿½ï¿½ï¿½Ë£ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½ï¿½ï¿½Æ·
     CreateItemParam p;
     p.item_base_db.set_config_id(cannot_stack_config_id);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
     auto item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//ÒòÎªÕ¼ÓÃÁËÒ»¸ö¸ñ×Ó£¬ËùÒÔ×Ü¹²²»ÂúÊ®¸ö¸ñ×Ó
-    //¸Ä³É8¸ö¿ÉÒÔµþ¼ÓµÄ¸ñ×Ó,Ò»¸ö²»¿Éµþ¼Ó£¬×Ü¹²ÐèÒª¾Å¸ö¸ñ×Ó
-    adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefualtCapacity - 2) * get_item_conf(stack_config_id)->max_statck_size();
+    EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//ï¿½ï¿½ÎªÕ¼ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü¹ï¿½ï¿½ï¿½ï¿½ï¿½Ê®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    //ï¿½Ä³ï¿½8ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½ÓµÄ¸ï¿½ï¿½ï¿½,Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½Ó£ï¿½ï¿½Ü¹ï¿½ï¿½ï¿½Òªï¿½Å¸ï¿½ï¿½ï¿½ï¿½ï¿½
+    adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefaultCapacity - 2) * get_item_conf(stack_config_id)->max_statck_size();
     EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
-    //·ÅÒ»¸ö¿ÉÒÔµþ¼ÓµÄ¸ñ×Ó
+    //ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½ÓµÄ¸ï¿½ï¿½ï¿½
     p.item_base_db.set_config_id(stack_config_id);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
     item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//ÒòÎªÕ¼ÓÃÁËÁ½¸ö¸ñ×Ó£¬ËùÒÔ×Ü¹²²»ÂúÊ®¸ö¸ñ×Ó
-    //¸Ä³É7¸ö¿ÉÒÔµþ¼ÓµÄ¸ñ×Ó,1¸ö²»¿Éµþ¼Ó£¬×Ü¹²ÐèÒª8¸ö¸ñ×Ó
-    adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefualtCapacity - 3) * get_item_conf(stack_config_id)->max_statck_size();
+    EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//ï¿½ï¿½ÎªÕ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü¹ï¿½ï¿½ï¿½ï¿½ï¿½Ê®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    //ï¿½Ä³ï¿½7ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½ÓµÄ¸ï¿½ï¿½ï¿½,1ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½Ó£ï¿½ï¿½Ü¹ï¿½ï¿½ï¿½Òª8ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    adequate_add[stack_config_id] = (uint32_t)(BagCapacity::kDefaultCapacity - 3) * get_item_conf(stack_config_id)->max_statck_size();
     EXPECT_EQ(kRetOK, bag.AdequateSizeAddItem(adequate_add));
-    //·ÅÒ»¸ö¿ÉÒÔµþ¼ÓµÄ¸ñ×Ó£¬¸öÊýÉÙ100
+    //ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½ÓµÄ¸ï¿½ï¿½Ó£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½100
     p.item_base_db.set_config_id(stack_config_id);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() - 100);
     item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//ÒòÎªÕ¼ÓÃÁËÈý¸ö¸ñ×Ó£¬ËùÒÔ×Ü¹²²»ÂúÊ®¸ö¸ñ×Ó
+    EXPECT_EQ(kRetBagAdequateAddItemSize, bag.AdequateSizeAddItem(adequate_add));//ï¿½ï¿½ÎªÕ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü¹ï¿½ï¿½ï¿½ï¿½ï¿½Ê®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 }
 
-//ÎïÆ·×ã¹»²âÊÔ
+//ï¿½ï¿½Æ·ï¿½ã¹»ï¿½ï¿½ï¿½ï¿½
 TEST(BagTest, AdequateItem)
 {
     Bag bag;
@@ -253,7 +253,7 @@ TEST(BagTest, AdequateItem)
     uint32_t config_id2 = 2;
     uint32_t config_id11 = 11;
     UInt32UInt32UnorderedMap adequate_item{ {config_id10 , 1} };
-    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//¿Õ±³°ü²âÊÔ
+    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//ï¿½Õ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     CreateItemParam p;
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
@@ -262,44 +262,44 @@ TEST(BagTest, AdequateItem)
     EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
     adequate_item[config_id10] = get_item_conf(p.item_base_db.config_id())->max_statck_size() / 2;
     EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
-    adequate_item.emplace(config_id1, 1);//²»¿Éµþ¼ÓÒ»¸ö
+    adequate_item.emplace(config_id1, 1);//ï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½Ò»ï¿½ï¿½
     EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));
 
     p.item_base_db.set_config_id(config_id1);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
-    item = CreateItem(p);//´´½¨Ò»¸ö²»¿ÉÒÔµþ¼ÓµÄ
+    item = CreateItem(p);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½
     EXPECT_EQ(kRetOK, bag.AddItem(item));
     EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
-    adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size();//1¸ö10¿Éµþ¼Ó999
+    adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size();//1ï¿½ï¿½10ï¿½Éµï¿½ï¿½ï¿½999
     EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
-    adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size() + 1;//1¸ö10¿Éµþ¼Ó1000
+    adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size() + 1;//1ï¿½ï¿½10ï¿½Éµï¿½ï¿½ï¿½1000
     EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));
-    adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size() * 3;//3¸ö10¿Éµþ¼Ó999*3
+    adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size() * 3;//3ï¿½ï¿½10ï¿½Éµï¿½ï¿½ï¿½999*3
     EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));
 
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
-    item = CreateItem(p);//´´½¨Ò»¸ö¿ÉÒÔµþ¼ÓµÄ
+    item = CreateItem(p);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½
     EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//2¸ö10µÄµþ¼Ó999
+    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//2ï¿½ï¿½10ï¿½Äµï¿½ï¿½ï¿½999
 
     p.item_base_db.set_config_id(config_id11);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * 3);
-    item = CreateItem(p);//´´½¨Ò»¸ö¿ÉÒÔµþ¼ÓµÄ
+    item = CreateItem(p);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½
     EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//2¸ö10µÄµþ¼Ó999
+    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//2ï¿½ï¿½10ï¿½Äµï¿½ï¿½ï¿½999
 
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
-    item = CreateItem(p);//´´½¨Ò»¸ö¿ÉÒÔµþ¼ÓµÄ
+    item = CreateItem(p);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½
     EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));//3¸ö10µÄµþ¼Ó999
+    EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));//3ï¿½ï¿½10ï¿½Äµï¿½ï¿½ï¿½999
 
-    adequate_item[config_id11] = get_item_conf(config_id11)->max_statck_size() * 3;//3¸ö10¿Éµþ¼Ó999 3¸ö11¿Éµþ¼Ó999
+    adequate_item[config_id11] = get_item_conf(config_id11)->max_statck_size() * 3;//3ï¿½ï¿½10ï¿½Éµï¿½ï¿½ï¿½999 3ï¿½ï¿½11ï¿½Éµï¿½ï¿½ï¿½999
     EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
 }
 
-//ÎïÆ·×ã¹»²âÊÔ
+//ï¿½ï¿½Æ·ï¿½ã¹»ï¿½ï¿½ï¿½ï¿½
 TEST(BagTest, DelItem)
 {
     Bag bag;
@@ -317,17 +317,17 @@ TEST(BagTest, DelItem)
 
     p.item_base_db.set_config_id(config_id1);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());// 1
-    item = CreateItem(p);//´´½¨Ò»¸ö²»¿ÉÒÔµþ¼ÓµÄ
+    item = CreateItem(p);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½
     EXPECT_EQ(kRetOK, bag.AddItem(item));
 
     p.item_base_db.set_config_id(config_id2);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());//  1
-    item = CreateItem(p);//´´½¨Ò»¸ö¿ÉÒÔµþ¼ÓµÄ
+    item = CreateItem(p);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½
     EXPECT_EQ(kRetOK, bag.AddItem(item));
 
     p.item_base_db.set_config_id(config_id11);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());// 999 * 1
-    item = CreateItem(p);//´´½¨Ò»¸ö¿ÉÒÔµþ¼ÓµÄ
+    item = CreateItem(p);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½
     EXPECT_EQ(kRetOK, bag.AddItem(item));
 
     UInt32UInt32UnorderedMap try_del;
@@ -364,7 +364,7 @@ TEST(BagTest, Del)
     uint32_t config_id1 = 1;
     p.item_base_db.set_config_id(config_id1);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());// 1
-    auto item = CreateItem(p);//´´½¨Ò»¸ö²»¿ÉÒÔµþ¼ÓµÄ
+    auto item = CreateItem(p);//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ôµï¿½ï¿½Óµï¿½
     EXPECT_EQ(kRetOK, bag.AddItem(item));
     EXPECT_EQ(1, bag.item_size());
     EXPECT_EQ(1, bag.pos_size());
@@ -402,39 +402,39 @@ TEST(BagTest, DelItemByPos)
     EXPECT_EQ(0, bag.GetItemByGuid(g_bag_server_sequence.LastId())->size());
 }
 
-//ÕûÀí1£¬Ã¿¸ö¸ñ×ÓÊ¹ÓÃÒ»µã
+//ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½Ò»ï¿½ï¿½
 TEST(BagTest, Neaten1)
 {
     Bag bag;
-    auto unlock_size = BagCapacity::kDefualtCapacity;
+    auto unlock_size = BagCapacity::kDefaultCapacity;
     bag.Unlock(unlock_size);
     CreateItemParam p;
     uint32_t config_id10 = 10;
     uint32_t config_id11 = 11;
     p.item_base_db.set_config_id(config_id10);
-    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);// 999 * 10
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);// 999 * 10
     auto item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
     auto id10 = g_bag_server_sequence.LastId();
     p.item_base_db.set_config_id(config_id11);
-    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);// 999 * 10
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);// 999 * 10
     item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
     auto id11 = g_bag_server_sequence.LastId();
-    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; ++i)
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; ++i)
     {
         DelItemByPosParam dp;
         dp.pos_ = i;
-        dp.item_guid_ = id10 - (BagCapacity::kDefualtCapacity - i) + 1;
+        dp.item_guid_ = id10 - (BagCapacity::kDefaultCapacity - i) + 1;
         dp.item_config_id_ = config_id10;
         dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
         EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
     }   
-    for (uint32_t i = (uint32_t)BagCapacity::kDefualtCapacity; i < bag.pos_size(); ++i)
+    for (uint32_t i = (uint32_t)BagCapacity::kDefaultCapacity; i < bag.pos_size(); ++i)
     {
         DelItemByPosParam dp;
         dp.pos_ = i;
-        dp.item_guid_ = id11 - (BagCapacity::kDefualtCapacity - (i - BagCapacity::kDefualtCapacity)) + 1;
+        dp.item_guid_ = id11 - (BagCapacity::kDefaultCapacity - (i - BagCapacity::kDefaultCapacity)) + 1;
         dp.item_config_id_ = config_id11;
         dp.size_ = get_item_conf(config_id11)->max_statck_size() - 1;
         EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
@@ -448,13 +448,13 @@ TEST(BagTest, Neaten1)
     EXPECT_EQ(2, bag.pos_size());
     for (auto& it : bag.pos())
     {
-        EXPECT_EQ(BagCapacity::kDefualtCapacity, (std::size_t)bag.GetItemByBos(bag.GetItemPos(it.second))->size());
+        EXPECT_EQ(BagCapacity::kDefaultCapacity, (std::size_t)bag.GetItemByBos(bag.GetItemPos(it.second))->size());
     }
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.GetItemStackSize(config_id10));
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.GetItemStackSize(config_id11));
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.GetItemStackSize(config_id10));
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.GetItemStackSize(config_id11));
 }
 
-//²âÊÔ400¸ñ×Ó£¬Ã¿¸öÓÃ998
+//ï¿½ï¿½ï¿½ï¿½400ï¿½ï¿½ï¿½Ó£ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½998
 TEST(BagTest, Neaten400)
 {
     Bag bag;
@@ -508,7 +508,7 @@ TEST(BagTest, Neaten400)
     EXPECT_EQ(grid_sz, bag.GetItemStackSize(config_id11));
 }
 
-//²âÊÔ400¸ñ×Ó£¬Ã¿ÖÖÎïÆ·Ç°100¸öÓÃ998
+//ï¿½ï¿½ï¿½ï¿½400ï¿½ï¿½ï¿½Ó£ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½Æ·Ç°100ï¿½ï¿½ï¿½ï¿½998
 TEST(BagTest, Neaten400_1)
 {
     Bag bag;
@@ -558,10 +558,10 @@ TEST(BagTest, Neaten400_1)
         dp.size_ = get_item_conf(config_id11)->max_statck_size() - 1;
         EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
     }
-    auto index1 = use_config_id10_sz;//µÚÒ»°Ù¸ö¸ñ×ÓÒÔÇ°1
-    auto index2 = use_config_id10_sz * 2;//µÚ¶þ°Ù¸ö¸ñ×ÓÒÔÇ°999
-    auto index3 = use_config_id10_sz * 3;//µÚsÈý°Ù¸ö¸ñ×ÓÒÔÇ°1
-    auto index4 = use_config_id10_sz * 4;//µÚsÈý°Ù¸ö¸ñ×ÓÒÔÇ°999
+    auto index1 = use_config_id10_sz;//ï¿½ï¿½Ò»ï¿½Ù¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°1
+    auto index2 = use_config_id10_sz * 2;//ï¿½Ú¶ï¿½ï¿½Ù¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°999
+    auto index3 = use_config_id10_sz * 3;//ï¿½ï¿½sï¿½ï¿½ï¿½Ù¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°1
+    auto index4 = use_config_id10_sz * 4;//ï¿½ï¿½sï¿½ï¿½ï¿½Ù¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°999
     for (uint32_t i = 0; i < (uint32_t)bag.pos_size(); ++i)
     {
         if (i < index1)
@@ -613,30 +613,30 @@ TEST(BagTest, Neaten400_1)
     EXPECT_EQ(per_grid_size / 2 * item_statck_max_sz + remain_sz, bag.GetItemStackSize(config_id11));
 }
 
-//ÕûÀí1£¬Ã¿¸ö¸ñ×ÓÊ¹ÓÃÒ»µã
+//ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½Ò»ï¿½ï¿½
 TEST(BagTest, NeatenCanNotStack)
 {
     Bag bag;
-    auto unlock_size = BagCapacity::kDefualtCapacity;
+    auto unlock_size = BagCapacity::kDefaultCapacity;
     bag.Unlock(unlock_size);
     CreateItemParam p;
     uint32_t config_id10 = 10;
     uint32_t config_id1 = 1;
     p.item_base_db.set_config_id(config_id10);
-    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);// 999 * 10
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);// 999 * 10
     auto item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
     auto id10 = g_bag_server_sequence.LastId();
     p.item_base_db.set_config_id(config_id1);
-    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefualtCapacity);// 999 * 10
+    p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * BagCapacity::kDefaultCapacity);// 999 * 10
     item = CreateItem(p);
     EXPECT_EQ(kRetOK, bag.AddItem(item));
     auto id11 = g_bag_server_sequence.LastId();
-    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefualtCapacity; ++i)
+    for (uint32_t i = 0; i < (uint32_t)BagCapacity::kDefaultCapacity; ++i)
     {
         DelItemByPosParam dp;
         dp.pos_ = i;
-        dp.item_guid_ = id10 - (BagCapacity::kDefualtCapacity - i) + 1;
+        dp.item_guid_ = id10 - (BagCapacity::kDefaultCapacity - i) + 1;
         dp.item_config_id_ = config_id10;
         dp.size_ = get_item_conf(config_id10)->max_statck_size() - 1;
         EXPECT_EQ(kRetOK, bag.DelItemByPos(dp));
@@ -647,17 +647,17 @@ TEST(BagTest, NeatenCanNotStack)
         EXPECT_EQ(1, bag.GetItemByBos(i)->size());
     }
     bag.Neaten();
-    EXPECT_EQ(BagCapacity::kDefualtCapacity + 1, bag.item_size());
-    EXPECT_EQ(BagCapacity::kDefualtCapacity + 1, bag.pos_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity + 1, bag.item_size());
+    EXPECT_EQ(BagCapacity::kDefaultCapacity + 1, bag.pos_size());
     for (auto& it : bag.pos())
     {
-        if ((std::size_t)bag.GetItemByBos(bag.GetItemPos(it.second))->size() != BagCapacity::kDefualtCapacity)
+        if ((std::size_t)bag.GetItemByBos(bag.GetItemPos(it.second))->size() != BagCapacity::kDefaultCapacity)
         {
             EXPECT_EQ(1, (std::size_t)bag.GetItemByBos(bag.GetItemPos(it.second))->size());
         }
     }
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.GetItemStackSize(config_id10));
-    EXPECT_EQ(BagCapacity::kDefualtCapacity, bag.GetItemStackSize(config_id1));
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.GetItemStackSize(config_id10));
+    EXPECT_EQ(BagCapacity::kDefaultCapacity, bag.GetItemStackSize(config_id1));
 }
 
 int main(int argc, char** argv)
