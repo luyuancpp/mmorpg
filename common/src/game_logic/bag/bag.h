@@ -42,7 +42,6 @@ struct DelItemByPosParam
 class Bag
 {
 public:
-	Bag();
 	using BagEntity = ItemEntity;
 	[[nodiscard]] entt::entity entity() const { return entity_.entity(); }
 	[[nodiscard]] Guid player_guid() const { return item_reg.get<Guid>(entity()); }
@@ -79,7 +78,8 @@ private:
 	bool CanStack(const Item& litem, const Item& ritem);
 	
 	BagEntity entity_;
-	ItemsMap items_;
-	PosMap pos_;
+	ItemsMap items_{};
+	PosMap pos_{};
 	uint32_t type_{};
+	BagCapacity capacity_;
 };

@@ -6,11 +6,6 @@
 
 #include"src/game_config/item_config.h"
 
-Bag::Bag()
-{
-	item_reg.emplace<BagCapacity>(entity());
-}
-
 std::size_t Bag::GetItemStackSize(uint32_t config_id)const
 {
 	std::size_t sz = 0;
@@ -506,7 +501,7 @@ uint32_t Bag::DelItem(Guid del_guid)
 
 void Bag::Unlock(std::size_t sz)
 {
-	item_reg.get<BagCapacity>(entity()).size_ += sz;
+	capacity_.size_ += sz;
 }
 
 std::size_t Bag::calc_item_need_grid_size(std::size_t item_size, std::size_t stack_size)

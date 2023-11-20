@@ -114,7 +114,7 @@ public:
 	inline bool IsNodeNoPressure() const { return node_pressure_state_ == NodePressureState::kNoPressure; }
 	inline bool IsNodePressure() const { return node_pressure_state_ == NodePressureState::kPressure; }
 
-	inline [[nodiscard]] ServerSceneType GetServerSceneType() const { return node_scene_type_; }
+	[[nodiscard]] inline  ServerSceneType GetServerSceneType() const { return node_scene_type_; }
 
 	inline void SetNodeSceneType(const ServerSceneType server_scene_type) { node_scene_type_ = server_scene_type; }
 
