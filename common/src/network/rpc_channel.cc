@@ -123,7 +123,6 @@ void RpcChannel::onRpcMessage(const TcpConnectionPtr& conn,
           return;
       }
 	  auto& message_info = g_message_info[message.message_id()];
-	  std::map<std::string, google::protobuf::Service*>::const_iterator it = services_->find(message_info.service);
 	  if (nullptr == message_info.service_impl_instance_)
 	  {
 		  return;
