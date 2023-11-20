@@ -33,6 +33,7 @@ fi
 cd ../../../
 cd common && cmake . && make -j$cpu
 if test $? -ne 0; then 
+    echo "common build error"
     exit 
 fi
 
