@@ -10,9 +10,6 @@
     <ClCompile Include="..\..\common\src\game_logic\bag\item.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\item_config.pb.cc">
-      <Filter>source</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\src\game_config\item_config.cpp">
       <Filter>source</Filter>
     </ClCompile>
@@ -22,6 +19,7 @@
     <ClCompile Include="..\..\common\src\pb\pbc\component_proto\item_base_comp.pb.cc">
       <Filter>source</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\src\pb\pbc\game_config\item_config.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Include">
@@ -53,5 +51,6 @@
     <ClInclude Include="..\..\common\src\return_code\error_code.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\src\pb\pbc\game_config\item_config.pb.h" />
   </ItemGroup>
 </Project>
