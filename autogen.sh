@@ -5,6 +5,13 @@ python vcxproj2cmake.py
 cat /proc/cpuinfo  | grep "processor" | wc -l
 cat=$1
 
+cd third_party/abseil-cpp/
+cmake -DABSL_BUILD_TESTING=ON -DABSL_USE_GOOGLETEST_HEAD=ON -DCMAKE_CXX_STANDARD=20
+cd ..
+if test $? -ne 0; then 
+   exit 
+fi
+
 cd bin/config && python gen.py
 if test $? -ne 0; then 
    exit 
@@ -15,6 +22,8 @@ cd  proto/generator/src && go build -o genproto && ./genproto
 if test $? -ne 0; then 
    exit 
 fi
+
+
 
 cd ../../../
 cd third_party && rm -rf muduo 
