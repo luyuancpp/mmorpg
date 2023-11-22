@@ -1,13 +1,5 @@
 FROM gcc:latest
 
-RUN mkdir /usr/src/turn-based-game
-
-COPY . /usr/src/turn-based-game
-
-WORKDIR /usr/src/turn-based-game
-
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
 RUN apt-get update && apt-get -y --no-install-recommends install \
     build-essential \
     cmake \
@@ -15,16 +7,16 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
     wget \ 
     make \
     libboost-dev \
-    vim \
-    golang \
-    brew
+    golang 
 
-RUN brew install bazel
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
-RUN cd third_party/protobuf/
+RUN mkdir /usr/src/turn-based-game
 
-RUN bazel build :protoc :protobuf
+COPY . /usr/src/turn-based-game
 
-RUN cp bazel-bin/protoc /usr/bin
+WORKDIR /usr/src/turn-based-game/third_party/abseil-cpp
+
+RUN cmake -DABSL_BUILD_TESTING=ON -DABSL_USE_GOOGLETEST_HEAD=ON -DCMAKE_CXX_STANDARD=20 .
 
 CMD ["./autogen.sh"]
