@@ -7,10 +7,17 @@ cat=$1
 
 cd third_party/abseil-cpp/
 cmake -DABSL_BUILD_TESTING=ON -DABSL_USE_GOOGLETEST_HEAD=ON -DCMAKE_CXX_STANDARD=20
-cd ..
+cd ../..
 if test $? -ne 0; then 
    exit 
 fi
+
+cd third_party/protobuf/
+bazel build :protoc :protobuf
+if test $? -ne 0; then 
+   exit 
+fi
+cd ../..
 
 cd bin/config && python gen.py
 if test $? -ne 0; then 
