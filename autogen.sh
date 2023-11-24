@@ -5,21 +5,7 @@ python vcxproj2cmake.py
 cat /proc/cpuinfo  | grep "processor" | wc -l
 cat=$1
 
-./bazel.sh --prefix=/usr
-
-cd third_party/abseil-cpp/
-cmake -DABSL_BUILD_TESTING=ON -DABSL_USE_GOOGLETEST_HEAD=ON -DCMAKE_CXX_STANDARD=20
-if test $? -ne 0; then 
-   exit 
-fi
-cd ../..
-
-cd third_party/protobuf/
-bazel build :protoc :protobuf
-if test $? -ne 0; then 
-   exit 
-fi
-cd ../..
+./third_party.sh 
 
 cd bin/config && python gen.py
 if test $? -ne 0; then 
