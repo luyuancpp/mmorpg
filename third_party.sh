@@ -25,3 +25,14 @@ if test $? -ne 0; then
 fi
 echo "protobuf install ok"
 cd ../..
+
+cd third_party/mysql/
+git submodule update --init --recursive
+cmake .
+make -j$cpu
+make install  
+if test $? -ne 0; then 
+   exit 
+fi
+echo "mysql install ok"
+cd ../..
