@@ -19,4 +19,4 @@ COPY . /usr/src/turn-based-game
 WORKDIR /usr/src/turn-based-game
 
 
-CMD ["./bazel.sh", "--prefix=/usr"]
+CMD ["./autogen.sh"]
