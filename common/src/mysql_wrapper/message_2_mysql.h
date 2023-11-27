@@ -1,16 +1,13 @@
 #pragma once
 
-#include <cctype>
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
-#include "mysql.h"
+#include <mysql.h>
 
 #include "google/protobuf/descriptor.h"
-#include "google/protobuf/dynamic_message.h"
 #include "google/protobuf/message.h"
 
 #include "src/common_type/common_type.h"
