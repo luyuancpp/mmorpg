@@ -4,7 +4,7 @@
 #include "src/util/game_registry.h"
 #include "src/util/snow_flake.h"
 
-#include "src/pb/pbc/component_proto/item_base_comp.pb.h"
+#include "component_proto/item_base_comp.pb.h"
 
 extern entt::registry item_reg;
 extern ServerSequence16 g_bag_server_sequence;
