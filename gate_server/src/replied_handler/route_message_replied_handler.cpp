@@ -6,9 +6,9 @@
 #include "src/network/codec/dispatcher.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 #include "src/util/defer.h"
-#include "src/pb/pbc/service.h"
+#include "service/service.h"
 
-#include "gate_service_service.h"
+#include "service/gate_service_service.h"
 
 extern ProtobufDispatcher g_response_dispatcher;
 
