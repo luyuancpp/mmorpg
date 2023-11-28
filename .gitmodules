@@ -43,5 +43,5 @@
 	url = https://github.com/abseil/abseil-cpp.git
 	branch = lts_2023_08_02
 [submodule "mysqlbuild"]
-	path = mysqlbuild
+	path = third_party/mysqlbuild
 	url = https://github.com/luyuancpp/mysqlbuild.git
