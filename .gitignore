@@ -19,7 +19,8 @@ compile_commands.json
 *.pyc
 *.dll
 *CMakeLists.txt
-common/src/pb/pbc/
+common/src/pbc_lua/*
+pbc/src/*
 output/
 x64/
 .vs/
