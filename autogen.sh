@@ -33,9 +33,29 @@ if test $? -ne 0; then
 fi
 
 cd ../../../
+cd pbc && cmake . && make -j$cpu
+if test $? -ne 0; then 
+    echo "pbc build error"
+    exit 
+fi
+
+cd ../
+cd config && cmake . && make -j$cpu
+if test $? -ne 0; then 
+    echo "config build error"
+    exit 
+fi
+
+cd ../
 cd common && cmake . && make -j$cpu
 if test $? -ne 0; then 
     echo "common build error"
+    exit 
+fi
+
+cd ..
+cd gate_server && cmake . && make -j$cpu
+if test $? -ne 0; then 
     exit 
 fi
 
@@ -65,12 +85,6 @@ fi
 
 cd ..
 cd controller_server && cmake . && make -j$cpu
-if test $? -ne 0; then 
-    exit 
-fi
-
-cd ..
-cd gate_server && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
 fi

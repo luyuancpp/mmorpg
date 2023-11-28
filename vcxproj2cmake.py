@@ -133,7 +133,8 @@ def generate(vcxprojfile, vcxprojDir, target_type):
     return projectName
 
 link_mysql = "mysqlclient"
-generate("./third_party/pbc.vcxproj", "./pbc/", "lib")
+generate("./pbc/pbc.vcxproj", "./pbc/", "lib")
+generate("./config/config.vcxproj", "./config/", "lib")
 generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 generate("./common/common.vcxproj", "./common/", "lib")
 generate("./deploy_server/deploy_server.vcxproj", "./deploy_server/", "")
