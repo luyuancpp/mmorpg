@@ -6,7 +6,7 @@
 #include "src/game_logic/constants/server_constants.h"
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/pb/pbc/component_proto/scene_comp.pb.h"
+#include "component_proto/scene_comp.pb.h"
 
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;
 using ScenePlayers = EntitySet; //弱引用，要解除玩家和场景的耦合
