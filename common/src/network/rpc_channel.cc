@@ -15,7 +15,7 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/empty.pb.h>
 
-#include "src/pb/pbc/service.h"
+#include "service/service.h"
 
 
 using namespace muduo;

@@ -4,7 +4,7 @@
 
 #include "src/game_logic/tips_id.h"
 
-#include"src/game_config/item_config.h"
+#include"item_config.h"
 
 std::size_t Bag::GetItemStackSize(uint32_t config_id)const
 {
