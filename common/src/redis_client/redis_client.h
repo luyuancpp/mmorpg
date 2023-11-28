@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "muduo/base/CrossPlatformAdapterFunction.h"
+
 #include "muduo/base/Logging.h"
 #include "muduo/contrib/hiredis/Hiredis.h"
 
