@@ -13,7 +13,7 @@
 #include "src/handler/gate_service_handler.h"
 #include "src/network/rpc_connection_event.h"
 
-#include "deploy_service.pb.h"
+#include "common_proto/deploy_service.pb.h"
 
 class GateServer : noncopyable
 {

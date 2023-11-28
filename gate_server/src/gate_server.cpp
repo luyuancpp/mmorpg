@@ -4,14 +4,14 @@
 #include "src/network/game_node.h"
 #include "src/network/login_node.h"
 #include "src/network/server_component.h"
-#include "src/pb/pbc/service.h"
-#include "src/pb/pbc/controller_service_service.h"
-#include "src/pb/pbc/deploy_service_service.h"
-#include "src/pb/pbc/game_service_service.h"
+#include "service/service.h"
+#include "service/controller_service_service.h"
+#include "service/deploy_service_service.h"
+#include "service/game_service_service.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 
-#include "game_service.pb.h"
-#include "login_service_service.h"
+#include "common_proto/game_service.pb.h"
+#include "service/login_service_service.h"
 
 GateServer* g_gate_node = nullptr; 
 

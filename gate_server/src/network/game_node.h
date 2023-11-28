@@ -6,7 +6,7 @@
 #include "src/network/rpc_client.h"
 #include "src/util/game_registry.h"
 
-#include "common.pb.h"
+#include "common_proto/common.pb.h"
 
 struct GameNode
 {
