@@ -62,7 +62,7 @@ const ServiceDirName = PbcOutDir + "service/"
 const ServiceCppFileName = ServiceDirName + "service.cpp"
 const ServiceHeadFileName = ServiceDirName + "service.h"
 const LuaServiceFileName = PbcLuaDirName + "lua_service.cpp"
-const PbcLuaDirName = PbcOutDir + "lua/"
+const PbcLuaDirName = ProjectDir + "common/src/pbc_lua/"
 
 const CommonProtoDirIndex = 0
 const ComponentProtoDirIndex = 1
