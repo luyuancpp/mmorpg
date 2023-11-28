@@ -45,3 +45,6 @@
 [submodule "mysqlbuild"]
 	path = third_party/mysqlbuild
 	url = https://github.com/luyuancpp/mysqlbuild.git
+[submodule "third_party/mysqlbuild"]
+	path = third_party/mysqlbuild
+	url = https://github.com/luyuancpp/mysqlbuild.git
