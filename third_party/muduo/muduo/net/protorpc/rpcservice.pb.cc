@@ -11,42 +11,28 @@
 #include "google/protobuf/generated_message_reflection.h"
 #include "google/protobuf/reflection_ops.h"
 #include "google/protobuf/wire_format.h"
+#include "google/protobuf/generated_message_tctable_impl.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
 #include "google/protobuf/port_def.inc"
 PROTOBUF_PRAGMA_INIT_SEG
-namespace _pb = ::PROTOBUF_NAMESPACE_ID;
-namespace _pbi = ::PROTOBUF_NAMESPACE_ID::internal;
+namespace _pb = ::google::protobuf;
+namespace _pbi = ::google::protobuf::internal;
+namespace _fl = ::google::protobuf::internal::field_layout;
 namespace muduo {
 namespace net {
-PROTOBUF_CONSTEXPR ListRpcRequest::ListRpcRequest(
-    ::_pbi::ConstantInitialized): _impl_{
-    /*decltype(_impl_._has_bits_)*/{}
-  , /*decltype(_impl_._cached_size_)*/{}
-  , /*decltype(_impl_.service_name_)*/ {
-    &::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized {}
-  }
 
-  , /*decltype(_impl_.list_method_)*/ false
-} {}
-struct ListRpcRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR ListRpcRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~ListRpcRequestDefaultTypeInternal() {}
-  union {
-    ListRpcRequest _instance;
-  };
-};
+inline constexpr ListRpcResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : service_name_{},
+        method_name_{},
+        error_{static_cast< ::muduo::net::ErrorCode >(0)},
+        _cached_size_{0} {}
 
-PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ListRpcRequestDefaultTypeInternal _ListRpcRequest_default_instance_;
-PROTOBUF_CONSTEXPR ListRpcResponse::ListRpcResponse(
-    ::_pbi::ConstantInitialized): _impl_{
-    /*decltype(_impl_.service_name_)*/{}
-  , /*decltype(_impl_.method_name_)*/{}
-  , /*decltype(_impl_.error_)*/ 0
-
-  , /*decltype(_impl_._cached_size_)*/{}} {}
+template <typename>
+PROTOBUF_CONSTEXPR ListRpcResponse::ListRpcResponse(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
 struct ListRpcResponseDefaultTypeInternal {
   PROTOBUF_CONSTEXPR ListRpcResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~ListRpcResponseDefaultTypeInternal() {}
@@ -57,36 +43,43 @@ struct ListRpcResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ListRpcResponseDefaultTypeInternal _ListRpcResponse_default_instance_;
-PROTOBUF_CONSTEXPR GetServiceRequest::GetServiceRequest(
-    ::_pbi::ConstantInitialized): _impl_{
-    /*decltype(_impl_.service_name_)*/ {
-    &::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized {}
-  }
 
-  , /*decltype(_impl_._cached_size_)*/{}} {}
-struct GetServiceRequestDefaultTypeInternal {
-  PROTOBUF_CONSTEXPR GetServiceRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
-  ~GetServiceRequestDefaultTypeInternal() {}
+inline constexpr ListRpcRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : _cached_size_{0},
+        service_name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        list_method_{false} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR ListRpcRequest::ListRpcRequest(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct ListRpcRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR ListRpcRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~ListRpcRequestDefaultTypeInternal() {}
   union {
-    GetServiceRequest _instance;
+    ListRpcRequest _instance;
   };
 };
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
-    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetServiceRequestDefaultTypeInternal _GetServiceRequest_default_instance_;
-PROTOBUF_CONSTEXPR GetServiceResponse::GetServiceResponse(
-    ::_pbi::ConstantInitialized): _impl_{
-    /*decltype(_impl_.proto_file_)*/ {
-    &::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized {}
-  }
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ListRpcRequestDefaultTypeInternal _ListRpcRequest_default_instance_;
 
-  , /*decltype(_impl_.proto_file_name_)*/ {
-    &::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized {}
-  }
+inline constexpr GetServiceResponse::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : proto_file_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        proto_file_name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        error_{static_cast< ::muduo::net::ErrorCode >(0)},
+        _cached_size_{0} {}
 
-  , /*decltype(_impl_.error_)*/ 0
-
-  , /*decltype(_impl_._cached_size_)*/{}} {}
+template <typename>
+PROTOBUF_CONSTEXPR GetServiceResponse::GetServiceResponse(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
 struct GetServiceResponseDefaultTypeInternal {
   PROTOBUF_CONSTEXPR GetServiceResponseDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~GetServiceResponseDefaultTypeInternal() {}
@@ -97,6 +90,27 @@ struct GetServiceResponseDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetServiceResponseDefaultTypeInternal _GetServiceResponse_default_instance_;
+
+inline constexpr GetServiceRequest::Impl_::Impl_(
+    ::_pbi::ConstantInitialized) noexcept
+      : service_name_(
+            &::google::protobuf::internal::fixed_address_empty_string,
+            ::_pbi::ConstantInitialized()),
+        _cached_size_{0} {}
+
+template <typename>
+PROTOBUF_CONSTEXPR GetServiceRequest::GetServiceRequest(::_pbi::ConstantInitialized)
+    : _impl_(::_pbi::ConstantInitialized()) {}
+struct GetServiceRequestDefaultTypeInternal {
+  PROTOBUF_CONSTEXPR GetServiceRequestDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
+  ~GetServiceRequestDefaultTypeInternal() {}
+  union {
+    GetServiceRequest _instance;
+  };
+};
+
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
+    PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 GetServiceRequestDefaultTypeInternal _GetServiceRequest_default_instance_;
 }  // namespace net
 }  // namespace muduo
 static ::_pb::Metadata file_level_metadata_rpcservice_2eproto[4];
@@ -153,10 +167,10 @@ const ::uint32_t TableStruct_rpcservice_2eproto::offsets[] PROTOBUF_SECTION_VARI
 
 static const ::_pbi::MigrationSchema
     schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-        { 0, 10, -1, sizeof(::muduo::net::ListRpcRequest)},
-        { 12, -1, -1, sizeof(::muduo::net::ListRpcResponse)},
-        { 23, -1, -1, sizeof(::muduo::net::GetServiceRequest)},
-        { 32, -1, -1, sizeof(::muduo::net::GetServiceResponse)},
+        {0, 10, -1, sizeof(::muduo::net::ListRpcRequest)},
+        {12, -1, -1, sizeof(::muduo::net::ListRpcResponse)},
+        {23, -1, -1, sizeof(::muduo::net::GetServiceRequest)},
+        {32, -1, -1, sizeof(::muduo::net::GetServiceResponse)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -240,70 +254,55 @@ class ListRpcRequest::_Internal {
   }
 };
 
-ListRpcRequest::ListRpcRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+ListRpcRequest::ListRpcRequest(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:muduo.net.ListRpcRequest)
 }
-ListRpcRequest::ListRpcRequest(const ListRpcRequest& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
-  ListRpcRequest* const _this = this; (void)_this;
-  new (&_impl_) Impl_{
-      decltype(_impl_._has_bits_){from._impl_._has_bits_}
-    , /*decltype(_impl_._cached_size_)*/{}
-    , decltype(_impl_.service_name_) {}
+inline PROTOBUF_NDEBUG_INLINE ListRpcRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from)
+      : _has_bits_{from._has_bits_},
+        _cached_size_{0},
+        service_name_(arena, from.service_name_) {}
 
-    , decltype(_impl_.list_method_) {}
-  };
+ListRpcRequest::ListRpcRequest(
+    ::google::protobuf::Arena* arena,
+    const ListRpcRequest& from)
+    : ::google::protobuf::Message(arena) {
+  ListRpcRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  _impl_.list_method_ = from._impl_.list_method_;
 
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  _impl_.service_name_.InitDefault();
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        _impl_.service_name_.Set("", GetArenaForAllocation());
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if ((from._impl_._has_bits_[0] & 0x00000001u) != 0) {
-    _this->_impl_.service_name_.Set(from._internal_service_name(), _this->GetArenaForAllocation());
-  }
-  _this->_impl_.list_method_ = from._impl_.list_method_;
   // @@protoc_insertion_point(copy_constructor:muduo.net.ListRpcRequest)
 }
+inline PROTOBUF_NDEBUG_INLINE ListRpcRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : _cached_size_{0},
+        service_name_(arena) {}
 
 inline void ListRpcRequest::SharedCtor(::_pb::Arena* arena) {
-  (void)arena;
-  new (&_impl_) Impl_{
-      decltype(_impl_._has_bits_){}
-    , /*decltype(_impl_._cached_size_)*/{}
-    , decltype(_impl_.service_name_) {}
-
-    , decltype(_impl_.list_method_) { false }
-
-  };
-  _impl_.service_name_.InitDefault();
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        _impl_.service_name_.Set("", GetArenaForAllocation());
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.list_method_ = {};
 }
-
 ListRpcRequest::~ListRpcRequest() {
   // @@protoc_insertion_point(destructor:muduo.net.ListRpcRequest)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
-  (void)arena;
-    return;
-  }
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-
 inline void ListRpcRequest::SharedDtor() {
-  ABSL_DCHECK(GetArenaForAllocation() == nullptr);
+  ABSL_DCHECK(GetArena() == nullptr);
   _impl_.service_name_.Destroy();
+  _impl_.~Impl_();
 }
 
-void ListRpcRequest::SetCachedSize(int size) const {
-  _impl_._cached_size_.Set(size);
-}
-
-void ListRpcRequest::Clear() {
+PROTOBUF_NOINLINE void ListRpcRequest::Clear() {
 // @@protoc_insertion_point(message_clear_start:muduo.net.ListRpcRequest)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -314,73 +313,68 @@ void ListRpcRequest::Clear() {
   }
   _impl_.list_method_ = false;
   _impl_._has_bits_.Clear();
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* ListRpcRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  _Internal::HasBits has_bits{};
-  while (!ctx->Done(&ptr)) {
-    ::uint32_t tag;
-    ptr = ::_pbi::ReadTag(ptr, &tag);
-    switch (tag >> 3) {
-      // optional string service_name = 1;
-      case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 10)) {
-          auto str = _internal_mutable_service_name();
-          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
-          CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "muduo.net.ListRpcRequest.service_name"));
-        } else {
-          goto handle_unusual;
-        }
-        continue;
-      // optional bool list_method = 2;
-      case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 16)) {
-          _Internal::set_has_list_method(&has_bits);
-          _impl_.list_method_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint64(&ptr);
-          CHK_(ptr);
-        } else {
-          goto handle_unusual;
-        }
-        continue;
-      default:
-        goto handle_unusual;
-    }  // switch
-  handle_unusual:
-    if ((tag == 0) || ((tag & 7) == 4)) {
-      CHK_(ptr);
-      ctx->SetLastTag(tag);
-      goto message_done;
-    }
-    ptr = UnknownFieldParse(
-        tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
-        ptr, ctx);
-    CHK_(ptr != nullptr);
-  }  // while
-message_done:
-  _impl_._has_bits_.Or(has_bits);
+const char* ListRpcRequest::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
-failure:
-  ptr = nullptr;
-  goto message_done;
-#undef CHK_
 }
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<1, 2, 0, 45, 2> ListRpcRequest::_table_ = {
+  {
+    PROTOBUF_FIELD_OFFSET(ListRpcRequest, _impl_._has_bits_),
+    0, // no _extensions_
+    2, 8,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967292,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    2,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_ListRpcRequest_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+  }, {{
+    // optional bool list_method = 2;
+    {::_pbi::TcParser::SingularVarintNoZag1<bool, offsetof(ListRpcRequest, _impl_.list_method_), 1>(),
+     {16, 1, 0, PROTOBUF_FIELD_OFFSET(ListRpcRequest, _impl_.list_method_)}},
+    // optional string service_name = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 0, 0, PROTOBUF_FIELD_OFFSET(ListRpcRequest, _impl_.service_name_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // optional string service_name = 1;
+    {PROTOBUF_FIELD_OFFSET(ListRpcRequest, _impl_.service_name_), _Internal::kHasBitsOffset + 0, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // optional bool list_method = 2;
+    {PROTOBUF_FIELD_OFFSET(ListRpcRequest, _impl_.list_method_), _Internal::kHasBitsOffset + 1, 0,
+    (0 | ::_fl::kFcOptional | ::_fl::kBool)},
+  }},
+  // no aux_entries
+  {{
+    "\30\14\0\0\0\0\0\0"
+    "muduo.net.ListRpcRequest"
+    "service_name"
+  }},
+};
 
 ::uint8_t* ListRpcRequest::_InternalSerialize(
-    ::uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:muduo.net.ListRpcRequest)
   ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _impl_._has_bits_[0];
   // optional string service_name = 1;
   if (cached_has_bits & 0x00000001u) {
     const std::string& _s = this->_internal_service_name();
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE, "muduo.net.ListRpcRequest.service_name");
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "muduo.net.ListRpcRequest.service_name");
     target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
@@ -392,8 +386,9 @@ failure:
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:muduo.net.ListRpcRequest)
   return target;
@@ -411,7 +406,7 @@ failure:
   if (cached_has_bits & 0x00000003u) {
     // optional string service_name = 1;
     if (cached_has_bits & 0x00000001u) {
-      total_size += 1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+      total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                       this->_internal_service_name());
     }
 
@@ -424,14 +419,15 @@ failure:
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ListRpcRequest::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    ListRpcRequest::MergeImpl
+const ::google::protobuf::Message::ClassData ListRpcRequest::_class_data_ = {
+    ListRpcRequest::MergeImpl,
+    nullptr,  // OnDemandRegisterArenaDtor
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ListRpcRequest::GetClassData() const { return &_class_data_; }
+const ::google::protobuf::Message::ClassData* ListRpcRequest::GetClassData() const {
+  return &_class_data_;
+}
 
-
-void ListRpcRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+void ListRpcRequest::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
   auto* const _this = static_cast<ListRpcRequest*>(&to_msg);
   auto& from = static_cast<const ListRpcRequest&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:muduo.net.ListRpcRequest)
@@ -449,7 +445,7 @@ void ListRpcRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const :
     }
     _this->_impl_._has_bits_[0] |= cached_has_bits;
   }
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
 void ListRpcRequest::CopyFrom(const ListRpcRequest& from) {
@@ -459,23 +455,24 @@ void ListRpcRequest::CopyFrom(const ListRpcRequest& from) {
   MergeFrom(from);
 }
 
-bool ListRpcRequest::IsInitialized() const {
+PROTOBUF_NOINLINE bool ListRpcRequest::IsInitialized() const {
   return true;
 }
 
-void ListRpcRequest::InternalSwap(ListRpcRequest* other) {
+::_pbi::CachedSize* ListRpcRequest::AccessCachedSize() const {
+  return &_impl_._cached_size_;
+}
+void ListRpcRequest::InternalSwap(ListRpcRequest* PROTOBUF_RESTRICT other) {
   using std::swap;
-  auto* lhs_arena = GetArenaForAllocation();
-  auto* rhs_arena = other->GetArenaForAllocation();
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_impl_._has_bits_[0], other->_impl_._has_bits_[0]);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.service_name_, lhs_arena,
-                                       &other->_impl_.service_name_, rhs_arena);
-
-  swap(_impl_.list_method_, other->_impl_.list_method_);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.service_name_, &other->_impl_.service_name_, arena);
+        swap(_impl_.list_method_, other->_impl_.list_method_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata ListRpcRequest::GetMetadata() const {
+::google::protobuf::Metadata ListRpcRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_rpcservice_2eproto_getter, &descriptor_table_rpcservice_2eproto_once,
       file_level_metadata_rpcservice_2eproto[0]);
@@ -486,144 +483,125 @@ class ListRpcResponse::_Internal {
  public:
 };
 
-ListRpcResponse::ListRpcResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+ListRpcResponse::ListRpcResponse(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:muduo.net.ListRpcResponse)
 }
-ListRpcResponse::ListRpcResponse(const ListRpcResponse& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
-  ListRpcResponse* const _this = this; (void)_this;
-  new (&_impl_) Impl_{
-      decltype(_impl_.service_name_){from._impl_.service_name_}
-    , decltype(_impl_.method_name_){from._impl_.method_name_}
-    , decltype(_impl_.error_) {}
+inline PROTOBUF_NDEBUG_INLINE ListRpcResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from)
+      : service_name_{visibility, arena, from.service_name_},
+        method_name_{visibility, arena, from.method_name_},
+        _cached_size_{0} {}
 
-    , /*decltype(_impl_._cached_size_)*/{}};
+ListRpcResponse::ListRpcResponse(
+    ::google::protobuf::Arena* arena,
+    const ListRpcResponse& from)
+    : ::google::protobuf::Message(arena) {
+  ListRpcResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  _impl_.error_ = from._impl_.error_;
 
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  _this->_impl_.error_ = from._impl_.error_;
   // @@protoc_insertion_point(copy_constructor:muduo.net.ListRpcResponse)
 }
+inline PROTOBUF_NDEBUG_INLINE ListRpcResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : service_name_{visibility, arena},
+        method_name_{visibility, arena},
+        _cached_size_{0} {}
 
 inline void ListRpcResponse::SharedCtor(::_pb::Arena* arena) {
-  (void)arena;
-  new (&_impl_) Impl_{
-      decltype(_impl_.service_name_){arena}
-    , decltype(_impl_.method_name_){arena}
-    , decltype(_impl_.error_) { 0 }
-
-    , /*decltype(_impl_._cached_size_)*/{}
-  };
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.error_ = {};
 }
-
 ListRpcResponse::~ListRpcResponse() {
   // @@protoc_insertion_point(destructor:muduo.net.ListRpcResponse)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
-  (void)arena;
-    return;
-  }
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-
 inline void ListRpcResponse::SharedDtor() {
-  ABSL_DCHECK(GetArenaForAllocation() == nullptr);
-  _internal_mutable_service_name()->~RepeatedPtrField();
-  _internal_mutable_method_name()->~RepeatedPtrField();
+  ABSL_DCHECK(GetArena() == nullptr);
+  _impl_.~Impl_();
 }
 
-void ListRpcResponse::SetCachedSize(int size) const {
-  _impl_._cached_size_.Set(size);
-}
-
-void ListRpcResponse::Clear() {
+PROTOBUF_NOINLINE void ListRpcResponse::Clear() {
 // @@protoc_insertion_point(message_clear_start:muduo.net.ListRpcResponse)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  _internal_mutable_service_name()->Clear();
-  _internal_mutable_method_name()->Clear();
+  _impl_.service_name_.Clear();
+  _impl_.method_name_.Clear();
   _impl_.error_ = 0;
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* ListRpcResponse::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  while (!ctx->Done(&ptr)) {
-    ::uint32_t tag;
-    ptr = ::_pbi::ReadTag(ptr, &tag);
-    switch (tag >> 3) {
-      // .muduo.net.ErrorCode error = 1;
-      case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 8)) {
-          ::int32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
-          CHK_(ptr);
-          _internal_set_error(static_cast<::muduo::net::ErrorCode>(val));
-        } else {
-          goto handle_unusual;
-        }
-        continue;
-      // repeated string service_name = 2;
-      case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 18)) {
-          ptr -= 1;
-          do {
-            ptr += 1;
-            auto str = _internal_add_service_name();
-            ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
-            CHK_(ptr);
-            CHK_(::_pbi::VerifyUTF8(str, "muduo.net.ListRpcResponse.service_name"));
-            if (!ctx->DataAvailable(ptr)) break;
-          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<18>(ptr));
-        } else {
-          goto handle_unusual;
-        }
-        continue;
-      // repeated string method_name = 3;
-      case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 26)) {
-          ptr -= 1;
-          do {
-            ptr += 1;
-            auto str = _internal_add_method_name();
-            ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
-            CHK_(ptr);
-            CHK_(::_pbi::VerifyUTF8(str, "muduo.net.ListRpcResponse.method_name"));
-            if (!ctx->DataAvailable(ptr)) break;
-          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<26>(ptr));
-        } else {
-          goto handle_unusual;
-        }
-        continue;
-      default:
-        goto handle_unusual;
-    }  // switch
-  handle_unusual:
-    if ((tag == 0) || ((tag & 7) == 4)) {
-      CHK_(ptr);
-      ctx->SetLastTag(tag);
-      goto message_done;
-    }
-    ptr = UnknownFieldParse(
-        tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
-        ptr, ctx);
-    CHK_(ptr != nullptr);
-  }  // while
-message_done:
+const char* ListRpcResponse::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
-failure:
-  ptr = nullptr;
-  goto message_done;
-#undef CHK_
 }
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 57, 2> ListRpcResponse::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_ListRpcResponse_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .muduo.net.ErrorCode error = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ListRpcResponse, _impl_.error_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ListRpcResponse, _impl_.error_)}},
+    // repeated string service_name = 2;
+    {::_pbi::TcParser::FastUR1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(ListRpcResponse, _impl_.service_name_)}},
+    // repeated string method_name = 3;
+    {::_pbi::TcParser::FastUR1,
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(ListRpcResponse, _impl_.method_name_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .muduo.net.ErrorCode error = 1;
+    {PROTOBUF_FIELD_OFFSET(ListRpcResponse, _impl_.error_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
+    // repeated string service_name = 2;
+    {PROTOBUF_FIELD_OFFSET(ListRpcResponse, _impl_.service_name_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
+    // repeated string method_name = 3;
+    {PROTOBUF_FIELD_OFFSET(ListRpcResponse, _impl_.method_name_), 0, 0,
+    (0 | ::_fl::kFcRepeated | ::_fl::kUtf8String | ::_fl::kRepSString)},
+  }},
+  // no aux_entries
+  {{
+    "\31\0\14\13\0\0\0\0"
+    "muduo.net.ListRpcResponse"
+    "service_name"
+    "method_name"
+  }},
+};
 
 ::uint8_t* ListRpcResponse::_InternalSerialize(
-    ::uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:muduo.net.ListRpcResponse)
   ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // .muduo.net.ErrorCode error = 1;
   if (this->_internal_error() != 0) {
@@ -634,23 +612,24 @@ failure:
 
   // repeated string service_name = 2;
   for (int i = 0, n = this->_internal_service_name_size(); i < n; ++i) {
-    const auto& s = this->_internal_service_name(i);
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-        s.data(), static_cast<int>(s.length()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE, "muduo.net.ListRpcResponse.service_name");
+    const auto& s = this->_internal_service_name().Get(i);
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "muduo.net.ListRpcResponse.service_name");
     target = stream->WriteString(2, s, target);
   }
 
   // repeated string method_name = 3;
   for (int i = 0, n = this->_internal_method_name_size(); i < n; ++i) {
-    const auto& s = this->_internal_method_name(i);
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-        s.data(), static_cast<int>(s.length()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE, "muduo.net.ListRpcResponse.method_name");
+    const auto& s = this->_internal_method_name().Get(i);
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        s.data(), static_cast<int>(s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "muduo.net.ListRpcResponse.method_name");
     target = stream->WriteString(3, s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:muduo.net.ListRpcResponse)
   return target;
@@ -665,19 +644,17 @@ failure:
   (void) cached_has_bits;
 
   // repeated string service_name = 2;
-  total_size += 1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(_internal_service_name().size());
+  total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_service_name().size());
   for (int i = 0, n = _internal_service_name().size(); i < n; ++i) {
-    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+    total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
         _internal_service_name().Get(i));
   }
-
   // repeated string method_name = 3;
-  total_size += 1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(_internal_method_name().size());
+  total_size += 1 * ::google::protobuf::internal::FromIntSize(_internal_method_name().size());
   for (int i = 0, n = _internal_method_name().size(); i < n; ++i) {
-    total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+    total_size += ::google::protobuf::internal::WireFormatLite::StringSize(
         _internal_method_name().Get(i));
   }
-
   // .muduo.net.ErrorCode error = 1;
   if (this->_internal_error() != 0) {
     total_size += 1 +
@@ -687,14 +664,15 @@ failure:
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ListRpcResponse::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    ListRpcResponse::MergeImpl
+const ::google::protobuf::Message::ClassData ListRpcResponse::_class_data_ = {
+    ListRpcResponse::MergeImpl,
+    nullptr,  // OnDemandRegisterArenaDtor
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ListRpcResponse::GetClassData() const { return &_class_data_; }
+const ::google::protobuf::Message::ClassData* ListRpcResponse::GetClassData() const {
+  return &_class_data_;
+}
 
-
-void ListRpcResponse::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+void ListRpcResponse::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
   auto* const _this = static_cast<ListRpcResponse*>(&to_msg);
   auto& from = static_cast<const ListRpcResponse&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:muduo.net.ListRpcResponse)
@@ -707,7 +685,7 @@ void ListRpcResponse::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const 
   if (from._internal_error() != 0) {
     _this->_internal_set_error(from._internal_error());
   }
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
 void ListRpcResponse::CopyFrom(const ListRpcResponse& from) {
@@ -717,21 +695,22 @@ void ListRpcResponse::CopyFrom(const ListRpcResponse& from) {
   MergeFrom(from);
 }
 
-bool ListRpcResponse::IsInitialized() const {
+PROTOBUF_NOINLINE bool ListRpcResponse::IsInitialized() const {
   return true;
 }
 
-void ListRpcResponse::InternalSwap(ListRpcResponse* other) {
+::_pbi::CachedSize* ListRpcResponse::AccessCachedSize() const {
+  return &_impl_._cached_size_;
+}
+void ListRpcResponse::InternalSwap(ListRpcResponse* PROTOBUF_RESTRICT other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  _internal_mutable_service_name()->InternalSwap(
-      other->_internal_mutable_service_name());
-  _internal_mutable_method_name()->InternalSwap(
-      other->_internal_mutable_method_name());
+  _impl_.service_name_.InternalSwap(&other->_impl_.service_name_);
+  _impl_.method_name_.InternalSwap(&other->_impl_.method_name_);
   swap(_impl_.error_, other->_impl_.error_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata ListRpcResponse::GetMetadata() const {
+::google::protobuf::Metadata ListRpcResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_rpcservice_2eproto_getter, &descriptor_table_rpcservice_2eproto_once,
       file_level_metadata_rpcservice_2eproto[1]);
@@ -742,128 +721,119 @@ class GetServiceRequest::_Internal {
  public:
 };
 
-GetServiceRequest::GetServiceRequest(::PROTOBUF_NAMESPACE_ID::Arena* arena)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+GetServiceRequest::GetServiceRequest(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:muduo.net.GetServiceRequest)
 }
-GetServiceRequest::GetServiceRequest(const GetServiceRequest& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
-  GetServiceRequest* const _this = this; (void)_this;
-  new (&_impl_) Impl_{
-      decltype(_impl_.service_name_) {}
+inline PROTOBUF_NDEBUG_INLINE GetServiceRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from)
+      : service_name_(arena, from.service_name_),
+        _cached_size_{0} {}
 
-    , /*decltype(_impl_._cached_size_)*/{}};
+GetServiceRequest::GetServiceRequest(
+    ::google::protobuf::Arena* arena,
+    const GetServiceRequest& from)
+    : ::google::protobuf::Message(arena) {
+  GetServiceRequest* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
 
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  _impl_.service_name_.InitDefault();
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        _impl_.service_name_.Set("", GetArenaForAllocation());
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (!from._internal_service_name().empty()) {
-    _this->_impl_.service_name_.Set(from._internal_service_name(), _this->GetArenaForAllocation());
-  }
   // @@protoc_insertion_point(copy_constructor:muduo.net.GetServiceRequest)
 }
+inline PROTOBUF_NDEBUG_INLINE GetServiceRequest::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : service_name_(arena),
+        _cached_size_{0} {}
 
 inline void GetServiceRequest::SharedCtor(::_pb::Arena* arena) {
-  (void)arena;
-  new (&_impl_) Impl_{
-      decltype(_impl_.service_name_) {}
-
-    , /*decltype(_impl_._cached_size_)*/{}
-  };
-  _impl_.service_name_.InitDefault();
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        _impl_.service_name_.Set("", GetArenaForAllocation());
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  new (&_impl_) Impl_(internal_visibility(), arena);
 }
-
 GetServiceRequest::~GetServiceRequest() {
   // @@protoc_insertion_point(destructor:muduo.net.GetServiceRequest)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
-  (void)arena;
-    return;
-  }
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-
 inline void GetServiceRequest::SharedDtor() {
-  ABSL_DCHECK(GetArenaForAllocation() == nullptr);
+  ABSL_DCHECK(GetArena() == nullptr);
   _impl_.service_name_.Destroy();
+  _impl_.~Impl_();
 }
 
-void GetServiceRequest::SetCachedSize(int size) const {
-  _impl_._cached_size_.Set(size);
-}
-
-void GetServiceRequest::Clear() {
+PROTOBUF_NOINLINE void GetServiceRequest::Clear() {
 // @@protoc_insertion_point(message_clear_start:muduo.net.GetServiceRequest)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
   _impl_.service_name_.ClearToEmpty();
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* GetServiceRequest::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  while (!ctx->Done(&ptr)) {
-    ::uint32_t tag;
-    ptr = ::_pbi::ReadTag(ptr, &tag);
-    switch (tag >> 3) {
-      // string service_name = 1;
-      case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 10)) {
-          auto str = _internal_mutable_service_name();
-          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
-          CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "muduo.net.GetServiceRequest.service_name"));
-        } else {
-          goto handle_unusual;
-        }
-        continue;
-      default:
-        goto handle_unusual;
-    }  // switch
-  handle_unusual:
-    if ((tag == 0) || ((tag & 7) == 4)) {
-      CHK_(ptr);
-      ctx->SetLastTag(tag);
-      goto message_done;
-    }
-    ptr = UnknownFieldParse(
-        tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
-        ptr, ctx);
-    CHK_(ptr != nullptr);
-  }  // while
-message_done:
+const char* GetServiceRequest::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
-failure:
-  ptr = nullptr;
-  goto message_done;
-#undef CHK_
 }
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<0, 1, 0, 48, 2> GetServiceRequest::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    1, 0,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967294,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    1,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_GetServiceRequest_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+  }, {{
+    // string service_name = 1;
+    {::_pbi::TcParser::FastUS1,
+     {10, 63, 0, PROTOBUF_FIELD_OFFSET(GetServiceRequest, _impl_.service_name_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // string service_name = 1;
+    {PROTOBUF_FIELD_OFFSET(GetServiceRequest, _impl_.service_name_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\33\14\0\0\0\0\0\0"
+    "muduo.net.GetServiceRequest"
+    "service_name"
+  }},
+};
 
 ::uint8_t* GetServiceRequest::_InternalSerialize(
-    ::uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:muduo.net.GetServiceRequest)
   ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // string service_name = 1;
   if (!this->_internal_service_name().empty()) {
     const std::string& _s = this->_internal_service_name();
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE, "muduo.net.GetServiceRequest.service_name");
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "muduo.net.GetServiceRequest.service_name");
     target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:muduo.net.GetServiceRequest)
   return target;
@@ -879,21 +849,22 @@ failure:
 
   // string service_name = 1;
   if (!this->_internal_service_name().empty()) {
-    total_size += 1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                     this->_internal_service_name());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData GetServiceRequest::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    GetServiceRequest::MergeImpl
+const ::google::protobuf::Message::ClassData GetServiceRequest::_class_data_ = {
+    GetServiceRequest::MergeImpl,
+    nullptr,  // OnDemandRegisterArenaDtor
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetServiceRequest::GetClassData() const { return &_class_data_; }
+const ::google::protobuf::Message::ClassData* GetServiceRequest::GetClassData() const {
+  return &_class_data_;
+}
 
-
-void GetServiceRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+void GetServiceRequest::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
   auto* const _this = static_cast<GetServiceRequest*>(&to_msg);
   auto& from = static_cast<const GetServiceRequest&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:muduo.net.GetServiceRequest)
@@ -904,7 +875,7 @@ void GetServiceRequest::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, cons
   if (!from._internal_service_name().empty()) {
     _this->_internal_set_service_name(from._internal_service_name());
   }
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
 void GetServiceRequest::CopyFrom(const GetServiceRequest& from) {
@@ -914,20 +885,22 @@ void GetServiceRequest::CopyFrom(const GetServiceRequest& from) {
   MergeFrom(from);
 }
 
-bool GetServiceRequest::IsInitialized() const {
+PROTOBUF_NOINLINE bool GetServiceRequest::IsInitialized() const {
   return true;
 }
 
-void GetServiceRequest::InternalSwap(GetServiceRequest* other) {
+::_pbi::CachedSize* GetServiceRequest::AccessCachedSize() const {
+  return &_impl_._cached_size_;
+}
+void GetServiceRequest::InternalSwap(GetServiceRequest* PROTOBUF_RESTRICT other) {
   using std::swap;
-  auto* lhs_arena = GetArenaForAllocation();
-  auto* rhs_arena = other->GetArenaForAllocation();
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.service_name_, lhs_arena,
-                                       &other->_impl_.service_name_, rhs_arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.service_name_, &other->_impl_.service_name_, arena);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata GetServiceRequest::GetMetadata() const {
+::google::protobuf::Metadata GetServiceRequest::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_rpcservice_2eproto_getter, &descriptor_table_rpcservice_2eproto_once,
       file_level_metadata_rpcservice_2eproto[2]);
@@ -938,84 +911,57 @@ class GetServiceResponse::_Internal {
  public:
 };
 
-GetServiceResponse::GetServiceResponse(::PROTOBUF_NAMESPACE_ID::Arena* arena)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
+GetServiceResponse::GetServiceResponse(::google::protobuf::Arena* arena)
+    : ::google::protobuf::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:muduo.net.GetServiceResponse)
 }
-GetServiceResponse::GetServiceResponse(const GetServiceResponse& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
-  GetServiceResponse* const _this = this; (void)_this;
-  new (&_impl_) Impl_{
-      decltype(_impl_.proto_file_) {}
+inline PROTOBUF_NDEBUG_INLINE GetServiceResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility, ::google::protobuf::Arena* arena,
+    const Impl_& from)
+      : proto_file_(arena, from.proto_file_),
+        proto_file_name_(arena, from.proto_file_name_),
+        _cached_size_{0} {}
 
-    , decltype(_impl_.proto_file_name_) {}
+GetServiceResponse::GetServiceResponse(
+    ::google::protobuf::Arena* arena,
+    const GetServiceResponse& from)
+    : ::google::protobuf::Message(arena) {
+  GetServiceResponse* const _this = this;
+  (void)_this;
+  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+      from._internal_metadata_);
+  new (&_impl_) Impl_(internal_visibility(), arena, from._impl_);
+  _impl_.error_ = from._impl_.error_;
 
-    , decltype(_impl_.error_) {}
-
-    , /*decltype(_impl_._cached_size_)*/{}};
-
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  _impl_.proto_file_.InitDefault();
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        _impl_.proto_file_.Set("", GetArenaForAllocation());
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (!from._internal_proto_file().empty()) {
-    _this->_impl_.proto_file_.Set(from._internal_proto_file(), _this->GetArenaForAllocation());
-  }
-  _impl_.proto_file_name_.InitDefault();
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        _impl_.proto_file_name_.Set("", GetArenaForAllocation());
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  if (!from._internal_proto_file_name().empty()) {
-    _this->_impl_.proto_file_name_.Set(from._internal_proto_file_name(), _this->GetArenaForAllocation());
-  }
-  _this->_impl_.error_ = from._impl_.error_;
   // @@protoc_insertion_point(copy_constructor:muduo.net.GetServiceResponse)
 }
+inline PROTOBUF_NDEBUG_INLINE GetServiceResponse::Impl_::Impl_(
+    ::google::protobuf::internal::InternalVisibility visibility,
+    ::google::protobuf::Arena* arena)
+      : proto_file_(arena),
+        proto_file_name_(arena),
+        _cached_size_{0} {}
 
 inline void GetServiceResponse::SharedCtor(::_pb::Arena* arena) {
-  (void)arena;
-  new (&_impl_) Impl_{
-      decltype(_impl_.proto_file_) {}
-
-    , decltype(_impl_.proto_file_name_) {}
-
-    , decltype(_impl_.error_) { 0 }
-
-    , /*decltype(_impl_._cached_size_)*/{}
-  };
-  _impl_.proto_file_.InitDefault();
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        _impl_.proto_file_.Set("", GetArenaForAllocation());
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
-  _impl_.proto_file_name_.InitDefault();
-  #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
-        _impl_.proto_file_name_.Set("", GetArenaForAllocation());
-  #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
+  new (&_impl_) Impl_(internal_visibility(), arena);
+  _impl_.error_ = {};
 }
-
 GetServiceResponse::~GetServiceResponse() {
   // @@protoc_insertion_point(destructor:muduo.net.GetServiceResponse)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
-  (void)arena;
-    return;
-  }
+  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
   SharedDtor();
 }
-
 inline void GetServiceResponse::SharedDtor() {
-  ABSL_DCHECK(GetArenaForAllocation() == nullptr);
+  ABSL_DCHECK(GetArena() == nullptr);
   _impl_.proto_file_.Destroy();
   _impl_.proto_file_name_.Destroy();
+  _impl_.~Impl_();
 }
 
-void GetServiceResponse::SetCachedSize(int size) const {
-  _impl_._cached_size_.Set(size);
-}
-
-void GetServiceResponse::Clear() {
+PROTOBUF_NOINLINE void GetServiceResponse::Clear() {
 // @@protoc_insertion_point(message_clear_start:muduo.net.GetServiceResponse)
+  PROTOBUF_TSAN_WRITE(&_impl_._tsan_detect_race);
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -1023,75 +969,69 @@ void GetServiceResponse::Clear() {
   _impl_.proto_file_.ClearToEmpty();
   _impl_.proto_file_name_.ClearToEmpty();
   _impl_.error_ = 0;
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
 }
 
-const char* GetServiceResponse::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  while (!ctx->Done(&ptr)) {
-    ::uint32_t tag;
-    ptr = ::_pbi::ReadTag(ptr, &tag);
-    switch (tag >> 3) {
-      // .muduo.net.ErrorCode error = 1;
-      case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 8)) {
-          ::int32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
-          CHK_(ptr);
-          _internal_set_error(static_cast<::muduo::net::ErrorCode>(val));
-        } else {
-          goto handle_unusual;
-        }
-        continue;
-      // string proto_file = 2;
-      case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 18)) {
-          auto str = _internal_mutable_proto_file();
-          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
-          CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "muduo.net.GetServiceResponse.proto_file"));
-        } else {
-          goto handle_unusual;
-        }
-        continue;
-      // string proto_file_name = 3;
-      case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 26)) {
-          auto str = _internal_mutable_proto_file_name();
-          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
-          CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "muduo.net.GetServiceResponse.proto_file_name"));
-        } else {
-          goto handle_unusual;
-        }
-        continue;
-      default:
-        goto handle_unusual;
-    }  // switch
-  handle_unusual:
-    if ((tag == 0) || ((tag & 7) == 4)) {
-      CHK_(ptr);
-      ctx->SetLastTag(tag);
-      goto message_done;
-    }
-    ptr = UnknownFieldParse(
-        tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
-        ptr, ctx);
-    CHK_(ptr != nullptr);
-  }  // while
-message_done:
+const char* GetServiceResponse::_InternalParse(
+    const char* ptr, ::_pbi::ParseContext* ctx) {
+  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
   return ptr;
-failure:
-  ptr = nullptr;
-  goto message_done;
-#undef CHK_
 }
+
+
+PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
+const ::_pbi::TcParseTable<2, 3, 0, 62, 2> GetServiceResponse::_table_ = {
+  {
+    0,  // no _has_bits_
+    0, // no _extensions_
+    3, 24,  // max_field_number, fast_idx_mask
+    offsetof(decltype(_table_), field_lookup_table),
+    4294967288,  // skipmap
+    offsetof(decltype(_table_), field_entries),
+    3,  // num_field_entries
+    0,  // num_aux_entries
+    offsetof(decltype(_table_), field_names),  // no aux_entries
+    &_GetServiceResponse_default_instance_._instance,
+    ::_pbi::TcParser::GenericFallback,  // fallback
+  }, {{
+    {::_pbi::TcParser::MiniParse, {}},
+    // .muduo.net.ErrorCode error = 1;
+    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(GetServiceResponse, _impl_.error_), 63>(),
+     {8, 63, 0, PROTOBUF_FIELD_OFFSET(GetServiceResponse, _impl_.error_)}},
+    // string proto_file = 2;
+    {::_pbi::TcParser::FastUS1,
+     {18, 63, 0, PROTOBUF_FIELD_OFFSET(GetServiceResponse, _impl_.proto_file_)}},
+    // string proto_file_name = 3;
+    {::_pbi::TcParser::FastUS1,
+     {26, 63, 0, PROTOBUF_FIELD_OFFSET(GetServiceResponse, _impl_.proto_file_name_)}},
+  }}, {{
+    65535, 65535
+  }}, {{
+    // .muduo.net.ErrorCode error = 1;
+    {PROTOBUF_FIELD_OFFSET(GetServiceResponse, _impl_.error_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
+    // string proto_file = 2;
+    {PROTOBUF_FIELD_OFFSET(GetServiceResponse, _impl_.proto_file_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+    // string proto_file_name = 3;
+    {PROTOBUF_FIELD_OFFSET(GetServiceResponse, _impl_.proto_file_name_), 0, 0,
+    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
+  }},
+  // no aux_entries
+  {{
+    "\34\0\12\17\0\0\0\0"
+    "muduo.net.GetServiceResponse"
+    "proto_file"
+    "proto_file_name"
+  }},
+};
 
 ::uint8_t* GetServiceResponse::_InternalSerialize(
-    ::uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::uint8_t* target,
+    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:muduo.net.GetServiceResponse)
   ::uint32_t cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // .muduo.net.ErrorCode error = 1;
   if (this->_internal_error() != 0) {
@@ -1103,22 +1043,23 @@ failure:
   // string proto_file = 2;
   if (!this->_internal_proto_file().empty()) {
     const std::string& _s = this->_internal_proto_file();
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE, "muduo.net.GetServiceResponse.proto_file");
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "muduo.net.GetServiceResponse.proto_file");
     target = stream->WriteStringMaybeAliased(2, _s, target);
   }
 
   // string proto_file_name = 3;
   if (!this->_internal_proto_file_name().empty()) {
     const std::string& _s = this->_internal_proto_file_name();
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE, "muduo.net.GetServiceResponse.proto_file_name");
+    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "muduo.net.GetServiceResponse.proto_file_name");
     target = stream->WriteStringMaybeAliased(3, _s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target =
+        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:muduo.net.GetServiceResponse)
   return target;
@@ -1134,13 +1075,13 @@ failure:
 
   // string proto_file = 2;
   if (!this->_internal_proto_file().empty()) {
-    total_size += 1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                     this->_internal_proto_file());
   }
 
   // string proto_file_name = 3;
   if (!this->_internal_proto_file_name().empty()) {
-    total_size += 1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
                                     this->_internal_proto_file_name());
   }
 
@@ -1153,14 +1094,15 @@ failure:
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData GetServiceResponse::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    GetServiceResponse::MergeImpl
+const ::google::protobuf::Message::ClassData GetServiceResponse::_class_data_ = {
+    GetServiceResponse::MergeImpl,
+    nullptr,  // OnDemandRegisterArenaDtor
 };
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetServiceResponse::GetClassData() const { return &_class_data_; }
+const ::google::protobuf::Message::ClassData* GetServiceResponse::GetClassData() const {
+  return &_class_data_;
+}
 
-
-void GetServiceResponse::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
+void GetServiceResponse::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
   auto* const _this = static_cast<GetServiceResponse*>(&to_msg);
   auto& from = static_cast<const GetServiceResponse&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:muduo.net.GetServiceResponse)
@@ -1177,7 +1119,7 @@ void GetServiceResponse::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, con
   if (from._internal_error() != 0) {
     _this->_internal_set_error(from._internal_error());
   }
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
 }
 
 void GetServiceResponse::CopyFrom(const GetServiceResponse& from) {
@@ -1187,65 +1129,66 @@ void GetServiceResponse::CopyFrom(const GetServiceResponse& from) {
   MergeFrom(from);
 }
 
-bool GetServiceResponse::IsInitialized() const {
+PROTOBUF_NOINLINE bool GetServiceResponse::IsInitialized() const {
   return true;
 }
 
-void GetServiceResponse::InternalSwap(GetServiceResponse* other) {
+::_pbi::CachedSize* GetServiceResponse::AccessCachedSize() const {
+  return &_impl_._cached_size_;
+}
+void GetServiceResponse::InternalSwap(GetServiceResponse* PROTOBUF_RESTRICT other) {
   using std::swap;
-  auto* lhs_arena = GetArenaForAllocation();
-  auto* rhs_arena = other->GetArenaForAllocation();
+  auto* arena = GetArena();
+  ABSL_DCHECK_EQ(arena, other->GetArena());
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.proto_file_, lhs_arena,
-                                       &other->_impl_.proto_file_, rhs_arena);
-  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.proto_file_name_, lhs_arena,
-                                       &other->_impl_.proto_file_name_, rhs_arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.proto_file_, &other->_impl_.proto_file_, arena);
+  ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.proto_file_name_, &other->_impl_.proto_file_name_, arena);
   swap(_impl_.error_, other->_impl_.error_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata GetServiceResponse::GetMetadata() const {
+::google::protobuf::Metadata GetServiceResponse::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_rpcservice_2eproto_getter, &descriptor_table_rpcservice_2eproto_once,
       file_level_metadata_rpcservice_2eproto[3]);
 }
 // ===================================================================
 
-const ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor* RpcService::descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_rpcservice_2eproto);
+const ::google::protobuf::ServiceDescriptor* RpcService::descriptor() {
+  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_rpcservice_2eproto);
   return file_level_service_descriptors_rpcservice_2eproto[0];
 }
 
-const ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor* RpcService::GetDescriptor() {
+const ::google::protobuf::ServiceDescriptor* RpcService::GetDescriptor() {
   return descriptor();
 }
 
-void RpcService::listRpc(::PROTOBUF_NAMESPACE_ID::RpcController* controller,
+void RpcService::listRpc(::google::protobuf::RpcController* controller,
                          const ::muduo::net::ListRpcRequest*, ::muduo::net::ListRpcResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method listRpc() not implemented.");
   done->Run();
 }
-void RpcService::getService(::PROTOBUF_NAMESPACE_ID::RpcController* controller,
+void RpcService::getService(::google::protobuf::RpcController* controller,
                          const ::muduo::net::GetServiceRequest*, ::muduo::net::GetServiceResponse*, ::google::protobuf::Closure* done) {
   controller->SetFailed("Method getService() not implemented.");
   done->Run();
 }
 
 void RpcService::CallMethod(
-    const ::PROTOBUF_NAMESPACE_ID::MethodDescriptor* method,
-    ::PROTOBUF_NAMESPACE_ID::RpcController* controller,
-    const ::PROTOBUF_NAMESPACE_ID::Message* request,
-    ::PROTOBUF_NAMESPACE_ID::Message* response, ::google::protobuf::Closure* done) {
+    const ::google::protobuf::MethodDescriptor* method,
+    ::google::protobuf::RpcController* controller,
+    const ::google::protobuf::Message* request,
+    ::google::protobuf::Message* response, ::google::protobuf::Closure* done) {
   ABSL_DCHECK_EQ(method->service(), file_level_service_descriptors_rpcservice_2eproto[0]);
   switch (method->index()) {
     case 0:
       listRpc(controller,
-             ::PROTOBUF_NAMESPACE_ID::internal::DownCast<const ::muduo::net::ListRpcRequest*>(request),
-             ::PROTOBUF_NAMESPACE_ID::internal::DownCast<::muduo::net::ListRpcResponse*>(response), done);
+             ::google::protobuf::internal::DownCast<const ::muduo::net::ListRpcRequest*>(request),
+             ::google::protobuf::internal::DownCast<::muduo::net::ListRpcResponse*>(response), done);
       break;
     case 1:
       getService(controller,
-             ::PROTOBUF_NAMESPACE_ID::internal::DownCast<const ::muduo::net::GetServiceRequest*>(request),
-             ::PROTOBUF_NAMESPACE_ID::internal::DownCast<::muduo::net::GetServiceResponse*>(response), done);
+             ::google::protobuf::internal::DownCast<const ::muduo::net::GetServiceRequest*>(request),
+             ::google::protobuf::internal::DownCast<::muduo::net::GetServiceResponse*>(response), done);
       break;
 
     default:
@@ -1254,8 +1197,8 @@ void RpcService::CallMethod(
   }
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message& RpcService::GetRequestPrototype(
-    const ::PROTOBUF_NAMESPACE_ID::MethodDescriptor* method) const {
+const ::google::protobuf::Message& RpcService::GetRequestPrototype(
+    const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
@@ -1265,13 +1208,13 @@ const ::PROTOBUF_NAMESPACE_ID::Message& RpcService::GetRequestPrototype(
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
-      return *::PROTOBUF_NAMESPACE_ID::MessageFactory::generated_factory()
+      return *::google::protobuf::MessageFactory::generated_factory()
                   ->GetPrototype(method->input_type());
   }
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message& RpcService::GetResponsePrototype(
-    const ::PROTOBUF_NAMESPACE_ID::MethodDescriptor* method) const {
+const ::google::protobuf::Message& RpcService::GetResponsePrototype(
+    const ::google::protobuf::MethodDescriptor* method) const {
   ABSL_DCHECK_EQ(method->service(), descriptor());
   switch (method->index()) {
     case 0:
@@ -1281,32 +1224,32 @@ const ::PROTOBUF_NAMESPACE_ID::Message& RpcService::GetResponsePrototype(
 
     default:
       ABSL_LOG(FATAL) << "Bad method index; this should never happen.";
-      return *::PROTOBUF_NAMESPACE_ID::MessageFactory::generated_factory()
+      return *::google::protobuf::MessageFactory::generated_factory()
                   ->GetPrototype(method->output_type());
   }
 }
 
-RpcService_Stub::RpcService_Stub(::PROTOBUF_NAMESPACE_ID::RpcChannel* channel)
+RpcService_Stub::RpcService_Stub(::google::protobuf::RpcChannel* channel)
     : channel_(channel), owns_channel_(false) {}
 
 RpcService_Stub::RpcService_Stub(
-    ::PROTOBUF_NAMESPACE_ID::RpcChannel* channel,
-    ::PROTOBUF_NAMESPACE_ID::Service::ChannelOwnership ownership)
+    ::google::protobuf::RpcChannel* channel,
+    ::google::protobuf::Service::ChannelOwnership ownership)
     : channel_(channel),
       owns_channel_(ownership ==
-                    ::PROTOBUF_NAMESPACE_ID::Service::STUB_OWNS_CHANNEL) {}
+                    ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
 
 RpcService_Stub::~RpcService_Stub() {
   if (owns_channel_) delete channel_;
 }
 
-void RpcService_Stub::listRpc(::PROTOBUF_NAMESPACE_ID::RpcController* controller,
+void RpcService_Stub::listRpc(::google::protobuf::RpcController* controller,
                               const ::muduo::net::ListRpcRequest* request,
                               ::muduo::net::ListRpcResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(0), controller,
                        request, response, done);
 }
-void RpcService_Stub::getService(::PROTOBUF_NAMESPACE_ID::RpcController* controller,
+void RpcService_Stub::getService(::google::protobuf::RpcController* controller,
                               const ::muduo::net::GetServiceRequest* request,
                               ::muduo::net::GetServiceResponse* response, ::google::protobuf::Closure* done) {
   channel_->CallMethod(descriptor()->method(1), controller,
@@ -1315,23 +1258,9 @@ void RpcService_Stub::getService(::PROTOBUF_NAMESPACE_ID::RpcController* control
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace net
 }  // namespace muduo
-PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::muduo::net::ListRpcRequest*
-Arena::CreateMaybeMessage< ::muduo::net::ListRpcRequest >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::muduo::net::ListRpcRequest >(arena);
-}
-template<> PROTOBUF_NOINLINE ::muduo::net::ListRpcResponse*
-Arena::CreateMaybeMessage< ::muduo::net::ListRpcResponse >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::muduo::net::ListRpcResponse >(arena);
-}
-template<> PROTOBUF_NOINLINE ::muduo::net::GetServiceRequest*
-Arena::CreateMaybeMessage< ::muduo::net::GetServiceRequest >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::muduo::net::GetServiceRequest >(arena);
-}
-template<> PROTOBUF_NOINLINE ::muduo::net::GetServiceResponse*
-Arena::CreateMaybeMessage< ::muduo::net::GetServiceResponse >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::muduo::net::GetServiceResponse >(arena);
-}
-PROTOBUF_NAMESPACE_CLOSE
+namespace google {
+namespace protobuf {
+}  // namespace protobuf
+}  // namespace google
 // @@protoc_insertion_point(global_scope)
 #include "google/protobuf/port_undef.inc"
