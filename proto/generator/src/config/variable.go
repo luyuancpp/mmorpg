@@ -3,7 +3,7 @@ package config
 const ProjectDir = "../../../"
 const ProtoDir = "../../"
 const Md5Ex = ".md5"
-const Md5Dir = ProtoDir + "gengo/bin/md5/"
+const Md5Dir = ProtoDir + "generator/bin/md5/"
 const ProtoEx = ".proto"
 const ProtoPbcEx = ".pb.cc"
 const ProtoPbhEx = ".pb.h"
