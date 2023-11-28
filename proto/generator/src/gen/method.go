@@ -25,7 +25,7 @@ func writeServiceMethodHeadFile(methodList RpcMethodInfos) {
 		data += "\n"
 	}
 	fileName := methodList[0].FileBaseName() + "_service" + config.HeadEx
-	Md5WriteData2File(config.PbcOutDir+fileName, data)
+	Md5WriteData2File(config.ServiceDirName+fileName, data)
 }
 
 func writeServiceMethodCppFile(methodList RpcMethodInfos) {
@@ -41,7 +41,7 @@ func writeServiceMethodCppFile(methodList RpcMethodInfos) {
 		data += "const uint32_t " + methodList[i].KeyName() + "Index = " + strconv.FormatUint(methodList[i].Index, 10) + ";\n"
 	}
 	fileName := methodList[0].FileBaseName() + "_service" + config.CppEx
-	Md5WriteData2File(config.PbcOutDir+fileName, data)
+	Md5WriteData2File(config.ServiceDirName+fileName, data)
 }
 
 func getMethodHandlerHeadStr(methodList RpcMethodInfos) string {

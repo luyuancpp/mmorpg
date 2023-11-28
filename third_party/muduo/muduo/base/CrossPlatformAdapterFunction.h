@@ -1,5 +1,4 @@
-#ifndef CROSSPLATFORM_ADAPTER_FUNCTION_H
-#define CROSSPLATFORM_ADAPTER_FUNCTION_H
+#pragma once
 
 #include <thread>
 
@@ -325,7 +324,5 @@ namespace muduo
 
 }//namespace muduo
 
-
-#endif // !CROSSPLATFORM_ADAPTER_FUNCTION_H
 
 	

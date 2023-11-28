@@ -55,11 +55,12 @@ var SourceNames = [...]string{
 var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string
 
-const PbcDirName = "common/src/pb/pbc/"
+const PbcDirName = "pbc/src/"
 
 const PbcOutDir = ProjectDir + PbcDirName
-const ServiceCppFileName = PbcOutDir + "service.cpp"
-const ServiceHeadFileName = PbcOutDir + "service.h"
+const ServiceDirName = PbcOutDir + "service/"
+const ServiceCppFileName = ServiceDirName + "service.cpp"
+const ServiceHeadFileName = ServiceDirName + "service.h"
 const LuaServiceFileName = PbcLuaDirName + "lua_service.cpp"
 const PbcLuaDirName = PbcOutDir + "lua/"
 
