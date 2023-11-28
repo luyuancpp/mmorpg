@@ -18,13 +18,11 @@ compile_commands.json
 *.exp
 *.pyc
 *.dll
-*CMakeLists.txt
-common/src/pbc_lua/*
 pbc/src/*
 output/
 x64/
 .vs/
-common/src/game_config/proto/*.proto
+common/src/game_config/proto/*
 bin/config/xlwt/
 bin/config/xlrd/
 bin/config/proto
