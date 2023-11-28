@@ -29,6 +29,8 @@
     <ClCompile Include="src\util\defer.cpp" />
     <ClCompile Include="src\game_logic\mission\mission_system.cpp" />
     <ClCompile Include="src\game_logic\teams\TeamSystem.cpp" />
+    <ClCompile Include="src\game_config\deploy_json.cpp" />
+    <ClCompile Include="src\game_config\lobby_config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\game_logic\comp\account_comp.h" />
@@ -80,5 +82,7 @@
     <ClInclude Include="src\network\gate_node.h" />
     <ClInclude Include="src\game_logic\mission\mission_system.h" />
     <ClInclude Include="src\game_logic\teams\TeamSystem.h" />
+    <ClInclude Include="src\game_config\deploy_json.h" />
+    <ClInclude Include="src\game_config\lobby_config.h" />
   </ItemGroup>
 </Project>
