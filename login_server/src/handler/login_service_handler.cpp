@@ -14,14 +14,14 @@
 #include "src/network/rpc_client.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/network/server_component.h"
-#include "src/pb/pbc/controller_service_service.h"
-#include "src/pb/pbc/database_service_service.h"
-#include "src/pb/pbc/service.h"
+#include "service/controller_service_service.h"
+#include "service/database_service_service.h"
+#include "service/service.h"
 #include "src/redis_client/redis_client.h"
 #include "src/thread_local/login_thread_local_storage.h"
 #include "src/util/defer.h"
 
-#include "controller_service.pb.h"
+#include "common_proto/controller_service.pb.h"
 
 void SendCtrlEnterGame(Guid player_id)
 {

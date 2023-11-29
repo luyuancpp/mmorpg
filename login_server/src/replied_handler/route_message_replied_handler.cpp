@@ -4,14 +4,14 @@
 #include "src/login_server.h"
 #include "src/network/node_info.h"
 #include "src/network/route_system.h"
-#include "src/pb/pbc/database_service_service.h"
-#include "src/pb/pbc/service.h"
+#include "service/database_service_service.h"
+#include "service/service.h"
 #include "src/thread_local/login_thread_local_storage.h"
 #include "src/util/defer.h"
 
-#include "controller_service_service.h"
-#include "gate_service_service.h"
-#include "src/pb/pbc/common_proto/database_service.pb.h"
+#include "service/controller_service_service.h"
+#include "service/gate_service_service.h"
+#include "common_proto/database_service.pb.h"
 
 extern ProtobufDispatcher g_response_dispatcher;
 
