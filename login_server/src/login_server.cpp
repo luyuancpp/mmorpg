@@ -6,11 +6,11 @@
 #include "src/network/node_info.h"
 #include "src/network/rpc_connection_event.h"
 #include "src/network/server_component.h"
-#include "src/pb/pbc/deploy_service_service.h"
-#include "src/pb/pbc/service.h"
+#include "service/deploy_service_service.h"
+#include "service/service.h"
 #include "src/thread_local/login_thread_local_storage.h"
 
-#include "common.pb.h"
+#include "common_proto/common.pb.h"
 
 LoginServer* g_login_node = nullptr;
 
