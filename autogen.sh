@@ -27,12 +27,14 @@ cp -f ../../common/src/muduowindow/TimerId.h  muduo/net/
 cp -f ../../common/src/muduowindow/CMakeLists.txt  ./
 cmake . 
 cd ../../
+
 cd common/src/network && ./autogen.sh
 if test $? -ne 0; then 
     exit 
 fi
 
 cd ../../../
+cmake .
 cd pbc && cmake . && make -j$cpu
 if test $? -ne 0; then 
     echo "pbc build error"
@@ -40,6 +42,7 @@ if test $? -ne 0; then
 fi
 
 cd ../
+cmake .
 cd config && cmake . && make -j$cpu
 if test $? -ne 0; then 
     echo "config build error"

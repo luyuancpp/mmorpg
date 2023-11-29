@@ -62,6 +62,9 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += 'add_definitions(-D__LINUX__)\n'
     fileLines += 'add_definitions(-D__linux__)\n'
     fileLines += "add_definitions(-DNOMINMAX)\n"
+    fileLines += "add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)\n"
+    fileLines += "add_definitions(-DGOOGLE_LOG=ABSL_LOG)\n"
+    fileLines += "add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)\n"
     fileLines += "add_definitions(-DENTT_ID_TYPE=uint64_t)\n\n"
     
 
