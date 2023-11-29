@@ -5,7 +5,7 @@
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
 #include "src/util/defer.h"
 #include "src/database_server.h"
-#include "src/pb/pbc/service.h"
+#include "service/service.h"
 ///<<< END WRITING YOUR CODE
 void DbServiceHandler::Login(::google::protobuf::RpcController* controller,
 	const ::DatabaseNodeLoginRequest* request,
