@@ -23,7 +23,6 @@ cd third_party && rm -rf muduo
 mv muduo muduo-windows
 cp -rf muduo-linux muduo 
 cd muduo
-sed -i 's/c++11/c++20/' CMakeLists.txt
 cp -f ../../common/src/muduowindow/TimerId.h  muduo/net/ 
 cp -f ../../common/src/muduowindow/CMakeLists.txt  ./
 cmake . 
