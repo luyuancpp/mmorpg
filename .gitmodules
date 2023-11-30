@@ -38,3 +38,7 @@
 	path = third_party/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp.git
 	branch = lts_2023_08_02
+[submodule "third_party/mysqlinclude"]
+	path = third_party/mysqlinclude
+	url = https://github.com/luyuancpp/mysqlinclude.git
+	branch = main
