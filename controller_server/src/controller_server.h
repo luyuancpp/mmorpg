@@ -9,8 +9,8 @@
 #include "src/network/rpc_server.h"
 #include "src/network/server_component.h"
 
-#include "deploy_service.pb.h"
-#include "database_service.pb.h"
+#include "common_proto/deploy_service.pb.h"
+#include "common_proto/database_service.pb.h"
 #include "logic_proto/lobby_scene.pb.h"
 
 class ControllerServer : muduo::noncopyable

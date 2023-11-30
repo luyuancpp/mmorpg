@@ -10,10 +10,10 @@
 #include "src/network/game_node.h"
 #include "src/network/gate_node.h"
 #include "src/network/server_component.h"
-#include "src/pb/pbc/service.h"
-#include "src/pb/pbc/gate_service_service.h"
-#include "src/pb/pbc/game_service_service.h"
-#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
+#include "service/service.h"
+#include "service/gate_service_service.h"
+#include "service/game_service_service.h"
+#include "component_proto/player_network_comp.pb.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 

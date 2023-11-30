@@ -5,7 +5,7 @@
 #include "src/network/node_info.h"
 #include "src/network/server_component.h"
 
-#include "common.pb.h"
+#include "common_proto/common.pb.h"
 #include "component_proto/gs_node_comp.pb.h"
 
 class GameNode

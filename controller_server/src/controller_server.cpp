@@ -2,7 +2,7 @@
 
 #include "muduo//net/EventLoop.h"
 
-#include "src/game_config/all_config.h"
+#include "all_config.h"
 #include "src/game_config/deploy_json.h"
 #include "src/game_config/lobby_config.h"
 
@@ -13,10 +13,10 @@
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/register_handler.h"
-#include "src/pb/pbc/service.h"
-#include "src/pb/pbc/deploy_service_service.h"
-#include "src/pb/pbc/gate_service_service.h"
-#include "src/pb/pbc/lobby_scene_service.h"
+#include "service/service.h"
+#include "service/deploy_service_service.h"
+#include "service/gate_service_service.h"
+#include "service/lobby_scene_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 

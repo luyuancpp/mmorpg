@@ -6,7 +6,7 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_config/mainscene_config.h"
+#include "mainscene_config.h"
 
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/game_logic/scene/scene_system.h"

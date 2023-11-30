@@ -2,7 +2,7 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/game_config/mainscene_config.h"
+#include "mainscene_config.h"
 
 #include "src/comp/account_player.h"
 #include "src/controller_server.h"
@@ -16,11 +16,11 @@
 #include "src/network/game_node.h"
 #include "src/network/login_node.h"
 #include "src/network/rpc_msg_route.h"
-#include "src/pb/pbc/gate_service_service.h"
-#include "src/pb/pbc/game_service_service.h"
-#include "src/pb/pbc/login_service_service.h"
-#include "src/pb/pbc/database_service_service.h"
-#include "src/pb/pbc/service.h"
+#include "service/gate_service_service.h"
+#include "service/game_service_service.h"
+#include "service/login_service_service.h"
+#include "service/database_service_service.h"
+#include "service/service.h"
 #include "src/handler/player_service.h"
 #include "src/handler/register_handler.h"
 #include "src/system/player_scene_system.h"
@@ -31,7 +31,7 @@
 
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
-#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 
 thread_local std::unordered_map<std::string, uint64_t> tls_login_accounts_session;
 

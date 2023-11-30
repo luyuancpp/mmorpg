@@ -3,7 +3,7 @@
 #include "src/comp/player_list.h"
 #include "src/game_logic/tips_id.h"
 #include "src/network/message_system.h"
-#include "src/pb/pbc/common_client_player_service.h"
+#include "service/common_client_player_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 
 void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVector& str_param)

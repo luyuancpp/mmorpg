@@ -8,7 +8,7 @@
 #include "src/game_logic/scene/scene_system.h"
 #include "src/pb/pbc/lobby_scene_service.h"
 #include "src/system/gs_scene_system.h"
-#include "src/game_config/deploy_json.h"
+#include "deploy_json.h"
 #include "src/game_server.h"
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;

@@ -11,11 +11,11 @@
 #include "src/network/message_system.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
-#include "src/pb/pbc/lobby_scene_service.h"
-#include "src/pb/pbc/game_service_service.h"
-#include "src/pb/pbc/game_scene_server_player_service.h"
+#include "service/lobby_scene_service.h"
+#include "service/game_service_service.h"
+#include "service/game_scene_server_player_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
-#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 
 NodeId controller_node_id();
 

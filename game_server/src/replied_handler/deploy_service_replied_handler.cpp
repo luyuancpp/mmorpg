@@ -2,7 +2,7 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/game_config/deploy_json.h"
+#include "deploy_json.h"
 #include "src/game_server.h"
 #include "src/pb/pbc/deploy_service_service.h"
 

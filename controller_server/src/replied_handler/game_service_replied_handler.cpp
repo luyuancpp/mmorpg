@@ -8,7 +8,7 @@
 
 #include "src/comp/player_list.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/pb/pbc/service.h"
+#include "service/service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/thread_local/controller_thread_local_storage.h"
 

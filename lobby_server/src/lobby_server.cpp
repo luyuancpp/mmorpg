@@ -2,9 +2,9 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_config/deploy_json.h"
-#include "src/game_config/mainscene_config.h"
-#include "src/game_config/lobby_config.h"
+#include "deploy_json.h"
+#include "mainscene_config.h"
+#include "lobby_config.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/server_component.h"
 #include "src/network/game_node.h"
