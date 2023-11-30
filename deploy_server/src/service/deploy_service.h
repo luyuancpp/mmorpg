@@ -1,5 +1,5 @@
 #pragma once
-#include "deploy_service.pb.h"
+#include "common_proto/deploy_service.pb.h"
 class DeployServiceImpl : public ::DeployService{
 public:
 public:

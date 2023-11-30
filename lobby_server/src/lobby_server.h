@@ -8,7 +8,7 @@
 
 #include "src/service/lobby_scene.h"
 
-#include "deploy_service.pb.h"
+#include "common_proto/deploy_service.pb.h"
 
 class LobbyServer : muduo::noncopyable
 {

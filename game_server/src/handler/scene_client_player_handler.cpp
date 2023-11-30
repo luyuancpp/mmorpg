@@ -5,7 +5,7 @@
 #include "src/network/node_info.h"
 #include "src/game_logic/tips_id.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/pb/pbc/controller_scene_server_player_service.h"
+#include "service/controller_scene_server_player_service.h"
 
 #include "server_player_proto/controller_scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE

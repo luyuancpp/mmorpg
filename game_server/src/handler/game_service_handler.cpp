@@ -7,13 +7,13 @@
 #include "src/game_logic/scene/scene_system.h"
 #include "src/network/gate_node.h"
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/pb/pbc/service.h"
+#include "service/service.h"
 #include "src/network/session.h"
 #include "src/handler/player_service.h"
 #include "src/system/player_common_system.h"
 #include "src/thread_local/game_thread_local_storage.h"
 #include "src/system/player_scene_system.h"
-#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 
 #include "component_proto/player_async_comp.pb.h"
 

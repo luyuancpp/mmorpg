@@ -5,7 +5,7 @@
 #include "src/system/player_common_system.h"
 #include "src/system/player_scene_system.h"
 #include "src/game_logic/comp/scene_comp.h"
-#include "src/pb/pbc/scene_client_player_service.h"
+#include "service/scene_client_player_service.h"
 
 #include "client_player_proto/scene_client_player.pb.h"
 ///<<< END WRITING YOUR CODE
