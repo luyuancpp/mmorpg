@@ -5,7 +5,7 @@
 #include "src/util/game_registry.h"
 #include "src/network/session.h"
 
-#include "mysql_database_table.pb.h"
+#include "common_proto/mysql_database_table.pb.h"
 
 class AccountPlayer
 {

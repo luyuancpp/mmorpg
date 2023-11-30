@@ -4,7 +4,7 @@
 #include "src/network/node_info.h"
 #include "src/network/server_component.h"
 
-#include "common.pb.h"
+#include "common_proto/common.pb.h"
 
 class LoginNode
 {

@@ -4,8 +4,8 @@
 
 #include "ue5navmesh/Public/Detour/DetourNavMesh.h"
 
-#include "src/game_config/mainscene_config.h"
-#include "src/game_config/scene_config.h"
+#include "mainscene_config.h"
+#include "scene_config.h"
 
 #include "src/game_logic/scene/servernode_system.h"
 #include "src/game_logic/scene/scene_system.h"

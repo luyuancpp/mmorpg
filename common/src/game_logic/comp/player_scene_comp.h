@@ -4,7 +4,7 @@
 
 #include <boost/circular_buffer.hpp>
 
-#include "src/pb/pbc/component_proto/scene_comp.pb.h"
+#include "component_proto/scene_comp.pb.h"
 
 struct PlayerControllerChangeSceneQueue
 {

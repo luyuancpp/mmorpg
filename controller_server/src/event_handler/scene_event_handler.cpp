@@ -9,7 +9,7 @@
 #include "src/game_logic/comp/scene_comp.h"
 #include "src/game_logic/scene/scene_system.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
-#include "src/pb/pbc/game_scene_server_player_service.h"
+#include "service/game_scene_server_player_service.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_change_scene.h"
 #include "src/network/message_system.h"

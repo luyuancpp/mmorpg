@@ -11,7 +11,7 @@
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
-#include "src/pb/pbc/component_proto/player_network_comp.pb.h"
+#include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 void ControllerScenePlayerServiceHandler::EnterScene(entt::entity player,
 	const ::ControllerEnterSceneRequest* request,

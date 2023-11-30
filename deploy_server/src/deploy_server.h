@@ -4,7 +4,7 @@
 
 #include "src/game_logic/timer_task/timer_task.h"
 #include "src/mysql_wrapper/mysql_database.h"
-#include "src/game_config/deploy_json.h"
+#include "deploy_json.h"
 #include "src/redis_client/redis_client.h"
 #include "src/reuse_game_id/reuse_game_id.h"
 #include "src/network/rpc_server.h"

@@ -1,6 +1,6 @@
 #include "database_server.h"
 
-#include "src/game_config/deploy_json.h"
+#include "deploy_json.h"
 #include "service/deploy_service_service.h"
 #include "src/handler/replied_dispathcer.h"
 #include "src/network/node_info.h"
