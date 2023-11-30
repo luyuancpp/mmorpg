@@ -306,7 +306,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./src/;../third_party/protobuf/src/;../third_party/protobuf/third_party/abseil-cpp/;./src/game_config/;../third_party/muduo/;../third_party/sol2/include/;../third_party/lua/src/;../common/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./src/;../third_party/protobuf/src/;../third_party/protobuf/third_party/abseil-cpp/;./src/game_config/;../third_party/muduo/;../third_party/sol2/include/;../common/;../third_party/lua/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
