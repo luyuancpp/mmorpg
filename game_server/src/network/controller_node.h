@@ -7,7 +7,7 @@
 #include "src/network/server_component.h"
 #include "src/network/rpc_client.h"
 
-#include "common.pb.h"
+#include "common_proto/common.pb.h"
 
 using ControllerSessionPtr = std::shared_ptr<RpcClient>;
 
