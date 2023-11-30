@@ -3,9 +3,6 @@
 cat /proc/cpuinfo  | grep "processor" | wc -l
 cat=$1
 
-./bazel.sh --prefix=/usr
-echo "bazel install ok"
-
 cd third_party/lua/
 make all test
 if test $? -ne 0; then 
