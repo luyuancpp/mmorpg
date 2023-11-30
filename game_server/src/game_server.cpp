@@ -3,22 +3,22 @@
 #include "muduo/base/Logging.h"
 
 #include "all_config.h"
-#include "deploy_json.h"
-#include "lobby_config.h"
+#include "src/game_config/deploy_json.h"
+#include "src/game_config/lobby_config.h"
 
 #include "src/event_handler/event_handler.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
-#include "src/pb/pbc/controller_service_service.h"
-#include "src/pb/pbc/deploy_service_service.h"
-#include "src/pb/pbc/lobby_scene_service.h"
+#include "service/controller_service_service.h"
+#include "service/deploy_service_service.h"
+#include "service/lobby_scene_service.h"
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/register_handler.h"
 
 #include "src/thread_local/game_thread_local_storage.h"
 
-#include "src/pb/pbc/service.h"
+#include "service/service.h"
 #include "src/system/logic/config_system.h"
 
 GameServer* g_game_node = nullptr;

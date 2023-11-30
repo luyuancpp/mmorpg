@@ -2,7 +2,7 @@
 
 #include "muduo/net/TcpConnection.h"
 
-#include "src/pb/pbc/common_proto/deploy_service.pb.h"
+#include "common_proto/deploy_service.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;

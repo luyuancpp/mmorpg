@@ -5,7 +5,7 @@
 #include "src/util/file2string.h"
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/luacpp/lua_module.h"
-#include "src/pb/pbc/service.h"
+#include "service/service.h"
 
 
 int main(int argc, char* argv[])

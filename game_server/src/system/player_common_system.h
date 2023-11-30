@@ -4,7 +4,7 @@
 #include "src/game_logic/thread_local/thread_local_storage.h"
 #include "src/redis_client/redis_client.h"
 
-#include "src/pb/pbc/common_proto/mysql_database_table.pb.h"
+#include "common_proto/mysql_database_table.pb.h"
 
 using PlayerDataRedisSystemPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 

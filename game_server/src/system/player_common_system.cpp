@@ -6,15 +6,15 @@
 #include "src/network/message_system.h"
 #include "src/network/controller_node.h"
 #include "src/network/session.h"
-#include "src/pb/pbc/controller_service_service.h"
-#include "src/pb/pbc/controller_scene_server_player_service.h"
+#include "service/controller_service_service.h"
+#include "service/controller_scene_server_player_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_async_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
-#include "controller_service.pb.h"
+#include "common_proto/controller_service.pb.h"
 #include "src/game_logic/comp/player_comp.h"
 
 

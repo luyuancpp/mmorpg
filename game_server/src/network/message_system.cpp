@@ -7,8 +7,8 @@
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
 #include "src/network/session.h"
-#include "src/pb/pbc/controller_service_service.h"
-#include "src/pb/pbc/gate_service_service.h"
+#include "service/controller_service_service.h"
+#include "service/gate_service_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_network_comp.pb.h"

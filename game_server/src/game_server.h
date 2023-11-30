@@ -10,8 +10,8 @@
 #include "src/redis_client/redis_client.h"
 #include "src/network/rpc_msg_route.h"
 
-#include "deploy_service.pb.h"
-#include "controller_service.pb.h"
+#include "common_proto/deploy_service.pb.h"
+#include "common_proto/controller_service.pb.h"
 #include "logic_proto/lobby_scene.pb.h"
 
 class GameServer : muduo::noncopyable

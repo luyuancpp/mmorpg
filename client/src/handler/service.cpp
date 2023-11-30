@@ -4,7 +4,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/luacpp/lua_module.h"
-#include "src/pb/pbc/service.h"
+#include "service/service.h"
 
 extern std::unordered_map<std::string, std::unique_ptr<::google::protobuf::Service>> g_player_service;
 

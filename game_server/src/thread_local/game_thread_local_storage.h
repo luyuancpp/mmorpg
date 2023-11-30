@@ -6,7 +6,7 @@
 #include "src/network/controller_node.h"
 #include "src/system/redis_system.h"
 #include "src/comp/gs_scene_comp.h"
-#include "src/pb/pbc/common_proto/mysql_database_table.pb.h"
+#include "common_proto/mysql_database_table.pb.h"
 
 using PlayerDataRedisSystemPtr = std::unique_ptr<MessageAsyncClient<Guid, player_database>>;
 using PlayerEntityPtrList = std::unordered_map<uint64_t, entt::entity>;

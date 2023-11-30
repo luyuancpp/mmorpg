@@ -1,7 +1,7 @@
 #include "player_tip_system.h"
 
 #include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/pb/pbc/common_client_player_service.h"
+#include "service/common_client_player_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
 #include "src/network/message_system.h"
 
