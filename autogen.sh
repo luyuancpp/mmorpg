@@ -25,6 +25,7 @@ cp -rf muduo-linux muduo
 cd muduo
 cp -f ../../common/src/muduowindow/TimerId.h  muduo/net/ 
 cp -f ../../common/src/muduowindow/CMakeLists.txt  ./
+sed '56,70' muduo/net/CMakeLists.txt
 cmake . 
 cd ../../
 
