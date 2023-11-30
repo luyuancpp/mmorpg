@@ -90,7 +90,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32_LEAN_AND_MEAN;ENTT_ID_TYPE=uint64_t;_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t;NOMINMAX;WIN32_LEAN_AND_MEAN;_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../common/;../pbc/src/;../third_party/protobuf/src/;../third_party/muduo/;../third_party/boost/;../third_party/redis/;../third_party/;../third_party/mysql/include/;./;../third_party/muduo/contrib/windows/include;../third_party/redis/deps/;../common/src/pb/pbc/common_proto/;../third_party/protobuf/third_party/abseil-cpp/;../third_party/mysqlinclude/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -166,12 +166,19 @@
     <ClCompile Include="src\handler\database_service_handler.cpp" />
     <ClCompile Include="src\handler\deploy_service_replied.cpp" />
     <ClCompile Include="src\handler\replied_dispathcer.cpp" />
+    <ClCompile Include="src\mysql_wrapper\message_2_mysql.cpp" />
+    <ClCompile Include="src\mysql_wrapper\mysql_client.cpp" />
+    <ClCompile Include="src\mysql_wrapper\mysql_database.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\database_server.h" />
     <ClInclude Include="src\handler\database_service_handler.h" />
     <ClInclude Include="src\handler\deploy_service_replied.h" />
     <ClInclude Include="src\handler\replied_dispathcer.h" />
+    <ClInclude Include="src\mysql_wrapper\message_2_mysql.h" />
+    <ClInclude Include="src\mysql_wrapper\mysql_client.h" />
+    <ClInclude Include="src\mysql_wrapper\mysql_database.h" />
+    <ClInclude Include="src\mysql_wrapper\mysql_result.h" />
     <ClInclude Include="src\network\message_system.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
