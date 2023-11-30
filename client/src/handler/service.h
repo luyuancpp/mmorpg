@@ -9,7 +9,7 @@
 #include "src/network/codec/codec.h"
 #include "src/network/codec/dispatcher.h"
 
-#include "c2gate.pb.h"
+#include "common_proto/c2gate.pb.h"
 #include "client_player_proto/scene_client_player.pb.h"
 
 using namespace muduo;
