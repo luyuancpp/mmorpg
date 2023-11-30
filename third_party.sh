@@ -6,6 +6,13 @@ cat=$1
 ./bazel.sh --prefix=/usr
 echo "bazel install ok"
 
+cd third_party/lua
+if test $? -ne 0; then 
+   exit 
+fi
+echo "lua install ok"
+cd ../..
+
 cd third_party/abseil-cpp/
 cmake -DCMAKE_INSTALL_PREFIX=/usr/bin -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 .
 cmake --build . --target all
