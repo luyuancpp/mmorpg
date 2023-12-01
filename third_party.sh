@@ -71,8 +71,10 @@ if test $? -ne 0; then
    exit 
 fi
 echo "muduo install ok"
-cp -rf ./lib/* ../../lib/
-cd ../../
+cd lib 
+ar rvs libmuduo.a libmuduo_base.a libmuduo_net.a
+cp -rf * ../../../lib/
+cd ../../../
 
 mkdir deb
 cd deb
