@@ -7,7 +7,7 @@
 #include "src/game_config/lobby_config.h"
 
 #include "src/event_handler/event_handler.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "service/controller_service_service.h"
 #include "service/deploy_service_service.h"

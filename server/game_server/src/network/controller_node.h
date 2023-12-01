@@ -2,7 +2,7 @@
 #include "muduo/net/TcpConnection.h"
 
 #include "src/util/game_registry.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/thread_local/thread_local_storage.h"
 #include "src/network/node_info.h"
 #include "src/network/server_component.h"
 #include "src/network/rpc_client.h"

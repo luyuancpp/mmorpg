@@ -2,8 +2,8 @@
 
 #include <ranges>
 
-#include "src/game_logic/comp/server_comp.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/comp/server_comp.h"
+#include "src/thread_local/thread_local_storage.h"
 
 #include "component_proto/gs_node_comp.pb.h"
 

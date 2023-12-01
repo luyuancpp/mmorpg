@@ -10,7 +10,7 @@
 #include "google/protobuf/descriptor.h"
 #include "google/protobuf/message.h"
 
-#include "src/common_type/common_type.h"
+#include "src/type_define/type_define.h"
 #include "src/mysql_wrapper/mysql_result.h"
 
 

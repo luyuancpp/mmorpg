@@ -3,8 +3,8 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 #include "muduo/base/Logging.h"
-#include "src/common_type/common_type.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/type_define/type_define.h"
+#include "src/thread_local/thread_local_storage.h"
 #include "src/system/player_change_scene.h"
 #include "src/util/game_registry.h"
 #include "src/system/player_common_system.h"

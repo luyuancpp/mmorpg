@@ -2,10 +2,10 @@
 
 #include <ranges>
 
-#include "src/common_type/common_type.h"
-#include "src/game_logic/constants/server_constants.h"
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/type_define/type_define.h"
+#include "src/constants/server_constants.h"
+#include "src/thread_local/common_logic_thread_local_storage.h"
+#include "src/thread_local/thread_local_storage.h"
 #include "component_proto/scene_comp.pb.h"
 
 using ConfigSceneListType = std::unordered_map<uint32_t, SceneList>;

@@ -5,9 +5,9 @@
 #include "muduo/base/Logging.h"
 
 #include "src/network/game_node.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/thread_local/thread_local_storage.h"
 #include "src/gate_server.h"
-#include "src/game_logic/tips_id.h"
+#include "src/constants/tips_id.h"
 #include "src/network/rpc_msg_route.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 

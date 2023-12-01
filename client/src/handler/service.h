@@ -3,9 +3,9 @@
 #include "muduo/net/TcpConnection.h"
 #include "muduo/net/TcpClient.h"
 
-#include "src/common_type/common_type.h"
-#include "src/game_logic/timer_task/timer_task.h"
-#include "src/game_logic/thread_local/thread_local_storage_lua.h"
+#include "src/type_define/type_define.h"
+#include "src/system/timer_task/timer_task.h"
+#include "src/thread_local/thread_local_storage_lua.h"
 #include "src/network/codec/codec.h"
 #include "src/network/codec/dispatcher.h"
 

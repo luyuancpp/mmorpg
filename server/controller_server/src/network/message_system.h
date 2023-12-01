@@ -4,7 +4,7 @@
 
 #include "entt/src/entt/entt.hpp"
 
-#include "src/common_type/common_type.h"
+#include "src/type_define/type_define.h"
 #include "src/util/game_registry.h"
 #include "src/network/gate_node.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "src/game_logic/comp/player_scene_comp.h"
+#include "src/comp/player_scene_comp.h"
 
 //todo 测试换场景的时候服务器崩溃，队列首个换场景删除以后还能正常换场景
 class PlayerChangeSceneSystem

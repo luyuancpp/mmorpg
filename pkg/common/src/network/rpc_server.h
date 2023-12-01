@@ -13,7 +13,7 @@
 
 #include "muduo/net/TcpServer.h"
 
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/thread_local/thread_local_storage.h"
 
 namespace google {
 namespace protobuf {

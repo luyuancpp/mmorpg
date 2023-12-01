@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common_proto/node_common.pb.h"
-#include "src/common_type/common_type.h"
+#include "src/type_define/type_define.h"
 
 using SceneList = std::unordered_map<Guid, entt::entity>;
 using PlayerList = std::unordered_map<Guid, entt::entity>;
