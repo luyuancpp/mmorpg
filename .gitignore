@@ -28,7 +28,7 @@ bin/config/xlrd/
 bin/config/proto
 bin/config/cpp/
 bin/zlib*
-config/src/
+pkg/config/src/
 bin/config/
 proto/md5/
 proto/generator/.idea/
