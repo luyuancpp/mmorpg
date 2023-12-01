@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/common_type/common_type.h"
-#include "src/game_logic/login_state/login_state_machine.h"
+#include "src/type_define/type_define.h"
+#include "src/system/login_state/login_state_machine.h"
 #include "src/util/game_registry.h"
 #include "src/network/session.h"
 
