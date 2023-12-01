@@ -29,9 +29,8 @@ if test $? -ne 0; then
    exit 
 fi
 cp -rf liblua.a ../../lib/
-echo "lua install ok"
 cd ../..
-
+echo "lua install ok"
 
 cd third_party/abseil-cpp/
 cmake -DCMAKE_INSTALL_PREFIX=/usr/bin -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 .
@@ -40,8 +39,8 @@ if test $? -ne 0; then
    echo "abseil install failed"
    exit 
 fi
-echo "abseil install ok"
 cd ../..
+echo "abseil install ok"
 
 cd third_party/protobuf/
 git submodule update --init --recursive
@@ -52,9 +51,8 @@ if test $? -ne 0; then
    echo "protobuf install failed"
    exit 
 fi
-echo "protobuf install ok"
 cd ../..
-
+echo "protobuf install ok"
 
 cd third_party 
 rm -rf muduo 
@@ -70,11 +68,11 @@ if test $? -ne 0; then
    echo "muduo install failed"
    exit 
 fi
-echo "muduo install ok"
 cd lib 
 ar rvs libmuduo.a libmuduo_base.a libmuduo_net.a
 cp -rf * ../../../lib/
 cd ../../../
+echo "muduo install ok"
 
 mkdir deb
 cd deb
@@ -103,5 +101,5 @@ apt install ./mysql-community-server-debug_8.2.0-1debian12_amd64.deb
 apt install ./mysql-community-test_8.2.0-1debian12_amd64.deb
 apt install ./mysql-community-test-debug_8.2.0-1debian12_amd64.deb
 apt install ./mysql-server_8.2.0-1debian12_amd64.deb
-echo "mysql install ok"
 cd ..
+echo "mysql install ok"
