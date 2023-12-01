@@ -3,6 +3,24 @@
 cat /proc/cpuinfo  | grep "processor" | wc -l
 cat=$1
 
+cd third_party/redis
+make
+if test $? -ne 0; then 
+   exit 
+fi
+cp -rf libhiredis.a ../../
+cd ../../../..
+echo "redis install ok"
+
+cd third_party/redis/deps/hiredis
+make
+if test $? -ne 0; then 
+   exit 
+fi
+cp -rf libhiredis.a ../../../../lib/
+cd ../../../..
+echo "hiredis install ok"
+
 cd third_party/lua/
 make all test
 if test $? -ne 0; then 
