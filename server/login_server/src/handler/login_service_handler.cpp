@@ -5,8 +5,8 @@
 #include "muduo/base/Logging.h"
 
 #include "src/comp/account_player.h"
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/game_logic/tips_id.h"
+#include "src/thread_local/common_logic_thread_local_storage.h"
+#include "src/constants/tips_id.h"
 #include "src/login_server.h"
 #include "src/network/gate_node.h"
 #include "src/network/node_info.h"

@@ -3,8 +3,8 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/network/node_info.h"
-#include "src/game_logic/tips_id.h"
-#include "src/game_logic/comp/scene_comp.h"
+#include "src/constants/tips_id.h"
+#include "src/comp/scene_comp.h"
 #include "service/controller_scene_server_player_service.h"
 
 #include "server_player_proto/controller_scene_server_player.pb.h"

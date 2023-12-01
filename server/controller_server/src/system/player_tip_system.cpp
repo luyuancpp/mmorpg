@@ -1,7 +1,7 @@
 #include "player_tip_system.h"
 
 #include "src/comp/player_list.h"
-#include "src/game_logic/tips_id.h"
+#include "src/constants/tips_id.h"
 #include "src/network/message_system.h"
 #include "service/common_client_player_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"

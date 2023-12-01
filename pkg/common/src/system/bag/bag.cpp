@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "src/game_logic/tips_id.h"
+#include "src/constants/tips_id.h"
 
 #include"item_config.h"
 

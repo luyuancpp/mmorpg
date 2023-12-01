@@ -3,7 +3,7 @@
 
 #include "muduo/net/TcpConnection.h"
 
-#include "src/common_type/common_type.h"
+#include "src/type_define/type_define.h"
 
 NodeId get_gate_node_id(uint64_t session_id);
 

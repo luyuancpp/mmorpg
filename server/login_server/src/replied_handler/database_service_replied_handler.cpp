@@ -3,7 +3,7 @@
 
 ///<<< BEGIN WRITING YOUR CODE
 
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
+#include "src/thread_local/common_logic_thread_local_storage.h"
 #include "src/network/route_system.h"
 #include "src/thread_local/login_thread_local_storage.h"
 #include "common_proto/c2gate.pb.h"

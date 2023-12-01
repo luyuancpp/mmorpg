@@ -1,8 +1,8 @@
 #pragma once
 
-#include "src/game_logic/constants/server_constants.h"
+#include "src/constants/server_constants.h"
 
-#include "src/common_type/common_type.h"
+#include "src/type_define/type_define.h"
 
 constexpr uint32_t kDefaultSceneId = 1;
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "common_proto/mysql_database_table.pb.h"
-#include "src/common_type/common_type.h"
-#include "src/game_logic/login_state/login_state_machine.h"
+#include "src/type_define/type_define.h"
+#include "src/system/login_state/login_state_machine.h"
 
 class AccountPlayer
 {

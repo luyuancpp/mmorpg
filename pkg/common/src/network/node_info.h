@@ -1,5 +1,5 @@
 #pragma once
-#include "src/common_type/common_type.h"
+#include "src/type_define/type_define.h"
 
 enum e_server_type : uint32_t
 {

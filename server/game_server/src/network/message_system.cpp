@@ -2,8 +2,8 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/thread_local/common_logic_thread_local_storage.h"
+#include "src/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/controller_node.h"
 #include "src/network/session.h"
@@ -12,7 +12,7 @@
 #include "src/thread_local/game_thread_local_storage.h"
 
 #include "component_proto/player_network_comp.pb.h"
-#include "src/game_logic/comp/player_comp.h"
+#include "src/comp/player_comp.h"
 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {

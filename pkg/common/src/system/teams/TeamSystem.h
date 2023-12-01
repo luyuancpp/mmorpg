@@ -1,7 +1,7 @@
 #pragma once
 
-#include "src/common_type/common_type.h"
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/type_define/type_define.h"
+#include "src/thread_local/thread_local_storage.h"
 #include "src/util/snow_flake.h"
 
 #include "team.h"

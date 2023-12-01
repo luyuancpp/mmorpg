@@ -2,8 +2,8 @@
 
 #include "muduo/base/Logging.h"
 
-#include "src/game_logic/thread_local/common_logic_thread_local_storage.h"
-#include "src/game_logic/scene/scene_system.h"
+#include "src/thread_local/common_logic_thread_local_storage.h"
+#include "src/system/scene/scene_system.h"
 #include "src/network/gate_node.h"
 #include "src/network/message_system.h"
 #include "src/system/gs_scene_system.h"

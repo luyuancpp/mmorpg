@@ -5,7 +5,7 @@
 #include "google/protobuf/message.h"
 #include "google/protobuf/service.h"
 
-#include "src/game_logic/thread_local/thread_local_storage.h"
+#include "src/thread_local/thread_local_storage.h"
 
 
 class PlayerService

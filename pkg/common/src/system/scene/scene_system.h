@@ -1,8 +1,8 @@
 #pragma once
 
-#include "src/game_logic/comp/server_comp.h"
+#include "src/comp/server_comp.h"
 
-#include "src/game_logic/scene/servernode_system.h"
+#include "src/system/scene/servernode_system.h"
 #include "src/util/snow_flake.h"
 #include <component_proto/scene_comp.pb.h>
 
