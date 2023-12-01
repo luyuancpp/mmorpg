@@ -55,7 +55,7 @@ var SourceNames = [...]string{
 var ProjectSourceDirs []string
 var ProjectSourceMd5Dirs []string
 
-const PbcDirName = "pbc/src/"
+const PbcDirName = "pkg/pbc/src/"
 
 const PbcOutDir = ProjectDir + PbcDirName
 const ServiceDirName = PbcOutDir + "service/"

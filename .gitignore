@@ -18,7 +18,7 @@ compile_commands.json
 *.exp
 *.pyc
 *.dll
-pbc/src/*
+pkg/pbc/src/*
 output/
 x64/
 .vs/
