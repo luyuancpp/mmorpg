@@ -1,6 +1,6 @@
 #pragma once
 #include <sol/sol.hpp>
-#include "src/game_logic/thread_local/thread_local_storage_lua.h"
+#include "src/thread_local/thread_local_storage_lua.h"
 #include "client_player_proto/team_client_player.pb.h"
 
 class ClientPlayerTeamServiceHandler : public ::ClientPlayerTeamService
