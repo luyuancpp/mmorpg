@@ -241,7 +241,7 @@ func writeGlobalServiceInfoFile() {
 	initFuncData += "}\n"
 	var data = includeData + classHandlerData + initFuncData
 
-	Md5WriteData2File(config.ServiceCppFileName, data)
+	WriteMd5Data2File(config.ServiceCppFileName, data)
 }
 
 func writeGlobalServiceInfoHeadFile() {
@@ -262,7 +262,7 @@ func writeGlobalServiceInfoHeadFile() {
 		"extern std::array<RpcService, " + strconv.FormatUint(MessageSize(), 10) + "> g_message_info;\n\n" +
 		"extern std::unordered_set<uint32_t> g_c2s_service_id;\n"
 
-	Md5WriteData2File(config.ServiceHeadFileName, data)
+	WriteMd5Data2File(config.ServiceHeadFileName, data)
 }
 
 func writeGsGlobalPlayerServiceInstanceFile() {
@@ -295,7 +295,7 @@ func writeGsGlobalPlayerServiceInstanceFile() {
 	data += "void InitPlayerService()\n{\n"
 	data += instanceData
 	data += "}"
-	Md5WriteData2File(config.GsMethodHandleDir+config.PlayerServiceName, data)
+	WriteMd5Data2File(config.GsMethodHandleDir+config.PlayerServiceName, data)
 }
 
 func writeControllerGlobalPlayerServiceInstanceFile() {
@@ -328,7 +328,7 @@ func writeControllerGlobalPlayerServiceInstanceFile() {
 	data += "void InitPlayerService()\n{\n"
 	data += instanceData
 	data += "}"
-	Md5WriteData2File(config.ControllerMethodHandleDir+config.PlayerServiceName, data)
+	WriteMd5Data2File(config.ControllerMethodHandleDir+config.PlayerServiceName, data)
 }
 
 func writeGsGlobalPlayerServiceRepliedInstanceFile() {
@@ -364,7 +364,7 @@ func writeGsGlobalPlayerServiceRepliedInstanceFile() {
 	data += "void InitPlayerServiceReplied()\n{\n"
 	data += instanceData
 	data += "}"
-	Md5WriteData2File(config.GsMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
+	WriteMd5Data2File(config.GsMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
 }
 
 func writeControllerGlobalPlayerServiceRepliedInstanceFile() {
@@ -399,7 +399,7 @@ func writeControllerGlobalPlayerServiceRepliedInstanceFile() {
 	data += "void InitPlayerServiceReplied()\n{\n"
 	data += instanceData
 	data += "}"
-	Md5WriteData2File(config.ControllerMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
+	WriteMd5Data2File(config.ControllerMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
 }
 
 func WriteServiceHandlerFile() {

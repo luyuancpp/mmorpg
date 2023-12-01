@@ -12,13 +12,13 @@ import (
 	"strings"
 )
 
-func StrMd5(data string) (md5str string) {
+func GetMd5(data string) (md5str string) {
 	hash := md5.New()
 	hash.Write([]byte(data))
 	return hex.EncodeToString(hash.Sum(nil))
 }
 
-func FileMd5(filePath string) (md5str string, err error) {
+func GetFileMd5(filePath string) (md5str string, err error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return "", err
@@ -28,23 +28,12 @@ func FileMd5(filePath string) (md5str string, err error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func CompareFile(dstFilePath string, srcFilePath string) (same bool, err error) {
-	srcMd5, err := FileMd5(srcFilePath)
+func CompareFileByMd5(dstFilePath string, srcFilePath string) (same bool, err error) {
+	srcMd5, err := GetFileMd5(srcFilePath)
 	if err != nil {
 		return false, err
 	}
-	dstMd5, err := FileMd5(dstFilePath)
-	if err != nil {
-		return false, err
-	}
-	if srcMd5 != dstMd5 {
-		return false, nil
-	}
-	return true, err
-}
-
-func CompareFileWithString(dstFilePath string, srcMd5 string) (same bool, err error) {
-	dstMd5, err := FileMd5(dstFilePath)
+	dstMd5, err := GetFileMd5(dstFilePath)
 	if err != nil {
 		return false, err
 	}
@@ -54,8 +43,19 @@ func CompareFileWithString(dstFilePath string, srcMd5 string) (same bool, err er
 	return true, err
 }
 
-func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
-	same, err := CompareFile(dstFilePath, srcFilePath)
+func CompareFileWithMd5String(dstFilePath string, srcMd5 string) (same bool, err error) {
+	dstMd5, err := GetFileMd5(dstFilePath)
+	if err != nil {
+		return false, err
+	}
+	if srcMd5 != dstMd5 {
+		return false, nil
+	}
+	return true, err
+}
+
+func CopyFileByMd5(dstFilePath string, srcFilePath string) (copy bool, err error) {
+	same, err := CompareFileByMd5(dstFilePath, srcFilePath)
 	if same {
 		return false, err
 	}
@@ -64,7 +64,7 @@ func Md5Copy(dstFilePath string, srcFilePath string) (copy bool, err error) {
 }
 
 func WriteToMd5ExFile(filePath string, md5FilePath string) (err error) {
-	md5Str, err := FileMd5(filePath)
+	md5Str, err := GetFileMd5(filePath)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func CompareByMd5Ex(dstFilePath string, md5SrcFilePath string) (same bool, err e
 	if err != nil {
 		return false, err
 	}
-	dstMd5, err := FileMd5(dstFilePath)
+	dstMd5, err := GetFileMd5(dstFilePath)
 	if err != nil {
 		return false, err
 	}
@@ -109,8 +109,8 @@ func Md5CopyByMd5Ex(dstFilePath string, srcFilePath string) (copy bool, err erro
 	return true, err
 }
 
-func Md5WriteData2File(dstFilePath string, data string) {
-	if same, _ := CompareFileWithString(dstFilePath, StrMd5(data)); same {
+func WriteMd5Data2File(dstFilePath string, data string) {
+	if same, _ := CompareFileWithMd5String(dstFilePath, GetMd5(data)); same {
 		return
 	}
 	os.WriteFile(GetMd5FileName(dstFilePath), []byte(data), 0666)

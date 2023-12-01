@@ -48,7 +48,7 @@ func WriteLoadClientLuaFile() {
 			data += config.Tab + "}\n"
 		}
 		data += "\n}\n"
-		Md5WriteData2File(config.ClientLuaServiceFile, data)
+		WriteMd5Data2File(config.ClientLuaServiceFile, data)
 	}()
 }
 
@@ -63,7 +63,7 @@ func toCppIntType(typeString string) (newType string, convert bool) {
 	return typeString, false
 }
 
-func GetTypeRef(typeString string) (valueTypeRef string) {
+func GetTypeRefString(typeString string) (valueTypeRef string) {
 	if isCppType(typeString) {
 		valueTypeRef, _ = toCppIntType(typeString)
 	} else {
@@ -86,7 +86,7 @@ func isCppType(typeString string) bool {
 		reflect.DeepEqual(typeString, "double")
 }
 
-func writeProtoSol2LuaFile(fd os.DirEntry, filePath string) {
+func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 	defer util.Wg.Done()
 	isMsgCode := 0
 	isEnumCode := 0
@@ -184,13 +184,13 @@ func writeProtoSol2LuaFile(fd os.DirEntry, filePath string) {
 						filedName + "(index, value);},\n"
 				} else if filedTypeName == mapType {
 					data += "\"count_" + filedName + "\",\n"
-					data += "[](" + className + "& pb, " + GetTypeRef(mapKeyType) + " key) ->decltype(auto){ return pb." +
+					data += "[](" + className + "& pb, " + GetTypeRefString(mapKeyType) + " key) ->decltype(auto){ return pb." +
 						filedName + "().count(key);},\n"
 					data += "\"insert_" + filedName + "\",\n"
-					data += "[](" + className + "& pb, " + GetTypeRef(mapKeyType) + " key, " + GetTypeRef(mapValueType) +
+					data += "[](" + className + "& pb, " + GetTypeRefString(mapKeyType) + " key, " + GetTypeRefString(mapValueType) +
 						" value) ->decltype(auto){ return pb.mutable_" + filedName + "()->emplace(key, value).second;},\n"
 					data += "\"" + filedName + "\",\n"
-					data += "[](" + className + "& pb, " + GetTypeRef(mapKeyType) + " key) ->decltype(auto){\n"
+					data += "[](" + className + "& pb, " + GetTypeRefString(mapKeyType) + " key) ->decltype(auto){\n"
 					data += " auto it =  pb.mutable_" + filedName + "()->find(key);\n"
 					if isCppType(mapValueType) {
 						vt, _ := toCppIntType(mapValueType)
@@ -225,10 +225,10 @@ func writeProtoSol2LuaFile(fd os.DirEntry, filePath string) {
 		}
 	}
 	data += "}\n"
-	Md5WriteData2File(config.PbcLuaDirName+fileBaseName+config.CppSol2Ex, data)
+	WriteMd5Data2File(config.PbcLuaDirName+fileBaseName+config.CppSol2Ex, data)
 }
 
-func writeAllProtoSol2LuaFile() {
+func WriteSol2LuaFile() {
 	util.Wg.Add(1)
 	go func() {
 		defer util.Wg.Done()
@@ -251,7 +251,7 @@ func writeAllProtoSol2LuaFile() {
 					continue
 				}
 				util.Wg.Add(1)
-				writeProtoSol2LuaFile(fd, config.ProtoDirs[i])
+				writeSol2LuaFileByProtoFile(fd, config.ProtoDirs[i])
 
 				fileBaseName := filepath.Base(strings.ToLower(strings.ReplaceAll(fd.Name(), config.ProtoEx, "")))
 				declarationData += "void Pb2sol2" + fileBaseName + "();\n"
@@ -264,13 +264,9 @@ func writeAllProtoSol2LuaFile() {
 		data += "tls_lua_state.new_usertype<::google::protobuf::Message>(\"Message\");\n"
 		data += callData + "\n"
 		data += "}\n"
-		Md5WriteData2File(config.PbcLuaDirName+"pb"+config.CppSol2Ex, data)
+		WriteMd5Data2File(config.PbcLuaDirName+"pb"+config.CppSol2Ex, data)
 	}()
 
-}
-
-func WritePbcLua() {
-	writeAllProtoSol2LuaFile()
 }
 
 func writeLuaServiceMethodCppFile(methodList RpcMethodInfos) {
@@ -297,7 +293,7 @@ func writeLuaServiceMethodCppFile(methodList RpcMethodInfos) {
 	}
 	data += "}\n"
 	fileName := methodList[0].FileBaseName() + "_service" + config.LuaCppEx
-	Md5WriteData2File(config.PbcLuaDirName+fileName, data)
+	WriteMd5Data2File(config.PbcLuaDirName+fileName, data)
 }
 
 func writeInitLuaServiceFile() {
@@ -317,7 +313,7 @@ func writeInitLuaServiceFile() {
 		data += config.Tab + "Init" + firstMethodInfo.Service + "Lua();\n\n"
 	}
 	data += "}\n"
-	Md5WriteData2File(config.LuaServiceFileName, data)
+	WriteMd5Data2File(config.LuaServiceFileName, data)
 }
 
 func WriteLuaServiceHeadHandlerFile() {
