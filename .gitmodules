@@ -42,6 +42,4 @@
 	path = third_party/mysqlinclude
 	url = https://github.com/luyuancpp/mysqlinclude.git
 	branch = main
-[submodule "muduo_windows/src"]
-	path = muduo_windows/src
-	url = https://github.com/luyuancpp/muduo-cross-platform.git
+
