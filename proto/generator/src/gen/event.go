@@ -43,7 +43,7 @@ func writeEventCppHandler(fd os.DirEntry, dstDir string) {
 		}
 	}
 
-	dataHead := "#pragma once\n" + "#include \"src/game_logic/thread_local/thread_local_storage.h\"\n\n"
+	dataHead := "#pragma once\n" + "#include \"src/thread_local/thread_local_storage.h\"\n\n"
 
 	className := getClassName(fd)
 
@@ -123,7 +123,7 @@ func WriteEventHandlerFile() {
 		registerData += getClassName(fd) + "::Register();\n"
 		unRegisterData += getClassName(fd) + "::UnRegister();\n"
 	}
-	eventHeadData := "#pragma once\n" + "#include \"src/game_logic/thread_local/thread_local_storage.h\"\n\n"
+	eventHeadData := "#pragma once\n" + "#include \"src/thread_local/thread_local_storage.h\"\n\n"
 	eventHeadData += "class EventHandler\n{\npublic:\n"
 	eventHeadData += "static void Register();\n"
 	eventHeadData += "static void UnRegister();\n"
