@@ -43,7 +43,6 @@ fi
 cd ../../
 echo "pkg/pbc build ok"
 
-
 cd pkg/config
 cmake . 
 make -j$cpu
