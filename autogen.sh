@@ -64,18 +64,6 @@ if test $? -ne 0; then
 fi
 
 cd ..
-cd deploy_server && cmake . && make -j$cpu
-if test $? -ne 0; then 
-    exit 
-fi
-
-cd ..
-cd lobby_server && cmake . && make -j$cpu
-if test $? -ne 0; then 
-    exit 
-fi
-
-cd ..
 cd database_server && cmake . && make -j$cpu
 if test $? -ne 0; then 
     exit 
