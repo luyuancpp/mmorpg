@@ -136,12 +136,12 @@ def generate(vcxprojfile, vcxprojDir, target_type):
     return projectName
 
 link_mysql = "mysqlclient"
-generate("./pbc/pbc.vcxproj", "./pbc/", "lib")
-generate("./config/config.vcxproj", "./config/", "lib")
-generate("./common/common.vcxproj", "./common/", "lib")
-generate("./database_server/database_server.vcxproj", "./database_server/", "")
-generate("./controller_server/controller_server.vcxproj", "./controller_server/", "")
-generate("./login_server/login_server.vcxproj", "./login_server/", "")
-generate("./gate_server/gate_server.vcxproj", "./gate_server/", "")
-generate("./game_server/game_server.vcxproj", "./game_server/", "")
+generate("./pkg/pbc/pbc.vcxproj", "./pkg/pbc/", "lib")
+generate("./pkg/config/config.vcxproj", "./pkg/config/", "lib")
+generate("./pkg/common/common.vcxproj", "./pkg/common/", "lib")
+generate("./server/database_server/database_server.vcxproj", "./server/database_server/", "")
+generate("./server/controller_server/controller_server.vcxproj", "./server/controller_server/", "")
+generate("./server/login_server/login_server.vcxproj", "./server/login_server/", "")
+generate("./server/gate_server/gate_server.vcxproj", "./server/gate_server/", "")
+generate("./server/game_server/game_server.vcxproj", "./server/game_server/", "")
 generate("./client/client.vcxproj", "./client/", "")
