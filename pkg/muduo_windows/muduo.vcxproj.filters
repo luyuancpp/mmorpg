@@ -1,0 +1,305 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资Source Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="muduo-cross-platform\muduo\base\AsyncLogging.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\Condition.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\CountDownLatch.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\CrossPlatformAdapterFunction.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\CurrentThread.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\Date.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\Exception.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\FileUtil.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\LogFile.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\Logging.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\LogStream.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\ProcessInfo.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\Thread.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\ThreadPool.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\Timestamp.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\base\TimeZone.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\Acceptor.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\boilerplate.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\Buffer.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\Channel.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\Connector.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\EventLoop.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\EventLoopThread.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\EventLoopThreadPool.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\InetAddress.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\Poller.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\Socket.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\SocketsOps.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\TcpClient.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\TcpConnection.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\TcpServer.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\Timer.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\TimerQueue.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\protobuf\ProtobufCodecLite.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\poller\DefaultPoller.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\poller\EPollPoller.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\poller\WindowsPollPoller.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\muduo\net\protorpc\RpcCodec.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="muduo-cross-platform\contrib\hiredis\Hiredis.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+   
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="muduo-cross-platform\muduo\base\AsyncLogging.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Atomic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\BlockingQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\BoundedBlockingQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Condition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\copyable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\CountDownLatch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\CrossPlatformAdapterFunction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\CurrentThread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Date.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Exception.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\FileUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\GzipFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\LogFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Logging.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\LogStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Mutex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\noncopyable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\ProcessInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Singleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\StringPiece.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Thread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\ThreadLocal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\ThreadLocalSingleton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\ThreadPool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Timestamp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\TimeZone.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\Types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\base\WeakCallback.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\Acceptor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\boilerplate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\Callbacks.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\Channel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\Connector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\Endian.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\EventLoop.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\EventLoopThread.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\EventLoopThreadPool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\InetAddress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\Poller.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\Socket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\SocketsOps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\TcpClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\TcpConnection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\TcpServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\Timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\TimerId.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\TimerQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\ZlibStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\protobuf\BufferStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\protobuf\ProtobufCodecLite.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\poller\EPollPoller.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\muduo\net\protorpc\RpcCodec.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="muduo-cross-platform\contrib\hiredis\Hiredis.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  
+  </ItemGroup>
+</Project>
