@@ -50,7 +50,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines = "cmake_minimum_required(VERSION 3.0)\n"
 
     fileLines += 'set(EXECUTABLE_OUTPUT_PATH ../bin)\n'
-    fileLines += 'set(LIBRARY_OUTPUT_PATH ../bin)\n'
+    fileLines += 'set(LIBRARY_OUTPUT_PATH ../lib)\n'
     if link_mysql:
         fileLines += 'execute_process(COMMAND mysql_config --cflags OUTPUT_VARIABLE MYSQL_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
         fileLines += 'execute_process(COMMAND mysql_config --libs OUTPUT_VARIABLE MYSQL_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
@@ -140,8 +140,6 @@ generate("./pbc/pbc.vcxproj", "./pbc/", "lib")
 generate("./config/config.vcxproj", "./config/", "lib")
 generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 generate("./common/common.vcxproj", "./common/", "lib")
-generate("./deploy_server/deploy_server.vcxproj", "./deploy_server/", "")
-generate("./lobby_server/lobby_server.vcxproj", "./lobby_server/", "")
 generate("./database_server/database_server.vcxproj", "./database_server/", "")
 generate("./controller_server/controller_server.vcxproj", "./controller_server/", "")
 generate("./login_server/login_server.vcxproj", "./login_server/", "")

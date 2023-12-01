@@ -8,7 +8,10 @@ make all test
 if test $? -ne 0; then 
    exit 
 fi
+cp -rf liblua.a ../../lib/
 echo "lua install ok"
+cd ../..
+
 
 cd third_party/abseil-cpp/
 cmake -DCMAKE_INSTALL_PREFIX=/usr/bin -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 .
@@ -29,6 +32,19 @@ if test $? -ne 0; then
 fi
 echo "protobuf install ok"
 cd ../..
+
+cd ../../../
+cd third_party && rm -rf muduo 
+cp -rf muduo-linux muduo 
+cd muduo
+cp -f ../../common/src/muduowindow/TimerId.h  muduo/net/ 
+cp -f ../../common/src/muduowindow/CMakeLists.txt  ./
+sed -i '109,116d' CMakeLists.txt
+sed -i '56,70d' muduo/net/CMakeLists.txt
+cmake . 
+make -j20
+cp -rf ./lib/* ../../lib/
+cd ../../
 
 mkdir deb
 cd deb
