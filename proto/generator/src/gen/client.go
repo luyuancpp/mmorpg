@@ -56,7 +56,7 @@ func writeClientMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	Md5WriteData2File(config.ClientMethodHandleDir+fileName, getClientMethodHandlerHeadStr(methodList))
+	WriteMd5Data2File(config.ClientMethodHandleDir+fileName, getClientMethodHandlerHeadStr(methodList))
 }
 
 func writeClientHandlerDefaultInstanceFile() {
@@ -86,7 +86,7 @@ func writeClientHandlerDefaultInstanceFile() {
 	data += "void InitPlayerService()\n{\n"
 	data += instanceData
 	data += "}"
-	Md5WriteData2File(config.ClientServiceInstanceFile, data)
+	WriteMd5Data2File(config.ClientServiceInstanceFile, data)
 }
 
 func WriteClientServiceHeadHandlerFile() {

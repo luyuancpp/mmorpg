@@ -75,7 +75,7 @@ func main() {
 	gen.BuildAllProtoc()
 	gen.WriteLoadClientLuaFile()
 	gen.WriteEventHandlerFile()
-	gen.WritePbcLua()
+	gen.WriteSol2LuaFile()
 	util.Wg.Wait()
 	//所有文件的proto读完以后
 	gen.InitServiceId()
