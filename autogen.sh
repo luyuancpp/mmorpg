@@ -20,27 +20,27 @@ fi
 
 
 
-cd common/src/network && ./autogen.sh
+cd pkg/common/src/network && ./autogen.sh
 if test $? -ne 0; then 
     exit 
 fi
 
-cd ../../../
+cd ../../../../
 cd pbc && cmake . && make -j$cpu
 if test $? -ne 0; then 
-    echo "pbc build error"
+    echo "pkg/common/src/network pbc build error"
     exit 
 fi
 
 cd ../
 cmake .
-cd config && cmake . && make -j$cpu
+cd pkg/config && cmake . && make -j$cpu
 if test $? -ne 0; then 
     echo "config build error"
     exit 
 fi
 
-cd ../
+cd ../../
 cd common && cmake . && make -j$cpu
 if test $? -ne 0; then 
     echo "common build error"
