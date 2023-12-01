@@ -15,13 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\login_server.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\comp\account_player.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\handler\login_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\route_system.cpp">
@@ -30,39 +27,30 @@
     <ClCompile Include="src\replied_handler\controller_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\replied_handler\database_service_replied_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\replied_handler\deploy_service_replied_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\handler\login_service_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\thread_local\login_thread_local_storage.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\replied_handler\route_message_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\replied_handler\register_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\replied_handler\database_service_replied_handler.cpp">
+    <ClCompile Include="src\replied_handler\route_message_replied_handler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\thread_local\login_thread_local_storage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\login_server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\login_server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\comp\account_player.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\network\route_system.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\replied_handler\controller_service_replied_handler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\replied_handler\deploy_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\handler\login_service_handler.h">
@@ -71,10 +59,25 @@
     <ClInclude Include="src\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_local\login_thread_local_storage.h">
+    <ClInclude Include="src\network\route_system.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\session.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\controller_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\database_service_replied_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\replied_handler\deploy_service_replied_handler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\thread_local\login_thread_local_storage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\login_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
