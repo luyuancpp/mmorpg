@@ -55,13 +55,14 @@ fi
 echo "protobuf install ok"
 cd ../..
 
-cd ../../../
-cd third_party && rm -rf muduo 
+
+cd third_party 
+rm -rf muduo 
 cp -rf muduo-linux muduo 
 cd muduo
 cp -f ../../common/src/muduowindow/TimerId.h  muduo/net/ 
 cp -f ../../common/src/muduowindow/CMakeLists.txt  ./
-sed -i '109,116d' CMakeLists.txt
+sed -i '111,119d' CMakeLists.txt
 sed -i '56,70d' muduo/net/CMakeLists.txt
 cmake . 
 make -j20
