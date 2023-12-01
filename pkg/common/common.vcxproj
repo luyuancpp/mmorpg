@@ -156,82 +156,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\game_config\deploy_json.cpp" />
-    <ClCompile Include="src\game_config\lobby_config.cpp" />
-    <ClCompile Include="src\game_logic\mission\mission_system.cpp" />
-    <ClCompile Include="src\game_logic\teams\TeamSystem.cpp" />
-    <ClCompile Include="src\game_logic\thread_local\common_logic_thread_local_storage.cpp" />
-    <ClCompile Include="src\game_logic\bag\bag.cpp" />
-    <ClCompile Include="src\game_logic\bag\item.cpp" />
-    <ClCompile Include="src\util\defer.cpp" />
-    <ClCompile Include="src\util\game_registry.cpp" />
-    <ClCompile Include="src\game_logic\comp\mission_comp.cpp" />
-    <ClCompile Include="src\game_logic\scene\scene_system.cpp" />
-    <ClCompile Include="src\game_logic\scene\servernode_system.cpp" />
-    <ClCompile Include="src\game_logic\thread_local\thread_local_storage.cpp" />
-    <ClCompile Include="src\game_logic\timer_task\timer_task.cpp" />
-    <ClCompile Include="src\network\rpc_msg_route.cpp" />
-    <ClCompile Include="src\network\session.cpp" />
-    <ClCompile Include="src\util\file2string.cpp" />
-    <ClCompile Include="src\game_logic\login_state\login_state.cpp" />
-    <ClCompile Include="src\game_logic\login_state\login_state_machine.cpp" />
-    <ClCompile Include="src\network\codec\codec.cc" />
-    <ClCompile Include="src\game_logic\teams\team.cpp" />
-    <ClCompile Include="src\jsoncpp\jsoncpp.cpp" />
-    <ClCompile Include="src\redis_client\redis_client.cpp" />
-    <ClCompile Include="src\network\game_rpc.pb.cc" />
-    <ClCompile Include="src\network\rpc_channel.cc" />
-    <ClCompile Include="src\network\rpc_server.cc" />
-    <ClCompile Include="src\game_logic\thread_local\thread_local_storage_lua.cpp" />
+
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\game_config\deploy_json.h" />
-    <ClInclude Include="src\game_config\lobby_config.h" />
-    <ClInclude Include="src\game_logic\mission\mission_system.h" />
-    <ClInclude Include="src\game_logic\teams\TeamSystem.h" />
-    <ClInclude Include="src\game_logic\thread_local\common_logic_thread_local_storage.h" />
-    <ClInclude Include="src\game_logic\bag\bag.h" />
-    <ClInclude Include="src\game_logic\bag\item.h" />
-    <ClInclude Include="src\game_logic\comp\account_comp.h" />
-    <ClInclude Include="src\game_logic\comp\player_comp.h" />
-    <ClInclude Include="src\game_logic\comp\scene_comp.h" />
-    <ClInclude Include="src\network\gate_node.h" />
-    <ClInclude Include="src\util\defer.h" />
-    <ClInclude Include="src\util\game_registry.h" />
-    <ClInclude Include="src\game_logic\login_state\login_state.h" />
-    <ClInclude Include="src\game_logic\login_state\login_state_concrete.h" />
-    <ClInclude Include="src\game_logic\login_state\login_state_machine.h" />
-    <ClInclude Include="src\game_logic\comp\mission_comp.h" />
-    <ClInclude Include="src\game_logic\mission\missions_config_template.h" />
-    <ClInclude Include="src\game_logic\scene\scene_system.h" />
-    <ClInclude Include="src\game_logic\scene\servernode_system.h" />
-    <ClInclude Include="src\game_logic\constants\time_variable.h" />
-    <ClInclude Include="src\game_logic\thread_local\thread_local_storage.h" />
-    <ClInclude Include="src\game_logic\timer_task\timer_task.h" />
-    <ClInclude Include="src\network\session.h" />
-    <ClInclude Include="src\network\codec\codec.h" />
-    <ClInclude Include="src\network\codec\dispatcher.h" />
-    <ClInclude Include="src\network\codec\dispatcher_lite.h" />
-    <ClInclude Include="src\common_type\common_type.h" />
-    <ClInclude Include="src\game_logic\config_expression\config_expression.h" />
-    <ClInclude Include="src\game_logic\exprtk\exprtk.hpp" />
-    <ClInclude Include="src\util\file2string.h" />
-    <ClInclude Include="src\game_logic\teams\team.h" />
-    <ClInclude Include="src\game_logic\teams\team_event.h" />
-    <ClInclude Include="src\jsoncpp\json.h" />
-    <ClInclude Include="src\redis_client\redis_client.h" />
-    <ClInclude Include="src\game_logic\tips_id.h" />
-    <ClInclude Include="src\network\game_rpc.pb.h" />
-    <ClInclude Include="src\network\node_info.h" />
-    <ClInclude Include="src\network\rpc_channel.h" />
-    <ClInclude Include="src\network\rpc_msg_route.h" />
-    <ClInclude Include="src\network\rpc_connection_event.h" />
-    <ClInclude Include="src\network\rpc_server.h" />
-    <ClInclude Include="src\network\server_component.h" />
-    <ClInclude Include="src\network\rpc_client.h" />
-    <ClInclude Include="src\util\random.h" />
-    <ClInclude Include="src\util\snow_flake.h" />
-    <ClInclude Include="src\game_logic\thread_local\thread_local_storage_lua.h" />
+
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
