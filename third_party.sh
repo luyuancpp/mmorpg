@@ -8,7 +8,6 @@ make
 if test $? -ne 0; then 
    exit 
 fi
-cp -rf libhiredis.a ../../
 cd ../../../..
 echo "redis install ok"
 
