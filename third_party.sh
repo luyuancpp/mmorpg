@@ -4,16 +4,18 @@ cat /proc/cpuinfo  | grep "processor" | wc -l
 cat=$1
 
 cd third_party/redis
-make
+make -j$cpu
 if test $? -ne 0; then 
+   echo "redis install failed"
    exit 
 fi
-cd ../../../..
+cd ../../
 echo "redis install ok"
 
 cd third_party/redis/deps/hiredis
-make
+make -j$cpu
 if test $? -ne 0; then 
+   echo "hiredis install failed"
    exit 
 fi
 cp -rf libhiredis.a ../../../../lib/
@@ -21,8 +23,9 @@ cd ../../../..
 echo "hiredis install ok"
 
 cd third_party/lua/
-make all test
+make -j$cpu all 
 if test $? -ne 0; then 
+   echo "lua install failed"
    exit 
 fi
 cp -rf liblua.a ../../lib/
@@ -34,6 +37,7 @@ cd third_party/abseil-cpp/
 cmake -DCMAKE_INSTALL_PREFIX=/usr/bin -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 .
 cmake --build . --target all
 if test $? -ne 0; then 
+   echo "abseil install failed"
    exit 
 fi
 echo "abseil install ok"
@@ -45,6 +49,7 @@ cmake .
 make -j$cpu
 make install  
 if test $? -ne 0; then 
+   echo "protobuf install failed"
    exit 
 fi
 echo "protobuf install ok"
@@ -60,6 +65,11 @@ sed -i '109,116d' CMakeLists.txt
 sed -i '56,70d' muduo/net/CMakeLists.txt
 cmake . 
 make -j20
+if test $? -ne 0; then 
+   echo "muduo install failed"
+   exit 
+fi
+echo "muduo install ok"
 cp -rf ./lib/* ../../lib/
 cd ../../
 
@@ -90,8 +100,5 @@ apt install ./mysql-community-server-debug_8.2.0-1debian12_amd64.deb
 apt install ./mysql-community-test_8.2.0-1debian12_amd64.deb
 apt install ./mysql-community-test-debug_8.2.0-1debian12_amd64.deb
 apt install ./mysql-server_8.2.0-1debian12_amd64.deb
-if test $? -ne 0; then 
-   exit 
-fi
 echo "mysql install ok"
 cd ..
