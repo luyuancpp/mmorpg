@@ -1,0 +1,34 @@
+syntax = "proto3";
+package muduo.net;
+// option go_package = "muduorpc";
+option java_package = "com.chenshuo.muduo.protorpc";
+option java_outer_classname = "RpcProto";
+
+enum MessageType
+{
+  REQUEST = 0;
+  RESPONSE = 1;
+  S2C_REQUEST = 2;//服务器到客户端
+  NODE_ROUTE = 3;//服务器间传递
+  RPC_ERROR = 4; // not used
+}
+
+enum ErrorCode
+{
+  RPC_NO_ERROR = 0;
+  WRONG_PROTO = 1;
+  NO_SERVICE = 2;
+  NO_METHOD = 3;
+  INVALID_REQUEST = 4;
+  INVALID_RESPONSE = 5;
+  TIMEOUT = 6;
+}
+
+message RpcMessage
+{
+  MessageType type = 1;
+  bytes request = 2;
+  bytes response = 3;
+  ErrorCode error = 4;
+  uint32 message_id = 5;
+}
