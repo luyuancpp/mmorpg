@@ -55,7 +55,7 @@ def getcpph(datastring, sheetname):
         s = "#pragma once\n"
         s += "#include <memory>\n"
         s += "#include <unordered_map>\n"
-        s += '#include "game_config/%s_config.pb.h" \n' % (sheetname)
+        s += '#include "%s_config.pb.h" \n' % (sheetname)
         s += 'class %s_config\n{\npublic:\n' % (sheetname)
         s += '  using row_type = const %s_row*;\n' % (sheetname)
         s += '  using kv_type = std::unordered_map<uint32_t, row_type>;\n'
