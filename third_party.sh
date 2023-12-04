@@ -60,10 +60,10 @@ cp -rf muduo-linux muduo
 cd muduo
 cp -f ../../pkg/common/src/muduowindow/TimerId.h  muduo/net/ 
 cp -f ../../pkg/common/src/muduowindow/CMakeLists.txt  ./
-sed -i '111,119d' CMakeLists.txt
+sed -i '112,120d' CMakeLists.txt
 sed -i '56,70d' muduo/net/CMakeLists.txt
 cmake . 
-make -j20
+make -j$cpu
 if test $? -ne 0; then 
    echo "muduo install failed"
    exit 
@@ -103,3 +103,15 @@ apt install ./mysql-community-test-debug_8.2.0-1debian12_amd64.deb
 apt install ./mysql-server_8.2.0-1debian12_amd64.deb
 cd ..
 echo "mysql install ok"
+
+cd third_party/zlib
+ ./configure --64 --libdir=../../lib
+make -j$cpu
+if test $? -ne 0; then 
+   echo "zlib install failed"
+   exit 
+fi
+cp -rf libz.a ../../lib/
+cd ../..
+echo "zlib install ok"
+end

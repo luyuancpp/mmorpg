@@ -49,8 +49,8 @@ def writeCMakeLists(vcxprojDir, target_type):
     # mini version
     fileLines = "cmake_minimum_required(VERSION 3.0)\n"
 
-    fileLines += 'set(EXECUTABLE_OUTPUT_PATH ../bin)\n'
-    fileLines += 'set(LIBRARY_OUTPUT_PATH ../lib)\n'
+    fileLines += 'set(EXECUTABLE_OUTPUT_PATH ../../bin)\n'
+    fileLines += 'set(LIBRARY_OUTPUT_PATH ../../lib)\n'
     if link_mysql:
         fileLines += 'execute_process(COMMAND mysql_config --cflags OUTPUT_VARIABLE MYSQL_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
         fileLines += 'execute_process(COMMAND mysql_config --libs OUTPUT_VARIABLE MYSQL_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
