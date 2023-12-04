@@ -51,7 +51,7 @@ if test $? -ne 0; then
     exit 
 fi
 cd ../../
-echo "pkg/pbc build ok"
+echo "pkg/config build ok"
 
 cd pkg/common 
 cmake . 
