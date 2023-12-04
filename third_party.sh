@@ -46,11 +46,6 @@ cd third_party/protobuf/
 git submodule update --init --recursive
 cmake .
 make install  -j$cpu
-if test $? -ne 0; then 
-   echo "protobuf install failed"
-   exit 
-fi
-
 cd ../..
 echo "protobuf install ok"
 
