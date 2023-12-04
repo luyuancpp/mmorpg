@@ -7,6 +7,7 @@ cat=$1
 
 ./third_party.sh 
 
+
 cd bin/config 
 python gen.py
 if test $? -ne 0; then 

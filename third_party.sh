@@ -50,6 +50,7 @@ if test $? -ne 0; then
    echo "protobuf install failed"
    exit 
 fi
+
 cd ../..
 echo "protobuf install ok"
 
