@@ -19,3 +19,4 @@ WORKDIR /usr/src/turn-based-game
 
 
 CMD ["bash", "-c", "while true; do echo Hello Docker; sleep 1; done"]
+#CMD ["./autogen.sh"]
