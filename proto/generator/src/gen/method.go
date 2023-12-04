@@ -9,7 +9,7 @@ import (
 
 type checkRepliedCb func(methodList *RpcMethodInfos) bool
 
-func writeServiceMethodHeadFile(methodList RpcMethodInfos) {
+func writeServiceIdHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -28,7 +28,7 @@ func writeServiceMethodHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.ServiceDirName+fileName, data)
 }
 
-func writeServiceMethodCppFile(methodList RpcMethodInfos) {
+func writeServiceIdCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
 	if len(methodList) <= 0 {
@@ -44,7 +44,7 @@ func writeServiceMethodCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(config.ServiceDirName+fileName, data)
 }
 
-func getMethodHandlerHeadStr(methodList RpcMethodInfos) string {
+func getServiceHandlerHeadStr(methodList RpcMethodInfos) string {
 	var data = "#pragma once\n"
 	data += methodList[0].IncludeName()
 	data += "class " + methodList[0].Service + "Handler : public ::" + methodList[0].Service + "\n{\npublic:\n"
@@ -330,7 +330,7 @@ func writeGsMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.GsMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+	WriteMd5Data2File(config.GsMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
 func writeGsMethodHandlerCppFile(methodList RpcMethodInfos) {
@@ -472,7 +472,7 @@ func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.ControllerMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+	WriteMd5Data2File(config.ControllerMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
 func isControllerPlayerHandler(methodList *RpcMethodInfos) (result bool) {
@@ -633,7 +633,7 @@ func writeGateMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.GateMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+	WriteMd5Data2File(config.GateMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
 func writeGateMethodHandlerCppFile(methodList RpcMethodInfos) {
@@ -712,7 +712,7 @@ func writeLoginMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.LoginMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+	WriteMd5Data2File(config.LoginMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
 func writeLoginMethodHandlerCppFile(methodList RpcMethodInfos) {
@@ -783,7 +783,7 @@ func writeDataBaseMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.DataBaseMethodHandleDir+fileName, getMethodHandlerHeadStr(methodList))
+	WriteMd5Data2File(config.DataBaseMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
 func writeDataBaseMethodHandlerCppFile(methodList RpcMethodInfos) {
@@ -803,9 +803,9 @@ func writeDataBaseMethodHandlerCppFile(methodList RpcMethodInfos) {
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
-		go writeServiceMethodHeadFile(v)
+		go writeServiceIdHeadFile(v)
 		util.Wg.Add(1)
-		go writeServiceMethodCppFile(v)
+		go writeServiceIdCppFile(v)
 
 		//gs
 		util.Wg.Add(1)

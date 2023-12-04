@@ -12,6 +12,7 @@ libs = []
 projectName = ""
 link_mysql = ""
 
+abseil_libs = " absl::strings "
 
 # parse vcxproj file
 def parseVCProjFile(vcxprojFile):
@@ -111,7 +112,8 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += ("target_link_libraries(%s " % projectName)
     for lib in libs:
         fileLines += ("%s " % lib)
-    fileLines += (" ${MYSQL_LIBS} libprotobuf.a libprotobuf-lite.a hiredis lua z)")
+    fileLines += abseil_libs
+    fileLines += (" ${MYSQL_LIBS} libprotobuf.a libprotobuf-lite.a hiredis lua liblua.a libmuduo_base.a  libmuduo_net.a libz.a)")
 
     if target_type == "lib":
         libs.append((("%s") %projectName))
