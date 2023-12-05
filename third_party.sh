@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cat /proc/cpuinfo  | grep "processor" | wc -l
-cat=$1
+cpu=$1
 
 cd third_party/redis
 make -j$cpu
@@ -44,8 +44,8 @@ echo "abseil install ok"
 
 cd third_party/protobuf/
 git submodule update --init --recursive
-cmake .
-make install  -j$cpu
+cmake . 
+make install -j$cpu
 cd ../..
 echo "protobuf install ok"
 
