@@ -3,7 +3,7 @@
 python vcxproj2cmake.py
 
 cat /proc/cpuinfo  | grep "processor" | wc -l
-cat=$1
+cpu=$1
 
 ./third_party.sh 
 
