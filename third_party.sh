@@ -115,5 +115,3 @@ cp -rf libz.a ../../lib/
 cd ../..
 echo "zlib install ok"
 end
-
-########third_party########

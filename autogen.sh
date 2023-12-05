@@ -24,7 +24,6 @@ fi
 cd ../../../
 echo "generator go ok"
 
-
 cd pkg/common/src/network && ./autogen.sh
 if test $? -ne 0; then 
     echo "pkg/common/src/network failed"
@@ -33,84 +32,32 @@ fi
 cd ../../../../
 echo "pkg/common/src/network ok"
 
-cd pkg/pbc 
-cmake . 
-make -j$cpu
-if test $? -ne 0; then 
-    echo "pkg/pbc build failed"
-    exit 
-fi
-cd ../../
-echo "pkg/pbc build ok"
+buildcmakeproject(){
+    cd $1
+    cmake . 
+    make -j$cpu
+    if test $? -ne 0; then 
+        echo "$1  build failed"
+        exit 
+    fi
+    cd $2
+    echo "$1  build ok"
+}
 
-cd pkg/config
-cmake . 
-make -j$cpu
-if test $? -ne 0; then 
-    echo "pkg/config build failed"
-    exit 
-fi
-cd ../../
-echo "pkg/config build ok"
+buildcmakeproject pkg/pbc ../../
 
-cd pkg/common 
-cmake . 
-make -j$cpu
-if test $? -ne 0; then 
-    echo "pkg/common build error"
-    exit 
-fi
-cd ../../
-echo "pkg/pbc build ok"
+buildcmakeproject pkg/config ../../
 
-cd server/gate_server 
-cmake . 
-make -j$cpu
-if test $? -ne 0; then 
-    echo "server/gate_server build error"
-    exit 
-fi
-cd ../../
-echo "server/gate_server build ok"
+buildcmakeproject pkg/common ../../
 
-cd server/database_server 
-cmake . 
-make -j$cpu
-if test $? -ne 0; then 
-    echo "server/database_server build error"
-    exit 
-fi
-cd ../../
-echo "server/database_server build ok"
+buildcmakeproject server/gate_server ../../
 
-cd server/login_server 
-cmake . 
-make -j$cpu
-if test $? -ne 0; then 
-    echo "server/login_server build error"
-    exit 
-fi
-cd ../../
-echo "server/login_server build ok"
+buildcmakeproject server/database_server ../../
 
-cd server/controller_server 
-cmake . 
-make -j$cpu
-if test $? -ne 0; then 
-    echo "server/controller_server build error"
-    exit 
-fi
-cd ../../
-echo "server/controller_server build ok"
+buildcmakeproject server/login_server ../../
 
-cd server/game_server 
-cmake . 
-make -j$cpu
-if test $? -ne 0; then 
-    echo "server/game_server build error"
-    exit 
-fi
-cd ../../
-echo "server/game_server build ok"
+buildcmakeproject server/controller_server ../../
+
+buildcmakeproject server/game_server ../../
 
 echo " go go go !"
