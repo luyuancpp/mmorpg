@@ -12,7 +12,91 @@ libs = []
 projectName = ""
 link_mysql = ""
 
-abseil_libs = " absl::strings "
+abseil_libs = " absl::strings absl::log_globals \
+absl::bad_any_cast_impl \
+absl::bad_optional_access \
+absl::bad_variant_access \
+absl::base \
+absl::city \
+absl::civil_time \
+absl::cord \
+absl::cordz_functions \
+absl::cordz_handle \
+absl::cordz_info \
+absl::cordz_sample_token \
+absl::cord_internal \
+absl::crc32c \
+absl::crc_cord_state \
+absl::crc_cpu_detect \
+absl::crc_internal \
+absl::debugging_internal \
+absl::demangle_internal \
+absl::die_if_null \
+absl::examine_stack \
+absl::exponential_biased \
+absl::failure_signal_handler \
+absl::flags \
+absl::flags_commandlineflag \
+absl::flags_commandlineflag_internal \
+absl::flags_config \
+absl::flags_internal \
+absl::flags_marshalling \
+absl::flags_parse \
+absl::flags_private_handle_accessor \
+absl::flags_program_name \
+absl::flags_reflection \
+absl::flags_usage \
+absl::flags_usage_internal \
+absl::graphcycles_internal \
+absl::hash \
+absl::hashtablez_sampler \
+absl::int128 \
+absl::kernel_timeout_internal \
+absl::leak_check \
+absl::log_entry \
+absl::log_flags \
+absl::log_initialize \
+absl::log_internal_check_op \
+absl::log_internal_conditions \
+absl::log_internal_format \
+absl::log_internal_globals \
+absl::log_internal_log_sink_set \
+absl::log_internal_message \
+absl::log_internal_nullguard \
+absl::log_internal_proto \
+absl::log_severity \
+absl::log_sink \
+absl::low_level_hash \
+absl::malloc_internal \
+absl::periodic_sampler \
+absl::random_distributions \
+absl::random_internal_distribution_test_util \
+absl::random_internal_platform \
+absl::random_internal_pool_urbg \
+absl::random_internal_randen \
+absl::random_internal_randen_hwaes \
+absl::random_internal_randen_hwaes_impl \
+absl::random_internal_randen_slow \
+absl::random_internal_seed_material \
+absl::random_seed_gen_exception \
+absl::random_seed_sequences \
+absl::raw_hash_set \
+absl::raw_logging_internal \
+absl::scoped_set_env \
+absl::spinlock_wait \
+absl::stacktrace \
+absl::status \
+absl::statusor \
+absl::strerror \
+absl::strings \
+absl::strings_internal \
+absl::string_view \
+absl::str_format_internal \
+absl::symbolize \
+absl::synchronization \
+absl::throw_delegate \
+absl::time \
+absl::time_zone "
 
 # parse vcxproj file
 def parseVCProjFile(vcxprojFile):
@@ -64,8 +148,8 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += 'add_definitions(-D__linux__)\n'
     fileLines += "add_definitions(-DNOMINMAX)\n"
     fileLines += "add_definitions(-DGOOGLE_CHECK_EQ=ABSL_CHECK_EQ)\n"
-    fileLines += "add_definitions(-DGOOGLE_LOG=ABSL_LOG)\n"
-    fileLines += "add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)\n"
+    fileLines += "add_definitions(-DGOOGLE_LOG=ABSL_CLOG)\n"
+    fileLines += "add_definitions(-DGOOGLE_DCHECK=ABSL_CDCHECK)\n"
     fileLines += "add_definitions(-DENTT_ID_TYPE=uint64_t)\n\n"
     
 
