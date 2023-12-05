@@ -33,11 +33,12 @@ cd ../../../../
 echo "pkg/common/src/network ok"
 
 buildcmakeproject(){
+    echo "$1 build begin"
     cd $1
     cmake . 
     make -j$cpu
     if test $? -ne 0; then 
-        echo "$1  build failed"
+        echo "$1 build failed"
         exit 
     fi
     cd $2
