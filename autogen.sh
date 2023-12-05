@@ -4,6 +4,8 @@ python vcxproj2cmake.py
 
 cat /proc/cpuinfo  | grep "processor" | wc -l
 cpu=$1
+echo "cpu core : "
+echo $cpu
 
 ./third_party.sh 
 

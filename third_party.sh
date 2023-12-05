@@ -44,8 +44,12 @@ echo "abseil install ok"
 
 cd third_party/protobuf/
 git submodule update --init --recursive
-cmake . 
-make install -j$cpu
+cmake . -DCMAKE_CXX_STANDARD=20
+cmake --build .
+if test $? -ne 0; then 
+   echo "protobuf install failed"
+   exit 
+fi
 cd ../..
 echo "protobuf install ok"
 
