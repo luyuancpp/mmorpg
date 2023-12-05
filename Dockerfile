@@ -5,7 +5,8 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
     cmake \
     gdb \
     wget \ 
-    make 
+    make  \
+    libboost-dev 
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
