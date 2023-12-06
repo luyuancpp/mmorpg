@@ -197,7 +197,8 @@ def writeCMakeLists(vcxprojDir, target_type):
     for lib in libs:
         fileLines += ("%s " % lib)
     fileLines += abseil_libs
-    fileLines += (" ${MYSQL_LIBS} libprotobuf.a libprotobuf-lite.a hiredis lua liblua.a libmuduo_base.a  libmuduo_net.a libz.a)")
+    fileLines += " libmuduo_base.a  libmuduo_net.a libmuduo_protobuf_codec.a "
+    fileLines += (" ${MYSQL_LIBS} libprotobuf.a libprotobuf-lite.a hiredis lua liblua.a  libz.a )")
 
     if target_type == "lib":
         libs.append((("%s") %projectName))
