@@ -35,7 +35,8 @@ echo "lua install ok"
 
 cd third_party/abseil-cpp/
 cmake -DCMAKE_INSTALL_PREFIX=/usr/bin -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 .
-cmake --build . --target all
+#cmake --build . --target all
+make install -j$cpu
 if test $? -ne 0; then 
    echo "abseil install failed"
    exit 
@@ -59,9 +60,9 @@ rm -rf muduo
 cp -rf muduo-linux muduo 
 cd muduo
 cp -f ../../pkg/common/src/muduowindow/TimerId.h  muduo/net/ 
-cp -f ../../pkg/common/src/muduowindow/CMakeLists.txt  ./
 sed -i '112,120d' CMakeLists.txt
-sed -i '56,70d' muduo/net/CMakeLists.txt
+sed -i '65,70d' muduo/net/CMakeLists.txt
+sed -i '56,63d' muduo/net/CMakeLists.txt
 cmake . 
 make -j$cpu
 if test $? -ne 0; then 
