@@ -45,7 +45,7 @@ cd ../..
 echo "abseil install ok"
 
 cd third_party/protobuf/
-git submodule update --init --recursive
+
 cmake . -DCMAKE_CXX_STANDARD=20
 make install -j$cpu
 if test $? -ne 0; then 
@@ -61,9 +61,13 @@ cp -rf muduo-linux muduo
 cd muduo
 cp -f ../../pkg/common/src/muduowindow/TimerId.h  muduo/net/ 
 cp -f ../../pkg/common/src/muduowindow/CMakeLists.txt  ./
+cp -f ../../pkg/common/src/muduowindow/muduo/net/protorpc/CMakeLists.txt  muduo/net/protorpc/
 sed -i '66,70d' muduo/net/CMakeLists.txt
 sed -i '56,63d' muduo/net/CMakeLists.txt
-cp -f ../../pkg/common/src/network/autogen.sh muduo/net/
+cp -f ../../pkg/common/src/network/autogen.sh muduo/net/protorpc/
+cd muduo/net/protorpc/
+./autogen.sh
+cd ../../../
 cmake . 
 make -j$cpu
 if test $? -ne 0; then 
