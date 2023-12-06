@@ -1,5 +1,7 @@
 #!/bin/bash
 
+git submodule update --init --recursive
+
 ./third_party.sh
 
 python vcxproj2cmake.py
