@@ -7,7 +7,8 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
     wget \ 
     make  \
     libboost-dev \
-    pkg-config
+    pkg-config \ 
+    vim
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
@@ -17,6 +18,5 @@ COPY . /usr/src/turn-based-game
 
 WORKDIR /usr/src/turn-based-game
 
-
-#CMD ["bash", "-c", "while true; do echo Hello Docker; sleep 1; done"]
-CMD ["./autogen.sh"]
+CMD ["bash", "-c", "while true; do echo Hello Docker; sleep 1; done"]
+#CMD ["./autogen.sh"]
