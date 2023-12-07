@@ -5,11 +5,10 @@ echo $cpu
 
 ########third_party########
 
-cd third_party
-if [ ! -d "cmake" ]; then
-   makedir cmake 
+if [ ! -d "cmakeinstall" ]; then
+   mkdir cmakeinstall 
 fi
-cd cmake 
+cd cmakeinstall 
 wget https://github.com/Kitware/CMake/archive/refs/tags/v3.28.0.zip .
 unzip v3.28.0.zip
 cd CMake-3.28.0
@@ -18,7 +17,7 @@ if test $? -ne 0; then
    echo "cmake install failed"
    exit 
 fi
-cd ../../../
+cd ../../
 echo "cmake install ok"
 
 cd third_party/redis
@@ -51,7 +50,7 @@ cd ../..
 echo "lua install ok"
 
 cd third_party/abseil-cpp/
-cmake . -DCMAKE_INSTALL_PREFIX=/usr/lib/abseil -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 -DABSL_PROPAGATE_CXX_STD=20
+cmake . -std=c++20 -DCMAKE_INSTALL_PREFIX=/usr/lib/abseil -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 -DABSL_PROPAGATE_CXX_STD=20
 cmake --build . --target all
 make install -j$cpu 
 if test $? -ne 0; then 
@@ -62,7 +61,7 @@ cd ../..
 echo "abseil install ok"
 
 cd third_party/protobuf/
-cmake . -DCMAKE_CXX_STANDARD=20 -DABSL_PROPAGATE_CXX_STD=20
+cmake . -std=c++20 -DABSL_PROPAGATE_CXX_STD=20
 make install -j$cpu
 if test $? -ne 0; then 
    echo "protobuf install failed"
