@@ -37,7 +37,7 @@ echo "pkg/common/src/network ok"
 buildcmakeproject(){
     echo "$1 build begin"
     cd $1
-    cmake . -std=c++20
+    cmake . 
     make -j$cpu
     if test $? -ne 0; then 
         echo "$1 build failed"
