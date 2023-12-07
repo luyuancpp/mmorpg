@@ -83,7 +83,7 @@ cp -f ../../pkg/common/src/network/autogen.sh muduo/net/protorpc/
 cd muduo/net/protorpc/
 ./autogen.sh
 cd ../../../
-cmake . 
+cmake . -std=c++20
 make -j$cpu
 if test $? -ne 0; then 
    echo "muduo install failed"
