@@ -135,7 +135,7 @@ def parseVCProjFile(vcxprojFile):
 # write cmake file
 def writeCMakeLists(vcxprojDir, target_type):
     # mini version
-    fileLines = "cmake_minimum_required(VERSION 3.0)\n"
+    fileLines = "cmake_minimum_required(VERSION 3.28)\n"
 
     fileLines += 'set(EXECUTABLE_OUTPUT_PATH ../../bin)\n'
     fileLines += 'set(LIBRARY_OUTPUT_PATH ../../lib)\n'
@@ -180,6 +180,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     # set flags
     fileLines += "set(CMAKE_VERBOSE_MAKEFILE on)\n"
     fileLines += "set(CMAKE_CXX_STANDARD  20)\n"
+    fileLines += "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")\n'
@@ -194,6 +195,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     if target_type == "lib":
         fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
     else:
+        fileLines += "add_subdirectory(../../third_party/abseil-cpp)"
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
 
     # link lib
@@ -206,6 +208,12 @@ def writeCMakeLists(vcxprojDir, target_type):
 
     if target_type == "lib":
         libs.append((("%s") %projectName))
+
+    #check
+    fileLines += "\nif(CMAKE_CXX_STANDARD LESS 20)"
+    fileLines += '\n message(FATAL_ERROR '
+    fileLines += '"my_lib_project requires CMAKE_CXX_STANDARD >= 20 (got: ${CMAKE_CXX_STANDARD})")'
+    fileLines += "\nendif()" + '\n'
 
     # write file
     file = open(vcxprojDir + "CMakeLists.txt", "w")

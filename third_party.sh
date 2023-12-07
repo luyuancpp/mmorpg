@@ -51,15 +51,6 @@ cp -rf liblua.a ../../lib/
 cd ../..
 echo "lua install ok"
 
-cd third_party/abseil-cpp/
-cmake . -DCMAKE_INSTALL_PREFIX=/usr/lib/abseil  -DCMAKE_CXX_STANDARD=20 -DABSL_PROPAGATE_CXX_STD=TRUE
-make install -j$cpu 
-if test $? -ne 0; then 
-   echo "abseil install failed"
-   exit 
-fi
-cd ../..
-echo "abseil install ok"
 
 cd third_party/protobuf/
 cmake .  -DABSL_PROPAGATE_CXX_STD=TRUE -DCMAKE_CXX_STANDARD=20
