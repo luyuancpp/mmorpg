@@ -12,7 +12,7 @@ libs = []
 projectName = ""
 link_mysql = ""
 
-abseil_libs = " absl_strings absl_log_globals \
+abseil_libs = " \
 absl_bad_any_cast_impl \
 absl_bad_optional_access \
 absl_bad_variant_access \
@@ -20,11 +20,11 @@ absl_base \
 absl_city \
 absl_civil_time \
 absl_cord \
+absl_cord_internal \
 absl_cordz_functions \
 absl_cordz_handle \
 absl_cordz_info \
 absl_cordz_sample_token \
-absl_cord_internal \
 absl_crc32c \
 absl_crc_cord_state \
 absl_crc_cpu_detect \
@@ -55,6 +55,7 @@ absl_kernel_timeout_internal \
 absl_leak_check \
 absl_log_entry \
 absl_log_flags \
+absl_log_globals \
 absl_log_initialize \
 absl_log_internal_check_op \
 absl_log_internal_conditions \
@@ -96,7 +97,9 @@ absl_symbolize \
 absl_synchronization \
 absl_throw_delegate \
 absl_time \
-absl_time_zone "
+absl_time_zone \
+utf8_range \
+utf8_validity "
 
 # parse vcxproj file
 def parseVCProjFile(vcxprojFile):
