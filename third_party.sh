@@ -9,10 +9,12 @@ if [ ! -d "cmakeinstall" ]; then
    mkdir cmakeinstall 
 fi
 cd cmakeinstall 
-wget https://github.com/Kitware/CMake/archive/refs/tags/v3.28.0.zip .
+wget https://github.com/Kitware/CMake/archive/refs/tags/v3.28.0.zip 
 unzip v3.28.0.zip
 cd CMake-3.28.0
-./bootstrap && make -j$cpu && make install
+./bootstrap 
+make -j$cpu 
+make install
 if test $? -ne 0; then 
    echo "cmake install failed"
    exit 
@@ -50,8 +52,7 @@ cd ../..
 echo "lua install ok"
 
 cd third_party/abseil-cpp/
-cmake . -std=c++20 -DCMAKE_INSTALL_PREFIX=/usr/lib/abseil -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 -DABSL_PROPAGATE_CXX_STD=TRUE
-cmake --build . --target all
+cmake . -DCMAKE_INSTALL_PREFIX=/usr/lib/abseil  -DCMAKE_CXX_STANDARD=20 -DABSL_PROPAGATE_CXX_STD=TRUE
 make install -j$cpu 
 if test $? -ne 0; then 
    echo "abseil install failed"
@@ -61,7 +62,7 @@ cd ../..
 echo "abseil install ok"
 
 cd third_party/protobuf/
-cmake . -std=c++20 -DABSL_PROPAGATE_CXX_STD=TRUE
+cmake .  -DABSL_PROPAGATE_CXX_STD=TRUE -DCMAKE_CXX_STANDARD=20
 make install -j$cpu
 if test $? -ne 0; then 
    echo "protobuf install failed"
@@ -83,7 +84,7 @@ cp -f ../../pkg/common/src/network/autogen.sh muduo/net/protorpc/
 cd muduo/net/protorpc/
 ./autogen.sh
 cd ../../../
-cmake . -std=c++20
+cmake . 
 make -j$cpu
 if test $? -ne 0; then 
    echo "muduo install failed"
@@ -132,7 +133,7 @@ if test $? -ne 0; then
    echo "zlib install failed"
    exit 
 fi
-cp -rf libz.a ../../lib/
+make install
 cd ../..
 echo "zlib install ok"
 end
