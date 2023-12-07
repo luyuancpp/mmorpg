@@ -195,7 +195,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     if target_type == "lib":
         fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
     else:
-        fileLines += "add_subdirectory(../../third_party/abseil-cpp)"
+        fileLines += "add_subdirectory(../../third_party/abseil-cpp)\n"
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
 
     # link lib
@@ -204,7 +204,7 @@ def writeCMakeLists(vcxprojDir, target_type):
         fileLines += ("%s " % lib)
     fileLines += abseil_libs
     fileLines += " muduo_base  muduo_net muduo_protobuf_codec muduo_protorpc_wire "
-    fileLines += (" ${MYSQL_LIBS} protobuf protobuf-lite hiredis lua z )")
+    fileLines += (" ${MYSQL_LIBS} protobuf hiredis lua z )")
 
     if target_type == "lib":
         libs.append((("%s") %projectName))
