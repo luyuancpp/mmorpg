@@ -154,6 +154,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += "add_definitions(-DGOOGLE_LOG=ABSL_DLOG)\n"
     fileLines += "add_definitions(-DGOOGLE_DCHECK=ABSL_DCHECK)\n"
     fileLines += "add_definitions(-DENTT_ID_TYPE=uint64_t)\n\n"
+
     
 
     # include directory
@@ -178,6 +179,7 @@ def writeCMakeLists(vcxprojDir, target_type):
 
     # set flags
     fileLines += "set(CMAKE_VERBOSE_MAKEFILE on)\n"
+    fileLines += "set(CMAKE_CXX_STANDARD 20)\n"
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")\n'
     fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")\n'
@@ -188,11 +190,10 @@ def writeCMakeLists(vcxprojDir, target_type):
     if link_mysql:
         fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MYSQL_INCLUDE}")\n\n'
 
+    # add exec or lib
     if target_type == "lib":
-        # add exec
         fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
     else:
-        # add exec
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
 
     # link lib
