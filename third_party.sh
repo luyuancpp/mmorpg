@@ -50,7 +50,7 @@ cd ../..
 echo "lua install ok"
 
 cd third_party/abseil-cpp/
-cmake . -std=c++20 -DCMAKE_INSTALL_PREFIX=/usr/lib/abseil -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 -DABSL_PROPAGATE_CXX_STD=20
+cmake . -std=c++20 -DCMAKE_INSTALL_PREFIX=/usr/lib/abseil -DABSL_BUILD_TESTING=OFF -DABSL_USE_GOOGLETEST_HEAD=OFF -DCMAKE_CXX_STANDARD=20 -DABSL_PROPAGATE_CXX_STD=TRUE
 cmake --build . --target all
 make install -j$cpu 
 if test $? -ne 0; then 
@@ -61,7 +61,7 @@ cd ../..
 echo "abseil install ok"
 
 cd third_party/protobuf/
-cmake . -std=c++20 -DABSL_PROPAGATE_CXX_STD=20
+cmake . -std=c++20 -DABSL_PROPAGATE_CXX_STD=TRUE
 make install -j$cpu
 if test $? -ne 0; then 
    echo "protobuf install failed"
