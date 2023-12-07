@@ -62,8 +62,7 @@ cd ../..
 echo "abseil install ok"
 
 cd third_party/protobuf/
-
-cmake . -DCMAKE_CXX_STANDARD=20
+cmake . -DCMAKE_CXX_STANDARD=20 -DABSL_PROPAGATE_CXX_STD=20
 make install -j$cpu
 if test $? -ne 0; then 
    echo "protobuf install failed"
