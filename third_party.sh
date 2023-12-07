@@ -80,10 +80,6 @@ cp -f ../../pkg/common/src/muduowindow/CMakeLists.txt  ./
 cp -f ../../pkg/common/src/muduowindow/muduo/net/protorpc/CMakeLists.txt  muduo/net/protorpc/
 sed -i '66,70d' muduo/net/CMakeLists.txt
 sed -i '56,63d' muduo/net/CMakeLists.txt
-cp -f ../../pkg/common/src/network/autogen.sh muduo/net/protorpc/
-cd muduo/net/protorpc/
-./autogen.sh
-cd ../../../
 cmake . 
 make -j$cpu
 if test $? -ne 0; then 
