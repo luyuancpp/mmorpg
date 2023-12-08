@@ -169,7 +169,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     uniqLinkDir = list(set(linkDirs))
     for linkUnit in uniqLinkDir:
         fileLines += (linkUnit + " ")
-    fileLines += " /usr/lib/x86_64-linux-gnu /usr/local/lib/ /usr/lib/asbel)\n\n"
+    fileLines += " /usr/lib/x86_64-linux-gnu /usr/local/lib/ )\n\n"
 
     # source file
     fileLines += "set(SOURCE_FILE "
@@ -201,9 +201,10 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += ("target_link_libraries(%s " % projectName)
     for lib in libs:
         fileLines += ("%s " % lib)
-    fileLines += abseil_libs
     fileLines += " muduo_base  muduo_net muduo_protobuf_codec muduo_protorpc_wire "
-    fileLines += (" ${MYSQL_LIBS} protobuf hiredis lua z )")
+    fileLines += " ${MYSQL_LIBS} protobuf hiredis lua z "
+    fileLines += abseil_libs
+    fileLines += " )"
 
     if target_type == "lib":
         libs.append((("%s") %projectName))
