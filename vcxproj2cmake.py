@@ -195,7 +195,6 @@ def writeCMakeLists(vcxprojDir, target_type):
     if target_type == "lib":
         fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
     else:
-        fileLines += "add_subdirectory(../../third_party/abseil-cpp)\n"
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
 
     # link lib
@@ -208,12 +207,6 @@ def writeCMakeLists(vcxprojDir, target_type):
 
     if target_type == "lib":
         libs.append((("%s") %projectName))
-
-    #check
-    fileLines += "\nif(CMAKE_CXX_STANDARD LESS 20)"
-    fileLines += '\n message(FATAL_ERROR '
-    fileLines += '"my_lib_project requires CMAKE_CXX_STANDARD >= 20 (got: ${CMAKE_CXX_STANDARD})")'
-    fileLines += "\nendif()" + '\n'
 
     # write file
     file = open(vcxprojDir + "CMakeLists.txt", "w")
