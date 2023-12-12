@@ -27,7 +27,7 @@ abseil_libs = " \
 /usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/time/libabsl_time.a \
 /usr/src/turn-based-game/third_party/protobuf/third_party/utf8_range/libutf8_validity.a \
 /usr/src/turn-based-game/third_party/protobuf/third_party/utf8_range/libutf8_range.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/absl_scoped_mock_log.a \
+./usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_scoped_mock_log.a \
 /usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_check_op.a \
 /usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/debugging/libabsl_leak_check.a \
 /usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_conditions.a \
