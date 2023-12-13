@@ -12,75 +12,40 @@ libs = []
 projectName = ""
 link_mysql = ""
 
-abseil_libs = " \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/base/libabsl_base.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/strings/libabsl_cord.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_die_if_null.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/flags/libabsl_flags.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/hash/libabsl_hash.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_initialize.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/base/libabsl_log_severity.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/status/libabsl_status.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/status/libabsl_statusor.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/strings/libabsl_strings.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/synchronization/libabsl_synchronization.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/time/libabsl_time.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/utf8_range/libutf8_validity.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/utf8_range/libutf8_range.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_scoped_mock_log.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_check_op.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/debugging/libabsl_leak_check.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_conditions.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_message.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_nullguard.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/debugging/libabsl_examine_stack.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_format.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_proto.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_log_sink_set.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_sink.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_entry.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/flags/libabsl_flags_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/flags/libabsl_flags_marshalling.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/flags/libabsl_flags_reflection.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/flags/libabsl_flags_config.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/flags/libabsl_flags_program_name.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/flags/libabsl_flags_private_handle_accessor.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/flags/libabsl_flags_commandlineflag.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/flags/libabsl_flags_commandlineflag_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_globals.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/log/libabsl_log_internal_globals.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/container/libabsl_raw_hash_set.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/hash/libabsl_city.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/hash/libabsl_low_level_hash.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/container/libabsl_hashtablez_sampler.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/strings/libabsl_cordz_info.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/strings/libabsl_cord_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/strings/libabsl_cordz_functions.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/profiling/libabsl_exponential_biased.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/strings/libabsl_cordz_handle.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/crc/libabsl_crc_cord_state.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/crc/libabsl_crc32c.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/crc/libabsl_crc_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/crc/libabsl_crc_cpu_detect.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/types/libabsl_bad_optional_access.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/strings/libabsl_str_format_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/base/libabsl_strerror.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/debugging/libabsl_stacktrace.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/debugging/libabsl_symbolize.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/debugging/libabsl_debugging_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/debugging/libabsl_demangle_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/synchronization/libabsl_graphcycles_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/synchronization/libabsl_kernel_timeout_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/base/libabsl_malloc_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/strings/libabsl_string_view.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/base/libabsl_throw_delegate.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/strings/libabsl_strings_internal.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/base/libabsl_spinlock_wait.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/numeric/libabsl_int128.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/time/libabsl_civil_time.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/time/libabsl_time_zone.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/types/libabsl_bad_variant_access.a \
-/usr/src/turn-based-game/third_party/protobuf/third_party/abseil-cpp/absl/base/libabsl_raw_logging_internal.a "
+abseil_libs = "absl::absl_check\
+absl::absl_log \
+absl::algorithm \
+absl::base \
+absl::bind_front \
+absl::bits \
+absl::btree \
+absl::cleanup \
+absl::cord \
+absl::core_headers \
+absl::debugging \
+absl::die_if_null \
+absl::dynamic_annotations \
+absl::flags \
+absl::flat_hash_map \
+absl::flat_hash_set \
+absl::function_ref \
+absl::hash \
+absl::layout \
+absl::log_initialize \
+absl::log_severity \
+absl::memory \
+absl::node_hash_map \
+absl::node_hash_set \
+absl::optional \
+absl::span \
+absl::status \
+absl::statusor \
+absl::strings \
+absl::synchronization \
+absl::time \
+absl::type_traits \
+absl::utility \
+absl::variant "
 
 # parse vcxproj file
 def parseVCProjFile(vcxprojFile):
@@ -175,6 +140,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     if target_type == "lib":
         fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
     else:
+        fileLines += ("add_subdirectory(../../third_party/protobuf/third_party/abseil-cpp/ build)\n\n")
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
 
     # link lib
