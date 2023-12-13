@@ -16,7 +16,7 @@
 class ControllerServer : muduo::noncopyable
 {
 public:
-	using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
+	
 	using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 	
 	ControllerServer(muduo::net::EventLoop* loop);
