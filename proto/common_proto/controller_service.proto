@@ -90,7 +90,7 @@ service ControllerService {
   rpc LsEnterGame (EnterGameRequest) returns (EnterGameResponse);
   rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (google.protobuf.Empty);
   rpc LsDisconnect (CtrlLsDisconnectRequest) returns (google.protobuf.Empty); 
-  rpc GsPlayerService (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
+  rpc GsPlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (google.protobuf.Empty);
   rpc EnterGsSucceed (EnterGameNodeSucceedRequest) returns (google.protobuf.Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);

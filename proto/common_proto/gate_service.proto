@@ -43,7 +43,7 @@ service GateService {
   rpc StartGS (GateNodeStartGSRequest) returns (google.protobuf.Empty);
   rpc StopGS (GateNodeStopGSRequest) returns (google.protobuf.Empty);
   rpc PlayerEnterGs (GateNodePlayerUpdateGameNodeRequest) returns (GateNodePlayerUpdateGameNodeResponese);
-  rpc PlayerMessage (NodeServiceMessageRequest) returns (google.protobuf.Empty);
+  rpc PlayerMessage (NodeRouteMessageRequest) returns (google.protobuf.Empty);
   rpc KickConnByController (GateNodeKickConnRequest) returns (google.protobuf.Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
