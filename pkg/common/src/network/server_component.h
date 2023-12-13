@@ -62,7 +62,4 @@ bool IsSameAddr(const muduo::net::InetAddress& conn_addr, const ServerInfo& serv
 	return server_info.ip() == conn_addr.toIp() && server_info.port() == conn_addr.port();
 }
 
-//static bool IsSameAddr(const muduo::net::InetAddress& conn_addr, const muduo::net::InetAddress& server_info)
-//{
-//	return server_info.toIp() == conn_addr.toIp() && server_info.port() == conn_addr.port();
-//}
+bool IsSameAddr(const muduo::net::InetAddress& conn_addr, const muduo::net::InetAddress& server_info);
