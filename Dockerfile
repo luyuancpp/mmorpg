@@ -6,7 +6,6 @@ RUN apt-get update && apt-get -y --no-install-recommends install \
     wget \ 
     make  \
     libboost-dev \
-    pkg-config \ 
     vim
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
