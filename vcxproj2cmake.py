@@ -140,7 +140,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     if target_type == "lib":
         fileLines += ("add_library(%s ${SOURCE_FILE})\n\n" % projectName)
     else:
-        fileLines += ("add_subdirectory(../../third_party/protobuf/third_party/abseil-cpp/ build)\n\n")
+        fileLines += ("add_subdirectory(../../third_party/protobuf/third_party/abseil-cpp/ ../../build)\n\n")
         fileLines += ("add_executable(%s ${SOURCE_FILE})\n\n" % projectName)
 
     # link lib
