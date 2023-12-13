@@ -7,20 +7,17 @@ echo $cpu
 
 if [ ! -d "cmakeinstall" ]; then
    mkdir cmakeinstall 
+   cd cmakeinstall 
+   wget https://github.com/Kitware/CMake/archive/refs/tags/v3.28.0.zip 
+   unzip v3.28.0.zip
+   cd CMake-3.28.0
+   ./bootstrap 
+   make -j$cpu 
+   make install
+   cd ../../
+   echo "cmake install ok"
 fi
-cd cmakeinstall 
-wget https://github.com/Kitware/CMake/archive/refs/tags/v3.28.0.zip 
-unzip v3.28.0.zip
-cd CMake-3.28.0
-./bootstrap 
-make -j$cpu 
-make install
-if test $? -ne 0; then 
-   echo "cmake install failed"
-   exit 
-fi
-cd ../../
-echo "cmake install ok"
+
 
 cd third_party/redis
 make -j$cpu
