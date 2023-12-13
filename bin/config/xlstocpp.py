@@ -59,7 +59,7 @@ def getcpph(datastring, sheetname):
         s += 'class %s_config\n{\npublic:\n' % (sheetname)
         s += '  using row_type = const %s_row*;\n' % (sheetname)
         s += '  using kv_type = std::unordered_map<uint32_t, row_type>;\n'
-        s += '  ~%s_config(){}\n' % (sheetname)
+        #s += '  ~%s_config(){}\n' % (sheetname)
         s += '  static %s_config& GetSingleton(){static %s_config singleton; return singleton;}\n' % (sheetname,sheetname)
         s += '  const %s_table& all()const{return data_;}\n'% (sheetname)
         s += '  row_type get(uint32_t keyid);\n'
