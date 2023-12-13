@@ -51,8 +51,8 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 }
 
 void GameServiceHandler::Send2Player(::google::protobuf::RpcController* controller,
-	const ::NodeServiceMessageRequest* request,
-	::NodeServiceMessageResponse* response,
+	const ::NodeRouteMessageRequest* request,
+	::NodeRouteMessageResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -198,7 +198,7 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
 }
 
 void GameServiceHandler::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
-	const ::NodeServiceMessageRequest* request,
+	const ::NodeRouteMessageRequest* request,
 	::google::protobuf::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
@@ -215,8 +215,8 @@ void GameServiceHandler::ControllerSend2PlayerViaGs(::google::protobuf::RpcContr
 }
 
 void GameServiceHandler::CallPlayer(::google::protobuf::RpcController* controller,
-	const ::NodeServiceMessageRequest* request,
-	::NodeServiceMessageResponse* response,
+	const ::NodeRouteMessageRequest* request,
+	::NodeRouteMessageResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
