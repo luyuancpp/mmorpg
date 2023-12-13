@@ -183,27 +183,6 @@
     <ClCompile Include="src\service\team_client_player_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\game_config\condition_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game_config\global_variable_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game_config\item_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game_config\mainscene_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game_config\mission_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game_config\monster_base_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game_config\scene_config.pb.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\lua\account_database_sol2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -367,6 +346,27 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\lua\team_comp_sol2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\condition_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\global_variable_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\item_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\mainscene_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\mission_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\monster_base_config.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game_config\scene_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
