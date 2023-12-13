@@ -12,7 +12,7 @@ libs = []
 projectName = ""
 link_mysql = ""
 
-abseil_libs = "absl::absl_check\
+abseil_libs = "absl::absl_check \
 absl::absl_log \
 absl::algorithm \
 absl::base \
@@ -148,7 +148,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     for lib in libs:
         fileLines += ("%s " % lib)
     fileLines += " muduo_base  muduo_net muduo_protobuf_codec muduo_protorpc_wire "
-    fileLines += " ${MYSQL_LIBS} protobuf hiredis lua z "
+    fileLines += " ${MYSQL_LIBS} protobuf hiredis lua z utf8_validity"
     fileLines += abseil_libs
     fileLines += " )"
 
