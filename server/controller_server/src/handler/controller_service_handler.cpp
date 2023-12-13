@@ -434,7 +434,6 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "session not found " << request->ex().session_id();
 		return;
 	}
-	const NodeMessageBody& message_extern = request->ex();
 	const auto it = controller_tls.player_list().find(*session_player_id);
 	if (it == controller_tls.player_list().end())
 	{
