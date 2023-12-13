@@ -10,12 +10,16 @@ enum  EnumCode : uint32_t
     kRetTableId = 2,
     kRetConfigData = 3,
     kRetEnttNull = 4,
-    kRetServiceNotOpen = 5, //改功能暂时关闭gate 用,gate写死了
-    kRetServerCrush = 6,//服务器关闭请重新登录 gate 用,gate写死了
-    kInvalidParam = 7,//未知参数
+    //改功能暂时关闭gate 用,gate写死了
+    kRetServiceNotOpen = 5,
+    //服务器关闭请重新登录 gate 用,gate写死了
+    kRetServerCrush = 6,
+    //未知参数
+    kInvalidParam = 7,
 
-    //login server 
-    kRetLoginCantFindAccount = 1000,//找不到
+    //login server
+    //找不到账号
+    kRetLoginCantFindAccount = 1000,
     kRetLoginAccountPlayerFull = 1001,
     kRetLoginCreatePlayerUnLoadAccount = 1002,
     kRetLoginCreatePlayerConnectionHasNotAccount = 1003,
@@ -25,26 +29,35 @@ enum  EnumCode : uint32_t
     kRetLoginEnteringGame = 1007,
     kRetLoginPlaying = 1008,
     kRetLoginCreatingPlayer = 1009,
-    kRetLoginWaitingEnterGame = 1010,//已经登录了，等待进入游戏
+    //已经登录了，等待进入游戏
+    kRetLoginWaitingEnterGame = 1010,
     kRetLoginEnterGuid = 1011,
     kRetLoginAccountNameEmpty = 1012,
     kRetLoginCreateConnectionAccountEmpty = 1013,
     kRetLoginEnterGameConnectionAccountEmpty = 1014,
     kRetLoginUnknownError = 1015,
     kRetLoginSessionDisconnect = 1016,
-    kRetLoginBeKickByAnOtherAccount = 1017,//在别的地方登录
+    //在别的地方登录
+    kRetLoginBeKickByAnOtherAccount = 1017,
 
     //Scene
     kRetEnterSceneNotFound = 4000,
     kRetEnterSceneNotFull = 4001,
-    kRetEnterSceneWeightRoundRobinMainScene = 4002,//所有场景已经满了
-    kRetEnterSceneCreatePlayer = 4003,//玩家进入不了跨服
-    kRetEnterGameGsCrash = 4004,//当前服务器不可进入，请重新进入
-    kRetEnterSceneServerType = 4005,//当前服务器不可切换场景
-    kRetEnterSceneParamError = 4006,//换场景参数错误
-    kRetEnterSceneSceneFull = 4007,//场景已经满了不能切换
-    kRetEnterSceneSceneNotFound = 4008,//您所要切换的场景不存在
-    kRetEnterSceneYouInCurrentScene = 4009,//您当前就在这个场景，无需切换
+    //所有场景已经满了
+    kRetEnterSceneWeightRoundRobinMainScene = 4002,
+    kRetNoUse = 4003,
+    //当前服务器不可进入，请重新进入
+    kRetEnterGameGsCrash = 4004,
+    //当前服务器不可切换场景
+    kRetEnterSceneServerType = 4005,
+    //换场景参数错误
+    kRetEnterSceneParamError = 4006,
+    //场景已经满了不能切换
+    kRetEnterSceneSceneFull = 4007,
+    //您所要切换的场景不存在
+    kRetEnterSceneSceneNotFound = 4008,
+    //您当前就在这个场景，无需切换
+    kRetEnterSceneYouInCurrentScene = 4009,
     kRetEnterSceneEnterCrossRoomScene = 4010,//不能进入跨服副本
     kRetEnterSceneGsInfoNull = 4011,//场景的数据不完整
     kRetEnterSceneGsFull = 4012,//gs 已经满了不能切换
@@ -112,7 +125,7 @@ if (ret != kRetOK)\
 }
 
 #define  CheckReturnClosureError(tip_code)\
-if (tip_code != kRetOK)\
+if ((tip_code) != kRetOK)\
 {\
     response->mutable_error()->set_id(tip_code);\
     return;\
@@ -131,7 +144,7 @@ return
 #define ReturnClosureOK ReturnClosureError(kRetOK);
 
 #define  ReturnAutoClosureError(tip_code)\
-if (tip_code != kRetOK)\
+if ((tip_code) != kRetOK)\
 {\
     response->mutable_error()->set_id(tip_code);\
     return;\

@@ -224,6 +224,7 @@
     <ClCompile Include="src\network\rpc_channel.cc" />
     <ClCompile Include="src\network\rpc_msg_route.cpp" />
     <ClCompile Include="src\network\rpc_server.cc" />
+    <ClCompile Include="src\network\server_component.cpp" />
     <ClCompile Include="src\network\session.cpp" />
     <ClCompile Include="src\redis_client\redis_client.cpp" />
     <ClCompile Include="src\system\bag\bag.cpp" />
