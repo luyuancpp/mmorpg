@@ -53,12 +53,12 @@ message Ctlr2GsEnterSceneRequest
 
 service GameService {
   rpc EnterGs (GameNodeEnterGsRequest) returns (google.protobuf.Empty);
-  rpc Send2Player (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
+  rpc Send2Player (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc ClientSend2Player (GameNodeRpcClientRequest) returns (GameNodeRpcClientResponse);
   rpc Disconnect (GameNodeDisconnectRequest) returns (google.protobuf.Empty); 
   rpc GateConnectGs (GameNodeConnectRequest) returns (google.protobuf.Empty); 
-  rpc ControllerSend2PlayerViaGs (NodeServiceMessageRequest) returns (google.protobuf.Empty);
-  rpc CallPlayer (NodeServiceMessageRequest) returns (NodeServiceMessageResponse);
+  rpc ControllerSend2PlayerViaGs (NodeRouteMessageRequest) returns (google.protobuf.Empty);
+  rpc CallPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
   rpc UpdateSession (UpdatePlayerSessionRequest) returns (google.protobuf.Empty);
