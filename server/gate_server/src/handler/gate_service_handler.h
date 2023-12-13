@@ -19,7 +19,7 @@ public:
 		 ::google::protobuf::Closure* done)override;
 
 	void PlayerMessage(::google::protobuf::RpcController* controller,
-		const ::NodeServiceMessageRequest* request,
+		const ::NodeRouteMessageRequest* request,
 		::google::protobuf::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 

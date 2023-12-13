@@ -9,8 +9,8 @@ public:
 		 ::google::protobuf::Closure* done)override;
 
 	void Send2Player(::google::protobuf::RpcController* controller,
-		const ::NodeServiceMessageRequest* request,
-		::NodeServiceMessageResponse* response,
+		const ::NodeRouteMessageRequest* request,
+		::NodeRouteMessageResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void ClientSend2Player(::google::protobuf::RpcController* controller,
@@ -29,13 +29,13 @@ public:
 		 ::google::protobuf::Closure* done)override;
 
 	void ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
-		const ::NodeServiceMessageRequest* request,
+		const ::NodeRouteMessageRequest* request,
 		::google::protobuf::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void CallPlayer(::google::protobuf::RpcController* controller,
-		const ::NodeServiceMessageRequest* request,
-		::NodeServiceMessageResponse* response,
+		const ::NodeRouteMessageRequest* request,
+		::NodeRouteMessageResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void RouteNodeStringMsg(::google::protobuf::RpcController* controller,

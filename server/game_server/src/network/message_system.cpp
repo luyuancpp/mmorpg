@@ -43,7 +43,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 		LOG_INFO << "gate not found " << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
-	NodeServiceMessageRequest message_wrapper;
+	NodeRouteMessageRequest message_wrapper;
 	message_wrapper.mutable_msg()->set_message_id(message_id);
 	message_wrapper.mutable_msg()->set_body(message.SerializeAsString());
 	message_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
@@ -84,7 +84,7 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 		LOG_ERROR << "Send2ControllerPlayer controller disconnect" << tls.registry.get<Guid>(player);
 		return;
 	}
-	NodeServiceMessageRequest msg_wrapper;
+	NodeRouteMessageRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_message_id(message_id);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());

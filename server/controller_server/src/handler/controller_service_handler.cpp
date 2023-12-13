@@ -417,8 +417,8 @@ void ControllerServiceHandler::LsDisconnect(::google::protobuf::RpcController* c
 }
 
 void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController* controller,
-	const ::NodeServiceMessageRequest* request,
-	::NodeServiceMessageResponse* response,
+	const ::NodeRouteMessageRequest* request,
+	::NodeRouteMessageResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
