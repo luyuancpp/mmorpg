@@ -53,7 +53,7 @@ echo "lua install ok"
 
 
 cd third_party/protobuf/
-cmake .  -DABSL_PROPAGATE_CXX_STD=TRUE 
+cmake .  -DABSL_PROPAGATE_CXX_STD=TRUE  -DCMAKE_CXX_STANDARD=20
 make install -j$cpu
 if test $? -ne 0; then 
    echo "protobuf install failed"
