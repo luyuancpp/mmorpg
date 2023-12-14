@@ -26,13 +26,6 @@
     <ClCompile Include="src\mainscene_config.cpp" />
     <ClCompile Include="src\mission_config.cpp" />
     <ClCompile Include="src\monster_base_config.cpp" />
-    <ClCompile Include="src\pbc\condition_config.pb.cc" />
-    <ClCompile Include="src\pbc\global_variable_config.pb.cc" />
-    <ClCompile Include="src\pbc\item_config.pb.cc" />
-    <ClCompile Include="src\pbc\mainscene_config.pb.cc" />
-    <ClCompile Include="src\pbc\mission_config.pb.cc" />
-    <ClCompile Include="src\pbc\monster_base_config.pb.cc" />
-    <ClCompile Include="src\pbc\scene_config.pb.cc" />
     <ClCompile Include="src\scene_config.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -44,13 +37,6 @@
     <ClInclude Include="src\mainscene_config.h" />
     <ClInclude Include="src\mission_config.h" />
     <ClInclude Include="src\monster_base_config.h" />
-    <ClInclude Include="src\pbc\condition_config.pb.h" />
-    <ClInclude Include="src\pbc\global_variable_config.pb.h" />
-    <ClInclude Include="src\pbc\item_config.pb.h" />
-    <ClInclude Include="src\pbc\mainscene_config.pb.h" />
-    <ClInclude Include="src\pbc\mission_config.pb.h" />
-    <ClInclude Include="src\pbc\monster_base_config.pb.h" />
-    <ClInclude Include="src\pbc\scene_config.pb.h" />
     <ClInclude Include="src\scene_config.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -156,7 +142,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>../../third_party/protobuf/src/;../common/;../../third_party/protobuf/third_party/abseil-cpp/;../../third_party/muduo/contrib/windows/include/;../../third_party/muduo;./src/pbc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../third_party/protobuf/src/;../common/;../../third_party/protobuf/third_party/abseil-cpp/;../../third_party/muduo/contrib/windows/include/;../../third_party/muduo;../pbc/src/game_config/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
