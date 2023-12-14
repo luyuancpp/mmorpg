@@ -56,6 +56,7 @@ class MessageAsyncClient
 public:
     using MessageValuePtr = std::shared_ptr<MessageValue>;
 
+    template <class Key, class MessageValue>
     struct Element
     {
         Key key_;
@@ -63,7 +64,7 @@ public:
         MessageValuePtr value_;
     };
 
-    using ElementPtr = std::shared_ptr<Element>;
+    using ElementPtr = std::shared_ptr<Element<Key, MessageValue>>;
     using LoadingQueue = std::unordered_map<std::string, ElementPtr>;
     using CommandCallback = std::function<void(Key, MessageValue&)>;
 
