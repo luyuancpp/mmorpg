@@ -17,7 +17,6 @@
 class GameServer : muduo::noncopyable
 {
 public:
-    using PbSyncRedisClientPtr = PbSyncRedisClientPtr;
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
     GameServer(muduo::net::EventLoop* loop);
