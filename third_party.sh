@@ -84,35 +84,37 @@ cp -rf * ../../../lib/
 cd ../../../
 echo "muduo install ok"
 
-mkdir deb
-cd deb
-apt-get remove mysql-common
-apt-get remove mysql-client
-apt-get remove mysql-community-server-core
-apt-get remove mariadb-server
-apt-get remove mariadb-client
-apt-get remove mariadb-client-core
-apt-get remove mariadb-server-core
-wget http://ftp.us.debian.org/debian/pool/main/o/openssl/libssl1.1_1.1.1w-0+deb11u1_amd64.deb
-apt install ./libssl1.1_1.1.1w-0+deb11u1_amd64.deb
-wget https://cdn.mysql.com//Downloads/MySQL-8.2/mysql-server_8.2.0-1debian12_amd64.deb-bundle.tar
-tar -xvf mysql-server_8.2.0-1debian12_amd64.deb-bundle.tar
+if [ ! -d "deb" ]; then
+   mkdir deb
+   cd deb
+   apt-get remove mysql-common
+   apt-get remove mysql-client
+   apt-get remove mysql-community-server-core
+   apt-get remove mariadb-server
+   apt-get remove mariadb-client
+   apt-get remove mariadb-client-core
+   apt-get remove mariadb-server-core
+   wget http://ftp.us.debian.org/debian/pool/main/o/openssl/libssl1.1_1.1.1w-0+deb11u1_amd64.deb
+   apt install ./libssl1.1_1.1.1w-0+deb11u1_amd64.deb
+   wget https://cdn.mysql.com//Downloads/MySQL-8.2/mysql-server_8.2.0-1debian12_amd64.deb-bundle.tar
+   tar -xvf mysql-server_8.2.0-1debian12_amd64.deb-bundle.tar
 
-apt install ./mysql-common_8.2.0-1debian12_amd64.deb
-apt install ./mysql-community-client-plugins_8.2.0-1debian12_amd64.deb
-apt install ./libmysqlclient22_8.2.0-1debian12_amd64.deb
-apt install ./libmysqlclient-dev_8.2.0-1debian12_amd64.deb
-apt install ./mysql-community-client-core_8.2.0-1debian12_amd64.deb
-apt install ./mysql-community-client_8.2.0-1debian12_amd64.deb
-apt install ./mysql-client_8.2.0-1debian12_amd64.deb
-apt install ./mysql-community-server-core_8.2.0-1debian12_amd64.deb
-apt install ./mysql-community-server_8.2.0-1debian12_amd64.deb
-apt install ./mysql-community-server-debug_8.2.0-1debian12_amd64.deb
-apt install ./mysql-community-test_8.2.0-1debian12_amd64.deb
-apt install ./mysql-community-test-debug_8.2.0-1debian12_amd64.deb
-apt install ./mysql-server_8.2.0-1debian12_amd64.deb
-cd ..
-echo "mysql install ok"
+   apt install ./mysql-common_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-community-client-plugins_8.2.0-1debian12_amd64.deb
+   apt install ./libmysqlclient22_8.2.0-1debian12_amd64.deb
+   apt install ./libmysqlclient-dev_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-community-client-core_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-community-client_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-client_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-community-server-core_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-community-server_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-community-server-debug_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-community-test_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-community-test-debug_8.2.0-1debian12_amd64.deb
+   apt install ./mysql-server_8.2.0-1debian12_amd64.deb
+   cd ..
+   echo "mysql install ok"
+fi
 
 cd third_party/zlib
  ./configure --64 --libdir=../../lib
