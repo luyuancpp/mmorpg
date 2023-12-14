@@ -53,6 +53,8 @@ buildcmakeproject pkg/config ../../
 
 buildcmakeproject pkg/common ../../
 
+buildcmakeproject third_party ../
+
 buildcmakeproject server/gate_server ../../
 
 buildcmakeproject server/database_server ../../
