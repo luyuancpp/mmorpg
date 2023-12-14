@@ -58,6 +58,7 @@
     <ClInclude Include="src\util\snow_flake.h" />
     <ClInclude Include="src\util\type_traits.h" />
     <ClInclude Include="src\util\utility.h" />
+    <ClInclude Include="src\network\process_info.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\comp\mission_comp.cpp" />
@@ -89,6 +90,7 @@
     <ClCompile Include="src\util\game_registry.cpp" />
     <ClCompile Include="src\util\utility.cpp" />
     <ClCompile Include="src\network\server_component.cpp" />
+    <ClCompile Include="src\network\process_info.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\game_rpc.proto" />
