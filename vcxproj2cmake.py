@@ -10,6 +10,7 @@ sourceFiles = []
 linkDirs = []
 libs = []
 projectName = ""
+outDir = ""
 link_mysql = ""
 
 abseil_libs = "absl::absl_check \
@@ -66,6 +67,9 @@ def parseVCProjFile(vcxprojFile):
                     if propertyNode.nodeName == "RootNamespace":
                         global projectName
                         projectName = propertyNode.firstChild.data
+                    if propertyNode.nodeName == "OutDir":
+                        global outDir
+                        outDir = propertyNode.firstChild.data    
             if subNode.nodeName == "ItemDefinitionGroup":
                 for defineGroup in subNode.childNodes:
                     for defineNode in defineGroup.childNodes:
@@ -97,8 +101,8 @@ def writeCMakeLists(vcxprojDir, target_type):
     if link_mysql:
         fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MYSQL_INCLUDE}")\n\n'
 
-    fileLines += 'set(EXECUTABLE_OUTPUT_PATH ../../bin)\n'
-    fileLines += 'set(LIBRARY_OUTPUT_PATH ../../lib)\n'
+    fileLines += ('set(EXECUTABLE_OUTPUT_PATH %s)\n' % outDir)
+    fileLines += ('set(LIBRARY_OUTPUT_PATH %s)\n' % outDir)
     if link_mysql:
         fileLines += 'execute_process(COMMAND mysql_config --cflags OUTPUT_VARIABLE MYSQL_CFLAGS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
         fileLines += 'execute_process(COMMAND mysql_config --libs OUTPUT_VARIABLE MYSQL_LIBS OUTPUT_STRIP_TRAILING_WHITESPACE)\n'
