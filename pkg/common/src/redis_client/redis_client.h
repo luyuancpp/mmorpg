@@ -79,7 +79,7 @@ public:
 
     void Save(const MessageValuePtr& message, const Key& key)
     {
-        ElementPtr element = std::make_shared<ElementPtr::element_type>();
+        ElementPtr element = std::make_shared<Element>();
         element->key_ = key;
         element->redis_key_ = full_name() + std::to_string(key);
         element->value_ = message;
@@ -98,7 +98,7 @@ public:
         {
             return;
         }
-        ElementPtr element = std::make_shared<ElementPtr::element_type>();
+        ElementPtr element = std::make_shared<Element>();
         element->key_ = key;
         element->redis_key_ = std::move(redis_key);
         loading_queue_.emplace(element->redis_key_, element);
