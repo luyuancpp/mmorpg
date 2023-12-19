@@ -175,10 +175,10 @@ def generate(vcxprojfile, vcxprojDir, target_type):
     return projectName
 
 link_mysql = "mysqlclient"
+generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 generate("./pkg/config/config.vcxproj", "./pkg/config/", "lib")
 generate("./pkg/common/common.vcxproj", "./pkg/common/", "lib")
 generate("./pkg/pbc/pbc.vcxproj", "./pkg/pbc/", "lib")
-generate("./third_party/third_party.vcxproj", "./third_party/", "lib")
 generate("./server/database_server/database_server.vcxproj", "./server/database_server/", "")
 generate("./server/controller_server/controller_server.vcxproj", "./server/controller_server/", "")
 generate("./server/login_server/login_server.vcxproj", "./server/login_server/", "")
