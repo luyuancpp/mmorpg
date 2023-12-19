@@ -5,6 +5,10 @@ echo $cpu
 
 ########third_party########
 
+cd third_party
+sed -i '8d' muduo/net/CMakeLists.txt
+cd ..
+
 if [ ! -d "cmakeinstall" ]; then
    mkdir cmakeinstall 
    cd cmakeinstall 
