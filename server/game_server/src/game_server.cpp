@@ -9,6 +9,7 @@
 #include "src/event_handler/event_handler.h"
 #include "src/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
+#include "src/network/process_info.h"
 #include "service/controller_service_service.h"
 #include "service/deploy_service_service.h"
 #include "service/lobby_scene_service.h"
@@ -92,7 +93,7 @@ void GameServer::ServerInfo(const ::servers_info_data& info)
     {
         StartGSRequest rq;
         rq.set_group(GameConfig::GetSingleton().config_info().group_id());
-        rq.mutable_my_info()->set_ip(muduo::ProcessInfo::localip());
+        rq.mutable_my_info()->set_ip(localip());
         rq.mutable_my_info()->set_id(gs_info_.id());
         rq.mutable_rpc_client()->set_ip(deploy_node_->local_addr().toIp());
         rq.mutable_rpc_client()->set_port(deploy_node_->local_addr().port());
