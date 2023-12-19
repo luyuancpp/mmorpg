@@ -83,6 +83,20 @@ def writeCMakeLists(vcxprojDir, target_type):
     # mini version
     fileLines = "cmake_minimum_required(VERSION 3.28)\n"
 
+    # set flags
+    fileLines += "set(CMAKE_VERBOSE_MAKEFILE on)\n"
+    fileLines += "set(CMAKE_CXX_STANDARD  20)\n"
+    fileLines += "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb")\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")\n'
+    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread ")\n\n'
+    if link_mysql:
+        fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MYSQL_INCLUDE}")\n\n'
+
     fileLines += 'set(EXECUTABLE_OUTPUT_PATH ../../bin)\n'
     fileLines += 'set(LIBRARY_OUTPUT_PATH ../../lib)\n'
     if link_mysql:
@@ -122,19 +136,7 @@ def writeCMakeLists(vcxprojDir, target_type):
         fileLines += (sourceUnit + " ")
     fileLines += ")\n\n"
 
-    # set flags
-    fileLines += "set(CMAKE_VERBOSE_MAKEFILE on)\n"
-    fileLines += "set(CMAKE_CXX_STANDARD  20)\n"
-    fileLines += "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")\n'
-    fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread ")\n\n'
-    if link_mysql:
-        fileLines += 'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${MYSQL_INCLUDE}")\n\n'
+
 
     # add exec or lib
     if target_type == "lib":
