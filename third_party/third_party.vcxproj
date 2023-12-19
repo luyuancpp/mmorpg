@@ -62,7 +62,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{fc29015b-fd9b-4ac9-832d-f660d2d7169d}</ProjectGuid>
-    <RootNamespace>base</RootNamespace>
+    <RootNamespace>third_party</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>third_party</ProjectName>
   </PropertyGroup>
