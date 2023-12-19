@@ -54,6 +54,9 @@ buildcmakeproject pkg/config ../../
 buildcmakeproject pkg/common ../../
 
 buildcmakeproject third_party ../
+cd third_party
+sed -i '9d' muduo/net/CMakeLists.txt
+cd ..
 
 buildcmakeproject server/gate_server ../../
 
