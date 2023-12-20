@@ -153,7 +153,7 @@ def writeCMakeLists(vcxprojDir, target_type):
     fileLines += ("target_link_libraries(%s " % projectName)
     for lib in libs:
         fileLines += ("%s " % lib)
-    fileLines += " muduo_base  muduo_net muduo_protobuf_codec muduo_protorpc_wire "
+    fileLines += " muduo_base  muduo_net muduo_protobuf_codec muduo_protorpc_wire mrediscli "
     fileLines += " ${MYSQL_LIBS} protobuf hiredis lua z utf8_validity "
     fileLines += abseil_libs
     fileLines += " )"

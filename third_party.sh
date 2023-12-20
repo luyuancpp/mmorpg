@@ -67,6 +67,7 @@ cd muduo
 cp -f ../../pkg/common/src/muduowindow/TimerId.h  muduo/net/ 
 cp -f ../../pkg/common/src/muduowindow/CMakeLists.txt  ./
 cp -f ../../pkg/common/src/muduowindow/muduo/net/protorpc/CMakeLists.txt  muduo/net/protorpc/
+cp -f ../../pkg/common/src/muduowindow/muduo/contrib/hiredis/CMakeLists.txt  contrib/hiredis/
 sed -i '66,70d' muduo/net/CMakeLists.txt
 sed -i '56,63d' muduo/net/CMakeLists.txt
 cp -f ../../pkg/common/src/muduowindow/autogen.sh muduo/net/protorpc/
