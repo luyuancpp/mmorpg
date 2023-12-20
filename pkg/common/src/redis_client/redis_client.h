@@ -107,7 +107,7 @@ public:
             format.c_str());
     }
 
-    MessageValuePtr CreateMessage() { return std::make_shared<MessageValuePtr::element_type>(); }
+    MessageValuePtr CreateMessage() { return std::make_shared<MessageValue>(); }
 private:
     void OnSaved(hiredis::Hiredis* c, redisReply* reply, ElementPtr element)
     {
