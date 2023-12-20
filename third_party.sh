@@ -31,6 +31,7 @@ echo "redis install ok"
 
 cd third_party/redis/deps/hiredis
 make -j$cpu
+make install
 if test $? -ne 0; then 
    echo "hiredis install failed"
    exit 
