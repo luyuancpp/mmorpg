@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
@@ -34,15 +35,31 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 				util.FileExists(dstFileName) {
 				return
 			}
-			cmd := exec.Command("protoc",
-				"--cpp_out="+config.PbcOutDir,
-				fileName,
-				"-I="+config.ProtoDir,
-				"-I="+config.ProtoDir+"common_proto/",
-				"-I="+config.ProtoDir+"component_proto/",
-				"-I="+config.ProtoDir+"event_proto/",
-				"-I="+config.ProtoDir+"logic_proto/",
-				"-I=../../../third_party/protobuf/src/")
+
+			sysType := runtime.GOOS
+			var cmd *exec.Cmd
+			if sysType == `linux` {
+				cmd = exec.Command("protoc",
+					"--cpp_out="+config.PbcOutDir,
+					fileName,
+					"-I="+config.ProtoDir,
+					"-I="+config.ProtoDir+"common_proto/",
+					"-I="+config.ProtoDir+"component_proto/",
+					"-I="+config.ProtoDir+"event_proto/",
+					"-I="+config.ProtoDir+"logic_proto/",
+					"-I=../../../third_party/protobuf/src/")
+			} else {
+				cmd = exec.Command("./protoc.exe",
+					"--cpp_out="+config.PbcOutDir,
+					fileName,
+					"-I="+config.ProtoDir,
+					"-I="+config.ProtoDir+"common_proto/",
+					"-I="+config.ProtoDir+"component_proto/",
+					"-I="+config.ProtoDir+"event_proto/",
+					"-I="+config.ProtoDir+"logic_proto/",
+					"-I=../../../third_party/protobuf/src/")
+			}
+
 			var out bytes.Buffer
 			var stderr bytes.Buffer
 			cmd.Stdout = &out
