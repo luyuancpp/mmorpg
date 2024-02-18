@@ -18,6 +18,7 @@
 #include "service/gate_service_service.h"
 #include "service/lobby_scene_service.h"
 #include "src/thread_local/controller_thread_local_storage.h"
+#include "src/thread_local/thread_local_storage_link.h"
 
 
 using namespace muduo;
@@ -211,6 +212,11 @@ void ControllerServer::InitConfig()
     DeployConfig::GetSingleton().Load("deploy.json");
     LobbyConfig::GetSingleton().Load("lobby.json");
     LoadAllConfigAsyncWhenServerLaunch();
+}
+
+void ControllerServer::InitMq()
+{
+    tlslink.producer = ROCKETMQ_NAMESPACE::Producer::newBuilder().build();
 }
 
 void ControllerServer::Connect2Lobby()

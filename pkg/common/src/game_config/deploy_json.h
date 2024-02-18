@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common_proto/common.pb.h"
+#include "common_proto/deploy_config.pb.h"
 
 
 class GameConfig

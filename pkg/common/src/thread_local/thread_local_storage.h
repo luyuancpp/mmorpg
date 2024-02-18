@@ -3,8 +3,9 @@
 #include "entt/src/entt/entity/registry.hpp"
 #include "entt/src/entt/signal/dispatcher.hpp"
 
-struct ThreadLocalStorage
+class ThreadLocalStorage
 {
+public:
 	entt::registry registry;
 	entt::dispatcher dispatcher;
 	entt::entity op_entity{entt::null};
