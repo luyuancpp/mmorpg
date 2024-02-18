@@ -173,6 +173,7 @@
     <ClInclude Include="src\game_config\deploy_json.h" />
     <ClInclude Include="src\game_config\lobby_config.h" />
     <ClInclude Include="src\jsoncpp\json.h" />
+    <ClInclude Include="src\mq\rocketmqproducer.h" />
     <ClInclude Include="src\network\codec\codec.h" />
     <ClInclude Include="src\network\codec\dispatcher.h" />
     <ClInclude Include="src\network\codec\dispatcher_lite.h" />
@@ -201,7 +202,8 @@
     <ClInclude Include="src\system\teams\team.h" />
     <ClInclude Include="src\system\teams\TeamSystem.h" />
     <ClInclude Include="src\event\team_event.h" />
-    <ClInclude Include="src\thread_local\common_logic_thread_local_storage.h" />
+    <ClInclude Include="src\thread_local\thread_local_storage_common_logic.h" />
+    <ClInclude Include="src\thread_local\thread_local_storage_link.h" />
     <ClInclude Include="src\thread_local\thread_local_storage.h" />
     <ClInclude Include="src\thread_local\thread_local_storage_lua.h" />
     <ClInclude Include="src\timer_task\timer_task.h" />
@@ -238,8 +240,9 @@
     <ClCompile Include="src\system\scene\servernode_system.cpp" />
     <ClCompile Include="src\system\teams\team.cpp" />
     <ClCompile Include="src\system\teams\TeamSystem.cpp" />
-    <ClCompile Include="src\thread_local\common_logic_thread_local_storage.cpp" />
+    <ClCompile Include="src\thread_local\thread_local_storage_common_logic.cpp" />
     <ClCompile Include="src\thread_local\thread_local_storage.cpp" />
+    <ClCompile Include="src\thread_local\thread_local_storage_link.cpp" />
     <ClCompile Include="src\thread_local\thread_local_storage_lua.cpp" />
     <ClCompile Include="src\timer_task\timer_task.cpp" />
     <ClCompile Include="src\util\defer.cpp" />

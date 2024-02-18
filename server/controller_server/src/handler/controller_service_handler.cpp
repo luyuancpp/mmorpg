@@ -12,7 +12,7 @@
 #include "src/comp/player_comp.h"
 #include "src/constants/tips_id.h"
 #include "src/system/scene/scene_system.h"
-#include "src/thread_local/common_logic_thread_local_storage.h"
+#include "src/thread_local/thread_local_storage_common_logic.h"
 #include "src/network/game_node.h"
 #include "src/network/login_node.h"
 #include "src/network/rpc_msg_route.h"
