@@ -40,3 +40,4 @@ Cmake/
 cmake-build-debug*/
 .idea/
 third_party/lua/vs2022
+*.pc
