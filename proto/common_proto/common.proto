@@ -18,11 +18,6 @@ message NodeInfo
   uint64 launch_time = 3;
 }
 
-message ConnetionParamJsonFormat
-{
-  repeated ConnetionParam data = 1;
-}
-
 message IpPort
 {
   string ip = 1;
