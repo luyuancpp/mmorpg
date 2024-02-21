@@ -55,6 +55,8 @@ void ControllerServer::Init()
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
 
+    InitMq();
+
 	Connect2Deploy();
 
     InitPlayerService();
@@ -64,8 +66,6 @@ void ControllerServer::Init()
    
     void InitServiceHandler();
     InitServiceHandler();
-
-    InitMq();
 }
 
 void ControllerServer::Connect2Deploy()
@@ -222,7 +222,7 @@ void ControllerServer::InitMq()
     CredentialsProviderPtr credentials_provider = 
         std::make_shared<StaticCredentialsProvider>(config_info.access_key(), config_info.access_secret());
 
-    tlslink.producer = Producer::newBuilder()
+    *tlslink.producer = Producer::newBuilder()
         .withConfiguration(Configuration::newBuilder()
                            .withEndpoints(config_info.access_point())
                            .withCredentialsProvider(credentials_provider)

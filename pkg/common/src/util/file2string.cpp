@@ -14,7 +14,7 @@ std::string File2String(const std::string& filename)
         // get length of file:
         if_stream.seekg(0, std::ifstream::end);
         const auto length = if_stream.tellg();
-        result.resize(static_cast<std::string::size_type>(length) + 1);
+        result.resize(static_cast<std::string::size_type>(length));
         if_stream.seekg(0, std::ifstream::beg);
         // read data as a block:
         if_stream.read(result.data(), length);
