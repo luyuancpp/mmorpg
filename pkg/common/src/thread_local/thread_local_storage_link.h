@@ -5,7 +5,7 @@
 class ThreadLocalStorageLink
 {
 public:
-    ROCKETMQ_NAMESPACE::Producer producer = ROCKETMQ_NAMESPACE::Producer::newBuilder().build();
+    std::unique_ptr<ROCKETMQ_NAMESPACE::Producer> producer;
 };
 
 extern thread_local ThreadLocalStorageLink tlslink;
