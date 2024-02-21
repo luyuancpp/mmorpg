@@ -30,6 +30,8 @@ public:
 
     void InitConfig();
 
+    void InitMq();
+
     void InitNetwork();
 
     void ServerInfo(const ::servers_info_data& info);
