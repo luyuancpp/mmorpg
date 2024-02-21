@@ -65,6 +65,7 @@ void ControllerServer::Init()
     void InitServiceHandler();
     InitServiceHandler();
 
+    InitMq();
 }
 
 void ControllerServer::Connect2Deploy()
@@ -216,7 +217,17 @@ void ControllerServer::InitConfig()
 
 void ControllerServer::InitMq()
 {
-    tlslink.producer = ROCKETMQ_NAMESPACE::Producer::newBuilder().build();
+    auto& config_info = GameConfig::GetSingleton().config_info();
+    using namespace ROCKETMQ_NAMESPACE;
+    CredentialsProviderPtr credentials_provider = 
+        std::make_shared<StaticCredentialsProvider>(config_info.access_key(), config_info.access_secret());
+
+    tlslink.producer = Producer::newBuilder()
+        .withConfiguration(Configuration::newBuilder()
+                           .withEndpoints(config_info.access_point())
+                           .withCredentialsProvider(credentials_provider)
+                           .build())
+        .build();
 }
 
 void ControllerServer::Connect2Lobby()
