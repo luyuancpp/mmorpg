@@ -96,7 +96,7 @@ public:
     std::string GetDeleteSql(const ::google::protobuf::Message& message, std::string where_clause);
     std::string GetTruncateSql(::google::protobuf::Message& message);
         
-    void AddTable(const ::google::protobuf::Message& message_default_instance);
+    void CreateMysqlTable(const ::google::protobuf::Message& message_default_instance);
 
     void set_mysql(MYSQL* mysql) { mysql_ = mysql; }
     PbSqlMap& tables() { return tables_; }

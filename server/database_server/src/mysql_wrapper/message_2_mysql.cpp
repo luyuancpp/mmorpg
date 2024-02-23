@@ -680,7 +680,7 @@ std::string Pb2DbTables::GetAlterTableAddFieldSql(const ::google::protobuf::Mess
     return it->second.GetAlterTableAddFieldSql();
 }
 
-void Pb2DbTables::AddTable(const ::google::protobuf::Message& message_default_instance)
+void Pb2DbTables::CreateMysqlTable(const ::google::protobuf::Message& message_default_instance)
 {
     tables_.emplace(message_default_instance.GetTypeName(), Message2MysqlSql(message_default_instance)); 
 }
