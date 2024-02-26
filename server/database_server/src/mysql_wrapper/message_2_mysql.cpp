@@ -128,7 +128,7 @@ const char* table_name_descriptor[google::protobuf::FieldDescriptor::MAX_CPPTYPE
 };
 
 #undef  GetMessage
-std::string ConvertFieldValue(const ::google::protobuf::Message& message, const google::protobuf::FieldDescriptor* fieldDesc, MYSQL* mysql)
+std::string SerializeFieldAsString(const ::google::protobuf::Message& message, const google::protobuf::FieldDescriptor* fieldDesc, MYSQL* mysql)
 {
     const auto reflect = message.GetReflection();
     std::string field_value;
@@ -320,7 +320,7 @@ std::string Message2MysqlSql::GetInsertSql(const ::google::protobuf::Message& me
         }
 
         field_desc = descriptor_->FindFieldByName(descriptor_->field(i)->name());
-        std::string value = ConvertFieldValue(message, field_desc, mysql);
+        std::string value = SerializeFieldAsString(message, field_desc, mysql);
         
         sql += "'";
         sql += value;
@@ -343,7 +343,7 @@ std::string Message2MysqlSql::GetInsertOnDupKeyForPrimaryKey(const ::google::pro
     std::string sql = GetInsertSql(message, mysql);
     sql += " ON DUPLICATE KEY UPDATE ";
     sql += " " + primarykey_field_->name();
-    std::string value = ConvertFieldValue(message, primarykey_field_, mysql);
+    std::string value = SerializeFieldAsString(message, primarykey_field_, mysql);
     sql += "=";
     sql += "'";
     sql += value;
@@ -470,7 +470,7 @@ std::string Message2MysqlSql::GetDeleteSql(const ::google::protobuf::Message& me
     sql += GetTypeName();
     sql += " where ";
     sql += descriptor_->field(kPrimaryKeyIndex)->name();
-    std::string value = ConvertFieldValue(message, primarykey_field_, mysql);
+    std::string value = SerializeFieldAsString(message, primarykey_field_, mysql);
     sql += " = '";
     sql += value;
     sql += "'";
@@ -518,7 +518,7 @@ std::string Message2MysqlSql::GetReplaceSql(const ::google::protobuf::Message& m
             bNeedComma = true;
         }
         file_desc = descriptor_->FindFieldByName(descriptor_->field(i)->name());
-        std::string value = ConvertFieldValue(message, file_desc, mysql);
+        std::string value = SerializeFieldAsString(message, file_desc, mysql);
         sql += "'";
         sql += value;
         sql += "'";
@@ -551,7 +551,7 @@ std::string Message2MysqlSql::GetUpdateSet(const ::google::protobuf::Message& me
                 bNeedComma = true;
             }
             sql += " " + field_name;
-            std::string value = ConvertFieldValue(message, file_desc, mysql);
+            std::string value = SerializeFieldAsString(message, file_desc, mysql);
             sql += "=";
             sql += "'";
             sql += value;
@@ -586,7 +586,7 @@ std::string Message2MysqlSql::GetUpdateSql(const ::google::protobuf::Message& me
                 bNeedComma = true;
             }
             sql += strPrimary;
-            std::string value = ConvertFieldValue(message, pFileDesc, mysql);
+            std::string value = SerializeFieldAsString(message, pFileDesc, mysql);
             sql += "='";
             sql += value;
             sql += "'";
@@ -614,7 +614,7 @@ std::string Message2MysqlSql::GetUpdateSql(::google::protobuf::Message& message,
         }
         sql += " " + descriptor_->field(i)->name();
         file_desc = descriptor_->FindFieldByName(descriptor_->field(i)->name());
-        std::string value = ConvertFieldValue(message, file_desc, mysql);
+        std::string value = SerializeFieldAsString(message, file_desc, mysql);
         sql += "=";
 
         sql += "'";
@@ -642,7 +642,7 @@ std::string Message2MysqlSql::GetTruncateSql(::google::protobuf::Message& messag
 
 std::string Message2MysqlSql::GetSelectColumn()
 {
-    return std::string("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS  WHERE  TABLE_NAME = '") + 
+    return std::string("SELECT COLUMN_NAME FROM INFORMATION_NAME.COLUMNS  WHERE  TABLE_NAME = '") + 
         GetTypeName() + 
         std::string("';");
 }
