@@ -52,27 +52,27 @@ uint32_t Bag::GetItemPos(Guid guid)
 	return kInvalidU32Id;
 }
 
-uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items)
+uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_add_item_map)
 {
 	auto empty_size = empty_grid_size();
 	UInt32UInt32UnorderedMap need_stack_sizes;//需要叠加的物品列表
 	bool has_stack_item = false;
 	//计算不可叠加商品
-	for (auto& item : try_items)
+	for (auto& try_item : try_add_item_map)
 	{
-		auto p_conf_item = get_item_conf(item.first);
+		auto p_conf_item = get_item_conf(try_item.first);
 		if (nullptr == p_conf_item)
 		{
 			return kRetTableId;
 		}
 		if (p_conf_item->max_statck_size() <= 0)
 		{
-			LOG_ERROR << "config error:" << item.first << "player:" << player_guid();
+			LOG_ERROR << "config error:" << try_item.first << "player:" << player_guid();
 			return kRetConfigData;
 		}
 		else if (p_conf_item->max_statck_size() == 1)//不可叠加占用一个格子
 		{
-			std::size_t need_grid_size = static_cast<std::size_t>(p_conf_item->max_statck_size() * item.second);
+			std::size_t need_grid_size = static_cast<std::size_t>(p_conf_item->max_statck_size() * try_item.second);
 			if (empty_size <= 0 || empty_size < need_grid_size)
 			{
 				return kRetBagAdequateAddItemSize;
@@ -81,8 +81,7 @@ uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items)
 		}
 		else //可以叠加
 		{
-			//todo : bug
-			need_stack_sizes.emplace(item.first, item.second);
+			need_stack_sizes.emplace(try_item.first, try_item.second);
 			has_stack_item = true;
 		}
 	}
@@ -272,38 +271,38 @@ void Bag::Neaten()
 	}
 	GuidVector clear_item_guids;
 	//开始叠加
-	for (auto& it : same_items)
+	for (auto& item : same_items)
 	{
-		if (it.size() == 1)//只有一个，自然不在叠加的计算之内
+		if (item.size() == 1)//只有一个，自然不在叠加的计算之内
 		{
 			continue;
 		}
-		auto config_id = (*it.begin())->config_id();
+		auto config_id = (*item.begin())->config_id();
 		auto p_c_item = get_item_conf(config_id);//上面判断过了，其他人不要模仿
 		uint32_t sz = 0;
-		for (auto& ji : it)
+		for (auto& ji : item)
 		{
 			sz += ji->size();
 		}
 		std::size_t index = 0;//使用了的物品下标
-		for (index = 0; index < it.size(); ++index)
+		for (index = 0; index < item.size(); ++index)
 		{
 			if (p_c_item->max_statck_size() >= sz)
 			{
-				it[index]->set_size(sz);
+				item[index]->set_size(sz);
 				++index;//下标加1，break并没有加
 				break;
 			}
 			else
 			{
-				it[index]->set_size(p_c_item->max_statck_size());
+				item[index]->set_size(p_c_item->max_statck_size());
 				sz -= p_c_item->max_statck_size();
 			}
 		}
-		for (; index < it.size(); ++index)
+		for (; index < item.size(); ++index)
 		{
-			it[index]->set_size(0);//被清空的物品
-			clear_item_guids.emplace_back(it[index]->guid());
+			item[index]->set_size(0);//被清空的物品
+			clear_item_guids.emplace_back(item[index]->guid());
 		}
 	}
 	if (clear_item_guids.empty())
