@@ -1,25 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\common\src\game_logic\bag\bag.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
     <ClCompile Include="bag_test.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_logic\bag\item.cpp">
+    <ClCompile Include="..\..\pkg\common\src\system\bag\bag.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\game_config\item_config.cpp">
+    <ClCompile Include="..\..\pkg\common\src\system\bag\item.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\util\file2string.cpp">
+    <ClCompile Include="..\..\pkg\pbc\src\game_config\item_config.pb.cc">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\component_proto\item_base_comp.pb.cc">
+    <ClCompile Include="..\..\pkg\pbc\src\component_proto\item_base_comp.pb.cc">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\game_config\item_config.pb.cc" />
+    <ClCompile Include="..\..\pkg\pbc\src\component_proto\item_comp.pb.cc">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\pkg\common\src\util\file2string.cpp">
+      <Filter>Include</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Include">
@@ -30,27 +32,26 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\common\src\game_logic\bag\bag.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_logic\bag\item.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\component_proto\item_base.pb.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\item_config.pb.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\game_config\item_config.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\src\util\file2string.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\src\return_code\error_code.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\game_config\item_config.pb.h" />
+    <ClInclude Include="..\..\pkg\common\src\system\bag\bag.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pkg\common\src\system\bag\item.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pkg\config\src\item_config.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pkg\pbc\src\game_config\item_config.pb.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\pkg\pbc\src\component_proto\item_base_comp.pb.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

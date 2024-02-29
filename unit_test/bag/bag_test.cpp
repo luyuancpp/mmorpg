@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include "src/game_config/item_config.h"
+#include "item_config.h"
 
-#include "src/game_logic/bag/bag.h"
+#include "src/system/bag/bag.h"
 
-#include "src/game_logic/tips_id.h"
+#include "src/constants/tips_id.h"
 
 TEST(BagTest, NullItem)
 {
@@ -253,7 +253,7 @@ TEST(BagTest, AdequateItem)
     uint32_t config_id2 = 2;
     uint32_t config_id11 = 11;
     UInt32UInt32UnorderedMap adequate_item{ {config_id10 , 1} };
-    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//�ձ�������
+    EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));//�ձ�������
     CreateItemParam p;
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
@@ -263,7 +263,7 @@ TEST(BagTest, AdequateItem)
     adequate_item[config_id10] = get_item_conf(p.item_base_db.config_id())->max_statck_size() / 2;
     EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
     adequate_item.emplace(config_id1, 1);//���ɵ���һ��
-    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));
+    EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));
 
     p.item_base_db.set_config_id(config_id1);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
@@ -273,21 +273,21 @@ TEST(BagTest, AdequateItem)
     adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size();//1��10�ɵ���999
     EXPECT_EQ(kRetOK, bag.AdequateItem(adequate_item));
     adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size() + 1;//1��10�ɵ���1000
-    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));
+    EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));
     adequate_item[config_id10] = get_item_conf(config_id10)->max_statck_size() * 3;//3��10�ɵ���999*3
-    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));
+    EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));
 
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
     item = CreateItem(p);//����һ�����Ե��ӵ�
     EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//2��10�ĵ���999
+    EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));//2��10�ĵ���999
 
     p.item_base_db.set_config_id(config_id11);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size() * 3);
     item = CreateItem(p);//����һ�����Ե��ӵ�
     EXPECT_EQ(kRetOK, bag.AddItem(item));
-    EXPECT_EQ(kRetBagAdequatetem, bag.AdequateItem(adequate_item));//2��10�ĵ���999
+    EXPECT_EQ(kRetBagAdequateItem, bag.AdequateItem(adequate_item));//2��10�ĵ���999
 
     p.item_base_db.set_config_id(config_id10);
     p.item_base_db.set_size(get_item_conf(p.item_base_db.config_id())->max_statck_size());
