@@ -58,21 +58,21 @@ uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items)
 	UInt32UInt32UnorderedMap need_stack_sizes;//需要叠加的物品列表
 	bool has_stack_item = false;
 	//计算不可叠加商品
-	for (auto& it : try_items)
+	for (auto& item : try_items)
 	{
-		auto p_c_item = get_item_conf(it.first);
-		if (nullptr == p_c_item)
+		auto p_conf_item = get_item_conf(item.first);
+		if (nullptr == p_conf_item)
 		{
 			return kRetTableId;
 		}
-		if (p_c_item->max_statck_size() <= 0)
+		if (p_conf_item->max_statck_size() <= 0)
 		{
-			LOG_ERROR << "config error:" << it.first << "player:" << player_guid();
+			LOG_ERROR << "config error:" << item.first << "player:" << player_guid();
 			return kRetConfigData;
 		}
-		else if (p_c_item->max_statck_size() == 1)//不可叠加占用一个格子
+		else if (p_conf_item->max_statck_size() == 1)//不可叠加占用一个格子
 		{
-			std::size_t need_grid_size = static_cast<std::size_t>(p_c_item->max_statck_size() * it.second);
+			std::size_t need_grid_size = static_cast<std::size_t>(p_conf_item->max_statck_size() * item.second);
 			if (empty_size <= 0 || empty_size < need_grid_size)
 			{
 				return kRetBagAdequateAddItemSize;
@@ -81,7 +81,8 @@ uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items)
 		}
 		else //可以叠加
 		{
-			need_stack_sizes.emplace(it.first, it.second);
+			//todo : bug
+			need_stack_sizes.emplace(item.first, item.second);
 			has_stack_item = true;
 		}
 	}
@@ -91,16 +92,16 @@ uint32_t Bag::AdequateSizeAddItem(const UInt32UInt32UnorderedMap& try_items)
 		return kRetOK;
 	}
 
-	for (auto& it : items_)
+	for (auto& item : items_)
 	{
 		for (auto& ji : need_stack_sizes)
 		{
-			if (it.second.config_id() != ji.first)
+			if (item.second.config_id() != ji.first)
 			{
 				continue;
 			}
-			auto p_c_item = get_item_conf(ji.first);//前面判断过了
-			auto remain_stack_size = p_c_item->max_statck_size() - it.second.size();
+			auto p_conf_item = get_item_conf(ji.first);//前面判断过了
+			auto remain_stack_size = p_conf_item->max_statck_size() - item.second.size();
 			if (remain_stack_size <= 0)//不可以叠加
 			{
 				continue;
@@ -148,13 +149,12 @@ uint32_t Bag::AdequateItem(const UInt32UInt32UnorderedMap& adequate_items)
 				LOG_ERROR << "config error:" << it.first << "player:" << player_guid();
 				return kRetConfigData;
 			}
-			auto sz = it.second.size();
-			if (ji.second <= sz)
+			if (ji.second <= it.second.size())
 			{
 				stack_item_list.erase(ji.first);//该物品叠加成功,从列表删除
 				break;
 			}
-			ji.second -= sz;
+			ji.second -= it.second.size();
 		}
 		if (stack_item_list.empty())
 		{
