@@ -184,8 +184,6 @@ std::string Message2MysqlTable::GetCreateTableSqlStmt()
         boost::split(unique_keys_, options_.GetExtension(OptionUniqueKey), boost::is_any_of(","));
     }
     auto_increase_key_ = options_.GetExtension(OptionAutoIncrementKey);
-    foreign_keys_ = options_.GetExtension(OptionForeignKey);
-    foreign_references_ = options_.GetExtension(OptionForeignReferences);
 
     sql += " (";
     bool need_comma = false;
@@ -217,14 +215,7 @@ std::string Message2MysqlTable::GetCreateTableSqlStmt()
     sql += ", PRIMARY KEY (";
     sql += options_.GetExtension(OptionPrimaryKey);
     sql += ")";
-    if (!foreign_keys_.empty() && !foreign_references_.empty())
-    {
-        sql += ", FOREIGN KEY (";
-        sql += foreign_keys_;
-        sql += ")";
-        sql += "REFERENCES ";
-        sql += foreign_references_;
-    }
+ 
     if (options_.GetExtension(OptionUniqueKey).length() > 0)
     {
         sql += ", UNIQUE KEY (";
