@@ -23,7 +23,7 @@ void MysqlDatabase::Init()
         Execute(pb2db_.GetCreateTableSql(it.second.default_instance()));
         auto cb = std::bind(&Message2MysqlSqlStmt::OnSelectTableColumnReturnSqlStmt, &it.second,
             std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-        Query(it.second.GetSelectColumn(), std::move(cb)); 
+        Query(it.second.GetSelectColumnStmt(), std::move(cb));
         auto alter_sql = pb2db_.GetAlterTableAddFieldSql(it.second.default_instance());
         if (!alter_sql.empty())
         {

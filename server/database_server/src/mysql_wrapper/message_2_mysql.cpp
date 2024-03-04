@@ -666,7 +666,7 @@ std::string Pb2DbTables::GetCreateTableSql(const ::google::protobuf::Message& me
     {
         return "";
     }
-    return it->second.GetCreateTableSql();
+    return it->second.GetCreateTableSqlStmt();
 }
 
 std::string Pb2DbTables::GetAlterTableAddFieldSql(const ::google::protobuf::Message& message)
@@ -677,7 +677,7 @@ std::string Pb2DbTables::GetAlterTableAddFieldSql(const ::google::protobuf::Mess
     {
         return "";
     }
-    return it->second.GetAlterTableAddFieldSql();
+    return it->second.GetAlterTableAddFieldSqlStmt();
 }
 
 void Pb2DbTables::CreateMysqlTable(const ::google::protobuf::Message& message_default_instance)
@@ -693,7 +693,7 @@ std::string Pb2DbTables::GetInsertSql(::google::protobuf::Message& message)
     {
         return "";
     }
-    return it->second.GetInsertSql(message, mysql_);
+    return it->second.GetInsertSqlStmt(message, mysql_);
 }
 
 std::string Pb2DbTables::GetReplaceSql(const ::google::protobuf::Message& message)
@@ -704,7 +704,7 @@ std::string Pb2DbTables::GetReplaceSql(const ::google::protobuf::Message& messag
     {
         return "";
     }
-    return it->second.GetReplaceSql(message, mysql_);
+    return it->second.GetReplaceSqlStmt(message, mysql_);
 }
 
 std::string Pb2DbTables::GetInsertOnDupUpdateSql(const ::google::protobuf::Message& message)
@@ -715,7 +715,7 @@ std::string Pb2DbTables::GetInsertOnDupUpdateSql(const ::google::protobuf::Messa
     {
         return "";
     }
-    return it->second.GetInsertOnDupUpdateSql(message, mysql_);
+    return it->second.GetInsertOnDupUpdateSqlStmt(message, mysql_);
 }
 
 std::string Pb2DbTables::GetInsertOnDupKeyForPrimaryKey(const ::google::protobuf::Message& message)
@@ -726,7 +726,7 @@ std::string Pb2DbTables::GetInsertOnDupKeyForPrimaryKey(const ::google::protobuf
     {
         return "";
     }
-    return it->second.GetInsertOnDupKeyForPrimaryKey(message, mysql_);
+    return it->second.GetInsertOnDupKeyForPrimaryKeySqlStmt(message, mysql_);
 }
 
 std::string Pb2DbTables::GetUpdateSql(::google::protobuf::Message& message)
@@ -737,7 +737,7 @@ std::string Pb2DbTables::GetUpdateSql(::google::protobuf::Message& message)
     {
         return "";
     }
-    return it->second.GetUpdateSql(message, mysql_);
+    return it->second.GetUpdateSqlStmt(message, mysql_);
 }
 
 std::string Pb2DbTables::GetUpdateSql(::google::protobuf::Message& message,  std::string where_clause)
@@ -748,7 +748,7 @@ std::string Pb2DbTables::GetUpdateSql(::google::protobuf::Message& message,  std
     {
         return "";
     }
-    return it->second.GetUpdateSql(message, mysql_, where_clause);
+    return it->second.GetUpdateSqlStmt(message, mysql_, where_clause);
 }
 
 std::string Pb2DbTables::GetSelectSql(::google::protobuf::Message& message, const std::string& key, const std::string& val)
@@ -759,7 +759,7 @@ std::string Pb2DbTables::GetSelectSql(::google::protobuf::Message& message, cons
     {
         return "";
     }
-    return it->second.GetSelectSql(key, val);
+    return it->second.GetSelectSqlStmt(key, val);
 }
 
 std::string Pb2DbTables::GetSelectSql(::google::protobuf::Message& message, const std::string& where_clause)
@@ -770,7 +770,7 @@ std::string Pb2DbTables::GetSelectSql(::google::protobuf::Message& message, cons
     {
         return "";
     }
-    return it->second.GetSelectSql(where_clause);
+    return it->second.GetSelectSqlStmt(where_clause);
 }
 
 std::string Pb2DbTables::GetSelectAllSql(::google::protobuf::Message& message)
@@ -781,7 +781,7 @@ std::string Pb2DbTables::GetSelectAllSql(::google::protobuf::Message& message)
     {
         return "";
     }
-    return it->second.GetSelectAllSql();
+    return it->second.GetSelectAllSqlStmt();
 }
 
 
@@ -793,7 +793,7 @@ std::string Pb2DbTables::GetSelectAllSql(::google::protobuf::Message& message, c
     {
         return "";
     }
-    return it->second.GetSelectAllSql(where_clause);
+    return it->second.GetSelectAllSqlStmt(where_clause);
 }
 
 std::string Pb2DbTables::GetDeleteSql(const ::google::protobuf::Message& message)
@@ -804,7 +804,7 @@ std::string Pb2DbTables::GetDeleteSql(const ::google::protobuf::Message& message
     {
         return "";
     }
-    return it->second.GetDeleteSql(message, mysql_);
+    return it->second.GetDeleteSqlStmt(message, mysql_);
 }
 
 std::string Pb2DbTables::GetDeleteSql(const ::google::protobuf::Message& message, std::string where_clause)
@@ -815,7 +815,7 @@ std::string Pb2DbTables::GetDeleteSql(const ::google::protobuf::Message& message
     {
         return "";
     }
-    return it->second.GetDeleteSql(where_clause, mysql_);
+    return it->second.GetDeleteSqlStmt(where_clause, mysql_);
 }
 
 std::string Pb2DbTables::GetTruncateSql(::google::protobuf::Message& message)
@@ -826,5 +826,5 @@ std::string Pb2DbTables::GetTruncateSql(::google::protobuf::Message& message)
     {
         return "";
     }
-    return it->second.GetTruncateSql(message);
+    return it->second.GetTruncateSqlStmt(message);
 }
