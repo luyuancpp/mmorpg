@@ -21,7 +21,7 @@ void MysqlDatabase::Init()
     for (auto& it : pb2db_.tables())
     {
         Execute(pb2db_.GetCreateTableSql(it.second.default_instance()));
-        auto cb = std::bind(&Message2MysqlSql::OnSelectTableColumnReturn, &it.second,
+        auto cb = std::bind(&Message2MysqlSqlStmt::OnSelectTableColumnReturnSqlStmt, &it.second,
             std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         Query(it.second.GetSelectColumn(), std::move(cb)); 
         auto alter_sql = pb2db_.GetAlterTableAddFieldSql(it.second.default_instance());
@@ -40,7 +40,7 @@ void MysqlDatabase::LoadOne(::google::protobuf::Message& message)
     {
         return;
     }
-    FillMessageField(message, *result);
+    ParseFromString(message, *result);
 }
 
 void MysqlDatabase::LoadOne(::google::protobuf::Message& message, const std::string& where_clause)
@@ -51,7 +51,7 @@ void MysqlDatabase::LoadOne(::google::protobuf::Message& message, const std::str
     {
         return;
     }
-    FillMessageField(message, *result);
+    ParseFromString(message, *result);
 }
 
 void MysqlDatabase::SaveOne(const ::google::protobuf::Message& message)

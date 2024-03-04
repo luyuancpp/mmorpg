@@ -27,7 +27,7 @@ public:
         auto fill_message = [this, &rf_message, &scratch_space](const ResultRowPtr& ptr)-> bool
         {
             scratch_space.Clear();
-            FillMessageField(scratch_space, *ptr);
+            ParseFromString(scratch_space, *ptr);
             rf_message.Add(scratch_space);
             return true;
         };
@@ -47,7 +47,7 @@ public:
         auto fill_message = [this, &rf_message, &scratch_space](const ResultRowPtr& ptr)-> bool
         {
             scratch_space.Clear();
-            FillMessageField(scratch_space, *ptr);
+            ParseFromString(scratch_space, *ptr);
             rf_message.Add(scratch_space);
             return true;
         };

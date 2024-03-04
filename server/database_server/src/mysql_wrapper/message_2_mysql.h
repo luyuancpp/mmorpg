@@ -16,15 +16,15 @@
 
 static int32_t kPrimaryKeyIndex = 0;
 
-void FillMessageField(::google::protobuf::Message& message, const ResultRow& row);
+void ParseFromString(::google::protobuf::Message& message, const ResultRow& row);
     
-class Message2MysqlSql
+class Message2MysqlSqlStmt
 {
 public:
     using Fields = std::unordered_map<std::size_t, std::string>;
     using ResultRowPtr = std::unique_ptr<ResultRow>;
 
-    Message2MysqlSql(const ::google::protobuf::Message& message_default_instance)
+    Message2MysqlSqlStmt(const ::google::protobuf::Message& message_default_instance)
         : default_instance_(message_default_instance),
             descriptor_(default_instance_.GetDescriptor()),
             options_(descriptor_->options())
@@ -36,24 +36,24 @@ public:
     inline const std::string& GetTypeName() { return default_instance_.GetDescriptor()->full_name(); }
     const ::google::protobuf::Message& default_instance() { return default_instance_; }
 
-    std::string GetCreateTableSql();
-    std::string GetAlterTableAddFieldSql();
-    std::string GetInsertSql(const ::google::protobuf::Message& message, MYSQL* mysql);
-    std::string GetSelectSql(const std::string& key, const std::string& val);
-    std::string GetSelectSql( const std::string& where_clause);
-    std::string GetSelectAllSql();
-    std::string GetSelectAllSql(const std::string& where_clause);
-    std::string GetInsertOnDupUpdateSql(const ::google::protobuf::Message& message, MYSQL* mysql);
-    std::string GetInsertOnDupKeyForPrimaryKey(const ::google::protobuf::Message& message, MYSQL* mysql);
-    std::string GetDeleteSql(const ::google::protobuf::Message& message, MYSQL* mysql);
-    std::string GetDeleteSql(const std::string& where_clause, MYSQL* mysql);
-    std::string GetReplaceSql(const ::google::protobuf::Message& message, MYSQL* mysql);
-    std::string GetUpdateSql(const ::google::protobuf::Message& message, MYSQL* mysql);
-    std::string GetUpdateSql( ::google::protobuf::Message& message, MYSQL* mysql, std::string where_clause);
-    std::string GetTruncateSql(::google::protobuf::Message& message);
-    std::string GetSelectColumn();
+    std::string GetCreateTableSqlStmt();
+    std::string GetAlterTableAddFieldSqlStmt();
+    std::string GetInsertSqlStmt(const ::google::protobuf::Message& message, MYSQL* mysql);
+    std::string GetSelectSqlStmt(const std::string& key, const std::string& val);
+    std::string GetSelectSqlStmt( const std::string& where_clause);
+    std::string GetSelectAllSqlStmt();
+    std::string GetSelectAllSqlStmt(const std::string& where_clause);
+    std::string GetInsertOnDupUpdateSqlStmt(const ::google::protobuf::Message& message, MYSQL* mysql);
+    std::string GetInsertOnDupKeyForPrimaryKeySqlStmt(const ::google::protobuf::Message& message, MYSQL* mysql);
+    std::string GetDeleteSqlStmt(const ::google::protobuf::Message& message, MYSQL* mysql);
+    std::string GetDeleteSqlStmt(const std::string& where_clause, MYSQL* mysql);
+    std::string GetReplaceSqlStmt(const ::google::protobuf::Message& message, MYSQL* mysql);
+    std::string GetUpdateSqlStmt(const ::google::protobuf::Message& message, MYSQL* mysql);
+    std::string GetUpdateSqlStmt( ::google::protobuf::Message& message, MYSQL* mysql, std::string where_clause);
+    std::string GetTruncateSqlStmt(::google::protobuf::Message& message);
+    std::string GetSelectColumnStmt();
 
-    bool OnSelectTableColumnReturn(const MYSQL_ROW&, const unsigned long*, uint32_t);
+    bool OnSelectTableColumnReturnSqlStmt(const MYSQL_ROW&, const unsigned long*, uint32_t);
 
        
 private:
@@ -76,7 +76,7 @@ private:
 class Pb2DbTables
 {
 public:
-    using PbSqlMap = std::unordered_map<std::string, Message2MysqlSql>;
+    using PbSqlMap = std::unordered_map<std::string, Message2MysqlSqlStmt>;
 
     void set_auto_increment(const ::google::protobuf::Message& message_default_instance, uint64_t auto_increment);
 

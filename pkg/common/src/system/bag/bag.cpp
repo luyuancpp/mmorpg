@@ -8,16 +8,16 @@
 
 std::size_t Bag::GetItemStackSize(uint32_t config_id)const
 {
-	std::size_t sz = 0;
+	std::size_t size_sum = 0;
 	for (auto&  it : items_)
 	{
 		if (it.second.config_id() != config_id)
 		{
 			continue;
 		}
-		sz += it.second.size();
+		size_sum += it.second.size();
 	}
-	return sz;
+	return size_sum;
 }
 
 Item* Bag::GetItemByGuid(Guid guid)
