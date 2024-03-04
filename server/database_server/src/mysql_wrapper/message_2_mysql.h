@@ -18,13 +18,13 @@ static int32_t kPrimaryKeyIndex = 0;
 
 void ParseFromString(::google::protobuf::Message& message, const ResultRow& row);
     
-class Message2MysqlSqlStmt
+class Message2MysqlTable
 {
 public:
     using Fields = std::unordered_map<std::size_t, std::string>;
     using ResultRowPtr = std::unique_ptr<ResultRow>;
 
-    Message2MysqlSqlStmt(const ::google::protobuf::Message& message_default_instance)
+    Message2MysqlTable(const ::google::protobuf::Message& message_default_instance)
         : default_instance_(message_default_instance),
             descriptor_(default_instance_.GetDescriptor()),
             options_(descriptor_->options())
@@ -75,35 +75,35 @@ private:
     std::string db_name_;
 };
 
-class Pb2DbTables
+class PB2DBTables
 {
 public:
-    using PbSqlMap = std::unordered_map<std::string, Message2MysqlSqlStmt>;
+    using PbTableMap = std::unordered_map<std::string, Message2MysqlTable>;
 
     void set_auto_increment(const ::google::protobuf::Message& message_default_instance, uint64_t auto_increment);
     void set_db_name(const std::string& db_name);
-    std::string GetCreateTableSql(const ::google::protobuf::Message& message);
-    std::string GetAlterTableAddFieldSql(const ::google::protobuf::Message& message);
-    std::string GetInsertSql(::google::protobuf::Message& message);
-    std::string GetReplaceSql(const::google::protobuf::Message& message);
-    std::string GetInsertOnDupUpdateSql(const ::google::protobuf::Message& message);
-    std::string GetInsertOnDupKeyForPrimaryKey(const ::google::protobuf::Message& message);
-    std::string GetUpdateSql(::google::protobuf::Message& message);
-    std::string GetUpdateSql(::google::protobuf::Message& message, std::string where_clause);
-    std::string GetSelectSql(::google::protobuf::Message& message, const std::string& key, const std::string& val);
-    std::string GetSelectSql(::google::protobuf::Message& message, const std::string& where_clause);
-    std::string GetSelectAllSql(::google::protobuf::Message& message);
-    std::string GetSelectAllSql(::google::protobuf::Message& message, const std::string& where_clause);
-    std::string GetDeleteSql(const ::google::protobuf::Message& message);
-    std::string GetDeleteSql(const ::google::protobuf::Message& message, std::string where_clause);
-    std::string GetTruncateSql(::google::protobuf::Message& message);
+    std::string GetCreateTableSqlStmt(const ::google::protobuf::Message& message);
+    std::string GetAlterTableAddFieldSqlStmt(const ::google::protobuf::Message& message);
+    std::string GetInsertSqlStmt(::google::protobuf::Message& message);
+    std::string GetReplaceSqlStmt(const::google::protobuf::Message& message);
+    std::string GetInsertOnDupUpdateSqlStmt(const ::google::protobuf::Message& message);
+    std::string GetInsertOnDupKeyForPrimaryKeySqlStmt(const ::google::protobuf::Message& message);
+    std::string GetUpdateSqlStmt(::google::protobuf::Message& message);
+    std::string GetUpdateSqlStmt(::google::protobuf::Message& message, std::string where_clause);
+    std::string GetSelectSqlStmt(::google::protobuf::Message& message, const std::string& key, const std::string& val);
+    std::string GetSelectSqlStmt(::google::protobuf::Message& message, const std::string& where_clause);
+    std::string GetSelectAllSqlStmt(::google::protobuf::Message& message);
+    std::string GetSelectAllSqlStmt(::google::protobuf::Message& message, const std::string& where_clause);
+    std::string GetDeleteSqlStmt(const ::google::protobuf::Message& message);
+    std::string GetDeleteSqlStmt(const ::google::protobuf::Message& message, std::string where_clause);
+    std::string GetTruncateSqlStmt(::google::protobuf::Message& message);
         
     void CreateMysqlTable(const ::google::protobuf::Message& message_default_instance);
 
     void set_mysql(MYSQL* mysql) { mysql_ = mysql; }
-    PbSqlMap& tables() { return tables_; }
+    PbTableMap& tables() { return tables_; }
 private:
-    PbSqlMap tables_;
+    PbTableMap tables_;
     MYSQL* mysql_{nullptr};
     std::string db_name_;
 };
