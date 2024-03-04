@@ -168,6 +168,11 @@ std::string SerializeFieldAsString(const ::google::protobuf::Message& message, c
     return field_value;
 }
 
+void Message2MysqlTable::Init()
+{
+
+}
+
 std::string Message2MysqlTable::GetCreateTableSqlStmt()
 {
     std::string sql = "CREATE TABLE IF NOT EXISTS " + GetTableName();
@@ -277,27 +282,30 @@ std::string Message2MysqlTable::GetAlterTableAddFieldSqlStmt()
 
 std::string Message2MysqlTable::GetInsertSqlStmt(const ::google::protobuf::Message& message, MYSQL* mysql)
 {
-    std::string sql = "INSERT INTO " + GetTableName();
-    sql += " (";
-    bool bNeedComma = false;
-    const ::google::protobuf::FieldDescriptor* field_desc = nullptr;
-    for (int32_t i = 0; i < descriptor_->field_count(); ++i)
+    if (insert_sql_stmt_.empty())
     {
-        if (bNeedComma == true)
+        insert_sql_stmt_ = "INSERT INTO " + GetTableName();
+        insert_sql_stmt_ += " (";
+        bool bNeedComma = false;
+        const ::google::protobuf::FieldDescriptor* field_desc = nullptr;
+        for (int32_t i = 0; i < descriptor_->field_count(); ++i)
         {
-            sql += ", ";
+            if (bNeedComma == true)
+            {
+                insert_sql_stmt_ += ", ";
+            }
+            else
+            {
+                bNeedComma = true;
+            }
+            insert_sql_stmt_ += descriptor_->field(i)->name();
         }
-        else
-        {
-            bNeedComma = true;
-        }
-
-        sql += descriptor_->field(i)->name();
+        insert_sql_stmt_ += ") VALUES (";
     }
-
-    sql += ") VALUES (";
-
-    bNeedComma = false;
+  
+    std::string sql = insert_sql_stmt_;
+    const ::google::protobuf::FieldDescriptor* field_desc = nullptr;
+    bool bNeedComma = false;
     for (int32_t i = 0; i < descriptor_->field_count(); ++i)
     {
 

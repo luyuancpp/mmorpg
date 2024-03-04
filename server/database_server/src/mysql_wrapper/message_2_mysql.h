@@ -32,6 +32,8 @@ public:
         primarykey_field_ = descriptor_->FindFieldByName(descriptor_->field(kPrimaryKeyIndex)->name());
     }
 
+    void Init();
+
     void set_auto_increment(uint64_t auto_increment) { auto_increment_ = auto_increment; }
     void set_db_name(const std::string& db_name) { db_name_ = db_name; }
     inline const std::string& GetTableName() { return default_instance_.GetDescriptor()->full_name(); }
@@ -71,6 +73,7 @@ private:
     const ::google::protobuf::FieldDescriptor* primarykey_field_{ nullptr };
     uint64_t auto_increment_{ 0 };
     std::string db_name_;
+    std::string insert_sql_stmt_;
 };
 
 class PB2DBTables
