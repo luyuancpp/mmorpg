@@ -16,6 +16,7 @@ TEST(MysqlClientTest, ConectMysql)
 {
     MysqlDatabase client;
     client.Connect(query_database_param);
+   
     query_database->AddTable(account_database_one_test::default_instance());
     client.Init();
 }
@@ -108,7 +109,8 @@ int main(int argc, char** argv)
     query_database->Connect(query_database_param);
     query_database->QueryOne(droptable);
     query_database->AddTable(account_database_one_test::default_instance());
-    query_database->Init();    
+    query_database->SetDBName("game");
+    query_database->Init();       
     testing::InitGoogleTest(&argc, argv);
 
     return RUN_ALL_TESTS();

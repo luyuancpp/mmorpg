@@ -170,7 +170,7 @@ std::string SerializeFieldAsString(const ::google::protobuf::Message& message, c
 
 std::string Message2MysqlSqlStmt::GetCreateTableSqlStmt()
 {
-    std::string sql = "CREATE TABLE IF NOT EXISTS " + GetTypeName();
+    std::string sql = "CREATE TABLE IF NOT EXISTS " + GetTableName();
     if (options_.HasExtension(OptionPrimaryKey))
     {
         boost::split(primary_key_, options_.GetExtension(OptionPrimaryKey), boost::is_any_of(","));
@@ -253,7 +253,7 @@ std::string Message2MysqlSqlStmt::GetAlterTableAddFieldSqlStmt()
         return "";
     }
     std::string sql("ALTER TABLE ");
-    sql += GetTypeName();
+    sql += GetTableName();
     for (int32_t i = 0; i < descriptor_->field_count(); ++i)
     {
         auto filed = descriptor_->field(i);
@@ -275,7 +275,7 @@ std::string Message2MysqlSqlStmt::GetAlterTableAddFieldSqlStmt()
     if (nullptr == primarykey_field_)
     {
         std::string es("Table ");
-        es += GetTypeName();
+        es += GetTableName();
         es += " Has not PrimaryKey!";
         LOG_FATAL << es;
         return "";
@@ -286,7 +286,7 @@ std::string Message2MysqlSqlStmt::GetAlterTableAddFieldSqlStmt()
 
 std::string Message2MysqlSqlStmt::GetInsertSqlStmt(const ::google::protobuf::Message& message, MYSQL* mysql)
 {
-    std::string sql = "INSERT INTO " + GetTypeName();
+    std::string sql = "INSERT INTO " + GetTableName();
     sql += " (";
     bool bNeedComma = false;
     const ::google::protobuf::FieldDescriptor* field_desc = nullptr;
@@ -381,7 +381,7 @@ std::string Message2MysqlSqlStmt::GetSelectSqlStmt(const std::string& key, const
     }
 
     sql += " from ";
-    sql += GetTypeName();
+    sql += GetTableName();
     sql += " where ";
     sql += key;
     sql += " = '";
@@ -408,7 +408,7 @@ std::string Message2MysqlSqlStmt::GetSelectSqlStmt(const std::string& where_clau
         sql += " " + descriptor_->field(i)->name();
     }
     sql += " from ";
-    sql += GetTypeName();
+    sql += GetTableName();
     sql += " where ";
     sql += where_clause;
     sql += ";";
@@ -433,7 +433,7 @@ std::string Message2MysqlSqlStmt::GetSelectAllSqlStmt()
         sql += " " + descriptor_->field(i)->name();
     }
     sql += " from ";
-    sql += GetTypeName();
+    sql += GetTableName();
     return sql;
 }
 
@@ -456,7 +456,7 @@ std::string Message2MysqlSqlStmt::GetSelectAllSqlStmt(const std::string& where_c
         sql += " " + descriptor_->field(i)->name();
     }
     sql += " from ";
-    sql += GetTypeName();
+    sql += GetTableName();
     sql += " where ";
     sql += where_clause;
     sql += ";";
@@ -467,7 +467,7 @@ std::string Message2MysqlSqlStmt::GetDeleteSqlStmt(const ::google::protobuf::Mes
 {
     std::string sql = "delete ";
     sql += " from ";
-    sql += GetTypeName();
+    sql += GetTableName();
     sql += " where ";
     sql += descriptor_->field(kPrimaryKeyIndex)->name();
     std::string value = SerializeFieldAsString(message, primarykey_field_, mysql);
@@ -481,7 +481,7 @@ std::string Message2MysqlSqlStmt::GetDeleteSqlStmt( const std::string& where_cla
 {
     std::string sql = "delete ";
     sql += " from ";
-    sql += GetTypeName();
+    sql += GetTableName();
     sql += " where ";
     sql += where_clause;
     return sql;
@@ -599,7 +599,7 @@ std::string Message2MysqlSqlStmt::GetUpdateSqlStmt(::google::protobuf::Message& 
 {
     const ::google::protobuf::FieldDescriptor* file_desc = nullptr;
 
-    std::string sql = "UPDATE " + GetTypeName();
+    std::string sql = "UPDATE " + GetTableName();
     bool bNeedComma = false;
     sql += " SET ";
     for (int32_t i = 0; i < descriptor_->field_count(); ++i)
@@ -642,8 +642,11 @@ std::string Message2MysqlSqlStmt::GetTruncateSqlStmt(::google::protobuf::Message
 
 std::string Message2MysqlSqlStmt::GetSelectColumnStmt()
 {
-    return std::string("SELECT COLUMN_NAME FROM INFORMATION_NAME.COLUMNS  WHERE  TABLE_NAME = '") + 
-        GetTypeName() + 
+    return std::string("SELECT COLUMN_NAME,ORDINAL_POSITION FROM \
+        INFORMATION_SCHEMA.COLUMNS  WHERE  TABLE_SCHEMA = '") + 
+        db_name_ + 
+        "' AND TABLE_NAME = '" +
+        GetTableName() +
         std::string("';");
 }
 
@@ -656,6 +659,15 @@ void Pb2DbTables::set_auto_increment(const ::google::protobuf::Message& message,
         return;
     }
     it->second.set_auto_increment(auto_increment);
+}
+
+void Pb2DbTables::set_db_name(const std::string& db_name)
+{
+    db_name_ = db_name;
+    for (auto& it : tables_)
+    {
+        it.second.set_db_name(db_name);
+    }
 }
 
 std::string Pb2DbTables::GetCreateTableSql(const ::google::protobuf::Message& message)

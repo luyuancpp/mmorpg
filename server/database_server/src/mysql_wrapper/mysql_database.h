@@ -74,6 +74,7 @@ public:
     void Delete(const ::google::protobuf::Message& message);
     void Delete(const ::google::protobuf::Message& message, const std::string& where_clause);    
 
+    void SetDBName(const std::string& name) { pb2db_.set_db_name(name); }
 private:
     Pb2DbTables pb2db_;
 };
