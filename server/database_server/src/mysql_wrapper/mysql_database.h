@@ -32,7 +32,7 @@ public:
             return true;
         };
         
-        std::string sql = pb2db_.GetSelectAllSql(scratch_space);
+        std::string sql = pb2db_.GetSelectAllSqlStmt(scratch_space);
         QueryResultRowProcessor(sql, fill_message);
     }
     template<typename T>
@@ -52,7 +52,7 @@ public:
             return true;
         };
 
-        std::string sql = pb2db_.GetSelectAllSql(scratch_space, where_clause);
+        std::string sql = pb2db_.GetSelectAllSqlStmt(scratch_space, where_clause);
         QueryResultRowProcessor(sql, fill_message);
     }
 
@@ -67,7 +67,7 @@ public:
         auto rf_message = ref->GetRepeatedFieldRef<T>(message, fd_sub_message);
         for (auto it = rf_message.begin(); it != rf_message.end(); ++it)
         {
-            Execute(pb2db_.GetInsertOnDupKeyForPrimaryKey(*it));
+            Execute(pb2db_.GetInsertOnDupKeyForPrimaryKeySqlStmt(*it));
         }
     }
 
@@ -76,7 +76,7 @@ public:
 
     void SetDBName(const std::string& name) { pb2db_.set_db_name(name); }
 private:
-    Pb2DbTables pb2db_;
+    PB2DBTables pb2db_;
 };
 
 using MysqlClientPtr = std::shared_ptr<MysqlDatabase>;
