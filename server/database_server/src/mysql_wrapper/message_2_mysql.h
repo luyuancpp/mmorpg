@@ -64,8 +64,6 @@ private:
     StringVector primary_key_;
     StringVector indexes_;
     StringVector unique_keys_;
-    std::string foreign_keys_;
-    std::string foreign_references_;
     std::string auto_increase_key_;
     const ::google::protobuf::Message& default_instance_;
     const ::google::protobuf::Descriptor* descriptor_{nullptr};
