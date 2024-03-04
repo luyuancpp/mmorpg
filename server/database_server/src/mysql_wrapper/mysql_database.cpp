@@ -9,7 +9,7 @@ void MysqlDatabase::set_auto_increment(const ::google::protobuf::Message& messag
 	pb2db_.set_auto_increment(message_default_instance, auto_increment);
 }
 
-void MysqlDatabase::CreateMysqlTable(const ::google::protobuf::Message& message_default_instance)
+void MysqlDatabase::AddTable(const ::google::protobuf::Message& message_default_instance)
 {
 	pb2db_.CreateMysqlTable(message_default_instance);
 }

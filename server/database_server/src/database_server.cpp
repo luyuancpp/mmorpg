@@ -40,8 +40,8 @@ void DatabaseServer::ConnectDeploy()
 
 void DatabaseServer::Start()
 {
-    database_->CreateMysqlTable(account_database::default_instance());
-    database_->CreateMysqlTable(player_database::default_instance());
+    database_->AddTable(account_database::default_instance());
+    database_->AddTable(player_database::default_instance());
     static const uint64_t begin_guid = 10000000000;
     database_->set_auto_increment(player_database::default_instance(),
         GameConfig::GetSingleton().config_info().group_id() * begin_guid);

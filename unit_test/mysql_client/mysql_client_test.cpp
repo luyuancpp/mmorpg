@@ -3,10 +3,11 @@
 #include "src/mysql_wrapper/mysql_database.h"
 
 #include "common_proto/mysql_database_test.pb.h"
+#include "common_proto/mysql_database_table.pb.h"
 
 
 MysqlClientPtr query_database;
-ConnetionParam query_database_param;
+database_server_db query_database_param;
 std::string main_acount("lu hailong");
 std::string main_password("lu yaun");
 std::string main_where_case = std::string("account = '") + main_acount + std::string("'");
@@ -100,7 +101,7 @@ int main(int argc, char** argv)
     
     query_database_param.set_db_host("127.0.0.1");
     query_database_param.set_db_user("root");
-    query_database_param.set_db_password("luyuan616586");
+    query_database_param.set_db_password("lhl616586");
     query_database_param.set_db_port(3306);
     query_database_param.set_db_dbname("game");
     query_database = std::make_unique<MysqlDatabase>();

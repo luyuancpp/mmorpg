@@ -18,22 +18,22 @@
     <ClCompile Include="mysql_client_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\mysql_wrapper\mysql_client.cpp">
+    <ClCompile Include="..\..\server\database_server\src\mysql_wrapper\message_2_mysql.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\mysql_wrapper\mysql_database.cpp">
+    <ClCompile Include="..\..\server\database_server\src\mysql_wrapper\mysql_client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\mysql_wrapper\message2mysqlsql.cpp">
+    <ClCompile Include="..\..\server\database_server\src\mysql_wrapper\mysql_database.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\common.pb.cc">
+    <ClCompile Include="..\..\pkg\pbc\src\common_proto\common.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\db_base.pb.cc">
+    <ClCompile Include="..\..\pkg\pbc\src\common_proto\db_base.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\src\pb\pbc\common_proto\mysql_database_test.pb.cc">
+    <ClCompile Include="..\..\pkg\pbc\src\common_proto\mysql_database_test.pb.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,28 +41,25 @@
     <ClInclude Include="..\..\common\src\util\expected.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\util\type_traits.h">
+    <ClInclude Include="..\..\server\database_server\src\mysql_wrapper\message_2_mysql.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_client.h">
+    <ClInclude Include="..\..\server\database_server\src\mysql_wrapper\mysql_client.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_database.h">
+    <ClInclude Include="..\..\server\database_server\src\mysql_wrapper\mysql_database.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\mysql_wrapper\mysql_result.h">
+    <ClInclude Include="..\..\server\database_server\src\mysql_wrapper\mysql_result.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\mysql_wrapper\message2mysqlsql.h">
+    <ClInclude Include="..\..\pkg\pbc\src\common_proto\common.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\common.pb.h">
+    <ClInclude Include="..\..\pkg\pbc\src\common_proto\db_base.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\db_base.pb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\common\src\pb\pbc\common_proto\mysql_database_test.pb.h">
+    <ClInclude Include="..\..\pkg\pbc\src\common_proto\mysql_database_test.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
