@@ -9,7 +9,7 @@ public:
 
     void set_auto_increment(const ::google::protobuf::Message& message_default_instance, uint64_t auto_increment);
 
-    void CreateMysqlTable(const ::google::protobuf::Message& message_default_instance);
+    void AddTable(const ::google::protobuf::Message& message_default_instance);
 
     void Init();
 
