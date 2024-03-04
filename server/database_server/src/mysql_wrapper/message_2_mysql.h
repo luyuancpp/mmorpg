@@ -33,7 +33,8 @@ public:
     }
 
     void set_auto_increment(uint64_t auto_increment) { auto_increment_ = auto_increment; }
-    inline const std::string& GetTypeName() { return default_instance_.GetDescriptor()->full_name(); }
+    void set_db_name(const std::string& db_name) { db_name_ = db_name; }
+    inline const std::string& GetTableName() { return default_instance_.GetDescriptor()->full_name(); }
     const ::google::protobuf::Message& default_instance() { return default_instance_; }
 
     std::string GetCreateTableSqlStmt();
@@ -71,6 +72,7 @@ private:
     const ::google::protobuf::MessageOptions&  options_;
     const ::google::protobuf::FieldDescriptor* primarykey_field_{ nullptr };
     uint64_t auto_increment_{ 0 };
+    std::string db_name_;
 };
 
 class Pb2DbTables
@@ -79,7 +81,7 @@ public:
     using PbSqlMap = std::unordered_map<std::string, Message2MysqlSqlStmt>;
 
     void set_auto_increment(const ::google::protobuf::Message& message_default_instance, uint64_t auto_increment);
-
+    void set_db_name(const std::string& db_name);
     std::string GetCreateTableSql(const ::google::protobuf::Message& message);
     std::string GetAlterTableAddFieldSql(const ::google::protobuf::Message& message);
     std::string GetInsertSql(::google::protobuf::Message& message);
@@ -103,5 +105,6 @@ public:
 private:
     PbSqlMap tables_;
     MYSQL* mysql_{nullptr};
+    std::string db_name_;
 };
 
