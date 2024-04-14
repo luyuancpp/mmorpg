@@ -38,7 +38,7 @@ RpcClientPtr& ClientReceiver::GetLoginNode(uint64_t session_id)
     }
     if (!session_it->second.ValidLogin())
     {
-        session_it->second.login_node_id_ = FindValidLoginNodeId(session_id);
+        session_it->second.login_node_id_ = GetLoginNodeId(session_id);
     }
     const auto login_node_it = gate_tls.login_nodes().find(session_it->second.login_node_id_);
     if (gate_tls.login_nodes().end() == login_node_it)
@@ -49,7 +49,7 @@ RpcClientPtr& ClientReceiver::GetLoginNode(uint64_t session_id)
     return login_node_it->second.login_session_;
 }
 
-uint32_t ClientReceiver::FindValidLoginNodeId(uint64_t session_id)
+uint32_t ClientReceiver::GetLoginNodeId(uint64_t session_id)
 {
     const auto index = session_id % gate_tls.login_nodes().size();
 	std::size_t i = 0;
@@ -76,11 +76,11 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
         {
             //此消息一定要发，不能值通过controller 的gw disconnect去发
             //比如:登录还没到controller,gw的disconnect 先到，登录后到，那么controller server 永远删除不了这个sessionid了
-			LoginNodeDisconnectRequest rq;
-			rq.set_session_id(session_id);
-            const auto& session_login_node = GetLoginNode(session_id);
-            if (nullptr != session_login_node)
+            if (const auto& session_login_node = GetLoginNode(session_id);
+                nullptr != session_login_node)
             {
+                LoginNodeDisconnectRequest rq;
+                rq.set_session_id(session_id);
                 session_login_node->CallMethod(LoginServiceDisconnectMsgId, rq);
             }			
         }
