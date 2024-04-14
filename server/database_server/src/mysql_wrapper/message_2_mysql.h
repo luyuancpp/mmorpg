@@ -32,8 +32,6 @@ public:
         primarykey_field_ = descriptor_->FindFieldByName(descriptor_->field(kPrimaryKeyIndex)->name());
     }
 
-    void Init();
-
     void set_auto_increment(uint64_t auto_increment) { auto_increment_ = auto_increment; }
     void set_db_name(const std::string& db_name) { db_name_ = db_name; }
     inline const std::string& GetTableName() { return default_instance_.GetDescriptor()->full_name(); }
