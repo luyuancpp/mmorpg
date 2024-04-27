@@ -124,26 +124,26 @@ if (ret != kRetOK)\
 }\
 }
 
-#define  CheckReturnClosureError(tip_code)\
+#define  CHECK_RETURN_CLOSURE_ERROR(tip_code)\
 if ((tip_code) != kRetOK)\
 {\
     response->mutable_error()->set_id(tip_code);\
     return;\
 }\
 
-#define CheckCondition(condition, tip_code)\
+#define CHECK_CONDITION(condition, tip_code)\
 if (condition)\
 {\
      return  tip_code; \
 }\
 
-#define  ReturnClosureError(f)\
+#define  RETURN_CLOSURE_ERROR(f)\
 response->mutable_error()->set_id(f);\
 return
 
-#define ReturnClosureOK ReturnClosureError(kRetOK);
+#define RETURN_CLOSURE_OK ReturnClosureError(kRetOK);
 
-#define  ReturnAutoClosureError(tip_code)\
+#define  RETURN_AUTO_CLOSURE_ERROR(tip_code)\
 if ((tip_code) != kRetOK)\
 {\
     response->mutable_error()->set_id(tip_code);\

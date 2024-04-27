@@ -55,14 +55,14 @@ uint32_t MissionSystem::Accept(const AcceptMissionEvent& accept_event)
 	//check
 	RET_CHECK_RET(mission_comp->IsUnAccepted(accept_event.mission_id())) //已经接受过
 	RET_CHECK_RET(mission_comp->IsUnCompleted(accept_event.mission_id())) //已经完成
-	CheckCondition(!mission_comp->GetMissionConfig()->HasKey(accept_event.mission_id()), kRetTableId)
+	CHECK_CONDITION(!mission_comp->GetMissionConfig()->HasKey(accept_event.mission_id()), kRetTableId)
 
 	auto mission_sub_type = mission_comp->GetMissionConfig()->GetMissionSubType(accept_event.mission_id());
 	auto mission_type = mission_comp->GetMissionConfig()->GetMissionType(accept_event.mission_id());
 	if (mission_comp->IsMissionTypeNotRepeated())
 	{
 		const UInt32PairSet::value_type mission_and_mission_subtype_pair(mission_type, mission_sub_type);
-		CheckCondition(mission_comp->GetTypeFilter().find(mission_and_mission_subtype_pair)
+		CHECK_CONDITION(mission_comp->GetTypeFilter().find(mission_and_mission_subtype_pair)
 			!= mission_comp->GetTypeFilter().end(), kRetMissionTypeRepeated)
 	}
 	MissionPbComp mission_pb;

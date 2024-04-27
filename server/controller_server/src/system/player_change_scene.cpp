@@ -20,7 +20,7 @@ uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const
     {
         return kRetChangeScenePlayerQueueComponentNull;
     }
-    CheckCondition(change_scene_queue->change_scene_queue_.full(), kRetEnterSceneChangingGs)
+    CHECK_CONDITION(change_scene_queue->change_scene_queue_.full(), kRetEnterSceneChangingGs)
     change_scene_queue->change_scene_queue_.push_back(change_info);
     //todo
     change_scene_queue->change_scene_queue_.front().set_change_time(muduo::Timestamp::now().secondsSinceEpoch());
