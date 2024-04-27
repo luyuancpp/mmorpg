@@ -111,7 +111,7 @@ message gate_server_db
 }
 
 
-message ServerInfoRequest
+message NodeInfoRequest
 {
   uint32 group = 1;
   uint32 lobby_id = 2;
@@ -127,19 +127,19 @@ message LoginNodesDb
   repeated login_server_db login_nodes = 1;
 }
 
-message ServerInfoResponse
+message NodeInfoResponse
 {
   servers_info_data info = 1;
 }
 
-message StartGSRequest
+message StartGsRequest
 {
   uint32 group = 1;
   game_server_db my_info = 2;
   IpPort rpc_client = 3; 
 }
 
-message StartGSResponse
+message StartGsResponse
 {
   game_server_db my_info = 1;
   uint32 error_no = 2;
@@ -161,31 +161,17 @@ message LobbyInfoResponse
   ControllerNodesDb lobby_controllers = 1;
 }
 
-message GroupLignRequest
-{
-  uint32 group_id = 1;
-}
-
-message GruoupLoginNodeResponse
-{
-  LoginNodesDb login_db = 1;
-}
-
-message SceneSqueueRequest
+message GsNodeIdRequest
 {
 }
 
-message SceneSqueueResponese
+message GsNodeIdResponse
 {
   uint32 node_id = 1;
 }
 
 service DeployService {
-  rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
-  rpc StartGS (StartGSRequest) returns (StartGSResponse);
-  rpc StartLobbyServer (LobbyServerRequest) returns (LobbyServerResponse);
-  rpc AcquireLobbyServerInfo (LobbyServerRequest) returns (LobbyServerResponse);
-  rpc AcquireLobbyInfo (LobbyServerRequest) returns (LobbyInfoResponse);
-  rpc LoginNodeInfo (GroupLignRequest) returns (GruoupLoginNodeResponse);
-  rpc SceneSequenceNodeId (SceneSqueueRequest) returns (SceneSqueueResponese);
+  rpc GetNodeInfo (NodeInfoRequest) returns (NodeInfoResponse);
+  rpc StartGs (StartGsRequest) returns (StartGsResponse);
+  rpc GetGsNodeId (GsNodeIdRequest) returns (GsNodeIdResponse);
 }

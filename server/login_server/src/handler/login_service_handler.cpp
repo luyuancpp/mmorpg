@@ -49,13 +49,14 @@ void LoginServiceHandler::Login(::google::protobuf::RpcController* controller,
 	//todo 登录的时候马上断开连接换了个gate应该可以登录成功
 	//todo 在链接过程中断了，换了gate新的gate 应该是可以上线成功的，消息要发到新的gate上,老的gate正常走断开流程
 	//todo gate异步同时登陆情况,老gate晚于新gate登录到controller会不会导致登录不成功了?这时候怎么处理
-	const auto session_it = login_tls.session_list().emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
-	if (!session_it.second)
+	const auto [fst, snd] =
+		login_tls.session_list().emplace(cl_tls.session_id(), std::make_shared<PlayerPtr::element_type>());
+	if (!snd)
 	{
-		LOG_ERROR << "session nout found " << request->DebugString();
+		LOG_ERROR << "session not found " << request->DebugString();
 		return;
 	}
-	session_it.first->second->set_login_account_name(request->account());
+	fst->second->set_login_account_name(request->account());
 	Route2Node(kControllerNode, ControllerServiceLsLoginAccountMsgId, *request);
 ///<<< END WRITING YOUR CODE
 }
@@ -71,9 +72,9 @@ void LoginServiceHandler::CreatePlayer(::google::protobuf::RpcController* contro
 	const auto sit = login_tls.session_list().find(cl_tls.session_id());
 	if (sit == login_tls.session_list().end())
 	{
-		ReturnClosureError(kRetLoginCreatePlayerConnectionHasNotAccount);
+		RETURN_CLOSURE_ERROR(kRetLoginCreatePlayerConnectionHasNotAccount);
 	}
-	CheckReturnClosureError(sit->second->CreatePlayer());
+	CHECK_RETURN_CLOSURE_ERROR(sit->second->CreatePlayer());
 	// database process
 	DatabaseNodeCreatePlayerRequest db_create_request;
 	db_create_request.set_account(sit->second->account());
@@ -90,15 +91,15 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 	const auto sit = login_tls.session_list().find(cl_tls.session_id());
 	if (sit == login_tls.session_list().end())
 	{
-		ReturnClosureError(kRetLoginEnterGameConnectionAccountEmpty);
+		RETURN_CLOSURE_ERROR(kRetLoginEnterGameConnectionAccountEmpty);
 	}
 	// check second times change player id error 
-	CheckReturnClosureError(sit->second->EnterGame());
+	CHECK_RETURN_CLOSURE_ERROR(sit->second->EnterGame());
 
 	// long time in login processing
 	if (!sit->second->HasPlayer(request->player_id()))
 	{
-		ReturnClosureError(kRetLoginPlayerGuidError);
+		RETURN_CLOSURE_ERROR(kRetLoginPlayerGuidError);
 	}
 	//todo 已经在其他login,异步问题
 	player_database new_player;
