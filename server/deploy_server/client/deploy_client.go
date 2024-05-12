@@ -4,21 +4,12 @@ import (
 	"deploy_server/client/deployservice"
 	"flag"
 	"fmt"
-	"github.com/zeromicro/zero-examples/rpc/remote/unary"
 	"time"
 )
-
-package main
-
 import (
-"context"
-"flag"
-"fmt"
-"time"
-
-"github.com/zeromicro/go-zero/core/conf"
-"github.com/zeromicro/go-zero/zrpc"
-"github.com/zeromicro/zero-examples/rpc/remote/unary"
+	"context"
+	"github.com/zeromicro/go-zero/core/conf"
+	"github.com/zeromicro/go-zero/zrpc"
 )
 
 var configFile = flag.String("f", "config.json", "the config file")
@@ -35,13 +26,11 @@ func main() {
 		select {
 		case <-ticker.C:
 			deploy := deployservice.NewDeployService(client)
-			resp, err := deploy.StartGs(context.Background(), &unary.Request{
-				Name: "kevin",
-			})
+			resp, err := deploy.StartGs(context.Background(), &deployservice.StartGsRequest{})
 			if err != nil {
 				fmt.Println("X", err.Error())
 			} else {
-				fmt.Println("=>", resp.Greet)
+				fmt.Println("=>", resp.String())
 			}
 			break
 		}
