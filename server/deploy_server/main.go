@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	server "deploy_server/internal/server"
-	pb "deploy_server/pb/go"
+	rpcserver "deploy_server/internal/server"
+	"deploy_server/pb/deploy"
 	"flag"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/zrpc"
@@ -21,7 +21,7 @@ func main() {
 	conf.MustLoad(*configFile, &c)
 
 	server := zrpc.MustNewServer(c, func(grpcServer *grpc.Server) {
-		pb.RegisterDeployServiceServer(grpcServer, server.NewDeployServer())
+		deploy.RegisterDeployServiceServer(grpcServer, rpcserver.NewDeployServer())
 	})
 	interceptor := func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		st := time.Now()
