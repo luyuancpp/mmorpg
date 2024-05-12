@@ -1,9 +1,10 @@
 syntax = "proto3";
+
 option optimize_for = SPEED;
 
-import "pb/descriptor.proto";
+import "descriptor.proto";
 
-option go_package = "./;pb";
+option go_package = "pb/deploy";
 
 //option id  要从50000开始 50000以内pb内部使用
 
