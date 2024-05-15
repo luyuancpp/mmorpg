@@ -1,4 +1,4 @@
-package client
+package main
 
 import (
 	"deploy_server/client/deployservice"
@@ -12,7 +12,7 @@ import (
 	"github.com/zeromicro/go-zero/zrpc"
 )
 
-var configFile = flag.String("f", "config.json", "the config file")
+var configFile = flag.String("f", "etc/config.json", "the config file")
 
 func main() {
 	flag.Parse()
