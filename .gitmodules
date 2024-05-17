@@ -45,3 +45,7 @@
 	path = third_party/rocketmq-clients
 	url = https://github.com/apache/rocketmq-clients.git
 	branch = cpp-5.0.0
+[submodule "third_party/yaml-cpp"]
+	path = third_party/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+	branch = 0.8.0
