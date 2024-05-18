@@ -1,8 +1,10 @@
 package main
 
 import (
+	"deploy_server/pkg"
 	"flag"
 	"fmt"
+	"log"
 
 	"deploy_server/internal/config"
 	deployserviceServer "deploy_server/internal/server/deployservice"
@@ -17,6 +19,7 @@ import (
 )
 
 var configFile = flag.String("f", "etc/deployservice.yaml", "the config file")
+var dbConfigFile = flag.String("f", "etc/db.json", "the db config file")
 
 func main() {
 	flag.Parse()
@@ -24,6 +27,12 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 	ctx := svc.NewServiceContext(c)
+
+	err := pkg.OpenDB(*dbConfigFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer pkg.PbDb.Close()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		deploy.RegisterDeployServiceServer(grpcServer, deployserviceServer.NewDeployServiceServer(ctx))
