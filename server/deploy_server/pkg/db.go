@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
-	pbmysql "github.com/luyuancpp/pbmysql-go/pkg"
+	pbmysql "github.com/luyuancpp/pbmysql-go"
 	"log"
 	"os"
 )
