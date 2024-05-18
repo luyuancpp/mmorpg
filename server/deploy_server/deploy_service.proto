@@ -12,7 +12,6 @@ message IpPort
   uint32 port = 2;
 }
 
-
 message database_server_db
 {
   option(OptionTableName)  = "database_server_db";
