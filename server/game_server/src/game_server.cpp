@@ -49,10 +49,10 @@ void GameServer::Init()
     InitConfig();
 	node_info_.set_node_type(kGameNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
-    muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
+    muduo::Logger::setLogLevel((muduo::Logger::LogLevel)ZoneConfig::GetSingleton().config_info().loglevel());
     global_entity();
-    tls.registry.emplace<GsServerType>(global_entity(), GsServerType{ GameConfig::GetSingleton().config_info().server_type() });
-    LOG_INFO << "server type" << GameConfig::GetSingleton().config_info().server_type();
+    tls.registry.emplace<GsServerType>(global_entity(), GsServerType{ ZoneConfig::GetSingleton().config_info().server_type() });
+    LOG_INFO << "server type" << ZoneConfig::GetSingleton().config_info().server_type();
     InitMessageInfo();
     InitPlayerService();
     InitPlayerServiceReplied();
@@ -65,7 +65,7 @@ void GameServer::Init()
 
 void GameServer::InitConfig()
 {
-	GameConfig::GetSingleton().Load("game.json");
+	ZoneConfig::GetSingleton().Load("game.json");
 	DeployConfig::GetSingleton().Load("deploy.json");
 	LobbyConfig::GetSingleton().Load("lobby.json");
     LoadAllConfigAsyncWhenServerLaunch();
@@ -74,7 +74,7 @@ void GameServer::InitConfig()
 
 void GameServer::InitMq()
 {
-    const auto& config_info = GameConfig::GetSingleton().config_info();
+    const auto& config_info = ZoneConfig::GetSingleton().config_info();
     using namespace ROCKETMQ_NAMESPACE;
     CredentialsProviderPtr credentials_provider =
         std::make_shared<StaticCredentialsProvider>(config_info.access_key(), config_info.access_secret());
@@ -109,7 +109,7 @@ void GameServer::ServerInfo(const ::servers_info_data& info)
 
     {
         StartGSRequest rq;
-        rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+        rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
         rq.mutable_my_info()->set_ip(localip());
         rq.mutable_my_info()->set_id(gs_info_.id());
         rq.mutable_rpc_client()->set_ip(deploy_node_->local_addr().toIp());
@@ -217,7 +217,7 @@ void GameServer::Receive1(const OnConnected2ServerEvent& es)
             [this]() ->void
             {
                 ServerInfoRequest rq;
-                rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+                rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
                 rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
                 deploy_node_->CallMethod(DeployServiceServerInfoMsgId, rq);
             }

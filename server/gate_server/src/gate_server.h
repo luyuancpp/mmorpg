@@ -43,6 +43,8 @@ public:
     void LoadConfig();
 
     void Init();
+
+    void InitNodeServer();
     
     void StartServer();
     

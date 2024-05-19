@@ -35,7 +35,7 @@ void InitControllerServiceStartGsRepliedHandler()
 void OnControllerServiceStartGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<CtrlStartGsResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	if (GameConfig::GetSingleton().server_type() == kMainSceneServer)
+	if (ZoneConfig::GetSingleton().server_type() == kMainSceneServer)
 	{
 		for (int32_t i = 0; i < replied->scenes_info_size(); ++i)
 		{
@@ -45,7 +45,7 @@ void OnControllerServiceStartGsRepliedHandler(const TcpConnectionPtr& conn, cons
 		}
 		LOG_DEBUG << replied->DebugString();
 	}
-	else if (GameConfig::GetSingleton().server_type() == kMainSceneCrossServer)
+	else if (ZoneConfig::GetSingleton().server_type() == kMainSceneCrossServer)
 	{
 		GameConnectToControllerRequest rq;
 		g_game_node->lobby_node()->CallMethod(LobbyServiceGameConnectToControllerMsgId, rq);

@@ -22,7 +22,7 @@ void AsyncCompleteGrpc();
 
 void GateServer::LoadConfig()
 {
-	GameConfig::GetSingleton().Load("game.json");
+	ZoneConfig::GetSingleton().Load("game.json");
 	DeployConfig::GetSingleton().Load("deploy.json");
 }
 
@@ -38,28 +38,34 @@ void GateServer::Init()
     node_info_.set_node_type(kGateNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
 
-    {
-        const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-        std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
-        auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
-        extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
-        g_deploy_stub = DeployService::NewStub(deploy_channel);
-        g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
-        EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+    InitNodeServer();
 
-        NodeInfoRequest req;
-        void SendGetNodeInfo(NodeInfoRequest & req);
-        SendGetNodeInfo(req);
-    }
-
-    /*InitMessageInfo();
+    InitMessageInfo();
     void InitRepliedHandler();
     InitRepliedHandler();
 
-    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateServer::Receive1>(*this);*/
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateServer::Receive1>(*this);
 
 }
 
+
+void GateServer::InitNodeServer()
+{
+    auto& zone = ZoneConfig::GetSingleton().config_info();
+
+    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
+    std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
+    extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
+    g_deploy_stub = DeployService::NewStub(deploy_channel);
+    g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+
+    NodeInfoRequest req;
+    req.set_zone_id(zone.zone_id());
+    void SendGetNodeInfo(NodeInfoRequest & req);
+    SendGetNodeInfo(req);
+}
 
 void GateServer::StartServer()
 {
