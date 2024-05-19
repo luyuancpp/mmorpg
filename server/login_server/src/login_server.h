@@ -7,6 +7,8 @@
 #include "src/network/rpc_connection_event.h"
 #include "src/redis_client/redis_client.h"
 
+#include "common_proto/deploy_service.pb.h"
+
 class LoginServer : muduo::noncopyable
 {
 public:
@@ -24,7 +26,9 @@ public:
     inline LoginServiceHandler& login_handler(){return  handler_;}
 	void Init();
 
-	void ConnectDeploy();
+	void LoadNodeConfig();
+
+	void InitNodeServer();
 
 	void Start();
 

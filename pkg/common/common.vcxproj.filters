@@ -61,6 +61,7 @@
     <ClInclude Include="src\network\process_info.h" />
     <ClInclude Include="src\mq\rocketmqproducer.h" />
     <ClInclude Include="src\thread_local\thread_local_storage_link.h" />
+    <ClInclude Include="src\network\deploy\deployclient.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\comp\mission_comp.cpp" />
@@ -94,6 +95,7 @@
     <ClCompile Include="src\network\server_component.cpp" />
     <ClCompile Include="src\network\process_info.cpp" />
     <ClCompile Include="src\thread_local\thread_local_storage_link.cpp" />
+    <ClCompile Include="src\network\deploy\deployclient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\network\game_rpc.proto" />

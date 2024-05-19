@@ -40,7 +40,7 @@ public:
 
     inline void Send2Client(muduo::net::TcpConnectionPtr& conn, const ::google::protobuf::Message& messag) { client_receiver_.Send2Client(conn, messag); }
 
-    void LoadConfig();
+    void LoadNodeConfig();
 
     void Init();
 

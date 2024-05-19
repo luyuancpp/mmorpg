@@ -48,9 +48,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\grpc\deployclient.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\grpc\async_client_call.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -96,9 +93,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gate_server.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\grpc\deployclient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\grpc\async_client_call.h">

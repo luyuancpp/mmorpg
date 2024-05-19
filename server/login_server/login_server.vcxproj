@@ -21,6 +21,9 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\comp\account_player.cpp" />
+    <ClCompile Include="src\grpc\async_client_call.cpp" />
+    <ClCompile Include="src\grpc\handler\deploy_grpc_reply_handler.cpp" />
+    <ClCompile Include="src\grpc\request\deploy_grpc_requst.cpp" />
     <ClCompile Include="src\handler\login_service_handler.cpp" />
     <ClCompile Include="src\login_server.cpp" />
     <ClCompile Include="src\network\route_system.cpp" />
@@ -33,6 +36,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\comp\account_player.h" />
+    <ClInclude Include="src\grpc\async_client_call.h" />
+    <ClInclude Include="src\grpc\handler\deploy_grpc_reply_handler.h" />
+    <ClInclude Include="src\grpc\request\deploy_grpc_requst.h" />
     <ClInclude Include="src\handler\login_service_handler.h" />
     <ClInclude Include="src\login_server.h" />
     <ClInclude Include="src\network\message_system.h" />
@@ -117,7 +123,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;WIN32_LEAN_AND_MEAN;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../third_party/;../../third_party/boost/;./;../../third_party/protobuf/src/;../../third_party/zlib/;../../pkg/common/;../../pkg/pbc/src/;../../third_party/redis/;../../third_party/muduo/;../../third_party/muduo/contrib/windows/include;../../third_party/redis/deps/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/pbc/src/game_config/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../third_party/;../../third_party/boost/;./;../../third_party/protobuf/src/;../../third_party/zlib/;../../pkg/common/;../../pkg/pbc/src/;../../third_party/redis/;../../third_party/muduo/;../../third_party/muduo/contrib/windows/include;../../third_party/redis/deps/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/pbc/src/game_config/;../../third_party/grpc/include/;../../pkg/pbc/src/common_proto/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4200;4819;4146;4244;4267;4018;</DisableSpecificWarnings>
       <TreatWarningAsError>true</TreatWarningAsError>

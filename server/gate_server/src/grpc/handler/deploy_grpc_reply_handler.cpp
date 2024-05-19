@@ -5,7 +5,8 @@
 #include "src/util/defer.h"
 
 #include "src/grpc/async_client_call.h"
-#include "src/grpc/deployclient.h"
+#include "src/network/deploy/deployclient.h"
+#include "src/gate_server.h"
 
 void AsyncCompleteGrpc()
 {
@@ -24,7 +25,7 @@ void AsyncCompleteGrpc()
     CHECK(ok);
 
     if (call->status.ok())
-        LOG_INFO << "Greeter received: " << call->reply.DebugString() ;
+        g_gate_node->set_servers_info_data(call->reply.info());
     else
         LOG_INFO << "RPC failed" ;
 
