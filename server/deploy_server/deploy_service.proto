@@ -106,8 +106,8 @@ message gate_server_db
 
 message NodeInfoRequest
 {
-  uint32 group = 1;
-  uint32 lobby_id = 2;
+  uint32 zone_id = 1;
+  uint32 group_id = 2;
 }
 
 message ControllerNodesDb
