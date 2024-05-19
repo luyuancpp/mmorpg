@@ -3,14 +3,14 @@
 #include "common_proto/deploy_config.pb.h"
 
 
-class GameConfig
+class ZoneConfig
 {
 public:
     inline const GameConfigInfo& config_info() const { return config_info_; }
     inline decltype(auto) server_type() const {  return config_info_.server_type();  }
 
-    static GameConfig& GetSingleton() {
-        static GameConfig singleton;
+    static ZoneConfig& GetSingleton() {
+        static ZoneConfig singleton;
         return singleton;
     }
 

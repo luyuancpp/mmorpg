@@ -53,7 +53,7 @@ void ControllerServer::Init()
     InitConfig();
 	node_info_.set_node_type(kControllerNode);
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
-    muduo::Logger::setLogLevel((muduo::Logger::LogLevel)GameConfig::GetSingleton().config_info().loglevel());
+    muduo::Logger::setLogLevel((muduo::Logger::LogLevel)ZoneConfig::GetSingleton().config_info().loglevel());
 
     InitMq();
 
@@ -134,7 +134,7 @@ void ControllerServer::Receive1(const OnConnected2ServerEvent& es)
 		{
 			{
                 ServerInfoRequest rq;
-                rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+                rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
                 rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
                 deploy_session_->CallMethod(DeployServiceServerInfoMsgId, rq);
 			}
@@ -209,7 +209,7 @@ void ControllerServer::Receive2(const OnBeConnectedEvent& es)
 
 void ControllerServer::InitConfig()
 {
-    GameConfig::GetSingleton().Load("game.json");
+    ZoneConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     LobbyConfig::GetSingleton().Load("lobby.json");
     LoadAllConfigAsyncWhenServerLaunch();
@@ -217,7 +217,7 @@ void ControllerServer::InitConfig()
 
 void ControllerServer::InitMq()
 {
-    auto& config_info = GameConfig::GetSingleton().config_info();
+    auto& config_info = ZoneConfig::GetSingleton().config_info();
     using namespace ROCKETMQ_NAMESPACE;
     CredentialsProviderPtr credentials_provider = 
         std::make_shared<StaticCredentialsProvider>(config_info.access_key(), config_info.access_secret());

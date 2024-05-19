@@ -19,7 +19,7 @@ DatabaseServer::~DatabaseServer()
 
 void DatabaseServer::Init()
 {
-    GameConfig::GetSingleton().Load("game.json");
+    ZoneConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
 	void InitMessageInfo();
 	InitMessageInfo();
@@ -44,7 +44,7 @@ void DatabaseServer::Start()
     database_->AddTable(player_database::default_instance());
     static const uint64_t begin_guid = 10000000000;
     database_->set_auto_increment(player_database::default_instance(),
-        GameConfig::GetSingleton().config_info().group_id() * begin_guid);
+        ZoneConfig::GetSingleton().config_info().group_id() * begin_guid);
     database_->Init();
 
     server_->registerService(&impl_);
@@ -75,7 +75,7 @@ void DatabaseServer::Receive(const OnConnected2ServerEvent& es) const
         return;
     }
     ServerInfoRequest rq;
-    rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+    rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
     deploy_session_->CallMethod(DeployServiceServerInfoMsgId, rq);
 }
 

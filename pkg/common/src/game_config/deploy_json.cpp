@@ -6,7 +6,7 @@
 
 #include "src/util/file2string.h"
 
-void GameConfig::Load(const std::string& filename)
+void ZoneConfig::Load(const std::string& filename)
 {
     auto contents = File2String(filename);
     absl::string_view sv(contents.data(), contents.size());

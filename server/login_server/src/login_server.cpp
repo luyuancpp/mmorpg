@@ -29,7 +29,7 @@ LoginServer::~LoginServer()
 void LoginServer::Init()
 {
     g_login_node = this;
-    GameConfig::GetSingleton().Load("game.json");
+    ZoneConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
     node_info_.set_node_type(kLoginNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
@@ -96,7 +96,7 @@ void LoginServer::Receive1(const OnConnected2ServerEvent& es) const
         return;
     }
     ServerInfoRequest rq;
-    rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+    rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
     deploy_session_->CallMethod(DeployServiceServerInfoMsgId, rq);
 }
 
