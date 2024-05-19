@@ -6,7 +6,4 @@ void InitRepliedHandler()
 	void InitDbServiceLoginRepliedHandler();
 	InitDbServiceLoginRepliedHandler();
 
-	void InitDeployServiceGetNodeInfoRepliedHandler();
-	InitDeployServiceGetNodeInfoRepliedHandler();
-
 }

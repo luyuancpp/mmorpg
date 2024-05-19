@@ -6,9 +6,6 @@ void InitRepliedHandler()
 	void InitControllerServiceStartGsRepliedHandler();
 	InitControllerServiceStartGsRepliedHandler();
 
-	void InitDeployServiceGetNodeInfoRepliedHandler();
-	InitDeployServiceGetNodeInfoRepliedHandler();
-
 	void InitLobbyServiceStartCrossGsRepliedHandler();
 	InitLobbyServiceStartCrossGsRepliedHandler();
 

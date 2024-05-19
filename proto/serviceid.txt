@@ -62,9 +62,6 @@
 63=GameServiceCallPlayer
 64=GameServiceRouteNodeStringMsg
 65=GameServiceRoutePlayerStringMsg
-66=DeployServiceGetGsNodeId
-69=DeployServiceStartGs
-70=DeployServiceGetNodeInfo
 72=GamePlayerServiceOnControllerEnterGateSucceed
 73=GamePlayerServiceController2GsLogin
 74=GameServiceUpdateSession

@@ -40,6 +40,7 @@ const RepliedHandlerName = "RepliedHandler"
 const YourCodeBegin = "///<<< BEGIN WRITING YOUR CODE"
 const YourCodeEnd = "///<<< END WRITING YOUR CODE"
 const YourCodePair = YourCodeBegin + "\n" + YourCodeEnd + "\n"
+const CcGenericServices = "cc_generic_services"
 
 var SourceNames = [...]string{
 	"common/",

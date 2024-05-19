@@ -240,12 +240,6 @@
     <ClCompile Include="src\lua\db_base_sol2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\lua\deploy_service_service_lua.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lua\deploy_service_sol2.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\lua\game_scene_server_player_service_lua.cpp">
       <Filter>源文件</Filter>
     </ClCompile>

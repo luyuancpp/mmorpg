@@ -37,7 +37,7 @@ message login_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 group_id = 4;
+  uint32 zone_id = 4;
 }
 
 message controller_server_db
@@ -69,7 +69,7 @@ message redis_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 group_id = 4;
+  uint32 zone_id = 4;
 }
 
 message game_server_db
@@ -97,8 +97,8 @@ message gate_server_db
 
 message NodeInfoRequest
 {
-  uint32 group = 1;
-  uint32 lobby_id = 2;
+  uint32 zone_id = 1;
+  uint32 group = 2;
 }
 
 message ControllerNodesDb
@@ -159,3 +159,4 @@ service DeployService {
   rpc StartGs (StartGsRequest) returns (StartGsResponse);
   rpc GetGsNodeId (GsNodeIdRequest) returns (GsNodeIdResponse);
 }
+
