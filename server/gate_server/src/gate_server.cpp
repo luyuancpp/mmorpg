@@ -1,19 +1,24 @@
 #include "gate_server.h"
 
+#include <grpcpp/grpcpp.h>
+
 #include "src/game_config/deploy_json.h"
 #include "src/network/game_node.h"
 #include "src/network/login_node.h"
 #include "src/network/server_component.h"
 #include "service/service.h"
 #include "service/controller_service_service.h"
-#include "service/deploy_service_service.h"
+#include "service/grpc/deploy_service.grpc.pb.h"
 #include "service/game_service_service.h"
 #include "src/thread_local/gate_thread_local_storage.h"
+#include "src/grpc/deployclient.h"
 
 #include "common_proto/game_service.pb.h"
 #include "service/login_service_service.h"
 
 GateServer* g_gate_node = nullptr; 
+
+void AsyncCompleteGrpc();
 
 void GateServer::LoadConfig()
 {
@@ -32,14 +37,27 @@ void GateServer::Init()
     LoadConfig();
     node_info_.set_node_type(kGateNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
-    InitMessageInfo();
+
+    {
+        const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
+        std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+        auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
+        extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
+        g_deploy_stub = DeployService::NewStub(deploy_channel);
+        g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
+        EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+
+        NodeInfoRequest req;
+        void SendGetNodeInfo(NodeInfoRequest & req);
+        SendGetNodeInfo(req);
+    }
+
+    /*InitMessageInfo();
     void InitRepliedHandler();
     InitRepliedHandler();
-    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
-    deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateServer::Receive1>(*this);
-    deploy_session_->connect();
+
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateServer::Receive1>(*this);*/
+
 }
 
 
