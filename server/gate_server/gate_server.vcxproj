@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\grpc\deployclient.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\gate_server.cpp" />
     <ClCompile Include="src\handler\c2gate.cpp" />
@@ -32,6 +33,7 @@
     <ClCompile Include="src\thread_local\gate_thread_local_storage.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\grpc\deployclient.h" />
     <ClInclude Include="src\gate_server.h" />
     <ClInclude Include="src\handler\c2gate.h" />
     <ClInclude Include="src\handler\gate_service_handler.h" />
@@ -44,6 +46,9 @@
     <ClInclude Include="src\replied_handler\game_service_replied_handler.h" />
     <ClInclude Include="src\replied_handler\login_service_replied_handler.h" />
     <ClInclude Include="src\thread_local\gate_thread_local_storage.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="src\grpc\" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -119,7 +124,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_WINSOCK_DEPRECATED_NO_WARNINGS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ENTT_ID_TYPE=uint64_t</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../third_party/;../../third_party/boost/;./;../../third_party/protobuf/src/;../../third_party/zlib/;../../pkg/common/;../../third_party/muduo/;../../third_party/muduo/contrib/windows/include;../../third_party/redis/deps/;../../common/src/pb/pbc/common_proto/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/pbc/src/;../../pkg/config/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../third_party/;../../third_party/boost/;./;../../third_party/protobuf/src/;../../third_party/zlib/;../../pkg/common/;../../third_party/muduo/;../../third_party/muduo/contrib/windows/include;../../third_party/redis/deps/;../../common/src/pb/pbc/common_proto/;../../third_party/protobuf/third_party/abseil-cpp/;../../pkg/pbc/src/;../../pkg/config/src/;../../third_party/grpc/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>

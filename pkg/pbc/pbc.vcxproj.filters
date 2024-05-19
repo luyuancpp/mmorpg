@@ -372,6 +372,9 @@
     <ClCompile Include="src\common_proto\deploy_config.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="src\service\grpc\deploy_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client_player_proto\common_client_player.pb.h">
@@ -564,6 +567,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\common_proto\deploy_config.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\service\grpc\deploy_service.grpc.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

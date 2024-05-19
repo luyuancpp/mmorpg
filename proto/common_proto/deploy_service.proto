@@ -1,9 +1,101 @@
 syntax = "proto3";
-import "common_proto/common.proto";
-import "common_proto/mysql_database_table.proto";
-option cc_generic_services = true;
 
-message ServerInfoRequest
+import "common_proto/db_base.proto";
+import "common_proto/common.proto";
+
+message database_server_db
+{
+  option(OptionTableName)  = "database_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  string db_host = 4;
+  string db_user = 5;
+  string db_password = 6;
+  uint32 db_port = 7;
+  string db_dbname = 8;
+  uint32 lobby_id = 9;
+}
+
+message servers_info_data
+{
+  database_server_db database_info = 1;
+  login_server_db login_info = 2;
+  controller_server_db controller_info = 3;
+  gate_server_db gate_info = 4;
+  redis_server_db redis_info = 5;
+  lobby_server_db lobby_info = 6;
+}
+
+message login_server_db
+{
+  option(OptionTableName)  = "login_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 group_id = 4;
+}
+
+message controller_server_db
+{
+  option(OptionTableName)  = "controller_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 lobby_id = 4;
+}
+
+message lobby_server_db
+{
+  option(OptionTableName)  = "lobby_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+}
+
+message redis_server_db
+{
+  option(OptionTableName)  = "redis_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 group_id = 4;
+}
+
+message game_server_db
+{
+  option(OptionTableName)  = "game_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 lobby_id = 4;
+}
+
+message gate_server_db
+{
+  option(OptionTableName)  = "gate_server_db";
+  option(OptionPrimaryKey) = "id";
+  option(OptionAutoIncrementKey) = "id";
+  uint32 id = 1;
+  string ip = 2;
+  uint32 port = 3;
+  uint32 lobby_id = 4;
+}
+
+
+message NodeInfoRequest
 {
   uint32 group = 1;
   uint32 lobby_id = 2;
@@ -19,19 +111,19 @@ message LoginNodesDb
   repeated login_server_db login_nodes = 1;
 }
 
-message ServerInfoResponse
+message NodeInfoResponse
 {
   servers_info_data info = 1;
 }
 
-message StartGSRequest
+message StartGsRequest
 {
   uint32 group = 1;
   game_server_db my_info = 2;
   IpPort rpc_client = 3; 
 }
 
-message StartGSResponse
+message StartGsResponse
 {
   game_server_db my_info = 1;
   uint32 error_no = 2;
@@ -53,31 +145,17 @@ message LobbyInfoResponse
   ControllerNodesDb lobby_controllers = 1;
 }
 
-message GroupLignRequest
-{
-  uint32 group_id = 1;
-}
-
-message GruoupLoginNodeResponse
-{
-  LoginNodesDb login_db = 1;
-}
-
-message SceneSqueueRequest
+message GsNodeIdRequest
 {
 }
 
-message SceneSqueueResponese
+message GsNodeIdResponse
 {
   uint32 node_id = 1;
 }
 
 service DeployService {
-  rpc ServerInfo (ServerInfoRequest) returns (ServerInfoResponse);
-  rpc StartGS (StartGSRequest) returns (StartGSResponse);
-  rpc StartLobbyServer (LobbyServerRequest) returns (LobbyServerResponse);
-  rpc AcquireLobbyServerInfo (LobbyServerRequest) returns (LobbyServerResponse);
-  rpc AcquireLobbyInfo (LobbyServerRequest) returns (LobbyInfoResponse);
-  rpc LoginNodeInfo (GroupLignRequest) returns (GruoupLoginNodeResponse);
-  rpc SceneSequenceNodeId (SceneSqueueRequest) returns (SceneSqueueResponese);
+  rpc GetNodeInfo (NodeInfoRequest) returns (NodeInfoResponse);
+  rpc StartGs (StartGsRequest) returns (StartGsResponse);
+  rpc GetGsNodeId (GsNodeIdRequest) returns (GsNodeIdResponse);
 }
