@@ -27,7 +27,23 @@ func NewGetNodeInfoLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetNo
 
 func (l *GetNodeInfoLogic) GetNodeInfo(in *deploy.NodeInfoRequest) (*deploy.NodeInfoResponse, error) {
 	// todo: add your logic here and delete this line
-	response := &deploy.NodeInfoResponse{Info: &deploy.ServersInfoData{GateInfo: &deploy.GateServerDb{}}}
-	pkg.PbDb.LoadOneByKV(response.Info.GetGateInfo(), "zone_id", strconv.FormatUint(uint64(in.ZoneId), 10))
+	response := &deploy.NodeInfoResponse{
+		Info: &deploy.ServersInfoData{
+			DatabaseInfo:   &deploy.DatabaseServerDb{},
+			LoginInfo:      &deploy.LoginServerDb{},
+			ControllerInfo: &deploy.ControllerServerDb{},
+			GateInfo:       &deploy.GateServerDb{},
+			RedisInfo:      &deploy.RedisServerDb{},
+			LobbyInfo:      &deploy.LobbyServerDb{},
+		},
+	}
+	
+	zoneId := strconv.FormatUint(uint64(in.ZoneId), 10)
+	pkg.PbDb.LoadOneByKV(response.Info.GetDatabaseInfo(), "zone_id", zoneId)
+	pkg.PbDb.LoadOneByKV(response.Info.GetLoginInfo(), "zone_id", zoneId)
+	pkg.PbDb.LoadOneByKV(response.Info.GetControllerInfo(), "zone_id", zoneId)
+	pkg.PbDb.LoadOneByKV(response.Info.GetGateInfo(), "zone_id", zoneId)
+	pkg.PbDb.LoadOneByKV(response.Info.GetLobbyInfo(), "zone_id", zoneId)
+
 	return response, nil
 }

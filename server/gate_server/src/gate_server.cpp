@@ -11,8 +11,7 @@
 #include "service/grpc/deploy_service.grpc.pb.h"
 #include "service/game_service_service.h"
 #include "src/thread_local/gate_thread_local_storage.h"
-#include "src/grpc/deployclient.h"
-
+#include "src/network/deploy/deployclient.h"
 #include "common_proto/game_service.pb.h"
 #include "service/login_service_service.h"
 
@@ -20,7 +19,7 @@ GateServer* g_gate_node = nullptr;
 
 void AsyncCompleteGrpc();
 
-void GateServer::LoadConfig()
+void GateServer::LoadNodeConfig()
 {
 	ZoneConfig::GetSingleton().Load("game.json");
 	DeployConfig::GetSingleton().Load("deploy.json");
@@ -34,18 +33,20 @@ GateServer::~GateServer()
 void GateServer::Init()
 {
     g_gate_node = this;
-    LoadConfig();
-    node_info_.set_node_type(kGateNode);
-    node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
 
     InitNodeServer();
 
+    LoadNodeConfig();
+
+    node_info_.set_node_type(kGateNode);
+    node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
+
     InitMessageInfo();
+
     void InitRepliedHandler();
     InitRepliedHandler();
 
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateServer::Receive1>(*this);
-
 }
 
 
