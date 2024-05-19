@@ -34,6 +34,8 @@ func main() {
 	}
 	defer pkg.PbDb.Close()
 
+	pkg.InitDBTables()
+
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		deploy.RegisterDeployServiceServer(grpcServer, deployserviceServer.NewDeployServiceServer(ctx))
 

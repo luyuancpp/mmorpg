@@ -17,8 +17,7 @@ void AsyncCompleteGrpc()
         return;
     }
 
-    auto call = static_cast<AsyncClientCall*>(got_tag);
-    defer(delete call);
+    std::unique_ptr<AsyncClientCall> call (static_cast<AsyncClientCall*>(got_tag));
 
     CHECK(ok);
 

@@ -66,3 +66,31 @@ func OpenDB(path string) error {
 
 	return nil
 }
+
+func InitDBTables() {
+	_, err := Db.Exec(PbDb.GetCreateTableSql(&deploy.DatabaseServerDb{}))
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&deploy.LoginServerDb{}))
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&deploy.ControllerServerDb{}))
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&deploy.RedisServerDb{}))
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&deploy.GateServerDb{}))
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+}
