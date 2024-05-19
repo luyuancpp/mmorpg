@@ -3,8 +3,8 @@ void InitRepliedHandler()
 	void InitDbServiceLoginRepliedHandler();
 	InitDbServiceLoginRepliedHandler();
 
-	void InitDeployServiceServerInfoRepliedHandler();
-	InitDeployServiceServerInfoRepliedHandler();
+	void InitDeployServiceGetNodeInfoRepliedHandler();
+	InitDeployServiceGetNodeInfoRepliedHandler();
 
 	void InitGameSceneServiceTestRepliedHandler();
 	InitGameSceneServiceTestRepliedHandler();

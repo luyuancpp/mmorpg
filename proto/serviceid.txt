@@ -44,7 +44,6 @@
 44=ControllerScenePlayerServiceEnterScene
 45=LoginServiceGateConnect
 46=GamePlayerSceneServiceEnterScene
-47=DeployServiceSceneSequenceNodeId
 48=GameSceneServiceTest
 49=ClientPlayerTeamServiceTeamInfoNotify
 50=LobbyServiceStartCrossGs
@@ -63,12 +62,9 @@
 63=GameServiceCallPlayer
 64=GameServiceRouteNodeStringMsg
 65=GameServiceRoutePlayerStringMsg
-66=DeployServiceServerInfo
-67=DeployServiceStartGS
-68=DeployServiceStartLobbyServer
-69=DeployServiceAcquireLobbyServerInfo
-70=DeployServiceAcquireLobbyInfo
-71=DeployServiceLoginNodeInfo
+66=DeployServiceGetGsNodeId
+69=DeployServiceStartGs
+70=DeployServiceGetNodeInfo
 72=GamePlayerServiceOnControllerEnterGateSucceed
 73=GamePlayerServiceController2GsLogin
 74=GameServiceUpdateSession

@@ -133,6 +133,7 @@
     <ClCompile Include="src\service\game_server_player_service.cpp" />
     <ClCompile Include="src\service\game_service_service.cpp" />
     <ClCompile Include="src\service\gate_service_service.cpp" />
+    <ClCompile Include="src\service\grpc\deploy_service.grpc.pb.cc" />
     <ClCompile Include="src\service\lobby_scene_service.cpp" />
     <ClCompile Include="src\service\login_service_service.cpp" />
     <ClCompile Include="src\service\scene_client_player_service.cpp" />
@@ -199,6 +200,7 @@
     <ClInclude Include="src\service\game_server_player_service.h" />
     <ClInclude Include="src\service\game_service_service.h" />
     <ClInclude Include="src\service\gate_service_service.h" />
+    <ClInclude Include="src\service\grpc\deploy_service.grpc.pb.h" />
     <ClInclude Include="src\service\lobby_scene_service.h" />
     <ClInclude Include="src\service\login_service_service.h" />
     <ClInclude Include="src\service\scene_client_player_service.h" />
@@ -308,7 +310,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./src/;../../third_party/protobuf/src/;../../third_party/protobuf/third_party/abseil-cpp/;./src/game_config/;../../third_party/sol2/include/;../../third_party/lua/;../common/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./src/;../../third_party/protobuf/src/;../../third_party/protobuf/third_party/abseil-cpp/;./src/game_config/;../../third_party/sol2/include/;../../third_party/lua/;../common/;./src/common_proto/;../../third_party/grpc/include/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4018;4244;4082;4267;</DisableSpecificWarnings>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>

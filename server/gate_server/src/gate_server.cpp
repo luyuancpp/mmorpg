@@ -57,9 +57,9 @@ void GateServer::StartServer()
     EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
         [this]() ->void
         {
-            GroupLignRequest rq;
+            /*GroupLignRequest rq;
             rq.set_group_id(GameConfig::GetSingleton().config_info().group_id());
-            deploy_session()->CallMethod(DeployServiceLoginNodeInfoMsgId, rq);
+            deploy_session()->CallMethod(DeployServiceLoginNodeInfoMsgId, rq);*/
         }
     );
 
@@ -93,9 +93,9 @@ void GateServer::Receive1(const OnConnected2ServerEvent& es)
         EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
             [this]() ->void
             {
-                ServerInfoRequest rq;
+                /*ServerInfoRequest rq;
                 rq.set_group(GameConfig::GetSingleton().config_info().group_id());
-                deploy_session()->CallMethod(DeployServiceServerInfoMsgId, rq);
+                deploy_session()->CallMethod(DeployServiceServerInfoMsgId, rq);*/
             }
         );
     }
