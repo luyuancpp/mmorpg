@@ -91,7 +91,7 @@ message gate_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 lobby_id = 4;
+  uint32 zone_id = 4;
 }
 
 
