@@ -31,8 +31,15 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	var service string
 	var methodIndex uint64
 	var rpcServiceInfo RpcServiceInfo
+	ccGenericServices := false
 	for scanner.Scan() {
 		line = scanner.Text()
+		if strings.Contains(line, config.CcGenericServices) {
+			ccGenericServices = true
+		}
+		if !ccGenericServices {
+			continue
+		}
 		if strings.Contains(line, "service ") && !strings.Contains(line, "=") {
 			service = strings.ReplaceAll(line, "{", "")
 			service = strings.Split(service, " ")[1]
@@ -59,6 +66,7 @@ func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 		} else if len(service) > 0 && strings.Contains(line, "}") {
 			break
 		}
+
 	}
 
 	if err := scanner.Err(); err != nil {
