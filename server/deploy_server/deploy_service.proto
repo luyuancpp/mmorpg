@@ -46,7 +46,7 @@ message login_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 group_id = 4;
+  uint32 zone_id = 4;
 }
 
 message controller_server_db
@@ -78,7 +78,7 @@ message redis_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 group_id = 4;
+  uint32 zone_id = 4;
 }
 
 message game_server_db
@@ -127,7 +127,7 @@ message NodeInfoResponse
 
 message StartGsRequest
 {
-  uint32 group = 1;
+  uint32 zone = 1;
   game_server_db my_info = 2;
   IpPort rpc_client = 3; 
 }
