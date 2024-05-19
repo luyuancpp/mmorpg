@@ -192,6 +192,9 @@ func InitServiceId() {
 				mv.Id = MessageIdFileMaxId
 			}
 			RpcIdMethodMap[mv.Id] = mv
+			if FileMaxMessageId < mv.Id && mv.Id != math.MaxUint64 {
+				FileMaxMessageId = mv.Id
+			}
 		}
 	}
 }
@@ -210,7 +213,7 @@ func writeGlobalServiceInfoFile() {
 	includeData += "#include \"service.h\"\n"
 	var classHandlerData = ""
 	var initFuncData = "std::unordered_set<uint32_t> g_c2s_service_id;\n" +
-		"std::array<RpcService, " + strconv.FormatUint(MessageSize(), 10) + "> g_message_info;\n\n"
+		"std::array<RpcService, " + strconv.FormatUint(MessageIdLen(), 10) + "> g_message_info;\n\n"
 
 	initFuncData += "void InitMessageInfo()\n{\n"
 	ServiceList := GetSortServiceList()
@@ -267,7 +270,7 @@ func writeGlobalServiceInfoHeadFile() {
 		" std::unique_ptr<::google::protobuf::Service> service_impl_instance_;\n};\n\n" +
 		"using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;\n\n" +
 		"void InitMessageInfo();\n\n" +
-		"extern std::array<RpcService, " + strconv.FormatUint(MessageSize(), 10) + "> g_message_info;\n\n" +
+		"extern std::array<RpcService, " + strconv.FormatUint(MessageIdLen(), 10) + "> g_message_info;\n\n" +
 		"extern std::unordered_set<uint32_t> g_c2s_service_id;\n"
 
 	WriteMd5Data2File(config.ServiceHeadFileName, data)

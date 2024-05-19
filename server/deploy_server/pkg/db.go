@@ -58,6 +58,10 @@ func OpenDB(path string) error {
 	Db.SetMaxIdleConns(dbConfig.MaxIdleConn)
 
 	PbDb = pbmysql.NewPb2DbTables()
+	err = PbDb.OpenDB(Db, mysqlConfig.DBName)
+	if err != nil {
+		return err
+	}
 	PbDb.AddMysqlTable(&deploy.DatabaseServerDb{})
 	PbDb.AddMysqlTable(&deploy.LoginServerDb{})
 	PbDb.AddMysqlTable(&deploy.ControllerServerDb{})

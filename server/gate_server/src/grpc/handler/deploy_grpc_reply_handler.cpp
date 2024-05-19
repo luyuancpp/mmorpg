@@ -1,5 +1,7 @@
 #include "deploy_grpc_reply_handler.h"
 
+#include "muduo/base/Logging.h"
+
 #include "src/util/defer.h"
 
 #include "src/grpc/async_client_call.h"
@@ -22,9 +24,9 @@ void AsyncCompleteGrpc()
     CHECK(ok);
 
     if (call->status.ok())
-        std::cout << "Greeter received: " << call->reply.DebugString() << std::endl;
+        LOG_INFO << "Greeter received: " << call->reply.DebugString() ;
     else
-        std::cout << "RPC failed" << std::endl;
+        LOG_INFO << "RPC failed" ;
 
 }
 
