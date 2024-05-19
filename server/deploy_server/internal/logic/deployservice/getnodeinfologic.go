@@ -37,7 +37,7 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *deploy.NodeInfoRequest) (*deploy.Node
 			LobbyInfo:      &deploy.LobbyServerDb{},
 		},
 	}
-	
+
 	zoneId := strconv.FormatUint(uint64(in.ZoneId), 10)
 	pkg.PbDb.LoadOneByKV(response.Info.GetDatabaseInfo(), "zone_id", zoneId)
 	pkg.PbDb.LoadOneByKV(response.Info.GetLoginInfo(), "zone_id", zoneId)
