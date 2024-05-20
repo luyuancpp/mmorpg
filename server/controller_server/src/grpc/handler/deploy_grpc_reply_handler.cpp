@@ -6,7 +6,7 @@
 
 #include "src/grpc/async_client_call.h"
 #include "src/grpc/deploy/deployclient.h"
-#include "src/gate_server.h"
+#include "src/controller_server.h"
 
 void AsyncCompleteGrpc()
 {
@@ -23,11 +23,6 @@ void AsyncCompleteGrpc()
     std::unique_ptr<AsyncClientCall> call (static_cast<AsyncClientCall*>(got_tag));
 
     CHECK(ok);
-
-    if (call->status.ok())
-        g_gate_node->set_servers_info_data(call->reply.info());
-    else
-        LOG_INFO << "RPC failed" ;
 
 }
 
