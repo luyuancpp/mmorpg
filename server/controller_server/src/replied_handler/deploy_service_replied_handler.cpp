@@ -33,15 +33,7 @@ void OnDeployServiceStartGsRepliedHandler(const TcpConnectionPtr& conn, const st
 void OnDeployServiceGetGsNodeIdRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<GsNodeIdResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
+	set_server_sequence_node_id(replied->node_id());
 ///<<< END WRITING YOUR CODE
 }
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-    set_server_sequence_node_id(replied->node_id());
-///<<< END WRITING YOUR CODE

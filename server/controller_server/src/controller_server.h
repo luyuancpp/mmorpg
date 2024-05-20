@@ -45,6 +45,8 @@ private:
 	void Connect2Lobby();
 	void Register2Lobby();
 
+	void InitNodeServer();
+
 	muduo::net::EventLoop* loop_{ nullptr };
 	PbSyncRedisClientPtr redis_;
 	RpcServerPtr server_;

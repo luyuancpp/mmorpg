@@ -1,5 +1,7 @@
 #include "controller_server.h"
 
+#include <grpcpp/grpcpp.h>
+
 #include "muduo//net/EventLoop.h"
 
 #include "all_config.h"
@@ -20,6 +22,9 @@
 #include "src/thread_local/controller_thread_local_storage.h"
 #include "src/thread_local/thread_local_storage_link.h"
 
+#include "service/grpc/deploy_service.grpc.pb.h"
+
+#include "src/network/deploy/deployclient.h"
 
 using namespace muduo;
 using namespace net;
@@ -58,6 +63,8 @@ void ControllerServer::Init()
     InitMq();
 
 	Connect2Deploy();
+
+    InitNodeServer();
 
     InitPlayerService();
     InitPlayerServiceReplied();
@@ -133,15 +140,11 @@ void ControllerServer::Receive1(const OnConnected2ServerEvent& es)
 		if (nullptr == server_)
 		{
 			{
-                ServerInfoRequest rq;
-                rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
-                rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-                deploy_session_->CallMethod(DeployServiceServerInfoMsgId, rq);
+              
 			}
 			
             {
-                SceneSqueueRequest rq;
-                deploy_session_->CallMethod(DeployServiceSceneSequenceNodeIdMsgId, rq);
+
             }
 		}
 		
@@ -251,4 +254,24 @@ void ControllerServer::Register2Lobby()
 	node_info->set_port(myinfo.port());
 	rq.set_controller_node_id(myinfo.id());
     lobby_session_->CallMethod(LobbyServiceStartControllerNodeMsgId, rq);
+}
+
+void ControllerServer::InitNodeServer()
+{
+    auto& zone = ZoneConfig::GetSingleton().config_info();
+
+    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
+    std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
+    extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
+    g_deploy_stub = DeployService::NewStub(deploy_channel);
+    g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
+
+    void AsyncCompleteGrpc();
+    EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
+
+    NodeInfoRequest req;
+    req.set_zone_id(zone.zone_id());
+    void SendGetNodeInfo(NodeInfoRequest & req);
+    SendGetNodeInfo(req);
 }

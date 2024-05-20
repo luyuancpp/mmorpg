@@ -11,7 +11,7 @@
 #include "service/grpc/deploy_service.grpc.pb.h"
 #include "service/game_service_service.h"
 #include "src/thread_local/gate_thread_local_storage.h"
-#include "src/network/deploy/deployclient.h"
+#include "src/grpc/deploy/deployclient.h"
 #include "common_proto/game_service.pb.h"
 #include "service/login_service_service.h"
 
@@ -49,23 +49,26 @@ void GateServer::Init()
     tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateServer::Receive1>(*this);
 }
 
-
 void GateServer::InitNodeServer()
 {
     auto& zone = ZoneConfig::GetSingleton().config_info();
 
-    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
+    //const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
+    std::string target_str = "127.0.0.1:1000";
     auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(deploy_channel);
     g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
 
-    NodeInfoRequest req;
-    req.set_zone_id(zone.zone_id());
-    void SendGetNodeInfo(NodeInfoRequest & req);
-    SendGetNodeInfo(req);
+    for (uint32_t i = 0; i < 1000; ++i)
+    {
+        NodeInfoRequest req;
+        req.set_zone_id(i);
+        void SendGetNodeInfo(NodeInfoRequest & req);
+        SendGetNodeInfo(req);
+    }
+   
 }
 
 void GateServer::StartServer()

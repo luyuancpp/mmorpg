@@ -5,7 +5,7 @@
 #include "src/util/defer.h"
 
 #include "src/grpc/async_client_call.h"
-#include "src/network/deploy/deployclient.h"
+#include "src/grpc/deploy/deployclient.h"
 #include "src/gate_server.h"
 
 void AsyncCompleteGrpc()

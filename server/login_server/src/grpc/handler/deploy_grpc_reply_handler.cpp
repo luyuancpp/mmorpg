@@ -5,7 +5,7 @@
 #include "src/util/defer.h"
 
 #include "src/grpc/async_client_call.h"
-#include "src/grpc/deployclient.h"
+#include "src/grpc/deploy/deployclient.h"
 #include "src/login_server.h"
 
 void AsyncCompleteGrpc()
@@ -23,9 +23,6 @@ void AsyncCompleteGrpc()
     std::unique_ptr<AsyncClientCall> call (static_cast<AsyncClientCall*>(got_tag));
 
     CHECK(ok);
-
-  
-
 }
 
 void DeployGrpcReplyHandler()
