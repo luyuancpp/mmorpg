@@ -9,13 +9,16 @@ type MsgChannelList struct {
 	Data chan MsgChannel
 }
 
-var QueueList []MsgChannelList
-var RoutineNum int
-var ChanelBufferNum uint64
+type MsgQueue struct {
+	QueueList       []MsgChannelList
+	RoutineNum      int
+	ChanelBufferNum uint64
+}
 
-func InitConsumerQueue() {
-	QueueList = make([]MsgChannelList, RoutineNum)
-	for i := 0; i < RoutineNum; i++ {
+func NewMsgQueue(RoutineNum int, ) {
+
+	q.QueueList = make([]MsgChannelList, q.RoutineNum)
+	for i := 0; i < q.RoutineNum; i++ {
 		QueueList[i] = MsgChannelList{make(chan MsgChannel, ChanelBufferNum)}
 	}
 }
