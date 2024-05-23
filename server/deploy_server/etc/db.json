@@ -1,0 +1,9 @@
+{
+  "Net": "",
+  "Addr": "127.0.0.1:3306",
+  "User": "root",
+  "Passwd": "lhl616586",
+  "DBName": "game",
+  "MaxOpenConn": 5,
+  "MaxIdleConn": 3
+}

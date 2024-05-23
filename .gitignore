@@ -14,7 +14,6 @@ compile_commands.json
 *.user
 *.zip
 *.lib
-*.json
 *.exp
 *.pyc
 *.dll
