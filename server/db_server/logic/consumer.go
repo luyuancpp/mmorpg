@@ -9,23 +9,23 @@ type MsgChannelList struct {
 	Data chan MsgChannel
 }
 
-var ConsumerQueue []MsgChannelList
+var QueueList []MsgChannelList
 var RoutineNum int
 var ChanelBufferNum uint64
 
-func InitConsumerQueue(queueLength int) {
-	ConsumerQueue = make([]MsgChannelList, RoutineNum)
+func InitConsumerQueue() {
+	QueueList = make([]MsgChannelList, RoutineNum)
 	for i := 0; i < RoutineNum; i++ {
-		ConsumerQueue[i] = MsgChannelList{make(chan MsgChannel, ChanelBufferNum)}
+		QueueList[i] = MsgChannelList{make(chan MsgChannel, ChanelBufferNum)}
 	}
 }
 
 func Put(msg MsgChannel) {
 	index := msg.Key % ChanelBufferNum
-	ConsumerQueue[index].Data <- msg
+	QueueList[index].Data <- msg
 }
 
 func Pop(index int) MsgChannel {
-	msg := <-ConsumerQueue[index].Data
+	msg := <-QueueList[index].Data
 	return msg
 }
