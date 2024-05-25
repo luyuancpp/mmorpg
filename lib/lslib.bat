@@ -1,2 +1,2 @@
-dir *.lib  /B  > D:\other\turn-based-game\lib\LIST.TXT
+dir *.lib  /B  > ./LIST.TXT
 pause

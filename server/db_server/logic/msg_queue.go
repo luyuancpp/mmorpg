@@ -15,20 +15,23 @@ type MsgQueue struct {
 	ChanelBufferNum uint64
 }
 
-func NewMsgQueue(RoutineNum int, ) {
-
+func NewMsgQueue(RoutineNum int, ChanelBufferNum uint64) *MsgQueue {
+	q := new(MsgQueue)
+	q.RoutineNum = RoutineNum
+	q.ChanelBufferNum = ChanelBufferNum
 	q.QueueList = make([]MsgChannelList, q.RoutineNum)
 	for i := 0; i < q.RoutineNum; i++ {
-		QueueList[i] = MsgChannelList{make(chan MsgChannel, ChanelBufferNum)}
+		q.QueueList[i] = MsgChannelList{make(chan MsgChannel, ChanelBufferNum)}
 	}
+	return q
 }
 
-func Put(msg MsgChannel) {
-	index := msg.Key % ChanelBufferNum
-	QueueList[index].Data <- msg
+func (q *MsgQueue) Put(msg MsgChannel) {
+	index := msg.Key % q.ChanelBufferNum
+	q.QueueList[index].Data <- msg
 }
 
-func Pop(index int) MsgChannel {
-	msg := <-QueueList[index].Data
+func (q *MsgQueue) Pop(index int) MsgChannel {
+	msg := <-q.QueueList[index].Data
 	return msg
 }
