@@ -2,6 +2,7 @@ package deployservicelogic
 
 import (
 	"context"
+	"log"
 
 	"deploy_server/internal/svc"
 	"deploy_server/pb/deploy"
@@ -25,6 +26,6 @@ func NewStartGsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *StartGsLo
 
 func (l *StartGsLogic) StartGs(in *deploy.StartGsRequest) (*deploy.StartGsResponse, error) {
 	// todo: add your logic here and delete this line
-
+	log.Println("zone id ", in.Zone)
 	return &deploy.StartGsResponse{}, nil
 }
