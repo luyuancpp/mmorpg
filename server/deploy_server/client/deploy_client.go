@@ -4,7 +4,6 @@ import (
 	"deploy_server/client/deployservice"
 	"flag"
 	"fmt"
-	"time"
 )
 import (
 	"context"
@@ -20,19 +19,13 @@ func main() {
 	var c zrpc.RpcClientConf
 	conf.MustLoad(*configFile, &c)
 	client := zrpc.MustNewClient(c)
-	ticker := time.NewTicker(time.Millisecond * 500)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			deploy := deployservice.NewDeployService(client)
-			resp, err := deploy.StartGs(context.Background(), &deployservice.StartGsRequest{})
-			if err != nil {
-				fmt.Println("X", err.Error())
-			} else {
-				fmt.Println("=>", resp.String())
-			}
-			break
+	for i := 0; i < 1000; i++ {
+		deploy := deployservice.NewDeployService(client)
+		resp, err := deploy.StartGs(context.Background(), &deployservice.StartGsRequest{Zone: uint32(i)})
+		if err != nil {
+			fmt.Println("X", err.Error())
+		} else {
+			fmt.Println("=>", resp.String())
 		}
 	}
 }
