@@ -9,10 +9,7 @@ import (
 
 func TestPut(t *testing.T) {
 	config.Load()
-	RoutineNum = config.DBConfig.RoutineNum
-	ChanelBufferNum = config.DBConfig.ChannelBufferNum
-
-	InitConsumerQueue()
+	q := NewMsgQueue(config.DBConfig.RoutineNum, config.DBConfig.ChannelBufferNum)
 
 	go func() {
 		for i := uint64(0); i < 10; i++ {
@@ -20,7 +17,7 @@ func TestPut(t *testing.T) {
 				for {
 					msg := MsgChannel{}
 					msg.Key = i
-					Put(msg)
+					q.Put(msg)
 				}
 			}(i)
 		}
@@ -30,7 +27,7 @@ func TestPut(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			go func(i int) {
 				for {
-					msg := Pop(i)
+					msg := q.Pop(i)
 					fmt.Println(msg.Key)
 				}
 			}(i)
