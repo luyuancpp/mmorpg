@@ -1,7 +1,8 @@
 syntax = "proto3";
-option optimize_for = SPEED;				
-option go_package = "./;game";
+option optimize_for = SPEED;
 
+option go_package = "github.com/luyuancpp/dbprotooption;db";
+				
 import "google/protobuf/descriptor.proto";
 
 //option id  要从50000开始 50000以内pb内部使用

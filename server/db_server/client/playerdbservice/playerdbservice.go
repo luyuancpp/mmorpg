@@ -6,21 +6,21 @@ package playerdbservice
 import (
 	"context"
 
-	"db_sever/pb/db"
+	"db_server/pb/game"
 
 	"github.com/zeromicro/go-zero/zrpc"
 	"google.golang.org/grpc"
 )
 
 type (
-	LoadAccountRequest  = db.LoadAccountRequest
-	LoadAccountResponse = db.LoadAccountResponse
-	LoadPlayerRequest   = db.LoadPlayerRequest
-	LoadPlayerResponse  = db.LoadPlayerResponse
-	SaveAccountRequest  = db.SaveAccountRequest
-	SaveAccountResponse = db.SaveAccountResponse
-	SavePlayerRequest   = db.SavePlayerRequest
-	SavePlayerResponse  = db.SavePlayerResponse
+	LoadAccountRequest  = game.LoadAccountRequest
+	LoadAccountResponse = game.LoadAccountResponse
+	LoadPlayerRequest   = game.LoadPlayerRequest
+	LoadPlayerResponse  = game.LoadPlayerResponse
+	SaveAccountRequest  = game.SaveAccountRequest
+	SaveAccountResponse = game.SaveAccountResponse
+	SavePlayerRequest   = game.SavePlayerRequest
+	SavePlayerResponse  = game.SavePlayerResponse
 
 	PlayerDBService interface {
 		Load2Redis(ctx context.Context, in *LoadPlayerRequest, opts ...grpc.CallOption) (*LoadPlayerResponse, error)
@@ -39,11 +39,11 @@ func NewPlayerDBService(cli zrpc.Client) PlayerDBService {
 }
 
 func (m *defaultPlayerDBService) Load2Redis(ctx context.Context, in *LoadPlayerRequest, opts ...grpc.CallOption) (*LoadPlayerResponse, error) {
-	client := db.NewPlayerDBServiceClient(m.cli.Conn())
+	client := game.NewPlayerDBServiceClient(m.cli.Conn())
 	return client.Load2Redis(ctx, in, opts...)
 }
 
 func (m *defaultPlayerDBService) Save2Redis(ctx context.Context, in *SavePlayerRequest, opts ...grpc.CallOption) (*SavePlayerResponse, error) {
-	client := db.NewPlayerDBServiceClient(m.cli.Conn())
+	client := game.NewPlayerDBServiceClient(m.cli.Conn())
 	return client.Save2Redis(ctx, in, opts...)
 }

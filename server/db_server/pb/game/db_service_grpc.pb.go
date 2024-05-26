@@ -4,7 +4,7 @@
 // - protoc             v3.19.4
 // source: common_proto/db_service.proto
 
-package db
+package game
 
 import (
 	context "context"

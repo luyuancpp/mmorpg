@@ -3,7 +3,7 @@ import "common_proto/db_base.proto";
 import "common_proto/account_database.proto";
 import "common_proto/comp.proto";
 
-option go_package = "./;game";
+option go_package = ".;game";
 
 /////////////         game
 message account_database
