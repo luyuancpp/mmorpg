@@ -127,7 +127,7 @@ message NodeInfoResponse
 
 message StartGsRequest
 {
-  uint32 zone = 1;
+  uint32 zone_id = 1;
   game_server_db my_info = 2;
   IpPort rpc_client = 3; 
 }
