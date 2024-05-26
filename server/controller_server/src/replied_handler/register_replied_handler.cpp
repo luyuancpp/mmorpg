@@ -1,7 +1,7 @@
 void InitRepliedHandler()
 {
-	void InitDbServiceLoginRepliedHandler();
-	InitDbServiceLoginRepliedHandler();
+	void InitAccountDBServiceLoad2RedisRepliedHandler();
+	InitAccountDBServiceLoad2RedisRepliedHandler();
 
 	void InitGameSceneServiceTestRepliedHandler();
 	InitGameSceneServiceTestRepliedHandler();

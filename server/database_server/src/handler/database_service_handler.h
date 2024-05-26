@@ -1,31 +1,16 @@
 #pragma once
 #include "common_proto/database_service.pb.h"
-class DbServiceHandler : public ::DbService
+class AccountDBServiceHandler : public ::AccountDBService
 {
 public:
-	void Login(::google::protobuf::RpcController* controller,
-		const ::DatabaseNodeLoginRequest* request,
-		::DatabaseNodeLoginResponse* response,
+	void Load2Redis(::google::protobuf::RpcController* controller,
+		const ::LoadAccountRequest* request,
+		::LoadAccountResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void CreatePlayer(::google::protobuf::RpcController* controller,
-		const ::DatabaseNodeCreatePlayerRequest* request,
-		::DatabaseNodeCreatePlayerResponse* response,
-		 ::google::protobuf::Closure* done)override;
-
-	void EnterGame(::google::protobuf::RpcController* controller,
-		const ::DatabaseNodeEnterGameRequest* request,
-		::DatabaseNodeEnterGameResponse* response,
-		 ::google::protobuf::Closure* done)override;
-
-	void RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-		const ::RouteMsgStringRequest* request,
-		::RouteMsgStringResponse* response,
-		 ::google::protobuf::Closure* done)override;
-
-	void RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-		const ::RoutePlayerMsgStringRequest* request,
-		::RoutePlayerMsgStringResponse* response,
+	void Save2Redis(::google::protobuf::RpcController* controller,
+		const ::SaveAccountRequest* request,
+		::SaveAccountResponse* response,
 		 ::google::protobuf::Closure* done)override;
 
 };

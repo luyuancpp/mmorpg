@@ -7,9 +7,9 @@
 #include "src/database_server.h"
 #include "service/service.h"
 ///<<< END WRITING YOUR CODE
-void DbServiceHandler::Login(::google::protobuf::RpcController* controller,
-	const ::DatabaseNodeLoginRequest* request,
-	::DatabaseNodeLoginResponse* response,
+void AccountDBServiceHandler::Load2Redis(::google::protobuf::RpcController* controller,
+	const ::LoadAccountRequest* request,
+	::LoadAccountResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -28,9 +28,9 @@ void DbServiceHandler::Login(::google::protobuf::RpcController* controller,
 ///<<< END WRITING YOUR CODE
 }
 
-void DbServiceHandler::CreatePlayer(::google::protobuf::RpcController* controller,
-	const ::DatabaseNodeCreatePlayerRequest* request,
-	::DatabaseNodeCreatePlayerResponse* response,
+void AccountDBServiceHandler::Save2Redis(::google::protobuf::RpcController* controller,
+	const ::SaveAccountRequest* request,
+	::SaveAccountResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -47,11 +47,6 @@ void DbServiceHandler::CreatePlayer(::google::protobuf::RpcController* controlle
 ///<<< END WRITING YOUR CODE
 }
 
-void DbServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
-	const ::DatabaseNodeEnterGameRequest* request,
-	::DatabaseNodeEnterGameResponse* response,
-	 ::google::protobuf::Closure* done)
-{
 ///<<< BEGIN WRITING YOUR CODE
 	player_database new_player;
 	const std::string where_case = std::string("player_id = '") +
@@ -62,13 +57,6 @@ void DbServiceHandler::EnterGame(::google::protobuf::RpcController* controller,
 	//todo  optimize
 	g_database_node->redis_client()->Save(new_player, new_player.player_id());
 ///<<< END WRITING YOUR CODE
-}
-
-void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
-	const ::RouteMsgStringRequest* request,
-	::RouteMsgStringResponse* response,
-	 ::google::protobuf::Closure* done)
-{
 ///<<< BEGIN WRITING YOUR CODE
 	//todo mysql 速度不够快,应该换成消息队列去处理,防止卡死mysql
 	defer(cl_tls.set_next_route_node_type(UINT32_MAX));
@@ -112,14 +100,5 @@ void DbServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* con
 	response->set_id(request->id());
 	response->set_is_client(request->is_client());
 ///<<< END WRITING YOUR CODE
-}
-
-void DbServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
-	const ::RoutePlayerMsgStringRequest* request,
-	::RoutePlayerMsgStringResponse* response,
-	 ::google::protobuf::Closure* done)
-{
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-}
-

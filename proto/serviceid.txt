@@ -1,9 +1,6 @@
 0=ClientPlayerCommonServicePushTipsS2C
-1=DbServiceLogin
-2=DbServiceCreatePlayer
-3=DbServiceEnterGame
-4=DbServiceRouteNodeStringMsg
-5=DbServiceRoutePlayerStringMsg
+2=AccountDBServiceSave2Redis
+5=AccountDBServiceLoad2Redis
 7=ControllerScenePlayerServiceLeaveScene
 8=ControllerScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
 9=GateServiceStartGS
