@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "./;game";
+
 message account_simple_player
 {
   uint64 player_id = 1;
