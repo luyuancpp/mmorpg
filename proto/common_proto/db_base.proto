@@ -1,5 +1,6 @@
 syntax = "proto3";
 option optimize_for = SPEED;				
+option go_package = "./;game";
 
 import "google/protobuf/descriptor.proto";
 
@@ -7,10 +8,10 @@ import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.MessageOptions {
 	optional uint32 OptionTableId			= 50000 ;	//表ID
-    optional string OptionTableName			= 50001 ;	//表名
-    optional string OptionPrimaryKey		= 50002 ;	//主键
-    optional string OptionForeignKey		= 50003 ;	//外键
-    optional string OptionForeignReferences	= 50005 ;	//外键的关联表
+	optional string OptionTableName			= 50001 ;	//表名
+	optional string OptionPrimaryKey		= 50002 ;	//主键
+	optional string OptionForeignKey		= 50003 ;	//外键
+	optional string OptionForeignReferences	= 50005 ;	//外键的关联表
 	optional string OptionAutoIncrementKey	= 50006 ;	//自增长的Key
 	optional string	OptionBackupTableName	= 50007	;	//备份表的名称
 	optional bool	OptionLoadOnly			= 50008	;	//只用于数据加载
@@ -22,8 +23,8 @@ extend google.protobuf.MessageOptions {
 
 // 描述字段的option
 extend google.protobuf.FieldOptions {
-    optional uint32 OptionRepeatLimit	= 60000 ;	// repeat 字段限制的个数
-    optional string OptionDBFieldExtra	= 60001 ;	// 创建数据库要用到得额外信息，如果没有该属性表示非数据库字段
+	optional uint32 OptionRepeatLimit	= 60000 ;	// repeat 字段限制的个数
+	optional string OptionDBFieldExtra	= 60001 ;	// 创建数据库要用到得额外信息，如果没有该属性表示非数据库字段
 	optional bool   OptionDBReadOnly	= 60002 ;	// 该字段对DB是否只读
 	optional string	OptionDBNamePrefix	= 60003 ;	// 数据库名称前缀
 	optional string	OptionDBLoadSql		= 60004 ;	// 数据加载SQL语句
