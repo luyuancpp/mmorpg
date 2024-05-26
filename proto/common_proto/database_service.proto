@@ -1,8 +1,5 @@
 syntax = "proto3";
-import "common_proto/common.proto";
 import "common_proto/mysql_database_table.proto";
-import "common_proto/node_common.proto";
-option cc_generic_services = true;
 
 message LoadAccountRequest
 {
@@ -11,7 +8,6 @@ message LoadAccountRequest
 
 message LoadAccountResponse
 {
-	Tips error = 1;
   account_database account_player = 2;
 }
 
@@ -44,8 +40,6 @@ message SavePlayerResponse
 {
   uint64 player_id = 2;
 }
-
-
 
 service AccountDBService {
   rpc Load2Redis (LoadAccountRequest) returns (LoadAccountResponse);
