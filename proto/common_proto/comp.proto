@@ -2,7 +2,6 @@ syntax = "proto3";
 
 option go_package = ".;game";
 
-
 message Vector3
 {
 	double x = 1;
