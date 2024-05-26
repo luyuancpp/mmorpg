@@ -1,6 +1,9 @@
 syntax = "proto3";
 import "common_proto/mysql_database_table.proto";
 
+option go_package = "pb/db";
+
+
 message LoadAccountRequest
 {
   string account = 1;
