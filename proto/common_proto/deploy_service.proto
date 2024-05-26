@@ -118,7 +118,7 @@ message NodeInfoResponse
 
 message StartGsRequest
 {
-  uint32 group_id = 1;
+  uint32 zone_id = 1;
   game_server_db my_info = 2;
   IpPort rpc_client = 3; 
 }
@@ -159,4 +159,3 @@ service DeployService {
   rpc StartGs (StartGsRequest) returns (StartGsResponse);
   rpc GetGsNodeId (GsNodeIdRequest) returns (GsNodeIdResponse);
 }
-
