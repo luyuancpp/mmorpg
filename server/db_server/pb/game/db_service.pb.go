@@ -4,7 +4,7 @@
 // 	protoc        v3.19.4
 // source: common_proto/db_service.proto
 
-package db
+package game
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -72,7 +72,7 @@ type LoadAccountResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	AccountPlayer *__.AccountDatabase `protobuf:"bytes,2,opt,name=account_player,json=accountPlayer,proto3" json:"account_player,omitempty"`
+	AccountPlayer *AccountDatabase `protobuf:"bytes,2,opt,name=account_player,json=accountPlayer,proto3" json:"account_player,omitempty"`
 }
 
 func (x *LoadAccountResponse) Reset() {
@@ -107,7 +107,7 @@ func (*LoadAccountResponse) Descriptor() ([]byte, []int) {
 	return file_common_proto_db_service_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *LoadAccountResponse) GetAccountPlayer() *__.AccountDatabase {
+func (x *LoadAccountResponse) GetAccountPlayer() *AccountDatabase {
 	if x != nil {
 		return x.AccountPlayer
 	}
@@ -436,8 +436,8 @@ var file_common_proto_db_service_proto_rawDesc = []byte{
 	0x61, 0x76, 0x65, 0x32, 0x52, 0x65, 0x64, 0x69, 0x73, 0x12, 0x12, 0x2e, 0x53, 0x61, 0x76, 0x65,
 	0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x13, 0x2e,
 	0x53, 0x61, 0x76, 0x65, 0x50, 0x6c, 0x61, 0x79, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x42, 0x07, 0x5a, 0x05, 0x70, 0x62, 0x2f, 0x64, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x73, 0x65, 0x42, 0x09, 0x5a, 0x07, 0x70, 0x62, 0x2f, 0x67, 0x61, 0x6d, 0x65, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -462,7 +462,7 @@ var file_common_proto_db_service_proto_goTypes = []interface{}{
 	(*LoadPlayerResponse)(nil),  // 5: LoadPlayerResponse
 	(*SavePlayerRequest)(nil),   // 6: SavePlayerRequest
 	(*SavePlayerResponse)(nil),  // 7: SavePlayerResponse
-	(*__.AccountDatabase)(nil),  // 8: account_database
+	(*AccountDatabase)(nil),  // 8: account_database
 }
 var file_common_proto_db_service_proto_depIdxs = []int32{
 	8, // 0: LoadAccountResponse.account_player:type_name -> account_database

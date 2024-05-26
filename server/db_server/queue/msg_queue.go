@@ -1,4 +1,4 @@
-package logic
+package queue
 
 type MsgChannel struct {
 	Key   uint64

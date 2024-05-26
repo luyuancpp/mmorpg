@@ -1,4 +1,4 @@
-package logic
+package queue
 
 import (
 	"db_sever/config"
