@@ -2,8 +2,6 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-import "common_proto/mysql_database_table.proto";
-
 message LoadAccountRequest
 {
   string account = 1;
@@ -11,7 +9,6 @@ message LoadAccountRequest
 
 message LoadAccountResponse
 {
-  account_database account_player = 2;
 }
 
 message SaveAccountRequest
