@@ -1,6 +1,4 @@
 0=ClientPlayerCommonServicePushTipsS2C
-2=AccountDBServiceSave2Redis
-5=AccountDBServiceLoad2Redis
 7=ControllerScenePlayerServiceLeaveScene
 8=ControllerScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
 9=GateServiceStartGS
