@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"db_sever/config"
+	"db_server/config"
 	"fmt"
 	"testing"
 	"time"
@@ -17,7 +17,14 @@ func TestPut(t *testing.T) {
 				for {
 					msg := MsgChannel{}
 					msg.Key = i
+					msg.Chan = make(chan bool)
 					q.Put(msg)
+					_, ok := <-msg.Chan
+					if !ok {
+						fmt.Println("channel closed")
+					} else {
+						fmt.Println("put ok")
+					}
 				}
 			}(i)
 		}
@@ -28,7 +35,7 @@ func TestPut(t *testing.T) {
 			go func(i int) {
 				for {
 					msg := q.Pop(i)
-					fmt.Println(msg.Key)
+					msg.Chan <- true
 				}
 			}(i)
 		}
