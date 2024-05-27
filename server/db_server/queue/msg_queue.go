@@ -3,6 +3,7 @@ package queue
 type MsgChannel struct {
 	Key   uint64
 	Value []byte
+	Chan  chan bool
 }
 
 type MsgChannelList struct {
