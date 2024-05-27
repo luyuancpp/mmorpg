@@ -9,6 +9,7 @@ message LoadAccountRequest
 
 message LoadAccountResponse
 {
+  string account = 1;
 }
 
 message SaveAccountRequest
@@ -18,7 +19,7 @@ message SaveAccountRequest
 
 message SaveAccountResponse
 {
-
+  string account = 1;
 }
 
 message LoadPlayerRequest
