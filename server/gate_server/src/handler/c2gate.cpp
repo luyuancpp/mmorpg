@@ -36,33 +36,32 @@ RpcClientPtr& ClientReceiver::GetLoginNode(uint64_t session_id)
     {
         return null_session;
     }
-    if (!session_it->second.ValidLogin())
+
+    if (gate_tls.login_nodes().empty())
     {
-        session_it->second.login_node_id_ = GetLoginNodeId(session_id);
+        return null_session;
     }
-    const auto login_node_it = gate_tls.login_nodes().find(session_it->second.login_node_id_);
+    
+    if (!session_it->second.HasLoginNodeId())
+    {
+        auto login_node_it = gate_tls.login_nodes().get_by_hash(session_id);
+        if (gate_tls.login_nodes().end() == login_node_it)
+        {
+            LOG_ERROR << "player login server not found session id : " << session_id;
+            return null_session;
+        }
+        //考虑中间一个login服务关了，原来的login服务器处理到一半，新的login处理不了
+        session_it->second.login_node_id_ = login_node_it->first;
+    }
+    auto login_node_id = session_it->second.login_node_id_;
+    const auto login_node_it = gate_tls.login_nodes().get_by_id(login_node_id);
     if (gate_tls.login_nodes().end() == login_node_it)
     {
+        session_it->second.login_node_id_ = kInvalidNodeId;
         LOG_ERROR << "player found login server crash : " << session_it->second.login_node_id_;
         return null_session;
     }
     return login_node_it->second.login_session_;
-}
-
-uint32_t ClientReceiver::GetLoginNodeId(uint64_t session_id)
-{
-    const auto index = session_id % gate_tls.login_nodes().size();
-	std::size_t i = 0;
-	for (const auto& key : gate_tls.login_nodes() | std::views::keys)
-	{
-		if (i < index)
-		{
-			++i;
-			continue;
-		}
-		return key;
-	}
-    return kInvalidNodeId;
 }
 
 void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
