@@ -75,10 +75,7 @@ void LoginServiceHandler::CreatePlayer(::google::protobuf::RpcController* contro
 		RETURN_CLOSURE_ERROR(kRetLoginCreatePlayerConnectionHasNotAccount);
 	}
 	CHECK_RETURN_CLOSURE_ERROR(sit->second->CreatePlayer());
-	// database process
-	DatabaseNodeCreatePlayerRequest db_create_request;
-	db_create_request.set_account(sit->second->account());
-	Route2Node(kDatabaseNode, DbServiceCreatePlayerMsgId, db_create_request);
+	
 	///<<< END WRITING YOUR CODE
 }
 
@@ -114,9 +111,6 @@ void LoginServiceHandler::EnterGame(::google::protobuf::RpcController* controlle
 		return;
 	}
 	// redis没有玩家数据去数据库取
-	DatabaseNodeEnterGameRequest database_enter_game_request;
-	database_enter_game_request.set_player_id(request->player_id());
-	Route2Node(kDatabaseNode, DbServiceEnterGameMsgId, database_enter_game_request);
 	///<<< END WRITING YOUR CODE
 }
 

@@ -157,6 +157,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\util\consistent_hash_node.h" />
     <ClInclude Include="src\comp\account_comp.h" />
     <ClInclude Include="src\comp\mission_comp.h" />
     <ClInclude Include="src\comp\player_comp.h" />
@@ -220,6 +221,7 @@
     <ClInclude Include="src\util\utility.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\util\consistent_hash_node.cpp" />
     <ClCompile Include="src\comp\mission_comp.cpp" />
     <ClCompile Include="src\game_config\deploy_json.cpp" />
     <ClCompile Include="src\game_config\lobby_config.cpp" />

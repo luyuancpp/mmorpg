@@ -24,7 +24,7 @@ func NewLoad2RedisLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Load2R
 }
 
 func (l *Load2RedisLogic) Load2Redis(in *game.LoadAccountRequest) (*game.LoadAccountResponse, error) {
-	// todo: add your logic here and delete this line
+	l.svcCtx.Rdb.HGet(l.svcCtx.Ctx, "account", in.Account)
 
 	return &game.LoadAccountResponse{}, nil
 }

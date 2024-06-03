@@ -193,7 +193,7 @@ void GateServer::Receive1(const OnConnected2ServerEvent& es)
                 });
                 break;
             }
-            gate_tls.login_nodes().erase(it.first);
+            gate_tls.login_nodes().remove(it.first);
             break;
         }
     }
