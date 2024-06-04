@@ -26,6 +26,6 @@ func NewStartGsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *StartGsLo
 
 func (l *StartGsLogic) StartGs(in *deploy.StartGsRequest) (*deploy.StartGsResponse, error) {
 	// todo: add your logic here and delete this line
-	log.Println("zone id ", in.Zone)
+	log.Println("zone id ", in.ZoneId)
 	return &deploy.StartGsResponse{}, nil
 }
