@@ -118,9 +118,9 @@ type LoginNodeCreatePlayerResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Error         *Tips               `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
-	AccountPlayer *__.AccountDatabase `protobuf:"bytes,2,opt,name=account_player,json=accountPlayer,proto3" json:"account_player,omitempty"`
-	PlayerId      uint64              `protobuf:"varint,3,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Error         *Tips            `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+	AccountPlayer *AccountDatabase `protobuf:"bytes,2,opt,name=account_player,json=accountPlayer,proto3" json:"account_player,omitempty"`
+	PlayerId      uint64           `protobuf:"varint,3,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 }
 
 func (x *LoginNodeCreatePlayerResponse) Reset() {
@@ -162,7 +162,7 @@ func (x *LoginNodeCreatePlayerResponse) GetError() *Tips {
 	return nil
 }
 
-func (x *LoginNodeCreatePlayerResponse) GetAccountPlayer() *__.AccountDatabase {
+func (x *LoginNodeCreatePlayerResponse) GetAccountPlayer() *AccountDatabase {
 	if x != nil {
 		return x.AccountPlayer
 	}
@@ -335,7 +335,7 @@ var file_common_proto_login_service_proto_goTypes = []interface{}{
 	(*LoginNodeDisconnectRequest)(nil),    // 3: LoginNodeDisconnectRequest
 	(*LeaveGameC2LRequest)(nil),           // 4: LeaveGameC2LRequest
 	(*Tips)(nil),                          // 5: Tips
-	(*__.AccountDatabase)(nil),            // 6: account_database
+	(*AccountDatabase)(nil),               // 6: account_database
 	(*LoginRequest)(nil),                  // 7: LoginRequest
 	(*EnterGameRequest)(nil),              // 8: EnterGameRequest
 	(*LoginResponse)(nil),                 // 9: LoginResponse
@@ -370,6 +370,7 @@ func file_common_proto_login_service_proto_init() {
 	file_common_proto_empty_proto_init()
 	file_common_proto_tip_proto_init()
 	file_common_proto_c2gate_proto_init()
+	file_common_proto_mysql_database_table_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_common_proto_login_service_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*LoginC2LRequest); i {
