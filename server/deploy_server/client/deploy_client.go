@@ -21,11 +21,17 @@ func main() {
 	client := zrpc.MustNewClient(c)
 	for i := 0; i < 1000; i++ {
 		deploy := deployservice.NewDeployService(client)
-		resp, err := deploy.StartGs(context.Background(), &deployservice.StartGsRequest{Zone: uint32(i)})
+		resp, err := deploy.StartGs(context.Background(), &deployservice.StartGsRequest{ZoneId: uint32(i)})
 		if err != nil {
 			fmt.Println("X", err.Error())
 		} else {
 			fmt.Println("=>", resp.String())
+		}
+		resp1, err := deploy.GetNodeInfo(context.Background(), &deployservice.NodeInfoRequest{ZoneId: uint32(i)})
+		if err != nil {
+			fmt.Println("X", err.Error())
+		} else {
+			fmt.Println("=>", resp1.String())
 		}
 	}
 }

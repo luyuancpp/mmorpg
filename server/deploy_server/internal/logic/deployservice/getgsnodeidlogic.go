@@ -2,7 +2,6 @@ package deployservicelogic
 
 import (
 	"context"
-
 	"deploy_server/internal/svc"
 	"deploy_server/pb/deploy"
 
@@ -25,6 +24,5 @@ func NewGetGsNodeIdLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetGs
 
 func (l *GetGsNodeIdLogic) GetGsNodeId(in *deploy.GsNodeIdRequest) (*deploy.GsNodeIdResponse, error) {
 	// todo: add your logic here and delete this line
-
 	return &deploy.GsNodeIdResponse{}, nil
 }
