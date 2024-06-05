@@ -15,7 +15,6 @@
 20=ControllerPlayerServiceTest
 21=ControllerServiceStartGs
 22=ControllerServiceGateConnect
-23=LoginServiceCreatePlayer
 24=ControllerServiceGatePlayerService
 25=ControllerServiceGateDisconnect
 26=ControllerServiceStartLs
@@ -28,16 +27,9 @@
 33=ControllerServiceEnterGsSucceed
 34=ControllerServiceRouteNodeStringMsg
 35=ControllerServiceRoutePlayerStringMsg
-36=LoginServiceLogin
 37=ClientPlayerCommonServiceBeKick
-38=LoginServiceEnterGame
-39=LoginServiceLeaveGame
-40=LoginServiceDisconnect
-41=LoginServiceRouteNodeStringMsg
-42=LoginServiceRoutePlayerStringMsg
 43=GamePlayerSceneServiceEnterSceneS2C
 44=ControllerScenePlayerServiceEnterScene
-45=LoginServiceGateConnect
 46=GamePlayerSceneServiceEnterScene
 48=GameSceneServiceTest
 49=ClientPlayerTeamServiceTeamInfoNotify

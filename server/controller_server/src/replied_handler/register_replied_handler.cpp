@@ -12,7 +12,4 @@ void InitRepliedHandler()
 	void InitLobbyServiceStartCrossGsRepliedHandler();
 	InitLobbyServiceStartCrossGsRepliedHandler();
 
-	void InitLoginServiceLoginRepliedHandler();
-	InitLoginServiceLoginRepliedHandler();
-
 }

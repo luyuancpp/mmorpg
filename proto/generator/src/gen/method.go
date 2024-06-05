@@ -678,19 +678,6 @@ func writeGateMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 
 ///login
 
-func isLoginMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
-	if len(*methodList) <= 0 {
-		return false
-	}
-	firstMethodInfo := (*methodList)[0]
-	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		return false
-	}
-	return strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) ||
-		strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
-		strings.Contains(firstMethodInfo.FileBaseName(), config.DataBasePrefixName)
-}
-
 func isLoginServiceHandler(methodList *RpcMethodInfos) (check bool) {
 	if len(*methodList) <= 0 {
 		return false
@@ -729,40 +716,6 @@ func writeLoginMethodHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func writeLoginMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-
-	if !isLoginMethodRepliedHandler(&methodList) {
-		return
-	}
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
-	dstFileName := config.LoginMethodRepliedHandleDir + fileName
-	data := getMethodRepliedHandlerHeadStr(&methodList)
-	WriteMd5Data2File(dstFileName, data)
-}
-
-func writeLoginMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-	methodLen := len(methodList)
-	if methodLen <= 0 {
-		return
-	}
-
-	if !isLoginMethodRepliedHandler(&methodList) {
-		return
-	}
-	firstMethodInfo := methodList[0]
-	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
-	dstFileName := config.LoginMethodRepliedHandleDir + fileName
-	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
-	WriteMd5Data2File(dstFileName, data)
-}
-
-// database
-
 func isDataBaseServiceHandler(methodList *RpcMethodInfos) (check bool) {
 	if len(*methodList) <= 0 {
 		return false
@@ -772,32 +725,6 @@ func isDataBaseServiceHandler(methodList *RpcMethodInfos) (check bool) {
 		return false
 	}
 	return strings.Contains(firstMethodInfo.FileBaseName(), "database")
-}
-
-func writeDataBaseMethodHandlerHeadFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-	if !isDataBaseServiceHandler(&methodList) {
-		return
-	}
-	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.DataBaseMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
-}
-
-func writeDataBaseMethodHandlerCppFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-	if !isDataBaseServiceHandler(&methodList) {
-		return
-	}
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.DataBaseMethodHandleDir + fileName
-	data := getMethodHandlerCppStr(dstFileName, &methodList)
-	WriteMd5Data2File(dstFileName, data)
 }
 
 func WriteMethodFile() {
@@ -853,21 +780,6 @@ func WriteMethodFile() {
 		util.Wg.Add(1)
 		go writeGateMethodRepliedHandlerCppFile(v)
 
-		// login
-		util.Wg.Add(1)
-		go writeLoginMethodHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeLoginMethodHandlerCppFile(v)
-		util.Wg.Add(1)
-		go writeLoginMethodRepliedHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeLoginMethodRepliedHandlerCppFile(v)
-
-		//database
-		util.Wg.Add(1)
-		go writeDataBaseMethodHandlerHeadFile(v)
-		util.Wg.Add(1)
-		go writeDataBaseMethodHandlerCppFile(v)
 	}
 	//game
 	util.Wg.Add(1)
@@ -880,10 +792,6 @@ func WriteMethodFile() {
 	go writeRegisterFile(config.ControllerMethodHandleDir+config.RegisterHandlerCppEx, isControllerMethodHandler)
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.ControllerMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isControllerMethodRepliedHandler)
-
-	//login
-	util.Wg.Add(1)
-	go writeRepliedRegisterFile(config.LoginMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isLoginMethodRepliedHandler)
 
 	//gate
 	util.Wg.Add(1)

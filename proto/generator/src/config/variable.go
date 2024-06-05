@@ -31,7 +31,6 @@ const GameDirName = "server/game_server/"
 const ControllerDirName = "server/controller_server/"
 const GateName = "server/gate_server/"
 const LoginDirName = "server/login_server/"
-const DataBaseDirName = "server/database_server/"
 const ClientDirName = "client/"
 const PlayerServiceIncludeName = "#include \"player_service.h\""
 const PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\""
@@ -49,7 +48,6 @@ var SourceNames = [...]string{
 	"gate_server/",
 	"login_server/",
 	"lobby_server/",
-	"database_server/",
 	"deploy_server/",
 	"client"}
 
@@ -111,10 +109,6 @@ const GatePrefixName = "gate"
 const LoginMethodHandleDir = ProjectDir + LoginDirName + HandlerDirName
 const LoginMethodRepliedHandleDir = ProjectDir + LoginDirName + RepliedHandlerDirName
 const LoginPrefixName = "login"
-
-const DataBaseMethodHandleDir = ProjectDir + DataBaseDirName + HandlerDirName
-const DataBaseMethodRepliedHandleDir = ProjectDir + DataBaseDirName + RepliedHandlerDirName
-const DataBasePrefixName = "database"
 
 const DeployPrefixName = "deploy"
 
