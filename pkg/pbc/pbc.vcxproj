@@ -32,12 +32,15 @@
     <ClCompile Include="src\common_proto\db_base.pb.cc" />
     <ClCompile Include="src\common_proto\deploy_config.pb.cc" />
     <ClCompile Include="src\common_proto\deploy_service.pb.cc" />
+    <ClCompile Include="src\common_proto\empty.pb.cc" />
     <ClCompile Include="src\common_proto\game_service.pb.cc" />
     <ClCompile Include="src\common_proto\gate_service.pb.cc" />
     <ClCompile Include="src\common_proto\login_service.pb.cc" />
     <ClCompile Include="src\common_proto\mysql_database_table.pb.cc" />
     <ClCompile Include="src\common_proto\mysql_database_test.pb.cc" />
     <ClCompile Include="src\common_proto\node_common.pb.cc" />
+    <ClCompile Include="src\common_proto\session.pb.cc" />
+    <ClCompile Include="src\common_proto\tip.pb.cc" />
     <ClCompile Include="src\component_proto\gs_node_comp.pb.cc" />
     <ClCompile Include="src\component_proto\item_base_comp.pb.cc" />
     <ClCompile Include="src\component_proto\item_comp.pb.cc" />
@@ -97,8 +100,6 @@
     <ClCompile Include="src\lua\item_comp_sol2.cpp" />
     <ClCompile Include="src\lua\lobby_scene_service_lua.cpp" />
     <ClCompile Include="src\lua\lobby_scene_sol2.cpp" />
-    <ClCompile Include="src\lua\login_service_service_lua.cpp" />
-    <ClCompile Include="src\lua\login_service_sol2.cpp" />
     <ClCompile Include="src\lua\lua_service.cpp" />
     <ClCompile Include="src\lua\mission_comp_sol2.cpp" />
     <ClCompile Include="src\lua\mission_event_sol2.cpp" />
@@ -137,6 +138,8 @@
     <ClCompile Include="src\service\scene_client_player_service.cpp" />
     <ClCompile Include="src\service\service.cpp" />
     <ClCompile Include="src\service\team_client_player_service.cpp" />
+    <ClCompile Include="src\tip_code_proto\common_tip_code.pb.cc" />
+    <ClCompile Include="src\tip_code_proto\login_tip_code.pb.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\client_player_proto\common_client_player.pb.h" />
@@ -152,12 +155,15 @@
     <ClInclude Include="src\common_proto\db_base.pb.h" />
     <ClInclude Include="src\common_proto\deploy_config.pb.h" />
     <ClInclude Include="src\common_proto\deploy_service.pb.h" />
+    <ClInclude Include="src\common_proto\empty.pb.h" />
     <ClInclude Include="src\common_proto\game_service.pb.h" />
     <ClInclude Include="src\common_proto\gate_service.pb.h" />
     <ClInclude Include="src\common_proto\login_service.pb.h" />
     <ClInclude Include="src\common_proto\mysql_database_table.pb.h" />
     <ClInclude Include="src\common_proto\mysql_database_test.pb.h" />
     <ClInclude Include="src\common_proto\node_common.pb.h" />
+    <ClInclude Include="src\common_proto\session.pb.h" />
+    <ClInclude Include="src\common_proto\tip.pb.h" />
     <ClInclude Include="src\component_proto\gs_node_comp.pb.h" />
     <ClInclude Include="src\component_proto\item_base_comp.pb.h" />
     <ClInclude Include="src\component_proto\item_comp.pb.h" />
@@ -204,6 +210,8 @@
     <ClInclude Include="src\service\scene_client_player_service.h" />
     <ClInclude Include="src\service\service.h" />
     <ClInclude Include="src\service\team_client_player_service.h" />
+    <ClInclude Include="src\tip_code_proto\common_tip_code.pb.h" />
+    <ClInclude Include="src\tip_code_proto\login_tip_code.pb.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

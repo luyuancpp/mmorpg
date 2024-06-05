@@ -1,5 +1,6 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
+import "common_proto/empty.proto";
+import "common_proto/tip.proto";
 import "common_proto/common.proto";
 import "component_proto/scene_comp.proto";
 option cc_generic_services = true;
@@ -65,11 +66,11 @@ message GameConnectToControllerRequest
 service LobbyService 
 {
   rpc StartCrossGs (StartCrossGsRequest) returns (StartCrossGsResponse);
-  rpc StartControllerNode (StartControllerRequest) returns (google.protobuf.Empty);
+  rpc StartControllerNode (StartControllerRequest) returns (Empty);
   rpc EnterCrossMainScene (EnterCrossMainSceneRequest) returns (EnterCrossMainSceneResponese);
   rpc EnterCrossMainSceneWeightRoundRobin (EnterCrossMainSceneWeightRoundRobinRequest) returns (EnterCrossRoomSceneSceneWeightRoundRobinResponse);
-  rpc LeaveCrossMainScene (LeaveCrossMainSceneRequest) returns (google.protobuf.Empty);
-  rpc GameConnectToController (GameConnectToControllerRequest) returns (google.protobuf.Empty);
+  rpc LeaveCrossMainScene (LeaveCrossMainSceneRequest) returns (Empty);
+  rpc GameConnectToController (GameConnectToControllerRequest) returns (Empty);
 }
 
 

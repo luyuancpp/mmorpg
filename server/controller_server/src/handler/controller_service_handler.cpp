@@ -136,7 +136,7 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 
 void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* controller,
 	const ::GateConnectRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -171,7 +171,7 @@ void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* co
 
 void ControllerServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,
 	const ::GateClientMessageRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -180,7 +180,7 @@ void ControllerServiceHandler::GatePlayerService(::google::protobuf::RpcControll
 
 void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController* controller,
 	const ::GateDisconnectRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -395,7 +395,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 
 void ControllerServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,
 	const ::CtrlLsLeaveGameRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -406,7 +406,7 @@ void ControllerServiceHandler::LsLeaveGame(::google::protobuf::RpcController* co
 
 void ControllerServiceHandler::LsDisconnect(::google::protobuf::RpcController* controller,
 	const ::CtrlLsDisconnectRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -489,7 +489,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 
 void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcController* controller,
 	const ::AddCrossServerSceneRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -517,7 +517,7 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 
 void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
 	const ::EnterGameNodeSucceedRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE

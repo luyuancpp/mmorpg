@@ -16,6 +16,8 @@
 #include "src/util/random.h"
 #include "src/util/snow_flake.h"
 
+#include "tip_code_proto/common_tip_code.pb.h"
+
 ServerSequence32 g_server_sequence_;
 extern std::unordered_set<uint32_t> g_c2s_service_id;
 
@@ -122,7 +124,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 		auto gs = gate_tls.game_nodes().find(it->second.game_node_id_);
 		if (gate_tls.game_nodes().end() == gs)
 		{
-            Tip(conn, 6);
+            Tip(conn, kRetServerCrush);
 			return;
 		}
         GameNodeRpcClientRequest rq;

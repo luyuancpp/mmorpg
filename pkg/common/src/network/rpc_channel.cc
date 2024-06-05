@@ -13,10 +13,10 @@
 #include "muduo/base/Logging.h"
 
 #include <google/protobuf/descriptor.h>
-#include <google/protobuf/empty.pb.h>
 
 #include "service/service.h"
 
+#include "common_proto/empty.pb.h"
 
 using namespace muduo;
 using namespace muduo::net;
@@ -290,7 +290,7 @@ void RpcChannel::onNormalRequestResponseMessage(const TcpConnectionPtr& conn, co
         SendRpcError(message, INVALID_REQUEST);
         return;
     }
-    if (service->GetResponsePrototype(method).GetDescriptor() == ::google::protobuf::Empty::GetDescriptor())
+    if (service->GetResponsePrototype(method).GetDescriptor() == Empty::GetDescriptor())
     {
         service->CallMethod(method, NULL, get_pointer(request), nullptr, nullptr);
     }

@@ -5,12 +5,12 @@ class GateServiceHandler : public ::GateService
 public:
 	void StartGS(::google::protobuf::RpcController* controller,
 		const ::GateNodeStartGSRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void StopGS(::google::protobuf::RpcController* controller,
 		const ::GateNodeStopGSRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void PlayerEnterGs(::google::protobuf::RpcController* controller,
@@ -20,12 +20,12 @@ public:
 
 	void PlayerMessage(::google::protobuf::RpcController* controller,
 		const ::NodeRouteMessageRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void KickConnByController(::google::protobuf::RpcController* controller,
 		const ::GateNodeKickConnRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void RouteNodeStringMsg(::google::protobuf::RpcController* controller,

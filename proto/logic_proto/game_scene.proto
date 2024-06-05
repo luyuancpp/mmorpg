@@ -1,5 +1,5 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
+import "common_proto/empty.proto";
 option cc_generic_services = true;
 
 message GameSceneTest
@@ -11,5 +11,5 @@ message GameSceneTest
 //断线重连进入场景,断线重连分时间
 service GameSceneService
 {
-  rpc Test (GameSceneTest) returns (google.protobuf.Empty);
+  rpc Test (GameSceneTest) returns (Empty);
 }
