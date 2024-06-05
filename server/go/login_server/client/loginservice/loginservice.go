@@ -14,15 +14,16 @@ import (
 
 type (
 	CreatePlayerC2LRequest        = game.CreatePlayerC2LRequest
+	EnterGameC2LRequest           = game.EnterGameC2LRequest
 	LeaveGameC2LRequest           = game.LeaveGameC2LRequest
 	LoginC2LRequest               = game.LoginC2LRequest
 	LoginNodeCreatePlayerResponse = game.LoginNodeCreatePlayerResponse
 	LoginNodeDisconnectRequest    = game.LoginNodeDisconnectRequest
 
 	LoginService interface {
-		Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+		Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 		CreatePlayer(ctx context.Context, in *CreatePlayerC2LRequest, opts ...grpc.CallOption) (*LoginNodeCreatePlayerResponse, error)
-		EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error)
+		EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameResponse, error)
 		LeaveGame(ctx context.Context, in *LeaveGameC2LRequest, opts ...grpc.CallOption) (*Empty, error)
 		Disconnect(ctx context.Context, in *LoginNodeDisconnectRequest, opts ...grpc.CallOption) (*Empty, error)
 	}
@@ -38,7 +39,7 @@ func NewLoginService(cli zrpc.Client) LoginService {
 	}
 }
 
-func (m *defaultLoginService) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (m *defaultLoginService) Login(ctx context.Context, in *LoginC2LRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
 	client := game.NewLoginServiceClient(m.cli.Conn())
 	return client.Login(ctx, in, opts...)
 }
@@ -48,7 +49,7 @@ func (m *defaultLoginService) CreatePlayer(ctx context.Context, in *CreatePlayer
 	return client.CreatePlayer(ctx, in, opts...)
 }
 
-func (m *defaultLoginService) EnterGame(ctx context.Context, in *EnterGameRequest, opts ...grpc.CallOption) (*EnterGameResponse, error) {
+func (m *defaultLoginService) EnterGame(ctx context.Context, in *EnterGameC2LRequest, opts ...grpc.CallOption) (*EnterGameResponse, error) {
 	client := game.NewLoginServiceClient(m.cli.Conn())
 	return client.EnterGame(ctx, in, opts...)
 }

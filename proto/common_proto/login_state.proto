@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "pb/game";
+
+
+enum eLoginState
+{
+	kLogin,//点击登录
+    kLoginAccountIngBeingProcessing,//登录状态，重复登录的话提示，比如快点俩下
+    kLoginAccountCreatePlayer,//登录状态，创建账号
+    kLoginAccountEnterGame,//登录状态，有角色进入了游戏
+    kLoginAccountPlaying,
+    kLoginWaitingEnterGame,//登录状态，账号加载数据完成,可以进入游戏
+    kLoginAccountNoPlayer,//登录状态，没有角色，不能进入游戏，必须发创建角色协议
+    kLoginAccountFullPlayer,//登录状态，角色已经满了不能再创建角色了
+    kLoginStateMax,
+};
