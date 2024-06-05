@@ -1,14 +1,12 @@
 syntax = "proto3";
 
-import "google/protobuf/empty.proto";
+option go_package = "pb/game";
 
-import "common_proto/common.proto";
+import "common_proto/empty.proto";
+import "common_proto/tip.proto";
 import "common_proto/c2gate.proto";
 import "common_proto/mysql_database_table.proto";
-import "common_proto/node_common.proto";
-import "common_proto/common_message.proto";
 
-option cc_generic_services = true;
 
 message LoginC2LRequest
 {
@@ -27,20 +25,9 @@ message LoginNodeCreatePlayerResponse
   uint64 player_id = 3;
 }
 
-
-message LoginNodeEnterGameResponse
-{
-  Tips error = 1;
-  uint64 player_id = 2;
-}
-
 message LoginNodeDisconnectRequest
 {
   uint64 session_id = 1;
-}
-
-message LoginNodeDisconnectResponse
-{
 }
 
 message LeaveGameC2LRequest
@@ -51,9 +38,6 @@ service LoginService {
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc CreatePlayer (CreatePlayerC2lRequest) returns (LoginNodeCreatePlayerResponse);
   rpc EnterGame (EnterGameRequest) returns (EnterGameResponse);
-  rpc LeaveGame (LeaveGameC2LRequest) returns (google.protobuf.Empty);
-  rpc Disconnect (LoginNodeDisconnectRequest) returns (google.protobuf.Empty);
-  rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
-  rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
-  rpc GateConnect (GateConnectRequest) returns (google.protobuf.Empty);
+  rpc LeaveGame (LeaveGameC2LRequest) returns (Empty);
+  rpc Disconnect (LoginNodeDisconnectRequest) returns (Empty);
 }

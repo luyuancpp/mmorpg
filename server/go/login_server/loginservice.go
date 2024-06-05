@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"login_server/data"
 
 	"login_server/internal/config"
 	loginserviceServer "login_server/internal/server/loginservice"
@@ -24,6 +25,8 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 	ctx := svc.NewServiceContext(c)
+
+	data.Init()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
 		game.RegisterLoginServiceServer(grpcServer, loginserviceServer.NewLoginServiceServer(ctx))
