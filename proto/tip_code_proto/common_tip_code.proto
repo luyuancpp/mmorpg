@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+
+enum  eCommonTipCode : uint32_t
+{
+    kRetOK = 0,
+    kRetTableId = 2,
+    kRetConfigData = 3,
+    kRetEnttNull = 4,
+    //改功能暂时关闭gate 用,gate写死了
+    kRetServiceNotOpen = 5,
+    //服务器关闭请重新登录 gate 用,gate写死了
+    kRetServerCrush = 6,
+    //未知参数
+    kInvalidParam = 7,
+}

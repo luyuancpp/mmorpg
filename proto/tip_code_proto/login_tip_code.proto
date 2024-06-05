@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+
+enum  eLoginTipCode : uint32_t
+{
+    //找不到账号
+    kRetLoginCantFindAccount = 1000,
+    kRetLoginAccountPlayerFull = 1001,
+    kRetLoginCreatePlayerUnLoadAccount = 1002,
+    kRetLoginCreatePlayerConnectionHasNotAccount = 1003,
+    kRetLoginUnLogin = 1004,
+    kRetLoginIng = 1005,
+    kRetLoginPlayerGuidError = 1006,
+    kRetLoginEnteringGame = 1007,
+    kRetLoginPlaying = 1008,
+    kRetLoginCreatingPlayer = 1009,
+    //已经登录了，等待进入游戏
+    kRetLoginWaitingEnterGame = 1010,
+    kRetLoginEnterGuid = 1011,
+    kRetLoginAccountNameEmpty = 1012,
+    kRetLoginCreateConnectionAccountEmpty = 1013,
+    kRetLoginEnterGameConnectionAccountEmpty = 1014,
+    kRetLoginUnknownError = 1015,
+    kRetLoginSessionDisconnect = 1016,
+    //在别的地方登录
+    kRetLoginBeKickByAnOtherAccount = 1017,
+}
