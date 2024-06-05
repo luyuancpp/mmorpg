@@ -81,6 +81,9 @@ func BuildProto(protoPath string, protoMd5Path string) (err error) {
 
 func BuildAllProtoc() {
 	for i := 0; i < len(config.ProtoDirs); i++ {
-		BuildProto(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+		err := BuildProto(config.ProtoDirs[i], config.ProtoMd5Dirs[i])
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }

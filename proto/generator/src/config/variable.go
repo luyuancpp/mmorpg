@@ -77,6 +77,7 @@ var ProtoDirNames = [...]string{
 	"logic_proto/",
 	"client_player_proto/",
 	"server_player_proto/",
+	"tip_code_proto/",
 }
 var ProtoDirs []string
 var ProtoMd5Dirs []string
