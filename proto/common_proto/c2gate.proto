@@ -1,5 +1,13 @@
 syntax = "proto3";
-import "common_proto/common.proto";
+
+option go_package = "pb/game";
+
+import "common_proto/tip.proto";
+
+message c_account_simple_player
+{
+  uint64 player_id = 1;
+}
 
 message LoginRequest
 {

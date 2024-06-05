@@ -1,15 +1,8 @@
 syntax = "proto3";
 
-message c_account_simple_player
-{
-  uint64 player_id = 1;
-}
+option go_package = "pb/game";
 
-message Tips
-{
-  uint32 id = 1;
-  repeated string param = 2;
-}
+import "common_proto/tip.proto";
 
 message NodeInfo
 {
