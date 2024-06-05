@@ -4,6 +4,8 @@ option go_package = "pb/game";
 
 enum  eLoginTipCode
 {
+    kRetOK = 0;
+	
     //找不到账号
     kRetLoginCantFindAccount = 1000;
     kRetLoginAccountPlayerFull = 1001;

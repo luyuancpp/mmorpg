@@ -1,5 +1,7 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
+
+import "common_proto/empty.proto";
+
 import "common_proto/common.proto";
 import "common_proto/node_common.proto";
 option cc_generic_services = true;
@@ -40,11 +42,11 @@ message GateNodeKickConnRequest
 }
 
 service GateService {
-  rpc StartGS (GateNodeStartGSRequest) returns (google.protobuf.Empty);
-  rpc StopGS (GateNodeStopGSRequest) returns (google.protobuf.Empty);
+  rpc StartGS (GateNodeStartGSRequest) returns (Empty);
+  rpc StopGS (GateNodeStopGSRequest) returns (Empty);
   rpc PlayerEnterGs (GateNodePlayerUpdateGameNodeRequest) returns (GateNodePlayerUpdateGameNodeResponese);
-  rpc PlayerMessage (NodeRouteMessageRequest) returns (google.protobuf.Empty);
-  rpc KickConnByController (GateNodeKickConnRequest) returns (google.protobuf.Empty);
+  rpc PlayerMessage (NodeRouteMessageRequest) returns (Empty);
+  rpc KickConnByController (GateNodeKickConnRequest) returns (Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
 }

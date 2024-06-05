@@ -10,17 +10,17 @@ public:
 
 	void GateConnect(::google::protobuf::RpcController* controller,
 		const ::GateConnectRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void GatePlayerService(::google::protobuf::RpcController* controller,
 		const ::GateClientMessageRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void GateDisconnect(::google::protobuf::RpcController* controller,
 		const ::GateDisconnectRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void StartLs(::google::protobuf::RpcController* controller,
@@ -40,12 +40,12 @@ public:
 
 	void LsLeaveGame(::google::protobuf::RpcController* controller,
 		const ::CtrlLsLeaveGameRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void LsDisconnect(::google::protobuf::RpcController* controller,
 		const ::CtrlLsDisconnectRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void GsPlayerService(::google::protobuf::RpcController* controller,
@@ -55,12 +55,12 @@ public:
 
 	void AddCrossServerScene(::google::protobuf::RpcController* controller,
 		const ::AddCrossServerSceneRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void EnterGsSucceed(::google::protobuf::RpcController* controller,
 		const ::EnterGameNodeSucceedRequest* request,
-		::google::protobuf::Empty* response,
+		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
 	void RouteNodeStringMsg(::google::protobuf::RpcController* controller,

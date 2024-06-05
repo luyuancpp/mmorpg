@@ -22,7 +22,7 @@ using MessageUniquePtr = std::unique_ptr<google::protobuf::Message>;
 ///<<< END WRITING YOUR CODE
 void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
 	const ::GameNodeEnterGsRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -154,7 +154,7 @@ void GameServiceHandler::ClientSend2Player(::google::protobuf::RpcController* co
 
 void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controller,
 	const ::GameNodeDisconnectRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -175,7 +175,7 @@ void GameServiceHandler::Disconnect(::google::protobuf::RpcController* controlle
 
 void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* controller,
 	const ::GameNodeConnectRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -199,7 +199,7 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
 
 void GameServiceHandler::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -288,7 +288,7 @@ void GameServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController*
 
 void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* controller,
 	const ::UpdatePlayerSessionRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -324,7 +324,7 @@ void GameServiceHandler::UpdateSession(::google::protobuf::RpcController* contro
 
 void GameServiceHandler::EnterScene(::google::protobuf::RpcController* controller,
 	const ::Ctlr2GsEnterSceneRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE

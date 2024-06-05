@@ -1,5 +1,5 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
+import "common_proto/empty.proto";
 import "common_proto/common.proto";
 import "common_proto/c2gate.proto";
 import "common_proto/node_common.proto";
@@ -82,17 +82,17 @@ message EnterGameNodeSucceedRequest
 
 service ControllerService {
   rpc StartGs (CtrlStartGsRequest) returns (CtrlStartGsResponse);
-  rpc GateConnect (GateConnectRequest) returns (google.protobuf.Empty);
-  rpc GatePlayerService (GateClientMessageRequest) returns (google.protobuf.Empty);
-  rpc GateDisconnect (GateDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc GateConnect (GateConnectRequest) returns (Empty);
+  rpc GatePlayerService (GateClientMessageRequest) returns (Empty);
+  rpc GateDisconnect (GateDisconnectRequest) returns (Empty); 
   rpc StartLs (StartLsRequest) returns (StartLsResponse);
   rpc LsLoginAccount (LoginRequest) returns (LoginResponse);
   rpc LsEnterGame (EnterGameRequest) returns (EnterGameResponse);
-  rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (google.protobuf.Empty);
-  rpc LsDisconnect (CtrlLsDisconnectRequest) returns (google.protobuf.Empty); 
+  rpc LsLeaveGame (CtrlLsLeaveGameRequest) returns (Empty);
+  rpc LsDisconnect (CtrlLsDisconnectRequest) returns (Empty); 
   rpc GsPlayerService (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
-  rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (google.protobuf.Empty);
-  rpc EnterGsSucceed (EnterGameNodeSucceedRequest) returns (google.protobuf.Empty);
+  rpc AddCrossServerScene (AddCrossServerSceneRequest) returns (Empty);
+  rpc EnterGsSucceed (EnterGameNodeSucceedRequest) returns (Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
 }

@@ -1,5 +1,6 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
+
+import "common_proto/empty.proto";
 import "common_proto/common.proto";
 import "common_proto/node_common.proto";
 option cc_generic_services = true;
@@ -52,15 +53,15 @@ message Ctlr2GsEnterSceneRequest
 }
 
 service GameService {
-  rpc EnterGs (GameNodeEnterGsRequest) returns (google.protobuf.Empty);
+  rpc EnterGs (GameNodeEnterGsRequest) returns (Empty);
   rpc Send2Player (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc ClientSend2Player (GameNodeRpcClientRequest) returns (GameNodeRpcClientResponse);
-  rpc Disconnect (GameNodeDisconnectRequest) returns (google.protobuf.Empty); 
-  rpc GateConnectGs (GameNodeConnectRequest) returns (google.protobuf.Empty); 
-  rpc ControllerSend2PlayerViaGs (NodeRouteMessageRequest) returns (google.protobuf.Empty);
+  rpc Disconnect (GameNodeDisconnectRequest) returns (Empty); 
+  rpc GateConnectGs (GameNodeConnectRequest) returns (Empty); 
+  rpc ControllerSend2PlayerViaGs (NodeRouteMessageRequest) returns (Empty);
   rpc CallPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
-  rpc UpdateSession (UpdatePlayerSessionRequest) returns (google.protobuf.Empty);
-  rpc EnterScene (Ctlr2GsEnterSceneRequest) returns (google.protobuf.Empty);
+  rpc UpdateSession (UpdatePlayerSessionRequest) returns (Empty);
+  rpc EnterScene (Ctlr2GsEnterSceneRequest) returns (Empty);
 }

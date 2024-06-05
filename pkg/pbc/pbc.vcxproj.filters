@@ -288,12 +288,6 @@
     <ClCompile Include="src\lua\lobby_scene_sol2.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\lua\login_service_service_lua.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\lua\login_service_sol2.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\lua\lua_service.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -367,6 +361,21 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\service\grpc\deploy_service.grpc.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tip_code_proto\common_tip_code.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tip_code_proto\login_tip_code.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common_proto\empty.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common_proto\session.pb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\common_proto\tip.pb.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -564,6 +573,21 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="src\service\grpc\deploy_service.grpc.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tip_code_proto\common_tip_code.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tip_code_proto\login_tip_code.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_proto\empty.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_proto\session.pb.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common_proto\tip.pb.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

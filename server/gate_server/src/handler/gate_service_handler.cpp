@@ -15,7 +15,7 @@
 ///<<< END WRITING YOUR CODE
 void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 	const ::GateNodeStartGSRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -43,7 +43,7 @@ void GateServiceHandler::StartGS(::google::protobuf::RpcController* controller,
 
 void GateServiceHandler::StopGS(::google::protobuf::RpcController* controller,
 	const ::GateNodeStopGSRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -81,7 +81,7 @@ void GateServiceHandler::PlayerEnterGs(::google::protobuf::RpcController* contro
 
 void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -97,7 +97,7 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 
 void GateServiceHandler::KickConnByController(::google::protobuf::RpcController* controller,
 	const ::GateNodeKickConnRequest* request,
-	::google::protobuf::Empty* response,
+	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 	///<<< BEGIN WRITING YOUR CODE

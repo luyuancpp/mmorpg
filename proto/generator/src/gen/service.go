@@ -14,17 +14,19 @@ import (
 	"sync/atomic"
 )
 
-func MessageSize() uint64 {
-	return MaxMessageId + 1
-}
-
 func ReadProtoFileService(fd os.DirEntry, filePath string) (err error) {
 	defer util.Wg.Done()
 	f, err := os.Open(filePath + fd.Name())
 	if err != nil {
-		return
+		log.Fatal(err)
+		return err
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(f)
 
 	scanner := bufio.NewScanner(f)
 	var line string
