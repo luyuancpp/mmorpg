@@ -2,9 +2,10 @@ package loginservicelogic
 
 import (
 	"context"
-
+	"login_server/data"
 	"login_server/internal/svc"
 	"login_server/pb/game"
+	"strconv"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -24,7 +25,7 @@ func NewDisconnectLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Discon
 }
 
 func (l *DisconnectLogic) Disconnect(in *game.LoginNodeDisconnectRequest) (*game.Empty, error) {
-	// todo: add your logic here and delete this line
-
+	sessionId := strconv.FormatUint(in.SessionId, 10)
+	data.SessionList.Remove(sessionId)
 	return &game.Empty{}, nil
 }

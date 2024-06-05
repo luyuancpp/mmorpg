@@ -7,7 +7,6 @@
 package game
 
 import (
-	__ "."
 	_ "github.com/luyuancpp/dbprotooption"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -28,9 +27,9 @@ type AccountDatabase struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Account       string                   `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
-	Password      string                   `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
-	SimplePlayers *__.AccountSimplePlayers `protobuf:"bytes,3,opt,name=simple_players,json=simplePlayers,proto3" json:"simple_players,omitempty"`
+	Account       string                `protobuf:"bytes,1,opt,name=account,proto3" json:"account,omitempty"`
+	Password      string                `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	SimplePlayers *AccountSimplePlayers `protobuf:"bytes,3,opt,name=simple_players,json=simplePlayers,proto3" json:"simple_players,omitempty"`
 }
 
 func (x *AccountDatabase) Reset() {
@@ -79,7 +78,7 @@ func (x *AccountDatabase) GetPassword() string {
 	return ""
 }
 
-func (x *AccountDatabase) GetSimplePlayers() *__.AccountSimplePlayers {
+func (x *AccountDatabase) GetSimplePlayers() *AccountSimplePlayers {
 	if x != nil {
 		return x.SimplePlayers
 	}
@@ -92,9 +91,9 @@ type PlayerDatabase struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	PlayerId     uint64      `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
-	Pos          *__.Vector3 `protobuf:"bytes,2,opt,name=pos,proto3" json:"pos,omitempty"`
-	RegisterTime int64       `protobuf:"varint,3,opt,name=register_time,json=registerTime,proto3" json:"register_time,omitempty"`
+	PlayerId     uint64   `protobuf:"varint,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Pos          *Vector3 `protobuf:"bytes,2,opt,name=pos,proto3" json:"pos,omitempty"`
+	RegisterTime int64    `protobuf:"varint,3,opt,name=register_time,json=registerTime,proto3" json:"register_time,omitempty"`
 }
 
 func (x *PlayerDatabase) Reset() {
@@ -136,7 +135,7 @@ func (x *PlayerDatabase) GetPlayerId() uint64 {
 	return 0
 }
 
-func (x *PlayerDatabase) GetPos() *__.Vector3 {
+func (x *PlayerDatabase) GetPos() *Vector3 {
 	if x != nil {
 		return x.Pos
 	}
@@ -252,11 +251,11 @@ func file_common_proto_mysql_database_table_proto_rawDescGZIP() []byte {
 
 var file_common_proto_mysql_database_table_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_common_proto_mysql_database_table_proto_goTypes = []interface{}{
-	(*AccountDatabase)(nil),         // 0: account_database
-	(*PlayerDatabase)(nil),          // 1: player_database
-	(*PlayerDatabase1)(nil),         // 2: player_database1
-	(*__.AccountSimplePlayers)(nil), // 3: account_simple_players
-	(*__.Vector3)(nil),              // 4: Vector3
+	(*AccountDatabase)(nil),      // 0: account_database
+	(*PlayerDatabase)(nil),       // 1: player_database
+	(*PlayerDatabase1)(nil),      // 2: player_database1
+	(*AccountSimplePlayers)(nil), // 3: account_simple_players
+	(*Vector3)(nil),              // 4: Vector3
 }
 var file_common_proto_mysql_database_table_proto_depIdxs = []int32{
 	3, // 0: account_database.simple_players:type_name -> account_simple_players
@@ -273,6 +272,8 @@ func file_common_proto_mysql_database_table_proto_init() {
 	if File_common_proto_mysql_database_table_proto != nil {
 		return
 	}
+	file_common_proto_account_database_proto_init()
+	file_common_proto_comp_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_common_proto_mysql_database_table_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*AccountDatabase); i {

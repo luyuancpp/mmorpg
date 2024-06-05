@@ -2,7 +2,10 @@ package loginservicelogic
 
 import (
 	"context"
+	"login_server/data"
+	"strconv"
 
+	"github.com/golang/protobuf/proto"
 	"login_server/internal/svc"
 	"login_server/pb/game"
 
@@ -24,7 +27,23 @@ func NewCreatePlayerLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Crea
 }
 
 func (l *CreatePlayerLogic) CreatePlayer(in *game.CreatePlayerC2LRequest) (*game.LoginNodeCreatePlayerResponse, error) {
-	// todo: add your logic here and delete this line
+	sessionId := strconv.FormatUint(in.SessionInfo.SessionId, 10)
+	player, ok := data.SessionList.Get(sessionId)
+	if !ok {
+		return &game.LoginNodeCreatePlayerResponse{Error: &game.Tips{Id: 1}}, nil
+	}
 
-	return &game.LoginNodeCreatePlayerResponse{}, nil
+	rdKey := "account" + player.Account
+	cmd := l.svcCtx.Rdb.Get(l.ctx, rdKey)
+	if cmd == nil {
+		return &game.LoginNodeCreatePlayerResponse{Error: &game.Tips{Id: 1}}, nil
+	}
+
+	resp := &game.LoginNodeCreatePlayerResponse{Players: &game.AccountDatabase{}}
+	if len(resp.Players.SimplePlayers.Players) >= 3 {
+		return &game.LoginNodeCreatePlayerResponse{Error: &game.Tips{Id: 1001}}, nil
+	}
+
+	err := proto.Unmarshal([]byte(cmd.Val()), resp.Players)
+	return resp, err
 }

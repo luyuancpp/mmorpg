@@ -3,10 +3,11 @@ syntax = "proto3";
 option go_package = "pb/game";
 
 import "common_proto/tip.proto";
+import "common_proto/account_database.proto";
 
 message c_account_simple_player
 {
-  uint64 player_id = 1;
+  AccountSimplePlayer playe = 1;
 }
 
 message LoginRequest
@@ -17,7 +18,7 @@ message LoginRequest
 
 message LoginResponse
 {
-	Tips error = 1;
+  Tips error = 1;
   repeated c_account_simple_player players = 2;
 }
 

@@ -22,7 +22,7 @@ func NewLoginServiceServer(svcCtx *svc.ServiceContext) *LoginServiceServer {
 	}
 }
 
-func (s *LoginServiceServer) Login(ctx context.Context, in *game.LoginRequest) (*game.LoginResponse, error) {
+func (s *LoginServiceServer) Login(ctx context.Context, in *game.LoginC2LRequest) (*game.LoginResponse, error) {
 	l := loginservicelogic.NewLoginLogic(ctx, s.svcCtx)
 	return l.Login(in)
 }
@@ -32,7 +32,7 @@ func (s *LoginServiceServer) CreatePlayer(ctx context.Context, in *game.CreatePl
 	return l.CreatePlayer(in)
 }
 
-func (s *LoginServiceServer) EnterGame(ctx context.Context, in *game.EnterGameRequest) (*game.EnterGameResponse, error) {
+func (s *LoginServiceServer) EnterGame(ctx context.Context, in *game.EnterGameC2LRequest) (*game.EnterGameResponse, error) {
 	l := loginservicelogic.NewEnterGameLogic(ctx, s.svcCtx)
 	return l.EnterGame(in)
 }
