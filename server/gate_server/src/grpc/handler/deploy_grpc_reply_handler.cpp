@@ -14,7 +14,8 @@ void AsyncCompleteGrpc()
     bool ok = false;
     gpr_timespec tm;
     tm.tv_sec = 0;
-    tm.tv_nsec = 1;
+    tm.tv_nsec = 0;
+    tm.clock_type = GPR_CLOCK_MONOTONIC;
     if (CompletionQueue::GOT_EVENT != g_deploy_client->cq().AsyncNext(&got_tag, &ok, tm))
     {
         return;
