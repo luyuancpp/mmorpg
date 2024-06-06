@@ -8,12 +8,12 @@ import (
 
 	"deploy_server/internal/logic/deployservice"
 	"deploy_server/internal/svc"
-	"deploy_server/pb/deploy"
+	"deploy_server/pb/game"
 )
 
 type DeployServiceServer struct {
 	svcCtx *svc.ServiceContext
-	deploy.UnimplementedDeployServiceServer
+	game.UnimplementedDeployServiceServer
 }
 
 func NewDeployServiceServer(svcCtx *svc.ServiceContext) *DeployServiceServer {
@@ -22,17 +22,17 @@ func NewDeployServiceServer(svcCtx *svc.ServiceContext) *DeployServiceServer {
 	}
 }
 
-func (s *DeployServiceServer) GetNodeInfo(ctx context.Context, in *deploy.NodeInfoRequest) (*deploy.NodeInfoResponse, error) {
+func (s *DeployServiceServer) GetNodeInfo(ctx context.Context, in *game.NodeInfoRequest) (*game.NodeInfoResponse, error) {
 	l := deployservicelogic.NewGetNodeInfoLogic(ctx, s.svcCtx)
 	return l.GetNodeInfo(in)
 }
 
-func (s *DeployServiceServer) StartGs(ctx context.Context, in *deploy.StartGsRequest) (*deploy.StartGsResponse, error) {
+func (s *DeployServiceServer) StartGs(ctx context.Context, in *game.StartGsRequest) (*game.StartGsResponse, error) {
 	l := deployservicelogic.NewStartGsLogic(ctx, s.svcCtx)
 	return l.StartGs(in)
 }
 
-func (s *DeployServiceServer) GetGsNodeId(ctx context.Context, in *deploy.GsNodeIdRequest) (*deploy.GsNodeIdResponse, error) {
+func (s *DeployServiceServer) GetGsNodeId(ctx context.Context, in *game.GsNodeIdRequest) (*game.GsNodeIdResponse, error) {
 	l := deployservicelogic.NewGetGsNodeIdLogic(ctx, s.svcCtx)
 	return l.GetGsNodeId(in)
 }
