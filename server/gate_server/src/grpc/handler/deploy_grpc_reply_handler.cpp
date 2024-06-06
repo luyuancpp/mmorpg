@@ -25,10 +25,14 @@ void AsyncCompleteGrpc()
     CHECK(ok);
 
     if (call->status.ok())
+    {
         g_gate_node->set_servers_info_data(call->reply.info());
+        g_gate_node->StartServer();
+    }
     else
-        LOG_INFO << "RPC failed" ;
-
+    {
+        LOG_INFO << "RPC failed";
+    }
 }
 
 void DeployGrpcReplyHandler()
