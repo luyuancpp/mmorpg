@@ -668,7 +668,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
 	    break;
     case kDatabaseNode:
 	{
-		g_controller_node->database_node()->Route2Node(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
+		//g_controller_node->database_node()->Route2Node(DbServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	    break;
     case kGateNode:

@@ -51,6 +51,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "muduo", "pkg\muduo_windows\
 		{7D732139-58FD-4E6F-A12A-F6B3F8B13577} = {7D732139-58FD-4E6F-A12A-F6B3F8B13577}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "logic", "pkg\logic\logic.vcxproj", "{03F2DF47-F5B9-41E9-933B-903D317FEEB1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -123,6 +125,14 @@ Global
 		{BD4A463B-510A-44B5-88A0-BD81DD4E46B2}.Release|x64.Build.0 = Release|x64
 		{BD4A463B-510A-44B5-88A0-BD81DD4E46B2}.Release|x86.ActiveCfg = Release|Win32
 		{BD4A463B-510A-44B5-88A0-BD81DD4E46B2}.Release|x86.Build.0 = Release|Win32
+		{03F2DF47-F5B9-41E9-933B-903D317FEEB1}.Debug|x64.ActiveCfg = Debug|x64
+		{03F2DF47-F5B9-41E9-933B-903D317FEEB1}.Debug|x64.Build.0 = Debug|x64
+		{03F2DF47-F5B9-41E9-933B-903D317FEEB1}.Debug|x86.ActiveCfg = Debug|Win32
+		{03F2DF47-F5B9-41E9-933B-903D317FEEB1}.Debug|x86.Build.0 = Debug|Win32
+		{03F2DF47-F5B9-41E9-933B-903D317FEEB1}.Release|x64.ActiveCfg = Release|x64
+		{03F2DF47-F5B9-41E9-933B-903D317FEEB1}.Release|x64.Build.0 = Release|x64
+		{03F2DF47-F5B9-41E9-933B-903D317FEEB1}.Release|x86.ActiveCfg = Release|Win32
+		{03F2DF47-F5B9-41E9-933B-903D317FEEB1}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

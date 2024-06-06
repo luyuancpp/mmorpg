@@ -9,7 +9,4 @@ void InitRepliedHandler()
 	void InitGateServiceStartGSRepliedHandler();
 	InitGateServiceStartGSRepliedHandler();
 
-	void InitLobbyServiceStartCrossGsRepliedHandler();
-	InitLobbyServiceStartCrossGsRepliedHandler();
-
 }

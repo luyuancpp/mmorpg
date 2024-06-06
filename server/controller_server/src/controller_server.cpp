@@ -24,7 +24,7 @@
 
 #include "service/grpc/deploy_service.grpc.pb.h"
 
-#include "src/network/deploy/deployclient.h"
+#include "src/grpc/deploy/deployclient.h"
 
 using namespace muduo;
 using namespace net;
