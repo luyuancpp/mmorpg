@@ -30,8 +30,8 @@ int main(int argc, char* argv[])
         }
         EventLoop loop;
 
-        loop.runInLoop(InitLua);
-        loop.runInLoop(InitServiceLua);
+        //loop.runInLoop(InitLua);
+        //loop.runInLoop(InitServiceLua);
 
         
         gAllFinish = tls.registry.create();
