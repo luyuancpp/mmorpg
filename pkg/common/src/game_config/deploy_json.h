@@ -2,7 +2,6 @@
 
 #include "common_proto/deploy_config.pb.h"
 
-
 class ZoneConfig
 {
 public:

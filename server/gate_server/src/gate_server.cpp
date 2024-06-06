@@ -34,9 +34,8 @@ void GateServer::Init()
 {
     g_gate_node = this;
 
-    InitNodeServer();
-
     LoadNodeConfig();
+    InitNodeServer();
 
     node_info_.set_node_type(kGateNode);
     node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
@@ -61,10 +60,9 @@ void GateServer::InitNodeServer()
     g_deploy_client = std::make_unique_for_overwrite<DeployClient>();
     EventLoop::getEventLoopOfCurrentThread()->runEvery(0.01, AsyncCompleteGrpc);
 
-    for (uint32_t i = 0; i < 1000; ++i)
     {
         NodeInfoRequest req;
-        req.set_zone_id(i);
+        req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
         void SendGetNodeInfo(NodeInfoRequest & req);
         SendGetNodeInfo(req);
     }
@@ -86,7 +84,7 @@ void GateServer::StartServer()
         [this]() ->void
         {
             /*GroupLignRequest rq;
-            rq.set_group_id(GameConfig::GetSingleton().config_info().group_id());
+            rq.set_group_id(ZoneConfig::GetSingleton().config_info().group_id());
             deploy_session()->CallMethod(DeployServiceLoginNodeInfoMsgId, rq);*/
         }
     );
@@ -122,7 +120,7 @@ void GateServer::Receive1(const OnConnected2ServerEvent& es)
             [this]() ->void
             {
                 /*ServerInfoRequest rq;
-                rq.set_group(GameConfig::GetSingleton().config_info().group_id());
+                rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
                 deploy_session()->CallMethod(DeployServiceServerInfoMsgId, rq);*/
             }
         );
