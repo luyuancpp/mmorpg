@@ -106,8 +106,12 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 			return
 		}
 	}(f)
+
+	headLen := len(data)
+
 	scanner := bufio.NewScanner(f)
 	className := ""
+	hasFiled := false
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, "enum") {
@@ -128,6 +132,7 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 		if strings.Contains(line, begin) {
 			continue
 		} else if strings.Contains(line, end) && isMsgCode == 1 {
+			hasFiled = true
 			data += "\"DebugString\",\n"
 			data += "&" + className + "::DebugString,\n"
 			data += "sol::base_classes, sol::bases<::google::protobuf::Message>());\n\n"
@@ -138,6 +143,7 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 			if len(s) < 3 {
 				continue
 			}
+			hasFiled = true
 			filedTypeName := s[0]
 			filedName := s[1]
 			templateName := ""
@@ -224,6 +230,10 @@ func writeSol2LuaFileByProtoFile(fd os.DirEntry, filePath string) {
 			}
 		}
 	}
+	if hasFiled == false && headLen != len(data) {
+		data = data[:len(data)-2]
+		data += ");\n"
+	}
 	data += "}\n"
 	WriteMd5Data2File(config.PbcLuaDirName+fileBaseName+config.CppSol2Ex, data)
 }
@@ -248,6 +258,12 @@ func WriteSol2LuaFile() {
 					continue
 				}
 				if strings.Contains(fd.Name(), config.MysqlName) {
+					continue
+				}
+				if strings.Contains(fd.Name(), config.DeployPrefixName) {
+					continue
+				}
+				if strings.Contains(fd.Name(), config.DatabasePrefixName) {
 					continue
 				}
 				util.Wg.Add(1)
