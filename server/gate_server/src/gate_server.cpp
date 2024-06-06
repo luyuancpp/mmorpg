@@ -52,8 +52,8 @@ void GateServer::InitNodeServer()
 {
     auto& zone = ZoneConfig::GetSingleton().config_info();
 
-    //const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
-    std::string target_str = "127.0.0.1:1000";
+    const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
+    std::string target_str = deploy_info.ip() + ":" + std::to_string(deploy_info.port());
     auto deploy_channel = grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials());
     extern std::unique_ptr<DeployService::Stub> g_deploy_stub;
     g_deploy_stub = DeployService::NewStub(deploy_channel);
@@ -63,31 +63,21 @@ void GateServer::InitNodeServer()
     {
         NodeInfoRequest req;
         req.set_zone_id(ZoneConfig::GetSingleton().config_info().zone_id());
-        void SendGetNodeInfo(NodeInfoRequest & req);
+        void SendGetNodeInfo(NodeInfoRequest & request);
         SendGetNodeInfo(req);
     }
-   
 }
 
 void GateServer::StartServer()
 {
-    auto& myinfo = conf_info_.gate_info();
-    InetAddress gate_addr(myinfo.ip(), myinfo.port());
+    auto& gate_info = conf_info_.gate_info();
+    InetAddress gate_addr(gate_info.ip(), gate_info.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
         std::bind(&GateServer::OnConnection, this, _1));
     server_->setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
-
-    EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-        [this]() ->void
-        {
-            /*GroupLignRequest rq;
-            rq.set_group_id(ZoneConfig::GetSingleton().config_info().group_id());
-            deploy_session()->CallMethod(DeployServiceLoginNodeInfoMsgId, rq);*/
-        }
-    );
 
     EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
         [this]() ->void
