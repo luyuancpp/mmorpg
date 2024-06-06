@@ -16,7 +16,7 @@ message database_server_db
   string db_password = 6;
   uint32 db_port = 7;
   string db_dbname = 8;
-  uint32 lobby_id = 9;
+  uint32 zone_id = 9;
 }
 
 message servers_info_data
@@ -26,7 +26,6 @@ message servers_info_data
   controller_server_db controller_info = 3;
   gate_server_db gate_info = 4;
   redis_server_db redis_info = 5;
-  lobby_server_db lobby_info = 6;
 }
 
 message login_server_db
@@ -48,7 +47,7 @@ message controller_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 lobby_id = 4;
+  uint32 zone_id = 4;
 }
 
 message lobby_server_db
@@ -80,7 +79,7 @@ message game_server_db
   uint32 id = 1;
   string ip = 2;
   uint32 port = 3;
-  uint32 lobby_id = 4;
+  uint32 zone_id = 4;
 }
 
 message gate_server_db
@@ -98,17 +97,7 @@ message gate_server_db
 message NodeInfoRequest
 {
   uint32 zone_id = 1;
-  uint32 group_id = 2;
-}
-
-message ControllerNodesDb
-{
-  repeated controller_server_db controllers = 1;
-}
-
-message LoginNodesDb
-{
-  repeated login_server_db login_nodes = 1;
+  uint32 lobby_id = 2;
 }
 
 message NodeInfoResponse
@@ -130,19 +119,14 @@ message StartGsResponse
   redis_server_db redis_info = 5;
 }
 
-message LobbyServerRequest
+message LobbyNodeInfoRequest
 {
   uint32 lobby_id = 1;
 }
 
-message LobbyServerResponse
+message LobbyNodeInfoResponse
 {
   lobby_server_db info = 1;
-}
-
-message LobbyInfoResponse
-{
-  ControllerNodesDb lobby_controllers = 1;
 }
 
 message GsNodeIdRequest
