@@ -1,7 +1,6 @@
 #include "muduo/base/Logging.h"
 
 #include "src/thread_local/thread_local_storage_common_logic.h"
-#include "src/constants/tips_id.h"
 #include "src/gate_server.h"
 #include "src/network/codec/dispatcher.h"
 #include "src/thread_local/gate_thread_local_storage.h"
