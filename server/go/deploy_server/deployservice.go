@@ -9,7 +9,7 @@ import (
 	"deploy_server/internal/config"
 	deployserviceServer "deploy_server/internal/server/deployservice"
 	"deploy_server/internal/svc"
-	"deploy_server/pb/deploy"
+	"deploy_server/pb/game"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/service"
@@ -37,7 +37,7 @@ func main() {
 	pkg.InitDBTables()
 
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
-		deploy.RegisterDeployServiceServer(grpcServer, deployserviceServer.NewDeployServiceServer(ctx))
+		game.RegisterDeployServiceServer(grpcServer, deployserviceServer.NewDeployServiceServer(ctx))
 
 		if c.Mode == service.DevMode || c.Mode == service.TestMode {
 			reflection.Register(grpcServer)

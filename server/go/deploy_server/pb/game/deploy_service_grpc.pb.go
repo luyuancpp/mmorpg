@@ -2,9 +2,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             v3.19.4
-// source: deploy_service.proto
+// source: common_proto/deploy_service.proto
 
-package deploy
+package game
 
 import (
 	context "context"
@@ -179,5 +179,5 @@ var DeployService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "deploy_service.proto",
+	Metadata: "common_proto/deploy_service.proto",
 }

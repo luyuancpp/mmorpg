@@ -3,7 +3,7 @@ package pkg
 import (
 	"database/sql"
 	"deploy_server/internal/config"
-	"deploy_server/pb/deploy"
+	"deploy_server/pb/game"
 	"encoding/json"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
@@ -62,37 +62,37 @@ func OpenDB(path string) error {
 	if err != nil {
 		return err
 	}
-	PbDb.AddMysqlTable(&deploy.DatabaseServerDb{})
-	PbDb.AddMysqlTable(&deploy.LoginServerDb{})
-	PbDb.AddMysqlTable(&deploy.ControllerServerDb{})
-	PbDb.AddMysqlTable(&deploy.RedisServerDb{})
-	PbDb.AddMysqlTable(&deploy.GateServerDb{})
+	PbDb.AddMysqlTable(&game.DatabaseServerDb{})
+	PbDb.AddMysqlTable(&game.LoginServerDb{})
+	PbDb.AddMysqlTable(&game.ControllerServerDb{})
+	PbDb.AddMysqlTable(&game.RedisServerDb{})
+	PbDb.AddMysqlTable(&game.GateServerDb{})
 
 	return nil
 }
 
 func InitDBTables() {
-	_, err := Db.Exec(PbDb.GetCreateTableSql(&deploy.DatabaseServerDb{}))
+	_, err := Db.Exec(PbDb.GetCreateTableSql(&game.DatabaseServerDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&deploy.LoginServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.LoginServerDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&deploy.ControllerServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.ControllerServerDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&deploy.RedisServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.RedisServerDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	_, err = Db.Exec(PbDb.GetCreateTableSql(&deploy.GateServerDb{}))
+	_, err = Db.Exec(PbDb.GetCreateTableSql(&game.GateServerDb{}))
 	if err != nil {
 		log.Fatal(err)
 		return
