@@ -37,14 +37,7 @@ int main(int argc, char* argv[])
         gAllFinish = tls.registry.create();
         tls.registry.emplace<uint32_t>(gAllFinish, nClients);
 
-        auto contents = File2String("client.json");
-        absl::string_view sv(contents.data(), contents.size());
-        ConnetionParamJsonFormat connetion_param_;
-        auto result =  google::protobuf::util::JsonStringToMessage(sv, &connetion_param_);
-		if (!result.ok()) {
-			LOG_FATAL << result.message().data();
-		}
-        InetAddress serverAddr(connetion_param_.data(0).ip(), connetion_param_.data(0).port());
+        InetAddress serverAddr("127.0.0.1", 8000);
   
         muduo::Logger::setLogLevel(muduo::Logger::WARN);
         std::vector<std::unique_ptr<PlayerClient>> clients;

@@ -112,6 +112,7 @@ const LoginMethodRepliedHandleDir = ProjectDir + LoginDirName + RepliedHandlerDi
 const LoginPrefixName = "login"
 
 const DeployPrefixName = "deploy"
+const DatabasePrefixName = "db"
 
 const LobbyPrefixName = "lobby"
 
@@ -123,6 +124,5 @@ const C2SMethodContainsName = "C2S"
 const MysqlName = "mysql"
 const PlayerServiceName = "player_service.cpp"
 const PlayerRepliedServiceName = "player_service_replied.cpp"
-const GoogleEmptyProtoName = "google::protobuf::Empty"
 const RegisterRepliedHandlerCppEx = "register" + CppRepliedHandlerEx
 const RegisterHandlerCppEx = "register" + CppHandlerEx
