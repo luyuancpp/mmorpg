@@ -1,18 +1,18 @@
-package main
+package muduo
 
 import (
-	"client/muduo"
 	"client/pb/game"
+	"testing"
 	"time"
 )
 
-func main() {
-	client, err := muduo.NewClient("127.0.0.1", 8000)
+func TestClient(t *testing.T) {
+	client, err := NewClient("127.0.0.1", 8000)
 	if err != nil {
 		panic(err)
 	}
 
-	defer func(client *muduo.Client) {
+	defer func(client *Client) {
 		err := client.Close()
 		if err != nil {
 			panic(err)
