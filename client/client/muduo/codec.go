@@ -8,25 +8,33 @@ import (
 
 func Encode(m *proto.Message) ([]byte, error) {
 	//from zinx
-
 	d := GetDescriptor(m)
 
-	nameLen := make([]byte, 4)
-	name := d.Name() + " "
-	binary.BigEndian.PutUint32(nameLen, uint32(len(name)))
+	/// A buffer class modeled after org.jboss.netty.buffer.ChannelBuffer
+	///
+	/// @code
+	/// +-------------------+------------------+------------------+
+	/// | prependable bytes |  readable bytes  |  writable bytes  |
+	/// |                   |     (CONTENT)    |                  |
+	/// +-------------------+------------------+------------------+
+	/// |                   |                  |                  |
+	/// 0      <=      readerIndex   <=   writerIndex    <=     size
 
-	typeName := []byte(name)
+	pbNameLenData := make([]byte, 4)
+	pbTypeName := d.Name() + " "
+	binary.BigEndian.PutUint32(pbNameLenData, uint32(len(pbTypeName)))
+	pbTypeNameData := []byte(pbTypeName)
 
-	body, err := proto.Marshal(*m)
+	pbBodyData, err := proto.Marshal(*m)
 	if err != nil {
 		return []byte{}, err
 	}
 
 	dataPB := make([]byte, 0)
 
-	dataPB = append(dataPB, nameLen...)
-	dataPB = append(dataPB, typeName...)
-	dataPB = append(dataPB, body...)
+	dataPB = append(dataPB, pbNameLenData...)
+	dataPB = append(dataPB, pbTypeNameData...)
+	dataPB = append(dataPB, pbBodyData...)
 
 	checkSum := adler32.Checksum(dataPB)
 	checkSumData := make([]byte, 4)
