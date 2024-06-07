@@ -19,7 +19,7 @@ func main() {
 		}
 	}(client)
 
-	rq := &game.LoginRequest{Account: "luhailong", Password: "luyuan"}
+	rq := &game.ClientRequest{Id: 1}
 
 	for {
 		client.Send(rq)

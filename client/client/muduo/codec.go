@@ -12,9 +12,10 @@ func Encode(m *proto.Message) ([]byte, error) {
 	d := GetDescriptor(m)
 
 	nameLen := make([]byte, 4)
-	binary.BigEndian.PutUint32(nameLen, uint32(len(d.FullName())))
+	name := d.Name() + " "
+	binary.BigEndian.PutUint32(nameLen, uint32(len(name)))
 
-	typeName := []byte(d.Name())
+	typeName := []byte(name)
 
 	body, err := proto.Marshal(*m)
 	if err != nil {
@@ -32,8 +33,9 @@ func Encode(m *proto.Message) ([]byte, error) {
 	binary.BigEndian.PutUint32(checkSumData, checkSum)
 	dataPB = append(dataPB, checkSumData...)
 
+	lenPB := len(dataPB)
 	lenData := make([]byte, 4)
-	binary.BigEndian.PutUint32(lenData, uint32(len(dataPB)))
+	binary.BigEndian.PutUint32(lenData, uint32(lenPB))
 	data := make([]byte, 0)
 	data = append(data, lenData...)
 	data = append(data, dataPB...)
