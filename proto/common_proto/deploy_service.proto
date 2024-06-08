@@ -26,7 +26,7 @@ message servers_info_data
 {
   database_server_db database_info = 1;
   login_server_db login_info = 2;
-  controller_server_db controller_info = 3;
+  centre_server_db centre_info = 3;
   gate_server_db gate_info = 4;
   redis_server_db redis_info = 5;
 }
@@ -42,9 +42,9 @@ message login_server_db
   uint32 zone_id = 4;
 }
 
-message controller_server_db
+message centre_server_db
 {
-  option(OptionTableName)  = "controller_server_db";
+  option(OptionTableName)  = "centre_server_db";
   option(OptionPrimaryKey) = "id";
   option(OptionAutoIncrementKey) = "id";
   uint32 id = 1;
