@@ -10,9 +10,7 @@
 #include "src/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
 #include "src/network/process_info.h"
-#include "service/controller_service_service.h"
-#include "service/deploy_service_service.h"
-#include "service/lobby_scene_service.h"
+#include "service/centre_service_service.h"
 #include "src/handler/player_service.h"
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/register_handler.h"
@@ -115,28 +113,12 @@ void GameNode::CallCentreStartGs(CentreSessionPtr controller_node)
     node_info->set_port(gs_info_.port());
     rq.set_server_type(tls.registry.get<GsServerType>(global_entity()).server_type_);
     rq.set_gs_node_id(gs_info_.id());
-    controller_node->CallMethod(ControllerServiceStartGsMsgId,rq);
+    controller_node->CallMethod(CentreServiceStartGsMsgId,rq);
     LOG_DEBUG << "connect to controller" ;
 }
 
 void GameNode::CallLobbyStartGs()
 {
-    auto server_type = tls.registry.get<GsServerType>(global_entity()).server_type_;
-    if (!(server_type == kMainSceneCrossServer ||
-        server_type == kRoomSceneCrossServer))
-    {
-        return;
-    }
-    StartCrossGsRequest rq;
-	auto session_info = rq.mutable_rpc_client();
-	auto node_info = rq.mutable_rpc_server();
-	session_info->set_ip(lobby_node_->local_addr().toIp());
-	session_info->set_port(lobby_node_->local_addr().port());
-	node_info->set_ip(gs_info_.ip());
-	node_info->set_port(gs_info_.port());
-    rq.set_server_type(server_type);
-	rq.set_gs_node_id(gs_info_.id());
-    lobby_node_->CallMethod(LobbyServiceStartCrossGsMsgId, rq);
 }
 
 void GameNode::Receive1(const OnConnected2ServerEvent& es)
@@ -151,7 +133,7 @@ void GameNode::Receive1(const OnConnected2ServerEvent& es)
         }
     }
 
-    for (auto& it : game_tls.controller_node())
+    for (auto& it : game_tls.centre_node())
     {
         auto& controller_node = it.second;
         auto& controller_session = controller_node->session_;

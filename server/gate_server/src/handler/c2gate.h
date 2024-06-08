@@ -8,7 +8,6 @@
 #include "src/network/rpc_msg_route.h"
 #include "src/network/rpc_client.h"
 
-#include "common_proto/database_service.pb.h"
 #include "common_proto/c2gate.pb.h"
 
 using RpcClientMessagePtr = std::shared_ptr<ClientRequest>;

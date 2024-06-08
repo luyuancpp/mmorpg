@@ -4,7 +4,6 @@
 ///<<< BEGIN WRITING YOUR CODE
 #include "src/game_config/deploy_json.h"
 #include "src/game_server.h"
-#include "service/deploy_service_service.h"
 
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;

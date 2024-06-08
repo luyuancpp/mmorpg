@@ -10,12 +10,12 @@
 //todo 各种服务器崩溃
 void PlayerChangeSceneSystem::InitChangeSceneQueue(entt::entity player)
 {
-    tls.registry.emplace<PlayerControllerChangeSceneQueue>(player);
+    tls.registry.emplace<PlayerCentreChangeSceneQueue>(player);
 }
 
 uint32_t PlayerChangeSceneSystem::PushChangeSceneInfo(entt::entity player, const ControllerChangeSceneInfo& change_info)
 {
-    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
         return kRetChangeScenePlayerQueueComponentNull;
@@ -35,7 +35,7 @@ void PlayerChangeSceneSystem::TryProcessChangeSceneQueue(entt::entity player)
 
 void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)
 {
-    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
         return;
@@ -49,7 +49,7 @@ void PlayerChangeSceneSystem::PopFrontChangeSceneQueue(entt::entity player)
 
 void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, ControllerChangeSceneInfo::eChangeGsStatus s)
 {
-    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
         return;
@@ -63,7 +63,7 @@ void PlayerChangeSceneSystem::SetChangeGsStatus(entt::entity player, ControllerC
 
 void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, ControllerChangeSceneInfo::eChangeCrossServerStatus s)
 {
-    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
         return;
@@ -77,7 +77,7 @@ void PlayerChangeSceneSystem::SetChangeCrossServerSatus(entt::entity player, Con
 
 void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity player)
 {
-    auto* const try_change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    auto* const try_change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == try_change_scene_queue)
     {
         return;
@@ -110,7 +110,7 @@ void PlayerChangeSceneSystem::TryProcessZoneServerChangeScene(entt::entity playe
 
 void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity player)
 {
-    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
         return;
@@ -142,7 +142,7 @@ void PlayerChangeSceneSystem::TryProcessViaCrossServerChangeScene(entt::entity p
 
 uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 {
-    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
         return kRetChangeScenePlayerQueueComponentNull;
@@ -169,7 +169,7 @@ uint32_t PlayerChangeSceneSystem::TryChangeSameGsScene(entt::entity player)
 
 uint32_t PlayerChangeSceneSystem::ChangeDiffGsScene(entt::entity player)
 {
-    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
         return kRetChangeScenePlayerQueueComponentNull;

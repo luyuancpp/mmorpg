@@ -5,12 +5,12 @@ class GamePlayerServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
-	static void Controller2GsLogin(entt::entity player,
+	static void Centre2GsLogin(entt::entity player,
 		const ::Centre2GsLoginRequest* request,
 		::google::protobuf::Empty* response);
 
-	static void OnControllerEnterGateSucceed(entt::entity player,
-		const ::Controller2GsEnterGateSucceedRequest* request,
+	static void OnCentreEnterGateSucceed(entt::entity player,
+		const ::Centre2GsEnterGateSucceedRequest* request,
 		::google::protobuf::Empty* response);
 
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
@@ -21,12 +21,12 @@ public:
         switch(method->index())
 		{
 		case 0:
-			Controller2GsLogin(player,
+			Centre2GsLogin(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
-			OnControllerEnterGateSucceed(player,
+			OnCentreEnterGateSucceed(player,
 			nullptr,
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;

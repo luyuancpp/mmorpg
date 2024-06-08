@@ -7,7 +7,7 @@
 #include "src/network/gate_node.h"
 #include "src/network/centre_node.h"
 #include "src/network/session.h"
-#include "service/controller_service_service.h"
+#include "service/centre_service_service.h"
 #include "service/gate_service_service.h"
 #include "src/thread_local/game_thread_local_storage.h"
 
@@ -50,18 +50,18 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	gate_it->second->session_.Send(GateServicePlayerMessageMsgId, message_wrapper);
 }
 
-void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
+void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id)
 {
 	auto it = game_tls.player_list().find(player_id);
 	if (it == game_tls.player_list().end())
 	{
-		LOG_DEBUG << " Send2ControllerPlayer player not found " << player_id;
+		LOG_DEBUG << " Send2CentrePlayer player not found " << player_id;
 		return;
 	}
-	Send2ControllerPlayer(message_id, message, it->second);
+	Send2CentrePlayer(message_id, message, it->second);
 }
 
-void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)
+void Send2CentrePlayer(uint32_t message_id, const google::protobuf::Message& msg, entt::entity player)
 {
 	if (!tls.registry.valid(player))
 	{
@@ -73,33 +73,33 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 		LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 		return;
 	}
-	const auto controller_it = game_tls.controller_node().find(player_node_info->centre_node_id());
-	if (controller_it == game_tls.controller_node().end())
+	const auto centre_it = game_tls.centre_node().find(player_node_info->centre_node_id());
+	if (centre_it == game_tls.centre_node().end())
 	{
-		LOG_ERROR << "controller not found" << player_node_info->centre_node_id();
+		LOG_ERROR << "centre not found" << player_node_info->centre_node_id();
 		return;
 	}
-	if (!controller_it->second->session_->connected())
+	if (!centre_it->second->session_->connected())
 	{
-		LOG_ERROR << "Send2ControllerPlayer controller disconnect" << tls.registry.get<Guid>(player);
+		LOG_ERROR << "Send2CentrePlayer centre disconnect" << tls.registry.get<Guid>(player);
 		return;
 	}
 	NodeRouteMessageRequest msg_wrapper;
 	msg_wrapper.mutable_msg()->set_message_id(message_id);
 	msg_wrapper.mutable_msg()->set_body(msg.SerializeAsString());
 	msg_wrapper.mutable_ex()->set_session_id(player_node_info->gate_session_id());
-	controller_it->second->session_->Send(ControllerServiceGsPlayerServiceMsgId, msg_wrapper);
+	centre_it->second->session_->Send(CentreServiceGsPlayerServiceMsgId, msg_wrapper);
 }
 
-void Send2Controller(const uint32_t message_id, const google::protobuf::Message& messag, uint32_t centre_node_id)
+void Send2Centre(const uint32_t message_id, const google::protobuf::Message& messag, uint32_t centre_node_id)
 {
-	const auto controller_it = game_tls.controller_node().find(centre_node_id);
-	if (controller_it == game_tls.controller_node().end())
+	const auto centre_it = game_tls.centre_node().find(centre_node_id);
+	if (centre_it == game_tls.centre_node().end())
 	{
-		LOG_ERROR << "Send2ControllerPlayer controller not found" << centre_node_id;
+		LOG_ERROR << "Send2CentrePlayer centre not found" << centre_node_id;
 		return;
 	}
-	controller_it->second->session_->Send(message_id, messag);
+	centre_it->second->session_->Send(message_id, messag);
 }
 
 void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, uint32_t gate_node_id)
@@ -113,14 +113,14 @@ void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, uin
 	gate_it->second->session_.Send(GateServicePlayerMessageMsgId, messag);
 }
 
-bool CallControllerNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
+bool CallCentreNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, const NodeId node_id)
 {
-	const auto controller_it = game_tls.controller_node().find(node_id);
-	if (controller_it == game_tls.controller_node().end())
+	const auto centre_it = game_tls.centre_node().find(node_id);
+	if (centre_it == game_tls.centre_node().end())
 	{
-		LOG_ERROR << "controller not found" << node_id;
+		LOG_ERROR << "centre not found" << node_id;
 		return false;
 	}
-	controller_it->second->session_->CallMethod(message_id, message);
+	centre_it->second->session_->CallMethod(message_id, message);
 	return true;
 }
