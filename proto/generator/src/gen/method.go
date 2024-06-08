@@ -689,44 +689,6 @@ func isLoginServiceHandler(methodList *RpcMethodInfos) (check bool) {
 	return strings.Contains(firstMethodInfo.FileBaseName(), "login")
 }
 
-func writeLoginMethodHandlerHeadFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-
-	if len(methodList) <= 0 {
-		return
-	}
-	if !isLoginServiceHandler(&methodList) {
-		return
-	}
-	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.LoginMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
-}
-
-func writeLoginMethodHandlerCppFile(methodList RpcMethodInfos) {
-	defer util.Wg.Done()
-	if len(methodList) <= 0 {
-		return
-	}
-	if !isLoginServiceHandler(&methodList) {
-		return
-	}
-	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.LoginMethodHandleDir + fileName
-	data := getMethodHandlerCppStr(dstFileName, &methodList)
-	WriteMd5Data2File(dstFileName, data)
-}
-
-func isDataBaseServiceHandler(methodList *RpcMethodInfos) (check bool) {
-	if len(*methodList) <= 0 {
-		return false
-	}
-	firstMethodInfo := (*methodList)[0]
-	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
-		return false
-	}
-	return strings.Contains(firstMethodInfo.FileBaseName(), "database")
-}
-
 func WriteMethodFile() {
 	for _, v := range ServiceMethodMap {
 		util.Wg.Add(1)
