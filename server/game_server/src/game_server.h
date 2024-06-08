@@ -11,8 +11,7 @@
 #include "src/network/rpc_msg_route.h"
 
 #include "common_proto/deploy_service.pb.h"
-#include "common_proto/controller_service.pb.h"
-#include "logic_proto/lobby_scene.pb.h"
+#include "common_proto/centre_service.pb.h"
 
 class GameNode : muduo::noncopyable
 {

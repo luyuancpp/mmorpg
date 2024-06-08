@@ -16,9 +16,7 @@
 #include "src/replied_handler/player_service_replied.h"
 #include "src/handler/register_handler.h"
 #include "service/service.h"
-#include "service/deploy_service_service.h"
 #include "service/gate_service_service.h"
-#include "service/lobby_scene_service.h"
 #include "src/thread_local/centre_thread_local_storage.h"
 #include "src/thread_local/thread_local_storage_link.h"
 
@@ -93,7 +91,7 @@ void CentreNode::StartServer(const ::servers_info_data& info)
     db_session_->connect();    
 
 	
-    auto& my_node_info = serverinfos_.controller_info();
+    auto& my_node_info = serverinfos_.centre_info();
     node_info_.set_node_id(my_node_info.id());
     InetAddress controller_addr(my_node_info.ip(), my_node_info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
@@ -151,7 +149,6 @@ void CentreNode::Receive1(const OnConnected2ServerEvent& es)
 		{
 			if (conn->connected() && IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 			{
-				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&CentreNode::Register2Lobby, this));
 			}
 			else if(!conn->connected() && IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 			{
@@ -230,20 +227,6 @@ void CentreNode::InitMq()
                            .withCredentialsProvider(credentials_provider)
                            .build())
         .build();
-}
-
-void CentreNode::Register2Lobby()
-{
-    auto& myinfo = serverinfos_.controller_info();
-    StartControllerRequest rq;
-	auto session_info = rq.mutable_rpc_client();
-	auto node_info = rq.mutable_rpc_server();
-	session_info->set_ip(lobby_session_->local_addr().toIp());
-	session_info->set_port(lobby_session_->local_addr().port());
-	node_info->set_ip(myinfo.ip());
-	node_info->set_port(myinfo.port());
-	rq.set_centre_node_id(myinfo.id());
-    lobby_session_->CallMethod(LobbyServiceStartControllerNodeMsgId, rq);
 }
 
 void CentreNode::InitNodeServer()

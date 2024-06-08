@@ -70,10 +70,10 @@ void PlayerCommonSystem::OnLogin(entt::entity player)
     }
 
     {
-        Controller2GsLoginRequest message;
+        Centre2GsLoginRequest message;
         message.set_enter_gs_type((*enter_game_node_flag).enter_gs_type());
         tls.registry.remove<EnterGsFlag>(player);
-        Send2GsPlayer(GamePlayerServiceController2GsLoginMsgId, message, player);
+        Send2GsPlayer(GamePlayerServiceCentre2GsLoginMsgId, message, player);
     }
 
     //给客户端发所有场景消息

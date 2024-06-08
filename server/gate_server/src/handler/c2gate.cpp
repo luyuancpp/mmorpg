@@ -8,9 +8,8 @@
 #include "src/util/game_registry.h"
 #include "src/network/game_node.h"
 #include "src/network/login_node.h"
-#include "service/controller_service_service.h"
+#include "service/centre_service_service.h"
 #include "service/game_service_service.h"
-#include "service/login_service_service.h"
 #include "service/common_client_player_service.h"
 #include "src/thread_local/gate_thread_local_storage.h"
 #include "src/util/random.h"
@@ -80,16 +79,17 @@ void ClientReceiver::OnConnection(const muduo::net::TcpConnectionPtr& conn)
             if (const auto& session_login_node = GetLoginNode(session_id);
                 nullptr != session_login_node)
             {
-                LoginNodeDisconnectRequest rq;
-                rq.set_session_id(session_id);
-                session_login_node->CallMethod(LoginServiceDisconnectMsgId, rq);
+                //todo 
+                //LoginNodeDisconnectRequest rq;
+                //rq.set_session_id(session_id);
+                //session_login_node->CallMethod(LoginServiceDisconnectMsgId, rq);
             }			
         }
         // controller
         {
             GateDisconnectRequest rq;
             rq.set_session_id(session_id);
-            g_gate_node->controller_node_session()->CallMethod(ControllerServiceGateDisconnectMsgId, rq);
+            g_gate_node->controller_node_session()->CallMethod(CentreServiceGateDisconnectMsgId, rq);
         }
         gate_tls.sessions().erase(session_id);
     }
@@ -149,7 +149,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
         {
             return;
         }
-        login_node->Route2Node(LoginServiceRouteNodeStringMsgMsgId, rq);
+        //todo 
     }
 }
 

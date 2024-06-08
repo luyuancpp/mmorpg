@@ -18,6 +18,6 @@ struct ControllerNode
 	CentreSessionPtr session_;
 };
 using ControllerNodePtr = std::shared_ptr<ControllerNode>;
-using ControllerNodes = std::unordered_map<uint64_t, ControllerNodePtr>;
+using CentreNodes = std::unordered_map<uint64_t, ControllerNodePtr>;
 
 

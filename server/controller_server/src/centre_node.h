@@ -10,8 +10,6 @@
 #include "src/network/server_component.h"
 
 #include "common_proto/deploy_service.pb.h"
-#include "common_proto/database_service.pb.h"
-#include "logic_proto/lobby_scene.pb.h"
 
 class CentreNode : muduo::noncopyable
 {
@@ -23,7 +21,7 @@ public:
 	~CentreNode();
 
 	inline PbSyncRedisClientPtr& redis_client() { return redis_; }
-	inline uint32_t center_node_id()const { return serverinfos_.controller_info().id(); }
+	inline uint32_t center_node_id()const { return serverinfos_.centre_info().id(); }
 	inline RpcClientPtr& lobby_node() { return lobby_session_; }
 	inline RpcClientPtr& database_node() { return db_session_; }
 	inline const NodeInfo& node_info()const { return node_info_; }
@@ -42,7 +40,6 @@ private:
 	void InitMq();
 
 	void Connect2Deploy();
-	void Register2Lobby();
 
 	void InitNodeServer();
 

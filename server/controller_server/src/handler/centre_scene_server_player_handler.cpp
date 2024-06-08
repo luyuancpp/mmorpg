@@ -14,7 +14,7 @@
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
 void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
-	const ::ControllerEnterSceneRequest* request,
+	const ::CentreEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -32,7 +32,7 @@ void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 }
 
 void CentreScenePlayerServiceHandler::LeaveScene(entt::entity player,
-	const ::ControllerLeaveSceneRequest* request,
+	const ::CentreLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
@@ -40,12 +40,12 @@ void CentreScenePlayerServiceHandler::LeaveScene(entt::entity player,
 }
 
 void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,
-	const ::ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
+	const ::CentreLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	::google::protobuf::Empty* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 	 //异步切换考虑消息队列
-	auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
 	if (nullptr == change_scene_queue)
 	{
 		return;
@@ -55,7 +55,7 @@ void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::en
 		return;
 	}
 	const auto& change_scene_info = change_scene_queue->change_scene_queue_.front();
-	LOG_DEBUG << "Gs2ControllerLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
+	LOG_DEBUG << "Gs2CentreLeaveSceneAsyncSavePlayerComplete  change scene " << change_scene_info.processing();
 	const auto to_scene = ScenesSystem::GetSceneByGuid(change_scene_info.scene_info().guid());
 	//todo异步加载完场景已经不在了scene了
 	//todo 场景崩溃了要去新的场景

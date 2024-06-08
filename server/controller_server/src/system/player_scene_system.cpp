@@ -11,7 +11,6 @@
 #include "src/network/message_system.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
-#include "service/lobby_scene_service.h"
 #include "service/game_service_service.h"
 #include "service/game_scene_server_player_service.h"
 #include "src/thread_local/centre_thread_local_storage.h"
@@ -85,7 +84,7 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
 //前一个队列完成的时候才应该调用到这里去判断当前队列
 void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
 {
-    auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+    auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
     if (nullptr == change_scene_queue)
     {
         return;
@@ -199,17 +198,17 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         if (is_from_gs_is_cross_server)
         {
             //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
-            LeaveCrossMainSceneRequest rq;
-            rq.set_player_id(tls.registry.get<Guid>(player));
-            g_centre_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMsgId, rq);
+            //LeaveCrossMainSceneRequest rq;
+            //rq.set_player_id(tls.registry.get<Guid>(player));
+            //g_centre_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMsgId, rq);
         }
         if (is_to_gs_is_cross_server)
         {
             //注意虽然一个逻辑，但是不一定是在leave后面处理
-            EnterCrossMainSceneRequest rq;
-            rq.set_scene_id(to_scene_guid);
-            rq.set_player_id(tls.registry.get<Guid>(player));
-            g_centre_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMsgId, rq);
+           // EnterCrossMainSceneRequest rq;
+            //rq.set_scene_id(to_scene_guid);
+            //rq.set_player_id(tls.registry.get<Guid>(player));
+            //g_centre_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMsgId, rq);
             return;
         }
     }

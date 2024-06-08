@@ -5,9 +5,9 @@
 #include "src/network/node_info.h"
 #include "src/constants/tips_id.h"
 #include "src/comp/scene_comp.h"
-#include "service/controller_scene_server_player_service.h"
+#include "service/centre_scene_server_player_service.h"
 
-#include "server_player_proto/controller_scene_server_player.pb.h"
+#include "server_player_proto/centre_scene_server_player.pb.h"
 ///<<< END WRITING YOUR CODE
 void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
 	const ::EnterSceneC2SRequest* request,
@@ -40,9 +40,9 @@ void ClientPlayerSceneServiceHandler::EnterSceneC2S(entt::entity player,
             return;
         }
     }
-    ControllerEnterSceneRequest message;
+    CentreEnterSceneRequest message;
     message.mutable_scene_info()->CopyFrom(request->scene_info());
-    Send2ControllerPlayer(ControllerScenePlayerServiceEnterSceneMsgId, message, player);
+    Send2CentrePlayer(CentreScenePlayerServiceEnterSceneMsgId, message, player);
 ///<<< END WRITING YOUR CODE
 }
 

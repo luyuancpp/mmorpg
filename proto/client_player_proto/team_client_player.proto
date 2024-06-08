@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "common_proto/tip.proto";
 import "common_proto/common.proto";
 option cc_generic_services = true;
 

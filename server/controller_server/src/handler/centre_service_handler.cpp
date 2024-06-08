@@ -18,8 +18,6 @@
 #include "src/network/rpc_msg_route.h"
 #include "service/gate_service_service.h"
 #include "service/game_service_service.h"
-#include "service/login_service_service.h"
-#include "service/database_service_service.h"
 #include "service/service.h"
 #include "src/handler/player_service.h"
 #include "src/handler/register_handler.h"
@@ -379,7 +377,7 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 			centre_tls.gate_sessions().erase(player_node_info->gate_session_id());
 			GateNodeKickConnRequest message;
 			message.set_session_id(cl_tls.session_id());
-			Send2Gate(GateServiceKickConnByControllerMsgId, message, get_gate_node_id(player_node_info->gate_session_id()));
+			Send2Gate(GateServiceKickConnByCentreMsgId, message, get_gate_node_id(player_node_info->gate_session_id()));
 
 			player_node_info->set_gate_session_id(cl_tls.session_id());
 		}
@@ -663,7 +661,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
 			LOG_ERROR << "login not found node id " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
 		}
-		(*login).session_.Route2Node(LoginServiceRouteNodeStringMsgMsgId, *mutable_request);
+		//(*login).session_.Route2Node(LoginServiceRouteNodeStringMsgMsgId, *mutable_request);
 	}
 	    break;
     case kDatabaseNode:

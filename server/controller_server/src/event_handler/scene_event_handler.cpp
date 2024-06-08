@@ -61,7 +61,7 @@ void SceneEventHandler::BeforeLeaveSceneHandler(const BeforeLeaveScene& message)
 ///<<< BEGIN WRITING YOUR CODE
 	const auto player = entt::to_entity(message.entity());
 	//LOG_INFO << "player leave scene " << *try_player_id << " " << tls.registry.get<SceneInfo>(tls.registry.get<SceneEntity>(player).scene_entity_).scene_id();
-	auto* const change_scene_queue = tls.registry.try_get<PlayerControllerChangeSceneQueue>(player);
+	auto* const change_scene_queue = tls.registry.try_get<PlayerCentreChangeSceneQueue>(player);
 	if (nullptr == change_scene_queue)
 	{
 		return;
