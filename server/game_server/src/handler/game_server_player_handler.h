@@ -5,12 +5,12 @@ class GamePlayerServiceHandler : public ::PlayerService
 {
 public:
 	using PlayerService::PlayerService;
-	static void Controller2GsLogin(entt::entity player,
-		const ::Controller2GsLoginRequest* request,
+	static void Centre2GsLogin(entt::entity player,
+		const ::Centre2GsLoginRequest* request,
 		::google::protobuf::Empty* response);
 
-	static void OnControllerEnterGateSucceed(entt::entity player,
-		const ::Controller2GsEnterGateSucceedRequest* request,
+	static void OnCentreEnterGateSucceed(entt::entity player,
+		const ::Centre2GsEnterGateSucceedRequest* request,
 		::google::protobuf::Empty* response);
 
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
@@ -21,13 +21,13 @@ public:
         switch(method->index())
 		{
 		case 0:
-			Controller2GsLogin(player,
-			::google::protobuf::internal::DownCast<const Controller2GsLoginRequest*>( request),
+			Centre2GsLogin(player,
+			::google::protobuf::internal::DownCast<const Centre2GsLoginRequest*>( request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		case 1:
-			OnControllerEnterGateSucceed(player,
-			::google::protobuf::internal::DownCast<const Controller2GsEnterGateSucceedRequest*>( request),
+			OnCentreEnterGateSucceed(player,
+			::google::protobuf::internal::DownCast<const Centre2GsEnterGateSucceedRequest*>( request),
 			::google::protobuf::internal::DownCast<google::protobuf::Empty*>(response));
 		break;
 		default:
