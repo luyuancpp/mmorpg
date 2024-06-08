@@ -36,6 +36,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "game", "node\game\game.vcxp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gate", "node\gate\gate.vcxproj", "{30D7288B-8317-4FB0-80B5-2FCCAD2AE1FA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "centre", "node\centre\centre.vcxproj", "{13118878-9993-4729-84B4-86C0197DAD06}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -108,6 +110,14 @@ Global
 		{30D7288B-8317-4FB0-80B5-2FCCAD2AE1FA}.Release|x64.Build.0 = Release|x64
 		{30D7288B-8317-4FB0-80B5-2FCCAD2AE1FA}.Release|x86.ActiveCfg = Release|Win32
 		{30D7288B-8317-4FB0-80B5-2FCCAD2AE1FA}.Release|x86.Build.0 = Release|Win32
+		{13118878-9993-4729-84B4-86C0197DAD06}.Debug|x64.ActiveCfg = Debug|x64
+		{13118878-9993-4729-84B4-86C0197DAD06}.Debug|x64.Build.0 = Debug|x64
+		{13118878-9993-4729-84B4-86C0197DAD06}.Debug|x86.ActiveCfg = Debug|Win32
+		{13118878-9993-4729-84B4-86C0197DAD06}.Debug|x86.Build.0 = Debug|Win32
+		{13118878-9993-4729-84B4-86C0197DAD06}.Release|x64.ActiveCfg = Release|x64
+		{13118878-9993-4729-84B4-86C0197DAD06}.Release|x64.Build.0 = Release|x64
+		{13118878-9993-4729-84B4-86C0197DAD06}.Release|x86.ActiveCfg = Release|Win32
+		{13118878-9993-4729-84B4-86C0197DAD06}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -121,6 +131,7 @@ Global
 		{03F2DF47-F5B9-41E9-933B-903D317FEEB1} = {9A3D9AF5-A60E-40E0-9A13-4196C05EDCCC}
 		{6348AEF3-B5C7-43C9-AEAD-D707F104140F} = {4AFA0052-539B-4118-BE90-A2FAB7AA256B}
 		{30D7288B-8317-4FB0-80B5-2FCCAD2AE1FA} = {4AFA0052-539B-4118-BE90-A2FAB7AA256B}
+		{13118878-9993-4729-84B4-86C0197DAD06} = {4AFA0052-539B-4118-BE90-A2FAB7AA256B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {39DD7ACD-8F24-4314-9D3C-74F6B00572A2}
