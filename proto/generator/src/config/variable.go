@@ -27,10 +27,9 @@ const Tab = "	"
 const Tab2 = Tab + Tab
 const Tab3 = Tab + Tab + Tab
 const Tab4 = Tab + Tab + Tab + Tab
-const GameDirName = "node/game_server/"
-const CentreDirName = "node/centre_server/"
-const GateName = "node/gate_server/"
-const LoginDirName = "node/login_server/"
+const GameDirName = "node/game/"
+const CentreDirName = "node/centre/"
+const GateName = "node/gate/"
 const ClientDirName = "client/"
 const PlayerServiceIncludeName = "#include \"player_service.h\""
 const PlayerServiceRepliedIncludeName = "#include \"player_service_replied.h\""
@@ -43,12 +42,9 @@ const CcGenericServices = "cc_generic_services"
 
 var SourceNames = [...]string{
 	"common/",
-	"center_server/",
-	"game_server/",
-	"gate_server/",
-	"login_server/",
-	"lobby_server/",
-	"deploy_server/",
+	"center/",
+	"game/",
+	"gate/",
 	"client"}
 
 var ProjectSourceDirs []string
@@ -107,7 +103,6 @@ const GateMethodHandleDir = ProjectDir + GateName + HandlerDirName
 const GateMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
 const GatePrefixName = "gate"
 
-const LoginMethodHandleDir = ProjectDir + LoginDirName + HandlerDirName
 const LoginPrefixName = "login"
 
 const DeployPrefixName = "deploy"
