@@ -197,7 +197,7 @@ void GameServiceHandler::GateConnectGs(::google::protobuf::RpcController* contro
 ///<<< END WRITING YOUR CODE
 }
 
-void GameServiceHandler::ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
+void GameServiceHandler::CentreSend2PlayerViaGs(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)

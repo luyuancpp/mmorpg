@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
 {
 	muduo::Logger::setLogLevel(muduo::Logger::DEBUG);
     EventLoop loop;
-    GateServer server(&loop);
+    GateNode server(&loop);
     server.Init();
     loop.loop();
     google::protobuf::ShutdownProtobufLibrary();

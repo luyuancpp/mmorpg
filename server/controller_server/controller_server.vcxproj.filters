@@ -18,7 +18,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\centre_server.cpp">
+    <ClCompile Include="src\centre_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\message_system.cpp">
@@ -122,7 +122,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\centre_server.h">
+    <ClInclude Include="src\centre_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\message_system.h">

@@ -14,13 +14,13 @@
 #include "common_proto/controller_service.pb.h"
 #include "logic_proto/lobby_scene.pb.h"
 
-class GameServer : muduo::noncopyable
+class GameNode : muduo::noncopyable
 {
 public:
     using RpcServerPtr = std::shared_ptr<muduo::net::RpcServer>;
 
-    GameServer(muduo::net::EventLoop* loop);
-    ~GameServer();
+    GameNode(muduo::net::EventLoop* loop);
+    ~GameNode();
 
     inline RpcClientPtr& lobby_node() { return lobby_node_; }
     const ::game_server_db& gs_info() const { return gs_info_; }
@@ -36,7 +36,7 @@ public:
 
     void ServerInfo(const ::servers_info_data& info);
 
-    void CallControllerStartGs(ControllerSessionPtr controller_session);
+    void CallCentreStartGs(CentreSessionPtr controller_session);
     void CallLobbyStartGs();
 
     void Receive1(const OnConnected2ServerEvent& es);
@@ -61,4 +61,4 @@ private:
     GameServiceHandler gs_service_impl_;
 };
 
-extern GameServer* g_game_node;
+extern GameNode* g_game_node;

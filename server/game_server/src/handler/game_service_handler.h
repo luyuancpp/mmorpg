@@ -28,7 +28,7 @@ public:
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void ControllerSend2PlayerViaGs(::google::protobuf::RpcController* controller,
+	void CentreSend2PlayerViaGs(::google::protobuf::RpcController* controller,
 		const ::NodeRouteMessageRequest* request,
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;

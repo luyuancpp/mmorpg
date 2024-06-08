@@ -23,7 +23,7 @@ public:
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;
 
-	void KickConnByController(::google::protobuf::RpcController* controller,
+	void KickConnByCentre(::google::protobuf::RpcController* controller,
 		const ::GateNodeKickConnRequest* request,
 		::Empty* response,
 		 ::google::protobuf::Closure* done)override;

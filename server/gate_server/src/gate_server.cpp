@@ -15,22 +15,22 @@
 #include "common_proto/game_service.pb.h"
 #include "service/login_service_service.h"
 
-GateServer* g_gate_node = nullptr; 
+GateNode* g_gate_node = nullptr; 
 
 void AsyncCompleteGrpc();
 
-void GateServer::LoadNodeConfig()
+void GateNode::LoadNodeConfig()
 {
 	ZoneConfig::GetSingleton().Load("game.json");
 	DeployConfig::GetSingleton().Load("deploy.json");
 }
 
-GateServer::~GateServer()
+GateNode::~GateNode()
 {
-    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GateServer::Receive1>(*this);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GateNode::Receive1>(*this);
 }
 
-void GateServer::Init()
+void GateNode::Init()
 {
     g_gate_node = this;
 
@@ -45,10 +45,10 @@ void GateServer::Init()
     void InitRepliedHandler();
     InitRepliedHandler();
 
-    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateServer::Receive1>(*this);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GateNode::Receive1>(*this);
 }
 
-void GateServer::InitNodeServer()
+void GateNode::InitNodeServer()
 {
     auto& zone = ZoneConfig::GetSingleton().config_info();
 
@@ -68,13 +68,13 @@ void GateServer::InitNodeServer()
     }
 }
 
-void GateServer::StartServer()
+void GateNode::StartServer()
 {
     auto& gate_info = conf_info_.gate_info();
     InetAddress gate_addr(gate_info.ip(), gate_info.port());
     server_ = std::make_unique<TcpServer>(loop_, gate_addr, "gate");
     server_->setConnectionCallback(
-        std::bind(&GateServer::OnConnection, this, _1));
+        std::bind(&GateNode::OnConnection, this, _1));
     server_->setMessageCallback(
         std::bind(&ProtobufCodec::onMessage, &codec_, _1, _2, _3));
     server_->start();
@@ -92,7 +92,7 @@ void GateServer::StartServer()
 }
 
 
-void GateServer::Receive1(const OnConnected2ServerEvent& es)
+void GateNode::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
     if (IsSameAddr(conn->peerAddress(), DeployConfig::GetSingleton().deploy_info()))

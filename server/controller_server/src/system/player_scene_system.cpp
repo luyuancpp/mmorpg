@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/comp/player_list.h"
-#include "src/centre_server.h"
+#include "src/centre_node.h"
 #include "src/comp/scene_comp.h"
 #include "src/system/scene/scene_system.h"
 
@@ -17,7 +17,7 @@
 #include "src/thread_local/centre_thread_local_storage.h"
 #include "component_proto/player_network_comp.pb.h"
 
-NodeId controller_node_id();
+NodeId centre_node_id();
 
 void PlayerSceneSystem::Send2GsEnterScene(entt::entity player)
 {
@@ -78,7 +78,7 @@ void PlayerSceneSystem::CallPlayerEnterGs(entt::entity player, NodeId node_id, S
     GameNodeEnterGsRequest req;
     req.set_player_id(tls.registry.get<Guid>(player));
     req.set_session_id(session_id);
-    req.set_controller_node_id(controller_node_id());
+    req.set_controller_node_id(centre_node_id());
     CallGameNodeMethod(GameServiceEnterGsMsgId, req, node_id);
 }
 
@@ -201,7 +201,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             //跨服到原来服务器，通知跨服离开场景，todo注意回到原来服务器的时候可能原来服务器满了
             LeaveCrossMainSceneRequest rq;
             rq.set_player_id(tls.registry.get<Guid>(player));
-            g_controller_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMsgId, rq);
+            g_centre_node->lobby_node()->CallMethod(LobbyServiceLeaveCrossMainSceneMsgId, rq);
         }
         if (is_to_gs_is_cross_server)
         {
@@ -209,7 +209,7 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
             EnterCrossMainSceneRequest rq;
             rq.set_scene_id(to_scene_guid);
             rq.set_player_id(tls.registry.get<Guid>(player));
-            g_controller_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMsgId, rq);
+            g_centre_node->lobby_node()->CallMethod(LobbyServiceEnterCrossMainSceneMsgId, rq);
             return;
         }
     }
