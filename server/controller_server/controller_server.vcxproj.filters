@@ -27,7 +27,7 @@
     <ClCompile Include="src\comp\player_list.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\controller_service_handler.cpp">
+    <ClCompile Include="src\handler\centre_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\system\player_scene_system.cpp">
@@ -51,7 +51,7 @@
     <ClCompile Include="src\handler\player_service.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thread_local\controller_thread_local_storage.cpp">
+    <ClCompile Include="src\thread_local\centre_thread_local_storage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\event_handler\mission_event_handler.cpp">
@@ -131,7 +131,7 @@
     <ClInclude Include="src\comp\player_list.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\controller_service_handler.h">
+    <ClInclude Include="src\handler\centre_service_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\system\player_scene_system.h">
@@ -167,7 +167,7 @@
     <ClInclude Include="src\replied_handler\player_service_replied.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\thread_local\controller_thread_local_storage.h">
+    <ClInclude Include="src\thread_local\centre_thread_local_storage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\login_node.h">

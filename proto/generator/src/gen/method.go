@@ -317,7 +317,7 @@ func isGsPlayerHandler(methodList *RpcMethodInfos) (result bool) {
 	}
 	if !strings.Contains(firstMethodInfo.FileBaseName(), config.PlayerName) {
 		return false
-	} else if strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) {
+	} else if strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) {
 		return false
 	}
 	return true
@@ -416,7 +416,7 @@ func isGsMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 		return false
 	}
 	return strings.Contains(firstMethodInfo.FileBaseName(), "deploy") ||
-		strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) ||
+		strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), "lobby")
 }
 
@@ -463,7 +463,7 @@ func isControllerMethodHandler(methodList *RpcMethodInfos) (isGsFile bool) {
 		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return false
 	}
-	return strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName)
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
 func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
@@ -472,7 +472,7 @@ func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.ControllerMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
+	WriteMd5Data2File(config.CentreMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
 func isControllerPlayerHandler(methodList *RpcMethodInfos) (result bool) {
@@ -483,7 +483,7 @@ func isControllerPlayerHandler(methodList *RpcMethodInfos) (result bool) {
 	if !firstMethodInfo.IsPlayerService() {
 		return false
 	}
-	if !strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) {
+	if !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) {
 		return false
 	}
 	return true
@@ -495,7 +495,7 @@ func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
-	WriteMd5Data2File(config.ControllerMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
+	WriteMd5Data2File(config.CentreMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
 }
 
 func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
@@ -505,7 +505,7 @@ func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	}
 	firstMethodInfo := methodList[0]
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.ControllerMethodHandleDir + fileName
+	dstFileName := config.CentreMethodHandleDir + fileName
 	data := getMethodPlayerHandlerCppStr(dstFileName,
 		&methodList,
 		firstMethodInfo.CppHandlerClassName(),
@@ -520,7 +520,7 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	}
 
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppHandlerEx
-	dstFileName := config.ControllerMethodHandleDir + fileName
+	dstFileName := config.CentreMethodHandleDir + fileName
 	data := getMethodHandlerCppStr(dstFileName, &methodList)
 	WriteMd5Data2File(dstFileName, data)
 }
@@ -534,7 +534,7 @@ func isControllerMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 		strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.LogicProtoDirIndex])) {
 		return false
 	}
-	return !strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName)
+	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
 func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
@@ -544,7 +544,7 @@ func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 		return
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
-	dstFileName := config.ControllerMethodRepliedHandleDir + fileName
+	dstFileName := config.CentreMethodRepliedHandleDir + fileName
 	data := getMethodRepliedHandlerHeadStr(&methodList)
 	WriteMd5Data2File(dstFileName, data)
 }
@@ -556,7 +556,7 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	}
 	firstMethodInfo := methodList[0]
 	fileName := strings.ToLower(firstMethodInfo.FileBaseName()) + config.CppRepliedHandlerEx
-	dstFileName := config.ControllerMethodRepliedHandleDir + fileName
+	dstFileName := config.CentreMethodRepliedHandleDir + fileName
 	data := getMethodRepliedHandlerCppStr(dstFileName, &methodList)
 	WriteMd5Data2File(dstFileName, data)
 }
@@ -569,7 +569,7 @@ func isControllerPlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) 
 	if !firstMethodInfo.IsPlayerService() {
 		return false
 	}
-	return !strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName)
+	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
 func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
@@ -578,7 +578,7 @@ func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadRepliedHandlerEx
-	WriteMd5Data2File(config.ControllerMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
+	WriteMd5Data2File(config.CentreMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
 }
 
 func writeControllerPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
@@ -588,7 +588,7 @@ func writeControllerPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos)
 	}
 	firstMethodInfo := methodList[0]
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.CppRepliedHandlerEx
-	dstFileName := config.ControllerMethodRepliedHandleDir + fileName
+	dstFileName := config.CentreMethodRepliedHandleDir + fileName
 	data := getMethodPlayerHandlerCppStr(dstFileName,
 		&methodList,
 		firstMethodInfo.CppRepliedHandlerClassName(),
@@ -605,7 +605,7 @@ func isGateMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 	if !strings.Contains(firstMethodInfo.Path, config.ProtoDirNames[config.CommonProtoDirIndex]) {
 		return false
 	}
-	return strings.Contains(firstMethodInfo.FileBaseName(), config.ControllerPrefixName) ||
+	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.DeployPrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.LobbyPrefixName) ||
 		strings.Contains(firstMethodInfo.FileBaseName(), config.GsPrefixName) ||
@@ -789,9 +789,9 @@ func WriteMethodFile() {
 
 	//controller
 	util.Wg.Add(1)
-	go writeRegisterFile(config.ControllerMethodHandleDir+config.RegisterHandlerCppEx, isControllerMethodHandler)
+	go writeRegisterFile(config.CentreMethodHandleDir+config.RegisterHandlerCppEx, isControllerMethodHandler)
 	util.Wg.Add(1)
-	go writeRepliedRegisterFile(config.ControllerMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isControllerMethodRepliedHandler)
+	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isControllerMethodRepliedHandler)
 
 	//gate
 	util.Wg.Add(1)

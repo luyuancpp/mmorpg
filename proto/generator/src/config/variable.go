@@ -28,7 +28,7 @@ const Tab2 = Tab + Tab
 const Tab3 = Tab + Tab + Tab
 const Tab4 = Tab + Tab + Tab + Tab
 const GameDirName = "server/game_server/"
-const ControllerDirName = "server/controller_server/"
+const CentreDirName = "server/centre_server/"
 const GateName = "server/gate_server/"
 const LoginDirName = "server/login_server/"
 const ClientDirName = "client/"
@@ -43,7 +43,7 @@ const CcGenericServices = "cc_generic_services"
 
 var SourceNames = [...]string{
 	"common/",
-	"controller_server/",
+	"center_server/",
 	"game_server/",
 	"gate_server/",
 	"login_server/",
@@ -96,10 +96,10 @@ const GsEventHandleDir = ProjectDir + GameDirName + EventHandlerDirName
 const GsMethodRepliedHandleDir = ProjectDir + GameDirName + RepliedHandlerDirName
 const GsPrefixName = "game"
 
-const ControllerMethodHandleDir = ProjectDir + ControllerDirName + HandlerDirName
-const ControllerMethodRepliedHandleDir = ProjectDir + ControllerDirName + RepliedHandlerDirName
-const ControllerEventHandleDir = ProjectDir + ControllerDirName + EventHandlerDirName
-const ControllerPrefixName = "controller"
+const CentreMethodHandleDir = ProjectDir + CentreDirName + HandlerDirName
+const CentreMethodRepliedHandleDir = ProjectDir + CentreDirName + RepliedHandlerDirName
+const CentreEventHandleDir = ProjectDir + CentreDirName + EventHandlerDirName
+const CentrePrefixName = "centre"
 
 const ClientMethodHandleDir = ProjectDir + ClientDirName + HandlerDirName
 
@@ -108,7 +108,6 @@ const GateMethodRepliedHandleDir = ProjectDir + GateName + RepliedHandlerDirName
 const GatePrefixName = "gate"
 
 const LoginMethodHandleDir = ProjectDir + LoginDirName + HandlerDirName
-const LoginMethodRepliedHandleDir = ProjectDir + LoginDirName + RepliedHandlerDirName
 const LoginPrefixName = "login"
 
 const DeployPrefixName = "deploy"

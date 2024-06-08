@@ -21,7 +21,7 @@
     <ClCompile Include="src\handler\gate_service_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\replied_handler\controller_service_replied_handler.cpp">
+    <ClCompile Include="src\replied_handler\centre_service_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\replied_handler\deploy_service_replied_handler.cpp">
@@ -77,7 +77,7 @@
     <ClInclude Include="src\network\message_system.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\replied_handler\controller_service_replied_handler.h">
+    <ClInclude Include="src\replied_handler\centre_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\deploy_service_replied_handler.h">

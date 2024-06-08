@@ -9,7 +9,7 @@
 #include "src/network/message_system.h"
 #include "service/game_service_service.h"
 #include "src/system/player_change_scene.h"
-#include "src/thread_local/controller_thread_local_storage.h"
+#include "src/thread_local/centre_thread_local_storage.h"
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"

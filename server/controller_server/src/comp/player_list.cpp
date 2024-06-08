@@ -2,7 +2,7 @@
 
 #include "src/system/scene/scene_system.h"
 #include "src/comp/scene_comp.h"
-#include "src/thread_local/controller_thread_local_storage.h"
+#include "src/thread_local/centre_thread_local_storage.h"
 
 entt::entity ControllerPlayerSystem::GetPlayer(Guid player_id)
 {

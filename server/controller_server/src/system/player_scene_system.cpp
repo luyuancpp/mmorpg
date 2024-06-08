@@ -14,7 +14,7 @@
 #include "service/lobby_scene_service.h"
 #include "service/game_service_service.h"
 #include "service/game_scene_server_player_service.h"
-#include "src/thread_local/controller_thread_local_storage.h"
+#include "src/thread_local/centre_thread_local_storage.h"
 #include "component_proto/player_network_comp.pb.h"
 
 NodeId controller_node_id();
