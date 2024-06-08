@@ -33,7 +33,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
         player_it != game_tls.player_list().end())
     {
         EnterGsInfo enter_info;
-        enter_info.set_controller_node_id(request->controller_node_id());
+        enter_info.set_centre_node_id(request->centre_node_id());
         PlayerCommonSystem::EnterGs(player_it->second, enter_info);
         return;
     }
@@ -43,7 +43,7 @@ void GameServiceHandler::EnterGs(::google::protobuf::RpcController* controller,
         LOG_ERROR << "EnterGs emplace player  " << request->player_id();
         return;
     }
-    tls.registry.emplace<EnterGsInfo>(player_it.first->second).set_controller_node_id(request->controller_node_id());
+    tls.registry.emplace<EnterGsInfo>(player_it.first->second).set_centre_node_id(request->centre_node_id());
     //异步加载过程中断开了，怎么处理？
     game_tls.player_data_redis_system()->AsyncLoad(request->player_id());
 

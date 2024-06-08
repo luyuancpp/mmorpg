@@ -11,7 +11,7 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 void Send2Player(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
 void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& message, Guid player_id);
 void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message& message, entt::entity player);
-void Send2Controller(uint32_t message_id,  const google::protobuf::Message& messag, uint32_t controller_node_id);
+void Send2Controller(uint32_t message_id,  const google::protobuf::Message& messag, uint32_t centre_node_id);
 void Send2Gate(uint32_t message_id, const google::protobuf::Message& messag, uint32_t gate_node_id);
 
 bool CallControllerNodeMethod(const uint32_t message_id, const google::protobuf::Message& message, NodeId node_id);

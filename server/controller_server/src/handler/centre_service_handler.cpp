@@ -71,7 +71,7 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	response->set_controller_node_id(centre_node_id());
+	response->set_centre_node_id(centre_node_id());
 	const InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	const InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity game_node{entt::null};
@@ -228,7 +228,7 @@ void CentreServiceHandler::StartLs(::google::protobuf::RpcController* controller
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	response->set_controller_node_id(centre_node_id());
+	response->set_centre_node_id(centre_node_id());
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity login{ entt::null };

@@ -17,7 +17,6 @@
 #include "common_proto/controller_service.pb.h"
 #include "src/comp/player_comp.h"
 
-
 void PlayerCommonSystem::OnAsyncLoadPlayerDb(Guid player_id, player_database& message)
 {
 	auto async_it = game_tls.async_player_data().find(player_id);
@@ -71,15 +70,15 @@ void PlayerCommonSystem::EnterGs(const entt::entity player, const EnterGsInfo& e
 	auto* player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	if (nullptr == player_node_info)
 	{
-		LOG_ERROR << "player node info  not found" << enter_info.controller_node_id();
+		LOG_ERROR << "player node info  not found" << enter_info.centre_node_id();
 		player_node_info = &tls.registry.emplace<PlayerNodeInfo>(player);
 	}
-	player_node_info->set_controller_node_id(enter_info.controller_node_id());
+	player_node_info->set_centre_node_id(enter_info.centre_node_id());
 	//todo controller 重新启动以后
 	EnterGameNodeSucceedRequest request;
 	request.set_player_id(tls.registry.get<Guid>(player));
 	request.set_game_node_id(get_gate_node_id());
-	CallControllerNodeMethod(ControllerServiceEnterGsSucceedMsgId, request, enter_info.controller_node_id());
+	CallControllerNodeMethod(ControllerServiceEnterGsSucceedMsgId, request, enter_info.centre_node_id());
 	//todo gs更新了对应的gate之后 然后才可以开始可以给客户端发送信息了, gs消息顺序问题要注意，
 	//进入gamenode a, 再进入gamenode b 两个gs的消息到达客户端消息的顺序不一样,所以说game 还要通知game 还要收到gate 的处理完准备离开game的消息
 	//否则两个不同的gs可能离开场景的消息后于进入场景的消息到达客户端
