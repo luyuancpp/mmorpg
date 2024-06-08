@@ -311,7 +311,7 @@ func writeGsGlobalPlayerServiceInstanceFile() {
 	WriteMd5Data2File(config.GsMethodHandleDir+config.PlayerServiceName, data)
 }
 
-func writeControllerGlobalPlayerServiceInstanceFile() {
+func writeCentreGlobalPlayerServiceInstanceFile() {
 	defer util.Wg.Done()
 	data := ""
 	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service.h\"\n\n"
@@ -323,7 +323,7 @@ func writeControllerGlobalPlayerServiceInstanceFile() {
 		if !ok {
 			continue
 		}
-		if !isControllerPlayerHandler(&methodList) {
+		if !isCentrePlayerHandler(&methodList) {
 			continue
 		}
 		method1Info := methodList[0]
@@ -380,7 +380,7 @@ func writeGsGlobalPlayerServiceRepliedInstanceFile() {
 	WriteMd5Data2File(config.GsMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
 }
 
-func writeControllerGlobalPlayerServiceRepliedInstanceFile() {
+func writeCentreGlobalPlayerServiceRepliedInstanceFile() {
 	defer util.Wg.Done()
 	data := ""
 	includeData := "#include <memory>\n#include <unordered_map>\n#include \"player_service_replied.h\"\n\n"
@@ -396,7 +396,7 @@ func writeControllerGlobalPlayerServiceRepliedInstanceFile() {
 			continue
 		}
 		method1Info := methodList[0]
-		if !isControllerPlayerRepliedHandler(&methodList) {
+		if !isCentrePlayerRepliedHandler(&methodList) {
 			continue
 		}
 		className := method1Info.Service + "Impl"
@@ -423,9 +423,9 @@ func WriteServiceHandlerFile() {
 	util.Wg.Add(1)
 	writeGsGlobalPlayerServiceInstanceFile()
 	util.Wg.Add(1)
-	writeControllerGlobalPlayerServiceInstanceFile()
+	writeCentreGlobalPlayerServiceInstanceFile()
 	util.Wg.Add(1)
 	writeGsGlobalPlayerServiceRepliedInstanceFile()
 	util.Wg.Add(1)
-	writeControllerGlobalPlayerServiceRepliedInstanceFile()
+	writeCentreGlobalPlayerServiceRepliedInstanceFile()
 }
