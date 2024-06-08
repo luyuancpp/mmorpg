@@ -13,8 +13,8 @@
 #include "component_proto/player_login_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-void GamePlayerServiceHandler::Controller2GsLogin(entt::entity player,
-	const ::Controller2GsLoginRequest* request,
+void GamePlayerServiceHandler::Centre2GsLogin(entt::entity player,
+	const ::Centre2GsLoginRequest* request,
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE
@@ -26,8 +26,8 @@ void GamePlayerServiceHandler::Controller2GsLogin(entt::entity player,
 	///<<< END WRITING YOUR CODE
 }
 
-void GamePlayerServiceHandler::OnControllerEnterGateSucceed(entt::entity player,
-	const ::Controller2GsEnterGateSucceedRequest* request,
+void GamePlayerServiceHandler::OnCentreEnterGateSucceed(entt::entity player,
+	const ::Centre2GsEnterGateSucceedRequest* request,
 	::google::protobuf::Empty* response)
 {
 	///<<< BEGIN WRITING YOUR CODE

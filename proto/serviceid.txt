@@ -1,6 +1,9 @@
 0=ClientPlayerCommonServicePushTipsS2C
-7=ControllerScenePlayerServiceLeaveScene
-8=ControllerScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
+3=CentreScenePlayerServiceLeaveScene
+4=CentreScenePlayerServiceEnterScene
+5=CentreScenePlayerServiceLeaveSceneAsyncSavePlayerComplete
+6=CentrePlayerServiceTest
+8=CentreSceneServiceUpdateCrossMainSceneInfo
 9=GateServiceStartGS
 10=GateServiceStopGS
 11=GateServicePlayerEnterGs
@@ -10,13 +13,12 @@
 16=ClientPlayerSceneServiceEnterSceneC2S
 17=ClientPlayerSceneServicePushEnterSceneS2C
 18=ClientPlayerSceneServicePushSceneInfoS2C
-19=ControllerSceneServiceUpdateCrossMainSceneInfo
-20=ControllerPlayerServiceTest
+20=GamePlayerServiceCentre2GsLogin
 21=GateServiceKickConnByCentre
 25=GameServiceCentreSend2PlayerViaGs
+32=GamePlayerServiceOnCentreEnterGateSucceed
 37=ClientPlayerCommonServiceBeKick
 43=GamePlayerSceneServiceEnterSceneS2C
-44=ControllerScenePlayerServiceEnterScene
 46=GamePlayerSceneServiceEnterScene
 48=GameSceneServiceTest
 49=ClientPlayerTeamServiceTeamInfoNotify
@@ -29,7 +31,5 @@
 63=GameServiceCallPlayer
 64=GameServiceRouteNodeStringMsg
 65=GameServiceRoutePlayerStringMsg
-72=GamePlayerServiceOnControllerEnterGateSucceed
-73=GamePlayerServiceController2GsLogin
 74=GameServiceUpdateSession
 75=GameServiceEnterScene
