@@ -37,10 +37,6 @@
 [submodule "pkg/muduo_windows/src"]
 	path = pkg/muduo_windows/src
 	url = https://github.com/luyuancpp/muduo-cross-platform.git
-[submodule "third_party/rocketmq-clients"]
-	path = third_party/rocketmq-clients
-	url = https://github.com/apache/rocketmq-clients.git
-	branch = cpp-5.0.0
 [submodule "third_party/yaml-cpp"]
 	path = third_party/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
