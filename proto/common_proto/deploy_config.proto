@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+option go_package = "pb/game";
+
 message ConnetionParam
 {
   string ip = 1;
