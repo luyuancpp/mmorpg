@@ -31,7 +31,6 @@
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 
-thread_local std::unordered_map<std::string, uint64_t> tls_login_accounts_session;
 
 constexpr std::size_t kMaxPlayerSize{1000};
 
@@ -182,18 +181,13 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-
+    defer(centre_tls.gate_sessions().erase(request->session_id()));
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	//考虑a 断 b 断 a 断 b 断.....(中间不断重连)
 	const auto player = GetPlayerByConnId(request->session_id());
 	if (entt::null == player)
 	{
 		return;
-	}
-	if (const auto* const player_account = tls.registry.try_get<PlayerAccount>(player);
-	nullptr != player_account)
-	{
-		tls_login_accounts_session.erase((*player_account)->account());
 	}
 	const auto* const player_node_info = tls.registry.try_get<PlayerNodeInfo>(player);
 	//玩家已经断开连接了
@@ -212,7 +206,6 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 		return;
 	}
 	const auto player_id = tls.registry.get<Guid>(player);
-	centre_tls.gate_sessions().erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
 	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
@@ -264,17 +257,18 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 	auto session_it = centre_tls.gate_sessions().find(cl_tls.session_id());
 	if (session_it == centre_tls.gate_sessions().end())
 	{
-		session_it = centre_tls.gate_sessions().emplace(cl_tls.session_id(), tls.registry.create()).first;
+		session_it = 
+			centre_tls.gate_sessions().emplace(cl_tls.session_id(), tls.registry.create()).first;
 	}
 	if (session_it == centre_tls.gate_sessions().end())
 	{
+		LOG_ERROR <<  request->account() << "can not login";
 		response->mutable_error()->set_id(kRetLoginUnknownError);
 		return;
 	}
 	tls.registry.emplace<PlayerAccount>(session_it->second, std::make_shared<PlayerAccount::element_type>())->set_account(request->account());
-	tls.registry.emplace<AccountLoginNode>(session_it->second, AccountLoginNode{cl_tls.session_id()});
-	//todo 队列里面有同一个人的两个链接
-	const auto lit = tls_login_accounts_session.find(request->account());
+
+	//todo 排队队列里面有同一个人的两个链接
 	if (centre_tls.player_list().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
@@ -282,22 +276,9 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 		return;
 	}
 
-	if (lit != tls_login_accounts_session.end())
 	{
 		//如果不是同一个登录服务器,踢掉已经登录的账号
-		if (lit->second != cl_tls.session_id())
-		{
-		}
 		//告诉客户端登录中
-		else
-		{
-			//能返回去吗?
-			response->mutable_error()->set_id(kRetLoginIng);
-		}
-	}
-	else
-	{
-		tls_login_accounts_session.emplace(request->account(), cl_tls.session_id());
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -321,10 +302,6 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 
 	const auto player_it = centre_tls.player_list().find(request->player_id());
 	const auto* const account = tls.registry.try_get<PlayerAccount>(session_it->second);
-	if (nullptr != account)
-	{
-		tls_login_accounts_session.erase((*account)->account());
-	}
 	if (player_it == centre_tls.player_list().end())
 	{
 		//把旧的connection 断掉
