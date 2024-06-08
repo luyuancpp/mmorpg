@@ -341,7 +341,7 @@ func writeControllerGlobalPlayerServiceInstanceFile() {
 	data += "void InitPlayerService()\n{\n"
 	data += instanceData
 	data += "}"
-	WriteMd5Data2File(config.ControllerMethodHandleDir+config.PlayerServiceName, data)
+	WriteMd5Data2File(config.CentreMethodHandleDir+config.PlayerServiceName, data)
 }
 
 func writeGsGlobalPlayerServiceRepliedInstanceFile() {
@@ -412,7 +412,7 @@ func writeControllerGlobalPlayerServiceRepliedInstanceFile() {
 	data += "void InitPlayerServiceReplied()\n{\n"
 	data += instanceData
 	data += "}"
-	WriteMd5Data2File(config.ControllerMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
+	WriteMd5Data2File(config.CentreMethodRepliedHandleDir+config.PlayerRepliedServiceName, data)
 }
 
 func WriteServiceHandlerFile() {

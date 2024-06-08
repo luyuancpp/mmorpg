@@ -8,7 +8,7 @@
 using PlayerListMap = std::unordered_map<Guid, entt::entity>;
 using GateSessionList = std::unordered_map<uint64_t, entt::entity>;
 
-class ControllerThreadLocalStorage
+class CentreThreadLocalStorage
 {
 public:
 	inline PlayerListMap& player_list() { return player_list_; }
@@ -24,5 +24,5 @@ private:
 	LoginNodes login_nodes_;
 };
 
-extern thread_local ControllerThreadLocalStorage centre_tls;
+extern thread_local CentreThreadLocalStorage centre_tls;
 

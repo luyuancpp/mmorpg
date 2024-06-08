@@ -14,7 +14,7 @@
 #include "service/gate_service_service.h"
 #include "service/game_service_service.h"
 #include "component_proto/player_network_comp.pb.h"
-#include "src/thread_local/controller_thread_local_storage.h"
+#include "src/thread_local/centre_thread_local_storage.h"
 
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, uint32_t node_id)

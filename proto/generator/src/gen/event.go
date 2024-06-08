@@ -115,7 +115,7 @@ func WriteEventHandlerFile() {
 		util.Wg.Add(1)
 		writeEventHandlerCpp(fd, config.GsEventHandleDir)
 		util.Wg.Add(1)
-		writeEventHandlerCpp(fd, config.ControllerEventHandleDir)
+		writeEventHandlerCpp(fd, config.CentreEventHandleDir)
 		cppIncludeData += config.IncludeBegin +
 			strings.Replace(filepath.Base(strings.ToLower(fd.Name())), config.ProtoEx, config.HeadHandlerEx, 1) +
 			config.IncludeEndLine
@@ -128,7 +128,7 @@ func WriteEventHandlerFile() {
 	eventHeadData += "static void UnRegister();\n"
 	eventHeadData += "};\n"
 	WriteMd5Data2File(config.GsEventHandleDir+config.EventHandlerFileNameHead, eventHeadData)
-	WriteMd5Data2File(config.ControllerEventHandleDir+config.EventHandlerFileNameHead, eventHeadData)
+	WriteMd5Data2File(config.CentreEventHandleDir+config.EventHandlerFileNameHead, eventHeadData)
 
 	eventCppData := config.IncludeBegin + config.EventHandlerFileNameHead + config.IncludeEndLine
 	eventCppData += cppIncludeData
@@ -139,5 +139,5 @@ func WriteEventHandlerFile() {
 	eventCppData += unRegisterData
 	eventCppData += "}\n"
 	WriteMd5Data2File(config.GsEventHandleDir+config.EventHandlerFileNameCpp, eventCppData)
-	WriteMd5Data2File(config.ControllerEventHandleDir+config.EventHandlerFileNameCpp, eventCppData)
+	WriteMd5Data2File(config.CentreEventHandleDir+config.EventHandlerFileNameCpp, eventCppData)
 }

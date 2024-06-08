@@ -19,7 +19,7 @@
 #include "service/deploy_service_service.h"
 #include "service/gate_service_service.h"
 #include "service/lobby_scene_service.h"
-#include "src/thread_local/controller_thread_local_storage.h"
+#include "src/thread_local/centre_thread_local_storage.h"
 #include "src/thread_local/thread_local_storage_link.h"
 
 #include "service/grpc/deploy_service.grpc.pb.h"
