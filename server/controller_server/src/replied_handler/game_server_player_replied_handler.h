@@ -6,7 +6,7 @@ class GamePlayerServiceRepliedHandler : public ::PlayerServiceReplied
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
 	static void Controller2GsLogin(entt::entity player,
-		const ::Controller2GsLoginRequest* request,
+		const ::Centre2GsLoginRequest* request,
 		::google::protobuf::Empty* response);
 
 	static void OnControllerEnterGateSucceed(entt::entity player,

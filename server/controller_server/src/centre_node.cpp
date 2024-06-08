@@ -242,7 +242,7 @@ void CentreNode::Register2Lobby()
 	session_info->set_port(lobby_session_->local_addr().port());
 	node_info->set_ip(myinfo.ip());
 	node_info->set_port(myinfo.port());
-	rq.set_controller_node_id(myinfo.id());
+	rq.set_centre_node_id(myinfo.id());
     lobby_session_->CallMethod(LobbyServiceStartControllerNodeMsgId, rq);
 }
 

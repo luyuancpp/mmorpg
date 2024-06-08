@@ -91,12 +91,12 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 	controller_it->second->session_->Send(ControllerServiceGsPlayerServiceMsgId, msg_wrapper);
 }
 
-void Send2Controller(const uint32_t message_id, const google::protobuf::Message& messag, uint32_t controller_node_id)
+void Send2Controller(const uint32_t message_id, const google::protobuf::Message& messag, uint32_t centre_node_id)
 {
-	const auto controller_it = game_tls.controller_node().find(controller_node_id);
+	const auto controller_it = game_tls.controller_node().find(centre_node_id);
 	if (controller_it == game_tls.controller_node().end())
 	{
-		LOG_ERROR << "Send2ControllerPlayer controller not found" << controller_node_id;
+		LOG_ERROR << "Send2ControllerPlayer controller not found" << centre_node_id;
 		return;
 	}
 	controller_it->second->session_->Send(message_id, messag);
