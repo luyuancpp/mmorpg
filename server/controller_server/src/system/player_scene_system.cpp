@@ -3,7 +3,7 @@
 #include "muduo/base/Logging.h"
 
 #include "src/comp/player_list.h"
-#include "src/controller_server.h"
+#include "src/centre_server.h"
 #include "src/comp/scene_comp.h"
 #include "src/system/scene/scene_system.h"
 
@@ -145,9 +145,9 @@ void PlayerSceneSystem::TryEnterNextScene(entt::entity player)
         return;
     }
 
-    auto from_gs_it = controller_tls.game_node().find((*from_scene_game_node)->node_id());
-    auto to_gs_it = controller_tls.game_node().find((*game_node)->node_id());
-    if (from_gs_it == controller_tls.game_node().end() || to_gs_it == controller_tls.game_node().end())
+    auto from_gs_it = centre_tls.game_node().find((*from_scene_game_node)->node_id());
+    auto to_gs_it = centre_tls.game_node().find((*game_node)->node_id());
+    if (from_gs_it == centre_tls.game_node().end() || to_gs_it == centre_tls.game_node().end())
     {
         //服务器已经崩溃了
         LOG_ERROR << " gs not found  : " <<

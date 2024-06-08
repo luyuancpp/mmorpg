@@ -19,8 +19,8 @@
 
 void Send2Gs(uint32_t message_id, const google::protobuf::Message& message, uint32_t node_id)
 {
-	auto it = controller_tls.game_node().find(node_id);
-	if (it == controller_tls.game_node().end())
+	auto it = centre_tls.game_node().find(node_id);
+	if (it == centre_tls.game_node().end())
 	{
         LOG_ERROR << "gs not found ->" << node_id;
 		return;
@@ -46,8 +46,8 @@ void Send2GsPlayer(const uint32_t message_id, const google::protobuf::Message& m
 	{
 		return;
 	}
-	const auto game_node_it = controller_tls.game_node().find(player_node_info->game_node_id());
-	if (controller_tls.game_node().end() == game_node_it)
+	const auto game_node_it = centre_tls.game_node().find(player_node_info->game_node_id());
+	if (centre_tls.game_node().end() == game_node_it)
 	{
 		return;
 	}
@@ -81,8 +81,8 @@ void Send2PlayerViaGs(uint32_t message_id, const google::protobuf::Message& mess
 	{
 		return;
 	}
-	const auto game_node_it = controller_tls.game_node().find(player_node_info->game_node_id());
-	if (controller_tls.game_node().end() == game_node_it)
+	const auto game_node_it = centre_tls.game_node().find(player_node_info->game_node_id());
+	if (centre_tls.game_node().end() == game_node_it)
 	{
 		return;
 	}
@@ -105,8 +105,8 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 	{
 		return;
 	}
-	const auto gate_it = controller_tls.gate_nodes().find(get_gate_node_id(player_node_info->gate_session_id()));
-	if (gate_it == controller_tls.gate_nodes().end())
+	const auto gate_it = centre_tls.gate_nodes().find(get_gate_node_id(player_node_info->gate_session_id()));
+	if (gate_it == centre_tls.gate_nodes().end())
 	{
 		LOG_ERROR << "gate not found ";
 		return;
@@ -133,8 +133,8 @@ void Send2Player(uint32_t message_id, const google::protobuf::Message& message, 
 
 void Send2Gate(const uint32_t message_id, const google::protobuf::Message& message, uint32_t gate_id)
 {
-	const auto gate_it = controller_tls.gate_nodes().find(gate_id);
-	if (gate_it == controller_tls.gate_nodes().end())
+	const auto gate_it = centre_tls.gate_nodes().find(gate_id);
+	if (gate_it == centre_tls.gate_nodes().end())
 	{
 		return;
 	}
@@ -152,8 +152,8 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 	{
 		return;
 	}
-	const auto game_node_it = controller_tls.game_node().find(player_node_info->game_node_id());
-	if (controller_tls.game_node().end() == game_node_it)
+	const auto game_node_it = centre_tls.game_node().find(player_node_info->game_node_id());
+	if (centre_tls.game_node().end() == game_node_it)
 	{
 		return;
 	}
@@ -168,8 +168,8 @@ void CallGamePlayerMethod(uint32_t message_id, const google::protobuf::Message& 
 
 bool CallGameNodeMethod(uint32_t message_id, const google::protobuf::Message& message, NodeId node_id)
 {
-	const auto it = controller_tls.game_node().find(node_id);
-	if (it == controller_tls.game_node().end())
+	const auto it = centre_tls.game_node().find(node_id);
+	if (it == centre_tls.game_node().end())
 	{
 		return false;
 	}

@@ -37,8 +37,9 @@ func (l *GetNodeInfoLogic) GetNodeInfo(in *game.NodeInfoRequest) (*game.NodeInfo
 			RedisInfo:      &game.RedisServerDb{},
 		},
 	}
+	//log.Println(strconv.FormatUint(uint64(in.GetZoneId()), 10))
 
-	zoneId := strconv.FormatUint(uint64(in.ZoneId), 10)
+	zoneId := strconv.FormatUint(uint64(in.GetZoneId()), 10)
 	pkg.PbDb.LoadOneByKV(response.Info.GetDatabaseInfo(), "zone_id", zoneId)
 	pkg.PbDb.LoadOneByKV(response.Info.GetLoginInfo(), "zone_id", zoneId)
 	pkg.PbDb.LoadOneByKV(response.Info.GetControllerInfo(), "zone_id", zoneId)

@@ -24,5 +24,5 @@ private:
 	LoginNodes login_nodes_;
 };
 
-extern thread_local ControllerThreadLocalStorage controller_tls;
+extern thread_local ControllerThreadLocalStorage centre_tls;
 

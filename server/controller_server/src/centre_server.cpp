@@ -1,4 +1,4 @@
-#include "controller_server.h"
+#include "centre_server.h"
 
 #include <grpcpp/grpcpp.h>
 
@@ -29,7 +29,7 @@
 using namespace muduo;
 using namespace net;
 
-ControllerServer* g_controller_node = nullptr;
+CentreServer* g_controller_node = nullptr;
 
 void set_server_sequence_node_id(uint32_t node_id);
 void InitRepliedHandler();
@@ -39,19 +39,19 @@ NodeId controller_node_id()
 	return g_controller_node->controller_node_id();
 }
 
-ControllerServer::ControllerServer(muduo::net::EventLoop* loop)
+CentreServer::CentreServer(muduo::net::EventLoop* loop)
     : loop_(loop),
       redis_(std::make_shared<PbSyncRedisClientPtr::element_type>())
 { 
 }
 
-ControllerServer::~ControllerServer()
+CentreServer::~CentreServer()
 {
-	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&ControllerServer::Receive1>(*this);
-	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&ControllerServer::Receive2>(*this);
+	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&CentreServer::Receive1>(*this);
+	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&CentreServer::Receive2>(*this);
 }
 
-void ControllerServer::Init()
+void CentreServer::Init()
 {
     g_controller_node = this;
     EventHandler::Register();
@@ -75,16 +75,16 @@ void ControllerServer::Init()
     InitServiceHandler();
 }
 
-void ControllerServer::Connect2Deploy()
+void CentreServer::Connect2Deploy()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_session_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&ControllerServer::Receive1>(*this);
+    tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&CentreServer::Receive1>(*this);
     deploy_session_->connect();
 }
 
-void ControllerServer::StartServer(const ::servers_info_data& info)
+void CentreServer::StartServer(const ::servers_info_data& info)
 {
     serverinfos_ = info;
     auto& database_info = serverinfos_.database_info();
@@ -92,13 +92,12 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
     db_session_ = std::make_unique<RpcClient>(loop_, database_addr);
     db_session_->connect();    
 
-    Connect2Lobby();
 	
     auto& my_node_info = serverinfos_.controller_info();
     node_info_.set_node_id(my_node_info.id());
     InetAddress controller_addr(my_node_info.ip(), my_node_info.port());
     server_ = std::make_shared<RpcServerPtr::element_type>(loop_, controller_addr);
-    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&ControllerServer::Receive2>(*this);
+    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&CentreServer::Receive2>(*this);
     server_->registerService(&contoller_service_);
     for (auto& it : g_server_service)
     {
@@ -109,7 +108,7 @@ void ControllerServer::StartServer(const ::servers_info_data& info)
 }
 
 
-void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
+void CentreServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
 {
     auto game_node_ptr = tls.registry.try_get<GameNodePtr>(gs);
     if (nullptr == game_node_ptr)
@@ -131,7 +130,7 @@ void ControllerServer::LetGateConnect2Gs(entt::entity gs, entt::entity gate)
     (*gate_node_ptr)->session_.Send(GateServiceStartGSMsgId, request);
 }
 
-void ControllerServer::Receive1(const OnConnected2ServerEvent& es)
+void CentreServer::Receive1(const OnConnected2ServerEvent& es)
 {
 	auto& conn = es.conn_;
     if (conn->connected())
@@ -152,7 +151,7 @@ void ControllerServer::Receive1(const OnConnected2ServerEvent& es)
 		{
 			if (conn->connected() && IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 			{
-				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&ControllerServer::Register2Lobby, this));
+				EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&CentreServer::Register2Lobby, this));
 			}
 			else if(!conn->connected() && IsSameAddr(lobby_session_->peer_addr(), conn->peerAddress()))
 			{
@@ -167,7 +166,7 @@ void ControllerServer::Receive1(const OnConnected2ServerEvent& es)
 	
 }
 
-void ControllerServer::Receive2(const OnBeConnectedEvent& es)
+void CentreServer::Receive2(const OnBeConnectedEvent& es)
 {
     auto& conn = es.conn_;
     if (conn->connected())
@@ -190,19 +189,19 @@ void ControllerServer::Receive2(const OnBeConnectedEvent& es)
             {
                 //remove AfterChangeGsEnterScene
 				//todo 
-                controller_tls.game_node().erase((*gsnode)->node_info_.node_id());
+                centre_tls.game_node().erase((*gsnode)->node_info_.node_id());
             }
 			auto gatenode = tls.registry.try_get<GateNodePtr>(e);
 			if (nullptr != gatenode && (*gatenode)->node_info_.node_type() == kGateNode)
 			{
 				//todo
-                controller_tls.gate_nodes().erase((*gatenode)->node_info_.node_id());
+                centre_tls.gate_nodes().erase((*gatenode)->node_info_.node_id());
 			}
 			auto login_node = tls.registry.try_get<LoginNode>(e);
 			if (nullptr != login_node && (*login_node).node_info_.node_type() == kLoginNode)
 			{
 				//todo
-				controller_tls.login_node().erase((*login_node).node_info_.node_id());
+				centre_tls.login_node().erase((*login_node).node_info_.node_id());
 			}
 			tls.registry.destroy(e);
 			break;
@@ -210,7 +209,7 @@ void ControllerServer::Receive2(const OnBeConnectedEvent& es)
     }
 }
 
-void ControllerServer::InitConfig()
+void CentreServer::InitConfig()
 {
     ZoneConfig::GetSingleton().Load("game.json");
     DeployConfig::GetSingleton().Load("deploy.json");
@@ -218,7 +217,7 @@ void ControllerServer::InitConfig()
     LoadAllConfigAsyncWhenServerLaunch();
 }
 
-void ControllerServer::InitMq()
+void CentreServer::InitMq()
 {
     auto& config_info = ZoneConfig::GetSingleton().config_info();
     using namespace ROCKETMQ_NAMESPACE;
@@ -233,16 +232,7 @@ void ControllerServer::InitMq()
         .build();
 }
 
-void ControllerServer::Connect2Lobby()
-{
-	auto& lobby_info = serverinfos_.lobby_info();
-	InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
-	lobby_session_ = std::make_unique<RpcClient>(loop_, lobby_addr);
-	lobby_session_->registerService(&contoller_service_);
-	lobby_session_->connect();
-}
-
-void ControllerServer::Register2Lobby()
+void CentreServer::Register2Lobby()
 {
     auto& myinfo = serverinfos_.controller_info();
     StartControllerRequest rq;
@@ -256,7 +246,7 @@ void ControllerServer::Register2Lobby()
     lobby_session_->CallMethod(LobbyServiceStartControllerNodeMsgId, rq);
 }
 
-void ControllerServer::InitNodeServer()
+void CentreServer::InitNodeServer()
 {
     auto& zone = ZoneConfig::GetSingleton().config_info();
 

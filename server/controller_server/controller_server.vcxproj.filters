@@ -18,7 +18,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\controller_server.cpp">
+    <ClCompile Include="src\centre_server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\network\message_system.cpp">
@@ -90,7 +90,7 @@
     <ClCompile Include="src\replied_handler\register_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\controller_scene_handler.cpp">
+    <ClCompile Include="src\handler\centre_scene_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\handler\register_handler.cpp">
@@ -105,10 +105,10 @@
     <ClCompile Include="src\replied_handler\game_server_player_replied_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\controller_common_server_player_handler.cpp">
+    <ClCompile Include="src\handler\centre_common_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\handler\controller_scene_server_player_handler.cpp">
+    <ClCompile Include="src\handler\centre_scene_server_player_handler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\grpc\handler\deploy_grpc_reply_handler.cpp">
@@ -122,7 +122,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\controller_server.h">
+    <ClInclude Include="src\centre_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\message_system.h">
@@ -203,7 +203,7 @@
     <ClInclude Include="src\replied_handler\gate_service_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\controller_scene_handler.h">
+    <ClInclude Include="src\handler\centre_scene_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\replied_handler\game_scene_replied_handler.h">
@@ -215,10 +215,10 @@
     <ClInclude Include="src\replied_handler\game_server_player_replied_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\controller_common_server_player_handler.h">
+    <ClInclude Include="src\handler\centre_common_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\handler\controller_scene_server_player_handler.h">
+    <ClInclude Include="src\handler\centre_scene_server_player_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\grpc\handler\deploy_grpc_reply_handler.h">

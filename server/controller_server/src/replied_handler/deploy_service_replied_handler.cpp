@@ -2,7 +2,7 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/controller_server.h"
+#include "src/centre_server.h"
 
 void set_server_sequence_node_id(uint32_t node_id);
 ///<<< END WRITING YOUR CODE

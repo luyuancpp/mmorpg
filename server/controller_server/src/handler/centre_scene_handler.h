@@ -1,6 +1,6 @@
 #pragma once
 #include "logic_proto/controller_scene.pb.h"
-class ControllerSceneServiceHandler : public ::ControllerSceneService
+class CentreSceneServiceHandler : public ::ControllerSceneService
 {
 public:
 	void UpdateCrossMainSceneInfo(::google::protobuf::RpcController* controller,

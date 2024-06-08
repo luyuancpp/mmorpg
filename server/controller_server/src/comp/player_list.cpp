@@ -6,8 +6,8 @@
 
 entt::entity ControllerPlayerSystem::GetPlayer(Guid player_id)
 {
-    const auto it = controller_tls.player_list().find(player_id);
-    if (it == controller_tls.player_list().end())
+    const auto it = centre_tls.player_list().find(player_id);
+    if (it == centre_tls.player_list().end())
     {
         return entt::null;
     }
@@ -18,8 +18,8 @@ void ControllerPlayerSystem::LeaveGame(Guid guid)
 {
     //todo 登录的时候leave
     //todo 断线不能马上下线，这里之后会改
-    auto it = controller_tls.player_list().find(guid);
-    if ( it == controller_tls.player_list().end())
+    auto it = centre_tls.player_list().find(guid);
+    if ( it == centre_tls.player_list().end())
     {
         return;
     }
@@ -35,6 +35,6 @@ void ControllerPlayerSystem::LeaveGame(Guid guid)
 		ScenesSystem::LeaveScene(lsp);
     }
     
-	controller_tls.player_list().erase(it);
+	centre_tls.player_list().erase(it);
 }
 
