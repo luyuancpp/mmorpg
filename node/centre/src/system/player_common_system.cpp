@@ -14,12 +14,12 @@
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 
-void PlayerCommonSystem::InitPlayerComponent(entt::entity player, Guid player_id)
+void PlayerCommonSystem::InitPlayerComponent(entt::entity eid, Guid player_id)
 {
-    centre_tls.player_list().emplace(player_id, player);
-    tls.registry.emplace<Guid>(player, player_id);
-    tls.registry.emplace<Player>(player);
-    PlayerChangeSceneSystem::InitChangeSceneQueue(player);
+    centre_tls.player_list().emplace(player_id, eid);
+    tls.registry.emplace<Guid>(eid, player_id);
+    tls.registry.emplace<Player>(eid);
+    //PlayerChangeSceneSystem::InitChangeSceneQueue(player);
 }
 
 void PlayerCommonSystem::OnGateUpdateGameNodeSucceed(entt::entity player)

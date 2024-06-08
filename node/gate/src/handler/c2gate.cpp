@@ -155,7 +155,7 @@ void ClientReceiver::OnRpcClientMessage(const muduo::net::TcpConnectionPtr& conn
 
 void ClientReceiver::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_id)
 {
-    TipsS2C tips;
+    TipS2C tips;
     tips.mutable_tips()->set_id(tip_id);//tips_id.h 暂时写死，错误码不用编译
     MessageBody msg;
     msg.set_body(tips.SerializeAsString());

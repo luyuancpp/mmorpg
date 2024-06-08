@@ -18,7 +18,7 @@ void InitGateServiceStartGSRepliedHandler()
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGateServiceStopGSRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<GateNodePlayerUpdateGameNodeResponese>(std::bind(&OnGateServicePlayerEnterGsRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGateServicePlayerMessageRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGateServiceKickConnByControllerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGateServiceKickConnByCentreRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<RouteMsgStringResponse>(std::bind(&OnGateServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<RoutePlayerMsgStringResponse>(std::bind(&OnGateServiceRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
@@ -59,7 +59,7 @@ void OnGateServicePlayerMessageRepliedHandler(const TcpConnectionPtr& conn, cons
 ///<<< END WRITING YOUR CODE
 }
 
-void OnGateServiceKickConnByControllerRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp)
+void OnGateServiceKickConnByCentreRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

@@ -18,13 +18,13 @@ message LoginRequest
 
 message LoginResponse
 {
-  Tips error = 1;
+  Tip error = 1;
   repeated c_account_simple_player players = 2;
 }
 
 message TestResponse
 {
-  Tips error = 1;
+  Tip error = 1;
   repeated c_account_simple_player players = 2;
   repeated string teststring = 3;
   repeated int32 testint = 4;
@@ -37,7 +37,7 @@ message CreatePlayerRequest
 
 message CreatePlayerResponse
 {
-	Tips error = 1;
+	Tip error = 1;
 	repeated c_account_simple_player players = 2;
 }
 
@@ -48,7 +48,7 @@ message EnterGameRequest
 
 message EnterGameResponse
 {
-	Tips error = 1;
+	Tip error = 1;
 }
 
 enum ClientMessageType
@@ -58,7 +58,7 @@ enum ClientMessageType
   CLIENT_RPC_ERROR = 2; // not used
 }
 
-enum TipsCode
+enum TipCode
 {
   CLIENT_RPC_NO_ERROR = 0;
   CLIENT_WRONG_PROTO = 1;

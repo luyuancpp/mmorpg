@@ -64,7 +64,7 @@ message NodeRouteMessageBody
    NodeInfo node_info = 2;
 }
 
-message TipsS2C
+message TipS2C
 {
-  Tips tips = 1;
+  Tip tips = 1;
 }

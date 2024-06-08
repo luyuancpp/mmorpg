@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "pb/game";
 
-message Tips
+message Tip
 {
   uint32 id = 1;
   repeated string param = 2;

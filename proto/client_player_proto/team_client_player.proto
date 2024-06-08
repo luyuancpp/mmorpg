@@ -9,7 +9,7 @@ message TeamInfoS2CRequest
 
 message TeamInfoS2CResponse
 {
-	Tips error = 1;
+	Tip error = 1;
 }
 
 

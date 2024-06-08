@@ -7,7 +7,7 @@
 
 void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVector& str_param)
 {
-	TipsS2C message;
+	TipS2C message;
 	message.mutable_tips()->set_id(tip_id);
 	for (auto& it : str_param)
 	{

@@ -5,13 +5,13 @@ class ClientPlayerCommonServiceRepliedHandler : public ::PlayerServiceReplied
 {
 public:
 	using PlayerServiceReplied::PlayerServiceReplied;
-	static void PushTipsS2C(entt::entity player,
-		const ::TipsS2C* request,
-		::TipsS2C* response);
+	static void PushTipS2C(entt::entity player,
+		const ::TipS2C* request,
+		::TipS2C* response);
 
 	static void BeKick(entt::entity player,
-		const ::TipsS2C* request,
-		::TipsS2C* response);
+		const ::TipS2C* request,
+		::TipS2C* response);
 
  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
    entt::entity player,
@@ -21,14 +21,14 @@ public:
         switch(method->index())
 		{
 		case 0:
-			PushTipsS2C(player,
+			PushTipS2C(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<TipsS2C*>(response));
+			::google::protobuf::internal::DownCast<TipS2C*>(response));
 		break;
 		case 1:
 			BeKick(player,
 			nullptr,
-			::google::protobuf::internal::DownCast<TipsS2C*>(response));
+			::google::protobuf::internal::DownCast<TipS2C*>(response));
 		break;
 		default:
 		break;

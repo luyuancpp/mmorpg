@@ -31,24 +31,19 @@
 #include "component_proto/player_comp.pb.h"
 #include "component_proto/player_network_comp.pb.h"
 
-
 constexpr std::size_t kMaxPlayerSize{1000};
 
 NodeId centre_node_id();
 
 Guid GetPlayerIdByConnId(const uint64_t session_id)
 {
-	const auto cit = centre_tls.gate_sessions().find(session_id);
-	if (cit == centre_tls.gate_sessions().end())
+    auto player_session_info = 
+		tls.session_registry.try_get<PlayerSessionInfo>(static_cast<entt::entity>(session_id));
+	if (nullptr == player_session_info)
 	{
-		return kInvalidGuid;
+        return kInvalidGuid;
 	}
-	const auto* const p_try_player = tls.registry.try_get<Guid>(cit->second);
-	if (nullptr == p_try_player)
-	{
-		return kInvalidGuid;
-	}
-	return *p_try_player;
+	return player_session_info->player_id();
 }
 
 entt::entity GetPlayerByConnId(uint64_t session_id)
@@ -181,7 +176,7 @@ void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-    defer(centre_tls.gate_sessions().erase(request->session_id()));
+    defer(tls.registry.destroy(static_cast<entt::entity>(cl_tls.session_id())));
 	//断开链接必须是当前的gate去断，防止异步消息顺序,进入先到然后断开才到
 	//考虑a 断 b 断 a 断 b 断.....(中间不断重连)
 	const auto player = GetPlayerByConnId(request->session_id());
@@ -254,32 +249,16 @@ void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* con
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto session_it = centre_tls.gate_sessions().find(cl_tls.session_id());
-	if (session_it == centre_tls.gate_sessions().end())
-	{
-		session_it = 
-			centre_tls.gate_sessions().emplace(cl_tls.session_id(), tls.registry.create()).first;
-	}
-	if (session_it == centre_tls.gate_sessions().end())
-	{
-		LOG_ERROR <<  request->account() << "can not login";
-		response->mutable_error()->set_id(kRetLoginUnknownError);
-		return;
-	}
-	tls.registry.emplace<PlayerAccount>(session_it->second, std::make_shared<PlayerAccount::element_type>())->set_account(request->account());
-
-	//todo 排队队列里面有同一个人的两个链接
 	if (centre_tls.player_list().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
 		return;
 	}
-
-	{
-		//如果不是同一个登录服务器,踢掉已经登录的账号
-		//告诉客户端登录中
-	}
+	//排队
+    //todo 排队队列里面有同一个人的两个链接
+	//如果不是同一个登录服务器,踢掉已经登录的账号
+	//告诉客户端登录中
 ///<<< END WRITING YOUR CODE
 }
 
@@ -289,27 +268,20 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+
+	//顶号
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
-	const auto session_it = centre_tls.gate_sessions().find(cl_tls.session_id());
-	if (session_it == centre_tls.gate_sessions().end())
-	{
-		LOG_ERROR << "connection not found " << cl_tls.session_id();
-		return;
-	}
-	tls.registry.emplace<Guid>(session_it->second, request->player_id());
+	auto session = tls.session_registry.create(entt::entity(cl_tls.session_id()));
+	tls.session_registry.emplace<PlayerSessionInfo>(session).set_player_id(request->player_id());
 
-	const auto player_it = centre_tls.player_list().find(request->player_id());
-	const auto* const account = tls.registry.try_get<PlayerAccount>(session_it->second);
-	if (player_it == centre_tls.player_list().end())
+	if (const auto player_it = centre_tls.player_list().find(request->player_id());
+	player_it == centre_tls.player_list().end())
 	{
 		//把旧的connection 断掉
 		const auto player = tls.registry.create();
-		if (nullptr != account)
-		{
-			tls.registry.emplace<PlayerAccount>(player, *account);
-		}
+		tls.registry.emplace<PlayerAccount>(player, std::make_shared<PlayerAccount::element_type>());
 		tls.registry.emplace_or_replace<PlayerNodeInfo>(player).set_gate_session_id(cl_tls.session_id());
 
 		PlayerCommonSystem::InitPlayerComponent(player, request->player_id());
@@ -347,11 +319,11 @@ void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* contro
 			nullptr != player_node_info)
 		{
 			extern const uint32_t ClientPlayerCommonServiceBeKickMsgId;
-			TipsS2C beKickTips;
-			beKickTips.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
-			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTips, request->player_id());
-			//删除老会话
-			centre_tls.gate_sessions().erase(player_node_info->gate_session_id());
+			TipS2C beKickTip;
+			beKickTip.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
+			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTip, request->player_id());
+			//删除老会话,需要玩家收到消息后再删除gate连接
+			tls.session_registry.destroy(static_cast<entt::entity>(player_node_info->gate_session_id()));
 			GateNodeKickConnRequest message;
 			message.set_session_id(cl_tls.session_id());
 			Send2Gate(GateServiceKickConnByCentreMsgId, message, get_gate_node_id(player_node_info->gate_session_id()));
@@ -385,9 +357,9 @@ void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* contr
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
+    defer(tls.registry.destroy(static_cast<entt::entity>(cl_tls.session_id())));
 	const auto player_id = GetPlayerIdByConnId(cl_tls.session_id());
 	ControllerPlayerSystem::LeaveGame(player_id);
-	centre_tls.gate_sessions().erase(player_id);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -397,22 +369,18 @@ void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* co
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto session_it = centre_tls.gate_sessions().find(request->ex().session_id());
-	if (session_it == centre_tls.gate_sessions().end())
-	{
-		LOG_ERROR << "session not found " << request->ex().session_id();
-		return;
-	}
-	const auto session_player_id = tls.registry.try_get<Guid>(session_it->second);
-	if (nullptr == session_player_id)
-	{
-		LOG_ERROR << "session not found " << request->ex().session_id();
-		return;
-	}
-	const auto it = centre_tls.player_list().find(*session_player_id);
+    const auto player_info =
+	tls.session_registry.try_get<PlayerSessionInfo>(static_cast<entt::entity>(request->ex().session_id()));
+    if (nullptr == player_info)
+    {
+        LOG_ERROR << "session not found " << request->ex().session_id();
+        return;
+    }
+    auto player_id = player_info->player_id();
+	const auto it = centre_tls.player_list().find(player_id);
 	if (it == centre_tls.player_list().end())
 	{
-		LOG_ERROR << "player not found " << *session_player_id;
+		LOG_ERROR << "player not found " << player_id;
 		return;
 	}
 	if (request->msg().message_id() >= g_message_info.size())

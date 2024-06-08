@@ -3,17 +3,17 @@
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
-void ClientPlayerCommonServiceHandler::PushTipsS2C(entt::entity player,
-	const ::TipsS2C* request,
-	::TipsS2C* response)
+void ClientPlayerCommonServiceHandler::PushTipS2C(entt::entity player,
+	const ::TipS2C* request,
+	::TipS2C* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
 }
 
 void ClientPlayerCommonServiceHandler::BeKick(entt::entity player,
-	const ::TipsS2C* request,
-	::TipsS2C* response)
+	const ::TipS2C* request,
+	::TipS2C* response)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE

@@ -11,7 +11,7 @@ message EnterSceneC2SRequest
 
 message EnterSceneC2SResponse
 {
-	Tips error = 1;
+	Tip error = 1;
 }
 
 message EnterSceneS2C
