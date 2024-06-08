@@ -2,17 +2,17 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 option cc_generic_services = true;
 
-message Controller2GsLoginRequest
+message Centre2GsLoginRequest
 {
   uint32 enter_gs_type = 1;
 }
 
-message Controller2GsEnterGateSucceedRequest
+message Centre2GsEnterGateSucceedRequest
 {
 }
 
 service GamePlayerService 
 {
-  rpc Controller2GsLogin (Controller2GsLoginRequest) returns (google.protobuf.Empty);
-  rpc OnControllerEnterGateSucceed (Controller2GsEnterGateSucceedRequest) returns (google.protobuf.Empty);
+  rpc Centre2GsLogin (Centre2GsLoginRequest) returns (google.protobuf.Empty);
+  rpc OnCentreEnterGateSucceed (Centre2GsEnterGateSucceedRequest) returns (google.protobuf.Empty);
 }
