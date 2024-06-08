@@ -37,7 +37,6 @@ public:
 private:
 
 	void InitConfig();
-	void InitMq();
 
 	void Connect2Deploy();
 

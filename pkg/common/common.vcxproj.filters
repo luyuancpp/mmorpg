@@ -35,8 +35,6 @@
     <ClInclude Include="src\util\type_traits.h" />
     <ClInclude Include="src\util\utility.h" />
     <ClInclude Include="src\network\process_info.h" />
-    <ClInclude Include="src\mq\rocketmqproducer.h" />
-    <ClInclude Include="src\thread_local\thread_local_storage_link.h" />
     <ClInclude Include="src\grpc\deploy\deployclient.h" />
     <ClInclude Include="src\util\consistent_hash_node.h" />
   </ItemGroup>
@@ -61,7 +59,6 @@
     <ClCompile Include="src\util\utility.cpp" />
     <ClCompile Include="src\network\server_component.cpp" />
     <ClCompile Include="src\network\process_info.cpp" />
-    <ClCompile Include="src\thread_local\thread_local_storage_link.cpp" />
     <ClCompile Include="src\grpc\deploy\deployclient.cpp" />
     <ClCompile Include="src\util\consistent_hash_node.cpp" />
   </ItemGroup>
