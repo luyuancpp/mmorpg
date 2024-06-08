@@ -159,7 +159,7 @@ void ClientReceiver::Tip(const muduo::net::TcpConnectionPtr& conn, uint32_t tip_
     tips.mutable_tips()->set_id(tip_id);//tips_id.h 暂时写死，错误码不用编译
     MessageBody msg;
     msg.set_body(tips.SerializeAsString());
-    msg.set_message_id(ClientPlayerCommonServicePushTipsS2CMsgId);
+    msg.set_message_id(ClientPlayerCommonServicePushTipS2CMsgId);
     g_gate_node->codec().send(conn, msg);
 }
 
