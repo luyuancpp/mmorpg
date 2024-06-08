@@ -17,6 +17,7 @@ compile_commands.json
 *.exp
 *.pyc
 *.dll
+*.log
 pkg/pbc/src/*
 output/
 x64/
@@ -40,3 +41,5 @@ cmake-build-debug*/
 .idea/
 third_party/lua/vs2022
 *.pc
+lib/LIST.TXT
+third_party/protobuf
