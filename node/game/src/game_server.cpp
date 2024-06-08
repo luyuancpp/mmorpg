@@ -16,7 +16,6 @@
 #include "src/handler/register_handler.h"
 
 #include "src/thread_local/game_thread_local_storage.h"
-#include "src/thread_local/thread_local_storage_link.h"
 
 #include "service/service.h"
 #include "src/system/logic/config_system.h"
@@ -69,22 +68,6 @@ void GameNode::InitConfig()
     LoadAllConfigAsyncWhenServerLaunch();
     ConfigSystem::OnConfigLoadSuccessful();
 }
-
-void GameNode::InitMq()
-{
-    const auto& config_info = ZoneConfig::GetSingleton().config_info();
-    using namespace ROCKETMQ_NAMESPACE;
-    CredentialsProviderPtr credentials_provider =
-        std::make_shared<StaticCredentialsProvider>(config_info.access_key(), config_info.access_secret());
-
-    *tlslink.producer = Producer::newBuilder()
-        .withConfiguration(Configuration::newBuilder()
-            .withEndpoints(config_info.access_point())
-            .withCredentialsProvider(credentials_provider)
-            .build())
-        .build();
-}
-
 
 void GameNode::InitNetwork()
 {

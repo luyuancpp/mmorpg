@@ -18,7 +18,6 @@
 #include "service/service.h"
 #include "service/gate_service_service.h"
 #include "src/thread_local/centre_thread_local_storage.h"
-#include "src/thread_local/thread_local_storage_link.h"
 
 #include "service/grpc/deploy_service.grpc.pb.h"
 
@@ -58,7 +57,6 @@ void CentreNode::Init()
 	node_info_.set_launch_time(Timestamp::now().microSecondsSinceEpoch());
     muduo::Logger::setLogLevel((muduo::Logger::LogLevel)ZoneConfig::GetSingleton().config_info().loglevel());
 
-    InitMq();
 
 	Connect2Deploy();
 
@@ -212,21 +210,6 @@ void CentreNode::InitConfig()
     DeployConfig::GetSingleton().Load("deploy.json");
     LobbyConfig::GetSingleton().Load("lobby.json");
     LoadAllConfigAsyncWhenServerLaunch();
-}
-
-void CentreNode::InitMq()
-{
-    auto& config_info = ZoneConfig::GetSingleton().config_info();
-    using namespace ROCKETMQ_NAMESPACE;
-    CredentialsProviderPtr credentials_provider = 
-        std::make_shared<StaticCredentialsProvider>(config_info.access_key(), config_info.access_secret());
-
-    *tlslink.producer = Producer::newBuilder()
-        .withConfiguration(Configuration::newBuilder()
-                           .withEndpoints(config_info.access_point())
-                           .withCredentialsProvider(credentials_provider)
-                           .build())
-        .build();
 }
 
 void CentreNode::InitNodeServer()

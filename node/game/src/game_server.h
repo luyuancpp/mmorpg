@@ -29,7 +29,6 @@ public:
 
     void InitConfig();
 
-    void InitMq();
 
     void InitNetwork();
 
