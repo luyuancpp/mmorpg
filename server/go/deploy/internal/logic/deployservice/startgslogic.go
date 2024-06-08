@@ -2,10 +2,8 @@ package deployservicelogic
 
 import (
 	"context"
-
 	"deploy_server/internal/svc"
 	"deploy_server/pb/game"
-
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -24,7 +22,8 @@ func NewStartGsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *StartGsLo
 }
 
 func (l *StartGsLogic) StartGs(in *game.StartGsRequest) (*game.StartGsResponse, error) {
-	// todo: add your logic here and delete this line
+	//zoneId := strconv.FormatUint(uint64(in.GetZoneId()), 10)
+	//log.Println(zoneId)
 
 	return &game.StartGsResponse{}, nil
 }

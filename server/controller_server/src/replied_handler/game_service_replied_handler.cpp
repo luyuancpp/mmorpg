@@ -77,8 +77,8 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "message_id not found " << replied->msg().message_id() ;
 		return;
 	}
-	auto session_it = controller_tls.gate_sessions().find(replied->ex().session_id());
-	if (session_it == controller_tls.gate_sessions().end())
+	auto session_it = centre_tls.gate_sessions().find(replied->ex().session_id());
+	if (session_it == centre_tls.gate_sessions().end())
 	{
 		LOG_ERROR << "session not found " << replied->ex().session_id();
 		return;
@@ -90,8 +90,8 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		return;
 	}
 	const auto& message_info = g_message_info.at(replied->msg().message_id() );
-	const auto player_it = controller_tls.player_list().find(*session_player_id);
-	if (player_it == controller_tls.player_list().end())
+	const auto player_it = centre_tls.player_list().find(*session_player_id);
+	if (player_it == centre_tls.player_list().end())
 	{
 		LOG_ERROR << "PlayerService player not found " << *session_player_id << ", message id"
 			<< replied->msg().message_id();

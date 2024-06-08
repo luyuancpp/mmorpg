@@ -19,8 +19,8 @@ void PlayerTipSystem::Tip(entt::entity player, uint32_t tip_id, const StringVect
 
 void PlayerTipSystem::Tip(Guid player_id, uint32_t tip_id, const StringVector& str_param)
 {
-	auto it = controller_tls.player_list().find(player_id);
-	if (it == controller_tls.player_list().end())
+	auto it = centre_tls.player_list().find(player_id);
+	if (it == centre_tls.player_list().end())
 	{
 		return;
 	}

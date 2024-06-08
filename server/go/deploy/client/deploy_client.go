@@ -3,7 +3,6 @@ package main
 import (
 	"deploy_server/client/deployservice"
 	"flag"
-	"fmt"
 )
 import (
 	"context"
@@ -19,19 +18,15 @@ func main() {
 	var c zrpc.RpcClientConf
 	conf.MustLoad(*configFile, &c)
 	client := zrpc.MustNewClient(c)
+	client1 := zrpc.MustNewClient(c)
+
 	for i := 0; i < 1000; i++ {
 		deploy := deployservice.NewDeployService(client)
-		resp, err := deploy.StartGs(context.Background(), &deployservice.StartGsRequest{ZoneId: uint32(i)})
-		if err != nil {
-			fmt.Println("X", err.Error())
-		} else {
-			fmt.Println("=>", resp.String())
-		}
-		resp1, err := deploy.GetNodeInfo(context.Background(), &deployservice.NodeInfoRequest{ZoneId: uint32(i)})
-		if err != nil {
-			fmt.Println("X", err.Error())
-		} else {
-			fmt.Println("=>", resp1.String())
-		}
+		deploy.StartGs(context.Background(), &deployservice.StartGsRequest{ZoneId: uint32(i)})
+		deploy.GetNodeInfo(context.Background(), &deployservice.NodeInfoRequest{ZoneId: uint32(i * 10)})
+
+		deploy1 := deployservice.NewDeployService(client1)
+		deploy1.StartGs(context.Background(), &deployservice.StartGsRequest{ZoneId: uint32(i * 100)})
+		deploy1.GetNodeInfo(context.Background(), &deployservice.NodeInfoRequest{ZoneId: uint32(i * 1000)})
 	}
 }

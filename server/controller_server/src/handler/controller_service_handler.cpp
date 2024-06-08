@@ -5,7 +5,7 @@
 #include "mainscene_config.h"
 
 #include "src/comp/account_player.h"
-#include "src/controller_server.h"
+#include "src/centre_server.h"
 #include "src/system/scene/servernode_system.h"
 #include "src/comp/player_list.h"
 #include "src/comp/account_comp.h"
@@ -41,8 +41,8 @@ NodeId controller_node_id();
 
 Guid GetPlayerIdByConnId(const uint64_t session_id)
 {
-	const auto cit = controller_tls.gate_sessions().find(session_id);
-	if (cit == controller_tls.gate_sessions().end())
+	const auto cit = centre_tls.gate_sessions().find(session_id);
+	if (cit == centre_tls.gate_sessions().end())
 	{
 		return kInvalidGuid;
 	}
@@ -56,8 +56,8 @@ Guid GetPlayerIdByConnId(const uint64_t session_id)
 
 entt::entity GetPlayerByConnId(uint64_t session_id)
 {
-	const auto player_it = controller_tls.player_list().find(GetPlayerIdByConnId(session_id));
-	if (player_it == controller_tls.player_list().end())
+	const auto player_it = centre_tls.player_list().find(GetPlayerIdByConnId(session_id));
+	if (player_it == centre_tls.player_list().end())
 	{
 		return entt::null;
 	}
@@ -65,7 +65,7 @@ entt::entity GetPlayerByConnId(uint64_t session_id)
 }
 
 ///<<< END WRITING YOUR CODE
-void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller,
 	const ::CtrlStartGsRequest* request,
 	::CtrlStartGsResponse* response,
 	 ::google::protobuf::Closure* done)
@@ -129,12 +129,12 @@ void ControllerServiceHandler::StartGs(::google::protobuf::RpcController* contro
 	{
 		g_controller_node->LetGateConnect2Gs(game_node, gate);
 	}
-	controller_tls.game_node().emplace(request->gs_node_id(), game_node);
+	centre_tls.game_node().emplace(request->gs_node_id(), game_node);
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::GateConnect(::google::protobuf::RpcController* controller,
 	const ::GateConnectRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
@@ -154,7 +154,7 @@ void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* co
 		gate_node->node_info_.set_node_id(request->gate_node_id());
 		gate_node->node_info_.set_node_type(kGateNode);
 		gate_node->entity_id_ = e;
-		controller_tls.gate_nodes().emplace(request->gate_node_id(), gate_node);
+		centre_tls.gate_nodes().emplace(request->gate_node_id(), gate_node);
 		break;
 	}
 	if (entt::null == gate)
@@ -169,7 +169,7 @@ void ControllerServiceHandler::GateConnect(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::GatePlayerService(::google::protobuf::RpcController* controller,
 	const ::GateClientMessageRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
@@ -178,7 +178,7 @@ void ControllerServiceHandler::GatePlayerService(::google::protobuf::RpcControll
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::GateDisconnect(::google::protobuf::RpcController* controller,
 	const ::GateDisconnectRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
@@ -208,13 +208,13 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 	{
 		return;
 	}
-	const auto game_node_it = controller_tls.game_node().find(player_node_info->game_node_id());
-	if (game_node_it == controller_tls.game_node().end())
+	const auto game_node_it = centre_tls.game_node().find(player_node_info->game_node_id());
+	if (game_node_it == centre_tls.game_node().end())
 	{
 		return;
 	}
 	const auto player_id = tls.registry.get<Guid>(player);
-	controller_tls.gate_sessions().erase(player_id);
+	centre_tls.gate_sessions().erase(player_id);
 	GameNodeDisconnectRequest rq;
 	rq.set_player_id(player_id);
 	tls.registry.get<GameNodePtr>(game_node_it->second)->session_.CallMethod(GameServiceDisconnectMsgId, rq);
@@ -222,7 +222,7 @@ void ControllerServiceHandler::GateDisconnect(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::StartLs(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::StartLs(::google::protobuf::RpcController* controller,
 	const ::StartLsRequest* request,
 	::StartLsResponse* response,
 	 ::google::protobuf::Closure* done)
@@ -252,23 +252,23 @@ void ControllerServiceHandler::StartLs(::google::protobuf::RpcController* contro
 	auto& login_node = tls.registry.emplace<LoginNode>(login, c.conn_);
 	login_node.node_info_.set_node_id(request->login_node_id());
 	login_node.node_info_.set_node_type(kGameNode);
-	controller_tls.game_node().emplace(request->login_node_id(), login);
+	centre_tls.game_node().emplace(request->login_node_id(), login);
 	LOG_DEBUG << "login connect node id: " << request->login_node_id() << response->DebugString() << "server type:" << request->server_type();
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::LsLoginAccount(::google::protobuf::RpcController* controller,
 	const ::LoginRequest* request,
 	::LoginResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	auto session_it = controller_tls.gate_sessions().find(cl_tls.session_id());
-	if (session_it == controller_tls.gate_sessions().end())
+	auto session_it = centre_tls.gate_sessions().find(cl_tls.session_id());
+	if (session_it == centre_tls.gate_sessions().end())
 	{
-		session_it = controller_tls.gate_sessions().emplace(cl_tls.session_id(), tls.registry.create()).first;
+		session_it = centre_tls.gate_sessions().emplace(cl_tls.session_id(), tls.registry.create()).first;
 	}
-	if (session_it == controller_tls.gate_sessions().end())
+	if (session_it == centre_tls.gate_sessions().end())
 	{
 		response->mutable_error()->set_id(kRetLoginUnknownError);
 		return;
@@ -277,7 +277,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 	tls.registry.emplace<AccountLoginNode>(session_it->second, AccountLoginNode{cl_tls.session_id()});
 	//todo 队列里面有同一个人的两个链接
 	const auto lit = tls_login_accounts_session.find(request->account());
-	if (controller_tls.player_list().size() >= kMaxPlayerSize)
+	if (centre_tls.player_list().size() >= kMaxPlayerSize)
 	{
 		//如果登录的是新账号,满了得去排队,是账号排队，还是角色排队>???
 		response->mutable_error()->set_id(kRetLoginAccountPlayerFull);
@@ -304,7 +304,7 @@ void ControllerServiceHandler::LsLoginAccount(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::LsEnterGame(::google::protobuf::RpcController* controller,
 	const ::EnterGameRequest* request,
 	::EnterGameResponse* response,
 	 ::google::protobuf::Closure* done)
@@ -313,21 +313,21 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 	//todo正常或者顶号进入场景
 	//todo 断线重连进入场景，断线重连分时间
 	//todo 返回login session 删除了后能返回客户端吗?数据流程对吗
-	const auto session_it = controller_tls.gate_sessions().find(cl_tls.session_id());
-	if (session_it == controller_tls.gate_sessions().end())
+	const auto session_it = centre_tls.gate_sessions().find(cl_tls.session_id());
+	if (session_it == centre_tls.gate_sessions().end())
 	{
 		LOG_ERROR << "connection not found " << cl_tls.session_id();
 		return;
 	}
 	tls.registry.emplace<Guid>(session_it->second, request->player_id());
 
-	const auto player_it = controller_tls.player_list().find(request->player_id());
+	const auto player_it = centre_tls.player_list().find(request->player_id());
 	const auto* const account = tls.registry.try_get<PlayerAccount>(session_it->second);
 	if (nullptr != account)
 	{
 		tls_login_accounts_session.erase((*account)->account());
 	}
-	if (player_it == controller_tls.player_list().end())
+	if (player_it == centre_tls.player_list().end())
 	{
 		//把旧的connection 断掉
 		const auto player = tls.registry.create();
@@ -376,7 +376,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 			beKickTips.mutable_tips()->set_id(kRetLoginBeKickByAnOtherAccount);
 			Send2Player(ClientPlayerCommonServiceBeKickMsgId, beKickTips, request->player_id());
 			//删除老会话
-			controller_tls.gate_sessions().erase(player_node_info->gate_session_id());
+			centre_tls.gate_sessions().erase(player_node_info->gate_session_id());
 			GateNodeKickConnRequest message;
 			message.set_session_id(cl_tls.session_id());
 			Send2Gate(GateServiceKickConnByControllerMsgId, message, get_gate_node_id(player_node_info->gate_session_id()));
@@ -393,7 +393,7 @@ void ControllerServiceHandler::LsEnterGame(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::LsLeaveGame(::google::protobuf::RpcController* controller,
 	const ::CtrlLsLeaveGameRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
@@ -404,7 +404,7 @@ void ControllerServiceHandler::LsLeaveGame(::google::protobuf::RpcController* co
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::LsDisconnect(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::LsDisconnect(::google::protobuf::RpcController* controller,
 	const ::CtrlLsDisconnectRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
@@ -412,18 +412,18 @@ void ControllerServiceHandler::LsDisconnect(::google::protobuf::RpcController* c
 ///<<< BEGIN WRITING YOUR CODE
 	const auto player_id = GetPlayerIdByConnId(cl_tls.session_id());
 	ControllerPlayerSystem::LeaveGame(player_id);
-	controller_tls.gate_sessions().erase(player_id);
+	centre_tls.gate_sessions().erase(player_id);
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::GsPlayerService(::google::protobuf::RpcController* controller,
 	const ::NodeRouteMessageRequest* request,
 	::NodeRouteMessageResponse* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto session_it = controller_tls.gate_sessions().find(request->ex().session_id());
-	if (session_it == controller_tls.gate_sessions().end())
+	const auto session_it = centre_tls.gate_sessions().find(request->ex().session_id());
+	if (session_it == centre_tls.gate_sessions().end())
 	{
 		LOG_ERROR << "session not found " << request->ex().session_id();
 		return;
@@ -434,8 +434,8 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 		LOG_ERROR << "session not found " << request->ex().session_id();
 		return;
 	}
-	const auto it = controller_tls.player_list().find(*session_player_id);
-	if (it == controller_tls.player_list().end())
+	const auto it = centre_tls.player_list().find(*session_player_id);
+	if (it == centre_tls.player_list().end())
 	{
 		LOG_ERROR << "player not found " << *session_player_id;
 		return;
@@ -487,7 +487,7 @@ void ControllerServiceHandler::GsPlayerService(::google::protobuf::RpcController
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::AddCrossServerScene(::google::protobuf::RpcController* controller,
 	const ::AddCrossServerSceneRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
@@ -496,8 +496,8 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 	CreateGameNodeSceneParam create_scene_param;
 	for (auto& it : request->cross_scenes_info())
 	{
-		auto git = controller_tls.game_node().find(it.gs_node_id());
-		if (git == controller_tls.game_node().end())
+		auto git = centre_tls.game_node().find(it.gs_node_id());
+		if (git == centre_tls.game_node().end())
 		{
 			continue;
 		}
@@ -515,14 +515,14 @@ void ControllerServiceHandler::AddCrossServerScene(::google::protobuf::RpcContro
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::EnterGsSucceed(::google::protobuf::RpcController* controller,
 	const ::EnterGameNodeSucceedRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	const auto it = controller_tls.player_list().find(request->player_id());
-	if (it == controller_tls.player_list().end())
+	const auto it = centre_tls.player_list().find(request->player_id());
+	if (it == centre_tls.player_list().end())
 	{
 		LOG_ERROR << "player not found" << request->player_id();
 		return;
@@ -534,14 +534,14 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 		LOG_ERROR << "player session not found" << request->player_id();
 		return;
 	}
-	const auto gate_it = controller_tls.gate_nodes().find(get_gate_node_id(player_node_info->gate_session_id()));
-	if (gate_it == controller_tls.gate_nodes().end())
+	const auto gate_it = centre_tls.gate_nodes().find(get_gate_node_id(player_node_info->gate_session_id()));
+	if (gate_it == centre_tls.gate_nodes().end())
 	{
 		LOG_ERROR << "gate crash" << get_gate_node_id(player_node_info->gate_session_id());
 		return;
 	}
-	const auto game_it = controller_tls.game_node().find(request->game_node_id());
-	if (game_it == controller_tls.game_node().end())
+	const auto game_it = centre_tls.game_node().find(request->game_node_id());
+	if (game_it == centre_tls.game_node().end())
 	{
         LOG_ERROR << "game crash" << request->game_node_id();
         return;
@@ -562,7 +562,7 @@ void ControllerServiceHandler::EnterGsSucceed(::google::protobuf::RpcController*
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::RouteNodeStringMsg(::google::protobuf::RpcController* controller,
 	const ::RouteMsgStringRequest* request,
 	::RouteMsgStringResponse* response,
 	 ::google::protobuf::Closure* done)
@@ -651,8 +651,8 @@ mutable_request->set_body(cl_tls.route_msg_body());
     {
     case kLoginNode:
 	{
-		auto login_node_it = controller_tls.login_node().find(cl_tls.next_route_node_id());
-		if (login_node_it == controller_tls.login_node().end())
+		auto login_node_it = centre_tls.login_node().find(cl_tls.next_route_node_id());
+		if (login_node_it == centre_tls.login_node().end())
 		{
 			LOG_ERROR << "login not found node id "  << cl_tls.next_route_node_id() << request->DebugString();
 			return;
@@ -673,8 +673,8 @@ mutable_request->set_body(cl_tls.route_msg_body());
 	    break;
     case kGateNode:
 	{
-		auto gate_it = controller_tls.gate_nodes().find(cl_tls.next_route_node_id());
-		if (gate_it == controller_tls.gate_nodes().end())
+		auto gate_it = centre_tls.gate_nodes().find(cl_tls.next_route_node_id());
+		if (gate_it == centre_tls.gate_nodes().end())
 		{
 			LOG_ERROR << "gate not found node id " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
@@ -684,8 +684,8 @@ mutable_request->set_body(cl_tls.route_msg_body());
 	break;
     case kGameNode:
 	{
-		auto controller_it = controller_tls.game_node().find(cl_tls.next_route_node_id());
-		if (controller_it == controller_tls.game_node().end())
+		auto controller_it = centre_tls.game_node().find(cl_tls.next_route_node_id());
+		if (controller_it == centre_tls.game_node().end())
 		{
 			LOG_ERROR << "game not found game " << cl_tls.next_route_node_id() << request->DebugString();
 			return;
@@ -709,7 +709,7 @@ mutable_request->set_body(cl_tls.route_msg_body());
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
+void CentreServiceHandler::RoutePlayerStringMsg(::google::protobuf::RpcController* controller,
 	const ::RoutePlayerMsgStringRequest* request,
 	::RoutePlayerMsgStringResponse* response,
 	 ::google::protobuf::Closure* done)

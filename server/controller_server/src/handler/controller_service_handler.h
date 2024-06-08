@@ -1,6 +1,6 @@
 #pragma once
 #include "common_proto/controller_service.pb.h"
-class ControllerServiceHandler : public ::ControllerService
+class CentreServiceHandler : public ::ControllerService
 {
 public:
 	void StartGs(::google::protobuf::RpcController* controller,

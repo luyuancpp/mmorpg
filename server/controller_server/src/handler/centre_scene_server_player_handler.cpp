@@ -1,4 +1,4 @@
-#include "controller_scene_server_player_handler.h"
+#include "centre_scene_server_player_handler.h"
 #include "src/thread_local/thread_local_storage.h"
 #include "src/network/message_system.h"
 ///<<< BEGIN WRITING YOUR CODE
@@ -7,13 +7,13 @@
 #include "src/system/scene/scene_system.h"
 #include "src/constants/tips_id.h"
 #include "src/network/game_node.h"
-#include "src/controller_server.h"
+#include "src/centre_server.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"
 #include "component_proto/player_network_comp.pb.h"
 ///<<< END WRITING YOUR CODE
-void ControllerScenePlayerServiceHandler::EnterScene(entt::entity player,
+void CentreScenePlayerServiceHandler::EnterScene(entt::entity player,
 	const ::ControllerEnterSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -31,7 +31,7 @@ void ControllerScenePlayerServiceHandler::EnterScene(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerScenePlayerServiceHandler::LeaveScene(entt::entity player,
+void CentreScenePlayerServiceHandler::LeaveScene(entt::entity player,
 	const ::ControllerLeaveSceneRequest* request,
 	::google::protobuf::Empty* response)
 {
@@ -39,7 +39,7 @@ void ControllerScenePlayerServiceHandler::LeaveScene(entt::entity player,
 ///<<< END WRITING YOUR CODE
 }
 
-void ControllerScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,
+void CentreScenePlayerServiceHandler::LeaveSceneAsyncSavePlayerComplete(entt::entity player,
 	const ::ControllerLeaveSceneAsyncSavePlayerCompleteRequest* request,
 	::google::protobuf::Empty* response)
 {
