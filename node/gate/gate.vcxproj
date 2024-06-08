@@ -58,7 +58,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{30d7288b-8317-4fb0-80b5-2fccad2ae1fa}</ProjectGuid>
-    <RootNamespace>gate_server</RootNamespace>
+    <RootNamespace>gate</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>gate</ProjectName>
   </PropertyGroup>

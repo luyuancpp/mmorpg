@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{13118878-9993-4729-84b4-86c0197dad06}</ProjectGuid>
-    <RootNamespace>controller_server</RootNamespace>
+    <RootNamespace>centre</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>centre</ProjectName>
   </PropertyGroup>
