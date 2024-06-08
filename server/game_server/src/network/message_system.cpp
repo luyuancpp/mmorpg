@@ -73,10 +73,10 @@ void Send2ControllerPlayer(uint32_t message_id, const google::protobuf::Message&
 		LOG_ERROR << "player node info  not found" << tls.registry.get<Guid>(player);
 		return;
 	}
-	const auto controller_it = game_tls.controller_node().find(player_node_info->controller_node_id());
+	const auto controller_it = game_tls.controller_node().find(player_node_info->centre_node_id());
 	if (controller_it == game_tls.controller_node().end())
 	{
-		LOG_ERROR << "controller not found" << player_node_info->controller_node_id();
+		LOG_ERROR << "controller not found" << player_node_info->centre_node_id();
 		return;
 	}
 	if (!controller_it->second->session_->connected())

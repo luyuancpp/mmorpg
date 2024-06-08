@@ -5,7 +5,7 @@
 #include "mainscene_config.h"
 
 #include "src/comp/account_player.h"
-#include "src/centre_server.h"
+#include "src/centre_node.h"
 #include "src/system/scene/servernode_system.h"
 #include "src/comp/player_list.h"
 #include "src/comp/account_comp.h"
@@ -37,7 +37,7 @@ thread_local std::unordered_map<std::string, uint64_t> tls_login_accounts_sessio
 
 constexpr std::size_t kMaxPlayerSize{1000};
 
-NodeId controller_node_id();
+NodeId centre_node_id();
 
 Guid GetPlayerIdByConnId(const uint64_t session_id)
 {
@@ -71,7 +71,7 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	response->set_controller_node_id(controller_node_id());
+	response->set_controller_node_id(centre_node_id());
 	const InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	const InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity game_node{entt::null};
@@ -127,7 +127,7 @@ void CentreServiceHandler::StartGs(::google::protobuf::RpcController* controller
 
 	for (auto gate : tls.registry.view<GateNodePtr>())
 	{
-		g_controller_node->LetGateConnect2Gs(game_node, gate);
+		g_centre_node->LetGateConnect2Gs(game_node, gate);
 	}
 	centre_tls.game_node().emplace(request->gs_node_id(), game_node);
 	LOG_DEBUG << "gs connect node id: " << request->gs_node_id() << response->DebugString() << "server type:" << request->server_type();
@@ -164,7 +164,7 @@ void CentreServiceHandler::GateConnect(::google::protobuf::RpcController* contro
 	tls.registry.emplace<InetAddress>(gate, session_addr);
 	for (auto e : tls.registry.view<GameNodePtr>())
 	{
-		g_controller_node->LetGateConnect2Gs(e, gate);
+		g_centre_node->LetGateConnect2Gs(e, gate);
 	}
 ///<<< END WRITING YOUR CODE
 }
@@ -228,7 +228,7 @@ void CentreServiceHandler::StartLs(::google::protobuf::RpcController* controller
 	 ::google::protobuf::Closure* done)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	response->set_controller_node_id(controller_node_id());
+	response->set_controller_node_id(centre_node_id());
 	InetAddress session_addr(request->rpc_client().ip(), request->rpc_client().port());
 	InetAddress service_addr(request->rpc_server().ip(), request->rpc_server().port());
 	entt::entity login{ entt::null };
@@ -643,7 +643,7 @@ if (cl_tls.next_route_node_type() == UINT32_MAX)
 //需要发送到下个节点
 const auto next_route_data = mutable_request->add_route_data_list();
 next_route_data->CopyFrom(cl_tls.route_data());
-next_route_data->mutable_node_info()->CopyFrom(g_controller_node->node_info());
+next_route_data->mutable_node_info()->CopyFrom(g_centre_node->node_info());
 mutable_request->set_body(cl_tls.route_msg_body());
     mutable_request->set_id(request->id());
 

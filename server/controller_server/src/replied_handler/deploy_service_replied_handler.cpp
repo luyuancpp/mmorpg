@@ -2,7 +2,7 @@
 #include "src/network/codec/dispatcher.h"
 
 ///<<< BEGIN WRITING YOUR CODE
-#include "src/centre_server.h"
+#include "src/centre_node.h"
 
 void set_server_sequence_node_id(uint32_t node_id);
 ///<<< END WRITING YOUR CODE
@@ -19,7 +19,7 @@ void InitDeployServiceGetNodeInfoRepliedHandler()
 void OnDeployServiceGetNodeInfoRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<NodeInfoResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	g_controller_node->StartServer(replied->info());
+	g_centre_node->StartServer(replied->info());
 ///<<< END WRITING YOUR CODE
 }
 

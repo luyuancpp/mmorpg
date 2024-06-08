@@ -94,7 +94,7 @@ void GateServiceHandler::PlayerMessage(::google::protobuf::RpcController* contro
 	///<<< END WRITING YOUR CODE
 }
 
-void GateServiceHandler::KickConnByController(::google::protobuf::RpcController* controller,
+void GateServiceHandler::KickConnByCentre(::google::protobuf::RpcController* controller,
 	const ::GateNodeKickConnRequest* request,
 	::Empty* response,
 	 ::google::protobuf::Closure* done)

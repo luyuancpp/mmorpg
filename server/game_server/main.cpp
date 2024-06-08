@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
 {
 
     EventLoop loop;
-    GameServer server(&loop);
+    GameNode server(&loop);
     server.Init();
     loop.loop();
     google::protobuf::ShutdownProtobufLibrary();

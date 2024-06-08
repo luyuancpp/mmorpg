@@ -7,7 +7,7 @@
 #include "src/system/scene/scene_system.h"
 #include "src/constants/tips_id.h"
 #include "src/network/game_node.h"
-#include "src/centre_server.h"
+#include "src/centre_node.h"
 #include "src/system/player_scene_system.h"
 #include "src/system/player_tip_system.h"
 #include "src/system/player_change_scene.h"

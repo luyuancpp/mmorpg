@@ -23,7 +23,7 @@
 #include "service/service.h"
 #include "src/system/logic/config_system.h"
 
-GameServer* g_game_node = nullptr;
+GameNode* g_game_node = nullptr;
 
 NodeId get_gate_node_id()
 {
@@ -32,17 +32,17 @@ NodeId get_gate_node_id()
 
 void InitRepliedHandler();
 
-GameServer::GameServer(muduo::net::EventLoop* loop)
+GameNode::GameNode(muduo::net::EventLoop* loop)
     :loop_(loop),
      redis_(std::make_shared<PbSyncRedisClientPtr::element_type>()){}
 
-GameServer::~GameServer()
+GameNode::~GameNode()
 {
-	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GameServer::Receive1>(*this);
-	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&GameServer::Receive2>(*this);
+	tls.dispatcher.sink<OnConnected2ServerEvent>().disconnect<&GameNode::Receive1>(*this);
+	tls.dispatcher.sink<OnBeConnectedEvent>().disconnect<&GameNode::Receive2>(*this);
 }
 
-void GameServer::Init()
+void GameNode::Init()
 {
     g_game_node = this; 
     EventHandler::Register();
@@ -63,7 +63,7 @@ void GameServer::Init()
 	InitServiceHandler();
 }
 
-void GameServer::InitConfig()
+void GameNode::InitConfig()
 {
 	ZoneConfig::GetSingleton().Load("game.json");
 	DeployConfig::GetSingleton().Load("deploy.json");
@@ -72,7 +72,7 @@ void GameServer::InitConfig()
     ConfigSystem::OnConfigLoadSuccessful();
 }
 
-void GameServer::InitMq()
+void GameNode::InitMq()
 {
     const auto& config_info = ZoneConfig::GetSingleton().config_info();
     using namespace ROCKETMQ_NAMESPACE;
@@ -88,22 +88,22 @@ void GameServer::InitMq()
 }
 
 
-void GameServer::InitNetwork()
+void GameNode::InitNetwork()
 {
     const auto& deploy_info = DeployConfig::GetSingleton().deploy_info();
     InetAddress deploy_addr(deploy_info.ip(), deploy_info.port());
     deploy_node_ = std::make_unique<RpcClient>(loop_, deploy_addr);
-	tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameServer::Receive1>(*this);
+	tls.dispatcher.sink<OnConnected2ServerEvent>().connect<&GameNode::Receive1>(*this);
     deploy_node_->connect();
 }
 
-void GameServer::ServerInfo(const ::servers_info_data& info)
+void GameNode::ServerInfo(const ::servers_info_data& info)
 {
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
     game_tls.redis_system().Init(serverAddr);
 }
 
-void GameServer::CallControllerStartGs(ControllerSessionPtr controller_node)
+void GameNode::CallCentreStartGs(CentreSessionPtr controller_node)
 {
     auto& controller_local_addr = controller_node->local_addr();
     CtrlStartGsRequest rq;
@@ -119,7 +119,7 @@ void GameServer::CallControllerStartGs(ControllerSessionPtr controller_node)
     LOG_DEBUG << "connect to controller" ;
 }
 
-void GameServer::CallLobbyStartGs()
+void GameNode::CallLobbyStartGs()
 {
     auto server_type = tls.registry.get<GsServerType>(global_entity()).server_type_;
     if (!(server_type == kMainSceneCrossServer ||
@@ -139,7 +139,7 @@ void GameServer::CallLobbyStartGs()
     lobby_node_->CallMethod(LobbyServiceStartCrossGsMsgId, rq);
 }
 
-void GameServer::Receive1(const OnConnected2ServerEvent& es)
+void GameNode::Receive1(const OnConnected2ServerEvent& es)
 {
     auto& conn = es.conn_;
     if (deploy_node_->peer_addr().toIpPort() == conn->peerAddress().toIpPort())
@@ -158,7 +158,7 @@ void GameServer::Receive1(const OnConnected2ServerEvent& es)
         if (conn->connected() &&
             IsSameAddr(controller_session->peer_addr(), conn->peerAddress()))
         {
-            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::CallControllerStartGs, this, controller_session));
+            EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameNode::CallCentreStartGs, this, controller_session));
             break;
         }
         // ms 走断线重连，不删除
@@ -169,7 +169,7 @@ void GameServer::Receive1(const OnConnected2ServerEvent& es)
 		if (conn->connected() && 
             IsSameAddr(lobby_node_->peer_addr(), conn->peerAddress()))
 		{
-			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameServer::CallLobbyStartGs, this));
+			EventLoop::getEventLoopOfCurrentThread()->queueInLoop(std::bind(&GameNode::CallLobbyStartGs, this));
 		}
 		else if (!conn->connected() &&
 			IsSameAddr(lobby_node_->peer_addr(), conn->peerAddress()))
@@ -180,7 +180,7 @@ void GameServer::Receive1(const OnConnected2ServerEvent& es)
   
 }
 
-void GameServer::Receive2(const OnBeConnectedEvent& es)
+void GameNode::Receive2(const OnBeConnectedEvent& es)
 {
     auto& conn = es.conn_;
 	if (conn->connected())
@@ -209,7 +209,7 @@ void GameServer::Receive2(const OnBeConnectedEvent& es)
     }
 }
 
-void GameServer::Connect2Lobby()
+void GameNode::Connect2Lobby()
 {
     lobby_node_->registerService(&gs_service_impl_);
     lobby_node_->connect();

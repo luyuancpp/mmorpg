@@ -15,19 +15,19 @@
 
 #include "common_proto/deploy_service.pb.h"
 
-class GateServer : noncopyable
+class GateNode : noncopyable
 {
 public:
     using TcpServerPtr = std::unique_ptr<TcpServer>;
 
-    GateServer(EventLoop* loop)
+    GateNode(EventLoop* loop)
         : loop_(loop),
-        dispatcher_(std::bind(&GateServer::OnUnknownMessage, this, _1, _2, _3)),
+        dispatcher_(std::bind(&GateNode::OnUnknownMessage, this, _1, _2, _3)),
         codec_(std::bind(&ProtobufDispatcher::onProtobufMessage, &dispatcher_, _1, _2, _3)),
         client_receiver_(codec_, dispatcher_)
     { }
 
-    ~GateServer();
+    ~GateNode();
 
     inline EventLoop* loop() { return loop_; }
     inline ProtobufCodec& codec() { return codec_; };
@@ -80,7 +80,7 @@ private:
     GateServiceHandler gate_service_handler_;
 };
 
-extern GateServer* g_gate_node;
+extern GateNode* g_gate_node;
 
 
 
