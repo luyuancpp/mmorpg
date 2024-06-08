@@ -99,71 +99,8 @@ void GameServer::InitNetwork()
 
 void GameServer::ServerInfo(const ::servers_info_data& info)
 {
-    auto& lobby_info = info.lobby_info();
-    InetAddress lobby_addr(lobby_info.ip(), lobby_info.port());
-    
-    lobby_node_ = std::make_unique<RpcClient>(loop_, lobby_addr);
-    
     InetAddress serverAddr(info.redis_info().ip(), info.redis_info().port());
     game_tls.redis_system().Init(serverAddr);
-
-    {
-        StartGSRequest rq;
-        rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
-        rq.mutable_my_info()->set_ip(localip());
-        rq.mutable_my_info()->set_id(gs_info_.id());
-        rq.mutable_rpc_client()->set_ip(deploy_node_->local_addr().toIp());
-        rq.mutable_rpc_client()->set_port(deploy_node_->local_addr().port());
-        deploy_node_->CallMethod(DeployServiceStartGSMsgId, rq);
-    }
-   
-    {
-        LobbyServerRequest rq;
-        rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-        deploy_node_->CallMethod(DeployServiceAcquireLobbyInfoMsgId, rq);//获取大厅服下所有服务器信息
-    }
-	
-}
-
-void GameServer::StartGsDeployReplied(const StartGSResponse& replied)
-{
-    Connect2Lobby();
-
-    auto& redis_info = replied.redis_info();
-	redis_->Connect(redis_info.ip(), redis_info.port(), 1, 1);
-
-    gs_info_ = replied.my_info();
-    node_info_.set_node_id(gs_info_.id());
-    InetAddress node_addr(gs_info_.ip(), gs_info_.port());
-    server_ = std::make_shared<RpcServerPtr::element_type>(loop_, node_addr);
-    tls.dispatcher.sink<OnBeConnectedEvent>().connect<&GameServer::Receive2>(*this);
-    server_->registerService(&gs_service_impl_);
-    for (auto& it : g_server_service)
-    {
-        server_->registerService(it.second.get());
-    }
-    server_->start();   
-}
-
-void GameServer::OnAcquireLobbyInfoReplied(LobbyInfoResponse& replied)
-{
-	//connect controller
-	const auto& lobby_controllers = replied.lobby_controllers();
-	for (int32_t i = 0; i < lobby_controllers.controllers_size(); ++i)
-	{
-		const auto& controller_node_info = lobby_controllers.controllers(i);
-		InetAddress controller_addr(controller_node_info.ip(), controller_node_info.port());
-		const auto [fst, snd] = game_tls.controller_node().emplace(controller_node_info.id(), std::make_shared<ControllerNode>());
-		auto& [node_info_, session_] = *fst->second;
-		session_ = std::make_shared<ControllerSessionPtr::element_type>(loop_, controller_addr);
-		node_info_.set_node_id(controller_node_info.id());
-		session_->registerService(&gs_service_impl_);
-		for (auto& it : g_server_service)
-		{
-			session_->registerService(it.second.get());
-		}
-		session_->connect();
-	}
 }
 
 void GameServer::CallControllerStartGs(ControllerSessionPtr controller_node)
@@ -212,16 +149,6 @@ void GameServer::Receive1(const OnConnected2ServerEvent& es)
         {
             return;
         }
-
-        EventLoop::getEventLoopOfCurrentThread()->queueInLoop(
-            [this]() ->void
-            {
-                ServerInfoRequest rq;
-                rq.set_group(ZoneConfig::GetSingleton().config_info().group_id());
-                rq.set_lobby_id(LobbyConfig::GetSingleton().config_info().lobby_id());
-                deploy_node_->CallMethod(DeployServiceServerInfoMsgId, rq);
-            }
-        );
     }
 
     for (auto& it : game_tls.controller_node())

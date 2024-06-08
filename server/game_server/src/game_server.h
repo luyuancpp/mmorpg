@@ -3,7 +3,7 @@
 #include "muduo/net/TcpServer.h"
 #include "muduo/net/EventLoop.h"
 
-#include "src/network/controller_node.h"
+#include "src/network/centre_node.h"
 #include "src/handler/game_service_handler.h"
 #include "src/network/rpc_server.h"
 
@@ -35,10 +35,6 @@ public:
     void InitNetwork();
 
     void ServerInfo(const ::servers_info_data& info);
-
-    void StartGsDeployReplied(const StartGSResponse& replied);
-
-	void OnAcquireLobbyInfoReplied(LobbyInfoResponse& replied);
 
     void CallControllerStartGs(ControllerSessionPtr controller_session);
     void CallLobbyStartGs();

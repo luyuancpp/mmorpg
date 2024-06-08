@@ -3,7 +3,7 @@
 #include "src/thread_local/thread_local_storage_common_logic.h"
 #include "src/network/node_info.h"
 #include "src/network/gate_node.h"
-#include "src/network/controller_node.h"
+#include "src/network/centre_node.h"
 #include "src/system/redis_system.h"
 #include "src/comp/gs_scene_comp.h"
 #include "common_proto/mysql_database_table.pb.h"

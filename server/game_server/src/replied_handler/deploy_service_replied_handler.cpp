@@ -27,7 +27,6 @@ void OnDeployServiceGetNodeInfoRepliedHandler(const TcpConnectionPtr& conn, cons
 void OnDeployServiceStartGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<StartGsResponse>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
-	g_game_node->StartGsDeployReplied(*replied);
 ///<<< END WRITING YOUR CODE
 }
 
@@ -37,12 +36,3 @@ void OnDeployServiceGetGsNodeIdRepliedHandler(const TcpConnectionPtr& conn, cons
 ///<<< END WRITING YOUR CODE
 }
 
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-	g_game_node->OnAcquireLobbyInfoReplied(*replied);
-///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
-///<<< BEGIN WRITING YOUR CODE
-///<<< END WRITING YOUR CODE
