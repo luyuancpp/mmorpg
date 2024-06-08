@@ -6,10 +6,10 @@
 #include "centre_scene_server_player_handler.h"
 std::unordered_map<std::string, std::unique_ptr<PlayerService>> g_player_service;
 
-class ControllerPlayerServiceImpl : public ControllerPlayerService{};
-class ControllerScenePlayerServiceImpl : public ControllerScenePlayerService{};
+class CentrePlayerServiceImpl : public CentrePlayerService{};
+class CentreScenePlayerServiceImpl : public CentreScenePlayerService{};
 void InitPlayerService()
 {
-	g_player_service.emplace("ControllerPlayerService", std::make_unique<CentrePlayerServiceHandler>(new ControllerPlayerServiceImpl));
-	g_player_service.emplace("ControllerScenePlayerService", std::make_unique<CentreScenePlayerServiceHandler>(new ControllerScenePlayerServiceImpl));
+	g_player_service.emplace("CentrePlayerService", std::make_unique<CentrePlayerServiceHandler>(new CentrePlayerServiceImpl));
+	g_player_service.emplace("CentreScenePlayerService", std::make_unique<CentreScenePlayerServiceHandler>(new CentreScenePlayerServiceImpl));
 }
