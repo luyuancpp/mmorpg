@@ -452,9 +452,9 @@ func writeGsMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-// controller server
+// centre server
 
-func isControllerMethodHandler(methodList *RpcMethodInfos) (isGsFile bool) {
+func isCentreMethodHandler(methodList *RpcMethodInfos) (isGsFile bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -466,16 +466,16 @@ func isControllerMethodHandler(methodList *RpcMethodInfos) (isGsFile bool) {
 	return strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
-func writeControllerMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeCentreMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isControllerMethodHandler(&methodList) {
+	if !isCentreMethodHandler(&methodList) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
 	WriteMd5Data2File(config.CentreMethodHandleDir+fileName, getServiceHandlerHeadStr(methodList))
 }
 
-func isControllerPlayerHandler(methodList *RpcMethodInfos) (result bool) {
+func isCentrePlayerHandler(methodList *RpcMethodInfos) (result bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -489,18 +489,18 @@ func isControllerPlayerHandler(methodList *RpcMethodInfos) (result bool) {
 	return true
 }
 
-func writeControllerPlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
+func writeCentrePlayerMethodHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isControllerPlayerHandler(&methodList) {
+	if !isCentrePlayerHandler(&methodList) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadHandlerEx
 	WriteMd5Data2File(config.CentreMethodHandleDir+fileName, getPlayerMethodHeadStr(methodList))
 }
 
-func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
+func writeCentrePlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isControllerPlayerHandler(&methodList) {
+	if !isCentrePlayerHandler(&methodList) {
 		return
 	}
 	firstMethodInfo := methodList[0]
@@ -513,9 +513,9 @@ func writeControllerPlayerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
+func writeCentreMethodHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isControllerMethodHandler(&methodList) {
+	if !isCentreMethodHandler(&methodList) {
 		return
 	}
 
@@ -525,7 +525,7 @@ func writeControllerMethodHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func isControllerMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
+func isCentreMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 	if len(*methodList) <= 0 {
 		return false
 	}
@@ -537,10 +537,10 @@ func isControllerMethodRepliedHandler(methodList *RpcMethodInfos) (check bool) {
 	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
-func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+func writeCentreMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
 
-	if !isControllerMethodRepliedHandler(&methodList) {
+	if !isCentreMethodRepliedHandler(&methodList) {
 		return
 	}
 	fileName := strings.ToLower(methodList[0].FileBaseName()) + config.HeadRepliedHandlerEx
@@ -549,9 +549,9 @@ func writeControllerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+func writeCentreMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isControllerMethodRepliedHandler(&methodList) {
+	if !isCentreMethodRepliedHandler(&methodList) {
 		return
 	}
 	firstMethodInfo := methodList[0]
@@ -561,7 +561,7 @@ func writeControllerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	WriteMd5Data2File(dstFileName, data)
 }
 
-func isControllerPlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) {
+func isCentrePlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) {
 	if len(*methodList) <= 0 {
 		return
 	}
@@ -572,18 +572,18 @@ func isControllerPlayerRepliedHandler(methodList *RpcMethodInfos) (result bool) 
 	return !strings.Contains(firstMethodInfo.FileBaseName(), config.CentrePrefixName)
 }
 
-func writeControllerPlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
+func writeCentrePlayerMethodRepliedHandlerHeadFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isControllerPlayerRepliedHandler(&methodList) {
+	if !isCentrePlayerRepliedHandler(&methodList) {
 		return
 	}
 	fileName := methodList[0].FileBaseName() + config.HeadRepliedHandlerEx
 	WriteMd5Data2File(config.CentreMethodRepliedHandleDir+fileName, getPlayerMethodRepliedHeadStr(methodList))
 }
 
-func writeControllerPlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
+func writeCentrePlayerMethodRepliedHandlerCppFile(methodList RpcMethodInfos) {
 	defer util.Wg.Done()
-	if !isControllerPlayerRepliedHandler(&methodList) {
+	if !isCentrePlayerRepliedHandler(&methodList) {
 		return
 	}
 	firstMethodInfo := methodList[0]
@@ -752,23 +752,23 @@ func WriteMethodFile() {
 		util.Wg.Add(1)
 		go writeGsPlayerMethodRepliedHandlerCppFile(v)
 
-		//Controller
+		//centre
 		util.Wg.Add(1)
-		go writeControllerMethodHandlerHeadFile(v)
+		go writeCentreMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
-		go writeControllerMethodHandlerCppFile(v)
+		go writeCentreMethodHandlerCppFile(v)
 		util.Wg.Add(1)
-		go writeControllerPlayerMethodHandlerHeadFile(v)
+		go writeCentrePlayerMethodHandlerHeadFile(v)
 		util.Wg.Add(1)
-		go writeControllerPlayerMethodHandlerCppFile(v)
+		go writeCentrePlayerMethodHandlerCppFile(v)
 		util.Wg.Add(1)
-		go writeControllerMethodRepliedHandlerHeadFile(v)
+		go writeCentreMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
-		go writeControllerMethodRepliedHandlerCppFile(v)
+		go writeCentreMethodRepliedHandlerCppFile(v)
 		util.Wg.Add(1)
-		go writeControllerPlayerMethodRepliedHandlerHeadFile(v)
+		go writeCentrePlayerMethodRepliedHandlerHeadFile(v)
 		util.Wg.Add(1)
-		go writeControllerPlayerMethodRepliedHandlerCppFile(v)
+		go writeCentrePlayerMethodRepliedHandlerCppFile(v)
 
 		//gate
 		util.Wg.Add(1)
@@ -787,11 +787,11 @@ func WriteMethodFile() {
 	util.Wg.Add(1)
 	go writeRepliedRegisterFile(config.GsMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isGsMethodRepliedHandler)
 
-	//controller
+	//centre
 	util.Wg.Add(1)
-	go writeRegisterFile(config.CentreMethodHandleDir+config.RegisterHandlerCppEx, isControllerMethodHandler)
+	go writeRegisterFile(config.CentreMethodHandleDir+config.RegisterHandlerCppEx, isCentreMethodHandler)
 	util.Wg.Add(1)
-	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isControllerMethodRepliedHandler)
+	go writeRepliedRegisterFile(config.CentreMethodRepliedHandleDir+config.RegisterRepliedHandlerCppEx, isCentreMethodRepliedHandler)
 
 	//gate
 	util.Wg.Add(1)
