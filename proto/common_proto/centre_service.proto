@@ -8,7 +8,6 @@ import "common_proto/c2gate.proto";
 import "common_proto/node_common.proto";
 import "component_proto/scene_comp.proto";
 import "common_proto/common_message.proto";
-option cc_generic_services = true;
 
 message CtrlStartGsRequest
 {
@@ -20,7 +19,7 @@ message CtrlStartGsRequest
 
 message CtrlStartGsResponse
 {
-  uint32 controller_node_id = 1;
+  uint32 Centre_node_id = 1;
   repeated SceneInfo scenes_info = 2;
   uint32 gate_node_id = 3;
 }
@@ -35,7 +34,7 @@ message StartLsRequest
 
 message StartLsResponse
 {
-  uint32 controller_node_id = 1;
+  uint32 Centre_node_id = 1;
   repeated SceneInfo scenes_info = 2;
   uint32 gate_node_id = 3;
 }
@@ -49,8 +48,6 @@ message CtrlConnectedGameRequest
 {
   IpPort rpc_client = 1;
 }
-
-
 
 message GateDisconnectRequest
 {
@@ -83,7 +80,7 @@ message EnterGameNodeSucceedRequest
   uint32 game_node_id = 2;
 }
 
-service ControllerService {
+service CentreService {
   rpc StartGs (CtrlStartGsRequest) returns (CtrlStartGsResponse);
   rpc GateConnect (GateConnectRequest) returns (Empty);
   rpc GatePlayerService (GateClientMessageRequest) returns (Empty);

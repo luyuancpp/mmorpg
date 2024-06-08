@@ -49,7 +49,7 @@ service GateService {
   rpc StopGS (GateNodeStopGSRequest) returns (Empty);
   rpc PlayerEnterGs (GateNodePlayerUpdateGameNodeRequest) returns (GateNodePlayerUpdateGameNodeResponese);
   rpc PlayerMessage (NodeRouteMessageRequest) returns (Empty);
-  rpc KickConnByController (GateNodeKickConnRequest) returns (Empty);
+  rpc KickConnByCentre (GateNodeKickConnRequest) returns (Empty);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
 }

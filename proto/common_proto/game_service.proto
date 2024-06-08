@@ -12,7 +12,7 @@ message GameNodeEnterGsRequest
 {
   uint64 player_id = 1;
   uint64 session_id = 2;
-  uint32 controller_node_id = 3;
+  uint32 centre_node_id = 3;
 }
 
 message GameNodeRpcClientRequest
@@ -60,7 +60,7 @@ service GameService {
   rpc ClientSend2Player (GameNodeRpcClientRequest) returns (GameNodeRpcClientResponse);
   rpc Disconnect (GameNodeDisconnectRequest) returns (Empty); 
   rpc GateConnectGs (GameNodeConnectRequest) returns (Empty); 
-  rpc ControllerSend2PlayerViaGs (NodeRouteMessageRequest) returns (Empty);
+  rpc CentreSend2PlayerViaGs (NodeRouteMessageRequest) returns (Empty);
   rpc CallPlayer (NodeRouteMessageRequest) returns (NodeRouteMessageResponse);
   rpc RouteNodeStringMsg (RouteMsgStringRequest) returns (RouteMsgStringResponse);
   rpc RoutePlayerStringMsg (RoutePlayerMsgStringRequest) returns (RoutePlayerMsgStringResponse);
