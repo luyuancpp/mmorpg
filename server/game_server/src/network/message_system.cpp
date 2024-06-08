@@ -5,7 +5,7 @@
 #include "src/thread_local/thread_local_storage_common_logic.h"
 #include "src/thread_local/thread_local_storage.h"
 #include "src/network/gate_node.h"
-#include "src/network/controller_node.h"
+#include "src/network/centre_node.h"
 #include "src/network/session.h"
 #include "service/controller_service_service.h"
 #include "service/gate_service_service.h"
