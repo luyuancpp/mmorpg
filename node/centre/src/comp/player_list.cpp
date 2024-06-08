@@ -34,7 +34,6 @@ void ControllerPlayerSystem::LeaveGame(Guid guid)
 		lsp.leaver_ = player;
 		ScenesSystem::LeaveScene(lsp);
     }
-    
 	centre_tls.player_list().erase(it);
 }
 

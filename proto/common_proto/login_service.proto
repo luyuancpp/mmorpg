@@ -29,7 +29,7 @@ message EnterGameC2LRequest
 
 message LoginNodeCreatePlayerResponse
 {
-  Tips error = 1;
+  Tip error = 1;
   account_database players = 2;
   uint64 player_id = 3;
 }

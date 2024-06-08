@@ -16,16 +16,16 @@ public:
 		{
 			case 0:
 			{
-				tls_lua_state["ClientPlayerCommonServicePushTipsS2CHandler"](
-				::google::protobuf::internal::DownCast<const ::TipsS2C*>( request),
-				::google::protobuf::internal::DownCast<::TipsS2C*>(response));
+				tls_lua_state["ClientPlayerCommonServicePushTipS2CHandler"](
+				::google::protobuf::internal::DownCast<const ::TipS2C*>( request),
+				::google::protobuf::internal::DownCast<::TipS2C*>(response));
 			}
 			break;
 			case 1:
 			{
 				tls_lua_state["ClientPlayerCommonServiceBeKickHandler"](
-				::google::protobuf::internal::DownCast<const ::TipsS2C*>( request),
-				::google::protobuf::internal::DownCast<::TipsS2C*>(response));
+				::google::protobuf::internal::DownCast<const ::TipS2C*>( request),
+				::google::protobuf::internal::DownCast<::TipS2C*>(response));
 			}
 			break;
 			default:

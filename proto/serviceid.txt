@@ -1,4 +1,4 @@
-0=ClientPlayerCommonServicePushTipsS2C
+0=ClientPlayerCommonServicePushTipS2C
 3=CentreScenePlayerServiceLeaveScene
 4=CentreScenePlayerServiceEnterScene
 5=CentreScenePlayerServiceLeaveSceneAsyncSavePlayerComplete

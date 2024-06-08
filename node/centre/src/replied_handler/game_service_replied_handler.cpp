@@ -12,6 +12,8 @@
 #include "src/replied_handler/player_service_replied.h"
 #include "src/thread_local/centre_thread_local_storage.h"
 
+#include "component_proto/player_network_comp.pb.h"
+
 ///<<< END WRITING YOUR CODE
 extern ProtobufDispatcher g_response_dispatcher;
 
@@ -23,7 +25,7 @@ void InitGameServiceEnterGsRepliedHandler()
 	g_response_dispatcher.registerMessageCallback<GameNodeRpcClientResponse>(std::bind(&OnGameServiceClientSend2PlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceDisconnectRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceGateConnectGsRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceControllerSend2PlayerViaGsRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	g_response_dispatcher.registerMessageCallback<Empty>(std::bind(&OnGameServiceCentreSend2PlayerViaGsRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<NodeRouteMessageResponse>(std::bind(&OnGameServiceCallPlayerRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<RouteMsgStringResponse>(std::bind(&OnGameServiceRouteNodeStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 	g_response_dispatcher.registerMessageCallback<RoutePlayerMsgStringResponse>(std::bind(&OnGameServiceRoutePlayerStringMsgRepliedHandler, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
@@ -63,7 +65,7 @@ void OnGameServiceGateConnectGsRepliedHandler(const TcpConnectionPtr& conn, cons
 ///<<< END WRITING YOUR CODE
 }
 
-void OnGameServiceControllerSend2PlayerViaGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp)
+void OnGameServiceCentreSend2PlayerViaGsRepliedHandler(const TcpConnectionPtr& conn, const std::shared_ptr<Empty>& replied, Timestamp timestamp)
 {
 ///<<< BEGIN WRITING YOUR CODE
 ///<<< END WRITING YOUR CODE
@@ -77,30 +79,26 @@ void OnGameServiceCallPlayerRepliedHandler(const TcpConnectionPtr& conn, const s
 		LOG_ERROR << "message_id not found " << replied->msg().message_id() ;
 		return;
 	}
-	auto session_it = centre_tls.gate_sessions().find(replied->ex().session_id());
-	if (session_it == centre_tls.gate_sessions().end())
+	const auto player_info = 
+		tls.session_registry.try_get<PlayerSessionInfo>(static_cast<entt::entity>(replied->ex().session_id()));
+	if (nullptr == player_info)
 	{
 		LOG_ERROR << "session not found " << replied->ex().session_id();
 		return;
 	}
-	const auto session_player_id = tls.registry.try_get<Guid>(session_it->second);
-	if (nullptr == session_player_id)
-	{
-		LOG_ERROR << "session not found " << replied->ex().session_id();
-		return;
-	}
+	auto player_id = player_info->player_id();
 	const auto& message_info = g_message_info.at(replied->msg().message_id() );
-	const auto player_it = centre_tls.player_list().find(*session_player_id);
+	const auto player_it = centre_tls.player_list().find(player_id);
 	if (player_it == centre_tls.player_list().end())
 	{
-		LOG_ERROR << "PlayerService player not found " << *session_player_id << ", message id"
+		LOG_ERROR << "PlayerService player not found " << player_id << ", message id"
 			<< replied->msg().message_id();
 		return;
 	}
 	const auto service_it = g_player_service_replied.find(message_info.service);
 	if (service_it == g_player_service_replied.end())
 	{
-		LOG_ERROR << "PlayerService service not found " << *session_player_id << ","
+		LOG_ERROR << "PlayerService service not found " << player_id << ","
 		<< replied->msg().message_id();
 		return;
 	}

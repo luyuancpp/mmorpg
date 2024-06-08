@@ -8,3 +8,8 @@ message PlayerNodeInfo
 	uint32 lobby_node_id = 4;
 }
 
+message PlayerSessionInfo
+{
+	uint64 player_id = 1;
+}
+
